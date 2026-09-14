@@ -19,9 +19,11 @@ import {
 import {
   ArrowRight,
   BadgeCheck,
+  BrainCircuit,
   BriefcaseBusiness,
   Check,
   Code2,
+  FileText,
   GraduationCap,
   Lightbulb,
   Loader2,
@@ -32,6 +34,7 @@ import {
   Sparkles,
   Target,
   TrendingUp,
+  Upload,
   UserRound,
   Users,
 } from "lucide-react";
@@ -107,12 +110,17 @@ export default function Home() {
   const [profile, setProfile] = useState<Profile>(defaults);
   const [hasPredicted, setHasPredicted] = useState(false);
   const [filters, setFilters] = useState({ year: "", branch: "", gender: "", skillCategory: "" });
+  const [resumeText, setResumeText] = useState("");
+  const [resumeFileName, setResumeFileName] = useState("");
+  const [csvFileName, setCsvFileName] = useState("");
   const { user, loading, isAuthenticated, logout } = useAuth();
 
   const result = useMemo(() => getResult(profile), [profile]);
   const recordsQuery = trpc.placement.records.useQuery(filters, { refetchOnWindowFocus: false });
   const historyQuery = trpc.predictions.history.useQuery(undefined, { enabled: isAuthenticated, refetchOnWindowFocus: false });
   const savePrediction = trpc.predictions.save.useMutation({ onSuccess: () => historyQuery.refetch() });
+  const resumeAnalysis = trpc.resume.analyze.useMutation();
+  const uploadCsv = trpc.placement.uploadCsv.useMutation({ onSuccess: () => recordsQuery.refetch() });
   const records = recordsQuery.data ?? [];
 
   const filterOptions = useMemo(() => ({
@@ -164,6 +172,18 @@ export default function Home() {
   const saveCurrentPrediction = () => {
     setHasPredicted(true);
     if (isAuthenticated) savePrediction.mutate({ ...profile, chance: result.chance });
+  };
+  const readResumeFile = (file: File) => {
+    setResumeFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => setResumeText(String(reader.result ?? ""));
+    reader.readAsText(file);
+  };
+  const readCsvFile = (file: File) => {
+    setCsvFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => uploadCsv.mutate({ content: String(reader.result ?? "") });
+    reader.readAsText(file);
   };
 
   return (
@@ -415,6 +435,26 @@ export default function Home() {
                 <div className="rounded-2xl border border-dashed border-white/10 px-5 py-8 text-center text-sm text-slate-500">Calculate your chance above to create your first saved prediction.</div>
               )}
             </div>
+          </section>
+        )}
+
+        {isAuthenticated && (
+          <section className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="rounded-[2rem] border border-emerald-300/15 bg-gradient-to-br from-[#10283b] to-[#0d1a2b] p-6 sm:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">05 / AI career coach</p><h2 className="mt-3 flex items-center gap-2 text-2xl font-bold"><BrainCircuit size={23} className="text-emerald-300" /> Resume skill analyzer</h2><p className="mt-2 text-sm leading-6 text-slate-400">Paste your resume or upload a text file. AI will identify placement-focused skill gaps and next actions.</p></div>
+                <FileText size={22} className="text-cyan-300" />
+              </div>
+              <textarea value={resumeText} onChange={(event) => setResumeText(event.target.value)} placeholder="Paste resume text here..." className="mt-6 min-h-36 w-full resize-y rounded-2xl border border-white/10 bg-[#081522] px-4 py-3 text-sm leading-6 text-slate-200 outline-none placeholder:text-slate-600 focus:border-emerald-300/60" />
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-emerald-300/40 hover:text-white"><Upload size={15} /> {resumeFileName || "Upload .txt / .md"}<input type="file" accept=".txt,.md,text/plain,text/markdown" className="hidden" onChange={(event) => event.target.files?.[0] && readResumeFile(event.target.files[0])} /></label>
+                <button disabled={resumeAnalysis.isPending || resumeText.trim().length < 80} onClick={() => resumeAnalysis.mutate({ resumeText })} className="rounded-xl bg-emerald-300 px-4 py-2 text-sm font-bold text-[#07111f] transition hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-40">{resumeAnalysis.isPending ? "Analyzing..." : "Analyze my resume"}</button>
+                {resumeAnalysis.error && <span className="text-xs text-rose-300">{resumeAnalysis.error.message}</span>}
+              </div>
+              {resumeAnalysis.data && <div className="mt-6 space-y-5 border-t border-white/10 pt-5"><p className="text-sm leading-6 text-slate-300">{resumeAnalysis.data.summary}</p><div><p className="text-xs font-bold uppercase tracking-wider text-emerald-300">Skills to improve</p><div className="mt-3 grid gap-3 sm:grid-cols-2">{resumeAnalysis.data.skillGaps.map((gap) => <div key={gap.skill} className="rounded-xl border border-white/10 bg-white/[0.04] p-3"><div className="flex items-center justify-between gap-2"><span className="font-semibold text-white">{gap.skill}</span><span className={`text-[10px] font-bold uppercase ${gap.priority === "High" ? "text-rose-300" : gap.priority === "Medium" ? "text-amber-200" : "text-emerald-300"}`}>{gap.priority}</span></div><p className="mt-1 text-xs leading-5 text-slate-400">{gap.reason}</p><p className="mt-2 text-xs font-medium text-cyan-200">Action: {gap.action}</p></div>)}</div></div><div><p className="text-xs font-bold uppercase tracking-wider text-emerald-300">Next steps</p><ul className="mt-2 space-y-1 text-sm text-slate-300">{resumeAnalysis.data.nextSteps.map((step) => <li key={step}>• {step}</li>)}</ul></div></div>}
+            </div>
+
+            {user?.role === "admin" && <div className="rounded-[2rem] border border-amber-300/15 bg-white/[0.03] p-6 sm:p-8"><p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-200">Admin tools</p><h2 className="mt-3 flex items-center gap-2 text-2xl font-bold"><Upload size={22} className="text-amber-200" /> Update placement data</h2><p className="mt-2 text-sm leading-6 text-slate-400">Upload a validated CSV to replace the dashboard dataset. Required columns: year, branch, gender, skillCategory, placed, cgpa, codingScore, communicationScore, internships.</p><label className="mt-6 flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-amber-300/30 bg-amber-300/5 text-center transition hover:bg-amber-300/10"><Upload size={24} className="text-amber-200" /><span className="text-sm font-semibold text-amber-100">{csvFileName || "Choose CSV file"}</span><span className="text-xs text-slate-500">Maximum 3 MB</span><input type="file" accept=".csv,text/csv" className="hidden" onChange={(event) => event.target.files?.[0] && readCsvFile(event.target.files[0])} /></label>{uploadCsv.isPending && <p className="mt-3 text-xs text-amber-100">Validating and importing records...</p>}{uploadCsv.data && <p className="mt-3 text-xs text-emerald-300">Successfully imported {uploadCsv.data.count} records.</p>}{uploadCsv.error && <p className="mt-3 text-xs text-rose-300">{uploadCsv.error.message}</p>}</div>}
           </section>
         )}
 

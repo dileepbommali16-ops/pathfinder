@@ -84,3 +84,19 @@ describe("placement.records", () => {
     expect(result.every((record) => record.year === 2015 && record.gender === "Female")).toBe(true);
   });
 });
+
+describe("placement.uploadCsv and resume.analyze", () => {
+  it("rejects CSV uploads from non-admin users", async () => {
+    const { ctx } = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.placement.uploadCsv({ content: "year,branch\n2015,CSE" })).rejects.toThrow();
+  });
+
+  it("rejects resumes that are too short to analyze", async () => {
+    const { ctx } = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.resume.analyze({ resumeText: "Too short" })).rejects.toThrow();
+  });
+});

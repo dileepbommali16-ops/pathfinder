@@ -65,6 +65,16 @@ export async function seedPlacementRecords(records: InsertPlacementRecord[]) {
   });
 }
 
+export async function replacePlacementRecords(records: InsertPlacementRecord[]) {
+  const db = await getDb();
+  if (!db || records.length === 0) throw new Error("Database is not available or CSV is empty");
+  await db.transaction(async (tx) => {
+    await tx.delete(placementRecords);
+    await tx.insert(placementRecords).values(records);
+  });
+  return records.length;
+}
+
 export async function getPlacementRecords(filters?: { year?: number; branch?: string; gender?: string; skillCategory?: string }) {
   const db = await getDb();
   if (!db) return [];
