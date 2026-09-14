@@ -1,3 +1,5 @@
+import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
 import { useMemo, useState } from "react";
 import {
   ArrowRight,
@@ -7,11 +9,15 @@ import {
   Code2,
   GraduationCap,
   Lightbulb,
+  Loader2,
+  LogIn,
+  LogOut,
   MessageCircle,
   RotateCcw,
   Sparkles,
   Target,
   TrendingUp,
+  UserRound,
   Users,
 } from "lucide-react";
 
@@ -78,6 +84,7 @@ function ScoreBar({ label, value, icon }: { label: string; value: number; icon: 
 export default function Home() {
   const [profile, setProfile] = useState<Profile>(defaults);
   const [hasPredicted, setHasPredicted] = useState(false);
+  const { user, loading, isAuthenticated, logout } = useAuth();
 
   const result = useMemo(() => getResult(profile), [profile]);
 
@@ -109,9 +116,21 @@ export default function Home() {
             <p className="text-xs text-slate-400">Placement readiness</p>
           </div>
         </div>
-        <div className="hidden items-center gap-6 text-sm text-slate-400 sm:flex">
-          <span className="flex items-center gap-2"><Users size={16} /> Built for students</span>
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-slate-300">Free demo</span>
+        <div className="flex items-center gap-3 text-sm text-slate-400">
+          <span className="hidden items-center gap-2 lg:flex"><Users size={16} /> Built for students</span>
+          {loading ? (
+            <span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-slate-400"><Loader2 size={15} className="animate-spin" /> Checking account</span>
+          ) : isAuthenticated && user ? (
+            <div className="flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-1.5">
+              <span className="flex items-center gap-2 px-2 text-emerald-100"><UserRound size={15} /> <span className="max-w-[120px] truncate">{user.name || user.email || "Student"}</span></span>
+              <button onClick={() => void logout()} className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-white/25 hover:text-white"><LogOut size={14} /> Log out</button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button onClick={() => startLogin()} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-slate-200 transition hover:border-emerald-300/40 hover:text-emerald-200"><LogIn size={15} /> Log in</button>
+              <button onClick={() => startLogin()} className="hidden rounded-full bg-emerald-300 px-4 py-2 font-bold text-[#07111f] transition hover:bg-emerald-200 sm:block">Create account</button>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -138,6 +157,9 @@ export default function Home() {
                 </span>
               ))}
             </div>
+            {!isAuthenticated && !loading && (
+              <p className="mt-5 flex items-center gap-2 text-sm text-slate-500"><UserRound size={15} /> Log in to save your profile and track progress in the next update.</p>
+            )}
           </div>
 
           <div className="relative animate-[rise_650ms_ease-out_both]">
