@@ -2,6 +2,20 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { useMemo, useState } from "react";
 import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
   ArrowRight,
   BadgeCheck,
   BriefcaseBusiness,
@@ -20,6 +34,34 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
+
+const placementSplit = [
+  { name: "Placed", value: 68, color: "#9ef5cb" },
+  { name: "Not placed", value: 32, color: "#334155" },
+];
+
+const cohortSkills = [
+  { skill: "CGPA", student: 72, cohort: 64 },
+  { skill: "Coding", student: 70, cohort: 58 },
+  { skill: "Communication", student: 70, cohort: 66 },
+  { skill: "Internships", student: 20, cohort: 28 },
+];
+
+const readinessTrend = [
+  { month: "Jan", score: 52 },
+  { month: "Feb", score: 58 },
+  { month: "Mar", score: 61 },
+  { month: "Apr", score: 67 },
+  { month: "May", score: 73 },
+  { month: "Jun", score: 78 },
+];
+
+const chartTooltipStyle = {
+  backgroundColor: "#0d1a2b",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: "12px",
+  color: "#fff",
+};
 
 const defaults = {
   cgpa: 7.2,
@@ -242,6 +284,71 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        <section className="mt-6 rounded-[2rem] border border-white/10 bg-[#0b1727]/90 p-6 shadow-2xl shadow-black/20 sm:p-8">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">03 / Placement analytics</p>
+              <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">See the signals behind the score.</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">A visual snapshot of the current profile compared with a sample student cohort.</p>
+            </div>
+            <span className="w-fit rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1.5 text-xs font-medium text-amber-100">Demo cohort data</span>
+          </div>
+
+          <div className="mt-8 grid gap-5 xl:grid-cols-[0.8fr_1.2fr_1.2fr]">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="flex items-center justify-between">
+                <div><p className="text-sm font-semibold text-white">Placement outcomes</p><p className="mt-1 text-xs text-slate-500">Sample cohort</p></div>
+                <Target size={18} className="text-emerald-300" />
+              </div>
+              <div className="relative mt-3 h-[180px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={placementSplit} dataKey="value" nameKey="name" innerRadius={55} outerRadius={76} paddingAngle={4} stroke="none">
+                      {placementSplit.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
+                    </Pie>
+                    <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => [`${value}%`, "Students"]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 grid place-items-center"><div className="text-center"><p className="text-3xl font-black text-white">68%</p><p className="text-[10px] uppercase tracking-widest text-slate-500">placed</p></div></div>
+              </div>
+              <div className="flex justify-center gap-4 text-xs text-slate-400"><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-300" />Placed</span><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-slate-600" />Not placed</span></div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="flex items-center justify-between"><div><p className="text-sm font-semibold text-white">Profile vs cohort</p><p className="mt-1 text-xs text-slate-500">Normalized score / 100</p></div><TrendingUp size={18} className="text-cyan-300" /></div>
+              <div className="mt-5 h-[210px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={cohortSkills} margin={{ top: 5, right: 0, left: -22, bottom: 0 }} barGap={5}>
+                    <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.08)" />
+                    <XAxis dataKey="skill" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 100]} tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={chartTooltipStyle} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
+                    <Bar dataKey="student" name="Your profile" fill="#9ef5cb" radius={[5, 5, 0, 0]} />
+                    <Bar dataKey="cohort" name="Cohort average" fill="#3b6874" radius={[5, 5, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-4 text-xs text-slate-400"><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-300" />Your profile</span><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#3b6874]" />Cohort average</span></div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="flex items-center justify-between"><div><p className="text-sm font-semibold text-white">Readiness trend</p><p className="mt-1 text-xs text-slate-500">Illustrative progress</p></div><Sparkles size={18} className="text-amber-200" /></div>
+              <div className="mt-5 h-[210px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={readinessTrend} margin={{ top: 10, right: 8, left: -22, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.08)" />
+                    <XAxis dataKey="month" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[40, 90]} tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => [`${value}%`, "Readiness"]} />
+                    <Line type="monotone" dataKey="score" name="Readiness" stroke="#f5d88a" strokeWidth={3} dot={{ fill: "#f5d88a", r: 4, strokeWidth: 0 }} activeDot={{ r: 6, fill: "#9ef5cb" }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs text-slate-400"><span>Jan → Jun</span><span className="font-semibold text-amber-200">+26 pts</span></div>
+            </div>
+          </div>
+        </section>
 
         <footer className="mt-12 flex flex-col gap-2 border-t border-white/10 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <span>Pathfinder · Student Placement Predictor</span>
