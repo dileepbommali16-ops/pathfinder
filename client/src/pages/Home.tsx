@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
+import { trpc } from "@/lib/trpc";
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -34,27 +35,6 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
-
-const placementSplit = [
-  { name: "Placed", value: 68, color: "#9ef5cb" },
-  { name: "Not placed", value: 32, color: "#334155" },
-];
-
-const cohortSkills = [
-  { skill: "CGPA", student: 72, cohort: 64 },
-  { skill: "Coding", student: 70, cohort: 58 },
-  { skill: "Communication", student: 70, cohort: 66 },
-  { skill: "Internships", student: 20, cohort: 28 },
-];
-
-const readinessTrend = [
-  { month: "Jan", score: 52 },
-  { month: "Feb", score: 58 },
-  { month: "Mar", score: 61 },
-  { month: "Apr", score: 67 },
-  { month: "May", score: 73 },
-  { month: "Jun", score: 78 },
-];
 
 const chartTooltipStyle = {
   backgroundColor: "#0d1a2b",
@@ -126,9 +106,49 @@ function ScoreBar({ label, value, icon }: { label: string; value: number; icon: 
 export default function Home() {
   const [profile, setProfile] = useState<Profile>(defaults);
   const [hasPredicted, setHasPredicted] = useState(false);
+  const [filters, setFilters] = useState({ year: "", branch: "", gender: "", skillCategory: "" });
   const { user, loading, isAuthenticated, logout } = useAuth();
 
   const result = useMemo(() => getResult(profile), [profile]);
+  const recordsQuery = trpc.placement.records.useQuery(filters, { refetchOnWindowFocus: false });
+  const historyQuery = trpc.predictions.history.useQuery(undefined, { enabled: isAuthenticated, refetchOnWindowFocus: false });
+  const savePrediction = trpc.predictions.save.useMutation({ onSuccess: () => historyQuery.refetch() });
+  const records = recordsQuery.data ?? [];
+
+  const filterOptions = useMemo(() => ({
+    years: Array.from(new Set(records.map((record) => String(record.year)))),
+    branches: Array.from(new Set(records.map((record) => record.branch))),
+    genders: Array.from(new Set(records.map((record) => record.gender))),
+    skills: Array.from(new Set(records.map((record) => record.skillCategory))),
+  }), [records]);
+
+  const placementSplit = useMemo(() => {
+    const placed = records.filter((record) => record.placed === 1).length;
+    const total = records.length || 1;
+    return [
+      { name: "Placed", value: Math.round((placed / total) * 100), color: "#9ef5cb" },
+      { name: "Not placed", value: Math.round(((total - placed) / total) * 100), color: "#334155" },
+    ];
+  }, [records]);
+
+  const cohortSkills = useMemo(() => {
+    const average = (key: "cgpa" | "codingScore" | "communicationScore" | "internships") => records.length ? Math.round(records.reduce((sum, record) => sum + record[key], 0) / records.length * (key === "internships" ? 10 : 1)) : 0;
+    return [
+      { skill: "CGPA", student: Math.round(profile.cgpa * 10), cohort: average("cgpa") },
+      { skill: "Coding", student: profile.coding * 10, cohort: average("codingScore") },
+      { skill: "Communication", student: profile.communication * 10, cohort: average("communicationScore") },
+      { skill: "Internships", student: profile.internships * 10, cohort: average("internships") },
+    ];
+  }, [profile, records]);
+
+  const readinessTrend = useMemo(() => {
+    const byYear = new Map<number, { placed: number; total: number }>();
+    records.forEach((record) => {
+      const current = byYear.get(record.year) ?? { placed: 0, total: 0 };
+      byYear.set(record.year, { placed: current.placed + (record.placed === 1 ? 1 : 0), total: current.total + 1 });
+    });
+    return Array.from(byYear.entries()).sort(([a], [b]) => a - b).map(([year, values]) => ({ month: String(year), score: Math.round((values.placed / values.total) * 100) }));
+  }, [records]);
 
   const update = (key: keyof Profile, value: number) => {
     setProfile((current) => ({ ...current, [key]: value }));
@@ -138,6 +158,12 @@ export default function Home() {
   const reset = () => {
     setProfile(defaults);
     setHasPredicted(false);
+  };
+
+  const updateFilter = (key: keyof typeof filters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
+  const saveCurrentPrediction = () => {
+    setHasPredicted(true);
+    if (isAuthenticated) savePrediction.mutate({ ...profile, chance: result.chance });
   };
 
   return (
@@ -239,7 +265,7 @@ export default function Home() {
                 <input aria-label="Coding score" type="range" min="1" max="10" value={profile.coding} onChange={(e) => update("coding", Number(e.target.value))} className="-mt-3 h-2 w-full cursor-pointer accent-emerald-300" />
               </div>
 
-              <button onClick={() => setHasPredicted(true)} className="group mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-300 px-5 py-3.5 font-bold text-[#07111f] shadow-lg shadow-emerald-300/10 transition hover:-translate-y-0.5 hover:bg-emerald-200 active:translate-y-0">
+              <button onClick={saveCurrentPrediction} className="group mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-300 px-5 py-3.5 font-bold text-[#07111f] shadow-lg shadow-emerald-300/10 transition hover:-translate-y-0.5 hover:bg-emerald-200 active:translate-y-0">
                 Calculate my chance <ArrowRight size={18} className="transition group-hover:translate-x-1" />
               </button>
             </div>
@@ -292,7 +318,24 @@ export default function Home() {
               <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">See the signals behind the score.</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">A visual snapshot of the current profile compared with a sample student cohort.</p>
             </div>
-            <span className="w-fit rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1.5 text-xs font-medium text-amber-100">Demo cohort data</span>
+            <span className="w-fit rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs font-medium text-emerald-100">{records.length} public records · 2015 cohort</span>
+          </div>
+
+          <div className="mt-6 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2 lg:grid-cols-4">
+            {([
+              ["year", "Year", filterOptions.years],
+              ["branch", "Branch", filterOptions.branches],
+              ["gender", "Gender", filterOptions.genders],
+              ["skillCategory", "Skill category", filterOptions.skills],
+            ] as const).map(([key, label, options]) => (
+              <label key={key} className="space-y-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{label}</span>
+                <select value={filters[key]} onChange={(event) => updateFilter(key, event.target.value)} className="w-full rounded-xl border border-white/10 bg-[#102033] px-3 py-2.5 text-sm text-slate-200 outline-none transition focus:border-emerald-300/60">
+                  <option value="">All {label.toLowerCase()}s</option>
+                  {options.map((option) => <option key={option} value={option}>{option}</option>)}
+                </select>
+              </label>
+            ))}
           </div>
 
           <div className="mt-8 grid gap-5 xl:grid-cols-[0.8fr_1.2fr_1.2fr]">
@@ -345,14 +388,39 @@ export default function Home() {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs text-slate-400"><span>Jan → Jun</span><span className="font-semibold text-amber-200">+26 pts</span></div>
+              <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs text-slate-400"><span>Historical placement rate</span><span className="font-semibold text-amber-200">{readinessTrend[0]?.score ?? 0}%</span></div>
             </div>
           </div>
         </section>
 
+        {isAuthenticated && (
+          <section className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 sm:p-8">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">04 / Your profile</p>
+                <h2 className="mt-3 text-2xl font-bold tracking-tight">Prediction history</h2>
+                <p className="mt-2 text-sm text-slate-400">Every saved readiness check stays on your account.</p>
+              </div>
+              <UserRound size={22} className="text-emerald-300" />
+            </div>
+            <div className="mt-6 overflow-x-auto">
+              {historyQuery.data?.length ? (
+                <table className="w-full min-w-[620px] text-left text-sm">
+                  <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-500"><tr><th className="pb-3">Date</th><th className="pb-3">Chance</th><th className="pb-3">CGPA</th><th className="pb-3">Coding</th><th className="pb-3">Communication</th><th className="pb-3">Internships</th></tr></thead>
+                  <tbody className="divide-y divide-white/5 text-slate-300">
+                    {historyQuery.data.map((entry) => <tr key={entry.id}><td className="py-3 text-slate-400">{new Date(entry.createdAt).toLocaleDateString()}</td><td className="py-3 font-bold text-emerald-300">{entry.chance}%</td><td className="py-3">{(entry.cgpa / 10).toFixed(1)}</td><td className="py-3">{entry.coding}/10</td><td className="py-3">{entry.communication}/10</td><td className="py-3">{entry.internships}</td></tr>)}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/10 px-5 py-8 text-center text-sm text-slate-500">Calculate your chance above to create your first saved prediction.</div>
+              )}
+            </div>
+          </section>
+        )}
+
         <footer className="mt-12 flex flex-col gap-2 border-t border-white/10 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <span>Pathfinder · Student Placement Predictor</span>
-          <span className="flex items-center gap-2"><BriefcaseBusiness size={14} /> Educational demo — use real approved college data for final decisions.</span>
+          <span className="flex items-center gap-2"><BriefcaseBusiness size={14} /> Public campus placement dataset · 215 student records · 2015 cohort.</span>
         </footer>
       </section>
     </main>

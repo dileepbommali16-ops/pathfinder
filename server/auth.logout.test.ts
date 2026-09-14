@@ -72,3 +72,15 @@ describe("auth.me", () => {
     expect(result?.email).toBe("sample@example.com");
   });
 });
+
+describe("placement.records", () => {
+  it("accepts dashboard filters and returns a record list", async () => {
+    const { ctx } = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.placement.records({ year: "2015", gender: "Female" });
+
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.every((record) => record.year === 2015 && record.gender === "Female")).toBe(true);
+  });
+});
