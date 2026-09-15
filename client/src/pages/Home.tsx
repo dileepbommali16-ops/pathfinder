@@ -46,6 +46,8 @@ const chartTooltipStyle = {
   color: "#fff",
 };
 
+const btechCourses = ["CSE", "CSD", "EEE", "AIML", "IT", "CSM"];
+
 const defaults = {
   cgpa: 7.2,
   backlogs: 0,
@@ -125,7 +127,7 @@ export default function Home() {
 
   const filterOptions = useMemo(() => ({
     years: Array.from(new Set(records.map((record) => String(record.year)))),
-    branches: Array.from(new Set(records.map((record) => record.branch))),
+    branches: Array.from(new Set([...btechCourses, ...records.map((record) => record.branch)])),
     genders: Array.from(new Set(records.map((record) => record.gender))),
     skills: Array.from(new Set(records.map((record) => record.skillCategory))),
   }), [records]);
@@ -344,7 +346,7 @@ export default function Home() {
           <div className="mt-6 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2 lg:grid-cols-4">
             {([
               ["year", "Year", filterOptions.years],
-              ["branch", "Branch", filterOptions.branches],
+              ["branch", "Course / Branch", filterOptions.branches],
               ["gender", "Gender", filterOptions.genders],
               ["skillCategory", "Skill category", filterOptions.skills],
             ] as const).map(([key, label, options]) => (
@@ -357,6 +359,7 @@ export default function Home() {
               </label>
             ))}
           </div>
+          {filters.branch && records.length === 0 && <p className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/5 px-4 py-3 text-sm text-amber-100">{filters.branch} selected. No records for this course are imported yet. An admin can upload your college CSV to populate this analysis.</p>}
 
           <div className="mt-8 grid gap-5 xl:grid-cols-[0.8fr_1.2fr_1.2fr]">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
