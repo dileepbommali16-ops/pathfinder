@@ -7,9 +7,9 @@ output = Path('/home/ubuntu/student-placement-website/sample-placement-2024-2026
 years = [2024, 2025, 2026]
 courses = ['CSE', 'CSD', 'EEE', 'AIML', 'IT', 'CSM']
 genders = ['Male', 'Female']
-skills = ['Python', 'Java', 'SQL', 'Machine Learning', 'Data Visualization']
+skills = ['C', 'Python', 'Java', 'SQL', 'Machine Learning', 'Data Visualization']
 course_bonus = {'CSE': 7, 'CSD': 6, 'EEE': 2, 'AIML': 8, 'IT': 5, 'CSM': 7}
-skill_bonus = {'Python': 5, 'Java': 4, 'SQL': 3, 'Machine Learning': 8, 'Data Visualization': 5}
+skill_bonus = {'C': 3, 'Python': 5, 'Java': 4, 'SQL': 3, 'Machine Learning': 8, 'Data Visualization': 5}
 
 rows = []
 source_id = 2024001
