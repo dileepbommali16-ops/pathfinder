@@ -21,6 +21,7 @@ import {
   BadgeCheck,
   Check,
   Code2,
+  Download,
   GraduationCap,
   Lightbulb,
   Loader2,
@@ -113,15 +114,35 @@ export default function Home() {
 
   const result = useMemo(() => getResult(profile), [profile]);
   const recordsQuery = trpc.placement.records.useQuery(filters, { refetchOnWindowFocus: false });
+  const yearRecordsQuery = trpc.placement.records.useQuery({ year: filters.year }, { refetchOnWindowFocus: false });
   const savePrediction = trpc.predictions.save.useMutation();
   const records = recordsQuery.data ?? [];
+  const yearRecords = yearRecordsQuery.data ?? [];
 
   const filterOptions = useMemo(() => ({
     years: recentYears,
-    branches: Array.from(new Set([...btechCourses, ...records.map((record) => record.branch)])),
-    genders: Array.from(new Set(records.map((record) => record.gender))),
-    skills: Array.from(new Set(records.map((record) => record.skillCategory))),
-  }), [records]);
+    branches: Array.from(new Set([...btechCourses, ...yearRecords.map((record) => record.branch)])),
+    genders: ["Male", "Female"],
+    skills: Array.from(new Set(yearRecords.map((record) => record.skillCategory))).sort(),
+  }), [yearRecords]);
+
+  const coursePlacement = useMemo(() => {
+    const byCourse = new Map<string, { placed: number; total: number }>();
+    yearRecords.forEach((record) => {
+      const current = byCourse.get(record.branch) ?? { placed: 0, total: 0 };
+      byCourse.set(record.branch, { placed: current.placed + record.placed, total: current.total + 1 });
+    });
+    return Array.from(byCourse, ([course, value]) => ({ course, placementRate: Math.round((value.placed / value.total) * 100), students: value.total })).sort((a, b) => b.placementRate - a.placementRate);
+  }, [yearRecords]);
+
+  const skillPlacement = useMemo(() => {
+    const bySkill = new Map<string, { placed: number; total: number }>();
+    yearRecords.forEach((record) => {
+      const current = bySkill.get(record.skillCategory) ?? { placed: 0, total: 0 };
+      bySkill.set(record.skillCategory, { placed: current.placed + record.placed, total: current.total + 1 });
+    });
+    return Array.from(bySkill, ([skill, value]) => ({ skill: skill.length > 18 ? `${skill.slice(0, 18)}…` : skill, placementRate: Math.round((value.placed / value.total) * 100), students: value.total })).sort((a, b) => b.placementRate - a.placementRate);
+  }, [yearRecords]);
 
   const placementSplit = useMemo(() => {
     const placed = records.filter((record) => record.placed === 1).length;
@@ -162,6 +183,23 @@ export default function Home() {
   };
 
   const updateFilter = (key: keyof typeof filters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
+  const exportCsv = () => {
+    const headers = ["year", "branch", "gender", "skillCategory", "placed", "cgpa", "codingScore", "communicationScore", "internships"];
+    const csv = [headers.join(","), ...records.map((record) => [record.year, record.branch, record.gender, record.skillCategory, record.placed ? "Placed" : "Not placed", (record.cgpa / 10).toFixed(1), (record.codingScore / 10).toFixed(1), (record.communicationScore / 10).toFixed(1), record.internships].map((value) => `"${String(value).replaceAll('"', '""')}"`).join(","))].join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `pathfinder-placement-${filters.year || "all-years"}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  const exportPdf = () => {
+    const rows = records.map((record) => `<tr><td>${record.year}</td><td>${record.branch}</td><td>${record.gender}</td><td>${record.skillCategory}</td><td>${record.placed ? "Placed" : "Not placed"}</td></tr>`).join("");
+    const report = window.open("", "_blank", "width=1000,height=800");
+    if (!report) return;
+    report.document.write(`<html><head><title>Pathfinder Placement Report</title><style>body{font-family:Arial;padding:32px;color:#132238}h1{color:#0f766e}table{border-collapse:collapse;width:100%;margin-top:20px}th,td{border:1px solid #cbd5e1;padding:8px;text-align:left}th{background:#dff7ee}</style></head><body><h1>Pathfinder Placement Analytics</h1><p>Filters: Year ${filters.year || "All"} · Course ${filters.branch || "All"} · Gender ${filters.gender || "All"} · Skill ${filters.skillCategory || "All"}</p><p>Total records: ${records.length}</p><table><thead><tr><th>Year</th><th>Course</th><th>Gender</th><th>Skill category</th><th>Outcome</th></tr></thead><tbody>${rows}</tbody></table><script>window.onload=()=>window.print()</script></body></html>`);
+    report.document.close();
+  };
   const saveCurrentPrediction = () => {
     setHasPredicted(true);
     if (isAuthenticated) savePrediction.mutate({ ...profile, chance: result.chance });
@@ -319,7 +357,7 @@ export default function Home() {
               <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">See the signals behind the score.</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">A visual snapshot of the current profile compared with a sample student cohort.</p>
             </div>
-            <span className="w-fit rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs font-medium text-emerald-100">{records.length} records · 2025 / 2024 / 2023</span>
+            <div className="flex flex-wrap items-center gap-2"><span className="w-fit rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs font-medium text-emerald-100">{records.length} records · {filters.year}</span><button onClick={exportCsv} disabled={!records.length} className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-emerald-300/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"><Download size={14} /> CSV</button><button onClick={exportPdf} disabled={!records.length} className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-emerald-300/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"><Download size={14} /> PDF</button></div>
           </div>
 
           <div className="mt-6 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -391,6 +429,17 @@ export default function Home() {
                 </ResponsiveContainer>
               </div>
               <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs text-slate-400"><span>Historical placement rate</span><span className="font-semibold text-amber-200">{readinessTrend[0]?.score ?? 0}%</span></div>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div><p className="text-sm font-semibold text-white">Course-wise placement percentage</p><p className="mt-1 text-xs text-slate-500">Selected year: {filters.year}</p></div>
+              <div className="mt-5 h-[240px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={coursePlacement} layout="vertical" margin={{ top: 5, right: 15, left: 8, bottom: 0 }}><CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.08)" /><XAxis type="number" domain={[0, 100]} tickFormatter={(value) => `${value}%`} tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} /><YAxis type="category" dataKey="course" width={55} tick={{ fill: "#cbd5e1", fontSize: 10 }} axisLine={false} tickLine={false} /><Tooltip contentStyle={chartTooltipStyle} formatter={(value) => [`${value}%`, "Placement rate"]} /><Bar dataKey="placementRate" name="Placement rate" fill="#67e8b5" radius={[0, 5, 5, 0]} /></BarChart></ResponsiveContainer></div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div><p className="text-sm font-semibold text-white">Skill category placement comparison</p><p className="mt-1 text-xs text-slate-500">Highest placement rates for selected year</p></div>
+              <div className="mt-5 h-[240px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={skillPlacement} layout="vertical" margin={{ top: 5, right: 15, left: 8, bottom: 0 }}><CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.08)" /><XAxis type="number" domain={[0, 100]} tickFormatter={(value) => `${value}%`} tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} /><YAxis type="category" dataKey="skill" width={105} tick={{ fill: "#cbd5e1", fontSize: 10 }} axisLine={false} tickLine={false} /><Tooltip contentStyle={chartTooltipStyle} formatter={(value) => [`${value}%`, "Placement rate"]} /><Bar dataKey="placementRate" name="Placement rate" fill="#67c7e8" radius={[0, 5, 5, 0]} /></BarChart></ResponsiveContainer></div>
             </div>
           </div>
         </section>
