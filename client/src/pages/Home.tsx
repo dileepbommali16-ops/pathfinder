@@ -44,7 +44,7 @@ const chartTooltipStyle = {
 };
 
 const btechCourses = ["CSE", "CSD", "EEE", "AIML", "IT", "CSM"];
-const recentYears = ["2025", "2024", "2023"];
+const recentYears = ["2026", "2025", "2024", "2023"];
 
 const defaults = {
   cgpa: 7.2,
@@ -376,7 +376,7 @@ export default function Home() {
               </label>
             ))}
           </div>
-          {records.length === 0 && <p className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/5 px-4 py-3 text-sm text-amber-100">No records match the selected filters. Recent 2025–2023 college data must be uploaded by an administrator before these charts can show course, skill, and gender insights.</p>}
+          {records.length === 0 && <p className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/5 px-4 py-3 text-sm text-amber-100">No records match the selected filters. Recent 2026–2023 college data must be uploaded by an administrator before these charts can show course, skill, and gender insights.</p>}
 
           <div className="mt-8 grid gap-5 xl:grid-cols-[0.8fr_1.2fr_1.2fr]">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
