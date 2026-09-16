@@ -82,9 +82,22 @@ export async function getPlacementRecords(filters?: { year?: number; branch?: st
     filters?.year ? eq(placementRecords.year, filters.year) : undefined,
     filters?.branch ? eq(placementRecords.branch, filters.branch) : undefined,
     filters?.gender ? eq(placementRecords.gender, filters.gender) : undefined,
-    filters?.skillCategory ? eq(placementRecords.skillCategory, filters.skillCategory) : undefined,
+    filters?.skillCategory && filters.skillCategory !== "AIML + Python" ? eq(placementRecords.skillCategory, filters.skillCategory) : undefined,
   ].filter(Boolean);
-  return db.select().from(placementRecords).where(conditions.length ? and(...conditions) : undefined);
+  const records = await db.select().from(placementRecords).where(conditions.length ? and(...conditions) : undefined);
+  if (filters?.skillCategory !== "AIML + Python") return records;
+
+  const groups = new Map<string, Set<string>>();
+  records.forEach((record) => {
+    const key = `${record.year}|${record.branch}|${record.gender}`;
+    const skills = groups.get(key) ?? new Set<string>();
+    skills.add(record.skillCategory);
+    groups.set(key, skills);
+  });
+  return records.filter((record) => {
+    const skills = groups.get(`${record.year}|${record.branch}|${record.gender}`);
+    return skills?.has("AIML") && skills.has("Python") && (record.skillCategory === "AIML" || record.skillCategory === "Python");
+  });
 }
 
 export async function addPredictionHistory(input: InsertPredictionHistory) {

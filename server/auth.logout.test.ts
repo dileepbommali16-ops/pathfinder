@@ -83,6 +83,21 @@ describe("placement.records", () => {
     expect(Array.isArray(result)).toBe(true);
     expect(result.every((record) => record.year === 2015 && record.gender === "Female")).toBe(true);
   });
+
+  it("returns only cohorts that contain both AIML and Python skills", async () => {
+    const result = await appRouter.createCaller(createAuthContext().ctx).placement.records({ year: "2026", skillCategory: "AIML + Python" });
+
+    expect(result.length).toBeGreaterThan(0);
+    const groups = new Map<string, Set<string>>();
+    result.forEach((record) => {
+      const key = `${record.year}|${record.branch}|${record.gender}`;
+      const skills = groups.get(key) ?? new Set<string>();
+      skills.add(record.skillCategory);
+      groups.set(key, skills);
+    });
+    expect(result.every((record) => record.skillCategory === "AIML" || record.skillCategory === "Python")).toBe(true);
+    expect(Array.from(groups.values()).every((skills) => skills.has("AIML") && skills.has("Python"))).toBe(true);
+  });
 });
 
 describe("placement.uploadCsv and resume.analyze", () => {

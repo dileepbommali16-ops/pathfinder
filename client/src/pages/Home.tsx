@@ -123,7 +123,7 @@ export default function Home() {
     years: recentYears,
     branches: Array.from(new Set([...btechCourses, ...yearRecords.map((record) => record.branch)])),
     genders: ["Male", "Female"],
-    skills: Array.from(new Set(yearRecords.map((record) => record.skillCategory))).sort(),
+    skills: ["AIML + Python", ...Array.from(new Set(yearRecords.map((record) => record.skillCategory))).sort()],
   }), [yearRecords]);
 
   const coursePlacement = useMemo(() => {
