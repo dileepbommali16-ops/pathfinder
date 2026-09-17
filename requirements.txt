@@ -2,3 +2,5 @@ pandas
 scikit-learn
 streamlit
 reportlab
+python-dotenv
+google-genai
