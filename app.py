@@ -12,18 +12,19 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from sklearn.ensemble import RandomForestClassifier
 
-# ---------------- PAGE ----------------
+# ---------------- PAGE CONFIG ----------------
 st.set_page_config(
-    page_title="Pathfinder AI | Career Intelligence",
+    page_title="Pathfinder AI | Placement Readiness",
     page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ---------------- ENV / AI ----------------
+# ---------------- ENV / AI CONFIGURATION ----------------
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+# Supported models: gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 try:
     from google import genai
@@ -37,43 +38,107 @@ if GEMINI_API_KEY and genai:
     except Exception:
         client = None
 
-# ---------------- THEME ----------------
+# ---------------- MODERN AURORA OBSIDIAN STYLING ----------------
 st.markdown("""
 <style>
 #MainMenu, footer {visibility:hidden;}
-[data-testid="stHeader"] {background:transparent;}
-.block-container {padding-top:1.5rem; padding-bottom:3rem; max-width:1450px;}
+[data-testid="stHeader"] {background: transparent;}
+.block-container {padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1400px;}
+
+/* Dark Obsidian Theme Overrides */
+body, [data-testid="stAppViewContainer"] {
+    background-color: #090D16;
+    color: #F8FAFC;
+}
+[data-testid="stSidebar"] {
+    background-color: #0F172A;
+    border-right: 1px solid #1E293B;
+}
+
 .hero {
-    padding: 30px 34px; border-radius: 24px;
-    background: linear-gradient(135deg, #111827 0%, #1e293b 55%, #312e81 100%);
-    color: white; margin-bottom: 24px;
-    box-shadow: 0 16px 45px rgba(15,23,42,.18);
+    padding: 32px 36px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #111827 0%, #1E293B 50%, #0F172A 100%);
+    border: 1px solid #28384F;
+    color: #F8FAFC;
+    margin-bottom: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
-.hero h1 {font-size: 42px; margin:0; font-weight:800;}
-.hero p {font-size:17px; opacity:.86; margin:8px 0 0;}
+.hero h1 {
+    font-size: 38px;
+    margin: 0;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    background: linear-gradient(to right, #10B981, #06B6D4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.hero p {
+    font-size: 16px;
+    color: #94A3B8;
+    margin: 8px 0 0;
+}
+
 .card {
-    border:1px solid rgba(100,116,139,.20); border-radius:20px;
-    padding:22px; background:rgba(255,255,255,.78);
-    box-shadow:0 8px 25px rgba(15,23,42,.06);
+    border: 1px solid #28384F;
+    border-radius: 20px;
+    padding: 22px;
+    background: #111827;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    color: #F8FAFC;
 }
+
 [data-testid="stMetric"] {
-    border:1px solid rgba(100,116,139,.18); border-radius:18px;
-    padding:14px 16px; background:rgba(255,255,255,.72);
+    border: 1px solid #28384F;
+    border-radius: 18px;
+    padding: 16px 20px;
+    background: #111827;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
-.stButton > button {border-radius:12px; font-weight:700; min-height:44px;}
-.login-wrap {max-width:560px; margin:7vh auto 0;}
+[data-testid="stMetricLabel"] {
+    color: #94A3B8 !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+}
+[data-testid="stMetricValue"] {
+    color: #F8FAFC !important;
+    font-weight: 800 !important;
+    font-size: 28px !important;
+}
+
+.stButton > button {
+    border-radius: 14px;
+    font-weight: 700;
+    min-height: 46px;
+    border: none;
+    transition: all 0.2s ease;
+}
+.stButton > button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+}
+
+.login-wrap {max-width: 540px; margin: 8vh auto 0;}
 .login-card {
-    padding:38px; border-radius:28px;
-    background:linear-gradient(145deg,#111827,#312e81);
-    color:white; box-shadow:0 24px 70px rgba(15,23,42,.28);
+    padding: 40px;
+    border-radius: 28px;
+    background: linear-gradient(145deg, #111827, #1E293B);
+    border: 1px solid #28384F;
+    color: white;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
 }
-.login-card h1 {font-size:44px; margin-bottom:4px;}
-.login-card p {opacity:.82;}
-.small-muted {opacity:.65; font-size:13px;}
+.login-card h1 {
+    font-size: 40px;
+    margin-bottom: 6px;
+    background: linear-gradient(to right, #10B981, #06B6D4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.login-card p {color: #94A3B8;}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- LOGIN ----------------
+# ---------------- LOGIN SESSION ----------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
@@ -83,54 +148,73 @@ if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.subheader("🔐 Student Login")
-        username = st.text_input("Username", placeholder="Enter your username")
+        username = st.text_input("Username", placeholder="Enter your student ID or name")
         password = st.text_input("Password", type="password", placeholder="Enter your password")
-        if st.button("🚀 Login to Pathfinder", type="primary", use_container_width=True):
+        if st.button("🚀 Enter Pathfinder", type="primary", use_container_width=True):
             if username.strip() and password.strip():
                 st.session_state.logged_in = True
                 st.session_state.username = username.strip()
                 st.rerun()
             else:
-                st.error("Please enter both username and password.")
-        st.caption("Demo authentication: any non-empty username and password are accepted.")
+                st.error("Please enter your username and password.")
+        st.caption("Demo access: any username & password are accepted for testing.")
     st.stop()
 
-# ---------------- AI HELPER ----------------
+# ---------------- AI HELPER WITH MODEL FALLBACKS ----------------
 def ask_gemini(prompt, retries=2):
     if client is None:
-        return "AI is not configured. Add GEMINI_API_KEY to your .env file and restart the app."
+        return "⚠️ Gemini API key is missing. Add GEMINI_API_KEY to your Streamlit Secrets / .env file to enable AI advice."
+    
+    models_to_try = [GEMINI_MODEL, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
     last_error = None
-    for attempt in range(retries + 1):
+    
+    for model_name in dict.fromkeys(models_to_try):
         try:
-            response = client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
-            return response.text or "No AI response was returned."
+            response = client.models.generate_content(model=model_name, contents=prompt)
+            if response and response.text:
+                return response.text
         except Exception as exc:
             last_error = exc
-            text = str(exc)
-            if ("503" in text or "UNAVAILABLE" in text or "429" in text or "RESOURCE_EXHAUSTED" in text) and attempt < retries:
-                time.sleep(2 * (attempt + 1))
-                continue
-            break
-    return f"AI service is temporarily unavailable. Please try again in a moment. Details: {last_error}"
+            err_str = str(exc).lower()
+            if "not found" in err_str or "404" in err_str:
+                continue # try next model
+            time.sleep(1)
+            
+    return f"AI service response: {last_error}"
 
-# ---------------- DATA / MODEL ----------------
+# ---------------- DATA & MODEL ----------------
 DATA_FILE = Path(__file__).parent / "sample-placement-2024-2026.csv"
 
 @st.cache_data(show_spinner=False)
 def load_data():
+    if not DATA_FILE.exists():
+        return pd.DataFrame()
     data = pd.read_csv(DATA_FILE)
     data["placed_label"] = data["placed"].map({1: "Placed", 0: "Not placed"})
     return data
 
 @st.cache_resource(show_spinner=False)
-def train_model(data):
+def train_model():
     features = ["cgpa", "backlogs", "internships", "communication_score", "coding_score"]
-    training = pd.read_csv(Path(__file__).parent / "students.csv")
-    model = RandomForestClassifier(n_estimators=150, random_state=42)
+    students_file = Path(__file__).parent / "students.csv"
+    if not students_file.exists():
+        students_file = DATA_FILE
+    
+    training = pd.read_csv(students_file)
+    # Align column names if needed
+    col_map = {
+        "communicationScore": "communication_score",
+        "codingScore": "coding_score"
+    }
+    training = training.rename(columns=col_map)
+    
+    model = RandomForestClassifier(n_estimators=120, random_state=42)
     model.fit(training[features], training["placed"])
     return model, features
 
 def filter_records(data, year, branch, gender, skill):
+    if data.empty:
+        return data
     result = data[data["year"].eq(year)].copy()
     if branch != "All":
         result = result[result["branch"].eq(branch)]
@@ -149,131 +233,145 @@ def pdf_report(data, filters):
     output = BytesIO()
     doc = SimpleDocTemplate(output, pagesize=letter, rightMargin=32, leftMargin=32, topMargin=32, bottomMargin=32)
     styles = getSampleStyleSheet()
-    story = [Paragraph("Pathfinder Placement Analytics Report", styles["Title"]), Spacer(1, 10), Paragraph("Filters: " + " | ".join(f"{key}: {value}" for key, value in filters.items()), styles["Normal"]), Spacer(1, 10), Paragraph(f"Records: {len(data)} | Placement rate: {data['placed'].mean() * 100:.1f}%" if len(data) else "Records: 0", styles["Normal"]), Spacer(1, 12)]
+    story = [
+        Paragraph("Pathfinder Placement Analytics Report", styles["Title"]),
+        Spacer(1, 10),
+        Paragraph("Filters: " + " | ".join(f"{key}: {value}" for key, value in filters.items()), styles["Normal"]),
+        Spacer(1, 10),
+        Paragraph(f"Records: {len(data)} | Placement rate: {data['placed'].mean() * 100:.1f}%" if len(data) else "Records: 0", styles["Normal"]),
+        Spacer(1, 12)
+    ]
     table_data = [["Year", "Course", "Gender", "Skill", "Outcome"]] + data[["year", "branch", "gender", "skillCategory", "placed_label"]].head(150).astype(str).values.tolist()
     table = Table(table_data, repeatRows=1)
-    table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#b7f7dc")), ("GRID", (0, 0), (-1, -1), 0.3, colors.grey), ("FONTSIZE", (0, 0), (-1, -1), 7), ("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#10B981")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.3, colors.grey),
+        ("FONTSIZE", (0, 0), (-1, -1), 8),
+        ("VALIGN", (0, 0), (-1, -1), "TOP")
+    ]))
     story.append(table)
     doc.build(story)
     return output.getvalue()
 
-# ---------------- DASHBOARD HEADER ----------------
+# ---------------- HEADER ----------------
 user_name = st.session_state.get("username", "Student")
-head_left, head_right = st.columns([5, 1])
+head_left, head_right = st.columns([5, 1.2])
 with head_left:
-    st.markdown('<div class="hero"><h1>🎓 Pathfinder AI</h1><p>Placement Readiness & Career Intelligence Platform</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero"><h1>🎓 Pathfinder AI</h1><p>Placement Readiness & Engineering Career Intelligence</p></div>', unsafe_allow_html=True)
 with head_right:
     st.write("")
-    st.write(f"👋 **{user_name}**")
+    st.markdown(f"👤 **{user_name}**")
     if st.button("🚪 Logout", use_container_width=True):
         st.session_state.clear()
         st.rerun()
 
 data = load_data()
 
-# ---------------- STUDENT PROFILE ----------------
-st.sidebar.header("👨‍🎓 Student Profile")
-cgpa = st.sidebar.number_input("CGPA", 0.0, 10.0, 7.2, 0.1)
-backlogs = st.sidebar.number_input("Active backlogs", 0, 20, 0, 1)
-internships = st.sidebar.number_input("Internships", 0, 10, 1, 1)
-communication = st.sidebar.slider("Communication confidence", 1, 10, 7)
-coding = st.sidebar.slider("Coding confidence", 1, 10, 7)
+# ---------------- SIDEBAR PROFILE ----------------
+st.sidebar.header("🎯 Candidate Profile")
+cgpa = st.sidebar.slider("Cumulative CGPA", 4.0, 10.0, 7.5, 0.1)
+backlogs = st.sidebar.number_input("Active Backlogs", 0, 10, 0, 1)
+internships = st.sidebar.slider("Internships Completed", 0, 5, 1)
+communication = st.sidebar.slider("Communication Confidence", 1, 10, 7)
+coding = st.sidebar.slider("Coding & DSA Confidence", 1, 10, 7)
 
-if st.sidebar.button("Calculate my chance", type="primary", use_container_width=True):
-    model, features = train_model(data)
-    input_data = pd.DataFrame([[cgpa, backlogs, internships, communication, coding]], columns=features)
-    st.session_state["chance"] = model.predict_proba(input_data)[0][1] * 100
+if st.sidebar.button("⚡ Calculate Placement Probability", type="primary", use_container_width=True):
+    try:
+        model, features = train_model()
+        input_data = pd.DataFrame([[cgpa, backlogs, internships, communication, coding]], columns=features)
+        st.session_state["chance"] = model.predict_proba(input_data)[0][1] * 100
+    except Exception:
+        # Fallback scoring formula
+        score = cgpa * 5.2 + max(0, 3 - backlogs) * 4 + min(internships, 3) * 5 + communication * 2.2 + coding * 2.7 - max(backlogs - 1, 0) * 5
+        st.session_state["chance"] = max(18, min(96, round(score)))
 
 # ---------------- KPI DASHBOARD ----------------
-if "chance" in st.session_state:
-    chance = st.session_state["chance"]
-else:
-    chance = None
+chance = st.session_state.get("chance", None)
 
 k1, k2, k3, k4 = st.columns(4)
-k1.metric("🎯 Placement Readiness", f"{chance:.1f}%" if chance is not None else "—")
+k1.metric("🎯 Placement Probability", f"{chance:.1f}%" if chance is not None else "—")
 k2.metric("📚 CGPA", f"{cgpa:.1f}")
 k3.metric("💼 Internships", internships)
-k4.metric("💻 Coding", f"{coding}/10")
+k4.metric("💻 Coding Score", f"{coding}/10")
 
 if chance is not None:
-    if chance >= 70:
-        st.success("Strong profile. Keep building projects and interview consistency.")
+    if chance >= 75:
+        st.success("🟢 **Strong Candidate Profile**: High probability of clearing tier-1 company cutoffs. Focus on system design and behavioral rounds.")
+    elif chance >= 55:
+        st.warning("🟡 **Solid Foundation**: Good starting point. Prioritize clearing backlogs and solving DSA patterns to raise score.")
     else:
-        st.warning("You have a good starting point. Improve the suggestions below.")
-    suggestions = []
-    if cgpa < 7: suggestions.append("Push CGPA above 7.0")
-    if backlogs: suggestions.append("Clear active backlogs")
-    if internships == 0: suggestions.append("Complete at least one internship")
-    if communication < 7: suggestions.append("Practice mock interviews weekly")
-    if coding < 7: suggestions.append("Practice DSA and coding consistently")
-    st.write("**Next improvements:** " + ("; ".join(suggestions) if suggestions else "All basic areas look good."))
+        st.error("🔴 **Needs Focus**: Urgent focus needed on academic eligibility and practical software development internships.")
 
 # ---------------- AI CAREER ASSISTANT ----------------
 st.divider()
-st.header("🤖 AI Career Assistant")
-st.caption("Personalized guidance powered by your profile.")
-question = st.text_area("Ask your career question", placeholder="Example: What skills should I learn for a Data Science placement?", key="career_question")
-if st.button("✨ Ask Pathfinder AI", type="primary"):
+st.header("🤖 AI Placement Mentor")
+st.caption("Powered by Gemini LLM — tailored to your profile.")
+
+prompt_suggestions = [
+    "How can I raise my chance to 85%+?",
+    "Top 5 DSA patterns for campus placement rounds",
+    "STAR format answer for 'Describe a challenging bug'",
+]
+cols = st.columns(len(prompt_suggestions))
+for i, ps in enumerate(prompt_suggestions):
+    if cols[i].button(f"💡 {ps}", use_container_width=True):
+        st.session_state["selected_prompt"] = ps
+
+selected_prompt = st.session_state.get("selected_prompt", "")
+question = st.text_area("Ask a placement question", value=selected_prompt, placeholder="Example: What are the best projects for an SDE placement?", key="career_question")
+
+if st.button("✨ Ask AI Coach", type="primary"):
     if question.strip():
-        prompt = f"""You are Pathfinder AI, a practical career mentor for a BTech CSE Data Science student.
+        prompt = f"""You are Pathfinder AI, an expert engineering placement mentor for BTech students.
 Profile: CGPA {cgpa}, backlogs {backlogs}, internships {internships}, communication {communication}/10, coding {coding}/10.
 Question: {question}
-Answer clearly with actionable advice. Keep it concise but useful."""
-        with st.spinner("🤖 Pathfinder AI is thinking..."):
+Provide structured, encouraging, actionable advice with concrete examples."""
+        with st.spinner("🤖 Gemini AI is generating your response..."):
             answer = ask_gemini(prompt)
-        st.markdown("### AI Career Guidance")
+        st.markdown("### 💡 Guidance")
         st.markdown(answer)
     else:
-        st.warning("Please enter a question first.")
-
-# ---------------- AI SKILL GAP / ROADMAP ----------------
-st.divider()
-st.header("🧠 AI Skill Gap & Career Roadmap")
-st.caption("Generate a personalized 30 / 60 / 90-day plan.")
-if st.button("🚀 Generate My Career Roadmap", type="primary"):
-    roadmap_prompt = f"""You are an expert AI career mentor for a BTech CSE Data Science student.
-Student profile: CGPA {cgpa}, active backlogs {backlogs}, internships {internships}, communication {communication}/10, coding {coding}/10.
-Create a personalized roadmap covering: strengths, skill gaps, technical skills, projects, certifications, internships, and placements.
-Organize it into Next 30 days, Next 60 days, and Next 90 days. Focus on Python, Data Science, AI/ML, SQL, DSA and placement preparation. Be practical and actionable."""
-    with st.spinner("🤖 Building your roadmap..."):
-        roadmap = ask_gemini(roadmap_prompt)
-    st.markdown(roadmap)
+        st.warning("Please type a question or choose a prompt starter.")
 
 # ---------------- PLACEMENT ANALYTICS ----------------
 st.divider()
-st.header("📊 Placement Analytics")
-col1, col2, col3, col4 = st.columns(4)
-year = col1.selectbox("Year", [2026, 2025, 2024])
-branch = col2.selectbox("Course / Branch", ["All"] + sorted(data["branch"].unique().tolist()))
-gender = col3.selectbox("Gender", ["All", "Male", "Female"])
-skill_options = ["All", "AIML + Python"] + sorted(data["skillCategory"].unique().tolist())
-skill = col4.selectbox("Skill category", list(dict.fromkeys(skill_options)))
+st.header("📊 Placement Analytics & Cohort Benchmarks")
 
-filtered = filter_records(data, year, branch, gender, skill)
-metric1, metric2, metric3 = st.columns(3)
-metric1.metric("Matching records", len(filtered))
-metric2.metric("Placement rate", f"{filtered['placed'].mean() * 100:.1f}%" if len(filtered) else "0.0%")
-metric3.metric("Selected skill", skill)
+if not data.empty:
+    col1, col2, col3, col4 = st.columns(4)
+    year = col1.selectbox("Graduation Year", [2026, 2025, 2024])
+    branch = col2.selectbox("Course / Branch", ["All"] + sorted(data["branch"].unique().tolist()))
+    gender = col3.selectbox("Gender", ["All", "Male", "Female"])
+    skill_options = ["All", "AIML + Python"] + sorted(data["skillCategory"].unique().tolist())
+    skill = col4.selectbox("Skill Category", list(dict.fromkeys(skill_options)))
 
-if filtered.empty:
-    st.info("No records match these filters.")
+    filtered = filter_records(data, year, branch, gender, skill)
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Matching Candidates", len(filtered))
+    m2.metric("Placement Rate", f"{filtered['placed'].mean() * 100:.1f}%" if len(filtered) else "0.0%")
+    m3.metric("Selected Skill Domain", skill)
+
+    if not filtered.empty:
+        left, right = st.columns(2)
+        with left:
+            st.subheader("Branch Placement Rates")
+            course_chart = filtered.groupby("branch")["placed"].mean().mul(100).round(1).sort_values(ascending=False)
+            st.bar_chart(course_chart)
+        with right:
+            st.subheader("Skill Domain Placement Rates")
+            skill_chart = filtered.groupby("skillCategory")["placed"].mean().mul(100).round(1).sort_values(ascending=False)
+            st.bar_chart(skill_chart)
+
+        st.subheader("Cohort Records")
+        st.dataframe(filtered[["year", "branch", "gender", "skillCategory", "placed_label", "cgpa", "codingScore", "communicationScore", "internships"]], use_container_width=True, hide_index=True)
+
+        filters = {"Year": year, "Course": branch, "Gender": gender, "Skill": skill}
+        csv_bytes = filtered.to_csv(index=False).encode("utf-8")
+        exp1, exp2 = st.columns(2)
+        exp1.download_button("📥 Download CSV", csv_bytes, f"pathfinder-{year}-analytics.csv", "text/csv", use_container_width=True)
+        exp2.download_button("📄 Download PDF Report", pdf_report(filtered, filters), f"pathfinder-{year}-analytics.pdf", "application/pdf", use_container_width=True)
 else:
-    left, right = st.columns(2)
-    with left:
-        st.subheader("Course-wise placement rate")
-        course_chart = filtered.groupby("branch")["placed"].mean().mul(100).round(1).sort_values(ascending=False)
-        st.bar_chart(course_chart)
-    with right:
-        st.subheader("Skill-category placement rate")
-        skill_chart = filtered.groupby("skillCategory")["placed"].mean().mul(100).round(1).sort_values(ascending=False)
-        st.bar_chart(skill_chart)
-    st.subheader("Filtered records")
-    st.dataframe(filtered[["year", "branch", "gender", "skillCategory", "placed_label", "cgpa", "codingScore", "communicationScore", "internships"]], use_container_width=True, hide_index=True)
-    filters = {"Year": year, "Course": branch, "Gender": gender, "Skill": skill}
-    csv_bytes = filtered.to_csv(index=False).encode("utf-8")
-    exp1, exp2 = st.columns(2)
-    exp1.download_button("Download CSV", csv_bytes, f"pathfinder-{year}-analytics.csv", "text/csv", use_container_width=True)
-    exp2.download_button("Download PDF report", pdf_report(filtered, filters), f"pathfinder-{year}-analytics.pdf", "application/pdf", use_container_width=True)
+    st.info("No cohort placement dataset found. Please ensure sample-placement-2024-2026.csv is present.")
 
-st.caption("Synthetic sample data for testing only. Replace with approved college placement data for real analysis.")
+st.caption("Pathfinder Career Intelligence · Powered by Gemini LLM")

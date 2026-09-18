@@ -82,11 +82,34 @@ export const appRouter = router({
       communication: z.number().int().min(1).max(10), coding: z.number().int().min(1).max(10), chance: z.number().int().min(0).max(100),
     })).mutation(({ ctx, input }) => addPredictionHistory({ userId: ctx.user.id, cgpa: Math.round(input.cgpa * 10), backlogs: input.backlogs, internships: input.internships, communication: input.communication, coding: input.coding, chance: input.chance })),
   }),
-  resume: router({
-    analyze: protectedProcedure.input(z.object({ resumeText: z.string().min(80).max(30_000) })).mutation(async ({ input }) => {
+  ai: router({
+    chat: publicProcedure.input(z.object({
+      messages: z.array(z.object({
+        role: z.enum(["system", "user", "assistant"]),
+        content: z.string(),
+      })),
+    })).mutation(async ({ input }) => {
       const response = await invokeLLM({
+        model: "gemini-3.5-flash",
         messages: [
-          { role: "system", content: "You are a practical campus-placement resume coach. Analyze only the provided resume text. Do not invent experience. Return concise, specific, encouraging suggestions for a CSE/data-science student." },
+          {
+            role: "system",
+            content: "You are Pathfinder AI Placement Coach, an expert mentor in engineering campus placements, software development roles, data science interviews, and resume optimization for BTech/CSE/IT/ECE students. Provide encouraging, structured, practical advice with concrete examples, DSA problem patterns, and behavioral STAR guidance.",
+          },
+          ...input.messages,
+        ],
+        maxTokens: 1000,
+      });
+      const content = response.choices[0]?.message.content;
+      return typeof content === "string" ? content : "I am ready to help with your placement preparation. Please ask your question.";
+    }),
+  }),
+  resume: router({
+    analyze: publicProcedure.input(z.object({ resumeText: z.string().min(30).max(30_000) })).mutation(async ({ input }) => {
+      const response = await invokeLLM({
+        model: "gemini-3.5-flash",
+        messages: [
+          { role: "system", content: "You are a practical campus-placement resume coach. Analyze only the provided resume text. Return concise, specific, encouraging suggestions for a tech student." },
           { role: "user", content: `Analyze this resume for placement readiness and identify skills to improve:\n\n${input.resumeText}` },
         ],
         response_format: { type: "json_schema", json_schema: { name: "resume_analysis", strict: true, schema: {
