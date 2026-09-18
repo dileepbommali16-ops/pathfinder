@@ -1,0 +1,8 @@
+{
+  "name": "Pathfinder",
+  "description": "Student placement readiness calculator and cohort analytics dashboard for BTech students.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

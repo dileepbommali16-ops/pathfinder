@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pathfinder</string>
+    <string name="tagline">Placement Readiness &amp; Analytics</string>
+    <string name="tab_readiness">Readiness</string>
+    <string name="tab_analytics">Analytics</string>
+    <string name="tab_history">History</string>
+    <string name="tab_coach">AI Coach</string>
+    <string name="cgpa_label">CGPA (0–10)</string>
+    <string name="backlogs_label">Active Backlogs</string>
+    <string name="internships_label">Internships Completed</string>
+    <string name="comm_label">Communication Skill</string>
+    <string name="coding_label">Coding Confidence</string>
+    <string name="calculate_chance">Calculate My Chance</string>
+    <string name="save_assessment">Save to History</string>
+    <string name="reset_defaults">Reset</string>
+    <string name="strong_profile">Strong Profile</string>
+    <string name="steady_profile">Good Foundation</string>
+    <string name="focus_profile">Needs Focused Improvement</string>
+    <string name="export_csv">Export CSV</string>
+</resources>
