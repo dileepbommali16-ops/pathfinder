@@ -2,6 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Bar,
   BarChart,
@@ -113,6 +114,49 @@ function ScoreBar({ label, value, icon }: { label: string; value: number; icon: 
     </div>
   );
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.04,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    transition: { duration: 0.15 },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 22, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 24,
+      mass: 0.8,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.25,
+      ease: "easeOut",
+    },
+  },
+};
 
 export default function Home() {
   const [profile, setProfile] = useState<Profile>(defaults);
@@ -343,8 +387,10 @@ export default function Home() {
             { id: "coach", label: "AI Placement Coach (LLM)", icon: Bot },
             { id: "resume", label: "ATS Resume Review (LLM)", icon: FileText },
           ].map(({ id, label, icon: Icon }) => (
-            <button
+            <motion.button
               key={id}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setActiveTab(id as any)}
               className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all ${
                 activeTab === id
@@ -354,213 +400,243 @@ export default function Home() {
             >
               <Icon size={15} />
               {label}
-            </button>
+            </motion.button>
           ))}
         </div>
       </nav>
 
       {/* Main Tab Content */}
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-12">
-        {activeTab === "calculator" && (
-          <div className="grid items-start gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-            {/* Left: Input Sliders */}
-            <div className="rounded-3xl border border-slate-800/80 bg-slate-900/70 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
-              <div className="mb-6 flex items-start justify-between">
-                <div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-400">
-                    <Sparkles size={13} /> Assessment Parameters
-                  </span>
-                  <h2 className="mt-3 text-2xl font-black sm:text-3xl">Evaluate Placement Readiness</h2>
-                  <p className="mt-1 text-xs text-slate-400">Adjust your academic & skill profile to calculate probability score.</p>
+        <AnimatePresence mode="wait">
+          {activeTab === "calculator" && (
+            <motion.div
+              key="calculator"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="grid items-start gap-8 lg:grid-cols-[1.1fr_0.9fr]"
+            >
+              {/* Left: Input Sliders */}
+              <motion.div
+                variants={cardVariants}
+                whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                className="rounded-3xl border border-slate-800/80 bg-slate-900/70 p-6 shadow-2xl backdrop-blur-xl sm:p-8"
+              >
+                <div className="mb-6 flex items-start justify-between">
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-400">
+                      <Sparkles size={13} /> Assessment Parameters
+                    </span>
+                    <h2 className="mt-3 text-2xl font-black sm:text-3xl">Evaluate Placement Readiness</h2>
+                    <p className="mt-1 text-xs text-slate-400">Adjust your academic & skill profile to calculate probability score.</p>
+                  </div>
+                  <button
+                    onClick={reset}
+                    title="Reset form"
+                    className="rounded-xl border border-slate-700 bg-slate-800/60 p-2.5 text-slate-400 transition hover:border-slate-600 hover:text-white"
+                  >
+                    <RotateCcw size={16} />
+                  </button>
                 </div>
-                <button
-                  onClick={reset}
-                  title="Reset form"
-                  className="rounded-xl border border-slate-700 bg-slate-800/60 p-2.5 text-slate-400 transition hover:border-slate-600 hover:text-white"
-                >
-                  <RotateCcw size={16} />
-                </button>
-              </div>
 
-              <div className="space-y-5">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-semibold text-slate-300">
-                      <span>Cumulative CGPA</span>
-                      <span className="text-emerald-400">{profile.cgpa.toFixed(1)} / 10.0</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="4"
-                      max="10"
-                      step="0.1"
-                      value={profile.cgpa}
-                      onChange={(e) => update("cgpa", Number(e.target.value))}
-                      className="h-2 w-full cursor-pointer accent-emerald-400"
-                    />
-                  </label>
+                <div className="space-y-5">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-semibold text-slate-300">
+                        <span>Cumulative CGPA</span>
+                        <span className="text-emerald-400">{profile.cgpa.toFixed(1)} / 10.0</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="4"
+                        max="10"
+                        step="0.1"
+                        value={profile.cgpa}
+                        onChange={(e) => update("cgpa", Number(e.target.value))}
+                        className="h-2 w-full cursor-pointer accent-emerald-400"
+                      />
+                    </label>
 
-                  <label className="space-y-1.5">
+                    <label className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-semibold text-slate-300">
+                        <span>Active Backlogs</span>
+                        <span className={profile.backlogs === 0 ? "text-emerald-400" : "text-rose-400"}>
+                          {profile.backlogs} {profile.backlogs === 0 ? "(Clean)" : "Active"}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="6"
+                        value={profile.backlogs}
+                        onChange={(e) => update("backlogs", Number(e.target.value))}
+                        className="h-2 w-full cursor-pointer accent-emerald-400"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="block space-y-1.5">
                     <div className="flex justify-between text-xs font-semibold text-slate-300">
-                      <span>Active Backlogs</span>
-                      <span className={profile.backlogs === 0 ? "text-emerald-400" : "text-rose-400"}>
-                        {profile.backlogs} {profile.backlogs === 0 ? "(Clean)" : "Active"}
-                      </span>
+                      <span>Internships Completed</span>
+                      <span className="text-cyan-400">{profile.internships} completed</span>
                     </div>
                     <input
                       type="range"
                       min="0"
-                      max="6"
-                      value={profile.backlogs}
-                      onChange={(e) => update("backlogs", Number(e.target.value))}
-                      className="h-2 w-full cursor-pointer accent-emerald-400"
+                      max="4"
+                      value={profile.internships}
+                      onChange={(e) => update("internships", Number(e.target.value))}
+                      className="h-2 w-full cursor-pointer accent-cyan-400"
                     />
                   </label>
-                </div>
 
-                <label className="block space-y-1.5">
-                  <div className="flex justify-between text-xs font-semibold text-slate-300">
-                    <span>Internships Completed</span>
-                    <span className="text-cyan-400">{profile.internships} completed</span>
+                  <div className="space-y-4 border-t border-slate-800 pt-5">
+                    <ScoreBar label="Communication Skills" value={profile.communication} icon={<MessageCircle size={16} />} />
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={profile.communication}
+                      onChange={(e) => update("communication", Number(e.target.value))}
+                      className="h-2 w-full cursor-pointer accent-emerald-400"
+                    />
+
+                    <ScoreBar label="Coding & Problem Solving" value={profile.coding} icon={<Code2 size={16} />} />
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={profile.coding}
+                      onChange={(e) => update("coding", Number(e.target.value))}
+                      className="h-2 w-full cursor-pointer accent-cyan-400"
+                    />
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="4"
-                    value={profile.internships}
-                    onChange={(e) => update("internships", Number(e.target.value))}
-                    className="h-2 w-full cursor-pointer accent-cyan-400"
-                  />
-                </label>
 
-                <div className="space-y-4 border-t border-slate-800 pt-5">
-                  <ScoreBar label="Communication Skills" value={profile.communication} icon={<MessageCircle size={16} />} />
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={profile.communication}
-                    onChange={(e) => update("communication", Number(e.target.value))}
-                    className="h-2 w-full cursor-pointer accent-emerald-400"
-                  />
-
-                  <ScoreBar label="Coding & Problem Solving" value={profile.coding} icon={<Code2 size={16} />} />
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={profile.coding}
-                    onChange={(e) => update("coding", Number(e.target.value))}
-                    className="h-2 w-full cursor-pointer accent-cyan-400"
-                  />
+                  <button
+                    onClick={saveCurrentPrediction}
+                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 py-3.5 text-sm font-extrabold text-[#090D16] shadow-lg shadow-emerald-500/25 transition hover:brightness-110 active:scale-[0.99]"
+                  >
+                    Save Assessment & Get Snapshot <ArrowRight size={17} />
+                  </button>
                 </div>
+              </motion.div>
 
-                <button
-                  onClick={saveCurrentPrediction}
-                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 py-3.5 text-sm font-extrabold text-[#090D16] shadow-lg shadow-emerald-500/25 transition hover:brightness-110 active:scale-[0.99]"
+              {/* Right: Results & Insights */}
+              <div className="space-y-6">
+                <motion.div
+                  variants={cardVariants}
+                  whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                  className="rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-900/90 to-[#0c1322] p-6 shadow-2xl backdrop-blur-xl sm:p-8"
                 >
-                  Save Assessment & Get Snapshot <ArrowRight size={17} />
-                </button>
-              </div>
-            </div>
-
-            {/* Right: Results & Insights */}
-            <div className="space-y-6">
-              <div className="rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-900/90 to-[#0c1322] p-6 shadow-2xl backdrop-blur-xl sm:p-8">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">Scorecard</span>
-                    <h3 className="mt-1 text-2xl font-black">Estimated Chance</h3>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">Scorecard</span>
+                      <h3 className="mt-1 text-2xl font-black">Estimated Chance</h3>
+                    </div>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-extrabold ${
+                        result.tone === "strong"
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                          : result.tone === "steady"
+                          ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                      }`}
+                    >
+                      {result.label}
+                    </span>
                   </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-extrabold ${
-                      result.tone === "strong"
-                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                        : result.tone === "steady"
-                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                        : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                    }`}
-                  >
-                    {result.label}
-                  </span>
-                </div>
 
-                <div className="my-8 flex items-center justify-center">
-                  <div
-                    className="relative grid h-44 w-44 place-items-center rounded-full border-[12px] border-slate-800"
-                    style={{
-                      background: `conic-gradient(#10B981 ${result.chance}%, rgba(16, 185, 129, 0.1) 0)`,
-                    }}
-                  >
-                    <div className="grid h-[130px] w-[130px] place-items-center rounded-full bg-[#090D16]">
-                      <div className="text-center">
-                        <p className="text-4xl font-black text-white">{result.chance}%</p>
-                        <p className="text-[10px] uppercase tracking-widest text-slate-400">Placement Probability</p>
+                  <div className="my-8 flex items-center justify-center">
+                    <div
+                      className="relative grid h-44 w-44 place-items-center rounded-full border-[12px] border-slate-800"
+                      style={{
+                        background: `conic-gradient(#10B981 ${result.chance}%, rgba(16, 185, 129, 0.1) 0)`,
+                      }}
+                    >
+                      <div className="grid h-[130px] w-[130px] place-items-center rounded-full bg-[#090D16]">
+                        <div className="text-center">
+                          <p className="text-4xl font-black text-white">{result.chance}%</p>
+                          <p className="text-[10px] uppercase tracking-widest text-slate-400">Placement Probability</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="border-t border-slate-800 pt-5">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Recommended Action Items</p>
-                  <div className="mt-3 space-y-2.5">
-                    {result.suggestions.map((suggestion) => (
-                      <div key={suggestion} className="flex items-start gap-2.5 text-xs text-slate-300">
-                        <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-emerald-500/20 text-emerald-400">
-                          <Check size={11} />
+                  <div className="border-t border-slate-800 pt-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Recommended Action Items</p>
+                    <div className="mt-3 space-y-2.5">
+                      {result.suggestions.map((suggestion) => (
+                        <div key={suggestion} className="flex items-start gap-2.5 text-xs text-slate-300">
+                          <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-emerald-500/20 text-emerald-400">
+                            <Check size={11} />
+                          </span>
+                          <span>{suggestion}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Benchmark vs Cohort */}
+                <motion.div
+                  variants={cardVariants}
+                  whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                  className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6"
+                >
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400">
+                    <TrendingUp size={14} /> Benchmark vs 2024–2026 Cohort
+                  </div>
+                  <div className="mt-4 space-y-3 text-xs">
+                    <div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>Your CGPA ({profile.cgpa.toFixed(1)}) vs Peer Average (7.2)</span>
+                        <span className={profile.cgpa >= 7.2 ? "text-emerald-400" : "text-amber-400"}>
+                          {profile.cgpa >= 7.2 ? "+ Above" : "- Below"}
                         </span>
-                        <span>{suggestion}</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+                      <div className="mt-1 h-2 rounded-full bg-slate-800">
+                        <div
+                          className="h-full rounded-full bg-emerald-400"
+                          style={{ width: `${Math.min(100, (profile.cgpa / 10) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
 
-              {/* Benchmark vs Cohort */}
-              <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400">
-                  <TrendingUp size={14} /> Benchmark vs 2024–2026 Cohort
-                </div>
-                <div className="mt-4 space-y-3 text-xs">
-                  <div>
-                    <div className="flex justify-between text-slate-400">
-                      <span>Your CGPA ({profile.cgpa.toFixed(1)}) vs Peer Average (7.2)</span>
-                      <span className={profile.cgpa >= 7.2 ? "text-emerald-400" : "text-amber-400"}>
-                        {profile.cgpa >= 7.2 ? "+ Above" : "- Below"}
-                      </span>
-                    </div>
-                    <div className="mt-1 h-2 rounded-full bg-slate-800">
-                      <div
-                        className="h-full rounded-full bg-emerald-400"
-                        style={{ width: `${Math.min(100, (profile.cgpa / 10) * 100)}%` }}
-                      />
+                    <div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>Internships ({profile.internships}) vs Peer Average (0.8)</span>
+                        <span className={profile.internships >= 1 ? "text-cyan-400" : "text-amber-400"}>
+                          {profile.internships >= 1 ? "+ Above" : "- Below"}
+                        </span>
+                      </div>
+                      <div className="mt-1 h-2 rounded-full bg-slate-800">
+                        <div
+                          className="h-full rounded-full bg-cyan-400"
+                          style={{ width: `${Math.min(100, (profile.internships / 3) * 100)}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-
-                  <div>
-                    <div className="flex justify-between text-slate-400">
-                      <span>Internships ({profile.internships}) vs Peer Average (0.8)</span>
-                      <span className={profile.internships >= 1 ? "text-cyan-400" : "text-amber-400"}>
-                        {profile.internships >= 1 ? "+ Above" : "- Below"}
-                      </span>
-                    </div>
-                    <div className="mt-1 h-2 rounded-full bg-slate-800">
-                      <div
-                        className="h-full rounded-full bg-cyan-400"
-                        style={{ width: `${Math.min(100, (profile.internships / 3) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
+                </motion.div>
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
 
         {activeTab === "analytics" && (
-          <section className="space-y-8">
+          <motion.section
+            key="analytics"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="space-y-8"
+          >
             {/* Header & Export */}
-            <div className="flex flex-col justify-between gap-4 rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6 sm:flex-row sm:items-center">
+            <motion.div
+              variants={cardVariants}
+              className="flex flex-col justify-between gap-4 rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6 sm:flex-row sm:items-center"
+            >
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">Cohort Insights</span>
                 <h2 className="mt-1 text-2xl font-black sm:text-3xl">Placement Signals & Distributions</h2>
@@ -575,10 +651,13 @@ export default function Home() {
                   <Download size={14} /> Export CSV
                 </button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Filter Chips Bar */}
-            <div className="grid gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/40 p-4 sm:grid-cols-2 lg:grid-cols-4">
+            <motion.div
+              variants={cardVariants}
+              className="grid gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/40 p-4 sm:grid-cols-2 lg:grid-cols-4"
+            >
               {([
                 ["year", "Graduation Year", filterOptions.years],
                 ["branch", "Engineering Branch", filterOptions.branches],
@@ -601,12 +680,16 @@ export default function Home() {
                   </select>
                 </label>
               ))}
-            </div>
+            </motion.div>
 
             {/* Visual Charts Grid */}
             <div className="grid gap-6 xl:grid-cols-3">
               {/* Donut Chart */}
-              <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6">
+              <motion.div
+                variants={cardVariants}
+                whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6"
+              >
                 <p className="text-sm font-bold text-white">Placement Outcomes</p>
                 <p className="text-xs text-slate-400">Placed vs Not Placed ratio</p>
                 <div className="relative mt-4 h-48">
@@ -631,10 +714,14 @@ export default function Home() {
                   <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-emerald-400" /> Placed</span>
                   <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-rose-500" /> Not Placed</span>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Profile vs Cohort Skills */}
-              <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6">
+              <motion.div
+                variants={cardVariants}
+                whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6"
+              >
                 <p className="text-sm font-bold text-white">Your Profile vs Cohort Average</p>
                 <p className="text-xs text-slate-400">Normalized score / 100</p>
                 <div className="mt-4 h-48">
@@ -653,10 +740,14 @@ export default function Home() {
                   <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-emerald-400" /> Your Profile</span>
                   <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-cyan-400" /> Cohort Avg</span>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Yearly Trend */}
-              <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6">
+              <motion.div
+                variants={cardVariants}
+                whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6"
+              >
                 <p className="text-sm font-bold text-white">Year-over-Year Campus Trend</p>
                 <p className="text-xs text-slate-400">Placement rate progression</p>
                 <div className="mt-4 h-48">
@@ -674,12 +765,16 @@ export default function Home() {
                   <span>Current Class Placement:</span>
                   <span className="font-bold text-violet-400">{readinessTrend[readinessTrend.length - 1]?.score ?? 0}%</span>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Course & Skill Rankings */}
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6">
+              <motion.div
+                variants={cardVariants}
+                whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6"
+              >
                 <p className="text-sm font-bold text-white">Engineering Branch Placement Success</p>
                 <p className="text-xs text-slate-400">Selected year: {filters.year}</p>
                 <div className="mt-4 h-60">
@@ -693,9 +788,13 @@ export default function Home() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6">
+              <motion.div
+                variants={cardVariants}
+                whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6"
+              >
                 <p className="text-sm font-bold text-white">Skill Tier Impact</p>
                 <p className="text-xs text-slate-400">Hiring rate by candidate skill domain</p>
                 <div className="mt-4 h-60">
@@ -709,14 +808,24 @@ export default function Home() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </section>
+          </motion.section>
         )}
 
         {activeTab === "coach" && (
-          <section className="space-y-6">
-            <div className="rounded-3xl border border-slate-800/80 bg-slate-900/70 p-6 backdrop-blur-xl sm:p-8">
+          <motion.section
+            key="coach"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="space-y-6"
+          >
+            <motion.div
+              variants={cardVariants}
+              className="rounded-3xl border border-slate-800/80 bg-slate-900/70 p-6 backdrop-blur-xl sm:p-8"
+            >
               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">
@@ -746,11 +855,17 @@ export default function Home() {
               </div>
 
               {/* Chat Thread */}
-              <div className="mt-6 space-y-4 rounded-2xl border border-slate-800/80 bg-[#0B0F19] p-4 sm:p-6">
+              <motion.div
+                variants={cardVariants}
+                className="mt-6 space-y-4 rounded-2xl border border-slate-800/80 bg-[#0B0F19] p-4 sm:p-6"
+              >
                 <div className="max-h-[420px] space-y-4 overflow-y-auto pr-2">
                   {messages.map((msg, i) => (
-                    <div
+                    <motion.div
                       key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
                       className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div
@@ -765,7 +880,7 @@ export default function Home() {
                         </p>
                         {msg.content}
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                   {aiChat.isPending && (
                     <div className="flex justify-start">
@@ -800,14 +915,24 @@ export default function Home() {
                     <Send size={14} /> Send
                   </button>
                 </form>
-              </div>
-            </div>
-          </section>
+              </motion.div>
+            </motion.div>
+          </motion.section>
         )}
 
         {activeTab === "resume" && (
-          <section className="space-y-6">
-            <div className="rounded-3xl border border-slate-800/80 bg-slate-900/70 p-6 backdrop-blur-xl sm:p-8">
+          <motion.section
+            key="resume"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="space-y-6"
+          >
+            <motion.div
+              variants={cardVariants}
+              className="rounded-3xl border border-slate-800/80 bg-slate-900/70 p-6 backdrop-blur-xl sm:p-8"
+            >
               <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-xs font-bold text-violet-300">
                 <Sparkles size={14} /> Powered by Gemini 3.5 Flash LLM
               </div>
@@ -835,7 +960,12 @@ export default function Home() {
 
               {/* Analysis Result */}
               {resumeAnalyze.data && (
-                <div className="mt-8 space-y-6 rounded-2xl border border-slate-800 bg-[#0B0F19] p-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  className="mt-8 space-y-6 rounded-2xl border border-slate-800 bg-[#0B0F19] p-6"
+                >
                   <div>
                     <h3 className="text-sm font-bold uppercase tracking-wider text-violet-400">Executive Summary</h3>
                     <p className="mt-2 text-xs leading-relaxed text-slate-300">{resumeAnalyze.data.summary}</p>
@@ -879,11 +1009,12 @@ export default function Home() {
                       ))}
                     </ul>
                   </div>
-                </div>
+                </motion.div>
               )}
-            </div>
-          </section>
+            </motion.div>
+          </motion.section>
         )}
+      </AnimatePresence>
       </div>
     </main>
   );
