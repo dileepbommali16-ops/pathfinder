@@ -1,6 +1,6 @@
 {
   "name": "Pathfinder",
-  "description": "Student placement readiness calculator and cohort analytics dashboard for BTech students.",
+  "description": "Campus placement readiness calculator, cohort analytics, live Google Search industry hiring trends, and AI Placement Coach for BTech students.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

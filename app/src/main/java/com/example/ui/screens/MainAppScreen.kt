@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -40,6 +41,7 @@ fun MainAppScreen(
     val navItems = listOf(
         NavigationItem("Readiness", Icons.Default.Assessment, "tab_readiness"),
         NavigationItem("Analytics", Icons.Default.Analytics, "tab_analytics"),
+        NavigationItem("Trends", Icons.Default.Public, "tab_trends"),
         NavigationItem("History", Icons.Default.History, "tab_history"),
         NavigationItem("AI Coach", Icons.Default.AutoAwesome, "tab_coach")
     )
@@ -84,8 +86,9 @@ fun MainAppScreen(
             when (selectedTab) {
                 0 -> ReadinessCalculatorScreen(viewModel = viewModel)
                 1 -> PlacementAnalyticsScreen(viewModel = viewModel)
-                2 -> PredictionHistoryScreen(viewModel = viewModel)
-                3 -> AICoachScreen()
+                2 -> IndustryNewsScreen(onConsultCoach = { selectedTab = 4 })
+                3 -> PredictionHistoryScreen(viewModel = viewModel)
+                4 -> AICoachScreen()
             }
         }
     }

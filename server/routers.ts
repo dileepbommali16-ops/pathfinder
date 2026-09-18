@@ -1,6 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
+import { fetchIndustryNews } from "./newsService";
 import { getPredictionHistory, getPlacementRecords, addPredictionHistory, replacePlacementRecords } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -88,17 +89,48 @@ export const appRouter = router({
         role: z.enum(["system", "user", "assistant"]),
         content: z.string(),
       })),
+      profile: z.object({
+        cgpa: z.number().optional(),
+        backlogs: z.number().optional(),
+        internships: z.number().optional(),
+        communication: z.number().optional(),
+        coding: z.number().optional(),
+        chance: z.number().optional(),
+        targetRole: z.string().optional(),
+        targetTier: z.string().optional(),
+        branch: z.string().optional(),
+      }).optional(),
     })).mutation(async ({ input }) => {
+      const profileInfo = input.profile
+        ? `\n\nSTUDENT'S LIVE PROFILE CONTEXT:
+- Cumulative CGPA: ${input.profile.cgpa !== undefined ? input.profile.cgpa.toFixed(1) : 'Not specified'} / 10.0
+- Active Backlogs: ${input.profile.backlogs !== undefined ? (input.profile.backlogs === 0 ? '0 (Clean academic record)' : `${input.profile.backlogs} active`) : 'Not specified'}
+- Internships Completed: ${input.profile.internships ?? 0}
+- Communication Confidence: ${input.profile.communication ?? 7} / 10
+- Coding & DSA Problem Solving Confidence: ${input.profile.coding ?? 7} / 10
+- Current Placement Probability Score: ${input.profile.chance !== undefined ? `${input.profile.chance}%` : 'Not evaluated yet'}
+- Target Career Role: ${input.profile.targetRole ?? 'Software Development Engineer (SDE-1)'}
+- Target Company Tier: ${input.profile.targetTier ?? 'Product / Tier-1 MNC'}
+- Academic Stream / Branch: ${input.profile.branch ?? 'Computer Science & Engineering'}
+
+GUIDELINES FOR YOUR MENTORSHIP:
+1. Deliver hyper-personalized, practical guidance explicitly referencing their metrics (e.g. tailoring advice to their specific coding score and academic record).
+2. If backlogs exist, explain company eligibility cutoffs and practical backlog clearing tactics without losing momentum on coding skills.
+3. If coding score < 7, prioritize high-frequency campus patterns: Arrays/Strings, HashMaps, Sliding Window, Binary Search, Trees, and Dynamic Programming foundations.
+4. For interviews, provide clear STAR framework formulas (Situation, Task, Action, Result) with sample tech project scenarios.
+5. Provide organized responses using bullet points, bold keywords, and concrete timelines where appropriate.`
+        : '';
+
       const response = await invokeLLM({
         model: "gemini-3.5-flash",
         messages: [
           {
             role: "system",
-            content: "You are Pathfinder AI Placement Coach, an expert mentor in engineering campus placements, software development roles, data science interviews, and resume optimization for BTech/CSE/IT/ECE students. Provide encouraging, structured, practical advice with concrete examples, DSA problem patterns, and behavioral STAR guidance.",
+            content: `You are Pathfinder AI Placement Coach, a world-class engineering campus placement mentor and career strategist powered by Gemini. You specialize in guiding college students through technical rounds, HR evaluations, system design, coding assessments, and ATS resume strategies.${profileInfo}`,
           },
           ...input.messages,
         ],
-        maxTokens: 1000,
+        maxTokens: 1200,
       });
       const content = response.choices[0]?.message.content;
       return typeof content === "string" ? content : "I am ready to help with your placement preparation. Please ask your question.";
@@ -128,6 +160,56 @@ export const appRouter = router({
       if (typeof content !== "string") throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "The analyzer returned no result." });
       return JSON.parse(content) as { summary: string; strengths: string[]; skillGaps: Array<{ skill: string; priority: string; reason: string; action: string }>; nextSteps: string[] };
     }),
+  }),
+  news: router({
+    getFeed: publicProcedure
+      .input(
+        z
+          .object({
+            query: z.string().optional(),
+            category: z.string().optional(),
+          })
+          .optional()
+      )
+      .query(async ({ input }) => {
+        return fetchIndustryNews(input?.query, input?.category);
+      }),
+    summarizeTrend: publicProcedure
+      .input(
+        z.object({
+          title: z.string(),
+          snippet: z.string(),
+          category: z.string().optional(),
+          userContext: z
+            .object({
+              cgpa: z.number().optional(),
+              coding: z.number().optional(),
+              targetRole: z.string().optional(),
+            })
+            .optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const response = await invokeLLM({
+          model: "gemini-3.5-flash",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are an expert career counselor for BTech students. Analyze this industry hiring trend and provide 3 ultra-specific, high-yield action items a student must take to capitalize on it.",
+            },
+            {
+              role: "user",
+              content: `Industry News Item: "${input.title}"\nDetails: "${input.snippet}"\nStudent Target Role: ${input.userContext?.targetRole || "Software Engineer"}\nStudent Coding Score: ${input.userContext?.coding || 7}/10\n\nProvide structured advice: 1. Why this matters for BTech campus placements, 2. Required skills to build this month, 3. Strategic recommendation for interviews. Keep it concise, punchy, and practical.`,
+            },
+          ],
+          maxTokens: 500,
+        });
+        const content = response.choices[0]?.message.content;
+        return typeof content === "string"
+          ? content
+          : "Focus on building core DSA proficiency and demonstrable full-stack projects.";
+      }),
   }),
 });
 

@@ -3,6 +3,7 @@ import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import IndustryNewsFeed from "@/components/IndustryNewsFeed";
 import {
   Bar,
   BarChart,
@@ -20,25 +21,34 @@ import {
 import {
   ArrowRight,
   BadgeCheck,
+  BookOpen,
   Bot,
+  Briefcase,
   Check,
+  CheckCheck,
   Code2,
+  Compass,
+  Copy,
   Download,
   FileText,
   GraduationCap,
+  HelpCircle,
   History,
   Lightbulb,
   Loader2,
   LogIn,
   LogOut,
   MessageCircle,
+  Newspaper,
   RotateCcw,
   Send,
   Sparkles,
   Target,
+  Trash2,
   TrendingUp,
   UserRound,
   Users,
+  Zap,
 } from "lucide-react";
 
 const chartTooltipStyle = {
@@ -161,16 +171,26 @@ const itemVariants = {
 export default function Home() {
   const [profile, setProfile] = useState<Profile>(defaults);
   const [hasPredicted, setHasPredicted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"calculator" | "analytics" | "coach" | "resume">("calculator");
+  const [activeTab, setActiveTab] = useState<"calculator" | "analytics" | "coach" | "resume" | "news">("calculator");
   const [filters, setFilters] = useState({ year: "2025", branch: "", gender: "", skillCategory: "" });
   const { user, loading, isAuthenticated, logout } = useAuth();
 
   // AI Placement Coach State (Gemini 3.5 Flash)
   const [chatInput, setChatInput] = useState("");
+  const [targetRole, setTargetRole] = useState("Software Development Engineer (SDE-1)");
+  const [targetTier, setTargetTier] = useState("Product / Tier-1 MNC");
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  const handleConsultCoachWithTrend = (title: string, source: string, takeaway: string) => {
+    setActiveTab("coach");
+    const prompt = `I was reviewing this latest industry hiring trend from ${source}: "${title}". Key takeaway: "${takeaway}". Based on my current CGPA (${profile.cgpa.toFixed(1)}), backlogs (${profile.backlogs}), coding score (${profile.coding}/10), and target role as ${targetRole} at ${targetTier}, what specific portfolio projects, DSA adjustments, or interview preparations should I prioritize?`;
+    handleSendMessage(prompt);
+  };
   const [messages, setMessages] = useState<Array<{ role: "system" | "user" | "assistant"; content: string }>>([
     {
       role: "assistant",
-      content: "Hello! I am your Pathfinder AI Placement Coach, powered by Gemini 3.5. How can I assist with your interview prep, DSA strategy, or campus readiness today?",
+      content:
+        "Hello! I am your Pathfinder AI Placement Coach, powered by Gemini 3.5. I am synchronized with your academic profile and placement metrics. How can I guide your preparation, DSA roadmap, or interview rounds today?",
     },
   ]);
   const aiChat = trpc.ai.chat.useMutation({
@@ -324,7 +344,54 @@ export default function Home() {
     const updated = [...messages, userMsg];
     setMessages(updated);
     setChatInput("");
-    aiChat.mutate({ messages: updated });
+    aiChat.mutate({
+      messages: updated,
+      profile: {
+        cgpa: profile.cgpa,
+        backlogs: profile.backlogs,
+        internships: profile.internships,
+        communication: profile.communication,
+        coding: profile.coding,
+        chance: result.chance,
+        targetRole,
+        targetTier,
+        branch: filters.branch || "Computer Science / Engineering",
+      },
+    });
+  };
+
+  const handleCopyAdvice = (text: string, index: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  const handleClearChat = () => {
+    setMessages([
+      {
+        role: "assistant",
+        content: `Chat session reset. I'm ready to mentor you for ${targetRole} positions at ${targetTier} companies. Ask anything or pick a quick topic below!`,
+      },
+    ]);
+  };
+
+  const handleExportChat = () => {
+    const textContent = [
+      `# Pathfinder AI Placement Coach - Career Mentorship Transcript`,
+      `Date: ${new Date().toLocaleDateString()}`,
+      `Candidate Profile: CGPA ${profile.cgpa.toFixed(1)} | Backlogs: ${profile.backlogs} | Internships: ${profile.internships} | Coding: ${profile.coding}/10 | Comm: ${profile.communication}/10`,
+      `Placement Probability: ${result.chance}% (${result.label})`,
+      `Target Goal: ${targetRole} (${targetTier})`,
+      `\n------------------------------------\n`,
+      ...messages.map((m) => `### ${m.role === "user" ? "Student" : "Gemini Placement Coach"}:\n${m.content}\n`),
+    ].join("\n\n");
+    const blob = new Blob([textContent], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `placement-coach-advice-${new Date().toISOString().slice(0, 10)}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -386,6 +453,7 @@ export default function Home() {
             { id: "analytics", label: "Cohort Analytics", icon: TrendingUp },
             { id: "coach", label: "AI Placement Coach (LLM)", icon: Bot },
             { id: "resume", label: "ATS Resume Review (LLM)", icon: FileText },
+            { id: "news", label: "Hiring Trends & News (Google Search)", icon: Newspaper },
           ].map(({ id, label, icon: Icon }) => (
             <motion.button
               key={id}
@@ -575,6 +643,19 @@ export default function Home() {
                         </div>
                       ))}
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("coach");
+                        handleSendMessage(
+                          `Based on my evaluated placement chance of ${result.chance}% (CGPA: ${profile.cgpa.toFixed(1)}, Backlogs: ${profile.backlogs}, Coding: ${profile.coding}/10, Comm: ${profile.communication}/10), what is my highest-leverage 60-day roadmap to reach top-tier placement readiness?`
+                        );
+                      }}
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 py-3 text-xs font-extrabold text-cyan-300 transition hover:bg-cyan-500/20 active:scale-[0.99]"
+                    >
+                      <Bot size={15} /> Consult AI Coach on this Score & Plan <ArrowRight size={14} />
+                    </button>
                   </div>
                 </motion.div>
 
@@ -822,44 +903,192 @@ export default function Home() {
             exit="exit"
             className="space-y-6"
           >
+            {/* Top Coaching Header & Profile Synchronization Bar */}
             <motion.div
               variants={cardVariants}
               className="rounded-3xl border border-slate-800/80 bg-slate-900/70 p-6 backdrop-blur-xl sm:p-8"
             >
-              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">
-                    <Bot size={14} /> Powered by Gemini 3.5 Flash LLM
+                    <Sparkles size={14} /> Powered by Gemini 3.5 Flash · Personalized Mentorship
                   </div>
-                  <h2 className="mt-2 text-2xl font-black sm:text-3xl">AI Placement Mentor</h2>
-                  <p className="text-xs text-slate-400">Ask real-time questions about interview prep, DSA problem roadmaps, and STAR answers.</p>
+                  <h2 className="mt-2 text-2xl font-black sm:text-3xl">AI Placement Coach</h2>
+                  <p className="text-xs text-slate-400">
+                    Get custom career roadmaps, high-frequency DSA patterns, mock behavioral STAR answers, and resume advice adapted to your exact scores.
+                  </p>
+                </div>
+
+                {/* Candidate Live Snapshot Pill */}
+                <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-800 bg-[#0B0F19] p-3 text-xs">
+                  <span className="font-bold text-slate-400">Live Profile:</span>
+                  <span className="rounded-lg bg-emerald-500/10 px-2 py-1 font-semibold text-emerald-400">
+                    CGPA {profile.cgpa.toFixed(1)}
+                  </span>
+                  <span
+                    className={`rounded-lg px-2 py-1 font-semibold ${
+                      profile.backlogs === 0
+                        ? "bg-slate-800 text-slate-300"
+                        : "bg-rose-500/10 text-rose-400"
+                    }`}
+                  >
+                    {profile.backlogs === 0 ? "0 Backlogs" : `${profile.backlogs} Backlogs`}
+                  </span>
+                  <span className="rounded-lg bg-cyan-500/10 px-2 py-1 font-semibold text-cyan-400">
+                    Coding {profile.coding}/10
+                  </span>
+                  <span className="rounded-lg bg-violet-500/10 px-2 py-1 font-semibold text-violet-400">
+                    Comm {profile.communication}/10
+                  </span>
+                  <span className="rounded-lg bg-amber-500/10 px-2 py-1 font-semibold text-amber-400">
+                    {result.chance}% Chance
+                  </span>
                 </div>
               </div>
 
-              {/* Quick Prompt Starters */}
-              <div className="mt-6 flex flex-wrap gap-2">
-                {[
-                  "How to raise placement probability from 65% to 85%?",
-                  "Top 5 high-yield DSA patterns for campus drives",
-                  "STAR method answer for 'Tell me about a challenging bug'",
-                  "How to explain an academic gap in HR round",
-                ].map((prompt) => (
-                  <button
-                    key={prompt}
-                    onClick={() => handleSendMessage(prompt)}
-                    className="rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs text-cyan-300 transition hover:border-cyan-500/40 hover:bg-slate-800"
+              {/* Career Goal Customization Bar */}
+              <div className="mt-6 grid gap-4 rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Target Engineering Role
+                  </label>
+                  <select
+                    value={targetRole}
+                    onChange={(e) => setTargetRole(e.target.value)}
+                    className="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white outline-none focus:border-cyan-400"
                   >
-                    💡 {prompt}
-                  </button>
-                ))}
+                    <option value="Software Development Engineer (SDE-1)">Software Development Engineer (SDE-1)</option>
+                    <option value="Full-Stack Developer (MERN / Next.js)">Full-Stack Developer (MERN / Next.js)</option>
+                    <option value="Data Scientist & AI/ML Engineer">Data Scientist & AI/ML Engineer</option>
+                    <option value="DevOps & Cloud Engineer">DevOps & Cloud Engineer</option>
+                    <option value="Core Engineering / Systems Specialist">Core Engineering / Systems Specialist</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Target Company Tier
+                  </label>
+                  <select
+                    value={targetTier}
+                    onChange={(e) => setTargetTier(e.target.value)}
+                    className="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white outline-none focus:border-cyan-400"
+                  >
+                    <option value="Product / Tier-1 MNC (FAANG, Uber, Atlassian, Adobe)">Product / Tier-1 MNC (FAANG, Uber, Atlassian)</option>
+                    <option value="High-Growth Tech Startups (Fintech, SaaS, AI unicorns)">High-Growth Tech Startups (Fintech, SaaS)</option>
+                    <option value="Mass Recruiters / IT Services (TCS Digital, Infosys, Cognizant)">Mass Recruiters / IT Services (TCS Digital, Infosys)</option>
+                  </select>
+                </div>
               </div>
 
-              {/* Chat Thread */}
+              {/* Categorized Quick Smart Starters */}
+              <div className="mt-6 space-y-2.5">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Recommended Coaching Starters (Tailored to Your Metrics)
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() =>
+                      handleSendMessage(
+                        `Based on my current placement probability of ${result.chance}% and coding score of ${profile.coding}/10, create a tailored 60-day placement preparation roadmap for ${targetRole} at ${targetTier}.`
+                      )
+                    }
+                    className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-500/20"
+                  >
+                    <Compass size={13} /> 60-Day Roadmap for {targetRole.split(" ")[0]}
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      handleSendMessage(
+                        `What are the top 5 highest-frequency DSA patterns I must master for campus online coding assessments (OAs) in 2025/2026? Give example problems for each pattern.`
+                      )
+                    }
+                    className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20"
+                  >
+                    <Code2 size={13} /> Top 5 High-Yield DSA Patterns
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      handleSendMessage(
+                        `Give me an authentic STAR-method response for: "Tell me about a challenging technical bug or conflict in a college team project" that will impress HR and Technical interviewers.`
+                      )
+                    }
+                    className="flex items-center gap-1.5 rounded-xl border border-violet-500/30 bg-violet-500/10 px-3 py-1.5 text-xs font-semibold text-violet-300 transition hover:bg-violet-500/20"
+                  >
+                    <MessageCircle size={13} /> STAR Format Interview Script
+                  </button>
+
+                  {profile.backlogs > 0 ? (
+                    <button
+                      onClick={() =>
+                        handleSendMessage(
+                          `I have ${profile.backlogs} active backlog(s) with a ${profile.cgpa.toFixed(1)} CGPA. How do I navigate company eligibility cutoffs and what is the best strategy to land off-campus and startup offers?`
+                        )
+                      }
+                      className="flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20"
+                    >
+                      <Zap size={13} /> Backlog Recovery & Eligibility Strategy
+                    </button>
+                  ) : profile.coding < 7 ? (
+                    <button
+                      onClick={() =>
+                        handleSendMessage(
+                          `My coding score is currently ${profile.coding}/10. What is a high-intensity 3-week coding routine to clear Round 1 technical coding screenings?`
+                        )
+                      }
+                      className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/20"
+                    >
+                      <Zap size={13} /> 3-Week Coding Score Boost
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() =>
+                        handleSendMessage(
+                          `What are the 2 strongest project architectures for ${targetRole} that will make my resume stand out to hiring managers at ${targetTier}?`
+                        )
+                      }
+                      className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/20"
+                    >
+                      <Briefcase size={13} /> Standout Resume Projects
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Chat Thread Container */}
               <motion.div
                 variants={cardVariants}
-                className="mt-6 space-y-4 rounded-2xl border border-slate-800/80 bg-[#0B0F19] p-4 sm:p-6"
+                className="mt-6 rounded-2xl border border-slate-800/80 bg-[#0B0F19] p-4 sm:p-6"
               >
-                <div className="max-h-[420px] space-y-4 overflow-y-auto pr-2">
+                {/* Chat Action Header */}
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3 text-xs text-slate-400">
+                  <span className="flex items-center gap-2 font-medium">
+                    <Bot size={14} className="text-cyan-400" /> Active Session · {targetRole}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleExportChat}
+                      className="flex items-center gap-1 hover:text-white transition"
+                      title="Export transcript as Markdown"
+                    >
+                      <Download size={13} /> Export Notes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearChat}
+                      className="flex items-center gap-1 hover:text-rose-400 transition"
+                      title="Reset chat session"
+                    >
+                      <Trash2 size={13} /> Clear Chat
+                    </button>
+                  </div>
+                </div>
+
+                {/* Messages Stream */}
+                <div className="my-4 max-h-[460px] space-y-4 overflow-y-auto pr-2">
                   {messages.map((msg, i) => (
                     <motion.div
                       key={i}
@@ -869,16 +1098,35 @@ export default function Home() {
                       className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-2xl p-4 text-xs leading-relaxed sm:text-sm ${
+                        className={`group relative max-w-[88%] rounded-2xl p-4 text-xs leading-relaxed sm:text-sm ${
                           msg.role === "user"
-                            ? "bg-emerald-500/20 text-white border border-emerald-500/30"
-                            : "bg-slate-900/80 text-slate-200 border border-slate-800 whitespace-pre-line"
+                            ? "border border-emerald-500/30 bg-emerald-500/15 text-white"
+                            : "border border-slate-800 bg-slate-900/85 text-slate-200"
                         }`}
                       >
-                        <p className="mb-1 text-[11px] font-bold text-slate-400">
-                          {msg.role === "user" ? "You" : "Gemini Placement Coach"}
-                        </p>
-                        {msg.content}
+                        <div className="mb-1.5 flex items-center justify-between gap-4">
+                          <p className="text-[11px] font-bold text-slate-400">
+                            {msg.role === "user" ? "Candidate (You)" : "Gemini Placement Coach"}
+                          </p>
+                          {msg.role === "assistant" && (
+                            <button
+                              onClick={() => handleCopyAdvice(msg.content, i)}
+                              className="opacity-0 transition-opacity group-hover:opacity-100 flex items-center gap-1 text-[10px] text-slate-400 hover:text-cyan-300"
+                              title="Copy advice"
+                            >
+                              {copiedIndex === i ? (
+                                <>
+                                  <CheckCheck size={12} className="text-emerald-400" /> Copied
+                                </>
+                              ) : (
+                                <>
+                                  <Copy size={12} /> Copy
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                        <div className="whitespace-pre-line text-slate-200">{msg.content}</div>
                       </div>
                     </motion.div>
                   ))}
@@ -886,7 +1134,7 @@ export default function Home() {
                     <div className="flex justify-start">
                       <div className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-xs text-slate-400">
                         <Loader2 size={15} className="animate-spin text-cyan-400" />
-                        Generating personalized advice...
+                        Gemini is formulating personalized advice based on your profile...
                       </div>
                     </div>
                   )}
@@ -904,7 +1152,7 @@ export default function Home() {
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask about DSA, projects, or behavioral interview prep..."
+                    placeholder={`Ask about ${targetRole.split(" ")[0]} interviews, DSA patterns, or salary negotiation...`}
                     className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-xs text-white outline-none focus:border-cyan-400"
                   />
                   <button
@@ -1012,6 +1260,31 @@ export default function Home() {
                 </motion.div>
               )}
             </motion.div>
+          </motion.section>
+        )}
+
+        {activeTab === "news" && (
+          <motion.section
+            key="news"
+            variants={tabVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <IndustryNewsFeed
+              userProfile={{
+                cgpa: profile.cgpa,
+                backlogs: profile.backlogs,
+                coding: profile.coding,
+                communication: profile.communication,
+                internships: profile.internships,
+                chance: result.chance,
+                label: result.label,
+              }}
+              targetRole={targetRole}
+              targetTier={targetTier}
+              onConsultCoachWithTrend={handleConsultCoachWithTrend}
+            />
           </motion.section>
         )}
       </AnimatePresence>
