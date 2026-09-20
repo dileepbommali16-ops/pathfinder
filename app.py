@@ -23,8 +23,9 @@ st.set_page_config(
 # ---------------- ENV / AI CONFIGURATION ----------------
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-# Supported models: gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+# Newest-first list; override with GEMINI_MODEL in Streamlit Secrets if needed.
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.7-flash")
+GEMINI_MODELS = [GEMINI_MODEL, "gemini-3.7-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash"]
 
 try:
     from google import genai
@@ -45,14 +46,23 @@ st.markdown("""
 [data-testid="stHeader"] {background: transparent;}
 .block-container {padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1400px;}
 
-/* Dark Obsidian Theme Overrides */
-body, [data-testid="stAppViewContainer"] {
-    background-color: #090D16;
-    color: #F8FAFC;
+/* Full-page animated Aurora background */
+body, [data-testid="stAppViewContainer"] { background: #050816; color: #F8FAFC; }
+[data-testid="stAppViewContainer"]::before {
+    content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+    background: radial-gradient(circle at 8% 12%, rgba(34,211,238,.22), transparent 30%), radial-gradient(circle at 90% 8%, rgba(168,85,247,.24), transparent 32%), radial-gradient(circle at 55% 92%, rgba(16,185,129,.16), transparent 34%), linear-gradient(135deg, #050816 0%, #0b1026 48%, #081b26 100%);
+    animation: aurora-shift 14s ease-in-out infinite alternate;
 }
+[data-testid="stAppViewContainer"]::after {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .16;
+    background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 42px 42px; mask-image: linear-gradient(to bottom, black, transparent 80%);
+}
+@keyframes aurora-shift { from { filter: hue-rotate(0deg) saturate(1); } to { filter: hue-rotate(18deg) saturate(1.15); } }
 [data-testid="stSidebar"] {
-    background-color: #0F172A;
-    border-right: 1px solid #1E293B;
+    background: rgba(7,13,32,.82);
+    border-right: 1px solid rgba(148,163,184,.18);
+    backdrop-filter: blur(22px);
 }
 
 .hero {
@@ -83,16 +93,17 @@ body, [data-testid="stAppViewContainer"] {
     border: 1px solid #28384F;
     border-radius: 20px;
     padding: 22px;
-    background: #111827;
+    background: rgba(15,23,42,.68);
+    backdrop-filter: blur(18px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     color: #F8FAFC;
 }
 
 [data-testid="stMetric"] {
-    border: 1px solid #28384F;
+    border: 1px solid rgba(148,163,184,.18);
     border-radius: 18px;
     padding: 16px 20px;
-    background: #111827;
+    background: rgba(15,23,42,.72);
     box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
 [data-testid="stMetricLabel"] {
@@ -117,6 +128,12 @@ body, [data-testid="stAppViewContainer"] {
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
 }
+.stTextInput input, .stTextArea textarea, [data-baseweb="select"] > div, [data-testid="stNumberInput"] input {
+    background: rgba(15,23,42,.72) !important;
+    border-color: rgba(103,232,249,.25) !important;
+}
+.stTabs [data-baseweb="tab-list"] { gap: 8px; }
+.stTabs [data-baseweb="tab"] { background: rgba(15,23,42,.58); border-radius: 12px 12px 0 0; padding: 10px 18px; }
 
 .login-wrap {max-width: 540px; margin: 8vh auto 0;}
 .login-card {
@@ -160,27 +177,31 @@ if not st.session_state.logged_in:
         st.caption("Demo access: any username & password are accepted for testing.")
     st.stop()
 
-# ---------------- AI HELPER WITH MODEL FALLBACKS ----------------
+# ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
 def ask_gemini(prompt, retries=2):
+    """Call Gemini with current models first and return an actionable error."""
+    if not GEMINI_API_KEY:
+        return "⚠️ AI is not configured yet. Add `GEMINI_API_KEY` under Streamlit Cloud → Settings → Secrets, then reboot the app."
     if client is None:
-        return "⚠️ Gemini API key is missing. Add GEMINI_API_KEY to your Streamlit Secrets / .env file to enable AI advice."
-    
-    models_to_try = [GEMINI_MODEL, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        return "⚠️ The Gemini SDK could not initialize. Confirm `google-genai` is installed and reboot the Streamlit app."
     last_error = None
-    
-    for model_name in dict.fromkeys(models_to_try):
-        try:
-            response = client.models.generate_content(model=model_name, contents=prompt)
-            if response and response.text:
-                return response.text
-        except Exception as exc:
-            last_error = exc
-            err_str = str(exc).lower()
-            if "not found" in err_str or "404" in err_str:
-                continue # try next model
-            time.sleep(1)
-            
-    return f"AI service response: {last_error}"
+    for model_name in dict.fromkeys(GEMINI_MODELS):
+        for attempt in range(retries):
+            try:
+                response = client.models.generate_content(model=model_name, contents=prompt)
+                answer = getattr(response, "text", None)
+                if answer and answer.strip():
+                    return answer.strip()
+                last_error = f"{model_name} returned an empty response"
+                break
+            except Exception as exc:
+                last_error = exc
+                error_text = str(exc).lower()
+                if any(token in error_text for token in ("not found", "404", "unsupported", "permission")):
+                    break
+                if attempt < retries - 1:
+                    time.sleep(1.0)
+    return f"⚠️ AI could not respond. Check that your Gemini API key is valid and that the Generative Language API is enabled. Technical detail: {last_error}"
 
 # ---------------- DATA & MODEL ----------------
 DATA_FILE = Path(__file__).parent / "sample-placement-2024-2026.csv"
@@ -306,7 +327,7 @@ if chance is not None:
 # ---------------- AI CAREER ASSISTANT ----------------
 st.divider()
 st.header("🤖 AI Placement Mentor")
-st.caption("Powered by Gemini LLM — tailored to your profile.")
+st.caption("Powered by the latest available Gemini model — tailored to your profile.")
 
 prompt_suggestions = [
     "How can I raise my chance to 85%+?",
