@@ -25,10 +25,6 @@ GEMINI_MODEL = "gemini-3.7-flash"
 
 The application can run without a key, but AI chat will display a configuration message until `GEMINI_API_KEY` is provided.
 
-## Weather Dashboard Workspace
-
-The Streamlit sidebar now includes a separate **Weather Dashboard** workspace based on the supplied Aurora liquid-glass specification. It preserves the existing placement workspace, bundles a storm background asset locally, and renders the Central Jakarta forecast composition with responsive layout, translucent glass cards, forecast chart animation, and mobile reflow.
-
 ## Architecture
 
 - **UI Framework**: Modern Jetpack Compose with Material Design 3 (M3).

@@ -1,12 +1,9 @@
-import base64
 import os
 import time
 from io import BytesIO
-from pathlib import Path
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 from dotenv import load_dotenv
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -162,101 +159,6 @@ def ask_gemini_chat(messages, retries=2):
                 if attempt < retries - 1:
                     time.sleep(1.0)
     return f"⚠️ AI could not respond. Check your Gemini API key and enabled API access. Technical detail: {last_error}"
-
-def render_weather_dashboard():
-    """Render the supplied Aurora-style weather composition as an isolated HTML view."""
-    background_path = Path(__file__).parent / "assets" / "storm-background.jpg"
-    if background_path.exists():
-        image_data = base64.b64encode(background_path.read_bytes()).decode("ascii")
-        background = f"data:image/jpeg;base64,{image_data}"
-    else:
-        background = ""
-    html = """
-<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500&display=swap" rel="stylesheet"><style>
-:root{--ink:#fff;--u:min(100vw/1357,100vh/871);--glass:rgba(255,255,255,.155);--line:rgba(255,255,255,.2);--ease:cubic-bezier(.16,1,.3,1)}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Inter,system-ui,sans-serif;color:var(--ink);background:#04121b}body{background-image:linear-gradient(105deg,rgba(4,16,24,.42),rgba(4,16,24,.12) 52%,rgba(4,16,24,.02)),url('__BG__');background-size:cover;background-position:center 25%;}.stage{position:relative;min-height:100%;overflow:hidden;padding:14px 38px 16px 16px}.stage:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(4,16,24,.12),transparent 24%),linear-gradient(0deg,rgba(4,16,24,.12),rgba(4,16,24,.12))}.glass{background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.11));border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(22px) saturate(118%);-webkit-backdrop-filter:blur(22px) saturate(118%);box-shadow:0 16px 36px rgba(0,0,0,.12)}.sidebar{position:absolute;z-index:2;left:16px;top:14px;bottom:7px;width:72px;border-radius:26px;display:flex;flex-direction:column;align-items:center;padding:22px 0 22px}.logo{width:40px;height:40px;border-radius:12px;border:2px solid rgba(255,255,255,.9);display:grid;place-items:center;font-size:22px}.nav{display:flex;flex-direction:column;gap:23px;margin-top:55px;align-items:center}.nav span,.logout{font-size:20px;opacity:.76;transition:.2s}.nav span:first-child{opacity:1;filter:drop-shadow(0 0 7px #fff)}.nav span:hover,.logout:hover{opacity:1;transform:translateY(-1px)}.logout{margin-top:auto;font-size:13px;writing-mode:vertical-rl;transform:rotate(180deg);opacity:.8}.content{position:relative;z-index:1;margin-left:110px;min-height:calc(100vh - 30px)}.header{height:58px;display:flex;align-items:center;justify-content:space-between}.hello{font-size:15px;opacity:.92}.who{font-size:19px;font-weight:700;margin-top:6px}.tools{display:flex;gap:12px;align-items:center}.tool{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);font-size:18px}.avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.72)}.layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:28px;min-height:calc(100vh - 105px);align-items:start}.hero{padding-top:66px;max-width:560px}.chip{display:inline-block;padding:9px 15px;border-radius:18px;background:rgba(255,255,255,.17);font-size:13px;border:1px solid rgba(255,255,255,.2)}h1{font-family:'Inter Tight',Inter,sans-serif;font-weight:500;font-size:clamp(46px,6vw,88px);line-height:.98;letter-spacing:-3px;margin:20px 0 22px}h1 span{display:block}.blurb{max-width:480px;font-size:15px;line-height:1.58;font-weight:500;opacity:.94}.forecast{position:absolute;left:0;right:20px;bottom:11px}.temps,.days{display:flex;justify-content:space-between;align-items:end;gap:10px}.temp{text-align:center;font-size:13px;opacity:.9}.temp b{display:block;font-size:30px;font-weight:400;letter-spacing:-1px}.temp i{font-style:normal;font-size:20px;display:block;margin:3px}.chart{width:100%;height:150px;margin-top:10px}.chart path.line{fill:none;stroke:#fff;stroke-width:3.4;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:0;animation:draw 1.6s var(--ease) both}.chart path.fill{fill:rgba(255,255,255,.16);stroke:none;clip-path:inset(0 100% 0 0);animation:wipe 1.42s var(--ease) 1.72s both}.days{font-size:13px;opacity:.85}.days b{color:#fff}.rail{padding-top:62px;display:flex;flex-direction:column;gap:16px}.card{border-radius:24px;padding:20px}.big .place{font-size:15px;display:flex;justify-content:space-between;align-items:center}.bigtemp{font-size:76px;line-height:1;font-weight:500;letter-spacing:-4px;margin:20px 0}.bigtemp i{font-size:28px;font-style:normal;letter-spacing:0}.metrics{display:flex;gap:20px;font-size:12px;opacity:.9}.metrics strong{display:block;font-size:17px;margin-bottom:3px}.row{min-height:92px;display:flex;justify-content:space-between;align-items:center}.row small{display:block;opacity:.7;margin-top:5px}.row .degrees{font-size:32px}.row .weather-icon{font-size:27px;margin-left:10px}@keyframes draw{from{stroke-dashoffset:1}}@keyframes wipe{to{clip-path:inset(0 0 0 0)}}@media(max-width:860px){body{overflow:auto}.stage{min-height:900px;padding:12px}.sidebar{position:fixed;left:12px;right:12px;top:auto;bottom:10px;width:auto;height:62px;flex-direction:row;padding:0 18px;border-radius:22px;justify-content:space-between}.logo{width:34px;height:34px}.nav{flex-direction:row;gap:22px;margin:0}.logout{margin:0;writing-mode:initial;transform:none;font-size:18px}.content{margin-left:0;padding-bottom:86px}.header{padding:0 4px}.layout{display:block}.hero{padding-top:44px;max-width:100%}h1{font-size:56px}.forecast{position:relative;bottom:auto;margin-top:62px}.rail{padding-top:40px}.tools .tool{width:35px;height:35px}.avatar{width:35px;height:35px}}
-</style></head><body><div class="stage"><aside class="sidebar glass"><div class="logo">≈</div><nav class="nav" aria-label="Weather navigation"><span aria-label="Dashboard">▦</span><span aria-label="Reports">◒</span><span aria-label="Explore regions">◎</span><span aria-label="Calendar">□</span><span aria-label="Settings">⚙</span></nav><div class="logout">Sign out</div></aside><main class="content"><header class="header"><div><div class="hello">Welcome</div><div class="who">Calfin Danang</div></div><div class="tools"><div class="tool">＋</div><div class="tool">⌕</div><div class="tool">♧</div><img class="avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&h=160&fit=crop&crop=faces&q=80&auto=format" alt="Calfin Danang"></div></header><div class="layout"><section class="hero"><span class="chip">Weather Forecast</span><h1><span>Strom</span><span>with Heavy Rain</span></h1><p class="blurb">Partly cloudy with occasional snow showers. High around 50°F.<br>Wind from the east 11 to 21 mph. Snow chance is 40%, with<br>rainfall expected to be less than an inch.</p><div class="forecast"><div class="temps"><div class="temp"><b>11°</b><i>☁</i></div><div class="temp"><b>13°</b><i>☁</i></div><div class="temp"><b>14°</b><i>☁</i></div><div class="temp"><b>10°</b><i>☄</i></div><div class="temp"><b>19°</b><i>☀</i></div><div class="temp"><b>12°</b><i>☁</i></div></div><svg class="chart" viewBox="0 0 835 230" preserveAspectRatio="none" aria-label="Forecast trend"><path class="fill" d="M0,155 C78,120 130,175 205,132 S345,82 420,135 S540,190 620,122 S745,58 835,86 L835,230 L0,230 Z"/><path class="line" pathLength="1" d="M0,155 C78,120 130,175 205,132 S345,82 420,135 S540,190 620,122 S745,58 835,86"/></svg><div class="days"><span>Sunday</span><span>Monday</span><span>Tuesday</span><b>Wednesday</b><span>Thursday</span><span>Friday</span></div></div></section><aside class="rail"><div class="card glass big"><div class="place">Central Jakarta <span>⌖</span></div><div class="bigtemp">10° <i>C</i></div><div class="metrics"><div><strong>19 mph</strong>Wind</div><div><strong>40%</strong>Rain</div><div><strong>15 km/h</strong>Gust</div></div></div><div class="card glass row"><div>Indonesia<small>North Jakarta · Mostly Sunny</small></div><div><span class="degrees">12°</span><span class="weather-icon">☀</span></div></div><div class="card glass row"><div>Indonesia<small>Bandung · Cloudy</small></div><div><span class="degrees">10°</span><span class="weather-icon">☁</span></div></div><div class="card glass row"><div>Indonesia<small>South Jakarta · Sunny</small></div><div><span class="degrees">14°</span><span class="weather-icon">☁</span></div></div></aside></div></main></div></body></html>
-""".replace("__BG__", background)
-    components.html(html, height=760, scrolling=False)
-
-# ---------------- WORKSPACE SELECTOR ----------------
-workspace = st.sidebar.radio("Pathfinder workspace", ["Placement Intelligence", "Weather Dashboard"], index=0)
-if workspace == "Weather Dashboard":
-    st.markdown("### Aurora Weather · Central Jakarta")
-    st.caption("Liquid-glass weather view added from your supplied design specification.")
-    render_weather_dashboard()
-    st.stop()
-
-# ---------------- DATA & MODEL ----------------
-DATA_FILE = Path(__file__).parent / "sample-placement-2024-2026.csv"
-
-@st.cache_data(show_spinner=False)
-def load_data():
-    if not DATA_FILE.exists():
-        return pd.DataFrame()
-    data = pd.read_csv(DATA_FILE)
-    data["placed_label"] = data["placed"].map({1: "Placed", 0: "Not placed"})
-    return data
-
-@st.cache_resource(show_spinner=False)
-def train_model():
-    features = ["cgpa", "backlogs", "internships", "communication_score", "coding_score"]
-    students_file = Path(__file__).parent / "students.csv"
-    if not students_file.exists():
-        students_file = DATA_FILE
-    
-    training = pd.read_csv(students_file)
-    # Align column names if needed
-    col_map = {
-        "communicationScore": "communication_score",
-        "codingScore": "coding_score"
-    }
-    training = training.rename(columns=col_map)
-    
-    model = RandomForestClassifier(n_estimators=120, random_state=42)
-    model.fit(training[features], training["placed"])
-    return model, features
-
-def filter_records(data, year, branch, gender, skill):
-    if data.empty:
-        return data
-    result = data[data["year"].eq(year)].copy()
-    if branch != "All":
-        result = result[result["branch"].eq(branch)]
-    if gender != "All":
-        result = result[result["gender"].eq(gender)]
-    if skill == "AIML + Python":
-        groups = result.groupby(["year", "branch", "gender"])["skillCategory"].apply(set)
-        valid = groups[groups.apply(lambda values: {"AIML", "Python"}.issubset(values))].index
-        result = result[result.set_index(["year", "branch", "gender"]).index.isin(valid)]
-        result = result[result["skillCategory"].isin(["AIML", "Python"])]
-    elif skill != "All":
-        result = result[result["skillCategory"].eq(skill)]
-    return result
-
-def pdf_report(data, filters):
-    output = BytesIO()
-    doc = SimpleDocTemplate(output, pagesize=letter, rightMargin=32, leftMargin=32, topMargin=32, bottomMargin=32)
-    styles = getSampleStyleSheet()
-    story = [
-        Paragraph("Pathfinder Placement Analytics Report", styles["Title"]),
-        Spacer(1, 10),
-        Paragraph("Filters: " + " | ".join(f"{key}: {value}" for key, value in filters.items()), styles["Normal"]),
-        Spacer(1, 10),
-        Paragraph(f"Records: {len(data)} | Placement rate: {data['placed'].mean() * 100:.1f}%" if len(data) else "Records: 0", styles["Normal"]),
-        Spacer(1, 12)
-    ]
-    table_data = [["Year", "Course", "Gender", "Skill", "Outcome"]] + data[["year", "branch", "gender", "skillCategory", "placed_label"]].head(150).astype(str).values.tolist()
-    table = Table(table_data, repeatRows=1)
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#10B981")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("GRID", (0, 0), (-1, -1), 0.3, colors.grey),
-        ("FONTSIZE", (0, 0), (-1, -1), 8),
-        ("VALIGN", (0, 0), (-1, -1), "TOP")
-    ]))
-    story.append(table)
-    doc.build(story)
-    return output.getvalue()
 
 # ---------------- HEADER ----------------
 user_name = st.session_state.get("username", "Student")
