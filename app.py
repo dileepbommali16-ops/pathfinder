@@ -321,11 +321,19 @@ for message in st.session_state.agent_messages:
         st.markdown(message["content"])
 
 pending_prompt = st.session_state.pop("agent_pending_prompt", "")
-user_message = st.chat_input("Type in English or తెలుగు…")
+with st.form("agent_chat_form", clear_on_submit=True):
+    user_message = st.text_area(
+        "Type your message",
+        placeholder="Ask anything in English or తెలుగు…",
+        height=90,
+        help="Write your question here, then press the button to send it to Pathfinder AI Agent.",
+    )
+    send_message = st.form_submit_button("🚀 Send message", use_container_width=True)
+
 if pending_prompt and not user_message:
     user_message = pending_prompt
 
-if user_message and user_message.strip():
+if (send_message or pending_prompt) and user_message and user_message.strip():
     user_message = user_message.strip()
     st.session_state.agent_messages.append({"role": "user", "content": user_message})
     chance_text = f"{chance:.1f}%" if chance is not None else "not calculated"
