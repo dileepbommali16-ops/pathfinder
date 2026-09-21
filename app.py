@@ -1,6 +1,7 @@
 import os
 import time
 from io import BytesIO
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -159,6 +160,76 @@ def ask_gemini_chat(messages, retries=2):
                 if attempt < retries - 1:
                     time.sleep(1.0)
     return f"⚠️ AI could not respond. Check your Gemini API key and enabled API access. Technical detail: {last_error}"
+
+# ---------------- DATA & MODEL ----------------
+DATA_FILE = Path(__file__).parent / "sample-placement-2024-2026.csv"
+
+@st.cache_data(show_spinner=False)
+def load_data():
+    if not DATA_FILE.exists():
+        return pd.DataFrame()
+    data = pd.read_csv(DATA_FILE)
+    data["placed_label"] = data["placed"].map({1: "Placed", 0: "Not placed"})
+    return data
+
+@st.cache_resource(show_spinner=False)
+def train_model():
+    features = ["cgpa", "backlogs", "internships", "communication_score", "coding_score"]
+    students_file = Path(__file__).parent / "students.csv"
+    if not students_file.exists():
+        students_file = DATA_FILE
+
+    training = pd.read_csv(students_file)
+    training = training.rename(columns={
+        "communicationScore": "communication_score",
+        "codingScore": "coding_score",
+    })
+
+    model = RandomForestClassifier(n_estimators=120, random_state=42)
+    model.fit(training[features], training["placed"])
+    return model, features
+
+def filter_records(data, year, branch, gender, skill):
+    if data.empty:
+        return data
+    result = data[data["year"].eq(year)].copy()
+    if branch != "All":
+        result = result[result["branch"].eq(branch)]
+    if gender != "All":
+        result = result[result["gender"].eq(gender)]
+    if skill == "AIML + Python":
+        groups = result.groupby(["year", "branch", "gender"])["skillCategory"].apply(set)
+        valid = groups[groups.apply(lambda values: {"AIML", "Python"}.issubset(values))].index
+        result = result[result.set_index(["year", "branch", "gender"]).index.isin(valid)]
+        result = result[result["skillCategory"].isin(["AIML", "Python"])]
+    elif skill != "All":
+        result = result[result["skillCategory"].eq(skill)]
+    return result
+
+def pdf_report(data, filters):
+    output = BytesIO()
+    doc = SimpleDocTemplate(output, pagesize=letter, rightMargin=32, leftMargin=32, topMargin=32, bottomMargin=32)
+    styles = getSampleStyleSheet()
+    story = [
+        Paragraph("Pathfinder Placement Analytics Report", styles["Title"]),
+        Spacer(1, 10),
+        Paragraph("Filters: " + " | ".join(f"{key}: {value}" for key, value in filters.items()), styles["Normal"]),
+        Spacer(1, 10),
+        Paragraph(f"Records: {len(data)} | Placement rate: {data['placed'].mean() * 100:.1f}%" if len(data) else "Records: 0", styles["Normal"]),
+        Spacer(1, 12),
+    ]
+    table_data = [["Year", "Course", "Gender", "Skill", "Outcome"]] + data[["year", "branch", "gender", "skillCategory", "placed_label"]].head(150).astype(str).values.tolist()
+    table = Table(table_data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#10B981")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.3, colors.grey),
+        ("FONTSIZE", (0, 0), (-1, -1), 8),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ]))
+    story.append(table)
+    doc.build(story)
+    return output.getvalue()
 
 # ---------------- HEADER ----------------
 user_name = st.session_state.get("username", "Student")
