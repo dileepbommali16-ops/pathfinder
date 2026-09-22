@@ -84,6 +84,8 @@ def structured_ai(prompt: str, schema: type[BaseModel]) -> BaseModel:
             return schema.model_validate(parsed if parsed is not None else json.loads(response_text))
         except Exception as error:
             last_error = error
+            if "429" in str(error) or "RESOURCE_EXHAUSTED" in str(error):
+                raise RuntimeError("AI quota is temporarily exhausted for this Gemini API project. Wait for the quota window to reset or enable billing, then try again.") from error
             if "404" in str(error) or "NOT_FOUND" in str(error):
                 continue
     raise RuntimeError(f"AI structured response failed: {last_error}")
@@ -94,7 +96,12 @@ def cached_gemini(prompt: str, model_name: str) -> str:
     """Cache non-streamed Gemini answers so repeated questions avoid API calls."""
     if client is None:
         return "⚠️ Gemini is not configured. Add GEMINI_API_KEY in Streamlit Secrets."
-    response = client.models.generate_content(model=model_name, contents=prompt)
+    try:
+        response = client.models.generate_content(model=model_name, contents=prompt)
+    except Exception as error:
+        if "429" in str(error) or "RESOURCE_EXHAUSTED" in str(error):
+            return "⚠️ AI quota is temporarily exhausted. Wait for the quota window to reset or enable billing, then try again."
+        raise
     return (getattr(response, "text", None) or "").strip()
 
 # ---------------- PAGE CONFIG ----------------
@@ -115,7 +122,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # Newest-first list; override with GEMINI_MODEL in Streamlit Secrets if needed.
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 # Flash is the fast default; use the current supported Pro preview only as fallback.
-GEMINI_MODELS = [GEMINI_MODEL, "gemini-3.1-pro-preview"]
+# Free-tier projects commonly have zero Pro quota, so do not auto-fallback to Pro.
+GEMINI_MODELS = [GEMINI_MODEL]
 
 try:
     from google import genai
@@ -250,6 +258,9 @@ def ask_gemini(prompt, retries=1, stream=False):
                     return
                 except Exception as exc:
                     last_error = exc
+                    if "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc):
+                        yield "⚠️ AI quota is temporarily exhausted. Wait for the quota window to reset or enable billing, then try again."
+                        return
                     if "404" in str(exc) or "NOT_FOUND" in str(exc):
                         break
                     if attempt < retries - 1:
