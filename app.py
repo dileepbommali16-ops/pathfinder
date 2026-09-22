@@ -144,6 +144,9 @@ body, [data-testid="stAppViewContainer"] { background:#09111f; color:#e5edf8; }
 /* Login: a separate midnight-blue identity is activated only while .login-screen exists. */
 body:has(.login-screen), body:has(.login-screen) [data-testid="stAppViewContainer"] { background:#050b18; }
 .login-screen { min-height:15vh; position:relative; max-width:620px; margin:6vh auto 1rem; padding:42px 44px; border:1px solid rgba(125,211,252,.22); border-radius:26px; background:rgba(9,21,42,.86); box-shadow:0 28px 90px rgba(0,0,0,.42),0 0 70px rgba(37,99,235,.12); z-index:1; }
+.login-brand { position:relative; max-width:620px; margin:7vh auto 1.5rem; padding:30px 36px; border:1px solid rgba(125,211,252,.28); border-radius:24px; background:#0b1b33; box-shadow:0 20px 70px rgba(0,0,0,.35); z-index:1; }
+.login-brand h1 { margin:0; color:#f8fbff; font-size:clamp(2rem,5vw,3.25rem); letter-spacing:.16em; font-weight:800; }
+.login-brand p { color:#c4d9ee; margin:.75rem 0 0; font-size:1rem; }
 .login-screen::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; background:radial-gradient(circle at 50% 42%,rgba(14,165,233,.16),transparent 22%),linear-gradient(135deg,#040918,#0b1730 52%,#061522); }
 .login-screen::after { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.18; background-image:linear-gradient(115deg,transparent 0 48%,rgba(103,232,249,.28) 49%,transparent 50%),linear-gradient(25deg,transparent 0 64%,rgba(96,165,250,.25) 65%,transparent 66%); background-size:280px 240px,340px 280px; animation:pf-network 28s linear infinite; }
 @keyframes pf-network { to { background-position:280px 240px,-340px 280px; } }
@@ -153,7 +156,7 @@ body:has(.login-screen), body:has(.login-screen) [data-testid="stAppViewContaine
 .login-card { padding:0 44px 34px; border-radius:0 0 26px 26px; background:rgba(9,21,42,.96); border:1px solid rgba(125,211,252,.22); border-top:0; color:#e6f2ff; box-shadow:0 28px 90px rgba(0,0,0,.42); }
 .login-card h1 { color:#eff8ff; }
 .login-card p { color:#a9c4df; }
-[data-testid="stVerticalBlockBorderWrapper"] { background:rgba(9,21,42,.96); border:1px solid rgba(125,211,252,.22); border-radius:26px; padding:26px 30px 30px; box-shadow:0 28px 90px rgba(0,0,0,.42); }
+[data-testid="stForm"] { background:#0b1b33; border:1px solid rgba(125,211,252,.28); border-radius:22px; padding:26px 30px 30px; box-shadow:0 24px 70px rgba(0,0,0,.35); }
 [data-testid="stSidebar"] { background:linear-gradient(180deg,#071426 0%,#0b1728 100%); border-right:1px solid rgba(96,165,250,.18); }
 [data-testid="stSidebar"] * { color:#dbeafe; }
 [data-testid="stSidebar"] label, [data-testid="stSidebar"] .stMarkdown p { color:#a9bfd8 !important; }
@@ -197,21 +200,23 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    st.markdown('<div class="login-screen"><h1>PATHFINDER</h1><p>AI-Powered Placement & Career Intelligence Platform</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="login-screen" aria-hidden="true"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="login-brand"><h1>PATHFINDER</h1><p>AI-Powered Placement & Career Intelligence Platform</p></div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        with st.container(border=True):
+        with st.form("pathfinder_login"):
             st.subheader("🔐 Student Login")
             username = st.text_input("Username", placeholder="Enter your student ID or name")
             password = st.text_input("Password", type="password", placeholder="Enter your password")
-            if st.button("🚀 Enter Pathfinder", type="primary", use_container_width=True):
+            submitted = st.form_submit_button("🚀 Enter Pathfinder", type="primary", use_container_width=True)
+            st.caption("Demo access: any username & password are accepted for testing.")
+            if submitted:
                 if username.strip() and password.strip():
                     st.session_state.logged_in = True
                     st.session_state.username = username.strip()
                     st.rerun()
                 else:
                     st.error("Please enter your username and password.")
-            st.caption("Demo access: any username & password are accepted for testing.")
     st.stop()
 
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
