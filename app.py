@@ -209,14 +209,48 @@ h1, h2, h3 { color:#f3f8ff; letter-spacing:-.25px; }
 </style>
 """, unsafe_allow_html=True)
 
+# ---------------- CINEMATIC VISUAL OVERRIDES ----------------
+# Visual-only layer: preserve all existing widgets and business logic while
+# adding depth, glass surfaces, aurora motion, and a motion-safe starfield.
+st.markdown("""
+<style>
+:root { --pf-cyan:#22d3ee; --pf-violet:#8b5cf6; --pf-sky:#60a5fa; }
+[data-testid="stAppViewContainer"]::before { content:""; position:fixed; inset:-18%; z-index:-3; pointer-events:none; background:radial-gradient(ellipse at 8% 4%,rgba(79,70,229,.30),transparent 31%),radial-gradient(ellipse at 93% 18%,rgba(6,182,212,.19),transparent 28%),radial-gradient(ellipse at 50% 92%,rgba(124,58,237,.16),transparent 34%),linear-gradient(145deg,#030817,#08152b 55%,#050a18); animation:pf-aurora 24s ease-in-out infinite alternate; }
+[data-testid="stAppViewContainer"]::after { content:""; position:fixed; inset:-20%; z-index:-2; pointer-events:none; opacity:.20; background-image:linear-gradient(115deg,transparent 0 48%,rgba(103,232,249,.22) 49%,transparent 50%),linear-gradient(25deg,transparent 0 64%,rgba(129,140,248,.18) 65%,transparent 66%),linear-gradient(rgba(96,165,250,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(96,165,250,.10) 1px,transparent 1px); background-size:320px 270px,420px 330px,64px 64px,64px 64px; animation:pf-circuit 42s linear infinite; }
+@keyframes pf-aurora { 0% { transform:translate3d(-2%,-1%,0) scale(1); filter:hue-rotate(0deg); } 50% { transform:translate3d(2%,1%,0) scale(1.05); } 100% { transform:translate3d(0,-2%,0) scale(1.02); filter:hue-rotate(12deg); } }
+@keyframes pf-circuit { to { background-position:320px 270px,-420px 330px,64px 64px,64px 64px; } }
+body:has(.login-screen), body:has(.login-screen) [data-testid="stAppViewContainer"] { background:#030617; }
+.login-screen { position:relative; max-width:620px; margin:6vh auto 1rem; padding:42px 44px; border:1px solid rgba(165,243,252,.30); border-radius:28px; background:linear-gradient(145deg,rgba(12,27,60,.70),rgba(8,15,38,.48)); backdrop-filter:blur(24px) saturate(130%); box-shadow:0 30px 100px rgba(0,0,0,.52),0 0 90px rgba(59,130,246,.18),inset 0 1px rgba(255,255,255,.10); animation:pf-rise .6s cubic-bezier(.2,.8,.2,1) both; z-index:1; }
+.login-screen::before { content:""; position:fixed; inset:-10%; z-index:-2; pointer-events:none; background:radial-gradient(ellipse at 20% 18%,rgba(99,102,241,.34),transparent 27%),radial-gradient(ellipse at 80% 30%,rgba(34,211,238,.22),transparent 26%),radial-gradient(ellipse at 50% 90%,rgba(168,85,247,.18),transparent 34%); filter:blur(18px); animation:pf-aurora 20s ease-in-out infinite alternate; }
+.login-screen::after { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.42; background-image:radial-gradient(circle,rgba(186,230,253,.75) 0 1px,transparent 1.5px),radial-gradient(circle,rgba(129,140,248,.60) 0 1px,transparent 1.5px); background-size:92px 92px,137px 137px; background-position:10px 18px,40px 70px; animation:pf-stars 28s linear infinite; mix-blend-mode:screen; }
+@keyframes pf-stars { to { background-position:102px 110px,-30px -54px; } }
+@keyframes pf-rise { from { opacity:0; transform:translateY(18px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+.login-screen h1 { text-shadow:0 0 28px rgba(103,232,249,.22); }
+.login-screen h1::after { content:""; display:block; width:68%; height:3px; margin-top:14px; border-radius:99px; background:linear-gradient(90deg,transparent,#22d3ee,#8b5cf6,transparent); box-shadow:0 0 18px rgba(34,211,238,.75); transform-origin:center; animation:pf-breathe 3.4s ease-in-out infinite; }
+@keyframes pf-breathe { 0%,100% { opacity:.48; transform:scaleX(.72); } 50% { opacity:1; transform:scaleX(1); } }
+[data-testid="stForm"] { background:rgba(10,27,59,.60); backdrop-filter:blur(18px); box-shadow:0 24px 70px rgba(0,0,0,.35),inset 0 1px rgba(255,255,255,.08); }
+[data-testid="stSidebar"] { background:linear-gradient(180deg,rgba(5,16,37,.96),rgba(8,20,40,.90)); }
+[data-testid="stSidebar"] [data-testid="stSlider"] [role="slider"] { background:#67e8f9; box-shadow:0 0 14px rgba(34,211,238,.55); }
+.hero, [data-testid="stMetric"], .card { backdrop-filter:blur(14px); box-shadow:0 12px 32px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.05); transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease; }
+.hero { background:linear-gradient(135deg,rgba(15,38,73,.82),rgba(8,21,44,.68)); }
+[data-testid="stMetric"]:hover, .card:hover { transform:translateY(-3px); border-color:rgba(103,232,249,.48); box-shadow:0 18px 38px rgba(0,0,0,.30),0 0 24px rgba(37,99,235,.10); }
+.stTextInput input:focus, .stTextArea textarea:focus, [data-testid="stNumberInput"] input:focus { border-color:rgba(103,232,249,.90) !important; box-shadow:0 0 0 3px rgba(34,211,238,.16),0 0 24px rgba(34,211,238,.12) !important; }
+.stButton > button:hover { transform:translateY(-2px); box-shadow:0 9px 22px rgba(37,99,235,.26); }
+.stButton > button[kind="primary"] { background:linear-gradient(135deg,#4f46e5,#0891b2); box-shadow:0 8px 24px rgba(37,99,235,.20); }
+.pf-gauge { background:rgba(148,163,184,.18); box-shadow:inset 0 1px 3px rgba(15,23,42,.32),0 0 12px rgba(34,211,238,.10); }
+.pf-gauge-fill { background:linear-gradient(90deg,#6366f1,#22d3ee,#2dd4bf); box-shadow:0 0 16px rgba(34,211,238,.55); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
+@media (max-width:768px) { .login-screen { margin-top:3vh; padding:30px 22px; } }
+</style>
+""", unsafe_allow_html=True)
+
 # ---------------- LOGIN SESSION ----------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    st.title("PATHFINDER")
-    st.caption("AI-Powered Placement & Career Intelligence Platform")
-    st.divider()
+    st.markdown('<section class="login-screen"><h1>PATHFINDER</h1><p>AI-Powered Placement &amp; Career Intelligence Platform</p></section>', unsafe_allow_html=True)
+    st.markdown('<div class="login-wrap"><div class="login-card">', unsafe_allow_html=True)
     st.subheader("🔐 Student Login")
     with st.form("pathfinder_login"):
         username = st.text_input("Username", placeholder="Enter your student ID or name")
@@ -230,6 +264,7 @@ if not st.session_state.logged_in:
             else:
                 st.error("Please enter your username and password.")
     st.caption("Demo access: any username & password are accepted for testing.")
+    st.markdown('</div></div>', unsafe_allow_html=True)
     st.stop()
 
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
