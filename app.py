@@ -119,10 +119,13 @@ if not ENV_FILE.exists():
     ENV_FILE = Path(__file__).parent / "pathfinder-main" / ".env"
 load_dotenv(ENV_FILE)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-# Newest-first list; override with GEMINI_MODEL in Streamlit Secrets if needed.
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-# Flash is the fast default; use the current supported Pro preview only as fallback.
-# Free-tier projects commonly have zero Pro quota, so do not auto-fallback to Pro.
+# Gemini has retired older model aliases for some new projects. Normalize legacy
+# Streamlit Secrets values so deployment does not keep requesting an unavailable model.
+configured_model = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip()
+if configured_model in {"gemini-2.5-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"}:
+    configured_model = "gemini-3.6-flash"
+GEMINI_MODEL = configured_model
+# Keep one fast model on the free tier; do not automatically use quota-heavy Pro models.
 GEMINI_MODELS = [GEMINI_MODEL]
 
 try:
