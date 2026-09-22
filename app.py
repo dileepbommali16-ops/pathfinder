@@ -200,23 +200,22 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    st.markdown('<div class="login-screen" aria-hidden="true"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="login-brand"><h1>PATHFINDER</h1><p>AI-Powered Placement & Career Intelligence Platform</p></div>', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        with st.form("pathfinder_login"):
-            st.subheader("🔐 Student Login")
-            username = st.text_input("Username", placeholder="Enter your student ID or name")
-            password = st.text_input("Password", type="password", placeholder="Enter your password")
-            submitted = st.form_submit_button("🚀 Enter Pathfinder", type="primary", use_container_width=True)
-            st.caption("Demo access: any username & password are accepted for testing.")
-            if submitted:
-                if username.strip() and password.strip():
-                    st.session_state.logged_in = True
-                    st.session_state.username = username.strip()
-                    st.rerun()
-                else:
-                    st.error("Please enter your username and password.")
+    st.title("PATHFINDER")
+    st.caption("AI-Powered Placement & Career Intelligence Platform")
+    st.divider()
+    st.subheader("🔐 Student Login")
+    with st.form("pathfinder_login"):
+        username = st.text_input("Username", placeholder="Enter your student ID or name")
+        password = st.text_input("Password", type="password", placeholder="Enter your password")
+        submitted = st.form_submit_button("🚀 Enter Pathfinder", type="primary", use_container_width=True)
+        if submitted:
+            if username.strip() and password.strip():
+                st.session_state.logged_in = True
+                st.session_state.username = username.strip()
+                st.rerun()
+            else:
+                st.error("Please enter your username and password.")
+    st.caption("Demo access: any username & password are accepted for testing.")
     st.stop()
 
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
