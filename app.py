@@ -196,10 +196,10 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    st.markdown('<div class="login-screen"><h1>PATHFINDER</h1><p>AI-Powered Placement & Career Intelligence Platform</p></div><div class="login-wrap"><div class="login-card">', unsafe_allow_html=True)
-    st.write("")
+    st.markdown('<div class="login-screen"><h1>PATHFINDER</h1><p>AI-Powered Placement & Career Intelligence Platform</p></div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
         st.subheader("🔐 Student Login")
         username = st.text_input("Username", placeholder="Enter your student ID or name")
         password = st.text_input("Password", type="password", placeholder="Enter your password")
@@ -211,7 +211,7 @@ if not st.session_state.logged_in:
             else:
                 st.error("Please enter your username and password.")
         st.caption("Demo access: any username & password are accepted for testing.")
-    st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
