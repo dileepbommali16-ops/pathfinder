@@ -153,6 +153,7 @@ body:has(.login-screen), body:has(.login-screen) [data-testid="stAppViewContaine
 .login-card { padding:0 44px 34px; border-radius:0 0 26px 26px; background:rgba(9,21,42,.96); border:1px solid rgba(125,211,252,.22); border-top:0; color:#e6f2ff; box-shadow:0 28px 90px rgba(0,0,0,.42); }
 .login-card h1 { color:#eff8ff; }
 .login-card p { color:#a9c4df; }
+[data-testid="stVerticalBlockBorderWrapper"] { background:rgba(9,21,42,.96); border:1px solid rgba(125,211,252,.22); border-radius:26px; padding:26px 30px 30px; box-shadow:0 28px 90px rgba(0,0,0,.42); }
 [data-testid="stSidebar"] { background:linear-gradient(180deg,#071426 0%,#0b1728 100%); border-right:1px solid rgba(96,165,250,.18); }
 [data-testid="stSidebar"] * { color:#dbeafe; }
 [data-testid="stSidebar"] label, [data-testid="stSidebar"] .stMarkdown p { color:#a9bfd8 !important; }
@@ -199,19 +200,18 @@ if not st.session_state.logged_in:
     st.markdown('<div class="login-screen"><h1>PATHFINDER</h1><p>AI-Powered Placement & Career Intelligence Platform</p></div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
-        st.subheader("🔐 Student Login")
-        username = st.text_input("Username", placeholder="Enter your student ID or name")
-        password = st.text_input("Password", type="password", placeholder="Enter your password")
-        if st.button("🚀 Enter Pathfinder", type="primary", use_container_width=True):
-            if username.strip() and password.strip():
-                st.session_state.logged_in = True
-                st.session_state.username = username.strip()
-                st.rerun()
-            else:
-                st.error("Please enter your username and password.")
-        st.caption("Demo access: any username & password are accepted for testing.")
-        st.markdown('</div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.subheader("🔐 Student Login")
+            username = st.text_input("Username", placeholder="Enter your student ID or name")
+            password = st.text_input("Password", type="password", placeholder="Enter your password")
+            if st.button("🚀 Enter Pathfinder", type="primary", use_container_width=True):
+                if username.strip() and password.strip():
+                    st.session_state.logged_in = True
+                    st.session_state.username = username.strip()
+                    st.rerun()
+                else:
+                    st.error("Please enter your username and password.")
+            st.caption("Demo access: any username & password are accepted for testing.")
     st.stop()
 
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
