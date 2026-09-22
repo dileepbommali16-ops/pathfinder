@@ -84,6 +84,8 @@ def structured_ai(prompt: str, schema: type[BaseModel]) -> BaseModel:
             return schema.model_validate(parsed if parsed is not None else json.loads(response_text))
         except Exception as error:
             last_error = error
+            if "404" in str(error) or "NOT_FOUND" in str(error):
+                continue
     raise RuntimeError(f"AI structured response failed: {last_error}")
 
 
@@ -112,7 +114,8 @@ load_dotenv(ENV_FILE)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # Newest-first list; override with GEMINI_MODEL in Streamlit Secrets if needed.
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-GEMINI_MODELS = [GEMINI_MODEL, "gemini-2.5-pro"]
+# Flash is the fast default; use the current supported Pro preview only as fallback.
+GEMINI_MODELS = [GEMINI_MODEL, "gemini-3.1-pro-preview"]
 
 try:
     from google import genai
@@ -247,6 +250,8 @@ def ask_gemini(prompt, retries=1, stream=False):
                     return
                 except Exception as exc:
                     last_error = exc
+                    if "404" in str(exc) or "NOT_FOUND" in str(exc):
+                        break
                     if attempt < retries - 1:
                         time.sleep(0.4)
         yield f"⚠️ AI could not respond. Check your Gemini API key and Generative Language API. Technical detail: {last_error}"
