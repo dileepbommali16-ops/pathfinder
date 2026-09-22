@@ -68,27 +68,34 @@ def readiness_score(profile: StudentProfile) -> ReadinessResult:
 
 
 def structured_ai(prompt: str, schema: type[BaseModel]) -> BaseModel:
-    """Call flash first, then the stronger fallback, with validated JSON output."""
+    """Call flash models with transient retries and validated JSON output."""
     if client is None:
         raise RuntimeError("Set GEMINI_API_KEY to enable structured AI features.")
     last_error = None
     for model_name in dict.fromkeys(GEMINI_MODELS):
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema, temperature=0.3),
-            )
-            parsed = getattr(response, "parsed", None)
-            response_text = response.text or "{}"
-            return schema.model_validate(parsed if parsed is not None else json.loads(response_text))
-        except Exception as error:
-            last_error = error
-            if "429" in str(error) or "RESOURCE_EXHAUSTED" in str(error):
-                raise RuntimeError("AI quota is temporarily exhausted for this Gemini API project. Wait for the quota window to reset or enable billing, then try again.") from error
-            if "404" in str(error) or "NOT_FOUND" in str(error):
-                continue
-    raise RuntimeError(f"AI structured response failed: {last_error}")
+        for attempt in range(2):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema, temperature=0.3),
+                )
+                parsed = getattr(response, "parsed", None)
+                response_text = response.text or "{}"
+                return schema.model_validate(parsed if parsed is not None else json.loads(response_text))
+            except Exception as error:
+                last_error = error
+                error_text = str(error).upper()
+                if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
+                    raise RuntimeError("AI quota is temporarily exhausted for this Gemini API project. Wait for the quota window to reset or enable billing, then try again.") from error
+                if "404" in error_text or "NOT_FOUND" in error_text:
+                    break
+                transient = any(code in error_text for code in ("503", "500", "502", "504", "UNAVAILABLE", "INTERNAL"))
+                if transient and attempt == 0:
+                    time.sleep(0.8)
+                    continue
+                break
+    raise RuntimeError(f"AI structured response failed after fallback models: {last_error}")
 
 
 @st.cache_data(show_spinner=False, ttl=3600)
@@ -125,8 +132,13 @@ configured_model = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip()
 if configured_model in {"gemini-2.5-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"}:
     configured_model = "gemini-3.6-flash"
 GEMINI_MODEL = configured_model
-# Keep one fast model on the free tier; do not automatically use quota-heavy Pro models.
-GEMINI_MODELS = [GEMINI_MODEL]
+# Keep fast flash-tier fallbacks so temporary overloads do not break AI features.
+GEMINI_MODELS = list(dict.fromkeys([
+    GEMINI_MODEL,
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+]))
 
 try:
     from google import genai
@@ -268,7 +280,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
-def ask_gemini(prompt, retries=1, stream=False):
+def ask_gemini(prompt, retries=2, stream=False):
     """Use cached full responses or stream a new flash-tier response progressively."""
     if not GEMINI_API_KEY:
         return iter(["⚠️ AI is not configured yet. Add `GEMINI_API_KEY` under Streamlit Cloud → Settings → Secrets, then reboot the app."]) if stream else "⚠️ AI is not configured yet. Add `GEMINI_API_KEY` under Streamlit Cloud → Settings → Secrets, then reboot the app."
@@ -296,11 +308,14 @@ def ask_gemini(prompt, retries=1, stream=False):
                     return
                 except Exception as exc:
                     last_error = exc
-                    if "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc):
+                    error_text = str(exc).upper()
+                    if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
                         yield "⚠️ AI quota is temporarily exhausted. Wait for the quota window to reset or enable billing, then try again."
                         return
-                    if "404" in str(exc) or "NOT_FOUND" in str(exc):
+                    if "404" in error_text or "NOT_FOUND" in error_text:
                         break
+                    if any(code in error_text for code in ("503", "500", "502", "504", "UNAVAILABLE", "INTERNAL")):
+                        time.sleep(0.8)
                     if attempt < retries - 1:
                         time.sleep(0.4)
         yield f"⚠️ AI could not respond. Check your Gemini API key and Generative Language API. Technical detail: {last_error}"
