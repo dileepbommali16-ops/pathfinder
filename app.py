@@ -1,4 +1,5 @@
 import os
+import json
 import time
 from io import BytesIO
 from pathlib import Path
@@ -6,11 +7,93 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
+from google.genai import types
+from pypdf import PdfReader
+from pydantic import BaseModel, Field
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from sklearn.ensemble import RandomForestClassifier
+
+
+class StudentProfile(BaseModel):
+    cgpa: float = Field(ge=0, le=10)
+    backlogs: int = Field(ge=0)
+    internships: int = Field(ge=0)
+    communication: int = Field(ge=1, le=10)
+    coding: int = Field(ge=1, le=10)
+
+
+class ReadinessResult(BaseModel):
+    score: float = Field(ge=0, le=100)
+    label: str
+    strengths: list[str]
+    priorities: list[str]
+
+
+class Roadmap(BaseModel):
+    headline: str
+    skill_gaps: list[str]
+    weekly_actions: list[str]
+
+
+class CohortInsight(BaseModel):
+    headline: str
+    summary: str
+    actions: list[str]
+
+
+class ResumeFeedback(BaseModel):
+    score: int = Field(ge=0, le=100)
+    verdict: str
+    strengths: list[str]
+    improvements: list[str]
+    ats_keywords: list[str]
+    formatting_tips: list[str]
+
+
+def readiness_score(profile: StudentProfile) -> ReadinessResult:
+    """Return a validated placement score for UI, API, or an AI agent caller."""
+    try:
+        model, features = train_model()
+        values = pd.DataFrame([[profile.cgpa, profile.backlogs, profile.internships, profile.communication, profile.coding]], columns=features)
+        score = float(model.predict_proba(values)[0][1] * 100)
+    except Exception:
+        score = max(0, min(100, profile.cgpa * 5 + profile.internships * 6 + profile.communication * 2.5 + profile.coding * 3 - profile.backlogs * 7))
+    strengths = (["Academic consistency"] if profile.cgpa >= 7 else []) + (["Practical exposure"] if profile.internships else [])
+    priorities = (["Raise CGPA above 7.0"] if profile.cgpa < 7 else []) + (["Build internship or project experience"] if not profile.internships else [])
+    priorities += (["Practice DSA consistently"] if profile.coding < 7 else []) + (["Practice weekly mock interviews"] if profile.communication < 7 else []) + (["Clear active backlogs"] if profile.backlogs else [])
+    return ReadinessResult(score=round(score, 1), label="Strong" if score >= 75 else "On track" if score >= 55 else "Needs focus", strengths=strengths or ["Clear starting point"], priorities=priorities)
+
+
+def structured_ai(prompt: str, schema: type[BaseModel]) -> BaseModel:
+    """Call flash first, then the stronger fallback, with validated JSON output."""
+    if client is None:
+        raise RuntimeError("Set GEMINI_API_KEY to enable structured AI features.")
+    last_error = None
+    for model_name in dict.fromkeys(GEMINI_MODELS):
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema, temperature=0.3),
+            )
+            parsed = getattr(response, "parsed", None)
+            response_text = response.text or "{}"
+            return schema.model_validate(parsed if parsed is not None else json.loads(response_text))
+        except Exception as error:
+            last_error = error
+    raise RuntimeError(f"AI structured response failed: {last_error}")
+
+
+@st.cache_data(show_spinner=False, ttl=3600)
+def cached_gemini(prompt: str, model_name: str) -> str:
+    """Cache non-streamed Gemini answers so repeated questions avoid API calls."""
+    if client is None:
+        return "⚠️ Gemini is not configured. Add GEMINI_API_KEY in Streamlit Secrets."
+    response = client.models.generate_content(model=model_name, contents=prompt)
+    return (getattr(response, "text", None) or "").strip()
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
@@ -21,11 +104,15 @@ st.set_page_config(
 )
 
 # ---------------- ENV / AI CONFIGURATION ----------------
-load_dotenv()
+# Load secrets beside app.py; support the current nested local copy during migration.
+ENV_FILE = Path(__file__).with_name(".env")
+if not ENV_FILE.exists():
+    ENV_FILE = Path(__file__).parent / "pathfinder-main" / ".env"
+load_dotenv(ENV_FILE)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # Newest-first list; override with GEMINI_MODEL in Streamlit Secrets if needed.
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.7-flash")
-GEMINI_MODELS = [GEMINI_MODEL, "gemini-3.7-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash"]
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODELS = [GEMINI_MODEL, "gemini-2.5-pro"]
 
 try:
     from google import genai
@@ -43,44 +130,63 @@ if GEMINI_API_KEY and genai:
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-:root { --pf-ink:#17233f; --pf-muted:#64748b; --pf-indigo:#4f46e5; --pf-indigo-dark:#3730a3; --pf-blue:#2563eb; --pf-border:rgba(148,163,184,.24); --pf-surface:rgba(255,255,255,.84); }
-html, body, [class*="css"], [data-testid="stAppViewContainer"] { font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+:root { --pf-ink:#17233f; --pf-muted:#475569; --pf-indigo:#4f46e5; --pf-indigo-dark:#3730a3; --pf-blue:#2563eb; --pf-border:rgba(148,163,184,.34); --pf-surface:rgba(255,255,255,.97); }
+/* Keep font rendering crisp across browsers and high-density displays. */
+html, body, [class*="css"], [data-testid="stAppViewContainer"] { font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
 #MainMenu, footer { visibility:hidden; }
-[data-testid="stHeader"] { background:rgba(248,250,252,.72); }
+/* Dashboard: quiet enterprise navy with a low-contrast analytics grid behind content. */
+[data-testid="stHeader"] { background:rgba(8,15,31,.86); }
 .block-container { max-width:1240px; padding:2.4rem 2rem 4rem; }
-body, [data-testid="stAppViewContainer"] { background:#f5f7fb; color:var(--pf-ink); }
-[data-testid="stAppViewContainer"]::before { content:""; position:fixed; inset:0; z-index:-2; pointer-events:none; background:radial-gradient(circle at 6% 4%,rgba(99,102,241,.10),transparent 28%),radial-gradient(circle at 96% 12%,rgba(59,130,246,.09),transparent 26%),radial-gradient(circle at 58% 100%,rgba(129,140,248,.07),transparent 32%),linear-gradient(135deg,#f8fafc 0%,#f4f6fb 54%,#eef3ff 100%); }
-[data-testid="stAppViewContainer"]::after { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.17; background-image:linear-gradient(rgba(79,70,229,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(79,70,229,.045) 1px,transparent 1px); background-size:52px 52px; mask-image:linear-gradient(to bottom,black,transparent 82%); }
-[data-testid="stSidebar"] { background:linear-gradient(180deg,#172554 0%,#1e293b 100%); border-right:1px solid rgba(30,41,59,.18); }
-[data-testid="stSidebar"] * { color:#e2e8f0; }
-[data-testid="stSidebar"] label, [data-testid="stSidebar"] .stMarkdown p { color:#cbd5e1 !important; }
-[data-testid="stSidebar"] [data-baseweb="select"] > div, [data-testid="stSidebar"] input { background:rgba(255,255,255,.10) !important; border-color:rgba(255,255,255,.18) !important; }
-[data-testid="stSidebar"] [data-testid="stSlider"] [role="slider"] { background:#a5b4fc; }
-.hero { padding:28px 32px; border-radius:22px; background:linear-gradient(120deg,rgba(255,255,255,.94),rgba(239,246,255,.84)); border:1px solid rgba(99,102,241,.16); color:var(--pf-ink); margin-bottom:24px; box-shadow:0 16px 42px rgba(30,41,59,.08); }
-.hero h1 { font-size:clamp(28px,4vw,38px); margin:0; font-weight:800; letter-spacing:-.7px; background:linear-gradient(90deg,var(--pf-indigo-dark),var(--pf-blue)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.hero p { font-size:15px; color:var(--pf-muted); margin:8px 0 0; }
-.login-wrap { max-width:520px; margin:7vh auto 0; }
-.login-card { padding:38px; border-radius:24px; background:rgba(255,255,255,.9); border:1px solid var(--pf-border); color:var(--pf-ink); box-shadow:0 22px 60px rgba(30,41,59,.11); }
-.login-card h1 { font-size:36px; margin-bottom:6px; color:var(--pf-indigo-dark); }
-.login-card p { color:var(--pf-muted); }
-.card, [data-testid="stMetric"] { background:var(--pf-surface); border:1px solid var(--pf-border); box-shadow:0 8px 26px rgba(30,41,59,.06); backdrop-filter:blur(12px); }
-.card { border-radius:18px; padding:22px; color:var(--pf-ink); }
+body, [data-testid="stAppViewContainer"] { background:#09111f; color:#e5edf8; }
+[data-testid="stAppViewContainer"]::before { content:""; position:fixed; inset:0; z-index:-2; pointer-events:none; background:radial-gradient(circle at 8% 0%,rgba(37,99,235,.18),transparent 28%),radial-gradient(circle at 92% 18%,rgba(8,145,178,.12),transparent 24%),linear-gradient(145deg,#09111f 0%,#0d1728 54%,#08101d 100%); }
+[data-testid="stAppViewContainer"]::after { content:""; position:fixed; inset:-12%; z-index:-1; pointer-events:none; opacity:.18; background-image:linear-gradient(rgba(96,165,250,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(96,165,250,.12) 1px,transparent 1px),radial-gradient(circle at 26% 24%,rgba(37,99,235,.25),transparent 18%),radial-gradient(circle at 76% 68%,rgba(6,182,212,.18),transparent 18%); background-size:58px 58px,58px 58px,auto,auto; filter:blur(3px); animation:pf-mesh 26s ease-in-out infinite alternate; }
+@keyframes pf-mesh { from { transform:translate3d(-1%, -1%, 0); } to { transform:translate3d(1%, 1%, 0); } }
+/* Login: a separate midnight-blue identity is activated only while .login-screen exists. */
+body:has(.login-screen), body:has(.login-screen) [data-testid="stAppViewContainer"] { background:#050b18; }
+.login-screen { min-height:15vh; position:relative; max-width:620px; margin:6vh auto 1rem; padding:42px 44px; border:1px solid rgba(125,211,252,.22); border-radius:26px; background:rgba(9,21,42,.86); box-shadow:0 28px 90px rgba(0,0,0,.42),0 0 70px rgba(37,99,235,.12); z-index:1; }
+.login-screen::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; background:radial-gradient(circle at 50% 42%,rgba(14,165,233,.16),transparent 22%),linear-gradient(135deg,#040918,#0b1730 52%,#061522); }
+.login-screen::after { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.18; background-image:linear-gradient(115deg,transparent 0 48%,rgba(103,232,249,.28) 49%,transparent 50%),linear-gradient(25deg,transparent 0 64%,rgba(96,165,250,.25) 65%,transparent 66%); background-size:280px 240px,340px 280px; animation:pf-network 28s linear infinite; }
+@keyframes pf-network { to { background-position:280px 240px,-340px 280px; } }
+.login-screen h1 { margin:0; color:#f8fbff; font-size:clamp(2rem,5vw,3.25rem); letter-spacing:.16em; font-weight:800; }
+.login-screen p { color:#a9c4df; margin:.75rem 0 0; font-size:1rem; }
+.login-wrap { max-width:520px; margin:0 auto; }
+.login-card { padding:0 44px 34px; border-radius:0 0 26px 26px; background:rgba(9,21,42,.96); border:1px solid rgba(125,211,252,.22); border-top:0; color:#e6f2ff; box-shadow:0 28px 90px rgba(0,0,0,.42); }
+.login-card h1 { color:#eff8ff; }
+.login-card p { color:#a9c4df; }
+[data-testid="stSidebar"] { background:linear-gradient(180deg,#071426 0%,#0b1728 100%); border-right:1px solid rgba(96,165,250,.18); }
+[data-testid="stSidebar"] * { color:#dbeafe; }
+[data-testid="stSidebar"] label, [data-testid="stSidebar"] .stMarkdown p { color:#a9bfd8 !important; }
+[data-testid="stSidebar"] [data-baseweb="select"] > div, [data-testid="stSidebar"] input { background:rgba(15,31,54,.96) !important; border-color:rgba(96,165,250,.25) !important; }
+[data-testid="stSidebar"] [data-testid="stSlider"] [role="slider"] { background:#60a5fa; }
+.hero { padding:28px 32px; border-radius:20px; background:rgba(13,29,50,.96); border:1px solid rgba(96,165,250,.22); color:#e5edf8; margin-bottom:24px; box-shadow:0 18px 46px rgba(0,0,0,.22); }
+.hero h1 { font-size:clamp(28px,4vw,38px); margin:0; font-weight:800; letter-spacing:.12em; color:#f8fbff; }
+.hero p { font-size:15px; color:#a9bfd8; margin:8px 0 0; }
+/* Opaque text surfaces prevent backdrop-filter text blur while retaining a premium card look. */
+.card, [data-testid="stMetric"] { position:relative; isolation:isolate; background:rgba(13,29,50,.96); border:1px solid rgba(96,165,250,.2); box-shadow:0 10px 28px rgba(0,0,0,.2); color:#e5edf8; }
+.card { border-radius:18px; padding:22px; }
 [data-testid="stMetric"] { border-radius:16px; padding:16px 18px; }
-[data-testid="stMetricLabel"] { color:var(--pf-muted) !important; font-weight:600 !important; font-size:12px !important; }
-[data-testid="stMetricValue"] { color:var(--pf-ink) !important; font-weight:800 !important; font-size:25px !important; }
-.stTextInput input, .stTextArea textarea, [data-baseweb="select"] > div, [data-testid="stNumberInput"] input, [data-testid="stFileUploaderDropzone"] { background:rgba(255,255,255,.88) !important; color:var(--pf-ink) !important; border:1px solid var(--pf-border) !important; border-radius:12px !important; }
-.stTextInput input:focus, .stTextArea textarea:focus, [data-testid="stNumberInput"] input:focus { border-color:rgba(79,70,229,.62) !important; box-shadow:0 0 0 3px rgba(79,70,229,.10) !important; }
+[data-testid="stMetricLabel"] { color:#a9bfd8 !important; font-weight:600 !important; font-size:12px !important; }
+[data-testid="stMetricValue"] { color:#f3f8ff !important; font-weight:800 !important; font-size:25px !important; }
+.card::before, [data-testid="stMetric"]::before { content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; background:linear-gradient(135deg,rgba(18,40,67,.98),rgba(10,24,43,.98)); }
+.stTextInput input, .stTextArea textarea, [data-baseweb="select"] > div, [data-testid="stNumberInput"] input, [data-testid="stFileUploaderDropzone"] { background:rgba(10,24,43,.96) !important; color:#e5edf8 !important; border:1px solid rgba(96,165,250,.24) !important; border-radius:12px !important; }
+.stTextInput input:focus, .stTextArea textarea:focus, [data-testid="stNumberInput"] input:focus { border-color:rgba(96,165,250,.85) !important; box-shadow:0 0 0 3px rgba(37,99,235,.18) !important; }
 [data-testid="stSlider"] [role="slider"] { background:var(--pf-indigo); }
-.stButton > button { border-radius:11px; min-height:42px; padding:0 16px; font-weight:700; border:1px solid rgba(79,70,229,.18); color:var(--pf-indigo-dark); background:rgba(255,255,255,.9); transition:transform .18s ease,box-shadow .18s ease,background .18s ease; }
-.stButton > button:hover { transform:translateY(-1px); box-shadow:0 7px 18px rgba(79,70,229,.14); background:#eef2ff; }
-.stButton > button[kind="primary"] { color:white; background:linear-gradient(135deg,var(--pf-indigo),var(--pf-blue)); border:none; }
+.stButton > button { border-radius:11px; min-height:42px; padding:0 16px; font-weight:700; border:1px solid rgba(96,165,250,.3); color:#dbeafe; background:rgba(18,40,67,.98); transition:transform .18s ease,box-shadow .18s ease,background .18s ease; }
+.stButton > button:hover { transform:translateY(-1px); box-shadow:0 7px 18px rgba(37,99,235,.24); background:#17385e; }
+.stButton > button[kind="primary"] { color:white; background:linear-gradient(135deg,#2563eb,#0891b2); border:none; }
 .stButton > button[kind="primary"]:hover { background:linear-gradient(135deg,var(--pf-indigo-dark),#1d4ed8); }
-h1, h2, h3 { color:var(--pf-ink); letter-spacing:-.25px; }
-[data-testid="stCaptionContainer"], .stCaption { color:var(--pf-muted) !important; }
-[data-testid="stAlert"] { border-radius:13px; border:1px solid var(--pf-border); }
+h1, h2, h3 { color:#f3f8ff; letter-spacing:-.25px; }
+.pf-gauge { width:100%; height:14px; margin:10px 0 18px; border-radius:999px; overflow:hidden; background:#e2e8f0; box-shadow:inset 0 1px 3px rgba(15,23,42,.12); }
+.pf-gauge-fill { height:100%; border-radius:inherit; background:linear-gradient(90deg,#4f46e5,#0ea5e9,#14b8a6); transform-origin:left; animation:pf-gauge-fill 1.1s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes pf-gauge-fill { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+[data-testid="stDataFrame"], [data-testid="stArrowVegaLiteChart"] { animation:pf-chart-in .7s ease both; }
+@keyframes pf-chart-in { from { opacity:0; transform:translateY(12px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+[data-testid="stCaptionContainer"], .stCaption { color:#a9bfd8 !important; }
+[data-testid="stAlert"] { border-radius:13px; border:1px solid rgba(96,165,250,.24); }
 .stTabs [data-baseweb="tab-list"] { gap:6px; border-bottom:1px solid var(--pf-border); }
-.stTabs [data-baseweb="tab"] { color:var(--pf-muted); padding:10px 16px; }
-.stTabs [aria-selected="true"] { color:var(--pf-indigo-dark) !important; }
+.stTabs [data-baseweb="tab"] { color:#a9bfd8; padding:10px 16px; }
+.stTabs [aria-selected="true"] { color:#93c5fd !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 @media (max-width:768px) { .block-container { padding:1.2rem 1rem 3rem; } .hero { padding:22px; border-radius:18px; } .login-card { padding:26px 20px; } [data-testid="stMetricValue"] { font-size:21px !important; } }
 </style>
 """, unsafe_allow_html=True)
@@ -90,7 +196,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    st.markdown('<div class="login-wrap"><div class="login-card"><h1>🎓 Pathfinder</h1><p>AI-Powered Placement Readiness & Career Intelligence</p></div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="login-screen"><h1>PATHFINDER</h1><p>AI-Powered Placement & Career Intelligence Platform</p></div><div class="login-wrap"><div class="login-card">', unsafe_allow_html=True)
     st.write("")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -105,61 +211,43 @@ if not st.session_state.logged_in:
             else:
                 st.error("Please enter your username and password.")
         st.caption("Demo access: any username & password are accepted for testing.")
+    st.markdown('</div></div>', unsafe_allow_html=True)
     st.stop()
 
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
-def ask_gemini(prompt, retries=2):
-    """Call Gemini with current models first and return an actionable error."""
+def ask_gemini(prompt, retries=1, stream=False):
+    """Use cached full responses or stream a new flash-tier response progressively."""
     if not GEMINI_API_KEY:
-        return "⚠️ AI is not configured yet. Add `GEMINI_API_KEY` under Streamlit Cloud → Settings → Secrets, then reboot the app."
+        return iter(["⚠️ AI is not configured yet. Add `GEMINI_API_KEY` under Streamlit Cloud → Settings → Secrets, then reboot the app."]) if stream else "⚠️ AI is not configured yet. Add `GEMINI_API_KEY` under Streamlit Cloud → Settings → Secrets, then reboot the app."
     if client is None:
-        return "⚠️ The Gemini SDK could not initialize. Confirm `google-genai` is installed and reboot the Streamlit app."
-    last_error = None
-    for model_name in dict.fromkeys(GEMINI_MODELS):
-        for attempt in range(retries):
-            try:
-                response = client.models.generate_content(model=model_name, contents=prompt)
-                answer = getattr(response, "text", None)
-                if answer and answer.strip():
-                    return answer.strip()
-                last_error = f"{model_name} returned an empty response"
-                break
-            except Exception as exc:
-                last_error = exc
-                error_text = str(exc).lower()
-                if any(token in error_text for token in ("not found", "404", "unsupported", "permission")):
-                    break
-                if attempt < retries - 1:
-                    time.sleep(1.0)
-    return f"⚠️ AI could not respond. Check that your Gemini API key is valid and that the Generative Language API is enabled. Technical detail: {last_error}"
+        return iter(["⚠️ The Gemini SDK could not initialize. Confirm `google-genai` is installed and reboot the Streamlit app."]) if stream else "⚠️ The Gemini SDK could not initialize. Confirm `google-genai` is installed and reboot the Streamlit app."
+    cache_key = f"{GEMINI_MODEL}:{prompt}"
+    if stream and cache_key in st.session_state.get("answer_cache", {}):
+        return iter([st.session_state["answer_cache"][cache_key]])
+    if not stream:
+        return cached_gemini(prompt, GEMINI_MODEL)
 
-def ask_gemini_chat(messages, retries=2):
-    """Call the strongest configured Gemini model with a bounded chat history."""
-    if not GEMINI_API_KEY:
-        return "⚠️ AI is not configured yet. Add `GEMINI_API_KEY` under Streamlit Cloud → Settings → Secrets, then reboot the app."
-    if client is None:
-        return "⚠️ The Gemini SDK could not initialize. Confirm `google-genai` is installed and reboot the Streamlit app."
-    transcript = "\n\n".join(
-        f"{message['role'].upper()}: {message['content']}" for message in messages
-    )
-    last_error = None
-    for model_name in dict.fromkeys(GEMINI_MODELS):
-        for attempt in range(retries):
-            try:
-                response = client.models.generate_content(model=model_name, contents=transcript)
-                answer = getattr(response, "text", None)
-                if answer and answer.strip():
-                    return answer.strip()
-                last_error = f"{model_name} returned an empty response"
-                break
-            except Exception as exc:
-                last_error = exc
-                error_text = str(exc).lower()
-                if any(token in error_text for token in ("not found", "404", "unsupported", "permission")):
-                    break
-                if attempt < retries - 1:
-                    time.sleep(1.0)
-    return f"⚠️ AI could not respond. Check your Gemini API key and enabled API access. Technical detail: {last_error}"
+    def response_stream():
+        last_error = None
+        for model_name in dict.fromkeys(GEMINI_MODELS):
+            for attempt in range(retries):
+                try:
+                    response = client.models.generate_content_stream(model=model_name, contents=prompt)  # type: ignore[union-attr]
+                    chunks = []
+                    for chunk in response:
+                        text = getattr(chunk, "text", None)
+                        if text:
+                            chunks.append(text)
+                            yield text
+                    st.session_state.setdefault("answer_cache", {})[cache_key] = "".join(chunks)
+                    return
+                except Exception as exc:
+                    last_error = exc
+                    if attempt < retries - 1:
+                        time.sleep(0.4)
+        yield f"⚠️ AI could not respond. Check your Gemini API key and Generative Language API. Technical detail: {last_error}"
+
+    return response_stream()
 
 # ---------------- DATA & MODEL ----------------
 DATA_FILE = Path(__file__).parent / "sample-placement-2024-2026.csv"
@@ -178,13 +266,15 @@ def train_model():
     students_file = Path(__file__).parent / "students.csv"
     if not students_file.exists():
         students_file = DATA_FILE
-
+    
     training = pd.read_csv(students_file)
-    training = training.rename(columns={
+    # Align column names if needed
+    col_map = {
         "communicationScore": "communication_score",
-        "codingScore": "coding_score",
-    })
-
+        "codingScore": "coding_score"
+    }
+    training = training.rename(columns=col_map)
+    
     model = RandomForestClassifier(n_estimators=120, random_state=42)
     model.fit(training[features], training["placed"])
     return model, features
@@ -216,7 +306,7 @@ def pdf_report(data, filters):
         Paragraph("Filters: " + " | ".join(f"{key}: {value}" for key, value in filters.items()), styles["Normal"]),
         Spacer(1, 10),
         Paragraph(f"Records: {len(data)} | Placement rate: {data['placed'].mean() * 100:.1f}%" if len(data) else "Records: 0", styles["Normal"]),
-        Spacer(1, 12),
+        Spacer(1, 12)
     ]
     table_data = [["Year", "Course", "Gender", "Skill", "Outcome"]] + data[["year", "branch", "gender", "skillCategory", "placed_label"]].head(150).astype(str).values.tolist()
     table = Table(table_data, repeatRows=1)
@@ -225,9 +315,28 @@ def pdf_report(data, filters):
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
         ("GRID", (0, 0), (-1, -1), 0.3, colors.grey),
         ("FONTSIZE", (0, 0), (-1, -1), 8),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("VALIGN", (0, 0), (-1, -1), "TOP")
     ]))
     story.append(table)
+    doc.build(story)
+    return output.getvalue()
+
+
+def extract_resume_text(uploaded_file) -> str:
+    """Extract readable text from an uploaded PDF without writing it to disk."""
+    reader = PdfReader(BytesIO(uploaded_file.getvalue()))
+    return "\n".join(page.extract_text() or "" for page in reader.pages).strip()
+
+
+def resume_feedback_pdf(feedback: ResumeFeedback) -> bytes:
+    output = BytesIO()
+    doc = SimpleDocTemplate(output, pagesize=letter, rightMargin=42, leftMargin=42, topMargin=42, bottomMargin=42)
+    styles = getSampleStyleSheet()
+    story = [Paragraph("Pathfinder Resume Feedback", styles["Title"]), Spacer(1, 12), Paragraph(f"Score: {feedback.score}/100", styles["Heading2"]), Paragraph(feedback.verdict, styles["Normal"]), Spacer(1, 10)]
+    for title, items in (("Strengths", feedback.strengths), ("Gaps and improvements", feedback.improvements), ("ATS keyword suggestions", feedback.ats_keywords), ("Formatting tips", feedback.formatting_tips)):
+        story.append(Paragraph(title, styles["Heading3"]))
+        story.extend(Paragraph(f"- {item}", styles["Normal"]) for item in items)
+        story.append(Spacer(1, 7))
     doc.build(story)
     return output.getvalue()
 
@@ -273,6 +382,7 @@ k3.metric("💼 Internships", internships)
 k4.metric("💻 Coding Score", f"{coding}/10")
 
 if chance is not None:
+    st.markdown(f'<div class="pf-gauge" aria-label="Placement probability {chance:.1f} percent"><div class="pf-gauge-fill" style="width:{max(0, min(100, chance)):.1f}%"></div></div>', unsafe_allow_html=True)
     if chance >= 75:
         st.success("🟢 **Strong Candidate Profile**: High probability of clearing tier-1 company cutoffs. Focus on system design and behavioral rounds.")
     elif chance >= 55:
@@ -280,94 +390,84 @@ if chance is not None:
     else:
         st.error("🔴 **Needs Focus**: Urgent focus needed on academic eligibility and practical software development internships.")
 
-# ---------------- MULTILINGUAL GENERAL AI AGENT ----------------
+profile = StudentProfile(cgpa=cgpa, backlogs=backlogs, internships=internships, communication=communication, coding=coding)
+st.subheader("🧭 Personalized AI Studio")
+studio_left, studio_right = st.columns(2)
+with studio_left:
+    if st.button("Generate weekly improvement roadmap", use_container_width=True):
+        with st.spinner("Building your roadmap..."):
+            try:
+                st.session_state["roadmap"] = structured_ai(f"Create a practical 6-week placement roadmap for this student profile: {profile.model_dump_json()}. Include a headline, skill gaps, and measurable weekly actions focused on Python, data science, AI/ML, projects, and interview preparation.", Roadmap)
+            except Exception as error:
+                st.error(str(error))
+    if "roadmap" in st.session_state:
+        roadmap = st.session_state["roadmap"]
+        st.info(roadmap.headline)
+        st.write("**Skill gaps:** " + ", ".join(roadmap.skill_gaps))
+        st.write("**Weekly actions:**")
+        st.write("\n".join(f"- {action}" for action in roadmap.weekly_actions))
+with studio_right:
+    st.markdown("#### 📄 Upload Resume")
+    uploaded_resume = st.file_uploader("Upload your PDF resume", type=["pdf"], help="Your resume is read in memory for feedback and is not saved by Pathfinder.")
+    resume_material = st.text_area("Resume or interview answer for AI feedback", placeholder="Paste a project summary, resume section, or interview answer...")
+    if st.button("Generate tailored feedback", use_container_width=True):
+        if uploaded_resume is not None:
+            try:
+                resume_material = extract_resume_text(uploaded_resume)
+            except Exception as error:
+                st.error(f"Could not read that PDF: {error}")
+                resume_material = ""
+        if resume_material.strip():
+            with st.spinner("Reviewing your material..."):
+                try:
+                    st.session_state["feedback"] = structured_ai(f"Review this resume or interview material for placement readiness. Profile: {profile.model_dump_json()} Material: {resume_material[:18000]}. Return a score, verdict, strengths, gaps, ATS keyword suggestions, and formatting tips.", ResumeFeedback)
+                except Exception as error:
+                    st.error(str(error))
+        else:
+            st.warning("Paste some material first.")
+    if "feedback" in st.session_state:
+        feedback = st.session_state["feedback"]
+        st.metric("AI feedback score", f"{feedback.score}/100")
+        st.write(feedback.verdict)
+        st.write("**Strengths:** " + ", ".join(feedback.strengths))
+        st.write("**Improvements:** " + ", ".join(feedback.improvements))
+        st.write("**ATS keywords:** " + ", ".join(feedback.ats_keywords))
+        st.write("**Formatting tips:** " + " | ".join(feedback.formatting_tips))
+        st.download_button("Download feedback PDF", resume_feedback_pdf(feedback), "pathfinder-resume-feedback.pdf", "application/pdf", use_container_width=True)
+
+# ---------------- AI CAREER ASSISTANT ----------------
 st.divider()
-st.header("🤖 Pathfinder AI Agent")
-st.caption("Friendly, advanced English + తెలుగు assistant. Ask anything, or use it as your personal placement and career coach.")
-
-if "agent_messages" not in st.session_state:
-    st.session_state.agent_messages = []
-if "agent_language" not in st.session_state:
-    st.session_state.agent_language = "Auto-detect"
-
-agent_left, agent_right = st.columns([4, 1])
-with agent_left:
-    language_options = ["Auto-detect", "English", "తెలుగు (Telugu)", "English + తెలుగు"]
-    language = st.selectbox(
-        "Response language",
-        language_options,
-        index=language_options.index(st.session_state.agent_language),
-        help="Auto-detect follows your message. You can force Telugu or bilingual replies at any time.",
-    )
-    st.session_state.agent_language = language
-with agent_right:
-    st.write("")
-    if st.button("🧹 Clear chat", use_container_width=True):
-        st.session_state.agent_messages = []
-        st.rerun()
+st.header("🤖 AI Placement Mentor")
+st.caption("Powered by the latest available Gemini model — tailored to your profile.")
 
 prompt_suggestions = [
-    "Create a practical 30-day plan for my goals",
-    "Explain this topic simply in Telugu and English",
-    "Help me compare two career or study options",
+    "How can I raise my chance to 85%+?",
+    "Top 5 DSA patterns for campus placement rounds",
+    "STAR format answer for 'Describe a challenging bug'",
 ]
-suggestion_cols = st.columns(len(prompt_suggestions))
-for i, suggestion in enumerate(prompt_suggestions):
-    if suggestion_cols[i].button(f"💡 {suggestion}", use_container_width=True):
-        st.session_state.agent_pending_prompt = suggestion
+cols = st.columns(len(prompt_suggestions))
+for i, ps in enumerate(prompt_suggestions):
+    if cols[i].button(f"💡 {ps}", use_container_width=True):
+        st.session_state["selected_prompt"] = ps
 
-for message in st.session_state.agent_messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+selected_prompt = st.session_state.get("selected_prompt", "")
+question = st.text_area("Ask a placement question", value=selected_prompt, placeholder="Example: What are the best projects for an SDE placement?", key="career_question")
 
-pending_prompt = st.session_state.pop("agent_pending_prompt", "")
-with st.form("agent_chat_form", clear_on_submit=True):
-    user_message = st.text_area(
-        "Type your message",
-        placeholder="Ask anything in English or తెలుగు…",
-        height=90,
-        help="Write your question here, then press the button to send it to Pathfinder AI Agent.",
-    )
-    send_message = st.form_submit_button("🚀 Send message", use_container_width=True)
-
-if pending_prompt and not user_message:
-    user_message = pending_prompt
-
-if (send_message or pending_prompt) and user_message and user_message.strip():
-    user_message = user_message.strip()
-    st.session_state.agent_messages.append({"role": "user", "content": user_message})
-    chance_text = f"{chance:.1f}%" if chance is not None else "not calculated"
-    profile_context = f"""
-CURRENT PATHFINDER PROFILE (use only when relevant):
-- CGPA: {cgpa}/10
-- Active backlogs: {backlogs}
-- Internships: {internships}
-- Communication confidence: {communication}/10
-- Coding and DSA confidence: {coding}/10
-- Calculated placement probability: {chance_text}
-"""
-    language_instruction = {
-        "Auto-detect": "Detect the user's language and reply in that language. If they mix Telugu and English, naturally mirror the mix.",
-        "English": "Reply in clear, friendly English.",
-        "తెలుగు (Telugu)": "Reply primarily in natural Telugu. Keep technical names and code keywords in English when that improves clarity.",
-        "English + తెలుగు": "Reply bilingually: give the main answer in clear English, followed by a concise natural Telugu explanation.",
-    }[language]
-    system_prompt = f"""You are Pathfinder AI Agent, a friendly, highly capable general-purpose assistant.
-You can explain concepts, brainstorm, plan, summarize, tutor, review text, help with coding, and coach career or placement goals.
-Be warm, practical, honest about uncertainty, and proactive. Ask a short clarifying question only when it is genuinely needed.
-Use headings, bullets, examples, and step-by-step guidance when helpful. Never claim to have performed an external action unless you actually did it.
-{language_instruction}
-{profile_context}
-"""
-    api_messages = [{"role": "system", "content": system_prompt}] + [
-        {"role": item["role"], "content": item["content"]}
-        for item in st.session_state.agent_messages[-12:]
-    ]
-    with st.chat_message("assistant"):
-        with st.spinner("🤖 Thinking… / ఆలోచిస్తున్నాను…"):
-            answer = ask_gemini_chat(api_messages)
-        st.markdown(answer)
-    st.session_state.agent_messages.append({"role": "assistant", "content": answer})
+if st.button("✨ Ask AI Coach", type="primary"):
+    question = question or ""
+    if question.strip():
+        prompt = f"""You are Pathfinder AI, an expert engineering placement mentor for BTech students.
+Profile: CGPA {cgpa}, backlogs {backlogs}, internships {internships}, communication {communication}/10, coding {coding}/10.
+Question: {question}
+    Format the response with a short markdown heading, bold key terms, and concise bullet points.
+    Keep it encouraging, actionable, and specific with concrete examples."""
+        with st.spinner("🤖 Gemini AI is generating your response..."):
+            answer = st.write_stream(ask_gemini(prompt, stream=True))
+        st.markdown("### 💡 Guidance")
+        if not answer:
+            st.warning("Gemini returned an empty response. Try again.")
+    else:
+        st.warning("Please type a question or choose a prompt starter.")
 
 # ---------------- PLACEMENT ANALYTICS ----------------
 st.divider()
@@ -388,6 +488,18 @@ if not data.empty:
     m3.metric("Selected Skill Domain", skill)
 
     if not filtered.empty:
+        if st.button("Summarize this cohort with AI", use_container_width=True):
+            with st.spinner("Summarizing cohort signals..."):
+                try:
+                    summary = filtered[["placed", "cgpa", "codingScore", "communicationScore", "internships"]].describe().fillna(0).to_json()
+                    st.session_state["cohort_insight"] = structured_ai(f"Summarize this placement cohort in plain language for students. Aggregate data: {summary}. Return a headline, evidence-based summary, and practical actions.", CohortInsight)
+                except Exception as error:
+                    st.error(str(error))
+        if "cohort_insight" in st.session_state:
+            insight = st.session_state["cohort_insight"]
+            st.info(insight.headline)
+            st.write(insight.summary)
+            st.write("**Actions:** " + " | ".join(insight.actions))
         left, right = st.columns(2)
         with left:
             st.subheader("Branch Placement Rates")
