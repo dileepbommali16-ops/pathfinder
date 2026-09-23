@@ -28,6 +28,17 @@ OPENROUTER_MODEL = "openrouter/free"
 
 If Gemini quota is exhausted, the app automatically tries OpenRouter's free router. If both keys are absent or unavailable, the built-in offline coach still returns placement guidance instead of an error. OpenRouter requires its own free API key; it cannot be inferred from the Gemini key.
 
+### Optional secure login secrets
+
+The login screen supports `[auth].users` in Streamlit Secrets. Values use the format `sha256$salt$hash`, where `hash` is the SHA-256 hexadecimal digest of `salt:password`. Do not commit passwords or API keys. When no `[auth].users` mapping exists, the app remains in demo mode and accepts any non-empty sign-in details; guest mode is limited to three AI messages per session.
+
+```toml
+[auth.users]
+student@example.com = "sha256$change-this-salt$paste-the-sha256-of-salt-colon-password"
+```
+
+For a real deployment, generate the digest locally, paste only the resulting `sha256$salt$hash` value into Streamlit Cloud Secrets, and rotate it if the account is shared.
+
 ## Architecture
 
 - **UI Framework**: Modern Jetpack Compose with Material Design 3 (M3).

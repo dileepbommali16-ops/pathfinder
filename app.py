@@ -1,6 +1,8 @@
 import os
 import json
 import re
+import hashlib
+import hmac
 import time
 import urllib.error
 import urllib.request
@@ -296,6 +298,24 @@ GEMINI_MODELS = list(dict.fromkeys([
     "gemini-2.0-flash-lite",
 ]))
 
+
+def verify_configured_user(username: str, password: str) -> bool:
+    """Verify a salted sha256 secret; keep demo mode when no auth secrets exist."""
+    try:
+        auth = st.secrets.get("auth", {})
+        users = auth.get("users", {}) if hasattr(auth, "get") else {}
+        stored = users.get(username) if hasattr(users, "get") else None
+    except Exception:
+        stored = None
+    if not stored:
+        return bool(username.strip() and password.strip())
+    parts = str(stored).split("$", 2)
+    if len(parts) != 3 or parts[0] != "sha256":
+        return False
+    salt, expected = parts[1], parts[2]
+    actual = hashlib.sha256(f"{salt}:{password}".encode("utf-8")).hexdigest()
+    return hmac.compare_digest(actual, expected)
+
 try:
     from google import genai
 except ImportError:
@@ -456,12 +476,15 @@ body:not(:has(.login-screen)) .stButton > button:active { transform:translateY(1
 .pf-bg-advanced__particle--one { left:22%; top:24%; animation-delay:-2s; }
 .pf-bg-advanced__particle--two { left:78%; top:32%; transform:scale(.7); animation-delay:-7s; }
 .pf-bg-advanced__particle--three { left:66%; top:72%; transform:scale(.55); animation-delay:-10s; }
+.pf-mentor-heading { display:flex; align-items:center; gap:12px; margin-top:4px; }
+.pf-brand-orb { display:inline-block; width:44px; height:44px; flex:none; border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff7ed 0 5%,#fdba74 14%,#fb923c 33%,#c2410c 68%,#431407 100%); box-shadow:0 0 16px rgba(251,146,60,.48),inset -7px -8px 14px rgba(67,20,7,.54); animation:pf-brand-orb-breathe 3.8s ease-in-out infinite; }
+@keyframes pf-brand-orb-breathe { 0%,100% { transform:scale(.94); filter:saturate(.92); } 50% { transform:scale(1.06); filter:saturate(1.18) brightness(1.08); } }
 @keyframes pf-advanced-aurora { from { transform:translate3d(-3%,-2%,0) scale(.94) rotate(-3deg); } to { transform:translate3d(4%,3%,0) scale(1.08) rotate(5deg); } }
 @keyframes pf-advanced-beam { from { opacity:.24; transform:translateX(-4%) rotate(-8deg); } to { opacity:.72; transform:translateX(4%) rotate(-5deg); } }
 @keyframes pf-advanced-grid { to { background-position:72px 72px,72px 72px; } }
 @keyframes pf-advanced-particle { 0%,100% { opacity:0; transform:translate3d(0,16px,0) scale(.5); } 30%,70% { opacity:.72; } 50% { opacity:1; transform:translate3d(18px,-24px,0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { body:not(:has(.login-screen)) .hero, body:not(:has(.login-screen)) [data-testid="stMetric"], body:not(:has(.login-screen)) h2, body:not(:has(.login-screen)) h3, body:not(:has(.login-screen)) [data-testid="stDataFrame"], body:not(:has(.login-screen)) [data-testid="stArrowVegaLiteChart"], body:not(:has(.login-screen)) [data-testid="stPlotlyChart"] { animation:none; } body:not(:has(.login-screen)) [data-testid="stMetric"]::after { display:none; } }
-@media (prefers-reduced-motion: reduce) { .pf-bg-advanced__aurora,.pf-bg-advanced__beam,.pf-bg-advanced__grid,.pf-bg-advanced__particle { animation:none; } }
+@media (prefers-reduced-motion: reduce) { .pf-bg-advanced__aurora,.pf-bg-advanced__beam,.pf-bg-advanced__grid,.pf-bg-advanced__particle,.pf-brand-orb { animation:none; } }
 </style>
 """, unsafe_allow_html=True)
 st.markdown("""
@@ -490,19 +513,34 @@ if "logged_in" not in st.session_state:
 if not st.session_state.logged_in:
     st.markdown('<section class="login-screen"><span class="login-sylva-orb"></span><span class="login-sylva-leaf login-sylva-leaf--one"></span><span class="login-sylva-leaf login-sylva-leaf--two"></span><h1>PATHFINDER</h1><p>AI-Powered Placement &amp; Career Intelligence Platform</p></section>', unsafe_allow_html=True)
     st.markdown('<div class="login-wrap"><div class="login-card">', unsafe_allow_html=True)
-    st.subheader("🔐 Student Login")
-    with st.form("pathfinder_login"):
-        username = st.text_input("Username", placeholder="Enter your student ID or name")
-        password = st.text_input("Password", type="password", placeholder="Enter your password")
-        submitted = st.form_submit_button("🚀 Enter Pathfinder", type="primary", use_container_width=True)
-        if submitted:
-            if username.strip() and password.strip():
-                st.session_state.logged_in = True
-                st.session_state.username = username.strip()
-                st.rerun()
-            else:
-                st.error("Please enter your username and password.")
-    st.caption("Demo access: any username & password are accepted for testing.")
+    st.subheader("🔐 Welcome back")
+    sign_in_tab, create_tab = st.tabs(["Sign in", "Create account"])
+    with sign_in_tab:
+        with st.form("pathfinder_login"):
+            username = st.text_input("Email or student ID", placeholder="you@example.com")
+            password = st.text_input("Password", type="password", placeholder="Enter your password")
+            submitted = st.form_submit_button("🚀 Sign in to Pathfinder", type="primary", use_container_width=True)
+            if submitted:
+                if verify_configured_user(username, password):
+                    st.session_state.logged_in = True
+                    st.session_state.username = username.strip()
+                    st.session_state.guest_mode = False
+                    st.rerun()
+                else:
+                    st.error("That sign-in didn’t work. Please check your details and try again.")
+        forgot_col, guest_col = st.columns(2)
+        if forgot_col.button("Forgot password?", use_container_width=True):
+            st.info("Password recovery is managed by your Pathfinder administrator.")
+        if guest_col.button("Continue as guest", use_container_width=True):
+            st.session_state.logged_in = True
+            st.session_state.username = "Guest student"
+            st.session_state.guest_mode = True
+            st.session_state.guest_ai_uses = 0
+            st.rerun()
+        st.caption("Demo mode: when no [auth].users secret is configured, any non-empty details are accepted.")
+    with create_tab:
+        st.info("Create-account registration is ready for your institution’s auth provider. For now, ask your administrator to add your hashed account under Streamlit Secrets → [auth].users.")
+        st.caption("Your password is never stored in this repository.")
     st.markdown('</div></div>', unsafe_allow_html=True)
     st.stop()
 
@@ -513,6 +551,12 @@ st.markdown('<div class="pf-bg-advanced" aria-hidden="true"><div class="pf-bg-ad
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
 def ask_gemini(prompt, retries=2, stream=False):
     """Use cached full responses or stream a new flash-tier response progressively."""
+    if st.session_state.get("guest_mode"):
+        guest_uses = int(st.session_state.get("guest_ai_uses", 0))
+        if guest_uses >= 3:
+            answer = "You’ve used the three guest AI messages for this session. Sign in to continue our conversation and keep your placement context saved."
+            return iter([answer]) if stream else answer
+        st.session_state["guest_ai_uses"] = guest_uses + 1
     if not GEMINI_API_KEY:
         answer = provider_answer(prompt)
         return iter([answer]) if stream else answer
@@ -752,7 +796,7 @@ with studio_right:
 
 # ---------------- AI CAREER ASSISTANT ----------------
 st.divider()
-st.header("🤖 AI Placement Mentor")
+st.markdown('<div class="pf-mentor-heading"><span class="pf-brand-orb" aria-hidden="true"></span><h2>AI Placement Mentor</h2></div>', unsafe_allow_html=True)
 st.caption("Powered by the latest available Gemini model — tailored to your profile.")
 
 prompt_suggestions = [
