@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import IndustryNewsFeed from "@/components/IndustryNewsFeed";
+import PathfinderAmbientScene from "@/components/PathfinderAmbientScene";
 import {
   Bar,
   BarChart,
@@ -402,12 +403,8 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#090D16] text-white selection:bg-emerald-500/30">
-      {/* Aurora Background Ambient Glows */}
-      <div className="pointer-events-none fixed inset-0 -z-0 opacity-70">
-        <div className="absolute -left-40 top-[-10rem] h-[36rem] w-[36rem] rounded-full bg-emerald-500/10 blur-[120px]" />
-        <div className="absolute right-[-10rem] top-20 h-[32rem] w-[32rem] rounded-full bg-cyan-500/10 blur-[120px]" />
-        <div className="absolute bottom-[-16rem] left-1/3 h-[36rem] w-[36rem] rounded-full bg-violet-500/10 blur-[130px]" />
-      </div>
+      {/* Low-contrast living-green ambience inspired by the SylvaHero brief. */}
+      <PathfinderAmbientScene />
 
       {/* Top Navigation */}
       <nav className="relative z-20 border-b border-slate-800/80 bg-[#090D16]/80 backdrop-blur-xl">

@@ -180,3 +180,101 @@
     }
   }
 }
+
+
+/* Sylva-inspired living-green ambience: decorative only, with low contrast so dashboard content stays crisp. */
+.pathfinder-ambient {
+  isolation: isolate;
+  opacity: 0.76;
+}
+
+.pathfinder-ambient__wash {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(74, 222, 128, 0.12), transparent 28%),
+    radial-gradient(circle at 86% 18%, rgba(34, 211, 238, 0.10), transparent 24%),
+    radial-gradient(circle at 52% 96%, rgba(139, 92, 246, 0.08), transparent 32%);
+}
+
+.pathfinder-ambient__moss {
+  position: absolute;
+  width: min(42vw, 520px);
+  height: min(24vw, 300px);
+  border: 1px solid rgba(134, 239, 172, 0.10);
+  border-radius: 48% 52% 62% 38% / 42% 35% 65% 58%;
+  background: radial-gradient(ellipse at 35% 42%, rgba(74, 222, 128, 0.10), transparent 67%);
+  filter: blur(1px);
+  transform: rotate(-12deg);
+  animation: pathfinder-moss-drift 18s ease-in-out infinite alternate;
+}
+
+.pathfinder-ambient__moss--one {
+  left: -11vw;
+  top: 15vh;
+}
+
+.pathfinder-ambient__moss--two {
+  right: -13vw;
+  bottom: 12vh;
+  transform: rotate(22deg) scale(0.8);
+  animation-delay: -7s;
+}
+
+.pathfinder-ambient__ring {
+  position: absolute;
+  width: min(34vw, 420px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(103, 232, 249, 0.10);
+  border-radius: 50%;
+  transform: rotate(18deg) scaleY(0.22);
+  box-shadow: 0 0 80px rgba(34, 211, 238, 0.08);
+  animation: pathfinder-ring-breathe 12s ease-in-out infinite;
+}
+
+.pathfinder-ambient__ring--one {
+  right: 5vw;
+  top: 8vh;
+}
+
+.pathfinder-ambient__ring--two {
+  left: 23vw;
+  bottom: -18vh;
+  animation-delay: -5s;
+}
+
+.pathfinder-ambient__pollen {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(187, 247, 208, 0.64);
+  box-shadow: 0 0 12px rgba(134, 239, 172, 0.72);
+  animation: pathfinder-pollen-float 9s ease-in-out infinite;
+}
+
+.pathfinder-ambient__pollen--one { left: 23%; top: 28%; animation-delay: -2s; }
+.pathfinder-ambient__pollen--two { left: 72%; top: 34%; animation-delay: -5s; transform: scale(0.72); }
+.pathfinder-ambient__pollen--three { left: 61%; top: 76%; animation-delay: -7s; transform: scale(0.56); }
+
+@keyframes pathfinder-moss-drift {
+  from { transform: translate3d(-1%, -1%, 0) rotate(-12deg); }
+  to { transform: translate3d(2%, 2%, 0) rotate(-8deg) scale(1.03); }
+}
+
+@keyframes pathfinder-ring-breathe {
+  0%, 100% { opacity: 0.42; transform: rotate(18deg) scaleY(0.22) scale(0.96); }
+  50% { opacity: 0.82; transform: rotate(14deg) scaleY(0.22) scale(1.04); }
+}
+
+@keyframes pathfinder-pollen-float {
+  0%, 100% { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.72); }
+  30%, 70% { opacity: 0.72; }
+  50% { transform: translate3d(12px, -18px, 0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pathfinder-ambient__moss,
+  .pathfinder-ambient__ring,
+  .pathfinder-ambient__pollen { animation: none; }
+}
