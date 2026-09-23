@@ -3,6 +3,7 @@ import json
 import re
 import hashlib
 import hmac
+import secrets as py_secrets
 import time
 import urllib.error
 import urllib.request
@@ -301,6 +302,13 @@ GEMINI_MODELS = list(dict.fromkeys([
 
 def verify_configured_user(username: str, password: str) -> bool:
     """Verify a salted sha256 secret; keep demo mode when no auth secrets exist."""
+    local_users = st.session_state.get("local_users", {})
+    stored_local = local_users.get(username) if hasattr(local_users, "get") else None
+    if stored_local:
+        parts = str(stored_local).split("$", 2)
+        if len(parts) == 3 and parts[0] == "sha256":
+            actual = hashlib.sha256(f"{parts[1]}:{password}".encode("utf-8")).hexdigest()
+            return hmac.compare_digest(actual, parts[2])
     try:
         auth = st.secrets.get("auth", {})
         users = auth.get("users", {}) if hasattr(auth, "get") else {}
@@ -315,6 +323,13 @@ def verify_configured_user(username: str, password: str) -> bool:
     salt, expected = parts[1], parts[2]
     actual = hashlib.sha256(f"{salt}:{password}".encode("utf-8")).hexdigest()
     return hmac.compare_digest(actual, expected)
+
+
+def hash_user_password(password: str) -> str:
+    """Create the same salted sha256 format used by configured auth users."""
+    salt = py_secrets.token_hex(16)
+    digest = hashlib.sha256(f"{salt}:{password}".encode("utf-8")).hexdigest()
+    return f"sha256${salt}${digest}"
 
 try:
     from google import genai
@@ -539,8 +554,31 @@ if not st.session_state.logged_in:
             st.rerun()
         st.caption("Demo mode: when no [auth].users secret is configured, any non-empty details are accepted.")
     with create_tab:
-        st.info("Create-account registration is ready for your institution’s auth provider. For now, ask your administrator to add your hashed account under Streamlit Secrets → [auth].users.")
-        st.caption("Your password is never stored in this repository.")
+        with st.form("pathfinder_create_account"):
+            new_email = st.text_input("Email address", placeholder="you@example.com")
+            new_password = st.text_input("Create password", type="password", placeholder="At least 8 characters")
+            confirm_password = st.text_input("Confirm password", type="password", placeholder="Re-enter your password")
+            create_submitted = st.form_submit_button("Create my account", type="primary", use_container_width=True)
+            if create_submitted:
+                if not new_email.strip() or "@" not in new_email:
+                    st.error("Please enter a valid email address.")
+                elif len(new_password) < 8:
+                    st.error("Please use a password with at least 8 characters.")
+                elif new_password != confirm_password:
+                    st.error("The passwords do not match yet.")
+                else:
+                    email_key = new_email.strip().lower()
+                    local_users = st.session_state.setdefault("local_users", {})
+                    if email_key in local_users:
+                        st.error("An account with this email already exists in this session. Please sign in.")
+                    else:
+                        local_users[email_key] = hash_user_password(new_password)
+                        st.session_state.logged_in = True
+                        st.session_state.username = email_key
+                        st.session_state.guest_mode = False
+                        st.success("Account created securely. Welcome to Pathfinder!")
+                        st.rerun()
+        st.caption("For this demo, the account lasts for the current session. Add a hashed [auth].users secret for persistent deployment accounts.")
     st.markdown('</div></div>', unsafe_allow_html=True)
     st.stop()
 
