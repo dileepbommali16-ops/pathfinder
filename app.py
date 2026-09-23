@@ -447,7 +447,21 @@ body:not(:has(.login-screen)) .stButton > button:active { transform:translateY(1
 @keyframes pf-section-reveal { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
 @keyframes pf-chart-reveal { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
 @keyframes pf-metric-shine { 0%,58%,100% { left:-45%; opacity:0; } 68% { opacity:1; } 82% { left:120%; opacity:0; } }
+.pf-bg-advanced { position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; opacity:.72; }
+.pf-bg-advanced__aurora { position:absolute; width:58vw; height:38vw; left:18%; top:8%; border-radius:50%; background:radial-gradient(ellipse at 38% 44%,rgba(34,211,238,.12),transparent 58%),radial-gradient(ellipse at 65% 55%,rgba(16,185,129,.10),transparent 66%); filter:blur(22px); animation:pf-advanced-aurora 19s ease-in-out infinite alternate; }
+.pf-bg-advanced__beam { position:absolute; width:76vw; height:1px; left:12%; top:32%; background:linear-gradient(90deg,transparent,rgba(103,232,249,.28),rgba(52,211,153,.18),transparent); box-shadow:0 0 22px rgba(34,211,238,.20); transform:rotate(-8deg); animation:pf-advanced-beam 11s ease-in-out infinite alternate; }
+.pf-bg-advanced__beam--two { top:66%; transform:rotate(7deg); opacity:.45; animation-delay:-5s; }
+.pf-bg-advanced__grid { position:absolute; inset:0; opacity:.14; background-image:linear-gradient(rgba(103,232,249,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(103,232,249,.16) 1px,transparent 1px); background-size:72px 72px; mask-image:linear-gradient(to bottom,transparent,black 22%,black 72%,transparent); animation:pf-advanced-grid 32s linear infinite; }
+.pf-bg-advanced__particle { position:absolute; width:5px; height:5px; border-radius:50%; background:#a7f3d0; box-shadow:0 0 16px rgba(45,212,191,.75); animation:pf-advanced-particle 12s ease-in-out infinite; }
+.pf-bg-advanced__particle--one { left:22%; top:24%; animation-delay:-2s; }
+.pf-bg-advanced__particle--two { left:78%; top:32%; transform:scale(.7); animation-delay:-7s; }
+.pf-bg-advanced__particle--three { left:66%; top:72%; transform:scale(.55); animation-delay:-10s; }
+@keyframes pf-advanced-aurora { from { transform:translate3d(-3%,-2%,0) scale(.94) rotate(-3deg); } to { transform:translate3d(4%,3%,0) scale(1.08) rotate(5deg); } }
+@keyframes pf-advanced-beam { from { opacity:.24; transform:translateX(-4%) rotate(-8deg); } to { opacity:.72; transform:translateX(4%) rotate(-5deg); } }
+@keyframes pf-advanced-grid { to { background-position:72px 72px,72px 72px; } }
+@keyframes pf-advanced-particle { 0%,100% { opacity:0; transform:translate3d(0,16px,0) scale(.5); } 30%,70% { opacity:.72; } 50% { opacity:1; transform:translate3d(18px,-24px,0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { body:not(:has(.login-screen)) .hero, body:not(:has(.login-screen)) [data-testid="stMetric"], body:not(:has(.login-screen)) h2, body:not(:has(.login-screen)) h3, body:not(:has(.login-screen)) [data-testid="stDataFrame"], body:not(:has(.login-screen)) [data-testid="stArrowVegaLiteChart"], body:not(:has(.login-screen)) [data-testid="stPlotlyChart"] { animation:none; } body:not(:has(.login-screen)) [data-testid="stMetric"]::after { display:none; } }
+@media (prefers-reduced-motion: reduce) { .pf-bg-advanced__aurora,.pf-bg-advanced__beam,.pf-bg-advanced__grid,.pf-bg-advanced__particle { animation:none; } }
 </style>
 """, unsafe_allow_html=True)
 st.markdown("""
@@ -494,6 +508,7 @@ if not st.session_state.logged_in:
 
 # Post-login interface: emerald Data Pixel Arc horizon for the analytics experience.
 st.markdown('<div class="pf-data-arc" aria-hidden="true"><div class="pf-data-arc__band"></div><div class="pf-data-arc__pixels"></div></div>', unsafe_allow_html=True)
+st.markdown('<div class="pf-bg-advanced" aria-hidden="true"><div class="pf-bg-advanced__aurora"></div><div class="pf-bg-advanced__beam"></div><div class="pf-bg-advanced__beam pf-bg-advanced__beam--two"></div><div class="pf-bg-advanced__grid"></div><span class="pf-bg-advanced__particle pf-bg-advanced__particle--one"></span><span class="pf-bg-advanced__particle pf-bg-advanced__particle--two"></span><span class="pf-bg-advanced__particle pf-bg-advanced__particle--three"></span></div>', unsafe_allow_html=True)
 
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
 def ask_gemini(prompt, retries=2, stream=False):
