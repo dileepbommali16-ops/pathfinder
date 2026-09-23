@@ -419,6 +419,22 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------- LOGIN SESSION ----------------
+st.markdown("""
+<style>
+body:not(:has(.login-screen)) .hero { animation:pf-dashboard-rise .72s cubic-bezier(.2,.8,.2,1) both; }
+body:not(:has(.login-screen)) [data-testid="stMetric"] { overflow:hidden; animation:pf-dashboard-rise .62s cubic-bezier(.2,.8,.2,1) both; }
+body:not(:has(.login-screen)) [data-testid="stMetric"]::after { content:""; position:absolute; inset:0 auto 0 -45%; width:34%; pointer-events:none; transform:skewX(-18deg); background:linear-gradient(90deg,transparent,rgba(125,211,252,.14),transparent); animation:pf-metric-shine 5.5s ease-in-out infinite; }
+body:not(:has(.login-screen)) h2, body:not(:has(.login-screen)) h3 { animation:pf-section-reveal .62s ease both; }
+body:not(:has(.login-screen)) [data-testid="stDataFrame"], body:not(:has(.login-screen)) [data-testid="stArrowVegaLiteChart"], body:not(:has(.login-screen)) [data-testid="stPlotlyChart"] { animation:pf-chart-reveal .8s cubic-bezier(.2,.8,.2,1) both; }
+body:not(:has(.login-screen)) .stButton > button { will-change:transform; }
+body:not(:has(.login-screen)) .stButton > button:active { transform:translateY(1px) scale(.985); }
+@keyframes pf-dashboard-rise { from { opacity:0; transform:translateY(14px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes pf-section-reveal { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
+@keyframes pf-chart-reveal { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pf-metric-shine { 0%,58%,100% { left:-45%; opacity:0; } 68% { opacity:1; } 82% { left:120%; opacity:0; } }
+@media (prefers-reduced-motion: reduce) { body:not(:has(.login-screen)) .hero, body:not(:has(.login-screen)) [data-testid="stMetric"], body:not(:has(.login-screen)) h2, body:not(:has(.login-screen)) h3, body:not(:has(.login-screen)) [data-testid="stDataFrame"], body:not(:has(.login-screen)) [data-testid="stArrowVegaLiteChart"], body:not(:has(.login-screen)) [data-testid="stPlotlyChart"] { animation:none; } body:not(:has(.login-screen)) [data-testid="stMetric"]::after { display:none; } }
+</style>
+""", unsafe_allow_html=True)
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
