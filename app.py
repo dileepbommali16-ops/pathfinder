@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import time
 import urllib.error
 import urllib.request
@@ -64,6 +65,19 @@ def quota_error(error: object) -> bool:
 def local_ai_answer(prompt: str) -> str:
     """Provide a warm, conversational answer when the remote model cannot be reached."""
     lower = prompt.lower()
+    user_text = lower.split("question:", 1)[-1].strip() if "question:" in lower else lower
+    topic_words = ("resume", "ats", "dsa", "leetcode", "coding", "interview", "star", "placement", "job", "career", "project", "cgpa", "internship", "company", "role")
+    greeting_words = ("hi", "hii", "hello", "hey", "hola", "good morning", "good afternoon", "good evening")
+    has_greeting = any(re.search(rf"\b{re.escape(word)}\b", user_text) for word in greeting_words)
+    has_topic = any(re.search(rf"\b{re.escape(word)}\b", user_text) for word in topic_words)
+    if has_greeting and not has_topic:
+        return """Hey! Nice to hear from you 🙂
+
+I’m here with you — no need to jump into goals immediately. We can just talk, or you can tell me what’s on your mind. Are you feeling like discussing placements, DSA, your resume, interviews, or something else?"""
+    if any(phrase in user_text for phrase in ("how are you", "how r u", "what's up", "whats up")):
+        return """I’m doing well, thanks for asking 🙂 More importantly, how are you feeling about your placement journey today? You can be completely honest — we can start from wherever you are."""
+    if any(phrase in user_text for phrase in ("thanks", "thank you", "thx")) and not has_topic:
+        return """Anytime — happy to help. You don’t have to figure everything out at once. What would you like to talk about next?"""
     if "resume" in lower or "ats" in lower:
         return """Hey — absolutely, let’s make your resume stronger without making it sound exaggerated.
 
