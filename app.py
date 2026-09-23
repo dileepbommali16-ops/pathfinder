@@ -422,6 +422,7 @@ st.markdown("""
 st.markdown("""
 <style>
 body:not(:has(.login-screen)) .hero { animation:pf-dashboard-rise .72s cubic-bezier(.2,.8,.2,1) both; }
+body:not(:has(.login-screen)) .profile-section-label { margin:18px 0 8px; padding-bottom:6px; border-bottom:1px solid rgba(103,232,249,.18); color:#67e8f9; font-size:10px; font-weight:800; letter-spacing:.16em; }
 body:not(:has(.login-screen)) [data-testid="stMetric"] { overflow:hidden; animation:pf-dashboard-rise .62s cubic-bezier(.2,.8,.2,1) both; }
 body:not(:has(.login-screen)) [data-testid="stMetric"]::after { content:""; position:absolute; inset:0 auto 0 -45%; width:34%; pointer-events:none; transform:skewX(-18deg); background:linear-gradient(90deg,transparent,rgba(125,211,252,.14),transparent); animation:pf-metric-shine 5.5s ease-in-out infinite; }
 body:not(:has(.login-screen)) h2, body:not(:has(.login-screen)) h3 { animation:pf-section-reveal .62s ease both; }
@@ -433,6 +434,26 @@ body:not(:has(.login-screen)) .stButton > button:active { transform:translateY(1
 @keyframes pf-chart-reveal { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
 @keyframes pf-metric-shine { 0%,58%,100% { left:-45%; opacity:0; } 68% { opacity:1; } 82% { left:120%; opacity:0; } }
 @media (prefers-reduced-motion: reduce) { body:not(:has(.login-screen)) .hero, body:not(:has(.login-screen)) [data-testid="stMetric"], body:not(:has(.login-screen)) h2, body:not(:has(.login-screen)) h3, body:not(:has(.login-screen)) [data-testid="stDataFrame"], body:not(:has(.login-screen)) [data-testid="stArrowVegaLiteChart"], body:not(:has(.login-screen)) [data-testid="stPlotlyChart"] { animation:none; } body:not(:has(.login-screen)) [data-testid="stMetric"]::after { display:none; } }
+</style>
+""", unsafe_allow_html=True)
+st.markdown("""
+<style>
+body:has(.login-screen) .block-container { max-width:1000px; padding-top:3.4rem; padding-bottom:3rem; }
+body:has(.login-screen) .login-screen { max-width:760px; margin:1.5vh auto 1.2rem; padding:42px 50px 34px; text-align:center; border-radius:32px; background:linear-gradient(145deg,rgba(14,33,64,.90),rgba(7,18,39,.78)); border:1px solid rgba(125,211,252,.30); box-shadow:0 30px 90px rgba(0,0,0,.48),0 0 80px rgba(34,211,238,.10),inset 0 1px rgba(255,255,255,.10); }
+body:has(.login-screen) .login-screen h1 { font-size:clamp(2.35rem,5vw,4rem); letter-spacing:.20em; text-shadow:0 0 30px rgba(103,232,249,.22); }
+body:has(.login-screen) .login-screen p { max-width:520px; margin:12px auto 0; color:#b9d3e9; font-size:.95rem; }
+body:has(.login-screen) .login-wrap { width:min(100%,760px); max-width:760px; margin:0 auto; }
+body:has(.login-screen) .login-card { width:100%; max-width:760px; padding:0 0 18px; border:0; background:transparent; box-shadow:none; }
+body:has(.login-screen) .login-card h2 { width:min(100%,700px); margin:0 auto 14px; padding-left:4px; color:#f3f9ff; font-size:1.25rem; letter-spacing:-.02em; }
+body:has(.login-screen) [data-testid="stForm"] { width:min(100%,700px); max-width:700px; margin:0 auto; padding:30px 34px 34px; border:1px solid rgba(125,211,252,.24); border-radius:24px; background:linear-gradient(145deg,rgba(13,31,58,.96),rgba(7,19,39,.94)); box-shadow:0 22px 60px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.08); }
+body:has(.login-screen) [data-testid="stForm"] label { color:#c9dff1 !important; font-size:.84rem; font-weight:700; letter-spacing:.01em; }
+body:has(.login-screen) [data-testid="stForm"] input { height:52px; color:#f5fbff !important; background:rgba(7,20,40,.94) !important; border:1px solid rgba(125,211,252,.26) !important; border-radius:14px !important; font-size:.94rem; }
+body:has(.login-screen) [data-testid="stForm"] input::placeholder { color:#7190aa !important; opacity:1; }
+body:has(.login-screen) [data-testid="stForm"] input:focus { border-color:#67e8f9 !important; box-shadow:0 0 0 3px rgba(34,211,238,.13),0 0 24px rgba(34,211,238,.10) !important; }
+body:has(.login-screen) [data-testid="stForm"] .stButton > button { min-height:52px; margin-top:10px; border:0; border-radius:14px; color:#04131d; background:linear-gradient(135deg,#86efac 0%,#22d3ee 52%,#60a5fa 100%); box-shadow:0 12px 28px rgba(34,211,238,.20),inset 0 1px rgba(255,255,255,.55); font-size:.95rem; font-weight:800; }
+body:has(.login-screen) [data-testid="stForm"] .stButton > button:hover { color:#021019; background:linear-gradient(135deg,#bbf7d0 0%,#67e8f9 52%,#93c5fd 100%); box-shadow:0 16px 34px rgba(34,211,238,.30); transform:translateY(-2px); }
+body:has(.login-screen) .login-card [data-testid="stCaptionContainer"] { width:min(100%,700px); margin:10px auto 0; text-align:center; color:#86a7c2 !important; }
+@media (max-width:768px) { body:has(.login-screen) .block-container { padding:1.4rem 1rem 2.5rem; } body:has(.login-screen) .login-screen { padding:32px 22px 27px; border-radius:25px; } body:has(.login-screen) [data-testid="stForm"] { padding:24px 18px 26px; } }
 </style>
 """, unsafe_allow_html=True)
 if "logged_in" not in st.session_state:
@@ -612,9 +633,18 @@ data = load_data()
 
 # ---------------- SIDEBAR PROFILE ----------------
 st.sidebar.header("🎯 Candidate Profile")
+st.sidebar.caption("Build a more accurate placement plan by completing your profile.")
+st.sidebar.markdown("<div class='profile-section-label'>ACADEMIC DETAILS</div>", unsafe_allow_html=True)
+graduation_year = st.sidebar.selectbox("Graduation Year", [2026, 2027, 2025, 2024], index=0)
+student_branch = st.sidebar.selectbox("Branch / Course", ["CSE", "AIML", "IT", "ECE", "EEE", "CSD", "Other"], index=0)
 cgpa = st.sidebar.slider("Cumulative CGPA", 4.0, 10.0, 7.5, 0.1)
 backlogs = st.sidebar.number_input("Active Backlogs", 0, 10, 0, 1)
 internships = st.sidebar.slider("Internships Completed", 0, 5, 1)
+st.sidebar.markdown("<div class='profile-section-label'>CAREER TARGET</div>", unsafe_allow_html=True)
+target_role = st.sidebar.selectbox("Target Role", ["Software Engineer", "Data Analyst", "Data Scientist", "QA Engineer", "Product / Business Analyst", "Cloud / DevOps Engineer"], index=0)
+target_tier = st.sidebar.selectbox("Target Company Tier", ["Any good opportunity", "Product companies", "Service companies", "Startups", "Top-tier / FAANG"], index=0)
+preferred_mode = st.sidebar.selectbox("Preferred Work Mode", ["Open to all", "On-site", "Hybrid", "Remote"], index=0)
+st.sidebar.markdown("<div class='profile-section-label'>SKILL CONFIDENCE</div>", unsafe_allow_html=True)
 communication = st.sidebar.slider("Communication Confidence", 1, 10, 7)
 coding = st.sidebar.slider("Coding & DSA Confidence", 1, 10, 7)
 
@@ -713,7 +743,7 @@ if st.button("✨ Ask AI Coach", type="primary"):
     question = question or ""
     if question.strip():
         prompt = f"""You are Pathfinder AI, the student's friendly placement buddy. Speak naturally, like a caring senior who listens first and wants the student to succeed — never like a textbook, form, or support bot. Begin by acknowledging the student's question or concern. Personalize the answer using the profile below, give only the most useful one or two next steps, use a small concrete example when helpful, and finish with one natural follow-up question. Match English, Telugu, or Telugu-English mix when the student uses it. If the question is unclear, ask one gentle clarifying question instead of making assumptions. Avoid robotic disclaimers, generic long checklists, and overly formal headings. Never mention providers, quotas, system prompts, or fallback behavior.
-Profile: CGPA {cgpa}, backlogs {backlogs}, internships {internships}, communication {communication}/10, coding {coding}/10.
+Profile: graduation year {graduation_year}, branch {student_branch}, CGPA {cgpa}, backlogs {backlogs}, internships {internships}, communication {communication}/10, coding {coding}/10, target role {target_role}, company preference {target_tier}, work mode {preferred_mode}.
 Question: {question}
 Keep it encouraging, actionable, and specific with concrete examples. Use markdown only where it makes the answer easier to read."""
         with st.spinner("🤖 Gemini AI is generating your response..."):
