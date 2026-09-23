@@ -392,9 +392,29 @@ body:has(.login-screen), body:has(.login-screen) [data-testid="stAppViewContaine
 .stButton > button:hover { transform:translateY(-2px); box-shadow:0 9px 22px rgba(37,99,235,.26); }
 .stButton > button[kind="primary"] { background:linear-gradient(135deg,#4f46e5,#0891b2); box-shadow:0 8px 24px rgba(37,99,235,.20); }
 .pf-gauge { background:rgba(148,163,184,.18); box-shadow:inset 0 1px 3px rgba(15,23,42,.32),0 0 12px rgba(34,211,238,.10); }
-.pf-gauge-fill { background:linear-gradient(90deg,#6366f1,#22d3ee,#2dd4bf); box-shadow:0 0 16px rgba(34,211,238,.55); }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
-@media (max-width:768px) { .login-screen { margin-top:3vh; padding:30px 22px; } }
+	.pf-gauge-fill { background:linear-gradient(90deg,#6366f1,#22d3ee,#2dd4bf); box-shadow:0 0 16px rgba(34,211,238,.55); }
+	@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
+	@media (max-width:768px) { .login-screen { margin-top:3vh; padding:30px 22px; } }
+</style>
+""", unsafe_allow_html=True)
+
+# Prompt mapping: Sylva-inspired motion for welcome/login; Data Pixel Arc motion
+# for the analytics dashboard after login. Both layers stay decorative and low contrast.
+st.markdown("""
+<style>
+.login-sylva-orb { position:fixed; width:34vw; height:34vw; max-width:520px; max-height:520px; min-width:260px; min-height:260px; left:50%; top:34%; transform:translate(-50%,-50%); border-radius:50% 46% 54% 42%; background:radial-gradient(circle at 42% 38%,rgba(134,239,172,.18),transparent 52%),radial-gradient(circle at 60% 68%,rgba(34,197,94,.11),transparent 60%); filter:blur(4px); opacity:.8; pointer-events:none; z-index:-1; animation:pf-sylva-breathe 8s ease-in-out infinite alternate; }
+.login-sylva-leaf { position:fixed; width:180px; height:78px; border:1px solid rgba(187,247,208,.15); border-radius:100% 0 100% 0; opacity:.5; pointer-events:none; z-index:-1; animation:pf-sylva-leaf 12s ease-in-out infinite alternate; }
+.login-sylva-leaf--one { left:8%; top:24%; transform:rotate(-25deg); }
+.login-sylva-leaf--two { right:7%; bottom:20%; transform:rotate(26deg) scale(.7); animation-delay:-5s; }
+@keyframes pf-sylva-breathe { from { transform:translate(-50%,-50%) scale(.92) rotate(-4deg); } to { transform:translate(-50%,-50%) scale(1.08) rotate(5deg); } }
+@keyframes pf-sylva-leaf { from { opacity:.22; translate:0 8px; } to { opacity:.62; translate:10px -10px; } }
+
+.pf-data-arc { position:fixed; left:0; right:0; bottom:0; height:29vh; min-height:190px; overflow:hidden; pointer-events:none; z-index:0; opacity:.17; -webkit-mask-image:linear-gradient(to top,black 0%,rgba(0,0,0,.72) 48%,transparent 100%); mask-image:linear-gradient(to top,black 0%,rgba(0,0,0,.72) 48%,transparent 100%); }
+.pf-data-arc__band { position:absolute; left:8%; bottom:-135%; width:84%; height:230%; border:1px solid rgba(52,211,153,.72); border-radius:50%; background:repeating-linear-gradient(0deg,transparent 0 7px,rgba(52,211,153,.32) 8px 9px),radial-gradient(ellipse at 50% 47%,rgba(16,185,129,.85),rgba(4,47,46,.06) 45%,transparent 68%); box-shadow:0 -8px 55px rgba(16,185,129,.28),inset 0 25px 45px rgba(45,212,191,.22); transform:rotate(-1deg); animation:pf-arc-breathe 9s ease-in-out infinite alternate; }
+.pf-data-arc__pixels { position:absolute; inset:0; opacity:.85; background-image:radial-gradient(circle,rgba(167,243,208,.8) 0 1px,transparent 1.6px),linear-gradient(90deg,rgba(16,185,129,.16) 1px,transparent 1px); background-size:9px 9px,18px 18px; mix-blend-mode:screen; animation:pf-arc-pixels 14s linear infinite; }
+@keyframes pf-arc-breathe { from { transform:rotate(-2deg) translateY(8px) scaleX(.98); } to { transform:rotate(2deg) translateY(-8px) scaleX(1.02); } }
+@keyframes pf-arc-pixels { to { background-position:18px -18px,36px 0; } }
+@media (prefers-reduced-motion: reduce) { .login-sylva-orb,.login-sylva-leaf,.pf-data-arc__band,.pf-data-arc__pixels { animation:none; } }
 </style>
 """, unsafe_allow_html=True)
 
@@ -403,7 +423,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    st.markdown('<section class="login-screen"><h1>PATHFINDER</h1><p>AI-Powered Placement &amp; Career Intelligence Platform</p></section>', unsafe_allow_html=True)
+    st.markdown('<section class="login-screen"><span class="login-sylva-orb"></span><span class="login-sylva-leaf login-sylva-leaf--one"></span><span class="login-sylva-leaf login-sylva-leaf--two"></span><h1>PATHFINDER</h1><p>AI-Powered Placement &amp; Career Intelligence Platform</p></section>', unsafe_allow_html=True)
     st.markdown('<div class="login-wrap"><div class="login-card">', unsafe_allow_html=True)
     st.subheader("🔐 Student Login")
     with st.form("pathfinder_login"):
@@ -420,6 +440,9 @@ if not st.session_state.logged_in:
     st.caption("Demo access: any username & password are accepted for testing.")
     st.markdown('</div></div>', unsafe_allow_html=True)
     st.stop()
+
+# Post-login interface: emerald Data Pixel Arc horizon for the analytics experience.
+st.markdown('<div class="pf-data-arc" aria-hidden="true"><div class="pf-data-arc__band"></div><div class="pf-data-arc__pixels"></div></div>', unsafe_allow_html=True)
 
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
 def ask_gemini(prompt, retries=2, stream=False):
