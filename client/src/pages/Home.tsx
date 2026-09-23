@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import IndustryNewsFeed from "@/components/IndustryNewsFeed";
 import {
   Bar,
@@ -125,7 +125,7 @@ function ScoreBar({ label, value, icon }: { label: string; value: number; icon: 
   );
 }
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -141,7 +141,7 @@ const containerVariants = {
   },
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 22, scale: 0.98 },
   visible: {
     opacity: 1,
@@ -156,7 +156,7 @@ const cardVariants = {
   },
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 12 },
   visible: {
     opacity: 1,
@@ -166,6 +166,12 @@ const itemVariants = {
       ease: "easeOut",
     },
   },
+};
+
+const tabVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
 };
 
 export default function Home() {

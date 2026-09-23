@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { trpc } from "../lib/trpc";
 import {
   ArrowRight,
@@ -48,7 +48,7 @@ const CATEGORIES = [
   { id: "ai_skills", label: "AI & Cloud Skills Demand" },
 ];
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 16 },
   visible: {
     opacity: 1,
