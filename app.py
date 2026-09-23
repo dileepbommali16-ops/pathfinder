@@ -1,6 +1,8 @@
 import os
 import json
 import time
+import urllib.error
+import urllib.request
 from io import BytesIO
 from pathlib import Path
 
@@ -131,6 +133,44 @@ def local_structured_fallback(prompt: str, schema: type[BaseModel]) -> BaseModel
     raise ValueError(f"No local fallback is defined for {schema.__name__}")
 
 
+def openrouter_answer(prompt: str) -> str | None:
+    """Call OpenRouter's free-model router when Gemini is unavailable or rate-limited."""
+    if not OPENROUTER_API_KEY:
+        return None
+    payload = json.dumps({
+        "model": OPENROUTER_MODEL,
+        "messages": [
+            {"role": "system", "content": "You are Pathfinder AI, an encouraging and practical engineering placement mentor. Use concise markdown with actionable steps."},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.4,
+        "max_tokens": 900,
+    }).encode("utf-8")
+    request = urllib.request.Request(
+        "https://openrouter.ai/api/v1/chat/completions",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://pathfinder-3kezapremrjbkfvtm5pkkn.streamlit.app/",
+            "X-OpenRouter-Title": "Pathfinder AI",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=35) as response:
+            result = json.loads(response.read().decode("utf-8"))
+        content = result.get("choices", [{}])[0].get("message", {}).get("content")
+        return content.strip() if isinstance(content, str) and content.strip() else None
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError, IndexError):
+        return None
+
+
+def provider_answer(prompt: str) -> str:
+    """Use the configured backup provider before deterministic offline guidance."""
+    return openrouter_answer(prompt) or local_ai_answer(prompt)
+
+
 def readiness_score(profile: StudentProfile) -> ReadinessResult:
     """Return a validated placement score for UI, API, or an AI agent caller."""
     try:
@@ -180,12 +220,12 @@ def structured_ai(prompt: str, schema: type[BaseModel]) -> BaseModel:
 def cached_gemini(prompt: str, model_name: str) -> str:
     """Cache non-streamed Gemini answers so repeated questions avoid API calls."""
     if client is None:
-        return local_ai_answer(prompt)
+        return provider_answer(prompt)
     try:
         response = client.models.generate_content(model=model_name, contents=prompt)
     except Exception as error:
         if quota_error(error):
-            return local_ai_answer(prompt)
+            return provider_answer(prompt)
         raise
     return (getattr(response, "text", None) or "").strip()
 
@@ -204,6 +244,8 @@ if not ENV_FILE.exists():
     ENV_FILE = Path(__file__).parent / "pathfinder-main" / ".env"
 load_dotenv(ENV_FILE)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip() or "openrouter/free"
 # Gemini has retired older model aliases for some new projects. Normalize legacy
 # Streamlit Secrets values so deployment does not keep requesting an unavailable model.
 configured_model = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip()
@@ -361,10 +403,10 @@ if not st.session_state.logged_in:
 def ask_gemini(prompt, retries=2, stream=False):
     """Use cached full responses or stream a new flash-tier response progressively."""
     if not GEMINI_API_KEY:
-        answer = local_ai_answer(prompt)
+        answer = provider_answer(prompt)
         return iter([answer]) if stream else answer
     if client is None:
-        answer = local_ai_answer(prompt)
+        answer = provider_answer(prompt)
         return iter([answer]) if stream else answer
     cache_key = f"{GEMINI_MODEL}:{prompt}"
     if stream and cache_key in st.session_state.get("answer_cache", {}):
@@ -390,7 +432,7 @@ def ask_gemini(prompt, retries=2, stream=False):
                     last_error = exc
                     error_text = str(exc).upper()
                     if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
-                        yield local_ai_answer(prompt)
+                        yield provider_answer(prompt)
                         return
                     if "404" in error_text or "NOT_FOUND" in error_text:
                         break
@@ -398,7 +440,7 @@ def ask_gemini(prompt, retries=2, stream=False):
                         time.sleep(0.8)
                     if attempt < retries - 1:
                         time.sleep(0.4)
-        yield local_ai_answer(prompt)
+        yield provider_answer(prompt)
 
     return response_stream()
 

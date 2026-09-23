@@ -12,7 +12,7 @@ Native Android application for student placement readiness evaluation and cohort
 
 ## Streamlit AI Agent
 
-The `app.py` Streamlit application includes a friendly general-purpose **Pathfinder AI Agent**. It supports multi-turn chat, English, Telugu, bilingual English + Telugu replies, automatic language detection, profile-aware placement guidance, prompt starters, and a clear-chat control. The agent uses the model named by `GEMINI_MODEL` first and falls back through compatible Gemini models when needed.
+The `app.py` Streamlit application includes a friendly general-purpose **Pathfinder AI Agent**. It supports multi-turn chat, English, Telugu, bilingual English + Telugu replies, automatic language detection, profile-aware placement guidance, prompt starters, and a clear-chat control. The agent uses the model named by `GEMINI_MODEL` first, then OpenRouter's free-model router, and finally deterministic offline placement guidance if external providers are unavailable.
 
 ### Streamlit Cloud setup
 
@@ -21,9 +21,12 @@ Add the following values under **Streamlit Cloud → Settings → Secrets**:
 ```toml
 GEMINI_API_KEY = "your-gemini-api-key"
 GEMINI_MODEL = "gemini-3.7-flash"
+# Optional free fallback provider. Create a key at https://openrouter.ai/settings/keys
+OPENROUTER_API_KEY = "your-openrouter-api-key"
+OPENROUTER_MODEL = "openrouter/free"
 ```
 
-The application can run without a key, but AI chat will display a configuration message until `GEMINI_API_KEY` is provided.
+If Gemini quota is exhausted, the app automatically tries OpenRouter's free router. If both keys are absent or unavailable, the built-in offline coach still returns placement guidance instead of an error. OpenRouter requires its own free API key; it cannot be inferred from the Gemini key.
 
 ## Architecture
 
