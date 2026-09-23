@@ -62,12 +62,14 @@ def quota_error(error: object) -> bool:
 
 
 def local_ai_answer(prompt: str) -> str:
-    """Provide a useful offline answer when the remote model cannot be reached."""
+    """Provide a warm, conversational answer when the remote model cannot be reached."""
     lower = prompt.lower()
     if "resume" in lower or "ats" in lower:
-        return """### Resume improvement plan
+        return """Hey — absolutely, let’s make your resume stronger without making it sound exaggerated.
 
-**Priorities**
+### A simple improvement plan
+
+**Start here:**
 - Lead with measurable project outcomes: users, latency, accuracy, cost, or adoption.
 - Put the target role's keywords in the skills and project sections, but only where they are truthful.
 - Rewrite each project bullet as **action + technology + measurable result**.
@@ -77,27 +79,33 @@ def local_ai_answer(prompt: str) -> str:
 - Keep the resume to one page for an early-career role.
 - Add GitHub or demo links and verify every link before applying."""
     if "dsa" in lower or "leetcode" in lower or "coding" in lower:
-        return """### 4-week DSA sprint
+        return """That’s a great goal — you don’t need to solve random problems all day. You need a repeatable pattern-based routine.
 
-- **Week 1:** Arrays, strings, hashing, and two pointers; solve 3 timed problems per day.
-- **Week 2:** Sliding window, binary search, stacks, and queues; review mistakes after every session.
-- **Week 3:** Trees, recursion, heaps, and graphs; explain the approach aloud before coding.
-- **Week 4:** Dynamic programming basics plus 4 mixed mock interviews.
+### Your 4-week DSA sprint
 
-Track patterns rather than only problem counts: write down the trigger, invariant, complexity, and one variation for every missed problem."""
+- **Week 1:** Arrays, strings, hashing, and two pointers; solve 2–3 timed problems per day.
+- **Week 2:** Sliding window, binary search, stacks, and queues; review your mistakes after every session.
+- **Week 3:** Trees, recursion, heaps, and graphs; explain your approach aloud before coding.
+- **Week 4:** Dynamic programming basics plus four mixed mock interviews.
+
+After every missed problem, write down the pattern trigger, invariant, time complexity, and one variation. If you tell me your current level and target company, I can narrow this into a daily schedule."""
     if "interview" in lower or "star" in lower:
-        return """### Interview preparation
+        return """You can absolutely improve this with practice. Don’t memorize polished answers; prepare a few honest stories that you can adapt.
 
-Use the **STAR** structure: **Situation**, **Task**, **Action**, and **Result**. Prepare two stories about debugging, one about teamwork, and one about learning a difficult technology. For technical rounds, clarify assumptions first, give a simple approach, state time and space complexity, then improve the solution and test edge cases."""
-    return """### Pathfinder guidance
+### Interview preparation
 
-Start with one job target and build a 6-week evidence plan:
+Use the **STAR** structure: **Situation**, **Task**, **Action**, and **Result**. Prepare two stories about debugging, one about teamwork, and one about learning a difficult technology. For technical rounds, clarify assumptions first, give a simple approach, state time and space complexity, then improve the solution and test edge cases.
+
+If you share one interview question you find difficult, I’ll help you shape a natural answer."""
+    return """Hi! I’m your Pathfinder placement mentor. I’ll help you turn your current profile into a practical next step — no judgment and no vague motivation.
+
+### Let’s start with one clear target
 
 - **Weeks 1–2:** strengthen DSA fundamentals and remove academic blockers.
 - **Weeks 3–4:** ship one role-aligned project with a README, tests, and a deployed demo.
 - **Weeks 5–6:** complete mock interviews, revise your resume, and apply with tailored bullets.
 
-Measure progress weekly with solved patterns, project milestones, mock-interview scores, and applications—not only study hours."""
+    Tell me your target role (for example, SDE, data analyst, or QA) and the biggest thing holding you back right now. I’ll help you choose the next small step."""
 
 
 def local_structured_fallback(prompt: str, schema: type[BaseModel]) -> BaseModel:
@@ -140,7 +148,7 @@ def openrouter_answer(prompt: str) -> str | None:
     payload = json.dumps({
         "model": OPENROUTER_MODEL,
         "messages": [
-            {"role": "system", "content": "You are Pathfinder AI, an encouraging and practical engineering placement mentor. Use concise markdown with actionable steps."},
+            {"role": "system", "content": "You are Pathfinder AI, a warm, patient, human-sounding engineering placement mentor. Acknowledge the student's question first, explain clearly, personalize advice to the profile, and end with one useful follow-up question. Match the student's language, including Telugu or Telugu-English. Avoid robotic disclaimers, generic filler, and overly rigid headings. Use concise markdown only when it improves readability."},
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.4,
@@ -665,11 +673,10 @@ question = st.text_area("Ask a placement question", value=selected_prompt, place
 if st.button("✨ Ask AI Coach", type="primary"):
     question = question or ""
     if question.strip():
-        prompt = f"""You are Pathfinder AI, an expert engineering placement mentor for BTech students.
+        prompt = f"""You are Pathfinder AI, a warm and friendly placement mentor for BTech students. Speak naturally, like a patient senior who wants the student to succeed. Acknowledge the student's question, personalize the answer using their profile, give one or two practical next steps, and finish with one helpful follow-up question. Match English, Telugu, or Telugu-English mix when the student uses it. Do not sound robotic or overly formal.
 Profile: CGPA {cgpa}, backlogs {backlogs}, internships {internships}, communication {communication}/10, coding {coding}/10.
 Question: {question}
-    Format the response with a short markdown heading, bold key terms, and concise bullet points.
-    Keep it encouraging, actionable, and specific with concrete examples."""
+    Keep it encouraging, actionable, and specific with concrete examples. Use markdown only where it makes the answer easier to read."""
         with st.spinner("🤖 Gemini AI is generating your response..."):
             answer = st.write_stream(ask_gemini(prompt, stream=True))
         st.markdown("### 💡 Guidance")
