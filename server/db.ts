@@ -1,9 +1,44 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import { readFileSync } from "node:fs";
 import { InsertPlacementRecord, InsertPredictionHistory, InsertUser, placementRecords, predictionHistory, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+
+type LocalPlacementRecord = InsertPlacementRecord & { placed: number };
+
+const localPlacementRecords = (): LocalPlacementRecord[] => {
+  try {
+    const file = new URL("./data/placement-data.json", import.meta.url);
+    return JSON.parse(readFileSync(file, "utf8")) as LocalPlacementRecord[];
+  } catch (error) {
+    console.warn("[Placement] Local seed data could not be loaded:", error);
+    return [];
+  }
+};
+
+const filterLocalPlacementRecords = (filters?: { year?: number; branch?: string; gender?: string; skillCategory?: string }) => {
+  const records = localPlacementRecords().filter(record =>
+    (filters?.year === undefined || record.year === filters.year) &&
+    (filters?.branch === undefined || record.branch === filters.branch) &&
+    (filters?.gender === undefined || record.gender === filters.gender)
+  );
+  if (!filters?.skillCategory || filters.skillCategory !== "AIML + Python") {
+    return filters?.skillCategory ? records.filter(record => record.skillCategory === filters.skillCategory) : records;
+  }
+  const groups = new Map<string, Set<string>>();
+  records.forEach(record => {
+    const key = `${record.year}|${record.branch}|${record.gender}`;
+    const skills = groups.get(key) ?? new Set<string>();
+    skills.add(record.skillCategory);
+    groups.set(key, skills);
+  });
+  return records.filter(record => {
+    const skills = groups.get(`${record.year}|${record.branch}|${record.gender}`);
+    return skills?.has("AIML") && skills.has("Python") && (record.skillCategory === "AIML" || record.skillCategory === "Python");
+  });
+};
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
@@ -77,7 +112,7 @@ export async function replacePlacementRecords(records: InsertPlacementRecord[]) 
 
 export async function getPlacementRecords(filters?: { year?: number; branch?: string; gender?: string; skillCategory?: string }) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return filterLocalPlacementRecords(filters);
   const conditions = [
     filters?.year ? eq(placementRecords.year, filters.year) : undefined,
     filters?.branch ? eq(placementRecords.branch, filters.branch) : undefined,
