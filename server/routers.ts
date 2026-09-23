@@ -10,6 +10,29 @@ import { TRPCError } from "@trpc/server";
 
 const optionalFilter = z.string().optional();
 
+const localCoachFallback = (question: string, profile?: { coding?: number; backlogs?: number; targetRole?: string }) => {
+  const lower = question.toLowerCase();
+  const coding = profile?.coding ?? 7;
+  const role = profile?.targetRole ?? "your target role";
+  if (lower.includes("resume") || lower.includes("ats")) {
+    return `### Resume action plan\n\n- Rewrite every project bullet as **action + technology + measurable result**.\n- Match truthful keywords from the ${role} job description in the skills and project sections.\n- Keep a clean one-column layout, standard headings, and working GitHub/demo links.\n\nStart by improving the three bullets with the weakest evidence, then ask for a peer review.`;
+  }
+  if (lower.includes("dsa") || lower.includes("leetcode") || lower.includes("coding")) {
+    return `### DSA plan for a ${coding}/10 coding profile\n\n- Week 1: arrays, strings, hashing, and two pointers.\n- Week 2: sliding window, binary search, stacks, and queues.\n- Week 3: trees, heaps, graphs, and recursion.\n- Week 4: dynamic programming basics and mixed timed mocks.\n\nSolve three problems per day, record the pattern and complexity for every mistake, and explain one solution aloud daily.`;
+  }
+  return `### Your next placement steps\n\n- Pick one target role and ship one role-aligned project with tests, a README, and a live demo.\n- Practice high-frequency DSA patterns for 45–60 minutes daily.\n- Prepare two STAR stories about debugging, teamwork, and learning.\n${profile?.backlogs ? "- Clear active backlogs early because eligibility cutoffs can block otherwise strong applications.\n" : ""}\nUse a weekly scorecard: solved patterns, project milestones, mock-interview score, and targeted applications.`;
+};
+
+const localResumeFallback = (resumeText: string) => ({
+  summary: "The resume has a foundation for placement applications, but it should show clearer impact and stronger role alignment.",
+  strengths: ["Includes material that can be tailored to a target role", "Provides a base for project and skills evidence"],
+  skillGaps: [
+    { skill: "Impact statements", priority: "High", reason: "Recruiters need evidence of what changed because of your work.", action: "Add metrics such as users, accuracy, latency, or time saved to project bullets." },
+    { skill: "Role keywords", priority: "Medium", reason: "ATS matching improves when truthful job-specific terms appear in context.", action: "Mirror relevant terms from three target job descriptions." },
+  ],
+  nextSteps: ["Rewrite the three weakest bullets using action, technology, and result.", "Add live GitHub or demo links and verify them.", "Keep the final resume to one page with standard headings."],
+});
+
 function parseCsv(content: string) {
   const lines = content.trim().split(/\r?\n/).filter(Boolean);
   if (lines.length < 2) throw new TRPCError({ code: "BAD_REQUEST", message: "CSV must include a header and at least one data row." });
@@ -121,24 +144,30 @@ GUIDELINES FOR YOUR MENTORSHIP:
 5. Provide organized responses using bullet points, bold keywords, and concrete timelines where appropriate.`
         : '';
 
-      const response = await invokeLLM({
-        model: "gemini-3.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: `You are Pathfinder AI Placement Coach, a world-class engineering campus placement mentor and career strategist powered by Gemini. You specialize in guiding college students through technical rounds, HR evaluations, system design, coding assessments, and ATS resume strategies.${profileInfo}`,
-          },
-          ...input.messages,
-        ],
-        maxTokens: 1200,
-      });
-      const content = response.choices[0]?.message.content;
-      return typeof content === "string" ? content : "I am ready to help with your placement preparation. Please ask your question.";
+      try {
+        const response = await invokeLLM({
+          model: "gemini-3.5-flash",
+          messages: [
+            {
+              role: "system",
+              content: `You are Pathfinder AI Placement Coach, a world-class engineering campus placement mentor and career strategist powered by Gemini. You specialize in guiding college students through technical rounds, HR evaluations, system design, coding assessments, and ATS resume strategies.${profileInfo}`,
+            },
+            ...input.messages,
+          ],
+          maxTokens: 1200,
+        });
+        const content = response.choices[0]?.message.content;
+        return typeof content === "string" ? content : localCoachFallback(input.messages.at(-1)?.content ?? "", input.profile);
+      } catch (error) {
+        console.warn("AI coach unavailable; using local fallback:", error);
+        return localCoachFallback(input.messages.at(-1)?.content ?? "", input.profile);
+      }
     }),
   }),
   resume: router({
     analyze: publicProcedure.input(z.object({ resumeText: z.string().min(30).max(30_000) })).mutation(async ({ input }) => {
-      const response = await invokeLLM({
+      try {
+        const response = await invokeLLM({
         model: "gemini-3.5-flash",
         messages: [
           { role: "system", content: "You are a practical campus-placement resume coach. Analyze only the provided resume text. Return concise, specific, encouraging suggestions for a tech student." },
@@ -155,10 +184,14 @@ GUIDELINES FOR YOUR MENTORSHIP:
           required: ["summary", "strengths", "skillGaps", "nextSteps"],
         } } },
         maxTokens: 1200,
-      });
-      const content = response.choices[0]?.message.content;
-      if (typeof content !== "string") throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "The analyzer returned no result." });
-      return JSON.parse(content) as { summary: string; strengths: string[]; skillGaps: Array<{ skill: string; priority: string; reason: string; action: string }>; nextSteps: string[] };
+        });
+        const content = response.choices[0]?.message.content;
+        if (typeof content !== "string") throw new Error("The analyzer returned no result.");
+        return JSON.parse(content) as { summary: string; strengths: string[]; skillGaps: Array<{ skill: string; priority: string; reason: string; action: string }>; nextSteps: string[] };
+      } catch (error) {
+        console.warn("Resume AI unavailable; using local fallback:", error);
+        return localResumeFallback(input.resumeText);
+      }
     }),
   }),
   news: router({

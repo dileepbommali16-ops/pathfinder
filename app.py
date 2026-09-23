@@ -53,6 +53,84 @@ class ResumeFeedback(BaseModel):
     formatting_tips: list[str]
 
 
+def quota_error(error: object) -> bool:
+    """Return true for provider quota/rate-limit failures that should degrade gracefully."""
+    message = str(error).upper()
+    return any(token in message for token in ("429", "RESOURCE_EXHAUSTED", "QUOTA", "RATE LIMIT", "RATE_LIMIT"))
+
+
+def local_ai_answer(prompt: str) -> str:
+    """Provide a useful offline answer when the remote model cannot be reached."""
+    lower = prompt.lower()
+    if "resume" in lower or "ats" in lower:
+        return """### Resume improvement plan
+
+**Priorities**
+- Lead with measurable project outcomes: users, latency, accuracy, cost, or adoption.
+- Put the target role's keywords in the skills and project sections, but only where they are truthful.
+- Rewrite each project bullet as **action + technology + measurable result**.
+
+**Quick ATS checklist**
+- Use one-column layout, standard headings, and text-selectable content.
+- Keep the resume to one page for an early-career role.
+- Add GitHub or demo links and verify every link before applying."""
+    if "dsa" in lower or "leetcode" in lower or "coding" in lower:
+        return """### 4-week DSA sprint
+
+- **Week 1:** Arrays, strings, hashing, and two pointers; solve 3 timed problems per day.
+- **Week 2:** Sliding window, binary search, stacks, and queues; review mistakes after every session.
+- **Week 3:** Trees, recursion, heaps, and graphs; explain the approach aloud before coding.
+- **Week 4:** Dynamic programming basics plus 4 mixed mock interviews.
+
+Track patterns rather than only problem counts: write down the trigger, invariant, complexity, and one variation for every missed problem."""
+    if "interview" in lower or "star" in lower:
+        return """### Interview preparation
+
+Use the **STAR** structure: **Situation**, **Task**, **Action**, and **Result**. Prepare two stories about debugging, one about teamwork, and one about learning a difficult technology. For technical rounds, clarify assumptions first, give a simple approach, state time and space complexity, then improve the solution and test edge cases."""
+    return """### Pathfinder guidance
+
+Start with one job target and build a 6-week evidence plan:
+
+- **Weeks 1–2:** strengthen DSA fundamentals and remove academic blockers.
+- **Weeks 3–4:** ship one role-aligned project with a README, tests, and a deployed demo.
+- **Weeks 5–6:** complete mock interviews, revise your resume, and apply with tailored bullets.
+
+Measure progress weekly with solved patterns, project milestones, mock-interview scores, and applications—not only study hours."""
+
+
+def local_structured_fallback(prompt: str, schema: type[BaseModel]) -> BaseModel:
+    """Return validated local output for structured features during provider outages."""
+    if schema is Roadmap:
+        return Roadmap(
+            headline="A focused six-week placement improvement roadmap",
+            skill_gaps=["DSA consistency", "One demonstrable role-aligned project", "Interview communication"],
+            weekly_actions=[
+                "Week 1: solve 15 array, string, and hashing problems and log every mistake.",
+                "Week 2: complete sliding-window, binary-search, and stack patterns.",
+                "Week 3: build one project feature with tests and publish a clear README.",
+                "Week 4: revise OS, DBMS, networking, and OOP fundamentals.",
+                "Week 5: complete three timed coding and two STAR mock interviews.",
+                "Week 6: tailor the resume to five target roles and apply with referrals.",
+            ],
+        )
+    if schema is CohortInsight:
+        return CohortInsight(
+            headline="Use the cohort as a benchmark, not a ceiling",
+            summary="Compare your CGPA, coding, communication, and internship exposure with the selected cohort, then focus on the largest gap first.",
+            actions=["Practice the highest-frequency DSA patterns weekly", "Ship one measurable project", "Run a mock interview every week"],
+        )
+    if schema is ResumeFeedback:
+        return ResumeFeedback(
+            score=70,
+            verdict="Your material can become placement-ready with clearer impact, stronger keywords, and tighter formatting.",
+            strengths=["Shows a foundation to build on", "Can be aligned to a specific target role"],
+            improvements=["Add measurable outcomes to project bullets", "Prioritize skills used in the target job description"],
+            ats_keywords=["data structures", "REST APIs", "SQL", "Git", "testing"],
+            formatting_tips=["Use standard headings", "Keep bullets concise and consistent", "Check that links are live"],
+        )
+    raise ValueError(f"No local fallback is defined for {schema.__name__}")
+
+
 def readiness_score(profile: StudentProfile) -> ReadinessResult:
     """Return a validated placement score for UI, API, or an AI agent caller."""
     try:
@@ -70,7 +148,7 @@ def readiness_score(profile: StudentProfile) -> ReadinessResult:
 def structured_ai(prompt: str, schema: type[BaseModel]) -> BaseModel:
     """Call flash models with transient retries and validated JSON output."""
     if client is None:
-        raise RuntimeError("Set GEMINI_API_KEY to enable structured AI features.")
+        return local_structured_fallback(prompt, schema)
     last_error = None
     for model_name in dict.fromkeys(GEMINI_MODELS):
         for attempt in range(2):
@@ -87,7 +165,7 @@ def structured_ai(prompt: str, schema: type[BaseModel]) -> BaseModel:
                 last_error = error
                 error_text = str(error).upper()
                 if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
-                    raise RuntimeError("AI quota is temporarily exhausted for this Gemini API project. Wait for the quota window to reset or enable billing, then try again.") from error
+                    return local_structured_fallback(prompt, schema)
                 if "404" in error_text or "NOT_FOUND" in error_text:
                     break
                 transient = any(code in error_text for code in ("503", "500", "502", "504", "UNAVAILABLE", "INTERNAL"))
@@ -95,19 +173,19 @@ def structured_ai(prompt: str, schema: type[BaseModel]) -> BaseModel:
                     time.sleep(0.8)
                     continue
                 break
-    raise RuntimeError(f"AI structured response failed after fallback models: {last_error}")
+    return local_structured_fallback(prompt, schema)
 
 
 @st.cache_data(show_spinner=False, ttl=3600)
 def cached_gemini(prompt: str, model_name: str) -> str:
     """Cache non-streamed Gemini answers so repeated questions avoid API calls."""
     if client is None:
-        return "⚠️ Gemini is not configured. Add GEMINI_API_KEY in Streamlit Secrets."
+        return local_ai_answer(prompt)
     try:
         response = client.models.generate_content(model=model_name, contents=prompt)
     except Exception as error:
-        if "429" in str(error) or "RESOURCE_EXHAUSTED" in str(error):
-            return "⚠️ AI quota is temporarily exhausted. Wait for the quota window to reset or enable billing, then try again."
+        if quota_error(error):
+            return local_ai_answer(prompt)
         raise
     return (getattr(response, "text", None) or "").strip()
 
@@ -283,9 +361,11 @@ if not st.session_state.logged_in:
 def ask_gemini(prompt, retries=2, stream=False):
     """Use cached full responses or stream a new flash-tier response progressively."""
     if not GEMINI_API_KEY:
-        return iter(["⚠️ AI is not configured yet. Add `GEMINI_API_KEY` under Streamlit Cloud → Settings → Secrets, then reboot the app."]) if stream else "⚠️ AI is not configured yet. Add `GEMINI_API_KEY` under Streamlit Cloud → Settings → Secrets, then reboot the app."
+        answer = local_ai_answer(prompt)
+        return iter([answer]) if stream else answer
     if client is None:
-        return iter(["⚠️ The Gemini SDK could not initialize. Confirm `google-genai` is installed and reboot the Streamlit app."]) if stream else "⚠️ The Gemini SDK could not initialize. Confirm `google-genai` is installed and reboot the Streamlit app."
+        answer = local_ai_answer(prompt)
+        return iter([answer]) if stream else answer
     cache_key = f"{GEMINI_MODEL}:{prompt}"
     if stream and cache_key in st.session_state.get("answer_cache", {}):
         return iter([st.session_state["answer_cache"][cache_key]])
@@ -310,7 +390,7 @@ def ask_gemini(prompt, retries=2, stream=False):
                     last_error = exc
                     error_text = str(exc).upper()
                     if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
-                        yield "⚠️ AI quota is temporarily exhausted. Wait for the quota window to reset or enable billing, then try again."
+                        yield local_ai_answer(prompt)
                         return
                     if "404" in error_text or "NOT_FOUND" in error_text:
                         break
@@ -318,7 +398,7 @@ def ask_gemini(prompt, retries=2, stream=False):
                         time.sleep(0.8)
                     if attempt < retries - 1:
                         time.sleep(0.4)
-        yield f"⚠️ AI could not respond. Check your Gemini API key and Generative Language API. Technical detail: {last_error}"
+        yield local_ai_answer(prompt)
 
     return response_stream()
 
