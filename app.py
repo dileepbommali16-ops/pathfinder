@@ -243,12 +243,26 @@ ENV_FILE = Path(__file__).with_name(".env")
 if not ENV_FILE.exists():
     ENV_FILE = Path(__file__).parent / "pathfinder-main" / ".env"
 load_dotenv(ENV_FILE)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip() or "openrouter/free"
+
+
+def setting(name: str, default: str = "") -> str:
+    """Read local environment values or Streamlit Cloud Secrets."""
+    value = os.getenv(name)
+    if value:
+        return value.strip()
+    try:
+        secret_value = st.secrets.get(name, default)
+        return str(secret_value).strip()
+    except Exception:
+        return default
+
+
+GEMINI_API_KEY = setting("GEMINI_API_KEY")
+OPENROUTER_API_KEY = setting("OPENROUTER_API_KEY")
+OPENROUTER_MODEL = setting("OPENROUTER_MODEL", "openrouter/free") or "openrouter/free"
 # Gemini has retired older model aliases for some new projects. Normalize legacy
 # Streamlit Secrets values so deployment does not keep requesting an unavailable model.
-configured_model = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip()
+configured_model = setting("GEMINI_MODEL", "gemini-3.6-flash")
 if configured_model in {"gemini-2.5-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"}:
     configured_model = "gemini-3.6-flash"
 GEMINI_MODEL = configured_model
