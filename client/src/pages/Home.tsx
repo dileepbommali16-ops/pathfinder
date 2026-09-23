@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import IndustryNewsFeed from "@/components/IndustryNewsFeed";
 import PathfinderAmbientScene from "@/components/PathfinderAmbientScene";
+import { PredictiveArcCanvas } from "@/components/PredictiveArcCanvas";
 import {
   Bar,
   BarChart,
@@ -405,6 +406,18 @@ export default function Home() {
     <main className="min-h-screen bg-[#090D16] text-white selection:bg-emerald-500/30">
       {/* Low-contrast living-green ambience inspired by the SylvaHero brief. */}
       <PathfinderAmbientScene />
+      {/* Exact registered Data Pixel Arc renderer, tuned as a quiet analytics horizon. */}
+      <div aria-hidden="true" className="pathfinder-arc-layer pointer-events-none fixed inset-x-0 bottom-0 -z-0 h-[36vh]">
+        <PredictiveArcCanvas
+          variant="data-pixel"
+          mode="dark"
+          speed={1}
+          hue={0}
+          saturation={1}
+          brightness={1}
+          className="pathfinder-arc-canvas"
+        />
+      </div>
 
       {/* Top Navigation */}
       <nav className="relative z-20 border-b border-slate-800/80 bg-[#090D16]/80 backdrop-blur-xl">
