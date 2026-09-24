@@ -212,7 +212,7 @@ def readiness_score(profile: StudentProfile) -> ReadinessResult:
     return ReadinessResult(score=round(score, 1), label="Strong" if score >= 75 else "On track" if score >= 55 else "Needs focus", strengths=strengths or ["Clear starting point"], priorities=priorities)
 
 
-def structured_ai(prompt: str, schema: type[BaseModel]) -> BaseModel:
+def structured_ai(prompt: str, schema: type[BaseModel], pdf_bytes: bytes | None = None) -> BaseModel:
     """Call flash models with transient retries and validated JSON output."""
     if client is None:
         return local_structured_fallback(prompt, schema)
@@ -220,9 +220,10 @@ def structured_ai(prompt: str, schema: type[BaseModel]) -> BaseModel:
     for model_name in dict.fromkeys(GEMINI_MODELS):
         for attempt in range(2):
             try:
+                contents = [types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"), prompt] if pdf_bytes else prompt
                 response = client.models.generate_content(
                     model=model_name,
-                    contents=prompt,
+                    contents=contents,
                     config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema, temperature=0.3),
                 )
                 parsed = getattr(response, "parsed", None)
@@ -1153,20 +1154,31 @@ with studio_right:
     st.caption("Step 1: upload your PDF resume above. Step 2: click **Generate tailored feedback**. The box below is optional \u2014 use it only if you have no PDF, or want feedback on a specific project or interview answer.")
     resume_material = st.text_area("Optional: paste resume text or an interview answer instead", placeholder="Not needed if you uploaded a PDF. Or paste a project summary, resume section, or interview answer here...")
     if st.button("Generate tailored feedback", use_container_width=True):
+        pdf_bytes = None
+        read_failed = False
         if uploaded_resume is not None:
             try:
                 resume_material = extract_resume_text(uploaded_resume)
             except Exception as error:
                 st.error(f"Could not read that PDF: {error}")
                 resume_material = ""
-        if resume_material.strip():
-            with st.spinner("Reviewing your material..."):
+                read_failed = True
+            if not resume_material.strip() and not read_failed:
+                # Scanned / image-only PDF: no text layer, so let Gemini read the PDF directly.
+                pdf_bytes = uploaded_resume.getvalue()
+        if read_failed:
+            pass
+        elif pdf_bytes is not None and client is None:
+            st.warning("This PDF looks like a scanned image, so no text could be read from it, and the AI key is not configured to read it directly. Please paste your resume text into the box below instead.")
+        elif resume_material.strip() or pdf_bytes is not None:
+            with st.spinner("Reviewing your resume..."):
                 try:
-                    st.session_state["feedback"] = structured_ai(f"Review this resume or interview material for placement readiness. Profile: {profile.model_dump_json()} Material: {resume_material[:18000]}. Return a score, verdict, strengths, gaps, ATS keyword suggestions, and formatting tips.", ResumeFeedback)
+                    material = resume_material[:18000] if resume_material.strip() else "(see the attached resume PDF)"
+                    st.session_state["feedback"] = structured_ai(f"Review this resume or interview material for placement readiness. Profile: {profile.model_dump_json()} Material: {material}. Return a score, verdict, strengths, gaps, ATS keyword suggestions, and formatting tips.", ResumeFeedback, pdf_bytes=pdf_bytes)
                 except Exception as error:
                     st.error(str(error))
         else:
-            st.warning("Paste some material first.")
+            st.warning("Nothing to review yet. Please upload a PDF resume above, or paste your resume text in the box below.")
     if "feedback" in st.session_state:
         feedback = st.session_state["feedback"]
         st.metric("AI feedback score", f"{feedback.score}/100")
