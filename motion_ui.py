@@ -401,6 +401,24 @@ div[data-testid="stVerticalBlockBorderWrapper"], [data-testid="stMetric"], div[d
 [data-testid="stDataFrame"], div[data-testid="stDataFrame"] { border:1px solid var(--pf-border) !important; background:rgba(4,16,11,.8) !important; }
 pre, code, [data-testid="stCode"] { background:rgba(4,16,11,.9) !important; color:#bfeed3 !important; }
 [data-testid="stToolbar"] *, [data-testid="stHeader"] * { color:var(--pf-text) !important; }
+/* selectboxes / multiselects / number inputs: kill the remaining white pills */
+.stSelectbox div[data-baseweb="select"], .stMultiSelect div[data-baseweb="select"],
+[data-testid="stSelectbox"] [role="combobox"], [data-testid="stMultiSelect"] [role="combobox"],
+[data-testid="stSelectbox"] [data-baseweb="select"] > div, [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
+  background:rgba(4,16,11,.92) !important; color:var(--pf-text) !important; border:1px solid var(--pf-border) !important; box-shadow:none !important;
+}
+[data-baseweb="select"] input, [data-baseweb="select"] [role="combobox"] * { background:transparent !important; color:var(--pf-text) !important; -webkit-text-fill-color:var(--pf-text) !important; }
+[data-baseweb="select"] svg, [data-testid="stSelectbox"] svg { fill:#9dbba8 !important; color:#9dbba8 !important; }
+[data-testid="stNumberInputContainer"], [data-testid="stNumberInput"] button { background:rgba(4,16,11,.92) !important; color:var(--pf-text) !important; border-color:var(--pf-border) !important; }
+[data-baseweb="tag"] { background:rgba(63,191,133,.22) !important; color:var(--pf-text) !important; }
+/* uploaded-file row (icon tile was white) */
+[data-testid="stFileUploader"] *:not(button):not(svg):not(path) { background-color:transparent !important; }
+[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] { background:rgba(4,16,11,.75) !important; }
+[data-testid="stFileUploader"] svg { fill:#8fe6b4 !important; color:#8fe6b4 !important; }
+[data-testid="stFileUploader"] small, [data-testid="stFileUploader"] span, [data-testid="stFileUploader"] p { color:var(--pf-text) !important; }
+[data-testid="stFileUploader"] button { background:rgba(63,191,133,.14) !important; color:#eafff2 !important; border:1px solid var(--pf-border) !important; }
+/* generic safety net */
+[data-testid="stForm"], [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"] { background-color:transparent !important; }
 .pf-gauge { background:rgba(157,187,168,.18) !important; }
 .pf-badge { background:rgba(63,191,133,.14) !important; color:#8fe6b4 !important; }
 </style>
