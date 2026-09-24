@@ -1150,7 +1150,8 @@ with studio_left:
 with studio_right:
     st.markdown("#### 📄 Upload Resume")
     uploaded_resume = st.file_uploader("Upload your PDF resume", type=["pdf"], help="Your resume is read in memory for feedback and is not saved by Pathfinder.")
-    resume_material = st.text_area("Resume or interview answer for AI feedback", placeholder="Paste a project summary, resume section, or interview answer...")
+    st.caption("Step 1: upload your PDF resume above. Step 2: click **Generate tailored feedback**. The box below is optional \u2014 use it only if you have no PDF, or want feedback on a specific project or interview answer.")
+    resume_material = st.text_area("Optional: paste resume text or an interview answer instead", placeholder="Not needed if you uploaded a PDF. Or paste a project summary, resume section, or interview answer here...")
     if st.button("Generate tailored feedback", use_container_width=True):
         if uploaded_resume is not None:
             try:
