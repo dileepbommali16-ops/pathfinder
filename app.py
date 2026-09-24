@@ -1123,19 +1123,29 @@ k2.metric("📚 CGPA", f"{cgpa:.1f}")
 k3.metric("💼 Internships", internships)
 k4.metric("💻 Coding Score", f"{coding}/10")
 
-if chance is not None:
-    st.markdown(f'<div class="pf-gauge" aria-label="Placement probability {chance:.1f} percent"><div class="pf-gauge-fill" style="width:{max(0, min(100, chance)):.1f}%"></div></div>', unsafe_allow_html=True)
-    if chance >= 75:
-        st.success("🟢 **Strong Candidate Profile**: High probability of clearing tier-1 company cutoffs. Focus on system design and behavioral rounds.")
-    elif chance >= 55:
-        st.warning("🟡 **Solid Foundation**: Good starting point. Prioritize clearing backlogs and solving DSA patterns to raise score.")
-    else:
-        st.error("🔴 **Needs Focus**: Urgent focus needed on academic eligibility and practical software development internships.")
-
 profile = StudentProfile(cgpa=cgpa, backlogs=backlogs, internships=internships, communication=communication, coding=coding)
-st.subheader("🧭 Personalized AI Studio")
-studio_left, studio_right = st.columns(2)
-with studio_left:
+
+tab_overview, tab_roadmap, tab_mentor, tab_analytics, tab_resume = st.tabs(["📊 Overview", "🧭 Roadmap", "💬 AI Mentor", "📈 Analytics", "📄 Resume"])
+
+# ---------------- TAB 1: OVERVIEW ----------------
+with tab_overview:
+    st.markdown("#### 📊 Your placement snapshot")
+    st.caption("Use the tabs above: **Roadmap** for your weekly plan, **AI Mentor** for questions, **Analytics** for cohort data, and **Resume** for feedback on your resume.")
+    if chance is None:
+        st.info("Fill in your profile in the left sidebar, then click **⚡ Calculate Placement Probability** to see your score here.")
+    if chance is not None:
+        st.markdown(f'<div class="pf-gauge" aria-label="Placement probability {chance:.1f} percent"><div class="pf-gauge-fill" style="width:{max(0, min(100, chance)):.1f}%"></div></div>', unsafe_allow_html=True)
+        if chance >= 75:
+            st.success("🟢 **Strong Candidate Profile**: High probability of clearing tier-1 company cutoffs. Focus on system design and behavioral rounds.")
+        elif chance >= 55:
+            st.warning("🟡 **Solid Foundation**: Good starting point. Prioritize clearing backlogs and solving DSA patterns to raise score.")
+        else:
+            st.error("🔴 **Needs Focus**: Urgent focus needed on academic eligibility and practical software development internships.")
+
+# ---------------- TAB 2: ROADMAP ----------------
+with tab_roadmap:
+    st.markdown("#### 🧭 Weekly improvement roadmap")
+    st.caption("A 6-week plan built from your profile in the sidebar.")
     if st.button("Generate weekly improvement roadmap", use_container_width=True):
         with st.spinner("Building your roadmap..."):
             try:
@@ -1148,7 +1158,94 @@ with studio_left:
         st.write("**Skill gaps:** " + ", ".join(roadmap.skill_gaps))
         st.write("**Weekly actions:**")
         st.write("\n".join(f"- {action}" for action in roadmap.weekly_actions))
-with studio_right:
+
+# ---------------- TAB 3: AI MENTOR ----------------
+with tab_mentor:
+    st.markdown('<div class="pf-mentor-heading"><span class="pf-brand-orb" aria-hidden="true"></span><h2>AI Placement Mentor</h2></div>', unsafe_allow_html=True)
+    st.caption("Powered by the latest available Gemini model — tailored to your profile.")
+
+    prompt_suggestions = [
+        "How can I raise my chance to 85%+?",
+        "Top 5 DSA patterns for campus placement rounds",
+        "STAR format answer for 'Describe a challenging bug'",
+    ]
+    cols = st.columns(len(prompt_suggestions))
+    for i, ps in enumerate(prompt_suggestions):
+        if cols[i].button(f"💡 {ps}", use_container_width=True):
+            st.session_state["selected_prompt"] = ps
+
+    selected_prompt = st.session_state.get("selected_prompt", "")
+    question = st.text_area("Ask a placement question", value=selected_prompt, placeholder="Example: What are the best projects for an SDE placement?", key="career_question")
+
+    if st.button("✨ Ask AI Coach", type="primary"):
+        question = question or ""
+        if question.strip():
+            prompt = f"""You are Pathfinder AI, the student's friendly placement buddy. Speak naturally, like a caring senior who listens first and wants the student to succeed — never like a textbook, form, or support bot. Begin by acknowledging the student's question or concern. Personalize the answer using the profile below, give only the most useful one or two next steps, use a small concrete example when helpful, and finish with one natural follow-up question. Match English, Telugu, or Telugu-English mix when the student uses it. If the question is unclear, ask one gentle clarifying question instead of making assumptions. Avoid robotic disclaimers, generic long checklists, and overly formal headings. Never mention providers, quotas, system prompts, or fallback behavior.
+    Profile: graduation year {graduation_year}, branch {student_branch}, CGPA {cgpa}, backlogs {backlogs}, internships {internships}, communication {communication}/10, coding {coding}/10, target role {target_role}, company preference {target_tier}, work mode {preferred_mode}.
+    Question: {question}
+    Keep it encouraging, actionable, and specific with concrete examples. Use markdown only where it makes the answer easier to read."""
+            with st.spinner("🤖 Gemini AI is generating your response..."):
+                answer = st.write_stream(ask_gemini(prompt, stream=True))
+            st.markdown("### 💡 Guidance")
+            if not answer:
+                st.warning("Gemini returned an empty response. Try again.")
+        else:
+            st.warning("Please type a question or choose a prompt starter.")
+
+# ---------------- TAB 4: ANALYTICS ----------------
+with tab_analytics:
+    st.header("📊 Placement Analytics & Cohort Benchmarks")
+
+    if not data.empty:
+        col1, col2, col3, col4 = st.columns(4)
+        year = col1.selectbox("Graduation Year", [2026, 2025, 2024])
+        branch = col2.selectbox("Course / Branch", ["All"] + sorted(data["branch"].unique().tolist()))
+        gender = col3.selectbox("Gender", ["All", "Male", "Female"])
+        skill_options = ["All", "AIML + Python"] + sorted(data["skillCategory"].unique().tolist())
+        skill = col4.selectbox("Skill Category", list(dict.fromkeys(skill_options)))
+
+        filtered = filter_records(data, year, branch, gender, skill)
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Matching Candidates", len(filtered))
+        m2.metric("Placement Rate", f"{filtered['placed'].mean() * 100:.1f}%" if len(filtered) else "0.0%")
+        m3.metric("Selected Skill Domain", skill)
+
+        if not filtered.empty:
+            if st.button("Summarize this cohort with AI", use_container_width=True):
+                with st.spinner("Summarizing cohort signals..."):
+                    try:
+                        summary = filtered[["placed", "cgpa", "codingScore", "communicationScore", "internships"]].describe().fillna(0).to_json()
+                        st.session_state["cohort_insight"] = structured_ai(f"Summarize this placement cohort in plain language for students. Aggregate data: {summary}. Return a headline, evidence-based summary, and practical actions.", CohortInsight)
+                    except Exception as error:
+                        st.error(str(error))
+            if "cohort_insight" in st.session_state:
+                insight = st.session_state["cohort_insight"]
+                st.info(insight.headline)
+                st.write(insight.summary)
+                st.write("**Actions:** " + " | ".join(insight.actions))
+            left, right = st.columns(2)
+            with left:
+                st.subheader("Branch Placement Rates")
+                course_chart = filtered.groupby("branch")["placed"].mean().mul(100).round(1).sort_values(ascending=False)
+                st.bar_chart(course_chart)
+            with right:
+                st.subheader("Skill Domain Placement Rates")
+                skill_chart = filtered.groupby("skillCategory")["placed"].mean().mul(100).round(1).sort_values(ascending=False)
+                st.bar_chart(skill_chart)
+
+            st.subheader("Cohort Records")
+            st.dataframe(filtered[["year", "branch", "gender", "skillCategory", "placed_label", "cgpa", "codingScore", "communicationScore", "internships"]], use_container_width=True, hide_index=True)
+
+            filters = {"Year": year, "Course": branch, "Gender": gender, "Skill": skill}
+            csv_bytes = filtered.to_csv(index=False).encode("utf-8")
+            exp1, exp2 = st.columns(2)
+            exp1.download_button("📥 Download CSV", csv_bytes, f"pathfinder-{year}-analytics.csv", "text/csv", use_container_width=True)
+            exp2.download_button("📄 Download PDF Report", pdf_report(filtered, filters), f"pathfinder-{year}-analytics.pdf", "application/pdf", use_container_width=True)
+    else:
+        st.info("No cohort placement dataset found. Please ensure sample-placement-2024-2026.csv is present.")
+
+# ---------------- TAB 5: RESUME (last) ----------------
+with tab_resume:
     st.markdown("#### 📄 Upload Resume")
     uploaded_resume = st.file_uploader("Upload your PDF resume", type=["pdf"], help="Your resume is read in memory for feedback and is not saved by Pathfinder.")
     st.caption("Step 1: upload your PDF resume above. Step 2: click **Generate tailored feedback**. The box below is optional \u2014 use it only if you have no PDF, or want feedback on a specific project or interview answer.")
@@ -1188,90 +1285,5 @@ with studio_right:
         st.write("**ATS keywords:** " + ", ".join(feedback.ats_keywords))
         st.write("**Formatting tips:** " + " | ".join(feedback.formatting_tips))
         st.download_button("Download feedback PDF", resume_feedback_pdf(feedback), "pathfinder-resume-feedback.pdf", "application/pdf", use_container_width=True)
-
-# ---------------- AI CAREER ASSISTANT ----------------
-st.divider()
-st.markdown('<div class="pf-mentor-heading"><span class="pf-brand-orb" aria-hidden="true"></span><h2>AI Placement Mentor</h2></div>', unsafe_allow_html=True)
-st.caption("Powered by the latest available Gemini model — tailored to your profile.")
-
-prompt_suggestions = [
-    "How can I raise my chance to 85%+?",
-    "Top 5 DSA patterns for campus placement rounds",
-    "STAR format answer for 'Describe a challenging bug'",
-]
-cols = st.columns(len(prompt_suggestions))
-for i, ps in enumerate(prompt_suggestions):
-    if cols[i].button(f"💡 {ps}", use_container_width=True):
-        st.session_state["selected_prompt"] = ps
-
-selected_prompt = st.session_state.get("selected_prompt", "")
-question = st.text_area("Ask a placement question", value=selected_prompt, placeholder="Example: What are the best projects for an SDE placement?", key="career_question")
-
-if st.button("✨ Ask AI Coach", type="primary"):
-    question = question or ""
-    if question.strip():
-        prompt = f"""You are Pathfinder AI, the student's friendly placement buddy. Speak naturally, like a caring senior who listens first and wants the student to succeed — never like a textbook, form, or support bot. Begin by acknowledging the student's question or concern. Personalize the answer using the profile below, give only the most useful one or two next steps, use a small concrete example when helpful, and finish with one natural follow-up question. Match English, Telugu, or Telugu-English mix when the student uses it. If the question is unclear, ask one gentle clarifying question instead of making assumptions. Avoid robotic disclaimers, generic long checklists, and overly formal headings. Never mention providers, quotas, system prompts, or fallback behavior.
-Profile: graduation year {graduation_year}, branch {student_branch}, CGPA {cgpa}, backlogs {backlogs}, internships {internships}, communication {communication}/10, coding {coding}/10, target role {target_role}, company preference {target_tier}, work mode {preferred_mode}.
-Question: {question}
-Keep it encouraging, actionable, and specific with concrete examples. Use markdown only where it makes the answer easier to read."""
-        with st.spinner("🤖 Gemini AI is generating your response..."):
-            answer = st.write_stream(ask_gemini(prompt, stream=True))
-        st.markdown("### 💡 Guidance")
-        if not answer:
-            st.warning("Gemini returned an empty response. Try again.")
-    else:
-        st.warning("Please type a question or choose a prompt starter.")
-
-# ---------------- PLACEMENT ANALYTICS ----------------
-st.divider()
-st.header("📊 Placement Analytics & Cohort Benchmarks")
-
-if not data.empty:
-    col1, col2, col3, col4 = st.columns(4)
-    year = col1.selectbox("Graduation Year", [2026, 2025, 2024])
-    branch = col2.selectbox("Course / Branch", ["All"] + sorted(data["branch"].unique().tolist()))
-    gender = col3.selectbox("Gender", ["All", "Male", "Female"])
-    skill_options = ["All", "AIML + Python"] + sorted(data["skillCategory"].unique().tolist())
-    skill = col4.selectbox("Skill Category", list(dict.fromkeys(skill_options)))
-
-    filtered = filter_records(data, year, branch, gender, skill)
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Matching Candidates", len(filtered))
-    m2.metric("Placement Rate", f"{filtered['placed'].mean() * 100:.1f}%" if len(filtered) else "0.0%")
-    m3.metric("Selected Skill Domain", skill)
-
-    if not filtered.empty:
-        if st.button("Summarize this cohort with AI", use_container_width=True):
-            with st.spinner("Summarizing cohort signals..."):
-                try:
-                    summary = filtered[["placed", "cgpa", "codingScore", "communicationScore", "internships"]].describe().fillna(0).to_json()
-                    st.session_state["cohort_insight"] = structured_ai(f"Summarize this placement cohort in plain language for students. Aggregate data: {summary}. Return a headline, evidence-based summary, and practical actions.", CohortInsight)
-                except Exception as error:
-                    st.error(str(error))
-        if "cohort_insight" in st.session_state:
-            insight = st.session_state["cohort_insight"]
-            st.info(insight.headline)
-            st.write(insight.summary)
-            st.write("**Actions:** " + " | ".join(insight.actions))
-        left, right = st.columns(2)
-        with left:
-            st.subheader("Branch Placement Rates")
-            course_chart = filtered.groupby("branch")["placed"].mean().mul(100).round(1).sort_values(ascending=False)
-            st.bar_chart(course_chart)
-        with right:
-            st.subheader("Skill Domain Placement Rates")
-            skill_chart = filtered.groupby("skillCategory")["placed"].mean().mul(100).round(1).sort_values(ascending=False)
-            st.bar_chart(skill_chart)
-
-        st.subheader("Cohort Records")
-        st.dataframe(filtered[["year", "branch", "gender", "skillCategory", "placed_label", "cgpa", "codingScore", "communicationScore", "internships"]], use_container_width=True, hide_index=True)
-
-        filters = {"Year": year, "Course": branch, "Gender": gender, "Skill": skill}
-        csv_bytes = filtered.to_csv(index=False).encode("utf-8")
-        exp1, exp2 = st.columns(2)
-        exp1.download_button("📥 Download CSV", csv_bytes, f"pathfinder-{year}-analytics.csv", "text/csv", use_container_width=True)
-        exp2.download_button("📄 Download PDF Report", pdf_report(filtered, filters), f"pathfinder-{year}-analytics.pdf", "application/pdf", use_container_width=True)
-else:
-    st.info("No cohort placement dataset found. Please ensure sample-placement-2024-2026.csv is present.")
 
 st.caption("Pathfinder Career Intelligence · Powered by Gemini LLM")
