@@ -177,7 +177,7 @@ _MAIN_JS = r"""
   }
   function flower(x, y, h, t, seed) {
     var sw = Math.sin(t * 0.7 + seed) * 10, tx = x + sw, ty = y - h;
-    ctx.strokeStyle = 'rgba(60,178,116,0.9)'; ctx.lineWidth = 2.2;
+    ctx.strokeStyle = 'rgba(44,140,92,0.9)'; ctx.lineWidth = 2.2;
     ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + sw * 0.3, y - h * 0.5, tx, ty); ctx.stroke();
     var fg = ctx.createRadialGradient(tx, ty, 0, tx, ty, 30);
     fg.addColorStop(0, 'rgba(140,255,200,0.22)'); fg.addColorStop(1, 'rgba(140,255,200,0)');
@@ -185,7 +185,7 @@ _MAIN_JS = r"""
     for (var i = 0; i < 6; i++) {
       var a = (i / 6) * TAU + t * 0.05;
       ctx.save(); ctx.translate(tx + Math.cos(a) * 8, ty + Math.sin(a) * 8); ctx.rotate(a);
-      ctx.fillStyle = 'rgba(176,240,206,0.93)'; ctx.strokeStyle = 'rgba(110,210,160,0.55)'; ctx.lineWidth = 0.8;
+      ctx.fillStyle = 'rgba(140,215,178,0.88)'; ctx.strokeStyle = 'rgba(110,210,160,0.55)'; ctx.lineWidth = 0.8;
       ctx.beginPath(); ctx.ellipse(0, 0, 10, 5, 0, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
     }
     ctx.fillStyle = '#f0c552'; ctx.beginPath(); ctx.arc(tx, ty, 4.6, 0, TAU); ctx.fill();
@@ -220,20 +220,20 @@ _MAIN_JS = r"""
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
     var g = ctx.createLinearGradient(0, 0, W * 0.3, H);
-    g.addColorStop(0, '#04100b'); g.addColorStop(0.55, '#0a2117'); g.addColorStop(1, '#05150e');
+    g.addColorStop(0, '#020805'); g.addColorStop(0.55, '#06150e'); g.addColorStop(1, '#030c08');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     var sh = ctx.createRadialGradient(W * 0.12, -H * 0.05, 0, W * 0.12, -H * 0.05, Math.max(W, H) * 0.7);
-    sh.addColorStop(0, 'rgba(90,230,160,0.16)'); sh.addColorStop(1, 'rgba(90,230,160,0)');
+    sh.addColorStop(0, 'rgba(90,230,160,0.09)'); sh.addColorStop(1, 'rgba(90,230,160,0)');
     ctx.fillStyle = sh; ctx.fillRect(0, 0, W, H);
     // moss mounds
-    moss(W * 0.12, H, W * 0.30, H * 0.20, 0.42); moss(W * 0.55, H + 20, W * 0.34, H * 0.14, 0.30); moss(W * 0.92, H, W * 0.30, H * 0.22, 0.42);
+    moss(W * 0.12, H, W * 0.30, H * 0.20, 0.30); moss(W * 0.55, H + 20, W * 0.34, H * 0.14, 0.20); moss(W * 0.92, H, W * 0.30, H * 0.22, 0.30);
     // ferns
     var s = Math.max(0.7, Math.min(1.4, H / 800));
-    fern(W * 0.03, H + 6, 0.35, 330 * s, 1, t, 0.5, '44,176,112');
-    fern(W * 0.08, H + 6, 0.10, 250 * s, 1, t, 1.7, '84,214,146');
-    fern(W * 0.97, H + 6, -0.35, 330 * s, -1, t, 2.6, '44,176,112');
-    fern(W * 0.92, H + 6, -0.10, 250 * s, -1, t, 3.9, '84,214,146');
-    fern(W * 0.50, H + 10, 0.0, 150 * s, 1, t, 4.4, '120,232,170');
+    fern(W * 0.03, H + 6, 0.35, 330 * s, 1, t, 0.5, '28,130,84');
+    fern(W * 0.08, H + 6, 0.10, 250 * s, 1, t, 1.7, '52,160,110');
+    fern(W * 0.97, H + 6, -0.35, 330 * s, -1, t, 2.6, '28,130,84');
+    fern(W * 0.92, H + 6, -0.10, 250 * s, -1, t, 3.9, '52,160,110');
+    fern(W * 0.50, H + 10, 0.0, 150 * s, 1, t, 4.4, '80,190,136');
     // flowers
     flower(W * 0.16, H + 4, 150 * s, t, 0.3); flower(W * 0.21, H + 4, 108 * s, t, 1.2);
     flower(W * 0.83, H + 4, 130 * s, t, 2.2); flower(W * 0.88, H + 4, 172 * s, t, 3.1); flower(W * 0.58, H + 4, 84 * s, t, 4.0);
@@ -244,12 +244,12 @@ _MAIN_JS = r"""
       var x = ((p.x + t * p.vx) % 1 + 1) % 1, y = ((p.y + t * p.vy) % 1 + 1) % 1;
       x += Math.sin(t * 0.7 + p.ph) * 0.006;
       var a = 0.45 + 0.35 * Math.sin(t * 1.1 + p.ph);
-      ctx.fillStyle = 'rgba(255,236,150,' + (0.14 * a) + ')'; ctx.beginPath(); ctx.arc(x * W, y * H, p.r * 3.4, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(255,236,150,' + (0.10 * a) + ')'; ctx.beginPath(); ctx.arc(x * W, y * H, p.r * 3.4, 0, TAU); ctx.fill();
       ctx.fillStyle = 'rgba(255,240,170,' + a + ')'; ctx.beginPath(); ctx.arc(x * W, y * H, p.r, 0, TAU); ctx.fill();
     }
     ctx.globalCompositeOperation = 'source-over';
     // soft warm orb (top-right) + butterfly
-    drawBurst(ctx, sparks, W - 150, 130, 105, t, false, 0.55);
+    drawBurst(ctx, sparks, W - 150, 130, 105, t, false, 0.42);
     butterfly(t);
     // hero orb
     if (heroOrb && heroOrb.isConnected) {
@@ -325,7 +325,7 @@ body:has(.login-screen) .stButton > button:hover { box-shadow:0 16px 36px rgba(2
 MAIN_CSS = """
 <style>
 /* ===== Main app: dark living-green scene ===== */
-html:not(:has(.login-screen)) { background:#06120d !important; }
+html:not(:has(.login-screen)) { background:#020805 !important; }
 body:not(:has(.login-screen)) { background:transparent !important; }
 body:not(:has(.login-screen)) .stApp,
 body:not(:has(.login-screen)) [data-testid="stAppViewContainer"],
@@ -353,18 +353,18 @@ body:not(:has(.login-screen)) [data-testid="stProgressBar"] > div > div { backgr
 # Dark overrides for every page: no white surfaces, no black text.
 DARK_CSS = """
 <style>
-:root { --pf-bg:#06120d; --pf-surface:rgba(12,32,24,.74); --pf-surface-strong:#0d2118; --pf-border:rgba(120,220,170,.18); --pf-text:#e3f1e6; --pf-muted:#9dbba8; color-scheme:dark; }
+:root { --pf-bg:#020805; --pf-surface:rgba(6,18,13,.86); --pf-surface-strong:#07160f; --pf-border:rgba(90,200,150,.14); --pf-text:#e3f1e6; --pf-muted:#9dbba8; color-scheme:dark; }
 body:not(:has(.login-screen)) { --pf-text:#e3f1e6; --pf-muted:#9dbba8; }
 h1,h2,h3,h4,h5,h6 { color:var(--pf-text) !important; }
 p, li, label, .stMarkdown, [data-testid="stMarkdownContainer"], [data-testid="stWidgetLabel"] { color:var(--pf-text) !important; }
 .stCaption, [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] * { color:var(--pf-muted) !important; }
 .hero p { color:var(--pf-muted) !important; }
 .hero, .pf-hero {
-  background:linear-gradient(135deg,rgba(14,42,31,.88),rgba(8,24,18,.80)) !important;
+  background:linear-gradient(135deg,rgba(8,28,20,.92),rgba(3,12,9,.88)) !important;
   border:1px solid var(--pf-border) !important; box-shadow:0 14px 40px rgba(0,0,0,.35) !important;
 }
 body [data-testid="stSidebar"], body section[data-testid="stSidebar"] {
-  background:linear-gradient(180deg,rgba(6,20,14,.94),rgba(10,30,22,.90)) !important;
+  background:linear-gradient(180deg,rgba(2,9,6,.97),rgba(5,18,12,.94)) !important;
   border-right:1px solid var(--pf-border) !important; box-shadow:8px 0 30px rgba(0,0,0,.30) !important;
 }
 body section[data-testid="stSidebar"] *, body [data-testid="stSidebar"] * { color:var(--pf-text) !important; }
@@ -380,21 +380,21 @@ div[data-testid="stVerticalBlockBorderWrapper"], [data-testid="stMetric"], div[d
 [data-testid="stExpander"] summary, [data-testid="stExpander"] summary * { color:var(--pf-text) !important; }
 .stTextInput input, .stNumberInput input, .stTextArea textarea, [data-testid="stChatInput"] textarea,
 [data-testid="stTextInput"] input, [data-testid="stNumberInput"] input, [data-testid="stTextArea"] textarea {
-  background:rgba(4,16,11,.92) !important; color:var(--pf-text) !important; border:1px solid var(--pf-border) !important; border-radius:12px !important; box-shadow:none !important;
+  background:rgba(1,8,5,.95) !important; color:var(--pf-text) !important; border:1px solid var(--pf-border) !important; border-radius:12px !important; box-shadow:none !important;
 }
 [data-baseweb="input"], [data-baseweb="textarea"], [data-baseweb="select"] > div, [data-baseweb="base-input"] {
   background:rgba(4,16,11,.92) !important; color:var(--pf-text) !important; border-color:var(--pf-border) !important;
 }
 [data-baseweb="select"] *, [data-baseweb="input"] * { color:var(--pf-text) !important; }
-[data-baseweb="popover"], [data-baseweb="popover"] > div, [data-baseweb="menu"], ul[role="listbox"] { background:#0d2118 !important; }
-[data-baseweb="popover"] li, [data-baseweb="menu"] li, ul[role="listbox"] li { background:#0d2118 !important; color:var(--pf-text) !important; }
-[data-baseweb="popover"] li:hover, [data-baseweb="menu"] li:hover, ul[role="listbox"] li:hover { background:#16382a !important; }
+[data-baseweb="popover"], [data-baseweb="popover"] > div, [data-baseweb="menu"], ul[role="listbox"] { background:#06140d !important; }
+[data-baseweb="popover"] li, [data-baseweb="menu"] li, ul[role="listbox"] li { background:#06140d !important; color:var(--pf-text) !important; }
+[data-baseweb="popover"] li:hover, [data-baseweb="menu"] li:hover, ul[role="listbox"] li:hover { background:#0f2a1e !important; }
 [data-baseweb="tab-list"] { background:rgba(255,255,255,.05) !important; }
 [data-baseweb="tab"], button[data-baseweb="tab"] { color:#a9c7b4 !important; }
 [data-testid="stFileUploaderDropzone"] { background:rgba(4,16,11,.75) !important; border:1px dashed var(--pf-border) !important; }
 [data-testid="stFileUploaderDropzone"] * { color:var(--pf-muted) !important; }
 [data-testid="stFileUploaderDropzone"] button { color:#eafff2 !important; }
-[data-testid="stAlert"], div[data-testid="stAlert"] { background:rgba(16,46,34,.78) !important; border:1px solid var(--pf-border) !important; }
+[data-testid="stAlert"], div[data-testid="stAlert"] { background:rgba(8,30,21,.85) !important; border:1px solid var(--pf-border) !important; }
 [data-testid="stAlert"] *, div[data-testid="stAlert"] * { color:var(--pf-text) !important; }
 [data-testid="stBottom"], [data-testid="stBottom"] > div, [data-testid="stChatInput"], [data-testid="stChatInput"] > div { background:transparent !important; }
 [data-testid="stChatInput"] > div { background:rgba(4,16,11,.92) !important; border:1px solid var(--pf-border) !important; }
@@ -419,6 +419,14 @@ pre, code, [data-testid="stCode"] { background:rgba(4,16,11,.9) !important; colo
 [data-testid="stFileUploader"] button { background:rgba(63,191,133,.14) !important; color:#eafff2 !important; border:1px solid var(--pf-border) !important; }
 /* generic safety net */
 [data-testid="stForm"], [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"] { background-color:transparent !important; }
+/* neat separated tabs */
+[data-testid="stTabs"] { padding:10px 20px 20px !important; border-radius:20px !important; }
+[data-baseweb="tab-list"] { gap:6px !important; background:rgba(1,8,5,.7) !important; border:1px solid var(--pf-border) !important; border-radius:14px !important; padding:5px !important; flex-wrap:wrap; }
+button[data-baseweb="tab"] { font-weight:700 !important; font-size:.98rem !important; padding:.55rem 1.1rem !important; border-radius:10px !important; }
+[data-baseweb="tab-highlight"], [data-baseweb="tab-border"] { display:none !important; }
+[data-baseweb="tab-panel"] { padding-top:1.2rem !important; }
+[data-testid="stTabs"] [data-testid="stMetric"] { box-shadow:none !important; }
+.block-container { max-width:1240px !important; }
 .pf-gauge { background:rgba(157,187,168,.18) !important; }
 .pf-badge { background:rgba(63,191,133,.14) !important; color:#8fe6b4 !important; }
 </style>
