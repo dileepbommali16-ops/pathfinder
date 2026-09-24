@@ -177,19 +177,22 @@ _MAIN_JS = r"""
   }
   function flower(x, y, h, t, seed) {
     var sw = Math.sin(t * 0.7 + seed) * 10, tx = x + sw, ty = y - h;
-    ctx.strokeStyle = 'rgba(70,116,72,0.85)'; ctx.lineWidth = 2.2;
+    ctx.strokeStyle = 'rgba(60,178,116,0.9)'; ctx.lineWidth = 2.2;
     ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + sw * 0.3, y - h * 0.5, tx, ty); ctx.stroke();
+    var fg = ctx.createRadialGradient(tx, ty, 0, tx, ty, 30);
+    fg.addColorStop(0, 'rgba(140,255,200,0.22)'); fg.addColorStop(1, 'rgba(140,255,200,0)');
+    ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(tx, ty, 30, 0, TAU); ctx.fill();
     for (var i = 0; i < 6; i++) {
       var a = (i / 6) * TAU + t * 0.05;
       ctx.save(); ctx.translate(tx + Math.cos(a) * 8, ty + Math.sin(a) * 8); ctx.rotate(a);
-      ctx.fillStyle = 'rgba(255,253,246,0.96)'; ctx.strokeStyle = 'rgba(200,190,165,0.55)'; ctx.lineWidth = 0.8;
+      ctx.fillStyle = 'rgba(176,240,206,0.93)'; ctx.strokeStyle = 'rgba(110,210,160,0.55)'; ctx.lineWidth = 0.8;
       ctx.beginPath(); ctx.ellipse(0, 0, 10, 5, 0, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
     }
     ctx.fillStyle = '#f0c552'; ctx.beginPath(); ctx.arc(tx, ty, 4.6, 0, TAU); ctx.fill();
   }
   function moss(x, y, rx, ry, a) {
     var g = ctx.createRadialGradient(x, y, 0, x, y, rx);
-    g.addColorStop(0, 'rgba(96,142,86,' + a + ')'); g.addColorStop(1, 'rgba(96,142,86,0)');
+    g.addColorStop(0, 'rgba(46,170,108,' + a + ')'); g.addColorStop(1, 'rgba(46,170,108,0)');
     ctx.save(); ctx.translate(x, y); ctx.scale(1, ry / rx); ctx.translate(-x, -y);
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, rx, 0, TAU); ctx.fill(); ctx.restore();
   }
@@ -217,24 +220,25 @@ _MAIN_JS = r"""
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
     var g = ctx.createLinearGradient(0, 0, W * 0.3, H);
-    g.addColorStop(0, '#f6faee'); g.addColorStop(0.55, '#e6f1e1'); g.addColorStop(1, '#d3e6d6');
+    g.addColorStop(0, '#04100b'); g.addColorStop(0.55, '#0a2117'); g.addColorStop(1, '#05150e');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     var sh = ctx.createRadialGradient(W * 0.12, -H * 0.05, 0, W * 0.12, -H * 0.05, Math.max(W, H) * 0.7);
-    sh.addColorStop(0, 'rgba(255,244,196,0.55)'); sh.addColorStop(1, 'rgba(255,244,196,0)');
+    sh.addColorStop(0, 'rgba(90,230,160,0.16)'); sh.addColorStop(1, 'rgba(90,230,160,0)');
     ctx.fillStyle = sh; ctx.fillRect(0, 0, W, H);
     // moss mounds
-    moss(W * 0.12, H, W * 0.30, H * 0.20, 0.55); moss(W * 0.55, H + 20, W * 0.34, H * 0.14, 0.40); moss(W * 0.92, H, W * 0.30, H * 0.22, 0.55);
+    moss(W * 0.12, H, W * 0.30, H * 0.20, 0.42); moss(W * 0.55, H + 20, W * 0.34, H * 0.14, 0.30); moss(W * 0.92, H, W * 0.30, H * 0.22, 0.42);
     // ferns
     var s = Math.max(0.7, Math.min(1.4, H / 800));
-    fern(W * 0.03, H + 6, 0.35, 330 * s, 1, t, 0.5, '78,124,80');
-    fern(W * 0.08, H + 6, 0.10, 250 * s, 1, t, 1.7, '96,140,86');
-    fern(W * 0.97, H + 6, -0.35, 330 * s, -1, t, 2.6, '78,124,80');
-    fern(W * 0.92, H + 6, -0.10, 250 * s, -1, t, 3.9, '96,140,86');
-    fern(W * 0.50, H + 10, 0.0, 150 * s, 1, t, 4.4, '110,152,96');
+    fern(W * 0.03, H + 6, 0.35, 330 * s, 1, t, 0.5, '44,176,112');
+    fern(W * 0.08, H + 6, 0.10, 250 * s, 1, t, 1.7, '84,214,146');
+    fern(W * 0.97, H + 6, -0.35, 330 * s, -1, t, 2.6, '44,176,112');
+    fern(W * 0.92, H + 6, -0.10, 250 * s, -1, t, 3.9, '84,214,146');
+    fern(W * 0.50, H + 10, 0.0, 150 * s, 1, t, 4.4, '120,232,170');
     // flowers
     flower(W * 0.16, H + 4, 150 * s, t, 0.3); flower(W * 0.21, H + 4, 108 * s, t, 1.2);
     flower(W * 0.83, H + 4, 130 * s, t, 2.2); flower(W * 0.88, H + 4, 172 * s, t, 3.1); flower(W * 0.58, H + 4, 84 * s, t, 4.0);
     // pollen
+    ctx.globalCompositeOperation = 'lighter';
     for (var i = 0; i < pollen.length; i++) {
       var p = pollen[i];
       var x = ((p.x + t * p.vx) % 1 + 1) % 1, y = ((p.y + t * p.vy) % 1 + 1) % 1;
@@ -243,14 +247,15 @@ _MAIN_JS = r"""
       ctx.fillStyle = 'rgba(255,236,150,' + (0.14 * a) + ')'; ctx.beginPath(); ctx.arc(x * W, y * H, p.r * 3.4, 0, TAU); ctx.fill();
       ctx.fillStyle = 'rgba(255,240,170,' + a + ')'; ctx.beginPath(); ctx.arc(x * W, y * H, p.r, 0, TAU); ctx.fill();
     }
+    ctx.globalCompositeOperation = 'source-over';
     // soft warm orb (top-right) + butterfly
-    drawBurst(ctx, sparks, W - 150, 130, 105, t, true, 0.32);
+    drawBurst(ctx, sparks, W - 150, 130, 105, t, false, 0.55);
     butterfly(t);
     // hero orb
     if (heroOrb && heroOrb.isConnected) {
       var oc = heroOrb.getContext('2d');
       oc.setTransform(DPR, 0, 0, DPR, 0, 0); oc.clearRect(0, 0, 112, 112);
-      drawBurst(oc, sparks, 56, 56, 50, t, true, 1);
+      drawBurst(oc, sparks, 56, 56, 50, t, false, 1);
     }
   }
 """
@@ -267,7 +272,8 @@ MAIN_SCRIPT = _script(_MAIN_JS)
 LOGIN_CSS = """
 <style>
 /* ===== Login: dark warm spark-burst scene ===== */
-html:has(.login-screen), body:has(.login-screen) { background:#08070a !important; }
+html:has(.login-screen) { background:#08070a !important; }
+body:has(.login-screen) { background:transparent !important; }
 body:has(.login-screen) {
   --pf-text:#f6efe6; --pf-muted:#b9a99a;
 }
@@ -318,8 +324,9 @@ body:has(.login-screen) .stButton > button:hover { box-shadow:0 16px 36px rgba(2
 
 MAIN_CSS = """
 <style>
-/* ===== Main app: living-green scene ===== */
-html:not(:has(.login-screen)), body:not(:has(.login-screen)) { background:#e6f0e2 !important; }
+/* ===== Main app: dark living-green scene ===== */
+html:not(:has(.login-screen)) { background:#06120d !important; }
+body:not(:has(.login-screen)) { background:transparent !important; }
 body:not(:has(.login-screen)) .stApp,
 body:not(:has(.login-screen)) [data-testid="stAppViewContainer"],
 body:not(:has(.login-screen)) [data-testid="stMain"],
@@ -327,21 +334,75 @@ body:not(:has(.login-screen)) [data-testid="stHeader"] { background:transparent 
 body:not(:has(.login-screen)) [data-testid="stAppViewContainer"]::before,
 body:not(:has(.login-screen)) [data-testid="stAppViewContainer"]::after,
 .pf-data-arc, .pf-bg-advanced { display:none !important; }
-
 .hero { position:relative; overflow:hidden; padding-right:150px !important; }
-body:not(:has(.login-screen)) [data-testid="stSidebar"] { background:rgba(248,252,245,.86) !important; }
-
-body:not(:has(.login-screen)) .stButton > button {
-  background:linear-gradient(135deg,#3f8a5c,#2f9e8f) !important;
-  box-shadow:0 9px 22px rgba(47,158,143,.22) !important;
+body:not(:has(.login-screen)) .stButton > button,
+body:not(:has(.login-screen)) .stDownloadButton > button {
+  color:#eafff2 !important;
+  background:linear-gradient(135deg,#1f8f5f,#1a9c8c) !important;
+  box-shadow:0 9px 22px rgba(26,156,140,.28) !important;
 }
-body:not(:has(.login-screen)) .stButton > button:hover { box-shadow:0 14px 30px rgba(47,158,143,.32) !important; }
-body:not(:has(.login-screen)) [data-baseweb="tab"][aria-selected="true"] { color:#2f7d55 !important; }
+body:not(:has(.login-screen)) .stButton > button:hover { box-shadow:0 14px 30px rgba(63,191,133,.38) !important; }
+body:not(:has(.login-screen)) [data-baseweb="tab"][aria-selected="true"] { color:#8fe6b4 !important; background:rgba(63,191,133,.14) !important; }
 body:not(:has(.login-screen)) [data-testid="stSlider"] [role="slider"] {
-  background:#3f8a5c !important; border-color:#3f8a5c !important; box-shadow:0 0 0 4px rgba(63,138,92,.14) !important;
+  background:#3fbf85 !important; border-color:#3fbf85 !important; box-shadow:0 0 0 4px rgba(63,191,133,.18) !important;
 }
-body:not(:has(.login-screen)) [data-testid="stProgressBar"] > div > div { background:linear-gradient(90deg,#3f8a5c,#8fcf8a,#f0c552) !important; }
-body:not(:has(.login-screen)) .hero h1 { color:#1f3a2a !important; }
+body:not(:has(.login-screen)) [data-testid="stProgressBar"] > div > div { background:linear-gradient(90deg,#1f8f5f,#6fe3a5,#f0c552) !important; }
+</style>
+"""
+
+# Dark overrides for every page: no white surfaces, no black text.
+DARK_CSS = """
+<style>
+:root { --pf-bg:#06120d; --pf-surface:rgba(12,32,24,.74); --pf-surface-strong:#0d2118; --pf-border:rgba(120,220,170,.18); --pf-text:#e3f1e6; --pf-muted:#9dbba8; color-scheme:dark; }
+body:not(:has(.login-screen)) { --pf-text:#e3f1e6; --pf-muted:#9dbba8; }
+h1,h2,h3,h4,h5,h6 { color:var(--pf-text) !important; }
+p, li, label, .stMarkdown, [data-testid="stMarkdownContainer"], [data-testid="stWidgetLabel"] { color:var(--pf-text) !important; }
+.stCaption, [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] * { color:var(--pf-muted) !important; }
+.hero p { color:var(--pf-muted) !important; }
+.hero, .pf-hero {
+  background:linear-gradient(135deg,rgba(14,42,31,.88),rgba(8,24,18,.80)) !important;
+  border:1px solid var(--pf-border) !important; box-shadow:0 14px 40px rgba(0,0,0,.35) !important;
+}
+body [data-testid="stSidebar"], body section[data-testid="stSidebar"] {
+  background:linear-gradient(180deg,rgba(6,20,14,.94),rgba(10,30,22,.90)) !important;
+  border-right:1px solid var(--pf-border) !important; box-shadow:8px 0 30px rgba(0,0,0,.30) !important;
+}
+body section[data-testid="stSidebar"] *, body [data-testid="stSidebar"] * { color:var(--pf-text) !important; }
+body section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] * { color:var(--pf-muted) !important; }
+.profile-section-label { color:#7fdcae !important; }
+div[data-testid="stVerticalBlockBorderWrapper"], [data-testid="stMetric"], div[data-testid="stMetric"],
+[data-testid="stExpander"], [data-testid="stTabs"], [data-testid="stChatMessage"] {
+  background:var(--pf-surface) !important; border:1px solid var(--pf-border) !important; color:var(--pf-text) !important;
+  box-shadow:0 12px 34px rgba(0,0,0,.32) !important;
+}
+[data-testid="stMetricLabel"], div[data-testid="stMetricLabel"], [data-testid="stMetricLabel"] * { color:var(--pf-muted) !important; }
+[data-testid="stMetricValue"], div[data-testid="stMetricValue"], [data-testid="stMetricValue"] * { color:#f1e8c9 !important; }
+[data-testid="stExpander"] summary, [data-testid="stExpander"] summary * { color:var(--pf-text) !important; }
+.stTextInput input, .stNumberInput input, .stTextArea textarea, [data-testid="stChatInput"] textarea,
+[data-testid="stTextInput"] input, [data-testid="stNumberInput"] input, [data-testid="stTextArea"] textarea {
+  background:rgba(4,16,11,.92) !important; color:var(--pf-text) !important; border:1px solid var(--pf-border) !important; border-radius:12px !important; box-shadow:none !important;
+}
+[data-baseweb="input"], [data-baseweb="textarea"], [data-baseweb="select"] > div, [data-baseweb="base-input"] {
+  background:rgba(4,16,11,.92) !important; color:var(--pf-text) !important; border-color:var(--pf-border) !important;
+}
+[data-baseweb="select"] *, [data-baseweb="input"] * { color:var(--pf-text) !important; }
+[data-baseweb="popover"], [data-baseweb="popover"] > div, [data-baseweb="menu"], ul[role="listbox"] { background:#0d2118 !important; }
+[data-baseweb="popover"] li, [data-baseweb="menu"] li, ul[role="listbox"] li { background:#0d2118 !important; color:var(--pf-text) !important; }
+[data-baseweb="popover"] li:hover, [data-baseweb="menu"] li:hover, ul[role="listbox"] li:hover { background:#16382a !important; }
+[data-baseweb="tab-list"] { background:rgba(255,255,255,.05) !important; }
+[data-baseweb="tab"], button[data-baseweb="tab"] { color:#a9c7b4 !important; }
+[data-testid="stFileUploaderDropzone"] { background:rgba(4,16,11,.75) !important; border:1px dashed var(--pf-border) !important; }
+[data-testid="stFileUploaderDropzone"] * { color:var(--pf-muted) !important; }
+[data-testid="stFileUploaderDropzone"] button { color:#eafff2 !important; }
+[data-testid="stAlert"], div[data-testid="stAlert"] { background:rgba(16,46,34,.78) !important; border:1px solid var(--pf-border) !important; }
+[data-testid="stAlert"] *, div[data-testid="stAlert"] * { color:var(--pf-text) !important; }
+[data-testid="stBottom"], [data-testid="stBottom"] > div, [data-testid="stChatInput"], [data-testid="stChatInput"] > div { background:transparent !important; }
+[data-testid="stChatInput"] > div { background:rgba(4,16,11,.92) !important; border:1px solid var(--pf-border) !important; }
+[data-testid="stDataFrame"], div[data-testid="stDataFrame"] { border:1px solid var(--pf-border) !important; background:rgba(4,16,11,.8) !important; }
+pre, code, [data-testid="stCode"] { background:rgba(4,16,11,.9) !important; color:#bfeed3 !important; }
+[data-testid="stToolbar"] *, [data-testid="stHeader"] * { color:var(--pf-text) !important; }
+.pf-gauge { background:rgba(157,187,168,.18) !important; }
+.pf-badge { background:rgba(63,191,133,.14) !important; color:#8fe6b4 !important; }
 </style>
 """
 
@@ -357,7 +418,7 @@ HELPER_CSS = """
 def render_scene(st, scene: str) -> None:
     """Inject the CSS theme and the canvas scene ('login' or 'main')."""
     css = LOGIN_CSS if scene == "login" else MAIN_CSS
-    st.markdown(HELPER_CSS + css, unsafe_allow_html=True)
+    st.markdown(HELPER_CSS + DARK_CSS + css, unsafe_allow_html=True)
     script = LOGIN_SCRIPT if scene == "login" else MAIN_SCRIPT
     try:
         import streamlit.components.v1 as components
