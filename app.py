@@ -22,6 +22,8 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from sklearn.ensemble import RandomForestClassifier
 
+from motion_ui import render_scene
+
 
 class StudentProfile(BaseModel):
     cgpa: float = Field(ge=0, le=10)
@@ -868,6 +870,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
+    render_scene(st, "login")
     st.markdown('<section class="login-screen"><span class="login-sylva-orb"></span><span class="login-sylva-leaf login-sylva-leaf--one"></span><span class="login-sylva-leaf login-sylva-leaf--two"></span><h1>PATHFINDER</h1><p>AI-Powered Placement &amp; Career Intelligence Platform</p></section>', unsafe_allow_html=True)
     st.markdown('<div class="login-wrap"><div class="login-card">', unsafe_allow_html=True)
     st.subheader("🔐 Welcome back")
@@ -924,9 +927,8 @@ if not st.session_state.logged_in:
     st.markdown('</div></div>', unsafe_allow_html=True)
     st.stop()
 
-# Post-login interface: emerald Data Pixel Arc horizon for the analytics experience.
-st.markdown('<div class="pf-data-arc" aria-hidden="true"><div class="pf-data-arc__band"></div><div class="pf-data-arc__pixels"></div></div>', unsafe_allow_html=True)
-st.markdown('<div class="pf-bg-advanced" aria-hidden="true"><div class="pf-bg-advanced__aurora"></div><div class="pf-bg-advanced__beam"></div><div class="pf-bg-advanced__beam pf-bg-advanced__beam--two"></div><div class="pf-bg-advanced__grid"></div><span class="pf-bg-advanced__particle pf-bg-advanced__particle--one"></span><span class="pf-bg-advanced__particle pf-bg-advanced__particle--two"></span><span class="pf-bg-advanced__particle pf-bg-advanced__particle--three"></span></div>', unsafe_allow_html=True)
+# Post-login interface: living-green motion scene (ferns, flowers, pollen, butterfly, spark orb).
+render_scene(st, "main")
 
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
 def ask_gemini(prompt, retries=2, stream=False):
