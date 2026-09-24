@@ -648,7 +648,7 @@ st.markdown("""
 <style>
 /* PATHFINDER LIGHT MOTION THEME — replaces the dark-blue visual language */
 :root {
-  --pf-bg: #f7f8fc;
+  --pf-bg: #eef3fb;
   --pf-surface: rgba(255,255,255,.86);
   --pf-surface-strong: #ffffff;
   --pf-border: rgba(99,102,241,.14);
@@ -661,7 +661,7 @@ st.markdown("""
 
 /* Main page */
 [data-testid="stAppViewContainer"] {
-  background: #f7f8fc !important;
+  background: linear-gradient(135deg,#eaf1fc 0%,#f4f7fd 45%,#eef8f6 100%) !important;
   color: var(--pf-text) !important;
 }
 [data-testid="stAppViewContainer"]::before {
@@ -671,10 +671,11 @@ st.markdown("""
   z-index:-5;
   pointer-events:none;
   background:
-    radial-gradient(circle at 12% 12%, rgba(167,139,250,.20), transparent 26%),
-    radial-gradient(circle at 88% 16%, rgba(45,212,191,.16), transparent 24%),
-    radial-gradient(circle at 78% 86%, rgba(244,114,182,.13), transparent 27%),
-    radial-gradient(circle at 20% 84%, rgba(96,165,250,.12), transparent 25%);
+    radial-gradient(circle at 10% 12%, rgba(37,99,235,.22), transparent 28%),
+    radial-gradient(circle at 90% 14%, rgba(13,148,136,.20), transparent 26%),
+    radial-gradient(circle at 82% 88%, rgba(245,158,11,.16), transparent 27%),
+    radial-gradient(circle at 16% 86%, rgba(79,70,229,.16), transparent 26%),
+    radial-gradient(circle at 50% 50%, rgba(14,165,233,.08), transparent 32%);
   filter: blur(8px);
   animation: pf-light-orbs 18s ease-in-out infinite alternate;
 }
@@ -686,8 +687,8 @@ st.markdown("""
   pointer-events:none;
   opacity:.34;
   background-image:
-    linear-gradient(rgba(109,93,252,.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(109,93,252,.035) 1px, transparent 1px);
+    linear-gradient(rgba(37,99,235,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37,99,235,.045) 1px, transparent 1px);
   background-size:48px 48px;
   mask-image:linear-gradient(to bottom, transparent, black 18%, black 78%, transparent);
   animation: pf-light-grid 30s linear infinite;
