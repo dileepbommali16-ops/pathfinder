@@ -781,9 +781,9 @@ OPENROUTER_API_KEY = setting("OPENROUTER_API_KEY")
 OPENROUTER_MODEL = setting("OPENROUTER_MODEL", "openrouter/free") or "openrouter/free"
 # Gemini has retired older model aliases for some new projects. Normalize legacy
 # Streamlit Secrets values so deployment does not keep requesting an unavailable model.
-configured_model = setting("GEMINI_MODEL", "gemini-3.6-flash")
-if configured_model in {"gemini-2.5-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"}:
-    configured_model = "gemini-3.6-flash"
+configured_model = setting("GEMINI_MODEL", "gemini-2.5-flash")
+if configured_model in {"gemini-3.6-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"}:
+    configured_model = "gemini-2.5-flash"
 GEMINI_MODEL = configured_model
 # Keep fast flash-tier fallbacks so temporary overloads do not break AI features.
 GEMINI_MODELS = list(dict.fromkeys([
