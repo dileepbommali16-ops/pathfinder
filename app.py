@@ -38,7 +38,7 @@ _COMMON = r"""
   D.body.insertBefore(cv, D.body.firstChild);
   var ctx = cv.getContext('2d'), W = 0, H = 0, DPR = 1, TAU = Math.PI * 2;
   function resize() {
-    DPR = Math.min(P.devicePixelRatio || 1, 2);
+    DPR = Math.min(P.devicePixelRatio || 1, 1.5);
     W = P.innerWidth; H = P.innerHeight;
     cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -107,10 +107,13 @@ _COMMON = r"""
 """
 
 _LOOP = r"""
-  var t0 = P.performance.now();
+  var t0 = P.performance.now(), lastDraw = 0;
   function frame(now) {
     if (!alive) return;
-    draw((now - t0) / 1000);
+    if (now - lastDraw >= 33) {  // ~30fps cap: smooth enough, much lighter than 60fps
+      lastDraw = now;
+      draw((now - t0) / 1000);
+    }
     P.requestAnimationFrame(frame);
   }
   if (reduce) { draw(2.0); } else { P.requestAnimationFrame(frame); }
@@ -118,9 +121,9 @@ _LOOP = r"""
 """
 
 _LOGIN_JS = r"""
-  var sparks = makeBurst(230, 7);
+  var sparks = makeBurst(90, 7);
   var rr = rng(21), embers = [];
-  for (var i = 0; i < 46; i++) embers.push({ x: rr(), y: rr(), v: 0.006 + rr() * 0.02, r: 0.6 + rr() * 1.6, ph: rr() * TAU });
+  for (var i = 0; i < 16; i++) embers.push({ x: rr(), y: rr(), v: 0.006 + rr() * 0.02, r: 0.6 + rr() * 1.6, ph: rr() * TAU });
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
     var cx = W / 2, cy = H * 0.36, R = Math.min(W, H) * 0.36;
@@ -147,11 +150,11 @@ _LOGIN_JS = r"""
 """
 
 _MAIN_JS = r"""
-  var sparks = makeBurst(120, 11);
+  var sparks = makeBurst(50, 11);
   var R2 = rng(5), pollen = [];
-  for (var i = 0; i < 70; i++) pollen.push({ x: R2(), y: R2(), vx: 0.004 + R2() * 0.01, vy: -(0.002 + R2() * 0.008), r: 0.8 + R2() * 1.8, ph: R2() * TAU });
+  for (var i = 0; i < 22; i++) pollen.push({ x: R2(), y: R2(), vx: 0.004 + R2() * 0.01, vy: -(0.002 + R2() * 0.008), r: 0.8 + R2() * 1.8, ph: R2() * TAU });
   var rs = rng(99), stars = [];
-  for (var i = 0; i < 90; i++) stars.push({ x: rs(), y: rs() * 0.62, r: 0.4 + rs() * 1.1, ph: rs() * TAU, sp: 0.6 + rs() * 1.6 });
+  for (var i = 0; i < 0; i++) stars.push({ x: rs(), y: rs() * 0.62, r: 0.4 + rs() * 1.1, ph: rs() * TAU, sp: 0.6 + rs() * 1.6 });
   var mouse = { x: -999, y: -999, gx: -999, gy: -999 };
   function onMove(e) { mouse.x = e.clientX; mouse.y = e.clientY; if (mouse.gx < -900) { mouse.gx = mouse.x; mouse.gy = mouse.y; } }
   P.addEventListener('mousemove', onMove); cleanups.push(function () { P.removeEventListener('mousemove', onMove); });
@@ -277,15 +280,6 @@ _MAIN_JS = r"""
       ctx.fillStyle = 'rgba(190,255,220,' + sa + ')'; ctx.beginPath(); ctx.arc(st.x * W, st.y * H, st.r, 0, TAU); ctx.fill();
     }
     ctx.globalCompositeOperation = 'source-over';
-    aurora(t);
-    // cursor glow (eased)
-    if (mouse.x > -900) {
-      mouse.gx += (mouse.x - mouse.gx) * 0.08; mouse.gy += (mouse.y - mouse.gy) * 0.08;
-      var mg = ctx.createRadialGradient(mouse.gx, mouse.gy, 0, mouse.gx, mouse.gy, 220);
-      mg.addColorStop(0, 'rgba(70,230,160,0.13)'); mg.addColorStop(1, 'rgba(70,230,160,0)');
-      ctx.fillStyle = mg; ctx.fillRect(mouse.gx - 220, mouse.gy - 220, 440, 440);
-    }
-    dataArc(t);
     // moss mounds
     moss(W * 0.12, H, W * 0.30, H * 0.20, 0.30); moss(W * 0.55, H + 20, W * 0.34, H * 0.14, 0.20); moss(W * 0.92, H, W * 0.30, H * 0.22, 0.30);
     // ferns
@@ -510,13 +504,19 @@ def render_scene(st, scene: str) -> None:
     """Inject the CSS theme and the canvas scene ('login' or 'main')."""
     css = LOGIN_CSS if scene == "login" else MAIN_CSS
     st.markdown(HELPER_CSS + DARK_CSS + css, unsafe_allow_html=True)
-    script = LOGIN_SCRIPT if scene == "login" else MAIN_SCRIPT
-    try:
-        import streamlit.components.v1 as components
-        components.html(script, height=0)
-    except Exception:
-        # Motion is decorative; never break the app if the component API changes.
-        pass
+    # The animation runs entirely in the browser (requestAnimationFrame), so it only
+    # needs to be (re)injected once per scene per session — not on every Next/Back
+    # click, which just reruns this script. This avoids reloading the component
+    # iframe on every interaction, which is the slow part on a weak connection.
+    if st.session_state.get("_pf_scene") != scene:
+        st.session_state["_pf_scene"] = scene
+        script = LOGIN_SCRIPT if scene == "login" else MAIN_SCRIPT
+        try:
+            import streamlit.components.v1 as components
+            components.html(script, height=0)
+        except Exception:
+            # Motion is decorative; never break the app if the component API changes.
+            pass
 # ======================= END MOTION UI =======================
 
 
@@ -680,7 +680,7 @@ def openrouter_answer(prompt: str) -> str | None:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=35) as response:
+        with urllib.request.urlopen(request, timeout=12) as response:  # fail fast on slow networks
             result = json.loads(response.read().decode("utf-8"))
         content = result.get("choices", [{}])[0].get("message", {}).get("content")
         return content.strip() if isinstance(content, str) and content.strip() else None
@@ -712,30 +712,25 @@ def structured_ai(prompt: str, schema: type[BaseModel], pdf_bytes: bytes | None 
     if client is None:
         return local_structured_fallback(prompt, schema)
     last_error = None
-    for model_name in dict.fromkeys(GEMINI_MODELS):
-        for attempt in range(2):
-            try:
-                contents = [types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"), prompt] if pdf_bytes else prompt
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=contents,
-                    config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema, temperature=0.3),
-                )
-                parsed = getattr(response, "parsed", None)
-                response_text = response.text or "{}"
-                return schema.model_validate(parsed if parsed is not None else json.loads(response_text))
-            except Exception as error:
-                last_error = error
-                error_text = str(error).upper()
-                if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
-                    return local_structured_fallback(prompt, schema)
-                if "404" in error_text or "NOT_FOUND" in error_text:
-                    break
-                transient = any(code in error_text for code in ("503", "500", "502", "504", "UNAVAILABLE", "INTERNAL"))
-                if transient and attempt == 0:
-                    time.sleep(0.8)
-                    continue
-                break
+    for model_name in GEMINI_MODELS:
+        # One attempt per model only: on a slow connection, retrying just doubles the wait.
+        # If it fails, move straight to the next (smaller/faster) model or the offline fallback.
+        try:
+            contents = [types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"), prompt] if pdf_bytes else prompt
+            response = client.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema, temperature=0.3),
+            )
+            parsed = getattr(response, "parsed", None)
+            response_text = response.text or "{}"
+            return schema.model_validate(parsed if parsed is not None else json.loads(response_text))
+        except Exception as error:
+            last_error = error
+            error_text = str(error).upper()
+            if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
+                return local_structured_fallback(prompt, schema)
+            continue
     return local_structured_fallback(prompt, schema)
 
 
@@ -792,9 +787,7 @@ GEMINI_MODEL = configured_model
 # Keep fast flash-tier fallbacks so temporary overloads do not break AI features.
 GEMINI_MODELS = list(dict.fromkeys([
     GEMINI_MODEL,
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
+    "gemini-2.0-flash-lite",  # smallest/fastest model, kept as the one fallback
 ]))
 
 
@@ -837,7 +830,7 @@ except ImportError:
 client = None
 if GEMINI_API_KEY and genai:
     try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
+        client = genai.Client(api_key=GEMINI_API_KEY, http_options=types.HttpOptions(timeout=12000))  # 12s timeout: fail fast on slow networks
     except Exception:
         client = None
 
@@ -1427,7 +1420,7 @@ if not st.session_state.logged_in:
 render_scene(st, "main")
 
 # ---------------- AI HELPER WITH ROBUST MODEL FALLBACKS ----------------
-def ask_gemini(prompt, retries=2, stream=False):
+def ask_gemini(prompt, retries=1, stream=False):
     """Use cached full responses or stream a new flash-tier response progressively."""
     if st.session_state.get("guest_mode"):
         guest_uses = int(st.session_state.get("guest_ai_uses", 0))
@@ -1448,31 +1441,25 @@ def ask_gemini(prompt, retries=2, stream=False):
         return cached_gemini(prompt, GEMINI_MODEL)
 
     def response_stream():
-        last_error = None
-        for model_name in dict.fromkeys(GEMINI_MODELS):
-            for attempt in range(retries):
-                try:
-                    response = client.models.generate_content_stream(model=model_name, contents=prompt)  # type: ignore[union-attr]
-                    chunks = []
-                    for chunk in response:
-                        text = getattr(chunk, "text", None)
-                        if text:
-                            chunks.append(text)
-                            yield text
-                    st.session_state.setdefault("answer_cache", {})[cache_key] = "".join(chunks)
+        # One quick attempt per model, no artificial waits: on a slow network every retry
+        # just adds dead time, so fail fast and hand off to the offline/backup answer.
+        for model_name in GEMINI_MODELS:
+            try:
+                response = client.models.generate_content_stream(model=model_name, contents=prompt)  # type: ignore[union-attr]
+                chunks = []
+                for chunk in response:
+                    text = getattr(chunk, "text", None)
+                    if text:
+                        chunks.append(text)
+                        yield text
+                st.session_state.setdefault("answer_cache", {})[cache_key] = "".join(chunks)
+                return
+            except Exception as exc:
+                error_text = str(exc).upper()
+                if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
+                    yield provider_answer(prompt)
                     return
-                except Exception as exc:
-                    last_error = exc
-                    error_text = str(exc).upper()
-                    if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
-                        yield provider_answer(prompt)
-                        return
-                    if "404" in error_text or "NOT_FOUND" in error_text:
-                        break
-                    if any(code in error_text for code in ("503", "500", "502", "504", "UNAVAILABLE", "INTERNAL")):
-                        time.sleep(0.8)
-                    if attempt < retries - 1:
-                        time.sleep(0.4)
+                continue
         yield provider_answer(prompt)
 
     return response_stream()
