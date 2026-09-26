@@ -24,8 +24,6 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 # ======================= MOTION UI (login + main animated backgrounds) =======================
-# Premium dark SaaS-style motion: gradient canvas, glowing orbs, a connected
-# particle network, a soft diagonal light sweep, and a cursor-reactive glow.
 _COMMON = r"""
 (function () {
   var P = window.parent, D = P.document;
@@ -46,9 +44,6 @@ _COMMON = r"""
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
   resize(); P.addEventListener('resize', resize);
-  var mouse = { x: -999, y: -999, gx: -999, gy: -999 };
-  function onMove(e) { mouse.x = e.clientX; mouse.y = e.clientY; if (mouse.gx < -900) { mouse.gx = mouse.x; mouse.gy = mouse.y; } }
-  P.addEventListener('mousemove', onMove); cleanups.push(function () { P.removeEventListener('mousemove', onMove); });
   P.__pfStop = function () {
     alive = false;
     P.removeEventListener('resize', resize);
@@ -68,83 +63,45 @@ _COMMON = r"""
     };
   }
 
-  /* ---- soft glowing orb ---- */
-  function drawGlowOrb(c, cx, cy, r, rgb, alpha) {
-    var g = c.createRadialGradient(cx, cy, 0, cx, cy, r);
-    g.addColorStop(0, 'rgba(' + rgb + ',' + (0.50 * alpha) + ')');
-    g.addColorStop(0.45, 'rgba(' + rgb + ',' + (0.18 * alpha) + ')');
-    g.addColorStop(1, 'rgba(' + rgb + ',0)');
-    c.globalCompositeOperation = 'lighter';
-    c.fillStyle = g; c.beginPath(); c.arc(cx, cy, r, 0, TAU); c.fill();
-    c.globalCompositeOperation = 'source-over';
-  }
-
-  /* ---- connected particle network (dots + fading links) ---- */
-  function makeParticles(n, seed) {
+  /* ---- warm spark burst (expands / contracts around a bright core) ---- */
+  function makeBurst(n, seed) {
     var r = rng(seed), a = [];
     for (var i = 0; i < n; i++) {
-      a.push({ x: r(), y: r(), vx: (r() - 0.5) * 0.012, vy: (r() - 0.5) * 0.012,
-               rad: 1.1 + r() * 1.7, ph: r() * TAU, tw: 0.5 + r() * 1.1 });
+      a.push({ ang: (i / n) * TAU + (r() - 0.5) * 0.05, len: 0.10 + r() * 0.30,
+               r0: 0.10 + r() * 0.20, ph: r() * TAU, w: 0.6 + r() * 1.0, hue: r() });
     }
     return a;
   }
-  function drawParticleField(c, list, t, rgb, linkDist) {
-    var pos = [];
-    for (var i = 0; i < list.length; i++) {
-      var p = list[i];
-      var x = ((p.x + t * p.vx) % 1 + 1) % 1;
-      var y = ((p.y + t * p.vy) % 1 + 1) % 1;
-      pos.push([x * W, y * H, p]);
+  function drawBurst(c, sparks, cx, cy, R, t, light, alpha) {
+    var breath = 0.5 + 0.5 * Math.sin(t * 0.9);
+    var cr = R * (0.14 + 0.10 * breath);
+    c.globalCompositeOperation = light ? 'source-over' : 'lighter';
+    var g = c.createRadialGradient(cx, cy, 0, cx, cy, cr * 2.4);
+    g.addColorStop(0, 'rgba(255,248,232,' + (0.95 * alpha) + ')');
+    g.addColorStop(0.35, 'rgba(255,186,116,' + (0.55 * alpha) + ')');
+    g.addColorStop(1, 'rgba(226,86,43,0)');
+    c.fillStyle = g; c.beginPath(); c.arc(cx, cy, cr * 2.4, 0, TAU); c.fill();
+    c.lineCap = 'round';
+    for (var i = 0; i < sparks.length; i++) {
+      var s = sparks[i];
+      var b = 0.5 + 0.5 * Math.sin(t * s.w * 0.9 + s.ph);
+      var e = 0.55 + 0.45 * Math.sin(t * 0.9 + s.ph * 0.15);
+      var r1 = R * s.r0 * (0.6 + 0.4 * e);
+      var r2 = r1 + R * s.len * (0.4 + 0.9 * e) * (0.6 + 0.4 * b);
+      var ca = Math.cos(s.ang), sa = Math.sin(s.ang);
+      var a = (0.18 + 0.62 * b) * alpha;
+      var gg = light ? Math.round(96 + s.hue * 40) : Math.round(150 + s.hue * 70);
+      var bb = light ? Math.round(40 + s.hue * 20) : Math.round(80 + s.hue * 60);
+      var rr = light ? 226 : 255;
+      c.strokeStyle = 'rgba(' + rr + ',' + gg + ',' + bb + ',' + a + ')';
+      c.lineWidth = 0.9 + s.w * 0.8;
+      c.beginPath();
+      c.moveTo(cx + ca * r1, cy + sa * r1);
+      c.lineTo(cx + ca * r2, cy + sa * r2);
+      c.stroke();
+      c.fillStyle = 'rgba(' + rr + ',' + Math.min(255, gg + 30) + ',' + (bb + 30) + ',' + Math.min(1, a + 0.15) + ')';
+      c.beginPath(); c.arc(cx + ca * r2, cy + sa * r2, 0.9 + s.w * 0.9, 0, TAU); c.fill();
     }
-    c.globalCompositeOperation = 'lighter';
-    c.lineWidth = 1;
-    for (var i = 0; i < pos.length; i++) {
-      for (var j = i + 1; j < pos.length; j++) {
-        var dx = pos[i][0] - pos[j][0], dy = pos[i][1] - pos[j][1];
-        var d = Math.sqrt(dx * dx + dy * dy);
-        if (d < linkDist) {
-          var a = (1 - d / linkDist) * 0.18;
-          c.strokeStyle = 'rgba(' + rgb + ',' + a + ')';
-          c.beginPath(); c.moveTo(pos[i][0], pos[i][1]); c.lineTo(pos[j][0], pos[j][1]); c.stroke();
-        }
-      }
-    }
-    for (var i = 0; i < pos.length; i++) {
-      var p = pos[i][2];
-      var tw = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * p.tw + p.ph));
-      c.fillStyle = 'rgba(' + rgb + ',' + (0.62 * tw) + ')';
-      c.beginPath(); c.arc(pos[i][0], pos[i][1], p.rad, 0, TAU); c.fill();
-      c.fillStyle = 'rgba(' + rgb + ',' + (0.12 * tw) + ')';
-      c.beginPath(); c.arc(pos[i][0], pos[i][1], p.rad * 3.4, 0, TAU); c.fill();
-    }
-    c.globalCompositeOperation = 'source-over';
-  }
-
-  /* ---- soft diagonal light sweep (premium sheen) ---- */
-  function lightSweep(c, t, rgb, period) {
-    var cyc = t % period, dur = period * 0.4;
-    if (cyc > dur) return;
-    var pos = cyc / dur;
-    c.save();
-    c.translate(W / 2, H / 2); c.rotate(-0.18);
-    var span = Math.max(W, H) * 2.4;
-    var x = -span / 2 + pos * span;
-    var g = c.createLinearGradient(x - 120, -span, x + 120, span);
-    g.addColorStop(0, 'rgba(' + rgb + ',0)');
-    g.addColorStop(0.5, 'rgba(' + rgb + ',' + (0.06 * Math.sin(pos * Math.PI)) + ')');
-    g.addColorStop(1, 'rgba(' + rgb + ',0)');
-    c.fillStyle = g; c.fillRect(-span, -span, span * 2, span * 2);
-    c.restore();
-  }
-
-  /* ---- cursor-reactive glow, eased ---- */
-  function drawCursorGlow(c, rgb, radius) {
-    if (mouse.x < -900) return;
-    mouse.gx += (mouse.x - mouse.gx) * 0.08; mouse.gy += (mouse.y - mouse.gy) * 0.08;
-    var mg = c.createRadialGradient(mouse.gx, mouse.gy, 0, mouse.gx, mouse.gy, radius);
-    mg.addColorStop(0, 'rgba(' + rgb + ',0.15)'); mg.addColorStop(1, 'rgba(' + rgb + ',0)');
-    c.globalCompositeOperation = 'lighter';
-    c.fillStyle = mg; c.fillRect(mouse.gx - radius, mouse.gy - radius, radius * 2, radius * 2);
     c.globalCompositeOperation = 'source-over';
   }
 """
@@ -161,30 +118,69 @@ _LOOP = r"""
 """
 
 _LOGIN_JS = r"""
-  var particles = makeParticles(40, 7);
-  var rgbA = '255,178,110';  /* warm amber core */
-  var rgbB = '226,86,43';    /* ember accent */
-  var rgbC = '255,224,190';  /* sheen / cursor */
+  var sparks = makeBurst(230, 7);
+  var rr = rng(21), embers = [];
+  for (var i = 0; i < 46; i++) embers.push({ x: rr(), y: rr(), v: 0.006 + rr() * 0.02, r: 0.6 + rr() * 1.6, ph: rr() * TAU });
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
-    var g = ctx.createLinearGradient(0, 0, W * 0.3, H);
-    g.addColorStop(0, '#0b0708'); g.addColorStop(0.55, '#130a09'); g.addColorStop(1, '#08070a');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    var cx = W / 2, cy = H * 0.36;
-    drawGlowOrb(ctx, cx, cy, Math.min(W, H) * 0.55, rgbA, 0.70 + 0.12 * Math.sin(t * 0.6));
-    drawGlowOrb(ctx, W * 0.88, H * 0.88, Math.max(W, H) * 0.30, rgbB, 0.38);
-    drawGlowOrb(ctx, W * 0.06, H * 0.06, Math.max(W, H) * 0.22, rgbB, 0.22);
-    lightSweep(ctx, t, rgbC, 8);
-    drawParticleField(ctx, particles, t, rgbA, 120);
-    drawCursorGlow(ctx, rgbC, 220);
+    var cx = W / 2, cy = H * 0.36, R = Math.min(W, H) * 0.36;
+    var bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.65);
+    bg.addColorStop(0, 'rgba(96,44,18,0.55)');
+    bg.addColorStop(0.5, 'rgba(34,17,10,0.30)');
+    bg.addColorStop(1, 'rgba(8,7,10,0)');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    var breath = 0.5 + 0.5 * Math.sin(t * 0.9);
+    ctx.strokeStyle = 'rgba(255,170,110,0.10)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, R * (0.62 + 0.06 * breath), 0, TAU); ctx.stroke();
+    drawBurst(ctx, sparks, cx, cy, R, t, false, 1);
+    ctx.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < embers.length; i++) {
+      var m = embers[i];
+      var y = ((m.y - t * m.v) % 1 + 1) % 1;
+      var x = m.x + Math.sin(t * 0.5 + m.ph) * 0.02;
+      var a = 0.25 + 0.35 * Math.sin(t * 1.3 + m.ph);
+      ctx.fillStyle = 'rgba(255,176,110,' + Math.max(0.05, a) + ')';
+      ctx.beginPath(); ctx.arc(x * W, y * H, m.r, 0, TAU); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
   }
 """
 
 _MAIN_JS = r"""
-  var particles = makeParticles(60, 11);
-  var rgbA = '70,230,170';   /* teal-green core */
-  var rgbB = '40,180,220';   /* cyan accent */
-  var rgbC = '170,255,210';  /* highlight / cursor */
+  var sparks = makeBurst(120, 11);
+  var R2 = rng(5), pollen = [];
+  for (var i = 0; i < 70; i++) pollen.push({ x: R2(), y: R2(), vx: 0.004 + R2() * 0.01, vy: -(0.002 + R2() * 0.008), r: 0.8 + R2() * 1.8, ph: R2() * TAU });
+  var rs = rng(99), stars = [];
+  for (var i = 0; i < 90; i++) stars.push({ x: rs(), y: rs() * 0.62, r: 0.4 + rs() * 1.1, ph: rs() * TAU, sp: 0.6 + rs() * 1.6 });
+  var mouse = { x: -999, y: -999, gx: -999, gy: -999 };
+  function onMove(e) { mouse.x = e.clientX; mouse.y = e.clientY; if (mouse.gx < -900) { mouse.gx = mouse.x; mouse.gy = mouse.y; } }
+  P.addEventListener('mousemove', onMove); cleanups.push(function () { P.removeEventListener('mousemove', onMove); });
+  function aurora(t) {
+    ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+    var cols = ['rgba(40,220,150,', 'rgba(30,170,200,', 'rgba(120,230,120,'];
+    for (var b = 0; b < 3; b++) {
+      var base = H * (0.10 + b * 0.07), amp = 34 + b * 12, f = 0.004 + b * 0.0016, sp = 0.35 + b * 0.15;
+      ctx.strokeStyle = cols[b] + (0.045 - b * 0.008) + ')'; ctx.lineWidth = 70 - b * 12;
+      ctx.beginPath();
+      for (var x = -20; x <= W + 20; x += 24) {
+        var y = base + Math.sin(x * f + t * sp + b) * amp + Math.sin(x * f * 2.3 - t * sp * 0.7) * amp * 0.4;
+        if (x === -20) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  function dataArc(t) {
+    var cx = W / 2, cy = H * 1.55, rad = H * 0.74;
+    ctx.globalCompositeOperation = 'lighter';
+    for (var i = 0; i <= 140; i++) {
+      var th = Math.PI * (1.10 + 0.80 * i / 140);
+      var a = 0.10 + 0.40 * (0.5 + 0.5 * Math.sin(i * 0.22 - t * 1.6));
+      ctx.fillStyle = 'rgba(70,230,160,' + a + ')';
+      ctx.fillRect(cx + Math.cos(th) * rad - 1.5, cy + Math.sin(th) * rad - 1.5, 3, 3);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
   var heroOrb = null;
   function ensureHeroOrb() {
     var hero = D.querySelector('.hero');
@@ -201,29 +197,129 @@ _MAIN_JS = r"""
   ensureHeroOrb();
   timers.push(setInterval(ensureHeroOrb, 700));
 
+  function fern(x, y, ang, len, dir, t, seed, tone) {
+    var N = 24, step = len / N, px = x, py = y;
+    ctx.lineCap = 'round';
+    for (var i = 0; i < N; i++) {
+      var k = i / N;
+      var a = ang + dir * k * 1.15 + Math.sin(t * 0.6 + seed + k * 1.6) * 0.10 * k;
+      var nx = px + Math.sin(a) * step, ny = py - Math.cos(a) * step;
+      ctx.strokeStyle = 'rgba(' + tone + ',0.78)';
+      ctx.lineWidth = 2.6 * (1 - k) + 0.7;
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(nx, ny); ctx.stroke();
+      if (i > 1) {
+        var ll = len * 0.30 * Math.pow(1 - k, 0.75) + 3;
+        ctx.lineWidth = 1.7 * (1 - k) + 0.5;
+        ctx.strokeStyle = 'rgba(' + tone + ',0.6)';
+        for (var sd = -1; sd <= 1; sd += 2) {
+          var la = a + sd * (1.0 + Math.sin(t * 0.8 + seed + i * 0.4) * 0.05);
+          ctx.beginPath(); ctx.moveTo(nx, ny);
+          ctx.lineTo(nx + Math.sin(la) * ll, ny - Math.cos(la) * ll); ctx.stroke();
+        }
+      }
+      px = nx; py = ny;
+    }
+  }
+  function flower(x, y, h, t, seed) {
+    var sw = Math.sin(t * 0.7 + seed) * 10, tx = x + sw, ty = y - h;
+    ctx.strokeStyle = 'rgba(44,140,92,0.9)'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + sw * 0.3, y - h * 0.5, tx, ty); ctx.stroke();
+    var fg = ctx.createRadialGradient(tx, ty, 0, tx, ty, 30);
+    fg.addColorStop(0, 'rgba(140,255,200,0.22)'); fg.addColorStop(1, 'rgba(140,255,200,0)');
+    ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(tx, ty, 30, 0, TAU); ctx.fill();
+    for (var i = 0; i < 6; i++) {
+      var a = (i / 6) * TAU + t * 0.05;
+      ctx.save(); ctx.translate(tx + Math.cos(a) * 8, ty + Math.sin(a) * 8); ctx.rotate(a);
+      ctx.fillStyle = 'rgba(140,215,178,0.88)'; ctx.strokeStyle = 'rgba(110,210,160,0.55)'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.ellipse(0, 0, 10, 5, 0, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+    }
+    ctx.fillStyle = '#f0c552'; ctx.beginPath(); ctx.arc(tx, ty, 4.6, 0, TAU); ctx.fill();
+  }
+  function moss(x, y, rx, ry, a) {
+    var g = ctx.createRadialGradient(x, y, 0, x, y, rx);
+    g.addColorStop(0, 'rgba(46,170,108,' + a + ')'); g.addColorStop(1, 'rgba(46,170,108,0)');
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, ry / rx); ctx.translate(-x, -y);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, rx, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  function butterfly(t) {
+    function pos(tt) {
+      var u = tt * 0.11;
+      return [W * (0.5 + 0.36 * Math.sin(u + 0.5)), H * (0.42 + 0.16 * Math.sin(u * 1.7)) + Math.sin(tt * 3) * 6];
+    }
+    var p = pos(t), q = pos(t + 0.05), hd = Math.atan2(q[1] - p[1], q[0] - p[0]);
+    var flap = 0.25 + 0.75 * Math.abs(Math.sin(t * 7.5));
+    ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(hd + Math.PI / 2); ctx.scale(0.8, 0.8);
+    for (var sd = -1; sd <= 1; sd += 2) {
+      ctx.save(); ctx.scale(sd * flap, 1);
+      ctx.fillStyle = 'rgba(247,183,77,0.95)'; ctx.strokeStyle = 'rgba(80,46,22,0.65)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(0, -2); ctx.bezierCurveTo(22, -30, 46, -18, 34, 2); ctx.bezierCurveTo(28, 8, 8, 6, 0, 0); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(234,130,58,0.93)';
+      ctx.beginPath(); ctx.moveTo(0, 2); ctx.bezierCurveTo(24, 4, 34, 24, 16, 26); ctx.bezierCurveTo(6, 26, 2, 14, 0, 4); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,248,226,0.9)';
+      ctx.beginPath(); ctx.arc(30, -6, 2.2, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.arc(16, 18, 1.8, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = '#3b2a1c'; ctx.beginPath(); ctx.ellipse(0, 2, 2.2, 10, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
-    var g = ctx.createLinearGradient(0, 0, W * 0.25, H);
-    g.addColorStop(0, '#03080a'); g.addColorStop(0.55, '#04120f'); g.addColorStop(1, '#020705');
+    var g = ctx.createLinearGradient(0, 0, W * 0.3, H);
+    g.addColorStop(0, '#020805'); g.addColorStop(0.55, '#06150e'); g.addColorStop(1, '#030c08');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    drawGlowOrb(ctx, W * 0.14, H * 0.10, Math.max(W, H) * 0.42, rgbA, 0.55 + 0.08 * Math.sin(t * 0.5));
-    drawGlowOrb(ctx, W * 0.92, H * 0.80, Math.max(W, H) * 0.38, rgbB, 0.40 + 0.08 * Math.sin(t * 0.4 + 1.4));
-    drawGlowOrb(ctx, W * 0.50, H * 1.05, Math.max(W, H) * 0.50, rgbC, 0.16);
-    lightSweep(ctx, t, rgbA, 9);
-    drawParticleField(ctx, particles, t, rgbA, 130);
-    drawCursorGlow(ctx, rgbB, 240);
+    var sh = ctx.createRadialGradient(W * 0.12, -H * 0.05, 0, W * 0.12, -H * 0.05, Math.max(W, H) * 0.7);
+    sh.addColorStop(0, 'rgba(90,230,160,0.09)'); sh.addColorStop(1, 'rgba(90,230,160,0)');
+    ctx.fillStyle = sh; ctx.fillRect(0, 0, W, H);
+    // stars + aurora
+    ctx.globalCompositeOperation = 'lighter';
+    for (var si = 0; si < stars.length; si++) {
+      var st = stars[si], sa = 0.15 + 0.55 * (0.5 + 0.5 * Math.sin(t * st.sp + st.ph));
+      ctx.fillStyle = 'rgba(190,255,220,' + sa + ')'; ctx.beginPath(); ctx.arc(st.x * W, st.y * H, st.r, 0, TAU); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    aurora(t);
+    // cursor glow (eased)
+    if (mouse.x > -900) {
+      mouse.gx += (mouse.x - mouse.gx) * 0.08; mouse.gy += (mouse.y - mouse.gy) * 0.08;
+      var mg = ctx.createRadialGradient(mouse.gx, mouse.gy, 0, mouse.gx, mouse.gy, 220);
+      mg.addColorStop(0, 'rgba(70,230,160,0.13)'); mg.addColorStop(1, 'rgba(70,230,160,0)');
+      ctx.fillStyle = mg; ctx.fillRect(mouse.gx - 220, mouse.gy - 220, 440, 440);
+    }
+    dataArc(t);
+    // moss mounds
+    moss(W * 0.12, H, W * 0.30, H * 0.20, 0.30); moss(W * 0.55, H + 20, W * 0.34, H * 0.14, 0.20); moss(W * 0.92, H, W * 0.30, H * 0.22, 0.30);
+    // ferns
+    var s = Math.max(0.7, Math.min(1.4, H / 800));
+    fern(W * 0.03, H + 6, 0.35, 330 * s, 1, t, 0.5, '28,130,84');
+    fern(W * 0.08, H + 6, 0.10, 250 * s, 1, t, 1.7, '52,160,110');
+    fern(W * 0.97, H + 6, -0.35, 330 * s, -1, t, 2.6, '28,130,84');
+    fern(W * 0.92, H + 6, -0.10, 250 * s, -1, t, 3.9, '52,160,110');
+    fern(W * 0.50, H + 10, 0.0, 150 * s, 1, t, 4.4, '80,190,136');
+    // flowers
+    flower(W * 0.16, H + 4, 150 * s, t, 0.3); flower(W * 0.21, H + 4, 108 * s, t, 1.2);
+    flower(W * 0.83, H + 4, 130 * s, t, 2.2); flower(W * 0.88, H + 4, 172 * s, t, 3.1); flower(W * 0.58, H + 4, 84 * s, t, 4.0);
+    // pollen
+    ctx.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < pollen.length; i++) {
+      var p = pollen[i];
+      var x = ((p.x + t * p.vx) % 1 + 1) % 1, y = ((p.y + t * p.vy) % 1 + 1) % 1;
+      x += Math.sin(t * 0.7 + p.ph) * 0.006;
+      var a = 0.45 + 0.35 * Math.sin(t * 1.1 + p.ph);
+      ctx.fillStyle = 'rgba(255,236,150,' + (0.10 * a) + ')'; ctx.beginPath(); ctx.arc(x * W, y * H, p.r * 3.4, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(255,240,170,' + a + ')'; ctx.beginPath(); ctx.arc(x * W, y * H, p.r, 0, TAU); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    // soft warm orb (top-right) + butterfly
+    drawBurst(ctx, sparks, W - 150, 130, 105, t, false, 0.42);
+    butterfly(t);
+    // hero orb
     if (heroOrb && heroOrb.isConnected) {
       var oc = heroOrb.getContext('2d');
       oc.setTransform(DPR, 0, 0, DPR, 0, 0); oc.clearRect(0, 0, 112, 112);
-      drawGlowOrb(oc, 56, 56, 46, rgbA, 0.92 + 0.08 * Math.sin(t * 1.2));
-      var oa = t * 0.8;
-      oc.fillStyle = 'rgba(' + rgbC + ',0.95)';
-      oc.beginPath(); oc.arc(56 + Math.cos(oa) * 30, 56 + Math.sin(oa) * 30, 3, 0, TAU); oc.fill();
+      drawBurst(oc, sparks, 56, 56, 50, t, false, 1);
     }
   }
 """
-
-
 
 
 def _script(scene_js: str) -> str:
@@ -392,6 +488,10 @@ button[data-baseweb="tab"] { font-weight:700 !important; font-size:.98rem !impor
 [data-baseweb="tab-panel"] { padding-top:1.2rem !important; }
 [data-testid="stTabs"] [data-testid="stMetric"] { box-shadow:none !important; }
 .block-container { max-width:1240px !important; }
+.pf-steps { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 18px; }
+.pf-step { padding:7px 14px; border-radius:999px; border:1px solid var(--pf-border); background:rgba(1,8,5,.7); color:#7f9b8b; font-size:.88rem; font-weight:600; }
+.pf-step.done { color:#5fb98a; background:rgba(63,191,133,.07); }
+.pf-step.on { color:#eafff2; background:linear-gradient(135deg,rgba(31,143,95,.55),rgba(26,156,140,.45)); border-color:rgba(111,227,165,.55); box-shadow:0 0 22px rgba(63,191,133,.25); }
 .pf-gauge { background:rgba(157,187,168,.18) !important; }
 .pf-badge { background:rgba(63,191,133,.14) !important; color:#8fe6b4 !important; }
 </style>
@@ -685,9 +785,9 @@ OPENROUTER_API_KEY = setting("OPENROUTER_API_KEY")
 OPENROUTER_MODEL = setting("OPENROUTER_MODEL", "openrouter/free") or "openrouter/free"
 # Gemini has retired older model aliases for some new projects. Normalize legacy
 # Streamlit Secrets values so deployment does not keep requesting an unavailable model.
-configured_model = setting("GEMINI_MODEL", "gemini-2.5-flash")
-if configured_model in {"gemini-3.6-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"}:
-    configured_model = "gemini-2.5-flash"
+configured_model = setting("GEMINI_MODEL", "gemini-3.6-flash")
+if configured_model in {"gemini-2.5-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"}:
+    configured_model = "gemini-3.6-flash"
 GEMINI_MODEL = configured_model
 # Keep fast flash-tier fallbacks so temporary overloads do not break AI features.
 GEMINI_MODELS = list(dict.fromkeys([
@@ -1512,20 +1612,34 @@ if st.sidebar.button("⚡ Calculate Placement Probability", type="primary", use_
 # ---------------- KPI DASHBOARD ----------------
 chance = st.session_state.get("chance", None)
 
-k1, k2, k3, k4 = st.columns(4)
-k1.metric("🎯 Placement Probability", f"{chance:.1f}%" if chance is not None else "—")
-k2.metric("📚 CGPA", f"{cgpa:.1f}")
-k3.metric("💼 Internships", internships)
-k4.metric("💻 Coding Score", f"{coding}/10")
-
 profile = StudentProfile(cgpa=cgpa, backlogs=backlogs, internships=internships, communication=communication, coding=coding)
 
-tab_overview, tab_roadmap, tab_mentor, tab_analytics, tab_resume = st.tabs(["📊 Overview", "🧭 Roadmap", "💬 AI Mentor", "📈 Analytics", "📄 Resume"])
+SLIDES = ["📊 Overview", "🧭 Roadmap", "💬 AI Mentor", "📈 Analytics", "📄 Resume"]
+if "slide" not in st.session_state:
+    st.session_state["slide"] = 0
 
-# ---------------- TAB 1: OVERVIEW ----------------
-with tab_overview:
+
+def go_slide(n: int) -> None:
+    st.session_state["slide"] = max(0, min(len(SLIDES) - 1, n))
+
+
+slide = st.session_state["slide"]
+_chips = "".join(
+    f'<span class="pf-step {"on" if i == slide else ("done" if i < slide else "")}">{i + 1}. {label}</span>'
+    for i, label in enumerate(SLIDES)
+)
+st.markdown(f'<div class="pf-steps">{_chips}</div>', unsafe_allow_html=True)
+
+# ---------------- SLIDE 1: OVERVIEW ----------------
+if slide == 0:
+    k1, k2, k3, k4 = st.columns(4)
+    k1.metric("🎯 Placement Probability", f"{chance:.1f}%" if chance is not None else "—")
+    k2.metric("📚 CGPA", f"{cgpa:.1f}")
+    k3.metric("💼 Internships", internships)
+    k4.metric("💻 Coding Score", f"{coding}/10")
+
     st.markdown("#### 📊 Your placement snapshot")
-    st.caption("Use the tabs above: **Roadmap** for your weekly plan, **AI Mentor** for questions, **Analytics** for cohort data, and **Resume** for feedback on your resume.")
+    st.caption("Press **Next** below to continue: Roadmap → AI Mentor → Analytics → Resume.")
     if chance is None:
         st.info("Fill in your profile in the left sidebar, then click **⚡ Calculate Placement Probability** to see your score here.")
     if chance is not None:
@@ -1537,8 +1651,8 @@ with tab_overview:
         else:
             st.error("🔴 **Needs Focus**: Urgent focus needed on academic eligibility and practical software development internships.")
 
-# ---------------- TAB 2: ROADMAP ----------------
-with tab_roadmap:
+# ---------------- SLIDE 2: ROADMAP ----------------
+if slide == 1:
     st.markdown("#### 🧭 Weekly improvement roadmap")
     st.caption("A 6-week plan built from your profile in the sidebar.")
     if st.button("Generate weekly improvement roadmap", use_container_width=True):
@@ -1554,8 +1668,8 @@ with tab_roadmap:
         st.write("**Weekly actions:**")
         st.write("\n".join(f"- {action}" for action in roadmap.weekly_actions))
 
-# ---------------- TAB 3: AI MENTOR ----------------
-with tab_mentor:
+# ---------------- SLIDE 3: AI MENTOR ----------------
+if slide == 2:
     st.markdown('<div class="pf-mentor-heading"><span class="pf-brand-orb" aria-hidden="true"></span><h2>AI Placement Mentor</h2></div>', unsafe_allow_html=True)
     st.caption("Powered by the latest available Gemini model — tailored to your profile.")
 
@@ -1587,8 +1701,8 @@ with tab_mentor:
         else:
             st.warning("Please type a question or choose a prompt starter.")
 
-# ---------------- TAB 4: ANALYTICS ----------------
-with tab_analytics:
+# ---------------- SLIDE 4: ANALYTICS ----------------
+if slide == 3:
     st.header("📊 Placement Analytics & Cohort Benchmarks")
 
     if not data.empty:
@@ -1639,8 +1753,8 @@ with tab_analytics:
     else:
         st.info("No cohort placement dataset found. Please ensure sample-placement-2024-2026.csv is present.")
 
-# ---------------- TAB 5: RESUME (last) ----------------
-with tab_resume:
+# ---------------- SLIDE 5: RESUME (last) ----------------
+if slide == 4:
     st.markdown("#### 📄 Upload Resume")
     uploaded_resume = st.file_uploader("Upload your PDF resume", type=["pdf"], help="Your resume is read in memory for feedback and is not saved by Pathfinder.")
     st.caption("Step 1: upload your PDF resume above. Step 2: click **Generate tailored feedback**. The box below is optional \u2014 use it only if you have no PDF, or want feedback on a specific project or interview answer.")
@@ -1680,5 +1794,18 @@ with tab_resume:
         st.write("**ATS keywords:** " + ", ".join(feedback.ats_keywords))
         st.write("**Formatting tips:** " + " | ".join(feedback.formatting_tips))
         st.download_button("Download feedback PDF", resume_feedback_pdf(feedback), "pathfinder-resume-feedback.pdf", "application/pdf", use_container_width=True)
+
+# ---------------- SLIDE NAVIGATION ----------------
+st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
+nav_back, nav_mid, nav_next = st.columns([1, 2, 1])
+with nav_back:
+    st.button("◀ Back", key="nav_back", disabled=slide == 0, on_click=go_slide, args=(slide - 1,), use_container_width=True)
+with nav_mid:
+    st.markdown(f"<div style='text-align:center;padding-top:.55rem;color:#9dbba8'>Slide {slide + 1} of {len(SLIDES)}</div>", unsafe_allow_html=True)
+with nav_next:
+    if slide < len(SLIDES) - 1:
+        st.button("Next ▶", key="nav_next", on_click=go_slide, args=(slide + 1,), use_container_width=True)
+    else:
+        st.button("↺ Start over", key="nav_restart", on_click=go_slide, args=(0,), use_container_width=True)
 
 st.caption("Pathfinder Career Intelligence · Powered by Gemini LLM")
