@@ -486,6 +486,10 @@ button[data-baseweb="tab"] { font-weight:700 !important; font-size:.98rem !impor
 .pf-step { padding:7px 14px; border-radius:999px; border:1px solid var(--pf-border); background:rgba(1,8,5,.7); color:#7f9b8b; font-size:.88rem; font-weight:600; }
 .pf-step.done { color:#5fb98a; background:rgba(63,191,133,.07); }
 .pf-step.on { color:#eafff2; background:linear-gradient(135deg,rgba(31,143,95,.55),rgba(26,156,140,.45)); border-color:rgba(111,227,165,.55); box-shadow:0 0 22px rgba(63,191,133,.25); }
+/* Hide the floating "current value" bubble that pops up above the slider thumb while dragging — the value still shows in the slider label/track, this just removes the extra floating number. */
+[data-testid="stSlider"] div[role="slider"] + div,
+[data-testid="stSlider"] [data-testid="stThumbValue"],
+[data-testid="stTickBarMin"], [data-testid="stTickBarMax"] { display:none !important; }
 .pf-gauge { background:rgba(157,187,168,.18) !important; }
 .pf-badge { background:rgba(63,191,133,.14) !important; color:#8fe6b4 !important; }
 </style>
@@ -1595,6 +1599,12 @@ if st.sidebar.button("⚡ Calculate Placement Probability", type="primary", use_
         # Fallback scoring formula
         score = cgpa * 5.2 + max(0, 3 - backlogs) * 4 + min(internships, 3) * 5 + communication * 2.2 + coding * 2.7 - max(backlogs - 1, 0) * 5
         st.session_state["chance"] = max(18, min(96, round(score)))
+    # Freeze the numbers shown on the KPI cards at the moment of calculation, so moving
+    # a sidebar slider afterwards does not silently change the displayed CGPA/Internships/
+    # Coding Score — those only update the next time this button is pressed.
+    st.session_state["kpi_cgpa"] = cgpa
+    st.session_state["kpi_internships"] = internships
+    st.session_state["kpi_coding"] = coding
 
 # ---------------- KPI DASHBOARD ----------------
 chance = st.session_state.get("chance", None)
@@ -1620,10 +1630,17 @@ st.markdown(f'<div class="pf-steps">{_chips}</div>', unsafe_allow_html=True)
 # ---------------- SLIDE 1: OVERVIEW ----------------
 if slide == 0:
     k1, k2, k3, k4 = st.columns(4)
-    k1.metric("🎯 Placement Probability", f"{chance:.1f}%" if chance is not None else "—")
-    k2.metric("📚 CGPA", f"{cgpa:.1f}")
-    k3.metric("💼 Internships", internships)
-    k4.metric("💻 Coding Score", f"{coding}/10")
+    if chance is None:
+        # Nothing calculated yet: don't show numbers that shift as sidebar sliders move.
+        k1.metric("🎯 Placement Probability", "—")
+        k2.metric("📚 CGPA", "—")
+        k3.metric("💼 Internships", "—")
+        k4.metric("💻 Coding Score", "—")
+    else:
+        k1.metric("🎯 Placement Probability", f"{chance:.1f}%")
+        k2.metric("📚 CGPA", f'{st.session_state.get("kpi_cgpa", cgpa):.1f}')
+        k3.metric("💼 Internships", st.session_state.get("kpi_internships", internships))
+        k4.metric("💻 Coding Score", f'{st.session_state.get("kpi_coding", coding)}/10')
 
     st.markdown("#### 📊 Your placement snapshot")
     st.caption("Press **Next** below to continue: Roadmap → AI Mentor → Analytics → Resume.")
