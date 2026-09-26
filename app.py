@@ -72,14 +72,20 @@ _COMMON = r"""
     }
     return a;
   }
-  function drawBurst(c, sparks, cx, cy, R, t, light, alpha) {
+  function drawBurst(c, sparks, cx, cy, R, t, light, alpha, indigo) {
     var breath = 0.5 + 0.5 * Math.sin(t * 0.9);
     var cr = R * (0.14 + 0.10 * breath);
     c.globalCompositeOperation = light ? 'source-over' : 'lighter';
     var g = c.createRadialGradient(cx, cy, 0, cx, cy, cr * 2.4);
-    g.addColorStop(0, 'rgba(255,248,232,' + (0.95 * alpha) + ')');
-    g.addColorStop(0.35, 'rgba(255,186,116,' + (0.55 * alpha) + ')');
-    g.addColorStop(1, 'rgba(226,86,43,0)');
+    if (indigo) {
+      g.addColorStop(0, 'rgba(224,224,255,' + (0.95 * alpha) + ')');
+      g.addColorStop(0.35, 'rgba(139,92,246,' + (0.55 * alpha) + ')');
+      g.addColorStop(1, 'rgba(99,102,241,0)');
+    } else {
+      g.addColorStop(0, 'rgba(255,248,232,' + (0.95 * alpha) + ')');
+      g.addColorStop(0.35, 'rgba(255,186,116,' + (0.55 * alpha) + ')');
+      g.addColorStop(1, 'rgba(226,86,43,0)');
+    }
     c.fillStyle = g; c.beginPath(); c.arc(cx, cy, cr * 2.4, 0, TAU); c.fill();
     c.lineCap = 'round';
     for (var i = 0; i < sparks.length; i++) {
@@ -90,16 +96,21 @@ _COMMON = r"""
       var r2 = r1 + R * s.len * (0.4 + 0.9 * e) * (0.6 + 0.4 * b);
       var ca = Math.cos(s.ang), sa = Math.sin(s.ang);
       var a = (0.18 + 0.62 * b) * alpha;
-      var gg = light ? Math.round(96 + s.hue * 40) : Math.round(150 + s.hue * 70);
-      var bb = light ? Math.round(40 + s.hue * 20) : Math.round(80 + s.hue * 60);
-      var rr = light ? 226 : 255;
+      var rr, gg, bb;
+      if (indigo) {
+        rr = Math.round(120 + s.hue * 60); gg = Math.round(90 + s.hue * 50); bb = 255;
+      } else {
+        gg = light ? Math.round(96 + s.hue * 40) : Math.round(150 + s.hue * 70);
+        bb = light ? Math.round(40 + s.hue * 20) : Math.round(80 + s.hue * 60);
+        rr = light ? 226 : 255;
+      }
       c.strokeStyle = 'rgba(' + rr + ',' + gg + ',' + bb + ',' + a + ')';
       c.lineWidth = 0.9 + s.w * 0.8;
       c.beginPath();
       c.moveTo(cx + ca * r1, cy + sa * r1);
       c.lineTo(cx + ca * r2, cy + sa * r2);
       c.stroke();
-      c.fillStyle = 'rgba(' + rr + ',' + Math.min(255, gg + 30) + ',' + (bb + 30) + ',' + Math.min(1, a + 0.15) + ')';
+      c.fillStyle = 'rgba(' + Math.min(255, rr + 20) + ',' + Math.min(255, gg + 30) + ',' + Math.min(255, bb + 20) + ',' + Math.min(1, a + 0.15) + ')';
       c.beginPath(); c.arc(cx + ca * r2, cy + sa * r2, 0.9 + s.w * 0.9, 0, TAU); c.fill();
     }
     c.globalCompositeOperation = 'source-over';
@@ -126,23 +137,27 @@ _LOGIN_JS = r"""
   for (var i = 0; i < 16; i++) embers.push({ x: rr(), y: rr(), v: 0.006 + rr() * 0.02, r: 0.6 + rr() * 1.6, ph: rr() * TAU });
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
+    // navy base, matching #0f172a
+    ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, W, H);
+    // indigo glow top-left, violet glow bottom-right (radial gradient positions from the supplied design)
+    var tl = ctx.createRadialGradient(W * 0.12, H * 0.06, 0, W * 0.12, H * 0.06, Math.max(W, H) * 0.5);
+    tl.addColorStop(0, 'rgba(30,58,138,0.42)'); tl.addColorStop(1, 'rgba(30,58,138,0)');
+    ctx.fillStyle = tl; ctx.fillRect(0, 0, W, H);
+    var br = ctx.createRadialGradient(W * 0.92, H * 0.94, 0, W * 0.92, H * 0.94, Math.max(W, H) * 0.5);
+    br.addColorStop(0, 'rgba(124,58,237,0.34)'); br.addColorStop(1, 'rgba(124,58,237,0)');
+    ctx.fillStyle = br; ctx.fillRect(0, 0, W, H);
     var cx = W / 2, cy = H * 0.36, R = Math.min(W, H) * 0.36;
-    var bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.65);
-    bg.addColorStop(0, 'rgba(96,44,18,0.55)');
-    bg.addColorStop(0.5, 'rgba(34,17,10,0.30)');
-    bg.addColorStop(1, 'rgba(8,7,10,0)');
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
     var breath = 0.5 + 0.5 * Math.sin(t * 0.9);
-    ctx.strokeStyle = 'rgba(255,170,110,0.10)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(139,92,246,0.12)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(cx, cy, R * (0.62 + 0.06 * breath), 0, TAU); ctx.stroke();
-    drawBurst(ctx, sparks, cx, cy, R, t, false, 1);
+    drawBurst(ctx, sparks, cx, cy, R, t, false, 1, true);
     ctx.globalCompositeOperation = 'lighter';
     for (var i = 0; i < embers.length; i++) {
       var m = embers[i];
       var y = ((m.y - t * m.v) % 1 + 1) % 1;
       var x = m.x + Math.sin(t * 0.5 + m.ph) * 0.02;
       var a = 0.25 + 0.35 * Math.sin(t * 1.3 + m.ph);
-      ctx.fillStyle = 'rgba(255,176,110,' + Math.max(0.05, a) + ')';
+      ctx.fillStyle = 'rgba(165,180,252,' + Math.max(0.05, a) + ')';
       ctx.beginPath(); ctx.arc(x * W, y * H, m.r, 0, TAU); ctx.fill();
     }
     ctx.globalCompositeOperation = 'source-over';
@@ -1362,11 +1377,55 @@ body:has(.login-screen) [data-testid="stCaptionContainer"] {
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
+st.markdown("""
+<style>
+/* ===== FINAL LOGIN OVERRIDE: user-supplied indigo/navy card design ===== */
+body:has(.login-screen), body:has(.login-screen) [data-testid="stAppViewContainer"] { background:#0f172a !important; }
+body:has(.login-screen) .login-screen,
+body:has(.login-screen) .login-wrap,
+body:has(.login-screen) .login-card { max-width:430px !important; margin:6vh auto 1rem !important; padding:0 !important; border:none !important; background:transparent !important; box-shadow:none !important; backdrop-filter:none !important; text-align:center !important; }
+body:has(.login-screen) [data-testid="stForm"] {
+  width:100% !important; max-width:430px !important; margin:0 auto !important;
+  padding:42px 38px !important; border:1px solid rgba(255,255,255,.125) !important; border-radius:24px !important;
+  background:rgba(17,24,39,.87) !important; backdrop-filter:blur(20px) !important;
+  box-shadow:0 25px 80px rgba(0,0,0,.4) !important;
+}
+body:has(.login-screen) .login-screen h1,
+body:has(.login-screen) .login-card h2,
+body:has(.login-screen) [data-testid="stForm"] + div h3,
+body:has(.login-screen) h3 { color:#ffffff !important; text-align:center !important; font-size:26px !important; text-shadow:none !important; }
+body:has(.login-screen) .login-screen h1::after { display:none !important; }
+body:has(.login-screen) .login-screen p,
+body:has(.login-screen) .login-card [data-testid="stCaptionContainer"] { color:#94a3b8 !important; text-align:center !important; }
+body:has(.login-screen) [data-testid="stForm"] label { color:#e2e8f0 !important; font-size:14px !important; text-align:left !important; }
+body:has(.login-screen) [data-testid="stForm"] input,
+body:has(.login-screen) [data-baseweb="input"] {
+  background:#0f172a !important; color:#fff !important; border:1px solid #334155 !important; border-radius:12px !important; height:48px !important;
+}
+body:has(.login-screen) [data-testid="stForm"] input:focus,
+body:has(.login-screen) [data-baseweb="input"]:focus-within { border-color:#6366f1 !important; box-shadow:0 0 0 3px rgba(99,102,241,.2) !important; }
+body:has(.login-screen) input::placeholder { color:#64748b !important; }
+body:has(.login-screen) [data-testid="stForm"] .stButton > button,
+body:has(.login-screen) .stButton > button {
+  background:linear-gradient(135deg,#6366f1,#8b5cf6) !important; color:#fff !important; border:none !important;
+  border-radius:12px !important; font-weight:700 !important; min-height:48px !important;
+  box-shadow:0 12px 30px rgba(99,102,241,.28) !important;
+}
+body:has(.login-screen) [data-testid="stForm"] .stButton > button:hover,
+body:has(.login-screen) .stButton > button:hover { transform:translateY(-2px); box-shadow:0 16px 36px rgba(99,102,241,.42) !important; }
+body:has(.login-screen) [data-baseweb="tab-list"] { background:transparent !important; border-bottom:1px solid #334155 !important; justify-content:center !important; }
+body:has(.login-screen) [data-baseweb="tab"] { color:#94a3b8 !important; }
+body:has(.login-screen) [data-baseweb="tab"][aria-selected="true"] { color:#a5b4fc !important; background:transparent !important; border-bottom:2px solid #6366f1 !important; }
+.pf-ai-logo { width:65px; height:65px; margin:0 auto 22px; display:flex; align-items:center; justify-content:center; border-radius:18px; background:linear-gradient(135deg,#6366f1,#8b5cf6); box-shadow:0 10px 30px rgba(99,102,241,.33); font-size:22px; font-weight:bold; color:#fff; font-family:Arial,Helvetica,sans-serif; }
+</style>
+""", unsafe_allow_html=True)
+
 if not st.session_state.logged_in:
     render_scene(st, "login")
     st.markdown('<section class="login-screen"><span class="login-sylva-orb"></span><span class="login-sylva-leaf login-sylva-leaf--one"></span><span class="login-sylva-leaf login-sylva-leaf--two"></span><h1>PATHFINDER</h1><p>AI-Powered Placement &amp; Career Intelligence Platform</p></section>', unsafe_allow_html=True)
     st.markdown('<div class="login-wrap"><div class="login-card">', unsafe_allow_html=True)
-    st.subheader("🔐 Welcome back")
+    st.markdown('<div class="pf-ai-logo">AI</div>', unsafe_allow_html=True)
+    st.markdown('<h3 style="text-align:center;margin-bottom:6px;">Welcome Back</h3><p style="text-align:center;color:#94a3b8;font-size:14px;margin-bottom:6px;">Sign in to continue to Pathfinder AI</p>', unsafe_allow_html=True)
     sign_in_tab, create_tab = st.tabs(["Sign in", "Create account"])
     with sign_in_tab:
         with st.form("pathfinder_login"):
