@@ -170,7 +170,7 @@ _LAMP_DOM_SCRIPT = r"""
   100% { transform:translate(var(--x5),var(--y5)); opacity:.5; }
 }
 #pf-lamp-room .lamp-side {
-  position:absolute; left:0; top:0; width:38%; min-width:280px; height:100%;
+  position:absolute; left:0; top:0; width:44%; min-width:300px; height:100%;
   display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:5;
 }
 #pf-lamp-room .lamp-container {
@@ -197,7 +197,7 @@ _LAMP_DOM_SCRIPT = r"""
 }
 #pf-lamp-room.on .light-beam { opacity:1; }
 #pf-lamp-room .lamp-stem {
-  width:6px; height:170px; background:linear-gradient(to right,#050505 0%,#2a2a2a 50%,#050505 100%);
+  width:6px; height:230px; background:linear-gradient(to right,#050505 0%,#2a2a2a 50%,#050505 100%);
   position:relative; z-index:4; transition:background .4s ease, box-shadow .4s ease;
 }
 #pf-lamp-room.on .lamp-stem { background:linear-gradient(to right,#050505 0%,#2a2010 50%,#050505 100%); box-shadow:0 0 10px rgba(255,200,100,.15); }
@@ -477,7 +477,8 @@ MAIN_SCRIPT = _script(_MAIN_JS)
 
 LOGIN_CSS = """
 <style>
-/* ===== Login: pull-string lamp, warm amber/charcoal card ===== */
+/* ===== Login: pull-string lamp, warm amber/charcoal card — 1:1 port of the
+   "Lamp Login Animation" static prototype (index.html / style.css / script.js) ===== */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 html:has(.login-screen) { background:#050505 !important; }
 body:has(.login-screen) { background:transparent !important; }
@@ -493,31 +494,72 @@ body:has(.login-screen) [data-testid="stAppViewContainer"]::before,
 body:has(.login-screen) [data-testid="stAppViewContainer"]::after,
 .login-screen::before, .login-screen::after,
 .login-sylva-orb, .login-sylva-leaf { display:none !important; }
-
-body:has(.login-screen) .login-screen {
-  background:transparent !important;
-  border:none !important;
-  box-shadow:none !important;
-  backdrop-filter:none !important;
+/* No sidebar in the original prototype */
+body:has(.login-screen) [data-testid="stSidebar"] { display:none !important; }
+/* Push the real form into the right ~62% of the screen, mirroring .login-side */
+body:has(.login-screen) [data-testid="stAppViewContainer"] .block-container {
+  max-width:520px !important; margin-left:auto !important; margin-right:8% !important;
+  padding-top:6vh !important;
 }
-body:has(.login-screen) .login-screen h1 { color:#ffffff !important; }
-body:has(.login-screen) .login-screen h1::after { display:none !important; }
-body:has(.login-screen) .login-screen p { color:#aaaaaa !important; }
-body:has(.login-screen) [data-testid="stForm"] {
+@media (max-width:899px) {
+  body:has(.login-screen) [data-testid="stAppViewContainer"] .block-container {
+    margin-left:auto !important; margin-right:auto !important;
+  }
+}
+
+/* ---- login card: same glass panel as .login-card, revealed only once the lamp is on ---- */
+body:has(.login-screen) .login-screen {
+  background:transparent !important; border:none !important; box-shadow:none !important; backdrop-filter:none !important;
+}
+.login-wrap .login-card {
+  padding:48px !important; border-radius:24px !important;
   background:rgba(255,255,255,.05) !important;
   border:1px solid rgba(255,255,255,.1) !important;
   box-shadow:0 8px 32px rgba(0,0,0,.3) !important;
   backdrop-filter:blur(16px) !important;
+  -webkit-backdrop-filter:blur(16px) !important;
+  opacity:0; transform:translateX(50px); filter:blur(10px); pointer-events:none;
+  transition:opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1), filter .6s ease;
 }
+body:has(#pf-lamp-room.on) .login-wrap .login-card {
+  opacity:1; transform:translateX(0); filter:blur(0); pointer-events:auto; transition-delay:.2s;
+}
+body:has(.login-screen) .login-screen h1 { color:#ffffff !important; }
+body:has(.login-screen) .login-screen h1::after { display:none !important; }
+body:has(.login-screen) .login-screen p { color:#aaaaaa !important; }
+.pf-ai-logo { background:#ffd600 !important; box-shadow:0 10px 30px rgba(255,214,0,.28) !important; color:#000 !important; }
+
+/* ---- inputs: dark inset field, amber focus ring, left-aligned icon per field ---- */
+body:has(.login-screen) [data-testid="stForm"] {
+  background:transparent !important; border:none !important; box-shadow:none !important; backdrop-filter:none !important;
+}
+body:has(.login-screen) [data-testid="stForm"] label p { color:#aaaaaa !important; font-size:13px !important; }
 body:has(.login-screen) [data-testid="stForm"] input {
   color:#ffffff !important; background:transparent !important; border-color:transparent !important; box-shadow:none !important;
 }
 body:has(.login-screen) [data-baseweb="input"] {
   background:rgba(0,0,0,.4) !important; border:1px solid rgba(255,255,255,.1) !important; border-radius:16px !important;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.5) !important; position:relative;
 }
 body:has(.login-screen) [data-baseweb="base-input"] { background:transparent !important; }
-body:has(.login-screen) [data-baseweb="input"]:focus-within { border-color:rgba(255,220,100,.45) !important; box-shadow:0 0 0 3px rgba(255,220,100,.10) !important; }
+body:has(.login-screen) [data-baseweb="input"]:focus-within {
+  border-color:rgba(255,220,100,.45) !important;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.5), 0 0 0 3px rgba(255,220,100,.06) !important;
+}
 body:has(.login-screen) input::placeholder { color:#888888 !important; }
+/* icon (mail/lock) rendered on the input wrapper, since <input> can't hold ::before content */
+body:has(.login-screen) [data-testid="stForm"] div:has(input[aria-label*="mail" i]) [data-baseweb="input"],
+body:has(.login-screen) [data-testid="stForm"] div:has(input[aria-label*="Email" i]) [data-baseweb="input"],
+body:has(.login-screen) [data-testid="stForm"] div:has(input[type="password"]) [data-baseweb="input"] { padding-left:40px; }
+body:has(.login-screen) [data-testid="stForm"] div:has(input[aria-label*="mail" i]) [data-baseweb="input"]::before,
+body:has(.login-screen) [data-testid="stForm"] div:has(input[aria-label*="Email" i]) [data-baseweb="input"]::before {
+  content:''; position:absolute; left:16px; top:50%; width:13px; height:9px; transform:translateY(-50%);
+  border:2px solid #888; border-radius:2px; z-index:2;
+}
+body:has(.login-screen) [data-testid="stForm"] div:has(input[type="password"]) [data-baseweb="input"]::before {
+  content:''; position:absolute; left:18px; top:50%; width:10px; height:8px; margin-top:-1px;
+  border:2px solid #888; border-radius:3px; transform:translateY(-50%); z-index:2;
+}
 body:has(.login-screen) [data-baseweb="tab-list"] { background:transparent !important; border-bottom:1px solid rgba(255,255,255,.1) !important; }
 body:has(.login-screen) [data-baseweb="tab"] { color:#888888 !important; }
 body:has(.login-screen) [data-baseweb="tab"][aria-selected="true"] { color:#ffd600 !important; background:transparent !important; box-shadow:none; border-bottom:2px solid #ffd600 !important; }
@@ -525,10 +567,20 @@ body:has(.login-screen) [data-baseweb="tab-highlight"] { background:#ffd600 !imp
 body:has(.login-screen) [data-testid="stCaptionContainer"] { color:#888888 !important; }
 body:has(.login-screen) .stButton > button {
   color:#000000 !important; font-weight:600 !important; border:none !important;
-  background:#ffd600 !important;
+  background:#ffd600 !important; border-radius:16px !important;
   box-shadow:none !important;
 }
 body:has(.login-screen) .stButton > button:hover { transform:scale(1.02); background:#ffdc64 !important; box-shadow:0 0 20px rgba(255,220,100,.4) !important; }
+
+/* ---- divider + social row, decorative like the prototype ---- */
+.pf-divider { display:flex; align-items:center; gap:12px; margin:20px 0 16px; }
+.pf-divider span { flex:1; height:1px; background:rgba(255,255,255,.1); }
+.pf-divider b { color:#888; font-size:13px; font-weight:500; white-space:nowrap; }
+body:has(.login-screen) .pf-social-row .stButton > button {
+  background:rgba(255,255,255,.05) !important; border:1px solid rgba(255,255,255,.1) !important;
+  color:#fff !important; font-weight:500 !important;
+}
+body:has(.login-screen) .pf-social-row .stButton > button:hover { background:rgba(255,255,255,.15) !important; box-shadow:none !important; }
 </style>
 """
 
@@ -1634,6 +1686,16 @@ if not st.session_state.logged_in:
                         st.success("Account created securely. Welcome to Pathfinder!")
                         st.rerun()
         st.caption("For this demo, the account lasts for the current session. Add a hashed [auth].users secret for persistent deployment accounts.")
+
+    st.markdown('<div class="pf-divider"><span></span><b>OR CONTINUE WITH</b><span></span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="pf-social-row">', unsafe_allow_html=True)
+    social_col1, social_col2 = st.columns(2)
+    if social_col1.button("🇬 Google", use_container_width=True):
+        st.info("Social sign-in isn't wired up in this demo yet — please use email + password above.")
+    if social_col2.button("● GitHub", use_container_width=True):
+        st.info("Social sign-in isn't wired up in this demo yet — please use email + password above.")
+    st.markdown('</div>', unsafe_allow_html=True)
+
     st.markdown('</div></div>', unsafe_allow_html=True)
     st.stop()
 
