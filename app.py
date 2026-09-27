@@ -2684,8 +2684,12 @@ with head_right:
     st.write("")
     st.markdown(f"👤 **{user_name}**")
     if st.button("🚪 Logout", use_container_width=True):
-        st.session_state.clear()
-        st.rerun()
+        # Google OIDC needs Streamlit's native logout to clear its identity cookie.
+        if getattr(st.user, "is_logged_in", False):
+            st.logout()
+        else:
+            st.session_state.clear()
+            st.rerun()
 
 data = load_data()
 
