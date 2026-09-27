@@ -1599,137 +1599,786 @@ body:has(.login-screen) [data-testid="stCaptionContainer"] {
 }
 </style>
 """, unsafe_allow_html=True)
+
+# ======================= REAL LAMP LOGIN COMPONENT =======================
+_LAMP_HTML = r"""<main class="room" id="room">
+    <div class="room-light" id="roomLight"></div>
+    <div class="fireflies" id="fireflies"></div>
+
+    <section class="lamp-side">
+      <div class="lamp-container" id="lampContainer">
+        <div class="lamp-glow"></div>
+        <div class="lamp-head"></div>
+        <div class="light-beam"></div>
+        <div class="lamp-stem"></div>
+        <div class="lamp-base"></div>
+        <div class="desk-surface"></div>
+
+        <svg class="string-svg" aria-hidden="true">
+          <path id="stringPath" d="M 0 0 L 0 80"></path>
+        </svg>
+
+        <div class="string-handle" id="stringHandle" aria-label="Pull lamp string"></div>
+      </div>
+    </section>
+
+    <section class="login-side">
+      <form class="glass login-card" id="loginForm">
+        <div class="glass-line"></div>
+
+        <div class="login-heading">
+          <h2>Welcome Back</h2>
+          <p>Enter your details to access your account</p>
+        </div>
+
+        <div class="inputs">
+          <label class="input-wrap">
+            <span class="input-icon user-icon" aria-hidden="true"></span>
+            <input type="text" placeholder="Username" autocomplete="username">
+          </label>
+
+          <label class="input-wrap">
+            <span class="input-icon mail-icon" aria-hidden="true"></span>
+            <input type="email" placeholder="Email Address" autocomplete="email">
+          </label>
+
+          <label class="input-wrap">
+            <span class="input-icon lock-icon" aria-hidden="true"></span>
+            <input type="password" placeholder="Password" autocomplete="current-password">
+          </label>
+        </div>
+
+        <button class="sign-in" type="submit">Sign In</button>
+
+        <div class="divider">
+          <span></span>
+          <b>OR CONTINUE WITH</b>
+          <span></span>
+        </div>
+
+        <div class="socials">
+          <button class="social-btn" type="button">
+            <span class="google-icon">G</span> Google
+          </button>
+          <button class="social-btn" type="button">
+            <span class="github-icon">●</span> GitHub
+          </button>
+        </div>
+      </form>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>"""
+
+_LAMP_CSS = r"""* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  font-family: 'Outfit', sans-serif;
+  color: #fff;
+  background: #050505;
+}
+
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
+body { background: #050505; }
+
+button, input { font: inherit; }
+
+.room {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-height: 500px;
+  display: flex;
+  overflow: hidden;
+  background: #050505;
+  transition: background-color .8s ease;
+}
+
+.room.on { background: #111; }
+
+.room-light {
+  position: absolute;
+  top: -30%;
+  left: 0;
+  width: 1000px;
+  height: 1000px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transform: scale(.5);
+  background: radial-gradient(circle, rgba(255,220,100,.15) 0%, rgba(255,214,0,.05) 30%, transparent 70%);
+  transition: opacity .8s ease, transform .8s ease;
+}
+
+.room.on .room-light { opacity: 1; transform: scale(1.5); }
+
+.fireflies {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+  overflow: hidden;
+}
+
+.firefly {
+  position: absolute;
+  border-radius: 50%;
+  background: #FFEA00;
+  box-shadow: 0 0 10px 3px rgba(255,234,0,.9), 0 0 20px rgba(255,179,0,.6);
+  animation: fireflyMove var(--duration) ease-in-out var(--delay) infinite alternate;
+}
+
+@keyframes fireflyMove {
+  0% { transform: translate(var(--x1), var(--y1)); opacity: .45; }
+  25% { transform: translate(var(--x2), var(--y2)); opacity: 1; }
+  50% { transform: translate(var(--x3), var(--y3)); opacity: .65; }
+  75% { transform: translate(var(--x4), var(--y4)); opacity: 1; }
+  100% { transform: translate(var(--x5), var(--y5)); opacity: .5; }
+}
+
+.lamp-side {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+}
+
+.lamp-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+  transform: scale(1.1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lamp-head {
+  width: 140px;
+  height: 50px;
+  background: #151515;
+  border-radius: 140px 140px 4px 4px;
+  box-shadow: inset 0 2px 5px rgba(255,255,255,.1), 0 10px 20px rgba(0,0,0,.9);
+  position: relative;
+  z-index: 6;
+  transition: box-shadow .4s ease;
+  border-bottom: 2px solid #050505;
+}
+
+.room.on .lamp-head {
+  box-shadow: inset 0 -3px 10px rgba(255,220,150,.4), inset 0 2px 5px rgba(255,255,255,.1);
+}
+
+.lamp-glow {
+  position: absolute;
+  top: 40px;
+  width: 90px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 40px 20px rgba(255,230,150,.9), 0 0 80px 40px rgba(255,200,100,.6);
+  opacity: 0;
+  transition: opacity .4s ease-in-out;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.room.on .lamp-glow { opacity: 1; }
+
+.light-beam {
+  position: absolute;
+  top: 45px;
+  width: 500px;
+  height: 350px;
+  clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+  background: linear-gradient(to bottom, rgba(255,230,140,.8) 0%, rgba(255,200,80,.2) 60%, transparent 100%);
+  opacity: 0;
+  transition: opacity .4s ease-in-out;
+  z-index: 3;
+  pointer-events: none;
+  filter: blur(8px);
+}
+
+.room.on .light-beam { opacity: 1; }
+
+.lamp-stem {
+  width: 6px;
+  height: 290px;
+  background: linear-gradient(to right, #050505 0%, #2a2a2a 50%, #050505 100%);
+  position: relative;
+  z-index: 4;
+  transition: background .4s ease, box-shadow .4s ease;
+}
+
+.room.on .lamp-stem {
+  background: linear-gradient(to right, #050505 0%, #2a2010 50%, #050505 100%);
+  box-shadow: 0 0 10px rgba(255,200,100,.15);
+}
+
+.lamp-base {
+  width: 100px;
+  height: 16px;
+  background: #151515;
+  border-radius: 30px 30px 4px 4px;
+  box-shadow: inset 0 2px 5px rgba(255,255,255,.1), 0 10px 20px rgba(0,0,0,.9);
+  position: relative;
+  z-index: 5;
+  transition: box-shadow .4s ease;
+  border-bottom: 2px solid #050505;
+}
+
+.room.on .lamp-base {
+  box-shadow: inset 0 2px 6px rgba(255,220,150,.3), 0 10px 20px rgba(0,0,0,.9);
+}
+
+.desk-surface {
+  position: absolute;
+  bottom: -40px;
+  width: 550px;
+  height: 100px;
+  background: radial-gradient(ellipse at center, rgba(255,220,120,.25) 0%, rgba(255,180,50,.05) 50%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity .4s ease-in-out;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.room.on .desk-surface { opacity: 1; }
+
+.string-svg {
+  position: absolute;
+  top: 45px;
+  left: calc(50% + 55px);
+  width: 2px;
+  height: 2px;
+  overflow: visible;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.string-svg path {
+  stroke: #222;
+  stroke-width: 2;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.string-handle {
+  position: absolute;
+  top: 125px;
+  left: calc(50% + 49px);
+  width: 10px;
+  height: 20px;
+  background: linear-gradient(to bottom, #ebd17a, #aa8529);
+  border-radius: 5px;
+  box-shadow: inset 0 2px 3px rgba(255,255,255,.5), 0 3px 5px rgba(0,0,0,.7);
+  cursor: grab;
+  z-index: 6;
+  touch-action: none;
+  user-select: none;
+  transition: transform .35s cubic-bezier(.2,.8,.2,1);
+}
+
+.string-handle.dragging { cursor: grabbing; transition: none; }
+
+.login-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding-right: 10%;
+}
+
+.login-card {
+  padding: 48px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(50px);
+  filter: blur(10px);
+  pointer-events: none;
+  transition: opacity .6s ease .0s, transform .6s cubic-bezier(.2,.8,.2,1), filter .6s ease;
+}
+
+.room.on .login-card {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+  pointer-events: auto;
+  transition-delay: .2s;
+}
+
+.glass {
+  background: rgba(255,255,255,.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 8px 32px rgba(0,0,0,.3);
+}
+
+.glass-line {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+}
+
+.login-heading {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.login-heading h2 {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #fff;
+  letter-spacing: -.5px;
+}
+
+.login-heading p { color: #aaa; font-size: 15px; }
+
+.inputs { display: flex; flex-direction: column; gap: 16px; }
+
+.input-wrap { position: relative; display: block; }
+
+.input-wrap input {
+  width: 100%;
+  padding: 16px 16px 16px 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(0,0,0,.4);
+  color: #fff;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .3s, box-shadow .3s, background-color .3s;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.5);
+}
+
+.input-wrap input:focus {
+  border-color: rgba(255,220,100,.45);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.5), 0 0 0 3px rgba(255,220,100,.06);
+}
+
+.input-wrap input::placeholder { color: #888; }
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translateY(-50%);
+  z-index: 2;
+  opacity: .8;
+}
+
+.user-icon::before {
+  content: '';
+  position: absolute;
+  width: 7px; height: 7px;
+  border: 2px solid #888; border-radius: 50%;
+  left: 4px; top: 1px;
+}
+.user-icon::after {
+  content: '';
+  position: absolute;
+  width: 13px; height: 8px;
+  border: 2px solid #888; border-bottom: 0;
+  border-radius: 9px 9px 0 0;
+  left: 1px; bottom: 1px;
+}
+
+.mail-icon::before {
+  content: '';
+  position: absolute; inset: 3px 1px;
+  border: 2px solid #888; border-radius: 3px;
+}
+.mail-icon::after {
+  content: '';
+  position: absolute;
+  width: 9px; height: 9px;
+  border-left: 2px solid #888; border-bottom: 2px solid #888;
+  transform: rotate(-45deg);
+  left: 5px; top: 1px;
+}
+
+.lock-icon::before {
+  content: '';
+  position: absolute;
+  width: 12px; height: 10px;
+  border: 2px solid #888; border-radius: 3px;
+  left: 2px; bottom: 1px;
+}
+.lock-icon::after {
+  content: '';
+  position: absolute;
+  width: 8px; height: 9px;
+  border: 2px solid #888; border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  left: 4px; top: 0;
+}
+
+.sign-in {
+  padding: 16px;
+  border-radius: 16px;
+  border: none;
+  background: #ffd600;
+  color: #000;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: transform .2s, background-color .3s, box-shadow .3s;
+}
+
+.sign-in:hover {
+  transform: scale(1.02);
+  background: #ffdc64;
+  box-shadow: 0 0 20px rgba(255,220,100,.4);
+}
+
+.sign-in:active { transform: scale(.98); }
+
+.divider { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+.divider span { flex: 1; height: 1px; background: rgba(255,255,255,.1); }
+.divider b { color: #888; font-size: 13px; font-weight: 500; white-space: nowrap; }
+
+.socials { display: flex; gap: 16px; }
+
+.social-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.05);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: transform .2s, background-color .3s;
+}
+
+.social-btn:hover { transform: scale(1.05); background: rgba(255,255,255,.15); }
+.social-btn:active { transform: scale(.95); }
+
+.google-icon {
+  width: 20px; height: 20px;
+  display: grid; place-items: center;
+  font-size: 19px; font-weight: 700;
+  font-family: Arial, sans-serif;
+  color: #4285F4;
+}
+
+.github-icon { font-size: 18px; color: white; }
+
+.prompt {
+  position: absolute;
+  top: 15%;
+  left: 18%;
+  transform: translateX(-50%);
+  color: #555;
+  font-size: 18px;
+  font-weight: 500;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 1;
+  transition: opacity .5s ease, transform .5s ease;
+}
+
+.room.on .prompt { opacity: 0; transform: translate(-50%, -20px); }
+
+.prompt i {
+  width: 2px;
+  height: 40px;
+  background: linear-gradient(to bottom, #555, transparent);
+  animation: promptArrow 2s infinite;
+}
+
+@keyframes promptArrow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+
+@media (max-width: 900px) {
+  .room { flex-direction: column; overflow-y: auto; }
+  .lamp-side { flex: 0 0 55vh; min-height: 430px; }
+  .login-side { padding: 30px 24px 50px; flex: 0 0 auto; }
+  .login-card { max-width: 440px; }
+  .prompt { left: 50%; top: 7%; font-size: 14px; text-align: center; }
+}
+
+@media (max-height: 650px) and (min-width: 901px) {
+  .lamp-container { transform: scale(.8); }
+  .login-card { padding: 30px; gap: 16px; }
+}
+
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 760px;
+  overflow: hidden;
+  background: #050505;
+}
+
+.room {
+  width: 100%;
+  height: 100%;
+  min-height: 760px;
+}
+
+@media (max-width: 900px) {
+  :host { min-height: 900px; overflow: auto; }
+  .room { min-height: 900px; }
+}
+"""
+
+_LAMP_JS = r"""
+export default function(component) {
+  const { parentElement, setTriggerValue } = component;
+  const root = parentElement;
+
+  const room = root.querySelector('#room');
+  const handle = root.querySelector('#stringHandle');
+  const path = root.querySelector('#stringPath');
+  const fireflies = root.querySelector('#fireflies');
+  const loginForm = root.querySelector('#loginForm');
+
+  if (!room || !handle || !path || !fireflies || !loginForm) {
+    return;
+  }
+
+  let isOn = false;
+  let dragging = false;
+  let startX = 0;
+  let startY = 0;
+  let dragX = 0;
+  let dragY = 0;
+
+  function setLamp(on) {
+    isOn = on;
+    room.classList.toggle('on', isOn);
+    if (isOn) createFireflies();
+    else fireflies.innerHTML = '';
+  }
+
+  function updateString(x, y) {
+    path.setAttribute('d', `M 0 0 L ${x} ${80 + y}`);
+  }
+
+  function resetHandle() {
+    handle.style.transform = 'translate(0px, 0px)';
+    updateString(0, 0);
+  }
+
+  function pointerDown(e) {
+    dragging = true;
+    handle.classList.add('dragging');
+    startX = e.clientX;
+    startY = e.clientY;
+    dragX = 0;
+    dragY = 0;
+    handle.setPointerCapture?.(e.pointerId);
+  }
+
+  function pointerMove(e) {
+    if (!dragging) return;
+    dragX = (e.clientX - startX) * 0.3;
+    dragY = Math.max(0, e.clientY - startY) * 0.6;
+    dragX = Math.max(-35, Math.min(35, dragX));
+    dragY = Math.min(180, dragY);
+    handle.style.transform = `translate(${dragX}px, ${dragY}px)`;
+    updateString(dragX, dragY);
+  }
+
+  function pointerUp() {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+
+    // Keep the original lamp behavior: pulling the string turns it on.
+    // A small click also toggles it so users are not forced to drag on mobile.
+    const pulled = dragY > 30 || (dragY < 4 && Math.abs(dragX) < 4);
+    resetHandle();
+
+    if (pulled) setLamp(!isOn);
+  }
+
+  handle.addEventListener('pointerdown', pointerDown);
+  handle.addEventListener('pointermove', pointerMove);
+  handle.addEventListener('pointerup', pointerUp);
+  handle.addEventListener('pointercancel', pointerUp);
+
+  function random(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
+  function createFireflies() {
+    fireflies.innerHTML = '';
+
+    for (let i = 0; i < 18; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'firefly';
+
+      const size = random(3, 7);
+      dot.style.width = `${size}px`;
+      dot.style.height = `${size}px`;
+      dot.style.setProperty('--duration', `${random(35, 65)}s`);
+      dot.style.setProperty('--delay', `${random(0, 3)}s`);
+
+      for (let n = 1; n <= 5; n++) {
+        dot.style.setProperty(`--x${n}`, `${random(0, 100)}vw`);
+        dot.style.setProperty(`--y${n}`, `${random(0, 100)}vh`);
+      }
+
+      fireflies.appendChild(dot);
+    }
+  }
+
+  // The original prototype had only a placeholder here.
+  // This is now the real Streamlit bridge: the complete form is sent to Python.
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const inputs = Array.from(loginForm.querySelectorAll('input'));
+    const username = (inputs[0]?.value || '').trim();
+    const email = (inputs[1]?.value || '').trim();
+    const password = inputs[2]?.value || '';
+
+    setTriggerValue('submit', {
+      username: username || email,
+      email: email,
+      password: password
+    });
+  });
+
+  const google = loginForm.querySelector('.social-btn:nth-of-type(1)');
+  const github = loginForm.querySelector('.social-btn:nth-of-type(2)');
+
+  google?.addEventListener('click', () => setTriggerValue('social', 'google'));
+  github?.addEventListener('click', () => setTriggerValue('social', 'github'));
+
+  setLamp(false);
+
+  return () => {
+    handle.removeEventListener('pointerdown', pointerDown);
+    handle.removeEventListener('pointermove', pointerMove);
+    handle.removeEventListener('pointerup', pointerUp);
+    handle.removeEventListener('pointercancel', pointerUp);
+  };
+}
+"""
+
+_lamp_component = None
+
+def render_real_lamp_login():
+    global _lamp_component
+
+    # Streamlit 1.64+ includes Components v2, which supports direct
+    # JavaScript -> Python trigger values without an iframe bridge.
+    try:
+        if _lamp_component is None:
+            _lamp_component = st.components.v2.component(
+                name="pathfinder_lamp_login_v2",
+                html=_LAMP_HTML,
+                css=_LAMP_CSS,
+                js=_LAMP_JS,
+                isolate_styles=True,
+            )
+        return _lamp_component(
+            key="pathfinder_lamp_login",
+            width="stretch",
+            height=780,
+            on_submit_change=lambda: None,
+            on_social_change=lambda: None,
+        )
+    except Exception as error:
+        st.error(f"Lamp login component could not start: {error}")
+        return None
+# ======================= END REAL LAMP LOGIN COMPONENT =======================
+
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-st.markdown("""
-<style>
-/* ===== FINAL LOGIN OVERRIDE: lamp-pull glass card, amber/charcoal ===== */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-body:has(.login-screen), body:has(.login-screen) [data-testid="stAppViewContainer"] { background:#050505 !important; }
-body:has(.login-screen), body:has(.login-screen) * { font-family:'Outfit', sans-serif !important; }
-body:has(.login-screen) .login-screen,
-body:has(.login-screen) .login-wrap,
-body:has(.login-screen) .login-card { max-width:440px !important; margin:6vh auto 1rem !important; padding:0 !important; border:none !important; background:transparent !important; box-shadow:none !important; backdrop-filter:none !important; text-align:center !important; position:relative; z-index:1; }
-@media (min-width:900px) {
-  body:has(.login-screen) .login-screen,
-  body:has(.login-screen) .login-wrap,
-  body:has(.login-screen) .login-card { margin:6vh 10% 1rem auto !important; }
-}
-body:has(.login-screen) [data-testid="stForm"] {
-  width:100% !important; max-width:440px !important; margin:0 auto !important;
-  padding:48px !important; border:1px solid rgba(255,255,255,.1) !important; border-radius:24px !important;
-  background:rgba(255,255,255,.05) !important; backdrop-filter:blur(16px) !important;
-  box-shadow:0 8px 32px rgba(0,0,0,.3) !important;
-}
-body:has(.login-screen) .login-screen h1,
-body:has(.login-screen) .login-card h2,
-body:has(.login-screen) [data-testid="stForm"] + div h3,
-body:has(.login-screen) h3 { color:#ffffff !important; text-align:center !important; font-size:26px !important; text-shadow:none !important; font-weight:700 !important; }
-body:has(.login-screen) .login-screen h1::after { display:none !important; }
-body:has(.login-screen) .login-screen p,
-body:has(.login-screen) .login-card [data-testid="stCaptionContainer"] { color:#aaaaaa !important; text-align:center !important; }
-body:has(.login-screen) [data-testid="stForm"] label { color:#e2e8f0 !important; font-size:14px !important; text-align:left !important; }
-body:has(.login-screen) [data-testid="stForm"] input,
-body:has(.login-screen) [data-baseweb="input"] {
-  background:rgba(0,0,0,.4) !important; color:#fff !important; border:1px solid rgba(255,255,255,.1) !important; border-radius:16px !important; height:48px !important;
-}
-body:has(.login-screen) [data-testid="stForm"] input:focus,
-body:has(.login-screen) [data-baseweb="input"]:focus-within { border-color:rgba(255,220,100,.45) !important; box-shadow:0 0 0 3px rgba(255,220,100,.10) !important; }
-body:has(.login-screen) input::placeholder { color:#888888 !important; }
-body:has(.login-screen) [data-testid="stForm"] .stButton > button,
-body:has(.login-screen) .stButton > button {
-  background:#ffd600 !important; color:#000000 !important; border:none !important;
-  border-radius:16px !important; font-weight:600 !important; min-height:48px !important;
-  box-shadow:none !important;
-}
-body:has(.login-screen) [data-testid="stForm"] .stButton > button:hover,
-body:has(.login-screen) .stButton > button:hover { transform:scale(1.02); background:#ffdc64 !important; box-shadow:0 0 20px rgba(255,220,100,.4) !important; }
-body:has(.login-screen) [data-baseweb="tab-list"] { background:transparent !important; border-bottom:1px solid rgba(255,255,255,.1) !important; justify-content:center !important; }
-body:has(.login-screen) [data-baseweb="tab"] { color:#888888 !important; }
-body:has(.login-screen) [data-baseweb="tab"][aria-selected="true"] { color:#ffd600 !important; background:transparent !important; border-bottom:2px solid #ffd600 !important; }
-.pf-ai-logo { width:65px; height:65px; margin:0 auto 22px; display:flex; align-items:center; justify-content:center; border-radius:18px; background:#ffd600; box-shadow:0 10px 30px rgba(255,214,0,.28); font-size:22px; font-weight:bold; color:#000; font-family:'Outfit',Arial,Helvetica,sans-serif; }
-/* Strip every generic dark "surface card" style off the login tabs/form container —
-   the login card supplies its own background, so these must not double up. */
-body:has(.login-screen) [data-testid="stTabs"],
-body:has(.login-screen) [data-testid="stForm"] { box-shadow:none !important; }
-body:has(.login-screen) [data-testid="stTabs"] { background:transparent !important; border:0 !important; padding:0 !important; margin-top:6px !important; }
-body:has(.login-screen) [data-baseweb="tab-list"] { background:transparent !important; border-radius:0 !important; padding:0 !important; border-bottom:1px solid rgba(255,255,255,.10) !important; justify-content:center !important; gap:28px !important; }
-/* Force the active-tab underline to amber (theme primaryColor otherwise leaks through green). */
-body:has(.login-screen) [data-baseweb="tab-highlight"] { background:#ffd600 !important; height:2px !important; display:block !important; }
-body:has(.login-screen) [data-baseweb="tab-border"] { display:none !important; }
-body:has(.login-screen) button[data-baseweb="tab"] { background:transparent !important; padding:10px 2px !important; font-weight:600 !important; }
-body:has(.login-screen) .stColumns { gap:10px !important; }
-
-</style>
-""", unsafe_allow_html=True)
-
 if not st.session_state.logged_in:
-    render_scene(st, "login")
-    st.markdown('<div class="login-screen login-wrap"><div class="login-card">', unsafe_allow_html=True)
-    st.markdown('<div class="pf-ai-logo">AI</div>', unsafe_allow_html=True)
-    st.markdown('<h3 style="text-align:center;margin-bottom:6px;">Welcome Back</h3><p style="text-align:center;color:#94a3b8;font-size:14px;margin-bottom:6px;">Sign in to continue to Pathfinder AI</p>', unsafe_allow_html=True)
-    sign_in_tab, create_tab = st.tabs(["Sign in", "Create account"])
-    with sign_in_tab:
-        with st.form("pathfinder_login"):
-            username = st.text_input("Email or student ID", placeholder="you@example.com")
-            password = st.text_input("Password", type="password", placeholder="Enter your password")
-            submitted = st.form_submit_button("🚀 Sign in to Pathfinder", type="primary", use_container_width=True)
-            if submitted:
-                if verify_configured_user(username, password):
-                    st.session_state.logged_in = True
-                    st.session_state.username = username.strip()
-                    st.session_state.guest_mode = False
-                    st.rerun()
-                else:
-                    st.error("That sign-in didn’t work. Please check your details and try again.")
-        forgot_col, guest_col = st.columns(2)
-        if forgot_col.button("Forgot password?", use_container_width=True):
-            st.info("Password recovery is managed by your Pathfinder administrator.")
-        if guest_col.button("Continue as guest", use_container_width=True):
-            st.session_state.logged_in = True
-            st.session_state.username = "Guest student"
-            st.session_state.guest_mode = True
-            st.session_state.guest_ai_uses = 0
-            st.rerun()
-        st.caption("Demo mode: when no [auth].users secret is configured, any non-empty details are accepted.")
-    with create_tab:
-        with st.form("pathfinder_create_account"):
-            new_email = st.text_input("Email address", placeholder="you@example.com")
-            new_password = st.text_input("Create password", type="password", placeholder="At least 8 characters")
-            confirm_password = st.text_input("Confirm password", type="password", placeholder="Re-enter your password")
-            create_submitted = st.form_submit_button("Create my account", type="primary", use_container_width=True)
-            if create_submitted:
-                if not new_email.strip() or "@" not in new_email:
-                    st.error("Please enter a valid email address.")
-                elif len(new_password) < 8:
-                    st.error("Please use a password with at least 8 characters.")
-                elif new_password != confirm_password:
-                    st.error("The passwords do not match yet.")
-                else:
-                    email_key = new_email.strip().lower()
-                    local_users = st.session_state.setdefault("local_users", {})
-                    if email_key in local_users:
-                        st.error("An account with this email already exists in this session. Please sign in.")
-                    else:
-                        local_users[email_key] = hash_user_password(new_password)
-                        st.session_state.logged_in = True
-                        st.session_state.username = email_key
-                        st.session_state.guest_mode = False
-                        st.success("Account created securely. Welcome to Pathfinder!")
-                        st.rerun()
-        st.caption("For this demo, the account lasts for the current session. Add a hashed [auth].users secret for persistent deployment accounts.")
+    # Hide the dashboard chrome while the real lamp component is active.
+    st.markdown("""
+    <style>
+      [data-testid="stSidebar"] { display:none !important; }
+      #MainMenu, footer, header { visibility:hidden !important; }
+      [data-testid="stAppViewContainer"] { background:#050505 !important; }
+      [data-testid="stMain"] { background:#050505 !important; }
+      .block-container {
+        max-width:none !important;
+        width:100% !important;
+        padding:0 !important;
+        margin:0 !important;
+      }
+      [data-testid="stElementContainer"]:has(.pf-lamp-login-anchor) { display:block; }
+      [data-testid="stElementContainer"] iframe { border:0 !important; }
+    </style>
+    <div class="pf-lamp-login-anchor"></div>
+    """, unsafe_allow_html=True)
 
-    st.markdown('<div class="pf-divider"><span></span><b>OR CONTINUE WITH</b><span></span></div>', unsafe_allow_html=True)
-    st.markdown('<div class="pf-social-row">', unsafe_allow_html=True)
-    social_col1, social_col2 = st.columns(2)
-    if social_col1.button("🇬 Google", use_container_width=True):
-        st.info("Social sign-in isn't wired up in this demo yet — please use email + password above.")
-    if social_col2.button("● GitHub", use_container_width=True):
-        st.info("Social sign-in isn't wired up in this demo yet — please use email + password above.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    lamp_result = render_real_lamp_login()
 
-    st.markdown('</div></div>', unsafe_allow_html=True)
+    if lamp_result is not None:
+        submit = getattr(lamp_result, "submit", None)
+        social = getattr(lamp_result, "social", None)
+
+        if submit:
+            username = str(submit.get("username", "")).strip()
+            email = str(submit.get("email", "")).strip()
+            password = str(submit.get("password", ""))
+
+            login_id = username or email
+            if verify_configured_user(login_id, password):
+                st.session_state.logged_in = True
+                st.session_state.username = login_id
+                st.session_state.guest_mode = False
+                st.rerun()
+            else:
+                st.session_state["lamp_login_error"] = "That sign-in didn’t work. Please check your details and try again."
+
+        if social == "google":
+            st.session_state["lamp_login_error"] = "Google sign-in isn't wired to an OAuth provider yet. Use Email + Password."
+        elif social == "github":
+            st.session_state["lamp_login_error"] = "GitHub sign-in isn't wired to an OAuth provider yet. Use Email + Password."
+
+    if st.session_state.pop("lamp_login_error", None):
+        st.markdown(
+            "<div style='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);"
+            "padding:10px 18px;border-radius:12px;background:rgba(80,20,10,.92);"
+            "border:1px solid rgba(255,150,100,.35);color:#ffd9c7;font-family:Outfit,sans-serif;"
+            "z-index:9999;text-align:center;'>"
+            + st.session_state.get("lamp_login_error", "")
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+
     st.stop()
 
 # Post-login interface: living-green motion scene (ferns, flowers, pollen, butterfly, spark orb).
