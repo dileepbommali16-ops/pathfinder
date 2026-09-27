@@ -2413,9 +2413,14 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github && githubAuthUrl) {
-    // Use a real top-level link so GitHub OAuth can leave the Streamlit component iframe.
+    // Start GitHub OAuth from a direct user click. Opening a new tab avoids
+    // iframe/top-navigation restrictions in Streamlit Components v2.
     github.href = githubAuthUrl;
-    github.target = '_top';
+    github.target = '_blank';
+    github.rel = 'noopener noreferrer';
+    github.addEventListener('click', () => {
+      window.open(githubAuthUrl, '_blank', 'noopener,noreferrer');
+    });
   } else {
     github?.addEventListener('click', (e) => {
       e.preventDefault();
