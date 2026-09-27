@@ -484,10 +484,28 @@ LOGIN_CSS = """
 /* ===== Login: pull-string lamp, warm amber/charcoal card — 1:1 port of the
    "Lamp Login Animation" static prototype (index.html / style.css / script.js).
    This whole block is ONLY ever injected while scene == "login" (see render_scene
-   below), so every rule here is already scoped to the login screen in Python —
-   no ':has()' gating needed, which also means these rules aren't at the mercy of
-   ':has()' browser support the way the older legacy CSS blocks elsewhere are. ===== */
+   below), so every rule here is already scoped to the login screen in Python.
+
+   IMPORTANT: recent Streamlit (this app pins streamlit>=1.64) renders native
+   widgets (buttons, text inputs, tabs) inside an isolated Shadow DOM. Plain CSS
+   selectors below (.stButton > button, [data-baseweb="input"], etc.) cannot
+   reach inside that boundary no matter how specific/!important they are — they
+   only still work for structural/container elements that stay in the light DOM
+   (.stApp, [data-testid="stAppViewContainer"], [data-testid="stForm"] itself,
+   the sidebar). The one thing that DOES cross a shadow boundary is CSS custom
+   properties, which Streamlit exposes as --st-<theme-option-in-kebab-case>. So
+   the widget colors are retheme'd via those variables first; the plain
+   selectors are kept below as a harmless no-op fallback for older Streamlit
+   versions that don't use Shadow DOM for native widgets. ===== */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+:root, body {
+  --st-primary-color:#ffd600 !important;
+  --st-background-color:#050505 !important;
+  --st-secondary-background-color:rgba(0,0,0,.4) !important;
+  --st-text-color:#ffffff !important;
+  --st-border-color:rgba(255,255,255,.15) !important;
+  --st-font:'Outfit', sans-serif !important;
+}
 html, body {
   background:#050505 !important;
   font-family:'Outfit', sans-serif !important;
@@ -731,7 +749,10 @@ def render_scene(st, scene: str) -> None:
     # needs to be (re)injected once per scene per session — not on every Next/Back
     # click, which just reruns this script. This avoids reloading the component
     # iframe on every interaction, which is the slow part on a weak connection.
-    if st.session_state.get("_pf_scene") != scene:
+    # The login scene is the exception: it's cheap, rare to rerun, and a hard
+    # browser refresh clears the injected DOM while session state can persist —
+    # so it must always re-inject or the lamp silently never appears at all.
+    if scene == "login" or st.session_state.get("_pf_scene") != scene:
         st.session_state["_pf_scene"] = scene
         script = LOGIN_SCRIPT if scene == "login" else MAIN_SCRIPT
         try:
