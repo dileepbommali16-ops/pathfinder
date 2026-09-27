@@ -2364,9 +2364,32 @@ if not st.session_state.logged_in:
                 st.session_state["lamp_login_error"] = "That sign-in didn’t work. Please check your details and try again."
 
         if social == "google":
-            st.session_state["lamp_login_error"] = "Google sign-in isn't wired to an OAuth provider yet. Use Email + Password."
+            # Real Google OIDC login. Configure [auth.google] in Streamlit Secrets.
+            auth_cfg = st.secrets.get("auth", {})
+            google_cfg = auth_cfg.get("google", {}) if hasattr(auth_cfg, "get") else {}
+            if google_cfg.get("client_id") and google_cfg.get("client_secret") and google_cfg.get("server_metadata_url"):
+                st.login("google")
+            else:
+                st.session_state["lamp_login_error"] = (
+                    "Google Login is ready, but OAuth credentials are not configured yet. "
+                    "Add the Google values under [auth.google] in Streamlit Secrets."
+                )
+
         elif social == "github":
-            st.session_state["lamp_login_error"] = "GitHub sign-in isn't wired to an OAuth provider yet. Use Email + Password."
+            # GitHub uses OAuth 2.0, not OIDC user login, so it cannot be passed
+            # directly to st.login(). Keep this button ready for the GitHub OAuth
+            # callback implementation once the app credentials are added.
+            github_cfg = st.secrets.get("github_oauth", {})
+            if github_cfg.get("client_id") and github_cfg.get("client_secret"):
+                st.session_state["lamp_login_error"] = (
+                    "GitHub OAuth credentials are detected. The callback URL must also be "
+                    "registered before GitHub can complete the sign-in."
+                )
+            else:
+                st.session_state["lamp_login_error"] = (
+                    "GitHub Login is ready for OAuth, but its Client ID and Client Secret "
+                    "are not configured yet."
+                )
 
     login_error = st.session_state.pop("lamp_login_error", None)
     if login_error:
