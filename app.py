@@ -1791,9 +1791,9 @@ _LAMP_HTML = r"""<main class="room" id="room">
           <button class="social-btn" type="button">
             <span class="google-icon">G</span> Google
           </button>
-          <button class="social-btn" type="button">
+          <a class="social-btn" id="github-social-btn" href="#" target="_top" rel="noopener">
             <span class="github-icon">●</span> GitHub
-          </button>
+          </a>
         </div>
       </form>
     </section>
@@ -2407,17 +2407,21 @@ export default function(component) {
   });
 
   const google = loginForm.querySelector('.social-btn:nth-of-type(1)');
-  const github = loginForm.querySelector('.social-btn:nth-of-type(2)');
+  const github = loginForm.querySelector('#github-social-btn');
   const githubAuthUrl = component.data?.github_auth_url || '';
 
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
-  github?.addEventListener('click', () => {
-    if (githubAuthUrl) {
-      window.top.location.href = githubAuthUrl;
-    } else {
+
+  if (github && githubAuthUrl) {
+    // Use a real top-level link so GitHub OAuth can leave the Streamlit component iframe.
+    github.href = githubAuthUrl;
+    github.target = '_top';
+  } else {
+    github?.addEventListener('click', (e) => {
+      e.preventDefault();
       setTriggerValue('social', 'github');
-    }
-  });
+    });
+  }
 
   setLamp(false);
 
