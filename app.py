@@ -1600,6 +1600,136 @@ body:has(.login-screen) [data-testid="stCaptionContainer"] {
 </style>
 """, unsafe_allow_html=True)
 
+
+# ======================= SOCIAL OAUTH HELPERS =======================
+def _secret_dict(name: str):
+    value = st.secrets.get(name, {})
+    return value if hasattr(value, "get") else {}
+
+
+def _github_oauth_url():
+    cfg = _secret_dict("github_oauth")
+    client_id = str(cfg.get("client_id", "")).strip()
+    redirect_uri = str(cfg.get("redirect_uri", "")).strip()
+    if not client_id or not redirect_uri:
+        return ""
+    if "github_oauth_state" not in st.session_state:
+        st.session_state["github_oauth_state"] = py_secrets.token_urlsafe(32)
+    state = st.session_state["github_oauth_state"]
+    params = urlencode({
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "scope": "read:user user:email",
+        "state": state,
+    })
+    return "https://github.com/login/oauth/authorize?" + params
+
+
+def _github_api_json(url: str, token: str = ""):
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "Pathfinder-Career-Intelligence"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    request = urllib.request.Request(url, headers=headers, method="GET")
+    with urllib.request.urlopen(request, timeout=15) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _github_exchange_code(code: str):
+    cfg = _secret_dict("github_oauth")
+    client_id = str(cfg.get("client_id", "")).strip()
+    client_secret = str(cfg.get("client_secret", "")).strip()
+    redirect_uri = str(cfg.get("redirect_uri", "")).strip()
+    if not client_id or not client_secret or not redirect_uri:
+        raise RuntimeError("GitHub OAuth credentials are not configured in Streamlit Secrets.")
+
+    payload = urlencode({
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "redirect_uri": redirect_uri,
+    }).encode("utf-8")
+    request = urllib.request.Request(
+        "https://github.com/login/oauth/access_token",
+        data=payload,
+        headers={
+            "Accept": "application/json",
+            "User-Agent": "Pathfinder-Career-Intelligence",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=15) as response:
+        token_data = json.loads(response.read().decode("utf-8"))
+
+    token = token_data.get("access_token")
+    if not token:
+        raise RuntimeError(token_data.get("error_description") or token_data.get("error") or "GitHub did not return an access token.")
+    return token
+
+
+def _handle_github_callback():
+    code = str(st.query_params.get("code", "")).strip()
+    state = str(st.query_params.get("state", "")).strip()
+    error = str(st.query_params.get("error", "")).strip()
+
+    if not code and not state and not error:
+        return
+
+    try:
+        expected_state = str(st.session_state.get("github_oauth_state", "")).strip()
+        if error:
+            raise RuntimeError(f"GitHub authorization was cancelled or denied: {error}.")
+        if not code or not state or not expected_state or not hmac.compare_digest(state, expected_state):
+            raise RuntimeError("GitHub OAuth security check failed. Please try again.")
+
+        token = _github_exchange_code(code)
+        profile = _github_api_json("https://api.github.com/user", token)
+        emails = _github_api_json("https://api.github.com/user/emails", token)
+
+        primary_email = ""
+        if isinstance(emails, list):
+            for item in emails:
+                if item.get("primary") and item.get("verified"):
+                    primary_email = str(item.get("email", "")).strip()
+                    break
+            if not primary_email:
+                for item in emails:
+                    if item.get("verified"):
+                        primary_email = str(item.get("email", "")).strip()
+                        if primary_email:
+                            break
+
+        login_id = primary_email or str(profile.get("login", "")).strip()
+        if not login_id:
+            raise RuntimeError("GitHub returned no usable account identity.")
+
+        st.session_state.logged_in = True
+        st.session_state.username = login_id
+        st.session_state.email = primary_email
+        st.session_state.guest_mode = False
+        st.session_state.pop("github_oauth_state", None)
+        st.query_params.clear()
+        st.rerun()
+    except Exception as error:
+        st.session_state["lamp_login_error"] = f"GitHub Login failed: {error}"
+        st.session_state.pop("github_oauth_state", None)
+        st.query_params.clear()
+
+
+# Process a GitHub OAuth callback before rendering the login screen.
+_handle_github_callback()
+
+# If Google OIDC has already authenticated the browser, bridge that identity
+# into Pathfinder's existing session-based dashboard login.
+try:
+    if getattr(st.user, "is_logged_in", False):
+        st.session_state.logged_in = True
+        st.session_state.username = str(getattr(st.user, "email", "") or getattr(st.user, "name", "") or "Google User")
+        st.session_state.email = str(getattr(st.user, "email", "") or "")
+        st.session_state.guest_mode = False
+except Exception:
+    pass
+
 # ======================= REAL LAMP LOGIN COMPONENT =======================
 _LAMP_HTML = r"""<main class="room" id="room">
     <div class="room-light" id="roomLight"></div>
@@ -2277,9 +2407,16 @@ export default function(component) {
 
   const google = loginForm.querySelector('.social-btn:nth-of-type(1)');
   const github = loginForm.querySelector('.social-btn:nth-of-type(2)');
+  const githubAuthUrl = component.data?.github_auth_url || '';
 
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
-  github?.addEventListener('click', () => setTriggerValue('social', 'github'));
+  github?.addEventListener('click', () => {
+    if (githubAuthUrl) {
+      window.top.location.href = githubAuthUrl;
+    } else {
+      setTriggerValue('social', 'github');
+    }
+  });
 
   setLamp(false);
 
@@ -2310,6 +2447,7 @@ def render_real_lamp_login():
             )
         return _lamp_component(
             key="pathfinder_lamp_login",
+            data={"github_auth_url": _github_oauth_url()},
             width="stretch",
             height=780,
             on_submit_change=lambda: None,
@@ -2364,31 +2502,23 @@ if not st.session_state.logged_in:
                 st.session_state["lamp_login_error"] = "That sign-in didn’t work. Please check your details and try again."
 
         if social == "google":
-            # Real Google OIDC login. Configure [auth.google] in Streamlit Secrets.
-            auth_cfg = st.secrets.get("auth", {})
+            # Real Google OIDC login. Streamlit handles state/nonce securely.
+            auth_cfg = _secret_dict("auth")
             google_cfg = auth_cfg.get("google", {}) if hasattr(auth_cfg, "get") else {}
             if google_cfg.get("client_id") and google_cfg.get("client_secret") and google_cfg.get("server_metadata_url"):
                 st.login("google")
             else:
                 st.session_state["lamp_login_error"] = (
-                    "Google Login is ready, but OAuth credentials are not configured yet. "
-                    "Add the Google values under [auth.google] in Streamlit Secrets."
+                    "Google Login is not configured yet. Add the Google Client ID and "
+                    "Client Secret under [auth.google] in Streamlit Secrets."
                 )
 
         elif social == "github":
-            # GitHub uses OAuth 2.0, not OIDC user login, so it cannot be passed
-            # directly to st.login(). Keep this button ready for the GitHub OAuth
-            # callback implementation once the app credentials are added.
-            github_cfg = st.secrets.get("github_oauth", {})
-            if github_cfg.get("client_id") and github_cfg.get("client_secret"):
+            github_url = _github_oauth_url()
+            if not github_url:
                 st.session_state["lamp_login_error"] = (
-                    "GitHub OAuth credentials are detected. The callback URL must also be "
-                    "registered before GitHub can complete the sign-in."
-                )
-            else:
-                st.session_state["lamp_login_error"] = (
-                    "GitHub Login is ready for OAuth, but its Client ID and Client Secret "
-                    "are not configured yet."
+                    "GitHub Login is not configured yet. Add client_id, client_secret, "
+                    "and redirect_uri under [github_oauth] in Streamlit Secrets."
                 )
 
     login_error = st.session_state.pop("lamp_login_error", None)
