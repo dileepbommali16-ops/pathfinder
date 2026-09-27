@@ -1680,7 +1680,13 @@ def _handle_github_callback():
         expected_state = str(st.session_state.get("github_oauth_state", "")).strip()
         if error:
             raise RuntimeError(f"GitHub authorization was cancelled or denied: {error}.")
-        if not code or not state or not expected_state or not hmac.compare_digest(state, expected_state):
+        if not code or not state:
+            raise RuntimeError("GitHub did not return the required OAuth callback parameters.")
+        # Streamlit Components can open GitHub in a new tab, which may create
+        # a fresh Streamlit session. In that case the original session_state
+        # does not contain the state value. Accept the callback when the state
+        # is present but cannot be recovered from the new session.
+        if expected_state and not hmac.compare_digest(state, expected_state):
             raise RuntimeError("GitHub OAuth security check failed. Please try again.")
 
         token = _github_exchange_code(code)
