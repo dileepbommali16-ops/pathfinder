@@ -54,6 +54,7 @@ _COMMON = r"""
     if (cv.parentNode) cv.parentNode.removeChild(cv);
     var o = D.querySelectorAll('.pf-hero-orb');
     for (var i = 0; i < o.length; i++) o[i].remove();
+    D.body.classList.remove('pf-lamp-on');
   };
   function rng(seed) {
     var a = seed >>> 0;
@@ -248,6 +249,7 @@ _LAMP_DOM_SCRIPT = r"""
   function setLamp(on) {
     isOn = on;
     room.classList.toggle('on', isOn);
+    D.body.classList.toggle('pf-lamp-on', isOn);
     if (isOn) createFireflies(); else fireflies.innerHTML = '';
   }
   function updateString(x, y) { path.setAttribute('d', 'M 0 0 L ' + x + ' ' + (80 + y)); }
@@ -269,7 +271,9 @@ _LAMP_DOM_SCRIPT = r"""
   function pointerUp() {
     if (!dragging) return;
     dragging = false; handle.classList.remove('dragging');
-    var pulled = dragY > 30;
+    // A real drag past the threshold pulls the string; a plain tap/click
+    // (near-zero movement) also toggles the lamp so it's not drag-only.
+    var pulled = dragY > 30 || (dragY < 4 && Math.abs(dragX) < 4);
     resetHandle();
     if (pulled) setLamp(!isOn);
   }
@@ -478,37 +482,39 @@ MAIN_SCRIPT = _script(_MAIN_JS)
 LOGIN_CSS = """
 <style>
 /* ===== Login: pull-string lamp, warm amber/charcoal card — 1:1 port of the
-   "Lamp Login Animation" static prototype (index.html / style.css / script.js) ===== */
+   "Lamp Login Animation" static prototype (index.html / style.css / script.js).
+   This whole block is ONLY ever injected while scene == "login" (see render_scene
+   below), so every rule here is already scoped to the login screen in Python —
+   no ':has()' gating needed, which also means these rules aren't at the mercy of
+   ':has()' browser support the way the older legacy CSS blocks elsewhere are. ===== */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-html:has(.login-screen) { background:#050505 !important; }
-body:has(.login-screen) { background:transparent !important; }
-body:has(.login-screen) {
-  --pf-text:#f1f5f9; --pf-muted:#a8a8a8;
+html, body {
+  background:#050505 !important;
   font-family:'Outfit', sans-serif !important;
 }
-body:has(.login-screen) .stApp,
-body:has(.login-screen) [data-testid="stAppViewContainer"],
-body:has(.login-screen) [data-testid="stMain"],
-body:has(.login-screen) [data-testid="stHeader"] { background:transparent !important; }
-body:has(.login-screen) [data-testid="stAppViewContainer"]::before,
-body:has(.login-screen) [data-testid="stAppViewContainer"]::after,
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="stHeader"] { background:transparent !important; }
+[data-testid="stAppViewContainer"]::before,
+[data-testid="stAppViewContainer"]::after,
 .login-screen::before, .login-screen::after,
 .login-sylva-orb, .login-sylva-leaf { display:none !important; }
 /* No sidebar in the original prototype */
-body:has(.login-screen) [data-testid="stSidebar"] { display:none !important; }
+[data-testid="stSidebar"] { display:none !important; }
 /* Push the real form into the right ~62% of the screen, mirroring .login-side */
-body:has(.login-screen) [data-testid="stAppViewContainer"] .block-container {
+[data-testid="stAppViewContainer"] .block-container {
   max-width:520px !important; margin-left:auto !important; margin-right:8% !important;
   padding-top:6vh !important;
 }
 @media (max-width:899px) {
-  body:has(.login-screen) [data-testid="stAppViewContainer"] .block-container {
+  [data-testid="stAppViewContainer"] .block-container {
     margin-left:auto !important; margin-right:auto !important;
   }
 }
 
 /* ---- login card: same glass panel as .login-card, revealed only once the lamp is on ---- */
-body:has(.login-screen) .login-screen {
+.login-screen {
   background:transparent !important; border:none !important; box-shadow:none !important; backdrop-filter:none !important;
 }
 .login-wrap .login-card {
@@ -518,69 +524,75 @@ body:has(.login-screen) .login-screen {
   box-shadow:0 8px 32px rgba(0,0,0,.3) !important;
   backdrop-filter:blur(16px) !important;
   -webkit-backdrop-filter:blur(16px) !important;
-  opacity:0; transform:translateX(50px); filter:blur(10px); pointer-events:none;
+  opacity:0 !important; transform:translateX(50px) !important; filter:blur(10px) !important; pointer-events:none !important;
   transition:opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1), filter .6s ease;
 }
-body:has(#pf-lamp-room.on) .login-wrap .login-card {
-  opacity:1; transform:translateX(0); filter:blur(0); pointer-events:auto; transition-delay:.2s;
+/* setLamp() in the lamp script toggles body.pf-lamp-on directly — a plain class,
+   not a ':has()' lookup, so the reveal works even where ':has()' is unsupported. */
+body.pf-lamp-on .login-wrap .login-card {
+  opacity:1 !important; transform:translateX(0) !important; filter:blur(0) !important; pointer-events:auto !important;
+  transition-delay:.2s;
 }
-body:has(.login-screen) .login-screen h1 { color:#ffffff !important; }
-body:has(.login-screen) .login-screen h1::after { display:none !important; }
-body:has(.login-screen) .login-screen p { color:#aaaaaa !important; }
+.login-screen h1 { color:#ffffff !important; }
+.login-screen h1::after { display:none !important; }
+.login-screen p { color:#aaaaaa !important; }
 .pf-ai-logo { background:#ffd600 !important; box-shadow:0 10px 30px rgba(255,214,0,.28) !important; color:#000 !important; }
 
 /* ---- inputs: dark inset field, amber focus ring, left-aligned icon per field ---- */
-body:has(.login-screen) [data-testid="stForm"] {
+[data-testid="stForm"] {
   background:transparent !important; border:none !important; box-shadow:none !important; backdrop-filter:none !important;
 }
-body:has(.login-screen) [data-testid="stForm"] label p { color:#aaaaaa !important; font-size:13px !important; }
-body:has(.login-screen) [data-testid="stForm"] input {
+[data-testid="stForm"] label p { color:#aaaaaa !important; font-size:13px !important; }
+[data-testid="stForm"] input {
   color:#ffffff !important; background:transparent !important; border-color:transparent !important; box-shadow:none !important;
 }
-body:has(.login-screen) [data-baseweb="input"] {
+[data-baseweb="input"] {
   background:rgba(0,0,0,.4) !important; border:1px solid rgba(255,255,255,.1) !important; border-radius:16px !important;
   box-shadow:inset 0 2px 4px rgba(0,0,0,.5) !important; position:relative;
 }
-body:has(.login-screen) [data-baseweb="base-input"] { background:transparent !important; }
-body:has(.login-screen) [data-baseweb="input"]:focus-within {
+[data-baseweb="base-input"] { background:transparent !important; }
+[data-baseweb="input"]:focus-within {
   border-color:rgba(255,220,100,.45) !important;
   box-shadow:inset 0 2px 4px rgba(0,0,0,.5), 0 0 0 3px rgba(255,220,100,.06) !important;
 }
-body:has(.login-screen) input::placeholder { color:#888888 !important; }
-/* icon (mail/lock) rendered on the input wrapper, since <input> can't hold ::before content */
-body:has(.login-screen) [data-testid="stForm"] div:has(input[aria-label*="mail" i]) [data-baseweb="input"],
-body:has(.login-screen) [data-testid="stForm"] div:has(input[aria-label*="Email" i]) [data-baseweb="input"],
-body:has(.login-screen) [data-testid="stForm"] div:has(input[type="password"]) [data-baseweb="input"] { padding-left:40px; }
-body:has(.login-screen) [data-testid="stForm"] div:has(input[aria-label*="mail" i]) [data-baseweb="input"]::before,
-body:has(.login-screen) [data-testid="stForm"] div:has(input[aria-label*="Email" i]) [data-baseweb="input"]::before {
+input::placeholder { color:#888888 !important; }
+/* icon (mail/lock) rendered on the input wrapper, since <input> can't hold ::before content.
+   Falls back gracefully (no icon, still padded) in browsers without :has(). */
+[data-testid="stForm"] div:has(input[aria-label*="mail" i]) [data-baseweb="input"],
+[data-testid="stForm"] div:has(input[aria-label*="Email" i]) [data-baseweb="input"],
+[data-testid="stForm"] div:has(input[type="password"]) [data-baseweb="input"] { padding-left:40px; }
+[data-testid="stForm"] div:has(input[aria-label*="mail" i]) [data-baseweb="input"]::before,
+[data-testid="stForm"] div:has(input[aria-label*="Email" i]) [data-baseweb="input"]::before {
   content:''; position:absolute; left:16px; top:50%; width:13px; height:9px; transform:translateY(-50%);
   border:2px solid #888; border-radius:2px; z-index:2;
 }
-body:has(.login-screen) [data-testid="stForm"] div:has(input[type="password"]) [data-baseweb="input"]::before {
+[data-testid="stForm"] div:has(input[type="password"]) [data-baseweb="input"]::before {
   content:''; position:absolute; left:18px; top:50%; width:10px; height:8px; margin-top:-1px;
   border:2px solid #888; border-radius:3px; transform:translateY(-50%); z-index:2;
 }
-body:has(.login-screen) [data-baseweb="tab-list"] { background:transparent !important; border-bottom:1px solid rgba(255,255,255,.1) !important; }
-body:has(.login-screen) [data-baseweb="tab"] { color:#888888 !important; }
-body:has(.login-screen) [data-baseweb="tab"][aria-selected="true"] { color:#ffd600 !important; background:transparent !important; box-shadow:none; border-bottom:2px solid #ffd600 !important; }
-body:has(.login-screen) [data-baseweb="tab-highlight"] { background:#ffd600 !important; }
-body:has(.login-screen) [data-testid="stCaptionContainer"] { color:#888888 !important; }
-body:has(.login-screen) .stButton > button {
+[data-baseweb="tab-list"] { background:transparent !important; border-bottom:1px solid rgba(255,255,255,.1) !important; }
+[data-baseweb="tab"] { color:#888888 !important; }
+[data-baseweb="tab"][aria-selected="true"] { color:#ffd600 !important; background:transparent !important; box-shadow:none; border-bottom:2px solid #ffd600 !important; }
+[data-baseweb="tab-highlight"] { background:#ffd600 !important; }
+[data-testid="stCaptionContainer"] { color:#888888 !important; }
+.stButton > button {
   color:#000000 !important; font-weight:600 !important; border:none !important;
   background:#ffd600 !important; border-radius:16px !important;
   box-shadow:none !important;
 }
-body:has(.login-screen) .stButton > button:hover { transform:scale(1.02); background:#ffdc64 !important; box-shadow:0 0 20px rgba(255,220,100,.4) !important; }
+.stButton > button:hover { transform:scale(1.02); background:#ffdc64 !important; box-shadow:0 0 20px rgba(255,220,100,.4) !important; }
+.stButton > button p { color:#000000 !important; }
 
 /* ---- divider + social row, decorative like the prototype ---- */
 .pf-divider { display:flex; align-items:center; gap:12px; margin:20px 0 16px; }
 .pf-divider span { flex:1; height:1px; background:rgba(255,255,255,.1); }
 .pf-divider b { color:#888; font-size:13px; font-weight:500; white-space:nowrap; }
-body:has(.login-screen) .pf-social-row .stButton > button {
+.pf-social-row .stButton > button {
   background:rgba(255,255,255,.05) !important; border:1px solid rgba(255,255,255,.1) !important;
   color:#fff !important; font-weight:500 !important;
 }
-body:has(.login-screen) .pf-social-row .stButton > button:hover { background:rgba(255,255,255,.15) !important; box-shadow:none !important; }
+.pf-social-row .stButton > button p { color:#fff !important; }
+.pf-social-row .stButton > button:hover { background:rgba(255,255,255,.15) !important; box-shadow:none !important; }
 </style>
 """
 
