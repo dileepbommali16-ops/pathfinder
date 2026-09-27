@@ -132,32 +132,29 @@ _LOOP = r"""
 """
 
 _LOGIN_JS = r"""
-  var sparks = makeBurst(90, 7);
-  var rr = rng(21), embers = [];
-  for (var i = 0; i < 16; i++) embers.push({ x: rr(), y: rr(), v: 0.006 + rr() * 0.02, r: 0.6 + rr() * 1.6, ph: rr() * TAU });
+  var rd = rng(21), dust = [];
+  for (var i = 0; i < 22; i++) dust.push({ x: rd(), y: rd(), v: 0.004 + rd() * 0.012, r: 0.5 + rd() * 1.3, ph: rd() * TAU });
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
     // navy base, matching #0f172a
     ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, W, H);
-    // indigo glow top-left, violet glow bottom-right (radial gradient positions from the supplied design)
-    var tl = ctx.createRadialGradient(W * 0.12, H * 0.06, 0, W * 0.12, H * 0.06, Math.max(W, H) * 0.5);
-    tl.addColorStop(0, 'rgba(30,58,138,0.42)'); tl.addColorStop(1, 'rgba(30,58,138,0)');
+    // two soft glows, slowly breathing \u2014 indigo top-left, violet bottom-right (matches the supplied design)
+    var b1 = 0.85 + 0.15 * Math.sin(t * 0.35);
+    var tl = ctx.createRadialGradient(W * 0.12, H * 0.06, 0, W * 0.12, H * 0.06, Math.max(W, H) * 0.55 * b1);
+    tl.addColorStop(0, 'rgba(30,58,138,0.40)'); tl.addColorStop(1, 'rgba(30,58,138,0)');
     ctx.fillStyle = tl; ctx.fillRect(0, 0, W, H);
-    var br = ctx.createRadialGradient(W * 0.92, H * 0.94, 0, W * 0.92, H * 0.94, Math.max(W, H) * 0.5);
-    br.addColorStop(0, 'rgba(124,58,237,0.34)'); br.addColorStop(1, 'rgba(124,58,237,0)');
+    var b2 = 0.85 + 0.15 * Math.sin(t * 0.32 + 2.1);
+    var br = ctx.createRadialGradient(W * 0.92, H * 0.94, 0, W * 0.92, H * 0.94, Math.max(W, H) * 0.55 * b2);
+    br.addColorStop(0, 'rgba(124,58,237,0.32)'); br.addColorStop(1, 'rgba(124,58,237,0)');
     ctx.fillStyle = br; ctx.fillRect(0, 0, W, H);
-    var cx = W / 2, cy = H * 0.36, R = Math.min(W, H) * 0.36;
-    var breath = 0.5 + 0.5 * Math.sin(t * 0.9);
-    ctx.strokeStyle = 'rgba(139,92,246,0.12)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(cx, cy, R * (0.62 + 0.06 * breath), 0, TAU); ctx.stroke();
-    drawBurst(ctx, sparks, cx, cy, R, t, false, 1, true);
+    // a few soft drifting specks for a hint of motion \u2014 nothing else
     ctx.globalCompositeOperation = 'lighter';
-    for (var i = 0; i < embers.length; i++) {
-      var m = embers[i];
+    for (var i = 0; i < dust.length; i++) {
+      var m = dust[i];
       var y = ((m.y - t * m.v) % 1 + 1) % 1;
-      var x = m.x + Math.sin(t * 0.5 + m.ph) * 0.02;
-      var a = 0.25 + 0.35 * Math.sin(t * 1.3 + m.ph);
-      ctx.fillStyle = 'rgba(165,180,252,' + Math.max(0.05, a) + ')';
+      var x = m.x + Math.sin(t * 0.4 + m.ph) * 0.015;
+      var a = 0.12 + 0.16 * Math.sin(t * 0.9 + m.ph);
+      ctx.fillStyle = 'rgba(165,180,252,' + Math.max(0.03, a) + ')';
       ctx.beginPath(); ctx.arc(x * W, y * H, m.r, 0, TAU); ctx.fill();
     }
     ctx.globalCompositeOperation = 'source-over';
@@ -341,11 +338,11 @@ MAIN_SCRIPT = _script(_MAIN_JS)
 
 LOGIN_CSS = """
 <style>
-/* ===== Login: dark warm spark-burst scene ===== */
-html:has(.login-screen) { background:#08070a !important; }
+/* ===== Login: clean indigo/navy card, matching the supplied design ===== */
+html:has(.login-screen) { background:#0f172a !important; }
 body:has(.login-screen) { background:transparent !important; }
 body:has(.login-screen) {
-  --pf-text:#f6efe6; --pf-muted:#b9a99a;
+  --pf-text:#f1f5f9; --pf-muted:#94a3b8;
 }
 body:has(.login-screen) .stApp,
 body:has(.login-screen) [data-testid="stAppViewContainer"],
@@ -357,38 +354,39 @@ body:has(.login-screen) [data-testid="stAppViewContainer"]::after,
 .login-sylva-orb, .login-sylva-leaf { display:none !important; }
 
 body:has(.login-screen) .login-screen {
-  background:linear-gradient(145deg,rgba(28,18,14,.62),rgba(14,10,10,.52)) !important;
-  border:1px solid rgba(255,170,110,.22) !important;
-  box-shadow:0 30px 90px rgba(0,0,0,.55), 0 0 80px rgba(226,86,43,.10), inset 0 1px rgba(255,255,255,.08) !important;
-  backdrop-filter:blur(16px) saturate(120%);
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
 }
-body:has(.login-screen) .login-screen h1 { color:#fff5e8 !important; }
-body:has(.login-screen) .login-screen h1::after { background:linear-gradient(90deg,transparent,#ffb37a,#e2562b,transparent) !important; box-shadow:0 0 18px rgba(255,150,90,.6) !important; }
-body:has(.login-screen) .login-screen p { color:#d9c8b8 !important; }
+body:has(.login-screen) .login-screen h1 { color:#ffffff !important; }
+body:has(.login-screen) .login-screen h1::after { display:none !important; }
+body:has(.login-screen) .login-screen p { color:#94a3b8 !important; }
 body:has(.login-screen) [data-testid="stForm"] {
-  background:rgba(22,16,14,.72) !important;
-  border:1px solid rgba(255,170,110,.18) !important;
-  box-shadow:0 20px 60px rgba(0,0,0,.45) !important;
+  background:rgba(17,24,39,.87) !important;
+  border:1px solid rgba(255,255,255,.125) !important;
+  box-shadow:0 25px 80px rgba(0,0,0,.4) !important;
 }
 body:has(.login-screen) [data-testid="stForm"] input {
-  color:#fff5e8 !important; background:transparent !important; border-color:transparent !important; box-shadow:none !important;
+  color:#ffffff !important; background:transparent !important; border-color:transparent !important; box-shadow:none !important;
 }
 body:has(.login-screen) [data-baseweb="input"] {
-  background:rgba(10,8,8,.82) !important; border:1px solid rgba(255,170,110,.25) !important; border-radius:12px !important;
+  background:#0f172a !important; border:1px solid #334155 !important; border-radius:12px !important;
 }
 body:has(.login-screen) [data-baseweb="base-input"] { background:transparent !important; }
-body:has(.login-screen) [data-baseweb="input"]:focus-within { border-color:rgba(255,160,100,.7) !important; box-shadow:0 0 0 4px rgba(255,140,80,.12) !important; }
-body:has(.login-screen) input::placeholder { color:#8f7f70 !important; }
-body:has(.login-screen) [data-baseweb="tab-list"] { background:rgba(255,255,255,.06) !important; }
-body:has(.login-screen) [data-baseweb="tab"] { color:#cbb9a8 !important; }
-body:has(.login-screen) [data-baseweb="tab"][aria-selected="true"] { color:#ffb37a !important; background:rgba(255,255,255,.09) !important; box-shadow:none; }
-body:has(.login-screen) [data-testid="stCaptionContainer"] { color:#b9a99a !important; }
+body:has(.login-screen) [data-baseweb="input"]:focus-within { border-color:#6366f1 !important; box-shadow:0 0 0 3px rgba(99,102,241,.2) !important; }
+body:has(.login-screen) input::placeholder { color:#64748b !important; }
+body:has(.login-screen) [data-baseweb="tab-list"] { background:transparent !important; border-bottom:1px solid #334155 !important; }
+body:has(.login-screen) [data-baseweb="tab"] { color:#94a3b8 !important; }
+body:has(.login-screen) [data-baseweb="tab"][aria-selected="true"] { color:#a5b4fc !important; background:transparent !important; box-shadow:none; border-bottom:2px solid #6366f1 !important; }
+body:has(.login-screen) [data-baseweb="tab-highlight"] { background:#6366f1 !important; }
+body:has(.login-screen) [data-testid="stCaptionContainer"] { color:#94a3b8 !important; }
 body:has(.login-screen) .stButton > button {
-  color:#1c0d05 !important; font-weight:700 !important;
-  background:linear-gradient(135deg,#ffb37a,#ff8a4c 55%,#e2562b) !important;
-  box-shadow:0 10px 26px rgba(226,86,43,.28) !important;
+  color:#ffffff !important; font-weight:700 !important; border:none !important;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6) !important;
+  box-shadow:0 12px 30px rgba(99,102,241,.28) !important;
 }
-body:has(.login-screen) .stButton > button:hover { box-shadow:0 16px 36px rgba(255,120,60,.42) !important; }
+body:has(.login-screen) .stButton > button:hover { transform:translateY(-2px); box-shadow:0 16px 36px rgba(99,102,241,.42) !important; }
 </style>
 """
 
@@ -1417,13 +1415,24 @@ body:has(.login-screen) [data-baseweb="tab-list"] { background:transparent !impo
 body:has(.login-screen) [data-baseweb="tab"] { color:#94a3b8 !important; }
 body:has(.login-screen) [data-baseweb="tab"][aria-selected="true"] { color:#a5b4fc !important; background:transparent !important; border-bottom:2px solid #6366f1 !important; }
 .pf-ai-logo { width:65px; height:65px; margin:0 auto 22px; display:flex; align-items:center; justify-content:center; border-radius:18px; background:linear-gradient(135deg,#6366f1,#8b5cf6); box-shadow:0 10px 30px rgba(99,102,241,.33); font-size:22px; font-weight:bold; color:#fff; font-family:Arial,Helvetica,sans-serif; }
+/* Strip every generic dark "surface card" style off the login tabs/form container —
+   the login card supplies its own background, so these must not double up. */
+body:has(.login-screen) [data-testid="stTabs"],
+body:has(.login-screen) [data-testid="stForm"] { box-shadow:none !important; }
+body:has(.login-screen) [data-testid="stTabs"] { background:transparent !important; border:0 !important; padding:0 !important; margin-top:6px !important; }
+body:has(.login-screen) [data-baseweb="tab-list"] { background:transparent !important; border-radius:0 !important; padding:0 !important; border-bottom:1px solid rgba(255,255,255,.10) !important; justify-content:center !important; gap:28px !important; }
+/* Force the active-tab underline to indigo (theme primaryColor otherwise leaks through green). */
+body:has(.login-screen) [data-baseweb="tab-highlight"] { background:#6366f1 !important; height:2px !important; display:block !important; }
+body:has(.login-screen) [data-baseweb="tab-border"] { display:none !important; }
+body:has(.login-screen) button[data-baseweb="tab"] { background:transparent !important; padding:10px 2px !important; font-weight:600 !important; }
+body:has(.login-screen) .stColumns { gap:10px !important; }
+
 </style>
 """, unsafe_allow_html=True)
 
 if not st.session_state.logged_in:
     render_scene(st, "login")
-    st.markdown('<section class="login-screen"><span class="login-sylva-orb"></span><span class="login-sylva-leaf login-sylva-leaf--one"></span><span class="login-sylva-leaf login-sylva-leaf--two"></span><h1>PATHFINDER</h1><p>AI-Powered Placement &amp; Career Intelligence Platform</p></section>', unsafe_allow_html=True)
-    st.markdown('<div class="login-wrap"><div class="login-card">', unsafe_allow_html=True)
+    st.markdown('<div class="login-screen login-wrap"><div class="login-card">', unsafe_allow_html=True)
     st.markdown('<div class="pf-ai-logo">AI</div>', unsafe_allow_html=True)
     st.markdown('<h3 style="text-align:center;margin-bottom:6px;">Welcome Back</h3><p style="text-align:center;color:#94a3b8;font-size:14px;margin-bottom:6px;">Sign in to continue to Pathfinder AI</p>', unsafe_allow_html=True)
     sign_in_tab, create_tab = st.tabs(["Sign in", "Create account"])
