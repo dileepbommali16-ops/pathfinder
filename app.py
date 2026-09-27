@@ -2368,13 +2368,14 @@ if not st.session_state.logged_in:
         elif social == "github":
             st.session_state["lamp_login_error"] = "GitHub sign-in isn't wired to an OAuth provider yet. Use Email + Password."
 
-    if st.session_state.pop("lamp_login_error", None):
+    login_error = st.session_state.pop("lamp_login_error", None)
+    if login_error:
         st.markdown(
             "<div style='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);"
             "padding:10px 18px;border-radius:12px;background:rgba(80,20,10,.92);"
             "border:1px solid rgba(255,150,100,.35);color:#ffd9c7;font-family:Outfit,sans-serif;"
             "z-index:9999;text-align:center;'>"
-            + st.session_state.get("lamp_login_error", "")
+            + login_error
             + "</div>",
             unsafe_allow_html=True,
         )
