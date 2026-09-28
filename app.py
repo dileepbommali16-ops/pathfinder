@@ -1797,7 +1797,7 @@ _LAMP_HTML = r"""<main class="room" id="room">
           <button class="social-btn" type="button">
             <span class="google-icon">G</span> Google
           </button>
-          <a class="social-btn" id="github-social-btn" href="#" target="_top" rel="noopener">
+          <a class="social-btn" id="github-social-btn" href="#" target="_self" rel="noopener">
             <span class="github-icon">●</span> GitHub
           </a>
         </div>
@@ -2216,8 +2216,6 @@ button, input { font: inherit; }
 
 .social-btn:hover { transform: scale(1.05); background: rgba(255,255,255,.15); }
 .social-btn:active { transform: scale(.95); }
-/* GitHub navigation is handled by the parent Streamlit page, not the Components iframe. */
-#github-social-btn { opacity: 0 !important; pointer-events: none !important; }
 
 .google-icon {
   width: 20px; height: 20px;
@@ -2415,9 +2413,28 @@ export default function(component) {
   });
 
   const google = loginForm.querySelector('.social-btn:nth-of-type(1)');
-  // GitHub is intentionally NOT navigated from this iframe. The parent
-  // Streamlit page renders the real OAuth link over this visual button.
+  const github = loginForm.querySelector('#github-social-btn');
+  const githubAuthUrl = component.data?.github_auth_url || '';
+
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
+
+  // Components v2 is frameless, so navigate from the actual app DOM.
+  // The URL is generated server-side from Streamlit Secrets.
+  if (github) {
+    if (githubAuthUrl) {
+      github.href = githubAuthUrl;
+      github.target = '_self';
+      github.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.assign(githubAuthUrl);
+      });
+    } else {
+      github.addEventListener('click', (e) => {
+        e.preventDefault();
+        setTriggerValue('social', 'github');
+      });
+    }
+  }
 
   setLamp(false);
 
@@ -2483,53 +2500,6 @@ if not st.session_state.logged_in:
     """, unsafe_allow_html=True)
 
     lamp_result = render_real_lamp_login()
-
-    # Render GitHub AFTER the Components iframe so the real parent-page OAuth
-    # link stays above the iframe and is directly clickable.
-    github_url = _github_oauth_url()
-    if github_url:
-        st.markdown(
-            f"""
-            <style>
-            .pf-github-parent-link {{
-                position: fixed;
-                left: calc(50% + 5px);
-                top: 548px;
-                width: 204px;
-                height: 50px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-                z-index: 2147483647;
-                border: 1px solid rgba(255,255,255,.12);
-                border-radius: 16px;
-                background: rgba(255,255,255,.05);
-                color: #fff !important;
-                text-decoration: none !important;
-                font: 500 15px Outfit, Arial, sans-serif;
-                box-shadow: 0 8px 32px rgba(0,0,0,.30);
-                backdrop-filter: blur(16px);
-                transition: transform .2s ease, background-color .3s ease;
-                cursor: pointer;
-            }}
-            .pf-github-parent-link:hover {{ transform: scale(1.05); background: rgba(255,255,255,.15); }}
-            .pf-github-parent-link:active {{ transform: scale(.95); }}
-            .pf-github-parent-link .pf-github-dot {{ font-size:18px; color:#fff; }}
-            @media (max-width: 900px) {{
-                .pf-github-parent-link {{
-                    left: 50%; top: 548px; width: min(204px, 44vw);
-                    transform: translateX(-50%);
-                }}
-                .pf-github-parent-link:hover {{ transform: translateX(-50%) scale(1.05); }}
-            }}
-            </style>
-            <a class="pf-github-parent-link" href="{github_url}" target="_self" rel="noopener">
-                <span class="pf-github-dot">●</span> GitHub
-            </a>
-            """,
-            unsafe_allow_html=True,
-        )
 
     if lamp_result is not None:
         submit = getattr(lamp_result, "submit", None)
