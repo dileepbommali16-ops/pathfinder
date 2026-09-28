@@ -2482,8 +2482,10 @@ if not st.session_state.logged_in:
     <div class="pf-lamp-login-anchor"></div>
     """, unsafe_allow_html=True)
 
-    # GitHub must be a parent-page navigation. Components v2 runs inside an
-    # isolated iframe, and GitHub refuses to render inside that iframe.
+    lamp_result = render_real_lamp_login()
+
+    # Render GitHub AFTER the Components iframe so the real parent-page OAuth
+    # link stays above the iframe and is directly clickable.
     github_url = _github_oauth_url()
     if github_url:
         st.markdown(
@@ -2509,19 +2511,17 @@ if not st.session_state.logged_in:
                 box-shadow: 0 8px 32px rgba(0,0,0,.30);
                 backdrop-filter: blur(16px);
                 transition: transform .2s ease, background-color .3s ease;
+                cursor: pointer;
             }}
-            .pf-github-parent-link:hover {{
-                transform: scale(1.05);
-                background: rgba(255,255,255,.15);
-            }}
+            .pf-github-parent-link:hover {{ transform: scale(1.05); background: rgba(255,255,255,.15); }}
             .pf-github-parent-link:active {{ transform: scale(.95); }}
             .pf-github-parent-link .pf-github-dot {{ font-size:18px; color:#fff; }}
             @media (max-width: 900px) {{
                 .pf-github-parent-link {{
-                    left: calc(50% + 5px);
-                    top: 548px;
-                    width: min(204px, 44vw);
+                    left: 50%; top: 548px; width: min(204px, 44vw);
+                    transform: translateX(-50%);
                 }}
+                .pf-github-parent-link:hover {{ transform: translateX(-50%) scale(1.05); }}
             }}
             </style>
             <a class="pf-github-parent-link" href="{github_url}" target="_self" rel="noopener">
@@ -2530,8 +2530,6 @@ if not st.session_state.logged_in:
             """,
             unsafe_allow_html=True,
         )
-
-    lamp_result = render_real_lamp_login()
 
     if lamp_result is not None:
         submit = getattr(lamp_result, "submit", None)
