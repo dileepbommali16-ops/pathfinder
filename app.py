@@ -2418,15 +2418,18 @@ export default function(component) {
 
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
-  // Components v2 is frameless, so navigate from the actual app DOM.
-  // The URL is generated server-side from Streamlit Secrets.
+  // Open GitHub as a top-level browser page.
+  // Some Streamlit hosting/browser contexts can treat component navigation
+  // as an embedded frame, and GitHub refuses to render its OAuth page there.
+  // A new tab guarantees that GitHub OAuth is loaded as a normal top-level page.
   if (github) {
     if (githubAuthUrl) {
       github.href = githubAuthUrl;
-      github.target = '_self';
+      github.target = '_blank';
+      github.rel = 'noopener noreferrer';
       github.addEventListener('click', (e) => {
         e.preventDefault();
-        window.location.assign(githubAuthUrl);
+        window.open(githubAuthUrl, '_blank', 'noopener,noreferrer');
       });
     } else {
       github.addEventListener('click', (e) => {
