@@ -2566,6 +2566,14 @@ if not st.session_state.logged_in:
                     "GitHub Login is not configured yet. Add client_id, client_secret, "
                     "and redirect_uri under [github_oauth] in Streamlit Secrets."
                 )
+            else:
+                # The redirect is executed from the top-level Streamlit page,
+                # not from the custom component. GitHub rejects OAuth pages
+                # when they are loaded in an embedded browsing context.
+                st.html(
+                    f"<script>window.location.replace({json.dumps(github_url)});</script>",
+                    unsafe_allow_javascript=True,
+                )
 
     login_error = st.session_state.pop("lamp_login_error", None)
     if login_error:
