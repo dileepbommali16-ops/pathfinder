@@ -2446,22 +2446,18 @@ export default function(component) {
 
   if (github) {
     // GitHub sends X-Frame-Options headers, so its OAuth page must never load
-    // inside the Streamlit component iframe. Navigate the top-level page in
-    // the same browser tab instead of opening a popup/new tab.
-    github.dataset.url = githubAuthUrl;
-    github.removeAttribute('href');
-    github.removeAttribute('target');
+    // inside the Streamlit component iframe. A native _top link preserves the
+    // click gesture and navigates the same browser tab reliably.
+    github.href = githubAuthUrl || '#';
+    github.target = '_top';
+    github.rel = 'noopener';
     if (!github.dataset.bound) {
       github.dataset.bound = '1';
       github.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const url = github.dataset.url || '';
-        if (!url) {
+        if (!githubAuthUrl) {
+          e.preventDefault();
           setTriggerValue('social', 'github');
-          return;
         }
-        window.top.location.assign(url);
       });
     }
   }
