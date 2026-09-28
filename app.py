@@ -2419,18 +2419,13 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github && githubAuthUrl) {
-    // Navigate the top-level Streamlit page in the SAME tab.
-    // This avoids both the old new-tab behavior and iframe-only navigation.
-    github.href = githubAuthUrl;
-    github.target = '_top';
-    github.rel = 'noopener noreferrer';
+    // Send the click to Python. Python will perform the OAuth navigation from
+    // the main Streamlit page, avoiding GitHub's X-Frame-Options refusal.
+    github.href = '#';
+    github.removeAttribute('target');
     github.addEventListener('click', (e) => {
       e.preventDefault();
-      try {
-        window.top.location.href = githubAuthUrl;
-      } catch (_) {
-        window.location.href = githubAuthUrl;
-      }
+      setTriggerValue('social', 'github');
     });
   } else {
     github?.addEventListener('click', (e) => {
@@ -2521,6 +2516,22 @@ if not st.session_state.logged_in:
                 st.rerun()
             else:
                 st.session_state["lamp_login_error"] = "That sign-in didn’t work. Please check your details and try again."
+
+        if social == "github":
+            # GitHub refuses to render its OAuth authorization page inside the
+            # Components iframe. The native Streamlit page must navigate to the
+            # OAuth URL instead, keeping the login flow in the same browser tab.
+            github_url = _github_oauth_url()
+            if github_url:
+                import streamlit.components.v1 as _components_v1
+                _components_v1.html(
+                    f"<script>window.parent.location.href={json.dumps(github_url)};</script>",
+                    height=0,
+                )
+            else:
+                st.session_state["lamp_login_error"] = (
+                    "GitHub Login is not configured. Check [github_oauth] in Streamlit Secrets."
+                )
 
         if social == "google":
             # Real Google OIDC login. Streamlit handles state/nonce securely.
