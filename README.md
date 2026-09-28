@@ -37,6 +37,24 @@ The login screen supports `[auth].users` in Streamlit Secrets. Values use the fo
 student@example.com = "sha256$change-this-salt$paste-the-sha256-of-salt-colon-password"
 ```
 
+### GitHub OAuth login
+
+Create a GitHub OAuth App under **GitHub → Settings → Developer settings → OAuth Apps**.
+Set **Authorization callback URL** to the exact public URL of this Streamlit app, for example:
+`https://your-app-name.streamlit.app/` (include the same trailing slash used by the deployed app).
+Then add these values under **Streamlit Cloud → App → Settings → Secrets**:
+
+```toml
+[github_oauth]
+client_id = "your-github-oauth-client-id"
+client_secret = "your-github-oauth-client-secret"
+redirect_uri = "https://your-app-name.streamlit.app/"
+```
+
+The GitHub authorization page is opened in a separate top-level browser tab because GitHub
+does not allow its OAuth page to be embedded inside a Streamlit component iframe. The
+`redirect_uri` in Secrets must match the GitHub OAuth App callback URL exactly.
+
 For a real deployment, generate the digest locally, paste only the resulting `sha256$salt$hash` value into Streamlit Cloud Secrets, and rotate it if the account is shared.
 
 ## Architecture

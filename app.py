@@ -2445,8 +2445,9 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github) {
-    // Never let the GitHub OAuth page load inside the lamp component.
-    // Navigate the browser's top-level window directly in the SAME TAB.
+    // GitHub sends X-Frame-Options headers, so its OAuth page must never load
+    // inside the Streamlit component iframe. Prefer a user-initiated new tab;
+    // fall back to top-level navigation if the browser blocks the popup.
     github.dataset.url = githubAuthUrl;
     github.removeAttribute('href');
     github.removeAttribute('target');
@@ -2460,7 +2461,8 @@ export default function(component) {
           setTriggerValue('social', 'github');
           return;
         }
-        window.top.location.assign(url);
+        const popup = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!popup) window.top.location.assign(url);
       });
     }
   }
@@ -2568,13 +2570,13 @@ if not st.session_state.logged_in:
                     "and redirect_uri under [github_oauth] in Streamlit Secrets."
                 )
             else:
-                # The redirect is executed from the top-level Streamlit page,
-                # not from the custom component. GitHub rejects OAuth pages
-                # when they are loaded in an embedded browsing context.
+                # Start OAuth outside the custom component iframe. GitHub
+                # rejects OAuth pages when they are loaded in an iframe.
                 st.html(
                     f"""<script>
 const githubUrl = {json.dumps(github_url)};
-window.top.location.assign(githubUrl);
+const githubPopup = window.open(githubUrl, '_blank', 'noopener,noreferrer');
+if (!githubPopup) window.top.location.assign(githubUrl);
 </script>""",
                     unsafe_allow_javascript=True,
                 )
