@@ -1898,7 +1898,7 @@ button, input { font: inherit; }
 
 .lamp-head {
   width: 140px;
-  height: 50px;
+  height: 74px;
   background: #151515;
   border-radius: 140px 140px 4px 4px;
   box-shadow: inset 0 2px 5px rgba(255,255,255,.1), 0 10px 20px rgba(0,0,0,.9);
@@ -2491,9 +2491,9 @@ if not st.session_state.logged_in:
             <style>
             .pf-github-parent-link {{
                 position: fixed;
-                left: calc(72% + 2px);
-                top: calc(50% + 170px);
-                width: 198px;
+                left: calc(50% + 5px);
+                top: 548px;
+                width: 204px;
                 height: 50px;
                 display: flex;
                 align-items: center;
@@ -2502,7 +2502,7 @@ if not st.session_state.logged_in:
                 z-index: 2147483647;
                 border: 1px solid rgba(255,255,255,.12);
                 border-radius: 16px;
-                background: rgba(255,255,255,.07);
+                background: rgba(255,255,255,.05);
                 color: #fff !important;
                 text-decoration: none !important;
                 font: 500 15px Outfit, Arial, sans-serif;
@@ -2516,12 +2516,11 @@ if not st.session_state.logged_in:
             }}
             .pf-github-parent-link:active {{ transform: scale(.95); }}
             .pf-github-parent-link .pf-github-dot {{ font-size:18px; color:#fff; }}
-            body:not(.pf-lamp-on) .pf-github-parent-link {{ opacity:0; pointer-events:none; }}
             @media (max-width: 900px) {{
                 .pf-github-parent-link {{
-                    left: calc(50% + 8px);
-                    top: calc(55vh + 360px);
-                    width: min(198px, 44vw);
+                    left: calc(50% + 5px);
+                    top: 548px;
+                    width: min(204px, 44vw);
                 }}
             }}
             </style>
