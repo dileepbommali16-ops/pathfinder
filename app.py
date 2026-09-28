@@ -2419,13 +2419,15 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github && githubAuthUrl) {
-    // Start GitHub OAuth from a direct user click. Opening a new tab avoids
-    // iframe/top-navigation restrictions in Streamlit Components v2.
+    // Keep GitHub OAuth in the SAME browser tab. The previous implementation
+    // opened a new tab, which left the original Pathfinder login tab visible
+    // beside the authenticated dashboard.
     github.href = githubAuthUrl;
-    github.target = '_blank';
+    github.target = '_self';
     github.rel = 'noopener noreferrer';
-    github.addEventListener('click', () => {
-      window.open(githubAuthUrl, '_blank', 'noopener,noreferrer');
+    github.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.parent.location.assign(githubAuthUrl);
     });
   } else {
     github?.addEventListener('click', (e) => {
