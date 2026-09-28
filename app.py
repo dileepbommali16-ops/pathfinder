@@ -2445,21 +2445,22 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github) {
-    // GitHub OAuth must start as a real browser navigation. Do not send this
-    // through a Streamlit rerun: the OAuth authorize page is a top-level web page.
+    // Never let the GitHub OAuth page load inside the lamp component.
+    // Navigate the browser's top-level window directly in the SAME TAB.
     github.dataset.url = githubAuthUrl;
-    github.href = githubAuthUrl || '#';
-    github.target = '_self';
-    github.rel = 'noopener';
+    github.removeAttribute('href');
+    github.removeAttribute('target');
     if (!github.dataset.bound) {
       github.dataset.bound = '1';
       github.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const url = github.dataset.url || '';
         if (!url) {
-          e.preventDefault();
           setTriggerValue('social', 'github');
+          return;
         }
-        // Otherwise allow the normal <a href> navigation in the SAME TAB.
+        window.top.location.assign(url);
       });
     }
   }
