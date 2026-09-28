@@ -2456,10 +2456,9 @@ export default function(component) {
           setTriggerValue('social', 'github');   // Python shows the "not configured" message
           return;
         }
-        // GitHub refuses to load inside Streamlit's iframe, so open a new tab
-        // from this direct click; fall back to same tab if the popup is blocked.
-        const w = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!w) window.location.href = url;
+        // Navigate the current tab from the real user click. Using _self keeps
+        // the OAuth flow in the same browser tab instead of opening a new tab.
+        window.open(url, '_self');
       });
     }
   }
