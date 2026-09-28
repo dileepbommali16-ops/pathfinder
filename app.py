@@ -2216,6 +2216,8 @@ button, input { font: inherit; }
 
 .social-btn:hover { transform: scale(1.05); background: rgba(255,255,255,.15); }
 .social-btn:active { transform: scale(.95); }
+/* GitHub navigation is handled by the parent Streamlit page, not the Components iframe. */
+#github-social-btn { opacity: 0 !important; pointer-events: none !important; }
 
 .google-icon {
   width: 20px; height: 20px;
@@ -2413,20 +2415,9 @@ export default function(component) {
   });
 
   const google = loginForm.querySelector('.social-btn:nth-of-type(1)');
-  const github = loginForm.querySelector('#github-social-btn');
-  const githubAuthUrl = component.data?.github_auth_url || '';
-
+  // GitHub is intentionally NOT navigated from this iframe. The parent
+  // Streamlit page renders the real OAuth link over this visual button.
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
-
-  if (github && githubAuthUrl) {
-    // Components v2 runs the login UI in an isolated frame. A normal anchor
-    // cannot reliably escape that frame, so send the click to Python and let
-    // the parent Streamlit page render a native link on the next rerun.
-    github.addEventListener('click', (e) => {
-      e.preventDefault();
-      setTriggerValue('social', 'github');
-    });
-  }
 
   setLamp(false);
 
@@ -2491,6 +2482,56 @@ if not st.session_state.logged_in:
     <div class="pf-lamp-login-anchor"></div>
     """, unsafe_allow_html=True)
 
+    # GitHub must be a parent-page navigation. Components v2 runs inside an
+    # isolated iframe, and GitHub refuses to render inside that iframe.
+    github_url = _github_oauth_url()
+    if github_url:
+        st.markdown(
+            f"""
+            <style>
+            .pf-github-parent-link {{
+                position: fixed;
+                left: calc(72% + 2px);
+                top: calc(50% + 170px);
+                width: 198px;
+                height: 50px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                z-index: 2147483647;
+                border: 1px solid rgba(255,255,255,.12);
+                border-radius: 16px;
+                background: rgba(255,255,255,.07);
+                color: #fff !important;
+                text-decoration: none !important;
+                font: 500 15px Outfit, Arial, sans-serif;
+                box-shadow: 0 8px 32px rgba(0,0,0,.30);
+                backdrop-filter: blur(16px);
+                transition: transform .2s ease, background-color .3s ease;
+            }}
+            .pf-github-parent-link:hover {{
+                transform: scale(1.05);
+                background: rgba(255,255,255,.15);
+            }}
+            .pf-github-parent-link:active {{ transform: scale(.95); }}
+            .pf-github-parent-link .pf-github-dot {{ font-size:18px; color:#fff; }}
+            body:not(.pf-lamp-on) .pf-github-parent-link {{ opacity:0; pointer-events:none; }}
+            @media (max-width: 900px) {{
+                .pf-github-parent-link {{
+                    left: calc(50% + 8px);
+                    top: calc(55vh + 360px);
+                    width: min(198px, 44vw);
+                }}
+            }}
+            </style>
+            <a class="pf-github-parent-link" href="{github_url}" target="_self" rel="noopener">
+                <span class="pf-github-dot">●</span> GitHub
+            </a>
+            """,
+            unsafe_allow_html=True,
+        )
+
     lamp_result = render_real_lamp_login()
 
     if lamp_result is not None:
@@ -2511,32 +2552,6 @@ if not st.session_state.logged_in:
             else:
                 st.session_state["lamp_login_error"] = "That sign-in didn’t work. Please check your details and try again."
 
-        if social == "github":
-            # Render a native Streamlit link outside the Components iframe.
-            # Clicking it performs a true top-level browser navigation, so
-            # github.com is never embedded in the login component.
-            github_url = _github_oauth_url()
-            if github_url:
-                st.markdown(
-                    f"""
-                    <a href="{github_url}" target="_self"
-                       style="position:fixed; left:50%; bottom:18px;
-                              transform:translateX(-50%); z-index:100000;
-                              padding:12px 22px; border-radius:12px;
-                              background:#24292f; color:white;
-                              text-decoration:none; font-weight:600;
-                              font-family:Arial,sans-serif;">
-                       Continue with GitHub
-                    </a>
-                    """,
-                    unsafe_allow_html=True,
-                )
-                st.info("Click **Continue with GitHub** to continue.")
-            else:
-                st.session_state["lamp_login_error"] = (
-                    "GitHub Login is not configured. Check [github_oauth] in Streamlit Secrets."
-                )
-
         if social == "google":
             # Real Google OIDC login. Streamlit handles state/nonce securely.
             auth_cfg = _secret_dict("auth")
@@ -2547,14 +2562,6 @@ if not st.session_state.logged_in:
                 st.session_state["lamp_login_error"] = (
                     "Google Login is not configured yet. Add the Google Client ID and "
                     "Client Secret under [auth.google] in Streamlit Secrets."
-                )
-
-        elif social == "github":
-            github_url = _github_oauth_url()
-            if not github_url:
-                st.session_state["lamp_login_error"] = (
-                    "GitHub Login is not configured yet. Add client_id, client_secret, "
-                    "and redirect_uri under [github_oauth] in Streamlit Secrets."
                 )
 
     login_error = st.session_state.pop("lamp_login_error", None)
