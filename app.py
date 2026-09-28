@@ -1045,7 +1045,8 @@ def verify_configured_user(username: str, password: str) -> bool:
             return hmac.compare_digest(actual, parts[2])
     try:
         auth = st.secrets.get("auth", {})
-        users = auth.get("users", {}) if hasattr(auth, "get") else {}        stored = users.get(username) if hasattr(users, "get") else None
+        users = auth.get("users", {}) if hasattr(auth, "get") else {}
+        stored = users.get(username) if hasattr(users, "get") else None
     except Exception:
         stored = None
     if not stored:
