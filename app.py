@@ -2424,13 +2424,12 @@ export default function(component) {
   // to Pathfinder in this same tab.
   if (github) {
     if (githubAuthUrl) {
+      // Let the browser perform a normal top-level link navigation.
+      // This avoids component/JavaScript navigation restrictions while
+      // keeping OAuth in the current tab.
       github.href = githubAuthUrl;
       github.target = '_self';
       github.rel = 'noopener noreferrer';
-      github.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.top.location.assign(githubAuthUrl);
-      });
     } else {
       github.addEventListener('click', (e) => {
         e.preventDefault();
