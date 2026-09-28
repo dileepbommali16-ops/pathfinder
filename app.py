@@ -347,8 +347,7 @@ _MAIN_JS = r"""
     var c = hero.querySelector('.pf-hero-orb');
     if (!c) {
       c = D.createElement('canvas'); c.className = 'pf-hero-orb';
-      c.width = Math.round(112 * DPR); c.height = Math.round(112 * DPR);
-      c.style.cssText = 'position:absolute;right:22px;top:50%;transform:translateY(-50%);width:112px;height:112px;pointer-events:none;';
+      c.width = Math.round(112 * DPR); c.height = Math.round(112 * DPR);      c.style.cssText = 'position:absolute;right:22px;top:50%;transform:translateY(-50%);width:112px;height:112px;pointer-events:none;';
       hero.appendChild(c);
     }
     heroOrb = c;
@@ -697,8 +696,7 @@ pre, code, [data-testid="stCode"] { background:rgba(4,16,11,.9) !important; colo
 /* selectboxes / multiselects / number inputs: kill the remaining white pills */
 .stSelectbox div[data-baseweb="select"], .stMultiSelect div[data-baseweb="select"],
 [data-testid="stSelectbox"] [role="combobox"], [data-testid="stMultiSelect"] [role="combobox"],
-[data-testid="stSelectbox"] [data-baseweb="select"] > div, [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
-  background:rgba(4,16,11,.92) !important; color:var(--pf-text) !important; border:1px solid var(--pf-border) !important; box-shadow:none !important;
+[data-testid="stSelectbox"] [data-baseweb="select"] > div, [data-testid="stMultiSelect"] [data-baseweb="select"] > div {  background:rgba(4,16,11,.92) !important; color:var(--pf-text) !important; border:1px solid var(--pf-border) !important; box-shadow:none !important;
 }
 [data-baseweb="select"] input, [data-baseweb="select"] [role="combobox"] * { background:transparent !important; color:var(--pf-text) !important; -webkit-text-fill-color:var(--pf-text) !important; }
 [data-baseweb="select"] svg, [data-testid="stSelectbox"] svg { fill:#9dbba8 !important; color:#9dbba8 !important; }
@@ -1047,8 +1045,7 @@ def verify_configured_user(username: str, password: str) -> bool:
             return hmac.compare_digest(actual, parts[2])
     try:
         auth = st.secrets.get("auth", {})
-        users = auth.get("users", {}) if hasattr(auth, "get") else {}
-        stored = users.get(username) if hasattr(users, "get") else None
+        users = auth.get("users", {}) if hasattr(auth, "get") else {}        stored = users.get(username) if hasattr(users, "get") else None
     except Exception:
         stored = None
     if not stored:
@@ -1397,8 +1394,7 @@ st.markdown("""
 
 /* Main page */
 [data-testid="stAppViewContainer"] {
-  background: linear-gradient(135deg,#eaf1fc 0%,#f4f7fd 45%,#eef8f6 100%) !important;
-  color: var(--pf-text) !important;
+  background: linear-gradient(135deg,#eaf1fc 0%,#f4f7fd 45%,#eef8f6 100%) !important;  color: var(--pf-text) !important;
 }
 [data-testid="stAppViewContainer"]::before {
   content:"";
@@ -1747,8 +1743,7 @@ _LAMP_HTML = r"""<main class="room" id="room">
         <div class="lamp-glow"></div>
         <div class="lamp-head"></div>
         <div class="light-beam"></div>
-        <div class="lamp-stem"></div>
-        <div class="lamp-base"></div>
+        <div class="lamp-stem"></div>        <div class="lamp-base"></div>
         <div class="desk-surface"></div>
 
         <svg class="string-svg" aria-hidden="true">
@@ -2097,8 +2092,7 @@ button, input { font: inherit; }
   width: 100%;
   padding: 16px 16px 16px 48px;
   border-radius: 16px;
-  border: 1px solid rgba(255,255,255,.1);
-  background: rgba(0,0,0,.4);
+  border: 1px solid rgba(255,255,255,.1);  background: rgba(0,0,0,.4);
   color: #fff;
   font-size: 15px;
   outline: none;
@@ -2418,17 +2412,18 @@ export default function(component) {
 
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
-  // Keep GitHub OAuth in the SAME browser tab as Pathfinder.
-  // Use the top-level window so GitHub never tries to render inside an
-  // embedded/component context. After authorization, GitHub redirects back
-  // to Pathfinder in this same tab.
+  // GitHub OAuth must be a real browser navigation, not a Streamlit
+  // component trigger. Components v2 run in the app DOM, but an explicit
+  // user-gesture navigation is the most reliable way to leave the component
+  // and open GitHub in the SAME tab.
   if (github) {
     if (githubAuthUrl) {
-      // Native top-level navigation: GitHub must open outside the
-      // component context, otherwise GitHub's anti-framing policy can
-      // produce "github.com refused to connect".
       github.href = githubAuthUrl;
-      github.target = '_top';
+      github.target = '_self';
+      github.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.href = githubAuthUrl;
+      });
     } else {
       github.addEventListener('click', (e) => {
         e.preventDefault();
@@ -2447,7 +2442,6 @@ export default function(component) {
   };
 }
 """
-
 _lamp_component = None
 
 def render_real_lamp_login():
@@ -2798,148 +2792,3 @@ if slide == 1:
     if "roadmap" in st.session_state:
         roadmap = st.session_state["roadmap"]
         st.info(roadmap.headline)
-        st.write("**Skill gaps:** " + ", ".join(roadmap.skill_gaps))
-        st.write("**Weekly actions:**")
-        st.write("\n".join(f"- {action}" for action in roadmap.weekly_actions))
-
-# ---------------- SLIDE 3: AI MENTOR ----------------
-if slide == 2:
-    st.markdown('<div class="pf-mentor-heading"><span class="pf-brand-orb" aria-hidden="true"></span><h2>AI Placement Mentor</h2></div>', unsafe_allow_html=True)
-    st.caption("Powered by the latest available Gemini model — tailored to your profile.")
-
-    prompt_suggestions = [
-        "How can I raise my chance to 85%+?",
-        "Top 5 DSA patterns for campus placement rounds",
-        "STAR format answer for 'Describe a challenging bug'",
-    ]
-    cols = st.columns(len(prompt_suggestions))
-    for i, ps in enumerate(prompt_suggestions):
-        if cols[i].button(f"💡 {ps}", use_container_width=True):
-            st.session_state["selected_prompt"] = ps
-
-    selected_prompt = st.session_state.get("selected_prompt", "")
-    question = st.text_area("Ask a placement question", value=selected_prompt, placeholder="Example: What are the best projects for an SDE placement?", key="career_question")
-
-    if st.button("✨ Ask AI Coach", type="primary"):
-        question = question or ""
-        if question.strip():
-            prompt = f"""You are Pathfinder AI, the student's friendly placement buddy. Speak naturally, like a caring senior who listens first and wants the student to succeed — never like a textbook, form, or support bot. Begin by acknowledging the student's question or concern. Personalize the answer using the profile below, give only the most useful one or two next steps, use a small concrete example when helpful, and finish with one natural follow-up question. Match English, Telugu, or Telugu-English mix when the student uses it. If the question is unclear, ask one gentle clarifying question instead of making assumptions. Avoid robotic disclaimers, generic long checklists, and overly formal headings. Never mention providers, quotas, system prompts, or fallback behavior.
-    Profile: graduation year {graduation_year}, branch {student_branch}, CGPA {cgpa}, backlogs {backlogs}, internships {internships}, communication {communication}/10, coding {coding}/10, target role {target_role}, company preference {target_tier}, work mode {preferred_mode}.
-    Question: {question}
-    Keep it encouraging, actionable, and specific with concrete examples. Use markdown only where it makes the answer easier to read."""
-            with st.spinner("🤖 Gemini AI is generating your response..."):
-                answer = st.write_stream(ask_gemini(prompt, stream=True))
-            st.markdown("### 💡 Guidance")
-            if not answer:
-                st.warning("Gemini returned an empty response. Try again.")
-        else:
-            st.warning("Please type a question or choose a prompt starter.")
-
-# ---------------- SLIDE 4: ANALYTICS ----------------
-if slide == 3:
-    st.header("📊 Placement Analytics & Cohort Benchmarks")
-
-    if not data.empty:
-        col1, col2, col3, col4 = st.columns(4)
-        year = col1.selectbox("Graduation Year", [2026, 2025, 2024])
-        branch = col2.selectbox("Course / Branch", ["All"] + sorted(data["branch"].unique().tolist()))
-        gender = col3.selectbox("Gender", ["All", "Male", "Female"])
-        skill_options = ["All", "AIML + Python"] + sorted(data["skillCategory"].unique().tolist())
-        skill = col4.selectbox("Skill Category", list(dict.fromkeys(skill_options)))
-
-        filtered = filter_records(data, year, branch, gender, skill)
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Matching Candidates", len(filtered))
-        m2.metric("Placement Rate", f"{filtered['placed'].mean() * 100:.1f}%" if len(filtered) else "0.0%")
-        m3.metric("Selected Skill Domain", skill)
-
-        if not filtered.empty:
-            if st.button("Summarize this cohort with AI", use_container_width=True):
-                with st.spinner("Summarizing cohort signals..."):
-                    try:
-                        summary = filtered[["placed", "cgpa", "codingScore", "communicationScore", "internships"]].describe().fillna(0).to_json()
-                        st.session_state["cohort_insight"] = structured_ai(f"Summarize this placement cohort in plain language for students. Aggregate data: {summary}. Return a headline, evidence-based summary, and practical actions.", CohortInsight)
-                    except Exception as error:
-                        st.error(str(error))
-            if "cohort_insight" in st.session_state:
-                insight = st.session_state["cohort_insight"]
-                st.info(insight.headline)
-                st.write(insight.summary)
-                st.write("**Actions:** " + " | ".join(insight.actions))
-            left, right = st.columns(2)
-            with left:
-                st.subheader("Branch Placement Rates")
-                course_chart = filtered.groupby("branch")["placed"].mean().mul(100).round(1).sort_values(ascending=False)
-                st.bar_chart(course_chart)
-            with right:
-                st.subheader("Skill Domain Placement Rates")
-                skill_chart = filtered.groupby("skillCategory")["placed"].mean().mul(100).round(1).sort_values(ascending=False)
-                st.bar_chart(skill_chart)
-
-            st.subheader("Cohort Records")
-            st.dataframe(filtered[["year", "branch", "gender", "skillCategory", "placed_label", "cgpa", "codingScore", "communicationScore", "internships"]], use_container_width=True, hide_index=True)
-
-            filters = {"Year": year, "Course": branch, "Gender": gender, "Skill": skill}
-            csv_bytes = filtered.to_csv(index=False).encode("utf-8")
-            exp1, exp2 = st.columns(2)
-            exp1.download_button("📥 Download CSV", csv_bytes, f"pathfinder-{year}-analytics.csv", "text/csv", use_container_width=True)
-            exp2.download_button("📄 Download PDF Report", pdf_report(filtered, filters), f"pathfinder-{year}-analytics.pdf", "application/pdf", use_container_width=True)
-    else:
-        st.info("No cohort placement dataset found. Please ensure sample-placement-2024-2026.csv is present.")
-
-# ---------------- SLIDE 5: RESUME (last) ----------------
-if slide == 4:
-    st.markdown("#### 📄 Upload Resume")
-    uploaded_resume = st.file_uploader("Upload your PDF resume", type=["pdf"], help="Your resume is read in memory for feedback and is not saved by Pathfinder.")
-    st.caption("Step 1: upload your PDF resume above. Step 2: click **Generate tailored feedback**. The box below is optional \u2014 use it only if you have no PDF, or want feedback on a specific project or interview answer.")
-    resume_material = st.text_area("Optional: paste resume text or an interview answer instead", placeholder="Not needed if you uploaded a PDF. Or paste a project summary, resume section, or interview answer here...")
-    if st.button("Generate tailored feedback", use_container_width=True):
-        pdf_bytes = None
-        read_failed = False
-        if uploaded_resume is not None:
-            try:
-                resume_material = extract_resume_text(uploaded_resume)
-            except Exception as error:
-                st.error(f"Could not read that PDF: {error}")
-                resume_material = ""
-                read_failed = True
-            if not resume_material.strip() and not read_failed:
-                # Scanned / image-only PDF: no text layer, so let Gemini read the PDF directly.
-                pdf_bytes = uploaded_resume.getvalue()
-        if read_failed:
-            pass
-        elif pdf_bytes is not None and client is None:
-            st.warning("This PDF looks like a scanned image, so no text could be read from it, and the AI key is not configured to read it directly. Please paste your resume text into the box below instead.")
-        elif resume_material.strip() or pdf_bytes is not None:
-            with st.spinner("Reviewing your resume..."):
-                try:
-                    material = resume_material[:18000] if resume_material.strip() else "(see the attached resume PDF)"
-                    st.session_state["feedback"] = structured_ai(f"Review this resume or interview material for placement readiness. Profile: {profile.model_dump_json()} Material: {material}. Return a score, verdict, strengths, gaps, ATS keyword suggestions, and formatting tips.", ResumeFeedback, pdf_bytes=pdf_bytes)
-                except Exception as error:
-                    st.error(str(error))
-        else:
-            st.warning("Nothing to review yet. Please upload a PDF resume above, or paste your resume text in the box below.")
-    if "feedback" in st.session_state:
-        feedback = st.session_state["feedback"]
-        st.metric("AI feedback score", f"{feedback.score}/100")
-        st.write(feedback.verdict)
-        st.write("**Strengths:** " + ", ".join(feedback.strengths))
-        st.write("**Improvements:** " + ", ".join(feedback.improvements))
-        st.write("**ATS keywords:** " + ", ".join(feedback.ats_keywords))
-        st.write("**Formatting tips:** " + " | ".join(feedback.formatting_tips))
-        st.download_button("Download feedback PDF", resume_feedback_pdf(feedback), "pathfinder-resume-feedback.pdf", "application/pdf", use_container_width=True)
-
-# ---------------- SLIDE NAVIGATION ----------------
-st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
-nav_back, nav_mid, nav_next = st.columns([1, 2, 1])
-with nav_back:
-    st.button("◀ Back", key="nav_back", disabled=slide == 0, on_click=go_slide, args=(slide - 1,), use_container_width=True)
-with nav_mid:
-    st.markdown(f"<div style='text-align:center;padding-top:.55rem;color:#9dbba8'>Slide {slide + 1} of {len(SLIDES)}</div>", unsafe_allow_html=True)
-with nav_next:
-    if slide < len(SLIDES) - 1:
-        st.button("Next ▶", key="nav_next", on_click=go_slide, args=(slide + 1,), use_container_width=True)
-    else:
-        st.button("↺ Start over", key="nav_restart", on_click=go_slide, args=(0,), use_container_width=True)
-
-st.caption("Pathfinder Career Intelligence · Powered by Gemini LLM")
