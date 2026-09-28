@@ -2419,11 +2419,19 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github && githubAuthUrl) {
-    // Navigate the TOP-LEVEL Streamlit page in the same browser tab.
-    // Do not use window.open() and do not prevent the anchor's default action.
+    // Navigate the top-level Streamlit page in the SAME tab.
+    // This avoids both the old new-tab behavior and iframe-only navigation.
     github.href = githubAuthUrl;
     github.target = '_top';
     github.rel = 'noopener noreferrer';
+    github.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        window.top.location.href = githubAuthUrl;
+      } catch (_) {
+        window.location.href = githubAuthUrl;
+      }
+    });
   } else {
     github?.addEventListener('click', (e) => {
       e.preventDefault();
