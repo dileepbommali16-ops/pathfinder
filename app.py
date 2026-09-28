@@ -1026,13 +1026,17 @@ OPENROUTER_MODEL = setting("OPENROUTER_MODEL", "openrouter/free") or "openrouter
 # Gemini has retired older model aliases for some new projects. Normalize legacy
 # Streamlit Secrets values so deployment does not keep requesting an unavailable model.
 configured_model = setting("GEMINI_MODEL", "gemini-3.6-flash")
-if configured_model in {"gemini-2.5-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"}:
+RETIRED_GEMINI_MODELS = {
+    "gemini-2.0-flash", "gemini-2.0-flash-001", "gemini-2.0-flash-lite", "gemini-2.0-flash-lite-001",
+    "gemini-2.5-flash", "gemini-3.1-flash",
+}
+if configured_model in RETIRED_GEMINI_MODELS:
     configured_model = "gemini-3.6-flash"
 GEMINI_MODEL = configured_model
 # Keep fast flash-tier fallbacks so temporary overloads do not break AI features.
 GEMINI_MODELS = list(dict.fromkeys([
     GEMINI_MODEL,
-    "gemini-2.0-flash-lite",  # smallest/fastest model, kept as the one fallback
+    "gemini-3.1-flash-lite",  # GA lite model as the one fallback (gemini-2.0-flash-lite was shut down June 1, 2026)
 ]))
 
 
