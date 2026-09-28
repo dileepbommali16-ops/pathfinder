@@ -2418,18 +2418,18 @@ export default function(component) {
 
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
-  // Open GitHub as a top-level browser page.
-  // Some Streamlit hosting/browser contexts can treat component navigation
-  // as an embedded frame, and GitHub refuses to render its OAuth page there.
-  // A new tab guarantees that GitHub OAuth is loaded as a normal top-level page.
+  // Keep GitHub OAuth in the SAME browser tab as Pathfinder.
+  // Use the top-level window so GitHub never tries to render inside an
+  // embedded/component context. After authorization, GitHub redirects back
+  // to Pathfinder in this same tab.
   if (github) {
     if (githubAuthUrl) {
       github.href = githubAuthUrl;
-      github.target = '_blank';
+      github.target = '_self';
       github.rel = 'noopener noreferrer';
       github.addEventListener('click', (e) => {
         e.preventDefault();
-        window.open(githubAuthUrl, '_blank', 'noopener,noreferrer');
+        window.top.location.assign(githubAuthUrl);
       });
     } else {
       github.addEventListener('click', (e) => {
