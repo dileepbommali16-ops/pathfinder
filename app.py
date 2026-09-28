@@ -2419,19 +2419,13 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github && githubAuthUrl) {
-    // Send the click to Python. Python will perform the OAuth navigation from
-    // the main Streamlit page, avoiding GitHub's X-Frame-Options refusal.
-    github.href = '#';
-    github.removeAttribute('target');
-    github.addEventListener('click', (e) => {
-      e.preventDefault();
-      setTriggerValue('social', 'github');
-    });
+    // Keep GitHub OAuth as a real top-level navigation. GitHub blocks its
+    // authorization page inside iframes, so do not intercept this click.
+    github.href = githubAuthUrl;
+    github.target = '_top';
+    github.rel = 'noopener';
   } else {
-    github?.addEventListener('click', (e) => {
-      e.preventDefault();
-      setTriggerValue('social', 'github');
-    });
+    github?.addEventListener('click', (e) => e.preventDefault());
   }
 
   setLamp(false);
