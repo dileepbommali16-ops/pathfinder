@@ -1648,6 +1648,7 @@ def _github_oauth_url():
         "client_id": client_id,
         "redirect_uri": redirect_uri,
         "scope": "read:user user:email",
+        "prompt": "select_account",
         "state": saved,
     })
     return "https://github.com/login/oauth/authorize?" + params
@@ -2456,9 +2457,9 @@ export default function(component) {
           setTriggerValue('social', 'github');   // Python shows the "not configured" message
           return;
         }
-        // Navigate the current tab from the real user click. Using _self keeps
-        // the OAuth flow in the same browser tab instead of opening a new tab.
-        window.open(url, '_self');
+        // Let Python handle the redirect from the main Streamlit page.
+        // This avoids GitHub refusing to load inside the component context.
+        setTriggerValue('social', 'github');
       });
     }
   }
