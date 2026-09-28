@@ -1797,7 +1797,7 @@ _LAMP_HTML = r"""<main class="room" id="room">
           <button class="social-btn" type="button">
             <span class="google-icon">G</span> Google
           </button>
-          <a class="social-btn" id="github-social-btn" href="#" target="_self" rel="noopener">
+          <a class="social-btn" id="github-social-btn" href="#" target="_top">
             <span class="github-icon">●</span> GitHub
           </a>
         </div>
@@ -2424,12 +2424,11 @@ export default function(component) {
   // to Pathfinder in this same tab.
   if (github) {
     if (githubAuthUrl) {
-      // Let the browser perform a normal top-level link navigation.
-      // This avoids component/JavaScript navigation restrictions while
-      // keeping OAuth in the current tab.
+      // Native top-level navigation: GitHub must open outside the
+      // component context, otherwise GitHub's anti-framing policy can
+      // produce "github.com refused to connect".
       github.href = githubAuthUrl;
-      github.target = '_self';
-      github.rel = 'noopener noreferrer';
+      github.target = '_top';
     } else {
       github.addEventListener('click', (e) => {
         e.preventDefault();
