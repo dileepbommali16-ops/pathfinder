@@ -1823,6 +1823,9 @@ _LAMP_HTML = r"""<main class="room" id="room">
           <button class="social-btn" type="button">
             <span class="google-icon">G</span> Google
           </button>
+          <a class="social-btn" id="github-social-btn" href="#" role="button">
+            <span class="github-icon">●</span> GitHub
+          </a>
         </div>
       </form>
     </section>
@@ -2436,8 +2439,32 @@ export default function(component) {
   });
 
   const google = loginForm.querySelector('.social-btn:nth-of-type(1)');
+  const github = loginForm.querySelector('#github-social-btn');
+  const githubAuthUrl = component.data?.github_auth_url || '';
 
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
+
+  if (github) {
+    // GitHub sends X-Frame-Options headers, so its OAuth page must never load
+    // inside the Streamlit component iframe. Force the user click to navigate
+    // the top-level browsing context in the same tab.
+    github.href = githubAuthUrl || '#';
+    github.target = '_top';
+    github.rel = 'noopener';
+    if (!github.dataset.bound) {
+      github.dataset.bound = '1';
+      github.addEventListener('click', (e) => {
+        if (!githubAuthUrl) {
+          e.preventDefault();
+          setTriggerValue('social', 'github');
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(githubAuthUrl, '_top');
+      });
+    }
+  }
 
   setLamp(false);
 
@@ -2468,7 +2495,7 @@ def render_real_lamp_login():
             )
         return _lamp_component(
             key="pathfinder_lamp_login",
-            data={},
+            data={"github_auth_url": _github_oauth_url()},
             width="stretch",
             height=780,
             on_submit_change=lambda: None,
