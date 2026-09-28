@@ -2446,8 +2446,8 @@ export default function(component) {
 
   if (github) {
     // GitHub sends X-Frame-Options headers, so its OAuth page must never load
-    // inside the Streamlit component iframe. A native _top link preserves the
-    // click gesture and navigates the same browser tab reliably.
+    // inside the Streamlit component iframe. Force the user click to navigate
+    // the top-level browsing context in the same tab.
     github.href = githubAuthUrl || '#';
     github.target = '_top';
     github.rel = 'noopener';
@@ -2457,7 +2457,11 @@ export default function(component) {
         if (!githubAuthUrl) {
           e.preventDefault();
           setTriggerValue('social', 'github');
+          return;
         }
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(githubAuthUrl, '_top');
       });
     }
   }
