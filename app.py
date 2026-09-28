@@ -2571,7 +2571,10 @@ if not st.session_state.logged_in:
                 # not from the custom component. GitHub rejects OAuth pages
                 # when they are loaded in an embedded browsing context.
                 st.html(
-                    f"<script>window.location.replace({json.dumps(github_url)});</script>",
+                    f"""<script>
+const githubUrl = {json.dumps(github_url)};
+window.top.location.assign(githubUrl);
+</script>""",
                     unsafe_allow_javascript=True,
                 )
 
