@@ -2419,13 +2419,17 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github && githubAuthUrl) {
-    // Keep GitHub OAuth as a real top-level navigation. GitHub blocks its
-    // authorization page inside iframes, so do not intercept this click.
+    // Let the browser handle the OAuth click as a real link. Parent navigation
+    // avoids loading github.com inside the component frame.
     github.href = githubAuthUrl;
-    github.target = '_top';
+    github.target = '_parent';
     github.rel = 'noopener';
+    github.onclick = null;
   } else {
-    github?.addEventListener('click', (e) => e.preventDefault());
+    github?.addEventListener('click', (e) => {
+      e.preventDefault();
+      setTriggerValue('social', 'github');
+    });
   }
 
   setLamp(false);
