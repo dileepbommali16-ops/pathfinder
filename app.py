@@ -2419,14 +2419,10 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github && githubAuthUrl) {
-    // Let the browser handle the OAuth click as a real link. Parent navigation
-    // avoids loading github.com inside the component frame.
-    github.href = githubAuthUrl;
-    github.target = '_parent';
-    github.rel = 'noopener';
-    github.onclick = null;
-  } else {
-    github?.addEventListener('click', (e) => {
+    // Components v2 runs the login UI in an isolated frame. A normal anchor
+    // cannot reliably escape that frame, so send the click to Python and let
+    // the parent Streamlit page render a native link on the next rerun.
+    github.addEventListener('click', (e) => {
       e.preventDefault();
       setTriggerValue('social', 'github');
     });
@@ -2516,16 +2512,26 @@ if not st.session_state.logged_in:
                 st.session_state["lamp_login_error"] = "That sign-in didn’t work. Please check your details and try again."
 
         if social == "github":
-            # GitHub refuses to render its OAuth authorization page inside the
-            # Components iframe. The native Streamlit page must navigate to the
-            # OAuth URL instead, keeping the login flow in the same browser tab.
+            # Render a native Streamlit link outside the Components iframe.
+            # Clicking it performs a true top-level browser navigation, so
+            # github.com is never embedded in the login component.
             github_url = _github_oauth_url()
             if github_url:
-                import streamlit.components.v1 as _components_v1
-                _components_v1.html(
-                    f"<script>window.parent.location.href={json.dumps(github_url)};</script>",
-                    height=0,
+                st.markdown(
+                    f"""
+                    <a href="{github_url}" target="_self"
+                       style="position:fixed; left:50%; bottom:18px;
+                              transform:translateX(-50%); z-index:100000;
+                              padding:12px 22px; border-radius:12px;
+                              background:#24292f; color:white;
+                              text-decoration:none; font-weight:600;
+                              font-family:Arial,sans-serif;">
+                       Continue with GitHub
+                    </a>
+                    """,
+                    unsafe_allow_html=True,
                 )
+                st.info("Click **Continue with GitHub** to continue.")
             else:
                 st.session_state["lamp_login_error"] = (
                     "GitHub Login is not configured. Check [github_oauth] in Streamlit Secrets."
