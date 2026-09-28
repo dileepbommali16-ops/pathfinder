@@ -2446,8 +2446,8 @@ export default function(component) {
 
   if (github) {
     // GitHub sends X-Frame-Options headers, so its OAuth page must never load
-    // inside the Streamlit component iframe. Prefer a user-initiated new tab;
-    // fall back to top-level navigation if the browser blocks the popup.
+    // inside the Streamlit component iframe. Navigate the top-level page in
+    // the same browser tab instead of opening a popup/new tab.
     github.dataset.url = githubAuthUrl;
     github.removeAttribute('href');
     github.removeAttribute('target');
@@ -2461,8 +2461,7 @@ export default function(component) {
           setTriggerValue('social', 'github');
           return;
         }
-        const popup = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!popup) window.top.location.assign(url);
+        window.top.location.assign(url);
       });
     }
   }
@@ -2575,8 +2574,7 @@ if not st.session_state.logged_in:
                 st.html(
                     f"""<script>
 const githubUrl = {json.dumps(github_url)};
-const githubPopup = window.open(githubUrl, '_blank', 'noopener,noreferrer');
-if (!githubPopup) window.top.location.assign(githubUrl);
+window.top.location.assign(githubUrl);
 </script>""",
                     unsafe_allow_javascript=True,
                 )
