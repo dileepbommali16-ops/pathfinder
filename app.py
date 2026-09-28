@@ -2445,21 +2445,21 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github) {
-    // Keep the latest URL on the element and bind the click handler only once,
-    // so re-renders never stack listeners (which opened several tabs).
+    // GitHub OAuth must start as a real browser navigation. Do not send this
+    // through a Streamlit rerun: the OAuth authorize page is a top-level web page.
     github.dataset.url = githubAuthUrl;
+    github.href = githubAuthUrl || '#';
+    github.target = '_self';
+    github.rel = 'noopener';
     if (!github.dataset.bound) {
       github.dataset.bound = '1';
       github.addEventListener('click', (e) => {
-        e.preventDefault();
         const url = github.dataset.url || '';
         if (!url) {
-          setTriggerValue('social', 'github');   // Python shows the "not configured" message
-          return;
+          e.preventDefault();
+          setTriggerValue('social', 'github');
         }
-        // Let Python handle the redirect from the main Streamlit page.
-        // This avoids GitHub refusing to load inside the component context.
-        setTriggerValue('social', 'github');
+        // Otherwise allow the normal <a href> navigation in the SAME TAB.
       });
     }
   }
