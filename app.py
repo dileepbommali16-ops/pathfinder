@@ -1823,7 +1823,7 @@ _LAMP_HTML = r"""<main class="room" id="room">
           <button class="social-btn" type="button">
             <span class="google-icon">G</span> Google
           </button>
-          <a class="social-btn" id="github-social-btn" href="#" role="button">
+          <a class="social-btn" id="github-social-btn" href="#" role="button" target="_top">
             <span class="github-icon">●</span> GitHub
           </a>
         </div>
@@ -2445,19 +2445,10 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github) {
-    // Never load GitHub from inside the custom lamp component. Send one
-    // trigger to Python, then let the main Streamlit document redirect.
-    github.removeAttribute('href');
-    github.removeAttribute('target');
-    github.style.cursor = 'pointer';
-    if (!github.dataset.bound) {
-      github.dataset.bound = '1';
-      github.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setTriggerValue('social', 'github');
-      });
-    }
+    // Native OAuth anchor. No click interception, no Streamlit rerun.
+    github.href = githubAuthUrl || '#';
+    github.target = '_top';
+    github.rel = 'noopener';
   }
 
   setLamp(false);
@@ -2523,6 +2514,17 @@ if not st.session_state.logged_in:
     <div class="pf-lamp-login-anchor"></div>
     """, unsafe_allow_html=True)
 
+    # Native top-level GitHub OAuth link. This sits in the Streamlit page,
+    # outside the custom component, so GitHub is never loaded as an embedded page.
+    _github_native_url = _github_oauth_url()
+    if _github_native_url:
+        st.markdown(
+            f"""<a id="pf-native-github-login" href="{_github_native_url}" target="_self"
+            style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;">
+            GitHub Login</a>""",
+            unsafe_allow_html=True,
+        )
+
     lamp_result = render_real_lamp_login()
 
     if lamp_result is not None:
@@ -2556,23 +2558,9 @@ if not st.session_state.logged_in:
                 )
 
         elif social == "github":
-            github_url = _github_oauth_url()
-            if not github_url:
-                st.session_state["lamp_login_error"] = (
-                    "GitHub Login is not configured yet. Add client_id, client_secret, "
-                    "and redirect_uri under [github_oauth] in Streamlit Secrets."
-                )
-            else:
-                # st.html is not iframed, so the OAuth navigation starts
-                # from the main Streamlit document instead of the lamp component.
-                st.html(
-                    f"""<script>
-const githubUrl = {json.dumps(github_url)};
-window.location.replace(githubUrl);
-</script>""",
-                    unsafe_allow_javascript=True,
-                )
-                st.stop()
+            # Legacy component trigger kept harmless for older cached clients.
+            # New clients use the native top-level GitHub anchor above.
+            pass
 
     login_error = st.session_state.pop("lamp_login_error", None)
     if login_error:
