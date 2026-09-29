@@ -2445,10 +2445,22 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github) {
-    // Native OAuth anchor. No click interception, no Streamlit rerun.
     github.href = githubAuthUrl || '#';
     github.target = '_top';
     github.rel = 'noopener';
+
+    // Force OAuth navigation in the top-level browser window.
+    // This avoids the embedded component context blocking github.com.
+    github.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      if (!githubAuthUrl) {
+        alert('GitHub OAuth is not configured.');
+        return;
+      }
+
+      window.top.location.href = githubAuthUrl;
+    });
   }
 
   setLamp(false);
