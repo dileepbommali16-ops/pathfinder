@@ -2445,21 +2445,17 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github) {
-    // Start OAuth as a real top-level navigation in the same browser tab.
-    github.href = githubAuthUrl || '#';
-    github.target = '_self';
-    github.rel = 'noopener';
+    // Never load GitHub from inside the custom lamp component. Send one
+    // trigger to Python, then let the main Streamlit document redirect.
+    github.removeAttribute('href');
+    github.removeAttribute('target');
+    github.style.cursor = 'pointer';
     if (!github.dataset.bound) {
       github.dataset.bound = '1';
       github.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const url = github.dataset.url || githubAuthUrl || '';
-        if (!url) {
-          setTriggerValue('social', 'github');
-          return;
-        }
-        window.location.assign(url);
+        setTriggerValue('social', 'github');
       });
     }
   }
@@ -2567,15 +2563,16 @@ if not st.session_state.logged_in:
                     "and redirect_uri under [github_oauth] in Streamlit Secrets."
                 )
             else:
-                # Start OAuth outside the custom component iframe. GitHub
-                # rejects OAuth pages when they are loaded in an iframe.
+                # st.html is not iframed, so the OAuth navigation starts
+                # from the main Streamlit document instead of the lamp component.
                 st.html(
                     f"""<script>
 const githubUrl = {json.dumps(github_url)};
-window.top.location.assign(githubUrl);
+window.location.replace(githubUrl);
 </script>""",
                     unsafe_allow_javascript=True,
                 )
+                st.stop()
 
     login_error = st.session_state.pop("lamp_login_error", None)
     if login_error:
