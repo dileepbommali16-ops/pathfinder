@@ -2445,23 +2445,21 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github) {
-    // GitHub sends X-Frame-Options headers, so its OAuth page must never load
-    // inside the Streamlit component iframe. Force the user click to navigate
-    // the top-level browsing context in the same tab.
+    // Start OAuth as a real top-level navigation in the same browser tab.
     github.href = githubAuthUrl || '#';
-    github.target = '_top';
+    github.target = '_self';
     github.rel = 'noopener';
     if (!github.dataset.bound) {
       github.dataset.bound = '1';
       github.addEventListener('click', (e) => {
-        if (!githubAuthUrl) {
-          e.preventDefault();
+        e.preventDefault();
+        e.stopPropagation();
+        const url = github.dataset.url || githubAuthUrl || '';
+        if (!url) {
           setTriggerValue('social', 'github');
           return;
         }
-        e.preventDefault();
-        e.stopPropagation();
-        window.open(githubAuthUrl, '_top');
+        window.location.assign(url);
       });
     }
   }
