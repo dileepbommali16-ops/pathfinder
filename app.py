@@ -2445,21 +2445,18 @@ export default function(component) {
   google?.addEventListener('click', () => setTriggerValue('social', 'google'));
 
   if (github) {
+    // GitHub must be opened as a real top-level browser page.
+    // Opening a new tab avoids the "github.com refused to connect" error
+    // that can occur when OAuth navigation is initiated from the component UI.
     github.href = githubAuthUrl || '#';
-    github.target = '_top';
-    github.rel = 'noopener';
+    github.target = '_blank';
+    github.rel = 'noopener noreferrer';
 
-    // Force OAuth navigation in the top-level browser window.
-    // This avoids the embedded component context blocking github.com.
     github.addEventListener('click', (e) => {
-      e.preventDefault();
-
       if (!githubAuthUrl) {
+        e.preventDefault();
         alert('GitHub OAuth is not configured.');
-        return;
       }
-
-      window.top.location.href = githubAuthUrl;
     });
   }
 
