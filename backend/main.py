@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 # Ensure UTF-8 output on Windows
 if sys.platform == "win32":
@@ -19,11 +20,14 @@ import uvicorn
 from backend.api import app
 
 
-def run_server(host: str = "127.0.0.1", port: int = 8000, reload: bool = False):
+def run_server(host: Optional[str] = None, port: Optional[int] = None, reload: bool = False):
+    host = host or os.getenv("HOST", "0.0.0.0")
+    port = port or int(os.getenv("PORT", "8000"))
     print(f"[Pathfinder 2.0] Backend starting on http://{host}:{port}")
     uvicorn.run("backend.api:app", host=host, port=port, reload=reload)
 
 
 if __name__ == "__main__":
+    host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "8000"))
-    run_server(port=port)
+    run_server(host=host, port=port)

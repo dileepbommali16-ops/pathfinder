@@ -12,7 +12,8 @@ import { LampLogin } from "@/components/auth/LampLogin";
 import { Ambient3DBackground } from "@/components/dashboard/Ambient3DBackground";
 
 // Base API URL: uses environment variable with fallback to FastAPI on 8000
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || "http://127.0.0.1:8000";
+const rawApiBase = (import.meta.env.VITE_API_BASE_URL as string) || "http://127.0.0.1:8000";
+const API_BASE = rawApiBase.replace(/\/+$/, "");
 
 const DEFAULT_PROFILE: StudentProfileState = {
   cgpa: 7.8,

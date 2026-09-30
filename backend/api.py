@@ -44,10 +44,26 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# Enable CORS for local dev servers and frontend clients
+# Configure CORS origins: allow local dev, explicit FRONTEND_URL env var, and Vercel domains
+frontend_url_env = os.getenv("FRONTEND_URL", "").strip()
+allowed_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8501",
+    "http://127.0.0.1:8501",
+]
+if frontend_url_env:
+    for origin in frontend_url_env.split(","):
+        cleaned = origin.strip().rstrip("/")
+        if cleaned and cleaned not in allowed_origins:
+            allowed_origins.append(cleaned)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -73,7 +89,11 @@ _cached_profile = StudentProfile()
 def get_oauth_urls():
     google_client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
     github_client_id = os.getenv("GITHUB_CLIENT_ID", "").strip()
-    redirect_uri = os.getenv("OAUTH_REDIRECT_URI", "http://localhost:3000/api/oauth/callback").strip()
+    
+    redirect_uri = os.getenv("OAUTH_REDIRECT_URI", "").strip()
+    if not redirect_uri:
+        frontend_base = os.getenv("FRONTEND_URL", "http://localhost:3000").split(",")[0].strip().rstrip("/")
+        redirect_uri = f"{frontend_base}/api/oauth/callback"
 
     google_url = None
     if google_client_id:
