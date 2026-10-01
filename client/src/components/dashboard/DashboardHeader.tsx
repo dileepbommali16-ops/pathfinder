@@ -11,10 +11,12 @@ import {
   ShieldCheck,
   User,
   GraduationCap,
-  Lightbulb
+  Lightbulb,
+  Calendar,
+  ShieldAlert
 } from "lucide-react";
 
-export type TabId = "overview" | "roadmap" | "coach" | "projects" | "analytics" | "resume";
+export type TabId = "overview" | "roles" | "missions" | "projects" | "defense" | "coach" | "resume" | "analytics";
 
 interface DashboardHeaderProps {
   activeTab: TabId;
@@ -25,12 +27,14 @@ interface DashboardHeaderProps {
 }
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string }[] = [
-  { id: "overview", label: "Readiness Command", icon: Target },
-  { id: "roadmap", label: "6-Week Roadmap", icon: Compass },
+  { id: "overview", label: "Command Center", icon: Target },
+  { id: "roles", label: "Role Intelligence", icon: Compass, badge: "Paths" },
+  { id: "missions", label: "30-Day Mission", icon: Calendar, badge: "Sprint" },
+  { id: "projects", label: "Project Blueprints", icon: Lightbulb, badge: "X-Y-Z" },
+  { id: "defense", label: "Project Defense", icon: ShieldAlert, badge: "STAR" },
   { id: "coach", label: "AI Career Coach", icon: Bot, badge: "Gemini" },
-  { id: "projects", label: "Project Blueprints", icon: Lightbulb, badge: "AI" },
-  { id: "analytics", label: "Cohort Analytics", icon: TrendingUp },
   { id: "resume", label: "ATS Resume Studio", icon: FileText },
+  { id: "analytics", label: "Cohort Analytics", icon: TrendingUp },
 ];
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({

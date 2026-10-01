@@ -38,14 +38,14 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       action: onTriggerCalculate,
     },
     {
-      id: "roadmap",
-      title: "Build 6-Week Roadmap",
-      description: `Generate weekly milestones and interview targets customized for ${targetRole || "SDE"}.`,
+      id: "missions",
+      title: "30-Day Sprint Mission",
+      description: `Structured sprint roadmap & milestones customized for ${targetRole || "SDE"}.`,
       icon: Compass,
       tag: "AI Guided",
       accent: "from-purple-500/20 to-indigo-500/10 border-purple-500/30 text-purple-400",
       btnClass: "hover:border-purple-500/50 hover:bg-purple-500/10",
-      action: () => onNavigateTab("roadmap"),
+      action: () => onNavigateTab("missions"),
     },
     {
       id: "interview",

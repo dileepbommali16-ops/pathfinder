@@ -22,7 +22,7 @@ interface HeroMetricsProps {
   internships: number;
   coding: number;
   communication: number;
-  onNavigateTab: (tab: "overview" | "roadmap" | "coach" | "analytics" | "resume") => void;
+  onNavigateTab: (tab: any) => void;
 }
 
 export const HeroMetrics: React.FC<HeroMetricsProps> = ({
@@ -99,10 +99,10 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
 
             <div className="flex flex-wrap gap-3 pt-2">
               <button
-                onClick={() => onNavigateTab("roadmap")}
+                onClick={() => onNavigateTab("missions")}
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-4 py-2.5 text-xs font-bold text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:brightness-110 active:scale-95"
               >
-                <span>View 6-Week Action Plan</span>
+                <span>View 30-Day Mission & Plan</span>
                 <ArrowUpRight className="h-4 w-4" />
               </button>
 

@@ -13,6 +13,11 @@ import { Ambient3DBackground } from "@/components/dashboard/Ambient3DBackground"
 import { AIActionCenter } from "@/components/dashboard/AIActionCenter";
 import { NextActionsWidget } from "@/components/dashboard/NextActionsWidget";
 import { ProjectRecommender } from "@/components/dashboard/ProjectRecommender";
+import { CareerDigitalTwin } from "@/components/dashboard/CareerDigitalTwin";
+import { WhatIfSimulator } from "@/components/dashboard/WhatIfSimulator";
+import { RoleIntelligence } from "@/components/dashboard/RoleIntelligence";
+import { ProjectDefenseConsole } from "@/components/dashboard/ProjectDefenseConsole";
+import { CareerMissionTracker } from "@/components/dashboard/CareerMissionTracker";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
 
 // Base API URL: uses environment variable with fallback to FastAPI on 8000 or Render production backend
@@ -113,6 +118,13 @@ export default function Home() {
     setEmail(user.email);
     setIsAuthenticated(true);
     localStorage.setItem("pathfinder_user", JSON.stringify(user));
+  };
+
+  // Synchronize target role update across Career Digital Twin, ML Sensitivity, Roadmap & Projects
+  const handleUpdateTargetRole = (newRole: string) => {
+    const updated = { ...profile, targetRole: newRole };
+    setProfile(updated);
+    fetchPrediction(updated);
   };
 
   // 1. Prediction State
@@ -557,7 +569,7 @@ export default function Home() {
       {/* Main Container */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
         <AnimatePresence mode="wait">
-          {/* TAB 1: READINESS OVERVIEW & PARAMETERS */}
+          {/* TAB 1: READINESS OVERVIEW & COMMAND CENTER */}
           {activeTab === "overview" && (
             <motion.div
               key="overview"
@@ -581,6 +593,24 @@ export default function Home() {
                 onNavigateTab={setActiveTab}
               />
 
+              {/* Career Digital Twin & Transparent Readiness Dimensions */}
+              <CareerDigitalTwin
+                profile={profile}
+                predictionChance={prediction.chance}
+                predictionTone={prediction.tone}
+                onNavigateTab={setActiveTab}
+              />
+
+              {/* Personalized Next Best Action: What Should I Do Next? */}
+              <NextActionsWidget
+                profile={profile}
+                onNavigateTab={setActiveTab}
+                onAskCoach={(q) => {
+                  setActiveTab("coach");
+                  handleSendMessage(q);
+                }}
+              />
+
               {/* AI Action Center */}
               <AIActionCenter
                 onNavigateTab={setActiveTab}
@@ -592,14 +622,10 @@ export default function Home() {
                 targetRole={profile.targetRole}
               />
 
-              {/* Personalized Next Actions: What Should I Do Next? */}
-              <NextActionsWidget
-                profile={profile}
-                onNavigateTab={setActiveTab}
-                onAskCoach={(q) => {
-                  setActiveTab("coach");
-                  handleSendMessage(q);
-                }}
+              {/* What-If? Career Trajectory Simulator */}
+              <WhatIfSimulator
+                currentProfile={profile}
+                currentScore={prediction.chance}
               />
 
               {/* Sliders & Parameters */}
@@ -627,15 +653,37 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* TAB 2: 6-WEEK AI CAREER ROADMAP */}
-          {activeTab === "roadmap" && (
+          {/* TAB 2: TARGET ROLE INTELLIGENCE & CAREER PATH SIMULATOR */}
+          {activeTab === "roles" && (
             <motion.div
-              key="roadmap"
+              key="roles"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
             >
+              <RoleIntelligence
+                currentProfile={profile}
+                onUpdateTargetRole={handleUpdateTargetRole}
+                onNavigateTab={setActiveTab}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 3: 30-DAY CAREER MISSION & ROADMAP */}
+          {activeTab === "missions" && (
+            <motion.div
+              key="missions"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-8"
+            >
+              <CareerMissionTracker
+                profile={profile}
+                onNavigateTab={setActiveTab}
+              />
               <RoadmapVisualizer
                 roadmap={roadmap}
                 isLoading={isRoadmapLoading}
@@ -644,26 +692,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* TAB 3: AI PLACEMENT COACH */}
-          {activeTab === "coach" && (
-            <motion.div
-              key="coach"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
-              <AICoachConsole
-                messages={messages}
-                onSendMessage={handleSendMessage}
-                onClearChat={() => setMessages([])}
-                isLoading={isChatLoading}
-                targetRole={profile.targetRole}
-              />
-            </motion.div>
-          )}
-
-          {/* TAB 4: AI PROJECT RECOMMENDER */}
+          {/* TAB 4: AI PROJECT RECOMMENDER & BLUEPRINTS */}
           {activeTab === "projects" && (
             <motion.div
               key="projects"
@@ -682,7 +711,63 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* TAB 5: COHORT ANALYTICS & BENCHMARKS */}
+          {/* TAB 5: PROJECT DEFENSE AI CONSOLE */}
+          {activeTab === "defense" && (
+            <motion.div
+              key="defense"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              <ProjectDefenseConsole
+                profile={profile}
+                onAskCoach={(q) => {
+                  setActiveTab("coach");
+                  handleSendMessage(q);
+                }}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 6: AI CAREER COACH & MOCK INTERVIEW */}
+          {activeTab === "coach" && (
+            <motion.div
+              key="coach"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              <AICoachConsole
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                onClearChat={() => setMessages([])}
+                isLoading={isChatLoading}
+                targetRole={profile.targetRole}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 7: ATS RESUME STUDIO */}
+          {activeTab === "resume" && (
+            <motion.div
+              key="resume"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              <ResumeStudio
+                feedback={resumeFeedback}
+                onAnalyze={handleAnalyzeResume}
+                isLoading={isAnalyzingResume}
+                onDownloadFeedbackPDF={handleDownloadResumePDF}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 8: COHORT ANALYTICS & BENCHMARKS */}
           {activeTab === "analytics" && (
             <motion.div
               key="analytics"
@@ -703,24 +788,6 @@ export default function Home() {
                 aiInsight={cohortInsight}
                 onDownloadCSV={handleDownloadCSV}
                 onDownloadPDF={handleDownloadPDF}
-              />
-            </motion.div>
-          )}
-
-          {/* TAB 6: ATS RESUME STUDIO */}
-          {activeTab === "resume" && (
-            <motion.div
-              key="resume"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
-              <ResumeStudio
-                feedback={resumeFeedback}
-                onAnalyze={handleAnalyzeResume}
-                isLoading={isAnalyzingResume}
-                onDownloadFeedbackPDF={handleDownloadResumePDF}
               />
             </motion.div>
           )}
