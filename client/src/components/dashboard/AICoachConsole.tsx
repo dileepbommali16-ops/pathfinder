@@ -9,7 +9,11 @@ import {
   User,
   Lightbulb,
   CornerDownLeft,
-  Loader2
+  Loader2,
+  MessageSquareCode,
+  Compass,
+  FileText,
+  Target
 } from "lucide-react";
 
 export interface Message {
@@ -26,11 +30,23 @@ interface AICoachConsoleProps {
 }
 
 const PROMPT_SUGGESTIONS = [
-  "How can I raise my placement chance above 85%?",
-  "Top 5 DSA patterns asked in campus rounds",
-  "STAR framework story for 'Describe a challenging bug'",
-  "What projects stand out most for an SDE placement?",
-  "Can you guide me in Telugu / English mix?",
+  "Analyze my career path 🚀",
+  "Find my skill gaps",
+  "Start a mock interview",
+  "Create my roadmap",
+  "Suggest an AI project",
+  "Prepare me for placements",
+  "Naku job kavali bro",
+  "Why am I not getting shortlisted?",
+  "Python or Java?"
+];
+
+const QUICK_ACTIONS = [
+  { label: "🎙️ Mock Interview", prompt: "Give me a mock interview." },
+  { label: "🗺️ 6-Week Roadmap", prompt: "Can you make me a 6 week roadmap?" },
+  { label: "🔍 Skill Gaps", prompt: "Na skills lo gaps enti?" },
+  { label: "📄 ATS Resume", prompt: "Make my resume better." },
+  { label: "💡 Project Idea", prompt: "Give me a project idea." },
 ];
 
 export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
@@ -62,7 +78,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   };
 
   return (
-    <div className="relative flex h-[680px] flex-col overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/50 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+    <div className="relative flex h-[700px] flex-col overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/50 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
       {/* Console Header */}
       <div className="flex items-center justify-between border-b border-white/[0.06] bg-black/20 px-6 py-4">
         <div className="flex items-center gap-3">
@@ -71,13 +87,14 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-white">AI Placement Coach</h2>
-              <span className="rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.2 text-[9px] font-bold text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.2)]">
-                Gemini 3.5
+              <h2 className="text-sm font-bold text-white">Pathfinder AI Career Agent</h2>
+              <span className="flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.2)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Agent • Multilingual
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              Personalized for target: <span className="font-semibold text-emerald-300">{targetRole}</span>
+              Candidate-aware for: <span className="font-semibold text-emerald-300">{targetRole}</span>
             </p>
           </div>
         </div>
@@ -89,9 +106,24 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             title="Clear chat history"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            <span>Clear</span>
+            <span>Reset</span>
           </button>
         )}
+      </div>
+
+      {/* Quick Action Chips Bar */}
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-white/[0.04] bg-black/10 px-6 py-2.5 scrollbar-none">
+        <span className="text-[11px] font-medium text-slate-500 shrink-0">Quick Actions:</span>
+        {QUICK_ACTIONS.map((action, i) => (
+          <button
+            key={i}
+            onClick={() => onSendMessage(action.prompt)}
+            disabled={isLoading}
+            className="shrink-0 rounded-lg border border-white/[0.07] bg-white/[0.02] px-2.5 py-1 text-[11px] font-medium text-slate-300 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-300 active:scale-95 disabled:opacity-50"
+          >
+            {action.label}
+          </button>
+        ))}
       </div>
 
       {/* Messages Scroll Area */}
@@ -101,13 +133,13 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
               <Sparkles className="h-7 w-7" />
             </div>
-            <h3 className="mt-4 text-base font-bold text-white">How can I guide your preparation today?</h3>
+            <h3 className="mt-4 text-base font-bold text-white">How can I guide your career today?</h3>
             <p className="mt-1 max-w-md text-xs text-slate-400">
-              Ask about campus eligibility cutoffs, high-yield DSA patterns, system design, or STAR behavioral interview answers.
+              Talk naturally in English, Telugu script, or Roman Telugu. Ask about placement strategy, mock interviews, skill gaps, or resume refinement.
             </p>
 
             {/* Starter Suggestion Chips */}
-            <div className="mt-6 flex max-w-lg flex-wrap justify-center gap-2">
+            <div className="mt-6 flex max-w-xl flex-wrap justify-center gap-2">
               {PROMPT_SUGGESTIONS.map((s, idx) => (
                 <button
                   key={idx}
@@ -132,7 +164,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               )}
 
               <div
-                className={`group relative max-w-[82%] rounded-2xl px-4.5 py-3 text-xs sm:text-sm leading-relaxed ${
+                className={`group relative max-w-[85%] rounded-2xl px-4.5 py-3 text-xs sm:text-sm leading-relaxed ${
                   m.role === "user"
                     ? "rounded-tr-none bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-lg shadow-emerald-950/40"
                     : "rounded-tl-none border border-white/[0.08] bg-slate-950/70 text-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.25)] backdrop-blur-xl"
@@ -165,9 +197,14 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 text-slate-950 shadow-sm">
               <Bot className="h-4 w-4" />
             </div>
-            <div className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-slate-950/80 px-4 py-3 text-xs text-slate-400 shadow-md">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
-              <span>Gemini AI is crafting structured guidance...</span>
+            <div className="flex items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-slate-950/80 px-4 py-3 text-xs text-slate-300 shadow-md">
+              <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+              <span>Pathfinder AI is analyzing & reasoning...</span>
+              <span className="flex gap-1 ml-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="h-1.5 w-1.5 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+              </span>
             </div>
           </div>
         )}
@@ -182,7 +219,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a placement question (e.g. 'How to solve two pointers?', 'STAR answer for conflict')..."
+            placeholder="Talk in English, Telugu, or Roman Telugu (e.g. 'Take my mock interview', 'Naku job kavali bro')..."
             className="w-full rounded-2xl border border-white/[0.08] bg-slate-950/80 py-3.5 pl-4 pr-12 text-xs font-medium text-slate-200 outline-none transition-all placeholder:text-slate-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
           />
           <button

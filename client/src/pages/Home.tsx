@@ -247,7 +247,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hi! I'm your Pathfinder AI Placement Coach powered by Gemini. I'm connected to your live candidate profile. Ask me about campus eligibility cutoffs, pattern-based DSA preparation, STAR behavioral answers, or resume optimization!"
+      content: "Hi! I'm your Pathfinder AI Career Agent powered by Gemini. I'm connected to your live candidate profile. Ask me anything in English, Telugu script, or Roman Telugu—placement cutoffs, mock interviews, 6-week roadmaps, skill gaps, or resume refinement!"
     }
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);
@@ -263,7 +263,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userText,
-          history: updatedMessages.slice(-6).map(m => ({ role: m.role, content: m.content })),
+          history: updatedMessages.slice(-12).map(m => ({ role: m.role, content: m.content })),
           profile: {
             cgpa: profile.cgpa,
             backlogs: profile.backlogs,
@@ -289,7 +289,7 @@ export default function Home() {
     } catch {
       setMessages([...updatedMessages, {
         role: "assistant",
-        content: "Here is your key action plan: (1) Ensure CGPA >= 7.0 to clear tier-1 criteria, (2) Solve 3 LeetCode patterns daily, (3) Deploy one flagship full-stack project with clear impact metrics."
+        content: "I'm right here with you! Key immediate steps: (1) Ensure CGPA >= 7.5 to clear top tier cutoffs, (2) Solve 2–3 Blind 75 LeetCode patterns daily, (3) Deploy one flagship full-stack/AI project with a live link and clean GitHub README."
       }]);
     } finally {
       setIsChatLoading(false);
