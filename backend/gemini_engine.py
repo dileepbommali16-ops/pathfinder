@@ -217,15 +217,15 @@ Take your shot!"""
                 return "Got it! Focusing on **AI/ML** 🚀 Let's skip generic web tech and concentrate on: (1) Core Python & Matrix Math, (2) Scikit-Learn Supervised/Unsupervised models, (3) 1 End-to-end deployed model. What is your current comfort with Python?"
 
     # -------------------------------------------------------------
-    # 2. CASUAL CONVERSATION & CHIT-CHAT (Do NOT lecture!)
+    # 2. CASUAL CONVERSATION & CHIT-CHAT (Natural, friendly, human-like)
     # -------------------------------------------------------------
     # Test K: Love message
     if "love you" in lower or "love u" in lower:
-        return "Aww 😄 That's sweet! I appreciate you too ❤️. Now, tell me—what are we conquering today? Placements, DSA patterns, or mock interviews?"
+        return "Aww 😄 That's sweet! I appreciate you too ❤️\nNow let's get you closer to your career goals."
 
     # Casual greetings
     if lower in ("hi", "hello", "hey", "hii", "heyy", "hola", "namaste", "namaskaram"):
-        return "Hey! 👋 Nice to see you. What's on your mind?"
+        return "Hey! 👋 What are you working on today?"
 
     if lower in ("how are you", "how are you?", "how r u", "how r u?"):
         return "I'm doing great 😊 Ready whenever you are. Career, coding, placements, or just a random question?"
@@ -236,6 +236,17 @@ Take your shot!"""
 
     if any(phrase in lower for phrase in ("bro ela unnava", "ela unnav bro", "ela unnaru", "bagunnava")):
         return "Super bro! Chala bagunna 😊 Enti sangathulu? Placements, coding, or general discussion—em cheddam?"
+
+    if "python baaga istam" in lower or "python istam" in lower:
+        return "Super! 🐍 Python is one of the most versatile languages in the industry today. Whether you want to crack Tier-1 Software Engineering (backend with FastAPI/Django, DSA) or transition into Data Science & AI/ML, Python gives you a massive advantage.\n\nAre you looking to use Python for Software Development, Data Engineering, or AI/Machine Learning?"
+
+    if "placement kosam em nerchukovali" in lower or "placements kosam em nerchukovali" in lower or "em nerchukovali" in lower:
+        return """Placement crack cheyyడానికి ముఖ్యంగా 3 స్తంభాలు (Pillars) అవసరం:
+1. **Core Problem Solving (DSA):** Blind 75 లో ముఖ్యమైన patterns — Arrays, Sliding Window, Two Pointers, Binary Search మరియు Trees (BFS/DFS).
+2. **One Flagship Project:** ఒక full-stack లేదా AI project ని live deploy చేసి GitHub లో clear documentation తో ఉంచండి.
+3. **Core CS Subjects & STAR Storytelling:** DBMS (SQL queries), OS basics, మరియు interview లో మీ projects ని STAR method లో వివరించగలగడం.
+
+మీ ప్రస్తుత టార్గెట్ రోల్ (SDE / Data / Web) ఏమిటో చెబితే, ఇంకా స్పష్టమైన వీక్లీ ప్లాన్ ఇస్తాను!"""
 
     if lower in ("thanks", "thank you", "thx", "dhanyavadalu", "chala thanks"):
         return "Anytime! 🙌 Always here to help you move forward. What's next?"

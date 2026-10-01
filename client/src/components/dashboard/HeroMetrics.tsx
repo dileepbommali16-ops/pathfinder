@@ -118,8 +118,11 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
 
           {/* Right: Modern High-Precision Probability Card */}
           <div className="flex flex-col items-center justify-center rounded-2xl border border-white/[0.08] bg-slate-950/70 p-6 text-center shadow-2xl backdrop-blur-xl ring-1 ring-white/5">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Placement Probability Score
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+              Pathfinder Career Readiness Assessment
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium">
+              ML Placement Probability Model
             </span>
 
             {/* Circular / Arc Gauge Visual */}

@@ -8,12 +8,14 @@ import {
   Check,
   User,
   Lightbulb,
-  CornerDownLeft,
   Loader2,
-  MessageSquareCode,
-  Compass,
-  FileText,
-  Target
+  Mic,
+  MessageSquare,
+  ShieldCheck,
+  ChevronRight,
+  Code2,
+  Layers,
+  HelpCircle
 } from "lucide-react";
 
 export interface Message {
@@ -33,20 +35,37 @@ const PROMPT_SUGGESTIONS = [
   "Analyze my career path 🚀",
   "Find my skill gaps",
   "Start a mock interview",
-  "Create my roadmap",
+  "Create my 6-week roadmap",
   "Suggest an AI project",
   "Prepare me for placements",
   "Naku job kavali bro",
   "Why am I not getting shortlisted?",
-  "Python or Java?"
+  "Python or Java for campus drives?",
+  "naaku python baaga istam"
 ];
 
 const QUICK_ACTIONS = [
-  { label: "🎙️ Mock Interview", prompt: "Give me a mock interview." },
-  { label: "🗺️ 6-Week Roadmap", prompt: "Can you make me a 6 week roadmap?" },
-  { label: "🔍 Skill Gaps", prompt: "Na skills lo gaps enti?" },
-  { label: "📄 ATS Resume", prompt: "Make my resume better." },
-  { label: "💡 Project Idea", prompt: "Give me a project idea." },
+  { label: "🎙️ Start Mock Interview", prompt: "Let's do an interactive mock interview for my role. Ask me question 1." },
+  { label: "🔍 Find My Skill Gaps", prompt: "Na skills lo gaps enti? Analyze against my target role." },
+  { label: "🗺️ Build 6-Week Roadmap", prompt: "Can you create a detailed 6-week milestone roadmap for my placement preparation?" },
+  { label: "📄 Review My Resume (ATS)", prompt: "Review my resume bullet points using the Google X-Y-Z formula." },
+  { label: "💡 Suggest Flagship Project", prompt: "Suggest a production-grade flagship project to close my technical gaps." },
+  { label: "🎯 Placement Preparation Plan", prompt: "naaku placement kosam em nerchukovali?" },
+];
+
+const MOCK_QUESTIONS = [
+  {
+    category: "Coding & DSA",
+    prompt: "Mock Interview Question 1: Given an array of integers, how would you find the maximum subarray sum in O(n) time? Explain Kadane's algorithm.",
+  },
+  {
+    category: "System Design",
+    prompt: "Mock Interview Question 2: How would you design a URL shortener like TinyURL that handles 100M redirects/day with caching?",
+  },
+  {
+    category: "Behavioral (STAR)",
+    prompt: "Mock Interview Question 3: Tell me about a time you faced a difficult technical bug in a project and how you resolved it using the STAR method.",
+  },
 ];
 
 export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
@@ -57,6 +76,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   targetRole,
 }) => {
   const [input, setInput] = useState("");
+  const [mode, setMode] = useState<"chat" | "interview">("chat");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -78,9 +98,9 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   };
 
   return (
-    <div className="relative flex h-[700px] flex-col overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/50 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+    <div className="relative flex h-[740px] flex-col overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/50 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
       {/* Console Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.06] bg-black/20 px-6 py-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.06] bg-black/20 px-6 py-3.5 gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 text-slate-950 shadow-md shadow-emerald-500/25 ring-1 ring-white/20">
             <Bot className="h-5 w-5" />
@@ -90,26 +110,84 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               <h2 className="text-sm font-bold text-white">Pathfinder AI Career Agent</h2>
               <span className="flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.2)]">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live Agent • Multilingual
+                Multilingual AI • Gemini
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              Candidate-aware for: <span className="font-semibold text-emerald-300">{targetRole}</span>
+              Personalized for: <span className="font-semibold text-emerald-300">{targetRole}</span> • English, తెలుగు & Roman Telugu
             </p>
           </div>
         </div>
 
-        {messages.length > 0 && (
-          <button
-            onClick={onClearChat}
-            className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-xs text-slate-400 transition-colors hover:border-red-500/40 hover:text-red-300"
-            title="Clear chat history"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span>Reset</span>
-          </button>
-        )}
+        {/* Mode Switcher & Reset */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-xl border border-white/[0.08] bg-black/40 p-1">
+            <button
+              type="button"
+              onClick={() => setMode("chat")}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                mode === "chat"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              <span>Strategy Chat</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("interview")}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                mode === "interview"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Mic className="h-3.5 w-3.5" />
+              <span>Mock Interview</span>
+            </button>
+          </div>
+
+          {messages.length > 0 && (
+            <button
+              onClick={onClearChat}
+              className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:border-red-500/40 hover:text-red-300"
+              title="Clear chat history"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Mock Interview Ribbon (When in Interview Mode) */}
+      {mode === "interview" && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-cyan-500/20 bg-cyan-950/20 px-6 py-2.5 gap-2">
+          <div className="flex items-center gap-2">
+            <Mic className="h-4 w-4 text-cyan-400 animate-pulse" />
+            <span className="text-xs font-bold text-cyan-200">
+              Live Mock Interview Simulator:
+            </span>
+            <span className="text-xs text-slate-300 hidden md:inline">
+              Answer aloud or type your solution. The AI evaluates with STAR scoring.
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {MOCK_QUESTIONS.map((q, i) => (
+              <button
+                key={i}
+                onClick={() => onSendMessage(q.prompt)}
+                disabled={isLoading}
+                className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/20 transition-all disabled:opacity-50"
+              >
+                {q.category}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick Action Chips Bar */}
       <div className="flex items-center gap-2 overflow-x-auto border-b border-white/[0.04] bg-black/10 px-6 py-2.5 scrollbar-none">
@@ -134,7 +212,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               <Sparkles className="h-7 w-7" />
             </div>
             <h3 className="mt-4 text-base font-bold text-white">How can I guide your career today?</h3>
-            <p className="mt-1 max-w-md text-xs text-slate-400">
+            <p className="mt-1 max-w-md text-xs text-slate-400 leading-relaxed">
               Talk naturally in English, Telugu script, or Roman Telugu. Ask about placement strategy, mock interviews, skill gaps, or resume refinement.
             </p>
 
@@ -158,7 +236,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {m.role === "assistant" && (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 text-slate-950 shadow-sm">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 text-slate-950 shadow-sm mt-0.5">
                   <Bot className="h-4 w-4" />
                 </div>
               )}
@@ -176,7 +254,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                   <button
                     onClick={() => handleCopy(m.content, idx)}
                     className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100 text-slate-400 hover:text-white"
-                    title="Copy advice"
+                    title="Copy response"
                   >
                     {copiedIndex === idx ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
                   </button>
@@ -184,7 +262,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               </div>
 
               {m.role === "user" && (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.06] text-slate-300">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.06] text-slate-300 mt-0.5">
                   <User className="h-4 w-4" />
                 </div>
               )}
@@ -219,7 +297,11 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Talk in English, Telugu, or Roman Telugu (e.g. 'Take my mock interview', 'Naku job kavali bro')..."
+            placeholder={
+              mode === "interview"
+                ? "Type your interview answer here or ask for feedback..."
+                : "Talk in English, Telugu, or Roman Telugu (e.g. 'Naku job kavali bro', 'Take my mock interview')..."
+            }
             className="w-full rounded-2xl border border-white/[0.08] bg-slate-950/80 py-3.5 pl-4 pr-12 text-xs font-medium text-slate-200 outline-none transition-all placeholder:text-slate-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
           />
           <button

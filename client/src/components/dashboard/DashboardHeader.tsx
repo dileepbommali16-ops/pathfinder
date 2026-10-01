@@ -10,10 +10,11 @@ import {
   Sparkles,
   ShieldCheck,
   User,
-  GraduationCap
+  GraduationCap,
+  Lightbulb
 } from "lucide-react";
 
-export type TabId = "overview" | "roadmap" | "coach" | "analytics" | "resume";
+export type TabId = "overview" | "roadmap" | "coach" | "projects" | "analytics" | "resume";
 
 interface DashboardHeaderProps {
   activeTab: TabId;
@@ -27,6 +28,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string 
   { id: "overview", label: "Readiness Command", icon: Target },
   { id: "roadmap", label: "6-Week Roadmap", icon: Compass },
   { id: "coach", label: "AI Career Coach", icon: Bot, badge: "Gemini" },
+  { id: "projects", label: "Project Blueprints", icon: Lightbulb, badge: "AI" },
   { id: "analytics", label: "Cohort Analytics", icon: TrendingUp },
   { id: "resume", label: "ATS Resume Studio", icon: FileText },
 ];

@@ -10,6 +10,9 @@ import { CohortExplorer, CohortAnalyticsData } from "@/components/dashboard/Coho
 import { ResumeStudio, ResumeFeedbackData } from "@/components/dashboard/ResumeStudio";
 import { LampLogin } from "@/components/auth/LampLogin";
 import { Ambient3DBackground } from "@/components/dashboard/Ambient3DBackground";
+import { AIActionCenter } from "@/components/dashboard/AIActionCenter";
+import { NextActionsWidget } from "@/components/dashboard/NextActionsWidget";
+import { ProjectRecommender } from "@/components/dashboard/ProjectRecommender";
 
 // Base API URL: uses environment variable with fallback to FastAPI on 8000
 const rawApiBase = (import.meta.env.VITE_API_BASE_URL as string) || "http://127.0.0.1:8000";
@@ -534,6 +537,27 @@ export default function Home() {
                 onNavigateTab={setActiveTab}
               />
 
+              {/* AI Action Center */}
+              <AIActionCenter
+                onNavigateTab={setActiveTab}
+                onTriggerCalculate={() => fetchPrediction(profile)}
+                onStartMockInterview={() => {
+                  setActiveTab("coach");
+                  handleSendMessage("Let's do an interactive mock interview for my role. Ask me question 1.");
+                }}
+                targetRole={profile.targetRole}
+              />
+
+              {/* Personalized Next Actions: What Should I Do Next? */}
+              <NextActionsWidget
+                profile={profile}
+                onNavigateTab={setActiveTab}
+                onAskCoach={(q) => {
+                  setActiveTab("coach");
+                  handleSendMessage(q);
+                }}
+              />
+
               {/* Sliders & Parameters */}
               <ProfileEvaluator
                 profile={profile}
@@ -595,7 +619,26 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* TAB 4: COHORT ANALYTICS & BENCHMARKS */}
+          {/* TAB 4: AI PROJECT RECOMMENDER */}
+          {activeTab === "projects" && (
+            <motion.div
+              key="projects"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              <ProjectRecommender
+                targetRole={profile.targetRole}
+                onAskCoach={(q) => {
+                  setActiveTab("coach");
+                  handleSendMessage(q);
+                }}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 5: COHORT ANALYTICS & BENCHMARKS */}
           {activeTab === "analytics" && (
             <motion.div
               key="analytics"
@@ -620,7 +663,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* TAB 5: ATS RESUME STUDIO */}
+          {/* TAB 6: ATS RESUME STUDIO */}
           {activeTab === "resume" && (
             <motion.div
               key="resume"
