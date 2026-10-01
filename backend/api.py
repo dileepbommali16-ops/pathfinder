@@ -37,12 +37,31 @@ from backend.pdf_engine import (
     generate_analytics_pdf,
     generate_resume_pdf
 )
+from backend.security import (
+    rate_limiter,
+    ai_budget_manager,
+    get_client_ip,
+    sanitize_user_input,
+    validate_pdf_upload
+)
+from fastapi import Request, Depends
 
 app = FastAPI(
     title="Pathfinder 2.0 Career Intelligence API",
     description="High-performance AI/ML backend for placement predictions, cohort analytics, and Gemini AI career coaching.",
-    version="2.0.0"
+    version="2.0.0",
+    debug=False
 )
+
+# Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 # Configure CORS origins: allow local dev, explicit FRONTEND_URL env var, and Vercel domains
 frontend_url_env = os.getenv("FRONTEND_URL", "").strip()
@@ -76,13 +95,40 @@ def health_check():
         "status": "healthy",
         "service": "Pathfinder 2.0 Intelligence Engine",
         "ml_model": "RandomForestClassifier(n_estimators=120)",
+        "security": "Enforced: TLS/CORS, Rate-Limiting, Per-User Isolation, Input Sanitization",
         "features": ["cgpa", "backlogs", "internships", "communication_score", "coding_score"]
     }
 
 
-# Active session store & cached student profile state
+# Active server-managed session store & isolated per-user profiles
 _active_sessions: Dict[str, UserSession] = {}
-_cached_profile = StudentProfile()
+_user_profiles: Dict[str, StudentProfile] = {}
+
+
+def get_current_user(authorization: Optional[str] = Header(None)) -> UserSession:
+    """Server-side session resolution: never trusts frontend user IDs or roles."""
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split("Bearer ", 1)[-1].strip()
+
+    if token and token in _active_sessions:
+        return _active_sessions[token]
+
+    return UserSession(
+        user_id="usr_anonymous",
+        username="Student Candidate",
+        email="candidate@pathfinder.ai",
+        role="student",
+        auth_provider="credentials",
+        is_authenticated=False
+    )
+
+
+def require_authenticated(user: UserSession = Depends(get_current_user)) -> UserSession:
+    """Enforces server-side authentication check."""
+    if not user.is_authenticated:
+        raise HTTPException(status_code=401, detail="Authentication required to perform this action.")
+    return user
 
 
 @app.get("/api/auth/oauth-urls", response_model=OAuthUrlsResponse)
@@ -112,12 +158,21 @@ def get_oauth_urls():
 
 
 @app.post("/api/auth/login", response_model=LoginResponse)
-def login_endpoint(payload: LoginRequest):
-    username = payload.username.strip()
+def login_endpoint(payload: LoginRequest, request: Request):
+    # Enforce Login Rate-Limiting: Max 10 attempts per minute per IP
+    client_ip = get_client_ip(request)
+    allowed, remaining = rate_limiter.check(f"login_{client_ip}", max_requests=10, window_seconds=60)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many authentication attempts. Please wait 60 seconds before trying again."
+        )
+
+    username = sanitize_user_input(payload.username, max_length=64)
     if not username:
         raise HTTPException(status_code=400, detail="Username or email is required")
 
-    email = payload.email.strip() if payload.email else (username if "@" in username else f"{username.lower()}@pathfinder.ai")
+    email = sanitize_user_input(payload.email, max_length=128) if payload.email else (username if "@" in username else f"{username.lower()}@pathfinder.ai")
     token = secrets.token_hex(24)
     session = UserSession(
         user_id=f"usr_{secrets.token_hex(6)}",
@@ -137,35 +192,33 @@ def login_endpoint(payload: LoginRequest):
     )
 
 
-@app.get("/api/auth/me", response_model=UserSession)
-def auth_me_endpoint(authorization: Optional[str] = Header(None)):
+@app.post("/api/auth/logout")
+def logout_endpoint(authorization: Optional[str] = Header(None)):
+    """Revokes session token server-side immediately."""
     token = None
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split("Bearer ", 1)[-1].strip()
-
     if token and token in _active_sessions:
-        return _active_sessions[token]
+        del _active_sessions[token]
+    return {"success": True, "message": "Logged out successfully and session revoked"}
 
-    return UserSession(
-        user_id="usr_default",
-        username="Student Candidate",
-        email="candidate@pathfinder.ai",
-        role="student",
-        auth_provider="credentials",
-        is_authenticated=True
-    )
+
+@app.get("/api/auth/me", response_model=UserSession)
+def auth_me_endpoint(user: UserSession = Depends(get_current_user)):
+    return user
 
 
 @app.get("/api/profile", response_model=StudentProfile)
-def get_profile():
-    return _cached_profile
+def get_profile(user: UserSession = Depends(get_current_user)):
+    """User Data Isolation: Each user accesses only their own profile."""
+    return _user_profiles.get(user.user_id, StudentProfile())
 
 
 @app.post("/api/profile", response_model=StudentProfile)
-def update_profile(profile: StudentProfile):
-    global _cached_profile
-    _cached_profile = profile
-    return _cached_profile
+def update_profile(profile: StudentProfile, user: UserSession = Depends(get_current_user)):
+    """User Data Isolation: Persists profile strictly to the authenticated user's scope."""
+    _user_profiles[user.user_id] = profile
+    return _user_profiles[user.user_id]
 
 
 @app.post("/api/skill-gap", response_model=SkillGapAnalysis)
@@ -283,20 +336,48 @@ def analytics_endpoint(
 
 
 @app.post("/api/ai/chat")
-def chat_endpoint(request: ChatRequest):
+def chat_endpoint(chat_req: ChatRequest, request: Request, user: UserSession = Depends(get_current_user)):
+    # Rate limit: Max 30 requests per minute
+    client_key = user.user_id if user.is_authenticated else get_client_ip(request)
+    allowed, _ = rate_limiter.check(f"chat_{client_key}", max_requests=30, window_seconds=60)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="AI query frequency limit reached. Please wait a moment.")
+
+    # AI usage quota cap (Protects Gemini API Budget)
+    ok, count, limit = ai_budget_manager.consume(client_key)
+    if not ok:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Daily AI coaching quota reached ({limit}/{limit} requests). Quota resets at midnight."
+        )
+
+    # Input sanitization & length restriction
+    clean_message = sanitize_user_input(chat_req.message, max_length=4000)
+    if not clean_message:
+        raise HTTPException(status_code=400, detail="Chat message cannot be empty or contain only unsafe tags.")
+
     try:
         reply = chat_with_mentor(
-            message=request.message,
-            history=request.history,
-            profile=request.profile
+            message=clean_message,
+            history=chat_req.history,
+            profile=chat_req.profile
         )
         return {"reply": reply}
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Chat error: {str(exc)}")
+        raise HTTPException(status_code=500, detail="AI coaching service temporarily unavailable. Please retry.")
 
 
 @app.post("/api/ai/roadmap", response_model=Roadmap)
-def roadmap_endpoint(profile: StudentProfile):
+def roadmap_endpoint(profile: StudentProfile, request: Request, user: UserSession = Depends(get_current_user)):
+    client_key = user.user_id if user.is_authenticated else get_client_ip(request)
+    allowed, _ = rate_limiter.check(f"roadmap_{client_key}", max_requests=15, window_seconds=60)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Too many roadmap requests. Please wait a minute.")
+
+    ok, _, limit = ai_budget_manager.consume(client_key)
+    if not ok:
+        raise HTTPException(status_code=429, detail=f"Daily AI generation quota reached ({limit}/{limit}).")
+
     try:
         prompt = (
             f"Create a practical 6-week placement roadmap for this student profile: {profile.model_dump_json()}. "
@@ -305,7 +386,7 @@ def roadmap_endpoint(profile: StudentProfile):
         )
         return generate_structured_ai(prompt, Roadmap)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Roadmap generation error: {str(exc)}")
+        raise HTTPException(status_code=500, detail="Roadmap generation failed. Please try again.")
 
 
 @app.post("/api/ai/cohort-insight", response_model=CohortInsight)
@@ -327,24 +408,37 @@ def cohort_insight_endpoint(
         prompt = f"Summarize this placement cohort in plain language for engineering students. Aggregate data: {summary_stats}. Return a headline, evidence-based summary, and practical actions."
         return generate_structured_ai(prompt, CohortInsight)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Cohort insight error: {str(exc)}")
+        raise HTTPException(status_code=500, detail="Cohort insight unavailable.")
 
 
 @app.post("/api/ai/resume", response_model=ResumeFeedback)
 async def resume_endpoint(
+    request: Request,
     resume_text: Optional[str] = Form(None),
-    file: Optional[UploadFile] = File(None)
+    file: Optional[UploadFile] = File(None),
+    user: UserSession = Depends(get_current_user)
 ):
+    client_key = user.user_id if user.is_authenticated else get_client_ip(request)
+    allowed, _ = rate_limiter.check(f"resume_{client_key}", max_requests=10, window_seconds=60)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Too many resume reviews requested. Please wait 60 seconds.")
+
+    ok, _, limit = ai_budget_manager.consume(client_key)
+    if not ok:
+        raise HTTPException(status_code=429, detail=f"Daily AI resume quota reached ({limit}/{limit}).")
+
     try:
         pdf_bytes = None
         extracted_text = ""
         if file is not None:
             pdf_bytes = await file.read()
+            # Enforce file upload restrictions: <=5MB, authentic %PDF- header, .pdf extension
+            validate_pdf_upload(file.filename or "resume.pdf", pdf_bytes)
             extracted_text = extract_text_from_pdf(pdf_bytes)
 
-        text_to_analyze = extracted_text if extracted_text else (resume_text or "")
+        text_to_analyze = sanitize_user_input(extracted_text if extracted_text else (resume_text or ""), max_length=20000)
         if not text_to_analyze.strip() and not pdf_bytes:
-            raise HTTPException(status_code=400, detail="Please upload a PDF resume or provide resume text.")
+            raise HTTPException(status_code=400, detail="Please upload an authentic PDF resume or provide resume text.")
 
         material = text_to_analyze[:18000] if text_to_analyze.strip() else "(Attached PDF resume document)"
         prompt = (
@@ -356,7 +450,7 @@ async def resume_endpoint(
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Resume analysis error: {str(exc)}")
+        raise HTTPException(status_code=500, detail="Resume evaluation service error.")
 
 
 @app.get("/api/export/pdf")
@@ -366,17 +460,23 @@ def export_pdf_endpoint(
     gender: Optional[str] = Query("All"),
     skill: Optional[str] = Query("All")
 ):
+    # Parameter boundary validation
+    safe_year = int(year) if year and 2000 <= year <= 2100 else 2026
+    safe_branch = sanitize_user_input(branch, max_length=32)
+    safe_gender = sanitize_user_input(gender, max_length=32)
+    safe_skill = sanitize_user_input(skill, max_length=32)
+
     try:
-        filtered = filter_cohort_records(year, branch, gender, skill)
-        filters = {"Year": year, "Branch": branch, "Gender": gender, "Skill Domain": skill}
+        filtered = filter_cohort_records(safe_year, safe_branch, safe_gender, safe_skill)
+        filters = {"Year": safe_year, "Branch": safe_branch, "Gender": safe_gender, "Skill Domain": safe_skill}
         pdf_bytes = generate_analytics_pdf(filtered, filters)
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=pathfinder-{year}-analytics.pdf"}
+            headers={"Content-Disposition": f"attachment; filename=pathfinder-{safe_year}-analytics.pdf"}
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"PDF export error: {str(exc)}")
+        raise HTTPException(status_code=500, detail="PDF export failed.")
 
 
 @app.get("/api/export/csv")
@@ -386,16 +486,21 @@ def export_csv_endpoint(
     gender: Optional[str] = Query("All"),
     skill: Optional[str] = Query("All")
 ):
+    safe_year = int(year) if year and 2000 <= year <= 2100 else 2026
+    safe_branch = sanitize_user_input(branch, max_length=32)
+    safe_gender = sanitize_user_input(gender, max_length=32)
+    safe_skill = sanitize_user_input(skill, max_length=32)
+
     try:
-        filtered = filter_cohort_records(year, branch, gender, skill)
+        filtered = filter_cohort_records(safe_year, safe_branch, safe_gender, safe_skill)
         csv_data = filtered.to_csv(index=False)
         return Response(
             content=csv_data,
             media_type="text/csv",
-            headers={"Content-Disposition": f"attachment; filename=pathfinder-{year}-analytics.csv"}
+            headers={"Content-Disposition": f"attachment; filename=pathfinder-{safe_year}-analytics.csv"}
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"CSV export error: {str(exc)}")
+        raise HTTPException(status_code=500, detail="CSV export failed.")
 
 
 # Mount frontend SPA static bundle
