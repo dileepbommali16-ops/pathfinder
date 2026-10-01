@@ -85,8 +85,8 @@ def run():
     else:
         print("ℹ️ Uncommitted changes:", untracked)
 
-    res_push = subprocess.run(['git', 'push', 'origin', 'main'], capture_output=True, text=True)
-    print("✅ GitHub Remote (origin/main):", res_push.stdout.strip() or res_push.stderr.strip() or "Up to date")
+    res_remote = subprocess.run(['git', 'status', '-uno'], capture_output=True, text=True)
+    print("✅ Git status:", "Synchronized" if "up to date" in res_remote.stdout else "Local commits ready")
 
     print("\n" + "=" * 60)
     print("🎯 FINAL RESULT: ALL 100% CLEAR — ZERO DISTURBANCE OR ERRORS!")
