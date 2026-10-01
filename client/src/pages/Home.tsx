@@ -13,10 +13,21 @@ import { Ambient3DBackground } from "@/components/dashboard/Ambient3DBackground"
 import { AIActionCenter } from "@/components/dashboard/AIActionCenter";
 import { NextActionsWidget } from "@/components/dashboard/NextActionsWidget";
 import { ProjectRecommender } from "@/components/dashboard/ProjectRecommender";
+import { getCareerAgentResponse } from "@/lib/careerAgent";
 
-// Base API URL: uses environment variable with fallback to FastAPI on 8000
-const rawApiBase = (import.meta.env.VITE_API_BASE_URL as string) || "http://127.0.0.1:8000";
-const API_BASE = rawApiBase.replace(/\/+$/, "");
+// Base API URL: uses environment variable with fallback to FastAPI on 8000 or Render production backend
+const getApiBase = (): string => {
+  if (typeof window !== "undefined") {
+    const envUrl = import.meta.env.VITE_API_BASE_URL as string;
+    if (envUrl && envUrl.trim()) return envUrl.replace(/\/+$/, "");
+    if (window.location.hostname.includes("vercel.app")) {
+      return "https://pathfinder-backend.onrender.com";
+    }
+  }
+  return "http://127.0.0.1:8000";
+};
+
+const API_BASE = getApiBase();
 
 const fetchWithTimeout = (url: string, options: RequestInit = {}, timeoutMs = 6000): Promise<Response> => {
   const controller = new AbortController();
@@ -284,22 +295,23 @@ export default function Home() {
             branch: profile.branch,
           }
         }),
-      }, 12000);
+      }, 7000);
 
       if (resp.ok) {
         const data = await resp.json();
-        setMessages([...updatedMessages, { role: "assistant", content: data.reply }]);
-      } else {
-        setMessages([...updatedMessages, {
-          role: "assistant",
-          content: "Focus on Blind 75 high-frequency patterns: Arrays/Strings (Sliding Window, Prefix Sum), Binary Search, Trees (BFS/DFS), and 0/1 Knapsack. Practice explaining solutions aloud using the STAR method."
-        }]);
+        if (data.reply && data.reply.trim()) {
+          setMessages([...updatedMessages, { role: "assistant", content: data.reply }]);
+          return;
+        }
       }
+
+      // If backend returns an error or is cold-starting, use the intelligent client-side agent
+      const agentReply = getCareerAgentResponse(userText, updatedMessages, profile);
+      setMessages([...updatedMessages, { role: "assistant", content: agentReply }]);
     } catch {
-      setMessages([...updatedMessages, {
-        role: "assistant",
-        content: "I'm right here with you! Key immediate steps: (1) Ensure CGPA >= 7.5 to clear top tier cutoffs, (2) Solve 2–3 Blind 75 LeetCode patterns daily, (3) Deploy one flagship full-stack/AI project with a live link and clean GitHub README."
-      }]);
+      // If network fails, times out, or mixed-content blocked, use the intelligent client-side agent
+      const agentReply = getCareerAgentResponse(userText, updatedMessages, profile);
+      setMessages([...updatedMessages, { role: "assistant", content: agentReply }]);
     } finally {
       setIsChatLoading(false);
     }
