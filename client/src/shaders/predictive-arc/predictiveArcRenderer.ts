@@ -44,7 +44,7 @@ export function createPredictiveArcRenderer(
   const resize = (nextWidth: number, nextHeight: number) => {
     width = Math.max(1, nextWidth);
     height = Math.max(1, nextHeight);
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
     canvas.width = Math.round(width * pixelRatio);
     canvas.height = Math.round(height * pixelRatio);
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
@@ -97,7 +97,7 @@ export function createPredictiveArcRenderer(
     }
 
     time += 0.016 * options.speed;
-    const step = Math.max(5, Math.round(options.spacing));
+    const step = Math.max(8, Math.round(options.spacing * 1.35));
     const effectiveThickness = (160 * options.thickness);
 
     context.globalCompositeOperation = isLight ? "source-over" : "lighter";
@@ -161,7 +161,7 @@ export function createPredictiveArcRenderer(
 
         const bright = options.brightness;
         context.fillStyle = `rgba(${Math.floor(r * bright)}, ${Math.floor(g * bright)}, ${Math.floor(b * bright)}, ${alpha})`;
-        const pSize = options.dotSize * (0.6 + intensity * 0.55);
+        const pSize = (options.dotSize * 1.25) * (0.6 + intensity * 0.55);
         context.fillRect(x - pSize / 2, y - pSize / 2, pSize, pSize);
       }
     }

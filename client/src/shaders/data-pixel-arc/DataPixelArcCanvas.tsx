@@ -17,7 +17,16 @@ export function DataPixelArcCanvas({ className = "", ...props }: DataPixelArcCan
     let frame = 0;
     let visible = true;
     const resize = () => { const bounds = host.getBoundingClientRect(); renderer.resize(bounds.width, bounds.height); renderer.render(); };
-    const tick = () => { renderer.render(); frame = visible && !document.hidden ? requestAnimationFrame(tick) : 0; };
+    let lastTick = 0;
+    const interval = 1000 / 40;
+    const tick = (now?: number) => {
+      const timestamp = typeof now === "number" ? now : performance.now();
+      if (timestamp - lastTick >= interval) {
+        lastTick = timestamp - ((timestamp - lastTick) % interval);
+        renderer.render();
+      }
+      frame = visible && !document.hidden ? requestAnimationFrame(tick) : 0;
+    };
     const observer = new ResizeObserver(resize);
     const intersection = new IntersectionObserver(([entry]) => {
       visible = entry?.isIntersecting ?? true;

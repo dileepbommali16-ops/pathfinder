@@ -173,7 +173,7 @@ export const VoidFieldCanvas: React.FC<VoidFieldCanvasProps> = ({
     const resize = () => {
       const w = canvas.clientWidth || window.innerWidth;
       const h = canvas.clientHeight || window.innerHeight;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -183,23 +183,32 @@ export const VoidFieldCanvas: React.FC<VoidFieldCanvasProps> = ({
     resize();
 
     const startTime = performance.now();
+    let lastTick = 0;
+    const interval = 1000 / 40;
 
     const render = (time: number) => {
-      const elapsed = (time - startTime) / 1000.0;
+      if (document.hidden) {
+        animationId = requestAnimationFrame(render);
+        return;
+      }
+      if (time - lastTick >= interval) {
+        lastTick = time - ((time - lastTick) % interval);
+        const elapsed = (time - startTime) / 1000.0;
 
-      // Smooth mouse lerp
-      mouseX += (targetMouseX - mouseX) * 0.05;
-      mouseY += (targetMouseY - mouseY) * 0.05;
+        // Smooth mouse lerp
+        mouseX += (targetMouseX - mouseX) * 0.05;
+        mouseY += (targetMouseY - mouseY) * 0.05;
 
-      gl.uniform2f(iResLoc, canvas.width, canvas.height);
-      gl.uniform1f(iTimeLoc, elapsed);
-      gl.uniform2f(uMouseLoc, mouseX, mouseY);
-      gl.uniform1f(uSpeedLoc, speed);
-      gl.uniform1f(uBrightnessLoc, brightness);
+        gl.uniform2f(iResLoc, canvas.width, canvas.height);
+        gl.uniform1f(iTimeLoc, elapsed);
+        gl.uniform2f(uMouseLoc, mouseX, mouseY);
+        gl.uniform1f(uSpeedLoc, speed);
+        gl.uniform1f(uBrightnessLoc, brightness);
 
-      gl.clearColor(0.0, 0.0, 0.0, 0.0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      }
 
       animationId = requestAnimationFrame(render);
     };

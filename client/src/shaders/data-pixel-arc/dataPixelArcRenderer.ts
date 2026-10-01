@@ -39,7 +39,7 @@ export function createDataPixelArcRenderer(canvas: HTMLCanvasElement, getOptions
   const resize = (nextWidth: number, nextHeight: number) => {
     width = Math.max(1, nextWidth);
     height = Math.max(1, nextHeight);
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
     canvas.width = Math.round(width * pixelRatio);
     canvas.height = Math.round(height * pixelRatio);
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
@@ -53,15 +53,16 @@ export function createDataPixelArcRenderer(canvas: HTMLCanvasElement, getOptions
     const isLight = resolveMode(options.mode) === "light";
     context.fillStyle = isLight && lightBackground ? lightBackground : "#030308";
     context.fillRect(0, 0, width, height);
-    const cols = Math.ceil(width / options.pixelSize);
-    const rows = Math.ceil(height / options.pixelSize);
+    const pSize = Math.max(9, options.pixelSize);
+    const cols = Math.ceil(width / pSize);
+    const rows = Math.ceil(height / pSize);
     const arcCenterY = height * options.arcCenter;
     const arcDrop = height * options.arcDrop;
     const thickness = height * options.thickness;
     for (let x = 0; x < cols; x += 1) {
       for (let y = 0; y < rows; y += 1) {
-        const px = x * options.pixelSize;
-        const py = y * options.pixelSize;
+        const px = x * pSize;
+        const py = y * pSize;
         const nx = (px / width) * 2 - 1;
         const curveY = arcCenterY + Math.pow(Math.abs(nx), 1.8) * arcDrop;
         let intensity = Math.max(0, 1 - Math.abs(py - curveY) / thickness);
@@ -96,7 +97,7 @@ export function createDataPixelArcRenderer(canvas: HTMLCanvasElement, getOptions
         }
         context.fillStyle = `rgb(${r}, ${g}, ${b})`;
         context.globalAlpha = isLight ? Math.min(1, 0.22 + Math.pow(intensity, 0.68) * 0.78) : intensity;
-        context.fillRect(px, py, options.pixelSize - 1, options.pixelSize - 1);
+        context.fillRect(px, py, pSize - 1, pSize - 1);
       }
     }
     context.globalAlpha = 1;

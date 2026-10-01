@@ -15,6 +15,12 @@ import { Ambient3DBackground } from "@/components/dashboard/Ambient3DBackground"
 const rawApiBase = (import.meta.env.VITE_API_BASE_URL as string) || "http://127.0.0.1:8000";
 const API_BASE = rawApiBase.replace(/\/+$/, "");
 
+const fetchWithTimeout = (url: string, options: RequestInit = {}, timeoutMs = 6000): Promise<Response> => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(id));
+};
+
 const DEFAULT_PROFILE: StudentProfileState = {
   cgpa: 7.8,
   backlogs: 0,
@@ -142,16 +148,16 @@ export default function Home() {
       };
 
       const [predResp, skillResp] = await Promise.allSettled([
-        fetch(`${API_BASE}/api/predict`, {
+        fetchWithTimeout(`${API_BASE}/api/predict`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }),
-        fetch(`${API_BASE}/api/skill-gap`, {
+        }, 5000),
+        fetchWithTimeout(`${API_BASE}/api/skill-gap`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }),
+        }, 5000),
       ]);
 
       if (predResp.status === "fulfilled" && predResp.value.ok) {
@@ -217,7 +223,7 @@ export default function Home() {
   const fetchRoadmap = async () => {
     setIsRoadmapLoading(true);
     try {
-      const resp = await fetch(`${API_BASE}/api/ai/roadmap`, {
+      const resp = await fetchWithTimeout(`${API_BASE}/api/ai/roadmap`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -231,7 +237,7 @@ export default function Home() {
           branch: profile.branch,
           graduation_year: profile.graduationYear,
         }),
-      });
+      }, 10000);
       if (resp.ok) {
         const data = await resp.json();
         setRoadmap(data);
@@ -258,7 +264,7 @@ export default function Home() {
     setIsChatLoading(true);
 
     try {
-      const resp = await fetch(`${API_BASE}/api/ai/chat`, {
+      const resp = await fetchWithTimeout(`${API_BASE}/api/ai/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -275,7 +281,7 @@ export default function Home() {
             branch: profile.branch,
           }
         }),
-      });
+      }, 12000);
 
       if (resp.ok) {
         const data = await resp.json();
@@ -315,7 +321,7 @@ export default function Home() {
         gender: f.gender,
         skill: f.skill
       });
-      const resp = await fetch(`${API_BASE}/api/analytics?${q.toString()}`);
+      const resp = await fetchWithTimeout(`${API_BASE}/api/analytics?${q.toString()}`, {}, 6000);
       if (resp.ok) {
         const data = await resp.json();
         setCohortAnalytics(data);
@@ -334,7 +340,7 @@ export default function Home() {
         gender: cohortFilters.gender,
         skill: cohortFilters.skill
       });
-      const resp = await fetch(`${API_BASE}/api/ai/cohort-insight?${q.toString()}`, { method: "POST" });
+      const resp = await fetchWithTimeout(`${API_BASE}/api/ai/cohort-insight?${q.toString()}`, { method: "POST" }, 10000);
       if (resp.ok) {
         const data = await resp.json();
         setCohortInsight(data);
@@ -357,10 +363,10 @@ export default function Home() {
       if (file) formData.append("file", file);
       if (text) formData.append("resume_text", text);
 
-      const resp = await fetch(`${API_BASE}/api/ai/resume`, {
+      const resp = await fetchWithTimeout(`${API_BASE}/api/ai/resume`, {
         method: "POST",
         body: formData
-      });
+      }, 12000);
       if (resp.ok) {
         const data = await resp.json();
         setResumeFeedback(data);
