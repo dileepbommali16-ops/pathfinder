@@ -80,9 +80,9 @@ export function PredictiveArcCanvas(props: PredictiveArcCanvasProps) {
     const { speed = 1, brightness = 1, hue = 0, saturation = 1, className = "", spacing, dotSize, archHeight, thickness } = props;
     return (
       <div className={`threeui-background predictive-void-composite relative w-full h-full overflow-hidden ${className}`}>
-        {/* Layer 1: Raw WebGL Void Field */}
+        {/* Layer 1: Raw WebGL Void Field Dot Matrix */}
         <VoidFieldCanvas speed={speed} brightness={brightness} hue={hue} saturation={saturation} />
-        {/* Layer 2: Transparent Violet Predictive Pixel Arch with Luminous Animated Core */}
+        {/* Layer 2: Transparent Luminous Predictive Pixel Arch with Glowing Core */}
         <PredictiveArcCore
           mode="dark"
           speed={speed}
@@ -90,11 +90,15 @@ export function PredictiveArcCanvas(props: PredictiveArcCanvasProps) {
           hue={hue}
           saturation={saturation}
           transparent={true}
-          spacing={spacing}
-          dotSize={dotSize}
+          spacing={spacing ?? 6}
+          dotSize={dotSize ?? 6}
           archHeight={archHeight}
           thickness={thickness}
         />
+        {/* Cyberpunk Hybrid Matrix Watermark Accent */}
+        <div className="pointer-events-none absolute top-6 left-8 font-mono text-[9px] tracking-[0.3em] uppercase text-emerald-400/20 select-none hidden sm:block">
+          SYS.HYBRID.DUAL // VOID_042 x PREDICTIVE_ARC
+        </div>
       </div>
     );
   }

@@ -73,15 +73,16 @@ const FRAGMENT_SHADER = `
     // Randomized flicker
     float flicker = rand(vec2(iTime, id.y)) > 0.98 ? 0.4 : 1.0;
 
-    // Base color compilation (Tinted Monotone Violet)
+    // Base color compilation: Cyberpunk Violet with subtle Cyan/Emerald edge shimmer
+    vec3 tint = mix(vec3(0.72, 0.42, 1.0), vec3(0.25, 0.90, 0.75), dist * 0.6);
     vec3 col = vec3(circle * pulse * flicker);
-    col -= scanline;
-    col *= vec3(0.68, 0.36, 1.0) * uBrightness; // Violet tint
+    col -= scanline * 0.5;
+    col *= tint * uBrightness;
     
     // Vignette edge masking
-    col *= smoothstep(0.8, 0.2, dist);
+    col *= smoothstep(0.85, 0.15, dist);
 
-    gl_FragColor = vec4(col, circle * pulse * 0.85);
+    gl_FragColor = vec4(col, circle * (pulse * 0.85 + 0.15));
   }
 `;
 

@@ -84,15 +84,31 @@ function PredictiveArcRenderer({ className = "", ...props }: PredictiveVariantPr
     };
   }, []);
 
+  const isTransparent = Boolean(props.transparent ?? optionsRef.current.transparent);
+
   return (
     <div
       ref={hostRef}
       className={`threeui-background predictive-arc predictive-arc--${optionsRef.current.mode}${className ? ` ${className}` : ""}`}
       data-mode={optionsRef.current.mode}
+      style={{
+        position: isTransparent ? "absolute" : "relative",
+        inset: isTransparent ? 0 : undefined,
+        background: isTransparent ? "transparent" : undefined,
+        width: "100%",
+        height: "100%",
+      }}
     >
       <canvas
         ref={canvasRef}
-        style={{ filter: `hue-rotate(${optionsRef.current.hue}deg) saturate(${optionsRef.current.saturation})` }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          display: "block",
+          filter: optionsRef.current.hue || optionsRef.current.saturation !== 1 ? `hue-rotate(${optionsRef.current.hue}deg) saturate(${optionsRef.current.saturation})` : undefined,
+        }}
       />
     </div>
   );
