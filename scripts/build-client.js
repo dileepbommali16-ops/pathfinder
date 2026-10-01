@@ -18,21 +18,22 @@ while (projectRoot !== path.dirname(projectRoot)) {
 console.log(`[Pathfinder Build] Project root: ${projectRoot}`);
 console.log(`[Pathfinder Build] Execution directory: ${process.cwd()}`);
 
-// Locate vite executable
-let viteJs = path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');
-if (!fs.existsSync(viteJs)) {
-  const fallbackVite = path.resolve('node_modules', 'vite', 'bin', 'vite.js');
-  if (fs.existsSync(fallbackVite)) {
-    viteJs = fallbackVite;
-  }
-}
-
 const nodePath = process.execPath;
 const viteConfig = path.join(projectRoot, 'vite.config.ts');
+let viteJs = path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');
 
-console.log('[Pathfinder Build] Running Vite production build...');
+let buildCommand = '';
+if (fs.existsSync(viteJs)) {
+  buildCommand = `"${nodePath}" "${viteJs}" build --config "${viteConfig}"`;
+} else if (fs.existsSync(path.resolve('node_modules', 'vite', 'bin', 'vite.js'))) {
+  buildCommand = `"${nodePath}" "${path.resolve('node_modules', 'vite', 'bin', 'vite.js')}" build --config "${viteConfig}"`;
+} else {
+  buildCommand = `npx vite build --config "${viteConfig}"`;
+}
+
+console.log(`[Pathfinder Build] Executing: ${buildCommand}`);
 try {
-  execSync(`"${nodePath}" "${viteJs}" build --config "${viteConfig}"`, {
+  execSync(buildCommand, {
     cwd: projectRoot,
     stdio: 'inherit',
     env: { ...process.env, NODE_ENV: 'production' }
