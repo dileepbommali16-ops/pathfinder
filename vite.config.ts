@@ -1,10 +1,28 @@
-import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
-import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+
+// Safely load dev-only plugins without breaking production builds if absent
+let jsxLocPlugin: () => Plugin = () => ({ name: "noop-jsx-loc" });
+try {
+  const mod = require("@builder.io/vite-plugin-jsx-loc");
+  if (mod && mod.jsxLocPlugin) jsxLocPlugin = mod.jsxLocPlugin;
+} catch {
+  /* dev plugin optional */
+}
+
+let vitePluginManusRuntime: () => Plugin = () => ({ name: "noop-manus-runtime" });
+try {
+  const mod = require("vite-plugin-manus-runtime");
+  if (mod && mod.vitePluginManusRuntime) vitePluginManusRuntime = mod.vitePluginManusRuntime;
+} catch {
+  /* dev plugin optional */
+}
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
