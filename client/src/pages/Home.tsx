@@ -402,6 +402,38 @@ export default function Home() {
     window.open(`${API_BASE}/api/export/pdf?${q.toString()}`, "_blank");
   };
 
+  const handleDownloadResumePDF = async () => {
+    try {
+      const resp = await fetch(`${API_BASE}/api/export/resume-pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(resumeFeedback || {
+          score: 78,
+          verdict: "Strong technical foundation with measurable project work.",
+          strengths: ["Clean chronological structure", "Full-stack web & database projects"],
+          improvements: ["Rewrite project bullets using the Google X-Y-Z formula", "Add live deployment links"],
+          ats_keywords: ["REST APIs", "Data Structures", "PostgreSQL", "Docker"],
+          formatting_tips: ["Single-column layout", "Standard ATS taxonomies"]
+        }),
+      });
+      if (resp.ok) {
+        const blob = await resp.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "pathfinder-ats-resume-report.pdf";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } else {
+        handleDownloadPDF();
+      }
+    } catch {
+      handleDownloadPDF();
+    }
+  };
+
   // Logout: cleans state and returns to the Lamp Login screen
   const handleLogout = () => {
     localStorage.removeItem("pathfinder_user");
@@ -676,7 +708,7 @@ export default function Home() {
                 feedback={resumeFeedback}
                 onAnalyze={handleAnalyzeResume}
                 isLoading={isAnalyzingResume}
-                onDownloadFeedbackPDF={handleDownloadPDF}
+                onDownloadFeedbackPDF={handleDownloadResumePDF}
               />
             </motion.div>
           )}

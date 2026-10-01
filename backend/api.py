@@ -505,6 +505,19 @@ def export_csv_endpoint(
         raise HTTPException(status_code=500, detail="CSV export failed.")
 
 
+@app.post("/api/export/resume-pdf")
+def export_resume_pdf_endpoint(feedback: ResumeFeedback):
+    try:
+        pdf_bytes = generate_resume_pdf(feedback)
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=pathfinder-ats-resume-feedback.pdf"}
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Resume PDF export failed.")
+
+
 # Mount frontend SPA static bundle
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
