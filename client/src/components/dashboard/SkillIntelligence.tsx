@@ -25,6 +25,7 @@ import {
   CartesianGrid,
   Cell
 } from "recharts";
+import { FALLBACK_SKILLS_DATA } from "@/lib/fallbackData";
 
 export interface SkillMetric {
   skill: string;
@@ -65,12 +66,16 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
   onAskCoach,
   onNavigateTab,
 }) => {
-  const [skillAnalytics, setSkillAnalytics] = useState<SkillMetric[]>([]);
-  const [benchmarks, setBenchmarks] = useState<CanonicalBenchmark[]>([]);
-  const [baselineRate, setBaselineRate] = useState<number>(75.0);
-  const [selectedSkillName, setSelectedSkillName] = useState<string>("AIML + Python (Combined)");
+  const [skillAnalytics, setSkillAnalytics] = useState<SkillMetric[]>(
+    (FALLBACK_SKILLS_DATA.skillAnalytics || []) as unknown as SkillMetric[]
+  );
+  const [benchmarks, setBenchmarks] = useState<CanonicalBenchmark[]>(
+    (FALLBACK_SKILLS_DATA.canonicalBenchmarks || []) as unknown as CanonicalBenchmark[]
+  );
+  const [baselineRate, setBaselineRate] = useState<number>(FALLBACK_SKILLS_DATA.baselinePlacementRate || 75.0);
+  const [selectedSkillName, setSelectedSkillName] = useState<string>("AIML");
   const [mySkills, setMySkills] = useState<string[]>(["Python", "SQL"]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;

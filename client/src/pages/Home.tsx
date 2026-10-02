@@ -21,14 +21,18 @@ import { CareerMissionTracker } from "@/components/dashboard/CareerMissionTracke
 import { BranchIntelligence } from "@/components/dashboard/BranchIntelligence";
 import { SkillIntelligence } from "@/components/dashboard/SkillIntelligence";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
+import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
 
 // Base API URL: uses environment variable with fallback to FastAPI on 8000 or Render production backend
 const getApiBase = (): string => {
   if (typeof window !== "undefined") {
     const envUrl = import.meta.env.VITE_API_BASE_URL as string;
     if (envUrl && envUrl.trim()) return envUrl.replace(/\/+$/, "");
-    if (window.location.hostname.includes("vercel.app")) {
-      return "https://pathfinder-backend.onrender.com";
+    if (
+      window.location.hostname.includes("vercel.app") ||
+      (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")
+    ) {
+      return "https://pathfinder-1.onrender.com";
     }
   }
   return "http://127.0.0.1:8000";
@@ -361,7 +365,9 @@ export default function Home() {
     gender: "All",
     skill: "All"
   });
-  const [cohortAnalytics, setCohortAnalytics] = useState<CohortAnalyticsData | null>(null);
+  const [cohortAnalytics, setCohortAnalytics] = useState<CohortAnalyticsData | null>(
+    FALLBACK_COHORT_ANALYTICS as unknown as CohortAnalyticsData
+  );
   const [isSummarizingCohort, setIsSummarizingCohort] = useState(false);
   const [cohortInsight, setCohortInsight] = useState<{ headline: string; summary: string; actions: string[] } | null>(null);
 
@@ -618,26 +624,30 @@ export default function Home() {
               className="space-y-8"
             >
               {/* Hero KPI Metrics */}
-              <HeroMetrics
-                username={username}
-                chance={prediction.chance}
-                label={prediction.label}
-                tone={prediction.tone}
-                cgpa={profile.cgpa}
-                backlogs={profile.backlogs}
-                internships={profile.internships}
-                coding={profile.coding}
-                communication={profile.communication}
-                onNavigateTab={setActiveTab}
-              />
+              <div id="career-readiness-assessment">
+                <HeroMetrics
+                  username={username}
+                  chance={prediction.chance}
+                  label={prediction.label}
+                  tone={prediction.tone}
+                  cgpa={profile.cgpa}
+                  backlogs={profile.backlogs}
+                  internships={profile.internships}
+                  coding={profile.coding}
+                  communication={profile.communication}
+                  onNavigateTab={setActiveTab}
+                />
+              </div>
 
               {/* Career Digital Twin & Transparent Readiness Dimensions */}
-              <CareerDigitalTwin
-                profile={profile}
-                predictionChance={prediction.chance}
-                predictionTone={prediction.tone}
-                onNavigateTab={setActiveTab}
-              />
+              <div id="career-digital-twin">
+                <CareerDigitalTwin
+                  profile={profile}
+                  predictionChance={prediction.chance}
+                  predictionTone={prediction.tone}
+                  onNavigateTab={setActiveTab}
+                />
+              </div>
 
               {/* Personalized Next Best Action: What Should I Do Next? */}
               <NextActionsWidget

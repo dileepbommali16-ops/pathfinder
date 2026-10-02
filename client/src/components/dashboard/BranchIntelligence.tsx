@@ -27,6 +27,7 @@ import {
   CartesianGrid,
   Cell
 } from "recharts";
+import { FALLBACK_BRANCHES } from "@/lib/fallbackData";
 
 export interface BranchData {
   code: string;
@@ -79,9 +80,9 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
   onAskCoach,
   onNavigateTab,
 }) => {
-  const [branches, setBranches] = useState<BranchData[]>([]);
+  const [branches, setBranches] = useState<BranchData[]>(FALLBACK_BRANCHES as unknown as BranchData[]);
   const [activeCode, setActiveCode] = useState<string>(currentBranch || "CSE");
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;

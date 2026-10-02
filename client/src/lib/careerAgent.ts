@@ -98,6 +98,117 @@ Take your shot!`;
   }
 
   // -------------------------------------------------------------
+  // CAREER READINESS & LIVE CANDIDATE PROFILE ASSESSMENT
+  // (Handles "Analyze Career Readiness", "analye carreer readinesss", "how ready am i")
+  // -------------------------------------------------------------
+  const isReadinessQuery =
+    lower.includes("readiness") ||
+    lower.includes("carreer") ||
+    (lower.includes("ready") && (lower.includes("how") || lower.includes("am i") || lower.includes("placement") || lower.includes("career") || lower.includes("check") || lower.includes("analyze") || lower.includes("evaluate") || lower.includes("score") || lower.includes("chance"))) ||
+    (lower.includes("profile") && (lower.includes("analyze") || lower.includes("evaluate") || lower.includes("score") || lower.includes("chance") || lower.includes("probability") || lower.includes("review") || lower.includes("check") || lower.includes("readiness"))) ||
+    lower.includes("placement chance") ||
+    lower.includes("placement probability") ||
+    lower.includes("na readiness") ||
+    lower.includes("readiness check");
+
+  if (isReadinessQuery) {
+    const cgpa = Number(profile?.cgpa ?? 7.8);
+    const backlogs = Number(profile?.backlogs ?? 0);
+    const internships = Number(profile?.internships ?? 1);
+    const coding = Number(profile?.coding ?? 7);
+    const comm = Number(profile?.communication ?? 7);
+    const role = profile?.targetRole || "Software Development Engineer (SDE)";
+    const tier = profile?.targetTier || "Product Companies / Tier-1 MNCs";
+    const branch = profile?.branch || "CSE";
+
+    const raw = cgpa * 5.2 + Math.max(0, 3 - backlogs) * 4 + Math.min(internships, 3) * 5 + comm * 2.2 + coding * 2.7 - Math.max(backlogs - 1, 0) * 5;
+    const chance = Math.max(18.0, Math.min(96.0, Math.round(raw * 10) / 10));
+    const toneLabel = chance >= 75 ? "Strong Candidate Profile" : chance >= 55 ? "Steady Foundation (On Track)" : "Needs Strategic Acceleration";
+
+    const academicsScore = Math.min(100, Math.round(cgpa * 10));
+    const codingScore = Math.min(100, Math.round(coding * 10));
+    const expScore = Math.min(100, internships * 35);
+    const commScore = Math.min(100, Math.round(comm * 10));
+    const eligScore = Math.max(0, 100 - backlogs * 25);
+
+    if (isRomanTelugu(msg) || isTeluguScript(msg)) {
+      return `### 🎯 Pathfinder Career Readiness Intelligence Analysis (లైవ్ ప్రొఫైల్ రిపోర్ట్)
+
+**టార్గెట్ రోల్:** ${role} | **కంపెనీ టైర్:** ${tier} | **బ్రాంచ్:** ${branch}
+
+---
+
+#### 1. 📊 Executive Placement Probability
+- **ప్లేస్‌మెంట్ రెడీనెస్ స్కోర్:** **\`${chance}%\`** — **${toneLabel}**
+- **డ్రైవ్ ఎలిజిబిలిటీ:** ${cgpa >= 7.5 && backlogs === 0 ? "✅ Tier-1 కంపెనీల కటాఫ్ (CGPA >= 7.5, 0 Backlogs) క్లియర్ అయింది!" : "⚠️ శ్రద్ధ వహించండి: బ్యాక్‌లాగ్స్ క్లియర్ చేసి CGPA >= 7.5 కి పెంచితే అన్ని Tier-1 కంపెనీలకు ఎలిజిబుల్ అవుతారు."}
+
+---
+
+#### 2. 🧭 మల్టీ-డైమెన్షనల్ వెక్టర్స్ బ్రేక్‌డౌన్
+| డైమెన్షన్ | స్కోర్ | స్టేటస్ |
+| :--- | :---: | :--- |
+| **అకడమిక్స్ & CGPA** | \`${academicsScore}%\` | CGPA ${cgpa.toFixed(1)}/10.0 |
+| **కోడింగ్ & DSA** | \`${codingScore}%\` | లెవెల్ ${coding}/10 |
+| **ప్రాక్టికల్ ప్రాజెక్ట్స్ & ఇంటర్న్‌షిప్స్** | \`${expScore}%\` | ${internships} ఇంటర్న్‌షిప్(లు) |
+| **కమ్యూనికేషన్ & ఇంటర్వ్యూ డిఫెన్స్** | \`${commScore}%\` | లెవెల్ ${comm}/10 |
+| **క్యాంపస్ ఎలిజిబిలిటీ** | \`${eligScore}%\` | ${backlogs} యాక్టివ్ బ్యాక్‌లాగ్స్ |
+
+---
+
+#### 3. 🚀 మీ తదుపరి 3 ముఖ్యమైన స్టెప్స్
+1. **Blind 75 DSA:** రోజూ 2 Two Pointers / Sliding Window మీడియం ప్రాబ్లమ్స్ సాల్వ్ చేయండి.
+2. **లైవ్ ప్రాజెక్ట్ డెప్లాయ్‌మెంట్:** GitHub లో README + లైవ్ Vercel/Render లింక్ ఉన్న ఫ్లాగ్‌షిప్ ప్రాజెక్ట్ డెప్లాయ్ చేయండి.
+3. **STAR ఇంటర్వ్యూ ప్రాక్టీస్:** ప్రాజెక్ట్ ట్రేడ్-ఆఫ్స్ ని STAR ఫార్మాట్ లో వివరించడం ప్రాక్టీస్ చేయండి.
+
+ఇప్పుడే **30-Day Sprint Roadmap** లేదా **Mock Interview** స్టార్ట్ చేద్దామా?`;
+    }
+
+    return `### 🎯 Pathfinder Career Readiness Intelligence Assessment
+
+**Target Role:** ${role} | **Target Tier:** ${tier} | **Department:** ${branch}
+
+---
+
+#### 1. 📊 Executive Placement Probability
+- **Placement Readiness Score:** **\`${chance}%\`** — **${toneLabel}**
+- **Drive Screening Clearance:** ${cgpa >= 7.5 && backlogs === 0 ? "✅ Tier-1 MNC Cutoffs Cleared (CGPA >= 7.5, 0 Active Backlogs)" : "⚠️ Tier-1 Cutoff Warning: Ensure CGPA >= 7.5 and 0 active backlogs to clear enterprise screening filters"}
+- **Candidate Benchmark:** Performing in the **Top ${Math.min(95, Math.max(15, Math.round(chance * 1.05)))}th percentile** of evaluated profiles for the Class of 2026.
+
+---
+
+#### 2. 🧭 Multi-Dimensional Career Readiness Vectors
+| Readiness Dimension | Score | Status & Candidate Benchmark |
+| :--- | :---: | :--- |
+| **Academics & Eligibility** | \`${academicsScore}%\` | CGPA ${cgpa.toFixed(1)}/10.0 (${cgpa >= 8.0 ? "Distinction" : cgpa >= 7.5 ? "Solid Standing" : "Needs Elevation to 7.5+"}) |
+| **Coding & DSA Foundation** | \`${codingScore}%\` | Level ${coding}/10 (${coding >= 7 ? "Screening Ready" : "Focus on Blind 75 High-Frequency Patterns"}) |
+| **Practical Engineering** | \`${expScore}%\` | ${internships} Verified Internship(s) (${internships > 0 ? "Proven Practical Exposure" : "Flagship Deployed Project Required"}) |
+| **Communication & STAR Defense** | \`${commScore}%\` | Confidence ${comm}/10 (${comm >= 7 ? "Ready for Technical Defense" : "Practice structured STAR answering"}) |
+| **Drive Eligibility Ratio** | \`${eligScore}%\` | ${backlogs} Active Backlog(s) (${backlogs === 0 ? "100% Eligible across all drives" : "Priority: Clear backlogs before final semester"}) |
+
+---
+
+#### 3. 🏆 Core Candidate Strengths
+- ${cgpa >= 7.5 && backlogs === 0 ? "High academic consistency clearing Tier-1 recruitment filters with zero backlogs." : "Eligible for standard and product drives with solid foundation."}
+- ${internships > 0 ? "Practical software exposure demonstrated through verified internship experience." : "Academic coursework foundation ready to be translated into live deployed architecture."}
+- ${coding >= 7 ? "Strong analytical problem-solving foundation with competitive DSA confidence." : "Ready to build structured algorithmic intuition through targeted patterns."}
+
+---
+
+#### 4. ⚠️ Priority Growth Areas for ${role}
+- ${coding >= 7 ? "Master advanced graph traversals and dynamic programming to guarantee round 2 technical clearance." : "Target Blind 75 high-frequency LeetCode patterns (Two Pointers, Sliding Window, Monotonic Stack)."}
+- ${comm >= 7 ? "Prepare deep STAR-format architectural defense for project scaling and database connection bottlenecks." : "Elevate articulation of technical trade-offs, time complexities, and project design decisions."}
+
+---
+
+#### 5. 🚀 Actionable 3-Step Milestone Plan
+1. **Algorithmic Sprints (Days 1–15):** Solve 2 LeetCode medium problems daily focusing on Two Pointers & Sliding Window.
+2. **Flagship Deployment (Days 16–25):** Deploy a production-grade backend or full-stack application with live API links and clean GitHub README.
+3. **Mock Technical Defense (Days 26–30):** Practice 3 mock technical rounds with Pathfinder AI Coach focusing on system design & edge cases.
+
+Would you like to generate your **custom 30-Day Sprint Roadmap** or start an **interactive Mock Interview** now?`;
+  }
+
+  // -------------------------------------------------------------
   // 2. CASUAL CHAT & WARM HUMAN MIRRORING
   // -------------------------------------------------------------
   if (lower.includes("love you") || lower.includes("love u")) {

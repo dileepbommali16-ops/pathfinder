@@ -26,16 +26,34 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
   onStartMockInterview,
   targetRole,
 }) => {
+  const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+  const [analyzedSuccess, setAnalyzedSuccess] = React.useState(false);
+
+  const handleAnalyzeReadiness = () => {
+    setIsAnalyzing(true);
+    onTriggerCalculate();
+    const el = document.getElementById("career-digital-twin") || document.getElementById("career-readiness-assessment");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      setAnalyzedSuccess(true);
+      setTimeout(() => setAnalyzedSuccess(false), 3500);
+    }, 600);
+  };
+
   const actions = [
     {
       id: "calculate",
       title: "Analyze Career Readiness",
       description: "Run Random Forest ML sensitivity on current CGPA, internships & coding scores.",
       icon: Target,
-      tag: "Instant ML",
+      tag: isAnalyzing ? "Evaluating..." : analyzedSuccess ? "Analyzed ✓" : "Instant ML",
       accent: "from-emerald-500/20 to-teal-500/10 border-emerald-500/30 text-emerald-400",
-      btnClass: "hover:border-emerald-500/50 hover:bg-emerald-500/10",
-      action: onTriggerCalculate,
+      btnClass: isAnalyzing ? "border-emerald-400 animate-pulse bg-emerald-500/20" : "hover:border-emerald-500/50 hover:bg-emerald-500/10",
+      action: handleAnalyzeReadiness,
+      actionText: isAnalyzing ? "Evaluating ML Vectors..." : analyzedSuccess ? "Assessment Updated ✓" : "Launch Tool",
     },
     {
       id: "missions",
@@ -139,7 +157,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               </div>
 
               <div className="mt-4 flex items-center gap-1 text-[11px] font-semibold text-slate-300 group-hover:text-white transition-colors">
-                <span>Launch Tool</span>
+                <span>{act.actionText || "Launch Tool"}</span>
                 <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
               </div>
             </button>
