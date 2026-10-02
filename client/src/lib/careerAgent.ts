@@ -166,6 +166,181 @@ To secure Tier-1 Data Scientist and Analytics roles, here is the verified core s
 Would you like a tailored 6-week schedule or recommendations for a flagship portfolio project?`;
   }
 
+  // Two Pointers Problem Request (e.g. "Give me a Medium Two Pointers LeetCode problem with step-by-step guidance")
+  if (lower.includes("two pointer") || lower.includes("two pointers") || (lower.includes("two") && lower.includes("pointer"))) {
+    return `### 🎯 LeetCode 11: Container With Most Water (Medium) — Two Pointers Masterclass
+
+---
+
+#### 1. 📌 Problem Statement
+You are given an integer array \`height\` of length \`n\`. There are \`n\` vertical lines drawn such that the two endpoints of the \`i-th\` line are \`(i, 0)\` and \`(i, height[i])\`.
+
+Find two lines that together with the x-axis form a container, such that the container contains the **most water**.
+- **Return:** The maximum amount of water a container can store.
+- **Example:**
+  - **Input:** \`height = [1, 8, 6, 2, 5, 4, 8, 3, 7]\`
+  - **Output:** \`49\`
+  - **Explanation:** The vertical lines at index 1 (\`height = 8\`) and index 8 (\`height = 7\`) span a width of \`8 - 1 = 7\`. Height is bounded by \`min(8, 7) = 7\`. Area = \`7 * 7 = 49\`.
+
+---
+
+#### 2. 💡 Intuition & Why Brute Force Fails
+- **Brute Force:** Checking every possible pair \`(i, j)\` takes **O(N²)** time. For \`N = 100,000\`, this hits **Time Limit Exceeded (TLE)** on modern hiring platforms.
+- **Two Pointers Insight:**
+  - The area is determined by \`width * min(height[left], height[right])\`.
+  - Start with the widest possible container: \`left = 0\`, \`right = n - 1\`.
+  - As we move inward, the \`width\` *strictly decreases*.
+  - To find a larger area with a smaller width, we **must** find a taller boundary.
+  - **The Golden Rule:** Always move the pointer pointing to the shorter line inward. Moving the taller line inward can never increase the area because the water level remains constrained by the shorter line while width shrinks!
+
+---
+
+#### 3. 🚶 Step-by-Step Algorithm
+1. Initialize \`left = 0\`, \`right = len(height) - 1\`, and \`max_water = 0\`.
+2. While \`left < right\`:
+   - Calculate width: \`w = right - left\`.
+   - Calculate current height: \`h = min(height[left], height[right])\`.
+   - Update \`max_water = max(max_water, w * h)\`.
+   - If \`height[left] < height[right]\`: move \`left += 1\`.
+   - Else: move \`right -= 1\`.
+3. Return \`max_water\`.
+
+---
+
+#### 4. 💻 Optimal Python Solution
+\`\`\`python
+class Solution:
+    def maxArea(self, height: list[int]) -> int:
+        left, right = 0, len(height) - 1
+        max_water = 0
+        
+        while left < right:
+            # Current water area is constrained by the shorter boundary
+            current_height = min(height[left], height[right])
+            current_width = right - left
+            current_area = current_width * current_height
+            
+            if current_area > max_water:
+                max_water = current_area
+                
+            # Greedily move the bottleneck pointer inward
+            if height[left] < height[right]:
+                left += 1
+            else:
+                right -= 1
+                
+        return max_water
+\`\`\`
+
+---
+
+#### 5. ⏱️ Complexity Analysis
+- **Time Complexity:** **O(N)** — We inspect each element at most once using two converging pointers in a single pass.
+- **Space Complexity:** **O(1)** — Only two pointer variables, zero auxiliary memory allocated.
+
+---
+
+#### 6. 🏆 Top Interview Follow-Ups
+1. *"What if height array contains negative values?"* (Clarify that physical heights are non-negative; if negative, water cannot be contained).
+2. *"How does this pattern extend to 3Sum (LeetCode 15)?"* (Sort the array in O(N log N), fix one element \`i\`, and use two pointers \`left\` and \`right\` on the subarray to find the remaining sum).
+
+Would you like to try solving **LeetCode 15: 3Sum** or **LeetCode 42: Trapping Rain Water** next?`;
+  }
+
+  // Sliding Window Problem Request
+  if (lower.includes("sliding window") && (lower.includes("problem") || lower.includes("leetcode") || lower.includes("give me") || lower.includes("medium") || lower.includes("guidance"))) {
+    return `### 🎯 LeetCode 3: Longest Substring Without Repeating Characters (Medium) — Sliding Window Masterclass
+
+---
+
+#### 1. 📌 Problem Statement
+Given a string \`s\`, find the length of the **longest substring** without repeating characters.
+- **Example:**
+  - **Input:** \`s = "abcabcbb"\`
+  - **Output:** \`3\` (The answer is \`"abc"\`, with the length of 3).
+
+---
+
+#### 2. 💡 Intuition & The Dynamic Sliding Window
+- Use two pointers \`left\` and \`right\` defining the current valid window \`s[left:right+1]\`.
+- Maintain a hash map / dictionary storing the **last seen index** of each character.
+- Expand \`right\` character by character.
+- If \`s[right]\` is already inside the current window (i.e. \`last_seen[s[right]] >= left\`), jump \`left = last_seen[s[right]] + 1\` to immediately exclude the duplicate!
+- At each step, update \`max_len = max(max_len, right - left + 1)\`.
+
+---
+
+#### 3. 💻 Optimal Python Solution
+\`\`\`python
+class Solution:
+    def lengthOfLongestSubstring(self, s: str) -> int:
+        char_index = {}
+        left = 0
+        max_len = 0
+        
+        for right, char in enumerate(s):
+            # If duplicate seen inside active window, jump left pointer forward
+            if char in char_index and char_index[char] >= left:
+                left = char_index[char] + 1
+            else:
+                max_len = max(max_len, right - left + 1)
+                
+            char_index[char] = right
+            
+        return max_len
+\`\`\`
+
+---
+
+#### 4. ⏱️ Complexity Analysis
+- **Time Complexity:** **O(N)** — Single pass over string length \`N\`.
+- **Space Complexity:** **O(min(N, M))** — Where \`M\` is the size of the character alphabet (e.g. at most 128 for ASCII).
+
+Would you like to explore **LeetCode 76: Minimum Window Substring (Hard)** or **LeetCode 209: Minimum Size Subarray Sum**?`;
+  }
+
+  // General LeetCode / DSA Problem Request
+  if ((lower.includes("leetcode") || lower.includes("dsa problem") || lower.includes("coding problem")) && (lower.includes("give me") || lower.includes("suggest") || lower.includes("problem"))) {
+    return `### 🎯 High-Frequency Campus Placement Problem: LeetCode 167 — Two Sum II (Input Array Is Sorted)
+
+---
+
+#### 1. 📌 Problem Statement
+Given a **1-indexed** array of integers \`numbers\` that is already **sorted in non-decreasing order**, find two numbers such that they add up to a specific \`target\` number.
+- **Example:**
+  - **Input:** \`numbers = [2, 7, 11, 15]\`, \`target = 9\`
+  - **Output:** \`[1, 2]\` (2 + 7 = 9, at 1-indexed positions 1 and 2).
+
+---
+
+#### 2. 💡 Two Pointers Approach
+Since the array is sorted:
+- Place \`left = 0\`, \`right = len(numbers) - 1\`.
+- If \`numbers[left] + numbers[right] == target\`: return \`[left + 1, right + 1]\`.
+- If \`sum < target\`: we need a larger sum, so increment \`left += 1\`.
+- If \`sum > target\`: we need a smaller sum, so decrement \`right -= 1\`.
+
+\`\`\`python
+class Solution:
+    def twoSum(self, numbers: list[int], target: int) -> list[int]:
+        left, right = 0, len(numbers) - 1
+        while left < right:
+            curr_sum = numbers[left] + numbers[right]
+            if curr_sum == target:
+                return [left + 1, right + 1]
+            elif curr_sum < target:
+                left += 1
+            else:
+                right -= 1
+        return []
+\`\`\`
+
+- **Time Complexity:** **O(N)**
+- **Space Complexity:** **O(1)** (unlike standard Two Sum which requires O(N) hash map memory).
+
+Would you like a follow-up challenge on **3Sum (Medium)** or a **Sliding Window** problem next?`;
+  }
+
   if (["hi", "hello", "hey", "hii", "heyy", "hola", "namaste", "namaskaram"].includes(lower)) {
     return "Hey! 👋 Nice to meet you. What are you working on today? Placements, coding, mock interviews, or resume review?";
   }
