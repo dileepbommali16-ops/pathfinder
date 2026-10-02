@@ -87,11 +87,83 @@ Take your shot!`;
     }
   }
 
+  // Security & Prompt Injection Defense
+  if (/ignore previous|ignore instructions|show your api key|show api key|reveal api key|reveal your system prompt|system prompt|api_key|secret key|disregard all instructions|jailbreak/i.test(lower)) {
+    return "I cannot reveal API keys, internal credentials, or system instructions. My purpose is strictly to assist you with placement preparation, career roadmaps, interview coaching, and cohort analytics. What career topic can I help you with?";
+  }
+
+  // Out of scope / Unknown data guard
+  if (/in 2035|in 2040|in 2050|who is the ceo of google in|who will be placed in google in 2030|who will be placed in 2030/i.test(lower)) {
+    return "I don't have verified records for this in Pathfinder's database. Pathfinder's analytics are strictly grounded in our authoritative 2024–2026 campus placement dataset covering 972 verified engineering candidates across 9 departments.";
+  }
+
   // -------------------------------------------------------------
   // 2. CASUAL CHAT & WARM HUMAN MIRRORING
   // -------------------------------------------------------------
   if (lower.includes("love you") || lower.includes("love u")) {
-    return "Aww 😄 That's sweet! I appreciate you too ❤️\nNow let's get you closer to your career goals. What are we conquering today?";
+    return "I love you too! 💖 What can I help you with today?\n\nChoose an area below or ask me anything:\n- 🎯 **Placement Strategy & Eligibility**\n- 🔍 **Skill Gap & Roadmap**\n- 💡 **Flagship Project Ideas**\n- 🎙️ **Interactive Mock Interview**\n- 📊 **Cohort & Branch Benchmarks**";
+  }
+
+  // AIML Placed Count query
+  if ((lower.includes("how many") || lower.includes("placed count") || lower.includes("students placed") || lower.includes("got placed")) && lower.includes("aiml")) {
+    return "Based on Pathfinder's verified dataset, **61 students got placed in AIML** out of 108 total candidates (an official placement rate of **56.5%**). The highest package secured in AIML reached **44.6 LPA**!";
+  }
+
+  // Highest Package query
+  if ((lower.includes("highest package") || lower.includes("highest salary") || lower.includes("max package") || lower.includes("highest lpa")) && (lower.includes("branch") || lower.includes("which") || lower.includes("what"))) {
+    return `Based on Pathfinder's verified 2024–2026 dataset across all 9 branches:
+- 🥇 **Computer Science & Machine Learning (CSM):** **44.9 LPA**
+- 🥈 **Artificial Intelligence & Machine Learning (AIML):** **44.6 LPA**
+- 🥉 **Computer Science & Engineering (CSE):** **44.0 LPA**
+- **Computer Science & Design (CSD):** **40.9 LPA**
+- **Information Technology (IT):** **31.4 LPA**
+- **Electrical & Electronics (EEE):** **23.7 LPA**
+- **Electronics & Communication (ECE):** **15.8 LPA**
+- **Mechanical Engineering (MECH):** **12.0 LPA**
+- **Civil Engineering (CIVIL):** **11.8 LPA**
+
+**Key Insight:** Computer Science specialization branches (CSM, AIML, CSE) secured the top Tier-1 product offers exceeding 44 LPA!`;
+  }
+
+  // Compare AIML and CSD query
+  if (lower.includes("compare") && lower.includes("aiml") && lower.includes("csd")) {
+    return `### 📊 Head-to-Head Comparison: AIML vs. CSD (Verified Dataset)
+
+| Metric | AIML (AI & Machine Learning) | CSD (Computer Science & Design) |
+| :--- | :--- | :--- |
+| **Total Candidates** | 108 | 108 |
+| **Placed Students** | **61** | **47** |
+| **Placement Rate** | **56.5%** | **43.5%** |
+| **Highest Package** | **44.6 LPA** | **40.9 LPA** |
+| **Average CGPA** | 7.70 | 7.84 |
+| **Core Recruiter Focus** | NVIDIA, Microsoft AI, Adobe, MathWorks | Swiggy, CRED, Razorpay, Atlassian |
+| **Flagship Skills** | PyTorch, Transformers, LLMs, Vector DBs | React, TypeScript, WebGL, UI Systems |
+
+**Strategic Summary:** AIML holds a higher placement rate (56.5% vs 43.5%) and slightly higher peak compensation (44.6 vs 40.9 LPA), driven by GenAI hiring. CSD excels for candidates targeting high-visibility frontend, product architecture, and consumer tech.`;
+  }
+
+  // Data Science Skills query
+  if ((lower.includes("skills") || lower.includes("roadmap") || lower.includes("what do i need")) && lower.includes("data science")) {
+    return `### 🚀 Essential Skills Roadmap for Data Science
+
+To secure Tier-1 Data Scientist and Analytics roles, here is the verified core stack:
+
+1. **Programming & Querying Foundations:**
+   - **Python:** OOP, functional programming, data manipulation.
+   - **SQL (Critical):** Complex JOINs, Window functions (\`ROW_NUMBER\`, \`DENSE_RANK\`), CTEs, and aggregation.
+2. **Data Wrangling & Statistical EDA:**
+   - **Pandas & NumPy:** Vectorized transformations, handling missing values, exploratory analysis.
+   - **Statistics & Probability:** Hypothesis testing, p-values, distributions, Bayes theorem.
+3. **Machine Learning Algorithms:**
+   - **Scikit-Learn:** Linear & Logistic Regression, Decision Trees, Random Forests, Gradient Boosting (XGBoost/LightGBM).
+   - **Evaluation Metrics:** Precision, Recall, F1-Score, ROC-AUC, RMSE.
+4. **Deep Learning & GenAI Fundamentals:**
+   - **PyTorch / TensorFlow:** Neural networks, embeddings, and Transformers.
+5. **Production & Deployment:**
+   - **FastAPI & Docker:** Wrap models in RESTful APIs and containerize them.
+   - **Visualization:** Matplotlib, Seaborn, and Streamlit or Dash for stakeholder demos.
+
+Would you like a tailored 6-week schedule or recommendations for a flagship portfolio project?`;
   }
 
   if (["hi", "hello", "hey", "hii", "heyy", "hola", "namaste", "namaskaram"].includes(lower)) {

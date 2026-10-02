@@ -60,7 +60,7 @@ class AIUsageBudgetManager:
         return True, entry["count"], self.daily_limit
 
 
-ai_budget_manager = AIUsageBudgetManager(daily_limit=60)
+ai_budget_manager = AIUsageBudgetManager(daily_limit=200)
 
 # ==========================================
 # 3. CLIENT IDENTIFICATION HELPER

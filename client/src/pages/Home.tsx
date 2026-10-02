@@ -99,6 +99,8 @@ export default function Home() {
     return "candidate@pathfinder.ai";
   });
 
+  const [isServerWakingUp, setIsServerWakingUp] = useState<boolean>(false);
+
   useEffect(() => {
     // Read session parameters from window or URL query params if present
     const params = new URLSearchParams(window.location.search);
@@ -135,8 +137,6 @@ export default function Home() {
       clearInterval(keepAlive);
     };
   }, []);
-
-  const [isServerWakingUp, setIsServerWakingUp] = useState<boolean>(false);
 
   const handleLogin = (user: { username: string; email: string }) => {
     setUsername(user.username);
@@ -332,7 +332,7 @@ export default function Home() {
             branch: profile.branch,
           }
         }),
-      }, 7000);
+      }, 18000);
 
       if (resp.ok) {
         const data = await resp.json();
