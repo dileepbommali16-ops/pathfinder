@@ -4,10 +4,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
 from backend.models import StudentProfile, PredictionResult
-
-ROOT_DIR = Path(__file__).resolve().parent.parent
-STUDENTS_CSV = ROOT_DIR / "students.csv"
-PLACEMENT_CSV = ROOT_DIR / "sample-placement-2024-2026.csv"
+from backend.data_service import get_placement_df
 
 _cached_model = None
 _cached_features = None
@@ -19,24 +16,17 @@ def get_trained_model() -> Tuple[RandomForestClassifier, List[str]]:
         return _cached_model, _cached_features
 
     features = ["cgpa", "backlogs", "internships", "communication_score", "coding_score"]
-    training_file = STUDENTS_CSV if STUDENTS_CSV.exists() else PLACEMENT_CSV
+    df = get_placement_df().copy()
+    if df.empty:
+        raise RuntimeError("No placement records available in data service.")
 
-    if not training_file.exists():
-        raise FileNotFoundError("Neither students.csv nor sample-placement-2024-2026.csv was found.")
-
-    training = pd.read_csv(training_file)
     col_map = {
         "communicationScore": "communication_score",
         "codingScore": "coding_score"
     }
-    training = training.rename(columns=col_map)
-
-    # Validate required columns
-    for col in features + ["placed"]:
-        if col not in training.columns:
-            # Fall back to placement data if columns missing
-            training = pd.read_csv(PLACEMENT_CSV).rename(columns=col_map)
-            break
+    training = df.rename(columns=col_map)
+    if "backlogs" not in training.columns:
+        training["backlogs"] = 0
 
     model = RandomForestClassifier(n_estimators=120, random_state=42)
     model.fit(training[features], training["placed"])

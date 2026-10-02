@@ -1,11 +1,39 @@
 services:
+  # ----------------------------------------------------------------------------
+  # Backend Web Service (FastAPI + AI Agent + ML Engine + Data Service)
+  # ----------------------------------------------------------------------------
   - type: web
     name: pathfinder-backend
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn backend.api:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
+    healthCheckPath: /api/health
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: http://localhost:3000,http://localhost:5173
+
+  # ----------------------------------------------------------------------------
+  # Optional: Frontend Static Site (Vite / React 19 Client on Render)
+  # ----------------------------------------------------------------------------
+  - type: static
+    name: pathfinder-frontend
+    buildCommand: npm install && npm run build:client
+    staticPublishPath: dist/public
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: VITE_API_BASE_URL
+        value: https://pathfinder-backend.onrender.com

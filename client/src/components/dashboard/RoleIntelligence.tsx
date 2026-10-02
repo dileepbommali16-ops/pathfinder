@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Compass,
@@ -22,13 +22,14 @@ interface RoleIntelligenceProps {
   currentProfile: StudentProfileState;
   onUpdateTargetRole: (newRole: string) => void;
   onNavigateTab: (tabId: any) => void;
+  apiBase?: string;
 }
 
 interface RoleBlueprint {
   id: string;
   title: string;
-  tier: "Tier-1 Product" | "Enterprise High-Scale" | "AI Startup / Growth";
-  alignment: number; // base alignment with candidate
+  tier: string;
+  alignment?: number;
   requiredSkills: string[];
   existingSkills: string[];
   missingSkills: string[];
@@ -202,10 +203,29 @@ const ROLES_DATA: RoleBlueprint[] = [
 export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
   currentProfile,
   onUpdateTargetRole,
-  onNavigateTab
+  onNavigateTab,
+  apiBase,
 }) => {
+  const [roles, setRoles] = useState<RoleBlueprint[]>(ROLES_DATA);
   const [selectedRoleId, setSelectedRoleId] = useState<string>("sde");
-  const activeRole = ROLES_DATA.find(r => r.id === selectedRoleId) || ROLES_DATA[0];
+
+  useEffect(() => {
+    if (!apiBase) return;
+    let isMounted = true;
+    fetch(`${apiBase}/api/data/roles`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data && Array.isArray(data) && data.length > 0) {
+          setRoles(data);
+        }
+      })
+      .catch((err) => console.warn("Roles API fetch warning:", err));
+    return () => {
+      isMounted = false;
+    };
+  }, [apiBase]);
+
+  const activeRole = roles.find(r => r.id === selectedRoleId) || roles[0];
 
   const handleSelectRole = (role: RoleBlueprint) => {
     setSelectedRoleId(role.id);
@@ -250,7 +270,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
 
         {/* Role Selector Chips */}
         <div className="mt-6 flex flex-wrap gap-2">
-          {ROLES_DATA.map(r => {
+          {roles.map(r => {
             const isSelected = r.id === selectedRoleId;
             return (
               <button
@@ -265,9 +285,9 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
               >
                 <span>{r.title}</span>
                 <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-black ${
-                  r.alignment >= 80 ? "bg-emerald-500/20 text-emerald-300" : "bg-cyan-500/20 text-cyan-300"
+                  (r.alignment ?? 0) >= 80 ? "bg-emerald-500/20 text-emerald-300" : "bg-cyan-500/20 text-cyan-300"
                 }`}>
-                  {r.alignment}% Match
+                  {r.alignment ?? 0}% Match
                 </span>
               </button>
             );

@@ -30,8 +30,12 @@ export interface CohortAnalyticsData {
   placement_rate: number;
   avg_cgpa: number;
   avg_coding_score: number;
+  avg_package?: number;
+  median_package?: number;
+  highest_package?: number;
   branch_distribution: Array<{ branch: string; total: number; placed: number; placement_rate: number }>;
   skill_distribution: Array<{ skill: string; total: number; placed: number; placement_rate: number }>;
+  year_distribution?: Array<{ year: number; total: number; placed: number; unplaced: number; placement_rate: number; avg_package: number }>;
   cgpa_bands: Array<{ band: string; total: number; placed: number; placement_rate: number }>;
   available_years: number[];
   available_branches: string[];
@@ -182,21 +186,40 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
         </div>
 
-        {/* 3 Metric Cards for Filtered Results */}
-        <div className="mt-5 grid grid-cols-3 gap-3 border-t border-slate-800/80 pt-5">
+        {/* 6 Metric Cards for Filtered Results */}
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-6 border-t border-slate-800/80 pt-5">
           <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-3 text-center">
-            <span className="text-[11px] text-slate-400">Matching Candidates</span>
-            <p className="mt-1 text-2xl font-black text-white">{analytics?.total_records || 0}</p>
+            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Total Students</span>
+            <p className="mt-1 text-xl font-black text-white">{analytics?.total_records || 0}</p>
           </div>
 
           <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-            <span className="text-[11px] text-emerald-400">Placement Rate</span>
-            <p className="mt-1 text-2xl font-black text-emerald-400">{analytics?.placement_rate.toFixed(1) || 0}%</p>
+            <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold">Placed</span>
+            <p className="mt-1 text-xl font-black text-emerald-400">{analytics?.placed_count || 0}</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-3 text-center">
-            <span className="text-[11px] text-slate-400">Average CGPA</span>
-            <p className="mt-1 text-2xl font-black text-cyan-400">{analytics?.avg_cgpa.toFixed(2) || "—"}</p>
+            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Unplaced</span>
+            <p className="mt-1 text-xl font-black text-slate-300">{analytics?.unplaced_count || 0}</p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-center">
+            <span className="text-[10px] uppercase tracking-wider text-emerald-300 font-semibold">Placement Rate</span>
+            <p className="mt-1 text-xl font-black text-emerald-300">{analytics ? `${analytics.placement_rate.toFixed(1)}%` : "—"}</p>
+          </div>
+
+          <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-center">
+            <span className="text-[10px] uppercase tracking-wider text-cyan-400 font-semibold">Avg Package</span>
+            <p className="mt-1 text-xl font-black text-cyan-400">
+              {analytics?.avg_package ? `${analytics.avg_package.toFixed(1)} LPA` : "—"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
+            <span className="text-[10px] uppercase tracking-wider text-amber-400 font-semibold">Highest Package</span>
+            <p className="mt-1 text-xl font-black text-amber-300">
+              {analytics?.highest_package ? `${analytics.highest_package.toFixed(1)} LPA` : "—"}
+            </p>
           </div>
         </div>
       </div>
@@ -273,6 +296,35 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             </ResponsiveContainer>
           </div>
         </div>
+
+        {/* Year-over-Year Class Trends */}
+        {analytics?.year_distribution && analytics.year_distribution.length > 0 && (
+          <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6 shadow-xl backdrop-blur-xl lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-white">Year-over-Year Placement Conversion & Average Compensation</h3>
+                <p className="text-xs text-slate-400">Class of 2024, 2025, and 2026 progression across 972 verified candidates</p>
+              </div>
+              <span className="rounded-lg bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-300 border border-emerald-500/20">
+                Authoritative Cohort
+              </span>
+            </div>
+            <div className="mt-4 h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analytics.year_distribution}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="year" stroke="#64748b" fontSize={11} />
+                  <YAxis stroke="#64748b" fontSize={11} domain={[0, 100]} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", fontSize: "12px" }}
+                  />
+                  <Bar dataKey="placement_rate" name="Placement Rate (%)" fill="#10b981" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="avg_package" name="Avg Package (LPA)" fill="#06b6d4" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Cohort Records Paginated Table */}

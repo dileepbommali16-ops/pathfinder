@@ -16,9 +16,10 @@ interface SkillGapSectionProps {
   priorities: string[];
   breakdown: Record<string, number>;
   onAskCoach: (query: string) => void;
+  apiBase?: string;
 }
 
-const RECOMMENDED_SKILLS = [
+const DEFAULT_RECOMMENDED_SKILLS = [
   { name: "Blind 75 DSA Patterns", category: "Core DSA", priority: "High" },
   { name: "System Design Foundations", category: "Architecture", priority: "High" },
   { name: "STAR Method Articulation", category: "Interviews", priority: "Critical" },
@@ -34,7 +35,25 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
   priorities,
   breakdown,
   onAskCoach,
+  apiBase,
 }) => {
+  const [skillsList, setSkillsList] = React.useState(DEFAULT_RECOMMENDED_SKILLS);
+
+  React.useEffect(() => {
+    if (!apiBase) return;
+    let isMounted = true;
+    fetch(`${apiBase}/api/data/skills`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data && data.canonicalBenchmarks && data.canonicalBenchmarks.length > 0) {
+          setSkillsList(data.canonicalBenchmarks);
+        }
+      })
+      .catch((err) => console.warn("Skill gap fetch warning:", err));
+    return () => {
+      isMounted = false;
+    };
+  }, [apiBase]);
   const dimensions = [
     { label: "Academics & CGPA Cutoff", score: breakdown.academics || 75, color: "from-cyan-400 to-blue-500" },
     { label: "DSA & Problem Solving", score: breakdown.coding_dsa || 70, color: "from-emerald-400 to-teal-500" },
@@ -86,7 +105,7 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
             High-Yield Recommended Skills:
           </span>
           <div className="mt-2.5 flex flex-wrap gap-2">
-            {RECOMMENDED_SKILLS.map((skill) => (
+            {skillsList.map((skill) => (
               <button
                 key={skill.name}
                 onClick={() => onAskCoach(`How should I prepare ${skill.name} for upcoming campus placement tests?`)}

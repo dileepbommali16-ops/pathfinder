@@ -18,6 +18,8 @@ import { WhatIfSimulator } from "@/components/dashboard/WhatIfSimulator";
 import { RoleIntelligence } from "@/components/dashboard/RoleIntelligence";
 import { ProjectDefenseConsole } from "@/components/dashboard/ProjectDefenseConsole";
 import { CareerMissionTracker } from "@/components/dashboard/CareerMissionTracker";
+import { BranchIntelligence } from "@/components/dashboard/BranchIntelligence";
+import { SkillIntelligence } from "@/components/dashboard/SkillIntelligence";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
 
 // Base API URL: uses environment variable with fallback to FastAPI on 8000 or Render production backend
@@ -111,7 +113,30 @@ export default function Home() {
     // Initial calculations
     fetchPrediction(DEFAULT_PROFILE);
     fetchCohortAnalytics({ year: 2026, branch: "All", gender: "All", skill: "All" });
+
+    // Health check & cold-start detector for Render free tier
+    const coldTimer = setTimeout(() => setIsServerWakingUp(true), 2500);
+    fetch(`${API_BASE}/api/health`)
+      .then((res) => {
+        if (res.ok) {
+          clearTimeout(coldTimer);
+          setIsServerWakingUp(false);
+        }
+      })
+      .catch(() => setIsServerWakingUp(true));
+
+    // Keep-alive ping every 3 minutes
+    const keepAlive = setInterval(() => {
+      fetch(`${API_BASE}/api/health`).catch(() => {});
+    }, 180000);
+
+    return () => {
+      clearTimeout(coldTimer);
+      clearInterval(keepAlive);
+    };
   }, []);
+
+  const [isServerWakingUp, setIsServerWakingUp] = useState<boolean>(false);
 
   const handleLogin = (user: { username: string; email: string }) => {
     setUsername(user.username);
@@ -290,7 +315,7 @@ export default function Home() {
     setIsChatLoading(true);
 
     try {
-      const resp = await fetchWithTimeout(`${API_BASE}/api/ai/chat`, {
+      const resp = await fetchWithTimeout(`${API_BASE}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -566,6 +591,19 @@ export default function Home() {
         onLogout={handleLogout}
       />
 
+      {/* Render Cold-Start Alert Banner */}
+      {isServerWakingUp && (
+        <div className="relative z-40 border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-center text-xs font-medium text-amber-300 backdrop-blur-md">
+          <div className="mx-auto flex max-w-7xl items-center justify-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500"></span>
+            </span>
+            <span>Connecting to cloud backend... (free-tier servers take ~15-20s on first load). All predictions will populate automatically.</span>
+          </div>
+        </div>
+      )}
+
       {/* Main Container */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
         <AnimatePresence mode="wait">
@@ -649,11 +687,56 @@ export default function Home() {
                   setActiveTab("coach");
                   handleSendMessage(q);
                 }}
+                apiBase={API_BASE}
               />
             </motion.div>
           )}
 
-          {/* TAB 2: TARGET ROLE INTELLIGENCE & CAREER PATH SIMULATOR */}
+          {/* TAB 2: BRANCH INTELLIGENCE & DEPARTMENT BENCHMARKS */}
+          {activeTab === "branches" && (
+            <motion.div
+              key="branches"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              <BranchIntelligence
+                apiBase={API_BASE}
+                selectedYear={profile.graduationYear || 2026}
+                currentBranch={profile.branch || "CSE"}
+                onAskCoach={(q) => {
+                  setActiveTab("coach");
+                  handleSendMessage(q);
+                }}
+                onNavigateTab={setActiveTab}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 3: SKILL INTELLIGENCE & IMPACT ANALYSIS */}
+          {activeTab === "skills" && (
+            <motion.div
+              key="skills"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              <SkillIntelligence
+                apiBase={API_BASE}
+                selectedYear={profile.graduationYear || 2026}
+                selectedBranch={profile.branch || "All"}
+                onAskCoach={(q) => {
+                  setActiveTab("coach");
+                  handleSendMessage(q);
+                }}
+                onNavigateTab={setActiveTab}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 4: TARGET ROLE INTELLIGENCE & CAREER PATH SIMULATOR */}
           {activeTab === "roles" && (
             <motion.div
               key="roles"
@@ -666,11 +749,12 @@ export default function Home() {
                 currentProfile={profile}
                 onUpdateTargetRole={handleUpdateTargetRole}
                 onNavigateTab={setActiveTab}
+                apiBase={API_BASE}
               />
             </motion.div>
           )}
 
-          {/* TAB 3: 30-DAY CAREER MISSION & ROADMAP */}
+          {/* TAB 5: 30-DAY CAREER MISSION & ROADMAP */}
           {activeTab === "missions" && (
             <motion.div
               key="missions"
@@ -692,7 +776,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* TAB 4: AI PROJECT RECOMMENDER & BLUEPRINTS */}
+          {/* TAB 6: AI PROJECT RECOMMENDER & BLUEPRINTS */}
           {activeTab === "projects" && (
             <motion.div
               key="projects"
@@ -707,6 +791,7 @@ export default function Home() {
                   setActiveTab("coach");
                   handleSendMessage(q);
                 }}
+                apiBase={API_BASE}
               />
             </motion.div>
           )}

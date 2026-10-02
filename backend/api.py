@@ -28,6 +28,17 @@ from backend.models import (
 )
 from backend.ml_engine import predict_placement
 from backend.analytics_engine import get_cohort_analytics, filter_cohort_records
+from backend.data_service import (
+    get_placement_df,
+    get_roles,
+    get_skills,
+    get_projects,
+    get_branches,
+    get_cohort_analytics_data,
+    get_branch_deep_analytics,
+    get_skills_deep_analytics,
+    execute_data_tool
+)
 from backend.gemini_engine import (
     chat_with_mentor,
     generate_structured_ai
@@ -93,12 +104,28 @@ app.add_middleware(
 @app.get("/health")
 @app.get("/api/health")
 def health_check():
+    df = get_placement_df()
+    dataset_records = len(df)
+    dataset_ok = dataset_records > 0
+    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+    gemini_configured = bool(gemini_key and len(gemini_key) > 5)
+
     return {
-        "status": "healthy",
+        "status": "healthy" if dataset_ok else "degraded",
         "service": "Pathfinder 2.0 Intelligence Engine",
+        "server": "healthy",
+        "dataset": {
+            "status": "ready" if dataset_ok else "missing",
+            "total_records": dataset_records,
+            "branches_count": len(df["branch"].unique()) if dataset_ok else 0,
+            "years_covered": sorted(df["year"].unique().tolist()) if dataset_ok else []
+        },
+        "gemini": {
+            "configured": gemini_configured,
+            "model": os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+        },
         "ml_model": "RandomForestClassifier(n_estimators=120)",
-        "security": "Enforced: TLS/CORS, Rate-Limiting, Per-User Isolation, Input Sanitization",
-        "features": ["cgpa", "backlogs", "internships", "communication_score", "coding_score"]
+        "security": "Enforced: TLS/CORS, Rate-Limiting, Per-User Isolation, Input Sanitization"
     }
 
 
@@ -337,6 +364,50 @@ def analytics_endpoint(
         raise HTTPException(status_code=500, detail=f"Analytics error: {str(exc)}")
 
 
+# ============================================================================
+# UNIFIED DATA REST ENDPOINTS (Strict SSOT from /data/*)
+# ============================================================================
+
+@app.get("/api/data/cohort")
+def data_cohort_endpoint(
+    year: Optional[int] = Query(2026),
+    branch: Optional[str] = Query("All"),
+    gender: Optional[str] = Query("All"),
+    skill: Optional[str] = Query("All")
+):
+    return get_cohort_analytics_data(year=year, branch=branch, gender=gender, skill=skill)
+
+
+@app.get("/api/data/branches")
+def data_branches_endpoint(year: Optional[int] = Query(2026)):
+    return get_branch_deep_analytics(year=year)
+
+
+@app.get("/api/data/skills")
+def data_skills_endpoint(year: Optional[int] = Query(2026), branch: Optional[str] = Query("All")):
+    return get_skills_deep_analytics(year=year, branch=branch)
+
+
+@app.get("/api/data/roles")
+def data_roles_endpoint():
+    return get_roles()
+
+
+@app.get("/api/data/projects")
+def data_projects_endpoint(role_id: Optional[str] = None, domain: Optional[str] = None):
+    projects = get_projects()
+    if role_id:
+        projects = [p for p in projects if role_id.lower() in p.get("roleId", "").lower()]
+    if domain:
+        projects = [p for p in projects if domain.lower() in p.get("domain", "").lower()]
+    return projects
+
+
+# ============================================================================
+# SINGLE BACKEND AGENT ROUTE (POST /api/chat)
+# ============================================================================
+
+@app.post("/api/chat")
 @app.post("/api/ai/chat")
 def chat_endpoint(chat_req: ChatRequest, request: Request, user: UserSession = Depends(get_current_user)):
     # Rate limit: Max 30 requests per minute
@@ -518,12 +589,32 @@ def export_resume_pdf_endpoint(feedback: ResumeFeedback):
         raise HTTPException(status_code=500, detail="Resume PDF export failed.")
 
 
-# Mount frontend SPA static bundle
+# Mount frontend SPA static bundle with client-side routing fallback
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-DIST_PUBLIC = ROOT_DIR / "dist" / "public"
-if DIST_PUBLIC.exists():
-    app.mount("/", StaticFiles(directory=str(DIST_PUBLIC), html=True), name="frontend")
+DIST_DIR = (
+    (ROOT_DIR / "dist" / "public") if (ROOT_DIR / "dist" / "public").exists()
+    else (ROOT_DIR / "dist") if (ROOT_DIR / "dist").exists()
+    else None
+)
+
+if DIST_DIR and DIST_DIR.exists():
+    assets_dir = DIST_DIR / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        if full_path.startswith("api/") or full_path.startswith("health"):
+            raise HTTPException(status_code=404, detail="API route not found")
+        file_path = DIST_DIR / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        index_file = DIST_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file)
+        raise HTTPException(status_code=404, detail="Page not found")
 

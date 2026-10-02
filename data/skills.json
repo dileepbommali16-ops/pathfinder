@@ -1,0 +1,98 @@
+[
+  {
+    "id": "core-dsa",
+    "name": "Blind 75 Core DSA Patterns",
+    "category": "Core Problem Solving",
+    "priority": "High",
+    "demandIndex": 98,
+    "placementRateWithSkill": 89.2,
+    "avgSalaryBumpLPA": 4.5,
+    "requiredLevel": 8.5,
+    "actionableStep": "Master 7 fundamental patterns: Sliding Window, Two Pointers, Fast & Slow Pointers, Monotonic Stack, Binary Search, BFS/DFS, and 1D Dynamic Programming.",
+    "highFrequencyTopics": ["Sliding Window Maximum", "Longest Substring Without Repeating Characters", "Valid Parentheses", "Merge Intervals", "Subarray Sum Equals K"]
+  },
+  {
+    "id": "system-design",
+    "name": "System Architecture & Scalability",
+    "category": "System Design",
+    "priority": "High",
+    "demandIndex": 92,
+    "placementRateWithSkill": 86.4,
+    "avgSalaryBumpLPA": 5.2,
+    "requiredLevel": 8.0,
+    "actionableStep": "Study real-world trade-offs: Caching (Redis), Load Balancing, Database Partitioning, Message Queues (Kafka/RabbitMQ), and CAP theorem.",
+    "highFrequencyTopics": ["Rate Limiter Design", "URL Shortener (TinyURL)", "Notification System", "Distributed Cache (LRU)", "Database Sharding & Replication"]
+  },
+  {
+    "id": "python-backend",
+    "name": "Python & FastAPI Production Engineering",
+    "category": "Backend Engineering",
+    "priority": "High",
+    "demandIndex": 94,
+    "placementRateWithSkill": 84.8,
+    "avgSalaryBumpLPA": 3.8,
+    "requiredLevel": 8.0,
+    "actionableStep": "Build asynchronous REST endpoints with Pydantic validation, dependency injection, SQLAlchemy 2.0 ORM, and automated pytest suites.",
+    "highFrequencyTopics": ["Async / Await Event Loop", "Pydantic V2 Serialization", "JWT Auth & Middleware", "Database Connection Pooling", "Pytest Fixtures & Mocking"]
+  },
+  {
+    "id": "java-spring",
+    "name": "Java & Enterprise Spring Boot",
+    "category": "Backend Engineering",
+    "priority": "Medium",
+    "demandIndex": 88,
+    "placementRateWithSkill": 81.5,
+    "avgSalaryBumpLPA": 3.5,
+    "requiredLevel": 7.5,
+    "actionableStep": "Understand Spring IoC, Dependency Injection, Spring Data JPA, Microservice boundaries, and JVM memory tuning.",
+    "highFrequencyTopics": ["Garbage Collection Algorithms", "Spring Security Filter Chain", "Hibernate N+1 Query Problem", "Multithreading & ExecutorService", "Maven / Gradle Lifecycle"]
+  },
+  {
+    "id": "sql-databases",
+    "name": "Relational DBMS & Advanced SQL",
+    "category": "Data & Persistence",
+    "priority": "High",
+    "demandIndex": 96,
+    "placementRateWithSkill": 87.1,
+    "avgSalaryBumpLPA": 3.2,
+    "requiredLevel": 8.0,
+    "actionableStep": "Write complex analytical queries using window functions, common table expressions (CTEs), and analyze EXPLAIN query execution plans.",
+    "highFrequencyTopics": ["Window Functions (RANK, DENSE_RANK)", "B-Tree vs Hash Indexes", "ACID Transactions & Isolation Levels", "Foreign Keys & Cascading", "Query Plan Cost Optimization"]
+  },
+  {
+    "id": "aiml-genai",
+    "name": "Generative AI, RAG & Vector Search",
+    "category": "Artificial Intelligence",
+    "priority": "High",
+    "demandIndex": 95,
+    "placementRateWithSkill": 91.0,
+    "avgSalaryBumpLPA": 6.0,
+    "requiredLevel": 8.2,
+    "actionableStep": "Implement production RAG with chunking strategies, vector search with Chroma/Qdrant, Gemini tool calling, and evaluation pipelines.",
+    "highFrequencyTopics": ["Embedding Dimension & Similarity Metrics", "Hierarchical Chunking", "Function / Tool Calling with LLMs", "Prompt Engineering & Grounding", "RAG Triad Evaluation (Context Relevance, Faithfulness)"]
+  },
+  {
+    "id": "docker-devops",
+    "name": "Docker Containerization & CI/CD",
+    "category": "DevOps & Cloud",
+    "priority": "Medium",
+    "demandIndex": 85,
+    "placementRateWithSkill": 82.6,
+    "avgSalaryBumpLPA": 3.0,
+    "requiredLevel": 7.5,
+    "actionableStep": "Create multi-stage Dockerfiles, Docker Compose multi-service stacks, and GitHub Actions workflows for automated test & build passes.",
+    "highFrequencyTopics": ["Multi-stage Dockerfile Optimization", "Docker Compose Network & Volume Mounts", "GitHub Actions Workflow YAML", "Environment Secrets Management", "Container Healthchecks"]
+  },
+  {
+    "id": "star-interview",
+    "name": "STAR Behavioral & Project Defense",
+    "category": "Interview Mastery",
+    "priority": "Critical",
+    "demandIndex": 99,
+    "placementRateWithSkill": 93.4,
+    "avgSalaryBumpLPA": 4.0,
+    "requiredLevel": 8.5,
+    "actionableStep": "Prepare 4 structured STAR stories: (1) Toughest technical bug resolved, (2) Architectural trade-off made, (3) Team conflict or deadline pressure, (4) Self-directed learning milestone.",
+    "highFrequencyTopics": ["STAR Structure (Situation, Task, Action, Result)", "Quantifiable Metrics Formulation", "Engineering Failure Self-Reflection", "Answering 'Tell me about yourself'", "Cross-questioning Project Details"]
+  }
+]

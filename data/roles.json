@@ -1,0 +1,140 @@
+[
+  {
+    "id": "sde",
+    "title": "Software Development Engineer (SDE)",
+    "tier": "Tier-1 Product",
+    "targetBranches": ["CSE", "IT", "ECE"],
+    "baseAlignment": 85,
+    "requiredSkills": ["Data Structures & Algorithms", "System Design", "Java / C++ / Python", "DBMS / SQL", "Operating Systems", "REST APIs"],
+    "existingSkills": ["Python / Java Fundamentals", "Basic Algorithms", "Coursework CS Fundamentals"],
+    "missingSkills": ["High-Frequency Blind 75 LeetCode Patterns", "Distributed System Design", "ACID Transaction Locks & Indexing"],
+    "recommendedProject": {
+      "title": "Distributed Asynchronous Job Queue & Rate Limiter",
+      "tech": ["Python", "FastAPI", "Redis Streams", "Docker", "PostgreSQL"],
+      "whyItMatters": "Proves understanding of concurrency, token-bucket rate limiting, worker fault-tolerance, and state recovery under burst traffic."
+    },
+    "interviewTopics": ["Two Pointers & Sliding Window", "Binary Trees & Graph Traversals", "Indexing & Query Optimization", "Multithreading & Concurrency"],
+    "resumeFocus": "Emphasize low latency, algorithm time/space complexities, and quantifiable throughput metrics (Google X-Y-Z formula).",
+    "pathStages": [
+      { "step": "1. Core DSA", "detail": "Arrays, Two-Pointers, Sliding Window, Monotonic Stacks (15 days)" },
+      { "step": "2. Flagship Backend", "detail": "Build and deploy async task queue with Redis & Docker (12 days)" },
+      { "step": "3. System Design", "detail": "Caching strategies, database partitioning, RESTful contracts (8 days)" },
+      { "step": "4. Interview Practice", "detail": "Timed LeetCode medium rounds + STAR project defense (7 days)" }
+    ]
+  },
+  {
+    "id": "fullstack",
+    "title": "Full Stack Developer",
+    "tier": "Enterprise High-Scale",
+    "targetBranches": ["CSE", "IT", "ECE"],
+    "baseAlignment": 80,
+    "requiredSkills": ["React / Next.js", "TypeScript", "Node.js / FastAPI", "PostgreSQL", "TailwindCSS", "State Management", "CI/CD"],
+    "existingSkills": ["React basics", "HTML/CSS", "API consumption"],
+    "missingSkills": ["TypeScript strict mode", "Production CI/CD pipelines", "WebSocket real-time synchronization"],
+    "recommendedProject": {
+      "title": "Real-Time Collaborative Code & Canvas Studio",
+      "tech": ["React", "TypeScript", "Node.js", "WebSockets", "WebRTC"],
+      "whyItMatters": "Demonstrates full-stack proficiency, state reconciliation, and responsive browser UI architecture."
+    },
+    "interviewTopics": ["React component lifecycle & re-render optimization", "CORS & JWT authentication flow", "Database schema normalization", "SSR vs CSR trade-offs"],
+    "resumeFocus": "Highlight clean UI design systems, responsive accessibility, and verified GitHub live deployment URLs.",
+    "pathStages": [
+      { "step": "1. Modern Frontend", "detail": "React 19, TypeScript strict typing, and Tailwind styling (10 days)" },
+      { "step": "2. Backend & Auth", "detail": "FastAPI / Node with JWT auth and Postgres migrations (12 days)" },
+      { "step": "3. Real-Time Sync", "detail": "WebSockets and optimistic UI state updates (8 days)" },
+      { "step": "4. Deployment & Lighthouse", "detail": "Deploy to Vercel/Render with 95+ Lighthouse score (5 days)" }
+    ]
+  },
+  {
+    "id": "ai-engineer",
+    "title": "AI & Machine Learning Engineer",
+    "tier": "AI Startup / Growth",
+    "targetBranches": ["CSE", "IT", "ECE"],
+    "baseAlignment": 86,
+    "requiredSkills": ["Python", "LLM Orchestration (LangChain / GenAI)", "Vector Databases (Pinecone / Chroma)", "FastAPI", "Prompt Engineering", "RAG Architecture"],
+    "existingSkills": ["Python syntax", "Gemini API integration", "Basic data manipulation"],
+    "missingSkills": ["Hybrid Vector Retrieval (BM25 + Semantic Search)", "Agentic Multi-Step Tool Calling", "Evaluation benchmarks"],
+    "recommendedProject": {
+      "title": "Multi-Agent Regulatory Document Research Engine (RAG)",
+      "tech": ["Python", "Google GenAI", "FastAPI", "Qdrant / ChromaDB", "Streamlit / React"],
+      "whyItMatters": "Validates ability to build accurate grounded RAG systems with document parsing and hallucination mitigation."
+    },
+    "interviewTopics": ["Cosine similarity vs Dot product embeddings", "Chunking strategies & recursive token splitters", "Agentic function calling loops", "Token optimization"],
+    "resumeFocus": "Spotlight hallucination reduction percentages, chunk retrieval latency, and end-to-end deployed agent pipeline demo.",
+    "pathStages": [
+      { "step": "1. LLM & Embeddings", "detail": "Master Gemini API, vector embeddings, and semantic similarity (7 days)" },
+      { "step": "2. Production RAG", "detail": "Build PDF parser + hybrid retrieval engine with Qdrant (12 days)" },
+      { "step": "3. Tool-Calling Agent", "detail": "Implement multi-turn autonomous agent with tool execution (10 days)" },
+      { "step": "4. Evaluation & Demo", "detail": "Benchmark recall@k and record an interactive video walkthrough (5 days)" }
+    ]
+  },
+  {
+    "id": "data-engineer",
+    "title": "Data Engineer & Analytics Specialist",
+    "tier": "Enterprise High-Scale",
+    "targetBranches": ["CSE", "IT", "ECE", "MECH", "CIVIL"],
+    "baseAlignment": 76,
+    "requiredSkills": ["SQL (Advanced Window Functions)", "Python (Pandas, PySpark)", "Data Warehousing (BigQuery / Snowflake)", "ETL Pipelines", "dbt", "Airflow"],
+    "existingSkills": ["Basic SQL SELECT queries", "Python basics", "Excel data analysis"],
+    "missingSkills": ["Distributed data processing with Spark", "Data modeling (Star/Snowflake schema)", "Automated pipeline orchestration"],
+    "recommendedProject": {
+      "title": "Automated High-Volume Stock & Crypto Market Data Lake",
+      "tech": ["Python", "Apache Airflow", "DuckDB / BigQuery", "Streamlit", "Docker"],
+      "whyItMatters": "Demonstrates ETL pipeline reliability, schema evolution, and automated backfilling capabilities."
+    },
+    "interviewTopics": ["Window functions (ROW_NUMBER, DENSE_RANK, LAG, LEAD)", "Partitioning and clustering strategies", "Idempotent pipeline design", "ACID in data lakes"],
+    "resumeFocus": "Emphasize gigabytes/terabytes processed, pipeline SLA guarantees, and query speedups achieved through indexing.",
+    "pathStages": [
+      { "step": "1. Advanced SQL", "detail": "Window functions, CTEs, self-joins, query optimization (8 days)" },
+      { "step": "2. Python Data Processing", "detail": "Pandas, DuckDB, Polars, Parquet columnar storage (10 days)" },
+      { "step": "3. Pipeline Orchestration", "detail": "Build daily ETL pipeline with Docker & Airflow (12 days)" },
+      { "step": "4. Analytics Dashboard", "detail": "Build interactive executive analytics dashboard with live refreshes (6 days)" }
+    ]
+  },
+  {
+    "id": "devops-cloud",
+    "title": "DevOps & Cloud Infrastructure Engineer",
+    "tier": "Tier-1 Product",
+    "targetBranches": ["CSE", "IT", "ECE"],
+    "baseAlignment": 74,
+    "requiredSkills": ["Linux / Bash Scripting", "Docker & Kubernetes", "CI/CD (GitHub Actions)", "Terraform (IaC)", "AWS / GCP", "Prometheus & Grafana"],
+    "existingSkills": ["Basic Git commands", "Command line basics", "Local development setup"],
+    "missingSkills": ["Multi-stage Docker builds", "Kubernetes ingress & replica sets", "Automated deployment rollbacks"],
+    "recommendedProject": {
+      "title": "GitOps Automated Microservices Deployment Platform",
+      "tech": ["GitHub Actions", "Docker", "Kubernetes (k3s)", "Terraform", "Prometheus"],
+      "whyItMatters": "Validates hands-on infrastructure as code and automated canary deployment skills."
+    },
+    "interviewTopics": ["Docker image layer caching & security scanning", "Kubernetes pods vs deployments vs stateful sets", "Blue-Green vs Canary deployments", "Linux process isolation & cgroups"],
+    "resumeFocus": "Quantify deployment frequency increases, zero-downtime updates, and MTTR (mean time to resolution) metrics.",
+    "pathStages": [
+      { "step": "1. Linux & Networking", "detail": "Deep dive into bash scripting, systemd, DNS, and TLS termination (7 days)" },
+      { "step": "2. Containerization", "detail": "Multi-stage Docker builds, image slimming, vulnerability scanning (8 days)" },
+      { "step": "3. CI/CD & GitOps", "detail": "Build GitHub Actions test, lint, and build matrix pipeline (10 days)" },
+      { "step": "4. Observability", "detail": "Setup Prometheus metrics collection and alerting dashboard (7 days)" }
+    ]
+  },
+  {
+    "id": "embedded-iot",
+    "title": "Embedded Systems & IoT Engineer",
+    "tier": "Core / Product",
+    "targetBranches": ["ECE", "MECH", "CSE"],
+    "baseAlignment": 82,
+    "requiredSkills": ["Embedded C / C++", "Microcontrollers (ESP32, STM32)", "RTOS (FreeRTOS)", "Communication Protocols (UART, SPI, I2C, MQTT)", "Circuit Simulation"],
+    "existingSkills": ["C programming", "Digital electronics coursework", "Microprocessor architecture"],
+    "missingSkills": ["Real-time task scheduling in FreeRTOS", "Low-power firmware optimization", "IoT cloud telemetry integration"],
+    "recommendedProject": {
+      "title": "Industrial Edge Sensor Telemetry & Anomaly Node",
+      "tech": ["Embedded C", "FreeRTOS", "ESP32", "MQTT", "Grafana Cloud"],
+      "whyItMatters": "Bridges core hardware with modern cloud telemetry and edge signal processing."
+    },
+    "interviewTopics": ["Interrupt Service Routines (ISRs) best practices", "Race conditions & mutexes in RTOS", "Bitwise manipulations and memory mapped registers", "I2C clock stretching"],
+    "resumeFocus": "Highlight power consumption reductions (microamps in deep sleep), sensor sampling rates, and reliable communication uptime.",
+    "pathStages": [
+      { "step": "1. Advanced C for Embedded", "detail": "Pointers, memory layout, register bit-masks, volatile keyword (8 days)" },
+      { "step": "2. Protocols & Drivers", "detail": "Write bare-metal drivers for UART, I2C, SPI sensors (10 days)" },
+      { "step": "3. RTOS Multi-Tasking", "detail": "FreeRTOS queues, semaphores, and preemptive scheduling (10 days)" },
+      { "step": "4. Cloud Telemetry", "detail": "Publish sensor telemetry over secure TLS/MQTT to cloud dashboard (6 days)" }
+    ]
+  }
+]

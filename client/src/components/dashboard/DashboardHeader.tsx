@@ -13,10 +13,11 @@ import {
   GraduationCap,
   Lightbulb,
   Calendar,
-  ShieldAlert
+  ShieldAlert,
+  Zap
 } from "lucide-react";
 
-export type TabId = "overview" | "roles" | "missions" | "projects" | "defense" | "coach" | "resume" | "analytics";
+export type TabId = "overview" | "branches" | "skills" | "roles" | "missions" | "projects" | "defense" | "coach" | "resume" | "analytics";
 
 interface DashboardHeaderProps {
   activeTab: TabId;
@@ -28,6 +29,8 @@ interface DashboardHeaderProps {
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string }[] = [
   { id: "overview", label: "Command Center", icon: Target },
+  { id: "branches", label: "Branch Intelligence", icon: GraduationCap, badge: "Dept" },
+  { id: "skills", label: "Skill Intelligence", icon: Zap, badge: "Impact" },
   { id: "roles", label: "Role Intelligence", icon: Compass, badge: "Paths" },
   { id: "missions", label: "30-Day Mission", icon: Calendar, badge: "Sprint" },
   { id: "projects", label: "Project Blueprints", icon: Lightbulb, badge: "X-Y-Z" },

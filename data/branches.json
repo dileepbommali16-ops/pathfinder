@@ -1,0 +1,290 @@
+[
+  {
+    "code": "CSE",
+    "name": "Computer Science & Engineering",
+    "description": "Primary driver of software engineering, cloud architecture, and tier-1 campus placements.",
+    "coreHiringDomains": [
+      "Software Development (SDE)",
+      "Full Stack Web",
+      "Distributed Systems",
+      "Cloud & DevOps"
+    ],
+    "topRecruiters": [
+      "Google",
+      "Amazon",
+      "Microsoft",
+      "Oracle",
+      "Goldman Sachs"
+    ],
+    "avgPlacementRate": 63.0,
+    "avgCgpaBenchmark": 7.97,
+    "topRecommendedSkills": [
+      "Blind 75 Core DSA",
+      "System Design",
+      "Python / Java",
+      "SQL & DBMS"
+    ],
+    "transitionRoadmap": "Focus 60% of preparation on high-frequency LeetCode patterns (Dynamic Programming, Graph algorithms) and build a flagship distributed backend system.",
+    "keyCutoffs": {
+      "tier1EligibleCgpa": 7.5,
+      "maxBacklogsAllowed": 0,
+      "minCodingConfidence": 8
+    }
+  },
+  {
+    "code": "AIML",
+    "name": "Artificial Intelligence & Machine Learning",
+    "description": "Specialized branch focused on deep learning, neural architectures, computer vision, and GenAI.",
+    "coreHiringDomains": [
+      "AI/ML Engineering",
+      "Data Science",
+      "LLM Application Development",
+      "Computer Vision"
+    ],
+    "topRecruiters": [
+      "NVIDIA",
+      "Microsoft AI",
+      "Adobe",
+      "MathWorks",
+      "Zomato AI"
+    ],
+    "avgPlacementRate": 56.5,
+    "avgCgpaBenchmark": 7.7,
+    "topRecommendedSkills": [
+      "PyTorch & TensorFlow",
+      "Transformers & LLMs",
+      "Python for ML",
+      "Vector Databases"
+    ],
+    "transitionRoadmap": "Build and evaluate end-to-end RAG and Vision systems with quantifiable benchmarks (latency, BLEU/ROUGE scores), paired with strong algorithmic foundations.",
+    "keyCutoffs": {
+      "tier1EligibleCgpa": 7.5,
+      "maxBacklogsAllowed": 0,
+      "minCodingConfidence": 8
+    }
+  },
+  {
+    "code": "CSD",
+    "name": "Computer Science & Design",
+    "description": "Blends computer science foundations with human-computer interaction, frontend architecture, and UX.",
+    "coreHiringDomains": [
+      "Frontend Engineering",
+      "UI/UX Product Architecture",
+      "Creative Tech",
+      "Full Stack Development"
+    ],
+    "topRecruiters": [
+      "Swiggy",
+      "CRED",
+      "Razorpay",
+      "Atlassian",
+      "MakeMyTrip"
+    ],
+    "avgPlacementRate": 43.5,
+    "avgCgpaBenchmark": 7.84,
+    "topRecommendedSkills": [
+      "React & TypeScript",
+      "WebGL / Three.js",
+      "Design Systems",
+      "Web Performance"
+    ],
+    "transitionRoadmap": "Master design systems, high-performance web animations, state management, and full-stack integration to target high-visibility consumer tech roles.",
+    "keyCutoffs": {
+      "tier1EligibleCgpa": 7.2,
+      "maxBacklogsAllowed": 0,
+      "minCodingConfidence": 7
+    }
+  },
+  {
+    "code": "CSM",
+    "name": "Computer Science & Machine Learning",
+    "description": "Combines software development fundamentals with statistical machine learning and analytics engineering.",
+    "coreHiringDomains": [
+      "Machine Learning Engineer",
+      "Backend Engineering",
+      "Data Analytics",
+      "Algorithm Design"
+    ],
+    "topRecruiters": [
+      "Salesforce",
+      "Intuit",
+      "Paytm",
+      "Fractal Analytics",
+      "Tiger Analytics"
+    ],
+    "avgPlacementRate": 55.6,
+    "avgCgpaBenchmark": 7.83,
+    "topRecommendedSkills": [
+      "Scikit-Learn & PyTorch",
+      "Feature Engineering",
+      "FastAPI / Docker",
+      "Core DSA"
+    ],
+    "transitionRoadmap": "Deploy ML models behind production FastAPI endpoints with Docker containerization and automated CI/CD unit testing.",
+    "keyCutoffs": {
+      "tier1EligibleCgpa": 7.2,
+      "maxBacklogsAllowed": 0,
+      "minCodingConfidence": 7
+    }
+  },
+  {
+    "code": "IT",
+    "name": "Information Technology",
+    "description": "Enterprise software engineering, distributed systems, full-stack development, and IT infrastructure.",
+    "coreHiringDomains": [
+      "Full Stack Web",
+      "Software Engineering",
+      "Cloud Infrastructure",
+      "DevOps"
+    ],
+    "topRecruiters": [
+      "JPMorgan Chase",
+      "Accenture",
+      "Cognizant",
+      "Cisco",
+      "Infosys"
+    ],
+    "avgPlacementRate": 50.0,
+    "avgCgpaBenchmark": 7.98,
+    "topRecommendedSkills": [
+      "Full-Stack Architecture",
+      "RESTful APIs",
+      "SQL & Optimization",
+      "Docker"
+    ],
+    "transitionRoadmap": "Build depth in microservices architecture, automated testing, and relational database indexing. Maintain > 7.0 CGPA.",
+    "keyCutoffs": {
+      "tier1EligibleCgpa": 7.2,
+      "maxBacklogsAllowed": 0,
+      "minCodingConfidence": 7
+    }
+  },
+  {
+    "code": "ECE",
+    "name": "Electronics & Communication Engineering",
+    "description": "Dual-path discipline with strong recruitment across semiconductor VLSI, embedded firmware, and software engineering.",
+    "coreHiringDomains": [
+      "Embedded Systems & IoT",
+      "VLSI Verification",
+      "Software Development",
+      "Signal Processing"
+    ],
+    "topRecruiters": [
+      "Qualcomm",
+      "Texas Instruments",
+      "Intel",
+      "Samsung R&D",
+      "Cisco"
+    ],
+    "avgPlacementRate": 48.1,
+    "avgCgpaBenchmark": 7.55,
+    "topRecommendedSkills": [
+      "Embedded C / C++",
+      "Microcontrollers & RTOS",
+      "Python / DSA",
+      "Computer Architecture"
+    ],
+    "transitionRoadmap": "Dual Track Strategy: Master Embedded C and RTOS for core hardware roles, or complete a 60-day DSA sprint for software roles.",
+    "keyCutoffs": {
+      "tier1EligibleCgpa": 7.0,
+      "maxBacklogsAllowed": 0,
+      "minCodingConfidence": 7
+    }
+  },
+  {
+    "code": "EEE",
+    "name": "Electrical & Electronics Engineering",
+    "description": "Core power systems, EV battery management, renewable energy systems, and computational engineering.",
+    "coreHiringDomains": [
+      "EV & Power Electronics",
+      "Embedded Systems",
+      "Hardware Engineering",
+      "Automation"
+    ],
+    "topRecruiters": [
+      "Schneider Electric",
+      "Siemens",
+      "ABB",
+      "Tata Power",
+      "TCS Digital"
+    ],
+    "avgPlacementRate": 25.9,
+    "avgCgpaBenchmark": 7.69,
+    "topRecommendedSkills": [
+      "MATLAB / Simulink",
+      "Power Electronics",
+      "Embedded C",
+      "Python for Data"
+    ],
+    "transitionRoadmap": "Pair electrical domain knowledge (BMS/EV) with embedded programming or pivot to software with DSA and database engineering.",
+    "keyCutoffs": {
+      "tier1EligibleCgpa": 7.0,
+      "maxBacklogsAllowed": 0,
+      "minCodingConfidence": 6
+    }
+  },
+  {
+    "code": "MECH",
+    "name": "Mechanical Engineering",
+    "description": "Physical product design, thermal systems, robotics, smart manufacturing, and techno-commercial analytics.",
+    "coreHiringDomains": [
+      "Automotive Systems",
+      "Robotics & Automation",
+      "CAD/CAE Analysis",
+      "Supply Chain"
+    ],
+    "topRecruiters": [
+      "Tata Motors",
+      "Mahindra & Mahindra",
+      "Bosch",
+      "Larsen & Toubro",
+      "Hero MotoCorp"
+    ],
+    "avgPlacementRate": 38.0,
+    "avgCgpaBenchmark": 7.35,
+    "topRecommendedSkills": [
+      "CAD / SolidWorks",
+      "Python for Analytics",
+      "Robotics (ROS)",
+      "Mechatronics"
+    ],
+    "transitionRoadmap": "Bridge to high-growth tech via Robotics (ROS + Python) or master SQL and analytics for operations and product management roles.",
+    "keyCutoffs": {
+      "tier1EligibleCgpa": 6.8,
+      "maxBacklogsAllowed": 0,
+      "minCodingConfidence": 6
+    }
+  },
+  {
+    "code": "CIVIL",
+    "name": "Civil Engineering",
+    "description": "Infrastructure engineering, structural analysis, smart city BIM modeling, and geotechnical design.",
+    "coreHiringDomains": [
+      "Structural Engineering",
+      "BIM & CAD Design",
+      "Construction Management",
+      "GIS & Surveying"
+    ],
+    "topRecruiters": [
+      "Larsen & Toubro",
+      "Afcons",
+      "Tata Projects",
+      "Shapoorji Pallonji",
+      "JLL"
+    ],
+    "avgPlacementRate": 31.5,
+    "avgCgpaBenchmark": 7.2,
+    "topRecommendedSkills": [
+      "AutoCAD & Revit",
+      "STAAD Pro",
+      "GIS & Spatial Analytics",
+      "Project Planning"
+    ],
+    "transitionRoadmap": "Specialize in BIM modeling and digital construction management, or learn Python data analysis to qualify for techno-managerial analyst positions.",
+    "keyCutoffs": {
+      "tier1EligibleCgpa": 6.8,
+      "maxBacklogsAllowed": 0,
+      "minCodingConfidence": 5
+    }
+  }
+]

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Lightbulb,
   Code2,
@@ -17,14 +17,15 @@ import { TabId } from "./DashboardHeader";
 interface ProjectRecommenderProps {
   targetRole: string;
   onAskCoach: (query: string) => void;
+  apiBase?: string;
 }
 
 interface ProjectBlueprint {
   id: string;
   title: string;
   domain: string;
-  roleMatch: string;
-  difficulty: "Intermediate" | "Advanced";
+  roleMatch?: string;
+  difficulty: "Intermediate" | "Advanced" | string;
   techStack: string[];
   overview: string;
   features: string[];
@@ -87,10 +88,28 @@ const PROJECTS_BY_ROLE: Record<string, ProjectBlueprint[]> = {
 export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
   targetRole,
   onAskCoach,
+  apiBase,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [projectsList, setProjectsList] = useState<ProjectBlueprint[]>(PROJECTS_BY_ROLE.default);
 
-  const projects = PROJECTS_BY_ROLE.default;
+  useEffect(() => {
+    if (!apiBase) return;
+    let isMounted = true;
+    fetch(`${apiBase}/api/data/projects`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data && Array.isArray(data) && data.length > 0) {
+          setProjectsList(data);
+        }
+      })
+      .catch((err) => console.warn("Projects API fetch warning:", err));
+    return () => {
+      isMounted = false;
+    };
+  }, [apiBase]);
+
+  const projects = projectsList;
 
   const handleCopyBullet = (id: string, text: string) => {
     navigator.clipboard.writeText(text);

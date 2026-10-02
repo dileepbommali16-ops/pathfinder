@@ -1,0 +1,104 @@
+[
+  {
+    "id": "proj-sde-1",
+    "roleId": "sde",
+    "title": "Distributed Asynchronous Job Queue & Rate Limiter",
+    "domain": "Backend Systems & Concurrency",
+    "difficulty": "Advanced",
+    "techStack": ["Python", "FastAPI", "Redis Streams", "Docker", "PostgreSQL"],
+    "overview": "A fault-tolerant distributed background task orchestrator with token-bucket rate limiting, worker consumer groups, and exponential backoff retry mechanisms.",
+    "features": [
+      "Token bucket rate-limiting middleware restricting client bursts",
+      "Redis stream worker pool with consumer groups and dead-letter queue",
+      "PostgreSQL state persistence with ACID transaction locks",
+      "Prometheus & Grafana telemetry tracking job throughput"
+    ],
+    "architectureSummary": "Client -> FastAPI Gateway -> Token Bucket Redis Middleware -> Redis Task Stream -> Worker Consumer Group (x3) -> Postgres Persistence -> Prometheus Metrics.",
+    "resumeBullet": "Engineered a distributed async task queue handling 3,500+ tasks/sec using Redis Streams and FastAPI, reducing job processing latency by 44% with zero message drop."
+  },
+  {
+    "id": "proj-fullstack-1",
+    "roleId": "fullstack",
+    "title": "Real-Time Collaborative Code & Canvas Studio",
+    "domain": "Full-Stack Web & WebSockets",
+    "difficulty": "Advanced",
+    "techStack": ["React 19", "TypeScript", "Node.js", "WebSockets", "TailwindCSS"],
+    "overview": "Low-latency browser IDE supporting synchronized multi-user code editing, syntax highlighting, and live conflict-free replicated data types (CRDT).",
+    "features": [
+      "CRDT-based text reconciliation for simultaneous multi-cursor editing",
+      "WebSocket heartbeat connection with auto-reconnect and state catchup",
+      "Sandboxed in-browser code execution runtime via WebAssembly",
+      "Modern dark glassmorphic design system built on TailwindCSS"
+    ],
+    "architectureSummary": "React Virtual DOM -> Yjs CRDT Provider -> Node.js WebSocket Hub -> Redis Pub/Sub Cluster -> Browser WebAssembly Runner.",
+    "resumeBullet": "Built real-time collaborative code editor supporting 50+ concurrent users with sub-30ms typing synchronization latency using WebSockets, React 19, and Yjs CRDTs."
+  },
+  {
+    "id": "proj-ai-1",
+    "roleId": "ai-engineer",
+    "title": "Multi-Agent Regulatory Document Research Engine (RAG)",
+    "domain": "Generative AI & Agentic Workflows",
+    "difficulty": "Advanced",
+    "techStack": ["Python", "Google GenAI", "FastAPI", "Qdrant", "React"],
+    "overview": "Autonomous multi-agent research pipeline that ingests complex legal and financial PDFs, constructs hybrid vector indexes, and produces verified factual summaries with exact citation coordinates.",
+    "features": [
+      "Recursive semantic chunking preserving table hierarchies and headers",
+      "Hybrid search combining BM25 keyword matching with dense Gemini embeddings",
+      "Autonomous reflection agent verifying answer faithfulness against source context",
+      "Interactive source bounding box highlighting in embedded PDF reader"
+    ],
+    "architectureSummary": "PDF Ingestion -> PyMuPDF OCR -> Gemini Embeddings -> Qdrant Vector DB -> Hybrid Ranker -> Gemini 3.5 Verification Agent -> React Citation UI.",
+    "resumeBullet": "Architected an enterprise RAG agent achieving 94.6% factual faithfulness on complex 80-page financial audits by implementing hybrid retrieval and autonomous self-reflection verification."
+  },
+  {
+    "id": "proj-data-1",
+    "roleId": "data-engineer",
+    "title": "High-Throughput Financial Market Data Lake & Stream Processing",
+    "domain": "Data Engineering & Stream Analytics",
+    "difficulty": "Advanced",
+    "techStack": ["Python", "Apache Kafka", "DuckDB", "Apache Airflow", "Docker"],
+    "overview": "Automated data engineering pipeline capturing tick-by-tick financial market feeds, performing deduplication, aggregating rolling candles, and writing partitioned Parquet lakes.",
+    "features": [
+      "Idempotent ingestion consumer preventing duplicate transactions",
+      "1-minute, 5-minute, and 1-hour rolling candlestick aggregations",
+      "Partitioned Parquet storage queryable via DuckDB in milliseconds",
+      "Airflow DAGs managing daily compaction, schema validation, and data quality checks"
+    ],
+    "architectureSummary": "Market WebSocket Stream -> Kafka Broker -> PySpark/DuckDB Stream Processor -> Partitioned Parquet Lakehouse -> Airflow Orchestrator -> Streamlit Dashboard.",
+    "resumeBullet": "Developed a real-time data lake pipeline processing 1.2M market events/day with DuckDB and Kafka, achieving 18x faster historical query times compared to traditional relational stores."
+  },
+  {
+    "id": "proj-devops-1",
+    "roleId": "devops-cloud",
+    "title": "Automated Multi-Environment GitOps & Canary Deployment Engine",
+    "domain": "Cloud Infrastructure & GitOps",
+    "difficulty": "Advanced",
+    "techStack": ["Kubernetes", "Docker", "Terraform", "GitHub Actions", "Prometheus"],
+    "overview": "A declarative GitOps workflow that spins up ephemeral preview environments on pull requests and manages canary rollouts with automated latency rollback triggers.",
+    "features": [
+      "Multi-stage Docker builds reducing production image footprint by 68%",
+      "Automated ephemeral preview environments deployed per pull request",
+      "Canary rollout controller rolling back deployments if HTTP 5xx error rate exceeds 1%",
+      "Prometheus & Grafana alerting integrated with Discord/Slack webhooks"
+    ],
+    "architectureSummary": "GitHub PR -> GitHub Actions Matrix -> Docker Slim Build -> Terraform Cloud -> k3s Kubernetes Ingress -> Prometheus Health Watchdog.",
+    "resumeBullet": "Designed automated GitOps CI/CD pipeline cutting deployment lead time from 45 mins to 3.8 mins while eliminating deployment-induced outages via automated canary rollback policies."
+  },
+  {
+    "id": "proj-embedded-1",
+    "roleId": "embedded-iot",
+    "title": "Industrial Edge Sensor Telemetry & Anomaly Node",
+    "domain": "Embedded Systems & Edge Computing",
+    "difficulty": "Advanced",
+    "techStack": ["Embedded C", "FreeRTOS", "ESP32", "MQTT / TLS", "Grafana Cloud"],
+    "overview": "Low-power industrial monitoring device collecting multi-axis vibration and temperature metrics, executing edge threshold filters, and securely transmitting packets to cloud time-series stores.",
+    "features": [
+      "Preemptive multi-tasking FreeRTOS architecture with sensor collection and network queues",
+      "Power management implementing deep sleep mode with 15µA quiescent draw",
+      "Mutual TLS (mTLS) authentication for encrypted MQTT broker communication",
+      "Watchdog timer recovery handling intermittent Wi-Fi / sensor dropouts"
+    ],
+    "architectureSummary": "I2C Vibration Sensor -> ESP32 Microcontroller (FreeRTOS) -> On-chip Edge Filter -> TLS/MQTT Client -> Cloud Broker -> Grafana Dashboard.",
+    "resumeBullet": "Built edge IoT sensor node running FreeRTOS on ESP32 with 15µA deep sleep consumption, delivering 99.8% telemetry uptime over mTLS to Grafana cloud."
+  }
+]
