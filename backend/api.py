@@ -119,7 +119,6 @@ app.add_middleware(
 )
 
 
-@app.get("/")
 @app.get("/health")
 @app.get("/api/health")
 def health_check():
@@ -632,15 +631,21 @@ if DIST_DIR and DIST_DIR.exists():
     if assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
+    @app.get("/")
     @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
+    async def serve_spa(full_path: str = ""):
         if full_path.startswith("api/") or full_path.startswith("health"):
             raise HTTPException(status_code=404, detail="API route not found")
-        file_path = DIST_DIR / full_path
-        if file_path.exists() and file_path.is_file():
-            return FileResponse(file_path)
+        if full_path:
+            file_path = DIST_DIR / full_path
+            if file_path.exists() and file_path.is_file():
+                return FileResponse(file_path)
         index_file = DIST_DIR / "index.html"
         if index_file.exists():
             return FileResponse(index_file)
         raise HTTPException(status_code=404, detail="Page not found")
+else:
+    @app.get("/")
+    def root_fallback():
+        return health_check()
 

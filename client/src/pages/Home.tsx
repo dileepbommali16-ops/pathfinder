@@ -668,6 +668,8 @@ export default function Home() {
                   handleSendMessage("Let's do an interactive mock interview for my role. Ask me question 1.");
                 }}
                 targetRole={profile.targetRole}
+                profile={profile}
+                prediction={prediction}
               />
 
               {/* What-If? Career Trajectory Simulator */}

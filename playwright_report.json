@@ -1,0 +1,141 @@
+{
+  "targetUrl": "http://127.0.0.1:8000/?demo=1",
+  "passed": 19,
+  "failed": 0,
+  "consoleErrors": [],
+  "results": [
+    {
+      "category": "Health",
+      "testName": "Root SPA HTTP Status",
+      "status": "PASS",
+      "details": "HTTP 200",
+      "timestamp": "2026-10-02 19:02:19"
+    },
+    {
+      "category": "Health",
+      "testName": "DOM Render & Title Check",
+      "status": "PASS",
+      "details": "Title: Pathfinder \u00b7 Student Placement Predictor",
+      "timestamp": "2026-10-02 19:02:21"
+    },
+    {
+      "category": "ActionCenter",
+      "testName": "Locate 'Analyze Career Readiness' Card",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2026-10-02 19:02:21"
+    },
+    {
+      "category": "ActionCenter",
+      "testName": "Click 'Analyze Career Readiness' Card",
+      "status": "PASS",
+      "details": "Triggered calculation lifecycle",
+      "timestamp": "2026-10-02 19:02:22"
+    },
+    {
+      "category": "ActionCenter",
+      "testName": "Career Readiness Audit Modal Displayed",
+      "status": "PASS",
+      "details": "Modal rendered in DOM with vectors",
+      "timestamp": "2026-10-02 19:02:23"
+    },
+    {
+      "category": "ActionCenter",
+      "testName": "Multi-Dimensional Vectors & Cutoffs",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2026-10-02 19:02:23"
+    },
+    {
+      "category": "ActionCenter",
+      "testName": "Modal Action Button Interaction",
+      "status": "PASS",
+      "details": "Modal action button clicked smoothly",
+      "timestamp": "2026-10-02 19:02:24"
+    },
+    {
+      "category": "Tabs",
+      "testName": "Tab: 'Command Center'",
+      "status": "PASS",
+      "details": "Activated without crash",
+      "timestamp": "2026-10-02 19:02:25"
+    },
+    {
+      "category": "Tabs",
+      "testName": "Tab: 'Branch Intelligence'",
+      "status": "PASS",
+      "details": "Activated without crash",
+      "timestamp": "2026-10-02 19:02:25"
+    },
+    {
+      "category": "Tabs",
+      "testName": "Tab: 'Skill Intelligence'",
+      "status": "PASS",
+      "details": "Activated without crash",
+      "timestamp": "2026-10-02 19:02:26"
+    },
+    {
+      "category": "Tabs",
+      "testName": "Tab: 'Role Intelligence'",
+      "status": "PASS",
+      "details": "Activated without crash",
+      "timestamp": "2026-10-02 19:02:27"
+    },
+    {
+      "category": "Tabs",
+      "testName": "Tab: '30-Day Mission'",
+      "status": "PASS",
+      "details": "Activated without crash",
+      "timestamp": "2026-10-02 19:02:28"
+    },
+    {
+      "category": "Tabs",
+      "testName": "Tab: 'Project Blueprints'",
+      "status": "PASS",
+      "details": "Activated without crash",
+      "timestamp": "2026-10-02 19:02:29"
+    },
+    {
+      "category": "Tabs",
+      "testName": "Tab: 'Project Defense'",
+      "status": "PASS",
+      "details": "Activated without crash",
+      "timestamp": "2026-10-02 19:02:29"
+    },
+    {
+      "category": "Tabs",
+      "testName": "Tab: 'AI Career Coach'",
+      "status": "PASS",
+      "details": "Activated without crash",
+      "timestamp": "2026-10-02 19:02:30"
+    },
+    {
+      "category": "Tabs",
+      "testName": "Tab: 'ATS Resume Studio'",
+      "status": "PASS",
+      "details": "Activated without crash",
+      "timestamp": "2026-10-02 19:02:31"
+    },
+    {
+      "category": "Tabs",
+      "testName": "Tab: 'Cohort Analytics'",
+      "status": "PASS",
+      "details": "Activated without crash",
+      "timestamp": "2026-10-02 19:02:31"
+    },
+    {
+      "category": "AICoach",
+      "testName": "Locate Chat Input",
+      "status": "PASS",
+      "details": "Chat component initialized",
+      "timestamp": "2026-10-02 19:02:32"
+    },
+    {
+      "category": "Mobile",
+      "testName": "Header Render (375px)",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2026-10-02 19:02:34"
+    }
+  ]
+}
