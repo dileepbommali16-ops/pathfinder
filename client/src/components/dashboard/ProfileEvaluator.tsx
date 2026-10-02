@@ -13,17 +13,8 @@ import {
   MessageSquare
 } from "lucide-react";
 
-export interface StudentProfileState {
-  cgpa: number;
-  backlogs: number;
-  internships: number;
-  coding: number;
-  communication: number;
-  targetRole: string;
-  targetTier: string;
-  branch: string;
-  graduationYear: number;
-}
+import { StudentProfileState } from "@/types/profile";
+export type { StudentProfileState };
 
 interface ProfileEvaluatorProps {
   profile: StudentProfileState;

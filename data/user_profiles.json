@@ -1,0 +1,224 @@
+{
+  "usr_anonymous": {
+    "user_id": "usr_anonymous",
+    "email": null,
+    "full_name": "Student Candidate",
+    "college": "National Institute of Technology",
+    "branch": "AIML",
+    "course": "B.Tech",
+    "current_year": 4,
+    "current_semester": 7,
+    "tenth_percentage": 85.0,
+    "twelfth_percentage": 82.0,
+    "cgpa": 8.2,
+    "percentage": 77.9,
+    "cgpa_formula_multiplier": 9.5,
+    "semester_cgpas": [],
+    "active_backlogs": 0,
+    "history_backlogs": 0,
+    "backlogs": 0,
+    "technical_skills": [
+      "Python",
+      "SQL",
+      "Data Structures"
+    ],
+    "tools": [
+      "Git",
+      "Docker",
+      "VS Code",
+      "Postman"
+    ],
+    "programming_languages": [
+      "Python",
+      "Java",
+      "SQL"
+    ],
+    "projects_count": 2,
+    "internships": 1,
+    "certifications": [
+      "AWS Certified Cloud Practitioner",
+      "HackerRank Problem Solving (Gold)"
+    ],
+    "coding_profiles": {},
+    "coding": 7,
+    "communication": 7,
+    "target_role": "Software Development Engineer (SDE)",
+    "target_domain": "Full-Stack & Cloud Systems",
+    "preferred_location": "Bangalore / Hyderabad",
+    "expected_package": "10 - 15 LPA",
+    "preferred_company_type": "Product Companies / Tier-1 MNCs",
+    "target_tier": "Product Companies / Tier-1 MNCs",
+    "graduation_year": 2026,
+    "onboarding_completed": false,
+    "wizard_step": 1,
+    "fullName": "Arjun Reddy",
+    "currentYear": "4th Year",
+    "currentSemester": "Semester 7",
+    "yearSemester": "4th Year / Semester 7",
+    "tenthPercentage": 91.5,
+    "twelfthPercentage": 88,
+    "cgpaFormulaMultiplier": 9.5,
+    "semesterCgpas": [
+      7.2,
+      7.5,
+      7.8,
+      8,
+      7.9,
+      8.2
+    ],
+    "activeBacklogs": 0,
+    "historyBacklogs": 0,
+    "historyOfBacklogs": 0,
+    "technicalSkills": [
+      "Python",
+      "JavaScript",
+      "React",
+      "SQL",
+      "Data Structures"
+    ],
+    "skills": [
+      "Python",
+      "JavaScript",
+      "React",
+      "SQL",
+      "Data Structures"
+    ],
+    "programmingLanguages": [
+      "Python",
+      "JavaScript",
+      "C++"
+    ],
+    "languages": [
+      "Python",
+      "JavaScript",
+      "C++"
+    ],
+    "projectsCount": 3,
+    "codingProfiles": {
+      "github": "https://github.com/candidate-demo",
+      "leetcode": "https://leetcode.com/candidate-demo"
+    },
+    "githubUrl": "https://github.com/candidate-demo",
+    "leetcodeUrl": "https://leetcode.com/candidate-demo",
+    "targetRole": "Software Development Engineer (SDE)",
+    "targetDomain": "Full Stack & Distributed Systems",
+    "preferredLocation": "Hyderabad / Bangalore",
+    "expectedPackage": "10-16 LPA",
+    "preferredCompanyType": "Product Companies / Tier-1 MNCs",
+    "targetTier": "Product Companies / Tier-1 MNCs",
+    "graduationYear": 2026,
+    "onboardingCompleted": true,
+    "wizardStep": 5
+  },
+  "Student Candidate": {
+    "user_id": "usr_anonymous",
+    "email": null,
+    "full_name": "Student Candidate",
+    "college": "National Institute of Technology",
+    "branch": "AIML",
+    "course": "B.Tech",
+    "current_year": 4,
+    "current_semester": 7,
+    "tenth_percentage": 85.0,
+    "twelfth_percentage": 82.0,
+    "cgpa": 8.2,
+    "percentage": 77.9,
+    "cgpa_formula_multiplier": 9.5,
+    "semester_cgpas": [],
+    "active_backlogs": 0,
+    "history_backlogs": 0,
+    "backlogs": 0,
+    "technical_skills": [
+      "Python",
+      "SQL",
+      "Data Structures"
+    ],
+    "tools": [
+      "Git",
+      "Docker",
+      "VS Code",
+      "Postman"
+    ],
+    "programming_languages": [
+      "Python",
+      "Java",
+      "SQL"
+    ],
+    "projects_count": 2,
+    "internships": 1,
+    "certifications": [
+      "AWS Certified Cloud Practitioner",
+      "HackerRank Problem Solving (Gold)"
+    ],
+    "coding_profiles": {},
+    "coding": 7,
+    "communication": 7,
+    "target_role": "Software Development Engineer (SDE)",
+    "target_domain": "Full-Stack & Cloud Systems",
+    "preferred_location": "Bangalore / Hyderabad",
+    "expected_package": "10 - 15 LPA",
+    "preferred_company_type": "Product Companies / Tier-1 MNCs",
+    "target_tier": "Product Companies / Tier-1 MNCs",
+    "graduation_year": 2026,
+    "onboarding_completed": false,
+    "wizard_step": 1,
+    "fullName": "Arjun Reddy",
+    "currentYear": "4th Year",
+    "currentSemester": "Semester 7",
+    "yearSemester": "4th Year / Semester 7",
+    "tenthPercentage": 91.5,
+    "twelfthPercentage": 88,
+    "cgpaFormulaMultiplier": 9.5,
+    "semesterCgpas": [
+      7.2,
+      7.5,
+      7.8,
+      8,
+      7.9,
+      8.2
+    ],
+    "activeBacklogs": 0,
+    "historyBacklogs": 0,
+    "historyOfBacklogs": 0,
+    "technicalSkills": [
+      "Python",
+      "JavaScript",
+      "React",
+      "SQL",
+      "Data Structures"
+    ],
+    "skills": [
+      "Python",
+      "JavaScript",
+      "React",
+      "SQL",
+      "Data Structures"
+    ],
+    "programmingLanguages": [
+      "Python",
+      "JavaScript",
+      "C++"
+    ],
+    "languages": [
+      "Python",
+      "JavaScript",
+      "C++"
+    ],
+    "projectsCount": 3,
+    "codingProfiles": {
+      "github": "https://github.com/candidate-demo",
+      "leetcode": "https://leetcode.com/candidate-demo"
+    },
+    "githubUrl": "https://github.com/candidate-demo",
+    "leetcodeUrl": "https://leetcode.com/candidate-demo",
+    "targetRole": "Software Development Engineer (SDE)",
+    "targetDomain": "Full Stack & Distributed Systems",
+    "preferredLocation": "Hyderabad / Bangalore",
+    "expectedPackage": "10-16 LPA",
+    "preferredCompanyType": "Product Companies / Tier-1 MNCs",
+    "targetTier": "Product Companies / Tier-1 MNCs",
+    "graduationYear": 2026,
+    "onboardingCompleted": true,
+    "wizardStep": 5
+  }
+}

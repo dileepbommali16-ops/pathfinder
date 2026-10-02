@@ -12,7 +12,7 @@
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:e2e": "node scripts/e2e_playwright_test.cjs",
+    "test:e2e": "python scripts/e2e_playwright_test.py",
     "db:push": "drizzle-kit generate && drizzle-kit migrate"
   },
   "dependencies": {

@@ -625,13 +625,13 @@ Would you like a follow-up challenge on **3Sum (Medium)** or a **Sliding Window*
     if "python baaga istam" in lower or "python istam" in lower:
         return "Super! 🐍 Python is one of the most versatile languages in the industry today. Whether you want to crack Tier-1 Software Engineering (backend with FastAPI/Django, DSA) or transition into Data Science & AI/ML, Python gives you a massive advantage.\n\nAre you looking to use Python for Software Development, Data Engineering, or AI/Machine Learning?"
 
-    if "placement kosam em nerchukovali" in lower or "placements kosam em nerchukovali" in lower or "em nerchukovali" in lower:
-        return """Placement crack cheyyడానికి ముఖ్యంగా 3 స్తంభాలు (Pillars) అవసరం:
-1. **Core Problem Solving (DSA):** Blind 75 లో ముఖ్యమైన patterns — Arrays, Sliding Window, Two Pointers, Binary Search మరియు Trees (BFS/DFS).
-2. **One Flagship Project:** ఒక full-stack లేదా AI project ని live deploy చేసి GitHub లో clear documentation తో ఉంచండి.
-3. **Core CS Subjects & STAR Storytelling:** DBMS (SQL queries), OS basics, మరియు interview లో మీ projects ని STAR method లో వివరించగలగడం.
+    if "placement kosam em nerchukovali" in lower or "placements kosam em nerchukovali" in lower or "em nerchukovali" in lower or "em skills kavali" in lower or "skills kavali" in lower or ("skills" in lower and "kavali" in lower) or ("skills" in lower and "nerchukovali" in lower):
+        return """Campus placements crack cheyadaniki mukhyamga 3 core pillars kavali:
+1. **Core Problem Solving (DSA):** Blind 75 lo unna Two Pointers, Sliding Window, Binary Search mariyu Trees (BFS/DFS).
+2. **One Solid Live Project:** GitHub lo clear documentation + live URL unna production-grade full-stack leda AI project.
+3. **Core CS Subjects & STAR Articulation:** DBMS (SQL queries), OS basics, mariyu interview lo projects ni STAR format lo clear ga explain cheyadam.
 
-మీ ప్రస్తుత టార్గెట్ రోల్ (SDE / Data / Web) ఏమిటో చెబితే, ఇంకా స్పష్టమైన వీక్లీ ప్లాన్ ఇస్తాను!"""
+Nee branch enti bro? Daniki tagina targeted weekly roadmap start cheddam!"""
 
     if lower in ("thanks", "thank you", "thx", "dhanyavadalu", "chala thanks"):
         return "Anytime! 🙌 Always here to help you move forward. What's next?"

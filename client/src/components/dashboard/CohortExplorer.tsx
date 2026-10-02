@@ -349,13 +349,13 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <tbody className="divide-y divide-slate-800/60">
               {currentRecords.map((r, i) => (
                 <tr key={i} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="px-6 py-3 font-mono text-slate-400">{r.sourceId}</td>
+                  <td className="px-6 py-3 font-mono text-slate-400">{r.sourceId ?? (r as any).source_id ?? "-"}</td>
                   <td className="px-6 py-3 text-slate-300">{r.year}</td>
                   <td className="px-6 py-3 font-semibold text-white">{r.branch}</td>
                   <td className="px-6 py-3 text-slate-300">{r.gender}</td>
-                  <td className="px-6 py-3 text-emerald-400">{r.skillCategory}</td>
-                  <td className="px-6 py-3 text-slate-200">{r.cgpa.toFixed(1)}</td>
-                  <td className="px-6 py-3 text-slate-200">{r.codingScore.toFixed(1)}/10</td>
+                  <td className="px-6 py-3 text-emerald-400">{r.skillCategory ?? (r as any).skill_category ?? "-"}</td>
+                  <td className="px-6 py-3 text-slate-200">{(Number(r.cgpa) || 0).toFixed(1)}</td>
+                  <td className="px-6 py-3 text-slate-200">{(Number(r.codingScore ?? (r as any).coding_score) || 0).toFixed(1)}/10</td>
                   <td className="px-6 py-3">
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface LampLoginProps {
-  onLogin: (user: { username: string; email: string }) => void;
+  onLogin: (user: { username: string; email: string; isNewUser?: boolean; bypassOnboarding?: boolean }) => void;
 }
 
 interface FireflyCoord {
@@ -15,7 +15,8 @@ interface FireflyCoord {
 }
 
 export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
-  const [isOn, setIsOn] = useState(false);
+  const [isOn, setIsOn] = useState(true);
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [username, setUsername] = useState("");
@@ -73,7 +74,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalUser = username.trim() || email.trim() || "Student";
+    const finalUser = username.trim() || email.trim() || (authMode === "signup" ? "New Candidate" : "Student");
     const finalEmail = email.trim() || (username.includes("@") ? username.trim() : "candidate@pathfinder.ai");
 
     if (!finalUser) {
@@ -81,14 +82,18 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
       return;
     }
 
-    onLogin({ username: finalUser, email: finalEmail });
+    onLogin({
+      username: finalUser,
+      email: finalEmail,
+      isNewUser: authMode === "signup"
+    });
   };
 
   const handleSocialLogin = (platform: "google" | "github") => {
     // If backend OAuth portal is configured, start OAuth flow, otherwise sign in directly
     const user = platform === "google" ? "Google User" : "GitHub User";
     const email = platform === "google" ? "user@gmail.com" : "developer@github.com";
-    onLogin({ username: user, email });
+    onLogin({ username: user, email, isNewUser: authMode === "signup" });
   };
 
   return (
@@ -244,6 +249,17 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
               }}
               title="Drag down or click to turn on lamp"
             />
+            {/* Quick Click to Turn On Lamp Button */}
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                id="btn-toggle-lamp"
+                onClick={() => setIsOn((prev) => !prev)}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-1.5 text-xs font-bold text-amber-300 backdrop-blur-md hover:bg-amber-400/20 transition-all active:scale-95"
+              >
+                <span>{isOn ? "💡 Lamp is ON (Click to Hide)" : "💡 Click to Turn On Lamp & Open Form"}</span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -260,12 +276,52 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
             {/* Header */}
-            <div className="mb-6 text-center">
+            <div className="mb-4 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ffd600] font-bold text-slate-950 shadow-[0_10px_25px_rgba(255,214,0,0.3)]">
                 AI
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Welcome Back</h2>
-              <p className="mt-1 text-sm text-slate-400">Sign in to Pathfinder Career Intelligence</p>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                {authMode === "signup" ? "Create Account" : "Welcome Back"}
+              </h2>
+              <p className="mt-1 text-sm text-slate-400">
+                {authMode === "signup"
+                  ? "Join Pathfinder & unlock step-wise career onboarding"
+                  : "Sign in to Pathfinder Career Intelligence"}
+              </p>
+            </div>
+
+            {/* Mode Switcher: Sign In vs Sign Up */}
+            <div className="mb-5 flex rounded-xl border border-white/10 bg-black/40 p-1">
+              <button
+                type="button"
+                id="tab-auth-signin"
+                onClick={() => {
+                  setAuthMode("signin");
+                  setErrorMessage(null);
+                }}
+                className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all ${
+                  authMode === "signin"
+                    ? "bg-[#ffd600] text-slate-950 shadow-md"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                id="tab-auth-signup"
+                onClick={() => {
+                  setAuthMode("signup");
+                  setErrorMessage(null);
+                }}
+                className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all ${
+                  authMode === "signup"
+                    ? "bg-[#ffd600] text-slate-950 shadow-md"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Sign Up / New Student
+              </button>
             </div>
 
             {/* Error Message */}
@@ -343,9 +399,10 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
               {/* Submit Button */}
               <button
                 type="submit"
+                id="btn-auth-submit"
                 className="w-full rounded-2xl bg-[#ffd600] py-3.5 text-base font-semibold text-slate-950 transition-all hover:bg-[#ffdc64] hover:shadow-[0_0_20px_rgba(255,220,100,0.4)] hover:scale-[1.02] active:scale-[0.98]"
               >
-                Sign In
+                {authMode === "signup" ? "Create Account & Start Onboarding" : "Sign In to Dashboard"}
               </button>
             </form>
 
@@ -379,12 +436,34 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
               </button>
             </div>
 
-            {/* Demo / Guest shortcut */}
-            <div className="mt-5 text-center">
+            {/* Demo / Guest shortcuts */}
+            <div className="mt-5 space-y-2 text-center">
               <button
                 type="button"
-                onClick={() => onLogin({ username: "Guest Student", email: "guest@pathfinder.ai" })}
-                className="text-xs text-slate-400 hover:text-amber-300 transition-colors underline underline-offset-4"
+                id="btn-demo-wizard"
+                onClick={() =>
+                  onLogin({
+                    username: "New Student",
+                    email: "newstudent@pathfinder.ai",
+                    isNewUser: true
+                  })
+                }
+                className="block w-full text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors underline underline-offset-4"
+              >
+                Start as New Student (Step-Wise Onboarding Wizard) &rarr;
+              </button>
+
+              <button
+                type="button"
+                id="btn-demo-guest"
+                onClick={() =>
+                  onLogin({
+                    username: "Guest Student",
+                    email: "guest@pathfinder.ai",
+                    bypassOnboarding: true
+                  })
+                }
+                className="block w-full text-xs text-slate-400 hover:text-amber-300 transition-colors underline underline-offset-4"
               >
                 Continue in Guest / Demo Mode &rarr;
               </button>

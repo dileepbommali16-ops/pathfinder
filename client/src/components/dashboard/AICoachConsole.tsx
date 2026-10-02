@@ -250,6 +250,37 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               >
                 <div className="whitespace-pre-wrap">{m.content}</div>
 
+                {m.role === "assistant" && (() => {
+                  const chips: string[] = [];
+                  const lines = m.content.split("\n");
+                  for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+                      const cleaned = trimmed.replace(/^[-*]\s+/, "").replace(/\*\*/g, "").trim();
+                      if (cleaned.length > 0 && cleaned.length < 80) {
+                        chips.push(cleaned);
+                      }
+                    }
+                  }
+                  if (chips.length === 0) return null;
+                  return (
+                    <div className="mt-3.5 flex flex-wrap gap-2 pt-2.5 border-t border-white/[0.08]">
+                      {chips.map((chip, cIdx) => (
+                        <button
+                          key={cIdx}
+                          type="button"
+                          onClick={() => onSendMessage(chip)}
+                          disabled={isLoading}
+                          className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition-all hover:bg-emerald-500/20 hover:border-emerald-400 active:scale-95 disabled:opacity-50 shadow-sm"
+                        >
+                          <Sparkles className="h-3 w-3 text-emerald-400 flex-shrink-0" />
+                          <span>{chip}</span>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+
                 {m.role === "assistant" && (
                   <button
                     onClick={() => handleCopy(m.content, idx)}
@@ -294,6 +325,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       <form onSubmit={handleSubmit} className="border-t border-white/[0.06] bg-black/20 p-4">
         <div className="relative flex items-center">
           <input
+            id="chat-console-input"
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -305,6 +337,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             className="w-full rounded-2xl border border-white/[0.08] bg-slate-950/80 py-3.5 pl-4 pr-12 text-xs font-medium text-slate-200 outline-none transition-all placeholder:text-slate-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
           />
           <button
+            id="chat-console-send"
             type="submit"
             disabled={!input.trim() || isLoading}
             className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 transition-all hover:brightness-110 active:scale-95 disabled:opacity-40 shadow-sm"

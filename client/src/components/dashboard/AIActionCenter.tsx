@@ -20,7 +20,7 @@ import {
   BarChart3
 } from "lucide-react";
 import { TabId } from "./DashboardHeader";
-import { StudentProfileState } from "./ProfileEvaluator";
+import { StudentProfileState, DEFAULT_STUDENT_PROFILE } from "@/types/profile";
 
 interface AIActionCenterProps {
   onNavigateTab: (tab: TabId) => void;
@@ -52,15 +52,8 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
   // Active candidate vectors fallback to safe defaults if not provided
   const activeProfile: StudentProfileState = profile || {
-    cgpa: 7.8,
-    backlogs: 0,
-    internships: 1,
-    coding: 7,
-    communication: 7,
-    targetRole: targetRole || "Software Development Engineer (SDE)",
-    targetTier: "Product Companies / Tier-1 MNCs",
-    branch: "CSE",
-    graduationYear: 2026,
+    ...DEFAULT_STUDENT_PROFILE,
+    targetRole: targetRole || DEFAULT_STUDENT_PROFILE.targetRole,
   };
 
   // Live mathematical sensitivity calculation

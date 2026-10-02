@@ -17,7 +17,19 @@ import {
   Zap
 } from "lucide-react";
 
-export type TabId = "overview" | "branches" | "skills" | "roles" | "missions" | "projects" | "defense" | "coach" | "resume" | "analytics";
+export type TabId =
+  | "overview"
+  | "action"
+  | "skills"
+  | "branches"
+  | "analytics"
+  | "coach"
+  | "profile"
+  | "roles"
+  | "missions"
+  | "projects"
+  | "defense"
+  | "resume";
 
 interface DashboardHeaderProps {
   activeTab: TabId;
@@ -28,16 +40,16 @@ interface DashboardHeaderProps {
 }
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string }[] = [
-  { id: "overview", label: "Command Center", icon: Target },
-  { id: "branches", label: "Branch Intelligence", icon: GraduationCap, badge: "Dept" },
-  { id: "skills", label: "Skill Intelligence", icon: Zap, badge: "Impact" },
-  { id: "roles", label: "Role Intelligence", icon: Compass, badge: "Paths" },
-  { id: "missions", label: "30-Day Mission", icon: Calendar, badge: "Sprint" },
-  { id: "projects", label: "Project Blueprints", icon: Lightbulb, badge: "X-Y-Z" },
-  { id: "defense", label: "Project Defense", icon: ShieldAlert, badge: "STAR" },
-  { id: "coach", label: "AI Career Coach", icon: Bot, badge: "Gemini" },
+  { id: "overview", label: "Dashboard", icon: Target },
+  { id: "action", label: "AI Action Centre", icon: Zap, badge: "Instant" },
+  { id: "skills", label: "Skills Roadmap", icon: Compass, badge: "Sprint" },
+  { id: "branches", label: "Branches and Courses", icon: GraduationCap, badge: "Dept" },
+  { id: "analytics", label: "Cohort Analytics / Placements", icon: TrendingUp, badge: "972" },
+  { id: "coach", label: "AI Chat Assistant", icon: Bot, badge: "Gemini" },
+  { id: "profile", label: "Profile/Settings", icon: User, badge: "SSOT" },
   { id: "resume", label: "ATS Resume Studio", icon: FileText },
-  { id: "analytics", label: "Cohort Analytics", icon: TrendingUp },
+  { id: "projects", label: "Project Blueprints", icon: Lightbulb },
+  { id: "defense", label: "Project Defense", icon: ShieldAlert },
 ];
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -76,18 +88,23 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {/* User Identity & Logout */}
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3.5 py-1.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
+          <button
+            type="button"
+            onClick={() => setActiveTab("profile")}
+            title="View & Edit Candidate Profile"
+            className="hidden sm:flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3.5 py-1.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-xl hover:border-emerald-500/40 hover:bg-white/[0.06] transition-all cursor-pointer text-left"
+          >
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-tr from-cyan-400 to-emerald-400 text-[11px] font-bold text-slate-950 shadow-sm">
               {username ? username.charAt(0).toUpperCase() : "U"}
             </div>
-            <div className="text-left">
+            <div>
               <div className="flex items-center gap-1.5 leading-none">
                 <span className="text-xs font-semibold text-slate-200">{username || "Student"}</span>
                 <ShieldCheck className="h-3 w-3 text-emerald-400" />
               </div>
               {email && <span className="text-[10px] text-slate-400 leading-none">{email}</span>}
             </div>
-          </div>
+          </button>
 
           <button
             onClick={onLogout}
@@ -109,6 +126,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             return (
               <button
                 key={tab.id}
+                id={`tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
                 className={`relative flex items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-semibold transition-all ${
                   isActive

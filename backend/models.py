@@ -1,17 +1,73 @@
-from typing import List, Optional, Dict
-from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any, Union
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class StudentProfile(BaseModel):
-    cgpa: float = Field(ge=0, le=10, default=7.5)
-    backlogs: int = Field(ge=0, default=0)
-    internships: int = Field(ge=0, default=1)
-    communication: int = Field(ge=1, le=10, default=7)
-    coding: int = Field(ge=1, le=10, default=7)
-    target_role: Optional[str] = "Software Development Engineer (SDE)"
-    target_tier: Optional[str] = "Product / Tier-1 MNC"
-    branch: Optional[str] = "CSE"
-    graduation_year: Optional[int] = 2026
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    # Identification
+    user_id: Optional[str] = Field(default=None, max_length=64)
+
+    # Step 1: Basic Details
+    email: Optional[str] = Field(default=None, max_length=128)
+    full_name: Optional[str] = Field(default="Student Candidate", max_length=100)
+    college: Optional[str] = Field(default="Engineering Institute", max_length=120)
+    branch: Optional[str] = Field(default="CSE", max_length=50)
+    course: Optional[str] = Field(default="B.Tech", max_length=50)
+    current_year: Optional[Union[int, str]] = 4
+    current_semester: Optional[Union[int, str]] = 7
+
+    # Step 2: Academic Details
+    tenth_percentage: Optional[float] = Field(default=85.0, ge=0.0, le=100.0)
+    twelfth_percentage: Optional[float] = Field(default=82.0, ge=0.0, le=100.0)
+    cgpa: float = Field(default=7.8, ge=0.0, le=10.0)
+    percentage: Optional[float] = Field(default=74.1, ge=0.0, le=100.0)
+    cgpa_formula_multiplier: Optional[float] = Field(default=9.5, ge=5.0, le=15.0)
+    semester_cgpas: Optional[List[float]] = Field(default_factory=list)
+    active_backlogs: int = Field(default=0, ge=0, le=50)
+    history_backlogs: int = Field(default=0, ge=0, le=50)
+    backlogs: int = Field(default=0, ge=0, le=50)  # alias for active_backlogs
+
+    # Step 3: Skills & Experience
+    technical_skills: Optional[List[str]] = Field(default_factory=lambda: ["Python", "SQL", "Data Structures"])
+    tools: Optional[List[str]] = Field(default_factory=lambda: ["Git", "Docker", "VS Code"])
+    programming_languages: Optional[List[str]] = Field(default_factory=lambda: ["Python", "Java", "SQL"])
+    projects_count: int = Field(default=2, ge=0, le=100)
+    internships: int = Field(default=1, ge=0, le=50)
+    certifications: Optional[List[str]] = Field(default_factory=list)
+    coding_profiles: Optional[Dict[str, str]] = Field(default_factory=dict)
+    coding: int = Field(default=7, ge=1, le=10)
+    communication: int = Field(default=7, ge=1, le=10)
+
+    # Step 4: Career Goals
+    target_role: Optional[str] = Field(default="Software Development Engineer (SDE)", max_length=120)
+    target_domain: Optional[str] = Field(default="Full-Stack & Cloud Systems", max_length=120)
+    preferred_location: Optional[str] = Field(default="Bangalore / Hyderabad", max_length=120)
+    expected_package: Optional[str] = Field(default="10 - 15 LPA", max_length=60)
+    preferred_company_type: Optional[str] = Field(default="Product Companies / Tier-1 MNCs", max_length=120)
+    target_tier: Optional[str] = Field(default="Product Companies / Tier-1 MNCs", max_length=120)
+    graduation_year: Optional[int] = Field(default=2026, ge=2000, le=2100)
+
+    # Onboarding Status & Saved Progress
+    onboarding_completed: bool = False
+    wizard_step: int = Field(default=1, ge=1, le=5)
+
+
+class ReadinessAuditResult(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    chance: float
+    label: str
+    tone: str
+    overall_percentage: float
+    cgpa: float
+    conversion_formula: str
+    strengths: List[str]
+    gaps: List[str]
+    recommended_skills: List[str]
+    breakdown: Dict[str, float]
+    cohort_comparison: Dict[str, Any]
+    next_steps: List[str]
 
 
 class PredictionResult(BaseModel):
@@ -50,16 +106,27 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str
-    history: Optional[List[ChatMessage]] = []
+    message: str = Field(..., min_length=1, max_length=2000)
+    history: Optional[List[ChatMessage]] = Field(default_factory=list)
     profile: Optional[StudentProfile] = None
 
 
 class CohortFilters(BaseModel):
-    year: Optional[int] = 2026
-    branch: Optional[str] = "All"
-    gender: Optional[str] = "All"
-    skill: Optional[str] = "All"
+    year: Optional[int] = Field(default=2026, ge=0, le=2100)
+    branch: Optional[str] = Field(default="All", max_length=50)
+    gender: Optional[str] = Field(default="All", max_length=50)
+    skill: Optional[str] = Field(default="All", max_length=64)
+
+
+class PaginatedCohortResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+    page: int = Field(ge=1, default=1)
+    page_size: int = Field(ge=1, le=100, default=25)
+    total_records: int
+    total_pages: int
+    has_next: bool
+    has_prev: bool
+    records: List[Dict[str, Any]]
 
 
 class UserSession(BaseModel):
@@ -73,8 +140,8 @@ class UserSession(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    username: str
-    email: Optional[str] = None
+    username: str = Field(..., min_length=1, max_length=64)
+    email: Optional[str] = Field(None, max_length=128)
 
 
 class LoginResponse(BaseModel):

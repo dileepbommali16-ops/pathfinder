@@ -57,6 +57,9 @@ pids
 *.seed
 *.pid.lock
 *.bak
+*.db-shm
+*.db-wal
+backups/
 
 # Coverage directory used by tools like istanbul
 coverage/

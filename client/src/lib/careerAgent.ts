@@ -472,13 +472,13 @@ Would you like a follow-up challenge on **3Sum (Medium)** or a **Sliding Window*
     return "Super! 🐍 Python is one of the most versatile and in-demand languages in tech today. Whether you want to crack Tier-1 Software Engineering (backend with FastAPI/Django, DSA) or transition into Data Science & AI/ML, Python gives you a massive advantage.\n\nAre you looking to use Python for Software Development, Data Engineering, or AI/Machine Learning?";
   }
 
-  if (/placement kosam em nerchukovali|placements kosam em nerchukovali|em nerchukovali/i.test(lower)) {
-    return `Placement crack cheyyడానికి ముఖ్యంగా 3 స్తంభాలు (Pillars) అవసరం:
+  if (/placement kosam em nerchukovali|placements kosam em nerchukovali|em nerchukovali|em skills kavali|skills kavali/i.test(lower) || (lower.includes("skills") && lower.includes("kavali"))) {
+    return `Placement crack cheyyడానికి ముఖ్యంగా 3 core pillars అవసరం:
 1. **Core Problem Solving (DSA):** Blind 75 లో ముఖ్యమైన patterns — Arrays, Sliding Window, Two Pointers, Binary Search మరియు Trees (BFS/DFS).
 2. **One Flagship Project:** ఒక full-stack లేదా AI project ని live deploy చేసి GitHub లో clear documentation తో ఉంచండి.
 3. **Core CS Subjects & STAR Storytelling:** DBMS (SQL queries), OS basics, మరియు interview లో మీ projects ని STAR method లో వివరించగలగడం.
 
-మీ ప్రస్తుత టార్గెట్ రోల్ (${profile.targetRole}) కి తగినట్టు వీక్లీ ప్లాన్ ఇస్తాను. రోజూ కోడింగ్ కి ఎంత సమయం కేటాయించగలరు?`;
+మీ ప్రస్తుత టార్గెట్ రోల్ (${profile.targetRole || "SDE"}) కి తగినట్టు వీక్లీ ప్లాన్ ఇస్తాను. రోజూ కోడింగ్ కి ఎంత సమయం కేటాయించగలరు?`;
   }
 
   if (["thanks", "thank you", "thx", "dhanyavadalu", "chala thanks"].includes(lower)) {
