@@ -68,15 +68,21 @@ class ReadinessAuditResult(BaseModel):
     breakdown: Dict[str, float]
     cohort_comparison: Dict[str, Any]
     next_steps: List[str]
+    is_estimated: Optional[bool] = False
+    data_source: Optional[str] = "Random Forest ML Engine"
 
 
 class PredictionResult(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
     chance: float
     label: str
     tone: str  # "strong" | "steady" | "focus"
     strengths: List[str]
     priorities: List[str]
     breakdown: Dict[str, float]
+    is_estimated: Optional[bool] = False
+    data_source: Optional[str] = "Random Forest ML Engine"
 
 
 class Roadmap(BaseModel):

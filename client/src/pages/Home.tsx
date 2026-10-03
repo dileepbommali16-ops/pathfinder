@@ -924,6 +924,7 @@ export default function Home() {
                 targetRole={profile.targetRole}
                 profile={profile}
                 prediction={prediction}
+                apiBase={API_BASE}
               />
 
               {/* What-If? Career Trajectory Simulator */}
@@ -982,6 +983,7 @@ export default function Home() {
                 targetRole={profile.targetRole}
                 profile={profile}
                 prediction={prediction}
+                apiBase={API_BASE}
               />
               <NextActionsWidget
                 profile={profile}

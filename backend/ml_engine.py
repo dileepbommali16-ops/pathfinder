@@ -55,6 +55,7 @@ def fallback_score(profile: StudentProfile) -> float:
 
 
 def predict_placement(profile: StudentProfile) -> PredictionResult:
+    is_estimated = False
     try:
         model, features = get_trained_model()
         input_df = pd.DataFrame(
@@ -66,6 +67,7 @@ def predict_placement(profile: StudentProfile) -> PredictionResult:
     except Exception as exc:
         print(f"[ML Engine] Prediction warning: {exc}, using calibrated fallback formula")
         chance = fallback_score(profile)
+        is_estimated = True
 
     # Determine classification label and tone
     if chance >= 75.0:
@@ -130,5 +132,7 @@ def predict_placement(profile: StudentProfile) -> PredictionResult:
         tone=tone,
         strengths=strengths,
         priorities=priorities,
-        breakdown=breakdown
+        breakdown=breakdown,
+        is_estimated=is_estimated,
+        data_source="Random Forest ML Engine (972 Records)" if not is_estimated else "Calibrated Rule-Based Model (Estimated)"
     )
