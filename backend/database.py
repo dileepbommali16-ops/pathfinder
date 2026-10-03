@@ -94,6 +94,91 @@ def init_database():
     # Pre-populate cohort_placements from CSV if empty
     populate_cohort_if_empty()
     migrate_legacy_profiles_if_present()
+    seed_demo_candidate_profile()
+
+
+def seed_demo_candidate_profile():
+    """Seeds pre-filled demo candidate profiles for live hackathon judge demonstrations."""
+    demo_profiles = [
+        {
+            "user_id": "usr_demo_judge",
+            "username": "Demo Candidate",
+            "email": "demo@pathfinder.ai",
+            "full_name": "Dileep Bommali (Judge Demo)",
+            "college": "National Institute of Technology",
+            "branch": "AIML",
+            "course": "B.Tech",
+            "year_semester": "4th Year / 7th Sem",
+            "tenth_percentage": 92.5,
+            "twelfth_percentage": 89.0,
+            "cgpa": 8.4,
+            "percentage": 79.8,
+            "cgpa_formula_multiplier": 9.5,
+            "semester_cgpas": [8.1, 8.2, 8.3, 8.5, 8.4, 8.6],
+            "active_backlogs": 0,
+            "backlogs": 0,
+            "history_of_backlogs": 0,
+            "technical_skills": ["Python", "Machine Learning", "FastAPI", "React", "PostgreSQL", "Docker", "PyTorch"],
+            "tools": ["Git", "Docker", "VS Code", "Postman", "Linux"],
+            "programming_languages": ["Python", "JavaScript", "TypeScript", "SQL"],
+            "projects_count": 3,
+            "internships": 2,
+            "certifications": ["AWS Certified Cloud Practitioner", "Google Cloud Associate"],
+            "github_url": "https://github.com/dileepbommali",
+            "leetcode_url": "https://leetcode.com/dileep",
+            "target_role": "Software Development Engineer (SDE)",
+            "target_tier": "Product Companies / Tier-1 MNCs",
+            "target_domain": "Applied AI & Cloud Services",
+            "preferred_location": "Bangalore",
+            "expected_package": "15 - 25 LPA",
+            "preferred_company_type": "Product Companies / Tier-1 MNCs",
+            "communication": 8,
+            "coding": 8,
+            "graduation_year": 2026,
+            "onboarding_completed": True,
+            "wizard_step": 5
+        },
+        {
+            "user_id": "usr_demo_guest",
+            "username": "Guest Student",
+            "email": "guest@pathfinder.ai",
+            "full_name": "Guest Student Candidate",
+            "college": "Engineering College",
+            "branch": "CSE",
+            "course": "B.Tech",
+            "year_semester": "4th Year / 7th Sem",
+            "tenth_percentage": 90.0,
+            "twelfth_percentage": 88.0,
+            "cgpa": 7.8,
+            "percentage": 74.1,
+            "cgpa_formula_multiplier": 9.5,
+            "active_backlogs": 0,
+            "backlogs": 0,
+            "history_of_backlogs": 0,
+            "technical_skills": ["Java", "Python", "SQL", "React", "Spring Boot"],
+            "tools": ["Git", "VS Code", "Postman"],
+            "programming_languages": ["Java", "Python", "SQL"],
+            "projects_count": 2,
+            "internships": 1,
+            "certifications": ["Java Professional", "SQL Advanced"],
+            "target_role": "Software Development Engineer (SDE)",
+            "target_tier": "Product Companies / Tier-1 MNCs",
+            "target_domain": "Full-Stack Development",
+            "preferred_location": "Hyderabad",
+            "expected_package": "10 - 15 LPA",
+            "preferred_company_type": "Product Companies / Tier-1 MNCs",
+            "communication": 7,
+            "coding": 7,
+            "graduation_year": 2026,
+            "onboarding_completed": True,
+            "wizard_step": 5
+        }
+    ]
+    for p in demo_profiles:
+        save_user_profile(p["user_id"], p)
+        if p.get("email"):
+            save_user_profile(p["email"], p)
+
 
 
 def populate_cohort_if_empty():
