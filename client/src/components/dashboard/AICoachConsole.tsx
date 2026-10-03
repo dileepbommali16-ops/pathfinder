@@ -15,7 +15,9 @@ import {
   ChevronRight,
   Code2,
   Layers,
-  HelpCircle
+  HelpCircle,
+  Square,
+  RotateCcw
 } from "lucide-react";
 
 export interface Message {
@@ -27,6 +29,8 @@ interface AICoachConsoleProps {
   messages: Message[];
   onSendMessage: (text: string) => void;
   onClearChat: () => void;
+  onStopGeneration?: () => void;
+  onRegenerate?: () => void;
   isLoading: boolean;
   targetRole: string;
 }
@@ -72,6 +76,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   messages,
   onSendMessage,
   onClearChat,
+  onStopGeneration,
+  onRegenerate,
   isLoading,
   targetRole,
 }) => {
@@ -148,16 +154,30 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             </button>
           </div>
 
-          {messages.length > 0 && (
-            <button
-              onClick={onClearChat}
-              className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:border-red-500/40 hover:text-red-300"
-              title="Clear chat history"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
-          )}
+          <div className="flex items-center gap-1.5">
+            {messages.length > 1 && !isLoading && onRegenerate && (
+              <button
+                type="button"
+                onClick={onRegenerate}
+                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:border-cyan-500/40 hover:text-cyan-300"
+                title="Regenerate last response"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Regenerate</span>
+              </button>
+            )}
+
+            {messages.length > 0 && (
+              <button
+                onClick={onClearChat}
+                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:border-red-500/40 hover:text-red-300"
+                title="Clear chat history"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Reset</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -302,19 +322,31 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         )}
 
         {isLoading && (
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 text-slate-950 shadow-sm">
-              <Bot className="h-4 w-4" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 text-slate-950 shadow-sm">
+                <Bot className="h-4 w-4" />
+              </div>
+              <div className="flex items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-slate-950/80 px-4 py-3 text-xs text-slate-300 shadow-md">
+                <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+                <span>Pathfinder AI is analyzing & reasoning...</span>
+                <span className="flex gap-1 ml-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-slate-950/80 px-4 py-3 text-xs text-slate-300 shadow-md">
-              <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
-              <span>Pathfinder AI is analyzing & reasoning...</span>
-              <span className="flex gap-1 ml-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="h-1.5 w-1.5 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: "300ms" }} />
-              </span>
-            </div>
+            {onStopGeneration && (
+              <button
+                type="button"
+                onClick={onStopGeneration}
+                className="flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 hover:border-rose-400 transition-all active:scale-95 shadow-sm"
+              >
+                <Square className="h-3 w-3 fill-rose-400 text-rose-400" />
+                <span>Stop</span>
+              </button>
+            )}
           </div>
         )}
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DashboardHeader, TabId } from "@/components/dashboard/DashboardHeader";
 import { HeroMetrics } from "@/components/dashboard/HeroMetrics";
@@ -467,35 +467,62 @@ export default function Home() {
     {
       role: "assistant",
       content:
-        "Hi! I'm your Pathfinder AI Career Agent powered by Gemini. I'm connected to your live candidate profile. Ask me anything in English, Telugu script, or Roman Telugu—placement cutoffs, mock interviews, 6-week roadmaps, skill gaps, or resume refinement!",
+        "Hi! I'm your Pathfinder AI Career Coach powered by Gemini. I'm connected to your live candidate profile. Ask me anything in English, Telugu script, or Roman Telugu—placement cutoffs, mock interviews, 6-week roadmaps, skill gaps, or resume refinement!",
     },
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatAbortRef = useRef<AbortController | null>(null);
 
-  const handleSendMessage = async (userText: string) => {
-    const updatedMessages: Message[] = [...messages, { role: "user", content: userText }];
+  const handleStopChat = () => {
+    if (chatAbortRef.current) {
+      chatAbortRef.current.abort();
+      chatAbortRef.current = null;
+    }
+    setIsChatLoading(false);
+  };
+
+  const handleSendMessage = async (userText: string, customHistory?: Message[]) => {
+    const currentBase = customHistory || messages;
+    const updatedMessages: Message[] = [...currentBase, { role: "user", content: userText }];
     setMessages(updatedMessages);
     setIsChatLoading(true);
 
+    if (chatAbortRef.current) {
+      chatAbortRef.current.abort();
+    }
+    const abortCtrl = new AbortController();
+    chatAbortRef.current = abortCtrl;
+
+    // Filter history: skip leading initial assistant greeting so first history item is user turn
+    const cleanHistory = currentBase
+      .filter((m, idx) => !(idx === 0 && m.role === "assistant"))
+      .slice(-10)
+      .map((m) => ({ role: m.role, content: m.content }));
+
     try {
-      const resp = await fetchWithTimeout(`${API_BASE}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userText,
-          history: updatedMessages.slice(-12).map((m) => ({ role: m.role, content: m.content })),
-          profile: {
-            cgpa: profile.cgpa,
-            backlogs: profile.backlogs,
-            internships: profile.internships,
-            communication: profile.communication,
-            coding: profile.coding,
-            target_role: profile.targetRole,
-            target_tier: profile.targetTier,
-            branch: profile.branch,
-          },
-        }),
-      }, 18000);
+      const resp = await fetchWithTimeout(
+        `${API_BASE}/api/chat`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: abortCtrl.signal,
+          body: JSON.stringify({
+            message: userText,
+            history: cleanHistory,
+            profile: {
+              cgpa: profile.cgpa,
+              backlogs: profile.backlogs,
+              internships: profile.internships,
+              communication: profile.communication,
+              coding: profile.coding,
+              target_role: profile.targetRole,
+              target_tier: profile.targetTier,
+              branch: profile.branch,
+            },
+          }),
+        },
+        20000
+      );
 
       if (resp.ok) {
         const data = await resp.json();
@@ -507,11 +534,28 @@ export default function Home() {
 
       const agentReply = getCareerAgentResponse(userText, updatedMessages, profile);
       setMessages([...updatedMessages, { role: "assistant", content: agentReply }]);
-    } catch {
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        return;
+      }
       const agentReply = getCareerAgentResponse(userText, updatedMessages, profile);
       setMessages([...updatedMessages, { role: "assistant", content: agentReply }]);
     } finally {
       setIsChatLoading(false);
+      chatAbortRef.current = null;
+    }
+  };
+
+  const handleRegenerateChat = () => {
+    // Find the last user message and re-send it
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        const lastUserText = messages[i].content;
+        const priorMessages = messages.slice(0, i);
+        setMessages(priorMessages);
+        handleSendMessage(lastUserText, priorMessages);
+        break;
+      }
     }
   };
 
@@ -1088,6 +1132,8 @@ export default function Home() {
                 messages={messages}
                 onSendMessage={handleSendMessage}
                 onClearChat={() => setMessages([])}
+                onStopGeneration={handleStopChat}
+                onRegenerate={handleRegenerateChat}
                 isLoading={isChatLoading}
                 targetRole={profile.targetRole}
               />

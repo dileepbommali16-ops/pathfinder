@@ -211,8 +211,77 @@ Would you like to generate your **custom 30-Day Sprint Roadmap** or start an **i
   // -------------------------------------------------------------
   // 2. CASUAL CHAT & WARM HUMAN MIRRORING
   // -------------------------------------------------------------
-  if (lower.includes("love you") || lower.includes("love u")) {
-    return "I love you too! 💖 What can I help you with today?\n\nChoose an area below or ask me anything:\n- 🎯 **Placement Strategy & Eligibility**\n- 🔍 **Skill Gap & Roadmap**\n- 💡 **Flagship Project Ideas**\n- 🎙️ **Interactive Mock Interview**\n- 📊 **Cohort & Branch Benchmarks**";
+  if (/love you|love u|luv u|i love u|i luv u|nenu ninnu premistunna|premistunna/i.test(lower)) {
+    return `I love you too! 💖 What can I help you with today?
+
+- Analyze my career readiness 📊
+- Build my 6-week roadmap 🚀
+- Placement stats 🎓
+- Just chat 💬`;
+  }
+
+  // Greetings with history-aware variation on repetition
+  const greetingWords = ["hi", "hello", "hey", "hlo", "namaste", "namaskaram", "hola", "yo"];
+  const isGreeting = greetingWords.some(g => lower === g || lower.startsWith(`${g} `) || lower.startsWith(`${g}!`) || lower.startsWith(`${g},`));
+  if (isGreeting) {
+    let greetCount = 0;
+    if (history) {
+      for (const prev of history) {
+        const prevText = (prev.content || "").toLowerCase();
+        if (/hi|hello|hey|welcome to pathfinder|great to see you|still right here/i.test(prevText)) {
+          greetCount++;
+        }
+      }
+    }
+    const name = (profile as any)?.name ? ` ${(profile as any).name}` : "";
+    if (greetCount > 0) {
+      const replies = [
+        `Hello again${name}! 😄 Still right here with you. What would you like to explore next?`,
+        `Hey${name}! Ready whenever you are—what's on your mind?`,
+        `Always here for you! Let's keep making progress. What should we tackle next?`,
+        `Hey there${name}! How can I assist your career prep right now?`
+      ];
+      return replies[greetCount % replies.length];
+    } else {
+      return `Hey${name}! 👋 Welcome to Pathfinder. What's on your mind today?
+
+- Analyze my career readiness 📊
+- Build my 6-week roadmap 🚀
+- Placement stats 🎓
+- Just chat 💬`;
+    }
+  }
+
+  if (lower.includes("just chat")) {
+    return "Awesome! 😊 I'm always up for a good chat. We can talk about tech trends, college life, hackathons, how you're feeling about placements, or anything else on your mind. What's happening?";
+  }
+
+  // "what do I do now?" personalized next steps
+  if (/what do i do now|what should i do now|what next|what to do now|what do i do|what do we do now/i.test(lower)) {
+    const cgpa = Number(profile?.cgpa ?? 7.8);
+    const backlogs = Number(profile?.backlogs ?? 0);
+    const internships = Number(profile?.internships ?? 1);
+    const coding = Number(profile?.coding ?? 7);
+    const role = profile?.targetRole || "Software Development Engineer (SDE)";
+
+    const raw = cgpa * 5.2 + Math.max(0, 3 - backlogs) * 4 + Math.min(internships, 3) * 5 + 7.0 * 2.2 + coding * 2.7 - Math.max(backlogs - 1, 0) * 5;
+    const chance = Math.max(18.0, Math.min(96.0, Math.round(raw * 10) / 10));
+
+    const gap1 = coding < 8 ? "Solve 2 LeetCode Medium problems daily on Blind 75 Two Pointers & Sliding Window" : "Maintain daily problem-solving consistency across Graph & DP patterns";
+    const gap2 = internships === 0 ? "Deploy 1 production-grade full-stack or ML application with a live URL and clean GitHub repository" : "Refine your project architectural defense using the STAR method for interview rounds";
+    const gap3 = backlogs > 0 ? "Clear all active backlogs before campus drives to clear Tier-1 enterprise filters" : "Ensure your ATS resume contains verified metric-driven bullet points";
+
+    return `Based on your active profile for **${role}** (Readiness Score: **\`${chance}%\`**, CGPA: ${cgpa.toFixed(1)}/10.0, Coding: ${coding}/10, Active Backlogs: ${backlogs}):
+
+Here are your prioritized next steps:
+1. **Algorithmic Foundation:** ${gap1}.
+2. **Flagship Proof of Work:** ${gap2}.
+3. **Screening Cutoffs:** ${gap3}.
+
+- Analyze my career readiness 📊
+- Build my 6-week roadmap 🚀
+- Placement stats 🎓
+- Just chat 💬`;
   }
 
   // AIML Placed Count query

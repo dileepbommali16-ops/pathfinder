@@ -112,7 +112,7 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str = Field(default="", max_length=4000)
+    message: str = Field(default="", max_length=10000)
     history: Optional[List[ChatMessage]] = Field(default_factory=list)
     profile: Optional[StudentProfile] = None
 
