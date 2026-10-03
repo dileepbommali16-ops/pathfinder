@@ -27,29 +27,7 @@ import { StudentProfileState, ReadinessAuditData, DEFAULT_STUDENT_PROFILE } from
 import { getCareerAgentResponse } from "@/lib/careerAgent";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
 import { Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
-
-// Base API URL: uses environment variable with fallback to FastAPI on 8000 or Render production backend
-const getApiBase = (): string => {
-  if (typeof window !== "undefined") {
-    const envUrl = import.meta.env.VITE_API_BASE_URL as string;
-    if (envUrl && envUrl.trim()) return envUrl.replace(/\/+$/, "");
-    if (
-      window.location.hostname.includes("vercel.app") ||
-      (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")
-    ) {
-      return "https://pathfinder-1.onrender.com";
-    }
-  }
-  return "http://127.0.0.1:8000";
-};
-
-const API_BASE = getApiBase();
-
-const fetchWithTimeout = (url: string, options: RequestInit = {}, timeoutMs = 6000): Promise<Response> => {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
-  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(id));
-};
+import { getApiBase, API_BASE, fetchWithTimeout, api } from "@/lib/apiClient";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
@@ -109,9 +87,34 @@ export default function Home() {
     return "candidate@pathfinder.ai";
   });
 
+  const [userRole, setUserRole] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("pathfinder_user");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.role) return parsed.role;
+        } catch {}
+      }
+    }
+    return "student";
+  });
+
   const [isServerWakingUp, setIsServerWakingUp] = useState<boolean>(false);
 
+  // Authentication session expiration listener (401 token revocation)
+  useEffect(() => {
+    const handleRemoteLogout = () => {
+      setIsAuthenticated(false);
+      setShowResultScreen(false);
+      setUserRole("student");
+    };
+    window.addEventListener("pathfinder_logout", handleRemoteLogout);
+    return () => window.removeEventListener("pathfinder_logout", handleRemoteLogout);
+  }, []);
+
   // 1. Prediction State
+
   const [prediction, setPrediction] = useState<{
     chance: number;
     label: string;
@@ -188,7 +191,29 @@ export default function Home() {
     setUsername(user.username);
     setEmail(user.email);
     setIsAuthenticated(true);
-    localStorage.setItem("pathfinder_user", JSON.stringify(user));
+
+    try {
+      const loginResp = await fetchWithTimeout(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user.username, email: user.email }),
+      }, 5000);
+      if (loginResp.ok) {
+        const authData = await loginResp.json();
+        if (authData.token) {
+          localStorage.setItem("pathfinder_token", authData.token);
+          if (authData.user) {
+            localStorage.setItem("pathfinder_user", JSON.stringify(authData.user));
+            setUserRole(authData.user.role || "student");
+          }
+        }
+      } else {
+        localStorage.setItem("pathfinder_user", JSON.stringify(user));
+      }
+    } catch {
+      localStorage.setItem("pathfinder_user", JSON.stringify(user));
+    }
+
 
     if (user.isNewUser) {
       // Force onboarding wizard for newly registered candidates
@@ -705,16 +730,24 @@ export default function Home() {
   };
 
   // Logout: cleans state and returns to the Lamp Login screen
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetchWithTimeout(`${API_BASE}/api/auth/logout`, { method: "POST" }, 2000);
+    } catch {
+      // ignore
+    }
     localStorage.removeItem("pathfinder_user");
+    localStorage.removeItem("pathfinder_token");
     setIsAuthenticated(false);
     setShowResultScreen(false);
+    setUserRole("student");
     try {
       window.parent.postMessage({ type: "PATHFINDER_LOGOUT" }, "*");
     } catch {
       // ignore
     }
   };
+
 
   // Check if any optional profile fields are missing to show completion banner on dashboard
   const isProfilePartiallyIncomplete =
@@ -868,7 +901,9 @@ export default function Home() {
         username={username}
         email={email}
         onLogout={handleLogout}
+        userRole={userRole}
       />
+
 
       {/* Render Cold-Start Alert Banner */}
       {isServerWakingUp && (

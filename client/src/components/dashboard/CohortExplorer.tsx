@@ -76,7 +76,13 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
+  // Reset pagination to page 1 whenever filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.year, filters.branch, filters.gender, filters.skill]);
+
   const records = analytics?.records || [];
+
   const totalPages = Math.ceil(records.length / pageSize) || 1;
   const currentRecords = records.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
@@ -347,28 +353,48 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {currentRecords.map((r, i) => (
-                <tr key={i} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="px-6 py-3 font-mono text-slate-400">{r.sourceId ?? (r as any).source_id ?? "-"}</td>
-                  <td className="px-6 py-3 text-slate-300">{r.year}</td>
-                  <td className="px-6 py-3 font-semibold text-white">{r.branch}</td>
-                  <td className="px-6 py-3 text-slate-300">{r.gender}</td>
-                  <td className="px-6 py-3 text-emerald-400">{r.skillCategory ?? (r as any).skill_category ?? "-"}</td>
-                  <td className="px-6 py-3 text-slate-200">{(Number(r.cgpa) || 0).toFixed(1)}</td>
-                  <td className="px-6 py-3 text-slate-200">{(Number(r.codingScore ?? (r as any).coding_score) || 0).toFixed(1)}/10</td>
-                  <td className="px-6 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        r.placed_label === "Placed"
-                          ? "bg-emerald-500/20 text-emerald-400"
-                          : "bg-slate-800 text-slate-400"
-                      }`}
-                    >
-                      {r.placed_label}
-                    </span>
+              {currentRecords.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Filter className="h-8 w-8 text-slate-500 opacity-60" />
+                      <p className="text-sm font-semibold text-slate-300">No candidate records match this filter combination</p>
+                      <p className="text-xs text-slate-500 max-w-sm">
+                        No student profiles found for {filters.branch !== "All" ? `Branch: ${filters.branch}` : "All branches"} with {filters.skill !== "All" ? `Skill: ${filters.skill}` : "All skills"} in {filters.year}.
+                      </p>
+                      <button
+                        onClick={() => onFilterChange({ year: filters.year, branch: "All", gender: "All", skill: "All" })}
+                        className="mt-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer"
+                      >
+                        Reset All Filters
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                currentRecords.map((r, i) => (
+                  <tr key={i} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="px-6 py-3 font-mono text-slate-400">{r.sourceId ?? (r as any).source_id ?? "-"}</td>
+                    <td className="px-6 py-3 text-slate-300">{r.year}</td>
+                    <td className="px-6 py-3 font-semibold text-white">{r.branch}</td>
+                    <td className="px-6 py-3 text-slate-300">{r.gender}</td>
+                    <td className="px-6 py-3 text-emerald-400">{r.skillCategory ?? (r as any).skill_category ?? "-"}</td>
+                    <td className="px-6 py-3 text-slate-200">{(Number(r.cgpa) || 0).toFixed(1)}</td>
+                    <td className="px-6 py-3 text-slate-200">{(Number(r.codingScore ?? (r as any).coding_score) || 0).toFixed(1)}/10</td>
+                    <td className="px-6 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          r.placed_label === "Placed"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-slate-800 text-slate-400"
+                        }`}
+                      >
+                        {r.placed_label}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -37,20 +37,23 @@ interface DashboardHeaderProps {
   username: string;
   email?: string;
   onLogout: () => void;
+  userRole?: string;
 }
+
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string }[] = [
   { id: "overview", label: "Dashboard", icon: Target },
-  { id: "action", label: "AI Action Centre", icon: Zap, badge: "Instant" },
-  { id: "skills", label: "Skills Roadmap", icon: Compass, badge: "Sprint" },
-  { id: "branches", label: "Branches and Courses", icon: GraduationCap, badge: "Dept" },
-  { id: "analytics", label: "Cohort Analytics / Placements", icon: TrendingUp, badge: "972" },
-  { id: "coach", label: "AI Chat Assistant", icon: Bot, badge: "Gemini" },
-  { id: "profile", label: "Profile/Settings", icon: User, badge: "SSOT" },
-  { id: "resume", label: "ATS Resume Studio", icon: FileText },
+  { id: "action", label: "Readiness Command", icon: Zap, badge: "Instant" },
+  { id: "skills", label: "6-Week Roadmap", icon: Compass, badge: "Sprint" },
+  { id: "coach", label: "AI Career Coach", icon: Bot, badge: "Gemini" },
   { id: "projects", label: "Project Blueprints", icon: Lightbulb },
+  { id: "analytics", label: "Cohort Analytics", icon: TrendingUp, badge: "972" },
+  { id: "resume", label: "ATS Resume Studio", icon: FileText },
+  { id: "branches", label: "Branches and Courses", icon: GraduationCap, badge: "Dept" },
   { id: "defense", label: "Project Defense", icon: ShieldAlert },
+  { id: "profile", label: "Profile / Settings", icon: User, badge: "SSOT" },
 ];
+
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   activeTab,
@@ -58,6 +61,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   username,
   email,
   onLogout,
+  userRole = "student",
 }) => {
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#060813]/85 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.45)]">
@@ -81,6 +85,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <span className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-400 uppercase shadow-[0_0_10px_rgba(16,185,129,0.2)]">
                 AI 2.0
               </span>
+              {userRole === "admin" && (
+                <span className="rounded-md border border-purple-500/40 bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold text-purple-300 uppercase tracking-wider shadow-[0_0_10px_rgba(168,85,247,0.3)]">
+                  Admin Portal
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-400">Campus Placement & Engineering Intelligence</p>
           </div>
@@ -100,11 +109,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <div>
               <div className="flex items-center gap-1.5 leading-none">
                 <span className="text-xs font-semibold text-slate-200">{username || "Student"}</span>
-                <ShieldCheck className="h-3 w-3 text-emerald-400" />
+                {userRole === "admin" ? (
+                  <span className="text-[9px] font-bold text-purple-400 bg-purple-950/60 border border-purple-500/30 px-1 rounded">ADMIN</span>
+                ) : (
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" />
+                )}
               </div>
               {email && <span className="text-[10px] text-slate-400 leading-none">{email}</span>}
             </div>
           </button>
+
 
           <button
             onClick={onLogout}
