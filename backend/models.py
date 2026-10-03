@@ -24,20 +24,20 @@ class StudentProfile(BaseModel):
     percentage: Optional[float] = Field(default=74.1, ge=0.0, le=100.0)
     cgpa_formula_multiplier: Optional[float] = Field(default=9.5, ge=5.0, le=15.0)
     semester_cgpas: Optional[List[float]] = Field(default_factory=list)
-    active_backlogs: int = Field(default=0, ge=0, le=50)
-    history_backlogs: int = Field(default=0, ge=0, le=50)
-    backlogs: int = Field(default=0, ge=0, le=50)  # alias for active_backlogs
+    active_backlogs: Union[float, int] = Field(default=0, ge=0, le=50)
+    history_backlogs: Union[float, int] = Field(default=0, ge=0, le=50)
+    backlogs: Union[float, int] = Field(default=0, ge=0, le=50)  # alias for active_backlogs
 
     # Step 3: Skills & Experience
     technical_skills: Optional[List[str]] = Field(default_factory=lambda: ["Python", "SQL", "Data Structures"])
     tools: Optional[List[str]] = Field(default_factory=lambda: ["Git", "Docker", "VS Code"])
     programming_languages: Optional[List[str]] = Field(default_factory=lambda: ["Python", "Java", "SQL"])
-    projects_count: int = Field(default=2, ge=0, le=100)
-    internships: int = Field(default=1, ge=0, le=50)
+    projects_count: Union[float, int] = Field(default=2, ge=0, le=100)
+    internships: Union[float, int] = Field(default=1, ge=0, le=50)
     certifications: Optional[List[str]] = Field(default_factory=list)
     coding_profiles: Optional[Dict[str, str]] = Field(default_factory=dict)
-    coding: int = Field(default=7, ge=1, le=10)
-    communication: int = Field(default=7, ge=1, le=10)
+    coding: Union[float, int] = Field(default=7, ge=0, le=10)
+    communication: Union[float, int] = Field(default=7, ge=0, le=10)
 
     # Step 4: Career Goals
     target_role: Optional[str] = Field(default="Software Development Engineer (SDE)", max_length=120)
@@ -106,7 +106,7 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str = Field(..., min_length=1, max_length=2000)
+    message: str = Field(default="", max_length=4000)
     history: Optional[List[ChatMessage]] = Field(default_factory=list)
     profile: Optional[StudentProfile] = None
 
