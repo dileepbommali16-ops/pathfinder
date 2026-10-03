@@ -4,12 +4,12 @@
  * - Automatic Authorization: Bearer <token> injection
  * - 401 interception: clean logout and redirect event
  * - AbortController timeout and signal chaining
- * - Consistent typed response and error handling
+ * - Consistent response and error handling
  */
 
-export const getApiBase = (): string => {
+export const getApiBase = () => {
   if (typeof window !== "undefined") {
-    const envUrl = import.meta.env.VITE_API_BASE_URL as string;
+    const envUrl = import.meta.env.VITE_API_BASE_URL;
     if (envUrl && envUrl.trim()) return envUrl.replace(/\/+$/, "");
     if (
       window.location.hostname.includes("vercel.app") ||
@@ -23,17 +23,7 @@ export const getApiBase = (): string => {
 
 export const API_BASE = getApiBase();
 
-export interface ApiError {
-  status: number;
-  message: string;
-  detail?: any;
-}
-
-export const fetchWithTimeout = async (
-  url: string,
-  options: RequestInit = {},
-  timeoutMs = 8000
-): Promise<Response> => {
+export const fetchWithTimeout = async (url, options = {}, timeoutMs = 8000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -69,10 +59,10 @@ export const fetchWithTimeout = async (
 };
 
 export const api = {
-  get: (url: string, options?: RequestInit, timeoutMs = 8000) =>
+  get: (url, options, timeoutMs = 8000) =>
     fetchWithTimeout(url, { ...options, method: "GET" }, timeoutMs),
 
-  post: (url: string, body?: any, options?: RequestInit, timeoutMs = 12000) =>
+  post: (url, body, options, timeoutMs = 12000) =>
     fetchWithTimeout(
       url,
       {
@@ -84,11 +74,11 @@ export const api = {
       timeoutMs
     ),
 
-  delete: (url: string, options?: RequestInit, timeoutMs = 8000) =>
+  delete: (url, options, timeoutMs = 8000) =>
     fetchWithTimeout(url, { ...options, method: "DELETE" }, timeoutMs),
 
   // Auth operations
-  login: async (username: string, email?: string) => {
+  login: async (username, email) => {
     const resp = await api.post("/api/auth/login", { username, email });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ detail: "Login failed" }));

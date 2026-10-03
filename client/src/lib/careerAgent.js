@@ -1,15 +1,8 @@
-import { StudentProfileState } from "@/components/dashboard/ProfileEvaluator";
-
-export interface ChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
-
-const isTeluguScript = (text: string): boolean => {
+const isTeluguScript = (text) => {
   return /[\u0C00-\u0C7F]/.test(text);
 };
 
-const isRomanTelugu = (text: string): boolean => {
+const isRomanTelugu = (text) => {
   const lower = text.toLowerCase();
   const keywords = [
     "naku", "naaku", "enti", "ela", "unnayi", "unnavu", "unnava", "kavali", "cheyali",
@@ -20,11 +13,8 @@ const isRomanTelugu = (text: string): boolean => {
   return keywords.some(k => new RegExp(`\\b${k}\\b`, "i").test(lower));
 };
 
-export const getCareerAgentResponse = (
-  message: string,
-  history: ChatMessage[] = [],
-  profile: StudentProfileState
-): string => {
+export const getCareerAgentResponse = (message, history = [], profile) => {
+
   const msg = message.trim();
   const lower = msg.toLowerCase();
 
@@ -233,7 +223,8 @@ Would you like to generate your **custom 30-Day Sprint Roadmap** or start an **i
         }
       }
     }
-    const name = (profile as any)?.name ? ` ${(profile as any).name}` : "";
+    const name = profile?.name ? ` ${profile.name}` : "";
+
     if (greetCount > 0) {
       const replies = [
         `Hello again${name}! 😄 Still right here with you. What would you like to explore next?`,
