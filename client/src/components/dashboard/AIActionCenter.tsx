@@ -485,7 +485,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Run Random Forest ML sensitivity on current CGPA, internships & coding scores.",
       icon: Target,
       tag: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "Report Ready ✓" : "Instant ML",
-      accent: "from-emerald-500/20 to-teal-500/10 border-emerald-500/30 text-emerald-400",
+      accent: "from-emerald-500/15 via-emerald-500/5 to-transparent border-emerald-500/25 text-emerald-400",
       btnClass: loadingActionId === "calculate"
         ? "border-emerald-400 animate-pulse bg-emerald-500/20 ring-2 ring-emerald-400/50"
         : "hover:border-emerald-500/50 hover:bg-emerald-500/10",
@@ -498,7 +498,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: `Customized 6-week milestone schedule based on missing skill gaps for ${activeProfile.targetRole || "SDE"}.`,
       icon: Compass,
       tag: loadingActionId === "roadmap" ? "Synthesizing..." : "6-Week Plan",
-      accent: "from-purple-500/20 to-indigo-500/10 border-purple-500/30 text-purple-400",
+      accent: "from-purple-500/15 via-purple-500/5 to-transparent border-purple-500/25 text-purple-400",
       btnClass: loadingActionId === "roadmap"
         ? "border-purple-400 animate-pulse bg-purple-500/20"
         : "hover:border-purple-500/50 hover:bg-purple-500/10",
@@ -511,24 +511,11 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Interactive technical & STAR behavioral questions with instant AI scoring.",
       icon: Mic,
       tag: loadingActionId === "interview" ? "Preparing..." : "Live Simulation",
-      accent: "from-cyan-500/20 to-blue-500/10 border-cyan-500/30 text-cyan-400",
+      accent: "from-cyan-500/15 via-cyan-500/5 to-transparent border-cyan-500/25 text-cyan-400",
       btnClass: loadingActionId === "interview"
         ? "border-cyan-400 animate-pulse bg-cyan-500/20"
         : "hover:border-cyan-500/50 hover:bg-cyan-500/10",
       actionText: loadingActionId === "interview" ? "Loading Interviewer..." : "Begin Interview",
-    },
-    {
-      id: "resume",
-      title: "Audit Resume with ATS",
-      subtitle: "[ATS Scanner]",
-      description: "Detect missing keywords, parse PDF bullet points and align with recruiter standards.",
-      icon: FileText,
-      tag: loadingActionId === "resume" ? "Scanning..." : "ATS Scanner",
-      accent: "from-amber-500/20 to-yellow-500/10 border-amber-500/30 text-amber-400",
-      btnClass: loadingActionId === "resume"
-        ? "border-amber-400 animate-pulse bg-amber-500/20"
-        : "hover:border-amber-500/50 hover:bg-amber-500/10",
-      actionText: loadingActionId === "resume" ? "Parsing Vectors..." : "Scan Resume",
     },
     {
       id: "projects",
@@ -537,10 +524,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Production-grade project blueprints mapped directly to your missing skill gaps.",
       icon: Lightbulb,
       tag: loadingActionId === "projects" ? "Generating..." : "Portfolio",
-      accent: "from-rose-500/20 to-pink-500/10 border-rose-500/30 text-rose-400",
+      accent: "from-amber-500/15 via-amber-500/5 to-transparent border-amber-500/25 text-amber-400",
       btnClass: loadingActionId === "projects"
-        ? "border-rose-400 animate-pulse bg-rose-500/20"
-        : "hover:border-rose-500/50 hover:bg-rose-500/10",
+        ? "border-amber-400 animate-pulse bg-amber-500/20"
+        : "hover:border-amber-500/50 hover:bg-amber-500/10",
       actionText: loadingActionId === "projects" ? "Synthesizing..." : "View Blueprints",
     },
     {
@@ -550,11 +537,24 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Compare your branch and graduation year against 650+ verified campus offers.",
       icon: TrendingUp,
       tag: loadingActionId === "analytics" ? "Querying..." : "Campus Data",
-      accent: "from-teal-500/20 to-emerald-500/10 border-teal-500/30 text-teal-400",
+      accent: "from-blue-500/15 via-blue-500/5 to-transparent border-blue-500/25 text-blue-400",
       btnClass: loadingActionId === "analytics"
-        ? "border-teal-400 animate-pulse bg-teal-500/20"
-        : "hover:border-teal-500/50 hover:bg-teal-500/10",
+        ? "border-blue-400 animate-pulse bg-blue-500/20"
+        : "hover:border-blue-500/50 hover:bg-blue-500/10",
       actionText: loadingActionId === "analytics" ? "Loading Data..." : "Explore Cohort",
+    },
+    {
+      id: "resume",
+      title: "Audit Resume with ATS",
+      subtitle: "[ATS Scanner]",
+      description: "Detect missing keywords, parse PDF bullet points and align with recruiter standards.",
+      icon: FileText,
+      tag: loadingActionId === "resume" ? "Scanning..." : "ATS Scanner",
+      accent: "from-rose-500/15 via-rose-500/5 to-transparent border-rose-500/25 text-rose-400",
+      btnClass: loadingActionId === "resume"
+        ? "border-rose-400 animate-pulse bg-rose-500/20"
+        : "hover:border-rose-500/50 hover:bg-rose-500/10",
+      actionText: loadingActionId === "resume" ? "Parsing Vectors..." : "Scan Resume",
     },
   ];
 

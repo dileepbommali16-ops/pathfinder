@@ -61,18 +61,18 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/50 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
       {/* Subtle background ambient mesh */}
-      <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-emerald-500/[0.05] blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-cyan-500/[0.05] blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-purple-500/[0.08] blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-indigo-500/[0.05] blur-3xl" />
 
       {/* Title & Action Bar */}
       <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
               <Compass className="h-4 w-4" />
             </div>
             <h2 className="text-xl font-bold tracking-tight text-white">AI-Generated Career Roadmap</h2>
-            <span className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 uppercase shadow-[0_0_10px_rgba(16,185,129,0.15)]">
+            <span className="rounded-md border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-semibold text-purple-400 uppercase shadow-[0_0_10px_rgba(168,85,247,0.15)]">
               Gemini Powered
             </span>
           </div>
@@ -84,7 +84,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
         <button
           onClick={onRegenerate}
           disabled={isLoading}
-          className="flex items-center gap-2 self-start rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all hover:bg-emerald-500/20 active:scale-95 disabled:opacity-50 sm:self-auto"
+          className="flex items-center gap-2 self-start rounded-xl border border-purple-500/30 bg-purple-500/10 px-4 py-2.5 text-xs font-bold text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all hover:bg-purple-500/20 active:scale-95 disabled:opacity-50 sm:self-auto"
         >
           <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
           <span>{isLoading ? "Generating with Gemini..." : "Regenerate Roadmap"}</span>
@@ -97,11 +97,11 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
         <div className="rounded-2xl border border-white/[0.08] bg-slate-950/50 p-4.5 backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
           <div className="flex justify-between text-xs font-semibold">
             <span className="text-slate-300">Roadmap Milestone Progress</span>
-            <span className="text-emerald-400 font-bold">{completedCount} of {currentRoadmap.weekly_actions.length} Completed ({progressPercent}%)</span>
+            <span className="text-purple-400 font-bold">{completedCount} of {currentRoadmap.weekly_actions.length} Completed ({progressPercent}%)</span>
           </div>
           <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-800">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 shadow-[0_0_10px_rgba(16,185,129,0.4)] transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-purple-500 via-violet-400 to-indigo-400 shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>

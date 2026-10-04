@@ -183,24 +183,24 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
       </div>
 
       {/* 4 Core Parameter KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
         {/* CGPA */}
         <motion.div
           whileHover={{ y: -3 }}
           transition={{ duration: 0.2 }}
-          className="rounded-2xl border border-white/[0.08] bg-slate-900/50 p-5 shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:border-cyan-500/40 hover:shadow-[0_12px_32px_rgba(6,182,212,0.12)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+          className="rounded-2xl border border-white/[0.08] bg-slate-900/50 p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:border-cyan-500/40 hover:shadow-[0_12px_32px_rgba(6,182,212,0.12)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
         >
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-xs font-semibold">Cumulative CGPA</span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               <BookOpen className="h-4 w-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-white">{cgpa.toFixed(1)}</span>
-            <span className="text-xs text-slate-500">/ 10.0</span>
+          <div className="mt-4 flex items-baseline gap-1.5">
+            <span className="text-3xl font-black text-white">{cgpa.toFixed(1)}</span>
+            <span className="text-xs text-slate-400 font-medium">/ 10.0</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-400">
+          <div className="mt-3 text-xs text-slate-400">
             {cgpa >= 7.5 ? (
               <span className="text-emerald-400 font-medium">✓ Satisfies Tier-1 criteria</span>
             ) : (
@@ -213,11 +213,11 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
         <motion.div
           whileHover={{ y: -3 }}
           transition={{ duration: 0.2 }}
-          className="rounded-2xl border border-white/[0.08] bg-slate-900/50 p-5 shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:border-emerald-500/40 hover:shadow-[0_12px_32px_rgba(16,185,129,0.12)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+          className="rounded-2xl border border-white/[0.08] bg-slate-900/50 p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:border-emerald-500/40 hover:shadow-[0_12px_32px_rgba(16,185,129,0.12)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
         >
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-xs font-semibold">Active Backlogs</span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <Award className="h-4 w-4" />
             </div>
           </div>

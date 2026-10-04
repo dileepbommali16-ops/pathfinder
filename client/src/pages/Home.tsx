@@ -24,9 +24,23 @@ import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { OnboardingResultScreen } from "@/components/onboarding/OnboardingResultScreen";
 import { ProfileSettings } from "@/components/dashboard/ProfileSettings";
 import { StudentProfileState, ReadinessAuditData, DEFAULT_STUDENT_PROFILE } from "@/types/profile";
-import { getCareerAgentResponse } from "@/lib/careerAgent";
+import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
-import { Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
+import {
+  Sparkles,
+  ArrowRight,
+  CheckCircle2,
+  Zap,
+  Compass,
+  Bot,
+  Lightbulb,
+  TrendingUp,
+  FileText,
+  GraduationCap,
+  ShieldAlert,
+  User,
+  Target
+} from "lucide-react";
 import { getApiBase, API_BASE, fetchWithTimeout, api } from "@/lib/apiClient";
 
 export default function Home() {
@@ -557,14 +571,24 @@ export default function Home() {
         }
       }
 
-      const agentReply = getCareerAgentResponse(userText, updatedMessages, profile);
-      setMessages([...updatedMessages, { role: "assistant", content: agentReply }]);
+      setMessages([
+        ...updatedMessages,
+        {
+          role: "assistant",
+          content: "I'm having a little trouble connecting right now! Please give me a second and ask me again 😊"
+        }
+      ]);
     } catch (err: any) {
       if (err?.name === "AbortError") {
         return;
       }
-      const agentReply = getCareerAgentResponse(userText, updatedMessages, profile);
-      setMessages([...updatedMessages, { role: "assistant", content: agentReply }]);
+      setMessages([
+        ...updatedMessages,
+        {
+          role: "assistant",
+          content: "I'm having a little trouble connecting right now! Please give me a second and ask me again 😊"
+        }
+      ]);
     } finally {
       setIsChatLoading(false);
       chatAbortRef.current = null;
@@ -929,17 +953,17 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
-              className="space-y-8"
+              className="space-y-12 sm:space-y-16"
             >
               {/* Optional Profile Completion Banner */}
               {isProfilePartiallyIncomplete && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-4 backdrop-blur-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-md">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
-                      <Sparkles className="h-4 w-4" />
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                      <Sparkles className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">Profile Boost Available</p>
+                      <p className="text-sm font-semibold text-white">Profile Acceleration Available</p>
                       <p className="text-xs text-slate-400">
                         Add your GitHub / LeetCode profiles or certifications in Profile / Settings to elevate your career readiness score by up to +12%.
                       </p>
@@ -948,7 +972,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setActiveTab("profile")}
-                    className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-emerald-500/20 px-3.5 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 transition-colors"
+                    className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 transition-colors"
                   >
                     <span>Complete Profile</span>
                     <ArrowRight className="h-3 w-3" />
@@ -956,8 +980,16 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Hero KPI Metrics */}
-              <div id="career-readiness-assessment">
+              {/* Section 1: Hero KPI Metrics */}
+              <section id="career-readiness-assessment" className="space-y-4">
+                <SectionHeader
+                  title="Campus Placement Readiness Overview"
+                  description="Real-time placement probability and primary eligibility benchmark"
+                  badge="Class of 2026"
+                  accent="emerald"
+                  icon={Target}
+                  helperLabel="Calculated via Random Forest model trained on 972 student records"
+                />
                 <HeroMetrics
                   username={username}
                   chance={prediction.chance}
@@ -970,75 +1002,131 @@ export default function Home() {
                   communication={profile.communication}
                   onNavigateTab={setActiveTab}
                 />
-              </div>
+              </section>
 
-              {/* Career Digital Twin & Transparent Readiness Dimensions */}
-              <div id="career-digital-twin">
+              {/* Section 2: Career Digital Twin */}
+              <section id="career-digital-twin" className="space-y-4">
+                <SectionHeader
+                  title="Candidate Readiness Vectors"
+                  description="Transparent multi-dimensional evaluation of your academic standing, practical coding, and communication confidence"
+                  badge="Readiness Vectors"
+                  accent="emerald"
+                  icon={Zap}
+                  helperLabel="5 vectors calibrated against Tier-1 campus drive cutoffs"
+                />
                 <CareerDigitalTwin
                   profile={profile}
                   predictionChance={prediction.chance}
                   predictionTone={prediction.tone}
                   onNavigateTab={setActiveTab}
                 />
-              </div>
+              </section>
 
-              {/* Personalized Next Best Action: What Should I Do Next? */}
-              <NextActionsWidget
-                profile={profile}
-                onNavigateTab={setActiveTab}
-                onAskCoach={(q) => {
-                  setActiveTab("coach");
-                  handleSendMessage(q);
-                }}
-              />
+              {/* Section 3: Priority Next Actions */}
+              <section id="career-next-actions" className="space-y-4">
+                <SectionHeader
+                  title="Priority Next Best Actions"
+                  description="Targeted high-leverage steps recommended specifically for your active bottlenecks"
+                  badge="Actionable"
+                  accent="emerald"
+                  icon={ArrowRight}
+                  helperLabel="Auto-prioritizes Blind 75 DSA, projects, or cutoff clearance"
+                />
+                <NextActionsWidget
+                  profile={profile}
+                  onNavigateTab={setActiveTab}
+                  onAskCoach={(q) => {
+                    setActiveTab("coach");
+                    handleSendMessage(q);
+                  }}
+                />
+              </section>
 
-              {/* AI Action Center */}
-              <AIActionCenter
-                onNavigateTab={setActiveTab}
-                onTriggerCalculate={() => fetchPrediction(profile)}
-                onStartMockInterview={() => {
-                  setActiveTab("coach");
-                  handleSendMessage("Let's do an interactive mock interview for my role. Ask me question 1.");
-                }}
-                targetRole={profile.targetRole}
-                profile={profile}
-                prediction={prediction}
-                apiBase={API_BASE}
-              />
+              {/* Section 4: AI Action Center */}
+              <section id="career-action-center" className="space-y-4">
+                <SectionHeader
+                  title="AI Action Center"
+                  description="One-click automated intelligence tools integrated with your candidate profile"
+                  badge="Command Hub"
+                  accent="emerald"
+                  icon={Zap}
+                  helperLabel="Click any tool to launch diagnostic audit"
+                />
+                <AIActionCenter
+                  onNavigateTab={setActiveTab}
+                  onTriggerCalculate={() => fetchPrediction(profile)}
+                  onStartMockInterview={() => {
+                    setActiveTab("coach");
+                    handleSendMessage("Let's do an interactive mock interview for my role. Ask me question 1.");
+                  }}
+                  targetRole={profile.targetRole}
+                  profile={profile}
+                  prediction={prediction}
+                  apiBase={API_BASE}
+                />
+              </section>
 
-              {/* What-If? Career Trajectory Simulator */}
-              <WhatIfSimulator
-                currentProfile={profile}
-                currentScore={prediction.chance}
-              />
+              {/* Section 5: What-If? Trajectory Simulator */}
+              <section id="career-trajectory-simulator" className="space-y-4">
+                <SectionHeader
+                  title="What-If? Career Trajectory Simulator"
+                  description="Simulate the immediate placement probability boost of boosting CGPA, clearing backlogs, or shipping an internship"
+                  badge="Interactive Sandbox"
+                  accent="emerald"
+                  icon={TrendingUp}
+                  helperLabel="Interactive sliders instantly re-simulate placement probability"
+                />
+                <WhatIfSimulator
+                  currentProfile={profile}
+                  currentScore={prediction.chance}
+                />
+              </section>
 
-              {/* Sliders & Parameters */}
-              <ProfileEvaluator
-                profile={profile}
-                onChange={(updated) => {
-                  const merged = { ...profile, ...updated };
-                  setProfile(merged);
-                  fetchPrediction(merged);
-                }}
-                onCalculate={() => fetchPrediction(profile)}
-                onReset={() => {
-                  setProfile(DEFAULT_STUDENT_PROFILE);
-                  fetchPrediction(DEFAULT_STUDENT_PROFILE);
-                }}
-                isCalculating={isCalculating}
-              />
+              {/* Section 6: Sliders & Parameters */}
+              <section id="career-parameters-evaluator" className="space-y-4">
+                <SectionHeader
+                  title="Candidate Vector Adjustments"
+                  description="Fine-tune your verified academic standing, coding proficiency, and target company tier"
+                  badge="Profile Parameters"
+                  accent="emerald"
+                  icon={Target}
+                />
+                <ProfileEvaluator
+                  profile={profile}
+                  onChange={(updated) => {
+                    const merged = { ...profile, ...updated };
+                    setProfile(merged);
+                    fetchPrediction(merged);
+                  }}
+                  onCalculate={() => fetchPrediction(profile)}
+                  onReset={() => {
+                    setProfile(DEFAULT_STUDENT_PROFILE);
+                    fetchPrediction(DEFAULT_STUDENT_PROFILE);
+                  }}
+                  isCalculating={isCalculating}
+                />
+              </section>
 
-              {/* Skill-Gap & Strengths */}
-              <SkillGapSection
-                strengths={prediction.strengths}
-                priorities={prediction.priorities}
-                breakdown={prediction.breakdown}
-                onAskCoach={(q) => {
-                  setActiveTab("coach");
-                  handleSendMessage(q);
-                }}
-                apiBase={API_BASE}
-              />
+              {/* Section 7: Skill-Gap & Strengths */}
+              <section id="career-skill-gap" className="space-y-4">
+                <SectionHeader
+                  title="Target Role Skill Gap Analysis"
+                  description="Direct alignment of your competencies against hiring cutoffs for your chosen domain"
+                  badge="Skill Gap Matrix"
+                  accent="emerald"
+                  icon={Sparkles}
+                />
+                <SkillGapSection
+                  strengths={prediction.strengths}
+                  priorities={prediction.priorities}
+                  breakdown={prediction.breakdown}
+                  onAskCoach={(q) => {
+                    setActiveTab("coach");
+                    handleSendMessage(q);
+                  }}
+                  apiBase={API_BASE}
+                />
+              </section>
             </motion.div>
           )}
 
@@ -1050,8 +1138,16 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
-              className="space-y-8"
+              className="space-y-12 sm:space-y-16"
             >
+              <SectionHeader
+                title="Readiness Command Center"
+                description="One-click automated intelligence workflows integrated with your active profile"
+                badge="Command Hub"
+                accent="emerald"
+                icon={Zap}
+                helperLabel="Launch diagnostics, audit reports, or mock interview rounds"
+              />
               <AIActionCenter
                 onNavigateTab={setActiveTab}
                 onTriggerCalculate={() => fetchPrediction(profile)}
@@ -1083,8 +1179,16 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
-              className="space-y-8"
+              className="space-y-12 sm:space-y-16"
             >
+              <SectionHeader
+                title="6-Week Strategic Placement Roadmap"
+                description="Custom weekly milestone plan designed to eliminate skill bottlenecks before drive season"
+                badge="Sprint Tracker"
+                accent="purple"
+                icon={Compass}
+                helperLabel="Milestones auto-adapt as you update skills and role"
+              />
               <CareerMissionTracker
                 profile={profile}
                 onNavigateTab={setActiveTab}
@@ -1115,7 +1219,16 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
+              className="space-y-12 sm:space-y-16"
             >
+              <SectionHeader
+                title="Branch Intelligence & Course Trends"
+                description="Comparative placement rates, top-tier recruiters, and course relevance across engineering departments"
+                badge="9 Departments"
+                accent="blue"
+                icon={GraduationCap}
+                helperLabel="Verified campus records for 2024-2026 batches"
+              />
               <BranchIntelligence
                 apiBase={API_BASE}
                 selectedYear={profile.graduationYear || 2026}
@@ -1137,7 +1250,16 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
+              className="space-y-12 sm:space-y-16"
             >
+              <SectionHeader
+                title="Cohort Placement Analytics & Benchmarks"
+                description="Authoritative campus placement records across 972 engineering candidates"
+                badge="972 Records"
+                accent="blue"
+                icon={TrendingUp}
+                helperLabel="Filter by branch, year, package, and package tier"
+              />
               <CohortExplorer
                 analytics={cohortAnalytics}
                 filters={cohortFilters}
@@ -1162,7 +1284,16 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
+              className="space-y-12 sm:space-y-16"
             >
+              <SectionHeader
+                title="Pathfinder AI Career Coach"
+                description="Real-time conversational mentor powered by Gemini AI with live profile awareness"
+                badge="Gemini AI"
+                accent="cyan"
+                icon={Bot}
+                helperLabel="Ask anything: casual chat, Telugu, mock interviews, or placement numbers"
+              />
               <AICoachConsole
                 messages={messages}
                 onSendMessage={handleSendMessage}
@@ -1183,7 +1314,16 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
+              className="space-y-12 sm:space-y-16"
             >
+              <SectionHeader
+                title="Candidate Profile & System Settings"
+                description="Single Source of Truth (SSOT) academic and coding parameters synced across all AI predictions"
+                badge="SSOT Sync"
+                accent="cyan"
+                icon={User}
+                helperLabel="Profile edits immediately recalculate all placement probabilities"
+              />
               <ProfileSettings
                 profile={profile}
                 onSaveProfile={handleSaveProfile}
@@ -1196,7 +1336,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* ADDITIONAL FEATURE TABS: RESUME STUDIO, PROJECTS, DEFENSE, ROLES */}
+          {/* ADDITIONAL FEATURE TABS: RESUME STUDIO, PROJECTS, DEFENSE */}
           {activeTab === "resume" && (
             <motion.div
               key="resume"
@@ -1204,7 +1344,16 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
+              className="space-y-12 sm:space-y-16"
             >
+              <SectionHeader
+                title="ATS Resume Studio & Diagnostic Scanner"
+                description="Upload and scan your PDF resume against recruiter screening standards and Google X-Y-Z formula"
+                badge="ATS Scanner"
+                accent="rose"
+                icon={FileText}
+                helperLabel="Single-column ATS compliance and keyword gap detection"
+              />
               <ResumeStudio
                 feedback={resumeFeedback}
                 onAnalyze={handleAnalyzeResume}
@@ -1221,7 +1370,16 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
+              className="space-y-12 sm:space-y-16"
             >
+              <SectionHeader
+                title="Flagship Project Blueprints & Portfolio"
+                description="Production-grade project architectures mapped to recruiter rubrics and technical defense rounds"
+                badge="Portfolio Blueprints"
+                accent="amber"
+                icon={Lightbulb}
+                helperLabel="Includes live architecture specs and STAR storytelling defense points"
+              />
               <ProjectRecommender
                 targetRole={profile.targetRole}
                 onAskCoach={(q) => {
@@ -1240,7 +1398,16 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
+              className="space-y-12 sm:space-y-16"
             >
+              <SectionHeader
+                title="Project Architecture Defense Simulator"
+                description="Interactive technical grilling simulator for system design, edge cases, and architectural trade-offs"
+                badge="STAR Defense"
+                accent="amber"
+                icon={ShieldAlert}
+                helperLabel="Simulates Round 2 technical interview architecture questioning"
+              />
               <ProjectDefenseConsole
                 profile={profile}
                 onAskCoach={(q) => {

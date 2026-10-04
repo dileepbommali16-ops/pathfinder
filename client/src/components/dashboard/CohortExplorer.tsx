@@ -95,11 +95,11 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
       {/* Top Controls & Filter Bar */}
       <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/50 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
         {/* Subtle background ambient mesh */}
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-emerald-500/[0.05] blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-blue-500/[0.08] blur-3xl" />
 
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
               <TrendingUp className="h-4 w-4" />
             </div>
             <div>
@@ -119,7 +119,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
             <button
               onClick={onDownloadPDF}
-              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-3.5 py-2 text-xs font-bold text-slate-950 shadow-[0_0_18px_rgba(16,185,129,0.25)] transition-all hover:brightness-110 active:scale-95"
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 px-3.5 py-2 text-xs font-bold text-white shadow-[0_0_18px_rgba(59,130,246,0.25)] transition-all hover:brightness-110 active:scale-95"
             >
               <FileText className="h-3.5 w-3.5" />
               <span>Download PDF</span>
@@ -234,14 +234,14 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
       <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-emerald-400" />
+            <Sparkles className="h-4 w-4 text-blue-400" />
             <span className="text-sm font-bold text-white">AI Cohort Intelligence</span>
           </div>
 
           <button
             onClick={onSummarizeAI}
             disabled={isSummarizing}
-            className="flex items-center gap-1.5 self-start rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 sm:self-auto"
+            className="flex items-center gap-1.5 self-start rounded-xl border border-blue-500/30 bg-blue-500/10 px-3.5 py-1.5 text-xs font-semibold text-blue-300 hover:bg-blue-500/20 sm:self-auto"
           >
             <Sparkles className="h-3.5 w-3.5" />
             <span>{isSummarizing ? "Synthesizing signals..." : "Summarize with Gemini AI"}</span>
@@ -250,7 +250,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
         {aiInsight && (
           <div className="mt-4 space-y-3 rounded-2xl border border-slate-800 bg-slate-950/60 p-4.5">
-            <h4 className="text-sm font-bold text-emerald-300">{aiInsight.headline}</h4>
+            <h4 className="text-sm font-bold text-blue-300">{aiInsight.headline}</h4>
             <p className="text-xs sm:text-sm leading-relaxed text-slate-300">{aiInsight.summary}</p>
             <div className="flex flex-wrap gap-2 pt-1">
               {aiInsight.actions.map((act, i) => (
@@ -278,7 +278,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <Tooltip
                   contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", fontSize: "12px" }}
                 />
-                <Bar dataKey="placement_rate" fill="#10b981" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="placement_rate" fill="#3b82f6" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

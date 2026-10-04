@@ -108,19 +108,19 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       {/* Console Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.06] bg-black/20 px-6 py-3.5 gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 text-slate-950 shadow-md shadow-emerald-500/25 ring-1 ring-white/20">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-500 text-slate-950 shadow-md shadow-cyan-500/25 ring-1 ring-white/20">
             <Bot className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-white">Pathfinder AI Career Agent</h2>
-              <span className="flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.2)]">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Multilingual AI • Gemini
+              <h2 className="text-sm font-bold text-white">Pathfinder AI Career Coach</h2>
+              <span className="flex items-center gap-1 rounded border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold text-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.2)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                Gemini AI Agent
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              Personalized for: <span className="font-semibold text-emerald-300">{targetRole}</span> • English, తెలుగు & Roman Telugu
+              Personalized for: <span className="font-semibold text-cyan-300">{targetRole}</span> • English, తెలుగు & Roman Telugu
             </p>
           </div>
         </div>
@@ -133,7 +133,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               onClick={() => setMode("chat")}
               className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                 mode === "chat"
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -217,7 +217,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             key={i}
             onClick={() => onSendMessage(action.prompt)}
             disabled={isLoading}
-            className="shrink-0 rounded-lg border border-white/[0.07] bg-white/[0.02] px-2.5 py-1 text-[11px] font-medium text-slate-300 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-300 active:scale-95 disabled:opacity-50"
+            className="shrink-0 rounded-lg border border-white/[0.07] bg-white/[0.02] px-2.5 py-1 text-[11px] font-medium text-slate-300 transition-all hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:text-cyan-300 active:scale-95 disabled:opacity-50"
           >
             {action.label}
           </button>
@@ -228,12 +228,12 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       <div className="flex-1 space-y-4 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-800">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
               <Sparkles className="h-7 w-7" />
             </div>
             <h3 className="mt-4 text-base font-bold text-white">How can I guide your career today?</h3>
             <p className="mt-1 max-w-md text-xs text-slate-400 leading-relaxed">
-              Talk naturally in English, Telugu script, or Roman Telugu. Ask about placement strategy, mock interviews, skill gaps, or resume refinement.
+              Talk naturally in English, Telugu script, or Roman Telugu. Ask about placement strategy, mock interviews, skill gaps, or just chat.
             </p>
 
             {/* Starter Suggestion Chips */}
@@ -242,7 +242,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 <button
                   key={idx}
                   onClick={() => onSendMessage(s)}
-                  className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-slate-300 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-300 hover:shadow-[0_0_12px_rgba(16,185,129,0.18)] active:scale-95"
+                  className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-slate-300 transition-all hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:text-cyan-300 hover:shadow-[0_0_12px_rgba(6,182,212,0.18)] active:scale-95"
                 >
                   💡 {s}
                 </button>
@@ -256,33 +256,36 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {m.role === "assistant" && (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 text-slate-950 shadow-sm mt-0.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-500 text-slate-950 shadow-sm mt-0.5">
                   <Bot className="h-4 w-4" />
                 </div>
               )}
 
               <div
+                data-message-role={m.role}
                 className={`group relative max-w-[85%] rounded-2xl px-4.5 py-3 text-xs sm:text-sm leading-relaxed ${
                   m.role === "user"
-                    ? "rounded-tr-none bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-lg shadow-emerald-950/40"
+                    ? "rounded-tr-none bg-gradient-to-r from-cyan-600 via-teal-600 to-blue-600 text-white shadow-lg shadow-cyan-950/40"
                     : "rounded-tl-none border border-white/[0.08] bg-slate-950/70 text-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.25)] backdrop-blur-xl"
                 }`}
               >
                 <div className="whitespace-pre-wrap">{m.content}</div>
 
-                {m.role === "assistant" && (() => {
+                {m.role === "assistant" && idx === messages.length - 1 && (() => {
+                  const hasExplicitOptions = /options?:|suggestions?:|you can:|choose one:|which one:|\?$/i.test(m.content);
+                  if (!hasExplicitOptions) return null;
                   const chips: string[] = [];
                   const lines = m.content.split("\n");
                   for (const line of lines) {
                     const trimmed = line.trim();
-                    if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-                      const cleaned = trimmed.replace(/^[-*]\s+/, "").replace(/\*\*/g, "").trim();
-                      if (cleaned.length > 0 && cleaned.length < 80) {
+                    if (/^[-*•]\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed)) {
+                      const cleaned = trimmed.replace(/^[-*•\d.]+\s+/, "").replace(/\*\*/g, "").trim();
+                      if (cleaned.length > 3 && cleaned.length < 55) {
                         chips.push(cleaned);
                       }
                     }
                   }
-                  if (chips.length === 0) return null;
+                  if (chips.length === 0 || chips.length > 3) return null;
                   return (
                     <div className="mt-3.5 flex flex-wrap gap-2 pt-2.5 border-t border-white/[0.08]">
                       {chips.map((chip, cIdx) => (
@@ -291,9 +294,9 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                           type="button"
                           onClick={() => onSendMessage(chip)}
                           disabled={isLoading}
-                          className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition-all hover:bg-emerald-500/20 hover:border-emerald-400 active:scale-95 disabled:opacity-50 shadow-sm"
+                          className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-300 transition-all hover:bg-cyan-500/20 hover:border-cyan-400 active:scale-95 disabled:opacity-50 shadow-sm"
                         >
-                          <Sparkles className="h-3 w-3 text-emerald-400 flex-shrink-0" />
+                          <Sparkles className="h-3 w-3 text-cyan-400 flex-shrink-0" />
                           <span>{chip}</span>
                         </button>
                       ))}
@@ -307,7 +310,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                     className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100 text-slate-400 hover:text-white"
                     title="Copy response"
                   >
-                    {copiedIndex === idx ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedIndex === idx ? <Check className="h-3.5 w-3.5 text-cyan-400" /> : <Copy className="h-3.5 w-3.5" />}
                   </button>
                 )}
               </div>
@@ -366,13 +369,13 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 ? "Type your interview answer here or ask for feedback..."
                 : "Talk in English, Telugu, or Roman Telugu (e.g. 'Naku job kavali bro', 'Take my mock interview')..."
             }
-            className="w-full rounded-2xl border border-white/[0.08] bg-slate-950/80 py-3.5 pl-4 pr-12 text-xs font-medium text-slate-200 outline-none transition-all placeholder:text-slate-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
+            className="w-full rounded-2xl border border-white/[0.08] bg-slate-950/80 py-3.5 pl-4 pr-12 text-xs font-medium text-slate-200 outline-none transition-all placeholder:text-slate-500 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
           />
           <button
             id="chat-console-send"
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 transition-all hover:brightness-110 active:scale-95 disabled:opacity-40 shadow-sm"
+            className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 text-slate-950 transition-all hover:brightness-110 active:scale-95 disabled:opacity-40 shadow-sm"
           >
             <Send className="h-4 w-4" />
           </button>

@@ -958,7 +958,7 @@ def chat_endpoint(chat_req: ChatRequest, request: Request, user: UserSession = D
     clean_message = sanitize_user_input(chat_req.message, max_length=4000)
     if not clean_message or not clean_message.strip():
         return {
-            "reply": "Please type a question or choose an area above so I can help you with your placement preparation!",
+            "reply": "Looks like your message was empty! What's on your mind? 😊",
             "status": "ok"
         }
 
@@ -970,9 +970,9 @@ def chat_endpoint(chat_req: ChatRequest, request: Request, user: UserSession = D
         )
         return {"reply": reply}
     except Exception as exc:
-        print(f"[Chat Endpoint] Recovering with resilient fallback: {exc}")
+        print(f"[Chat Endpoint] Error calling chat_with_mentor: {exc}")
         return {
-            "reply": "I am currently in resilient fallback mode. You can ask me about campus placements, 6-week roadmaps, branch cutoff CGPAs, or mock technical interviews!",
+            "reply": "I'm having a little trouble connecting to my AI brain right now! Please give me a second and ask me again 😊",
             "status": "fallback"
         }
 
