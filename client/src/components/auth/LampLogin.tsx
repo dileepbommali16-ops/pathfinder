@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_BASE } from "@/lib/apiClient";
 
 interface LampLoginProps {
   onLogin: (user: { username: string; email: string; isNewUser?: boolean; bypassOnboarding?: boolean }) => void;
+  initialError?: string | null;
 }
 
 interface FireflyCoord {
@@ -14,7 +16,7 @@ interface FireflyCoord {
   y: string[];
 }
 
-export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
+export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) => {
   const [isOn, setIsOn] = useState(true);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [isDragging, setIsDragging] = useState(false);
@@ -22,8 +24,27 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(initialError || null);
+  const [socialLoading, setSocialLoading] = useState<"google" | "github" | null>(null);
+  const [socialError, setSocialError] = useState<string | null>(null);
   const [fireflies, setFireflies] = useState<FireflyCoord[]>([]);
+
+  useEffect(() => {
+    if (initialError) {
+      setErrorMessage(initialError);
+    }
+  }, [initialError]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash.includes("oauth_error=")) {
+      const fragment = window.location.hash.substring(1);
+      const params = new URLSearchParams(fragment);
+      const err = params.get("oauth_error");
+      if (err) {
+        setErrorMessage(decodeURIComponent(err.replace(/\+/g, " ")));
+      }
+    }
+  }, []);
 
   const startPos = useRef({ x: 0, y: 0 });
 
@@ -89,11 +110,29 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
     });
   };
 
-  const handleSocialLogin = (platform: "google" | "github") => {
-    // If backend OAuth portal is configured, start OAuth flow, otherwise sign in directly
-    const user = platform === "google" ? "Google User" : "GitHub User";
-    const email = platform === "google" ? "user@gmail.com" : "developer@github.com";
-    onLogin({ username: user, email, isNewUser: authMode === "signup" });
+  const handleSocialLogin = async (platform: "google" | "github") => {
+    setErrorMessage(null);
+    setSocialError(null);
+    setSocialLoading(platform);
+
+    try {
+      const resp = await fetch(`${API_BASE}/api/auth/oauth-urls`);
+      if (resp.ok) {
+        const data = await resp.json();
+        const configured = platform === "google" ? data.google_configured : data.github_configured;
+        if (!configured) {
+          const providerName = platform === "google" ? "Google" : "GitHub";
+          setSocialError(`${providerName} login is not set up yet`);
+          setSocialLoading(null);
+          return;
+        }
+      }
+    } catch {
+      // If oauth-urls check is temporarily unreachable, proceed to backend /start
+    }
+
+    // Navigate in same tab
+    window.location.href = `${API_BASE}/api/auth/${platform}/start`;
   };
 
   return (
@@ -227,7 +266,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
             >
               <path
                 d={`M 0 0 L ${dragOffset.x} ${80 + dragOffset.y}`}
-                stroke="#444"
+                stroke={!isOn ? "#ffd600" : "#444"}
                 strokeWidth="2"
                 strokeLinecap="round"
                 fill="none"
@@ -240,25 +279,24 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
-              className={`absolute top-[125px] left-[calc(50%+49px)] z-30 h-[22px] w-[12px] rounded-[5px] shadow-[inset_0_2px_3px_rgba(255,255,255,0.5),0_3px_6px_rgba(0,0,0,0.8)] touch-none select-none cursor-grab active:cursor-grabbing transition-transform ${
+              className={`absolute top-[125px] left-[calc(50%+49px)] z-30 h-[22px] w-[12px] rounded-[5px] touch-none select-none cursor-grab active:cursor-grabbing transition-transform ${
                 isDragging ? "transition-none" : "duration-300 ease-out"
+              } ${
+                !isOn
+                  ? "animate-pulse shadow-[0_0_15px_rgba(255,214,0,0.9),inset_0_2px_3px_rgba(255,255,255,0.7)] ring-1 ring-amber-300/60"
+                  : "shadow-[inset_0_2px_3px_rgba(255,255,255,0.5),0_3px_6px_rgba(0,0,0,0.8)]"
               }`}
               style={{
                 transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`,
                 background: "linear-gradient(to bottom, #ebd17a, #aa8529)",
               }}
-              title="Drag down or click to turn on lamp"
+              title="Pull the cord to turn the lamp on/off"
             />
-            {/* Quick Click to Turn On Lamp Button */}
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                id="btn-toggle-lamp"
-                onClick={() => setIsOn((prev) => !prev)}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-1.5 text-xs font-bold text-amber-300 backdrop-blur-md hover:bg-amber-400/20 transition-all active:scale-95"
-              >
-                <span>{isOn ? "💡 Lamp is ON (Click to Hide)" : "💡 Click to Turn On Lamp & Open Form"}</span>
-              </button>
+            {/* Lamp Caption */}
+            <div className="mt-4 text-center select-none pointer-events-none">
+              <span className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-1.5 text-xs font-bold text-amber-300 backdrop-blur-md">
+                Lamp your Career
+              </span>
             </div>
           </div>
         </section>
@@ -419,22 +457,41 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin }) => {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
+                id="btn-oauth-google"
+                disabled={Boolean(socialLoading)}
                 onClick={() => handleSocialLogin("google")}
-                className="flex items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] py-3 text-sm font-medium text-white transition-all hover:bg-white/[0.12] hover:scale-[1.02] active:scale-[0.98]"
+                className={`flex items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] py-3 text-sm font-medium text-white transition-all ${
+                  socialLoading
+                    ? "opacity-60 cursor-not-allowed"
+                    : "hover:bg-white/[0.12] hover:scale-[1.02] active:scale-[0.98]"
+                }`}
               >
                 <span className="text-base font-bold text-[#4285F4]">G</span>
-                <span>Google</span>
+                <span>{socialLoading === "google" ? "Redirecting..." : "Google"}</span>
               </button>
 
               <button
                 type="button"
+                id="btn-oauth-github"
+                disabled={Boolean(socialLoading)}
                 onClick={() => handleSocialLogin("github")}
-                className="flex items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] py-3 text-sm font-medium text-white transition-all hover:bg-white/[0.12] hover:scale-[1.02] active:scale-[0.98]"
+                className={`flex items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] py-3 text-sm font-medium text-white transition-all ${
+                  socialLoading
+                    ? "opacity-60 cursor-not-allowed"
+                    : "hover:bg-white/[0.12] hover:scale-[1.02] active:scale-[0.98]"
+                }`}
               >
                 <span className="text-sm">●</span>
-                <span>GitHub</span>
+                <span>{socialLoading === "github" ? "Redirecting..." : "GitHub"}</span>
               </button>
             </div>
+
+            {/* Inline error for unconfigured provider */}
+            {socialError && (
+              <p className="mt-2 text-center text-xs font-medium text-amber-300">
+                {socialError}
+              </p>
+            )}
 
             {/* Demo / Guest shortcuts */}
             <div className="mt-5 space-y-2 text-center">

@@ -115,6 +115,7 @@ export default function Home() {
   });
 
   const [isServerWakingUp, setIsServerWakingUp] = useState<boolean>(false);
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   // Authentication session expiration listener (401 token revocation)
   useEffect(() => {
@@ -125,6 +126,61 @@ export default function Home() {
     };
     window.addEventListener("pathfinder_logout", handleRemoteLogout);
     return () => window.removeEventListener("pathfinder_logout", handleRemoteLogout);
+  }, []);
+
+  // Process OAuth return fragment (#oauth_token=... or #oauth_error=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    if (!hash || (!hash.includes("oauth_token=") && !hash.includes("oauth_error="))) {
+      return;
+    }
+
+    const fragmentStr = hash.startsWith("#") ? hash.slice(1) : hash;
+    const params = new URLSearchParams(fragmentStr);
+
+    const token = params.get("oauth_token");
+    const error = params.get("oauth_error");
+    const isNew = params.get("new") === "1";
+
+    // Immediately remove fragment from URL without reload
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+
+    if (error) {
+      setOauthError(decodeURIComponent(error.replace(/\+/g, " ")));
+      return;
+    }
+
+    if (token) {
+      localStorage.setItem("pathfinder_token", token);
+      (async () => {
+        try {
+          const meResp = await fetchWithTimeout(
+            `${API_BASE}/api/auth/me`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+            6000
+          );
+          if (meResp.ok) {
+            const userData = await meResp.json();
+            if (userData && userData.email) {
+              localStorage.setItem("pathfinder_user", JSON.stringify(userData));
+              setUserRole(userData.role || "student");
+              await handleLogin({
+                username: userData.username || "Student",
+                email: userData.email,
+                isNewUser: isNew,
+              });
+            }
+          } else {
+            setOauthError("Failed to verify OAuth session. Please try signing in again.");
+          }
+        } catch {
+          setOauthError("Network error while completing OAuth authentication.");
+        }
+      })();
+    }
   }, []);
 
   // 1. Prediction State
@@ -206,26 +262,40 @@ export default function Home() {
     setEmail(user.email);
     setIsAuthenticated(true);
 
-    try {
-      const loginResp = await fetchWithTimeout(`${API_BASE}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: user.username, email: user.email }),
-      }, 5000);
-      if (loginResp.ok) {
-        const authData = await loginResp.json();
-        if (authData.token) {
-          localStorage.setItem("pathfinder_token", authData.token);
-          if (authData.user) {
-            localStorage.setItem("pathfinder_user", JSON.stringify(authData.user));
-            setUserRole(authData.user.role || "student");
-          }
+    const storedToken = localStorage.getItem("pathfinder_token");
+    const storedUser = localStorage.getItem("pathfinder_user");
+    let isOAuth = false;
+    if (storedToken && storedUser) {
+      try {
+        const u = JSON.parse(storedUser);
+        if (u.auth_provider === "google" || u.auth_provider === "github") {
+          isOAuth = true;
         }
-      } else {
+      } catch {}
+    }
+
+    if (!isOAuth) {
+      try {
+        const loginResp = await fetchWithTimeout(`${API_BASE}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: user.username, email: user.email }),
+        }, 5000);
+        if (loginResp.ok) {
+          const authData = await loginResp.json();
+          if (authData.token) {
+            localStorage.setItem("pathfinder_token", authData.token);
+            if (authData.user) {
+              localStorage.setItem("pathfinder_user", JSON.stringify(authData.user));
+              setUserRole(authData.user.role || "student");
+            }
+          }
+        } else {
+          localStorage.setItem("pathfinder_user", JSON.stringify(user));
+        }
+      } catch {
         localStorage.setItem("pathfinder_user", JSON.stringify(user));
       }
-    } catch {
-      localStorage.setItem("pathfinder_user", JSON.stringify(user));
     }
 
 
@@ -780,7 +850,7 @@ export default function Home() {
 
   // 1. LANDING & AUTH SCREEN
   if (!isAuthenticated) {
-    return <LampLogin onLogin={handleLogin} />;
+    return <LampLogin onLogin={handleLogin} initialError={oauthError} />;
   }
 
   // 2. ONBOARDING WIZARD (STRICT STEP-WISE FLOW FOR NEW USERS)

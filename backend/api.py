@@ -233,7 +233,9 @@ def health_check():
 
 
 # Active server-managed session store & isolated per-user profiles
-_active_sessions: Dict[str, UserSession] = {}
+from backend.oauth import _active_sessions, oauth_router
+app.include_router(oauth_router)
+
 _user_profiles: Dict[str, StudentProfile] = {}
 PROFILES_FILE = DATA_DIR / "user_profiles.json"
 
@@ -288,31 +290,6 @@ def require_authenticated(user: UserSession = Depends(get_current_user)) -> User
         raise HTTPException(status_code=401, detail="Authentication required to perform this action.")
     return user
 
-
-@app.get("/api/auth/oauth-urls", response_model=OAuthUrlsResponse)
-def get_oauth_urls():
-    google_client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
-    github_client_id = os.getenv("GITHUB_CLIENT_ID", "").strip()
-    
-    redirect_uri = os.getenv("OAUTH_REDIRECT_URI", "").strip()
-    if not redirect_uri:
-        frontend_base = os.getenv("FRONTEND_URL", "http://localhost:3000").split(",")[0].strip().rstrip("/")
-        redirect_uri = f"{frontend_base}/api/oauth/callback"
-
-    google_url = None
-    if google_client_id:
-        google_url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={google_client_id}&redirect_uri={redirect_uri}&response_type=code&scope=openid%20profile%20email"
-
-    github_url = None
-    if github_client_id:
-        github_url = f"https://github.com/login/oauth/authorize?client_id={github_client_id}&redirect_uri={redirect_uri}&scope=read:user%20user:email"
-
-    return OAuthUrlsResponse(
-        google_configured=bool(google_client_id),
-        github_configured=bool(github_client_id),
-        google_url=google_url,
-        github_url=github_url
-    )
 
 
 @app.post("/api/auth/login", response_model=LoginResponse)
@@ -400,7 +377,7 @@ def logout_endpoint(authorization: Optional[str] = Header(None)):
 
 
 @app.get("/api/auth/me", response_model=UserSession)
-def auth_me_endpoint(user: UserSession = Depends(get_current_user)):
+def auth_me_endpoint(user: UserSession = Depends(require_authenticated)):
     return user
 
 

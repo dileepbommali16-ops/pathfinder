@@ -39,6 +39,24 @@ student@example.com = "sha256$change-this-salt$paste-the-sha256-of-salt-colon-pa
 
 For a real deployment, generate the digest locally, paste only the resulting `sha256$salt$hash` value into Streamlit Cloud Secrets, and rotate it if the account is shared.
 
+## Setting up Google and GitHub login
+
+To enable real Google and GitHub OAuth authentication, obtain client credentials and configure the callback URLs:
+
+### Google Cloud Console
+1. Navigate to **APIs & Services > Credentials > Create Credentials > OAuth client ID** (Application type: **Web application**).
+2. Under **Authorized redirect URIs**, register:
+   - `{BACKEND_PUBLIC_URL}/api/auth/google/callback` (e.g. `https://pathfinder-1-xhme.onrender.com/api/auth/google/callback`)
+   - `http://localhost:8000/api/auth/google/callback`
+3. Copy the Client ID and Client Secret into your `.env` or Render environment variables (`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`).
+
+### GitHub Developer Settings
+1. Navigate to **Settings > Developer settings > OAuth Apps > New OAuth App**.
+2. Set **Authorization callback URL** to:
+   - `{BACKEND_PUBLIC_URL}/api/auth/github/callback` (e.g. `https://pathfinder-1-xhme.onrender.com/api/auth/github/callback`)
+   *(Note: Register a second OAuth app with `http://localhost:8000/api/auth/github/callback` for localhost testing, as GitHub allows only one callback URL per app).*
+3. Copy the Client ID and Client Secret into your `.env` or Render environment variables (`GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`).
+
 ## Architecture
 
 - **UI Framework**: Modern Jetpack Compose with Material Design 3 (M3).
