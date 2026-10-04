@@ -425,6 +425,36 @@ Here are your prioritized next steps:
     if ("how many" in lower or "placed count" in lower or "students placed" in lower or "got placed" in lower) and "aiml" in lower:
         return "Based on Pathfinder's verified dataset, **61 students got placed in AIML** out of 108 total candidates (an official placement rate of **56.5%**). The highest package secured in AIML reached **44.6 LPA**!"
 
+    # ML Engineer skill gap / missing skills query
+    if ("ml" in lower or "machine learning" in lower) and ("missing" in lower or "what do i need" in lower or "what am i missing" in lower or "python and sql" in lower):
+        return """To transition from Python & SQL to a competitive **Machine Learning Engineer**, here is what is missing from your toolkit:
+
+1. **Applied Math & Statistics:** Linear algebra (matrix dot products, eigenvalues), multivariable calculus (gradient descent mechanics), and probability/hypothesis testing.
+2. **Core Machine Learning:** Mastering **Scikit-Learn** algorithms (Linear/Logistic Regression, Decision Trees, Random Forests, XGBoost, K-Means clustering, and ROC-AUC / F1-score model evaluation).
+3. **Deep Learning Frameworks:** Hands-on experience with **PyTorch** or **TensorFlow** (building neural networks, CNNs, LSTMs, and Transformers).
+4. **Production Model Deployment:** Packaging your trained model into a REST API using FastAPI and containerizing it with Docker.
+5. **Flagship ML Project:** Build and deploy an end-to-end model (e.g. recommendation system, predictive analytics) with verifiable GitHub code.
+
+Which of these would you like to start with—the math foundations or Scikit-Learn algorithms?"""
+
+    # Branch comparison: AIML vs CSE
+    if ("aiml" in lower and "cse" in lower) or ("cse vs aiml" in lower or "aiml vs cse" in lower):
+        return """### 📊 AIML vs CSE: 2024–2026 Campus Placement Analysis
+
+Based on Pathfinder's verified dataset across 972 engineering records:
+
+- **Computer Science & Engineering (CSE):**
+  - **Highest Package:** 44.0 LPA
+  - **Placement Rate:** ~74.2% across core product & Tier-1 MNC drives
+  - **Focus:** Strong foundational versatility across Systems, Full-Stack, Cloud, and Core SDE roles.
+
+- **Artificial Intelligence & Machine Learning (AIML):**
+  - **Highest Package:** 44.6 LPA (highest single offer in recent cohorts)
+  - **Placement Rate:** 56.5% (61 placed out of 108 candidates)
+  - **Focus:** Specialized AI engineering, data science, and applied machine learning models.
+
+**Verdict:** CSE provides broader eligibility for traditional IT/product companies, while AIML commands premium top-tier packages for specialized roles. Both branches require solid DSA and project portfolios."""
+
     # Highest Package query
     if ("highest package" in lower or "highest salary" in lower or "max package" in lower or "highest lpa" in lower) and ("branch" in lower or "which" in lower or "what" in lower):
         return """Based on Pathfinder's verified 2024–2026 dataset across all 9 branches:
