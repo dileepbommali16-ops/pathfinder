@@ -15,7 +15,10 @@ export const getApiBase = () => {
       window.location.hostname.includes("vercel.app") ||
       (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")
     ) {
-      return "https://pathfinder-1.onrender.com";
+      if (window.location.hostname.includes("onrender.com")) {
+        return window.location.origin;
+      }
+      return "https://pathfinder-1-xhme.onrender.com";
     }
   }
   return "http://127.0.0.1:8000";
