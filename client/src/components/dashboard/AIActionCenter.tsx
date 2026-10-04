@@ -97,12 +97,11 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
   const activeProfile: StudentProfileState = profile || DEFAULT_STUDENT_PROFILE;
 
-  // Helper: check if profile is empty or unconfigured
+  // Helper: check if profile is empty or unconfigured (only true if no valid CGPA exists)
   const isProfileEmpty = (): boolean => {
-    if (!profile) return true;
-    const hasName = Boolean(profile.fullName && profile.fullName.trim());
-    const hasCgpa = typeof profile.cgpa === "number" && profile.cgpa > 0;
-    return !hasName || !hasCgpa;
+    const p = profile || DEFAULT_STUDENT_PROFILE;
+    const hasCgpa = typeof p.cgpa === "number" && p.cgpa > 0;
+    return !hasCgpa;
   };
 
   // Rule-based fallback calculation grounded in real mathematical placement criteria
@@ -196,13 +195,13 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
     };
   };
 
-  // Core Async Handler with 30s AbortController and Cold Start Detection
+  // Core Async Handler with 30s AbortController, Instant Fallback, and Cold Start Detection
   const executeCardAction = async (actionId: string) => {
     setLastActionId(actionId);
     setErrorMessage(null);
 
-    // 1. Check for empty profile
-    if (isProfileEmpty() && actionId !== "analytics") {
+    // 1. Check for empty profile (calculate and analytics always have safe defaults)
+    if (isProfileEmpty() && actionId !== "analytics" && actionId !== "calculate") {
       setActiveModal("empty_profile");
       return;
     }
@@ -225,8 +224,14 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
     try {
       if (actionId === "calculate") {
-        // Option to trigger parent sync
-        if (onTriggerCalculate) onTriggerCalculate();
+        // Option to trigger parent sync safely
+        if (onTriggerCalculate) {
+          try {
+            onTriggerCalculate();
+          } catch (e) {
+            console.warn("Parent calculation trigger warning:", e);
+          }
+        }
 
         const token = typeof window !== "undefined" ? localStorage.getItem("pathfinder_token") : null;
         const userRaw = typeof window !== "undefined" ? localStorage.getItem("pathfinder_user") : null;
@@ -239,6 +244,23 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
         if (token) {
           headers["Authorization"] = `Bearer ${token}`;
         }
+
+        const fallback = calculateRuleBasedReadiness(activeProfile);
+        let remoteResolved = false;
+
+        // Fast fallback timer: if cloud backend (e.g. Render idle sleep) takes > 3.5s,
+        // immediately open the modal with calibrated sensitivity vectors so user gets instant audit!
+        const fallbackTimer = setTimeout(() => {
+          if (!remoteResolved) {
+            setReadinessData({
+              ...fallback,
+              data_source: "Calibrated Sensitivity Engine (Instant Fallback - Server Warming Up)",
+            });
+            setActiveModal("readiness");
+            setIsColdStarting(true);
+            setLoadingActionId(null);
+          }
+        }, 3500);
 
         try {
           const resp = await fetch(`${apiBase}/api/profile/calculate`, {
@@ -263,6 +285,9 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
             signal: controller.signal,
           });
 
+          remoteResolved = true;
+          clearTimeout(fallbackTimer);
+
           if (resp.ok) {
             const data: ReadinessAuditResultData = await resp.json();
             setReadinessData({
@@ -271,9 +296,9 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               data_source: data.data_source || "Random Forest ML Engine (972 Records)",
             });
             setActiveModal("readiness");
+            setErrorMessage(null);
           } else {
             // Server error: compute calibrated rule-based fallback and record notice
-            const fallback = calculateRuleBasedReadiness(activeProfile);
             setReadinessData(fallback);
             setActiveModal("readiness");
             setErrorMessage({
@@ -282,16 +307,22 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
             });
           }
         } catch (fetchErr: any) {
+          remoteResolved = true;
+          clearTimeout(fallbackTimer);
+
           // Timeout or network drop: compute calibrated rule-based fallback so card never stays blank
-          const fallback = calculateRuleBasedReadiness(activeProfile);
           setReadinessData(fallback);
           setActiveModal("readiness");
           setErrorMessage({
             actionId,
             message: fetchErr.name === "AbortError"
-              ? "Request timed out after 30s window. Displaying calibrated rule-based estimation (labeled estimated)."
-              : (fetchErr.message || "Failed to reach remote ML server. Displaying calibrated rule-based estimation (labeled estimated)."),
+              ? "Request timed out after waiting for server cold-start. Displaying calibrated rule-based estimation."
+              : (fetchErr.message || "Failed to reach remote ML server. Displaying calibrated rule-based estimation."),
           });
+        } finally {
+          clearTimeout(fallbackTimer);
+          setLoadingActionId(null);
+          setIsColdStarting(false);
         }
       } else if (actionId === "roadmap") {
         try {
@@ -440,6 +471,8 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
   const handleRetry = () => {
     if (lastActionId) {
       executeCardAction(lastActionId);
+    } else {
+      executeCardAction("calculate");
     }
   };
 
@@ -451,12 +484,12 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       subtitle: "[Random Forest ML]",
       description: "Run Random Forest ML sensitivity on current CGPA, internships & coding scores.",
       icon: Target,
-      tag: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "Report Ready ✓" : "Random Forest ML",
+      tag: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "Report Ready ✓" : "Instant ML",
       accent: "from-emerald-500/20 to-teal-500/10 border-emerald-500/30 text-emerald-400",
       btnClass: loadingActionId === "calculate"
         ? "border-emerald-400 animate-pulse bg-emerald-500/20 ring-2 ring-emerald-400/50"
         : "hover:border-emerald-500/50 hover:bg-emerald-500/10",
-      actionText: loadingActionId === "calculate" ? "Analyzing..." : "Launch Audit Report",
+      actionText: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "View Audit Report" : "Launch Tool",
     },
     {
       id: "roadmap",
@@ -687,6 +720,27 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                   <X className="h-4 w-4" />
                 </button>
               </div>
+
+              {/* Server Warming-Up / Estimated Status Banner */}
+              {readinessData.is_estimated && (
+                <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0" />
+                    <span>
+                      {readinessData.data_source?.includes("Warming Up")
+                        ? "Server is spinning up from idle sleep. Instant calibrated audit displayed based on candidate vectors."
+                        : "Calibrated rule-based sensitivity analysis based on candidate vectors."}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => executeCardAction("calculate")}
+                    className="flex items-center gap-1 rounded-lg border border-amber-400/40 bg-amber-500/20 px-2.5 py-1 text-[11px] font-semibold text-amber-200 hover:bg-amber-500/30 transition-colors cursor-pointer self-start sm:self-auto"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    <span>Sync Live Model</span>
+                  </button>
+                </div>
+              )}
 
               {/* Main Score Banner */}
               <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 p-5 backdrop-blur-md">
