@@ -97,11 +97,16 @@ CORE RULES:
    - Never force unwanted translation.
 
 3. CASUAL CONVERSATION (DO NOT LECTURE):
-   - "Hi" / "Hello" -> Short, warm, natural ("Hey! 👋 Welcome to Pathfinder. What's on your mind today?")
+   - "Hi" / "Hello" -> Short, warm, natural.
+     - First greeting: "Hey! 👋 Welcome to Pathfinder. What's on your mind today?"
+     - Repeated greetings: NEVER repeat the initial welcome greeting! Vary your reply naturally (e.g., "Hello again! 😄 Still right here with you. What would you like to explore next?", "Hey! Ready whenever you are—what's on your mind?", "Always here for you! Let's keep making progress. What should we tackle next?").
    - "How are you?" -> "I'm doing great 😊 Ready whenever you are. Career, coding, placements, or just a random question?"
    - "Bro" -> "Yeah bro 😄 tell me!"
    - "Bro ela unnava?" -> "Super bro! Chala bagunna 😊 Enti sangathulu? Em discuss cheddam?"
-   - "I love you" / "I love you 😂" -> Reply: "I love you too! 💖 What can I help you with today? Choose an area below or ask me anything:\n- 🎯 **Placement Strategy & Eligibility**\n- 🔍 **Skill Gap & Roadmap**\n- 💡 **Flagship Project Ideas**\n- 🎙️ **Interactive Mock Interview**\n- 📊 **Cohort & Branch Benchmarks**"
+   - "I love you" / "I love you 😂" -> Reply warmly, kindly, and playfully WITHOUT jumping to career advice or dumping career modules: "I love you too! 💖 Haha, that made my day! I'm always here in your corner whenever you want to study, prep, or just chat. How's everything going with you today?"
+   - "What do I do now?" / "What should I do now?" / "What next?" ->
+     - First time: Ground in saved candidate profile with top 3 prioritized strategic next steps.
+     - When repeated or earlier steps already present: CRITICAL: DO NOT repeat earlier steps! Acknowledge what was already discussed and advance to immediate actionable today-sprints (e.g., today's 60-minute DSA sprint, specific LeetCode problem, GitHub README push, or a quick interactive mock round). Always move forward.
    - "Thanks" -> "Anytime! 🙌 Always happy to help."
    - "Bye" -> "Bye! 👋 Come back whenever you need me. All the best!"
    NEVER turn simple greetings or casual chit-chat into massive unsolicited placement lectures!
@@ -377,17 +382,19 @@ Take your shot!"""
 
 Would you like to generate your **custom 30-Day Sprint Roadmap** or start an **interactive Mock Interview** now?"""
 
-    # Test K: Love message (Strictly matching criteria: "I love you too! 💖" with option chips, no career lecture)
+    # Love message (warm, friendly, reciprocal; NO jumping to career advice or modules)
     if any(p in lower for p in ("love you", "love u", "luv u", "i love u", "i luv u", "nenu ninnu premistunna", "premistunna")):
-        return """I love you too! 💖 What can I help you with today?
+        return "I love you too! 💖 Haha, that made my day! I'm always here in your corner whenever you want to study, prep, or just chat. How's everything going with you today?"
 
-- Analyze my career readiness 📊
-- Build my 6-week roadmap 🚀
-- Placement stats 🎓
-- Just chat 💬"""
+    # "what do I do now?" personalized next steps (Contextual & never repeats earlier steps)
+    if any(p in lower for p in ("what do i do now", "what should i do now", "what next", "what to do now", "what do i do", "what do we do now", "what now")):
+        prior_steps_count = 0
+        if history:
+            for prev in history:
+                prev_text = (getattr(prev, "content", None) or (prev.get("content") if isinstance(prev, dict) else "") or "").lower()
+                if any(k in prev_text for k in ("prioritized next steps", "algorithmic foundation", "today's 60-minute", "action beats over-planning")):
+                    prior_steps_count += 1
 
-    # "what do I do now?" personalized next steps
-    if any(p in lower for p in ("what do i do now", "what should i do now", "what next", "what to do now", "what do i do", "what do we do now")):
         p = profile or {}
         if isinstance(p, dict):
             cgpa = float(p.get("cgpa", 7.8))
@@ -409,17 +416,31 @@ Would you like to generate your **custom 30-Day Sprint Roadmap** or start an **i
         gap2 = "Deploy 1 production-grade full-stack or ML application with a live URL and clean GitHub repository" if internships == 0 else "Refine your project architectural defense using the STAR method for interview rounds"
         gap3 = "Clear all active backlogs before campus drives to clear Tier-1 enterprise filters" if backlogs > 0 else "Ensure your ATS resume contains verified metric-driven bullet points"
 
-        return f"""Based on your active profile for **{role}** (Readiness Score: **`{chance}%`**, CGPA: {cgpa:.1f}/10.0, Coding: {coding:.0f}/10, Active Backlogs: {backlogs}):
+        if prior_steps_count == 0:
+            return f"""Based on your active profile for **{role}** (Readiness Score: **`{chance}%`**, CGPA: {cgpa:.1f}/10.0, Coding: {coding:.0f}/10, Active Backlogs: {backlogs}):
 
 Here are your prioritized next steps:
 1. **Algorithmic Foundation:** {gap1}.
 2. **Flagship Proof of Work:** {gap2}.
 3. **Screening Cutoffs:** {gap3}.
 
-- Analyze my career readiness 📊
-- Build my 6-week roadmap 🚀
-- Placement stats 🎓
-- Just chat 💬"""
+Which of these would you like to start on right now—DSA problem solving, project architecture, or cutoffs?"""
+        elif prior_steps_count == 1:
+            return f"""Since we've already outlined your high-level roadmap for **{role}**, let's not repeat earlier steps—let's focus on **what you can do right now today**:
+
+1. **Today's 60-Minute DSA Sprint:** Solve 1 medium pattern problem on Two Pointers (e.g. *LeetCode 11: Container With Most Water*). Focus on clean time/space complexity analysis.
+2. **Flagship Project Touchpoint:** Commit 1 clean feature to your GitHub repo and write a crisp 3-bullet STAR impact summary for your README.
+3. **Mock Articulation Check:** Practice explaining your project's toughest technical challenge in under 2 minutes.
+
+Want to do a quick 5-minute technical question right now, or should we review your resume bullet points?"""
+        else:
+            return """Action beats over-planning! Pick ONE immediate task right now and let's do it together:
+
+- 🎯 **Option A:** Start a 5-minute Mock Technical Interview (type *'start mock interview'*).
+- 💻 **Option B:** Solve a Two Pointers challenge together step-by-step (type *'give me a two pointers problem'*).
+- 📄 **Option C:** Polish your project bullet points into Google X-Y-Z format (type *'make my resume better'*).
+
+Tell me which one you want to knock out right now!"""
 
     # AIML Placed Count query
     if ("how many" in lower or "placed count" in lower or "students placed" in lower or "got placed" in lower) and "aiml" in lower:
@@ -685,12 +706,16 @@ Would you like a follow-up challenge on **3Sum (Medium)** or a **Sliding Window*
     greeting_words = ["hi", "hello", "hey", "hlo", "namaste", "namaskaram", "hola", "yo"]
     is_greeting = any(lower == g or lower.startswith(f"{g} ") or lower.startswith(f"{g}!") or lower.startswith(f"{g},") for g in greeting_words)
     if is_greeting:
-        greet_count = 0
+        user_greet_count = 0
+        last_assistant_reply = ""
         if history:
             for prev in history:
-                prev_text = (prev.content or "").lower()
-                if any(g in prev_text for g in ("hi", "hello", "hey", "welcome to pathfinder", "great to see you", "still right here")):
-                    greet_count += 1
+                prev_text = (getattr(prev, "content", None) or (prev.get("content") if isinstance(prev, dict) else "") or "").lower().strip()
+                prev_role = getattr(prev, "role", None) or (prev.get("role") if isinstance(prev, dict) else "")
+                if prev_role == "user" and any(prev_text == g or prev_text.startswith(f"{g} ") or prev_text.startswith(f"{g}!") or prev_text.startswith(f"{g},") for g in greeting_words):
+                    user_greet_count += 1
+                if prev_role in ("assistant", "model"):
+                    last_assistant_reply = (getattr(prev, "content", None) or (prev.get("content") if isinstance(prev, dict) else "") or "").strip()
 
         name = ""
         if profile:
@@ -699,14 +724,16 @@ Would you like a follow-up challenge on **3Sum (Medium)** or a **Sliding Window*
                 name = profile.get("name") or profile.get("userName") or ""
         name_str = f" {name}".rstrip()
 
-        if greet_count > 0:
+        if user_greet_count > 0:
             replies = [
                 f"Hello again{name_str}! 😄 Still right here with you. What would you like to explore next?",
                 f"Hey{name_str}! Ready whenever you are—what's on your mind?",
                 f"Always here for you! Let's keep making progress. What should we tackle next?",
-                f"Hey there{name_str}! How can I assist your career prep right now?"
+                f"Hey there{name_str}! How can I assist your career prep or questions right now?"
             ]
-            return replies[greet_count % len(replies)]
+            available_replies = [r for r in replies if r.strip() != last_assistant_reply.strip()]
+            chosen_pool = available_replies if available_replies else replies
+            return chosen_pool[(user_greet_count - 1) % len(chosen_pool)]
         else:
             return f"""Hey{name_str}! 👋 Welcome to Pathfinder. What's on your mind today?
 

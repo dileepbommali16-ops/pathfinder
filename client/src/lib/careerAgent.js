@@ -202,37 +202,43 @@ Would you like to generate your **custom 30-Day Sprint Roadmap** or start an **i
   // 2. CASUAL CHAT & WARM HUMAN MIRRORING
   // -------------------------------------------------------------
   if (/love you|love u|luv u|i love u|i luv u|nenu ninnu premistunna|premistunna/i.test(lower)) {
-    return `I love you too! 💖 What can I help you with today?
-
-- Analyze my career readiness 📊
-- Build my 6-week roadmap 🚀
-- Placement stats 🎓
-- Just chat 💬`;
+    return "I love you too! 💖 Haha, that made my day! I'm always here in your corner whenever you want to study, prep, or just chat. How's everything going with you today?";
   }
 
   // Greetings with history-aware variation on repetition
   const greetingWords = ["hi", "hello", "hey", "hlo", "namaste", "namaskaram", "hola", "yo"];
   const isGreeting = greetingWords.some(g => lower === g || lower.startsWith(`${g} `) || lower.startsWith(`${g}!`) || lower.startsWith(`${g},`));
   if (isGreeting) {
-    let greetCount = 0;
+    let userGreetCount = 0;
+    let lastAssistantReply = "";
     if (history) {
-      for (const prev of history) {
-        const prevText = (prev.content || "").toLowerCase();
-        if (/hi|hello|hey|welcome to pathfinder|great to see you|still right here/i.test(prevText)) {
-          greetCount++;
+      for (let i = 0; i < history.length; i++) {
+        const item = history[i];
+        // If this item is the current user message at the very end of updatedMessages, skip it
+        if (i === history.length - 1 && item.role === "user" && item.content === message) {
+          continue;
+        }
+        const text = (item.content || "").toLowerCase().trim();
+        if (item.role === "user" && greetingWords.some(g => text === g || text.startsWith(`${g} `) || text.startsWith(`${g}!`) || text.startsWith(`${g},`))) {
+          userGreetCount++;
+        }
+        if (item.role === "assistant") {
+          lastAssistantReply = item.content || "";
         }
       }
     }
     const name = profile?.name ? ` ${profile.name}` : "";
 
-    if (greetCount > 0) {
+    if (userGreetCount > 0) {
       const replies = [
         `Hello again${name}! 😄 Still right here with you. What would you like to explore next?`,
         `Hey${name}! Ready whenever you are—what's on your mind?`,
         `Always here for you! Let's keep making progress. What should we tackle next?`,
-        `Hey there${name}! How can I assist your career prep right now?`
+        `Hey there${name}! How can I assist your career prep or questions right now?`
       ];
-      return replies[greetCount % replies.length];
+      const available = replies.filter(r => r.trim() !== lastAssistantReply.trim());
+      const chosenPool = available.length > 0 ? available : replies;
+      return chosenPool[(userGreetCount - 1) % chosenPool.length];
     } else {
       return `Hey${name}! 👋 Welcome to Pathfinder. What's on your mind today?
 
@@ -247,8 +253,18 @@ Would you like to generate your **custom 30-Day Sprint Roadmap** or start an **i
     return "Awesome! 😊 I'm always up for a good chat. We can talk about tech trends, college life, hackathons, how you're feeling about placements, or anything else on your mind. What's happening?";
   }
 
-  // "what do I do now?" personalized next steps
-  if (/what do i do now|what should i do now|what next|what to do now|what do i do|what do we do now/i.test(lower)) {
+  // "what do I do now?" personalized next steps (Contextual & never repeats earlier steps)
+  if (/what do i do now|what should i do now|what next|what to do now|what do i do|what do we do now|what now/i.test(lower)) {
+    let priorStepsCount = 0;
+    if (history) {
+      for (const prev of history) {
+        const prevText = (prev.content || "").toLowerCase();
+        if (/prioritized next steps|algorithmic foundation|today's 60-minute|action beats over-planning/i.test(prevText)) {
+          priorStepsCount++;
+        }
+      }
+    }
+
     const cgpa = Number(profile?.cgpa ?? 7.8);
     const backlogs = Number(profile?.backlogs ?? 0);
     const internships = Number(profile?.internships ?? 1);
@@ -262,17 +278,32 @@ Would you like to generate your **custom 30-Day Sprint Roadmap** or start an **i
     const gap2 = internships === 0 ? "Deploy 1 production-grade full-stack or ML application with a live URL and clean GitHub repository" : "Refine your project architectural defense using the STAR method for interview rounds";
     const gap3 = backlogs > 0 ? "Clear all active backlogs before campus drives to clear Tier-1 enterprise filters" : "Ensure your ATS resume contains verified metric-driven bullet points";
 
-    return `Based on your active profile for **${role}** (Readiness Score: **\`${chance}%\`**, CGPA: ${cgpa.toFixed(1)}/10.0, Coding: ${coding}/10, Active Backlogs: ${backlogs}):
+    if (priorStepsCount === 0) {
+      return `Based on your active profile for **${role}** (Readiness Score: **\`${chance}%\`**, CGPA: ${cgpa.toFixed(1)}/10.0, Coding: ${coding}/10, Active Backlogs: ${backlogs}):
 
 Here are your prioritized next steps:
 1. **Algorithmic Foundation:** ${gap1}.
 2. **Flagship Proof of Work:** ${gap2}.
 3. **Screening Cutoffs:** ${gap3}.
 
-- Analyze my career readiness 📊
-- Build my 6-week roadmap 🚀
-- Placement stats 🎓
-- Just chat 💬`;
+Which of these would you like to start on right now—DSA problem solving, project architecture, or cutoffs?`;
+    } else if (priorStepsCount === 1) {
+      return `Since we've already outlined your high-level roadmap for **${role}**, let's not repeat earlier steps—let's focus on **what you can do right now today**:
+
+1. **Today's 60-Minute DSA Sprint:** Solve 1 medium pattern problem on Two Pointers (e.g. *LeetCode 11: Container With Most Water*). Focus on clean time/space complexity analysis.
+2. **Flagship Project Touchpoint:** Commit 1 clean feature to your GitHub repo and write a crisp 3-bullet STAR impact summary for your README.
+3. **Mock Articulation Check:** Practice explaining your project's toughest technical challenge in under 2 minutes.
+
+Want to do a quick 5-minute technical question right now, or should we review your resume bullet points?`;
+    } else {
+      return `Action beats over-planning! Pick ONE immediate task right now and let's do it together:
+
+- 🎯 **Option A:** Start a 5-minute Mock Technical Interview (type *'start mock interview'*).
+- 💻 **Option B:** Solve a Two Pointers challenge together step-by-step (type *'give me a two pointers problem'*).
+- 📄 **Option C:** Polish your project bullet points into Google X-Y-Z format (type *'make my resume better'*).
+
+Tell me which one you want to knock out right now!`;
+    }
   }
 
   // AIML Placed Count query
