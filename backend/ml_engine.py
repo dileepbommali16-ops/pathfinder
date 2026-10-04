@@ -120,6 +120,10 @@ def predict_placement(profile: StudentProfile) -> PredictionResult:
 
     breakdown = {
         "academics": round(min(100.0, (profile.cgpa / 10.0) * 100.0), 1),
+        "skills": round(profile.coding * 10.0, 1),
+        "projects": round(min(100.0, max(25.0, profile.projects_count * 25.0)), 1),
+        "internships": round(min(100.0, profile.internships * 40.0), 1),
+        "coding": round(profile.coding * 10.0, 1),
         "coding_dsa": round(profile.coding * 10.0, 1),
         "communication": round(profile.communication * 10.0, 1),
         "experience": round(min(100.0, profile.internships * 35.0), 1),

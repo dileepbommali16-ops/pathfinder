@@ -160,7 +160,7 @@ if frontend_url_env:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=r"https://.*(\.vercel\.app|\.onrender\.com)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -565,19 +565,30 @@ def calculate_readiness_audit(
     Reads the logged-in user's SAVED profile from the database if profile is not fully provided.
     Runs Random Forest ML sensitivity scoring, falling back gracefully to calibrated rule-based estimation if needed.
     """
-    if profile is None or (profile.cgpa == 7.8 and not profile.email and user.is_authenticated):
-        saved_db = None
-        if user.is_authenticated and user.user_id:
-            saved_db = get_user_profile_by_id(user.user_id)
-        if not saved_db and user.email:
-            saved_db = get_user_profile_by_email_or_username(user.email)
-        if saved_db:
-            try:
-                profile = StudentProfile(**saved_db)
-            except Exception:
-                pass
-        if profile is None:
-            profile = StudentProfile()
+    # 1. Resolve student profile from request or database (saved profile lookup)
+    saved_db = None
+    if user.is_authenticated and user.user_id:
+        saved_db = get_user_profile_by_id(user.user_id)
+    if not saved_db and user.email:
+        saved_db = get_user_profile_by_email_or_username(user.email)
+    if not saved_db and profile and profile.email:
+        saved_db = get_user_profile_by_email_or_username(profile.email)
+    if not saved_db and profile and profile.user_id:
+        saved_db = get_user_profile_by_id(profile.user_id)
+
+    if saved_db:
+        saved_profile_dict = dict(saved_db)
+        if profile is not None:
+            # Overlay non-null request attributes over saved DB values
+            incoming_dict = profile.model_dump(exclude_unset=True)
+            saved_profile_dict.update({k: v for k, v in incoming_dict.items() if v is not None})
+        try:
+            profile = StudentProfile(**saved_profile_dict)
+        except Exception:
+            pass
+
+    if profile is None:
+        profile = StudentProfile()
 
     cgpa = float(profile.cgpa)
     backlogs = int(profile.active_backlogs if profile.active_backlogs is not None else profile.backlogs)
@@ -589,7 +600,7 @@ def calculate_readiness_audit(
     overall_percentage = round(cgpa * multiplier, 1)
     cert_count = len(profile.certifications) if profile.certifications else 0
 
-    # Execute Random Forest ML sensitivity prediction
+    # 2. Execute Random Forest ML sensitivity prediction with calibrated fallback
     is_estimated = False
     data_source = "Random Forest ML Engine (972 Records)"
     try:
@@ -600,7 +611,7 @@ def calculate_readiness_audit(
         is_estimated = getattr(pred, "is_estimated", False)
         data_source = getattr(pred, "data_source", "Random Forest ML Engine (972 Records)")
     except Exception as exc:
-        logger.warning(f"[Readiness Audit] ML call fallback: {exc}")
+        logger.warning(f"[Readiness Audit] ML service call failed/timed out: {exc}. Using calibrated rule-based estimate.")
         raw = (
             cgpa * 5.2
             + max(0, 3 - backlogs) * 4.0
@@ -623,13 +634,14 @@ def calculate_readiness_audit(
         is_estimated = True
         data_source = "Calibrated Rule-Based Model (Estimated)"
 
-    # Multi-dimensional vector breakdown (academics, skills, projects, internships, certifications, etc.)
+    # 3. Multi-dimensional vector breakdown (academics, skills, projects, internships, coding)
     breakdown = {
         "academics": min(100.0, round((cgpa / 10.0) * 100.0, 1)),
         "skills": min(100.0, round(coding * 10.0, 1)),
-        "coding_dsa": min(100.0, round(coding * 10.0, 1)),
         "projects": min(100.0, max(25.0, projects * 25.0)),
         "internships": min(100.0, internships * 40.0),
+        "coding": min(100.0, round(coding * 10.0, 1)),
+        "coding_dsa": min(100.0, round(coding * 10.0, 1)),
         "certifications": min(100.0, max(25.0, cert_count * 35.0)),
         "communication": min(100.0, round(comm * 10.0, 1)),
         "eligibility": max(0.0, round(100.0 - (backlogs * 25.0), 1)),

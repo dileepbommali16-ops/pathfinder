@@ -4,12 +4,24 @@ import time
 from playwright.sync_api import sync_playwright
 
 def diagnose():
+    if sys.platform == "win32":
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+            sys.stderr.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
     print("=" * 60)
-    print("🔍 DIAGNOSING 'Analyze Career Readiness' IN REAL BROWSER")
+    print("DIAGNOSING 'Analyze Career Readiness' IN REAL BROWSER")
     print("=" * 60)
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        try:
+            browser = p.chromium.launch(channel="msedge", headless=True)
+        except Exception:
+            try:
+                browser = p.chromium.launch(channel="chrome", headless=True)
+            except Exception:
+                browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 1280, "height": 900})
         page = context.new_page()
 

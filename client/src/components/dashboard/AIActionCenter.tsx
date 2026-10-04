@@ -136,10 +136,11 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
     const breakdown = {
       academics: Math.min(100, Math.round((cgpa / 10) * 100)),
-      coding_dsa: Math.min(100, Math.round(coding * 10)),
       skills: Math.min(100, Math.round(coding * 10)),
       projects: Math.min(100, Math.max(25, projects * 25)),
       internships: Math.min(100, internships * 40),
+      coding: Math.min(100, Math.round(coding * 10)),
+      coding_dsa: Math.min(100, Math.round(coding * 10)),
       communication: Math.min(100, Math.round(comm * 10)),
       eligibility: Math.max(0, 100 - backlogs * 25),
     };
@@ -206,13 +207,13 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       return;
     }
 
-    // 2. Set loading and start 3.5s cold-start indicator
+    // 2. Set loading and start 2.5s cold-start indicator
     setLoadingActionId(actionId);
     setIsColdStarting(false);
     if (coldStartTimerRef.current) clearTimeout(coldStartTimerRef.current);
     coldStartTimerRef.current = setTimeout(() => {
       setIsColdStarting(true);
-    }, 3500);
+    }, 2500);
 
     // 3. Set up 30-second AbortController
     if (abortControllerRef.current) abortControllerRef.current.abort();
@@ -227,11 +228,26 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
         // Option to trigger parent sync
         if (onTriggerCalculate) onTriggerCalculate();
 
+        const token = typeof window !== "undefined" ? localStorage.getItem("pathfinder_token") : null;
+        const userRaw = typeof window !== "undefined" ? localStorage.getItem("pathfinder_user") : null;
+        let parsedUser: any = null;
+        if (userRaw) {
+          try { parsedUser = JSON.parse(userRaw); } catch {}
+        }
+
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
         try {
           const resp = await fetch(`${apiBase}/api/profile/calculate`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers,
             body: JSON.stringify({
+              user_id: parsedUser?.user_id,
+              email: parsedUser?.email || activeProfile.email,
+              full_name: activeProfile.fullName,
               cgpa: activeProfile.cgpa,
               backlogs: activeProfile.backlogs,
               internships: activeProfile.internships,
@@ -242,7 +258,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               target_tier: activeProfile.targetTier,
               branch: activeProfile.branch,
               graduation_year: activeProfile.graduationYear,
-              skills: activeProfile.skills,
+              skills: activeProfile.skills || activeProfile.technicalSkills,
             }),
             signal: controller.signal,
           });
@@ -254,18 +270,29 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               is_estimated: data.is_estimated ?? false,
               data_source: data.data_source || "Random Forest ML Engine (972 Records)",
             });
+            setActiveModal("readiness");
           } else {
-            // Server error: compute calibrated rule-based fallback
+            // Server error: compute calibrated rule-based fallback and record notice
             const fallback = calculateRuleBasedReadiness(activeProfile);
             setReadinessData(fallback);
+            setActiveModal("readiness");
+            setErrorMessage({
+              actionId,
+              message: `Server returned status ${resp.status}. Displaying calibrated rule-based estimation (labeled estimated).`,
+            });
           }
-        } catch {
-          // Timeout or network drop: compute calibrated rule-based fallback
+        } catch (fetchErr: any) {
+          // Timeout or network drop: compute calibrated rule-based fallback so card never stays blank
           const fallback = calculateRuleBasedReadiness(activeProfile);
           setReadinessData(fallback);
+          setActiveModal("readiness");
+          setErrorMessage({
+            actionId,
+            message: fetchErr.name === "AbortError"
+              ? "Request timed out after 30s window. Displaying calibrated rule-based estimation (labeled estimated)."
+              : (fetchErr.message || "Failed to reach remote ML server. Displaying calibrated rule-based estimation (labeled estimated)."),
+          });
         }
-
-        setActiveModal("readiness");
       } else if (actionId === "roadmap") {
         try {
           const resp = await fetch(`${apiBase}/api/roadmap`, {
@@ -424,12 +451,12 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       subtitle: "[Random Forest ML]",
       description: "Run Random Forest ML sensitivity on current CGPA, internships & coding scores.",
       icon: Target,
-      tag: loadingActionId === "calculate" ? "Evaluating ML..." : readinessData ? "Report Ready ✓" : "Random Forest ML",
+      tag: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "Report Ready ✓" : "Random Forest ML",
       accent: "from-emerald-500/20 to-teal-500/10 border-emerald-500/30 text-emerald-400",
       btnClass: loadingActionId === "calculate"
-        ? "border-emerald-400 animate-pulse bg-emerald-500/20"
+        ? "border-emerald-400 animate-pulse bg-emerald-500/20 ring-2 ring-emerald-400/50"
         : "hover:border-emerald-500/50 hover:bg-emerald-500/10",
-      actionText: loadingActionId === "calculate" ? "Evaluating Vectors..." : "Launch Audit Report",
+      actionText: loadingActionId === "calculate" ? "Analyzing..." : "Launch Audit Report",
     },
     {
       id: "roadmap",
@@ -594,11 +621,11 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                 </p>
               </div>
 
-              <div className="mt-4 flex items-center gap-1 text-[11px] font-semibold text-slate-300 group-hover:text-white transition-colors">
+              <div className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-slate-300 group-hover:text-white transition-colors">
                 {isLoading ? (
                   <>
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    <span>Processing...</span>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
+                    <span className="text-emerald-300 font-bold">Analyzing...</span>
                   </>
                 ) : (
                   <>
@@ -692,44 +719,64 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                   <span>Multi-Dimensional Vectors</span>
                 </h4>
 
-                <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                     <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-slate-300">Academics & CGPA</span>
-                      <span className="text-emerald-400">{readinessData.cgpa ?? activeProfile.cgpa}/10 ({readinessData.breakdown.academics || 0}%)</span>
+                      <span className="text-slate-300">Academics</span>
+                      <span className="text-emerald-400">{readinessData.cgpa ?? activeProfile.cgpa}/10 ({readinessData.breakdown.academics ?? 0}%)</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-                      <div className="h-full bg-emerald-400 rounded-full" style={{ width: `${readinessData.breakdown.academics || 0}%` }} />
+                      <div className="h-full bg-emerald-400 rounded-full" style={{ width: `${readinessData.breakdown.academics ?? 0}%` }} />
                     </div>
                   </div>
 
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                     <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-slate-300">Coding & DSA Level</span>
-                      <span className="text-cyan-400">{activeProfile.coding}/10 ({readinessData.breakdown.coding_dsa || readinessData.breakdown.skills || 0}%)</span>
+                      <span className="text-slate-300">Skills</span>
+                      <span className="text-teal-400">{readinessData.breakdown.skills ?? readinessData.breakdown.coding ?? 70}%</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-                      <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${readinessData.breakdown.coding_dsa || readinessData.breakdown.skills || 0}%` }} />
+                      <div className="h-full bg-teal-400 rounded-full" style={{ width: `${readinessData.breakdown.skills ?? readinessData.breakdown.coding ?? 70}%` }} />
                     </div>
                   </div>
 
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                     <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-slate-300">Practical Internships</span>
-                      <span className="text-purple-400">{activeProfile.internships} verified ({readinessData.breakdown.internships || 0}%)</span>
+                      <span className="text-slate-300">Projects</span>
+                      <span className="text-rose-400">{activeProfile.projectsCount} portfolio ({readinessData.breakdown.projects ?? 50}%)</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-                      <div className="h-full bg-purple-400 rounded-full" style={{ width: `${readinessData.breakdown.internships || 0}%` }} />
+                      <div className="h-full bg-rose-400 rounded-full" style={{ width: `${readinessData.breakdown.projects ?? 50}%` }} />
                     </div>
                   </div>
 
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                     <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-slate-300">STAR Communication</span>
-                      <span className="text-amber-400">{activeProfile.communication}/10 ({readinessData.breakdown.communication || 0}%)</span>
+                      <span className="text-slate-300">Internships</span>
+                      <span className="text-purple-400">{activeProfile.internships} verified ({readinessData.breakdown.internships ?? 0}%)</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-                      <div className="h-full bg-amber-400 rounded-full" style={{ width: `${readinessData.breakdown.communication || 0}%` }} />
+                      <div className="h-full bg-purple-400 rounded-full" style={{ width: `${readinessData.breakdown.internships ?? 0}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-slate-300">Coding</span>
+                      <span className="text-cyan-400">{activeProfile.coding}/10 ({readinessData.breakdown.coding ?? readinessData.breakdown.coding_dsa ?? 70}%)</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
+                      <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${readinessData.breakdown.coding ?? readinessData.breakdown.coding_dsa ?? 70}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-slate-300">Communication</span>
+                      <span className="text-amber-400">{activeProfile.communication}/10 ({readinessData.breakdown.communication ?? 70}%)</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
+                      <div className="h-full bg-amber-400 rounded-full" style={{ width: `${readinessData.breakdown.communication ?? 70}%` }} />
                     </div>
                   </div>
                 </div>
@@ -1095,20 +1142,25 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
               <div className="mt-6 flex items-center justify-end gap-2.5">
                 <button
+                  type="button"
                   onClick={() => setActiveModal(null)}
                   className="rounded-xl border border-white/10 px-3.5 py-2 text-xs text-slate-400 hover:text-white cursor-pointer"
                 >
                   Dismiss
                 </button>
-                <button
-                  onClick={() => {
+                <a
+                  href="#profile"
+                  id="link-empty-profile-page"
+                  onClick={(e) => {
+                    e.preventDefault();
                     setActiveModal(null);
                     onNavigateTab("profile");
                   }}
-                  className="rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-xs font-bold text-slate-950 hover:brightness-110 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-xs font-bold text-slate-950 hover:brightness-110 cursor-pointer shadow-lg shadow-amber-500/20"
                 >
-                  Complete Profile Settings
-                </button>
+                  <span>Go to Profile Page</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
               </div>
             </motion.div>
           </div>

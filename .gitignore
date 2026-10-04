@@ -9,6 +9,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 .manus-logs/
+scratch*.png
 
 # Build outputs
 dist/

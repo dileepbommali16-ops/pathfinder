@@ -7,6 +7,7 @@ export interface CodingProfiles {
 
 export interface StudentProfileState {
   // Step 1: Basic Details
+  email?: string;
   fullName: string;
   college: string;
   branch: string;
