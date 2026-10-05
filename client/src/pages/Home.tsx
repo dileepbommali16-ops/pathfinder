@@ -128,9 +128,59 @@ export default function Home() {
     return () => window.removeEventListener("pathfinder_logout", handleRemoteLogout);
   }, []);
 
-  // Process OAuth return fragment (#oauth_token=... or #oauth_error=...)
+  // Complete OAuth returns before rendering either the login card or dashboard.
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const oauthCode = searchParams.get("oauth_code");
+    const queryError = searchParams.get("oauth_error");
+    if (oauthCode || queryError) {
+      window.history.replaceState(null, "", window.location.pathname);
+
+      if (queryError) {
+        const messages: Record<string, string> = {
+          google_not_configured: "Google sign-in is not configured yet.",
+          github_not_configured: "GitHub sign-in is not configured yet.",
+          google_cancelled: "Google sign-in was cancelled.",
+          github_cancelled: "GitHub sign-in was cancelled.",
+          google_failed: "Google sign-in failed, please try again.",
+          github_failed: "GitHub sign-in failed, please try again.",
+        };
+        setOauthError(messages[queryError.toLowerCase()] || "Sign-in was cancelled or failed. Please try again.");
+        return;
+      }
+
+      if (oauthCode) {
+        (async () => {
+          try {
+            const exchangeResp = await fetchWithTimeout(`${API_BASE}/api/auth/oauth/exchange`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code: oauthCode }),
+            }, 12000);
+            const authData = await exchangeResp.json();
+            if (!exchangeResp.ok || !authData.success || !authData.user || !authData.token) {
+              throw new Error(authData.message || "OAuth sign-in could not be completed.");
+            }
+
+            localStorage.setItem("pathfinder_token", authData.token);
+            localStorage.setItem("pathfinder_user", JSON.stringify(authData.user));
+            setUserRole(authData.user.role || "student");
+            setOauthError(null);
+            await handleLogin({
+              username: authData.user.username || "Student",
+              email: authData.user.email,
+              isNewUser: authData.is_new_user === true,
+            });
+          } catch (error) {
+            setOauthError(error instanceof Error ? error.message : "OAuth sign-in could not be completed.");
+          }
+        })();
+      }
+      return;
+    }
+
     const hash = window.location.hash;
     if (!hash || (!hash.includes("oauth_token=") && !hash.includes("oauth_error="))) {
       return;

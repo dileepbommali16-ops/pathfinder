@@ -35,17 +35,6 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     }
   }, [initialError]);
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash.includes("oauth_error=")) {
-      const fragment = window.location.hash.substring(1);
-      const params = new URLSearchParams(fragment);
-      const err = params.get("oauth_error");
-      if (err) {
-        setErrorMessage(decodeURIComponent(err.replace(/\+/g, " ")));
-      }
-    }
-  }, []);
-
   const startPos = useRef({ x: 0, y: 0 });
 
   // Generate random firefly coordinates when lamp turns on
@@ -116,23 +105,11 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     setSocialLoading(platform);
 
     try {
-      const resp = await fetch(`${API_BASE}/api/auth/oauth-urls`);
-      if (resp.ok) {
-        const data = await resp.json();
-        const configured = platform === "google" ? data.google_configured : data.github_configured;
-        if (!configured) {
-          const providerName = platform === "google" ? "Google" : "GitHub";
-          setSocialError(`${providerName} login is not set up yet`);
-          setSocialLoading(null);
-          return;
-        }
-      }
+      window.location.href = `${API_BASE}/api/auth/${platform}/start`;
     } catch {
-      // If oauth-urls check is temporarily unreachable, proceed to backend /start
+      setSocialLoading(null);
+      setErrorMessage(`${platform === "google" ? "Google" : "GitHub"} sign-in is unavailable right now. Please try again.`);
     }
-
-    // Navigate in same tab
-    window.location.href = `${API_BASE}/api/auth/${platform}/start`;
   };
 
   return (

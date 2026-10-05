@@ -13,11 +13,15 @@ from backend.database import get_user_profile_by_email_or_username
 
 logger = logging.getLogger("pathfinder.oauth")
 
-# Expiry for OAuth CSRF state parameter (5 minutes)
-STATE_EXPIRY_SECONDS = 300
+# Expiry for OAuth CSRF state parameter (10 minutes)
+STATE_EXPIRY_SECONDS = 600
+ONE_TIME_CODE_EXPIRY_SECONDS = 60
 
 # Server-side in-memory state store: state_token -> { provider, origin, created_at }
 _oauth_states: Dict[str, Dict[str, Any]] = {}
+
+# One-time OAuth exchange codes: code -> { session_token, created_at }
+_oauth_one_time_codes: Dict[str, Dict[str, Any]] = {}
 
 # Active server-managed session store (shared with api.py)
 _active_sessions: Dict[str, UserSession] = {}
@@ -66,8 +70,23 @@ def get_backend_public_url(request: Request) -> str:
 
 def redirect_oauth_error(base_frontend: str, user_friendly_message: str) -> RedirectResponse:
     """Safe redirect back to frontend with a sanitized URL-encoded error message."""
+    base_frontend = base_frontend.rstrip("/")
     encoded = urllib.parse.quote_plus(user_friendly_message)
-    return RedirectResponse(url=f"{base_frontend}/#oauth_error={encoded}", status_code=302)
+    return RedirectResponse(url=f"{base_frontend}/?oauth_error={encoded}", status_code=302)
+
+
+def build_oauth_frontend_redirect(base_frontend: str, *, oauth_code: Optional[str] = None, oauth_error: Optional[str] = None) -> str:
+    """Build a frontend redirect with safe query parameters for OAuth completion or errors."""
+    base_frontend = base_frontend.rstrip("/")
+    params: Dict[str, str] = {}
+    if oauth_code:
+        params["oauth_code"] = oauth_code
+    if oauth_error:
+        params["oauth_error"] = oauth_error
+    query = urllib.parse.urlencode(params)
+    if query:
+        return f"{base_frontend}/?{query}"
+    return base_frontend + "/"
 
 
 def create_oauth_state(provider: str, origin: str) -> str:
@@ -100,6 +119,35 @@ def verify_and_consume_oauth_state(state: Optional[str], expected_provider: str)
     return data
 
 
+def create_one_time_oauth_code(session_token: str, is_new_user: bool) -> str:
+    """Creates a short-lived single-use OAuth exchange code for the frontend."""
+    now = time.time()
+    expired = [code for code, data in _oauth_one_time_codes.items() if now - data.get("created_at", 0) > ONE_TIME_CODE_EXPIRY_SECONDS]
+    for code in expired:
+        _oauth_one_time_codes.pop(code, None)
+
+    code = secrets.token_urlsafe(24)
+    _oauth_one_time_codes[code] = {
+        "session_token": session_token,
+        "is_new_user": is_new_user,
+        "created_at": now,
+    }
+    return code
+
+
+def consume_one_time_oauth_code(code: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Consumes and validates a one-time OAuth code."""
+    if not code:
+        return None
+    data = _oauth_one_time_codes.pop(code, None)
+    if not data:
+        return None
+    now = time.time()
+    if now - data.get("created_at", 0) > ONE_TIME_CODE_EXPIRY_SECONDS:
+        return None
+    return data
+
+
 @oauth_router.get("/oauth-urls", response_model=OAuthUrlsResponse)
 def get_oauth_urls_endpoint(request: Request):
     """
@@ -122,6 +170,54 @@ def get_oauth_urls_endpoint(request: Request):
         google_url=f"{backend_base}/api/auth/google/start" if google_configured else None,
         github_url=f"{backend_base}/api/auth/github/start" if github_configured else None
     )
+
+
+@oauth_router.post("/oauth/exchange")
+def exchange_oauth_code(payload: Dict[str, Any]):
+    """Consumes a one-time OAuth code and returns the same session payload as a normal login."""
+    code = payload.get("code") if isinstance(payload, dict) else None
+    oauth_code_data = consume_one_time_oauth_code(code)
+    if not oauth_code_data:
+        return {
+            "success": False,
+            "message": "OAuth login code is invalid or expired.",
+            "user": UserSession(
+                user_id="usr_anonymous",
+                username="Guest",
+                email="guest@pathfinder.ai",
+                role="student",
+                auth_provider="oauth",
+                is_authenticated=False,
+                token=""
+            ),
+            "token": ""
+        }
+
+    session_token = oauth_code_data.get("session_token")
+    session = _active_sessions.get(session_token)
+    if not session or not session.is_authenticated:
+        return {
+            "success": False,
+            "message": "OAuth session could not be verified.",
+            "user": UserSession(
+                user_id="usr_anonymous",
+                username="Guest",
+                email="guest@pathfinder.ai",
+                role="student",
+                auth_provider="oauth",
+                is_authenticated=False,
+                token=""
+            ),
+            "token": ""
+        }
+
+    return {
+        "success": True,
+        "message": "OAuth authentication successful",
+        "user": session,
+        "token": session_token,
+        "is_new_user": oauth_code_data.get("is_new_user", False),
+    }
 
 
 # -----------------------------------------------------------------------------
@@ -148,7 +244,7 @@ def google_oauth_start(request: Request):
 
     if not google_client_id or not google_client_secret:
         logger.warning("[Google OAuth] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET")
-        return redirect_oauth_error(frontend_base, "Google login is not configured yet")
+        return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="google_not_configured"), status_code=302)
 
     state = create_oauth_state("google", frontend_base)
     backend_base = get_backend_public_url(request)
@@ -182,23 +278,23 @@ async def google_oauth_callback(
 
     if error:
         logger.warning(f"[Google OAuth] Error received from Google: {error}")
-        return redirect_oauth_error(fallback_frontend, "Access denied by user")
+        return RedirectResponse(url=build_oauth_frontend_redirect(fallback_frontend, oauth_error="google_cancelled"), status_code=302)
 
     state_data = verify_and_consume_oauth_state(state, "google")
     if not state_data:
         logger.warning(f"[Google OAuth] State verification failed for state={state}")
-        return redirect_oauth_error(fallback_frontend, "Invalid or expired session state. Please try again.")
+        return RedirectResponse(url=build_oauth_frontend_redirect(fallback_frontend, oauth_error="google_failed"), status_code=302)
 
     frontend_base = state_data.get("origin") or fallback_frontend
 
     if not code:
         logger.warning("[Google OAuth] Authorization code missing in callback")
-        return redirect_oauth_error(frontend_base, "Authorization code missing from Google")
+        return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="google_failed"), status_code=302)
 
     google_client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
     google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
     if not google_client_id or not google_client_secret:
-        return redirect_oauth_error(frontend_base, "Google login is not configured yet")
+        return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="google_not_configured"), status_code=302)
 
     backend_base = get_backend_public_url(request)
     redirect_uri = f"{backend_base}/api/auth/google/callback"
@@ -216,13 +312,13 @@ async def google_oauth_callback(
             token_resp = await client.post("https://oauth2.googleapis.com/token", data=token_payload)
             if token_resp.status_code != 200:
                 logger.error(f"[Google OAuth] Token exchange error ({token_resp.status_code}): {token_resp.text}")
-                return redirect_oauth_error(frontend_base, "Failed to exchange authorization code with Google")
+                return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="google_failed"), status_code=302)
 
             token_data = token_resp.json()
             access_token = token_data.get("access_token")
             if not access_token:
                 logger.error("[Google OAuth] Missing access_token in Google response")
-                return redirect_oauth_error(frontend_base, "Failed to obtain access token from Google")
+                return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="google_failed"), status_code=302)
 
             userinfo_resp = await client.get(
                 "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -230,19 +326,19 @@ async def google_oauth_callback(
             )
             if userinfo_resp.status_code != 200:
                 logger.error(f"[Google OAuth] Userinfo fetch failed ({userinfo_resp.status_code}): {userinfo_resp.text}")
-                return redirect_oauth_error(frontend_base, "Failed to retrieve user profile from Google")
+                return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="google_failed"), status_code=302)
 
             userinfo = userinfo_resp.json()
     except Exception as exc:
         logger.exception(f"[Google OAuth] Network exception during Google OAuth: {exc}")
-        return redirect_oauth_error(frontend_base, "Authentication failed due to connection error")
+        return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="google_failed"), status_code=302)
 
     # Enforce verified email
     email = userinfo.get("email")
     is_verified = bool(userinfo.get("email_verified"))
     if not email or not is_verified:
         logger.warning(f"[Google OAuth] Rejected login: unverified email ({email})")
-        return redirect_oauth_error(frontend_base, "A verified email address is required from Google")
+        return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="google_failed"), status_code=302)
 
     username = userinfo.get("name") or userinfo.get("given_name") or email.split("@")[0]
 
@@ -261,12 +357,9 @@ async def google_oauth_callback(
     _active_sessions[token] = session
     logger.info(f"[Google OAuth] Authenticated user '{username}' ({email}) as student session")
 
-    # Detect if user is new or returning
     existing_profile = get_user_profile_by_email_or_username(email)
-    is_new = existing_profile is None
-
-    fragment = f"oauth_token={token}&new=1" if is_new else f"oauth_token={token}"
-    return RedirectResponse(url=f"{frontend_base}/#{fragment}", status_code=302)
+    oauth_code = create_one_time_oauth_code(token, is_new_user=existing_profile is None)
+    return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_code=oauth_code), status_code=302)
 
 
 # -----------------------------------------------------------------------------
@@ -292,7 +385,7 @@ def github_oauth_start(request: Request):
 
     if not github_client_id or not github_client_secret:
         logger.warning("[GitHub OAuth] Missing GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET")
-        return redirect_oauth_error(frontend_base, "GitHub login is not configured yet")
+        return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="github_not_configured"), status_code=302)
 
     state = create_oauth_state("github", frontend_base)
     backend_base = get_backend_public_url(request)
@@ -324,23 +417,23 @@ async def github_oauth_callback(
 
     if error:
         logger.warning(f"[GitHub OAuth] Error received from GitHub: {error}")
-        return redirect_oauth_error(fallback_frontend, "Access denied by user")
+        return RedirectResponse(url=build_oauth_frontend_redirect(fallback_frontend, oauth_error="github_cancelled"), status_code=302)
 
     state_data = verify_and_consume_oauth_state(state, "github")
     if not state_data:
         logger.warning(f"[GitHub OAuth] State verification failed for state={state}")
-        return redirect_oauth_error(fallback_frontend, "Invalid or expired session state. Please try again.")
+        return RedirectResponse(url=build_oauth_frontend_redirect(fallback_frontend, oauth_error="github_failed"), status_code=302)
 
     frontend_base = state_data.get("origin") or fallback_frontend
 
     if not code:
         logger.warning("[GitHub OAuth] Authorization code missing in callback")
-        return redirect_oauth_error(frontend_base, "Authorization code missing from GitHub")
+        return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="github_failed"), status_code=302)
 
     github_client_id = os.getenv("GITHUB_CLIENT_ID", "").strip()
     github_client_secret = os.getenv("GITHUB_CLIENT_SECRET", "").strip()
     if not github_client_id or not github_client_secret:
-        return redirect_oauth_error(frontend_base, "GitHub login is not configured yet")
+        return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="github_not_configured"), status_code=302)
 
     backend_base = get_backend_public_url(request)
     redirect_uri = f"{backend_base}/api/auth/github/callback"
@@ -361,13 +454,13 @@ async def github_oauth_callback(
             )
             if token_resp.status_code != 200:
                 logger.error(f"[GitHub OAuth] Token exchange error ({token_resp.status_code}): {token_resp.text}")
-                return redirect_oauth_error(frontend_base, "Failed to exchange authorization code with GitHub")
+                return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="github_failed"), status_code=302)
 
             token_data = token_resp.json()
             access_token = token_data.get("access_token")
             if not access_token:
                 logger.error(f"[GitHub OAuth] Missing access_token in response: {token_data}")
-                return redirect_oauth_error(frontend_base, "Failed to obtain access token from GitHub")
+                return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="github_failed"), status_code=302)
 
             # Fetch user profile
             user_resp = await client.get(
@@ -380,7 +473,7 @@ async def github_oauth_callback(
             )
             if user_resp.status_code != 200:
                 logger.error(f"[GitHub OAuth] User profile fetch failed ({user_resp.status_code}): {user_resp.text}")
-                return redirect_oauth_error(frontend_base, "Failed to retrieve GitHub user profile")
+                return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="github_failed"), status_code=302)
 
             user_data = user_resp.json()
             login = user_data.get("login") or "github_user"
@@ -421,7 +514,7 @@ async def github_oauth_callback(
                 email = f"{login}@users.noreply.github.com"
     except Exception as exc:
         logger.exception(f"[GitHub OAuth] Network exception during GitHub OAuth: {exc}")
-        return redirect_oauth_error(frontend_base, "Authentication failed due to connection error")
+        return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_error="github_failed"), status_code=302)
 
     # Create server session with role ALWAYS "student" (never admin for OAuth)
     token = secrets.token_hex(24)
@@ -438,9 +531,6 @@ async def github_oauth_callback(
     _active_sessions[token] = session
     logger.info(f"[GitHub OAuth] Authenticated user '{username}' ({email}) as student session")
 
-    # Detect if user is new or returning
     existing_profile = get_user_profile_by_email_or_username(email)
-    is_new = existing_profile is None
-
-    fragment = f"oauth_token={token}&new=1" if is_new else f"oauth_token={token}"
-    return RedirectResponse(url=f"{frontend_base}/#{fragment}", status_code=302)
+    oauth_code = create_one_time_oauth_code(token, is_new_user=existing_profile is None)
+    return RedirectResponse(url=build_oauth_frontend_redirect(frontend_base, oauth_code=oauth_code), status_code=302)
