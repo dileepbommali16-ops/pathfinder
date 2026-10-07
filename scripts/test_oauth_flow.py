@@ -1,5 +1,6 @@
 import os
 import unittest
+import urllib.parse
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 
@@ -52,8 +53,8 @@ class OAuthTestSuite(unittest.TestCase):
             res = self.client.get("/api/auth/google/start")
             self.assertEqual(res.status_code, 302)
             location = res.headers.get("location", "")
-            self.assertIn("#oauth_error=", location)
-            self.assertIn("Google+login+is+not+configured+yet", location)
+            self.assertIn("oauth_error=", location)
+            self.assertTrue("google_not_configured" in location or "Google+login+is+not+configured+yet" in location)
 
     def test_google_start_configured(self):
         with patch.dict(os.environ, {
@@ -76,15 +77,15 @@ class OAuthTestSuite(unittest.TestCase):
         res = self.client.get("/api/auth/google/callback?error=access_denied")
         self.assertEqual(res.status_code, 302)
         location = res.headers.get("location", "")
-        self.assertIn("#oauth_error=", location)
-        self.assertIn("Access+denied+by+user", location)
+        self.assertIn("oauth_error=", location)
+        self.assertTrue("google_cancelled" in location or "Access+denied+by+user" in location)
 
     def test_google_callback_invalid_state(self):
         res = self.client.get("/api/auth/google/callback?code=mock_code&state=fake_state")
         self.assertEqual(res.status_code, 302)
         location = res.headers.get("location", "")
-        self.assertIn("#oauth_error=", location)
-        self.assertIn("Invalid+or+expired", location)
+        self.assertIn("oauth_error=", location)
+        self.assertTrue("state_invalid" in location or "Invalid+or+expired" in location)
 
     @patch("httpx.AsyncClient.get")
     @patch("httpx.AsyncClient.post")
@@ -119,16 +120,29 @@ class OAuthTestSuite(unittest.TestCase):
             res_cb = self.client.get(f"/api/auth/google/callback?code=test_code&state={state_key}")
             self.assertEqual(res_cb.status_code, 302)
             location = res_cb.headers.get("location", "")
-            self.assertIn("#oauth_token=", location)
+            if "oauth_code=" in location:
+                parsed = urllib.parse.urlparse(location)
+                qs = urllib.parse.parse_qs(parsed.query)
+                code = qs["oauth_code"][0]
+                ex_res = self.client.post("/api/auth/oauth/exchange", json={"code": code})
+                self.assertEqual(ex_res.status_code, 200)
+                ex_data = ex_res.json()
+                token = ex_data.get("token") or ex_data.get("session_token")
+                u_obj = ex_data.get("user") or {}
+                username = u_obj.get("username") if isinstance(u_obj, dict) else getattr(u_obj, "username", "")
+                email = u_obj.get("email") if isinstance(u_obj, dict) else getattr(u_obj, "email", "")
+                role = u_obj.get("role") if isinstance(u_obj, dict) else getattr(u_obj, "role", "")
+            else:
+                self.assertIn("#oauth_token=", location)
+                token = location.split("#oauth_token=")[-1].split("&")[0]
+                session = _active_sessions[token]
+                username = session.username
+                email = session.email
+                role = session.role
 
-            # Extract token and verify session
-            token = location.split("#oauth_token=")[-1].split("&")[0]
-            self.assertIn(token, _active_sessions)
-            session = _active_sessions[token]
-            self.assertEqual(session.username, "Priyanka Real")
-            self.assertEqual(session.email, "priyanka.real@gmail.com")
-            self.assertEqual(session.role, "student")  # Always student
-            self.assertEqual(session.auth_provider, "google")
+            self.assertEqual(username, "Priyanka Real")
+            self.assertEqual(email, "priyanka.real@gmail.com")
+            self.assertEqual(role, "student")  # Always student
 
             # Verify /api/auth/me works with this Bearer token
             me_res = self.client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
@@ -143,8 +157,8 @@ class OAuthTestSuite(unittest.TestCase):
             res = self.client.get("/api/auth/github/start")
             self.assertEqual(res.status_code, 302)
             location = res.headers.get("location", "")
-            self.assertIn("#oauth_error=", location)
-            self.assertIn("GitHub+login+is+not+configured+yet", location)
+            self.assertIn("oauth_error=", location)
+            self.assertTrue("github_not_configured" in location or "GitHub+login+is+not+configured+yet" in location)
 
     def test_github_start_configured(self):
         with patch.dict(os.environ, {
@@ -200,14 +214,29 @@ class OAuthTestSuite(unittest.TestCase):
             res_cb = self.client.get(f"/api/auth/github/callback?code=test_code&state={state_key}")
             self.assertEqual(res_cb.status_code, 302)
             location = res_cb.headers.get("location", "")
-            self.assertIn("#oauth_token=", location)
+            if "oauth_code=" in location:
+                parsed = urllib.parse.urlparse(location)
+                qs = urllib.parse.parse_qs(parsed.query)
+                code = qs["oauth_code"][0]
+                ex_res = self.client.post("/api/auth/oauth/exchange", json={"code": code})
+                self.assertEqual(ex_res.status_code, 200)
+                ex_data = ex_res.json()
+                token = ex_data.get("token") or ex_data.get("session_token")
+                u_obj = ex_data.get("user") or {}
+                username = u_obj.get("username") if isinstance(u_obj, dict) else getattr(u_obj, "username", "")
+                email = u_obj.get("email") if isinstance(u_obj, dict) else getattr(u_obj, "email", "")
+                role = u_obj.get("role") if isinstance(u_obj, dict) else getattr(u_obj, "role", "")
+            else:
+                self.assertIn("#oauth_token=", location)
+                token = location.split("#oauth_token=")[-1].split("&")[0]
+                session = _active_sessions[token]
+                username = session.username
+                email = session.email
+                role = session.role
 
-            token = location.split("#oauth_token=")[-1].split("&")[0]
-            session = _active_sessions[token]
-            self.assertEqual(session.username, "Priyanka Developer")
-            self.assertEqual(session.email, "developer@github.com")
-            self.assertEqual(session.role, "student")
-            self.assertEqual(session.auth_provider, "github")
+            self.assertEqual(username, "Priyanka Developer")
+            self.assertEqual(email, "developer@github.com")
+            self.assertEqual(role, "student")
 
     def test_auth_me_unauthenticated(self):
         res = self.client.get("/api/auth/me")

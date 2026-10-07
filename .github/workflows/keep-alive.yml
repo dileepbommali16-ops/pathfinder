@@ -14,5 +14,5 @@ jobs:
       - name: Send keep-alive HTTP GET request
         run: |
           echo "Pinging Pathfinder Render Backend..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 45 "https://pathfinder-1.onrender.com/api/health" || echo "TIMEOUT")
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 45 "https://pathfinder-1-xhme.onrender.com/api/health" || echo "TIMEOUT")
           echo "Response HTTP Status: $HTTP_STATUS"

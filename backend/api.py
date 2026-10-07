@@ -233,7 +233,7 @@ def health_check():
 
 
 # Active server-managed session store & isolated per-user profiles
-from backend.oauth import _active_sessions, oauth_router
+from backend.oauth import _active_sessions, oauth_router, verify_signed_session_token, revoke_signed_session_token
 app.include_router(oauth_router)
 
 _user_profiles: Dict[str, StudentProfile] = {}
@@ -273,6 +273,12 @@ def get_current_user(authorization: Optional[str] = Header(None)) -> UserSession
 
     if token and token in _active_sessions:
         return _active_sessions[token]
+
+    # OAuth sessions are signed + expiring, so they stay valid after a Render sleep/redeploy
+    signed_session = verify_signed_session_token(token)
+    if signed_session:
+        _active_sessions[token] = signed_session
+        return signed_session
 
     return UserSession(
         user_id="usr_anonymous",
@@ -373,6 +379,7 @@ def logout_endpoint(authorization: Optional[str] = Header(None)):
         token = authorization.split("Bearer ", 1)[-1].strip()
     if token and token in _active_sessions:
         del _active_sessions[token]
+    revoke_signed_session_token(token)
     return {"success": True, "message": "Logged out successfully and session revoked"}
 
 
@@ -440,6 +447,36 @@ def get_profile(
         onboarding_completed=False,
         wizard_step=1
     )
+
+
+@app.get("/api/profile/history")
+def get_profile_history(user: UserSession = Depends(get_current_user)):
+    """Returns the student's historical readiness evaluations over time."""
+    target_uid = user.user_id if (user.is_authenticated and user.user_id) else "usr_anonymous"
+    from backend.database import get_user_readiness_history
+    history = get_user_readiness_history(target_uid)
+    return {"user_id": target_uid, "history": history, "total": len(history)}
+
+
+@app.post("/api/profile/history")
+def add_profile_history(
+    payload: Dict[str, Any] = Body(...),
+    user: UserSession = Depends(get_current_user)
+):
+    """Records a new historical readiness snapshot."""
+    target_uid = user.user_id if (user.is_authenticated and user.user_id) else (payload.get("user_id") or "usr_anonymous")
+    from backend.database import save_user_readiness_history
+    row_id = save_user_readiness_history(
+        user_id=target_uid,
+        chance=float(payload.get("chance", 70.0)),
+        cgpa=float(payload.get("cgpa", 8.0)),
+        coding=float(payload.get("coding", 7.0)),
+        communication=float(payload.get("communication", 7.0)),
+        internships=int(payload.get("internships", 1)),
+        backlogs=int(payload.get("backlogs", 0)),
+        target_role=payload.get("target_role") or payload.get("targetRole")
+    )
+    return {"success": True, "id": row_id}
 
 
 @app.get("/api/profile/{target_user_id}", response_model=StudentProfile)
@@ -681,6 +718,22 @@ def calculate_readiness_audit(
         "Run an interactive AI Mock Interview to rehearse technical questions",
         "Optimize your resume in ATS Resume Studio with quantified X-Y-Z bullet points"
     ]
+
+    target_uid = user.user_id if (user.is_authenticated and user.user_id) else (getattr(profile, "user_id", None) or "usr_anonymous")
+    try:
+        from backend.database import save_user_readiness_history
+        save_user_readiness_history(
+            user_id=target_uid,
+            chance=chance,
+            cgpa=cgpa,
+            coding=coding,
+            communication=comm,
+            internships=internships,
+            backlogs=backlogs,
+            target_role=getattr(profile, "target_role", "Software Engineer")
+        )
+    except Exception as _hist_err:
+        logger.debug(f"[History] Auto-record skipped: {_hist_err}")
 
     return ReadinessAuditResult(
         chance=chance,

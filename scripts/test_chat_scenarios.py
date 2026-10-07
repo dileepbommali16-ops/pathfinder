@@ -69,28 +69,46 @@ print("================================================================")
 print("PATHFINDER AI COPILOT CHAT & INTELLIGENCE VERIFICATION SUITE")
 print("================================================================\n")
 
+_test_client = None
+
+def send_chat_req(msg_dict):
+    global _test_client
+    try:
+        payload = json.dumps(msg_dict).encode("utf-8")
+        req = urllib.request.Request(BASE_URL, data=payload, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=2) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        if _test_client is None:
+            from pathlib import Path
+            root = Path(__file__).resolve().parent.parent
+            if str(root) not in sys.path:
+                sys.path.insert(0, str(root))
+            from fastapi.testclient import TestClient
+            from backend.api import app
+            _test_client = TestClient(app)
+        res = _test_client.post("/api/chat", json=msg_dict)
+        return res.json()
+
 all_passed = True
 
 for tc in test_cases:
-    payload = json.dumps({"message": tc["message"]}).encode("utf-8")
-    req = urllib.request.Request(BASE_URL, data=payload, headers={"Content-Type": "application/json"})
     t0 = time.time()
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            latency_ms = int((time.time() - t0) * 1000)
-            reply = data.get("reply") or data.get("response", "")
-            passed = tc["expected_check"](reply)
-            
-            if passed:
-                print(f"[PASS] {tc['name']} ({latency_ms}ms)")
-                safe_snippet = reply[:120].strip().encode('ascii', errors='replace').decode('ascii')
-                print(f"       Response snippet: {safe_snippet}...\n")
-            else:
-                print(f"[FAIL] {tc['name']} ({latency_ms}ms)")
-                safe_full = reply.encode('ascii', errors='replace').decode('ascii')
-                print(f"       Full Response: {safe_full}\n")
-                all_passed = False
+        data = send_chat_req({"message": tc["message"]})
+        latency_ms = int((time.time() - t0) * 1000)
+        reply = data.get("reply") or data.get("response", "")
+        passed = tc["expected_check"](reply)
+        
+        if passed:
+            print(f"[PASS] {tc['name']} ({latency_ms}ms)")
+            safe_snippet = reply[:120].strip().encode('ascii', errors='replace').decode('ascii')
+            print(f"       Response snippet: {safe_snippet}...\n")
+        else:
+            print(f"[FAIL] {tc['name']} ({latency_ms}ms)")
+            safe_full = reply.encode('ascii', errors='replace').decode('ascii')
+            print(f"       Full Response: {safe_full}\n")
+            all_passed = False
     except Exception as e:
         print(f"[ERROR] {tc['name']} -> {e}\n")
         all_passed = False
@@ -98,13 +116,10 @@ for tc in test_cases:
 print("\n--- Testing 10 Rapid-Fire Consecutive Messages ---")
 rapid_success = 0
 for i in range(1, 11):
-    payload = json.dumps({"message": f"Quick test query #{i}: Placement tips?"}).encode("utf-8")
-    req = urllib.request.Request(BASE_URL, data=payload, headers={"Content-Type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            if data.get("reply") or data.get("response"):
-                rapid_success += 1
+        data = send_chat_req({"message": f"Quick test query #{i}: Placement tips?"})
+        if data.get("reply") or data.get("response"):
+            rapid_success += 1
     except Exception as e:
         print(f"   Query #{i} failed: {e}")
 

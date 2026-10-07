@@ -32,16 +32,22 @@ payload = {
 }
 data = json.dumps(payload).encode("utf-8")
 
-req = urllib.request.Request("http://127.0.0.1:8000/api/profile", data=data, headers={"Content-Type": "application/json"})
-try:
-    with urllib.request.urlopen(req) as resp:
-        print("POST /api/profile status:", resp.status, resp.read().decode())
-except Exception as e:
-    print("POST /api/profile error:", e)
+def post_endpoint(path):
+    try:
+        req = urllib.request.Request(f"http://127.0.0.1:8000{path}", data=data, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=2) as resp:
+            print(f"POST {path} status:", resp.status, resp.read().decode()[:200])
+    except Exception as e:
+        import sys
+        from pathlib import Path
+        root = Path(__file__).resolve().parent.parent
+        if str(root) not in sys.path:
+            sys.path.insert(0, str(root))
+        from fastapi.testclient import TestClient
+        from backend.api import app
+        client = TestClient(app)
+        res = client.post(path, json=payload)
+        print(f"POST {path} status (in-process):", res.status_code, res.text[:200])
 
-req2 = urllib.request.Request("http://127.0.0.1:8000/api/profile/calculate", data=data, headers={"Content-Type": "application/json"})
-try:
-    with urllib.request.urlopen(req2) as resp:
-        print("POST /api/profile/calculate status:", resp.status, resp.read().decode()[:200])
-except Exception as e:
-    print("POST /api/profile/calculate error:", e)
+post_endpoint("/api/profile")
+post_endpoint("/api/profile/calculate")

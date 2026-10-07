@@ -4,6 +4,33 @@ import sys
 
 base_url = "http://127.0.0.1:8000"
 
+_client = None
+def post_json(path, payload):
+    global _client
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(0.15)
+    is_live = False
+    try:
+        s.connect(("127.0.0.1", 8000))
+        s.close()
+        is_live = True
+    except Exception:
+        pass
+
+    if is_live:
+        return requests.post(f"{base_url}{path}", json=payload, timeout=45)
+    
+    if _client is None:
+        from pathlib import Path
+        root = Path(__file__).resolve().parent.parent
+        if str(root) not in sys.path:
+            sys.path.insert(0, str(root))
+        from fastapi.testclient import TestClient
+        from backend.api import app
+        _client = TestClient(app)
+    return _client.post(path, json=payload)
+
 print("--- Testing Live FastAPI Gemini Endpoints ---")
 
 # 1. Test POST /api/ai/chat
@@ -25,7 +52,7 @@ chat_payload = {
 
 try:
     print("Sending request to POST /api/ai/chat...")
-    chat_resp = requests.post(f"{base_url}/api/ai/chat", json=chat_payload, timeout=45)
+    chat_resp = post_json("/api/ai/chat", chat_payload)
     print(f"1. Endpoint: POST /api/ai/chat")
     print(f"   HTTP Status: {chat_resp.status_code}")
     if chat_resp.status_code == 200:
@@ -55,7 +82,7 @@ roadmap_payload = {
 
 try:
     print("\nSending request to POST /api/ai/roadmap...")
-    roadmap_resp = requests.post(f"{base_url}/api/ai/roadmap", json=roadmap_payload, timeout=45)
+    roadmap_resp = post_json("/api/ai/roadmap", roadmap_payload)
     print(f"2. Endpoint: POST /api/ai/roadmap")
     print(f"   HTTP Status: {roadmap_resp.status_code}")
     if roadmap_resp.status_code == 200:

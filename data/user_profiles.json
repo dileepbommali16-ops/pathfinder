@@ -1,17 +1,17 @@
 {
-  "usr_b327d3a663e0": {
-    "user_id": "usr_b327d3a663e0",
+  "usr_anonymous": {
+    "user_id": "usr_anonymous",
     "email": null,
-    "full_name": "Alice Wonderland",
-    "college": "Engineering Institute",
+    "full_name": "Student Candidate",
+    "college": "NIT Hyderabad",
     "branch": "AIML",
     "course": "B.Tech",
     "current_year": 4,
     "current_semester": 7,
-    "tenth_percentage": 94.0,
-    "twelfth_percentage": 91.0,
-    "cgpa": 9.1,
-    "percentage": 86.5,
+    "tenth_percentage": 85.0,
+    "twelfth_percentage": 82.0,
+    "cgpa": 8.2,
+    "percentage": 77.9,
     "cgpa_formula_multiplier": 9.5,
     "semester_cgpas": [],
     "active_backlogs": 0,
@@ -24,8 +24,7 @@
     ],
     "tools": [
       "Git",
-      "Docker",
-      "VS Code"
+      "Docker"
     ],
     "programming_languages": [
       "Python",
@@ -34,10 +33,12 @@
     ],
     "projects_count": 2,
     "internships": 1,
-    "certifications": [],
+    "certifications": [
+      "AWS Certified"
+    ],
     "coding_profiles": {},
-    "coding": 7,
-    "communication": 7,
+    "coding": 8,
+    "communication": 8,
     "target_role": "Software Development Engineer (SDE)",
     "target_domain": "Full-Stack & Cloud Systems",
     "preferred_location": "Bangalore / Hyderabad",
@@ -46,21 +47,44 @@
     "target_tier": "Product Companies / Tier-1 MNCs",
     "graduation_year": 2026,
     "onboarding_completed": false,
-    "wizard_step": 1
+    "wizard_step": 1,
+    "fullName": "Arjun Reddy",
+    "currentYear": "3rd Year",
+    "currentSemester": "6th Semester",
+    "tenthPercentage": 91.5,
+    "twelfthPercentage": 88.0,
+    "activeBacklogs": 0,
+    "historyBacklogs": 0,
+    "technicalSkills": [
+      "Python",
+      "SQL",
+      "FastAPI"
+    ],
+    "programmingLanguages": [
+      "Python",
+      "TypeScript"
+    ],
+    "projectsCount": 3,
+    "targetRole": "AI/ML Engineer",
+    "preferredCompanyType": "Product Tier-1 MNC",
+    "preferredLocation": "Hyderabad / Remote",
+    "expectedPackage": "12 - 18 LPA",
+    "onboardingCompleted": true,
+    "wizardStep": 5
   },
-  "Alice_User1": {
-    "user_id": "usr_b327d3a663e0",
+  "Student Candidate": {
+    "user_id": "usr_anonymous",
     "email": null,
-    "full_name": "Alice Wonderland",
-    "college": "Engineering Institute",
+    "full_name": "Student Candidate",
+    "college": "NIT Hyderabad",
     "branch": "AIML",
     "course": "B.Tech",
     "current_year": 4,
     "current_semester": 7,
-    "tenth_percentage": 94.0,
-    "twelfth_percentage": 91.0,
-    "cgpa": 9.1,
-    "percentage": 86.5,
+    "tenth_percentage": 85.0,
+    "twelfth_percentage": 82.0,
+    "cgpa": 8.2,
+    "percentage": 77.9,
     "cgpa_formula_multiplier": 9.5,
     "semester_cgpas": [],
     "active_backlogs": 0,
@@ -73,8 +97,7 @@
     ],
     "tools": [
       "Git",
-      "Docker",
-      "VS Code"
+      "Docker"
     ],
     "programming_languages": [
       "Python",
@@ -83,10 +106,12 @@
     ],
     "projects_count": 2,
     "internships": 1,
-    "certifications": [],
+    "certifications": [
+      "AWS Certified"
+    ],
     "coding_profiles": {},
-    "coding": 7,
-    "communication": 7,
+    "coding": 8,
+    "communication": 8,
     "target_role": "Software Development Engineer (SDE)",
     "target_domain": "Full-Stack & Cloud Systems",
     "preferred_location": "Bangalore / Hyderabad",
@@ -95,55 +120,29 @@
     "target_tier": "Product Companies / Tier-1 MNCs",
     "graduation_year": 2026,
     "onboarding_completed": false,
-    "wizard_step": 1
-  },
-  "Alice Wonderland": {
-    "user_id": "usr_b327d3a663e0",
-    "email": null,
-    "full_name": "Alice Wonderland",
-    "college": "Engineering Institute",
-    "branch": "AIML",
-    "course": "B.Tech",
-    "current_year": 4,
-    "current_semester": 7,
-    "tenth_percentage": 94.0,
-    "twelfth_percentage": 91.0,
-    "cgpa": 9.1,
-    "percentage": 86.5,
-    "cgpa_formula_multiplier": 9.5,
-    "semester_cgpas": [],
-    "active_backlogs": 0,
-    "history_backlogs": 0,
-    "backlogs": 0,
-    "technical_skills": [
+    "wizard_step": 1,
+    "fullName": "Arjun Reddy",
+    "currentYear": "3rd Year",
+    "currentSemester": "6th Semester",
+    "tenthPercentage": 91.5,
+    "twelfthPercentage": 88.0,
+    "activeBacklogs": 0,
+    "historyBacklogs": 0,
+    "technicalSkills": [
       "Python",
       "SQL",
-      "Data Structures"
+      "FastAPI"
     ],
-    "tools": [
-      "Git",
-      "Docker",
-      "VS Code"
-    ],
-    "programming_languages": [
+    "programmingLanguages": [
       "Python",
-      "Java",
-      "SQL"
+      "TypeScript"
     ],
-    "projects_count": 2,
-    "internships": 1,
-    "certifications": [],
-    "coding_profiles": {},
-    "coding": 7,
-    "communication": 7,
-    "target_role": "Software Development Engineer (SDE)",
-    "target_domain": "Full-Stack & Cloud Systems",
-    "preferred_location": "Bangalore / Hyderabad",
-    "expected_package": "10 - 15 LPA",
-    "preferred_company_type": "Product Companies / Tier-1 MNCs",
-    "target_tier": "Product Companies / Tier-1 MNCs",
-    "graduation_year": 2026,
-    "onboarding_completed": false,
-    "wizard_step": 1
+    "projectsCount": 3,
+    "targetRole": "AI/ML Engineer",
+    "preferredCompanyType": "Product Tier-1 MNC",
+    "preferredLocation": "Hyderabad / Remote",
+    "expectedPackage": "12 - 18 LPA",
+    "onboardingCompleted": true,
+    "wizardStep": 5
   }
 }

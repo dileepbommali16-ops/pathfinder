@@ -7,7 +7,7 @@ Supports:
 3. Automated restore testing in an isolated verification sandbox.
 4. How Backups Are Enabled in Production:
    - Render Persistent Disks: Mount /data to a Render Disk volume for zero data loss across container rebuilds.
-   - Render Cron Jobs: Run `python scripts/backup_restore.py` on a daily schedule (e.g. `0 2 * * *`).
+   - Render Cron Jobs: Run `python scripts/db_backup.py` on a daily schedule (e.g. `0 2 * * *`).
    - Cloud Object Storage: Sync backups/ to AWS S3 or Google Cloud Storage (gsutil rsync).
    - PostgreSQL (Managed): When DATABASE_URL is configured, Render Managed Postgres provides continuous WAL archiving and automated daily snapshots.
 """

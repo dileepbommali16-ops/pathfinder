@@ -116,6 +116,8 @@ export default function Home() {
 
   const [isServerWakingUp, setIsServerWakingUp] = useState<boolean>(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const [oauthSigningIn, setOauthSigningIn] = useState<boolean>(false);
+  const oauthHandledRef = useRef<boolean>(false);
 
   // Authentication session expiration listener (401 token revocation)
   useEffect(() => {
@@ -132,10 +134,14 @@ export default function Home() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // The one-time code is single-use: guard so StrictMode/re-renders never run the exchange twice
+    if (oauthHandledRef.current) return;
+
     const searchParams = new URLSearchParams(window.location.search);
     const oauthCode = searchParams.get("oauth_code");
     const queryError = searchParams.get("oauth_error");
     if (oauthCode || queryError) {
+      oauthHandledRef.current = true;
       window.history.replaceState(null, "", window.location.pathname);
 
       if (queryError) {
@@ -146,22 +152,41 @@ export default function Home() {
           github_cancelled: "GitHub sign-in was cancelled.",
           google_failed: "Google sign-in failed, please try again.",
           github_failed: "GitHub sign-in failed, please try again.",
+          google_timeout: "Google took too long to respond. Please try again.",
+          github_timeout: "GitHub took too long to respond. Please try again.",
+          state_invalid: "Your sign-in session expired. Please try again.",
         };
         setOauthError(messages[queryError.toLowerCase()] || "Sign-in was cancelled or failed. Please try again.");
         return;
       }
 
       if (oauthCode) {
+        setOauthSigningIn(true);
         (async () => {
           try {
-            const exchangeResp = await fetchWithTimeout(`${API_BASE}/api/auth/oauth/exchange`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ code: oauthCode }),
-            }, 12000);
-            const authData = await exchangeResp.json();
+            const exchange = () =>
+              fetchWithTimeout(`${API_BASE}/api/auth/oauth/exchange`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: oauthCode }),
+              }, 60000);
+
+            let exchangeResp: Response;
+            try {
+              exchangeResp = await exchange();
+            } catch (networkErr) {
+              // Retry once, on network errors only (not on timeouts or HTTP errors)
+              if (networkErr instanceof TypeError) {
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+                exchangeResp = await exchange();
+              } else {
+                throw networkErr;
+              }
+            }
+
+            const authData = await exchangeResp.json().catch(() => ({} as any));
             if (!exchangeResp.ok || !authData.success || !authData.user || !authData.token) {
-              throw new Error(authData.message || "OAuth sign-in could not be completed.");
+              throw new Error(authData.message || authData.detail || "OAuth sign-in could not be completed.");
             }
 
             localStorage.setItem("pathfinder_token", authData.token);
@@ -174,7 +199,18 @@ export default function Home() {
               isNewUser: authData.is_new_user === true,
             });
           } catch (error) {
-            setOauthError(error instanceof Error ? error.message : "OAuth sign-in could not be completed.");
+            const isAbort = error instanceof DOMException && error.name === "AbortError";
+            setOauthError(
+              isAbort
+                ? "Sign-in timed out. Please try again."
+                : error instanceof TypeError
+                  ? "Network error while signing in. Please try again."
+                  : error instanceof Error
+                    ? error.message
+                    : "OAuth sign-in could not be completed."
+            );
+          } finally {
+            setOauthSigningIn(false);
           }
         })();
       }
@@ -899,6 +935,13 @@ export default function Home() {
     (!profile.githubUrl || !profile.leetcodeUrl || !profile.certifications || profile.certifications.length === 0);
 
   // 1. LANDING & AUTH SCREEN
+  if (oauthSigningIn && !isAuthenticated) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-[#111111] font-['Outfit',sans-serif] text-slate-200">
+        <p className="animate-pulse text-sm font-medium tracking-wide">Signing you in...</p>
+      </div>
+    );
+  }
   if (!isAuthenticated) {
     return <LampLogin onLogin={handleLogin} initialError={oauthError} />;
   }

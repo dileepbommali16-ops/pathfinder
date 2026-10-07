@@ -89,6 +89,24 @@ def init_database():
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_cohort_year ON cohort_placements(year);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_cohort_placed ON cohort_placements(placed);")
 
+        # 3. Student Readiness Progression History Table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS readiness_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                chance REAL NOT NULL,
+                cgpa REAL NOT NULL,
+                coding REAL NOT NULL,
+                communication REAL NOT NULL,
+                internships INTEGER DEFAULT 0,
+                backlogs INTEGER DEFAULT 0,
+                target_role TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_readiness_history_user ON readiness_history(user_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_readiness_history_created ON readiness_history(created_at);")
+
         conn.commit()
 
     # Pre-populate cohort_placements from CSV if empty
@@ -400,3 +418,48 @@ def query_cohort_paginated(
             "has_prev": page > 1,
             "records": records
         }
+
+
+def save_user_readiness_history(
+    user_id: str,
+    chance: float,
+    cgpa: float,
+    coding: float,
+    communication: float,
+    internships: int = 0,
+    backlogs: int = 0,
+    target_role: Optional[str] = None
+) -> int:
+    """Appends a new evaluation snapshot to the student's historical timeline."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO readiness_history
+            (user_id, chance, cgpa, coding, communication, internships, backlogs, target_role, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
+        """, (user_id, float(chance), float(cgpa), float(coding), float(communication), int(internships), int(backlogs), target_role or "Software Engineer"))
+        conn.commit()
+        return cursor.lastrowid or 1
+
+
+def get_user_readiness_history(user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    """Retrieves chronological readiness progression snapshots for a student."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, user_id, chance, cgpa, coding, communication, internships, backlogs, target_role, created_at
+            FROM readiness_history
+            WHERE user_id = ?
+            ORDER BY created_at ASC
+            LIMIT ?;
+        """, (user_id, limit))
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+
+
+# Auto-initialize database tables and initial cohort seed on module load
+try:
+    init_database()
+except Exception as _init_err:
+    logger.warning(f"[Database] Startup schema initialization deferred: {_init_err}")
+

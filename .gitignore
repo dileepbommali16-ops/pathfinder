@@ -8,7 +8,6 @@ ENV/
 __pycache__/
 *.py[cod]
 *$py.class
-.manus-logs/
 scratch*.png
 
 # Build outputs
@@ -124,10 +123,9 @@ temp/
 
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
-backups/
-
-# Manus version file (auto-generated, not part of source)
-client/public/__manus__/version.json
+# Gradle build cache & test reports
+.gradle/
+playwright_report.json
 .project-config.json
 .agent/
 .planning/

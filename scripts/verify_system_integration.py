@@ -42,7 +42,7 @@ def test_health_endpoint():
     assert resp.status_code == 200, f"Health check failed: {resp.status_code}"
     data = resp.json()
     assert data["status"] in ("healthy", "degraded")
-    assert data["server"] == "healthy"
+    assert data["server"] == "healthy" or (isinstance(data["server"], dict) and data["server"].get("status") == "healthy")
     assert "dataset" in data
     assert data["dataset"]["total_records"] == 972
     assert data["dataset"]["branches_count"] == 9

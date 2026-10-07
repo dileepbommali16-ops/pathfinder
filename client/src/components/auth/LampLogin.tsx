@@ -35,6 +35,32 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     }
   }, [initialError]);
 
+  // Wake the (possibly sleeping) Render backend early; fire and forget
+  useEffect(() => {
+    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
+  }, []);
+
+  // Reset the social loading state when the page is restored from the back/forward cache
+  useEffect(() => {
+    const handlePageShow = () => {
+      setSocialLoading(null);
+      setSocialError(null);
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
+  // Safety net: never stay on "Redirecting..." forever
+  useEffect(() => {
+    if (!socialLoading) return;
+    const timer = setTimeout(() => {
+      setSocialLoading(null);
+      setSocialError(null);
+      setErrorMessage("Taking longer than usual. Please try again.");
+    }, 20000);
+    return () => clearTimeout(timer);
+  }, [socialLoading]);
+
   const startPos = useRef({ x: 0, y: 0 });
 
   // Generate random firefly coordinates when lamp turns on
@@ -100,15 +126,18 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
   };
 
   const handleSocialLogin = async (platform: "google" | "github") => {
+    const providerName = platform === "google" ? "Google" : "GitHub";
     setErrorMessage(null);
     setSocialError(null);
     setSocialLoading(platform);
+    setSocialError(`Connecting to ${providerName}... the server may take up to a minute to wake up the first time.`);
 
     try {
-      window.location.href = `${API_BASE}/api/auth/${platform}/start`;
+      window.location.href = `${API_BASE}/api/auth/${platform}/start?origin=${encodeURIComponent(window.location.origin)}`;
     } catch {
       setSocialLoading(null);
-      setErrorMessage(`${platform === "google" ? "Google" : "GitHub"} sign-in is unavailable right now. Please try again.`);
+      setSocialError(null);
+      setErrorMessage(`${providerName} sign-in is unavailable right now. Please try again.`);
     }
   };
 

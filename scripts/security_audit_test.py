@@ -60,9 +60,8 @@ def run_tests():
     # -------------------------------------------------------------
     print("\n[TEST 2] Testing Without Logging In (Point 20)...")
     guest_res = client.get("/api/auth/me")
-    guest_data = guest_res.json()
-    if guest_data["is_authenticated"] is False:
-        print(f"  -> PASSED: Unauthenticated user recognized as guest (is_authenticated=False).")
+    if guest_res.status_code == 401 or guest_res.json().get("is_authenticated") is False:
+        print(f"  -> PASSED: Unauthenticated user rejected with 401 Unauthorized / recognized as guest.")
         passed_count += 1
     else:
         print("  -> FAILED: Unauthenticated user granted authenticated status.")
@@ -122,7 +121,7 @@ def run_tests():
     print("\n[TEST 6] Token Revocation on Logout (Point 10)...")
     logout_res = client.post("/api/auth/logout", headers=alice_headers)
     verify_res = client.get("/api/auth/me", headers=alice_headers)
-    if logout_res.status_code == 200 and verify_res.json()["is_authenticated"] is False:
+    if logout_res.status_code == 200 and (verify_res.status_code == 401 or verify_res.json().get("is_authenticated") is False):
         print("  -> PASSED: Token successfully revoked from server store upon logout.")
         passed_count += 1
     else:
