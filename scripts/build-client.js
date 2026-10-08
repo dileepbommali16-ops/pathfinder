@@ -99,47 +99,30 @@ const clientDist = path.join(projectRoot, 'client', 'dist');
 const clientDistPublic = path.join(projectRoot, 'client', 'dist', 'public');
 const cwdDist = path.join(process.cwd(), 'dist');
 
-// Locate output build directory (dist/public or dist)
-const sourceDir = fs.existsSync(path.join(distPublic, 'index.html'))
-  ? distPublic
-  : fs.existsSync(path.join(distRoot, 'index.html'))
-  ? distRoot
-  : null;
+if (fs.existsSync(path.join(distRoot, 'index.html'))) {
+  console.log(`[Pathfinder Build] Synchronizing build artifacts from ${distRoot}...`);
 
-if (sourceDir) {
-  console.log(`[Pathfinder Build] Synchronizing build artifacts from ${sourceDir} across all expected deployment paths...`);
-
-  // 1. Sync to projectRoot/dist (standard Vercel output from repo root)
-  if (path.resolve(sourceDir) !== path.resolve(distRoot)) {
-    fs.cpSync(sourceDir, distRoot, { recursive: true });
+  // 1. Mirror to dist/public (skipping public directory itself)
+  if (!fs.existsSync(distPublic)) {
+    fs.mkdirSync(distPublic, { recursive: true });
+  }
+  const items = fs.readdirSync(distRoot);
+  for (const item of items) {
+    if (item === 'public') continue;
+    const src = path.join(distRoot, item);
+    const dest = path.join(distPublic, item);
+    fs.cpSync(src, dest, { recursive: true });
   }
 
-  // 2. Sync to projectRoot/dist/public (Render static publish path)
-  if (path.resolve(sourceDir) !== path.resolve(distPublic)) {
-    if (!fs.existsSync(distPublic)) {
-      fs.mkdirSync(distPublic, { recursive: true });
-    }
-    fs.cpSync(sourceDir, distPublic, { recursive: true });
-  }
-
-  // 3. Sync to client/dist (for when Vercel root directory is set to 'client')
+  // 2. Mirror to client/dist (for when Vercel root directory is set to 'client')
   if (!fs.existsSync(clientDist)) {
     fs.mkdirSync(clientDist, { recursive: true });
   }
-  fs.cpSync(sourceDir, clientDist, { recursive: true });
-
-  // 4. Sync to client/dist/public
-  if (!fs.existsSync(clientDistPublic)) {
-    fs.mkdirSync(clientDistPublic, { recursive: true });
-  }
-  fs.cpSync(sourceDir, clientDistPublic, { recursive: true });
-
-  // 5. If current working directory is distinct, sync to cwd/dist
-  if (path.resolve(cwdDist) !== path.resolve(distRoot) && path.resolve(cwdDist) !== path.resolve(clientDist)) {
-    if (!fs.existsSync(cwdDist)) {
-      fs.mkdirSync(cwdDist, { recursive: true });
-    }
-    fs.cpSync(sourceDir, cwdDist, { recursive: true });
+  for (const item of items) {
+    if (item === 'public') continue;
+    const src = path.join(distRoot, item);
+    const dest = path.join(clientDist, item);
+    fs.cpSync(src, dest, { recursive: true });
   }
 
   console.log('[Pathfinder Build] Build assets successfully synchronized to:');
@@ -148,6 +131,6 @@ if (sourceDir) {
   console.log(`  - ${clientDist}`);
   console.log('[Pathfinder Build] Deployment build completed successfully.');
 } else {
-  console.warn('[Pathfinder Build] Warning: build output index.html was not found in dist or dist/public.');
+  console.warn('[Pathfinder Build] Warning: index.html was not found in dist.');
 }
 
