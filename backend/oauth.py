@@ -177,7 +177,7 @@ def _is_local_url(url: str) -> bool:
 def get_allowed_frontend_origins() -> List[str]:
     """Retrieves list of allowlisted frontend origins from the comma-separated FRONTEND_URL env var."""
     raw = os.getenv("FRONTEND_URL", f"http://localhost:3000,http://localhost:5173,{_DEFAULT_DEPLOYED_FRONTEND}").strip()
-    raw = raw.replace("ttps://", "https://")
+    raw = raw.replace("hhttps://", "https://").replace("ttps://", "https://")
     origins = [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
     if _DEFAULT_DEPLOYED_FRONTEND not in origins:
         origins.append(_DEFAULT_DEPLOYED_FRONTEND)
