@@ -219,7 +219,7 @@ def health_check():
         "gemini": {
             "status": "ready" if gemini_configured else "fallback_active",
             "configured": gemini_configured,
-            "model": os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+            "model": os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
         },
         "ml_service": {
             "status": "ready",
@@ -970,11 +970,15 @@ def data_projects_endpoint(role_id: Optional[str] = None, domain: Optional[str] 
 @app.post("/api/chat")
 @app.post("/api/ai/chat")
 def chat_endpoint(chat_req: ChatRequest, request: Request, user: UserSession = Depends(get_current_user)):
-    # Rate limit: Max 60 requests per minute to support rapid-fire stress queries
-    client_key = user.user_id if user.is_authenticated else get_client_ip(request)
+    # Rate limit: Max 60 requests per minute to support rapid-fire queries
+    session_id = request.headers.get("x-session-id") or request.cookies.get("pathfinder_session_id") or ""
+    client_key = user.user_id if user.is_authenticated else (f"anon_{session_id}" if session_id else get_client_ip(request))
     allowed, _ = rate_limiter.check(f"chat_{client_key}", max_requests=60, window_seconds=60)
     if not allowed:
-        raise HTTPException(status_code=429, detail="AI query frequency limit reached. Please wait a moment.")
+        raise HTTPException(
+            status_code=429,
+            detail="AI query frequency limit reached (60 requests/min). Please wait a moment."
+        )
 
     # AI usage quota cap (Protects Gemini API Budget)
     ok, count, limit = ai_budget_manager.consume(client_key)
