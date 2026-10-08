@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { API_BASE } from "@/lib/apiClient";
+import { API_BASE, fetchWithTimeout } from "@/lib/apiClient";
 
 interface LampLoginProps {
   onLogin: (user: { username: string; email: string; isNewUser?: boolean; bypassOnboarding?: boolean }) => void;
@@ -130,9 +130,28 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     setErrorMessage(null);
     setSocialError(null);
     setSocialLoading(platform);
-    setSocialError(`Connecting to ${providerName}... the server may take up to a minute to wake up the first time.`);
+    setSocialError(`Connecting to ${providerName}...`);
 
     try {
+      // Pre-check if OAuth provider credentials are configured on the backend
+      try {
+        const checkResp = await fetchWithTimeout(`${API_BASE}/api/auth/oauth-urls`, {}, 3000);
+        if (checkResp.ok) {
+          const checkData = await checkResp.json();
+          const isConfigured = platform === "google" ? checkData.google_configured : checkData.github_configured;
+          if (!isConfigured) {
+            setSocialLoading(null);
+            setSocialError(null);
+            setErrorMessage(
+              `${providerName} sign-in is not configured yet on Render. Please set ${providerName.toUpperCase()}_CLIENT_ID and ${providerName.toUpperCase()}_CLIENT_SECRET in your Render backend environment variables.`
+            );
+            return;
+          }
+        }
+      } catch {
+        // Fall back to direct redirect if pre-check encounters network issues
+      }
+
       window.location.href = `${API_BASE}/api/auth/${platform}/start?origin=${encodeURIComponent(window.location.origin)}`;
     } catch {
       setSocialLoading(null);

@@ -163,6 +163,7 @@ def revoke_signed_session_token(token: Optional[str]) -> None:
 # -----------------------------------------------------------------------------
 
 _LOCAL_HOSTS = ("localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]")
+_DEFAULT_DEPLOYED_FRONTEND = "https://pathfinder-client-fzom-n4kdokzfp-dileepbommali16-ops-projects.vercel.app"
 
 
 def _is_local_url(url: str) -> bool:
@@ -175,9 +176,45 @@ def _is_local_url(url: str) -> bool:
 
 def get_allowed_frontend_origins() -> List[str]:
     """Retrieves list of allowlisted frontend origins from the comma-separated FRONTEND_URL env var."""
-    raw = os.getenv("FRONTEND_URL", "http://localhost:3000,http://localhost:5173").strip()
+    raw = os.getenv("FRONTEND_URL", f"http://localhost:3000,http://localhost:5173,{_DEFAULT_DEPLOYED_FRONTEND}").strip()
     origins = [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
     return origins if origins else ["http://localhost:3000"]
+
+
+def _is_allowed_origin(url: Optional[str]) -> bool:
+    """Checks whether an origin URL is allowed: localhost, FRONTEND_URL entries, or valid Vercel/Render HTTPS domains."""
+    if not url:
+        return False
+    try:
+        parsed = urllib.parse.urlparse(str(url).strip())
+        scheme = (parsed.scheme or "").lower()
+        if scheme not in ("http", "https"):
+            return False
+        hostname = (parsed.hostname or "").lower()
+        if not hostname:
+            return False
+        # Local development origins
+        if hostname in _LOCAL_HOSTS:
+            return True
+        # Explicit allowlist configured via FRONTEND_URL
+        for allowed in get_allowed_frontend_origins():
+            try:
+                a_parsed = urllib.parse.urlparse(allowed.strip())
+                if (a_parsed.hostname or "").lower() == hostname:
+                    return True
+            except Exception:
+                pass
+        # All HTTPS Vercel and Render deployments/previews
+        if scheme == "https" and (
+            hostname == "vercel.app"
+            or hostname.endswith(".vercel.app")
+            or hostname == "onrender.com"
+            or hostname.endswith(".onrender.com")
+        ):
+            return True
+    except Exception:
+        return False
+    return False
 
 
 def get_default_frontend_base() -> str:
@@ -192,29 +229,29 @@ def get_default_frontend_base() -> str:
 def resolve_frontend_redirect_base(candidate_origin: Optional[str] = None) -> str:
     """
     Returns an allowlisted frontend origin.
-    Only allows origins that strictly match entries in FRONTEND_URL (prevents open redirects).
-    Falls back to the default (first non-localhost) entry if not matched or empty.
+    Allows origins that match FRONTEND_URL or trusted deployment domains (*.vercel.app, *.onrender.com).
+    Falls back to the default (first non-localhost if available) entry if not matched or empty.
     """
-    allowed = get_allowed_frontend_origins()
     if candidate_origin:
-        clean = candidate_origin.strip().rstrip("/").lower()
-        for origin in allowed:
-            if origin.lower() == clean:
-                return origin
+        clean = candidate_origin.strip().rstrip("/")
+        if _is_allowed_origin(clean):
+            return clean
     return get_default_frontend_base()
 
 
 def _candidate_origin(request: Request, origin_param: Optional[str]) -> Optional[str]:
     """First allowlisted origin among ?origin=, Origin header and Referer; otherwise None."""
-    allowed = {o.lower() for o in get_allowed_frontend_origins()}
     for raw in (origin_param, request.headers.get("origin"), request.headers.get("referer")):
         if not raw:
             continue
-        parsed = urllib.parse.urlparse(raw.strip())
-        if parsed.scheme and parsed.netloc:
-            candidate = f"{parsed.scheme}://{parsed.netloc}"
-            if candidate.lower() in allowed:
-                return candidate
+        try:
+            parsed = urllib.parse.urlparse(raw.strip())
+            if parsed.scheme and parsed.netloc:
+                candidate = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+                if _is_allowed_origin(candidate):
+                    return candidate
+        except Exception:
+            continue
     return None
 
 
