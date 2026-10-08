@@ -34,8 +34,14 @@ def get_db_connection() -> sqlite3.Connection:
     return conn
 
 
+_database_initialized = False
+
+
 def init_database():
     """Initializes tables and indexes for profiles and cohort records."""
+    global _database_initialized
+    if _database_initialized:
+        return
     logger.info(f"[Database] Initializing persistent database at: {DB_PATH}")
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -113,6 +119,7 @@ def init_database():
     populate_cohort_if_empty()
     migrate_legacy_profiles_if_present()
     seed_demo_candidate_profile()
+    _database_initialized = True
 
 
 def seed_demo_candidate_profile():
@@ -215,14 +222,8 @@ def populate_cohort_if_empty():
         from backend.data_service import get_placement_df
         df = get_placement_df()
         logger.info(f"[Database] Seeding {len(df)} cohort placement records into SQL database...")
-        for _, row in df.iterrows():
-            cursor.execute("""
-                INSERT OR REPLACE INTO cohort_placements (
-                    source_id, year, branch, gender, skill_category, placed,
-                    placed_label, salary_lpa, cgpa, coding_score,
-                    communication_score, internships, backlogs
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
+        records = [
+            (
                 int(row["sourceId"]),
                 int(row["year"]),
                 str(row["branch"]).strip(),
@@ -236,7 +237,16 @@ def populate_cohort_if_empty():
                 float(row["communicationScore"]),
                 int(row.get("internships", 0)),
                 int(row.get("backlogs", 0))
-            ))
+            )
+            for _, row in df.iterrows()
+        ]
+        cursor.executemany("""
+            INSERT OR REPLACE INTO cohort_placements (
+                source_id, year, branch, gender, skill_category, placed,
+                placed_label, salary_lpa, cgpa, coding_score,
+                communication_score, internships, backlogs
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, records)
         conn.commit()
         logger.info("[Database] Cohort placement records successfully indexed in SQL.")
 
