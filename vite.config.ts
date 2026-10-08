@@ -34,27 +34,7 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
-    chunkSizeWarningLimit: 1200,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (id.includes("react-dom") || id.includes("/react/") || id.includes("scheduler")) {
-              return "vendor-react";
-            }
-            if (id.includes("framer-motion")) {
-              return "vendor-framer-motion";
-            }
-            if (id.includes("lucide-react") || id.includes("@radix-ui")) {
-              return "vendor-ui";
-            }
-            if (id.includes("three")) {
-              return "vendor-three";
-            }
-          }
-        },
-      },
-    },
+    chunkSizeWarningLimit: 2000,
   },
   server: {
     host: true,
