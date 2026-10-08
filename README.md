@@ -26,6 +26,7 @@ Pathfinder is an intelligent, full-stack placement readiness assessment, cohort 
 | **Authentication** | Google OAuth 2.0, GitHub OAuth 2.0, Jose / Authlib, Signed JWT Sessions |
 | **Mobile App** | Kotlin, Jetpack Compose, Android Room Database, Coroutines & Flow |
 | **Cloud Deployment** | Vercel (Frontend Static Client) & Render (Backend Web Service) |
+| **Live Deployments** | Frontend: [pathfinder-client-fzom.vercel.app](https://pathfinder-client-fzom.vercel.app) · Backend: [pathfinder-backend-klrp.onrender.com](https://pathfinder-backend-klrp.onrender.com) |
 
 ---
 
