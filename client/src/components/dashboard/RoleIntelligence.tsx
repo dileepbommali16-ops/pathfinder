@@ -22,6 +22,7 @@ interface RoleIntelligenceProps {
   currentProfile: StudentProfileState;
   onUpdateTargetRole: (newRole: string) => void;
   onNavigateTab: (tabId: any) => void;
+  onAskCoach?: (query: string) => void;
   apiBase?: string;
 }
 
@@ -204,6 +205,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
   currentProfile,
   onUpdateTargetRole,
   onNavigateTab,
+  onAskCoach,
   apiBase,
 }) => {
   const [roles, setRoles] = useState<RoleBlueprint[]>(ROLES_DATA);
@@ -445,10 +447,17 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
 
             <button
               type="button"
-              onClick={() => onNavigateTab("coach")}
+              onClick={() => {
+                const prompt = `Let's do an interactive mock interview practice round for the ${activeRole.title} role. Ask me question 1 on ${activeRole.interviewTopics[0] || "core technical concepts"}.`;
+                if (onAskCoach) {
+                  onAskCoach(prompt);
+                } else {
+                  onNavigateTab("coach");
+                }
+              }}
               className="mt-5 w-full rounded-xl border border-cyan-500/30 bg-cyan-500/10 py-2.5 text-center text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition-all"
             >
-              Start Practice Round →
+              Start Practice Round with AI Coach →
             </button>
           </div>
 

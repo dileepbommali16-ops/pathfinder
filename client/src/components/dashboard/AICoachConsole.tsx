@@ -32,6 +32,7 @@ interface AICoachConsoleProps {
   onStopGeneration?: () => void;
   onRegenerate?: () => void;
   isLoading: boolean;
+  isServerWakingUp?: boolean;
   targetRole: string;
 }
 
@@ -79,6 +80,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   onStopGeneration,
   onRegenerate,
   isLoading,
+  isServerWakingUp,
   targetRole,
 }) => {
   const [input, setInput] = useState("");
@@ -332,7 +334,11 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               </div>
               <div className="flex items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-slate-950/80 px-4 py-3 text-xs text-slate-300 shadow-md">
                 <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
-                <span>Pathfinder AI is analyzing & reasoning...</span>
+                <span>
+                  {isServerWakingUp
+                    ? "Waking up the server... Pathfinder AI will respond shortly."
+                    : "Pathfinder AI is analyzing & reasoning..."}
+                </span>
                 <span className="flex gap-1 ml-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
                   <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />

@@ -26,6 +26,16 @@ export const getApiBase = () => {
 
 export const API_BASE = getApiBase();
 
+export const getSessionId = () => {
+  if (typeof window === "undefined") return "server_session";
+  let sid = localStorage.getItem("pathfinder_session_id");
+  if (!sid) {
+    sid = "sess_" + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+    localStorage.setItem("pathfinder_session_id", sid);
+  }
+  return sid;
+};
+
 export const fetchWithTimeout = async (url, options = {}, timeoutMs = 8000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
@@ -35,9 +45,13 @@ export const fetchWithTimeout = async (url, options = {}, timeoutMs = 8000) => {
   }
 
   const token = typeof window !== "undefined" ? localStorage.getItem("pathfinder_token") : null;
+  const sid = getSessionId();
   const headers = new Headers(options.headers || {});
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
+  }
+  if (sid && !headers.has("X-Session-ID")) {
+    headers.set("X-Session-ID", sid);
   }
 
   const resolvedUrl = url.startsWith("http") ? url : `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
@@ -68,6 +82,18 @@ export const api = {
   post: (url, body, options, timeoutMs = 12000) =>
     fetchWithTimeout(
       url,
+      {
+        ...options,
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(options?.headers || {}) },
+        body: body ? JSON.stringify(body) : undefined,
+      },
+      timeoutMs
+    ),
+
+  chat: (body, options, timeoutMs = 45000) =>
+    fetchWithTimeout(
+      "/api/chat",
       {
         ...options,
         method: "POST",

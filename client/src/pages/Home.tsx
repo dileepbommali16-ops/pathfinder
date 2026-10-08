@@ -666,6 +666,7 @@ export default function Home() {
     },
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isChatWakingUp, setIsChatWakingUp] = useState(false);
   const chatAbortRef = useRef<AbortController | null>(null);
 
   const handleStopChat = () => {
@@ -674,13 +675,18 @@ export default function Home() {
       chatAbortRef.current = null;
     }
     setIsChatLoading(false);
+    setIsChatWakingUp(false);
   };
 
   const handleSendMessage = async (userText: string, customHistory?: Message[]) => {
+    const trimmed = userText.trim();
+    if (!trimmed) return;
+
     const currentBase = customHistory || messages;
-    const updatedMessages: Message[] = [...currentBase, { role: "user", content: userText }];
+    const updatedMessages: Message[] = [...currentBase, { role: "user", content: trimmed }];
     setMessages(updatedMessages);
     setIsChatLoading(true);
+    setIsChatWakingUp(false);
 
     if (chatAbortRef.current) {
       chatAbortRef.current.abort();
@@ -688,67 +694,119 @@ export default function Home() {
     const abortCtrl = new AbortController();
     chatAbortRef.current = abortCtrl;
 
-    // Filter history: skip leading initial assistant greeting so first history item is user turn
+    // Detect Render cold-start: if response takes longer than 3.5s, signal server wake-up
+    const coldStartTimer = setTimeout(() => {
+      setIsChatWakingUp(true);
+    }, 3500);
+
+    // Filter history: drop leading initial assistant greeting so first history item is user turn
     const cleanHistory = currentBase
       .filter((m, idx) => !(idx === 0 && m.role === "assistant"))
-      .slice(-10)
+      .slice(-12)
       .map((m) => ({ role: m.role, content: m.content }));
 
-    try {
-      const resp = await fetchWithTimeout(
-        `${API_BASE}/api/chat`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: abortCtrl.signal,
-          body: JSON.stringify({
-            message: userText,
-            history: cleanHistory,
-            profile: {
-              cgpa: profile.cgpa,
-              backlogs: profile.backlogs,
-              internships: profile.internships,
-              communication: profile.communication,
-              coding: profile.coding,
-              target_role: profile.targetRole,
-              target_tier: profile.targetTier,
-              branch: profile.branch,
-            },
-          }),
-        },
-        20000
-      );
+    const chatPayload = {
+      message: trimmed,
+      history: cleanHistory,
+      profile: {
+        cgpa: profile.cgpa,
+        backlogs: profile.backlogs,
+        internships: profile.internships,
+        communication: profile.communication,
+        coding: profile.coding,
+        target_role: profile.targetRole,
+        target_tier: profile.targetTier,
+        branch: profile.branch,
+      },
+    };
 
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.reply && data.reply.trim()) {
-          setMessages([...updatedMessages, { role: "assistant", content: data.reply }]);
-          return;
+    const callBackend = async (isRetry = false): Promise<string | null> => {
+      try {
+        const resp = await fetchWithTimeout(
+          `${API_BASE}/api/chat`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: abortCtrl.signal,
+            body: JSON.stringify(chatPayload),
+          },
+          45000
+        );
+
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.reply && data.reply.trim()) {
+            return data.reply.trim();
+          }
         }
+
+        // Retry once on rate limit (429) or transient server errors (500, 502, 503, 504)
+        if (!isRetry && (resp.status === 429 || resp.status >= 500)) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          return callBackend(true);
+        }
+
+        return null;
+      } catch (err: any) {
+        if (abortCtrl.signal.aborted) {
+          // Manually cancelled by user via stop button
+          return null;
+        }
+        // If timeout or network dropped, retry once before failing
+        if (!isRetry) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          return callBackend(true);
+        }
+        return null;
+      }
+    };
+
+    try {
+      const reply = await callBackend(false);
+      clearTimeout(coldStartTimer);
+      setIsChatWakingUp(false);
+
+      if (abortCtrl.signal.aborted) {
+        return;
       }
 
-      setMessages([
-        ...updatedMessages,
-        {
-          role: "assistant",
-          content: "I'm having a little trouble connecting right now! Please give me a second and ask me again 😊"
-        }
-      ]);
+      if (reply) {
+        setMessages([...updatedMessages, { role: "assistant", content: reply }]);
+      } else {
+        setMessages([
+          ...updatedMessages,
+          {
+            role: "assistant",
+            content: "I'm having a little trouble connecting to my AI brain right now! Please give me a second and click Regenerate or ask again 😊",
+          },
+        ]);
+      }
     } catch (err: any) {
-      if (err?.name === "AbortError") {
+      clearTimeout(coldStartTimer);
+      setIsChatWakingUp(false);
+      if (abortCtrl.signal.aborted) {
         return;
       }
       setMessages([
         ...updatedMessages,
         {
           role: "assistant",
-          content: "I'm having a little trouble connecting right now! Please give me a second and ask me again 😊"
-        }
+          content: "I'm having a little trouble connecting to my AI brain right now! Please give me a second and click Regenerate or ask again 😊",
+        },
       ]);
     } finally {
+      clearTimeout(coldStartTimer);
       setIsChatLoading(false);
+      setIsChatWakingUp(false);
       chatAbortRef.current = null;
     }
+  };
+
+  const handleAskCoach = (query: string) => {
+    setActiveTab("coach");
+    setTimeout(() => {
+      handleSendMessage(query);
+    }, 60);
   };
 
   const handleRegenerateChat = () => {
@@ -1198,10 +1256,7 @@ export default function Home() {
                 <NextActionsWidget
                   profile={profile}
                   onNavigateTab={setActiveTab}
-                  onAskCoach={(q) => {
-                    setActiveTab("coach");
-                    handleSendMessage(q);
-                  }}
+                  onAskCoach={handleAskCoach}
                 />
               </section>
 
@@ -1283,10 +1338,7 @@ export default function Home() {
                   strengths={prediction.strengths}
                   priorities={prediction.priorities}
                   breakdown={prediction.breakdown}
-                  onAskCoach={(q) => {
-                    setActiveTab("coach");
-                    handleSendMessage(q);
-                  }}
+                  onAskCoach={handleAskCoach}
                   apiBase={API_BASE}
                 />
               </section>
@@ -1326,10 +1378,7 @@ export default function Home() {
               <NextActionsWidget
                 profile={profile}
                 onNavigateTab={setActiveTab}
-                onAskCoach={(q) => {
-                  setActiveTab("coach");
-                  handleSendMessage(q);
-                }}
+                onAskCoach={handleAskCoach}
               />
             </motion.div>
           )}
@@ -1365,10 +1414,7 @@ export default function Home() {
                 apiBase={API_BASE}
                 selectedYear={profile.graduationYear || 2026}
                 selectedBranch={profile.branch || "All"}
-                onAskCoach={(q) => {
-                  setActiveTab("coach");
-                  handleSendMessage(q);
-                }}
+                onAskCoach={handleAskCoach}
                 onNavigateTab={setActiveTab}
               />
             </motion.div>
@@ -1396,10 +1442,7 @@ export default function Home() {
                 apiBase={API_BASE}
                 selectedYear={profile.graduationYear || 2026}
                 currentBranch={profile.branch || "CSE"}
-                onAskCoach={(q) => {
-                  setActiveTab("coach");
-                  handleSendMessage(q);
-                }}
+                onAskCoach={handleAskCoach}
                 onNavigateTab={setActiveTab}
               />
             </motion.div>
@@ -1464,6 +1507,7 @@ export default function Home() {
                 onStopGeneration={handleStopChat}
                 onRegenerate={handleRegenerateChat}
                 isLoading={isChatLoading}
+                isServerWakingUp={isChatWakingUp}
                 targetRole={profile.targetRole}
               />
             </motion.div>
@@ -1545,10 +1589,7 @@ export default function Home() {
               />
               <ProjectRecommender
                 targetRole={profile.targetRole}
-                onAskCoach={(q) => {
-                  setActiveTab("coach");
-                  handleSendMessage(q);
-                }}
+                onAskCoach={handleAskCoach}
                 apiBase={API_BASE}
               />
             </motion.div>
@@ -1573,10 +1614,7 @@ export default function Home() {
               />
               <ProjectDefenseConsole
                 profile={profile}
-                onAskCoach={(q) => {
-                  setActiveTab("coach");
-                  handleSendMessage(q);
-                }}
+                onAskCoach={handleAskCoach}
               />
             </motion.div>
           )}
@@ -1593,6 +1631,7 @@ export default function Home() {
                 currentProfile={profile}
                 onUpdateTargetRole={handleUpdateTargetRole}
                 onNavigateTab={setActiveTab}
+                onAskCoach={handleAskCoach}
                 apiBase={API_BASE}
               />
             </motion.div>
