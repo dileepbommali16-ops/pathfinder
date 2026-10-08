@@ -1,5 +1,4 @@
 export * from "./predictive-arc/PredictiveArcCollection";
-export * from "./predictive-arc/PredictiveArcCanvas";
 export {
   createPredictiveArcRenderer,
   PREDICTIVE_ARC_DEFAULTS,
