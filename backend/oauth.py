@@ -163,7 +163,7 @@ def revoke_signed_session_token(token: Optional[str]) -> None:
 # -----------------------------------------------------------------------------
 
 _LOCAL_HOSTS = ("localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]")
-_DEFAULT_DEPLOYED_FRONTEND = "https://pathfinder-client-fzom-n4kdokzfp-dileepbommali16-ops-projects.vercel.app"
+_DEFAULT_DEPLOYED_FRONTEND = "https://pathfinder-client-fzom.vercel.app"
 
 
 def _is_local_url(url: str) -> bool:
@@ -177,7 +177,11 @@ def _is_local_url(url: str) -> bool:
 def get_allowed_frontend_origins() -> List[str]:
     """Retrieves list of allowlisted frontend origins from the comma-separated FRONTEND_URL env var."""
     raw = os.getenv("FRONTEND_URL", f"http://localhost:3000,http://localhost:5173,{_DEFAULT_DEPLOYED_FRONTEND}").strip()
+    raw = raw.replace("ttps://", "https://")
     origins = [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
+    if _DEFAULT_DEPLOYED_FRONTEND not in origins:
+        origins.append(_DEFAULT_DEPLOYED_FRONTEND)
+    return origins
     return origins if origins else ["http://localhost:3000"]
 
 
@@ -257,6 +261,8 @@ def _candidate_origin(request: Request, origin_param: Optional[str]) -> Optional
 
 def _normalize_backend_url(url: str) -> str:
     url = url.strip().rstrip("/")
+    if url.startswith("ttps://"):
+        url = "https://" + url[len("ttps://"):]
     if url.startswith("http://") and not _is_local_url(url):
         url = "https://" + url[len("http://"):]
     return url
@@ -265,15 +271,24 @@ def _normalize_backend_url(url: str) -> str:
 def get_backend_public_url(request: Request) -> str:
     """
     Returns canonical public URL of this backend service for OAuth callback registration.
-    Uses BACKEND_PUBLIC_URL or BACKEND_URL env var, falling back to request.base_url.
+    Detects dynamic Render domain from request headers if hosted on onrender.com,
+    or falls back to BACKEND_PUBLIC_URL / BACKEND_URL env var, or request.base_url.
     Trailing slashes are stripped and https is forced for non-local hosts.
     """
+    # 1. Prefer incoming request host if running on onrender.com
+    req_host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(":")[0].strip()
+    if req_host.endswith(".onrender.com"):
+        return f"https://{req_host}"
+
+    # 2. Check explicit environment overrides
     env_backend = os.getenv("BACKEND_PUBLIC_URL", "").strip().rstrip("/")
     if env_backend:
         return _normalize_backend_url(env_backend)
     backend_url = os.getenv("BACKEND_URL", "").strip().rstrip("/")
     if backend_url:
         return _normalize_backend_url(backend_url)
+
+    # 3. Fallback to request base_url
     base = str(request.base_url).rstrip("/")
     proto = request.headers.get("x-forwarded-proto")
     if proto == "https" and base.startswith("http://"):
