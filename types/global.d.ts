@@ -18,3 +18,30 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
   readonly dirname?: string;
 }
+
+declare module "@tailwindcss/vite" {
+  const plugin: () => any;
+  export default plugin;
+}
+
+declare module "@vitejs/plugin-react" {
+  const plugin: () => any;
+  export default plugin;
+}
+
+declare module "vite" {
+  export interface Plugin {
+    name: string;
+    [key: string]: any;
+  }
+  export function defineConfig(config: any): any;
+}
+
+declare module "node:path" {
+  const path: any;
+  export default path;
+}
+
+declare module "node:module" {
+  export function createRequire(url: string | URL): (id: string) => any;
+}
