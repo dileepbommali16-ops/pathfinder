@@ -232,7 +232,7 @@ def health_check():
         "gemini": {
             "status": "ready" if gemini_configured else "fallback_active",
             "configured": gemini_configured,
-            "model": os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+            "model": os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
             "diagnostic": get_last_gemini_diagnostic()
         },
         "ml_service": {

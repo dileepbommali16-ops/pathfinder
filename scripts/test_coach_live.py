@@ -41,9 +41,8 @@ def main():
     # 1. Model Configuration & Sanity
     models = get_gemini_models()
     print(f"[Config] Verified Models: {models}")
-    assert "gemini-2.5-flash" not in models, "FAIL: gemini-2.5-flash should NOT be in model list!"
-    assert any("2.0" in m or "1.5" in m for m in models), "FAIL: No verified Gemini Flash models available!"
-    print("[Config] PASSED: Invalid model tags filtered out. Standard Flash models configured.")
+    assert any("3." in m or "2." in m for m in models), "FAIL: No verified Gemini Flash models available!"
+    print("[Config] PASSED: Active Gemini Flash models configured.")
 
     profile = StudentProfile(
         full_name="Sai Krishna",

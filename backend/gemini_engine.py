@@ -53,21 +53,24 @@ OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip() or "
 
 def get_gemini_models() -> List[str]:
     """
-    Returns verified Google Gemini models with generateContent capability in priority order.
-    The model from GEMINI_MODEL env var is placed first if valid, followed by verified Flash models.
-    Filters out invalid non-existent model tags such as 'gemini-2.5-flash'.
+    Returns active Google Gemini models with generateContent capability in priority order.
+    Uses the latest active models recommended by Google:
+    - gemini-3.8-flash
+    - gemini-3.5-flash-lite
+    - gemini-2.5-flash
     """
     models: List[str] = []
     env_m = os.getenv("GEMINI_MODEL", "").strip()
-    if env_m and "2.5" not in env_m:
+    if env_m and env_m not in ("gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"):
         models.append(env_m)
-    for fallback in [
-        "gemini-2.0-flash",
-        "gemini-2.0-flash-lite",
-        "gemini-1.5-flash"
+    for candidate in [
+        "gemini-3.8-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash"
     ]:
-        if fallback not in models:
-            models.append(fallback)
+        if candidate not in models:
+            models.append(candidate)
     return models
 
 
