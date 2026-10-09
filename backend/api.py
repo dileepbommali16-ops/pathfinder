@@ -66,7 +66,10 @@ from backend.data_service import (
 )
 from backend.gemini_engine import (
     chat_with_mentor,
-    generate_structured_ai
+    generate_structured_ai,
+    get_last_gemini_diagnostic,
+    call_gemini_rest,
+    get_gemini_models
 )
 from backend.pdf_engine import (
     extract_text_from_pdf,
@@ -229,7 +232,8 @@ def health_check():
         "gemini": {
             "status": "ready" if gemini_configured else "fallback_active",
             "configured": gemini_configured,
-            "model": os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+            "model": os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+            "diagnostic": get_last_gemini_diagnostic()
         },
         "ml_service": {
             "status": "ready",
@@ -239,6 +243,39 @@ def health_check():
         },
         "security": "Enforced: TLS/CORS, Rate-Limiting, Per-User Isolation, Input Sanitization"
     }
+
+
+@app.get("/api/gemini/ping")
+def gemini_ping():
+    import urllib.error
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return {"configured": False, "error": "GEMINI_API_KEY is not set"}
+    models = get_gemini_models()
+    results = {}
+    for m in models:
+        try:
+            res = call_gemini_rest(
+                model=m,
+                contents=[{"role": "user", "parts": [{"text": "Say pong in one word"}]}],
+                sys_instruction="You are a ping test assistant.",
+                api_key=api_key,
+                temperature=0.1,
+                max_output_tokens=10,
+                include_thinking=False
+            )
+            results[m] = {"status": "ok", "reply": res}
+            break
+        except urllib.error.HTTPError as he:
+            b = ""
+            try:
+                b = he.read().decode("utf-8", errors="replace")
+            except Exception:
+                pass
+            results[m] = {"status": "http_error", "code": he.code, "reason": he.reason, "body": b[:300]}
+        except Exception as e:
+            results[m] = {"status": "error", "message": str(e)}
+    return {"key_prefix": api_key[:6] + "..." if len(api_key) > 6 else "short", "results": results}
 
 
 

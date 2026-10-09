@@ -73,6 +73,11 @@ def get_gemini_models() -> List[str]:
 
 GEMINI_MODELS = get_gemini_models()
 _client = None
+_last_gemini_diagnostic: Dict[str, Any] = {"status": "none"}
+
+
+def get_last_gemini_diagnostic() -> Dict[str, Any]:
+    return _last_gemini_diagnostic
 
 
 def get_gemini_client():
@@ -422,6 +427,8 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
                         include_thinking=False
                     )
                     if reply and reply.strip():
+                        global _last_gemini_diagnostic
+                        _last_gemini_diagnostic = {"status": "success", "model": model}
                         return evaluate_and_enforce_novelty(reply.strip(), model)
                 except urllib.error.HTTPError as http_err:
                     err_body = ""
@@ -429,6 +436,13 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
                         err_body = http_err.read().decode("utf-8", errors="replace")
                     except Exception:
                         pass
+                    _last_gemini_diagnostic = {
+                        "status": "http_error",
+                        "model": model,
+                        "code": http_err.code,
+                        "reason": http_err.reason,
+                        "body": err_body[:300]
+                    }
                     logger.error(
                         f"[Gemini Engine] Model '{model}' HTTP {http_err.code} ({http_err.reason}). Response body: {err_body}"
                     )
@@ -440,6 +454,12 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
                     # 404 Not Found (model does not exist) or fatal 400/403: fall through to next model
                     break
                 except Exception as exc:
+                    _last_gemini_diagnostic = {
+                        "status": "exception",
+                        "model": model,
+                        "error_type": type(exc).__name__,
+                        "message": str(exc)
+                    }
                     logger.error(f"[Gemini Engine] Model '{model}' exception: {exc}")
                     time.sleep(0.5)
                     continue
