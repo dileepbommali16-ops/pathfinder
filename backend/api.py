@@ -188,9 +188,19 @@ def health_check():
     from backend.database import DB_PATH
     sqlite_ok = DB_PATH.exists()
 
+    git_sha = os.getenv("RENDER_GIT_COMMIT") or os.getenv("VERCEL_GIT_COMMIT_SHA") or ""
+    if not git_sha:
+        try:
+            import subprocess
+            git_sha = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
+        except Exception:
+            git_sha = "unknown"
+
     return {
         "status": "healthy" if dataset_ok else "degraded",
         "service": "Pathfinder 2.0 Intelligence Engine",
+        "version": "2.0.0",
+        "git_sha": git_sha,
         "server": {
             "status": "healthy",
             "uptime_seconds": round(time.time() - SERVER_START_TIME, 1) if "SERVER_START_TIME" in globals() else 0,
@@ -219,7 +229,7 @@ def health_check():
         "gemini": {
             "status": "ready" if gemini_configured else "fallback_active",
             "configured": gemini_configured,
-            "model": os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+            "model": os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
         },
         "ml_service": {
             "status": "ready",
@@ -1000,13 +1010,15 @@ def chat_endpoint(chat_req: ChatRequest, request: Request, user: UserSession = D
         reply = chat_with_mentor(
             message=clean_message,
             history=chat_req.history,
-            profile=chat_req.profile
+            profile=chat_req.profile,
+            active_tab=chat_req.active_tab,
+            page_context=chat_req.page_context
         )
         return {"reply": reply}
     except Exception as exc:
-        print(f"[Chat Endpoint] Error calling chat_with_mentor: {exc}")
+        logger.error(f"[Chat Endpoint] Error calling chat_with_mentor: {exc}")
         return {
-            "reply": "I'm having a little trouble connecting to my AI brain right now! Please give me a second and ask me again 😊",
+            "reply": "I'm having trouble reaching my brain right now, try again in a moment",
             "status": "fallback"
         }
 

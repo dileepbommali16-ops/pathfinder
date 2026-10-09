@@ -42,6 +42,7 @@ import {
   Target
 } from "lucide-react";
 import { getApiBase, API_BASE, fetchWithTimeout, api } from "@/lib/apiClient";
+import { getTabKnowledge } from "@/lib/siteKnowledge";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
@@ -718,6 +719,16 @@ export default function Home() {
         target_tier: profile.targetTier,
         branch: profile.branch,
       },
+      active_tab: activeTab,
+      page_context: {
+        activeTabTitle: getTabKnowledge(activeTab)?.title || activeTab,
+        placementReadinessChance: `${prediction.chance}%`,
+        placementReadinessLabel: prediction.label,
+        candidateBranch: profile.branch,
+        targetRole: profile.targetRole,
+        cohortYear: cohortFilters.year,
+        cohortBranch: cohortFilters.branch,
+      },
     };
 
     const callBackend = async (isRetry = false): Promise<string | null> => {
@@ -740,8 +751,15 @@ export default function Home() {
           }
         }
 
-        // Retry once on rate limit (429) or transient server errors (500, 502, 503, 504)
-        if (!isRetry && (resp.status === 429 || resp.status >= 500)) {
+        if (resp.status === 429) {
+          const errData = await resp.json().catch(() => null);
+          if (errData && errData.detail) {
+            return errData.detail;
+          }
+        }
+
+        // Retry once on transient server errors (500, 502, 503, 504)
+        if (!isRetry && resp.status >= 500) {
           await new Promise((resolve) => setTimeout(resolve, 1500));
           return callBackend(true);
         }
@@ -777,7 +795,7 @@ export default function Home() {
           ...updatedMessages,
           {
             role: "assistant",
-            content: "I'm having a little trouble connecting to my AI brain right now! Please give me a second and click Regenerate or ask again 😊",
+            content: "I'm having trouble reaching my brain right now, try again in a moment",
           },
         ]);
       }
@@ -791,7 +809,7 @@ export default function Home() {
         ...updatedMessages,
         {
           role: "assistant",
-          content: "I'm having a little trouble connecting to my AI brain right now! Please give me a second and click Regenerate or ask again 😊",
+          content: "I'm having trouble reaching my brain right now, try again in a moment",
         },
       ]);
     } finally {
@@ -1658,6 +1676,22 @@ export default function Home() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Global Floating 'Ask Coach' Trigger (Available on all tabs except Coach) */}
+        {activeTab !== "coach" && (
+          <button
+            type="button"
+            onClick={() => {
+              const tabTitle = getTabKnowledge(activeTab)?.title || activeTab;
+              handleAskCoach(`Explain the '${tabTitle}' tab and what actions I should take here to improve my placement readiness.`);
+            }}
+            className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full border border-cyan-500/40 bg-slate-900/90 px-4 py-2.5 text-xs font-semibold text-cyan-300 shadow-xl shadow-cyan-500/20 backdrop-blur-xl transition-all hover:scale-105 hover:border-cyan-400 hover:bg-slate-900 hover:text-white hover:shadow-cyan-500/35 active:scale-95"
+            title="Ask AI Coach about this page"
+          >
+            <Bot className="h-4 w-4 text-cyan-400" />
+            <span>Ask Coach About This Page</span>
+          </button>
+        )}
       </main>
     </div>
   );

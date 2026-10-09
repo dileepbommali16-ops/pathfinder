@@ -115,6 +115,8 @@ class ChatRequest(BaseModel):
     message: str = Field(default="", max_length=10000)
     history: Optional[List[ChatMessage]] = Field(default_factory=list)
     profile: Optional[StudentProfile] = None
+    active_tab: Optional[str] = None
+    page_context: Optional[Dict[str, Any]] = None
 
 
 class CohortFilters(BaseModel):
