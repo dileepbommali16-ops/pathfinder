@@ -240,19 +240,24 @@ def chat_with_mentor(
     history: Optional[List[Any]] = None,
     profile: Optional[StudentProfile] = None,
     active_tab: Optional[str] = None,
-    page_context: Optional[Dict[str, Any]] = None
-) -> str:
+    page_context: Optional[Dict[str, Any]] = None,
+    return_meta: bool = False
+) -> Any:
     """
     Main conversational AI entrypoint.
     Every user message routes directly to live LLMs (Gemini primary, OpenRouter fallback)
     with comprehensive site knowledge, candidate profile grounding, multi-turn history,
     and automatic repeat protection against prior turns.
     """
+    t_start = time.perf_counter()
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     clean_msg = message.strip() if message else ""
 
     if not clean_msg:
-        return "Looks like your message was empty! What's on your mind? 😊"
+        empty_text = "Looks like your message was empty! What's on your mind? 😊"
+        if return_meta:
+            return empty_text, {"prep_ms": 0.0, "gemini_call_ms": 0.0, "novelty_ms": 0.0, "model_used": "none"}
+        return empty_text
 
     # 1. Build profile context
     profile_ctx = ""
@@ -422,11 +427,17 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
 
         return candidate_text
 
+    prep_ms = round((time.perf_counter() - t_start) * 1000, 2)
+    attempts_log = []
+    gemini_call_ms = 0.0
+    model_used = "none"
+
     # 6. Execute with retries across verified Gemini models
     models_to_try = get_gemini_models()
     if api_key:
         for model in models_to_try:
             for attempt in range(2):
+                t_call_start = time.perf_counter()
                 try:
                     reply = call_gemini_rest(
                         model=model,
@@ -437,11 +448,30 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
                         max_output_tokens=1500,
                         include_thinking=False
                     )
+                    call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
+                    attempts_log.append({"model": model, "duration_ms": call_duration, "status": "ok" if reply else "empty"})
                     if reply and reply.strip():
                         global _last_gemini_diagnostic
-                        _last_gemini_diagnostic = {"status": "success", "model": model}
-                        return evaluate_and_enforce_novelty(reply.strip(), model)
+                        _last_gemini_diagnostic = {"status": "success", "model": model, "duration_ms": call_duration}
+                        model_used = model
+                        gemini_call_ms = call_duration
+
+                        t_nov_start = time.perf_counter()
+                        final_reply = evaluate_and_enforce_novelty(reply.strip(), model)
+                        novelty_ms = round((time.perf_counter() - t_nov_start) * 1000, 2)
+
+                        meta = {
+                            "prep_ms": prep_ms,
+                            "gemini_call_ms": gemini_call_ms,
+                            "novelty_ms": novelty_ms,
+                            "model_used": model_used,
+                            "attempts": attempts_log
+                        }
+                        if return_meta:
+                            return final_reply, meta
+                        return final_reply
                 except urllib.error.HTTPError as http_err:
+                    call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
                     err_body = ""
                     try:
                         err_body = http_err.read().decode("utf-8", errors="replace")
@@ -452,10 +482,12 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
                         "model": model,
                         "code": http_err.code,
                         "reason": http_err.reason,
-                        "body": err_body[:300]
+                        "body": err_body[:300],
+                        "duration_ms": call_duration
                     }
+                    attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"HTTP {http_err.code}"})
                     logger.error(
-                        f"[Gemini Engine] Model '{model}' HTTP {http_err.code} ({http_err.reason}). Response body: {err_body}"
+                        f"[Gemini Engine] Model '{model}' HTTP {http_err.code} ({http_err.reason}) in {call_duration}ms. Response body: {err_body}"
                     )
 
                     # Backoff on 429 (rate limit) or 503 (service unavailable)
@@ -465,28 +497,53 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
                     # 404 Not Found (model does not exist) or fatal 400/403: fall through to next model
                     break
                 except Exception as exc:
+                    call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
                     _last_gemini_diagnostic = {
                         "status": "exception",
                         "model": model,
                         "error_type": type(exc).__name__,
-                        "message": str(exc)
+                        "message": str(exc),
+                        "duration_ms": call_duration
                     }
-                    logger.error(f"[Gemini Engine] Model '{model}' exception: {exc}")
+                    attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"Exception {type(exc).__name__}"})
+                    logger.error(f"[Gemini Engine] Model '{model}' exception in {call_duration}ms: {exc}")
                     time.sleep(0.5)
                     continue
 
     # 7. OpenRouter fallback if configured
     if OPENROUTER_API_KEY:
+        t_or_start = time.perf_counter()
         try:
             or_reply = openrouter_chat(openrouter_messages, sys_instruction)
+            or_duration = round((time.perf_counter() - t_or_start) * 1000, 2)
             if or_reply and or_reply.strip():
-                return evaluate_and_enforce_novelty(or_reply.strip(), OPENROUTER_MODEL)
+                final_reply = evaluate_and_enforce_novelty(or_reply.strip(), OPENROUTER_MODEL)
+                meta = {
+                    "prep_ms": prep_ms,
+                    "gemini_call_ms": or_duration,
+                    "novelty_ms": 0.0,
+                    "model_used": OPENROUTER_MODEL,
+                    "attempts": attempts_log
+                }
+                if return_meta:
+                    return final_reply, meta
+                return final_reply
         except Exception as or_exc:
             logger.error(f"[OpenRouter Engine] Failed: {or_exc}")
 
     # 8. Single allowed friendly error when both fail or no LLM provider responds
     logger.error("[Gemini Engine] All configured LLM providers failed or returned empty.")
-    return "I'm having trouble reaching my brain right now, try again in a moment"
+    fallback_text = "I'm having trouble reaching my brain right now, try again in a moment"
+    meta = {
+        "prep_ms": prep_ms,
+        "gemini_call_ms": gemini_call_ms,
+        "novelty_ms": 0.0,
+        "model_used": "none",
+        "attempts": attempts_log
+    }
+    if return_meta:
+        return fallback_text, meta
+    return fallback_text
 
 
 def local_structured_fallback(schema: Type[BaseModel]) -> BaseModel:

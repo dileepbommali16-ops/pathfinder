@@ -1017,6 +1017,8 @@ def data_projects_endpoint(role_id: Optional[str] = None, domain: Optional[str] 
 @app.post("/api/chat")
 @app.post("/api/ai/chat")
 def chat_endpoint(chat_req: ChatRequest, request: Request, user: UserSession = Depends(get_current_user)):
+    t_start = time.perf_counter()
+
     # Rate limit: Max 60 requests per minute to support rapid-fire queries
     session_id = request.headers.get("x-session-id") or request.cookies.get("pathfinder_session_id") or ""
     client_key = user.user_id if user.is_authenticated else (f"anon_{session_id}" if session_id else get_client_ip(request))
@@ -1035,28 +1037,56 @@ def chat_endpoint(chat_req: ChatRequest, request: Request, user: UserSession = D
             detail=f"Daily AI coaching quota reached ({limit}/{limit} requests). Quota resets at midnight."
         )
 
+    t_auth_done = time.perf_counter()
+    auth_ms = round((t_auth_done - t_start) * 1000, 2)
+
     # Input sanitization & length restriction
     clean_message = sanitize_user_input(chat_req.message, max_length=4000)
     if not clean_message or not clean_message.strip():
         return {
             "reply": "Looks like your message was empty! What's on your mind? 😊",
-            "status": "ok"
+            "status": "ok",
+            "timings_ms": {
+                "total_request_ms": round((time.perf_counter() - t_start) * 1000, 2),
+                "auth_ratelimit_ms": auth_ms
+            }
         }
 
     try:
-        reply = chat_with_mentor(
+        reply, meta = chat_with_mentor(
             message=clean_message,
             history=chat_req.history,
             profile=chat_req.profile,
             active_tab=chat_req.active_tab,
-            page_context=chat_req.page_context
+            page_context=chat_req.page_context,
+            return_meta=True
         )
-        return {"reply": reply}
+        t_end = time.perf_counter()
+        total_request_ms = round((t_end - t_start) * 1000, 2)
+        meta["auth_ratelimit_ms"] = auth_ms
+        meta["total_request_ms"] = total_request_ms
+
+        logger.info(
+            f"[TIMING /api/chat] Total: {total_request_ms}ms | Auth: {auth_ms}ms | "
+            f"Prep: {meta.get('prep_ms', 0)}ms | Gemini Call ({meta.get('model_used', 'none')}): {meta.get('gemini_call_ms', 0)}ms | "
+            f"Novelty: {meta.get('novelty_ms', 0)}ms"
+        )
+
+        return {
+            "reply": reply,
+            "timings_ms": meta
+        }
     except Exception as exc:
-        logger.error(f"[Chat Endpoint] Error calling chat_with_mentor: {exc}")
+        t_end = time.perf_counter()
+        total_request_ms = round((t_end - t_start) * 1000, 2)
+        logger.error(f"[Chat Endpoint] Error calling chat_with_mentor after {total_request_ms}ms: {exc}")
         return {
             "reply": "I'm having trouble reaching my brain right now, try again in a moment",
-            "status": "fallback"
+            "status": "fallback",
+            "timings_ms": {
+                "total_request_ms": total_request_ms,
+                "auth_ratelimit_ms": auth_ms
+            }
         }
 
 
