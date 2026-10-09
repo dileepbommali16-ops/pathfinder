@@ -336,7 +336,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
                 <span>
                   {isServerWakingUp
-                    ? "Waking up the server... Pathfinder AI will respond shortly."
+                    ? "Waking up the server, this can take up to a minute... Pathfinder AI will respond shortly."
                     : "Pathfinder AI is analyzing & reasoning..."}
                 </span>
                 <span className="flex gap-1 ml-1">

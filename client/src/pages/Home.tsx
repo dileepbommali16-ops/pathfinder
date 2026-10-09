@@ -39,7 +39,8 @@ import {
   GraduationCap,
   ShieldAlert,
   User,
-  Target
+  Target,
+  Loader2
 } from "lucide-react";
 import { getApiBase, API_BASE, fetchWithTimeout, api } from "@/lib/apiClient";
 import { getTabKnowledge } from "@/lib/siteKnowledge";
@@ -416,7 +417,7 @@ export default function Home() {
 
     // Returning user: check backend persisted profile
     try {
-      const resp = await fetchWithTimeout(`${API_BASE}/api/profile?email=${encodeURIComponent(user.email)}`, {}, 3000);
+      const resp = await fetchWithTimeout(`${API_BASE}/api/profile?email=${encodeURIComponent(user.email)}`, {}, 45000);
       if (resp.ok) {
         const data = await resp.json();
         if (data && data.branch) {
@@ -550,12 +551,12 @@ export default function Home() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }, 5000),
+        }, 45000),
         fetchWithTimeout(`${API_BASE}/api/skill-gap`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }, 5000),
+        }, 45000),
       ]);
 
       if (predResp.status === "fulfilled" && predResp.value.ok) {
@@ -668,7 +669,18 @@ export default function Home() {
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isChatWakingUp, setIsChatWakingUp] = useState(false);
+  const [isGlobalServerWakingUp, setIsGlobalServerWakingUp] = useState(false);
   const chatAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const handleWakingUpEvent = (e: any) => {
+      setIsGlobalServerWakingUp(Boolean(e.detail?.isWakingUp));
+    };
+    window.addEventListener("pathfinder_server_waking_up", handleWakingUpEvent);
+    return () => {
+      window.removeEventListener("pathfinder_server_waking_up", handleWakingUpEvent);
+    };
+  }, []);
 
   const handleStopChat = () => {
     if (chatAbortRef.current) {
@@ -695,10 +707,10 @@ export default function Home() {
     const abortCtrl = new AbortController();
     chatAbortRef.current = abortCtrl;
 
-    // Detect Render cold-start: if response takes longer than 3.5s, signal server wake-up
+    // Detect Render cold-start: if response takes longer than 3.0s, signal server wake-up
     const coldStartTimer = setTimeout(() => {
       setIsChatWakingUp(true);
-    }, 3500);
+    }, 3000);
 
     // Filter history: drop leading initial assistant greeting so first history item is user turn
     const cleanHistory = currentBase
@@ -741,7 +753,7 @@ export default function Home() {
             signal: abortCtrl.signal,
             body: JSON.stringify(chatPayload),
           },
-          45000
+          60000
         );
 
         if (resp.ok) {
@@ -1103,6 +1115,14 @@ export default function Home() {
   // 4. MAIN DASHBOARD & PLATFORM NAVIGATION
   return (
     <div className="relative min-h-screen bg-[#05070e] text-slate-100 selection:bg-emerald-500 selection:text-slate-950 font-sans overflow-x-hidden">
+      {/* Graceful Cold-Start Wake-Up Notification */}
+      {isGlobalServerWakingUp && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-cyan-500/30 bg-slate-950/95 px-4 py-2 text-xs font-medium text-cyan-300 shadow-[0_4px_24px_rgba(6,182,212,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+          <span>Waking up the server, this can take up to a minute...</span>
+        </div>
+      )}
+
       {/* ================= PREMIUM AI STARTUP BACKGROUND SYSTEM ================= */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
         <div className="absolute inset-0 bg-gradient-to-b from-[#070b16] via-[#05070f] to-[#03040a]" />

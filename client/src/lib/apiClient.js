@@ -36,7 +36,7 @@ export const getSessionId = () => {
   return sid;
 };
 
-export const fetchWithTimeout = async (url, options = {}, timeoutMs = 8000) => {
+export const fetchWithTimeout = async (url, options = {}, timeoutMs = 55000, isRetry = false) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -56,6 +56,19 @@ export const fetchWithTimeout = async (url, options = {}, timeoutMs = 8000) => {
 
   const resolvedUrl = url.startsWith("http") ? url : `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
 
+  let isWakingSignaled = false;
+  let wakeUpTimer = null;
+  if (typeof window !== "undefined") {
+    wakeUpTimer = setTimeout(() => {
+      isWakingSignaled = true;
+      window.dispatchEvent(
+        new CustomEvent("pathfinder_server_waking_up", {
+          detail: { isWakingUp: true, url: resolvedUrl }
+        })
+      );
+    }, 3000);
+  }
+
   try {
     const resp = await fetch(resolvedUrl, {
       ...options,
@@ -63,23 +76,55 @@ export const fetchWithTimeout = async (url, options = {}, timeoutMs = 8000) => {
       signal: controller.signal,
     });
 
+    if (wakeUpTimer) clearTimeout(wakeUpTimer);
+    if (isWakingSignaled && typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("pathfinder_server_waking_up", {
+          detail: { isWakingUp: false, url: resolvedUrl }
+        })
+      );
+    }
+
     if (resp.status === 401 && typeof window !== "undefined") {
       localStorage.removeItem("pathfinder_token");
       localStorage.removeItem("pathfinder_user");
       window.dispatchEvent(new Event("pathfinder_logout"));
     }
 
+    // Auto-retry once on 502/503/504 (standard Render wake-up status codes)
+    if (!isRetry && (resp.status === 502 || resp.status === 503 || resp.status === 504)) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      return fetchWithTimeout(url, options, timeoutMs, true);
+    }
+
     return resp;
+  } catch (err) {
+    if (wakeUpTimer) clearTimeout(wakeUpTimer);
+    if (isWakingSignaled && typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("pathfinder_server_waking_up", {
+          detail: { isWakingUp: false, url: resolvedUrl }
+        })
+      );
+    }
+
+    // Auto-retry once on network error or wake-up timeout if not aborted by user
+    if (!isRetry && !options.signal?.aborted) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      return fetchWithTimeout(url, options, timeoutMs, true);
+    }
+    throw err;
   } finally {
     clearTimeout(id);
+    if (wakeUpTimer) clearTimeout(wakeUpTimer);
   }
 };
 
 export const api = {
-  get: (url, options, timeoutMs = 8000) =>
+  get: (url, options, timeoutMs = 50000) =>
     fetchWithTimeout(url, { ...options, method: "GET" }, timeoutMs),
 
-  post: (url, body, options, timeoutMs = 12000) =>
+  post: (url, body, options, timeoutMs = 50000) =>
     fetchWithTimeout(
       url,
       {
@@ -91,7 +136,7 @@ export const api = {
       timeoutMs
     ),
 
-  chat: (body, options, timeoutMs = 45000) =>
+  chat: (body, options, timeoutMs = 60000) =>
     fetchWithTimeout(
       "/api/chat",
       {
@@ -103,7 +148,7 @@ export const api = {
       timeoutMs
     ),
 
-  delete: (url, options, timeoutMs = 8000) =>
+  delete: (url, options, timeoutMs = 50000) =>
     fetchWithTimeout(url, { ...options, method: "DELETE" }, timeoutMs),
 
   // Auth operations
