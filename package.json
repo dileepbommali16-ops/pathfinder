@@ -9,10 +9,10 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "NODE_ENV=development tsx watch server/_core/index.ts",
-    "build": "vite build",
+    "build": "node scripts/build-client.js",
     "build:server": "esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "build:client": "node scripts/build-client.js",
-    "build:vercel": "vite build",
+    "build:vercel": "node scripts/build-client.js",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
     "format": "prettier --write .",

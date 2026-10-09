@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "installCommand": "pnpm install --no-frozen-lockfile || npm install --legacy-peer-deps",
-  "buildCommand": "vite build",
+  "installCommand": "npm install --legacy-peer-deps || pnpm install --no-frozen-lockfile",
+  "buildCommand": "node scripts/build-client.js",
 
   "outputDirectory": "dist",
   "cleanUrls": true,
