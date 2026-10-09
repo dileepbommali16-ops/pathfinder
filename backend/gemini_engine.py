@@ -215,8 +215,16 @@ def call_gemini_rest(
         res = json.loads(resp.read().decode("utf-8"))
         candidates = res.get("candidates", [])
         if candidates and candidates[0].get("content", {}).get("parts"):
-            text = candidates[0]["content"]["parts"][0].get("text", "")
-            return text.strip() if text else None
+            parts = candidates[0]["content"]["parts"]
+            # Extract text from all parts (filtering out thinking tokens)
+            text_chunks = [p.get("text", "") for p in parts if "text" in p and p.get("text")]
+            if text_chunks:
+                return "".join(text_chunks).strip()
+            # Fallback to any non-thought string part
+            for p in parts:
+                for k, v in p.items():
+                    if isinstance(v, str) and v.strip() and k != "thought":
+                        return v.strip()
     return None
 
 

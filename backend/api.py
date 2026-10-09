@@ -260,8 +260,8 @@ def gemini_ping():
                 contents=[{"role": "user", "parts": [{"text": "Say pong in one word"}]}],
                 sys_instruction="You are a ping test assistant.",
                 api_key=api_key,
-                temperature=0.1,
-                max_output_tokens=10,
+                temperature=0.2,
+                max_output_tokens=250,
                 include_thinking=False
             )
             results[m] = {"status": "ok", "reply": res}
