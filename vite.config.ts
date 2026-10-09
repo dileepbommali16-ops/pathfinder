@@ -17,22 +17,24 @@ try {
 
 const plugins = [react(), tailwindcss(), jsxLocPlugin()];
 
+const rootDir = import.meta.dirname ?? process.cwd();
+
 export default defineConfig({
   plugins,
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
-      "@designcodeio/threeui/style.css": path.resolve(import.meta.dirname, "client", "src", "shaders", "threeui.css"),
-      "@designcodeio/threeui": path.resolve(import.meta.dirname, "client", "src", "shaders", "index.ts"),
+      "@": path.resolve(rootDir, "client", "src"),
+      "@shared": path.resolve(rootDir, "shared"),
+      "@assets": path.resolve(rootDir, "attached_assets"),
+      "@designcodeio/threeui/style.css": path.resolve(rootDir, "client", "src", "shaders", "threeui.css"),
+      "@designcodeio/threeui": path.resolve(rootDir, "client", "src", "shaders", "index.ts"),
     },
   },
-  envDir: path.resolve(import.meta.dirname),
-  root: path.resolve(import.meta.dirname, "client"),
-  publicDir: path.resolve(import.meta.dirname, "client", "public"),
+  envDir: path.resolve(rootDir),
+  root: path.resolve(rootDir, "client"),
+  publicDir: path.resolve(rootDir, "client", "public"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist"),
+    outDir: path.resolve(rootDir, "dist"),
     emptyOutDir: true,
     chunkSizeWarningLimit: 2000,
   },
