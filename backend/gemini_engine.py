@@ -54,19 +54,19 @@ OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip() or "
 def get_gemini_models() -> List[str]:
     """
     Returns active Google Gemini models with generateContent capability in priority order.
-    Uses the latest active models recommended by Google:
-    - gemini-3.8-flash
-    - gemini-3.5-flash-lite
-    - gemini-2.5-flash
+    Prioritizes low-latency models for rapid conversational turnaround:
+    - gemini-3.5-flash-lite (fastest, sub-3s conversational responses)
+    - gemini-2.5-flash (balanced speed & knowledge)
+    - gemini-3.8-flash (reasoning-heavy model)
     """
     models: List[str] = []
     env_m = os.getenv("GEMINI_MODEL", "").strip()
     if env_m and env_m not in ("gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"):
         models.append(env_m)
     for candidate in [
-        "gemini-3.8-flash",
         "gemini-3.5-flash-lite",
         "gemini-2.5-flash",
+        "gemini-3.8-flash",
         "gemini-2.0-flash"
     ]:
         if candidate not in models:
@@ -188,7 +188,8 @@ def call_gemini_rest(
     api_key: str,
     temperature: float = 0.9,
     max_output_tokens: int = 1500,
-    include_thinking: bool = False
+    include_thinking: bool = False,
+    timeout_sec: float = 12.0
 ) -> Optional[str]:
     """Direct, high-performance REST call to Google Gemini with model-adaptive parameters."""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -211,7 +212,7 @@ def call_gemini_rest(
         data=data,
         headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(req, timeout=35) as resp:
+    with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
         res = json.loads(resp.read().decode("utf-8"))
         candidates = res.get("candidates", [])
         if candidates and candidates[0].get("content", {}).get("parts"):
@@ -436,79 +437,74 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
     models_to_try = get_gemini_models()
     if api_key:
         for model in models_to_try:
-            for attempt in range(2):
-                t_call_start = time.perf_counter()
+            t_call_start = time.perf_counter()
+            try:
+                reply = call_gemini_rest(
+                    model=model,
+                    contents=contents,
+                    sys_instruction=sys_instruction,
+                    api_key=api_key,
+                    temperature=0.85,
+                    max_output_tokens=1500,
+                    include_thinking=False,
+                    timeout_sec=10.0
+                )
+                call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
+                attempts_log.append({"model": model, "duration_ms": call_duration, "status": "ok" if reply else "empty"})
+                if reply and reply.strip():
+                    global _last_gemini_diagnostic
+                    _last_gemini_diagnostic = {"status": "success", "model": model, "duration_ms": call_duration}
+                    model_used = model
+                    gemini_call_ms = call_duration
+
+                    t_nov_start = time.perf_counter()
+                    final_reply = evaluate_and_enforce_novelty(reply.strip(), model)
+                    novelty_ms = round((time.perf_counter() - t_nov_start) * 1000, 2)
+
+                    meta = {
+                        "prep_ms": prep_ms,
+                        "gemini_call_ms": gemini_call_ms,
+                        "novelty_ms": novelty_ms,
+                        "model_used": model_used,
+                        "attempts": attempts_log
+                    }
+                    if return_meta:
+                        return final_reply, meta
+                    return final_reply
+            except urllib.error.HTTPError as http_err:
+                call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
+                err_body = ""
                 try:
-                    reply = call_gemini_rest(
-                        model=model,
-                        contents=contents,
-                        sys_instruction=sys_instruction,
-                        api_key=api_key,
-                        temperature=0.9,
-                        max_output_tokens=1500,
-                        include_thinking=False
-                    )
-                    call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
-                    attempts_log.append({"model": model, "duration_ms": call_duration, "status": "ok" if reply else "empty"})
-                    if reply and reply.strip():
-                        global _last_gemini_diagnostic
-                        _last_gemini_diagnostic = {"status": "success", "model": model, "duration_ms": call_duration}
-                        model_used = model
-                        gemini_call_ms = call_duration
-
-                        t_nov_start = time.perf_counter()
-                        final_reply = evaluate_and_enforce_novelty(reply.strip(), model)
-                        novelty_ms = round((time.perf_counter() - t_nov_start) * 1000, 2)
-
-                        meta = {
-                            "prep_ms": prep_ms,
-                            "gemini_call_ms": gemini_call_ms,
-                            "novelty_ms": novelty_ms,
-                            "model_used": model_used,
-                            "attempts": attempts_log
-                        }
-                        if return_meta:
-                            return final_reply, meta
-                        return final_reply
-                except urllib.error.HTTPError as http_err:
-                    call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
-                    err_body = ""
-                    try:
-                        err_body = http_err.read().decode("utf-8", errors="replace")
-                    except Exception:
-                        pass
-                    _last_gemini_diagnostic = {
-                        "status": "http_error",
-                        "model": model,
-                        "code": http_err.code,
-                        "reason": http_err.reason,
-                        "body": err_body[:300],
-                        "duration_ms": call_duration
-                    }
-                    attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"HTTP {http_err.code}"})
-                    logger.error(
-                        f"[Gemini Engine] Model '{model}' HTTP {http_err.code} ({http_err.reason}) in {call_duration}ms. Response body: {err_body}"
-                    )
-
-                    # Backoff on 429 (rate limit) or 503 (service unavailable)
-                    if http_err.code in (429, 503):
-                        time.sleep(1.5)
-                        continue
-                    # 404 Not Found (model does not exist) or fatal 400/403: fall through to next model
-                    break
-                except Exception as exc:
-                    call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
-                    _last_gemini_diagnostic = {
-                        "status": "exception",
-                        "model": model,
-                        "error_type": type(exc).__name__,
-                        "message": str(exc),
-                        "duration_ms": call_duration
-                    }
-                    attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"Exception {type(exc).__name__}"})
-                    logger.error(f"[Gemini Engine] Model '{model}' exception in {call_duration}ms: {exc}")
-                    time.sleep(0.5)
-                    continue
+                    err_body = http_err.read().decode("utf-8", errors="replace")
+                except Exception:
+                    pass
+                _last_gemini_diagnostic = {
+                    "status": "http_error",
+                    "model": model,
+                    "code": http_err.code,
+                    "reason": http_err.reason,
+                    "body": err_body[:300],
+                    "duration_ms": call_duration
+                }
+                attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"HTTP {http_err.code}"})
+                logger.warning(
+                    f"[Gemini Engine] Model '{model}' HTTP {http_err.code} ({http_err.reason}) in {call_duration}ms. Failing over to next model immediately..."
+                )
+                continue
+            except Exception as exc:
+                call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
+                _last_gemini_diagnostic = {
+                    "status": "exception",
+                    "model": model,
+                    "error_type": type(exc).__name__,
+                    "message": str(exc),
+                    "duration_ms": call_duration
+                }
+                attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"Exception {type(exc).__name__}"})
+                logger.warning(
+                    f"[Gemini Engine] Model '{model}' exception in {call_duration}ms: {exc}. Failing over to next model immediately..."
+                )
+                continue
 
     # 7. OpenRouter fallback if configured
     if OPENROUTER_API_KEY:
