@@ -20,42 +20,71 @@
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ Comprehensive Full-Stack System Architecture
 
 ```text
-                                  ┌──────────────────────────────────────────────┐
-                                  │           CLIENT ACCESS LAYER                │
-                                  ├──────────────────────┬───────────────────────┤
-                                  │   React 19 + Vite    │  Vanilla JS Showcase  │
-                                  │    (/client/src)     │      (/vanilla)       │
-                                  └───────────┬──────────┴───────────┬───────────┘
-                                              │                      │
-                                              ▼                      ▼
-                                    HTTPS REST / JWT Bearer Tokens / Headers
-                                              │                      │
-                                              ▼                      ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                 PATHFINDER FASTAPI BACKEND ENGINE                                      │
+│                                   PATHFINDER FULL-STACK ARCHITECTURE                                   │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│  [Middleware Pipeline]                                                                                 │
-│   ├── Request Correlation ID (X-Request-ID) & Structured JSON Logger                                   │
-│   ├── Client IP Defense (X-Forwarded-For Spoofing Mitigation, Cloudflare / Render Trust)               │
-│   ├── In-Memory Sliding-Window Rate Limiter (Auth & Heavy PDF Export protection)                       │
-│   └── OWASP Hardened Headers (HSTS, CSP, X-Frame-Options, Sniffing Protection)                         │
-├───────────────────────────────────────────────────┬────────────────────────────────────────────────────┤
-│  [API Routers Layer]                              │  [Core Intelligence Engines]                       │
-│   ├── /api/auth       (Credentials & OAuth 2.0)   │   ├── Random Forest Placement Predictor (Scikit)   │
-│   ├── /api/profile    (SSOT Candidate Records)    │   ├── Multi-Dimensional Readiness Vector Matrix    │
-│   ├── /api/predict    (ML Inference & Sensitivity)│   ├── Gemini AI Bilingual Coach (English & Telugu) │
-│   ├── /api/analytics  (972 Cohort Records)        │   ├── ATS Resume Parser & Keyword Scanner          │
-│   ├── /api/ai         (Roadmap & Project Defense) │   └── In-Memory TTL Cache & Circuit Breakers       │
-│   └── /api/export     (Streaming CSV & PDF)       │                                                    │
-├───────────────────────────────────────────────────┴────────────────────────────────────────────────────┤
-│  [Data Persistence & Storage Layer]                                                                    │
-│   ├── SQLite (WAL Mode, 13 Composite Performance Indexes, Single Source of Truth)                      │
-│   └── In-Memory LRU Cache with Automatic Invalidation on Profile Mutations                            │
+│  1. FRONTEND PRESENTATION & INTERACTION LAYER                                                          │
+│  ┌───────────────────────────────────────────────────┬────────────────────────────────────────────────┐│
+│  │  PRIMARY APP: React 19 + Vite 7 (/client/src)     │  SHOWCASE: Zero-Build Vanilla JS (/vanilla)    ││
+│  ├───────────────────────────────────────────────────┼────────────────────────────────────────────────┤│
+│  │  [Visual UI & Design System]                      │  [Zero-Framework Engine]                       ││
+│  │   ├── Tailwind CSS v4 + Dark Ambient Matrix       │   ├── Pure HTML5 / CSS3 / Vanilla JavaScript   ││
+│  │   ├── Glassmorphic Cards & 3D Shaders / Glows     │   ├── Chart.js Radar & Bar Visualizations      ││
+│  │   └── Lucide Vector Icon System (30+ icons)       │   └── Browser Fetch API (Zero Bundler Needed)  ││
+│  │  [Core Interactive Workspaces]                    │  [Standalone Features]                         ││
+│  │   ├── 💡 Desk Lamp Login (Pull cord physics)      │   ├── Desk Lamp Pull-String Physics            ││
+│  │   ├── 🎓 5-Step Diagnostic Onboarding Wizard      │   ├── 5-Step Progressive Onboarding Form       ││
+│  │   ├── 📊 Hero KPI Gauges & Placement Chances      │   ├── Live What-If Parameter Sliders           ││
+│  │   ├── 🕸️ Career Digital Twin (5-Vector Radar)     │   ├── 5-Vector Radar & Placement Charts        ││
+│  │   ├── 🎛️ What-If? Real-Time Trajectory Sandbox    │   ├── Gemini AI Career Coach Console           ││
+│  │   ├── 💬 AI Coach Console (Bilingual Telugu/Eng)  │   └── ATS Resume Scanner & Diagnostic Score    ││
+│  │   ├── 👥 Cohort 972 Explorer & Bar Benchmarks     │                                                ││
+│  │   ├── 📄 ATS Resume Studio & Keyword Diagnostics  │                                                ││
+│  │   ├── 🗺️ 6-Week Placement Sprint Roadmap          │                                                ││
+│  │   ├── 🏛️ Branch Intelligence (9 Engineering Batches)│                                               ││
+│  │   ├── 🛡️ Project Defense & Architecture Simulator │                                                ││
+│  │   └── ⚙️ SSOT Profile Settings & DB Synchronizer  │                                                ││
+│  │  [Client-Side State & Reactivity]                 │                                                ││
+│  │   ├── React 19 Hooks + TanStack Query             │                                                ││
+│  │   ├── Recharts Dynamic SVG Data Visualizers       │                                                ││
+│  │   └── LocalStorage Cache + Session Recovery       │                                                ││
+│  └───────────────────────────────────────────────────┴────────────────────────────────────────────────┘│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  2. COMMUNICATION & PROTOCOL LAYER                                                                     │
+│   ├── HTTPS RESTful APIs (FastAPI JSON endpoints) · Signed JWT Bearer Token Headers                    │
+│   ├── OAuth 2.0 Flow (Google & GitHub redirect authorization & code exchange)                          │
+│   ├── Multipart/Form-Data (ATS Resume PDF parsing & file uploads)                                      │
+│   ├── Streaming File Downloads (ReportLab PDF generation & RFC 4180 CSV exports)                       │
+│   └── Request Cancellation via Client-Side AbortController (Instant AI Generation Stop)                │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  3. BACKEND SERVICES & INTELLIGENCE ENGINES (/backend)                                                 │
+│  ┌───────────────────────────────────────────────────┬────────────────────────────────────────────────┐│
+│  │  [Middleware & Security Pipeline]                 │  [Modular Routers (/backend/routers)]          ││
+│  │   ├── X-Request-ID Correlation & JSON Logging     │   ├── /api/auth       (Credentials & OAuth)    ││
+│  │   ├── Client IP Spoof Defense (Cloudflare/Render) │   ├── /api/profile    (SSOT Profile CRUD)      ││
+│  │   ├── Sliding-Window Rate Limiter (Anti-DDoS)     │   ├── /api/predict    (ML Inference & Vectors) ││
+│  │   └── OWASP Hardened Headers (HSTS, CSP, Sniffing)│   ├── /api/analytics  (972 Cohort Queries)     ││
+│  ├───────────────────────────────────────────────────┼── ├── /api/ai         (Gemini Coach & Roadmap) ││
+│  │  [Core Machine Learning & AI Engines]             │   ├── /api/export     (CSV & PDF Generation)   ││
+│  │   ├── Scikit-Learn Random Forest Classifier       │   └── /api/health     (Probes & Telemetry)     ││
+│  │   ├── Multi-Dimensional Readiness Vector Matrix   ├────────────────────────────────────────────────┤│
+│  │   ├── Google Gemini LLM Engine (Telugu + English) │  [Reliability & Resilience]                    ││
+│  │   ├── NLP Resume Parser & Google X-Y-Z Rubrics    │   ├── Circuit Breaker Protected Providers      ││
+│  │   └── Deterministic Offline Heuristic Fallback    │   ├── Render Free-Tier Warm-Up Keep-Alive Ping ││
+│  │                                                   │   └── Thread-Safe In-Memory Cache with TTL     ││
+│  └───────────────────────────────────────────────────┴────────────────────────────────────────────────┘│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  4. DATA PERSISTENCE & STORAGE TIER                                                                    │
+│   ├── SQLite Database Engine (Write-Ahead Logging / WAL Mode for High Concurrency)                     │
+│   ├── 13 Specialized B-Tree Composite Performance Indexes (Sub-5ms Query Latency)                      │
+│   ├── Canonical Placement Data Store (972 Student Records across 9 Disciplines)                        │
+│   └── Atomic Transaction Isolation & In-Memory LRU Cache with Automatic Invalidation                   │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
 
 ---
 
