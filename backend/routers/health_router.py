@@ -22,6 +22,7 @@ health_router = APIRouter(tags=["Health & System Diagnostics"])
 _START_TIME = time.time()
 
 
+@health_router.api_route("/", methods=["GET", "HEAD"])
 @health_router.api_route("/health", methods=["GET", "HEAD"])
 @health_router.api_route("/api/health", methods=["GET", "HEAD"])
 def full_health_check():
