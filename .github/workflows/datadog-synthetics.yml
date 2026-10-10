@@ -1,0 +1,12 @@
+name: Datadog Synthetics
+
+on:
+  workflow_dispatch:
+
+jobs:
+  synthetics:
+    name: Synthetic Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Informational Check
+        run: echo "Datadog synthetic monitoring is optional and skipped when not configured."
