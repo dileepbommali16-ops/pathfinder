@@ -5,6 +5,7 @@ and type safety across environments (Development, Testing, Render Production).
 """
 
 import os
+import secrets
 from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional
@@ -33,7 +34,7 @@ class Settings:
         self.mongodb_uri: Optional[str] = os.getenv("MONGODB_URI") or os.getenv("MONGO_URL")
 
         # Security & Authentication
-        self.jwt_secret: str = os.getenv("JWT_SECRET", "pathfinder-secret-key-production-sec-1029384756")
+        self.jwt_secret: str = os.getenv("JWT_SECRET") or secrets.token_hex(32)
         self.jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
         self.jwt_expire_minutes: int = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))  # 24 hours
 

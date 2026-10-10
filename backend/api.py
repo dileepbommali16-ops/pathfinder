@@ -212,7 +212,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
-    allow_origin_regex=r"https://.*(\.vercel\.app|\.onrender\.com)",
+    allow_origin_regex=r"https://(pathfinder-client-[a-z0-9\-]+\.vercel\.app|pathfinder-backend-[a-z0-9\-]+\.onrender\.com)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
