@@ -20,6 +20,15 @@ from backend.gemini_engine import get_last_gemini_diagnostic, get_gemini_models
 health_router = APIRouter(tags=["Health & System Diagnostics"])
 
 _START_TIME = time.time()
+_GIT_SHA = os.getenv("RENDER_GIT_COMMIT") or os.getenv("VERCEL_GIT_COMMIT_SHA") or ""
+if not _GIT_SHA:
+    try:
+        _GIT_SHA = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL
+        ).decode().strip()
+    except Exception:
+        _GIT_SHA = "prod"
 
 
 @health_router.api_route("/", methods=["GET", "HEAD"])
@@ -37,21 +46,11 @@ def full_health_check():
 
     sqlite_ok = DB_PATH.exists()
 
-    git_sha = os.getenv("RENDER_GIT_COMMIT") or os.getenv("VERCEL_GIT_COMMIT_SHA") or ""
-    if not git_sha:
-        try:
-            git_sha = subprocess.check_output(
-                ["git", "rev-parse", "--short", "HEAD"],
-                stderr=subprocess.DEVNULL
-            ).decode().strip()
-        except Exception:
-            git_sha = "unknown"
-
     return {
         "status": "healthy" if dataset_ok else "degraded",
         "service": "Pathfinder 2.0 Intelligence Engine",
         "version": "2.0.0",
-        "git_sha": git_sha,
+        "git_sha": _GIT_SHA,
         "server": {
             "status": "healthy",
             "uptime_seconds": round(time.time() - _START_TIME, 1),

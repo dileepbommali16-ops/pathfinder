@@ -58,19 +58,19 @@ OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip() or "
 def get_gemini_models() -> List[str]:
     """
     Returns active Google Gemini models with generateContent capability in priority order.
-    Prioritizes low-latency models for rapid conversational turnaround:
-    - gemini-3.5-flash-lite (fastest, sub-3s conversational responses)
+    Prioritizes officially supported high-speed models:
+    - gemini-3.8-flash (official primary model per Google AI Studio deprecation of 3.7)
     - gemini-2.5-flash (balanced speed & knowledge)
-    - gemini-3.8-flash (reasoning-heavy model)
+    - gemini-3.5-flash-lite (fast conversational fallback)
     """
     models: List[str] = []
     env_m = os.getenv("GEMINI_MODEL", "").strip()
-    if env_m and env_m not in ("gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"):
+    if env_m and env_m not in ("gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-3.7-flash"):
         models.append(env_m)
     for candidate in [
-        "gemini-3.5-flash-lite",
-        "gemini-2.5-flash",
         "gemini-3.8-flash",
+        "gemini-2.5-flash",
+        "gemini-3.5-flash-lite",
         "gemini-2.0-flash"
     ]:
         if candidate not in models:
@@ -269,7 +269,7 @@ def get_intelligent_local_conversation_reply(message: str, profile: Optional[Stu
     if any(k in low for k in ("tell me a joke", "funny joke", "say a joke")):
         return "Why do programmers prefer dark mode? Because light attracts bugs! 😄 Now let's squash all the bugs in your placement prep! What topic shall we study?"
     if low in ("i am bored", "bored", "feeling bored"):
-        return "Bored? Let's fix that! Here's a quick engineering brainteaser: If a binary search tree has 7 distinct nodes, what is its minimum possible height? (Answer: 2 if perfectly balanced!). Want to solve a quick LeetCode challenge or explore an SIH flagship project?"
+        return "Bored? Let's fix that! Here's a quick engineering brainteaser: If a binary search tree has 7 distinct nodes, what is its minimum possible height? (Answer: 2 if perfectly balanced!). Want to solve a quick LeetCode challenge or explore a flagship architecture project?"
 
     # 4. Negative Emotions, Burnout & Rejection
     if any(k in low for k in ("failed", "fail", "hopeless", "sad", "depressed", "gave up", "rejection", "rejected", "tension", "worry")):
@@ -303,7 +303,7 @@ Both branches have strong product company cutoffs, with AIML leaning toward data
     if any(k in low for k in ("naku", "cheppu", "bro", "nerchukovali", "ela", "placements kosam", "job kavali", "enti bro")):
         return """Namaste bro! Campus placements lo top package kottalante 3 main pillars meedha focus cheyyali:
 1. **Data Structures & Algorithms (DSA)**: Striver SDE sheet leda Blind 75 questions practice chey (Arrays, Strings, Trees, Dynamic Programming).
-2. **Flagship Project**: Mana Pathfinder లో ఉన్న 23 Blueprints & SIH Problem Statements లోంచి ఒక solid project ఎంచుకుని end-to-end deploy చెయ్.
+2. **Flagship Project**: Mana Pathfinder లో ఉన్న 23 Software & Hardware Project Blueprints లోంచి ఒక solid project ఎంచుకుని end-to-end deploy చెయ్.
 3. **Core CS Fundamentals**: Operating Systems, DBMS, Computer Networks revision chey.
 
 Nee target company tier enti bro? Product MNCs ah leda Startups ah? Nuvvu adigina topic meedha step-by-step roadmap istha! 🚀"""
@@ -315,7 +315,7 @@ Nee target company tier enti bro? Product MNCs ah leda Startups ah? Nuvvu adigin
 2. **Database & SQL Mastery**: Complex joins, window functions, and indexing in PostgreSQL / DuckDB.
 3. **Applied ML Algorithms**: Random Forest, Gradient Boosting (XGBoost), Linear/Logistic Regression, and Clustering.
 4. **End-to-End Deployment**: FastAPI REST service, Docker containerization, and Streamlit/React dashboards.
-Check out our **SatQuery AI (ISRO)** and **NASA FIRMS Fire Classification** blueprints to build a killer portfolio!"""
+Check out our **SatQuery AI** and **NASA FIRMS Fire Classification** blueprints to build a killer portfolio!"""
 
     if any(k in low for k in ("sde skills", "software development engineer", "what to study for sde", "what skills")):
         return """For **Software Development Engineer (SDE)** campus hiring drives, focus on:
@@ -329,7 +329,7 @@ Check out our **SatQuery AI (ISRO)** and **NASA FIRMS Fire Classification** blue
         return "I don't have verified records or clairvoyant predictions for that future timeframe! I can however analyze your current preparation vectors and help you maximize your placement probability for upcoming recruitment drives. What role are you targeting?"
 
     # 9. Generic Warm Peer Response with Actions
-    return f"I hear you! As your Pathfinder AI Career Coach, I'm here to help you turn that into actionable placement success. Would you like to:\n1. 📊 Check your current Placement Readiness score in the Dashboard?\n2. 🗺️ Generate a personalized 6-Week Study Roadmap in the Skills tab?\n3. 🏆 Pick one of our 23 SIH Project Blueprints to build?\nLet me know what you'd like to tackle next! 🚀"
+    return f"I hear you! As your Pathfinder AI Career Coach, I'm here to help you turn that into actionable placement success. Would you like to:\n1. 📊 Check your current Placement Readiness score in the Dashboard?\n2. 🗺️ Generate a personalized 6-Week Study Roadmap in the Skills tab?\n3. 🏆 Pick one of our 23 Software & Hardware Project Blueprints to build?\nLet me know what you'd like to tackle next! 🚀"
 
 
 def chat_with_mentor(

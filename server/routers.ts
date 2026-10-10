@@ -146,7 +146,7 @@ GUIDELINES FOR YOUR MENTORSHIP:
 
       try {
         const response = await invokeLLM({
-          model: "gemini-3.5-flash",
+          model: "gemini-3.8-flash",
           messages: [
             {
               role: "system",
@@ -168,7 +168,7 @@ GUIDELINES FOR YOUR MENTORSHIP:
     analyze: publicProcedure.input(z.object({ resumeText: z.string().min(30).max(30_000) })).mutation(async ({ input }) => {
       try {
         const response = await invokeLLM({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         messages: [
           { role: "system", content: "You are a practical campus-placement resume coach. Analyze only the provided resume text. Return concise, specific, encouraging suggestions for a tech student." },
           { role: "user", content: `Analyze this resume for placement readiness and identify skills to improve:\n\n${input.resumeText}` },
@@ -224,7 +224,7 @@ GUIDELINES FOR YOUR MENTORSHIP:
       )
       .mutation(async ({ input }) => {
         const response = await invokeLLM({
-          model: "gemini-3.5-flash",
+          model: "gemini-3.8-flash",
           messages: [
             {
               role: "system",

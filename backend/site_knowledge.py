@@ -204,17 +204,17 @@ TABS_KNOWLEDGE: Dict[str, Dict[str, Any]] = {
         "limitations": "Initial score reflects baseline status before completing suggested roadmap sprints."
     },
     "projects": {
-        "title": "Flagship Project Blueprints & SIH 2026 Problem Statements",
-        "purpose": "Curated repository of 23 production architectures and Smart India Hackathon (SIH 2026) Problem Statements (15 Software + 8 Hardware & IoT) spanning all engineering departments (CSE, IT, ECE, EEE, Mech, Civil, Mining, Chemical, Biomedical).",
+        "title": "Flagship Project Blueprints & Engineering Architectures",
+        "purpose": "Curated repository of 23 production architectures (15 Software + 8 Hardware & IoT) spanning all engineering departments (CSE, IT, ECE, EEE, Mech, Civil, Mining, Chemical, Biomedical).",
         "widgets": [
-            "Category Filters: All Blueprints (23), Software Track (15), Hardware & IoT (8), SIH 2026 Problem Statements (17).",
+            "Category Filters: All Architectures (23), Software Systems (15), Hardware & Embedded (8).",
             "Full Architectural Pipeline Summaries and Tech Stack / Hardware Components chips.",
             "Key Implementation Features & Google X-Y-Z Resume Bullets with one-click clipboard copy.",
-            "Discuss Architecture with AI Coach Button: Instant handoff to Gemini Coach for A-to-Z build roadmaps and viva defense masterclasses."
+            "Discuss Architecture with AI Coach Button: Instant handoff to Gemini Coach for A-to-Z build roadmaps and technical interview defense masterclasses."
         ],
-        "data_sources": "Official Smart India Hackathon (SIH 2026) catalogue from Ministry of MSME, Ministry of Coal, Ministry of Railways, NTRO, ISRO, BEL, MRPL, Autodesk.",
-        "how_to_use": "Select your branch problem statement, copy the resume bullet, or click 'Discuss Architecture with AI Coach' for step-by-step guidance.",
-        "limitations": "Prototypes should be customized according to team lab availability and hardware resource budgets."
+        "data_sources": "Curated production engineering architectures across cloud, distributed systems, embedded IoT, robotics, and applied AI.",
+        "how_to_use": "Select your branch architecture, copy the resume bullet, or click 'Discuss Architecture with AI Coach' for step-by-step guidance.",
+        "limitations": "Prototypes should be customized according to lab availability and team project scope."
     }
 }
 
@@ -590,16 +590,16 @@ def generate_project_guide(proj: Dict[str, Any], query: str = "") -> str:
     intro = ""
     if is_telugu:
         intro = (
-            f"🔥 **Namaste bro! Super choice!** Ee project `{title}` chala high-impact problem statement!\n"
-            f"Idhi hackathon lo implement chesthe judges ki mind-blow avvadam guarantee. "
+            f"🔥 **Namaste bro! Super choice!** Ee project `{title}` chala high-impact engineering architecture!\n"
+            f"Idhi portfolio lo leda technical interview lo explain chesthe recruiters ki solid impression ivvadam guarantee. "
             f"First to last complete ga ela build cheyyalo, system architecture, hardware/software stack, "
-            f"5-phase roadmap inka viva defense tips motham A-to-Z detail ga kindha ichanu chudu:\n\n"
+            f"5-phase roadmap inka technical defense tips motham A-to-Z detail ga kindha ichanu chudu:\n\n"
         )
     else:
         intro = (
-            f"🚀 **Outstanding choice!** Project **'{title}'** ({ps_code}) is a premier {cat} problem statement "
-            f"sponsored by **{org}**. Here is your complete A-to-Z production blueprint engineered to win hackathons "
-            f"and dominate technical viva rounds:\n\n"
+            f"🚀 **Outstanding choice!** Project **'{title}'** is a premier {cat} engineering architecture blueprint. "
+            f"Here is your complete A-to-Z production blueprint engineered for portfolio excellence "
+            f"and technical interview viva defense:\n\n"
         )
 
     # Format roadmap phases nicely
@@ -609,10 +609,9 @@ def generate_project_guide(proj: Dict[str, Any], query: str = "") -> str:
         formatted_roadmap += f"- **{phase}**\n"
 
     guide = f"""{intro}### 1. 📋 Project Identity & Scope
-- **Problem Statement Code**: `{ps_code}` ({cat} Track)
-- **Sponsoring Organization**: **{org}**
+- **Domain & Track**: {cat} Systems
 - **Recommended Branches**: `{branches}`
-- **Difficulty Level**: Production / Hackathon Flagship
+- **Difficulty Level**: Production Enterprise Grade
 
 ---
 

@@ -29,7 +29,7 @@ interface ProjectRecommenderProps {
   apiBase?: string;
 }
 
-type CategoryTab = "all" | "software" | "hardware" | "sih";
+type CategoryTab = "all" | "software" | "hardware";
 
 export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
   targetRole,
@@ -39,7 +39,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [projectsList, setProjectsList] = useState<ProjectBlueprint[]>(DEFAULT_PROJECT_CATALOG);
   const [activeTab, setActiveTab] = useState<CategoryTab>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("" );
 
   useEffect(() => {
     let isMounted = true;
@@ -75,7 +75,6 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
       const cat = (proj.category || "").toLowerCase();
       if (activeTab === "software" && cat !== "software") return false;
       if (activeTab === "hardware" && cat !== "hardware") return false;
-      if (activeTab === "sih" && !proj.psCode) return false;
 
       // Search filter
       if (searchQuery.trim()) {
@@ -85,7 +84,6 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
         const matchesOverview = (proj.overview || "").toLowerCase().includes(q);
         const matchesBranch = (proj.branch || "").toLowerCase().includes(q);
         const matchesOrg = (proj.organization || "").toLowerCase().includes(q);
-        const matchesPsCode = (proj.psCode || "").toLowerCase().includes(q);
         const matchesTech = proj.techStack.some((t) => t.toLowerCase().includes(q));
 
         if (
@@ -94,7 +92,6 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
           !matchesOverview &&
           !matchesBranch &&
           !matchesOrg &&
-          !matchesPsCode &&
           !matchesTech
         ) {
           return false;
@@ -110,7 +107,6 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
       all: projectsList.length,
       software: projectsList.filter((p) => (p.category || "").toLowerCase() === "software").length,
       hardware: projectsList.filter((p) => (p.category || "").toLowerCase() === "hardware").length,
-      sih: projectsList.filter((p) => !!p.psCode).length,
     };
   }, [projectsList]);
 
@@ -124,11 +120,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
               <Lightbulb className="h-3.5 w-3.5" />
-              Flagship Portfolio & Hackathon Blueprints
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs font-semibold text-purple-300">
-              <Trophy className="h-3.5 w-3.5" />
-              SIH 2026 Problem Statements Included
+              Flagship Portfolio & System Architectures
             </span>
             <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-xs text-slate-300">
               Target: {targetRole || "All Engineering Branches (CSE, ECE, EEE, Mech, Civil, Mining)"}
@@ -136,11 +128,11 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
           </div>
 
           <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-            AI Project Blueprints & SIH Problem Statements
+            Engineering Portfolio & System Architecture Blueprints
           </h1>
 
           <p className="text-sm leading-relaxed text-slate-300">
-            Top hackathon judges and Tier-1 recruiters evaluate end-to-end engineered systems over boilerplate tutorials. Explore <strong className="text-amber-300">10 Software</strong> and <strong className="text-amber-300">7 Hardware & IoT</strong> Problem Statements sourced from national hackathon catalogues (NTRO, ISRO, BEL, MRPL, Ministry of MSME, Coal, and Railways). Click any project to have the AI Coach guide you step-by-step from component selection to viva defense!
+            Top recruiters and technical evaluators look for production-grade end-to-end engineered systems over simple tutorials. Explore <strong className="text-amber-300">15 Software</strong> and <strong className="text-cyan-300">8 Hardware & IoT</strong> architectures spanning full-stack pipelines, robotics, ML computer vision, and embedded firmware. Click any project to discuss system architecture with the AI Coach!
           </p>
         </div>
       </div>
@@ -159,7 +151,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
             }`}
           >
             <Sparkles className="h-3.5 w-3.5" />
-            <span>All Projects</span>
+            <span>All Architectures</span>
             <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "all" ? "bg-slate-950/20 text-slate-950" : "bg-white/10 text-slate-300"}`}>
               {counts.all}
             </span>
@@ -175,7 +167,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
             }`}
           >
             <Laptop className="h-3.5 w-3.5" />
-            <span>Software Projects</span>
+            <span>Software Systems</span>
             <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "software" ? "bg-slate-950/20 text-slate-950" : "bg-white/10 text-slate-300"}`}>
               {counts.software}
             </span>
@@ -191,25 +183,9 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
             }`}
           >
             <Cpu className="h-3.5 w-3.5" />
-            <span>Hardware & IoT</span>
+            <span>Hardware & Embedded</span>
             <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "hardware" ? "bg-slate-950/20 text-slate-950" : "bg-white/10 text-slate-300"}`}>
               {counts.hardware}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("sih")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-              activeTab === "sih"
-                ? "bg-purple-500 text-white shadow-md shadow-purple-500/20"
-                : "border border-white/10 bg-slate-900/60 text-slate-300 hover:border-purple-500/30 hover:text-white"
-            }`}
-          >
-            <Trophy className="h-3.5 w-3.5" />
-            <span>SIH 2026 Problem Statements</span>
-            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "sih" ? "bg-white/20 text-white" : "bg-white/10 text-slate-300"}`}>
-              {counts.sih}
             </span>
           </button>
         </div>
@@ -221,7 +197,18 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search title, branch, tech, or code..."
+            placeholder="Search title, branch, tech, or domain..."
+            className="w-full rounded-xl border border-white/10 bg-slate-950/60 py-2 pl-9 pr-3 text-xs text-white placeholder-slate-400 outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
+          />
+        </div>
+        {/* Search Bar */}
+        <div className="relative min-w-[260px] sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search title, branch, tech, or domain..."
             className="w-full rounded-xl border border-white/10 bg-slate-950/60 py-2 pl-9 pr-3 text-xs text-white placeholder-slate-400 outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
           />
         </div>
@@ -257,12 +244,6 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                   {/* Badges / Header */}
                   <div className="flex flex-wrap items-center justify-between gap-1.5">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {proj.psCode && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-purple-300">
-                          <Trophy className="h-3 w-3" />
-                          {proj.psCode}
-                        </span>
-                      )}
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                           isHardware
@@ -271,8 +252,13 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                         }`}
                       >
                         {isHardware ? <Cpu className="h-3 w-3" /> : <Laptop className="h-3 w-3" />}
-                        {isHardware ? "Hardware / IoT" : "Software Track"}
+                        {isHardware ? "Hardware & Embedded" : "Software Systems"}
                       </span>
+                      {proj.domain && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-300">
+                          {proj.domain}
+                        </span>
+                      )}
                     </div>
 
                     <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-slate-300">
@@ -378,11 +364,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                     type="button"
                     onClick={() =>
                       onAskCoach(
-                        `Let's discuss how to build '${proj.title}'${
-                          proj.psCode
-                            ? ` (Problem Statement: ${proj.psCode}, Sponsoring Org: ${proj.organization || "National Hackathon"})`
-                            : ""
-                        }. What should the complete system architecture, component stack, 5-phase build roadmap, and top hackathon viva defense talking points look like?`
+                        `Let's discuss how to build '${proj.title}'. What should the complete system architecture, component stack, 5-phase build roadmap, and top technical interview defense talking points look like?`
                       )
                     }
                     className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-yellow-500/20 border border-amber-500/30 py-2.5 text-xs font-bold text-white transition-all hover:border-amber-400/50 hover:brightness-110 active:scale-95 shadow-sm"
