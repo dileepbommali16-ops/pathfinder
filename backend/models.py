@@ -148,6 +148,7 @@ class UserSession(BaseModel):
     auth_provider: str = "credentials"
     is_authenticated: bool = True
     token: Optional[str] = None
+    last_active_at: Optional[float] = None
 
 
 class LoginRequest(BaseModel):

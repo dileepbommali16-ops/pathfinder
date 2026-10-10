@@ -25,11 +25,27 @@ def get_current_user(authorization: Optional[str] = Header(None)) -> UserSession
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split("Bearer ", 1)[-1].strip()
 
+    now = time.time()
     if token and token in _active_sessions:
-        return _active_sessions[token]
+        session = _active_sessions[token]
+        # Inactivity check: 30 minutes (1800 seconds)
+        if session.last_active_at and (now - session.last_active_at > 1800):
+            del _active_sessions[token]
+            revoke_signed_session_token(token)
+            return UserSession(
+                user_id="usr_anonymous",
+                username="Student Candidate",
+                email="candidate@pathfinder.ai",
+                role="student",
+                auth_provider="credentials",
+                is_authenticated=False
+            )
+        session.last_active_at = now
+        return session
 
     signed_session = verify_signed_session_token(token)
     if signed_session:
+        signed_session.last_active_at = now
         _active_sessions[token] = signed_session
         return signed_session
 
@@ -100,7 +116,8 @@ def login_endpoint(payload: LoginRequest, request: Request):
         role=role,
         auth_provider="credentials",
         is_authenticated=True,
-        token=token
+        token=token,
+        last_active_at=time.time()
     )
     _active_sessions[token] = session
     return LoginResponse(

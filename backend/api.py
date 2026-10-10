@@ -241,8 +241,7 @@ async def global_unhandled_exception_handler(request: Request, exc: Exception):
             "success": False,
             "error": {
                 "code": "INTERNAL_SERVER_ERROR",
-                "message": "An internal server error occurred. The incident has been recorded in the platform logs.",
-                "error_type": type(exc).__name__
+                "message": "An unexpected error occurred while processing your request. Please try again later.",
             },
             "request_id": req_id
         }

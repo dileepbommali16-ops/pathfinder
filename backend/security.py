@@ -203,11 +203,13 @@ SECURITY_HEADERS = {
     "X-XSS-Protection": "1; mode=block",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
     "Content-Security-Policy": (
         "default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; "
         "img-src 'self' https: data: blob:; "
         "connect-src 'self' https: wss:; "
-        "frame-ancestors 'self';"
+        "frame-ancestors 'self'; "
+        "upgrade-insecure-requests;"
     )
 }
 
