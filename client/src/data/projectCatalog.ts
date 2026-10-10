@@ -1,4 +1,22 @@
-[
+export interface ProjectBlueprint {
+  id: string;
+  roleId?: string;
+  title: string;
+  domain: string;
+  roleMatch?: string;
+  difficulty: 'Intermediate' | 'Advanced' | string;
+  techStack: string[];
+  overview: string;
+  features: string[];
+  architectureSummary?: string;
+  resumeBullet: string;
+  psCode?: string;
+  category?: 'software' | 'hardware' | string;
+  branch?: string;
+  organization?: string;
+}
+
+export const DEFAULT_PROJECT_CATALOG: ProjectBlueprint[] = [
   {
     "id": "proj-sde-1",
     "roleId": "sde",
@@ -624,4 +642,4 @@
     "architectureSummary": "Air Sniffer Micro-Pump -> Multi-Channel Chemical Sensor Chamber -> 16-Bit ADC Digitizer -> Jetson Nano 1D-CNN Fingerprint Classifier -> Audio/Visual Alert -> RPF Control Room Stream.",
     "resumeBullet": "Engineered a robotic chemical sniffer platform for railway security detecting trace explosive and narcotic vapors down to 2 ppm within 3.5 seconds using a MOS sensor array and Jetson Orin Nano CNN inference."
   }
-]
+];

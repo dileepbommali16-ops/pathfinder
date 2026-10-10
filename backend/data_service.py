@@ -87,6 +87,10 @@ class ProjectBlueprint(BaseModel):
     features: List[str]
     architectureSummary: str
     resumeBullet: str
+    psCode: Optional[str] = None
+    category: Optional[str] = "software"
+    branch: Optional[str] = None
+    organization: Optional[str] = None
 
 
 class BranchProfile(BaseModel):

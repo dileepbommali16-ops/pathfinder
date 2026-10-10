@@ -18,7 +18,11 @@ from backend.models import (
     ResumeFeedback,
     ChatMessage
 )
-from backend.site_knowledge import get_site_knowledge_context
+from backend.site_knowledge import (
+    get_site_knowledge_context,
+    find_project_blueprint,
+    generate_project_guide
+)
 
 logger = logging.getLogger("pathfinder.gemini")
 
@@ -527,7 +531,23 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
         except Exception as or_exc:
             logger.error(f"[OpenRouter Engine] Failed: {or_exc}")
 
-    # 8. Single allowed friendly error when both fail or no LLM provider responds
+    # 8. Check if user asked about a project blueprint / SIH problem statement
+    matched_proj = find_project_blueprint(clean_msg)
+    if matched_proj:
+        logger.info(f"[Gemini Engine] Serving high-fidelity project architecture guide for '{matched_proj.get('title')}'")
+        project_guide = generate_project_guide(matched_proj, query=clean_msg)
+        meta = {
+            "prep_ms": prep_ms,
+            "gemini_call_ms": gemini_call_ms,
+            "novelty_ms": 0.0,
+            "model_used": "site_knowledge_project_advisor",
+            "attempts": attempts_log
+        }
+        if return_meta:
+            return project_guide, meta
+        return project_guide
+
+    # 9. Single allowed friendly error when both fail or no LLM provider responds
     logger.error("[Gemini Engine] All configured LLM providers failed or returned empty.")
     fallback_text = "I'm having trouble reaching my brain right now, try again in a moment"
     meta = {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Lightbulb,
   Code2,
@@ -10,80 +10,26 @@ import {
   ShieldCheck,
   CheckCircle2,
   Copy,
-  Check
+  Check,
+  Search,
+  Cpu,
+  Laptop,
+  Trophy,
+  Building2,
+  GraduationCap
 } from "lucide-react";
-import { TabId } from "./DashboardHeader";
+import {
+  ProjectBlueprint,
+  DEFAULT_PROJECT_CATALOG
+} from "../../data/projectCatalog";
 
 interface ProjectRecommenderProps {
-  targetRole: string;
+  targetRole?: string;
   onAskCoach: (query: string) => void;
   apiBase?: string;
 }
 
-interface ProjectBlueprint {
-  id: string;
-  title: string;
-  domain: string;
-  roleMatch?: string;
-  difficulty: "Intermediate" | "Advanced" | string;
-  techStack: string[];
-  overview: string;
-  features: string[];
-  resumeBullet: string;
-}
-
-const PROJECTS_BY_ROLE: Record<string, ProjectBlueprint[]> = {
-  default: [
-    {
-      id: "proj-1",
-      title: "Distributed Asynchronous Job Queue & Rate Limiter",
-      domain: "Backend & Systems",
-      roleMatch: "Software Development Engineer (SDE)",
-      difficulty: "Advanced",
-      techStack: ["Python", "FastAPI", "Redis Streams", "Docker", "PostgreSQL"],
-      overview: "A fault-tolerant distributed background task orchestrator with token-bucket rate limiting and exponential backoff retry mechanisms.",
-      features: [
-        "Token bucket rate-limiting middleware restricting client bursts",
-        "Redis stream worker pool with consumer groups and dead-letter queue",
-        "PostgreSQL state persistence with ACID transaction locks",
-        "Prometheus & Grafana telemetry tracking job throughput"
-      ],
-      resumeBullet: "Engineered a distributed async task queue handling 3,500+ tasks/sec using Redis Streams and FastAPI, reducing job processing latency by 44% with zero message drop."
-    },
-    {
-      id: "proj-2",
-      title: "Real-Time Collaborative Code & Canvas Studio",
-      domain: "Full-Stack Web",
-      roleMatch: "Full-Stack Web Developer",
-      difficulty: "Advanced",
-      techStack: ["React", "TypeScript", "Node.js", "WebSockets", "WebRTC"],
-      overview: "Low-latency browser IDE supporting synchronized multi-user code editing, syntax highlighting, and live peer-to-peer audio preview.",
-      features: [
-        "Operational Transformation (OT) conflict resolution for concurrent keystrokes",
-        "WebSocket heartbeat connection recovery with state hydration",
-        "Sandboxed browser code execution environment",
-        "Role-based workspace invitation and session authentication"
-      ],
-      resumeBullet: "Architected a real-time collaborative code editor supporting 50+ concurrent typing sessions with <15ms peer synchronization via WebSockets and Operational Transformation."
-    },
-    {
-      id: "proj-3",
-      title: "Agentic AI Placement & Knowledge Assistant",
-      domain: "Applied AI / ML",
-      roleMatch: "Data Scientist / ML Engineer",
-      difficulty: "Intermediate",
-      techStack: ["Python", "Scikit-Learn", "Gemini API", "FastAPI", "Pandas"],
-      overview: "An intelligent career analytics platform combining machine learning probability scoring with generative AI conversational mentoring.",
-      features: [
-        "Random Forest classifier trained on 650+ verified placement outcomes",
-        "Context-grounded LLM agent with multilingual mirroring (English & Telugu)",
-        "Automated ATS PDF resume text extraction and keyword alignment",
-        "Sliding-window API rate limiting and token usage budget guardrails"
-      ],
-      resumeBullet: "Developed an AI career copilot combining Scikit-Learn Random Forest (86% accuracy) and Gemini GenAI to provide personalized placement roadmaps for 600+ students."
-    }
-  ],
-};
+type CategoryTab = "all" | "software" | "hardware" | "sih";
 
 export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
   targetRole,
@@ -91,25 +37,30 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
   apiBase,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [projectsList, setProjectsList] = useState<ProjectBlueprint[]>(PROJECTS_BY_ROLE.default);
+  const [projectsList, setProjectsList] = useState<ProjectBlueprint[]>(DEFAULT_PROJECT_CATALOG);
+  const [activeTab, setActiveTab] = useState<CategoryTab>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
-    if (!apiBase) return;
     let isMounted = true;
-    fetch(`${apiBase}/api/data/projects`)
+    const url = apiBase ? `${apiBase}/api/data/projects` : "/api/data/projects";
+
+    fetch(url)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (isMounted && data && Array.isArray(data) && data.length > 0) {
           setProjectsList(data);
         }
       })
-      .catch((err) => console.warn("Projects API fetch warning:", err));
+      .catch((err) => {
+        // Silently preserve high-fidelity default catalog if offline
+        console.warn("Projects API fetch notice, using fallback catalog:", err);
+      });
+
     return () => {
       isMounted = false;
     };
   }, [apiBase]);
-
-  const projects = projectsList;
 
   const handleCopyBullet = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -117,139 +68,335 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
     setTimeout(() => setCopiedId(null), 2500);
   };
 
+  // Filtered projects computation
+  const filteredProjects = useMemo(() => {
+    return projectsList.filter((proj) => {
+      // Category filter
+      const cat = (proj.category || "").toLowerCase();
+      if (activeTab === "software" && cat !== "software") return false;
+      if (activeTab === "hardware" && cat !== "hardware") return false;
+      if (activeTab === "sih" && !proj.psCode) return false;
+
+      // Search filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesTitle = proj.title.toLowerCase().includes(q);
+        const matchesDomain = (proj.domain || "").toLowerCase().includes(q);
+        const matchesOverview = (proj.overview || "").toLowerCase().includes(q);
+        const matchesBranch = (proj.branch || "").toLowerCase().includes(q);
+        const matchesOrg = (proj.organization || "").toLowerCase().includes(q);
+        const matchesPsCode = (proj.psCode || "").toLowerCase().includes(q);
+        const matchesTech = proj.techStack.some((t) => t.toLowerCase().includes(q));
+
+        if (
+          !matchesTitle &&
+          !matchesDomain &&
+          !matchesOverview &&
+          !matchesBranch &&
+          !matchesOrg &&
+          !matchesPsCode &&
+          !matchesTech
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [projectsList, activeTab, searchQuery]);
+
+  const counts = useMemo(() => {
+    return {
+      all: projectsList.length,
+      software: projectsList.filter((p) => (p.category || "").toLowerCase() === "software").length,
+      hardware: projectsList.filter((p) => (p.category || "").toLowerCase() === "hardware").length,
+      sih: projectsList.filter((p) => !!p.psCode).length,
+    };
+  }, [projectsList]);
+
   return (
     <div className="space-y-6">
       {/* Hero Header */}
       <div className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-slate-950/70 to-slate-900/50 p-6 shadow-2xl backdrop-blur-2xl ring-1 ring-white/10 sm:p-8">
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl" />
         
-        <div className="relative z-10 max-w-2xl space-y-3">
-          <div className="flex items-center gap-2">
+        <div className="relative z-10 max-w-3xl space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
               <Lightbulb className="h-3.5 w-3.5" />
-              Flagship Portfolio Blueprints
+              Flagship Portfolio & Hackathon Blueprints
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs font-semibold text-purple-300">
+              <Trophy className="h-3.5 w-3.5" />
+              SIH 2026 Problem Statements Included
             </span>
             <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-xs text-slate-300">
-              Target: {targetRole || "Software Development Engineer (SDE)"}
+              Target: {targetRole || "All Engineering Branches (CSE, ECE, EEE, Mech, Civil, Mining)"}
             </span>
           </div>
 
           <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-            AI Project Recommender
+            AI Project Blueprints & SIH Problem Statements
           </h1>
 
           <p className="text-sm leading-relaxed text-slate-300">
-            Tier-1 recruiters prioritize end-to-end deployed systems over generic tutorials. These curated architectures are engineered to close your technical skill gaps and provide bulletproof talking points in interviews.
+            Top hackathon judges and Tier-1 recruiters evaluate end-to-end engineered systems over boilerplate tutorials. Explore <strong className="text-amber-300">10 Software</strong> and <strong className="text-amber-300">7 Hardware & IoT</strong> Problem Statements sourced from national hackathon catalogues (NTRO, ISRO, BEL, MRPL, Ministry of MSME, Coal, and Railways). Click any project to have the AI Coach guide you step-by-step from component selection to viva defense!
           </p>
         </div>
       </div>
 
-      {/* Projects Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {projects.map((proj) => {
-          const isCopied = copiedId === proj.id;
-          return (
-            <div
-              key={proj.id}
-              className="flex flex-col justify-between rounded-3xl border border-white/[0.08] bg-slate-900/40 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-300 hover:border-amber-500/30 hover:bg-slate-900/70 hover:shadow-amber-500/5"
-            >
-              <div className="space-y-4">
-                {/* Meta Header */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
-                    {proj.domain}
-                  </span>
-                  <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-slate-300">
-                    {proj.difficulty}
-                  </span>
-                </div>
+      {/* Filter Tabs & Search Bar */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Category Tabs */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("all")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              activeTab === "all"
+                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                : "border border-white/10 bg-slate-900/60 text-slate-300 hover:border-amber-500/30 hover:text-white"
+            }`}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>All Projects</span>
+            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "all" ? "bg-slate-950/20 text-slate-950" : "bg-white/10 text-slate-300"}`}>
+              {counts.all}
+            </span>
+          </button>
 
-                {/* Title & Overview */}
-                <div>
-                  <h2 className="text-lg font-bold text-white tracking-tight leading-snug">
-                    {proj.title}
-                  </h2>
-                  <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                    {proj.overview}
-                  </p>
-                </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab("software")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              activeTab === "software"
+                ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
+                : "border border-white/10 bg-slate-900/60 text-slate-300 hover:border-emerald-500/30 hover:text-white"
+            }`}
+          >
+            <Laptop className="h-3.5 w-3.5" />
+            <span>Software Projects</span>
+            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "software" ? "bg-slate-950/20 text-slate-950" : "bg-white/10 text-slate-300"}`}>
+              {counts.software}
+            </span>
+          </button>
 
-                {/* Tech Stack Chips */}
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {proj.techStack.map((tech) => (
-                    <span
-                      key={tech}
-                      className="rounded-lg border border-white/[0.06] bg-white/[0.04] px-2 py-0.5 text-[11px] font-medium text-slate-300"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab("hardware")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              activeTab === "hardware"
+                ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20"
+                : "border border-white/10 bg-slate-900/60 text-slate-300 hover:border-cyan-500/30 hover:text-white"
+            }`}
+          >
+            <Cpu className="h-3.5 w-3.5" />
+            <span>Hardware & IoT</span>
+            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "hardware" ? "bg-slate-950/20 text-slate-950" : "bg-white/10 text-slate-300"}`}>
+              {counts.hardware}
+            </span>
+          </button>
 
-                {/* Key Architecture Features */}
-                <div className="space-y-2 pt-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    Key Implementation Features:
-                  </span>
-                  <ul className="space-y-1.5">
-                    {proj.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-xs text-slate-300">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                        <span className="leading-snug">{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab("sih")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              activeTab === "sih"
+                ? "bg-purple-500 text-white shadow-md shadow-purple-500/20"
+                : "border border-white/10 bg-slate-900/60 text-slate-300 hover:border-purple-500/30 hover:text-white"
+            }`}
+          >
+            <Trophy className="h-3.5 w-3.5" />
+            <span>SIH 2026 Problem Statements</span>
+            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "sih" ? "bg-white/20 text-white" : "bg-white/10 text-slate-300"}`}>
+              {counts.sih}
+            </span>
+          </button>
+        </div>
 
-                {/* Resume Ready Bullet */}
-                <div className="rounded-2xl border border-white/[0.06] bg-slate-950/60 p-3.5 space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400">
-                    <span>Google X-Y-Z Resume Bullet:</span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyBullet(proj.id, proj.resumeBullet)}
-                      className="flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition-colors"
-                      title="Copy bullet point to clipboard"
-                    >
-                      {isCopied ? (
-                        <>
-                          <Check className="h-3 w-3 text-emerald-400" />
-                          <span>Copied</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3 w-3" />
-                          <span>Copy</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-[11px] italic text-slate-300 leading-relaxed">
-                    "{proj.resumeBullet}"
-                  </p>
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <div className="pt-6">
-                <button
-                  type="button"
-                  onClick={() =>
-                    onAskCoach(
-                      `Let's discuss how to build '${proj.title}'. What should the system architecture look like and what libraries should I install first?`
-                    )
-                  }
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-yellow-500/20 border border-amber-500/30 py-2.5 text-xs font-bold text-white transition-all hover:border-amber-400/50 hover:brightness-110 active:scale-95 shadow-sm"
-                >
-                  <Bot className="h-3.5 w-3.5 text-amber-400" />
-                  <span>Discuss Architecture with AI Coach</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-          );
-        })}
+        {/* Search Bar */}
+        <div className="relative min-w-[260px] sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search title, branch, tech, or code..."
+            className="w-full rounded-xl border border-white/10 bg-slate-950/60 py-2 pl-9 pr-3 text-xs text-white placeholder-slate-400 outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
+          />
+        </div>
       </div>
+
+      {/* Projects Grid */}
+      {filteredProjects.length === 0 ? (
+        <div className="rounded-3xl border border-white/10 bg-slate-900/30 p-12 text-center">
+          <p className="text-sm font-semibold text-slate-400">No project blueprints matched your filter or search criteria.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("all");
+              setSearchQuery("");
+            }}
+            className="mt-3 text-xs font-bold text-amber-400 hover:underline"
+          >
+            Reset Filters
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-3">
+          {filteredProjects.map((proj) => {
+            const isCopied = copiedId === proj.id;
+            const isHardware = (proj.category || "").toLowerCase() === "hardware";
+
+            return (
+              <div
+                key={proj.id}
+                className="flex flex-col justify-between rounded-3xl border border-white/[0.08] bg-slate-900/40 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-300 hover:border-amber-500/30 hover:bg-slate-900/70 hover:shadow-amber-500/5"
+              >
+                <div className="space-y-4">
+                  {/* Badges / Header */}
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {proj.psCode && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-purple-300">
+                          <Trophy className="h-3 w-3" />
+                          {proj.psCode}
+                        </span>
+                      )}
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                          isHardware
+                            ? "border border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
+                            : "border border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                        }`}
+                      >
+                        {isHardware ? <Cpu className="h-3 w-3" /> : <Laptop className="h-3 w-3" />}
+                        {isHardware ? "Hardware / IoT" : "Software Track"}
+                      </span>
+                    </div>
+
+                    <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-slate-300">
+                      {proj.difficulty}
+                    </span>
+                  </div>
+
+                  {/* Sponsoring Org & Branch Tagging */}
+                  {(proj.organization || proj.branch) && (
+                    <div className="space-y-1">
+                      {proj.organization && (
+                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-amber-300">
+                          <Building2 className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                          <span>Org: {proj.organization}</span>
+                        </div>
+                      )}
+                      {proj.branch && (
+                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                          <GraduationCap className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          <span>Branches: {proj.branch}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Title & Overview */}
+                  <div>
+                    <h2 className="text-base font-bold text-white tracking-tight leading-snug">
+                      {proj.title}
+                    </h2>
+                    <p className="mt-2 text-xs text-slate-300 leading-relaxed line-clamp-3">
+                      {proj.overview}
+                    </p>
+                  </div>
+
+                  {/* Architecture Summary (if present) */}
+                  {proj.architectureSummary && (
+                    <div className="rounded-2xl border border-sky-500/20 bg-sky-950/25 p-3 text-[11px] leading-relaxed text-sky-200">
+                      <span className="font-bold text-sky-400">Architecture: </span>
+                      {proj.architectureSummary}
+                    </div>
+                  )}
+
+                  {/* Tech Stack Chips */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {proj.techStack.map((tech) => (
+                      <span
+                        key={tech}
+                        className="rounded-lg border border-white/[0.06] bg-white/[0.04] px-2 py-0.5 text-[11px] font-medium text-slate-300"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Key Implementation Features */}
+                  <div className="space-y-2 pt-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Key Implementation Features:
+                    </span>
+                    <ul className="space-y-1.5">
+                      {proj.features.map((feat, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs text-slate-300">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span className="leading-snug">{feat}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Resume Ready Bullet */}
+                  <div className="rounded-2xl border border-white/[0.06] bg-slate-950/60 p-3.5 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400">
+                      <span>Google X-Y-Z Resume Bullet:</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyBullet(proj.id, proj.resumeBullet)}
+                        className="flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition-colors"
+                        title="Copy bullet point to clipboard"
+                      >
+                        {isCopied ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-400" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-[11px] italic text-slate-300 leading-relaxed">
+                      "{proj.resumeBullet}"
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Button: Handoff to AI Coach */}
+                <div className="pt-6">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onAskCoach(
+                        `Let's discuss how to build '${proj.title}'${
+                          proj.psCode
+                            ? ` (Problem Statement: ${proj.psCode}, Sponsoring Org: ${proj.organization || "National Hackathon"})`
+                            : ""
+                        }. What should the complete system architecture, component stack, 5-phase build roadmap, and top hackathon viva defense talking points look like?`
+                      )
+                    }
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-yellow-500/20 border border-amber-500/30 py-2.5 text-xs font-bold text-white transition-all hover:border-amber-400/50 hover:brightness-110 active:scale-95 shadow-sm"
+                  >
+                    <Bot className="h-3.5 w-3.5 text-amber-400" />
+                    <span>Discuss Architecture with AI Coach</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
