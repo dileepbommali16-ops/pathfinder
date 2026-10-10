@@ -36,8 +36,16 @@ class MongoDBDatabaseAdapter:
             return []
 
         try:
-            from pymongo import MongoClient
-            client = MongoClient(self.uri, serverSelectionTimeoutMS=2000)
+            import importlib
+            import importlib.util
+            if not importlib.util.find_spec("pymongo"):
+                logger.info("PyMongo driver not installed. Standalone engine active.")
+                return []
+            pymongo = importlib.import_module("pymongo")
+            mongo_client_cls = getattr(pymongo, "MongoClient", None)
+            if not mongo_client_cls:
+                return []
+            client = mongo_client_cls(self.uri, serverSelectionTimeoutMS=2000)
             db = client[self.database_name]
             cursor = db[collection_name].find(query or {}).limit(limit)
             results = list(cursor)

@@ -38,14 +38,19 @@ class MySQLDatabaseAdapter:
         Falls back gracefully if external MySQL server is not active.
         """
         try:
-            import pymysql
+            import importlib
+            import importlib.util
+            if not importlib.util.find_spec("pymysql"):
+                logger.info("PyMySQL driver not installed. Using local SQLite core.")
+                return []
+            pymysql = importlib.import_module("pymysql")
             conn = pymysql.connect(
                 host=self.host,
                 port=self.port,
                 user=self.user,
                 password=self.password,
                 database=self.database,
-                cursorclass=pymysql.cursors.DictCursor,
+                cursorclass=getattr(pymysql.cursors, "DictCursor", None),
                 connect_timeout=3
             )
             with conn.cursor() as cursor:
