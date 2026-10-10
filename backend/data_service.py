@@ -255,7 +255,9 @@ def get_cohort_analytics_data(
     year: Optional[int] = 2026,
     branch: Optional[str] = "All",
     gender: Optional[str] = "All",
-    skill: Optional[str] = "All"
+    skill: Optional[str] = "All",
+    page: Optional[int] = None,
+    page_size: Optional[int] = None
 ) -> Dict[str, Any]:
     """Generates complete aggregated metrics, distributions, and record slices."""
     raw_df = get_placement_df()
@@ -370,8 +372,31 @@ def get_cohort_analytics_data(
         })
     year_dist.sort(key=lambda x: x["year"], reverse=True)
 
-    # Prepare serialized records slice
-    records_slice = filtered.head(200).to_dict(orient="records")
+    # Prepare serialized records slice with pagination support
+    if page is not None and page_size is not None:
+        p = max(1, int(page))
+        ps = max(1, int(page_size))
+        offset = (p - 1) * ps
+        records_subset = filtered.iloc[offset:offset + ps]
+        pagination_info = {
+            "page": p,
+            "page_size": ps,
+            "total_records": total,
+            "total_pages": (total + ps - 1) // ps if total > 0 else 1
+        }
+    else:
+        records_subset = filtered.head(200)
+        pagination_info = {
+            "page": 1,
+            "page_size": min(len(records_subset), 200),
+            "total_records": total,
+            "total_pages": 1
+        }
+
+    records_slice = []
+    for r in records_subset.to_dict(orient="records"):
+        r["source_id"] = r.get("source_id") or r.get("sourceId") or f"src_{r.get('id', 0)}"
+        records_slice.append(r)
 
     return {
         "total_records": total,
@@ -393,7 +418,8 @@ def get_cohort_analytics_data(
         "available_years": sorted(raw_df["year"].unique().tolist(), reverse=True) if not raw_df.empty else [2026, 2025, 2024],
         "available_branches": ["All"] + sorted(raw_df["branch"].unique().tolist()) if not raw_df.empty else ["All"],
         "available_skills": ["All", "AIML + Python"] + sorted(raw_df["skillCategory"].unique().tolist()) if not raw_df.empty else ["All"],
-        "records": records_slice
+        "records": records_slice,
+        "pagination": pagination_info
     }
 
 

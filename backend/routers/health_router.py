@@ -69,7 +69,7 @@ def full_health_check():
         "database_sql": {
             "status": "ready" if sqlite_ok else "initializing",
             "engine": "sqlite_wal",
-            "path": str(DB_PATH)
+            "connected": sqlite_ok
         },
         "dataset": {
             "status": "ready" if dataset_ok else "missing",
@@ -160,4 +160,4 @@ def gemini_ping():
         except Exception as e:
             results[m] = {"status": "error", "message": str(e)}
 
-    return {"key_prefix": api_key[:6] + "..." if len(api_key) > 6 else "short", "results": results}
+    return {"configured": True, "results": results}

@@ -208,12 +208,10 @@ def _is_allowed_origin(url: Optional[str]) -> bool:
                     return True
             except Exception:
                 pass
-        # All HTTPS Vercel and Render deployments/previews
+        # Verified Pathfinder HTTPS Vercel and Render deployments/previews
         if scheme == "https" and (
-            hostname == "vercel.app"
-            or hostname.endswith(".vercel.app")
-            or hostname == "onrender.com"
-            or hostname.endswith(".onrender.com")
+            hostname.startswith("pathfinder-")
+            and (hostname.endswith(".vercel.app") or hostname.endswith(".onrender.com"))
         ):
             return True
     except Exception:

@@ -4,12 +4,15 @@ Handles PDF analytics generation, CSV cohort data streaming, and ATS resume PDF 
 """
 
 import io
+import re
+import logging
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, Response, HTTPException, Query, Body
 
 from backend.analytics_engine import filter_cohort_records
 from backend.pdf_engine import generate_analytics_pdf, generate_resume_pdf
 
+logger = logging.getLogger("pathfinder.export")
 export_router = APIRouter(tags=["Exports & Document Generation"])
 
 
@@ -50,7 +53,8 @@ def export_pdf_endpoint(
             headers={"Content-Disposition": f"inline; filename={filename}"}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
+        logger.error(f"Failed to generate analytics PDF: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate analytics PDF. Please try again.")
 
 
 @export_router.post("/api/export/resume-pdf")
@@ -58,7 +62,8 @@ def export_resume_pdf_endpoint(payload: Dict[str, Any] = Body(...)):
     """Compiles structured candidate profile into a clean ATS-friendly PDF resume."""
     try:
         pdf_bytes = generate_resume_pdf(payload)
-        candidate_name = payload.get("full_name", "candidate").replace(" ", "_")
+        raw_name = str(payload.get("full_name") or "candidate").strip()
+        candidate_name = re.sub(r"[^a-zA-Z0-9_\-]", "", raw_name.replace(" ", "_"))[:40] or "candidate"
         filename = f"{candidate_name}_ATS_Resume.pdf"
         return Response(
             content=pdf_bytes,
@@ -66,4 +71,5 @@ def export_resume_pdf_endpoint(payload: Dict[str, Any] = Body(...)):
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to compile resume: {str(e)}")
+        logger.error(f"Failed to compile resume: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to compile resume. Please try again.")

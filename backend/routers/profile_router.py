@@ -168,17 +168,22 @@ def delete_profile(
     email: Optional[str] = Query(None),
     user: UserSession = Depends(get_current_user)
 ):
-    """Deletes profile by ID or email with ownership protection."""
-    target = user_id or email or user.user_id
-    if not target or target == "usr_anonymous":
-        raise HTTPException(status_code=400, detail="Missing user_id or email to delete.")
+    """Deletes profile with strict authentication and ownership protection."""
+    if not user.is_authenticated:
+        raise HTTPException(status_code=401, detail="Authentication required to delete a profile.")
 
-    if user.is_authenticated and user_id and user_id != user.user_id:
+    if user_id and user_id != user.user_id:
         raise HTTPException(status_code=403, detail="Forbidden: You cannot delete another user's profile.")
 
+    if email and email.strip().lower() != user.email.strip().lower():
+        raise HTTPException(status_code=403, detail="Forbidden: You cannot delete another user's profile.")
+
+    target = user.user_id
     deleted = UserRepository.delete(target)
     if target in _user_profiles:
         del _user_profiles[target]
+    if user.email in _user_profiles:
+        del _user_profiles[user.email]
     return {"status": "deleted" if deleted else "not_found", "target": target}
 
 

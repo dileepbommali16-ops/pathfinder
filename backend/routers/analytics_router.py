@@ -28,10 +28,19 @@ def analytics_endpoint(
     year: Optional[int] = Query(2026, description="Graduation year filter"),
     branch: Optional[str] = Query("All", description="Engineering branch filter"),
     gender: Optional[str] = Query("All", description="Gender filter"),
-    skill: Optional[str] = Query("All", description="Skill category filter")
+    skill: Optional[str] = Query("All", description="Skill category filter"),
+    page: Optional[int] = Query(None, description="Page number for pagination"),
+    page_size: Optional[int] = Query(None, description="Page size for pagination")
 ):
     """Returns real-time cohort distribution, placement rates, and tier benchmarking."""
-    return get_cohort_analytics(year=year, branch=branch, gender=gender, skill=skill)
+    return get_cohort_analytics(
+        year=year,
+        branch=branch,
+        gender=gender,
+        skill=skill,
+        page=page,
+        page_size=page_size
+    )
 
 
 @analytics_router.get("/api/data/cohort")

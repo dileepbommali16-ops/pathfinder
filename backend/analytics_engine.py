@@ -31,7 +31,16 @@ def get_cohort_analytics(
     year: Optional[int] = 2026,
     branch: Optional[str] = "All",
     gender: Optional[str] = "All",
-    skill: Optional[str] = "All"
+    skill: Optional[str] = "All",
+    page: Optional[int] = None,
+    page_size: Optional[int] = None
 ) -> Dict[str, Any]:
     """Delegates cohort analytics directly to data_service."""
-    return get_cohort_analytics_data(year=year, branch=branch, gender=gender, skill=skill)
+    return get_cohort_analytics_data(
+        year=year,
+        branch=branch,
+        gender=gender,
+        skill=skill,
+        page=page,
+        page_size=page_size
+    )
