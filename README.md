@@ -59,6 +59,55 @@
 
 ---
 
+## 🗺️ Codebase Map: Where is Frontend & Where is Backend?
+
+This repository contains clearly decoupled **Frontend** and **Backend** directories:
+
+### 🖥️ 1. FRONTEND ARCHITECTURE (Where the UI is Built)
+* **Primary Framework Application (`/client`):**
+  * **HTML Shell & Mounting:** [`client/index.html`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/index.html) and [`client/src/main.tsx`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/main.tsx)
+  * **Main View & Tab Orchestration:** [`client/src/pages/Home.tsx`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/pages/Home.tsx) (Contains all 11 workspace views)
+  * **Lamp Login Experience:** [`client/src/components/auth/LampLogin.tsx`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/components/auth/LampLogin.tsx) (Interactive cord physics, ambient light)
+  * **5-Step Onboarding Wizard:** [`client/src/components/onboarding/OnboardingWizard.tsx`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/components/onboarding/OnboardingWizard.tsx)
+  * **Dashboard Feature Components:** [`client/src/components/dashboard/`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/components/dashboard/)
+    * `HeroMetrics.tsx` — Readiness KPI cards and percentage gauges
+    * `CareerDigitalTwin.tsx` — 5-vector Radar benchmark visualization
+    * `AICoachConsole.tsx` — Bilingual Gemini AI chat mentor interface
+    * `CohortExplorer.tsx` — 972 student cohort benchmark explorer
+    * `ResumeStudio.tsx` — Drag-and-drop ATS resume scanner
+    * `WhatIfSimulator.tsx` — Interactive placement probability sandbox
+    * `RoadmapVisualizer.tsx` — 6-week preparation sprint milestones
+    * `BranchIntelligence.tsx` — Branch placement rankings across 9 departments
+  * **API Client & Networking:** [`client/src/lib/apiClient.js`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/lib/apiClient.js)
+  * **Design System & Styles:** [`client/src/index.css`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/index.css) (Tailwind CSS tokens, dark mode)
+
+* **Zero-Framework Static Showcase (`/vanilla`):**
+  * Built as a pure, zero-build HTML5/CSS3/JavaScript alternative:
+  * [`vanilla/index.html`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/index.html) — Single-page view switcher
+  * [`vanilla/app.js`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/app.js) — Pure JS state machine & Chart.js radar
+  * [`vanilla/api.js`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/api.js) — Native browser fetch client
+  * [`vanilla/style.css`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/style.css) — Compiled styling bundle
+
+---
+
+### ⚙️ 2. BACKEND ARCHITECTURE (Where the API & Intelligence is Built)
+* **Application Entry Point:** [`backend/main.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/main.py) (FastAPI app, middleware, CORS, lifespan)
+* **Modular API Routers (`/backend/routers/`):**
+  * [`auth_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/auth_router.py) — Credentials, OAuth 2.0 exchange, token revocation
+  * [`profile_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/profile_router.py) — Candidate SSOT CRUD (IDOR-protected)
+  * [`predictions_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/predictions_router.py) — Random Forest ML inference & bounds checks
+  * [`ai_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/ai_router.py) — Gemini AI bilingual coach, ATS resume scanner
+  * [`analytics_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/analytics_router.py) — 972 cohort queries & multi-variable filters
+  * [`export_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/export_router.py) — Streaming CSV & ReportLab PDF generation
+  * [`health_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/health_router.py) — System telemetry, circuit breakers, liveness probes
+* **Machine Learning & Core Engines:**
+  * [`ml_engine.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/ml_engine.py) — Scikit-Learn Random Forest model & sensitivity vectors
+  * [`gemini_engine.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/gemini_engine.py) — Gemini LLM mentor integration with bilingual prompt templates
+  * [`data_service.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/data_service.py) — 972 cohort dataset management
+  * [`database.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/database.py) — SQLite WAL engine with 13 composite B-Tree indexes
+  * [`security.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/security.py) — IP extraction, rate limiting, JWT cryptography, OWASP headers
+
+
 ## 🎨 Frontend Architecture (Top to Bottom)
 
 Pathfinder features a **Dual-Frontend Architecture**: an enterprise React 19 application and a zero-build vanilla HTML/CSS/JavaScript showcase.
