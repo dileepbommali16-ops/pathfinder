@@ -1,6 +1,15 @@
 # Pathfinder 2.0
 
-> **Intelligent campus placement readiness platform and bilingual AI career mentor designed for engineering students, faculty placement cells, and university hiring coordinators.**
+> **An AI career co-pilot that analyzes student skills and projects to predict campus placement odds and generate custom interview roadmaps in seconds.**
+
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Try_Pathfinder_Now-0070F3?style=for-the-badge&logo=vercel&logoColor=white)](https://pathfinder-client-fzom.vercel.app)
+[![API Engine](https://img.shields.io/badge/⚡_API_Engine-Render_Active-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://pathfinder-backend-klrp.onrender.com/api/health)
+[![Open Source](https://img.shields.io/badge/GitHub-Public_Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/dileepbommali16-ops/pathfinder)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+
+### 🌟 Experience the Live Platform
+👉 **[Launch Pathfinder Live Demo (Vercel)](https://pathfinder-client-fzom.vercel.app)**  
+*(Instant guest access available — no signup required to explore features, analytics, and predictions!)*
 
 ---
 
@@ -35,7 +44,12 @@ Engineering students often struggle to gauge their true placement readiness beca
 
 ## Architecture Overview
 
-The React client operates as a responsive Single Page Application (SPA) communicating over HTTPS with the FastAPI backend. FastAPI routes inference requests to the local Scikit-Learn model for zero-lag scoring and delegates conversational queries to Google Gemini. Application data and student cohort records are persisted in SQLite, backed by an LRU/TTL caching layer to maintain sub-50ms API response times.
+The platform uses a decoupled, high-performance architecture where each layer has a distinct responsibility:
+
+1. **Presentation Layer (Frontend):** A React 19 SPA hosted on Vercel delivering sub-second interactive dashboards, animated 3D visual feedback, and responsive data charts.
+2. **API & Security Gateway (Backend):** A Python 3.11 FastAPI service hosted on Render managing JWT session security, sliding-window rate limiting, and CORS routing.
+3. **Data & Persistence Layer (Database):** SQLite configured in WAL (Write-Ahead Logging) mode storing 970+ student cohort records, coupled with an in-memory LRU/TTL caching layer for sub-20ms queries.
+4. **Intelligence Layer (ML & AI):** A Scikit-Learn Random Forest model for deterministic, calibrated placement readiness scoring, paired with Google Gemini 3.8 Flash for context-aware bilingual mentorship.
 
 ```mermaid
 graph TD
@@ -58,7 +72,7 @@ graph TD
 
 ## Screenshots
 
-Visual previews of the platform can be added to the [`docs/screenshots/`](docs/screenshots) directory:
+Visual previews of the platform are organized in the [`docs/screenshots/`](docs/screenshots) directory:
 
 - **Dashboard & Readiness Scoring:** `docs/screenshots/dashboard.png`
 - **Bilingual AI Placement Coach:** `docs/screenshots/ai_coach.png`
