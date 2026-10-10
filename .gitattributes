@@ -1,0 +1,9 @@
+# GitHub Linguist Configuration
+# Treat all TypeScript and TSX files as JavaScript in GitHub repository language stats
+*.ts linguist-language=JavaScript
+*.tsx linguist-language=JavaScript
+
+# Ensure HTML templates and CSS stylesheets are prominently counted
+*.html linguist-detectable=true
+*.css linguist-detectable=true
+
