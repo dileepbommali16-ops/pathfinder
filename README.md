@@ -185,6 +185,45 @@ pathfinder/
 
 ---
 
+## 🌐 Full Stack Architecture Breakdown
+
+> **Full Stack = Frontend + Backend + Cloud + Deploy**  
+> A complete end-to-end modern web application encompasses the user interface, server-side computation & ML, cloud intelligence services, and automated production deployment pipelines. Here is the exact breakdown of what we used in Pathfinder and the role of each component:
+
+### 1. 🎨 Frontend (Client & UI/UX Layer)
+- **React 19 & TypeScript:** Type-safe, component-driven Single Page Application (SPA) offering fast state updates and seamless user experience.
+- **Vite 7:** High-speed development server and optimized production build tool with instant Hot Module Replacement (HMR).
+- **Tailwind CSS v4:** Modern, performance-focused utility CSS framework providing sleek responsive layouts and dark-mode styling.
+- **Lucide React Icons:** Crisp, lightweight SVG iconography across all user dashboards and navigation bars.
+- **Radix UI & Framer Motion:** Accessible UI primitives combined with smooth 60fps animations and micro-interactions.
+- **Recharts:** Interactive data visualization for student placement readiness probabilities, salary tier percentiles, and cohort analytics.
+- **Wouter & TanStack Query:** Lightweight client-side routing paired with asynchronous server-state management and query caching.
+
+### 2. ⚙️ Backend (Server, Business Logic & ML Engine)
+- **Python 3.11 & FastAPI:** High-throughput, asynchronous RESTful API framework with automatic OpenAPI/Swagger interactive documentation (`/docs`).
+- **Uvicorn & Gunicorn:** Production-grade ASGI server handling asynchronous concurrent client requests.
+- **Pydantic v2:** Strict request/response payload validation, schema definition, and serialization.
+- **Scikit-Learn (Machine Learning Engine):** Calibrated **Random Forest** classification and regression models trained on 970+ student cohort records to compute placement readiness odds and salary tier predictions.
+- **SQLite (WAL Mode) & In-Memory LRU Cache:** Zero-config relational database with Write-Ahead Logging for high-concurrency reads, backed by in-memory LRU/TTL caching for sub-20ms queries.
+- **JWT & OAuth 2.0 Security:** Enterprise token-based session management, password hashing, and single sign-on integration via Google and GitHub.
+- **ReportLab & PyPDF:** Automated server-side PDF generator constructing downloadable, personalized placement roadmaps and gap-closure reports.
+
+### 3. ☁️ Cloud & AI Services (Intelligence Layer)
+- **Google Gemini 3.8 Flash (`google-genai` SDK):** Next-gen generative AI foundation model powering our **Bilingual AI Placement Coach** (capable of contextual career mentorship in English and Telugu).
+- **OpenRouter Cloud API:** Cloud LLM fallback provider ensuring 99.9% high availability and fault-tolerant AI responses.
+- **Google Cloud Platform (GCP) OAuth Console:** Cloud identity management and API credentials for secure student authentication.
+
+### 4. 🚀 Deploy & DevOps (Hosting & Infrastructure)
+- **Vercel (Frontend Edge Hosting):**
+  - **Live URL:** [https://pathfinder-client-fzom.vercel.app](https://pathfinder-client-fzom.vercel.app)
+  - Edge CDN deployment delivering global low-latency page loads, automatic Git branch previews, and single-page routing rewrites (`vercel.json`).
+- **Render (Backend Cloud Web Service):**
+  - **Live URL:** [https://pathfinder-backend-klrp.onrender.com](https://pathfinder-backend-klrp.onrender.com)
+  - Cloud Linux container service executing FastAPI with automated Git deployments via `render.yaml` and live health-check telemetry (`/api/health`).
+- **GitHub & GitHub Actions:** Source control, automated testing workflows, and project lifecycle management.
+
+---
+
 ## License & Credits
 
 - **License:** Distributed under the [MIT License](LICENSE).
