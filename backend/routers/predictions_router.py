@@ -16,11 +16,14 @@ predictions_router = APIRouter(tags=["ML Readiness & Predictions"])
 @predictions_router.post("/api/predict", response_model=PredictionResult)
 def predict_endpoint(payload: Dict[str, Any] = Body(...)):
     """Computes placement readiness probability via trained Random Forest ML Engine."""
-    cgpa = float(payload.get("cgpa", 7.5))
-    coding = float(payload.get("coding", 7))
-    communication = float(payload.get("communication", 7))
-    internships = float(payload.get("internships", 0))
-    backlogs = float(payload.get("backlogs", payload.get("active_backlogs", 0)))
+    try:
+        cgpa = max(0.0, min(10.0, float(payload.get("cgpa", 7.5))))
+        coding = max(0.0, min(10.0, float(payload.get("coding", 7))))
+        communication = max(0.0, min(10.0, float(payload.get("communication", 7))))
+        internships = max(0.0, min(20.0, float(payload.get("internships", 0))))
+        backlogs = max(0.0, min(50.0, float(payload.get("backlogs", payload.get("active_backlogs", 0)))))
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid numeric metrics provided for prediction.")
 
     return predict_placement(
         cgpa=cgpa,

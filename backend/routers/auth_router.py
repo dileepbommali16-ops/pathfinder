@@ -80,10 +80,18 @@ def login_endpoint(payload: LoginRequest, request: Request):
 
     email = sanitize_user_input(payload.email, max_length=128) if payload.email else (username if "@" in username else f"{username.lower()}@pathfinder.ai")
     token = secrets.token_hex(24)
-    is_admin = (
-        username.lower() in ["admin", "administrator", "faculty_admin", "staff_admin"] or
-        (email and email.lower().startswith("admin@"))
-    )
+    admin_header = request.headers.get("x-admin-key") or request.headers.get("X-Admin-Key") or ""
+    configured_key = os.getenv("ADMIN_KEY", "").strip()
+    is_admin = False
+    if configured_key and admin_header:
+        import hmac
+        if hmac.compare_digest(admin_header, configured_key):
+            is_admin = True
+    elif not configured_key and os.getenv("ENVIRONMENT") == "development":
+        is_admin = (
+            username.lower() in ["admin", "administrator", "faculty_admin", "staff_admin"] or
+            (email and email.lower().startswith("admin@"))
+        )
     role = "admin" if is_admin else "student"
     session = UserSession(
         user_id=f"usr_{secrets.token_hex(6)}",

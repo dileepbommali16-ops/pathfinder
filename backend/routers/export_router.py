@@ -7,10 +7,11 @@ import io
 import re
 import logging
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, Response, HTTPException, Query, Body
+from fastapi import APIRouter, Response, HTTPException, Query, Body, Request
 
 from backend.analytics_engine import filter_cohort_records
 from backend.pdf_engine import generate_analytics_pdf, generate_resume_pdf
+from backend.security import rate_limiter, get_client_ip
 
 logger = logging.getLogger("pathfinder.export")
 export_router = APIRouter(tags=["Exports & Document Generation"])
@@ -36,12 +37,18 @@ def export_csv_endpoint(
 
 @export_router.get("/api/export/pdf")
 def export_pdf_endpoint(
+    request: Request,
     year: Optional[int] = Query(2026),
     branch: Optional[str] = Query("All"),
     gender: Optional[str] = Query("All"),
     skill: Optional[str] = Query("All")
 ):
     """Generates an executive placement analytics summary PDF."""
+    client_ip = get_client_ip(request)
+    allowed, _ = rate_limiter.check(f"pdf_{client_ip}", max_requests=10, window_seconds=60)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Too many PDF export requests. Please wait 60 seconds.")
+
     try:
         df = filter_cohort_records(year=year or 2026, branch=branch or "All", gender=gender or "All", skill=skill or "All")
         filters = {"Year": year or 2026, "Branch": branch or "All"}
@@ -58,8 +65,16 @@ def export_pdf_endpoint(
 
 
 @export_router.post("/api/export/resume-pdf")
-def export_resume_pdf_endpoint(payload: Dict[str, Any] = Body(...)):
+def export_resume_pdf_endpoint(
+    request: Request,
+    payload: Dict[str, Any] = Body(...)
+):
     """Compiles structured candidate profile into a clean ATS-friendly PDF resume."""
+    client_ip = get_client_ip(request)
+    allowed, _ = rate_limiter.check(f"resume_pdf_{client_ip}", max_requests=10, window_seconds=60)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Too many resume PDF compilation requests. Please wait 60 seconds.")
+
     try:
         pdf_bytes = generate_resume_pdf(payload)
         raw_name = str(payload.get("full_name") or "candidate").strip()

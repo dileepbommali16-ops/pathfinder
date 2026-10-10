@@ -6,9 +6,12 @@ and Server-Sent Events (SSE) streaming with circuit breaker protection.
 
 import json
 import asyncio
+import logging
 from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, Request, HTTPException, Depends, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
+
+logger = logging.getLogger("pathfinder.ai")
 
 from backend.models import ChatRequest, Roadmap, CohortInsight, ResumeFeedback, UserSession
 from backend.security import rate_limiter, ai_budget_manager, get_client_ip, sanitize_user_input, validate_pdf_upload
@@ -244,4 +247,5 @@ async def resume_endpoint(
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Resume evaluation error: {str(exc)}")
+        logger.error(f"[Resume Evaluation] Error: {exc}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Unable to complete resume review. Please verify file formatting and try again.")

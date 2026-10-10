@@ -76,7 +76,7 @@
 
 /// <reference types="@types/google.maps" />
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePersistFn } from "@/hooks/usePersistFn";
 import { cn } from "@/lib/utils";
 
@@ -124,30 +124,51 @@ export function MapView({
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<google.maps.Map | null>(null);
+  const [mapError, setMapError] = useState(false);
 
   const init = usePersistFn(async () => {
-    await loadMapScript();
-    if (!mapContainer.current) {
-      console.error("Map container not found");
+    if (!API_KEY) {
+      setMapError(true);
       return;
     }
-    map.current = new window.google.maps.Map(mapContainer.current, {
-      zoom: initialZoom,
-      center: initialCenter,
-      mapTypeControl: true,
-      fullscreenControl: true,
-      zoomControl: true,
-      streetViewControl: true,
-      mapId: "DEMO_MAP_ID",
-    });
-    if (onMapReady) {
-      onMapReady(map.current);
+    try {
+      await loadMapScript();
+      if (!mapContainer.current || !window.google?.maps?.Map) {
+        setMapError(true);
+        return;
+      }
+      map.current = new window.google.maps.Map(mapContainer.current, {
+        zoom: initialZoom,
+        center: initialCenter,
+        mapTypeControl: true,
+        fullscreenControl: true,
+        zoomControl: true,
+        streetViewControl: true,
+        mapId: "DEMO_MAP_ID",
+      });
+      if (onMapReady) {
+        onMapReady(map.current);
+      }
+    } catch {
+      setMapError(true);
     }
   });
 
   useEffect(() => {
     init();
   }, [init]);
+
+  if (mapError) {
+    return (
+      <div className={cn("w-full h-[500px] rounded-2xl border border-white/10 bg-slate-900/60 flex flex-col items-center justify-center p-6 text-center text-slate-400", className)}>
+        <p className="text-sm font-medium text-slate-300 mb-1">Campus Placement Geographic Hub</p>
+        <p className="text-xs text-slate-500 max-w-sm">
+          Interactive coordinates active ({initialCenter.lat.toFixed(2)}°N, {initialCenter.lng.toFixed(2)}°W).
+          Live satellite layer initializes dynamically with API integration.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div ref={mapContainer} className={cn("w-full h-[500px]", className)} />

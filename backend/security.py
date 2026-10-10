@@ -67,13 +67,30 @@ ai_budget_manager = AIUsageBudgetManager(daily_limit=200)
 # ==========================================
 
 def get_client_ip(request: Request) -> str:
-    """Extract real client IP considering forward headers from proxies."""
+    """Extract real client IP securely prioritizing authentic proxy headers."""
+    # 1. Cloudflare / CDN authoritative headers
+    cf_ip = request.headers.get("cf-connecting-ip")
+    if cf_ip and cf_ip.strip():
+        return cf_ip.strip()
+
+    # 2. Render / platform proxy header
+    render_ip = request.headers.get("render-client-ip")
+    if render_ip and render_ip.strip():
+        return render_ip.strip()
+
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip and real_ip.strip():
+        return real_ip.strip()
+
+    # 3. For multi-hop proxies, retrieve peer IP
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
-    real_ip = request.headers.get("x-real-ip")
-    if real_ip:
-        return real_ip.strip()
+        parts = [p.strip() for p in forwarded.split(",") if p.strip()]
+        if len(parts) > 1:
+            return parts[-1]
+        elif parts:
+            return parts[0]
+
     return request.client.host if request.client else "127.0.0.1"
 
 
