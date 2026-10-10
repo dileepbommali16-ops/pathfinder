@@ -76,6 +76,7 @@ def cohort_paginated_endpoint(
     )
 
 
+@analytics_router.get("/api/analytics/branch-deep")
 @analytics_router.get("/api/data/branches")
 def data_branches_endpoint(year: Optional[int] = Query(None)):
     """Returns branch-wise placement rates and intelligence analytics."""
@@ -84,6 +85,7 @@ def data_branches_endpoint(year: Optional[int] = Query(None)):
     return get_branches()
 
 
+@analytics_router.get("/api/analytics/skills-deep")
 @analytics_router.get("/api/data/skills")
 def data_skills_endpoint(
     year: Optional[int] = Query(None),

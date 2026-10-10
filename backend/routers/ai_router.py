@@ -161,14 +161,26 @@ def roadmap_endpoint(payload: Dict[str, Any]):
     )
 
 
-@ai_router.get("/api/ai/cohort-insight", response_model=CohortInsight)
-def cohort_insight_endpoint(
+@ai_router.api_route("/api/ai/cohort-insight", methods=["GET", "POST"], response_model=CohortInsight)
+@ai_router.api_route("/api/cohort-insight", methods=["GET", "POST"], response_model=CohortInsight)
+async def cohort_insight_endpoint(
+    request: Request,
     year: Optional[int] = 2026,
     branch: Optional[str] = "All",
     gender: Optional[str] = "All",
     skill: Optional[str] = "All"
 ):
     """Generates qualitative AI analysis explaining placement distribution patterns."""
+    if request.method == "POST":
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                year = body.get("year", year)
+                branch = body.get("branch", branch)
+                gender = body.get("gender", gender)
+                skill = body.get("skill", skill)
+        except Exception:
+            pass
     prompt = (
         f"Provide analytical recruitment insight for cohort year {year}, branch {branch}, "
         f"skill level {skill}. Return JSON with 'headline', 'summary' (2-3 sentences), "
