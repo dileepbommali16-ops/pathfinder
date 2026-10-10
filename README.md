@@ -22,120 +22,109 @@
 
 ## 🏛️ Comprehensive Full-Stack System Architecture
 
-```text
+`	ext
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                   PATHFINDER FULL-STACK ARCHITECTURE                                   │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│  1. FRONTEND PRESENTATION & INTERACTION LAYER                                                          │
-│  ┌───────────────────────────────────────────────────┬────────────────────────────────────────────────┐│
-│  │  PRIMARY APP: React 19 + Vite 7 (/client/src)     │  SHOWCASE: Zero-Build Vanilla JS (/vanilla)    ││
-│  ├───────────────────────────────────────────────────┼────────────────────────────────────────────────┤│
-│  │  [Visual UI & Design System]                      │  [Zero-Framework Engine]                       ││
-│  │   ├── Tailwind CSS v4 + Dark Ambient Matrix       │   ├── Pure HTML5 / CSS3 / Vanilla JavaScript   ││
-│  │   ├── Glassmorphic Cards & 3D Shaders / Glows     │   ├── Chart.js Radar & Bar Visualizations      ││
-│  │   └── Lucide Vector Icon System (30+ icons)       │   └── Browser Fetch API (Zero Bundler Needed)  ││
-│  │  [Core Interactive Workspaces]                    │  [Standalone Features]                         ││
-│  │   ├── 💡 Desk Lamp Login (Pull cord physics)      │   ├── Desk Lamp Pull-String Physics            ││
-│  │   ├── 🎓 5-Step Diagnostic Onboarding Wizard      │   ├── 5-Step Progressive Onboarding Form       ││
-│  │   ├── 📊 Hero KPI Gauges & Placement Chances      │   ├── Live What-If Parameter Sliders           ││
-│  │   ├── 🕸️ Career Digital Twin (5-Vector Radar)     │   ├── 5-Vector Radar & Placement Charts        ││
-│  │   ├── 🎛️ What-If? Real-Time Trajectory Sandbox    │   ├── Gemini AI Career Coach Console           ││
-│  │   ├── 💬 AI Coach Console (Bilingual Telugu/Eng)  │   └── ATS Resume Scanner & Diagnostic Score    ││
-│  │   ├── 👥 Cohort 972 Explorer & Bar Benchmarks     │                                                ││
-│  │   ├── 📄 ATS Resume Studio & Keyword Diagnostics  │                                                ││
-│  │   ├── 🗺️ 6-Week Placement Sprint Roadmap          │                                                ││
-│  │   ├── 🏛️ Branch Intelligence (9 Engineering Batches)│                                               ││
-│  │   ├── 🛡️ Project Defense & Architecture Simulator │                                                ││
-│  │   └── ⚙️ SSOT Profile Settings & DB Synchronizer  │                                                ││
-│  │  [Client-Side State & Reactivity]                 │                                                ││
-│  │   ├── React 19 Hooks + TanStack Query             │                                                ││
-│  │   ├── Recharts Dynamic SVG Data Visualizers       │                                                ││
-│  │   └── LocalStorage Cache + Session Recovery       │                                                ││
-│  └───────────────────────────────────────────────────┴────────────────────────────────────────────────┘│
+│  1. MULTI-FRAMEWORK FRONTEND & CLIENT ACCESS LAYER                                                     │
+│  ┌────────────────────────┬─────────────────────────┬────────────────────────┬────────────────────────┐│
+│  │ React 19 + Vite 7      │ Vanilla HTML5 / CSS3/JS │ Bootstrap 5.3 Edition  │ Next.js & Vue 3        ││
+│  │ (/client/src)          │ (/vanilla)              │ (/vanilla/bootstrap)   │ (/integrations)        ││
+│  ├────────────────────────┼─────────────────────────┼────────────────────────┼────────────────────────┤│
+│  │ • Tailwind CSS v4      │ • Zero-Build DOM Engine │ • Bootstrap 5.3 Grid   │ • Next.js App Router   ││
+│  │ • Recharts + Lucide    │ • Chart.js Visualizer   │ • Dark Theme Cards     │ • Vue 3 SFC Component  ││
+│  │ • 11 Interactive Views │ • Desk Lamp Physics     │ • REST API Client      │ • Reactive Two-Way Bind││
+│  └────────────────────────┴─────────────────────────┴────────────────────────┴────────────────────────┘│
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│  2. COMMUNICATION & PROTOCOL LAYER                                                                     │
-│   ├── HTTPS RESTful APIs (FastAPI JSON endpoints) · Signed JWT Bearer Token Headers                    │
-│   ├── OAuth 2.0 Flow (Google & GitHub redirect authorization & code exchange)                          │
-│   ├── Multipart/Form-Data (ATS Resume PDF parsing & file uploads)                                      │
-│   ├── Streaming File Downloads (ReportLab PDF generation & RFC 4180 CSV exports)                       │
-│   └── Request Cancellation via Client-Side AbortController (Instant AI Generation Stop)                │
+│  2. COMMUNICATION, PROTOCOL & SECURITY LAYER                                                           │
+│   ├── HTTPS RESTful APIs · Cryptographically Signed Bearer Tokens · 30-Min Idle Session Revocation      │
+│   ├── HSTS (max-age=31536000; includeSubDomains; preload) & CSP upgrade-insecure-requests                  │
+│   ├── Sliding-Window Rate Limiting (10 req/min auth, 30 req/min predict) & IDOR Multi-User Defense         │
+│   ├── Multipart/Form-Data Resume Uploads with Binary Magic-Byte Verification (Blocks Malicious Files)  │
+│   └── Sanitized Global Exception Handlers (Zero Leaked Stack Traces, Private Correlation request_id)   │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│  3. BACKEND SERVICES & INTELLIGENCE ENGINES (/backend)                                                 │
-│  ┌───────────────────────────────────────────────────┬────────────────────────────────────────────────┐│
-│  │  [Middleware & Security Pipeline]                 │  [Modular Routers (/backend/routers)]          ││
-│  │   ├── X-Request-ID Correlation & JSON Logging     │   ├── /api/auth       (Credentials & OAuth)    ││
-│  │   ├── Client IP Spoof Defense (Cloudflare/Render) │   ├── /api/profile    (SSOT Profile CRUD)      ││
-│  │   ├── Sliding-Window Rate Limiter (Anti-DDoS)     │   ├── /api/predict    (ML Inference & Vectors) ││
-│  │   └── OWASP Hardened Headers (HSTS, CSP, Sniffing)│   ├── /api/analytics  (972 Cohort Queries)     ││
-│  ├───────────────────────────────────────────────────┼── ├── /api/ai         (Gemini Coach & Roadmap) ││
-│  │  [Core Machine Learning & AI Engines]             │   ├── /api/export     (CSV & PDF Generation)   ││
-│  │   ├── Scikit-Learn Random Forest Classifier       │   └── /api/health     (Probes & Telemetry)     ││
-│  │   ├── Multi-Dimensional Readiness Vector Matrix   ├────────────────────────────────────────────────┤│
-│  │   ├── Google Gemini LLM Engine (Telugu + English) │  [Reliability & Resilience]                    ││
-│  │   ├── NLP Resume Parser & Google X-Y-Z Rubrics    │   ├── Circuit Breaker Protected Providers      ││
-│  │   └── Deterministic Offline Heuristic Fallback    │   ├── Render Free-Tier Warm-Up Keep-Alive Ping ││
-│  │                                                   │   └── Thread-Safe In-Memory Cache with TTL     ││
-│  └───────────────────────────────────────────────────┴────────────────────────────────────────────────┘│
+│  3. MULTI-LANGUAGE BACKEND COMPUTATION & MICROSERVICES                                                 │
+│  ┌───────────────────────────────────┬───────────────────────────────────┬────────────────────────────┐│
+│  │ Python 3.11 FastAPI Engine        │ Node.js Express Microservice      │ Java Enterprise Service    ││
+│  │ (/backend)                        │ (/backend/node_server.js)         │ (/backend/java)            ││
+│  ├───────────────────────────────────┼───────────────────────────────────┼────────────────────────────┤│
+│  │ • Scikit-Learn Random Forest ML   │ • Pure JavaScript Node Runtime    │ • JVM Placement Evaluator  ││
+│  │ • Google Gemini Bilingual LLM     │ • CORS & Async HTTP Routing       │ • Strongly-Typed Telemetry ││
+│  │ • Pydantic v2 Schema Validators   │ • Standalone Prediction Engine    │ • Android Kotlin Sync      ││
+│  └───────────────────────────────────┴───────────────────────────────────┴────────────────────────────┘│
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│  4. DATA PERSISTENCE & STORAGE TIER                                                                    │
-│   ├── SQLite Database Engine (Write-Ahead Logging / WAL Mode for High Concurrency)                     │
-│   ├── 13 Specialized B-Tree Composite Performance Indexes (Sub-5ms Query Latency)                      │
-│   ├── Canonical Placement Data Store (972 Student Records across 9 Disciplines)                        │
-│   └── Atomic Transaction Isolation & In-Memory LRU Cache with Automatic Invalidation                   │
+│  4. MULTI-DATABASE STORAGE & PERSISTENCE TIER                                                          │
+│  ┌───────────────────────────────────┬───────────────────────────────────┬────────────────────────────┐│
+│  │ SQLite Production Core (WAL Mode) │ MySQL Enterprise Relational       │ MongoDB NoSQL Document     ││
+│  │ (/data/pathfinder_production.db)  │ (/backend/db_connectors/mysql)    │ (/backend/db_connectors)   ││
+│  ├───────────────────────────────────┼───────────────────────────────────┼────────────────────────────┤│
+│  │ • 13 Composite Performance Indexes│ • InnoDB utf8mb4 Engine Schema    │ •  Validators   ││
+│  │ • 972 Canonical Cohort Records    │ • PyMySQL Connection Pooling      │ • PyMongo Document Stores  ││
+│  │ • Sub-5ms Read Query Latency      │ • Relational Profile Foreign Keys │ • Time-Series Prediction DB││
+│  └───────────────────────────────────┴───────────────────────────────────┴────────────────────────────┘│
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
+`
 
 ---
 
 ## 🗺️ Codebase Map: Where is Frontend & Where is Backend?
 
-This repository contains clearly decoupled **Frontend** and **Backend** directories:
+This repository contains an enterprise decoupled full-stack architecture supporting multiple frontend frameworks, backend languages, and database engines:
 
 ### 🖥️ 1. FRONTEND ARCHITECTURE (Where the UI is Built)
-* **Primary Framework Application (`/client`):**
-  * **HTML Shell & Mounting:** [`client/index.html`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/index.html) and [`client/src/main.tsx`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/main.tsx)
-  * **Main View & Tab Orchestration:** [`client/src/pages/Home.tsx`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/pages/Home.tsx) (Contains all 11 workspace views)
-  * **Lamp Login Experience:** [`client/src/components/auth/LampLogin.tsx`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/components/auth/LampLogin.tsx) (Interactive cord physics, ambient light)
-  * **5-Step Onboarding Wizard:** [`client/src/components/onboarding/OnboardingWizard.tsx`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/components/onboarding/OnboardingWizard.tsx)
-  * **Dashboard Feature Components:** [`client/src/components/dashboard/`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/components/dashboard/)
-    * `HeroMetrics.tsx` — Readiness KPI cards and percentage gauges
-    * `CareerDigitalTwin.tsx` — 5-vector Radar benchmark visualization
-    * `AICoachConsole.tsx` — Bilingual Gemini AI chat mentor interface
-    * `CohortExplorer.tsx` — 972 student cohort benchmark explorer
-    * `ResumeStudio.tsx` — Drag-and-drop ATS resume scanner
-    * `WhatIfSimulator.tsx` — Interactive placement probability sandbox
-    * `RoadmapVisualizer.tsx` — 6-week preparation sprint milestones
-    * `BranchIntelligence.tsx` — Branch placement rankings across 9 departments
-  * **API Client & Networking:** [`client/src/lib/apiClient.js`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/lib/apiClient.js)
-  * **Design System & Styles:** [`client/src/index.css`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/index.css) (Tailwind CSS tokens, dark mode)
+* **Primary React 19 Application ([/client](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client)):**
+  * **HTML Shell & Mounting:** [client/index.html](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/index.html) and [client/src/main.tsx](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/main.tsx)
+  * **Main View & Tab Orchestration:** [client/src/pages/Home.tsx](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/pages/Home.tsx) (All 11 workspace views)
+  * **Interactive Lamp Login:** [client/src/components/auth/LampLogin.tsx](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/components/auth/LampLogin.tsx) (Pull-cord physics, ambient lighting)
+  * **5-Step Onboarding Wizard:** [client/src/components/onboarding/OnboardingWizard.tsx](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/components/onboarding/OnboardingWizard.tsx)
+  * **Dashboard Workspaces:** [client/src/components/dashboard/](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/components/dashboard/) (Radar charts, AI coach, Cohort explorer, What-if simulator)
+  * **Styling & Tokens:** Tailwind CSS v4 in [client/src/index.css](file:///c:/Users/Priyanka/Downloads/pathfinder-main/client/src/index.css)
 
-* **Zero-Framework Static Showcase (`/vanilla`):**
-  * Built as a pure, zero-build HTML5/CSS3/JavaScript alternative:
-  * [`vanilla/index.html`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/index.html) — Single-page view switcher
-  * [`vanilla/app.js`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/app.js) — Pure JS state machine & Chart.js radar
-  * [`vanilla/api.js`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/api.js) — Native browser fetch client
-  * [`vanilla/style.css`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/style.css) — Compiled styling bundle
+* **Zero-Framework Pure HTML/CSS/JavaScript Showcase ([/vanilla](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla)):**
+  * [vanilla/index.html](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/index.html) — Pure HTML5 responsive user interface (zero build step)
+  * [vanilla/style.css](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/style.css) — Handcrafted modern responsive CSS design system
+  * [vanilla/app.js](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/app.js) — Pure modern JavaScript state & visualizer engine
+  * [vanilla/api.js](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/api.js) — Browser native fetch API client
+
+* **Bootstrap 5.3 Responsive Edition ([/vanilla/bootstrap_dashboard.html](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/bootstrap_dashboard.html)):**
+  * [vanilla/bootstrap_dashboard.html](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/bootstrap_dashboard.html) — Bootstrap 5.3 dark-themed enterprise UI
+  * [vanilla/bootstrap_dashboard.js](file:///c:/Users/Priyanka/Downloads/pathfinder-main/vanilla/bootstrap_dashboard.js) — Pure JavaScript API controller for Bootstrap
+
+* **Framework Integrations ([/integrations](file:///c:/Users/Priyanka/Downloads/pathfinder-main/integrations)):**
+  * **Next.js:** [integrations/nextjs/PathfinderNextDashboard.jsx](file:///c:/Users/Priyanka/Downloads/pathfinder-main/integrations/nextjs/PathfinderNextDashboard.jsx) — Next.js 14+ App Router client component
+  * **Vue 3:** [integrations/vue/PathfinderVueDashboard.vue](file:///c:/Users/Priyanka/Downloads/pathfinder-main/integrations/vue/PathfinderVueDashboard.vue) — Vue 3 Single File Component (SFC)
 
 ---
 
-### ⚙️ 2. BACKEND ARCHITECTURE (Where the API & Intelligence is Built)
-* **Application Entry Point:** [`backend/main.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/main.py) (FastAPI app, middleware, CORS, lifespan)
-* **Modular API Routers (`/backend/routers/`):**
-  * [`auth_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/auth_router.py) — Credentials, OAuth 2.0 exchange, token revocation
-  * [`profile_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/profile_router.py) — Candidate SSOT CRUD (IDOR-protected)
-  * [`predictions_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/predictions_router.py) — Random Forest ML inference & bounds checks
-  * [`ai_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/ai_router.py) — Gemini AI bilingual coach, ATS resume scanner
-  * [`analytics_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/analytics_router.py) — 972 cohort queries & multi-variable filters
-  * [`export_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/export_router.py) — Streaming CSV & ReportLab PDF generation
-  * [`health_router.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/health_router.py) — System telemetry, circuit breakers, liveness probes
-* **Machine Learning & Core Engines:**
-  * [`ml_engine.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/ml_engine.py) — Scikit-Learn Random Forest model & sensitivity vectors
-  * [`gemini_engine.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/gemini_engine.py) — Gemini LLM mentor integration with bilingual prompt templates
-  * [`data_service.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/data_service.py) — 972 cohort dataset management
-  * [`database.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/database.py) — SQLite WAL engine with 13 composite B-Tree indexes
-  * [`security.py`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/security.py) — IP extraction, rate limiting, JWT cryptography, OWASP headers
+### ⚙️ 2. BACKEND & MICROSERVICES ARCHITECTURE
+* **Primary Python 3.11 Intelligence Engine ([/backend](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend)):**
+  * [main.py](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/main.py) — FastAPI application entry point, middleware & CORS
+  * [`routers/`](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/routers/) — Modular REST endpoints (`auth_router.py`, `profile_router.py`, `predictions_router.py`, `ai_router.py`, `analytics_router.py`, `health_router.py`)
+  * [ml_engine.py](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/ml_engine.py) — Scikit-Learn Random Forest model & sensitivity vectors
+  * [gemini_engine.py](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/gemini_engine.py) — Google Gemini LLM mentor integration (Telugu & English)
+  * [security.py](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/security.py) — HSTS, CSP, sliding-window rate limiters, token revocation
 
+* **Node.js Express Microservice ([/backend/node_server.js](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/node_server.js)):**
+  * Pure JavaScript Node.js 18+ server providing /api/health, /api/predict, and /api/analytics endpoints without build steps.
+  * Secondary TypeScript server gateway in [server/_core/](file:///c:/Users/Priyanka/Downloads/pathfinder-main/server/_core/).
+
+* **Java Enterprise Backend Service ([/backend/java](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/java)):**
+  * [backend/java/PathfinderService.java](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/java/PathfinderService.java) — Java placement evaluation microservice.
+  * Android Kotlin application in [app/src/main/java/](file:///c:/Users/Priyanka/Downloads/pathfinder-main/app/src/main/java/).
+
+---
+
+### 💾 3. MULTI-DATABASE PERSISTENCE ARCHITECTURE
+* **SQLite Production Database:**
+  * [backend/database.py](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/database.py) — High-throughput SQLite in WAL mode with 13 composite B-Tree indexes.
+* **MySQL Enterprise Relational Support:**
+  * [backend/db_connectors/mysql_adapter.py](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/db_connectors/mysql_adapter.py) — Connection pooling & query execution.
+  * [backend/db_connectors/schema_mysql.sql](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/db_connectors/schema_mysql.sql) — Complete MySQL DDL schema script.
+* **MongoDB NoSQL Document Store Support:**
+  * [backend/db_connectors/mongodb_adapter.py](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/db_connectors/mongodb_adapter.py) — MongoDB connection adapter.
+  * [backend/db_connectors/schema_mongodb.js](file:///c:/Users/Priyanka/Downloads/pathfinder-main/backend/db_connectors/schema_mongodb.js) — Collection schemas with $jsonSchema validators.
+
+---
 
 ## 🎨 Frontend Architecture (Top to Bottom)
 
