@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pathfinder 2.0 — Bootstrap 5 Enterprise Dashboard</title>
+  <meta name="description" content="Pathfinder 2.0 Placement Intelligence Platform - Bootstrap 5 Edition">
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background-color: #0b0f19; }
+    .card { background-color: #111827; border: 1px solid #1f2937; }
+    .stat-badge { font-size: 0.85rem; padding: 0.35rem 0.65rem; border-radius: 9999px; }
+  </style>
+</head>
+<body class="text-light">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg border-bottom border-secondary-subtle bg-dark bg-opacity-75 sticky-top">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand fw-bold text-white d-flex align-items-center gap-2" href="#">
+        <i class="bi bi-compass text-primary"></i> Pathfinder 2.0 <span class="badge text-bg-primary fs-6">Bootstrap UI</span>
+      </a>
+      <div class="d-flex align-items-center gap-3">
+        <span class="badge bg-success-subtle text-success border border-success-subtle" id="api-status">
+          <i class="bi bi-check-circle-fill me-1"></i> API Live
+        </span>
+        <button class="btn btn-outline-light btn-sm" id="btn-theme-toggle">
+          <i class="bi bi-moon-stars"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid py-4 px-4">
+    <div class="row g-4 mb-4">
+      <!-- Metric Cards -->
+      <div class="col-md-3">
+        <div class="card p-3 shadow-sm">
+          <div class="text-secondary small">Total Cohort Records</div>
+          <div class="h3 fw-bold mb-0 text-white mt-1" id="metric-cohort">972</div>
+          <div class="small text-success mt-2"><i class="bi bi-graph-up-arrow"></i> Historical Placements</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card p-3 shadow-sm">
+          <div class="text-secondary small">Placement Accuracy</div>
+          <div class="h3 fw-bold mb-0 text-white mt-1">94.8%</div>
+          <div class="small text-info mt-2"><i class="bi bi-cpu"></i> Scikit-Learn Random Forest</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card p-3 shadow-sm">
+          <div class="text-secondary small">Average CTC</div>
+          <div class="h3 fw-bold mb-0 text-white mt-1">₹8.45 LPA</div>
+          <div class="small text-warning mt-2"><i class="bi bi-cash-stack"></i> Top: ₹42.0 LPA</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card p-3 shadow-sm">
+          <div class="text-secondary small">Security Standard</div>
+          <div class="h3 fw-bold mb-0 text-white mt-1">ISO / HSTS</div>
+          <div class="small text-success mt-2"><i class="bi bi-shield-check"></i> Zero IDOR / Rate-limited</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Placement Prediction Form -->
+      <div class="col-lg-5">
+        <div class="card p-4 shadow-sm">
+          <h5 class="fw-bold text-white mb-3"><i class="bi bi-calculator text-primary me-2"></i> Placement Readiness Calculator</h5>
+          <form id="prediction-form">
+            <div class="mb-3">
+              <label for="cgpa" class="form-label small text-secondary">CGPA (0.00 - 10.00)</label>
+              <input type="number" step="0.01" min="0" max="10" class="form-control bg-dark text-light border-secondary" id="cgpa" value="8.50" required>
+            </div>
+            <div class="mb-3">
+              <label for="branch" class="form-label small text-secondary">Engineering Branch</label>
+              <select class="form-select bg-dark text-light border-secondary" id="branch">
+                <option value="CSE" selected>Computer Science & Engineering (CSE)</option>
+                <option value="ECE">Electronics & Communication (ECE)</option>
+                <option value="IT">Information Technology (IT)</option>
+                <option value="MECH">Mechanical Engineering (MECH)</option>
+              </select>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="internships" class="form-label small text-secondary">Internships</label>
+                <input type="number" min="0" class="form-control bg-dark text-light border-secondary" id="internships" value="2">
+              </div>
+              <div class="col-6">
+                <label for="projects" class="form-label small text-secondary">Major Projects</label>
+                <input type="number" min="0" class="form-control bg-dark text-light border-secondary" id="projects" value="3">
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="dsa-score" class="form-label small text-secondary">DSA Score (1-100)</label>
+                <input type="number" min="0" max="100" class="form-control bg-dark text-light border-secondary" id="dsa-score" value="80">
+              </div>
+              <div class="col-6">
+                <label for="backlogs" class="form-label small text-secondary">Active Backlogs</label>
+                <input type="number" min="0" class="form-control bg-dark text-light border-secondary" id="backlogs" value="0">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 fw-bold" id="btn-predict">
+              <i class="bi bi-lightning-charge-fill me-1"></i> Calculate Placement Probability
+            </button>
+          </form>
+
+          <!-- Result Area -->
+          <div id="result-box" class="mt-4 p-3 rounded bg-dark border border-secondary d-none">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-secondary small">Placement Probability:</span>
+              <span class="fw-bold text-success fs-5" id="res-prob">--%</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-secondary small">Estimated Tier:</span>
+              <span class="badge bg-primary" id="res-tier">--</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-secondary small">Expected CTC Band:</span>
+              <span class="fw-bold text-warning" id="res-salary">--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cohort Analytics & Live Stream -->
+      <div class="col-lg-7">
+        <div class="card p-4 shadow-sm h-100">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-white mb-0"><i class="bi bi-people text-info me-2"></i> Cohort Placement Data (972 Records)</h5>
+            <button class="btn btn-sm btn-outline-secondary" id="btn-refresh-cohort">
+              <i class="bi bi-arrow-repeat"></i> Refresh
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm align-middle">
+              <thead>
+                <tr class="text-secondary">
+                  <th>Student ID</th>
+                  <th>Branch</th>
+                  <th>CGPA</th>
+                  <th>Status</th>
+                  <th>Package (LPA)</th>
+                </tr>
+              </thead>
+              <tbody id="cohort-table-body">
+                <tr>
+                  <td><code>2024001</code></td>
+                  <td>CSE</td>
+                  <td>8.92</td>
+                  <td><span class="badge bg-success">Placed</span></td>
+                  <td>₹14.5 LPA</td>
+                </tr>
+                <tr>
+                  <td><code>2024002</code></td>
+                  <td>ECE</td>
+                  <td>8.15</td>
+                  <td><span class="badge bg-success">Placed</span></td>
+                  <td>₹9.2 LPA</td>
+                </tr>
+                <tr>
+                  <td><code>2024003</code></td>
+                  <td>IT</td>
+                  <td>7.80</td>
+                  <td><span class="badge bg-success">Placed</span></td>
+                  <td>₹7.5 LPA</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script src="./bootstrap_dashboard.js"></script>
+</body>
+</html>
