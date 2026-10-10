@@ -21,6 +21,7 @@ on:
 
 jobs:
   build:
+    if: ${{ secrets.DD_API_KEY != '' }}
     runs-on: ubuntu-latest
 
     steps:
