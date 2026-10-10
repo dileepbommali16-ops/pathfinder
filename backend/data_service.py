@@ -649,7 +649,7 @@ def execute_data_tool(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, An
     return {"error": f"Unknown tool name: {tool_name}"}
 
 
-def compute_cohort_benchmark(branch: str, cgpa: float) -> Dict[str, Any]:
+def compute_cohort_benchmark(branch: str = "CSE", cgpa: float = 7.5, **kwargs) -> Dict[str, Any]:
     """Compute candidate's exact percentile and benchmark against the branch cohort."""
     df = get_placement_df()
     if df is None or df.empty:

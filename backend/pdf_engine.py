@@ -24,7 +24,21 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
         return ""
 
 
-def generate_analytics_pdf(data: pd.DataFrame, filters: Dict[str, Any]) -> bytes:
+def generate_analytics_pdf(
+    data: Optional[pd.DataFrame] = None,
+    filters: Optional[Dict[str, Any]] = None,
+    **kwargs
+) -> bytes:
+    if data is None or not isinstance(data, pd.DataFrame):
+        from backend.analytics_engine import filter_cohort_records
+        year = kwargs.get("year", 2026)
+        branch = kwargs.get("branch", "All")
+        data = filter_cohort_records(year=year, branch=branch)
+        if filters is None:
+            filters = {"Year": year, "Branch": branch}
+    if filters is None:
+        filters = {"Cohort": "All"}
+
     output = BytesIO()
     doc = SimpleDocTemplate(
         output,

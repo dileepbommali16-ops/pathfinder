@@ -54,7 +54,37 @@ def fallback_score(profile: StudentProfile) -> float:
     return float(max(18.0, min(96.0, round(raw_score, 1))))
 
 
-def predict_placement(profile: StudentProfile) -> PredictionResult:
+from typing import Dict, List, Tuple, Optional, Union, Any
+
+
+def predict_placement(
+    profile: Optional[Union[StudentProfile, Dict[str, Any]]] = None,
+    cgpa: Optional[float] = None,
+    coding: Optional[float] = None,
+    communication: Optional[float] = None,
+    internships: Optional[float] = None,
+    backlogs: Optional[float] = None,
+    **kwargs
+) -> PredictionResult:
+    if profile is None or not isinstance(profile, StudentProfile):
+        extracted = {}
+        if isinstance(profile, dict):
+            extracted.update(profile)
+        extracted.update(kwargs)
+        p_cgpa = cgpa if cgpa is not None else extracted.get("cgpa", 7.5)
+        p_coding = coding if coding is not None else extracted.get("coding", 7.0)
+        p_comm = communication if communication is not None else extracted.get("communication", 7.0)
+        p_intern = internships if internships is not None else extracted.get("internships", 1)
+        p_back = backlogs if backlogs is not None else extracted.get("backlogs", extracted.get("active_backlogs", 0))
+        profile = StudentProfile(
+            cgpa=float(p_cgpa),
+            coding=float(p_coding),
+            communication=float(p_comm),
+            internships=float(p_intern),
+            active_backlogs=float(p_back),
+            backlogs=float(p_back)
+        )
+
     is_estimated = False
     try:
         model, features = get_trained_model()

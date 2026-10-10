@@ -112,11 +112,14 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
     message: str = Field(default="", max_length=10000)
     history: Optional[List[ChatMessage]] = Field(default_factory=list)
+    chat_history: Optional[List[Any]] = Field(default_factory=list)
     profile: Optional[StudentProfile] = None
     active_tab: Optional[str] = None
     page_context: Optional[Dict[str, Any]] = None
+    user_context: Optional[Dict[str, Any]] = None
 
 
 class CohortFilters(BaseModel):

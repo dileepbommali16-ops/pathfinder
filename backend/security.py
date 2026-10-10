@@ -136,3 +136,61 @@ def validate_pdf_upload(filename: str, content: bytes):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File content failed PDF magic signature verification."
         )
+
+
+# ==========================================
+# 6. ROLE-BASED ACCESS CONTROL (RBAC)
+# ==========================================
+
+def require_role(allowed_roles: list[str]):
+    """
+    FastAPI dependency factory enforcing role-based permissions.
+    Usage: Depends(require_role(["admin"]))
+    """
+    def role_checker(request: Request):
+        auth_header = request.headers.get("Authorization") or request.headers.get("authorization")
+        from backend.oauth import _active_sessions, verify_signed_session_token
+        token = None
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split("Bearer ", 1)[-1].strip()
+
+        user = None
+        if token and token in _active_sessions:
+            user = _active_sessions[token]
+        elif token:
+            user = verify_signed_session_token(token)
+
+        if not user or not user.is_authenticated:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required to perform this action."
+            )
+
+        if user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Forbidden: Action requires role in {allowed_roles}, but current role is '{user.role}'."
+            )
+        return user
+
+    return role_checker
+
+
+# ==========================================
+# 7. OWASP SECURITY HEADERS CONFIGURATION
+# ==========================================
+
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "X-XSS-Protection": "1; mode=block",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Content-Security-Policy": (
+        "default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; "
+        "img-src 'self' https: data: blob:; "
+        "connect-src 'self' https: wss:; "
+        "frame-ancestors 'self';"
+    )
+}
+

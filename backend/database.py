@@ -25,12 +25,14 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 
 def get_db_connection() -> sqlite3.Connection:
-    """Returns a SQLite connection configured with WAL mode and foreign keys."""
+    """Returns a SQLite connection configured with WAL mode, foreign keys, and memory caches."""
     conn = sqlite3.connect(str(DB_PATH), timeout=20.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA foreign_keys=ON;")
+    conn.execute("PRAGMA cache_size = -64000;")  # 64MB memory page cache
+    conn.execute("PRAGMA temp_store = MEMORY;")
     return conn
 
 
@@ -94,6 +96,7 @@ def init_database():
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_cohort_branch ON cohort_placements(branch);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_cohort_year ON cohort_placements(year);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_cohort_placed ON cohort_placements(placed);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_cohort_composite ON cohort_placements(branch, year, placed);")
 
         # 3. Student Readiness Progression History Table
         cursor.execute("""
@@ -112,6 +115,7 @@ def init_database():
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_readiness_history_user ON readiness_history(user_id);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_readiness_history_created ON readiness_history(created_at);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_readiness_history_composite ON readiness_history(user_id, created_at DESC);")
 
         conn.commit()
 
