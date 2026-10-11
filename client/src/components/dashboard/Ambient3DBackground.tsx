@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { PredictiveArcCanvas } from "@designcodeio/threeui";
 import "@designcodeio/threeui/style.css";
@@ -28,6 +28,15 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
   const [variant, setVariantState] = useState<BackgroundVariant>(getInitialVariant);
   const [speed] = useState<number>(1.0);
   const [brightness] = useState<number>(1.0);
+  const [isVisible, setIsVisible] = useState<boolean>(true);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsVisible(document.visibilityState === "visible");
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
 
   const setVariant = (next: BackgroundVariant) => {
     setVariantState(next);
@@ -105,37 +114,42 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
 
   return (
     <>
-      <div className={`fixed inset-0 pointer-events-none overflow-hidden select-none z-0 ${className}`}>
+      <div
+        className={`fixed inset-0 pointer-events-none overflow-hidden select-none z-0 ${className}`}
+        style={{ contain: "strict", willChange: "transform", transform: "translateZ(0)" }}
+      >
         {/* ThreeUI Shaders Canvas Layer */}
-        <div className="absolute inset-0">
-          {variant === "predictive-void" && (
-            <PredictiveArcCanvas
-              variant="predictive-void"
-              speed={speed}
-              hue={0}
-              saturation={1.0}
-              brightness={brightness}
-            />
-          )}
-          {variant === "predictive" && (
-            <PredictiveArcCanvas
-              variant="predictive"
-              mode="dark"
-              speed={speed}
-              hue={0}
-              saturation={1.0}
-              brightness={brightness}
-            />
-          )}
-          {variant === "void-field" && (
-            <PredictiveArcCanvas
-              variant="void-field"
-              hue={0}
-              saturation={1.0}
-              brightness={brightness}
-            />
-          )}
-        </div>
+        {isVisible && (
+          <div className="absolute inset-0">
+            {variant === "predictive-void" && (
+              <PredictiveArcCanvas
+                variant="predictive-void"
+                speed={speed}
+                hue={0}
+                saturation={1.0}
+                brightness={brightness}
+              />
+            )}
+            {variant === "predictive" && (
+              <PredictiveArcCanvas
+                variant="predictive"
+                mode="dark"
+                speed={speed}
+                hue={0}
+                saturation={1.0}
+                brightness={brightness}
+              />
+            )}
+            {variant === "void-field" && (
+              <PredictiveArcCanvas
+                variant="void-field"
+                hue={0}
+                saturation={1.0}
+                brightness={brightness}
+              />
+            )}
+          </div>
+        )}
 
         {/* Atmospheric Radial Color Grading & Subtle Vignette */}
         <div

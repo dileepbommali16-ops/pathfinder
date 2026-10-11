@@ -7,15 +7,6 @@ interface LampLoginProps {
   initialError?: string | null;
 }
 
-interface FireflyCoord {
-  id: number;
-  size: number;
-  duration: number;
-  delay: number;
-  x: string[];
-  y: string[];
-}
-
 export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) => {
   const [isOn, setIsOn] = useState(true);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
@@ -27,7 +18,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
   const [errorMessage, setErrorMessage] = useState<string | null>(initialError || null);
   const [socialLoading, setSocialLoading] = useState<"google" | "github" | null>(null);
   const [socialError, setSocialError] = useState<string | null>(null);
-  const [fireflies, setFireflies] = useState<FireflyCoord[]>([]);
+  const startPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     if (initialError) {
@@ -61,24 +52,17 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     return () => clearTimeout(timer);
   }, [socialLoading]);
 
-  const startPos = useRef({ x: 0, y: 0 });
-
-  // Generate random firefly coordinates when lamp turns on
-  useEffect(() => {
-    if (isOn) {
-      const generated: FireflyCoord[] = Array.from({ length: 18 }, (_, i) => ({
-        id: i,
-        size: Math.random() * 4 + 3,
-        duration: Math.random() * 25 + 30,
-        delay: Math.random() * 2,
-        x: Array.from({ length: 5 }, () => `${Math.random() * 96}vw`),
-        y: Array.from({ length: 5 }, () => `${Math.random() * 94}vh`),
-      }));
-      setFireflies(generated);
-    } else {
-      setFireflies([]);
-    }
-  }, [isOn]);
+  // Static positions for lightweight GPU CSS particles
+  const ambientParticles = [
+    { top: "15%", left: "12%", size: 4, duration: "18s", delay: "0s" },
+    { top: "28%", left: "75%", size: 5, duration: "22s", delay: "2s" },
+    { top: "45%", left: "20%", size: 3, duration: "16s", delay: "4s" },
+    { top: "60%", left: "82%", size: 5, duration: "25s", delay: "1s" },
+    { top: "75%", left: "30%", size: 4, duration: "20s", delay: "3s" },
+    { top: "85%", left: "65%", size: 3, duration: "19s", delay: "5s" },
+    { top: "35%", left: "45%", size: 4, duration: "24s", delay: "2.5s" },
+    { top: "68%", left: "10%", size: 5, duration: "21s", delay: "0.5s" },
+  ];
 
   // Pointer drag event handlers for string handle
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -99,7 +83,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     if (!isDragging) return;
     setIsDragging(false);
 
-    // If pulled more than 30px, or a quick click, toggle the light
+    // If pulled more than 25px, or a quick click, toggle the light
     const pulled = dragOffset.y > 25 || (dragOffset.y < 5 && Math.abs(dragOffset.x) < 5);
     setDragOffset({ x: 0, y: 0 });
 
@@ -166,6 +150,14 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
         isOn ? "bg-[#111111]" : "bg-[#050505]"
       }`}
     >
+      <style>{`
+        @keyframes ambientMoteDrift {
+          0% { transform: translate3d(0, 0, 0) scale(0.85); opacity: 0.25; }
+          50% { transform: translate3d(18px, -24px, 0) scale(1.1); opacity: 0.85; }
+          100% { transform: translate3d(-14px, -45px, 0) scale(0.85); opacity: 0.25; }
+        }
+      `}</style>
+
       {/* Ambient Room Light Glow */}
       <div
         className={`pointer-events-none absolute -top-[30%] left-0 h-[1000px] w-[1000px] rounded-full transition-all duration-700 ${
@@ -177,29 +169,22 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
         }}
       />
 
-      {/* Floating Fireflies */}
+      {/* Floating Ambient Particles (Hardware Composited, Zero JS ticks) */}
       {isOn && (
-        <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden">
-          {fireflies.map((f) => (
-            <motion.span
-              key={f.id}
+        <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden" style={{ contain: "strict" }}>
+          {ambientParticles.map((p, idx) => (
+            <span
+              key={idx}
               className="absolute rounded-full bg-[#FFEA00]"
               style={{
-                width: f.size,
-                height: f.size,
-                boxShadow: "0 0 10px 3px rgba(255,234,0,0.9), 0 0 20px rgba(255,179,0,0.6)",
-              }}
-              animate={{
-                x: f.x,
-                y: f.y,
-                opacity: [0.4, 0.9, 0.5, 1, 0.4],
-              }}
-              transition={{
-                duration: f.duration,
-                repeat: Infinity,
-                repeatType: "mirror",
-                ease: "easeInOut",
-                delay: f.delay,
+                top: p.top,
+                left: p.left,
+                width: p.size,
+                height: p.size,
+                boxShadow: "0 0 10px 3px rgba(255,234,0,0.8), 0 0 18px rgba(255,179,0,0.5)",
+                animation: `ambientMoteDrift ${p.duration} ease-in-out infinite alternate`,
+                animationDelay: p.delay,
+                willChange: "transform, opacity",
               }}
             />
           ))}
@@ -209,37 +194,49 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
       {/* Main Split Layout */}
       <div className="relative z-10 flex min-h-screen w-full flex-col lg:flex-row">
         {/* LEFT: Desk Lamp with interactive pull cord */}
-        <section className="relative flex flex-1 flex-col items-center justify-center py-12 lg:py-0">
+        <section className="relative flex flex-1 flex-col items-center justify-center py-6 lg:py-0">
           {/* Prompt instruction when light is off */}
           {!isOn && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="pointer-events-none absolute top-12 flex flex-col items-center gap-2 text-center text-slate-500 lg:top-20"
+              className="pointer-events-none absolute top-4 flex flex-col items-center gap-2 text-center text-slate-400 lg:top-14"
             >
-              <span className="text-sm font-medium tracking-wide uppercase">Pull string or click handle to illuminate</span>
-              <span className="h-6 w-0.5 animate-bounce bg-gradient-to-b from-amber-400/60 to-transparent" />
+              <span className="text-xs sm:text-sm font-medium tracking-wide uppercase">Click lamp or pull string to illuminate</span>
+              <span className="h-4 w-0.5 animate-bounce bg-gradient-to-b from-amber-400/80 to-transparent" />
             </motion.div>
           )}
 
           {/* Lamp Container */}
           <div className="relative flex flex-col items-center select-none scale-100 sm:scale-110">
-            {/* Lamp Head */}
+            {/* Lamp Head (Clickable to toggle) */}
             <div
-              className={`relative z-30 h-[50px] w-[140px] rounded-t-[140px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#151515] transition-shadow duration-500 ${
+              role="button"
+              tabIndex={0}
+              onClick={() => setIsOn((prev) => !prev)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsOn((prev) => !prev);
+                }
+              }}
+              title="Click lamp head to toggle light"
+              className={`relative z-30 h-[50px] w-[140px] rounded-t-[140px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#151515] transition-all duration-500 cursor-pointer hover:brightness-125 ${
                 isOn
                   ? "shadow-[inset_0_-3px_10px_rgba(255,220,150,0.4),inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)]"
-                  : "shadow-[inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)]"
+                  : "shadow-[inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)] hover:ring-1 hover:ring-amber-400/40"
               }`}
             />
 
-            {/* Lamp Bulb Glow */}
+            {/* Lamp Bulb Glow (Clickable) */}
             <div
-              className={`pointer-events-none absolute top-[40px] z-20 h-[20px] w-[90px] rounded-full bg-white transition-opacity duration-500 ${
+              onClick={() => setIsOn((prev) => !prev)}
+              title="Click bulb to toggle light"
+              className={`absolute top-[40px] z-20 h-[20px] w-[90px] rounded-full bg-white transition-opacity duration-500 cursor-pointer ${
                 isOn
                   ? "opacity-100 shadow-[0_0_40px_20px_rgba(255,230,150,0.9),0_0_80px_40px_rgba(255,200,100,0.6)]"
-                  : "opacity-0"
+                  : "opacity-10 hover:opacity-40"
               }`}
             />
 
@@ -264,12 +261,22 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               }`}
             />
 
-            {/* Lamp Base */}
+            {/* Lamp Base (Clickable) */}
             <div
-              className={`relative z-20 h-[16px] w-[100px] rounded-t-[30px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#151515] transition-shadow duration-500 ${
+              role="button"
+              tabIndex={0}
+              onClick={() => setIsOn((prev) => !prev)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsOn((prev) => !prev);
+                }
+              }}
+              title="Click lamp base to toggle light"
+              className={`relative z-20 h-[16px] w-[100px] rounded-t-[30px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#151515] transition-all duration-500 cursor-pointer hover:brightness-125 ${
                 isOn
                   ? "shadow-[inset_0_2px_6px_rgba(255,220,150,0.3),0_10px_20px_rgba(0,0,0,0.9)]"
-                  : "shadow-[inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)]"
+                  : "shadow-[inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)] hover:ring-1 hover:ring-amber-400/40"
               }`}
             />
 
@@ -315,28 +322,50 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`,
                 background: "linear-gradient(to bottom, #ebd17a, #aa8529)",
               }}
-              title="Pull the cord to turn the lamp on/off"
+              title="Pull or click the cord to toggle lamp light"
             />
-            {/* Lamp Caption */}
-            <div className="mt-4 text-center select-none pointer-events-none">
-              <span className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-1.5 text-xs font-bold text-amber-300 backdrop-blur-md">
-                Lamp your Career
-              </span>
+            {/* Lamp Caption & Friendly Toggle Pill */}
+            <div className="mt-4 flex flex-col items-center gap-2 text-center">
+              <button
+                type="button"
+                onClick={() => setIsOn((prev) => !prev)}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-1.5 text-xs font-bold text-amber-300 backdrop-blur-md transition-all hover:bg-amber-400/20 hover:border-amber-400/50 cursor-pointer"
+                title="Click lamp to toggle lighting"
+              >
+                <span>{isOn ? "💡 Lamp Illuminated" : "🌙 Lamp Dimmed"}</span>
+                <span className="text-[10px] text-amber-200/80">(Tap to toggle)</span>
+              </button>
             </div>
           </div>
         </section>
 
-        {/* RIGHT: Glassmorphic Login Card */}
-        <section className="relative flex flex-1 items-center justify-center px-6 pb-12 lg:px-12 lg:pb-0">
+        {/* RIGHT: Glassmorphic Login Card (Always Accessible) */}
+        <section className="relative flex flex-1 items-center justify-center px-4 py-6 sm:px-6 sm:pb-12 lg:px-12 lg:pb-0">
           <div
-            className={`relative w-full max-w-[440px] rounded-[24px] border border-white/10 bg-white/[0.05] p-8 sm:p-12 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-700 ${
+            className={`relative w-full max-w-[440px] rounded-[24px] border p-8 sm:p-12 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-700 pointer-events-auto ${
               isOn
-                ? "translate-x-0 opacity-100 blur-none pointer-events-auto"
-                : "translate-x-10 opacity-0 blur-md pointer-events-none"
+                ? "translate-x-0 opacity-100 blur-none border-white/10 bg-white/[0.05]"
+                : "translate-x-0 opacity-95 blur-none border-amber-500/30 bg-[#0c0d12]/95 shadow-[0_8px_32px_rgba(0,0,0,0.9)] ring-1 ring-amber-500/20"
             }`}
           >
             {/* Glossy top border line */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+
+            {/* Lamp Dimmed Notification Banner with One-Click Turn On */}
+            {!isOn && (
+              <div className="mb-5 flex items-center justify-between rounded-xl border border-amber-400/40 bg-amber-400/10 px-3.5 py-2 text-xs text-amber-300">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <span>💡</span> Lamp light is dimmed
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsOn(true)}
+                  className="font-bold underline underline-offset-2 hover:text-amber-200 cursor-pointer"
+                >
+                  Turn On Radiance &rarr;
+                </button>
+              </div>
+            )}
 
             {/* Header */}
             <div className="mb-4 text-center">

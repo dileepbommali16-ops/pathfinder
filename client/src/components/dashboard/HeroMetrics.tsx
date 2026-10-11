@@ -11,8 +11,6 @@ import {
   CheckCircle2,
   AlertTriangle
 } from "lucide-react";
-import { ShaderButtons } from "@designcodeio/threeui";
-import "@designcodeio/threeui/style.css";
 
 interface HeroMetricsProps {
   username: string;
@@ -98,7 +96,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             </h1>
 
             <p className="max-w-xl text-sm leading-relaxed text-slate-300">
-              Your placement intelligence command center combines real campus recruitment cohort benchmarks (650+ records), scikit-learn probability modeling, and Gemini placement coaching.
+              Your placement intelligence command center combines real campus recruitment cohort benchmarks (972 records), scikit-learn probability modeling, and Gemini placement coaching.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -118,21 +116,20 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
                 <span>Ask AI Placement Coach</span>
               </button>
 
-              {/* ThreeUI Chrome Upload ShaderButton */}
-              <div
+              {/* Hardware-Accelerated Metallic Chrome ATS Button */}
+              <button
+                type="button"
                 onClick={() => onNavigateTab("resume")}
                 title="Chrome Upload: Instant ATS Resume Audit & Sync"
-                className="shader-frame relative inline-flex items-center justify-center overflow-hidden rounded-2xl cursor-pointer border border-white/15 bg-slate-950/80 shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all hover:scale-105 active:scale-95 hover:border-cyan-400/50"
-                style={{ width: 176, height: 44 }}
+                className="group relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-xl border border-white/20 bg-gradient-to-b from-slate-800 via-slate-900 to-black px-4 text-xs font-bold text-white shadow-[0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)] transition-all hover:scale-105 hover:border-cyan-400/60 hover:shadow-[0_0_18px_rgba(6,182,212,0.35)] active:scale-95 cursor-pointer"
               >
-                <ShaderButtons
-                  variant="chrome-upload"
-                  mode="dark"
-                  hue={0}
-                  saturation={1.0}
-                  brightness={1.0}
-                />
-              </div>
+                <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
+                <span className="relative z-10 flex items-center gap-1.5 bg-gradient-to-r from-white via-cyan-100 to-slate-200 bg-clip-text text-transparent">
+                  <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.9)] animate-pulse" />
+                  Chrome ATS Sync
+                </span>
+                <ArrowUpRight className="relative z-10 h-3.5 w-3.5 text-cyan-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </button>
             </div>
           </div>
 
