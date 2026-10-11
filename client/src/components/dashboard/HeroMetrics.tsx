@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   AlertTriangle
 } from "lucide-react";
+import { ShaderButtons } from "@designcodeio/threeui";
+import "@designcodeio/threeui/style.css";
 
 interface HeroMetricsProps {
   username: string;
@@ -97,7 +99,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
               Your placement intelligence command center combines real campus recruitment cohort benchmarks (650+ records), scikit-learn probability modeling, and Gemini placement coaching.
             </p>
 
-            <div className="flex flex-wrap gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
                 onClick={() => onNavigateTab("missions")}
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 px-4 py-2.5 text-xs font-bold text-white shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all hover:brightness-110 active:scale-95 cursor-pointer"
@@ -113,6 +115,22 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
                 <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
                 <span>Ask AI Placement Coach</span>
               </button>
+
+              {/* ThreeUI Chrome Upload ShaderButton */}
+              <div
+                onClick={() => onNavigateTab("resume")}
+                title="Chrome Upload: Instant ATS Resume Audit & Sync"
+                className="shader-frame relative inline-flex items-center justify-center overflow-hidden rounded-2xl cursor-pointer border border-white/15 bg-slate-950/80 shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all hover:scale-105 active:scale-95 hover:border-cyan-400/50"
+                style={{ width: 176, height: 44 }}
+              >
+                <ShaderButtons
+                  variant="chrome-upload"
+                  mode="dark"
+                  hue={0}
+                  saturation={1.0}
+                  brightness={1.0}
+                />
+              </div>
             </div>
           </div>
 

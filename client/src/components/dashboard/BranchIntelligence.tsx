@@ -123,17 +123,17 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
     <div className="space-y-8">
       {/* Top Banner & Branch Pills */}
       <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/50 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-emerald-500/[0.06] blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-indigo-500/[0.08] blur-3xl" />
         
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 text-emerald-400 border border-emerald-500/30 shadow-inner">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 text-indigo-400 border border-indigo-500/30 shadow-inner">
               <GraduationCap className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold tracking-tight text-white">Course & Branch Intelligence</h2>
-                <span className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+                <span className="rounded-md border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-semibold text-indigo-300">
                   Single Data Layer • 2026 Cohort
                 </span>
               </div>
@@ -146,7 +146,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
           {/* Quick ask button */}
           <button
             onClick={() => onAskCoach(`What are the placement cutoffs, top companies, and roadmaps for ${activeCode} students?`)}
-            className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-300 transition-all hover:bg-emerald-500/20 active:scale-95 shadow-sm"
+            className="flex items-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-xs font-semibold text-indigo-300 transition-all hover:bg-indigo-500/20 active:scale-95 shadow-sm cursor-pointer"
           >
             <Bot className="h-4 w-4" />
             <span>Consult Coach on {activeCode}</span>
@@ -157,14 +157,14 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
         <div className="mt-6 flex flex-wrap gap-2.5">
           {branches.map((b) => {
             const isSelected = b.code === activeCode;
-            const color = BRANCH_COLORS[b.code] || "#10b981";
+            const color = BRANCH_COLORS[b.code] || "#6366f1";
             return (
               <button
                 key={b.code}
                 onClick={() => setActiveCode(b.code)}
-                className={`group relative flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all ${
+                className={`group relative flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all cursor-pointer ${
                   isSelected
-                    ? "border-emerald-500/50 bg-emerald-500/15 text-white shadow-[0_0_16px_rgba(16,185,129,0.25)]"
+                    ? "border-indigo-500/50 bg-indigo-500/20 text-white shadow-[0_0_16px_rgba(99,102,241,0.25)]"
                     : "border-white/[0.08] bg-white/[0.02] text-slate-400 hover:border-white/20 hover:text-slate-200"
                 }`}
               >

@@ -137,8 +137,8 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
               onClick={() => toggleWeek(index)}
               className={`group flex cursor-pointer items-start gap-4 rounded-2xl border p-4.5 transition-all sm:p-5 ${
                 isDone
-                  ? "border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 via-slate-950/60 to-slate-950/60 text-slate-300 shadow-[0_4px_20px_rgba(16,185,129,0.1)]"
-                  : "border-white/[0.08] bg-slate-950/50 text-slate-200 hover:border-emerald-500/30 hover:bg-slate-900/60 hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
+                  ? "border-purple-500/40 bg-gradient-to-r from-purple-500/10 via-slate-950/60 to-slate-950/60 text-slate-300 shadow-[0_4px_20px_rgba(168,85,247,0.1)]"
+                  : "border-white/[0.08] bg-slate-950/50 text-slate-200 hover:border-purple-500/30 hover:bg-slate-900/60 hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
               }`}
             >
               {/* Checkbox Trigger */}
@@ -146,8 +146,8 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
                 type="button"
                 className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all ${
                   isDone
-                    ? "border-emerald-500 bg-emerald-500 text-slate-950"
-                    : "border-slate-700 bg-slate-900 text-transparent group-hover:border-slate-500"
+                    ? "border-purple-500 bg-purple-500 text-slate-950"
+                    : "border-slate-700 bg-slate-900 text-transparent group-hover:border-purple-500/50"
                 }`}
               >
                 <CheckCircle className="h-4 w-4" />
@@ -156,11 +156,11 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
               {/* Week Content */}
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs font-bold uppercase tracking-wider ${isDone ? "text-emerald-400" : "text-cyan-400"}`}>
+                  <span className={`text-xs font-bold uppercase tracking-wider ${isDone ? "text-purple-300" : "text-purple-400"}`}>
                     {weekTitle}
                   </span>
                   {isDone && (
-                    <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">
+                    <span className="rounded bg-purple-500/20 px-1.5 py-0.5 text-[9px] font-bold text-purple-300">
                       Completed
                     </span>
                   )}

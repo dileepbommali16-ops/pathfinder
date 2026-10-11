@@ -11,6 +11,7 @@ import {
 } from "./PredictiveArcCanvas";
 
 import { VoidFieldCanvas } from "../neuform-isolated/VoidFieldCanvas";
+import { SparseVoidFieldCanvas } from "../neuform-isolated/SparseVoidFieldCanvas";
 
 export type PredictiveArcVariant =
   | PredictiveArcCoreVariant
@@ -110,7 +111,7 @@ export function PredictiveArcCanvas(props: PredictiveArcCanvasProps) {
 
   if (props.variant === "void-field") {
     const { variant: _variant, ...voidProps } = props;
-    return <Suspense fallback={FALLBACK}><VoidFieldVariant {...voidProps} /></Suspense>;
+    return <SparseVoidFieldCanvas {...voidProps} />;
   }
 
   if (props.variant === "halftone-flow") {

@@ -11,4 +11,7 @@ export type { NeuformIsolatedEffectProps } from "./neuform-isolated/NeuformIsola
 export type { NeuformBatchEffectProps } from "./neuform-isolated/NeuformBatchEffects";
 export * from "./neuform-isolated/NeuformCraftEffects";
 export * from "./neuform-isolated/VoidFieldCanvas";
+export * from "./neuform-isolated/SparseVoidFieldCanvas";
 export * from "./ribbon-field/RibbonFieldBackground";
+export * from "./shader-buttons/ShaderButtons";
+export * from "./shader-buttons/SelectedButtonStudies";

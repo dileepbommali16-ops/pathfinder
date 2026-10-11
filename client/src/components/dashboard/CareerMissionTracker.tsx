@@ -224,11 +224,11 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
     <div className="space-y-6">
       {/* Top Banner */}
       <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/60 p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
-        <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-purple-500/30 bg-purple-500/10 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
               <Calendar className="h-6 w-6" />
             </div>
             <div>
@@ -236,7 +236,7 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
                 <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl">
                   Personalized 30-Day Career Mission
                 </h2>
-                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-300">
                   Sprint Roadmap
                 </span>
               </div>
@@ -265,14 +265,14 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
               <Trophy className="h-5 w-5 text-amber-400" />
               <span className="text-xs font-bold text-white">Overall 30-Day Execution Progress</span>
             </div>
-            <span className="text-sm font-black text-emerald-400">
+            <span className="text-sm font-black text-purple-400">
               {completedTasks} of {allTasks.length} Milestones Achieved ({progressPercent}%)
             </span>
           </div>
 
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-800">
             <div
-              className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 transition-all duration-500"
+              className="h-full bg-gradient-to-r from-purple-500 via-violet-400 to-indigo-400 transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -293,7 +293,7 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
               <div className="flex flex-col gap-2 border-b border-white/[0.08] pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-black text-emerald-300">
+                    <span className="rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-0.5 text-xs font-black text-purple-300">
                       WEEK {wk.weekNumber}
                     </span>
                     <h3 className="text-sm font-bold text-white">{wk.theme}</h3>
@@ -303,7 +303,7 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
 
                 <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
                   <span>{wkCompleted}/{wk.tasks.length} Done</span>
-                  <span className="text-emerald-400 font-bold">({wkPct}%)</span>
+                  <span className="text-purple-400 font-bold">({wkPct}%)</span>
                 </div>
               </div>
 
@@ -315,7 +315,7 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
                     onClick={() => toggleTask(wkIdx, task.id)}
                     className={`cursor-pointer rounded-2xl border p-4 transition-all duration-200 ${
                       task.completed
-                        ? "border-emerald-500/30 bg-emerald-950/20 text-slate-300"
+                        ? "border-purple-500/30 bg-purple-950/20 text-slate-300"
                         : "border-white/[0.06] bg-slate-950/40 hover:border-white/12 hover:bg-slate-950/60"
                     }`}
                   >
@@ -325,7 +325,7 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
                           type="button"
                           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all ${
                             task.completed
-                              ? "border-emerald-400 bg-emerald-500 text-slate-950"
+                              ? "border-purple-400 bg-purple-500 text-slate-950"
                               : "border-slate-600 bg-slate-800 text-transparent"
                           }`}
                         >

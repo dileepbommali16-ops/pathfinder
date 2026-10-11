@@ -160,15 +160,15 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab("software")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
               activeTab === "software"
-                ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                : "border border-white/10 bg-slate-900/60 text-slate-300 hover:border-emerald-500/30 hover:text-white"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
+                : "border border-white/10 bg-slate-900/60 text-slate-300 hover:border-indigo-500/40 hover:text-white"
             }`}
           >
             <Laptop className="h-3.5 w-3.5" />
             <span>Software Systems</span>
-            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "software" ? "bg-slate-950/20 text-slate-950" : "bg-white/10 text-slate-300"}`}>
+            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "software" ? "bg-white/20 text-white" : "bg-white/10 text-slate-300"}`}>
               {counts.software}
             </span>
           </button>
@@ -176,7 +176,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab("hardware")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
               activeTab === "hardware"
                 ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20"
                 : "border border-white/10 bg-slate-900/60 text-slate-300 hover:border-cyan-500/30 hover:text-white"
@@ -190,17 +190,6 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative min-w-[260px] sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search title, branch, tech, or domain..."
-            className="w-full rounded-xl border border-white/10 bg-slate-950/60 py-2 pl-9 pr-3 text-xs text-white placeholder-slate-400 outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
-          />
-        </div>
         {/* Search Bar */}
         <div className="relative min-w-[260px] sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />

@@ -11,6 +11,8 @@ import {
   Loader2,
   FileCheck
 } from "lucide-react";
+import { ShaderButtons } from "@designcodeio/threeui";
+import "@designcodeio/threeui/style.css";
 
 export interface ResumeFeedbackData {
   score: number;
@@ -57,6 +59,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [rawText, setRawText] = useState("");
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const activeFeedback = feedback || DEFAULT_FEEDBACK;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,7 +111,28 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                 <span className="mt-1 text-[11px] text-slate-500">
                   PDF format · Maximum size 10MB
                 </span>
+                {/* ThreeUI Chrome Upload Button */}
+                <div 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  title="Chrome Upload: Fast PDF Resume Selector"
+                  className="shader-frame relative my-2 inline-flex items-center justify-center overflow-hidden rounded-2xl cursor-pointer border border-white/20 bg-slate-950/80 shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-transform hover:scale-105 active:scale-95"
+                  style={{ width: 176, height: 44 }}
+                >
+                  <ShaderButtons
+                    variant="chrome-upload"
+                    mode="dark"
+                    hue={0}
+                    saturation={1.0}
+                    brightness={1.0}
+                  />
+                </div>
+
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept=".pdf"
                   onChange={handleFileChange}
