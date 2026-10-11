@@ -43,17 +43,13 @@ def get_profile(
     """
     # 1. Authorization Ownership Check
     if user_id and user_id != user.user_id:
-        if user.is_authenticated:
-            # Stale client-side ID from previous login session; rebind to authenticated user
-            user_id = user.user_id
-        else:
-            logger.warning(
-                f"[AUTHORIZATION 403] Unauthenticated request for user '{user_id}' profile"
-            )
-            raise HTTPException(
-                status_code=403,
-                detail="Forbidden: Authentication required to access user profiles."
-            )
+        logger.warning(
+            f"[AUTHORIZATION 403] User '{user.user_id}' attempted to access profile of '{user_id}'"
+        )
+        raise HTTPException(
+            status_code=403,
+            detail=f"Forbidden: You are not authorized to view user '{user_id}' profile."
+        )
 
     # 2. Determine target lookup key
     target_key = user_id or (user.user_id if user.is_authenticated else None)
@@ -120,10 +116,15 @@ def update_profile(profile: StudentProfile, user: UserSession = Depends(get_curr
     Persists profile to the persistent SQL database.
     """
     # 1. Authorization Ownership Check
-    if user.is_authenticated:
-        # Rebind to current authenticated user's ID
-        profile.user_id = user.user_id
-    elif profile.user_id and profile.user_id != user.user_id and profile.user_id != "usr_anonymous":
+    if profile.user_id and profile.user_id != user.user_id and profile.user_id != "usr_anonymous":
+        logger.warning(
+            f"[AUTHORIZATION 403] User '{user.user_id}' attempted to overwrite profile of '{profile.user_id}'"
+        )
+        raise HTTPException(
+            status_code=403,
+            detail=f"Forbidden: You cannot modify profile belonging to user '{profile.user_id}'."
+        )
+    elif not user.is_authenticated and profile.user_id and profile.user_id != "usr_anonymous":
         raise HTTPException(
             status_code=403,
             detail="Forbidden: Authentication required to modify user profiles."
