@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pathfinder 2.0 • Cinematic Keynote Walkthrough</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050508;
+      --card-bg: rgba(15, 13, 20, 0.96);
+      --card-inner: rgba(24, 20, 32, 0.98);
+      --border: rgba(46, 32, 52, 0.9);
+      --crimson: #FF1E56;
+      --ruby: #E11D48;
+      --amethyst: #A855F7;
+      --magenta: #D946EF;
+      --text: #F8FAFC;
+      --muted: #A1A1AA;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255, 30, 86, 0.16), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 90% 90%, rgba(168, 85, 247, 0.12), transparent 60%);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+    .container {
+      width: 100%;
+      max-width: 1240px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo-img {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 0 25px rgba(255, 30, 86, 0.45);
+      border: 1px solid rgba(255, 30, 86, 0.4);
+    }
+    .brand-title h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #FFFFFF, var(--crimson));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-title p {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .telemetry-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(255, 30, 86, 0.12);
+      border: 1px solid rgba(255, 30, 86, 0.35);
+      color: var(--crimson);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--crimson);
+      box-shadow: 0 0 10px var(--crimson);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+    .player-window {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #06060A;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95), 0 0 45px rgba(255, 30, 86, 0.18);
+      display: flex;
+      flex-direction: column;
+    }
+    .screen-stage {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 48px;
+    }
+    .scene-canvas {
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      animation: fadeIn 0.4s ease;
+    }
+    .scene-canvas.active {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .scene-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .scene-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--crimson);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .scene-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--amethyst);
+      font-weight: 700;
+    }
+    .scene-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 16px 0;
+    }
+    .interactive-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px 32px;
+      width: 100%;
+      max-width: 950px;
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
+    }
+    .narration-bar {
+      background: rgba(14, 12, 20, 0.95);
+      border: 1px solid rgba(255, 30, 86, 0.3);
+      border-radius: 14px;
+      padding: 14px 20px;
+      backdrop-filter: blur(12px);
+    }
+    .narration-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--crimson);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 2px;
+    }
+    .narration-body {
+      font-size: 14px;
+      color: #FFFFFF;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 22px;
+      background: rgba(12, 10, 18, 0.98);
+      border-top: 1px solid var(--border);
+      gap: 16px;
+    }
+    .btn-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    button {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    button:hover {
+      background: rgba(255, 30, 86, 0.18);
+      border-color: var(--crimson);
+      transform: translateY(-1px);
+    }
+    button.primary {
+      background: linear-gradient(135deg, var(--crimson), var(--amethyst));
+      color: #FFFFFF;
+      border: none;
+      box-shadow: 0 0 15px rgba(255, 30, 86, 0.4);
+    }
+    .progress-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--amethyst), var(--crimson));
+      border-radius: 999px;
+      width: 10%;
+      transition: width 0.3s ease;
+    }
+    .thumbs-strip {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 8px;
+      width: 100%;
+    }
+    .thumb-btn {
+      padding: 8px 6px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      cursor: pointer;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+    .thumb-btn.active {
+      border-color: var(--crimson);
+      color: #FFFFFF;
+      background: rgba(255, 30, 86, 0.2);
+      box-shadow: 0 0 15px rgba(255, 30, 86, 0.35);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand-group">
+        <img class="logo-img" src="pathfinder_logo.jpg" alt="Pathfinder Logo">
+        <div class="brand-title">
+          <h1>Pathfinder 2.0 • Live Keynote Video Walkthrough</h1>
+          <p>Autonomous Placement Analytics & Bilingual AI Mentorship (Obsidian Ruby & Amethyst Theme)</p>
+        </div>
+      </div>
+      <div class="telemetry-tag">
+        <div class="pulse-dot"></div>
+        <span>Production Verified • 972 Records</span>
+      </div>
+    </div>
+
+    <!-- Video Showcase Window -->
+    <div class="player-window" id="playerWindow">
+      <div class="screen-stage">
+
+        <!-- SCENE 1: Brand & Thesis -->
+        <div class="scene-canvas active" id="scene0">
+          <div class="scene-header">
+            <span class="scene-tag">CHAPTER 01 • BRAND IDENTITY & THESIS</span>
+            <span class="scene-time">0:00 / 1:00</span>
+          </div>
+          <div class="scene-main">
+            <div class="interactive-card" style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+              <img src="pathfinder_logo.jpg" style="width: 140px; height: 140px; border-radius: 20px; box-shadow: 0 0 40px rgba(255,30,86,0.5); border: 2px solid rgba(255,30,86,0.4);" alt="Logo">
+              <div style="font-size: 32px; font-weight: 900; color: #FF1E56;">PATHFINDER 2.0</div>
+              <div style="font-size: 16px; color: #FFFFFF; max-width: 650px;">Autonomous Placement Intelligence that transforms campus recruitment anxiety into predictable Tier-1 engineering offers.</div>
+              <div style="font-size: 13px; font-family: 'JetBrains Mono', monospace; color: #A855F7;">Lead Architect: Dileep Bommali &nbsp;|&nbsp; 972 Cohort Records across 9 Branches</div>
+            </div>
+          </div>
+          <div class="narration-bar">
+            <div class="narration-title">Executive Narration:</div>
+            <div class="narration-body">"Pathfinder 2.0 was engineered to bridge the critical gap between university curriculum and high-growth technology hiring rubrics."</div>
+          </div>
+        </div>
+
+        <!-- SCENE 2: Lamp Login Experience -->
+        <div class="scene-canvas" id="scene1">
+          <div class="scene-header">
+            <span class="scene-tag">CHAPTER 02 • ZERO-BLOCKAGE TACTILE ACCESS</span>
+            <span class="scene-time">0:06 / 1:00</span>
+          </div>
+          <div class="scene-main">
+            <div class="interactive-card" style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="flex: 1;">
+                <div style="font-size: 24px; font-weight: 800; color: #FF1E56; margin-bottom: 8px;">Tactile Desk Lamp Gateway</div>
+                <div style="font-size: 14px; color: #E2E8F0; line-height: 1.6; margin-bottom: 16px;">
+                  • Interactive 3D pull cord with spring physics<br>
+                  • Dynamic lighting switch illuminating authentication cards<br>
+                  • 1-Click Instant Guest / Demo Mode bypass for zero login friction<br>
+                  • WebGL shader background with reactive particle field
+                </div>
+                <button class="primary" onclick="alert('Lamp Illuminated! Entering guest session...')">💡 Pull Lamp Cord & Enter Guest Mode</button>
+              </div>
+              <div style="background: rgba(24, 20, 32, 0.98); border: 1px solid rgba(255,30,86,0.3); border-radius: 16px; padding: 24px; text-align: center; width: 280px;">
+                <div style="font-size: 40px; margin-bottom: 8px;">🏮</div>
+                <div style="font-size: 14px; font-weight: 700; color: #A855F7;">Illumination State: 100%</div>
+                <div style="font-size: 12px; color: #A1A1AA; margin-top: 4px;">Sub-10ms Shader Render Latency</div>
+              </div>
+            </div>
+          </div>
+          <div class="narration-bar">
+            <div class="narration-title">Executive Narration:</div>
+            <div class="narration-body">"First impressions matter. The tactile lamp login gives students zero-friction guest access while setting an immersive, spatial UI tone."</div>
+          </div>
+        </div>
+
+        <!-- SCENE 3: Placement Intelligence Vector -->
+        <div class="scene-canvas" id="scene2">
+          <div class="scene-header">
+            <span class="scene-tag">CHAPTER 03 • 88.2% ML PLACEMENT PREDICTION</span>
+            <span class="scene-time">0:12 / 1:00</span>
+          </div>
+          <div class="scene-main">
+            <div class="interactive-card">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <div>
+                  <div style="font-size: 22px; font-weight: 800; color: #FF1E56;">Calibrated ML Readiness Vector</div>
+                  <div style="font-size: 13px; color: #A1A1AA;">Trained on 972 historical student records using 120-tree Random Forest</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 26px; font-weight: 900; color: #A855F7;" id="demoOdds">84.6%</div>
+                  <div style="font-size: 11px; color: var(--crimson); font-weight: 700;">PREDICTED PLACEMENT ODDS</div>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div style="background: var(--card-inner); padding: 14px; border-radius: 12px;">
+                  <div style="font-size: 12px; font-weight: 700; color: #FF1E56; margin-bottom: 4px;">DSA Problem Mastery</div>
+                  <input type="range" min="50" max="450" value="280" style="width: 100%; accent-color: #FF1E56;" oninput="updateDemoOdds(this.value)">
+                  <div style="font-size: 11px; color: #A1A1AA; margin-top: 4px;">Adjust solved count to test real-time ML inference</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 14px; border-radius: 12px;">
+                  <div style="font-size: 12px; font-weight: 700; color: #A855F7; margin-bottom: 4px;">Predicted Compensation Tier</div>
+                  <div style="font-size: 16px; font-weight: 800; color: #FFFFFF;" id="demoTier">Tier 3: Product Engineering (10 - 18 LPA)</div>
+                  <div style="font-size: 11px; color: #A1A1AA; margin-top: 4px;">Feature importance weights DSA (31%) & Projects (26%) over CGPA</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="narration-bar">
+            <div class="narration-title">Executive Narration:</div>
+            <div class="narration-body">"Rather than relying solely on GPA, our 8-dimensional Random Forest classifier computes quantitative placement probability in under 45ms."</div>
+          </div>
+        </div>
+
+        <!-- SCENE 4: 6-Phase Adaptive Roadmap -->
+        <div class="scene-canvas" id="scene3">
+          <div class="scene-header">
+            <span class="scene-tag">CHAPTER 04 • 6-PHASE TACTICAL SPRINT ROADMAP</span>
+            <span class="scene-time">0:18 / 1:00</span>
+          </div>
+          <div class="scene-main">
+            <div class="interactive-card">
+              <div style="font-size: 20px; font-weight: 800; color: #FF1E56; margin-bottom: 12px;">Adaptive Skill-Gap Calibration Roadmap</div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                <div style="background: var(--card-inner); padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                  <div style="font-size: 11px; font-weight: 700; color: #A855F7;">PHASE 01</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #FFFFFF;">Algorithmic Foundations</div>
+                  <div style="font-size: 11px; color: #A1A1AA;">50 LeetCode Easy/Medium</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                  <div style="font-size: 11px; font-weight: 700; color: #A855F7;">PHASE 02</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #FFFFFF;">Trees & Dynamic Prog.</div>
+                  <div style="font-size: 11px; color: #A1A1AA;">Memoization & Graph BFS</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                  <div style="font-size: 11px; font-weight: 700; color: #A855F7;">PHASE 03</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #FFFFFF;">Production Backend</div>
+                  <div style="font-size: 11px; color: #A1A1AA;">FastAPI & SQLite WAL</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                  <div style="font-size: 11px; font-weight: 700; color: #FF1E56;">PHASE 04</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #FFFFFF;">System Architecture</div>
+                  <div style="font-size: 11px; color: #A1A1AA;">Docker, Redis & Kafka</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                  <div style="font-size: 11px; font-weight: 700; color: #FF1E56;">PHASE 05</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #FFFFFF;">Viva Interview Grill</div>
+                  <div style="font-size: 11px; color: #A1A1AA;">Trade-off defense simulation</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                  <div style="font-size: 11px; font-weight: 700; color: #FF1E56;">PHASE 06</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #FFFFFF;">Recruitment Sprints</div>
+                  <div style="font-size: 11px; color: #A1A1AA;">ATS audits & cold outreach</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="narration-bar">
+            <div class="narration-title">Executive Narration:</div>
+            <div class="narration-body">"Identified skill gaps are instantly synthesized into structured, semester-by-semester tactical milestones tailored to each candidate."</div>
+          </div>
+        </div>
+
+        <!-- SCENE 5: Screen-Aware Bilingual AI Coach -->
+        <div class="scene-canvas" id="scene4">
+          <div class="scene-header">
+            <span class="scene-tag">CHAPTER 05 • SCREEN-AWARE BILINGUAL AI COACH</span>
+            <span class="scene-time">0:24 / 1:00</span>
+          </div>
+          <div class="scene-main">
+            <div class="interactive-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="font-size: 20px; font-weight: 800; color: #FF1E56;">Google Gemini 2.0 Flash Mentorship</div>
+                <span class="scene-tag" style="color: #A855F7;">ENGLISH & TELUGU SUPPORT</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: var(--card-inner); padding: 12px 16px; border-radius: 12px; border-left: 3px solid #FF1E56;">
+                  <div style="font-size: 11px; font-weight: 700; color: #FF1E56;">CANDIDATE QUESTION (ROMAN TELUGU):</div>
+                  <div style="font-size: 13px; color: #FFFFFF;">"Naa CGPA 7.4 undhi, backlogs 1 undhi. Tier-1 product companies crack cheyadam ela?"</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 12px 16px; border-radius: 12px; border-left: 3px solid #A855F7;">
+                  <div style="font-size: 11px; font-weight: 700; color: #A855F7;">AI PLACEMENT COACH (LIVE MENTORSHIP):</div>
+                  <div style="font-size: 13px; color: #E2E8F0; line-height: 1.5;">"Kangarupadaku! Mee CGPA 7.4 tho 70% company criteria satisfy avuthundhi. Main priority: active backlog clear cheyadam & LeetCode lo 150+ problems solve chesi 2 deployed production projects showcase cheyadam. Mana Phase 1 roadmap ippude start cheddam."</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="narration-bar">
+            <div class="narration-title">Executive Narration:</div>
+            <div class="narration-body">"The Gemini AI Coach breaks regional intimidation barriers by mentoring in fluent English, native Telugu script, and Roman Telugu with live screen awareness."</div>
+          </div>
+        </div>
+
+        <!-- SCENE 6: 23 Production Blueprints -->
+        <div class="scene-canvas" id="scene5">
+          <div class="scene-header">
+            <span class="scene-tag">CHAPTER 06 • 23 PRODUCTION BLUEPRINTS</span>
+            <span class="scene-time">0:30 / 1:00</span>
+          </div>
+          <div class="scene-main">
+            <div class="interactive-card">
+              <div style="font-size: 20px; font-weight: 800; color: #FF1E56; margin-bottom: 12px;">Enterprise Architectures & SIH Problem Statements</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="background: var(--card-inner); padding: 12px; border-radius: 10px;">
+                  <div style="font-size: 14px; font-weight: 700; color: #FFFFFF;">Smart Campus Micro-Grid</div>
+                  <div style="font-size: 11px; color: #A855F7;">ESP32 • InfluxDB • Grafana • MQTT</div>
+                  <div style="font-size: 12px; color: #A1A1AA; margin-top: 4px;">Sub-second telemetry & load balancing for IoT engineers.</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 12px; border-radius: 10px;">
+                  <div style="font-size: 14px; font-weight: 700; color: #FFFFFF;">High-Throughput Ledger</div>
+                  <div style="font-size: 11px; color: #A855F7;">Go • Kafka • Redis • PostgreSQL</div>
+                  <div style="font-size: 12px; color: #A1A1AA; margin-top: 4px;">12,000 tx/sec double-entry financial transaction engine.</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 12px; border-radius: 10px;">
+                  <div style="font-size: 14px; font-weight: 700; color: #FFFFFF;">Medical Image Classifier</div>
+                  <div style="font-size: 11px; color: #FF1E56;">PyTorch • DenseNet • FastAPI</div>
+                  <div style="font-size: 12px; color: #A1A1AA; margin-top: 4px;">Chest pathology diagnostic pipeline with 94.6% accuracy.</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 12px; border-radius: 10px;">
+                  <div style="font-size: 14px; font-weight: 700; color: #FF1E56;">Drone 3D Model Synthesizer</div>
+                  <div style="font-size: 11px; color: #FF1E56;">Instant-NGP • NeRF • Open3D</div>
+                  <div style="font-size: 12px; color: #A1A1AA; margin-top: 4px;">SIH 2026 problem statement for defence reconnaissance.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="narration-bar">
+            <div class="narration-title">Executive Narration:</div>
+            <div class="narration-body">"Students graduate from toy classroom scripts to enterprise-grade blueprints featuring pipelines, failure trade-offs, and viva defense answers."</div>
+          </div>
+        </div>
+
+        <!-- SCENE 7: Viva Defense Simulator -->
+        <div class="scene-canvas" id="scene6">
+          <div class="scene-header">
+            <span class="scene-tag">CHAPTER 07 • VIVA DEFENSE & GRILL SIMULATOR</span>
+            <span class="scene-time">0:36 / 1:00</span>
+          </div>
+          <div class="scene-main">
+            <div class="interactive-card">
+              <div style="font-size: 20px; font-weight: 800; color: #FF1E56; margin-bottom: 12px;">High-Pressure Viva Defense Interrogation</div>
+              <div style="background: var(--card-inner); padding: 14px 18px; border-radius: 12px; margin-bottom: 12px; border-left: 3px solid #FF1E56;">
+                <div style="font-size: 11px; font-weight: 700; color: #FF1E56;">TECHNICAL INTERVIEWER PANEL:</div>
+                <div style="font-size: 13px; color: #FFFFFF; font-weight: 600;">"What happens if your Kafka partition leader crashes during a transaction burst in your Ledger project?"</div>
+              </div>
+              <div style="background: var(--card-inner); padding: 14px 18px; border-radius: 12px; border-left: 3px solid #A855F7;">
+                <div style="font-size: 11px; font-weight: 700; color: #A855F7;">STUDENT DEFENSE RUBRIC:</div>
+                <div style="font-size: 13px; color: #E2E8F0; line-height: 1.5;">"The In-Sync Replicas (ISR) protocol triggers an automated leader election within 250ms with zero data loss due to acks=all idempotency."</div>
+              </div>
+            </div>
+          </div>
+          <div class="narration-bar">
+            <div class="narration-title">Executive Narration:</div>
+            <div class="narration-body">"The defense simulator prepares candidates for grueling viva examination panels by testing their architectural depth and failure mitigation."</div>
+          </div>
+        </div>
+
+        <!-- SCENE 8: ATS Resume Studio -->
+        <div class="scene-canvas" id="scene7">
+          <div class="scene-header">
+            <span class="scene-tag">CHAPTER 08 • ATS RESUME STUDIO & AUDITOR</span>
+            <span class="scene-time">0:42 / 1:00</span>
+          </div>
+          <div class="scene-main">
+            <div class="interactive-card">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 14px;">
+                <div>
+                  <div style="font-size: 20px; font-weight: 800; color: #FF1E56;">ATS Keyword Score & Diagnostics</div>
+                  <div style="font-size: 12px; color: #A1A1AA;">Benchmarked against Tier-1 Software Engineer Job Descriptions</div>
+                </div>
+                <div style="font-size: 24px; font-weight: 900; color: #A855F7;">91 / 100 ATS MATCH</div>
+              </div>
+              <div style="background: var(--card-inner); padding: 14px; border-radius: 12px;">
+                <div style="font-size: 11px; font-weight: 700; color: #FF1E56; margin-bottom: 6px;">AUTOMATED BULLET IMPACT REWRITE:</div>
+                <div style="font-size: 12px; color: #A1A1AA; text-decoration: line-through;">"Built a backend with Python and handled users."</div>
+                <div style="font-size: 13px; color: #FFFFFF; font-weight: 700; margin-top: 4px;">"Architected an asynchronous FastAPI service handling 4.2k requests/sec, reducing median query latency by 38% via SQLite WAL caching."</div>
+              </div>
+            </div>
+          </div>
+          <div class="narration-bar">
+            <div class="narration-title">Executive Narration:</div>
+            <div class="narration-body">"The ATS Studio transforms weak student bullet points into high-impact, metric-driven achievements that pass enterprise screening algorithms."</div>
+          </div>
+        </div>
+
+        <!-- SCENE 9: Institutional Analytics -->
+        <div class="scene-canvas" id="scene8">
+          <div class="scene-header">
+            <span class="scene-tag">CHAPTER 09 • INSTITUTIONAL COHORT ANALYTICS</span>
+            <span class="scene-time">0:48 / 1:00</span>
+          </div>
+          <div class="scene-main">
+            <div class="interactive-card">
+              <div style="font-size: 20px; font-weight: 800; color: #FF1E56; margin-bottom: 12px;">Batch Telemetry & Accreditation Pipelines</div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+                <div style="background: var(--card-inner); padding: 14px; border-radius: 12px; text-align: center;">
+                  <div style="font-size: 26px; font-weight: 900; color: #FF1E56;">972</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #E2E8F0;">Active Student Cohort</div>
+                  <div style="font-size: 10px; color: #A1A1AA;">Across 9 Engineering Branches</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 14px; border-radius: 12px; text-align: center;">
+                  <div style="font-size: 26px; font-weight: 900; color: #A855F7;">88.2%</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #E2E8F0;">Prediction Precision</div>
+                  <div style="font-size: 10px; color: #A1A1AA;">Validated against final offers</div>
+                </div>
+                <div style="background: var(--card-inner); padding: 14px; border-radius: 12px; text-align: center;">
+                  <div style="font-size: 26px; font-weight: 900; color: #FFFFFF;">100%</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #E2E8F0;">Automated PDF / CSV</div>
+                  <div style="font-size: 10px; color: #A1A1AA;">NAAC & NIRF compliant exports</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="narration-bar">
+            <div class="narration-title">Executive Narration:</div>
+            <div class="narration-body">"Placement cells receive institutional-grade cohort telemetry with one-click ReportLab PDF dossiers and streaming CSV data pipelines."</div>
+          </div>
+        </div>
+
+        <!-- SCENE 10: Live Production Verification -->
+        <div class="scene-canvas" id="scene9">
+          <div class="scene-header">
+            <span class="scene-tag">CHAPTER 10 • PRODUCTION VERIFICATION & SCALING</span>
+            <span class="scene-time">0:54 / 1:00</span>
+          </div>
+          <div class="scene-main">
+            <div class="interactive-card" style="text-align: center;">
+              <div style="font-size: 26px; font-weight: 900; color: #FF1E56; margin-bottom: 8px;">Production Deployed & Cloud Verified</div>
+              <div style="font-size: 14px; color: #FFFFFF; margin-bottom: 16px;">Vercel Edge SPA Client &nbsp;•&nbsp; Render Cloud Python API &nbsp;•&nbsp; 16/16 IDOR Audits Passed</div>
+              <div style="display: flex; justify-content: center; gap: 14px;">
+                <a href="https://pathfinder-client-fzom.vercel.app" target="_blank" style="text-decoration: none;">
+                  <button class="primary" style="font-size: 14px; padding: 10px 22px;">🚀 Open Production App</button>
+                </a>
+                <a href="slides_preview.html" target="_blank" style="text-decoration: none;">
+                  <button style="font-size: 14px; padding: 10px 22px; border-color: #A855F7; color: #A855F7;">📊 View Full PPT Keynote</button>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="narration-bar">
+            <div class="narration-title">Executive Narration:</div>
+            <div class="narration-body">"Pathfinder 2.0 is live in production today. Rock-solid type safety, calibrated ML, and scalable architecture ready for university deployment."</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Controls Bar -->
+      <div class="controls-bar">
+        <div class="btn-group">
+          <button id="playBtn" class="primary" onclick="togglePlay()">▶ Play Keynote</button>
+          <button onclick="prevScene()">❮ Prev</button>
+          <button onclick="nextScene()">Next ❯</button>
+        </div>
+
+        <div class="progress-track" onclick="seek(event)">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="btn-group">
+          <button onclick="toggleFullscreen()" title="Fullscreen Mode">⛶ Fullscreen</button>
+          <a href="https://pathfinder-client-fzom.vercel.app" target="_blank" style="text-decoration: none;">
+            <button style="border-color: var(--crimson); color: var(--crimson);">🚀 Live Cloud</button>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thumbnails navigation -->
+    <div class="thumbs-strip" id="thumbsStrip"></div>
+  </div>
+
+  <script>
+    let currentScene = 0;
+    const totalScenes = 10;
+    let isPlaying = false;
+    let timer = null;
+
+    const progressFill = document.getElementById("progressFill");
+    const playBtn = document.getElementById("playBtn");
+    const thumbsStrip = document.getElementById("thumbsStrip");
+    const playerWindow = document.getElementById("playerWindow");
+
+    for (let i = 0; i < totalScenes; i++) {
+      const b = document.createElement("div");
+      b.className = `thumb-btn ${i === 0 ? 'active' : ''}`;
+      b.innerText = `Ch 0${i + 1}`;
+      b.onclick = () => showScene(i);
+      thumbsStrip.appendChild(b);
+    }
+
+    function showScene(idx) {
+      document.getElementById(`scene${currentScene}`).classList.remove("active");
+      currentScene = idx;
+      document.getElementById(`scene${currentScene}`).classList.add("active");
+      progressFill.style.width = `${((currentScene + 1) / totalScenes) * 100}%`;
+
+      document.querySelectorAll(".thumb-btn").forEach((btn, i) => {
+        btn.classList.toggle("active", i === currentScene);
+      });
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      playBtn.innerText = isPlaying ? "⏸ Pause" : "▶ Play Keynote";
+      if (isPlaying) {
+        timer = setInterval(() => {
+          if (currentScene < totalScenes - 1) showScene(currentScene + 1);
+          else showScene(0);
+        }, 5000);
+      } else {
+        clearInterval(timer);
+      }
+    }
+
+    function nextScene() {
+      if (currentScene < totalScenes - 1) showScene(currentScene + 1);
+      else showScene(0);
+    }
+
+    function prevScene() {
+      if (currentScene > 0) showScene(currentScene - 1);
+      else showScene(totalScenes - 1);
+    }
+
+    function seek(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const pct = clickX / rect.width;
+      const target = Math.min(Math.floor(pct * totalScenes), totalScenes - 1);
+      showScene(target);
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        playerWindow.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    function updateDemoOdds(val) {
+      const base = 50 + (val / 450) * 45;
+      const rounded = Math.min(Math.round(base * 10) / 10, 98.4);
+      document.getElementById("demoOdds").innerText = rounded + "%";
+      if (val > 300) {
+        document.getElementById("demoTier").innerText = "Tier 4: Tier-1 Tech Elite (18 - 35+ LPA)";
+      } else if (val > 180) {
+        document.getElementById("demoTier").innerText = "Tier 3: Product Engineering (10 - 18 LPA)";
+      } else {
+        document.getElementById("demoTier").innerText = "Tier 2: Mid-Level Engineering (6 - 10 LPA)";
+      }
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.code === "ArrowRight") {
+        nextScene();
+      } else if (e.code === "ArrowLeft") {
+        prevScene();
+      }
+    });
+  </script>
+</body>
+</html>

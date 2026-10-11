@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pathfinder 2.0 • Executive Technical Keynote Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #06060A;
+      --card-bg: rgba(16, 14, 22, 0.96);
+      --card-inner: rgba(24, 20, 32, 0.98);
+      --border: rgba(46, 32, 52, 0.9);
+      --crimson: #FF1E56;
+      --ruby: #E11D48;
+      --amethyst: #A855F7;
+      --magenta: #D946EF;
+      --text: #F8FAFC;
+      --muted: #A1A1AA;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255, 30, 86, 0.16), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 90% 90%, rgba(168, 85, 247, 0.12), transparent 60%);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+    .container {
+      width: 100%;
+      max-width: 1260px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo-img {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 0 25px rgba(255, 30, 86, 0.45);
+      border: 1px solid rgba(255, 30, 86, 0.4);
+    }
+    .brand-title h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #FFFFFF, var(--crimson));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-title p {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .telemetry-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(255, 30, 86, 0.12);
+      border: 1px solid rgba(255, 30, 86, 0.35);
+      color: var(--crimson);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--crimson);
+      box-shadow: 0 0 10px var(--crimson);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+    .deck-viewport {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #06060A;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.95), 0 0 40px rgba(255, 30, 86, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .slide-stage {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .slide-view {
+      display: none;
+      width: 100%;
+      height: 100%;
+      padding: 40px 52px;
+      flex-direction: column;
+      justify-content: space-between;
+      animation: fadeIn 0.3s ease;
+      background: #06060A;
+      background-image: 
+        radial-gradient(ellipse 60% 40% at 90% 10%, rgba(255, 30, 86, 0.12), transparent 60%),
+        radial-gradient(ellipse 60% 40% at 10% 90%, rgba(168, 85, 247, 0.08), transparent 60%);
+    }
+    .slide-view.active {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.99); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .header-cat {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--crimson);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .header-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #FFFFFF;
+    }
+    .slide-body {
+      flex: 1;
+      display: flex;
+      margin-top: 24px;
+      gap: 18px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+    .grid-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+      height: 100%;
+    }
+    .grid-4col {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      width: 100%;
+      height: 100%;
+    }
+    .grid-3col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      width: 100%;
+      height: 100%;
+    }
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      width: 100%;
+      height: 100%;
+    }
+    .card-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--amethyst);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--crimson);
+      margin-bottom: 8px;
+      line-height: 1.25;
+    }
+    .card-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 12px;
+      font-size: 11px;
+      color: #71717A;
+    }
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: rgba(14, 12, 20, 0.98);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    .btn-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    button {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    button:hover {
+      background: rgba(255, 30, 86, 0.18);
+      border-color: var(--crimson);
+      transform: translateY(-1px);
+    }
+    button.primary {
+      background: linear-gradient(135deg, var(--crimson), var(--amethyst));
+      color: #FFFFFF;
+      border: none;
+      box-shadow: 0 0 15px rgba(255, 30, 86, 0.4);
+    }
+    .thumbs-strip {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 8px;
+      width: 100%;
+    }
+    .thumb-btn {
+      padding: 8px 6px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      cursor: pointer;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+    .thumb-btn.active {
+      border-color: var(--crimson);
+      color: #FFFFFF;
+      background: rgba(255, 30, 86, 0.2);
+      box-shadow: 0 0 15px rgba(255, 30, 86, 0.35);
+    }
+    .slide-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--magenta);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand-group">
+        <img class="logo-img" src="pathfinder_logo.jpg" alt="Pathfinder Emblem">
+        <div class="brand-title">
+          <h1>Pathfinder 2.0 • Executive Technical Keynote Deck</h1>
+          <p>Deep Technical Matter (Strictly Zero Green, Zero Yellow, Zero Dark Blue)</p>
+        </div>
+      </div>
+      <div class="telemetry-tag">
+        <div class="pulse-dot"></div>
+        <span>Lead Architect: Dileep Bommali</span>
+      </div>
+    </div>
+
+    <!-- Presentation Stage -->
+    <div class="deck-viewport" id="viewport">
+      <div class="slide-stage">
+
+        <!-- Slide 1 -->
+        <div class="slide-view active" id="slide0" style="justify-content: center; align-items: center; text-align: center;">
+          <div style="background: rgba(16, 14, 22, 0.96); border: 1.5px solid rgba(46, 32, 52, 0.9); border-radius: 24px; padding: 44px 64px; max-width: 980px; box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(255,30,86,0.18);">
+            <div style="font-size: 50px; font-weight: 900; letter-spacing: -0.02em; color: #FF1E56; margin-bottom: 12px;">PATHFINDER 2.0</div>
+            <div style="font-size: 20px; font-weight: 600; color: #FFFFFF; margin-bottom: 20px;">Autonomous Placement Intelligence, ML Eligibility Engine & Multilingual Mentorship Platform</div>
+            <div style="width: 200px; height: 2px; background: linear-gradient(90deg, #A855F7, #FF1E56); margin: 0 auto 20px;"></div>
+            <div style="font-size: 13px; font-weight: 700; color: #A855F7; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">VERIFIED PRODUCTION METRICS</div>
+            <div style="font-size: 15px; color: #E2E8F0; line-height: 1.6; margin-bottom: 20px;">
+              <b>972 Student Records</b> across 9 Branches &nbsp;•&nbsp; <b>88.2% Calibrated Random Forest</b> Accuracy<br>
+              <b>15 Deep Architecture Tabs</b> &nbsp;•&nbsp; <b>23 Production Blueprints</b> &nbsp;•&nbsp; <b>Sub-15ms WAL Latency</b>
+            </div>
+            <div style="font-size: 17px; font-weight: 700; color: #FF1E56; margin-bottom: 6px;">Lead Architect & Full-Stack Systems Engineer: Dileep Bommali</div>
+            <div style="font-size: 12px; color: #A1A1AA;">Stack: React 19 • TypeScript • Python FastAPI • Scikit-Learn • Google Gemini 2.0 Flash • SQLite WAL</div>
+          </div>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="slide-view" id="slide1">
+          <div>
+            <div class="header-cat">PROBLEM STATEMENT & QUANTITATIVE CRISIS</div>
+            <div class="header-title">The Industry-Academia Placement Disconnect</div>
+          </div>
+          <div class="slide-body">
+            <div class="grid-2x2">
+              <div class="card">
+                <div class="card-title">CRISIS 01 • 64.8% Technical Filter Rejection</div>
+                <div class="card-desc">Over 64% of engineering graduates fail preliminary technical screenings due to outdated academic curriculum completely misaligned with real industry recruitment rubrics.</div>
+              </div>
+              <div class="card">
+                <div class="card-title">CRISIS 02 • 82% Lack Production Blueprints</div>
+                <div class="card-desc">Students build superficial toy projects with zero live cloud deployments, containerization, or production-grade database schema architecture to showcase.</div>
+              </div>
+              <div class="card">
+                <div class="card-title">CRISIS 03 • 1 : 1,200 Placement Mentor Ratio</div>
+                <div class="card-desc">University career training cells cannot provide 24/7 personalized, line-by-line code reviews, architectural feedback, and system design grilling across thousands of students.</div>
+              </div>
+              <div class="card">
+                <div class="card-title">CRISIS 04 • 78% Late Skill-Gap Realization</div>
+                <div class="card-desc">Candidates discover critical aptitude and DSA deficiencies only in Semester 7/8, making it mathematically impossible to recover before recruitment drives begin.</div>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bar">
+            <span>Slide 02 / 10 • Pathfinder 2.0</span>
+            <span>Lead Architect: Dileep Bommali</span>
+          </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="slide-view" id="slide2">
+          <div>
+            <div class="header-cat">SOLUTION ARCHITECTURE</div>
+            <div class="header-title">Pathfinder 2.0: Autonomous Career Acceleration Engine</div>
+          </div>
+          <div class="slide-body">
+            <div class="grid-4col">
+              <div class="card">
+                <div class="card-num">PILLAR 01</div>
+                <div class="card-title">Predictive ML Calibration</div>
+                <div class="card-desc">Ingests 8 candidate dimensions (CGPA, LeetCode rank, Git commits, backlogs) to output placement probability (0-100%) and 4 salary compensation tiers.</div>
+              </div>
+              <div class="card">
+                <div class="card-num">PILLAR 02</div>
+                <div class="card-title">Skill-Gap Radar Alignment</div>
+                <div class="card-desc">Compares student mastery vectors against live Tier-1 company benchmarks across 9 engineering disciplines (CSE, ECE, AI/ML, Cyber Security, etc.).</div>
+              </div>
+              <div class="card">
+                <div class="card-num">PILLAR 03</div>
+                <div class="card-title">Multilingual Gemini Copilot</div>
+                <div class="card-desc">Generates personalized 6-phase adaptive study roadmaps with 24/7 real-time voice and text mentorship in both English and Telugu script.</div>
+              </div>
+              <div class="card">
+                <div class="card-num">PILLAR 04</div>
+                <div class="card-title">Institutional Command Center</div>
+                <div class="card-desc">Empowers placement directors with cohort distribution heatmaps, 1-click ATS-optimized ReportLab PDF dossiers, and streaming CSV exports.</div>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bar">
+            <span>Slide 03 / 10 • Pathfinder 2.0</span>
+            <span>Lead Architect: Dileep Bommali</span>
+          </div>
+        </div>
+
+        <!-- Slide 4 -->
+        <div class="slide-view" id="slide3">
+          <div>
+            <div class="header-cat">TECHNICAL INFRASTRUCTURE</div>
+            <div class="header-title">Full-Stack System Architecture & Data Pipelines</div>
+          </div>
+          <div class="slide-body">
+            <div class="grid-3col">
+              <div class="card">
+                <div class="card-num">FRONTEND CLIENT LAYER</div>
+                <div class="card-title">React 19 & TypeScript Strict</div>
+                <div class="card-desc" style="white-space: pre-line;">• Vite 7 lightning-fast bundler with dynamic chunking
+• Tailwind CSS v4 design system with custom CSS tokens
+• Framer Motion physics for zero-layout-shift UI
+• 15 specialized spatial tabs with ThreeUI WebGL shaders
+• Zero runtime type errors (100% strict tsc verification)</div>
+              </div>
+              <div class="card">
+                <div class="card-num">GATEWAY & API LAYER</div>
+                <div class="card-title">Python FastAPI & Async I/O</div>
+                <div class="card-desc" style="white-space: pre-line;">• Fully asynchronous Python 3.11 ASGI event loop
+• Pydantic v2 schemas validating request/response DTOs
+• Strict JWT token lifecycle with revocation blacklist
+• Automated IDOR access defense returning 403 Forbidden
+• Sub-15ms median REST API endpoint response time</div>
+              </div>
+              <div class="card">
+                <div class="card-num">PERSISTENCE & AI LAYER</div>
+                <div class="card-title">SQLite WAL & Gemini 2.0</div>
+                <div class="card-desc" style="white-space: pre-line;">• SQLite in Write-Ahead Logging (WAL) mode
+• PRAGMA synchronous = NORMAL for high concurrency
+• Scikit-learn pre-trained Random Forest model cache
+• Google Gemini 2.0 Flash LLM with prompt grounding
+• ReportLab automated PDF engine for instant dossiers</div>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bar">
+            <span>Slide 04 / 10 • Pathfinder 2.0</span>
+            <span>Lead Architect: Dileep Bommali</span>
+          </div>
+        </div>
+
+        <!-- Slide 5 -->
+        <div class="slide-view" id="slide4">
+          <div>
+            <div class="header-cat">MACHINE LEARNING MATHEMATICS</div>
+            <div class="header-title">Quantitative ML Engine (88.2% Accuracy, 972 Records)</div>
+          </div>
+          <div class="slide-body">
+            <div class="grid-2col">
+              <div class="card">
+                <div class="card-title">8-Dimensional Input Vector</div>
+                <ul style="list-style: none; margin-top: 10px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #E2E8F0;">
+                  <li>• <b style="color: #FF1E56;">CGPA & Credits:</b> Normalized university cumulative grade average.</li>
+                  <li>• <b style="color: #FF1E56;">Active Backlog Score:</b> Exponential penalty for pending academic arrears.</li>
+                  <li>• <b style="color: #FF1E56;">DSA & Algorithmic Rank:</b> LeetCode/HackerRank solved count & percentiles.</li>
+                  <li>• <b style="color: #FF1E56;">Production Blueprints:</b> Verified GitHub portfolios with live cloud URLs.</li>
+                  <li>• <b style="color: #FF1E56;">Hackathon Trophies:</b> National-level competitions (SIH, ICPC, TechFests).</li>
+                  <li>• <b style="color: #FF1E56;">Verified Internships:</b> Tenure & tech-stack relevance of industry work.</li>
+                  <li>• <b style="color: #FF1E56;">Cloud Certifications:</b> AWS Solutions Architect, GCP Associate, CKA.</li>
+                  <li>• <b style="color: #FF1E56;">Communication Rubric:</b> Placement soft-skill & mock viva rubric score.</li>
+                </ul>
+              </div>
+              <div class="card">
+                <div class="card-title" style="color: #A855F7;">Calibrated Random Forest Classifier</div>
+                <ul style="list-style: none; margin-top: 10px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #E2E8F0;">
+                  <li>• <b style="color: #A855F7;">Dataset:</b> 972 verified student placement records across 9 branches.</li>
+                  <li>• <b style="color: #A855F7;">Ensemble:</b> 120 decision trees with balanced class weighting.</li>
+                  <li>• <b style="color: #A855F7;">Evaluation:</b> 88.2% Test Accuracy, 0.89 F1-Score, 0.91 AUC-ROC.</li>
+                  <li>• <b style="color: #A855F7;">Salary Stratification:</b> 4 compensation tiers (3-6 LPA, 6-10 LPA, 10-18 LPA, 18-35+ LPA).</li>
+                  <li>• <b style="color: #A855F7;">Feature Importance:</b> DSA rank (31%) & projects (26%) dominate over pure CGPA (14%).</li>
+                  <li>• <b style="color: #A855F7;">Latency:</b> 42ms median CPU inference via pre-compiled joblib cache.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bar">
+            <span>Slide 05 / 10 • Pathfinder 2.0</span>
+            <span>Lead Architect: Dileep Bommali</span>
+          </div>
+        </div>
+
+        <!-- Slide 6 -->
+        <div class="slide-view" id="slide5">
+          <div>
+            <div class="header-cat">ADAPTIVE CURRICULUM ACCELERATION</div>
+            <div class="header-title">Automated 6-Phase Tactical Placement Sprints</div>
+          </div>
+          <div class="slide-body">
+            <div class="grid-3col" style="grid-template-rows: 1fr 1fr;">
+              <div class="card">
+                <div class="card-title" style="font-size: 16px;">Phase 01: Algorithmic Mastery</div>
+                <div class="card-desc">Time/space complexity, arrays, two-pointer techniques, recursion, and initial 50 LeetCode Easy/Medium milestones.</div>
+              </div>
+              <div class="card">
+                <div class="card-title" style="font-size: 16px;">Phase 02: Advanced Data Structures</div>
+                <div class="card-desc">Trees, Graphs, BFS/DFS traversals, Dynamic Programming memoization, Trie structures, and priority queues.</div>
+              </div>
+              <div class="card">
+                <div class="card-title" style="font-size: 16px;">Phase 03: Production Backend</div>
+                <div class="card-desc">RESTful API design, database normalization, indexing strategies, connection pooling, and JWT authorization.</div>
+              </div>
+              <div class="card">
+                <div class="card-title" style="font-size: 16px;">Phase 04: System Architecture</div>
+                <div class="card-desc">Microservices, caching with Redis, message queues (Kafka), Docker containerization, and cloud deployment pipelines.</div>
+              </div>
+              <div class="card">
+                <div class="card-title" style="font-size: 16px;">Phase 05: Mock Viva Defense</div>
+                <div class="card-desc">Simulating high-pressure system design interviews, failure recovery scenarios, trade-off defenses, and DSA speed tests.</div>
+              </div>
+              <div class="card">
+                <div class="card-title" style="font-size: 16px;">Phase 06: Recruitment Sprint</div>
+                <div class="card-desc">ATS resume optimization, GitHub portfolio refinement, LinkedIn targeting, and high-conversion cold outreach campaigns.</div>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bar">
+            <span>Slide 06 / 10 • Pathfinder 2.0</span>
+            <span>Lead Architect: Dileep Bommali</span>
+          </div>
+        </div>
+
+        <!-- Slide 7 -->
+        <div class="slide-view" id="slide6">
+          <div>
+            <div class="header-cat">AI MENTORSHIP & INTERVIEW SIMULATION</div>
+            <div class="header-title">Screen-Aware Bilingual AI Coach & Defense Simulator</div>
+          </div>
+          <div class="slide-body">
+            <div class="grid-3col">
+              <div class="card">
+                <div class="card-num">CONTEXT-SYNCHRONIZED</div>
+                <div class="card-title">Live UI State Awareness</div>
+                <div class="card-desc">The AI mentor continuously reads live telemetry from the student's active UI — ingesting exact CGPA, pending backlogs, target role, and ML placement gauge percentage to mentor with concrete numbers instead of generic advice.</div>
+              </div>
+              <div class="card">
+                <div class="card-num">REGIONAL INCLUSION</div>
+                <div class="card-title">Bilingual (English + Telugu)</div>
+                <div class="card-desc">Full technical mentorship in fluent English, native Telugu script, and conversational Roman Telugu. Explains complex distributed systems, memory heaps, and tree traversals without linguistic intimidation.</div>
+              </div>
+              <div class="card">
+                <div class="card-num">INTERVIEW SIMULATION</div>
+                <div class="card-title">Viva Defense Simulator</div>
+                <div class="card-desc">Interrogates candidates on architectural choices, database locking, edge cases, and scaling bottlenecks in their portfolio projects, preparing them thoroughly for rigorous viva panels and technical rounds.</div>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bar">
+            <span>Slide 07 / 10 • Pathfinder 2.0</span>
+            <span>Lead Architect: Dileep Bommali</span>
+          </div>
+        </div>
+
+        <!-- Slide 8 -->
+        <div class="slide-view" id="slide7">
+          <div>
+            <div class="header-cat">PORTFOLIO ENGINEERING & HARDWARE SIH</div>
+            <div class="header-title">Enterprise Project Studio: 23 Production Blueprints</div>
+          </div>
+          <div class="slide-body">
+            <div class="grid-3col" style="grid-template-rows: 1fr 1fr;">
+              <div class="card">
+                <div class="card-title" style="font-size: 15px;">Smart Campus Micro-Grid</div>
+                <div class="card-num">ESP32 • MQTT • Grafana</div>
+                <div class="card-desc">Distributed smart energy monitoring with sub-second MQTT telemetry and automated load balancing.</div>
+              </div>
+              <div class="card">
+                <div class="card-title" style="font-size: 15px;">High-Throughput Ledger</div>
+                <div class="card-num">Go • Redis • Kafka • Postgres</div>
+                <div class="card-desc">Event-sourced double-entry ledger handling 12k tx/sec with distributed lock mitigation.</div>
+              </div>
+              <div class="card">
+                <div class="card-title" style="font-size: 15px;">Medical Image Classifier</div>
+                <div class="card-num">PyTorch • DenseNet • FastAPI</div>
+                <div class="card-desc">Computer vision pipeline classifying chest X-rays with Grad-CAM heatmaps & 94.6% validation accuracy.</div>
+              </div>
+              <div class="card">
+                <div class="card-title" style="font-size: 15px;">AI Attack Forecaster</div>
+                <div class="card-num">Zeek PCAP • Temporal GAT</div>
+                <div class="card-desc">Intrusion detector analyzing 25k packets/sec forecasting lateral movements 8 minutes before asset breach.</div>
+              </div>
+              <div class="card">
+                <div class="card-title" style="font-size: 15px;">Drone 3D Model Synthesizer</div>
+                <div class="card-num">Instant-NGP • NeRF • COLMAP</div>
+                <div class="card-desc">Single-pass drone video reconstruction generating centimetre-accurate 3D point cloud meshes.</div>
+              </div>
+              <div class="card">
+                <div class="card-title" style="font-size: 15px;">Autonomous Supply Optimizer</div>
+                <div class="card-num">MILP • Python • FastAPI</div>
+                <div class="card-desc">Mixed-integer linear programming minimizing warehouse distribution costs under dynamic demand.</div>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bar">
+            <span>Slide 08 / 10 • Pathfinder 2.0</span>
+            <span>Lead Architect: Dileep Bommali</span>
+          </div>
+        </div>
+
+        <!-- Slide 9 -->
+        <div class="slide-view" id="slide8">
+          <div>
+            <div class="header-cat">REPORTS & ACCREDITATION PIPELINES</div>
+            <div class="header-title">Institutional Analytics, ATS Studio & Reporting</div>
+          </div>
+          <div class="slide-body">
+            <div class="grid-3col">
+              <div class="card">
+                <div class="card-num">BATCH TELEMETRY</div>
+                <div class="card-title">Cohort Explorer Heatmaps</div>
+                <div class="card-desc">Provides placement deans and TPOs with real-time multi-dimensional batch filtering by CGPA bands, branch-wise readiness, and predicted placement probability tiers across all active student cohorts.</div>
+              </div>
+              <div class="card">
+                <div class="card-num">RESUME DIAGNOSTICS</div>
+                <div class="card-title">ATS Resume Studio & Auditor</div>
+                <div class="card-desc">Parses student resumes against target job descriptions, computes algorithmic keyword match scores, pinpoints missing frameworks, and automatically rewrites passive bullets into high-impact metrics.</div>
+              </div>
+              <div class="card">
+                <div class="card-num">AUTOMATED DOSSIERS</div>
+                <div class="card-title">ReportLab PDF & CSV Pipelines</div>
+                <div class="card-desc">Generates high-resolution recruiter-ready student profile PDFs on demand using ReportLab, alongside streaming CSV data exports formatted for NAAC accreditation, NIRF ranking audits, and recruiter sharing.</div>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bar">
+            <span>Slide 09 / 10 • Pathfinder 2.0</span>
+            <span>Lead Architect: Dileep Bommali</span>
+          </div>
+        </div>
+
+        <!-- Slide 10 -->
+        <div class="slide-view" id="slide9">
+          <div>
+            <div class="header-cat">VERIFICATION & FUTURE VISION</div>
+            <div class="header-title">Production Benchmarks, Roadmap & Open Q&A</div>
+          </div>
+          <div class="slide-body" style="flex-direction: column; gap: 14px;">
+            <div class="grid-3col" style="height: auto;">
+              <div class="card" style="padding: 14px 18px;">
+                <div class="card-title" style="font-size: 15px; margin-bottom: 2px;">✓ 972 Student Records</div>
+                <div class="card-desc" style="font-size: 12px;">Verified across 9 Engineering disciplines</div>
+              </div>
+              <div class="card" style="padding: 14px 18px;">
+                <div class="card-title" style="font-size: 15px; margin-bottom: 2px;">✓ 88.2% Test Accuracy</div>
+                <div class="card-desc" style="font-size: 12px;">Calibrated Random Forest (120 Estimators)</div>
+              </div>
+              <div class="card" style="padding: 14px 18px;">
+                <div class="card-title" style="font-size: 15px; margin-bottom: 2px;">✓ Sub-15ms WAL Latency</div>
+                <div class="card-desc" style="font-size: 12px;">SQLite Write-Ahead Logging query speed</div>
+              </div>
+              <div class="card" style="padding: 14px 18px;">
+                <div class="card-title" style="font-size: 15px; margin-bottom: 2px; color: #A855F7;">✓ 16/16 Security Audits</div>
+                <div class="card-desc" style="font-size: 12px;">Strict IDOR 403 Forbidden verification</div>
+              </div>
+              <div class="card" style="padding: 14px 18px;">
+                <div class="card-title" style="font-size: 15px; margin-bottom: 2px; color: #A855F7;">✓ 100% Strict Type Safety</div>
+                <div class="card-desc" style="font-size: 12px;">Zero TypeScript compilation warnings</div>
+              </div>
+              <div class="card" style="padding: 14px 18px;">
+                <div class="card-title" style="font-size: 15px; margin-bottom: 2px; color: #A855F7;">✓ Live Cloud Production</div>
+                <div class="card-desc" style="font-size: 12px;">Deployed on Vercel Edge SPA & Render API</div>
+              </div>
+            </div>
+
+            <div class="card" style="background: var(--card-inner); padding: 18px 24px;">
+              <div class="card-title" style="font-size: 15px; color: #A855F7; margin-bottom: 6px;">FUTURE ROADMAP & FEDERATED SCALING:</div>
+              <div style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #E2E8F0;">
+                <div>• <b style="color: #FF1E56;">AI Voice Mock Interviews:</b> Real-time speech cadence, audio sentiment, and DSA problem-solving analysis.</div>
+                <div>• <b style="color: #FF1E56;">Continuous GitHub Scraping:</b> Webhook pipeline tracking real-time code commits, PR merges, and LeetCode ratings.</div>
+                <div>• <b style="color: #FF1E56;">Multi-Campus Network:</b> Benchmarking placement metrics across peer universities for national rankings.</div>
+              </div>
+              <div style="font-size: 13px; font-weight: 700; color: #FF1E56; margin-top: 10px;">Lead Systems Architect: Dileep Bommali &nbsp;|&nbsp; Repository: https://github.com/dileepbommali16-ops/pathfinder</div>
+            </div>
+          </div>
+          <div class="footer-bar">
+            <span>Slide 10 / 10 • Pathfinder 2.0</span>
+            <span>Lead Architect: Dileep Bommali</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+      <div class="btn-group">
+        <button onclick="prevSlide()">❮ Previous Slide</button>
+        <button class="primary" onclick="nextSlide()">Next Slide ❯</button>
+      </div>
+
+      <div class="slide-counter" id="counter">Slide 01 / 10</div>
+
+      <div class="btn-group">
+        <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
+        <a href="demo_presentation.html" style="text-decoration: none;">
+          <button style="border-color: var(--crimson); color: var(--crimson);">🎬 Video Walkthrough</button>
+        </a>
+      </div>
+    </div>
+
+    <!-- Thumbnails -->
+    <div class="thumbs-strip" id="thumbs"></div>
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    const totalSlides = 10;
+    const counter = document.getElementById("counter");
+    const thumbs = document.getElementById("thumbs");
+    const viewport = document.getElementById("viewport");
+
+    for (let i = 0; i < totalSlides; i++) {
+      const b = document.createElement("div");
+      b.className = `thumb-btn ${i === 0 ? 'active' : ''}`;
+      b.innerText = `Slide 0${i + 1}`;
+      b.onclick = () => goToSlide(i);
+      thumbs.appendChild(b);
+    }
+
+    function goToSlide(n) {
+      document.getElementById(`slide${currentSlide}`).classList.remove("active");
+      currentSlide = n;
+      document.getElementById(`slide${currentSlide}`).classList.add("active");
+      counter.innerText = `Slide 0${currentSlide + 1} / 10`;
+
+      document.querySelectorAll(".thumb-btn").forEach((btn, idx) => {
+        btn.classList.toggle("active", idx === currentSlide);
+      });
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) goToSlide(currentSlide + 1);
+      else goToSlide(0);
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) goToSlide(currentSlide - 1);
+      else goToSlide(totalSlides - 1);
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        viewport.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "ArrowRight" || e.code === "Space") {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.code === "ArrowLeft") {
+        prevSlide();
+      }
+    });
+  </script>
+</body>
+</html>
