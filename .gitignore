@@ -9,6 +9,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 scratch*.png
+scratch/
 pathfinder-main/
 
 # Build outputs
