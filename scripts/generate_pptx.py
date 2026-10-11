@@ -560,13 +560,17 @@ def create_deck():
         "I am now open to your questions."
     )
 
-    # Save outputs to both Desktop and current folder
-    desktop_path = r"C:\Users\Priyanka\Desktop\Pathfinder_Presentation_Dileep_Bommali.pptx"
-    repo_path = r"C:\Users\Priyanka\Desktop\pathfinder-main\Pathfinder_Presentation_Dileep_Bommali.pptx"
+    # Save outputs to both Desktop and current project root
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    repo_path = os.path.join(repo_root, "Pathfinder_Presentation_Dileep_Bommali.pptx")
+    desktop_path = os.path.expanduser(r"~\Desktop\Pathfinder_Presentation_Dileep_Bommali.pptx")
 
     prs.save(repo_path)
-    prs.save(desktop_path)
-    print(f"Presentation saved successfully to:\n1. {repo_path}\n2. {desktop_path}")
+    try:
+        prs.save(desktop_path)
+        print(f"Presentation saved successfully to:\n1. {repo_path}\n2. {desktop_path}")
+    except Exception:
+        print(f"Presentation saved successfully to:\n1. {repo_path}")
 
 if __name__ == '__main__':
     create_deck()
