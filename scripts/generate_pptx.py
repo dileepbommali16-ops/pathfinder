@@ -92,7 +92,7 @@ def create_deck():
     p2.alignment = PP_ALIGN.CENTER
 
     p3 = tf.add_paragraph()
-    p3.text = "Stack: React 18 • TypeScript • FastAPI • Scikit-Learn • Google Gemini AI • ThreeUI WebGL"
+    p3.text = "Stack: React 19 • TypeScript • FastAPI • Scikit-Learn • Google Gemini AI • ThreeUI WebGL"
     p3.font.size = Pt(14)
     p3.font.color.rgb = TEXT_MUTED
     p3.alignment = PP_ALIGN.CENTER
@@ -213,9 +213,9 @@ def create_deck():
     add_header(s4, "Full-Stack System Architecture & Data Flow", "SYSTEM DESIGN")
 
     tiers = [
-        ("Frontend Tier", "React 18 & TypeScript", "Vite build system, Tailwind CSS, Framer Motion micro-interactions, ThreeUI Void Field WebGL shaders."),
-        ("API Gateway", "FastAPI & Uvicorn", "High-throughput asynchronous Python gateway, strict Pydantic schemas, CORS security, JWT session management."),
-        ("Intelligence Engine", "Scikit-Learn & Gemini AI", "Ensemble Random Forest & Gradient Boosted placement classifier, Google Gemini 2.5 Flash roadmap generator.")
+        ("Frontend Tier", "React 19 & TypeScript", "Vite 7 build system, Tailwind CSS v4, Framer Motion, 15 specialized modules, ThreeUI 3D WebGL background shaders."),
+        ("API & Gateway Tier", "FastAPI & SQLite WAL", "High-throughput asynchronous Python gateway, SQLite in WAL mode with repository pattern, sub-20ms queries, JWT security."),
+        ("Intelligence Tier", "Scikit-Learn & Gemini AI", "Calibrated Random Forest model (88% accuracy, 972 cohort records), Google Gemini 2.0 Flash bilingual AI Coach.")
     ]
 
     for i, (layer, tech, detail) in enumerate(tiers):
@@ -239,13 +239,13 @@ def create_deck():
 
         p_t = tf_box.add_paragraph()
         p_t.text = tech
-        p_t.font.size = Pt(19)
+        p_t.font.size = Pt(18)
         p_t.font.bold = True
         p_t.font.color.rgb = CYAN_ACCENT
 
         p_d = tf_box.add_paragraph()
         p_d.text = detail
-        p_d.font.size = Pt(14)
+        p_d.font.size = Pt(13)
         p_d.font.color.rgb = TEXT_WHITE
 
     s4.notes_slide.notes_text_frame.text = (
@@ -258,7 +258,7 @@ def create_deck():
     # -------------------------------------------------------------
     s5 = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_background(s5)
-    add_header(s5, "Quantitative ML Placement Prediction", "ALGORITHM & MODEL")
+    add_header(s5, "Quantitative ML Placement Prediction (972 Records)", "ALGORITHM & MODEL")
 
     # Left Box
     b_l = s5.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.9), Inches(5.6), Inches(4.8))
@@ -276,16 +276,16 @@ def create_deck():
     p_lt.font.color.rgb = CYAN_ACCENT
 
     points = [
-        "Academic standing: CGPA, core credits, backlogs",
+        "Academic standing: CGPA, core credits, active backlogs",
         "Industry readiness: Internships, live deployed projects",
-        "Algorithmic aptitude: LeetCode/CodeChef ratings, DSA rank",
-        "Competitions: Hackathon wins, research publications",
-        "Communication & soft skills: Mock interview ratings"
+        "Algorithmic aptitude: LeetCode/DSA problem count & rank",
+        "Competitions: Hackathon wins, certifications, GitHub portfolio",
+        "Communication & soft skills: Placement interview rubric scores"
     ]
     for pt in points:
         p = tf_l.add_paragraph()
         p.text = f"• {pt}"
-        p.font.size = Pt(14)
+        p.font.size = Pt(13)
         p.font.color.rgb = TEXT_WHITE
 
     # Right Box
@@ -298,26 +298,26 @@ def create_deck():
     tf_r.word_wrap = True
 
     p_rt = tf_r.paragraphs[0]
-    p_rt.text = "Ensemble Classifier & Inference"
+    p_rt.text = "Calibrated Random Forest Engine"
     p_rt.font.size = Pt(19)
     p_rt.font.bold = True
     p_rt.font.color.rgb = PURPLE_ACCENT
 
     r_points = [
-        "Dual-engine Voting Classifier (Random Forest + Gradient Boosting)",
-        "Outputs probabilistic placement odds (0 - 100%)",
+        "Trained on 972 historical student placement records across 9 branches",
+        "Random Forest Classifier with 120 decision trees (88% test accuracy)",
+        "Outputs probabilistic placement odds (0 - 100%) and salary tier (LPA)",
         "Feature importance scoring highlights priority growth areas",
-        "Instant inference latency (< 45ms per prediction)",
-        "Confidence intervals & risk mitigation factors provided"
+        "Sub-45ms ultra-low inference latency per candidate prediction"
     ]
     for pt in r_points:
         p = tf_r.add_paragraph()
         p.text = f"• {pt}"
-        p.font.size = Pt(14)
+        p.font.size = Pt(13)
         p.font.color.rgb = TEXT_WHITE
 
     s5.notes_slide.notes_text_frame.text = (
-        "Rather than guessing based on grades, our ML engine analyzes 12 holistic dimensions. "
+        "Rather than guessing based on grades, our ML engine analyzes 8 holistic dimensions across 972 real records. "
         "It generates exact probability scores and pinpoints high-impact actions to improve student outcomes."
     )
 
@@ -326,12 +326,12 @@ def create_deck():
     # -------------------------------------------------------------
     s6 = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_background(s6)
-    add_header(s6, "Adaptive Skill-Gap Analysis & Gemini Roadmaps", "AI MENTORSHIP")
+    add_header(s6, "Screen-Aware Bilingual Gemini AI Coach", "AI MENTORSHIP")
 
     cards6 = [
-        ("Dynamic Role Benchmarks", "Target Role Catalog", "Curated benchmarks for Full-Stack, Machine Learning, DevOps, Cloud Architect, and Mobile Dev roles."),
-        ("Skill Gap Radar", "Deficiency Identification", "Quantifies percentage gap across foundational algorithms, system design, modern frameworks, and cloud tooling."),
-        ("Gemini AI Career Co-Pilot", "Autonomous Roadmaps", "Generates structured week-by-week learning paths with real-time conversational career and interview coaching.")
+        ("Screen-Aware Context", "Live UI Synchronized", "The AI Coach dynamically reads the active screen, CGPA, backlogs, and gauge percentage to mentor with exact numbers."),
+        ("Bilingual Mentorship", "English & Telugu Support", "Offers technical coaching in English, Telugu script, and Roman Telugu to eliminate language barriers for all students."),
+        ("Multi-Turn Follow-Ups", "Conversational Memory", "Retains multi-turn dialogue context so candidates can ask in-depth follow-up questions on architecture, DSA, and viva prep.")
     ]
     for i, (title, sub, body) in enumerate(cards6):
         x = Inches(0.8 + i * 3.95)
@@ -374,9 +374,9 @@ def create_deck():
     add_header(s7, "Spatial UI & Immersive User Experience", "DESIGN & INTERACTION")
 
     features7 = [
-        ("Interactive Lamp Login", "Tactile Authentication", "Custom pull-cord lamp physics that transitions between dark and light states, backed by Google & GitHub OAuth."),
-        ("ThreeUI Void Field Shaders", "3D WebGL Background", "Hardware-accelerated reactive WebGL shader mesh producing an immersive, dark-tech aesthetic."),
-        ("Glassmorphism & Micro-Motion", "Modern Visual Hierarchy", "Fluid card layouts, accessible color contrast ratios, dynamic Recharts data visualizations, and mobile responsiveness.")
+        ("Interactive Lamp Login", "Zero-Blockage Access", "Tactile desk lamp with pull cord, multi-point click controls, GPU particles, and 1-click Instant Guest Mode."),
+        ("23 Production Blueprints", "Software & Hardware", "6 Flagship + 17 Smart India Hackathon system architectures with pipelines, pitfalls, and viva defense Q&A."),
+        ("15 Specialized Modules", "Spatial UI Architecture", "Overview, Cohort Analytics, What-If Simulator, Resume Studio, Digital Twin, and 3D WebGL background shaders.")
     ]
     for i, (title, sub, body) in enumerate(features7):
         x = Inches(0.8 + i * 3.95)
@@ -464,12 +464,12 @@ def create_deck():
     add_header(s9, "Performance Benchmarks & Quality Assurance", "VERIFICATION")
 
     metrics = [
-        ("0 Syntax Errors", "14/14 Python Backend Modules Passed"),
-        ("0 TypeScript Errors", "tsc --noEmit 100% Strict Type Safe"),
-        ("16/16 APIs Verified", "Health, Auth, Predict, AI, PDF/CSV 200 OK"),
-        ("< 50ms ML Latency", "High-throughput Placement Inference"),
-        ("100% Secret Protection", ".env Safely Guarded & Git Excluded"),
-        ("Production Bundled", "Vite Minified & Optimized")
+        ("972 Placement Records", "Verified across 9 Engineering Branches"),
+        ("88% ML Accuracy", "Random Forest Classifier (120 Estimators)"),
+        ("100% Strict Type Safety", "tsc --noEmit & zero Python compilation errors"),
+        ("16/16 Audit Passed", "IDOR 403 Forbidden & Security Verification"),
+        ("Bilingual AI Mentorship", "English, Telugu Script & Roman Telugu"),
+        ("Production Deployed", "Vercel Edge SPA & Render Cloud API Service")
     ]
     for i, (title, desc) in enumerate(metrics):
         row = i // 3

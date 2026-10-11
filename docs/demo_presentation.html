@@ -3,24 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pathfinder 2.0 - Interactive Video Demo & Slide Showcase</title>
+  <title>Pathfinder 2.0 • Official Interactive Video Walkthrough</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #07090e;
-      --card: rgba(18, 24, 38, 0.85);
-      --border: rgba(255, 255, 255, 0.1);
+      --bg: #06080F;
+      --card-bg: rgba(13, 17, 28, 0.92);
+      --border: rgba(255, 255, 255, 0.12);
       --cyan: #00E5FF;
-      --purple: #A855F7;
+      --sapphire: #0084FF;
+      --violet: #A855F7;
       --amber: #FFD600;
-      --text: #f8fafc;
-      --muted: #94a3b8;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: var(--bg);
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 132, 255, 0.15), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 90% 90%, rgba(168, 85, 247, 0.1), transparent 60%);
       color: var(--text);
       font-family: 'Outfit', sans-serif;
       min-height: 100vh;
@@ -33,7 +37,7 @@
     }
     .container {
       width: 100%;
-      max-width: 1100px;
+      max-width: 1140px;
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -45,52 +49,51 @@
       border-bottom: 1px solid var(--border);
       padding-bottom: 16px;
     }
-    .title-group {
+    .brand-group {
       display: flex;
       align-items: center;
       gap: 16px;
     }
-    .logo-badge {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--amber), var(--cyan));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      color: #000;
-      box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+    .logo-img {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 0 25px rgba(0, 229, 255, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
-    .title h1 {
+    .brand-title h1 {
       font-size: 24px;
       font-weight: 800;
-      background: linear-gradient(to right, #fff, var(--cyan));
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #FFFFFF, var(--cyan));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .title p {
+    .brand-title p {
       font-size: 13px;
       color: var(--muted);
+      font-weight: 500;
     }
-    .live-tag {
+    .telemetry-tag {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       padding: 6px 14px;
       border-radius: 9999px;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.4);
-      color: #34d399;
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      color: var(--cyan);
       font-size: 12px;
       font-weight: 700;
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
     }
     .pulse-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 10px #10b981;
+      background: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan);
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
@@ -101,11 +104,11 @@
       position: relative;
       width: 100%;
       aspect-ratio: 16 / 9;
-      background: #000;
-      border-radius: 20px;
+      background: #020408;
+      border-radius: 22px;
       overflow: hidden;
       border: 1px solid var(--border);
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 229, 255, 0.15);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 50px rgba(0, 132, 255, 0.15);
       display: flex;
       flex-direction: column;
     }
@@ -121,54 +124,57 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      transition: opacity 0.6s ease, transform 0.6s ease;
+      transition: opacity 0.5s ease;
     }
     .narration-overlay {
       position: absolute;
       bottom: 24px;
       left: 24px;
       right: 24px;
-      background: rgba(7, 10, 18, 0.88);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(16px);
+      background: rgba(8, 12, 22, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(20px);
       border-radius: 16px;
-      padding: 16px 20px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      padding: 16px 22px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 16px;
     }
     .narration-text h3 {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--cyan);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.08em;
       margin-bottom: 4px;
+      font-weight: 700;
     }
     .narration-text p {
       font-size: 15px;
-      color: #fff;
+      color: #FFFFFF;
       font-weight: 600;
       line-height: 1.4;
     }
     .scene-badge {
-      padding: 4px 10px;
-      border-radius: 8px;
+      padding: 6px 12px;
+      border-radius: 10px;
       background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
+      font-size: 13px;
       color: var(--amber);
       white-space: nowrap;
+      font-weight: 700;
     }
     .controls-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 20px;
-      background: rgba(10, 14, 24, 0.95);
+      padding: 16px 24px;
+      background: rgba(10, 14, 26, 0.98);
       border-top: 1px solid var(--border);
-      gap: 16px;
+      gap: 18px;
     }
     .btn-group {
       display: flex;
@@ -191,19 +197,19 @@
       gap: 8px;
     }
     button:hover {
-      background: rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.18);
       border-color: var(--cyan);
       transform: translateY(-1px);
     }
     button.primary {
-      background: linear-gradient(135deg, var(--cyan), #0091ff);
-      color: #000;
+      background: linear-gradient(135deg, var(--cyan), var(--sapphire));
+      color: #040814;
       border: none;
-      box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
     }
     button.primary:hover {
-      filter: brightness(1.1);
-      box-shadow: 0 0 25px rgba(0, 229, 255, 0.5);
+      filter: brightness(1.15);
+      box-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
     }
     .progress-track {
       flex: 1;
@@ -228,50 +234,58 @@
       width: 100%;
     }
     .thumb-btn {
-      padding: 6px;
+      padding: 8px 6px;
       border-radius: 10px;
       border: 1px solid var(--border);
-      background: var(--card);
+      background: var(--card-bg);
       cursor: pointer;
       text-align: center;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--muted);
       transition: all 0.2s;
     }
     .thumb-btn.active {
       border-color: var(--cyan);
-      color: #fff;
-      background: rgba(0, 229, 255, 0.15);
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+      color: #FFFFFF;
+      background: rgba(0, 229, 255, 0.16);
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+    }
+    .shortcuts-hint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 0 4px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="title-group">
-        <div class="logo-badge">P2</div>
-        <div class="title">
-          <h1>Pathfinder 2.0 • Live Video Walkthrough</h1>
-          <p>Autonomous Placement Analytics & AI Career Guidance Platform</p>
+      <div class="brand-group">
+        <img class="logo-img" src="pathfinder_logo.jpg" alt="Pathfinder 2.0 Official Emblem">
+        <div class="brand-title">
+          <h1>Pathfinder 2.0 • Live Interactive Video Walkthrough</h1>
+          <p>Autonomous Placement Analytics & Bilingual AI Career Guidance Platform</p>
         </div>
       </div>
-      <div class="live-tag">
+      <div class="telemetry-tag">
         <div class="pulse-dot"></div>
-        <span>Production Verified</span>
+        <span>Production Verified • 972 Cohort Records</span>
       </div>
     </div>
 
     <!-- Video Showcase Window -->
-    <div class="player-window">
+    <div class="player-window" id="playerWindow">
       <div class="screen-view">
-        <img id="mainScreen" class="screen-img" src="../client/public/pathfinder_logo.jpg" alt="Pathfinder Screen">
+        <img id="mainScreen" class="screen-img" src="pathfinder_logo.jpg" alt="Pathfinder Screen">
         
         <div class="narration-overlay">
           <div class="narration-text">
-            <h3 id="sceneLabel">Scene 1 / 10 • Opening & Identity</h3>
-            <p id="narrationText">Pathfinder 2.0: AI-Powered Career Co-Pilot that turns placement anxiety into predictable offers.</p>
+            <h3 id="sceneLabel">Scene 1 / 10 • Brand Identity & Vision</h3>
+            <p id="narrationText">Pathfinder 2.0: AI-Powered Career Co-Pilot that turns campus placement anxiety into predictable offers.</p>
           </div>
           <div class="scene-badge" id="timeBadge">0:00 / 1:00</div>
         </div>
@@ -279,7 +293,7 @@
 
       <div class="controls-bar">
         <div class="btn-group">
-          <button id="playBtn" class="primary" onclick="togglePlay()">▶ Play Demo</button>
+          <button id="playBtn" class="primary" onclick="togglePlay()">▶ Play Keynote</button>
           <button onclick="prevScene()">❮ Prev</button>
           <button onclick="nextScene()">Next ❯</button>
         </div>
@@ -288,46 +302,54 @@
           <div class="progress-fill" id="progressFill"></div>
         </div>
 
-        <a href="https://pathfinder-client-fzom.vercel.app" target="_blank" style="text-decoration: none;">
-          <button style="border-color: var(--amber); color: var(--amber);">🚀 Open Live Web App</button>
-        </a>
+        <div class="btn-group">
+          <button onclick="toggleFullscreen()" title="Fullscreen Mode">⛶ Fullscreen</button>
+          <a href="https://pathfinder-client-fzom.vercel.app" target="_blank" style="text-decoration: none;">
+            <button style="border-color: var(--amber); color: var(--amber); box-shadow: 0 0 15px rgba(255,214,0,0.2);">🚀 Live Web App</button>
+          </a>
+        </div>
       </div>
     </div>
 
     <!-- Thumbnails navigation -->
     <div class="thumbnails-strip" id="thumbsStrip"></div>
+
+    <div class="shortcuts-hint">
+      <span>💡 Pro Tip: Use <b>Spacebar</b> to Play/Pause, <b>Arrow Keys (← / →)</b> to navigate scenes.</span>
+      <span>Lead Engineer: <b>Dileep Bommali</b></span>
+    </div>
   </div>
 
   <script>
     const scenes = [
       {
-        img: "../client/public/pathfinder_logo.jpg",
-        title: "SCENE 1: BRAND IDENTITY & VISION",
-        text: "Pathfinder 2.0 unites historical campus hiring benchmarks with bilingual AI coaching to guide engineering students.",
+        img: "pathfinder_logo.jpg",
+        title: "SCENE 1: LUXURY EMBLEM & MISSION",
+        text: "Pathfinder 2.0 bridges academic curriculum with tier-1 hiring standards using historical data and bilingual AI.",
         time: "0:00"
       },
       {
         img: "screenshots/01_lamp_login_untouched.png",
         title: "SCENE 2: INTERACTIVE LAMP LOGIN",
-        text: "Pull the interactive desk lamp string to illuminate the room. Zero-blockage access with instant 1-click Guest Mode.",
+        text: "Tactile pull-cord desk lamp with multi-point click controls, GPU particles, and 1-click Instant Guest Access.",
         time: "0:06"
       },
       {
         img: "screenshots/02_screen_dashboard_overview.png",
-        title: "SCENE 3: READINESS INTELLIGENCE COMMAND CENTER",
-        text: "Calibrated Random Forest model trained on 972 student records evaluates 5 readiness vectors with salary tier projections.",
+        title: "SCENE 3: READINESS INTELLIGENCE DASHBOARD",
+        text: "Calibrated Random Forest model (88% accuracy) trained on 972 records computes 5 readiness vectors and salary tiers.",
         time: "0:12"
       },
       {
         img: "screenshots/03_screen_roadmap.png",
-        title: "SCENE 4: 6-WEEK STEP-WISE MILESTONE SPRINT",
-        text: "Automated skill gap engine converts raw academic weaknesses into semester-by-semester tactical study sprints.",
+        title: "SCENE 4: 6-WEEK STEP-WISE MILESTONES",
+        text: "Automated skill gap engine converts candidate deficiencies into semester-by-semester tactical study sprints.",
         time: "0:18"
       },
       {
         img: "screenshots/04_screen_ai_coach.png",
-        title: "SCENE 5: BILINGUAL SCREEN-AWARE AI COACH",
-        text: "Powered by Google Gemini 2.0 Flash. Understands live screen metrics and mentors candidates in English and Telugu.",
+        title: "SCENE 5: SCREEN-AWARE BILINGUAL AI COACH",
+        text: "Google Gemini 2.0 Flash reads live screen metrics and mentors candidates in English and Telugu with exact numbers.",
         time: "0:24"
       },
       {
@@ -344,7 +366,7 @@
       },
       {
         img: "screenshots/07_screen_resume_studio.png",
-        title: "SCENE 8: RESUME STUDIO & ATS SCORER",
+        title: "SCENE 8: RESUME STUDIO & ATS AUDITOR",
         text: "Instant ATS compliance audit, formatting diagnostics, and automated bullet-point impact rewrites.",
         time: "0:42"
       },
@@ -356,8 +378,8 @@
       },
       {
         img: "screenshots/10_screen_profile_settings.png",
-        title: "SCENE 10: ENTERPRISE SECURITY & DATA PRIVACY",
-        text: "Role-based access, IDOR protection, JWT revocation, and GDPR data export hosted on Vercel and Render.",
+        title: "SCENE 10: ENTERPRISE SECURITY & IDOR PROTECTION",
+        text: "Role-based access, strict 403 Forbidden IDOR defense, JWT revocation, and GDPR data export hosted on Vercel and Render.",
         time: "0:54"
       }
     ];
@@ -373,12 +395,13 @@
     const progressFill = document.getElementById("progressFill");
     const playBtn = document.getElementById("playBtn");
     const thumbsStrip = document.getElementById("thumbsStrip");
+    const playerWindow = document.getElementById("playerWindow");
 
     // Init thumbs
     scenes.forEach((s, i) => {
       const b = document.createElement("div");
       b.className = `thumb-btn ${i === 0 ? 'active' : ''}`;
-      b.innerText = `S${i + 1}`;
+      b.innerText = `S0${i + 1}`;
       b.onclick = () => showScene(i);
       thumbsStrip.appendChild(b);
     });
@@ -390,7 +413,7 @@
       setTimeout(() => {
         mainScreen.src = s.img;
         mainScreen.style.opacity = "1";
-      }, 200);
+      }, 150);
 
       sceneLabel.innerText = s.title;
       narrationText.innerText = s.text;
@@ -404,7 +427,7 @@
 
     function togglePlay() {
       isPlaying = !isPlaying;
-      playBtn.innerText = isPlaying ? "⏸ Pause" : "▶ Play Demo";
+      playBtn.innerText = isPlaying ? "⏸ Pause" : "▶ Play Keynote";
       if (isPlaying) {
         timer = setInterval(() => {
           if (currentIndex < scenes.length - 1) {
@@ -427,6 +450,26 @@
       if (currentIndex > 0) showScene(currentIndex - 1);
       else showScene(scenes.length - 1);
     }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        playerWindow.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    // Keyboard support
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.code === "ArrowRight") {
+        nextScene();
+      } else if (e.code === "ArrowLeft") {
+        prevScene();
+      }
+    });
   </script>
 </body>
 </html>
