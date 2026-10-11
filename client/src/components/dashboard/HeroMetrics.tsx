@@ -41,10 +41,10 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
 
   const toneConfig = {
     strong: {
-      border: "border-emerald-500/30",
-      bg: "from-emerald-500/10 via-emerald-950/20 to-slate-900/40",
-      badge: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-      progress: "from-emerald-400 to-teal-400",
+      border: "border-indigo-500/30",
+      bg: "from-indigo-500/10 via-slate-950/40 to-purple-950/20",
+      badge: "border-indigo-500/30 bg-indigo-500/10 text-indigo-300",
+      progress: "from-indigo-400 via-cyan-400 to-teal-400",
       icon: CheckCircle2,
       tag: "Tier-1 Ready",
     },
@@ -73,7 +73,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
       {/* Hero Banner with Integrated Probability Dial */}
       <div className={`relative overflow-hidden rounded-3xl border ${toneConfig.border} bg-gradient-to-br ${toneConfig.bg} p-6 shadow-[0_20px_50px_rgba(0,0,0,0.55)] backdrop-blur-2xl ring-1 ring-white/10 sm:p-8`}>
         {/* Subtle background ambient mesh */}
-        <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl" />
 
         <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
@@ -90,7 +90,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             </div>
 
             <h1 className="text-2xl font-black tracking-tight text-white sm:text-4xl">
-              Welcome back, <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent drop-shadow-sm">{username || "Engineer"}</span>
+              Welcome back, <span className="bg-gradient-to-r from-indigo-300 via-cyan-300 to-purple-300 bg-clip-text text-transparent drop-shadow-sm">{username || "Engineer"}</span>
             </h1>
 
             <p className="max-w-xl text-sm leading-relaxed text-slate-300">
@@ -100,7 +100,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             <div className="flex flex-wrap gap-3 pt-2">
               <button
                 onClick={() => onNavigateTab("missions")}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-4 py-2.5 text-xs font-bold text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:brightness-110 active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 px-4 py-2.5 text-xs font-bold text-white shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all hover:brightness-110 active:scale-95 cursor-pointer"
               >
                 <span>View 30-Day Mission & Plan</span>
                 <ArrowUpRight className="h-4 w-4" />
@@ -108,9 +108,9 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
 
               <button
                 onClick={() => onNavigateTab("coach")}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.05] px-4 py-2.5 text-xs font-semibold text-slate-200 backdrop-blur-md transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-300 active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.05] px-4 py-2.5 text-xs font-semibold text-slate-200 backdrop-blur-md transition-all hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:text-cyan-300 active:scale-95 cursor-pointer"
               >
-                <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+                <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
                 <span>Ask AI Placement Coach</span>
               </button>
             </div>
@@ -118,16 +118,23 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
 
           {/* Right: Modern High-Precision Probability Card */}
           <div className="flex flex-col items-center justify-center rounded-2xl border border-white/[0.08] bg-slate-950/70 p-6 text-center shadow-2xl backdrop-blur-xl ring-1 ring-white/5">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
               Pathfinder Career Readiness Assessment
             </span>
             <span className="text-[10px] text-slate-500 font-medium">
               ML Placement Probability Model
             </span>
 
-            {/* Circular / Arc Gauge Visual */}
+            {/* Circular / Arc Gauge Visual with Multi-tone Gradient */}
             <div className="relative my-4 flex h-36 w-36 items-center justify-center">
               <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 100 100">
+                <defs>
+                  <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#818cf8" />
+                    <stop offset="50%" stopColor="#38bdf8" />
+                    <stop offset="100%" stopColor="#2dd4bf" />
+                  </linearGradient>
+                </defs>
                 <circle
                   cx="50"
                   cy="50"
@@ -140,7 +147,8 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
                   cx="50"
                   cy="50"
                   r="40"
-                  className={`stroke-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.6)]`}
+                  stroke="url(#gaugeGradient)"
+                  className="drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]"
                   strokeWidth="8"
                   strokeDasharray="251.2"
                   initial={{ strokeDashoffset: 251.2 }}
@@ -173,7 +181,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
                 <div
-                  className={`h-full rounded-full bg-gradient-to-r ${toneConfig.progress} shadow-[0_0_10px_rgba(16,185,129,0.5)]`}
+                  className={`h-full rounded-full bg-gradient-to-r ${toneConfig.progress} shadow-[0_0_10px_rgba(99,102,241,0.4)]`}
                   style={{ width: `${displayChance}%` }}
                 />
               </div>
@@ -213,11 +221,11 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
         <motion.div
           whileHover={{ y: -3 }}
           transition={{ duration: 0.2 }}
-          className="rounded-2xl border border-white/[0.08] bg-slate-900/50 p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:border-emerald-500/40 hover:shadow-[0_12px_32px_rgba(16,185,129,0.12)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+          className="rounded-2xl border border-white/[0.08] bg-slate-900/50 p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:border-teal-500/40 hover:shadow-[0_12px_32px_rgba(20,184,166,0.12)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
         >
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-xs font-semibold">Active Backlogs</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
               <Award className="h-4 w-4" />
             </div>
           </div>
@@ -227,22 +235,22 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
           </div>
           <div className="mt-2 text-[11px]">
             {backlogs === 0 ? (
-              <span className="text-emerald-400 font-medium">✓ 100% Eligible for drives</span>
+              <span className="text-teal-300 font-medium">✓ 100% Eligible for drives</span>
             ) : (
               <span className="text-rose-400 font-medium">Clear before campus drives</span>
             )}
           </div>
         </motion.div>
 
-        {/* Internships */}
+        {/* Internships - Project Accent (Amber) */}
         <motion.div
           whileHover={{ y: -3 }}
           transition={{ duration: 0.2 }}
-          className="rounded-2xl border border-white/[0.08] bg-slate-900/50 p-5 shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:border-purple-500/40 hover:shadow-[0_12px_32px_rgba(168,85,247,0.12)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+          className="rounded-2xl border border-white/[0.08] bg-slate-900/50 p-5 shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:border-amber-500/40 hover:shadow-[0_12px_32px_rgba(245,158,11,0.12)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
         >
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-xs font-semibold">Internships Completed</span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <Briefcase className="h-4 w-4" />
             </div>
           </div>
@@ -252,22 +260,22 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
           </div>
           <div className="mt-2 text-[11px] text-slate-400">
             {internships >= 1 ? (
-              <span className="text-emerald-400 font-medium">✓ Practical work validated</span>
+              <span className="text-amber-300 font-medium">✓ Practical work validated</span>
             ) : (
               <span className="text-slate-400">Target 1 practical project</span>
             )}
           </div>
         </motion.div>
 
-        {/* Coding & DSA */}
+        {/* Coding & DSA - Skills Accent (Purple) */}
         <motion.div
           whileHover={{ y: -3 }}
           transition={{ duration: 0.2 }}
-          className="rounded-2xl border border-white/[0.08] bg-slate-900/50 p-5 shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:border-amber-500/40 hover:shadow-[0_12px_32px_rgba(245,158,11,0.12)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+          className="rounded-2xl border border-white/[0.08] bg-slate-900/50 p-5 shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:border-purple-500/40 hover:shadow-[0_12px_32px_rgba(168,85,247,0.12)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
         >
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-xs font-semibold">DSA & Problem Solving</span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
               <Code2 className="h-4 w-4" />
             </div>
           </div>
@@ -277,7 +285,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
           </div>
           <div className="mt-2 text-[11px] text-slate-400">
             {coding >= 7 ? (
-              <span className="text-emerald-400 font-medium">✓ High-frequency patterns</span>
+              <span className="text-purple-300 font-medium">✓ High-frequency patterns</span>
             ) : (
               <span className="text-amber-400 font-medium">Review Blind 75 list</span>
             )}

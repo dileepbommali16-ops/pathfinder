@@ -1245,7 +1245,7 @@ export default function Home() {
                   title="Campus Placement Readiness Overview"
                   description="Real-time placement probability and primary eligibility benchmark"
                   badge="Class of 2026"
-                  accent="emerald"
+                  accent="cyan"
                   icon={Target}
                   helperLabel="Calculated via Random Forest model trained on 972 student records"
                 />
@@ -1269,7 +1269,7 @@ export default function Home() {
                   title="Candidate Readiness Vectors"
                   description="Transparent multi-dimensional evaluation of your academic standing, practical coding, and communication confidence"
                   badge="Readiness Vectors"
-                  accent="emerald"
+                  accent="purple"
                   icon={Zap}
                   helperLabel="5 vectors calibrated against Tier-1 campus drive cutoffs"
                 />
@@ -1287,7 +1287,7 @@ export default function Home() {
                   title="Priority Next Best Actions"
                   description="Targeted high-leverage steps recommended specifically for your active bottlenecks"
                   badge="Actionable"
-                  accent="emerald"
+                  accent="amber"
                   icon={ArrowRight}
                   helperLabel="Auto-prioritizes Blind 75 DSA, projects, or cutoff clearance"
                 />
@@ -1304,7 +1304,7 @@ export default function Home() {
                   title="AI Action Center"
                   description="One-click automated intelligence tools integrated with your candidate profile"
                   badge="Command Hub"
-                  accent="emerald"
+                  accent="blue"
                   icon={Zap}
                   helperLabel="Click any tool to launch diagnostic audit"
                 />
@@ -1328,7 +1328,7 @@ export default function Home() {
                   title="What-If? Career Trajectory Simulator"
                   description="Simulate the immediate placement probability boost of boosting CGPA, clearing backlogs, or shipping an internship"
                   badge="Interactive Sandbox"
-                  accent="emerald"
+                  accent="rose"
                   icon={TrendingUp}
                   helperLabel="Interactive sliders instantly re-simulate placement probability"
                 />
@@ -1344,7 +1344,7 @@ export default function Home() {
                   title="Candidate Vector Adjustments"
                   description="Fine-tune your verified academic standing, coding proficiency, and target company tier"
                   badge="Profile Parameters"
-                  accent="emerald"
+                  accent="purple"
                   icon={Target}
                 />
                 <ProfileEvaluator
@@ -1369,7 +1369,7 @@ export default function Home() {
                   title="Target Role Skill Gap Analysis"
                   description="Direct alignment of your competencies against hiring cutoffs for your chosen domain"
                   badge="Skill Gap Matrix"
-                  accent="emerald"
+                  accent="amber"
                   icon={Sparkles}
                 />
                 <SkillGapSection

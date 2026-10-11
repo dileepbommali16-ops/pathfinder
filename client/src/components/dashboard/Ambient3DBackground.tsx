@@ -93,11 +93,11 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
         title="042 Void Protocol: Cyberpunk Telemetry Field"
         className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
           variant === "void-field"
-            ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/50 shadow-[0_0_16px_rgba(16,185,129,0.4)]"
+            ? "bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 shadow-[0_0_16px_rgba(6,182,212,0.4)]"
             : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
         }`}
       >
-        <span className="text-[10px] font-mono text-emerald-400 font-bold">042</span>
+        <span className="text-[10px] font-mono text-cyan-400 font-bold">042</span>
         <span>Void Field</span>
       </button>
     </aside>
@@ -142,7 +142,7 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
           className="absolute inset-0 pointer-events-none mix-blend-screen opacity-40"
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 50% 25%, rgba(139, 92, 246, 0.15), rgba(16, 185, 129, 0.08) 45%, transparent 75%)",
+              "radial-gradient(ellipse 80% 60% at 50% 25%, rgba(139, 92, 246, 0.15), rgba(56, 189, 248, 0.06) 45%, transparent 75%)",
           }}
         />
 

@@ -57,13 +57,13 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string 
 
 const TAB_THEMES: Record<TabId, { activeBg: string; text: string; icon: string; border: string; glow: string; badge: string; indicator: string }> = {
   overview: {
-    activeBg: "bg-emerald-500/15",
-    text: "text-emerald-300",
-    icon: "text-emerald-400",
-    border: "border-emerald-500/30",
-    glow: "shadow-[0_0_18px_rgba(16,185,129,0.15)]",
-    badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-    indicator: "from-emerald-400 to-teal-400"
+    activeBg: "bg-indigo-500/15",
+    text: "text-indigo-300",
+    icon: "text-indigo-400",
+    border: "border-indigo-500/30",
+    glow: "shadow-[0_0_18px_rgba(99,102,241,0.15)]",
+    badge: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
+    indicator: "from-indigo-400 to-cyan-400"
   },
   action: {
     activeBg: "bg-emerald-500/15",
