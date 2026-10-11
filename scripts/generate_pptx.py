@@ -11,14 +11,14 @@ def create_deck():
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
 
-    # Color Palette - Pathfinder Dark Tech Theme
-    BG_DARK = RGBColor(11, 15, 25)       # Deep slate navy
-    CARD_BG = RGBColor(19, 26, 42)       # Card background
-    CYAN_ACCENT = RGBColor(0, 229, 255)  # Glowing cyan
-    PURPLE_ACCENT = RGBColor(168, 85, 247)# Violet accent
-    TEXT_WHITE = RGBColor(248, 250, 252) # Crisp white
-    TEXT_MUTED = RGBColor(148, 163, 184) # Slate gray
-    BORDER_COLOR = RGBColor(37, 49, 78)  # Card border
+    # Color Palette - Obsidian Ruby & Cyber Amethyst Theme (Zero Green, Zero Yellow, Zero Blue)
+    BG_DARK = RGBColor(9, 9, 14)          # Deep obsidian black
+    CARD_BG = RGBColor(18, 16, 24)        # Luxury dark card background
+    CRIMSON_ACCENT = RGBColor(255, 45, 85)# Electric crimson ruby
+    PURPLE_ACCENT = RGBColor(168, 85, 247)# Cyber amethyst violet
+    TEXT_WHITE = RGBColor(248, 250, 252)  # Crisp platinum white
+    TEXT_MUTED = RGBColor(161, 161, 170)  # Zinc slate gray
+    BORDER_COLOR = RGBColor(48, 32, 50)   # Subtle crimson-amethyst border
 
     def set_slide_background(slide):
         bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, prs.slide_width, prs.slide_height)
@@ -36,7 +36,7 @@ def create_deck():
         p_cat.text = category_text.upper()
         p_cat.font.size = Pt(11)
         p_cat.font.bold = True
-        p_cat.font.color.rgb = CYAN_ACCENT
+        p_cat.font.color.rgb = CRIMSON_ACCENT
 
         # Main Title
         title_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.85), Inches(11.7), Inches(0.8))
@@ -69,7 +69,7 @@ def create_deck():
     p0.text = "PATHFINDER 2.0"
     p0.font.size = Pt(46)
     p0.font.bold = True
-    p0.font.color.rgb = CYAN_ACCENT
+    p0.font.color.rgb = CRIMSON_ACCENT
     p0.alignment = PP_ALIGN.CENTER
 
     p1 = tf.add_paragraph()
@@ -100,7 +100,7 @@ def create_deck():
     p4 = tf.add_paragraph()
     p4.text = "Repository: https://github.com/dileepbommali16-ops/pathfinder"
     p4.font.size = Pt(13)
-    p4.font.color.rgb = CYAN_ACCENT
+    p4.font.color.rgb = CRIMSON_ACCENT
     p4.alignment = PP_ALIGN.CENTER
 
     # Notes
@@ -144,7 +144,7 @@ def create_deck():
         p_t.text = f"0{i+1}. {title}"
         p_t.font.size = Pt(17)
         p_t.font.bold = True
-        p_t.font.color.rgb = CYAN_ACCENT
+        p_t.font.color.rgb = CRIMSON_ACCENT
 
         p_d = tf_box.add_paragraph()
         p_d.text = desc
@@ -193,7 +193,7 @@ def create_deck():
         p_t.text = title
         p_t.font.size = Pt(18)
         p_t.font.bold = True
-        p_t.font.color.rgb = CYAN_ACCENT
+        p_t.font.color.rgb = CRIMSON_ACCENT
 
         p_d = tf_box.add_paragraph()
         p_d.text = desc
@@ -241,7 +241,7 @@ def create_deck():
         p_t.text = tech
         p_t.font.size = Pt(18)
         p_t.font.bold = True
-        p_t.font.color.rgb = CYAN_ACCENT
+        p_t.font.color.rgb = CRIMSON_ACCENT
 
         p_d = tf_box.add_paragraph()
         p_d.text = detail
@@ -273,7 +273,7 @@ def create_deck():
     p_lt.text = "Features & Input Vector"
     p_lt.font.size = Pt(19)
     p_lt.font.bold = True
-    p_lt.font.color.rgb = CYAN_ACCENT
+    p_lt.font.color.rgb = CRIMSON_ACCENT
 
     points = [
         "Academic standing: CGPA, core credits, active backlogs",
@@ -348,7 +348,7 @@ def create_deck():
         p0.text = sub.upper()
         p0.font.size = Pt(12)
         p0.font.bold = True
-        p0.font.color.rgb = CYAN_ACCENT
+        p0.font.color.rgb = CRIMSON_ACCENT
 
         p1 = tf.add_paragraph()
         p1.text = title
@@ -399,7 +399,7 @@ def create_deck():
         p1.text = title
         p1.font.size = Pt(19)
         p1.font.bold = True
-        p1.font.color.rgb = CYAN_ACCENT
+        p1.font.color.rgb = CRIMSON_ACCENT
 
         p2 = tf.add_paragraph()
         p2.text = body
@@ -438,7 +438,7 @@ def create_deck():
         p0.text = sub.upper()
         p0.font.size = Pt(12)
         p0.font.bold = True
-        p0.font.color.rgb = CYAN_ACCENT
+        p0.font.color.rgb = CRIMSON_ACCENT
 
         p1 = tf.add_paragraph()
         p1.text = title
@@ -489,7 +489,7 @@ def create_deck():
         p0.text = "✓ " + title
         p0.font.size = Pt(18)
         p0.font.bold = True
-        p0.font.color.rgb = CYAN_ACCENT
+        p0.font.color.rgb = CRIMSON_ACCENT
 
         p1 = tf.add_paragraph()
         p1.text = desc
@@ -522,7 +522,7 @@ def create_deck():
     p_f.text = "Future Roadmap:"
     p_f.font.size = Pt(20)
     p_f.font.bold = True
-    p_f.font.color.rgb = CYAN_ACCENT
+    p_f.font.color.rgb = CRIMSON_ACCENT
 
     p_f1 = tf_c.add_paragraph()
     p_f1.text = "• AI Voice Mock Interviews: Real-time speech and technical problem-solving analysis."
@@ -553,7 +553,7 @@ def create_deck():
     p_creds = tf_c.add_paragraph()
     p_creds.text = "Developer: Dileep Bommali  |  GitHub: https://github.com/dileepbommali16-ops/pathfinder"
     p_creds.font.size = Pt(14)
-    p_creds.font.color.rgb = CYAN_ACCENT
+    p_creds.font.color.rgb = CRIMSON_ACCENT
 
     s10.notes_slide.notes_text_frame.text = (
         "Thank you for your time and attention. Pathfinder represents the future of data-driven student career acceleration. "

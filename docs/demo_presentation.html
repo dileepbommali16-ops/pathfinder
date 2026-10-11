@@ -3,28 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pathfinder 2.0 • Official Interactive Video Walkthrough</title>
+  <title>Pathfinder 2.0 • Executive Video Walkthrough</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #06080F;
-      --card-bg: rgba(13, 17, 28, 0.92);
+      --bg: #07070A;
+      --card-bg: rgba(18, 16, 26, 0.94);
       --border: rgba(255, 255, 255, 0.12);
-      --cyan: #00E5FF;
-      --sapphire: #0084FF;
-      --violet: #A855F7;
-      --amber: #FFD600;
+      --crimson: #FF2D55;
+      --ruby: #E11D48;
+      --amethyst: #A855F7;
+      --magenta: #D946EF;
+      --platinum: #F1F5F9;
       --text: #F8FAFC;
-      --muted: #94A3B8;
+      --muted: #A1A1AA;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: var(--bg);
       background-image: 
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 132, 255, 0.15), transparent 70%),
-        radial-gradient(ellipse 60% 40% at 90% 90%, rgba(168, 85, 247, 0.1), transparent 60%);
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255, 45, 85, 0.15), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 90% 90%, rgba(168, 85, 247, 0.12), transparent 60%);
       color: var(--text);
       font-family: 'Outfit', sans-serif;
       min-height: 100vh;
@@ -55,18 +56,18 @@
       gap: 16px;
     }
     .logo-img {
-      width: 52px;
-      height: 52px;
+      width: 54px;
+      height: 54px;
       border-radius: 14px;
       object-fit: cover;
-      box-shadow: 0 0 25px rgba(0, 229, 255, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 25px rgba(255, 45, 85, 0.45);
+      border: 1px solid rgba(255, 45, 85, 0.4);
     }
     .brand-title h1 {
       font-size: 24px;
       font-weight: 800;
       letter-spacing: -0.02em;
-      background: linear-gradient(to right, #FFFFFF, var(--cyan));
+      background: linear-gradient(to right, #FFFFFF, var(--crimson));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -81,19 +82,19 @@
       gap: 8px;
       padding: 6px 14px;
       border-radius: 9999px;
-      background: rgba(0, 229, 255, 0.1);
-      border: 1px solid rgba(0, 229, 255, 0.3);
-      color: var(--cyan);
+      background: rgba(255, 45, 85, 0.12);
+      border: 1px solid rgba(255, 45, 85, 0.35);
+      color: var(--crimson);
       font-size: 12px;
       font-weight: 700;
-      box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
+      box-shadow: 0 0 15px rgba(255, 45, 85, 0.2);
     }
     .pulse-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--cyan);
-      box-shadow: 0 0 10px var(--cyan);
+      background: var(--crimson);
+      box-shadow: 0 0 10px var(--crimson);
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
@@ -104,11 +105,11 @@
       position: relative;
       width: 100%;
       aspect-ratio: 16 / 9;
-      background: #020408;
+      background: #040407;
       border-radius: 22px;
       overflow: hidden;
       border: 1px solid var(--border);
-      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 50px rgba(0, 132, 255, 0.15);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95), 0 0 50px rgba(255, 45, 85, 0.18);
       display: flex;
       flex-direction: column;
     }
@@ -131,12 +132,12 @@
       bottom: 24px;
       left: 24px;
       right: 24px;
-      background: rgba(8, 12, 22, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(12, 10, 18, 0.92);
+      border: 1px solid rgba(255, 45, 85, 0.3);
       backdrop-filter: blur(20px);
       border-radius: 16px;
       padding: 16px 22px;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 45, 85, 0.15);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -144,7 +145,7 @@
     }
     .narration-text h3 {
       font-size: 13px;
-      color: var(--cyan);
+      color: var(--crimson);
       text-transform: uppercase;
       letter-spacing: 0.08em;
       margin-bottom: 4px;
@@ -159,11 +160,11 @@
     .scene-badge {
       padding: 6px 12px;
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 45, 85, 0.15);
+      border: 1px solid rgba(255, 45, 85, 0.3);
       font-family: 'JetBrains Mono', monospace;
       font-size: 13px;
-      color: var(--amber);
+      color: var(--magenta);
       white-space: nowrap;
       font-weight: 700;
     }
@@ -172,7 +173,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 16px 24px;
-      background: rgba(10, 14, 26, 0.98);
+      background: rgba(14, 12, 20, 0.98);
       border-top: 1px solid var(--border);
       gap: 18px;
     }
@@ -197,19 +198,19 @@
       gap: 8px;
     }
     button:hover {
-      background: rgba(255, 255, 255, 0.18);
-      border-color: var(--cyan);
+      background: rgba(255, 45, 85, 0.18);
+      border-color: var(--crimson);
       transform: translateY(-1px);
     }
     button.primary {
-      background: linear-gradient(135deg, var(--cyan), var(--sapphire));
-      color: #040814;
+      background: linear-gradient(135deg, var(--crimson), var(--amethyst));
+      color: #FFFFFF;
       border: none;
-      box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+      box-shadow: 0 0 20px rgba(255, 45, 85, 0.5);
     }
     button.primary:hover {
       filter: brightness(1.15);
-      box-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+      box-shadow: 0 0 30px rgba(255, 45, 85, 0.7);
     }
     .progress-track {
       flex: 1;
@@ -222,7 +223,7 @@
     }
     .progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--amber), var(--cyan));
+      background: linear-gradient(90deg, var(--amethyst), var(--crimson));
       border-radius: 999px;
       width: 10%;
       transition: width 0.3s ease;
@@ -246,10 +247,10 @@
       transition: all 0.2s;
     }
     .thumb-btn.active {
-      border-color: var(--cyan);
+      border-color: var(--crimson);
       color: #FFFFFF;
-      background: rgba(0, 229, 255, 0.16);
-      box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+      background: rgba(255, 45, 85, 0.2);
+      box-shadow: 0 0 15px rgba(255, 45, 85, 0.35);
     }
     .shortcuts-hint {
       display: flex;
@@ -284,7 +285,7 @@
         
         <div class="narration-overlay">
           <div class="narration-text">
-            <h3 id="sceneLabel">Scene 1 / 10 • Brand Identity & Vision</h3>
+            <h3 id="sceneLabel">Scene 1 / 10 • Brand Identity & Mission</h3>
             <p id="narrationText">Pathfinder 2.0: AI-Powered Career Co-Pilot that turns campus placement anxiety into predictable offers.</p>
           </div>
           <div class="scene-badge" id="timeBadge">0:00 / 1:00</div>
@@ -305,7 +306,7 @@
         <div class="btn-group">
           <button onclick="toggleFullscreen()" title="Fullscreen Mode">⛶ Fullscreen</button>
           <a href="https://pathfinder-client-fzom.vercel.app" target="_blank" style="text-decoration: none;">
-            <button style="border-color: var(--amber); color: var(--amber); box-shadow: 0 0 15px rgba(255,214,0,0.2);">🚀 Live Web App</button>
+            <button style="border-color: var(--crimson); color: var(--crimson); box-shadow: 0 0 15px rgba(255,45,85,0.25);">🚀 Live Web App</button>
           </a>
         </div>
       </div>
@@ -449,6 +450,14 @@
     function prevScene() {
       if (currentIndex > 0) showScene(currentIndex - 1);
       else showScene(scenes.length - 1);
+    }
+
+    function seek(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const pct = clickX / rect.width;
+      const targetScene = Math.min(Math.floor(pct * scenes.length), scenes.length - 1);
+      showScene(targetScene);
     }
 
     function toggleFullscreen() {
