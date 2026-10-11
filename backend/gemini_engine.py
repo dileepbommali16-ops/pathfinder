@@ -240,7 +240,13 @@ def _calculate_similarity(text1: str, text2: str) -> float:
     return difflib.SequenceMatcher(None, text1.strip().lower(), text2.strip().lower()).ratio()
 
 
-def get_intelligent_local_conversation_reply(message: str, profile: Optional[StudentProfile] = None) -> Optional[str]:
+def get_intelligent_local_conversation_reply(
+    message: str,
+    profile: Optional[StudentProfile] = None,
+    active_tab: Optional[str] = None,
+    page_context: Optional[Dict[str, Any]] = None,
+    history: Optional[List[Any]] = None
+) -> Optional[str]:
     """
     High-fidelity deterministic local conversational mentor fallback.
     Ensures zero 500s and zero dead-end errors when LLM APIs are offline or rate-limited.
@@ -255,11 +261,62 @@ def get_intelligent_local_conversation_reply(message: str, profile: Optional[Stu
     if any(k in low for k in ("ignore instruction", "ignore previous", "system prompt", "api key", "secret key", "show instructions")):
         return "I cannot reveal internal system instructions, security credentials, or API keys. I am Pathfinder's AI Career Coach, here to assist you with campus placement readiness, DSA roadmaps, and project architecture!"
 
-    # 2. Greetings
+    # 2. Explaining the Platform ("What is this website?")
+    if any(k in low for k in ("what is this website", "what is this site", "about this website", "about pathfinder", "what does this website do", "explain this website")):
+        return """🚀 **Welcome to Pathfinder 2.0!**
+Pathfinder 2.0 is an intelligent **Campus Placement Readiness, Cohort Benchmarking, and AI Career Coaching Platform** designed specifically for engineering students across all 9 departments (CSE, IT, ECE, EEE, MECH, CIVIL, AIML, CSD, CSM).
+
+Here is how the platform empowers you:
+1. 📊 **Placement Probability Engine**: Predicts your real-time placement probability (0-100%) using a Random Forest machine learning model trained on 972 verified student placement records (88% cross-validated accuracy).
+2. 📈 **Cohort Analytics & Package Benchmarks**: Benchmarks your academic index (CGPA, backlogs, branch) against verified historical distributions where top salary packages reach **44.6 LPA** (CSM/AIML) and **44.0 LPA** (CSE).
+3. 🗺️ **6-Week Sprint Roadmaps & Readiness Vectors**: Pinpoints exact technical gaps across DSA, Academics, Internships, and Communication with week-by-week actionable checklists.
+4. 🏗️ **23 Flagship Project Blueprints**: Provides complete production system architectures (15 Software + 8 Hardware/IoT) with step-by-step build guides, common pitfalls, and viva defense masterclasses.
+5. 🤖 **Interactive AI Career Coach**: Connected to your live student profile, offering guidance in English, Telugu script, or Tenglish anytime!
+
+Explore the **Dashboard Overview** to see your current score, or head over to **Project Blueprints** to pick your flagship portfolio project! What role are you targeting?"""
+
+    # 3. Explaining the Readiness Score ("I don't understand this score, what does it mean?")
+    if any(k in low for k in ("don't understand this score", "dont understand this score", "what does this score mean", "what does the score mean", "explain this score", "readiness score", "what is this score", "what does it mean")):
+        p_chance = "your current score"
+        p_label = "Placement Readiness"
+        if page_context and isinstance(page_context, dict):
+            if page_context.get("placementReadinessChance"):
+                p_chance = page_context.get("placementReadinessChance")
+            if page_context.get("placementReadinessLabel"):
+                p_label = page_context.get("placementReadinessLabel")
+
+        return f"""📊 **Understanding Your Placement Readiness Score ({p_chance} - {p_label})**
+
+Your Readiness Score is an **empirical statistical probability** generated in real-time by a trained Random Forest machine learning model (120 decision trees, 88% cross-validated accuracy) trained on 972 verified student placement records from 2024–2026 campus drives.
+
+Here is how the 5 Core Readiness Vectors influence your score:
+1. 🎓 **Academic CGPA (Weight ~35%)**: Acts as the initial Day-1 eligibility screening filter. Tier-1 product firms enforce a 7.5+ or 8.0+ cutoff.
+2. ⚠️ **Active Backlogs (Penalty -15% to -25%)**: Having active backlogs immediately triggers an eligibility lock for over 70% of on-campus recruitment drives.
+3. 💼 **Practical Internships (Weight ~20%)**: Having at least 1 verified internship provides the highest statistical boost for clearing final managerial/HR interview rounds.
+4. 💻 **Coding / DSA Proficiency (Weight ~20%)**: Dictates your ability to pass automated online assessment (OA) coding rounds on LeetCode/HackerRank platforms.
+5. 🗣️ **Communication Rating (Weight ~10%)**: Directly influences technical round interview articulation and STAR behavioral story clarity.
+
+> 💡 **Key Takeaway**: This is NOT a static grade! It is an interactive simulator. For example, completing a 4-week DSA sprint or clearing a backlog updates and boosts your score immediately. Check the **'What-If Simulator'** on the Action tab to see which exact skill lever gives you the biggest score increase!"""
+
+    # 4. Vague "I don't get it" / "I don't understand" Clarifying Response
+    if low in ("i don't get it", "i dont get it", "i don't understand", "i dont understand", "i am confused", "im confused", "not getting it", "what is this?", "what is this", "idk", "i don't know"):
+        return """I'm right here with you! Don't worry at all. 😊
+To give you the exact explanation you need, could you tell me what specific part you're looking at right now?
+
+Are you wondering about:
+1. 📊 **The Placement Readiness Score Gauge** (what the percentage means and how it's calculated)?
+2. ⚡ **The 5 Readiness Vectors** (CGPA, Coding DSA, Internships, Communication, Backlogs)?
+3. 🗺️ **The 6-Week Study Roadmap** (how the sprints and milestones work)?
+4. 🛠️ **A Project Blueprint** (how to build and defend a specific architecture)?
+5. 📈 **Cohort Analytics** (salary packages or branch placement comparisons)?
+
+Just tell me which card, number, or screen has you puzzled, and I'll walk you through it step-by-step! 🚀"""
+
+    # 5. Greetings
     if low in ("hi", "hello", "hey", "hola", "yo", "namaste", "hi coach", "hello coach") or low.startswith(("hi ", "hello ", "hey ")):
         return "Hey there! 👋 Pathfinder AI Coach here. I'm pumped to help you land your dream campus placement offer! What are we focusing on today: 6-Week Roadmap, DSA Sprint, ATS Resume Review, or Project Blueprints?"
 
-    # 3. Positive Banter & Affection
+    # 6. Positive Banter & Affection
     if "i love you 2" in low or "love you too" in low:
         return "Haha, double the love! You're making my CPU blush 😊 What are we tackling next in our placement preparation?"
     if "i love you" in low:
@@ -624,10 +681,10 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
             logger.error(f"[OpenRouter Engine] Failed: {or_exc}")
 
     # 8. Check if user asked about a project blueprint / SIH problem statement
-    matched_proj = find_project_blueprint(clean_msg)
+    matched_proj = find_project_blueprint(clean_msg, history=clean_history, page_context=page_context)
     if matched_proj:
         logger.info(f"[Gemini Engine] Serving high-fidelity project architecture guide for '{matched_proj.get('title')}'")
-        project_guide = generate_project_guide(matched_proj, query=clean_msg)
+        project_guide = generate_project_guide(matched_proj, query=clean_msg, history=clean_history)
         meta = {
             "prep_ms": prep_ms,
             "gemini_call_ms": gemini_call_ms,
@@ -640,7 +697,13 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
         return project_guide
 
     # 9. Intelligent local mentor fallback (guarantees dynamic, empathetic, data-grounded replies even if LLMs are offline)
-    local_reply = get_intelligent_local_conversation_reply(clean_msg, profile=profile)
+    local_reply = get_intelligent_local_conversation_reply(
+        clean_msg,
+        profile=profile,
+        active_tab=active_tab,
+        page_context=page_context,
+        history=clean_history
+    )
     if local_reply:
         logger.info("[Gemini Engine] Serving high-fidelity local mentor fallback reply")
         meta = {

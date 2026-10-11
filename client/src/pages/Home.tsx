@@ -691,7 +691,12 @@ export default function Home() {
     setIsChatWakingUp(false);
   };
 
-  const handleSendMessage = async (userText: string, customHistory?: Message[]) => {
+  const handleSendMessage = async (
+    userText: string,
+    customHistory?: Message[],
+    originTab?: string,
+    cardContext?: string
+  ) => {
     const trimmed = userText.trim();
     if (!trimmed) return;
 
@@ -718,6 +723,9 @@ export default function Home() {
       .slice(-12)
       .map((m) => ({ role: m.role, content: m.content }));
 
+    const effectiveTab = originTab || activeTab;
+    const tabKnowledge = getTabKnowledge(effectiveTab);
+
     const chatPayload = {
       message: trimmed,
       history: cleanHistory,
@@ -731,13 +739,21 @@ export default function Home() {
         target_tier: profile.targetTier,
         branch: profile.branch,
       },
-      active_tab: activeTab,
+      active_tab: effectiveTab,
       page_context: {
-        activeTabTitle: getTabKnowledge(activeTab)?.title || activeTab,
+        activeTabTitle: tabKnowledge?.title || effectiveTab,
+        screenName: tabKnowledge?.title || effectiveTab,
+        screenPurpose: tabKnowledge?.purpose || "",
+        cardContext: cardContext || "",
         placementReadinessChance: `${prediction.chance}%`,
         placementReadinessLabel: prediction.label,
         candidateBranch: profile.branch,
         targetRole: profile.targetRole,
+        cgpa: profile.cgpa,
+        backlogs: profile.backlogs,
+        internships: profile.internships,
+        codingConfidence: profile.coding,
+        communicationRating: profile.communication,
         cohortYear: cohortFilters.year,
         cohortBranch: cohortFilters.branch,
       },
@@ -832,10 +848,11 @@ export default function Home() {
     }
   };
 
-  const handleAskCoach = (query: string) => {
+  const handleAskCoach = (query: string, originTab?: string, cardContext?: string) => {
+    const fromTab = originTab || activeTab;
     setActiveTab("coach");
     setTimeout(() => {
-      handleSendMessage(query);
+      handleSendMessage(query, undefined, fromTab, cardContext);
     }, 60);
   };
 
@@ -1248,6 +1265,7 @@ export default function Home() {
                   accent="cyan"
                   icon={Target}
                   helperLabel="Calculated via Random Forest model trained on 972 student records"
+                  onAskCoach={handleAskCoach}
                 />
                 <HeroMetrics
                   username={username}
@@ -1260,6 +1278,7 @@ export default function Home() {
                   coding={profile.coding}
                   communication={profile.communication}
                   onNavigateTab={setActiveTab}
+                  onAskCoach={handleAskCoach}
                 />
               </section>
 
@@ -1272,6 +1291,7 @@ export default function Home() {
                   accent="purple"
                   icon={Zap}
                   helperLabel="5 vectors calibrated against Tier-1 campus drive cutoffs"
+                  onAskCoach={handleAskCoach}
                 />
                 <CareerDigitalTwin
                   profile={profile}
@@ -1290,6 +1310,7 @@ export default function Home() {
                   accent="amber"
                   icon={ArrowRight}
                   helperLabel="Auto-prioritizes Blind 75 DSA, projects, or cutoff clearance"
+                  onAskCoach={handleAskCoach}
                 />
                 <NextActionsWidget
                   profile={profile}
@@ -1307,6 +1328,7 @@ export default function Home() {
                   accent="blue"
                   icon={Zap}
                   helperLabel="Click any tool to launch diagnostic audit"
+                  onAskCoach={handleAskCoach}
                 />
                 <AIActionCenter
                   onNavigateTab={setActiveTab}

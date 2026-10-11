@@ -1,4 +1,5 @@
 import React from "react";
+import { Sparkles } from "lucide-react";
 
 interface SectionHeaderProps {
   title: string;
@@ -8,6 +9,7 @@ interface SectionHeaderProps {
   icon?: React.ElementType;
   helperLabel?: string;
   action?: React.ReactNode;
+  onAskCoach?: (query: string) => void;
 }
 
 const ACCENT_STYLES = {
@@ -57,6 +59,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
   icon: Icon,
   helperLabel,
   action,
+  onAskCoach,
 }) => {
   const styles = ACCENT_STYLES[accent] || ACCENT_STYLES.cyan;
 
@@ -82,12 +85,22 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           </div>
         </div>
 
-        {(action || helperLabel) && (
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+        {(action || helperLabel || onAskCoach) && (
+          <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
             {helperLabel && (
               <span className="text-[11px] font-medium text-slate-500 bg-white/[0.02] border border-white/[0.05] px-2.5 py-1 rounded-lg">
                 ℹ️ {helperLabel}
               </span>
+            )}
+            {onAskCoach && (
+              <button
+                type="button"
+                onClick={() => onAskCoach(`Can you explain the '${title}' section? What is this showing and what should I do here?`)}
+                className="flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all active:scale-95 shadow-sm"
+              >
+                <Sparkles className="h-3 w-3 text-cyan-400" />
+                <span>Ask Coach about this</span>
+              </button>
             )}
             {action}
           </div>

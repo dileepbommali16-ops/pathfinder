@@ -25,6 +25,7 @@ interface HeroMetricsProps {
   coding: number;
   communication: number;
   onNavigateTab: (tab: any) => void;
+  onAskCoach?: (query: string, originTab?: string, cardContext?: string) => void;
 }
 
 export const HeroMetrics: React.FC<HeroMetricsProps> = ({
@@ -38,6 +39,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
   coding,
   communication,
   onNavigateTab,
+  onAskCoach,
 }) => {
   const displayChance = chance !== null ? chance : 74.0;
 
@@ -204,6 +206,23 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
                 />
               </div>
             </div>
+
+            {onAskCoach && (
+              <button
+                type="button"
+                onClick={() =>
+                  onAskCoach(
+                    "I don't understand this score, what does it mean?",
+                    "overview",
+                    `Readiness Probability Score Gauge: ${displayChance.toFixed(0)}% (${label})`
+                  )
+                }
+                className="mt-3.5 flex items-center justify-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-bold text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all active:scale-95 shadow-sm cursor-pointer w-full"
+              >
+                <Sparkles className="h-3 w-3 text-cyan-400 shrink-0" />
+                <span>Ask Coach about this score</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

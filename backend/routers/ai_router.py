@@ -51,6 +51,8 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
     sanitized_message = sanitize_user_input(request_body.message, max_length=2000)
     user_context = getattr(request_body, "user_context", None) or getattr(request_body, "page_context", None) or {}
     raw_history = getattr(request_body, "chat_history", None) or getattr(request_body, "history", None) or []
+    active_tab = getattr(request_body, "active_tab", None) or (user_context.get("active_tab") if isinstance(user_context, dict) else None)
+    profile = getattr(request_body, "profile", None)
 
     # 4. Check circuit breaker status
     if not gemini_circuit_breaker.allow_request():
@@ -64,6 +66,8 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
         reply_text = chat_with_mentor(
             message=sanitized_message,
             history=raw_history,
+            profile=profile,
+            active_tab=active_tab,
             page_context=user_context
         )
         gemini_circuit_breaker.record_success()
@@ -96,6 +100,8 @@ async def chat_stream_endpoint(request_body: ChatRequest, request: Request):
     sanitized_message = sanitize_user_input(request_body.message, max_length=2000)
     user_context = getattr(request_body, "user_context", None) or getattr(request_body, "page_context", None) or {}
     raw_history = getattr(request_body, "chat_history", None) or getattr(request_body, "history", None) or []
+    active_tab = getattr(request_body, "active_tab", None) or (user_context.get("active_tab") if isinstance(user_context, dict) else None)
+    profile = getattr(request_body, "profile", None)
 
     async def event_generator():
         try:
@@ -103,6 +109,8 @@ async def chat_stream_endpoint(request_body: ChatRequest, request: Request):
                 chat_with_mentor,
                 message=sanitized_message,
                 history=raw_history,
+                profile=profile,
+                active_tab=active_tab,
                 page_context=user_context
             )
             words = full_reply.split(" ")
