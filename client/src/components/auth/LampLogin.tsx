@@ -324,17 +324,11 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               }}
               title="Pull or click the cord to toggle lamp light"
             />
-            {/* Lamp Caption & Friendly Toggle Pill */}
-            <div className="mt-4 flex flex-col items-center gap-2 text-center">
-              <button
-                type="button"
-                onClick={() => setIsOn((prev) => !prev)}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-1.5 text-xs font-bold text-amber-300 backdrop-blur-md transition-all hover:bg-amber-400/20 hover:border-amber-400/50 cursor-pointer"
-                title="Click lamp to toggle lighting"
-              >
-                <span>{isOn ? "💡 Lamp Illuminated" : "🌙 Lamp Dimmed"}</span>
-                <span className="text-[10px] text-amber-200/80">(Tap to toggle)</span>
-              </button>
+            {/* Lamp Caption */}
+            <div className="mt-4 text-center select-none pointer-events-none">
+              <span className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-1.5 text-xs font-bold text-amber-300 backdrop-blur-md">
+                Lamp your Career
+              </span>
             </div>
           </div>
         </section>
@@ -350,22 +344,6 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
           >
             {/* Glossy top border line */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-
-            {/* Lamp Dimmed Notification Banner with One-Click Turn On */}
-            {!isOn && (
-              <div className="mb-5 flex items-center justify-between rounded-xl border border-amber-400/40 bg-amber-400/10 px-3.5 py-2 text-xs text-amber-300">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <span>💡</span> Lamp light is dimmed
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsOn(true)}
-                  className="font-bold underline underline-offset-2 hover:text-amber-200 cursor-pointer"
-                >
-                  Turn On Radiance &rarr;
-                </button>
-              </div>
-            )}
 
             {/* Header */}
             <div className="mb-4 text-center">
