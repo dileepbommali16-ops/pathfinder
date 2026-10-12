@@ -1054,7 +1054,7 @@ export default function Home() {
   // 2. ONBOARDING WIZARD (STRICT STEP-WISE FLOW FOR NEW USERS)
   if (!profile.onboardingCompleted) {
     return (
-      <div className="relative min-h-screen bg-[#05070e] text-slate-100 font-sans overflow-x-hidden">
+      <div className="pathfinder-dashboard relative min-h-screen bg-[#05070e] text-slate-100 font-sans overflow-x-hidden">
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
           <div className="absolute inset-0 bg-gradient-to-b from-[#070b16] via-[#05070f] to-[#03040a]" />
           <Ambient3DBackground />
@@ -1097,7 +1097,7 @@ export default function Home() {
   // 3. IMMEDIATE RESULT SCREEN POST-SUBMIT
   if (showResultScreen && auditResult) {
     return (
-      <div className="relative min-h-screen bg-[#05070e] text-slate-100 font-sans overflow-x-hidden">
+      <div className="pathfinder-dashboard relative min-h-screen bg-[#05070e] text-slate-100 font-sans overflow-x-hidden">
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
           <div className="absolute inset-0 bg-gradient-to-b from-[#070b16] via-[#05070f] to-[#03040a]" />
           <Ambient3DBackground />
@@ -1131,11 +1131,11 @@ export default function Home() {
 
   // 4. MAIN DASHBOARD & PLATFORM NAVIGATION
   return (
-    <div className="relative min-h-screen bg-[#05070e] text-slate-100 selection:bg-[#FF6B4A] selection:text-white font-sans overflow-x-hidden">
+    <div className="pathfinder-dashboard relative min-h-screen bg-[#05070e] text-slate-100 selection:bg-[#B8A1FF] selection:text-white font-sans overflow-x-hidden">
       {/* Graceful Cold-Start Wake-Up Notification */}
       {isGlobalServerWakingUp && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[#FF6B4A]/30 bg-[#1B1B1F]/95 px-4 py-2 text-xs font-medium text-[#F2F2F3] shadow-[0_4px_24px_rgba(255,107,74,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#FF6B4A]" />
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[#B8A1FF]/30 bg-[#1B1B1F]/95 px-4 py-2 text-xs font-medium text-[#F1F0F7] shadow-[0_4px_24px_rgba(184,161,255,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#B8A1FF]" />
           <span>Waking up the server, this can take up to a minute...</span>
         </div>
       )}

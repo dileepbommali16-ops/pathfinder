@@ -408,16 +408,10 @@ function __OriginkitBase_SphereShieldTiled(props: SphereShieldTiledProps) {
         let hoverTarget = 0
         const onEnter = () => { hoverTarget = 1 }
         const onLeave = () => { hoverTarget = 0 }
-        root.addEventListener("pointerenter", onEnter)
-        root.addEventListener("pointerleave", onLeave)
+        root.addEventListener("pointerenter", onEnter, { passive: true })
+        root.addEventListener("pointerleave", onLeave, { passive: true })
 
         const drag = { active: false, x: 0, y: 0, yaw: 0, tiltOff: 0 }
-        const onDown = (e: PointerEvent) => {
-            if (!propsRef.current.dragToRotate) return
-            drag.active = true
-            drag.x = e.clientX
-            drag.y = e.clientY
-        }
         const onMove = (e: PointerEvent) => {
             if (!drag.active) return
             const sens = Math.max(0, Number(propsRef.current.dragSensitivity) || 0) / 50
@@ -428,11 +422,22 @@ function __OriginkitBase_SphereShieldTiled(props: SphereShieldTiledProps) {
             drag.yaw += (dx / Math.max(1, cssW)) * Math.PI * sens
             drag.tiltOff = Math.max(-60, Math.min(60, drag.tiltOff - (dy / Math.max(1, cssH)) * 90 * sens))
         }
-        const onUp = () => { drag.active = false }
-        root.addEventListener("pointerdown", onDown)
-        window.addEventListener("pointermove", onMove)
-        window.addEventListener("pointerup", onUp)
-        window.addEventListener("pointercancel", onUp)
+        const onUp = () => {
+            drag.active = false
+            window.removeEventListener("pointermove", onMove)
+            window.removeEventListener("pointerup", onUp)
+            window.removeEventListener("pointercancel", onUp)
+        }
+        const onDown = (e: PointerEvent) => {
+            if (!propsRef.current.dragToRotate) return
+            drag.active = true
+            drag.x = e.clientX
+            drag.y = e.clientY
+            window.addEventListener("pointermove", onMove, { passive: true })
+            window.addEventListener("pointerup", onUp, { passive: true })
+            window.addEventListener("pointercancel", onUp, { passive: true })
+        }
+        root.addEventListener("pointerdown", onDown, { passive: true })
 
         let raf = 0
         let last = -1
@@ -442,7 +447,11 @@ function __OriginkitBase_SphereShieldTiled(props: SphereShieldTiledProps) {
         let mouseTargetY = 0
         let mouseX = 0
         let mouseY = 0
+        let lastMoveTime = 0
         const onGlobalMove = (e: PointerEvent) => {
+            const now = performance.now()
+            if (now - lastMoveTime < 33) return // Throttle to ~30fps for zero main-thread lag
+            lastMoveTime = now
             mouseTargetX = (e.clientX / Math.max(1, window.innerWidth) - 0.5) * 0.35
             mouseTargetY = (e.clientY / Math.max(1, window.innerHeight) - 0.5) * 12
         }

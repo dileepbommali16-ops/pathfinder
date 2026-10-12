@@ -103,7 +103,7 @@ def login_endpoint(payload: LoginRequest, request: Request):
         import hmac
         if hmac.compare_digest(admin_header, configured_key):
             is_admin = True
-    elif not configured_key and os.getenv("ENVIRONMENT") == "development":
+    elif not configured_key and os.getenv("ENVIRONMENT") == "development" and not os.getenv("RENDER") and not os.getenv("VERCEL"):
         is_admin = (
             username.lower() in ["admin", "administrator", "faculty_admin", "staff_admin"] or
             (email and email.lower().startswith("admin@"))

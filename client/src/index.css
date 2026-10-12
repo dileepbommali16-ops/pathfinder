@@ -374,3 +374,142 @@
   }
 }
 
+/* ==========================================================================
+   HACKATHON-LEVEL TYPOGRAPHY RESTYLING SYSTEM (PATHFINDER DASHBOARD)
+   Strictly scoped to .pathfinder-dashboard to never touch LampLogin/Auth
+   Palette:
+     - Main page titles & primary headings: #FFFFFF
+     - AI-highlighted words & accents:      #B8A1FF (Electric Lavender)
+     - Section headings & subheadings:     #E5E1EF (Soft Silver)
+     - Paragraphs, descriptions, body:      #B9B5C7 (Muted Silver)
+     - AI labels, small interactive accents: #9CE5E0 (Ice Mint)
+     - Key metrics & statistics:            #F1F0F7 (Frost White)
+   ========================================================================== */
+
+.pathfinder-dashboard {
+  --pf-heading-primary: #FFFFFF;
+  --pf-ai-accent: #B8A1FF;
+  --pf-heading-secondary: #E5E1EF;
+  --pf-text-body: #B9B5C7;
+  --pf-ai-label: #9CE5E0;
+  --pf-metric-value: #F1F0F7;
+
+  font-family: "Outfit", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #B9B5C7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 1. Main page titles and primary headings: #FFFFFF */
+.pathfinder-dashboard h1 {
+  font-family: "Space Grotesk", "Outfit", sans-serif;
+  color: #FFFFFF !important;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.18;
+}
+
+/* 2. Section headings and subheadings: #E5E1EF */
+.pathfinder-dashboard h2,
+.pathfinder-dashboard h3,
+.pathfinder-dashboard h4,
+.pathfinder-dashboard h5,
+.pathfinder-dashboard h6 {
+  font-family: "Space Grotesk", "Outfit", sans-serif;
+  color: #E5E1EF !important;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.28;
+}
+
+/* 3. Paragraphs, descriptions, supporting text: #B9B5C7 */
+.pathfinder-dashboard p {
+  color: #B9B5C7;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+/* 4. AI-highlighted words and selected heading accents: #B8A1FF (Electric Lavender) */
+.pathfinder-dashboard .ai-highlight,
+.pathfinder-dashboard .ai-accent,
+.pathfinder-dashboard .text-accent-ai {
+  color: #B8A1FF !important;
+  font-weight: 600;
+}
+
+/* 5. AI labels, small interactive text accents, secondary highlights: #9CE5E0 (Ice Mint) */
+.pathfinder-dashboard .ai-label,
+.pathfinder-dashboard .ai-badge {
+  color: #9CE5E0 !important;
+  font-weight: 500;
+}
+
+/* 6. Utility class color mappings to the hackathon palette */
+.pathfinder-dashboard .text-\[\#F2F2F3\],
+.pathfinder-dashboard .text-slate-100,
+.pathfinder-dashboard .text-slate-200 {
+  color: #F1F0F7 !important;
+}
+
+.pathfinder-dashboard .text-\[\#A1A1AA\],
+.pathfinder-dashboard .text-slate-400,
+.pathfinder-dashboard .text-slate-500,
+.pathfinder-dashboard .text-zinc-400,
+.pathfinder-dashboard .text-zinc-500,
+.pathfinder-dashboard .text-gray-400,
+.pathfinder-dashboard .text-gray-500 {
+  color: #B9B5C7 !important;
+}
+
+.pathfinder-dashboard .text-\[\#FF6B4A\] {
+  color: #B8A1FF !important;
+}
+
+.pathfinder-dashboard .text-\[\#FF8A6E\] {
+  color: #9CE5E0 !important;
+}
+
+/* Avoid dark green, dark blue, pink, and yellow text */
+.pathfinder-dashboard .text-green-300,
+.pathfinder-dashboard .text-green-400,
+.pathfinder-dashboard .text-green-500,
+.pathfinder-dashboard .text-emerald-300,
+.pathfinder-dashboard .text-emerald-400,
+.pathfinder-dashboard .text-emerald-500,
+.pathfinder-dashboard .text-cyan-300,
+.pathfinder-dashboard .text-cyan-400,
+.pathfinder-dashboard .text-teal-300,
+.pathfinder-dashboard .text-teal-400 {
+  color: #9CE5E0 !important;
+}
+
+.pathfinder-dashboard .text-blue-300,
+.pathfinder-dashboard .text-blue-400,
+.pathfinder-dashboard .text-blue-500,
+.pathfinder-dashboard .text-indigo-300,
+.pathfinder-dashboard .text-indigo-400 {
+  color: #B8A1FF !important;
+}
+
+.pathfinder-dashboard .text-rose-300,
+.pathfinder-dashboard .text-rose-400,
+.pathfinder-dashboard .text-rose-500,
+.pathfinder-dashboard .text-pink-300,
+.pathfinder-dashboard .text-pink-400,
+.pathfinder-dashboard .text-pink-500,
+.pathfinder-dashboard .text-yellow-300,
+.pathfinder-dashboard .text-yellow-400,
+.pathfinder-dashboard .text-yellow-500,
+.pathfinder-dashboard .text-amber-300,
+.pathfinder-dashboard .text-amber-400,
+.pathfinder-dashboard .text-amber-500 {
+  color: #B8A1FF !important;
+}
+
+/* Selection highlight */
+.pathfinder-dashboard ::selection {
+  background: rgba(184, 161, 255, 0.35);
+  color: #FFFFFF;
+}
+
+

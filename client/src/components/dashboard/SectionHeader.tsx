@@ -14,46 +14,46 @@ interface SectionHeaderProps {
 
 const ACCENT_STYLES = {
   emerald: {
-    badge: "border-[#FF6B4A]/30 bg-[#FF6B4A]/10 text-[#FF6B4A] shadow-[0_0_12px_rgba(255,107,74,0.18)]",
-    icon: "bg-[#FF6B4A]/15 text-[#FF6B4A] border-[#FF6B4A]/30",
-    titleTint: "text-[#F2F2F3]",
-    line: "from-[#FF6B4A]/30 via-[#FF6B4A]/10 to-transparent",
+    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
+    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
+    titleTint: "text-[#E5E1EF]",
+    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
   },
   purple: {
-    badge: "border-[#FF6B4A]/30 bg-[#FF6B4A]/10 text-[#FF6B4A] shadow-[0_0_12px_rgba(255,107,74,0.18)]",
-    icon: "bg-[#FF6B4A]/15 text-[#FF6B4A] border-[#FF6B4A]/30",
-    titleTint: "text-[#F2F2F3]",
-    line: "from-[#FF6B4A]/30 via-[#FF6B4A]/10 to-transparent",
+    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
+    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
+    titleTint: "text-[#E5E1EF]",
+    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
   },
   cyan: {
-    badge: "border-[#FF6B4A]/30 bg-[#FF6B4A]/10 text-[#FF6B4A] shadow-[0_0_12px_rgba(255,107,74,0.18)]",
-    icon: "bg-[#FF6B4A]/15 text-[#FF6B4A] border-[#FF6B4A]/30",
-    titleTint: "text-[#F2F2F3]",
-    line: "from-[#FF6B4A]/30 via-[#FF6B4A]/10 to-transparent",
+    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
+    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
+    titleTint: "text-[#E5E1EF]",
+    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
   },
   amber: {
-    badge: "border-[#FF6B4A]/30 bg-[#FF6B4A]/10 text-[#FF6B4A] shadow-[0_0_12px_rgba(255,107,74,0.18)]",
-    icon: "bg-[#FF6B4A]/15 text-[#FF6B4A] border-[#FF6B4A]/30",
-    titleTint: "text-[#F2F2F3]",
-    line: "from-[#FF6B4A]/30 via-[#FF6B4A]/10 to-transparent",
+    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
+    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
+    titleTint: "text-[#E5E1EF]",
+    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
   },
   blue: {
-    badge: "border-[#FF6B4A]/30 bg-[#FF6B4A]/10 text-[#FF6B4A] shadow-[0_0_12px_rgba(255,107,74,0.18)]",
-    icon: "bg-[#FF6B4A]/15 text-[#FF6B4A] border-[#FF6B4A]/30",
-    titleTint: "text-[#F2F2F3]",
-    line: "from-[#FF6B4A]/30 via-[#FF6B4A]/10 to-transparent",
+    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
+    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
+    titleTint: "text-[#E5E1EF]",
+    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
   },
   rose: {
-    badge: "border-rose-500/30 bg-rose-500/10 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.18)]",
-    icon: "bg-rose-500/15 text-rose-400 border-rose-500/30",
-    titleTint: "text-[#F2F2F3]",
-    line: "from-rose-500/30 via-rose-500/10 to-transparent",
+    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
+    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
+    titleTint: "text-[#E5E1EF]",
+    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
   },
   accent: {
-    badge: "border-[#FF6B4A]/30 bg-[#FF6B4A]/10 text-[#FF6B4A] shadow-[0_0_12px_rgba(255,107,74,0.18)]",
-    icon: "bg-[#FF6B4A]/15 text-[#FF6B4A] border-[#FF6B4A]/30",
-    titleTint: "text-[#F2F2F3]",
-    line: "from-[#FF6B4A]/30 via-[#FF6B4A]/10 to-transparent",
+    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
+    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
+    titleTint: "text-[#E5E1EF]",
+    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
   },
 };
 
@@ -80,21 +80,21 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           )}
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
-              <h2 className={`text-lg sm:text-xl font-bold tracking-tight ${styles.titleTint}`}>{title}</h2>
+              <h2 className={`text-lg sm:text-xl font-semibold tracking-tight ${styles.titleTint}`}>{title}</h2>
               {badge && (
-                <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${styles.badge}`}>
+                <span className={`rounded-md border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${styles.badge}`}>
                   {badge}
                 </span>
               )}
             </div>
-            <p className="mt-0.5 text-xs sm:text-sm text-[#A1A1AA] leading-relaxed">{description}</p>
+            <p className="mt-0.5 text-xs sm:text-sm text-[#B9B5C7] leading-relaxed">{description}</p>
           </div>
         </div>
 
         {(action || helperLabel || onAskCoach) && (
           <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
             {helperLabel && (
-              <span className="text-[11px] font-medium text-[#A1A1AA] bg-white/[0.02] border border-[#2A2A30] px-2.5 py-1 rounded-lg">
+              <span className="text-[11px] font-medium text-[#B9B5C7] bg-white/[0.02] border border-[#2A2A30] px-2.5 py-1 rounded-lg">
                 ℹ️ {helperLabel}
               </span>
             )}
@@ -102,9 +102,9 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
               <button
                 type="button"
                 onClick={() => onAskCoach(`Can you explain the '${title}' section? What is this showing and what should I do here?`)}
-                className="flex items-center gap-1.5 rounded-lg border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-2.5 py-1 text-[11px] font-semibold text-[#FF6B4A] hover:bg-[#FF6B4A]/20 hover:border-[#FF8A6E] transition-all active:scale-95 shadow-sm"
+                className="flex items-center gap-1.5 rounded-lg border border-[#B8A1FF]/30 bg-[#B8A1FF]/10 px-2.5 py-1 text-[11px] font-semibold text-[#9CE5E0] hover:bg-[#B8A1FF]/20 hover:border-[#B8A1FF] transition-all active:scale-95 shadow-sm"
               >
-                <Sparkles className="h-3 w-3 text-[#FF6B4A]" />
+                <Sparkles className="h-3 w-3 text-[#B8A1FF]" />
                 <span>Ask Coach about this</span>
               </button>
             )}

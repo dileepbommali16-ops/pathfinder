@@ -20,7 +20,6 @@ import {
   Target
 } from "lucide-react";
 import { StudentProfileState } from "./ProfileEvaluator";
-import { SphereShieldTiled } from "@designcodeio/threeui";
 
 interface CareerDigitalTwinProps {
   profile: StudentProfileState;
@@ -153,16 +152,6 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
       {/* Ambient background glow */}
       <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-[#FF6B4A]/10 blur-3xl pointer-events-none" />
       <div className="absolute -right-20 -bottom-20 h-64 w-64 rounded-full bg-[#FF6B4A]/10 blur-3xl pointer-events-none" />
-
-      {/* Subtle 3D Career Digital Twin Neural Sphere */}
-      <div className="absolute right-4 -top-8 w-44 h-44 opacity-25 pointer-events-none hidden lg:block overflow-hidden">
-        <SphereShieldTiled
-          size={170}
-          speed={30}
-          background="transparent"
-          style={{ width: "100%", height: "100%" }}
-        />
-      </div>
 
       <div className="relative z-10">
         {/* Top Header */}

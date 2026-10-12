@@ -17,7 +17,6 @@ import {
   Check
 } from "lucide-react";
 import { StudentProfileState } from "./ProfileEvaluator";
-import { SphereShieldTiled } from "@designcodeio/threeui";
 
 interface ProjectDefenseConsoleProps {
   profile: StudentProfileState;
@@ -114,16 +113,6 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
       {/* Top Banner */}
       <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#FF6B4A]/10 blur-3xl pointer-events-none" />
-
-        {/* Subtle Cyber Defense 3D Sphere Shield */}
-        <div className="absolute right-0 -bottom-6 w-48 h-48 opacity-25 pointer-events-none hidden lg:block overflow-hidden">
-          <SphereShieldTiled
-            size={180}
-            speed={35}
-            background="transparent"
-            style={{ width: "100%", height: "100%" }}
-          />
-        </div>
 
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
