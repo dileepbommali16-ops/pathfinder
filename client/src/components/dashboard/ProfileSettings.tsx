@@ -88,15 +88,15 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   return (
     <div className="relative mx-auto max-w-4xl space-y-6">
       {/* Header */}
-      <div className="rounded-3xl border border-white/[0.08] bg-slate-900/60 p-6 shadow-2xl backdrop-blur-2xl">
+      <div className="rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-2xl backdrop-blur-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-3 py-1 text-xs font-semibold text-[#FF6B4A]">
               <User className="h-3.5 w-3.5" />
               <span>Single Source of Truth</span>
             </div>
-            <h1 className="mt-2 text-2xl font-black text-white">Profile & Candidate Settings</h1>
-            <p className="mt-1 text-xs text-slate-400">
+            <h1 className="mt-2 text-2xl font-black text-[#F2F2F3]">Profile & Candidate Settings</h1>
+            <p className="mt-1 text-xs text-[#A1A1AA]">
               Update your academic marks, backlogs, skills, or target role. All dashboard widgets and AI assistants will recalculate immediately.
             </p>
           </div>
@@ -105,7 +105,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             <button
               type="button"
               onClick={onResetToDefaults}
-              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 transition-all active:scale-95"
+              className="flex items-center gap-1.5 rounded-xl border border-[#2A2A30] bg-[#141417] px-3 py-2 text-xs font-semibold text-[#A1A1AA] hover:text-[#F2F2F3] hover:bg-white/5 transition-all active:scale-95"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span>Reset Defaults</span>
@@ -117,53 +117,53 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-semibold text-emerald-300"
+            className="mt-4 flex items-center gap-2 rounded-2xl border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 p-3 text-xs font-semibold text-[#F2F2F3]"
           >
-            <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-400" />
+            <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-[#FF6B4A]" />
             <span>{successMsg}</span>
           </motion.div>
         )}
       </div>
 
       {/* Main Settings Form */}
-      <form onSubmit={handleSave} className="rounded-3xl border border-white/[0.08] bg-slate-900/50 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
+      <form onSubmit={handleSave} className="rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
         {/* Section 1: Identity & College */}
         <div className="space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-[#FF6B4A] flex items-center gap-2">
             <GraduationCap className="h-4 w-4" />
             <span>Academic Identity</span>
           </h3>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Candidate Full Name</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">Candidate Full Name</label>
               <input
                 type="text"
                 id="settings-full-name"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-500/50"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">College / Institute</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">College / Institute</label>
               <input
                 type="text"
                 id="settings-college"
                 value={formData.college}
                 onChange={(e) => setFormData({ ...formData, college: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-500/50"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Branch / Department</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">Branch / Department</label>
               <select
                 id="settings-branch"
                 value={formData.branch}
                 onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-500/50"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               >
                 {BRANCHES.map((b) => (
                   <option key={b} value={b}>{b}</option>
@@ -172,20 +172,20 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Course & Year</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">Course & Year</label>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   value={formData.course}
                   onChange={(e) => setFormData({ ...formData, course: e.target.value })}
-                  className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white outline-none"
+                  className="rounded-xl border border-[#2A2A30] bg-[#141417] px-3 py-2 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
                   placeholder="e.g. B.Tech"
                 />
                 <input
                   type="text"
                   value={formData.currentYear}
                   onChange={(e) => setFormData({ ...formData, currentYear: e.target.value })}
-                  className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white outline-none"
+                  className="rounded-xl border border-[#2A2A30] bg-[#141417] px-3 py-2 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
                   placeholder="e.g. 4th Year"
                 />
               </div>
@@ -194,8 +194,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         </div>
 
         {/* Section 2: Academics & Formula */}
-        <div className="space-y-4 pt-4 border-t border-white/[0.06]">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-teal-400 flex items-center gap-2">
+        <div className="space-y-4 pt-4 border-t border-[#2A2A30]">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-[#FF6B4A] flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
             <span>Academic Performance & Live Conversion</span>
           </h3>
@@ -203,8 +203,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-1">
               <div className="flex justify-between items-center text-xs">
-                <label className="font-semibold text-slate-300">Current CGPA (0 - 10)</label>
-                <span className="font-bold text-emerald-400">{formData.cgpa.toFixed(2)}</span>
+                <label className="font-semibold text-[#A1A1AA]">Current CGPA (0 - 10)</label>
+                <span className="font-bold text-[#FF6B4A]">{formData.cgpa.toFixed(2)}</span>
               </div>
               <input
                 type="number"
@@ -223,22 +223,22 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     percentage: Math.round(cgpa * mult * 10) / 10
                   });
                 }}
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-500/50"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Live Converted Percentage</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">Live Converted Percentage</label>
               <input
                 type="number"
                 disabled
                 value={(formData.cgpa * (formData.cgpaFormulaMultiplier || 9.5)).toFixed(1)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-3.5 py-2.5 text-xs font-bold text-emerald-300 outline-none"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs font-bold text-[#F2F2F3] outline-none"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Conversion Multiplier</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">Conversion Multiplier</label>
               <select
                 id="settings-formula"
                 value={formData.cgpaFormulaMultiplier || 9.5}
@@ -250,7 +250,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     percentage: Math.round(formData.cgpa * mult * 10) / 10
                   });
                 }}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-500/50"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               >
                 <option value={9.5}>AICTE / Standard (× 9.5)</option>
                 <option value={10.0}>Direct Scale (× 10.0)</option>
@@ -259,7 +259,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">10th Percentage (%)</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">10th Percentage (%)</label>
               <input
                 type="number"
                 min="0"
@@ -267,12 +267,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 step="0.1"
                 value={formData.tenthPercentage}
                 onChange={(e) => setFormData({ ...formData, tenthPercentage: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white outline-none"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">12th / Diploma (%)</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">12th / Diploma (%)</label>
               <input
                 type="number"
                 min="0"
@@ -280,12 +280,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 step="0.1"
                 value={formData.twelfthPercentage}
                 onChange={(e) => setFormData({ ...formData, twelfthPercentage: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white outline-none"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Active Standing Backlogs</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">Active Standing Backlogs</label>
               <input
                 type="number"
                 min="0"
@@ -295,48 +295,48 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   const val = parseInt(e.target.value, 10) || 0;
                   setFormData({ ...formData, activeBacklogs: val, backlogs: val });
                 }}
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white outline-none"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               />
             </div>
           </div>
         </div>
 
         {/* Section 3: Skills & Ratings */}
-        <div className="space-y-4 pt-4 border-t border-white/[0.06]">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+        <div className="space-y-4 pt-4 border-t border-[#2A2A30]">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-[#FF6B4A] flex items-center gap-2">
             <Code className="h-4 w-4" />
             <span>Skills, Projects & Self-Assessments</span>
           </h3>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Flagship Projects Count</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">Flagship Projects Count</label>
               <input
                 type="number"
                 min="0"
                 max="20"
                 value={formData.projectsCount}
                 onChange={(e) => setFormData({ ...formData, projectsCount: parseInt(e.target.value, 10) || 0 })}
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white outline-none"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Verified Internships Count</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">Verified Internships Count</label>
               <input
                 type="number"
                 min="0"
                 max="10"
                 value={formData.internships}
                 onChange={(e) => setFormData({ ...formData, internships: parseInt(e.target.value, 10) || 0 })}
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white outline-none"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               />
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between items-center text-xs">
-                <label className="font-semibold text-slate-300">Coding & DSA Confidence</label>
-                <span className="font-bold text-cyan-400">{formData.coding} / 10</span>
+                <label className="font-semibold text-[#A1A1AA]">Coding & DSA Confidence</label>
+                <span className="font-bold text-[#FF6B4A]">{formData.coding} / 10</span>
               </div>
               <input
                 type="range"
@@ -344,14 +344,14 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 max="10"
                 value={formData.coding}
                 onChange={(e) => setFormData({ ...formData, coding: parseInt(e.target.value, 10) })}
-                className="w-full accent-cyan-400"
+                className="w-full accent-[#FF6B4A]"
               />
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between items-center text-xs">
-                <label className="font-semibold text-slate-300">Communication & Interview Confidence</label>
-                <span className="font-bold text-amber-400">{formData.communication} / 10</span>
+                <label className="font-semibold text-[#A1A1AA]">Communication & Interview Confidence</label>
+                <span className="font-bold text-[#FF8A6E]">{formData.communication} / 10</span>
               </div>
               <input
                 type="range"
@@ -359,27 +359,27 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 max="10"
                 value={formData.communication}
                 onChange={(e) => setFormData({ ...formData, communication: parseInt(e.target.value, 10) })}
-                className="w-full accent-amber-400"
+                className="w-full accent-[#FF6B4A]"
               />
             </div>
           </div>
         </div>
 
         {/* Section 4: Target Career Role */}
-        <div className="space-y-4 pt-4 border-t border-white/[0.06]">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2">
+        <div className="space-y-4 pt-4 border-t border-[#2A2A30]">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-[#FF6B4A] flex items-center gap-2">
             <Target className="h-4 w-4" />
             <span>Target Role & Preferences</span>
           </h3>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Target Role</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">Target Role</label>
               <select
                 id="settings-target-role"
                 value={formData.targetRole}
                 onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-500/50"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               >
                 {ROLES.map((r) => (
                   <option key={r} value={r}>{r}</option>
@@ -388,12 +388,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Target Company Tier</label>
+              <label className="text-xs font-semibold text-[#A1A1AA]">Target Company Tier</label>
               <select
                 id="settings-target-tier"
                 value={formData.targetTier}
                 onChange={(e) => setFormData({ ...formData, targetTier: e.target.value, preferredCompanyType: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-500/50"
+                className="w-full rounded-xl border border-[#2A2A30] bg-[#141417] px-3.5 py-2.5 text-xs text-[#F2F2F3] outline-none focus:border-[#FF6B4A]"
               >
                 {TIERS.map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -404,12 +404,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         </div>
 
         {/* Save CTA Button */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.08]">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#2A2A30]">
           <button
             type="submit"
             id="btn-save-settings"
             disabled={isSaving}
-            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-6 py-3 text-xs font-bold text-slate-950 shadow-xl shadow-emerald-500/20 hover:brightness-110 active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-2xl bg-[#FF6B4A] hover:bg-[#FF8A6E] active:bg-[#C2452B] px-6 py-3 text-xs font-bold text-white shadow-xl shadow-[#FF6B4A]/20 transition-all active:scale-95 disabled:opacity-50"
           >
             {isSaving ? (
               <>

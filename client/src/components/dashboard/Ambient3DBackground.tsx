@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { PredictiveArcCanvas } from "@designcodeio/threeui";
+import { PredictiveArcCanvas, SphereShieldTiled } from "@designcodeio/threeui";
 import "@designcodeio/threeui/style.css";
 import { Sparkles, Orbit, Layers } from "lucide-react";
 
@@ -52,10 +52,10 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
   const switcher = (
     <aside
       aria-label="3D Background Mode Controls"
-      className="fixed bottom-4 right-4 z-[99999] pointer-events-auto flex items-center gap-1.5 rounded-2xl border border-white/10 bg-slate-950/90 p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl transition-all duration-300 hover:border-purple-500/50"
+      className="fixed bottom-4 right-4 z-[99999] pointer-events-auto flex items-center gap-1.5 rounded-2xl border border-[#2A2A30] bg-[#1B1B1F]/90 p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl transition-all duration-300 hover:border-[#FF6B4A]/50"
     >
-      <div className="flex items-center gap-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-        <Layers className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
+      <div className="flex items-center gap-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-[#A1A1AA]">
+        <Layers className="h-3.5 w-3.5 text-[#FF6B4A] animate-pulse" />
         <span className="hidden sm:inline">Background:</span>
       </div>
 
@@ -68,11 +68,11 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
         title="Hybrid Mix: 3D WebGL Void Matrix + Luminous Predictive Arc"
         className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
           variant === "predictive-void"
-            ? "bg-gradient-to-r from-purple-500/30 to-emerald-500/30 text-white border border-purple-400/50 shadow-[0_0_16px_rgba(168,85,247,0.4)]"
-            : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
+            ? "bg-[#FF6B4A]/20 text-[#F2F2F3] border border-[#FF6B4A]/50 shadow-[0_0_16px_rgba(255,107,74,0.3)]"
+            : "text-[#A1A1AA] hover:text-[#F2F2F3] hover:bg-white/[0.06]"
         }`}
       >
-        <Sparkles className="h-3 w-3 text-emerald-400" />
+        <Sparkles className="h-3 w-3 text-[#FF6B4A]" />
         <span>Hybrid Mix</span>
       </button>
 
@@ -85,11 +85,11 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
         title="Predictive Neural Arc: Luminous 3D AI Trajectory"
         className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
           variant === "predictive"
-            ? "bg-purple-500/30 text-purple-200 border border-purple-400/50 shadow-[0_0_16px_rgba(168,85,247,0.4)]"
-            : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
+            ? "bg-[#FF6B4A]/20 text-[#F2F2F3] border border-[#FF6B4A]/50 shadow-[0_0_16px_rgba(255,107,74,0.3)]"
+            : "text-[#A1A1AA] hover:text-[#F2F2F3] hover:bg-white/[0.06]"
         }`}
       >
-        <Orbit className="h-3 w-3 text-purple-400" />
+        <Orbit className="h-3 w-3 text-[#FF6B4A]" />
         <span>Predictive Arc</span>
       </button>
 
@@ -99,14 +99,14 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
           e.stopPropagation();
           setVariant("void-field");
         }}
-        title="042 Void Protocol: Cyberpunk Telemetry Field"
+        title="Sphere Shield WebGL2: Shield Matrix"
         className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
           variant === "void-field"
-            ? "bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 shadow-[0_0_16px_rgba(6,182,212,0.4)]"
-            : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
+            ? "bg-[#FF6B4A]/20 text-[#F2F2F3] border border-[#FF6B4A]/50 shadow-[0_0_16px_rgba(255,107,74,0.3)]"
+            : "text-[#A1A1AA] hover:text-[#F2F2F3] hover:bg-white/[0.06]"
         }`}
       >
-        <span className="text-[10px] font-mono text-cyan-400 font-bold">042</span>
+        <span className="text-[10px] font-mono text-[#FF6B4A] font-bold">042</span>
         <span>Void Field</span>
       </button>
     </aside>
@@ -141,11 +141,8 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
               />
             )}
             {variant === "void-field" && (
-              <PredictiveArcCanvas
-                variant="void-field"
-                hue={0}
-                saturation={1.0}
-                brightness={brightness}
+              <SphereShieldTiled
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", minWidth: 0, minHeight: 0 }}
               />
             )}
           </div>

@@ -54,30 +54,31 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
       isMounted = false;
     };
   }, [apiBase]);
+
   const dimensions = [
-    { label: "Academics & CGPA Cutoff", score: breakdown.academics || 75, color: "from-cyan-400 to-blue-500" },
-    { label: "DSA & Problem Solving", score: breakdown.coding_dsa || 70, color: "from-emerald-400 to-teal-500" },
-    { label: "Technical Communication & STAR", score: breakdown.communication || 70, color: "from-purple-400 to-indigo-500" },
-    { label: "Practical Internships & Projects", score: breakdown.experience || 35, color: "from-amber-400 to-orange-500" },
-    { label: "Drive Eligibility & Clearance", score: breakdown.eligibility || 100, color: "from-rose-400 to-pink-500" },
+    { label: "Academics & CGPA Cutoff", score: breakdown.academics || 75, color: "from-[#C2452B] to-[#FF6B4A]" },
+    { label: "DSA & Problem Solving", score: breakdown.coding_dsa || 70, color: "from-[#FF6B4A] to-[#FF8A6E]" },
+    { label: "Technical Communication & STAR", score: breakdown.communication || 70, color: "from-[#FF8A6E] to-[#F2F2F3]" },
+    { label: "Practical Internships & Projects", score: breakdown.experience || 35, color: "from-[#C2452B] to-[#FF8A6E]" },
+    { label: "Drive Eligibility & Clearance", score: breakdown.eligibility || 100, color: "from-[#FF6B4A] to-[#FF6B4A]" },
   ];
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Left: Dimension Health & Skill-Gap Breakdown */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/50 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-7">
+      <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-7">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FF6B4A]/10 text-[#FF6B4A] border border-[#FF6B4A]/20">
               <TrendingUp className="h-4 w-4" />
             </div>
-            <h3 className="text-lg font-bold text-white">Skill Strength & Gap Analysis</h3>
+            <h3 className="text-lg font-bold text-[#F2F2F3]">Skill Strength & Gap Analysis</h3>
           </div>
-          <span className="rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold text-slate-300">
+          <span className="rounded-md border border-[#2A2A30] bg-[#141417] px-2 py-0.5 text-[10px] font-semibold text-[#A1A1AA]">
             5 Dimensions
           </span>
         </div>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-[#A1A1AA]">
           Evaluated relative to tier-1 campus recruitment expectations and benchmarks
         </p>
 
@@ -86,12 +87,12 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
           {dimensions.map((dim) => (
             <div key={dim.label} className="space-y-1.5">
               <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-300">{dim.label}</span>
-                <span className="text-slate-200">{dim.score.toFixed(0)}%</span>
+                <span className="text-[#A1A1AA]">{dim.label}</span>
+                <span className="text-[#F2F2F3]">{dim.score.toFixed(0)}%</span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800/80">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-[#2A2A30]">
                 <div
-                  className={`h-full rounded-full bg-gradient-to-r ${dim.color} shadow-[0_0_8px_rgba(16,185,129,0.3)]`}
+                  className={`h-full rounded-full bg-gradient-to-r ${dim.color} shadow-[0_0_8px_rgba(255,107,74,0.3)]`}
                   style={{ width: `${Math.max(5, Math.min(100, dim.score))}%` }}
                 />
               </div>
@@ -100,8 +101,8 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
         </div>
 
         {/* Recommended High-Yield Target Skills */}
-        <div className="mt-6 border-t border-white/[0.06] pt-5">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+        <div className="mt-6 border-t border-[#2A2A30] pt-5">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">
             High-Yield Recommended Skills:
           </span>
           <div className="mt-2.5 flex flex-wrap gap-2">
@@ -109,10 +110,10 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
               <button
                 key={skill.name}
                 onClick={() => onAskCoach(`How should I prepare ${skill.name} for upcoming campus placement tests?`)}
-                className="group flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-xs text-slate-300 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-300 hover:shadow-[0_0_12px_rgba(16,185,129,0.18)] active:scale-95"
+                className="group flex items-center gap-1.5 rounded-lg border border-[#2A2A30] bg-[#141417] px-2.5 py-1.5 text-xs text-[#F2F2F3] transition-all hover:border-[#FF6B4A]/40 hover:bg-[#FF6B4A]/10 hover:text-[#FF8A6E] hover:shadow-[0_0_12px_rgba(255,107,74,0.18)] active:scale-95"
               >
                 <span>{skill.name}</span>
-                <ArrowRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+                <ArrowRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100 text-[#FF6B4A]" />
               </button>
             ))}
           </div>
@@ -122,15 +123,15 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
       {/* Right: Strengths & Placement Blocker Cards */}
       <div className="space-y-6">
         {/* Identified Strengths */}
-        <div className="relative overflow-hidden rounded-3xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 via-slate-900/60 to-slate-900/80 p-6 shadow-[0_8px_32px_rgba(16,185,129,0.08)] backdrop-blur-2xl ring-1 ring-white/5">
-          <div className="flex items-center gap-2 text-emerald-400">
-            <CheckCircle2 className="h-5 w-5" />
-            <h3 className="text-base font-bold text-white">Identified Competitive Strengths</h3>
+        <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl ring-1 ring-white/5">
+          <div className="flex items-center gap-2 text-[#FF6B4A]">
+            <CheckCircle2 className="h-5 w-5 text-[#FF6B4A]" />
+            <h3 className="text-base font-bold text-[#F2F2F3]">Identified Competitive Strengths</h3>
           </div>
           <div className="mt-3.5 space-y-2.5">
             {strengths.map((str, idx) => (
-              <div key={idx} className="flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] p-3 text-xs text-emerald-200">
-                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+              <div key={idx} className="flex items-start gap-2.5 rounded-xl border border-[#2A2A30] bg-[#141417] p-3 text-xs text-[#F2F2F3]">
+                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#FF6B4A]" />
                 <span>{str}</span>
               </div>
             ))}
@@ -138,21 +139,21 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
         </div>
 
         {/* Critical Action Items / Priorities */}
-        <div className="relative overflow-hidden rounded-3xl border border-amber-500/25 bg-gradient-to-br from-amber-500/10 via-slate-900/60 to-slate-900/80 p-6 shadow-[0_8px_32px_rgba(245,158,11,0.08)] backdrop-blur-2xl ring-1 ring-white/5">
-          <div className="flex items-center gap-2 text-amber-400">
-            <ShieldAlert className="h-5 w-5" />
-            <h3 className="text-base font-bold text-white">Priority Placement Actions</h3>
+        <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl ring-1 ring-white/5">
+          <div className="flex items-center gap-2 text-[#FF8A6E]">
+            <ShieldAlert className="h-5 w-5 text-[#FF6B4A]" />
+            <h3 className="text-base font-bold text-[#F2F2F3]">Priority Placement Actions</h3>
           </div>
           <div className="mt-3.5 space-y-2.5">
             {priorities.length > 0 ? (
               priorities.map((prio, idx) => (
-                <div key={idx} className="flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-3 text-xs text-amber-200">
-                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+                <div key={idx} className="flex items-start gap-2.5 rounded-xl border border-[#2A2A30] bg-[#141417] p-3 text-xs text-[#F2F2F3]">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-400" />
                   <span>{prio}</span>
                 </div>
               ))
             ) : (
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] p-3 text-xs text-emerald-300">
+              <div className="rounded-xl border border-[#2A2A30] bg-[#141417] p-3 text-xs text-[#A1A1AA]">
                 No critical academic or eligibility blockers detected. Focus on interview polish and mock tests.
               </div>
             )}

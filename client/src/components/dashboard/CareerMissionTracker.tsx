@@ -223,24 +223,24 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/60 p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
-        <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+        <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-[#FF6B4A]/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-purple-500/30 bg-purple-500/10 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 text-[#FF6B4A] shadow-[0_0_20px_rgba(255,107,74,0.2)]">
               <Calendar className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl">
+                <h2 className="text-xl font-black tracking-tight text-[#F2F2F3] sm:text-2xl">
                   Personalized 30-Day Career Mission
                 </h2>
-                <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                <span className="rounded-full border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FF6B4A]">
                   Sprint Roadmap
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-slate-400">
+              <p className="mt-0.5 text-xs text-[#A1A1AA]">
                 Action-oriented weekly execution plan customized for your role as <strong>{profile.targetRole}</strong>.
               </p>
             </div>
@@ -250,7 +250,7 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
             <button
               type="button"
               onClick={handleResetMission}
-              className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition-all"
+              className="flex items-center gap-1.5 rounded-xl border border-[#2A2A30] bg-[#141417] px-3 py-1.5 text-xs font-semibold text-[#A1A1AA] hover:text-[#F2F2F3] hover:bg-[#2A2A30] transition-all cursor-pointer"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span>Reset</span>
@@ -259,20 +259,20 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
         </div>
 
         {/* Progress Tracker Bar */}
-        <div className="mt-6 rounded-2xl border border-white/[0.06] bg-slate-950/60 p-5">
+        <div className="mt-6 rounded-2xl border border-[#2A2A30] bg-[#141417] p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-amber-400" />
-              <span className="text-xs font-bold text-white">Overall 30-Day Execution Progress</span>
+              <Trophy className="h-5 w-5 text-[#FF6B4A]" />
+              <span className="text-xs font-bold text-[#F2F2F3]">Overall 30-Day Execution Progress</span>
             </div>
-            <span className="text-sm font-black text-purple-400">
+            <span className="text-sm font-black text-[#FF8A6E]">
               {completedTasks} of {allTasks.length} Milestones Achieved ({progressPercent}%)
             </span>
           </div>
 
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-800">
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#1B1B1F]">
             <div
-              className="h-full bg-gradient-to-r from-purple-500 via-violet-400 to-indigo-400 transition-all duration-500"
+              className="h-full bg-gradient-to-r from-[#C2452B] to-[#FF6B4A] transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -288,22 +288,22 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
           return (
             <div
               key={wk.weekNumber}
-              className="overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/50 p-6 backdrop-blur-2xl transition-all hover:border-white/12"
+              className="overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 backdrop-blur-2xl transition-all hover:border-[#FF6B4A]/30"
             >
-              <div className="flex flex-col gap-2 border-b border-white/[0.08] pb-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 border-b border-[#2A2A30] pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-0.5 text-xs font-black text-purple-300">
+                    <span className="rounded-lg border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-2.5 py-0.5 text-xs font-black text-[#FF6B4A]">
                       WEEK {wk.weekNumber}
                     </span>
-                    <h3 className="text-sm font-bold text-white">{wk.theme}</h3>
+                    <h3 className="text-sm font-bold text-[#F2F2F3]">{wk.theme}</h3>
                   </div>
-                  <p className="mt-1 text-xs text-slate-400">{wk.description}</p>
+                  <p className="mt-1 text-xs text-[#A1A1AA]">{wk.description}</p>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#A1A1AA]">
                   <span>{wkCompleted}/{wk.tasks.length} Done</span>
-                  <span className="text-purple-400 font-bold">({wkPct}%)</span>
+                  <span className="text-[#FF8A6E] font-bold">({wkPct}%)</span>
                 </div>
               </div>
 
@@ -315,8 +315,8 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
                     onClick={() => toggleTask(wkIdx, task.id)}
                     className={`cursor-pointer rounded-2xl border p-4 transition-all duration-200 ${
                       task.completed
-                        ? "border-purple-500/30 bg-purple-950/20 text-slate-300"
-                        : "border-white/[0.06] bg-slate-950/40 hover:border-white/12 hover:bg-slate-950/60"
+                        ? "border-[#FF6B4A]/30 bg-[#FF6B4A]/10 text-[#A1A1AA]"
+                        : "border-[#2A2A30] bg-[#141417] hover:border-[#FF6B4A]/30"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -325,24 +325,24 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
                           type="button"
                           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all ${
                             task.completed
-                              ? "border-purple-400 bg-purple-500 text-slate-950"
-                              : "border-slate-600 bg-slate-800 text-transparent"
+                              ? "border-[#FF6B4A] bg-[#FF6B4A] text-white"
+                              : "border-[#2A2A30] bg-[#1B1B1F] text-transparent"
                           }`}
                         >
                           <CheckCircle2 className="h-4 w-4" />
                         </button>
 
                         <div>
-                          <span className={`text-xs font-bold ${task.completed ? "line-through text-slate-400" : "text-white"}`}>
+                          <span className={`text-xs font-bold ${task.completed ? "line-through text-[#A1A1AA]" : "text-[#F2F2F3]"}`}>
                             {task.title}
                           </span>
-                          <p className="mt-0.5 text-xs text-slate-400">{task.purpose}</p>
+                          <p className="mt-0.5 text-xs text-[#A1A1AA]">{task.purpose}</p>
 
                           <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
-                            <span className="rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 font-semibold text-slate-300">
+                            <span className="rounded-md border border-[#2A2A30] bg-[#1B1B1F] px-2 py-0.5 font-semibold text-[#A1A1AA]">
                               ⏱️ {task.effort}
                             </span>
-                            <span className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 font-semibold text-cyan-300">
+                            <span className="rounded-md border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-2 py-0.5 font-semibold text-[#FF8A6E]">
                               🎯 {task.skill}
                             </span>
                           </div>
@@ -356,7 +356,7 @@ export const CareerMissionTracker: React.FC<CareerMissionTrackerProps> = ({
                             e.stopPropagation();
                             onNavigateTab(task.actionTab);
                           }}
-                          className="shrink-0 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-slate-200 hover:bg-white/[0.08] hover:text-white transition-all"
+                          className="shrink-0 rounded-lg border border-[#2A2A30] bg-[#1B1B1F] px-2.5 py-1 text-[11px] font-semibold text-[#F2F2F3] hover:border-[#FF6B4A]/40 transition-all cursor-pointer"
                         >
                           Execute →
                         </button>

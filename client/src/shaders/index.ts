@@ -15,3 +15,4 @@ export * from "./neuform-isolated/SparseVoidFieldCanvas";
 export * from "./ribbon-field/RibbonFieldBackground";
 export * from "./shader-buttons/ShaderButtons";
 export * from "./shader-buttons/SelectedButtonStudies";
+export { default as SphereShieldTiled } from "./SphereShieldTiled";

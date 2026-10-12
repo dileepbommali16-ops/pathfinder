@@ -1131,11 +1131,11 @@ export default function Home() {
 
   // 4. MAIN DASHBOARD & PLATFORM NAVIGATION
   return (
-    <div className="relative min-h-screen bg-[#05070e] text-slate-100 selection:bg-emerald-500 selection:text-slate-950 font-sans overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#05070e] text-slate-100 selection:bg-[#FF6B4A] selection:text-white font-sans overflow-x-hidden">
       {/* Graceful Cold-Start Wake-Up Notification */}
       {isGlobalServerWakingUp && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-cyan-500/30 bg-slate-950/95 px-4 py-2 text-xs font-medium text-cyan-300 shadow-[0_4px_24px_rgba(6,182,212,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[#FF6B4A]/30 bg-[#1B1B1F]/95 px-4 py-2 text-xs font-medium text-[#F2F2F3] shadow-[0_4px_24px_rgba(255,107,74,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#FF6B4A]" />
           <span>Waking up the server, this can take up to a minute...</span>
         </div>
       )}
@@ -1207,11 +1207,11 @@ export default function Home() {
 
       {/* Render Cold-Start Alert Banner */}
       {isServerWakingUp && (
-        <div className="relative z-40 border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-center text-xs font-medium text-amber-300 backdrop-blur-md">
+        <div className="relative z-40 border-b border-[#2A2A30] bg-[#141417] px-4 py-2 text-center text-xs font-medium text-[#F2F2F3] backdrop-blur-md">
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF6B4A] opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF6B4A]"></span>
             </span>
             <span>Connecting to cloud backend... (free-tier servers take ~15-20s on first load). All predictions will populate automatically.</span>
           </div>
@@ -1233,14 +1233,14 @@ export default function Home() {
             >
               {/* Optional Profile Completion Banner */}
               {isProfilePartiallyIncomplete && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#2A2A30] bg-[#1B1B1F] p-5 backdrop-blur-md">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FF6B4A]/10 text-[#FF6B4A]">
                       <Sparkles className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">Profile Acceleration Available</p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-sm font-semibold text-[#F2F2F3]">Profile Acceleration Available</p>
+                      <p className="text-xs text-[#A1A1AA]">
                         Add your GitHub / LeetCode profiles or certifications in Profile / Settings to elevate your career readiness score by up to +12%.
                       </p>
                     </div>
@@ -1248,7 +1248,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setActiveTab("profile")}
-                    className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 transition-colors"
+                    className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-[#FF6B4A] hover:bg-[#FF8A6E] px-3.5 py-2 text-xs font-semibold text-white transition-colors"
                   >
                     <span>Complete Profile</span>
                     <ArrowRight className="h-3 w-3" />
@@ -1727,10 +1727,10 @@ export default function Home() {
               const tabTitle = getTabKnowledge(activeTab)?.title || activeTab;
               handleAskCoach(`Explain the '${tabTitle}' tab and what actions I should take here to improve my placement readiness.`);
             }}
-            className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full border border-cyan-500/40 bg-slate-900/90 px-4 py-2.5 text-xs font-semibold text-cyan-300 shadow-xl shadow-cyan-500/20 backdrop-blur-xl transition-all hover:scale-105 hover:border-cyan-400 hover:bg-slate-900 hover:text-white hover:shadow-cyan-500/35 active:scale-95"
+            className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full border border-[#FF6B4A]/40 bg-[#1B1B1F]/95 px-4 py-2.5 text-xs font-semibold text-[#FF6B4A] shadow-xl shadow-[#FF6B4A]/20 backdrop-blur-xl transition-all hover:scale-105 hover:border-[#FF8A6E] hover:text-[#F2F2F3] hover:shadow-[#FF6B4A]/35 active:scale-95"
             title="Ask AI Coach about this page"
           >
-            <Bot className="h-4 w-4 text-cyan-400" />
+            <Bot className="h-4 w-4 text-[#FF6B4A]" />
             <span>Ask Coach About This Page</span>
           </button>
         )}

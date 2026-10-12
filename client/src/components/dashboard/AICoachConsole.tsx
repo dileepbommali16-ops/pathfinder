@@ -106,37 +106,37 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   };
 
   return (
-    <div className="relative flex h-[740px] flex-col overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/50 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+    <div className="relative flex h-[740px] flex-col overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
       {/* Console Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.06] bg-black/20 px-6 py-3.5 gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#2A2A30] bg-[#141417]/80 px-6 py-3.5 gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-500 text-slate-950 shadow-md shadow-cyan-500/25 ring-1 ring-white/20">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-[#C2452B] to-[#FF6B4A] text-white shadow-md shadow-[#FF6B4A]/25 ring-1 ring-white/20">
             <Bot className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-white">Pathfinder AI Career Coach</h2>
-              <span className="flex items-center gap-1 rounded border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold text-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.2)]">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              <h2 className="text-sm font-bold text-[#F2F2F3]">Pathfinder AI Career Coach</h2>
+              <span className="flex items-center gap-1 rounded border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-2 py-0.5 text-[10px] font-bold text-[#FF6B4A] shadow-[0_0_8px_rgba(255,107,74,0.2)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#FF6B4A] animate-pulse" />
                 Gemini AI Agent
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">
-              Personalized for: <span className="font-semibold text-cyan-300">{targetRole}</span> • English, తెలుగు & Roman Telugu
+            <p className="text-[11px] text-[#A1A1AA]">
+              Personalized for: <span className="font-semibold text-[#FF8A6E]">{targetRole}</span> • English, తెలుగు & Roman Telugu
             </p>
           </div>
         </div>
 
         {/* Mode Switcher & Reset */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-xl border border-white/[0.08] bg-black/40 p-1">
+          <div className="flex items-center rounded-xl border border-[#2A2A30] bg-[#141417] p-1">
             <button
               type="button"
               onClick={() => setMode("chat")}
               className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                 mode === "chat"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[#FF6B4A]/20 text-[#FF6B4A] border border-[#FF6B4A]/30 shadow-sm"
+                  : "text-[#A1A1AA] hover:text-[#F2F2F3]"
               }`}
             >
               <MessageSquare className="h-3.5 w-3.5" />
@@ -147,8 +147,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               onClick={() => setMode("interview")}
               className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                 mode === "interview"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[#FF6B4A]/20 text-[#FF6B4A] border border-[#FF6B4A]/30 shadow-sm"
+                  : "text-[#A1A1AA] hover:text-[#F2F2F3]"
               }`}
             >
               <Mic className="h-3.5 w-3.5" />
@@ -161,7 +161,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               <button
                 type="button"
                 onClick={onRegenerate}
-                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:border-cyan-500/40 hover:text-cyan-300"
+                className="flex items-center gap-1.5 rounded-xl border border-[#2A2A30] bg-[#141417] px-2.5 py-1.5 text-xs text-[#A1A1AA] transition-colors hover:border-[#FF6B4A]/40 hover:text-[#FF8A6E]"
                 title="Regenerate last response"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
@@ -172,7 +172,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             {messages.length > 0 && (
               <button
                 onClick={onClearChat}
-                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:border-red-500/40 hover:text-red-300"
+                className="flex items-center gap-1.5 rounded-xl border border-[#2A2A30] bg-[#141417] px-2.5 py-1.5 text-xs text-[#A1A1AA] transition-colors hover:border-red-500/40 hover:text-red-400"
                 title="Clear chat history"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -185,13 +185,13 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
       {/* Mock Interview Ribbon (When in Interview Mode) */}
       {mode === "interview" && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-cyan-500/20 bg-cyan-950/20 px-6 py-2.5 gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#2A2A30] bg-[#141417] px-6 py-2.5 gap-2">
           <div className="flex items-center gap-2">
-            <Mic className="h-4 w-4 text-cyan-400 animate-pulse" />
-            <span className="text-xs font-bold text-cyan-200">
+            <Mic className="h-4 w-4 text-[#FF6B4A] animate-pulse" />
+            <span className="text-xs font-bold text-[#FF8A6E]">
               Live Mock Interview Simulator:
             </span>
-            <span className="text-xs text-slate-300 hidden md:inline">
+            <span className="text-xs text-[#A1A1AA] hidden md:inline">
               Answer aloud or type your solution. The AI evaluates with STAR scoring.
             </span>
           </div>
@@ -202,7 +202,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 key={i}
                 onClick={() => onSendMessage(q.prompt)}
                 disabled={isLoading}
-                className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/20 transition-all disabled:opacity-50"
+                className="rounded-lg border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-2 py-0.5 text-[11px] font-semibold text-[#FF6B4A] hover:bg-[#FF6B4A]/20 transition-all disabled:opacity-50"
               >
                 {q.category}
               </button>
@@ -212,14 +212,14 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       )}
 
       {/* Quick Action Chips Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b border-white/[0.04] bg-black/10 px-6 py-2.5 scrollbar-none">
-        <span className="text-[11px] font-medium text-slate-500 shrink-0">Quick Actions:</span>
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-[#2A2A30] bg-black/10 px-6 py-2.5 scrollbar-none">
+        <span className="text-[11px] font-medium text-[#A1A1AA] shrink-0">Quick Actions:</span>
         {QUICK_ACTIONS.map((action, i) => (
           <button
             key={i}
             onClick={() => onSendMessage(action.prompt)}
             disabled={isLoading}
-            className="shrink-0 rounded-lg border border-white/[0.07] bg-white/[0.02] px-2.5 py-1 text-[11px] font-medium text-slate-300 transition-all hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:text-cyan-300 active:scale-95 disabled:opacity-50"
+            className="shrink-0 rounded-lg border border-[#2A2A30] bg-[#141417] px-2.5 py-1 text-[11px] font-medium text-[#A1A1AA] transition-all hover:border-[#FF6B4A]/40 hover:bg-[#FF6B4A]/10 hover:text-[#FF8A6E] active:scale-95 disabled:opacity-50"
           >
             {action.label}
           </button>
@@ -227,14 +227,14 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 space-y-4 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-800">
+      <div className="flex-1 space-y-4 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-zinc-800">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 text-[#FF6B4A] shadow-[0_0_20px_rgba(255,107,74,0.2)]">
               <Sparkles className="h-7 w-7" />
             </div>
-            <h3 className="mt-4 text-base font-bold text-white">How can I guide your career today?</h3>
-            <p className="mt-1 max-w-md text-xs text-slate-400 leading-relaxed">
+            <h3 className="mt-4 text-base font-bold text-[#F2F2F3]">How can I guide your career today?</h3>
+            <p className="mt-1 max-w-md text-xs text-[#A1A1AA] leading-relaxed">
               Talk naturally in English, Telugu script, or Roman Telugu. Ask about placement strategy, mock interviews, skill gaps, or just chat.
             </p>
 
@@ -244,7 +244,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 <button
                   key={idx}
                   onClick={() => onSendMessage(s)}
-                  className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-slate-300 transition-all hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:text-cyan-300 hover:shadow-[0_0_12px_rgba(6,182,212,0.18)] active:scale-95"
+                  className="rounded-xl border border-[#2A2A30] bg-[#141417] px-3 py-1.5 text-xs text-[#A1A1AA] transition-all hover:border-[#FF6B4A]/40 hover:bg-[#FF6B4A]/10 hover:text-[#FF8A6E] hover:shadow-[0_0_12px_rgba(255,107,74,0.18)] active:scale-95"
                 >
                   💡 {s}
                 </button>
@@ -258,7 +258,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {m.role === "assistant" && (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-500 text-slate-950 shadow-sm mt-0.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-[#C2452B] to-[#FF6B4A] text-white shadow-sm mt-0.5">
                   <Bot className="h-4 w-4" />
                 </div>
               )}
@@ -267,8 +267,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 data-message-role={m.role}
                 className={`group relative max-w-[85%] rounded-2xl px-4.5 py-3 text-xs sm:text-sm leading-relaxed ${
                   m.role === "user"
-                    ? "rounded-tr-none bg-gradient-to-r from-cyan-600 via-teal-600 to-blue-600 text-white shadow-lg shadow-cyan-950/40"
-                    : "rounded-tl-none border border-white/[0.08] bg-slate-950/70 text-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+                    ? "rounded-tr-none bg-gradient-to-r from-[#C2452B] to-[#FF6B4A] text-white shadow-lg shadow-[#C2452B]/30"
+                    : "rounded-tl-none border border-[#2A2A30] bg-[#141417] text-[#F2F2F3] shadow-[0_4px_20px_rgba(0,0,0,0.25)] backdrop-blur-xl"
                 }`}
               >
                 <div className="whitespace-pre-wrap">{m.content}</div>
@@ -289,16 +289,16 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                   }
                   if (chips.length === 0 || chips.length > 3) return null;
                   return (
-                    <div className="mt-3.5 flex flex-wrap gap-2 pt-2.5 border-t border-white/[0.08]">
+                    <div className="mt-3.5 flex flex-wrap gap-2 pt-2.5 border-t border-[#2A2A30]">
                       {chips.map((chip, cIdx) => (
                         <button
                           key={cIdx}
                           type="button"
                           onClick={() => onSendMessage(chip)}
                           disabled={isLoading}
-                          className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-300 transition-all hover:bg-cyan-500/20 hover:border-cyan-400 active:scale-95 disabled:opacity-50 shadow-sm"
+                          className="flex items-center gap-1.5 rounded-xl border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-3 py-1.5 text-xs font-semibold text-[#FF6B4A] transition-all hover:bg-[#FF6B4A]/20 hover:border-[#FF8A6E] active:scale-95 disabled:opacity-50 shadow-sm"
                         >
-                          <Sparkles className="h-3 w-3 text-cyan-400 flex-shrink-0" />
+                          <Sparkles className="h-3 w-3 text-[#FF6B4A] flex-shrink-0" />
                           <span>{chip}</span>
                         </button>
                       ))}
@@ -309,16 +309,16 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 {m.role === "assistant" && (
                   <button
                     onClick={() => handleCopy(m.content, idx)}
-                    className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100 text-slate-400 hover:text-white"
+                    className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100 text-[#A1A1AA] hover:text-[#F2F2F3]"
                     title="Copy response"
                   >
-                    {copiedIndex === idx ? <Check className="h-3.5 w-3.5 text-cyan-400" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedIndex === idx ? <Check className="h-3.5 w-3.5 text-[#FF6B4A]" /> : <Copy className="h-3.5 w-3.5" />}
                   </button>
                 )}
               </div>
 
               {m.role === "user" && (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.06] text-slate-300 mt-0.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#2A2A30] bg-[#141417] text-[#A1A1AA] mt-0.5">
                   <User className="h-4 w-4" />
                 </div>
               )}
@@ -329,20 +329,20 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         {isLoading && (
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 text-slate-950 shadow-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#C2452B] to-[#FF6B4A] text-white shadow-sm">
                 <Bot className="h-4 w-4" />
               </div>
-              <div className="flex items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-slate-950/80 px-4 py-3 text-xs text-slate-300 shadow-md">
-                <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+              <div className="flex items-center gap-2.5 rounded-2xl border border-[#2A2A30] bg-[#141417] px-4 py-3 text-xs text-[#A1A1AA] shadow-md">
+                <Loader2 className="h-4 w-4 animate-spin text-[#FF6B4A]" />
                 <span>
                   {isServerWakingUp
                     ? "Waking up the server, this can take up to a minute... Pathfinder AI will respond shortly."
                     : "Pathfinder AI is analyzing & reasoning..."}
                 </span>
                 <span className="flex gap-1 ml-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="h-1.5 w-1.5 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#FF6B4A] animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#FF8A6E] animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#C2452B] animate-bounce" style={{ animationDelay: "300ms" }} />
                 </span>
               </div>
             </div>
@@ -363,7 +363,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       </div>
 
       {/* Input Bar */}
-      <form onSubmit={handleSubmit} className="border-t border-white/[0.06] bg-black/20 p-4">
+      <form onSubmit={handleSubmit} className="border-t border-[#2A2A30] bg-black/20 p-4">
         <div className="relative flex items-center">
           <input
             id="chat-console-input"
@@ -375,13 +375,13 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 ? "Type your interview answer here or ask for feedback..."
                 : "Talk in English, Telugu, or Roman Telugu (e.g. 'Naku job kavali bro', 'Take my mock interview')..."
             }
-            className="w-full rounded-2xl border border-white/[0.08] bg-slate-950/80 py-3.5 pl-4 pr-12 text-xs font-medium text-slate-200 outline-none transition-all placeholder:text-slate-500 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
+            className="w-full rounded-2xl border border-[#2A2A30] bg-[#141417] py-3.5 pl-4 pr-12 text-xs font-medium text-[#F2F2F3] outline-none transition-all placeholder:text-[#A1A1AA] focus:border-[#FF6B4A] focus:ring-1 focus:ring-[#FF6B4A]/20"
           />
           <button
             id="chat-console-send"
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 text-slate-950 transition-all hover:brightness-110 active:scale-95 disabled:opacity-40 shadow-sm"
+            className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-[#FF6B4A] text-white transition-all hover:bg-[#FF8A6E] active:scale-95 disabled:opacity-40 shadow-sm"
           >
             <Send className="h-4 w-4" />
           </button>

@@ -12,6 +12,7 @@ import {
 
 import { VoidFieldCanvas } from "../neuform-isolated/VoidFieldCanvas";
 import { SparseVoidFieldCanvas } from "../neuform-isolated/SparseVoidFieldCanvas";
+import SphereShieldTiled from "../SphereShieldTiled";
 
 export type PredictiveArcVariant =
   | PredictiveArcCoreVariant
@@ -111,7 +112,7 @@ export function PredictiveArcCanvas(props: PredictiveArcCanvasProps) {
 
   if (props.variant === "void-field") {
     const { variant: _variant, ...voidProps } = props;
-    return <SparseVoidFieldCanvas {...voidProps} />;
+    return <SphereShieldTiled style={{ position: "absolute", inset: 0, width: "100%", height: "100%", minWidth: 0, minHeight: 0 }} {...voidProps} />;
   }
 
   if (props.variant === "halftone-flow") {
