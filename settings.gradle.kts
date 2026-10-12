@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Pathfinder"
+rootProject.name = "pathfinder-main"
 include(":app")
