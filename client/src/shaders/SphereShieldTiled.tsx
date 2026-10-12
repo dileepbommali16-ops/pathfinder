@@ -28,8 +28,8 @@ const ADVANCED_DEFAULTS = {
     mottlePct: 20,
     mottleDimPct: 50,
     seed: 10,
-    midColor: "#3B546E",
-    hotColor: "#9FF0FD",
+    midColor: "#8C331E",
+    hotColor: "#FFC2B3",
     hotPct: 70,
     backColor: "#151C24",
     backWallPct: 45,
@@ -294,6 +294,8 @@ export interface SphereShieldTiledProps {
     dragSensitivity?: number
     hoverSpeed?: number
     hoverGlow?: number
+    autoRotate?: boolean
+    autoRotateSpeed?: number
     advanced?: {
         periodMs?: number
         phaseMs?: number
@@ -328,21 +330,23 @@ function __OriginkitBase_SphereShieldTiled(props: SphereShieldTiledProps) {
         cellCount = 40,
         bandWidth = 5,
         extrude = 5,
-        color = "#7AC2F9",
-        baseColor = "#000000",
-        rimColor = "#5683AE",
-        background = "#000000",
+        color = "#FF8A6E",
+        baseColor = "#0A0B0E",
+        rimColor = "#FF6B4A",
+        background = "transparent",
         dragToRotate = true,
         dragSensitivity = 100,
         hoverSpeed = 40,
         hoverGlow = 100,
+        autoRotate = true,
+        autoRotateSpeed = 0.35,
         style,
     } = props
 
     const rootRef = useRef<HTMLDivElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const propsRef = useRef<any>(null)
-    propsRef.current = { speed, size, cellCount, bandWidth, extrude, color, baseColor, rimColor, background, dragToRotate, dragSensitivity, hoverSpeed, hoverGlow, advanced: props.advanced }
+    propsRef.current = { speed, size, cellCount, bandWidth, extrude, color, baseColor, rimColor, background, dragToRotate, dragSensitivity, hoverSpeed, hoverGlow, autoRotate, autoRotateSpeed, advanced: props.advanced }
 
     useEffect(() => {
         const root = rootRef.current
@@ -433,6 +437,17 @@ function __OriginkitBase_SphereShieldTiled(props: SphereShieldTiledProps) {
         let raf = 0
         let last = -1
         let sim = 0
+        let autoYaw = 0
+        let mouseTargetX = 0
+        let mouseTargetY = 0
+        let mouseX = 0
+        let mouseY = 0
+        const onGlobalMove = (e: PointerEvent) => {
+            mouseTargetX = (e.clientX / Math.max(1, window.innerWidth) - 0.5) * 0.35
+            mouseTargetY = (e.clientY / Math.max(1, window.innerHeight) - 0.5) * 12
+        }
+        window.addEventListener("pointermove", onGlobalMove, { passive: true })
+
         const frame = (now: number) => {
             raf = requestAnimationFrame(frame)
             const dt = last < 0 ? 0 : Math.min((now - last) / 1000, 1 / 20)
@@ -442,8 +457,18 @@ function __OriginkitBase_SphereShieldTiled(props: SphereShieldTiledProps) {
             hover += (hoverTarget - hover) * Math.min(1, dt * 6)
             root.style.cursor = drag.active ? "grabbing" : p.dragToRotate ? "grab" : "default"
             const hoverSpeedBoost = Math.max(0, Number(p.hoverSpeed) || 0) / 100
-            sim += (dt * Math.max(0, Number(p.speed) || 0) / 50) * (1 + hover * hoverSpeedBoost)
-            const t = reduced || isStatic ? adv.freezeMs / 1000 : sim
+            const speedVal = p.speed !== undefined && p.speed !== null ? Number(p.speed) : 50
+            sim += (dt * Math.max(0.1, speedVal) / 50) * (1 + hover * hoverSpeedBoost)
+
+            // Smooth continuous auto-rotation
+            const autoRate = p.autoRotate !== false ? (p.autoRotateSpeed !== undefined ? Number(p.autoRotateSpeed) : 0.35) : 0
+            autoYaw += dt * autoRate
+
+            // Responsive cursor parallax
+            mouseX += (mouseTargetX - mouseX) * Math.min(1, dt * 3)
+            mouseY += (mouseTargetY - mouseY) * Math.min(1, dt * 3)
+
+            const t = isStatic ? adv.freezeMs / 1000 : (reduced ? sim * 0.35 : sim)
 
             const period = Math.max(100, adv.periodMs)
             const phase = (((t * 1000 + adv.phaseMs) / period) % 1 + 1) % 1
@@ -454,10 +479,14 @@ function __OriginkitBase_SphereShieldTiled(props: SphereShieldTiledProps) {
             gl.useProgram(program)
             gl.bindVertexArray(vao)
 
-            const tilt = ((adv.tiltDeg + drag.tiltOff) * Math.PI) / 180
+            // Gentle organic floating tilt oscillation
+            const tiltWobble = Math.sin(sim * 0.8) * 3.2
+            const tilt = ((adv.tiltDeg + drag.tiltOff + tiltWobble - mouseY) * Math.PI) / 180
             const hoverGlowAmt = Math.max(0, Number(p.hoverGlow) || 0) / 100
-            const az = (adv.lightAzDeg * Math.PI) / 180
-            const el = (adv.lightElDeg * Math.PI) / 180
+
+            // Floating dynamic lighting
+            const az = ((adv.lightAzDeg + Math.sin(sim * 0.4) * 14) * Math.PI) / 180
+            const el = ((adv.lightElDeg + Math.cos(sim * 0.3) * 8) * Math.PI) / 180
             const c3 = (c: unknown, fb: RGBA) => parseColor(c, fb).slice(0, 3) as [number, number, number]
 
             gl.uniform2f(loc.uRes, W, H)
@@ -471,24 +500,24 @@ function __OriginkitBase_SphereShieldTiled(props: SphereShieldTiledProps) {
             gl.uniform1f(loc.uExtrude, Math.max(0, p.extrude) / 100)
             gl.uniform1f(loc.uGap, Math.min(0.8, Math.max(0, adv.gapPct / 100)))
             gl.uniform2f(loc.uTilt, Math.cos(tilt), Math.sin(tilt))
-            gl.uniform1f(loc.uYaw, drag.yaw)
+            gl.uniform1f(loc.uYaw, drag.yaw + autoYaw + mouseX)
             gl.uniform3f(loc.uLight, Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el))
             gl.uniform1f(loc.uAmb, Math.min(1, adv.ambientPct / 100 + hover * hoverGlowAmt * 0.3))
-            gl.uniform3fv(loc.uBase, c3(p.baseColor, [0.082, 0.11, 0.141, 1]))
-            gl.uniform3fv(loc.uMid, c3(adv.midColor, [0.231, 0.329, 0.431, 1]))
-            gl.uniform3fv(loc.uLit, c3(p.color, [0.478, 0.761, 0.976, 1]))
-            gl.uniform3fv(loc.uHot, c3(adv.hotColor, [0.624, 0.941, 0.992, 1]))
-            gl.uniform3fv(loc.uRim, c3(p.rimColor, [0.337, 0.514, 0.682, 1]))
+            gl.uniform3fv(loc.uBase, c3(p.baseColor, [0.043, 0.051, 0.071, 1]))
+            gl.uniform3fv(loc.uMid, c3(adv.midColor, [0.549, 0.196, 0.118, 1]))
+            gl.uniform3fv(loc.uLit, c3(p.color, [1.0, 0.541, 0.431, 1]))
+            gl.uniform3fv(loc.uHot, c3(adv.hotColor, [1.0, 0.761, 0.702, 1]))
+            gl.uniform3fv(loc.uRim, c3(p.rimColor, [1.0, 0.42, 0.29, 1]))
             gl.uniform1f(loc.uRimPow, Math.max(0.5, adv.rimPower / 10))
             gl.uniform1f(loc.uRimStr, (adv.rimStrength / 100) * (1 + hover * hoverGlowAmt))
             gl.uniform1f(loc.uHotStr, adv.hotPct / 100)
             gl.uniform1f(loc.uWall, adv.wallPct / 100)
-            gl.uniform3fv(loc.uBack, c3(adv.backColor, [0.082, 0.11, 0.141, 1]))
+            gl.uniform3fv(loc.uBack, c3(adv.backColor, [0.078, 0.082, 0.106, 1]))
             gl.uniform1f(loc.uBackStr, adv.backWallPct / 100)
             gl.uniform1f(loc.uBaseCenter, adv.baseCenterPct / 100)
             gl.uniform2f(loc.uMottle, adv.mottlePct / 100, adv.mottleDimPct / 100)
             gl.uniform1f(loc.uSeed, adv.seed)
-            const bg = parseColor(p.background, [0, 0, 0, 1])
+            const bg = parseColor(p.background, [0, 0, 0, 0])
             gl.uniform4f(loc.uBg, bg[0], bg[1], bg[2], bg[3])
             gl.uniform1f(loc.uGrain, adv.grain / 100)
             gl.uniform1f(loc.uVignette, adv.vignette / 100)
@@ -504,6 +533,7 @@ function __OriginkitBase_SphereShieldTiled(props: SphereShieldTiledProps) {
             cancelAnimationFrame(raf)
             ro.disconnect()
             mq?.removeEventListener?.("change", onMq)
+            window.removeEventListener("pointermove", onGlobalMove)
             root.removeEventListener("pointerenter", onEnter)
             root.removeEventListener("pointerleave", onLeave)
             root.removeEventListener("pointerdown", onDown)
@@ -521,12 +551,14 @@ function __OriginkitBase_SphereShieldTiled(props: SphereShieldTiledProps) {
         <div
             ref={rootRef}
             style={{
+                minWidth: 0,
+                minHeight: 0,
                 ...style,
                 position: "relative",
                 width: "100%",
                 height: "100%",
                 overflow: "hidden",
-                background,
+                background: background === "transparent" ? "transparent" : background,
                 isolation: "isolate",
             }}
         >
@@ -539,30 +571,34 @@ function __OriginkitBase_SphereShieldTiled(props: SphereShieldTiledProps) {
 }
 
 const __originkitPresetProps = {
-  "advanced": {
-    "seed": 10,
-    "grain": 0,
-    "gapPct": 6,
-    "hotPct": 70,
-    "leadPct": 60,
-    "offsetX": 0,
-    "offsetY": 0,
-    "phaseMs": 1030,
-    "tiltDeg": 6,
-    "wallPct": 45,
-    "freezeMs": 900,
-    "periodMs": 1500,
-    "rimPower": 50,
-    "vignette": 0,
-    "mottlePct": 20,
-    "ambientPct": 70,
-    "lightAzDeg": 180,
-    "lightElDeg": 90,
-    "backWallPct": 45,
-    "rimStrength": 70,
-    "fadeStartPct": 25,
-    "mottleDimPct": 50,
-    "baseCenterPct": 0
+  speed: 50,
+  autoRotate: true,
+  autoRotateSpeed: 0.35,
+  background: "transparent",
+  advanced: {
+    seed: 10,
+    grain: 0,
+    gapPct: 6,
+    hotPct: 70,
+    leadPct: 60,
+    offsetX: 0,
+    offsetY: 0,
+    phaseMs: 1030,
+    tiltDeg: 6,
+    wallPct: 45,
+    freezeMs: 900,
+    periodMs: 1500,
+    rimPower: 50,
+    vignette: 0,
+    mottlePct: 20,
+    ambientPct: 70,
+    lightAzDeg: 180,
+    lightElDeg: 90,
+    backWallPct: 45,
+    rimStrength: 70,
+    fadeStartPct: 25,
+    mottleDimPct: 50,
+    baseCenterPct: 0
   }
 };
 

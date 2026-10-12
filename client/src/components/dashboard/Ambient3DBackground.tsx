@@ -142,6 +142,8 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
             )}
             {variant === "void-field" && (
               <SphereShieldTiled
+                speed={speed * 50}
+                background="transparent"
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", minWidth: 0, minHeight: 0 }}
               />
             )}
