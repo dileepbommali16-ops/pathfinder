@@ -4,7 +4,6 @@
   "installCommand": "pnpm install --no-frozen-lockfile || npm install --legacy-peer-deps",
   "buildCommand": "node scripts/build-client.js",
   "outputDirectory": "dist",
-  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/(.*)",
