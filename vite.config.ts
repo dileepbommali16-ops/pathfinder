@@ -41,7 +41,13 @@ export default defineConfig({
       output: {
         manualChunks(id: string) {
           if (id.includes("node_modules")) {
-            if (id.includes("react-dom") || id.includes("react/") || id.includes("wouter")) {
+            if (
+              id.includes("react-dom") ||
+              id.includes("/react/") ||
+              id.includes("\\react\\") ||
+              id.includes("wouter") ||
+              id.includes("streamdown")
+            ) {
               return "vendor-react";
             }
             if (id.includes("recharts") || id.includes("d3-")) {
@@ -52,9 +58,6 @@ export default defineConfig({
             }
             if (id.includes("lucide-react")) {
               return "vendor-icons";
-            }
-            if (id.includes("streamdown") || id.includes("mermaid")) {
-              return "vendor-diagrams";
             }
           }
         },

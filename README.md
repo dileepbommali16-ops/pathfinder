@@ -48,69 +48,88 @@ Pathfinder bridges this gap by translating academic records, verified technical 
 ## 🌐 Enterprise Full Stack Architecture
 
 ```mermaid
-flowchart TB
-    subgraph CLIENT_TIER["🖥️ Tier 1: Client Presentation Layer (Vercel Edge CDN)"]
-        direction TB
-        Browser["🌐 Modern Web Browser / Mobile Viewport"]
-        subgraph REACT_APP["React 19 + TypeScript SPA"]
-            Router["Wouter Router & Route Guard"]
-            StateMgmt["React Query v5 + Context API State"]
-            UIComponents["Radix UI + Tailwind CSS v4 Components"]
-            WebGLArc["Predictive Arc WebGL Shaders & 3D Telemetry"]
-            LampAuth["Illuminated Lamp Auth & Guest Quickstart"]
-        end
-        Browser <-->|DOM Events & State Sync| REACT_APP
+flowchart TD
+    %% =========================================================================
+    %% TIER 1: FRONTEND PRESENTATION LAYER (VERCEL EDGE CDN)
+    %% =========================================================================
+    subgraph TIER1["🖥️ TIER 1: PRESENTATION & CLIENT LAYER (Vercel Edge CDN)"]
+        direction LR
+        Browser["🌐 <b>Modern Web / Mobile Client</b><br/>Chrome • Edge • Safari • Firefox"]
+        ClientSPA["⚡ <b>React 19 + TypeScript SPA</b><br/>Wouter Router • TanStack Query v5 • Route Guards"]
+        UIElements["🎨 <b>Interactive UI & WebGL Shaders</b><br/>Radix UI • Tailwind CSS v4 • ThreeUI Canvas"]
+        LampAuth["💡 <b>Illuminated Lamp Auth</b><br/>1-Click Guest Access • Radiant Glow Particles"]
+
+        Browser <-->|"DOM Events & State Sync"| ClientSPA
+        ClientSPA --- UIElements
+        ClientSPA --- LampAuth
     end
 
-    subgraph NETWORK_TIER["🛡️ Tier 2: Edge Security & API Gateway (Render Cloud)"]
-        direction TB
-        ReverseProxy["Uvicorn ASGI Server (uvloop, 0.0.0.0:10000)"]
-        subgraph MIDDLEWARES["FastAPI Security & Gateway Middleware Pipeline"]
-            CORS["CORS Policy (Whitelisted Edge Origins)"]
-            RateLimit["Sliding-Window IP Rate Limiter (60 req/min)"]
-            ReqID["X-Request-ID Correlation Tracing"]
-            GZip["GZip Dynamic Payload Compression"]
-            OWASP["OWASP Strict Security Headers"]
-        end
-        ReverseProxy --> MIDDLEWARES
+    %% =========================================================================
+    %% TIER 2: EDGE SECURITY & GATEWAY LAYER (RENDER CLOUD)
+    %% =========================================================================
+    subgraph TIER2["🛡️ TIER 2: EDGE SECURITY & API GATEWAY (Render Cloud)"]
+        direction LR
+        Gateway["🚀 <b>Uvicorn ASGI Gateway</b><br/>uvloop • High-Throughput Async Server"]
+        SecurityPipeline["🔒 <b>OWASP Security & CORS Guard</b><br/>Sliding Rate Limiter (60 req/min) • GZip • X-Request-ID"]
+        AuthGuard["🔑 <b>Session & IDOR Guard</b><br/>JWT Bearer Tokens • Guest Quickstart • OAuth 2.0"]
+
+        Gateway -->|"Inspect & Sanitize"| SecurityPipeline
+        SecurityPipeline -->|"Verify Credentials"| AuthGuard
     end
 
-    subgraph APP_TIER["⚙️ Tier 3: Core Application & Intelligence Services"]
-        direction TB
-        subgraph ROUTERS["Modular API Routers (FastAPI)"]
-            AuthRouter["/api/auth (JWT Bearer & OAuth 2.0)"]
-            ProfileRouter["/api/profile (CRUD & IDOR Guard)"]
-            PredictRouter["/api/predict & /api/audit"]
-            AnalyticsRouter["/api/analytics & /api/branches"]
-            AICoachRouter["/api/chat & /api/chat/stream"]
-            ExportRouter["/api/export (PDF & GDPR Data)"]
-        end
+    %% =========================================================================
+    %% TIER 3: COMPUTATIONAL ENGINES & AI MENTOR
+    %% =========================================================================
+    subgraph TIER3["⚙️ TIER 3: COMPUTATIONAL ENGINES & AI MENTOR SERVICES"]
+        direction LR
+        APIRouters["📡 <b>Modular FastAPI Routers</b><br/>/predict • /chat • /analytics • /branches • /export"]
+        MLEngine["🧠 <b>Random Forest ML Engine</b><br/>120 Calibrated Trees • 88% Accuracy • &lt; 15ms"]
+        GeminiEngine["⚡ <b>Bilingual AI Career Coach</b><br/>Gemini 2.0 Flash • Screen Context • Grounded Guide"]
+        CohortEngine["📊 <b>Cohort Analytics Engine</b><br/>972 Student Records • 9 Engineering Branches"]
+        PDFEngine["📄 <b>ATS Resume & Audit Engine</b><br/>ReportLab PDF Synthesis • Readiness Audits"]
 
-        subgraph ENGINES["Core Computational Engines"]
-            MLEngine["🧠 ML Engine (Random Forest, 120 Estimators, 88% Acc)"]
-            GeminiEngine["⚡ AI Coach (Gemini 2.0 Flash + Grounded Guide)"]
-            AnalyticsEngine["📊 Cohort Engine (972 Records, 9 Engineering Branches)"]
-            PDFEngine["📄 PDF Engine (ATS Resume & Audit Reports)"]
-        end
-
-        MIDDLEWARES --> ROUTERS
-        ROUTERS --> ENGINES
+        APIRouters -->|"Feature Vector (5 Metrics)"| MLEngine
+        APIRouters -->|"Contextual Chat Stream"| GeminiEngine
+        APIRouters -->|"Statistical Aggregations"| CohortEngine
+        APIRouters -->|"PDF Report Generation"| PDFEngine
     end
 
-    subgraph DATA_TIER["💾 Tier 4: Persistence & High-Speed Data Services"]
-        direction TB
-        MemoryCache["⚡ In-Memory LRU / TTL Cache (Sub-5ms Query Returns)"]
-        SQLiteDB["🗄️ SQLite 3 Database (WAL Mode, PRAGMA Page Cache 16MB)"]
-        KnowledgeFS["📚 Domain Knowledge Base (23 Production Blueprints + Pathfinder Guide)"]
-        CohortDataset["📈 Public & Augmented Placement Dataset (215 Real + 757 Synthetic)"]
+    %% =========================================================================
+    %% TIER 4: PERSISTENCE & CACHING LAYER
+    %% =========================================================================
+    subgraph TIER4["💾 TIER 4: PERSISTENCE, CACHE & PLACEMENT DATA"]
+        direction LR
+        MemoryCache["⚡ <b>In-Memory LRU / TTL Cache</b><br/>Sub-1ms Query Hit • Zero Cold-Start Lag"]
+        SQLiteDB["🗄️ <b>SQLite 3 Database (WAL Mode)</b><br/>16MB PRAGMA Page Cache • Zero Locking Delay"]
+        KnowledgeBase["📚 <b>Domain Knowledge Base</b><br/>23 SIH Blueprints • Verified Placement Criteria"]
+        PlacementData["📈 <b>Curated Placement Dataset</b><br/>215 Real + 757 Calibrated Historical Records"]
 
-        ENGINES <-->|Read / Write| MemoryCache
-        ENGINES <-->|Indexed B-Tree Queries| SQLiteDB
-        GeminiEngine <-->|Zero-Hallucination Grounding| KnowledgeFS
-        AnalyticsEngine <-->|Aggregations & Percentiles| CohortDataset
+        MemoryCache <-->|"Read / Write Cache"| SQLiteDB
     end
 
-    CLIENT_TIER <==>|HTTPS / JSON REST & SSE Streams (TLS 1.3)| NETWORK_TIER
+    %% =========================================================================
+    %% CROSS-TIER PIPELINE FLOWS
+    %% =========================================================================
+    ClientSPA ==>|"HTTPS / JSON REST & SSE Streams (TLS 1.3)"| Gateway
+    AuthGuard ==>|"Authorized Request Dispatch"| APIRouters
+
+    MLEngine <-->|"Sub-5ms Query Cache"| MemoryCache
+    GeminiEngine <-->|"Zero-Hallucination Grounding"| KnowledgeBase
+    CohortEngine <-->|"Percentile & Benchmark Filters"| PlacementData
+    APIRouters <-->|"ACID Profile & Session Queries"| SQLiteDB
+
+    %% =========================================================================
+    %% VISUAL STYLING CLASSES
+    %% =========================================================================
+    classDef tier1 fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef tier2 fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#f8fafc;
+    classDef tier3 fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#f8fafc;
+    classDef tier4 fill:#451a03,stroke:#fbbf24,stroke-width:2px,color:#f8fafc;
+
+    class Browser,ClientSPA,UIElements,LampAuth tier1;
+    class Gateway,SecurityPipeline,AuthGuard tier2;
+    class APIRouters,MLEngine,GeminiEngine,CohortEngine,PDFEngine tier3;
+    class MemoryCache,SQLiteDB,KnowledgeBase,PlacementData tier4;
 ```
 
 ---
@@ -139,15 +158,15 @@ sequenceDiagram
     participant ML as Random Forest ML
     participant AI as Gemini 2.0 Flash
 
-    Student->>Client: Lands on site (Lamp illuminated) & clicks "Lamp your Career → Start"
-    Client->>Gateway: POST /api/auth/login { guest: true, bypassOnboarding: true }
+    Student->>Client: Lands on site (Lamp illuminated) and clicks 'Lamp your Career'
+    Client->>Gateway: POST /api/auth/login (guest quickstart)
     Gateway->>DB: Upsert session & profile record
     DB-->>Gateway: User session token (JWT)
-    Gateway-->>Client: 200 OK { token, user_id, profile }
+    Gateway-->>Client: 200 OK (token, user_id, profile)
     Client->>Student: Instantly mounts Full Placement Dashboard
 
-    Student->>Client: Types query in AI Career Coach: "How does the readiness score work?"
-    Client->>Gateway: POST /api/chat { message, history, profile, page_context }
+    Student->>Client: Asks AI Career Coach: How does my placement score work?
+    Client->>Gateway: POST /api/chat (message, history, profile, page_context)
     Gateway->>Cache: Check for cached query or platform stats
     alt Stats grounding needed
         Gateway->>DB: Query cohort dataset & branch package aggregates
@@ -155,7 +174,7 @@ sequenceDiagram
     end
     Gateway->>AI: Send prompt grounded with pathfinder_guide.md + candidate profile
     AI-->>Gateway: Natural, empathetic, truthful explanation (analogy + disclosure)
-    Gateway-->>Client: 200 OK { reply, metadata }
+    Gateway-->>Client: 200 OK (reply, metadata)
     Client->>Student: Renders formatted reply with contextual follow-up chips
 ```
 

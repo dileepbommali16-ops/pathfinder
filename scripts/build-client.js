@@ -18,10 +18,16 @@ while (projectRoot !== path.dirname(projectRoot)) {
 console.log(`[Pathfinder Build] Project root: ${projectRoot}`);
 console.log(`[Pathfinder Build] Execution directory: ${process.cwd()}`);
 
-// Auto-install dependencies if node_modules or vite is missing
-const vitePkgDir = path.join(projectRoot, 'node_modules', 'vite');
-if (!fs.existsSync(vitePkgDir)) {
-  console.log('[Pathfinder Build] node_modules or Vite not found in project root. Installing dependencies...');
+// Auto-install dependencies only if Vite is truly missing from all locations
+const hasVite =
+  fs.existsSync(path.join(projectRoot, 'node_modules', 'vite')) ||
+  fs.existsSync(path.join(projectRoot, 'client', 'node_modules', 'vite')) ||
+  fs.existsSync(path.join(projectRoot, 'node_modules', '.bin', 'vite')) ||
+  fs.existsSync(path.join(projectRoot, 'node_modules', '.bin', 'vite.cmd')) ||
+  fs.existsSync(path.join(process.cwd(), 'node_modules', 'vite'));
+
+if (!hasVite) {
+  console.log('[Pathfinder Build] node_modules or Vite not found. Installing dependencies...');
   try {
     execSync('pnpm install --no-frozen-lockfile', { cwd: projectRoot, stdio: 'inherit' });
   } catch (err) {
@@ -37,14 +43,14 @@ if (!fs.existsSync(vitePkgDir)) {
 
 const nodePath = process.execPath;
 const viteConfig = path.join(projectRoot, 'vite.config.ts');
-let viteJs = path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');
-
-if (!fs.existsSync(viteJs)) {
-  const fallbackVite = path.resolve(projectRoot, 'node_modules', '.bin', 'vite');
-  if (fs.existsSync(fallbackVite)) {
-    viteJs = fallbackVite;
-  }
-}
+const viteCandidates = [
+  path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js'),
+  path.join(projectRoot, 'client', 'node_modules', 'vite', 'bin', 'vite.js'),
+  path.resolve(projectRoot, 'node_modules', '.bin', 'vite'),
+  path.resolve(process.cwd(), 'node_modules', 'vite', 'bin', 'vite.js'),
+  path.resolve(process.cwd(), 'node_modules', '.bin', 'vite')
+];
+let viteJs = viteCandidates.find(p => fs.existsSync(p)) || '';
 
 console.log(`[Pathfinder Build] Running Vite production build with config: ${viteConfig}`);
 let buildSuccess = false;
