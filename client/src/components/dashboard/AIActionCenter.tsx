@@ -476,7 +476,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
     }
   };
 
-  // Card definitions
+  // Card definitions with distinct, theme-consistent accents
   const actions = [
     {
       id: "calculate",
@@ -485,10 +485,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Run Random Forest ML sensitivity on current CGPA, internships & coding scores.",
       icon: Target,
       tag: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "Report Ready ✓" : "Instant ML",
-      accent: "from-[#FF6B4A]/15 via-[#FF6B4A]/5 to-transparent border-[#2A2A30] text-[#FF6B4A]",
+      iconColor: "text-indigo-400",
       btnClass: loadingActionId === "calculate"
-        ? "border-[#FF6B4A] animate-pulse bg-[#FF6B4A]/20 ring-2 ring-[#FF6B4A]/50"
-        : "hover:border-[#FF6B4A]/50 hover:bg-[#FF6B4A]/10",
+        ? "border-indigo-500 animate-pulse bg-indigo-500/20 ring-2 ring-indigo-500/50"
+        : "border-[#2A2A30] hover:border-indigo-500/50 hover:bg-indigo-500/10",
       actionText: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "View Audit Report" : "Launch Tool",
     },
     {
@@ -498,10 +498,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: `Customized 6-week milestone schedule based on missing skill gaps for ${activeProfile.targetRole || "SDE"}.`,
       icon: Compass,
       tag: loadingActionId === "roadmap" ? "Synthesizing..." : "6-Week Plan",
-      accent: "from-[#FF6B4A]/15 via-[#FF6B4A]/5 to-transparent border-[#2A2A30] text-[#FF6B4A]",
+      iconColor: "text-purple-400",
       btnClass: loadingActionId === "roadmap"
-        ? "border-[#FF6B4A] animate-pulse bg-[#FF6B4A]/20"
-        : "hover:border-[#FF6B4A]/50 hover:bg-[#FF6B4A]/10",
+        ? "border-purple-500 animate-pulse bg-purple-500/20"
+        : "border-[#2A2A30] hover:border-purple-500/50 hover:bg-purple-500/10",
       actionText: loadingActionId === "roadmap" ? "Building Schedule..." : "Open 6-Week Roadmap",
     },
     {
@@ -511,10 +511,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Interactive technical & STAR behavioral questions with instant AI scoring.",
       icon: Mic,
       tag: loadingActionId === "interview" ? "Preparing..." : "Live Simulation",
-      accent: "from-[#FF6B4A]/15 via-[#FF6B4A]/5 to-transparent border-[#2A2A30] text-[#FF6B4A]",
+      iconColor: "text-cyan-400",
       btnClass: loadingActionId === "interview"
-        ? "border-[#FF6B4A] animate-pulse bg-[#FF6B4A]/20"
-        : "hover:border-[#FF6B4A]/50 hover:bg-[#FF6B4A]/10",
+        ? "border-cyan-500 animate-pulse bg-cyan-500/20"
+        : "border-[#2A2A30] hover:border-cyan-500/50 hover:bg-cyan-500/10",
       actionText: loadingActionId === "interview" ? "Loading Interviewer..." : "Begin Interview",
     },
     {
@@ -524,10 +524,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Production-grade project blueprints mapped directly to your missing skill gaps.",
       icon: Lightbulb,
       tag: loadingActionId === "projects" ? "Generating..." : "Portfolio",
-      accent: "from-[#FF6B4A]/15 via-[#FF6B4A]/5 to-transparent border-[#2A2A30] text-[#FF6B4A]",
+      iconColor: "text-amber-400",
       btnClass: loadingActionId === "projects"
-        ? "border-[#FF6B4A] animate-pulse bg-[#FF6B4A]/20"
-        : "hover:border-[#FF6B4A]/50 hover:bg-[#FF6B4A]/10",
+        ? "border-amber-500 animate-pulse bg-amber-500/20"
+        : "border-[#2A2A30] hover:border-amber-500/50 hover:bg-amber-500/10",
       actionText: loadingActionId === "projects" ? "Synthesizing..." : "View Blueprints",
     },
     {
@@ -537,10 +537,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Compare your branch and graduation year against 650+ verified campus offers.",
       icon: TrendingUp,
       tag: loadingActionId === "analytics" ? "Querying..." : "Campus Data",
-      accent: "from-[#FF6B4A]/15 via-[#FF6B4A]/5 to-transparent border-[#2A2A30] text-[#FF6B4A]",
+      iconColor: "text-blue-400",
       btnClass: loadingActionId === "analytics"
-        ? "border-[#FF6B4A] animate-pulse bg-[#FF6B4A]/20"
-        : "hover:border-[#FF6B4A]/50 hover:bg-[#FF6B4A]/10",
+        ? "border-blue-500 animate-pulse bg-blue-500/20"
+        : "border-[#2A2A30] hover:border-blue-500/50 hover:bg-blue-500/10",
       actionText: loadingActionId === "analytics" ? "Loading Data..." : "Explore Cohort",
     },
     {
@@ -550,10 +550,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Detect missing keywords, parse PDF bullet points and align with recruiter standards.",
       icon: FileText,
       tag: loadingActionId === "resume" ? "Scanning..." : "ATS Scanner",
-      accent: "from-rose-500/15 via-rose-500/5 to-transparent border-[#2A2A30] text-rose-400",
+      iconColor: "text-rose-400",
       btnClass: loadingActionId === "resume"
         ? "border-rose-400 animate-pulse bg-rose-500/20"
-        : "hover:border-rose-500/50 hover:bg-rose-500/10",
+        : "border-[#2A2A30] hover:border-rose-500/50 hover:bg-rose-500/10",
       actionText: loadingActionId === "resume" ? "Parsing Vectors..." : "Scan Resume",
     },
   ];
@@ -632,9 +632,9 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.06] backdrop-blur-md shadow-inner group-hover:scale-105 transition-transform text-[#FF6B4A]">
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.06] backdrop-blur-md shadow-inner group-hover:scale-105 transition-transform ${act.iconColor}`}>
                     {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-[#FF6B4A]" />
+                      <Loader2 className={`h-4 w-4 animate-spin ${act.iconColor}`} />
                     ) : (
                       <Icon className="h-4 w-4" />
                     )}
@@ -643,7 +643,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     {act.tag}
                   </span>
                 </div>
-                <h3 className="mt-3 text-sm font-bold text-[#F2F2F3] group-hover:text-[#FF8A6E] transition-colors flex items-center gap-1.5 flex-wrap">
+                <h3 className="mt-3 text-sm font-bold text-[#F2F2F3] group-hover:text-white transition-colors flex items-center gap-1.5 flex-wrap">
                   <span>{act.title}</span>
                   {act.subtitle && (
                     <span className="text-[11px] font-normal text-[#A1A1AA]">{act.subtitle}</span>
@@ -657,8 +657,8 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               <div className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-[#A1A1AA] group-hover:text-[#F2F2F3] transition-colors">
                 {isLoading ? (
                   <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-[#FF6B4A]" />
-                    <span className="text-[#FF6B4A] font-bold">Analyzing...</span>
+                    <Loader2 className={`h-3.5 w-3.5 animate-spin ${act.iconColor}`} />
+                    <span className={`${act.iconColor} font-bold`}>Analyzing...</span>
                   </>
                 ) : (
                   <>

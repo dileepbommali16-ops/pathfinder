@@ -463,7 +463,7 @@
   color: #B9B5C7 !important;
 }
 
-/* RESTYLE ALL ORANGE ACROSS THE ENTIRE WEBSITE TO LIGHT WHITE */
+/* ELEGANT DARK THEME ACCENTS FOR ANY LEGACY ACCENT REFERENCES */
 [class*="text-[#FF6B4A]"],
 [class*="text-[#FF8A6E]"],
 [class*="text-[#C2452B]"],
@@ -471,27 +471,20 @@
 .pathfinder-dashboard .text-\[\#FF8A6E\],
 .text-\[\#FF6B4A\],
 .text-\[\#FF8A6E\] {
-  color: #FFFFFF !important;
+  color: #B8A1FF !important;
 }
 
 [class*="bg-[#FF6B4A]/"],
 [class*="bg-[#C2452B]/"],
 [class*="bg-[#FF8A6E]/"] {
-  background-color: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(184, 161, 255, 0.12) !important;
 }
 
-button[class*="bg-[#FF6B4A]"],
-a[class*="bg-[#FF6B4A]"],
+/* Primary Action Buttons: Modern Rich Indigo Gradient, Never Blinding White */
 .bg-\[\#FF6B4A\],
 .bg-\[\#C2452B\] {
-  background-color: #FFFFFF !important;
-  color: #09090B !important;
-}
-
-button[class*="bg-[#FF6B4A]"]:hover,
-a[class*="bg-[#FF6B4A]"]:hover {
-  background-color: #E4E4E7 !important;
-  color: #09090B !important;
+  background: linear-gradient(135deg, #7C3AED, #6366F1) !important;
+  color: #FFFFFF !important;
 }
 
 [class*="border-[#FF6B4A]"],
@@ -499,25 +492,25 @@ a[class*="bg-[#FF6B4A]"]:hover {
 [class*="border-[#FF8A6E]"],
 .border-\[\#FF6B4A\],
 .border-\[\#C2452B\] {
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(184, 161, 255, 0.28) !important;
 }
 
 [class*="shadow-[#FF6B4A]"],
 [class*="shadow-[#C2452B]"] {
-  --tw-shadow-color: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.08) !important;
+  --tw-shadow-color: rgba(184, 161, 255, 0.2) !important;
+  box-shadow: 0 4px 20px rgba(184, 161, 255, 0.15) !important;
 }
 
 [class*="from-[#C2452B]"],
 [class*="from-[#FF6B4A]"] {
-  --tw-gradient-from: #FFFFFF var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: #E4E4E7 var(--tw-gradient-to-position) !important;
+  --tw-gradient-from: #7C3AED var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: #6366F1 var(--tw-gradient-to-position) !important;
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 
 [class*="to-[#FF6B4A]"],
 [class*="to-[#FF8A6E]"] {
-  --tw-gradient-to: #F4F4F5 var(--tw-gradient-to-position) !important;
+  --tw-gradient-to: #6366F1 var(--tw-gradient-to-position) !important;
 }
 
 /* Avoid dark green, dark blue, pink, and yellow text */
