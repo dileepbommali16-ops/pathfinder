@@ -36,7 +36,30 @@ export default defineConfig({
   build: {
     outDir: path.resolve(rootDir, "dist"),
     emptyOutDir: true,
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 5000,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes("node_modules")) {
+            if (id.includes("react-dom") || id.includes("react/") || id.includes("wouter")) {
+              return "vendor-react";
+            }
+            if (id.includes("recharts") || id.includes("d3-")) {
+              return "vendor-charts";
+            }
+            if (id.includes("framer-motion")) {
+              return "vendor-motion";
+            }
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
+            }
+            if (id.includes("streamdown") || id.includes("mermaid")) {
+              return "vendor-diagrams";
+            }
+          }
+        },
+      },
+    },
   },
   server: {
     host: true,
