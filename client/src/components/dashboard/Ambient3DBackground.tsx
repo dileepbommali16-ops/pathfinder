@@ -85,11 +85,11 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
         title="Predictive Neural Arc: Luminous 3D AI Trajectory"
         className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
           variant === "predictive"
-            ? "bg-[#FF6B4A]/20 text-[#F2F2F3] border border-[#FF6B4A]/50 shadow-[0_0_16px_rgba(255,107,74,0.3)]"
+            ? "bg-white/20 text-[#F2F2F3] border border-white/50 shadow-[0_0_16px_rgba(255,255,255,0.2)]"
             : "text-[#A1A1AA] hover:text-[#F2F2F3] hover:bg-white/[0.06]"
         }`}
       >
-        <Orbit className="h-3 w-3 text-[#FF6B4A]" />
+        <Orbit className="h-3 w-3 text-white" />
         <span>Predictive Arc</span>
       </button>
 
@@ -102,11 +102,11 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
         title="Sphere Shield WebGL2: Shield Matrix"
         className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
           variant === "void-field"
-            ? "bg-[#FF6B4A]/20 text-[#F2F2F3] border border-[#FF6B4A]/50 shadow-[0_0_16px_rgba(255,107,74,0.3)]"
+            ? "bg-white/20 text-[#F2F2F3] border border-white/50 shadow-[0_0_16px_rgba(255,255,255,0.2)]"
             : "text-[#A1A1AA] hover:text-[#F2F2F3] hover:bg-white/[0.06]"
         }`}
       >
-        <span className="text-[10px] font-mono text-[#FF6B4A] font-bold">042</span>
+        <span className="text-[10px] font-mono text-white font-bold">042</span>
         <span>Void Field</span>
       </button>
     </aside>

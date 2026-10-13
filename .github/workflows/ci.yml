@@ -33,3 +33,6 @@ jobs:
 
       - name: Run Security Audit Test Suite
         run: python scripts/security_audit_test.py
+
+      - name: Run Chat AI Smoke Tests
+        run: python scripts/chat_smoke_test.py

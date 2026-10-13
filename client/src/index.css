@@ -164,10 +164,12 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+    outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: "DM Sans", sans-serif;
     background: #07111f;
   }
@@ -183,7 +185,7 @@
   select:not(:disabled),
   input[type="checkbox"]:not(:disabled),
   input[type="radio"]:not(:disabled) {
-    @apply cursor-pointer;
+    cursor: pointer;
   }
 }
 
@@ -461,12 +463,61 @@
   color: #B9B5C7 !important;
 }
 
-.pathfinder-dashboard .text-\[\#FF6B4A\] {
-  color: #B8A1FF !important;
+/* RESTYLE ALL ORANGE ACROSS THE ENTIRE WEBSITE TO LIGHT WHITE */
+[class*="text-[#FF6B4A]"],
+[class*="text-[#FF8A6E]"],
+[class*="text-[#C2452B]"],
+.pathfinder-dashboard .text-\[\#FF6B4A\],
+.pathfinder-dashboard .text-\[\#FF8A6E\],
+.text-\[\#FF6B4A\],
+.text-\[\#FF8A6E\] {
+  color: #FFFFFF !important;
 }
 
-.pathfinder-dashboard .text-\[\#FF8A6E\] {
-  color: #9CE5E0 !important;
+[class*="bg-[#FF6B4A]/"],
+[class*="bg-[#C2452B]/"],
+[class*="bg-[#FF8A6E]/"] {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+button[class*="bg-[#FF6B4A]"],
+a[class*="bg-[#FF6B4A]"],
+.bg-\[\#FF6B4A\],
+.bg-\[\#C2452B\] {
+  background-color: #FFFFFF !important;
+  color: #09090B !important;
+}
+
+button[class*="bg-[#FF6B4A]"]:hover,
+a[class*="bg-[#FF6B4A]"]:hover {
+  background-color: #E4E4E7 !important;
+  color: #09090B !important;
+}
+
+[class*="border-[#FF6B4A]"],
+[class*="border-[#C2452B]"],
+[class*="border-[#FF8A6E]"],
+.border-\[\#FF6B4A\],
+.border-\[\#C2452B\] {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+[class*="shadow-[#FF6B4A]"],
+[class*="shadow-[#C2452B]"] {
+  --tw-shadow-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.08) !important;
+}
+
+[class*="from-[#C2452B]"],
+[class*="from-[#FF6B4A]"] {
+  --tw-gradient-from: #FFFFFF var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: #E4E4E7 var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[class*="to-[#FF6B4A]"],
+[class*="to-[#FF8A6E]"] {
+  --tw-gradient-to: #F4F4F5 var(--tw-gradient-to-position) !important;
 }
 
 /* Avoid dark green, dark blue, pink, and yellow text */

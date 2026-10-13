@@ -700,9 +700,7 @@ export default function Home() {
     const trimmed = userText.trim();
     if (!trimmed) return;
 
-    const currentBase = customHistory || messages;
-    const updatedMessages: Message[] = [...currentBase, { role: "user", content: trimmed }];
-    setMessages(updatedMessages);
+    setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
     setIsChatLoading(true);
     setIsChatWakingUp(false);
 
@@ -712,11 +710,12 @@ export default function Home() {
     const abortCtrl = new AbortController();
     chatAbortRef.current = abortCtrl;
 
-    // Detect Render cold-start: if response takes longer than 3.0s, signal server wake-up
+    // Detect Render cold-start: if response takes longer than 8.0s, signal server wake-up
     const coldStartTimer = setTimeout(() => {
       setIsChatWakingUp(true);
-    }, 3000);
+    }, 8000);
 
+    const currentBase = customHistory || messages;
     // Filter history: drop leading initial assistant greeting so first history item is user turn
     const cleanHistory = currentBase
       .filter((m, idx) => !(idx === 0 && m.role === "assistant"))
@@ -817,13 +816,13 @@ export default function Home() {
       }
 
       if (reply) {
-        setMessages([...updatedMessages, { role: "assistant", content: reply }]);
+        setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
       } else {
-        setMessages([
-          ...updatedMessages,
+        setMessages((prev) => [
+          ...prev,
           {
             role: "assistant",
-            content: "I'm having trouble reaching my brain right now, try again in a moment",
+            content: "I couldn't reach the AI right now. Please tap retry in a moment!",
           },
         ]);
       }
@@ -833,11 +832,11 @@ export default function Home() {
       if (abortCtrl.signal.aborted) {
         return;
       }
-      setMessages([
-        ...updatedMessages,
+      setMessages((prev) => [
+        ...prev,
         {
           role: "assistant",
-          content: "I'm having trouble reaching my brain right now, try again in a moment",
+          content: "I couldn't reach the AI right now. Please tap retry in a moment!",
         },
       ]);
     } finally {
@@ -1210,8 +1209,8 @@ export default function Home() {
         <div className="relative z-40 border-b border-[#2A2A30] bg-[#141417] px-4 py-2 text-center text-xs font-medium text-[#F2F2F3] backdrop-blur-md">
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF6B4A] opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF6B4A]"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
             </span>
             <span>Connecting to cloud backend... (free-tier servers take ~15-20s on first load). All predictions will populate automatically.</span>
           </div>
@@ -1235,7 +1234,7 @@ export default function Home() {
               {isProfilePartiallyIncomplete && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#2A2A30] bg-[#1B1B1F] p-5 backdrop-blur-md">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FF6B4A]/10 text-[#FF6B4A]">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
                       <Sparkles className="h-5 w-5" />
                     </div>
                     <div>
@@ -1248,7 +1247,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setActiveTab("profile")}
-                    className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-[#FF6B4A] hover:bg-[#FF8A6E] px-3.5 py-2 text-xs font-semibold text-white transition-colors"
+                    className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-white hover:bg-zinc-200 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition-colors shadow-sm"
                   >
                     <span>Complete Profile</span>
                     <ArrowRight className="h-3 w-3" />
@@ -1727,10 +1726,10 @@ export default function Home() {
               const tabTitle = getTabKnowledge(activeTab)?.title || activeTab;
               handleAskCoach(`Explain the '${tabTitle}' tab and what actions I should take here to improve my placement readiness.`);
             }}
-            className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full border border-[#FF6B4A]/40 bg-[#1B1B1F]/95 px-4 py-2.5 text-xs font-semibold text-[#FF6B4A] shadow-xl shadow-[#FF6B4A]/20 backdrop-blur-xl transition-all hover:scale-105 hover:border-[#FF8A6E] hover:text-[#F2F2F3] hover:shadow-[#FF6B4A]/35 active:scale-95"
+            className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full border border-white/20 bg-[#1B1B1F]/95 px-4 py-2.5 text-xs font-semibold text-white shadow-xl shadow-white/10 backdrop-blur-xl transition-all hover:scale-105 hover:border-white/40 hover:text-white hover:shadow-white/20 active:scale-95 cursor-pointer"
             title="Ask AI Coach about this page"
           >
-            <Bot className="h-4 w-4 text-[#FF6B4A]" />
+            <Bot className="h-4 w-4 text-white" />
             <span>Ask Coach About This Page</span>
           </button>
         )}

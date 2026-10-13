@@ -57,30 +57,37 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
     # 4. Check circuit breaker status
     if not gemini_circuit_breaker.allow_request():
         return {
-            "reply": "I'm having trouble reaching my brain right now, try again in a moment. (CircuitBreaker Active)",
-            "source": "CircuitBreaker Fallback (Upstream Service Temporarily Degraded)",
+            "reply": "I couldn't reach the AI right now. Please tap retry in a moment!",
+            "source": "CircuitBreaker (Service Temporarily Degraded)",
             "budget_remaining": limit - used
         }
 
     try:
-        reply_text = chat_with_mentor(
+        reply_text, meta = chat_with_mentor(
             message=sanitized_message,
             history=raw_history,
             profile=profile,
             active_tab=active_tab,
-            page_context=user_context
+            page_context=user_context,
+            return_meta=True
         )
         gemini_circuit_breaker.record_success()
+        model_used = meta.get("model_used", "none")
+        if model_used != "none":
+            source = f"Google Gemini ({model_used})" if "gemini" in model_used.lower() else f"OpenRouter ({model_used})"
+        else:
+            source = "AI Engine Unavailable"
         return {
             "reply": reply_text,
-            "source": "Google Gemini Intelligence Engine",
-            "budget_remaining": limit - used
+            "source": source,
+            "budget_remaining": limit - used,
+            "meta": meta
         }
     except Exception as e:
         gemini_circuit_breaker.record_failure(e)
         return {
-            "reply": "I'm having trouble reaching my brain right now, try again in a moment.",
-            "source": f"Deterministic Offline Engine (Error: {type(e).__name__})",
+            "reply": "I couldn't reach the AI right now. Please tap retry in a moment!",
+            "source": f"Error: {type(e).__name__}",
             "budget_remaining": limit - used
         }
 

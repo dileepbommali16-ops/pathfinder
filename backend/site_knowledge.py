@@ -620,17 +620,10 @@ def get_site_knowledge_context(active_tab: Optional[str] = None, page_context: O
     for tab_id, info in TABS_KNOWLEDGE.items():
         ctx_parts.append(f"• [{info['title']}] (id: {tab_id}): {info['purpose']}")
 
-    # Inject 23 Project Architectures Directory
+    # 23 Project Architectures Reference
     ctx_parts.append("")
     ctx_parts.append("================================================================================")
-    ctx_parts.append("23 PRODUCTION ENGINEERING ARCHITECTURES DIRECTORY (6 FLAGSHIP + 17 SIH BLUEPRINTS)")
-    ctx_parts.append("Use this deep architectural knowledge whenever a student asks how to build any of these:")
-    for p_id, p in ALL_PROJECTS_DIRECTORY.items():
-        ctx_parts.append(f"[{p['ps_code']} - {p['category'].upper()}] '{p['title']}' ({p['org']}) - Recommended for: {p['branches']}")
-        ctx_parts.append(f"  • Architecture: {p['architecture']}")
-        ctx_parts.append(f"  • Stack: {p.get('stack') or p.get('stack_rationale', '').splitlines()[0]}")
-        ctx_parts.append(f"  • Build Roadmap: {p['roadmap']}")
-        ctx_parts.append(f"  • Hackathon Defense: {p['defense']}")
+    ctx_parts.append("23 PRODUCTION ENGINEERING ARCHITECTURES AVAILABLE (Referenced in catalog above)")
     ctx_parts.append("================================================================================")
     return "\n".join(ctx_parts)
 
