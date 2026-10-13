@@ -67,7 +67,7 @@ def get_gemini_models() -> List[str]:
 
     models: List[str] = []
     env_m = os.getenv("GEMINI_MODEL", "").strip()
-    if env_m:
+    if env_m and "3.8" not in env_m:
         models.append(env_m)
 
     key = os.getenv("GEMINI_API_KEY", "").strip()
@@ -320,8 +320,8 @@ def call_gemini_rest(
         "temperature": temperature,
         "maxOutputTokens": max_output_tokens
     }
-    # Only pass thinkingConfig if "thinking" is explicitly in model name to avoid 400 Bad Request
-    if include_thinking and "thinking" in model.lower():
+    # Zero thinking budget eliminates reasoning latency for fast conversational response
+    if "thinking" in model.lower() or "2.5" in model.lower():
         gen_config["thinkingConfig"] = {"thinkingBudget": 0}
 
     payload = {
