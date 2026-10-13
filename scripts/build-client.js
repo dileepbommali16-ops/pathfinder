@@ -18,16 +18,10 @@ while (projectRoot !== path.dirname(projectRoot)) {
 console.log(`[Pathfinder Build] Project root: ${projectRoot}`);
 console.log(`[Pathfinder Build] Execution directory: ${process.cwd()}`);
 
-// Auto-install dependencies only if Vite is truly missing from all locations
-const hasVite =
-  fs.existsSync(path.join(projectRoot, 'node_modules', 'vite')) ||
-  fs.existsSync(path.join(projectRoot, 'client', 'node_modules', 'vite')) ||
-  fs.existsSync(path.join(projectRoot, 'node_modules', '.bin', 'vite')) ||
-  fs.existsSync(path.join(projectRoot, 'node_modules', '.bin', 'vite.cmd')) ||
-  fs.existsSync(path.join(process.cwd(), 'node_modules', 'vite'));
-
-if (!hasVite) {
-  console.log('[Pathfinder Build] node_modules or Vite not found. Installing dependencies...');
+// Auto-install dependencies if node_modules or vite is missing in project root
+const vitePkgDir = path.join(projectRoot, 'node_modules', 'vite');
+if (!fs.existsSync(vitePkgDir)) {
+  console.log('[Pathfinder Build] node_modules or Vite not found in project root. Installing dependencies...');
   try {
     execSync('pnpm install --no-frozen-lockfile', { cwd: projectRoot, stdio: 'inherit' });
   } catch (err) {
@@ -43,14 +37,14 @@ if (!hasVite) {
 
 const nodePath = process.execPath;
 const viteConfig = path.join(projectRoot, 'vite.config.ts');
-const viteCandidates = [
-  path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js'),
-  path.join(projectRoot, 'client', 'node_modules', 'vite', 'bin', 'vite.js'),
-  path.resolve(projectRoot, 'node_modules', '.bin', 'vite'),
-  path.resolve(process.cwd(), 'node_modules', 'vite', 'bin', 'vite.js'),
-  path.resolve(process.cwd(), 'node_modules', '.bin', 'vite')
-];
-let viteJs = viteCandidates.find(p => fs.existsSync(p)) || '';
+let viteJs = path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');
+
+if (!fs.existsSync(viteJs)) {
+  const fallbackVite = path.resolve(projectRoot, 'node_modules', '.bin', 'vite');
+  if (fs.existsSync(fallbackVite)) {
+    viteJs = fallbackVite;
+  }
+}
 
 console.log(`[Pathfinder Build] Running Vite production build with config: ${viteConfig}`);
 let buildSuccess = false;
@@ -98,9 +92,9 @@ if (!buildSuccess) {
   }
 }
 
-// Vite outputs to projectRoot/dist/public per vite.config.ts
-const distPublic = path.join(projectRoot, 'dist', 'public');
+// Vite outputs to projectRoot/dist per vite.config.ts
 const distRoot = path.join(projectRoot, 'dist');
+const distPublic = path.join(projectRoot, 'dist', 'public');
 const clientDist = path.join(projectRoot, 'client', 'dist');
 const clientDistPublic = path.join(projectRoot, 'client', 'dist', 'public');
 const cwdDist = path.join(process.cwd(), 'dist');
@@ -108,27 +102,31 @@ const cwdDist = path.join(process.cwd(), 'dist');
 if (fs.existsSync(path.join(distRoot, 'index.html'))) {
   console.log(`[Pathfinder Build] Synchronizing build artifacts from ${distRoot}...`);
 
-  // 1. Mirror to dist/public (skipping public directory itself)
-  if (!fs.existsSync(distPublic)) {
-    fs.mkdirSync(distPublic, { recursive: true });
-  }
-  const items = fs.readdirSync(distRoot);
-  for (const item of items) {
-    if (item === 'public') continue;
-    const src = path.join(distRoot, item);
-    const dest = path.join(distPublic, item);
-    fs.cpSync(src, dest, { recursive: true });
-  }
+  const copyContents = (srcDir, targetDir) => {
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+    const items = fs.readdirSync(srcDir);
+    for (const item of items) {
+      if (item === 'public') continue;
+      const src = path.join(srcDir, item);
+      const dest = path.join(targetDir, item);
+      fs.cpSync(src, dest, { recursive: true });
+    }
+  };
 
-  // 2. Mirror to client/dist (for when Vercel root directory is set to 'client')
-  if (!fs.existsSync(clientDist)) {
-    fs.mkdirSync(clientDist, { recursive: true });
-  }
-  for (const item of items) {
-    if (item === 'public') continue;
-    const src = path.join(distRoot, item);
-    const dest = path.join(clientDist, item);
-    fs.cpSync(src, dest, { recursive: true });
+  // 1. Mirror to dist/public
+  copyContents(distRoot, distPublic);
+
+  // 2. Mirror to client/dist (for when Vercel root directory is 'client')
+  copyContents(distRoot, clientDist);
+
+  // 3. Mirror to client/dist/public
+  copyContents(distRoot, clientDistPublic);
+
+  // 4. Mirror to process.cwd()/dist if different
+  if (process.cwd() !== projectRoot && process.cwd() !== path.join(projectRoot, 'client')) {
+    copyContents(distRoot, cwdDist);
   }
 
   console.log('[Pathfinder Build] Build assets successfully synchronized to:');

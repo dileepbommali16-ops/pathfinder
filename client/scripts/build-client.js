@@ -6,10 +6,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const candidatePaths = [
   path.resolve(__dirname, '../../scripts/build-client.js'),
-  path.resolve(__dirname, '../scripts/build-client.js'),
-  path.resolve(process.cwd(), 'scripts/build-client.js'),
-  path.resolve(process.cwd(), '../scripts/build-client.js')
-];
+  path.resolve(process.cwd(), '../scripts/build-client.js'),
+  path.resolve(process.cwd(), 'scripts/build-client.js')
+].filter(p => p !== __filename);
 
 const rootScript = candidatePaths.find(p => fs.existsSync(p));
 
