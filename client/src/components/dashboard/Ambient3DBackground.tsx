@@ -52,11 +52,11 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
   const switcher = (
     <aside
       aria-label="3D Background Mode Controls"
-      className="fixed bottom-4 right-4 z-[99999] pointer-events-auto flex items-center gap-1.5 rounded-2xl border border-[#2A2A30] bg-[#1B1B1F]/90 p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl transition-all duration-300 hover:border-[#FF6B4A]/50"
+      className="fixed bottom-3 right-3 z-[99999] pointer-events-auto flex items-center gap-1 rounded-xl border border-white/10 bg-[#141417]/95 p-1 shadow-[0_8px_30px_rgba(0,0,0,0.8)] backdrop-blur-2xl transition-all duration-300 hover:border-white/30"
     >
-      <div className="flex items-center gap-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-[#A1A1AA]">
-        <Layers className="h-3.5 w-3.5 text-[#FF6B4A] animate-pulse" />
-        <span className="hidden sm:inline">Background:</span>
+      <div className="flex items-center gap-1 px-1.5 text-[9px] font-bold uppercase tracking-wider text-[#A1A1AA]">
+        <Layers className="h-3 w-3 text-white" />
+        <span className="hidden sm:inline">BG:</span>
       </div>
 
       <button
@@ -66,13 +66,13 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
           setVariant("predictive-void");
         }}
         title="Hybrid Mix: 3D WebGL Void Matrix + Luminous Predictive Arc"
-        className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+        className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all cursor-pointer ${
           variant === "predictive-void"
-            ? "bg-[#FF6B4A]/20 text-[#F2F2F3] border border-[#FF6B4A]/50 shadow-[0_0_16px_rgba(255,107,74,0.3)]"
+            ? "bg-white/20 text-white border border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.2)]"
             : "text-[#A1A1AA] hover:text-[#F2F2F3] hover:bg-white/[0.06]"
         }`}
       >
-        <Sparkles className="h-3 w-3 text-[#FF6B4A]" />
+        <Sparkles className="h-2.5 w-2.5 text-white" />
         <span>Hybrid Mix</span>
       </button>
 
@@ -83,13 +83,13 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
           setVariant("predictive");
         }}
         title="Predictive Neural Arc: Luminous 3D AI Trajectory"
-        className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+        className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all cursor-pointer ${
           variant === "predictive"
-            ? "bg-white/20 text-[#F2F2F3] border border-white/50 shadow-[0_0_16px_rgba(255,255,255,0.2)]"
+            ? "bg-white/20 text-white border border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.2)]"
             : "text-[#A1A1AA] hover:text-[#F2F2F3] hover:bg-white/[0.06]"
         }`}
       >
-        <Orbit className="h-3 w-3 text-white" />
+        <Orbit className="h-2.5 w-2.5 text-white" />
         <span>Predictive Arc</span>
       </button>
 
@@ -100,13 +100,13 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
           setVariant("void-field");
         }}
         title="Sphere Shield WebGL2: Shield Matrix"
-        className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+        className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all cursor-pointer ${
           variant === "void-field"
-            ? "bg-white/20 text-[#F2F2F3] border border-white/50 shadow-[0_0_16px_rgba(255,255,255,0.2)]"
+            ? "bg-white/20 text-white border border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.2)]"
             : "text-[#A1A1AA] hover:text-[#F2F2F3] hover:bg-white/[0.06]"
         }`}
       >
-        <span className="text-[10px] font-mono text-white font-bold">042</span>
+        <span className="text-[9px] font-mono text-white font-bold">042</span>
         <span>Void Field</span>
       </button>
     </aside>

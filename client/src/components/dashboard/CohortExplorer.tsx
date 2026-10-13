@@ -95,11 +95,11 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
       {/* Top Controls & Filter Bar */}
       <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
         {/* Subtle background ambient mesh */}
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#FF6B4A]/[0.08] blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/[0.04] blur-3xl" />
 
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FF6B4A]/10 text-[#FF6B4A] border border-[#FF6B4A]/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white border border-white/20">
               <TrendingUp className="h-4 w-4" />
             </div>
             <div>
@@ -111,17 +111,17 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onDownloadCSV}
-              className="flex items-center gap-1.5 rounded-xl border border-[#2A2A30] bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-[#F2F2F3] transition-all hover:bg-white/[0.08] active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 rounded-xl border border-[#2A2A30] bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-[#F2F2F3] transition-all hover:bg-white/[0.08] active:scale-95 shadow-sm cursor-pointer"
             >
-              <Download className="h-3.5 w-3.5 text-[#FF6B4A]" />
+              <Download className="h-3.5 w-3.5 text-white" />
               <span>Export CSV</span>
             </button>
 
             <button
               onClick={onDownloadPDF}
-              className="flex items-center gap-1.5 rounded-xl bg-[#FF6B4A] px-3.5 py-2 text-xs font-bold text-white shadow-[0_0_18px_rgba(255,107,74,0.25)] transition-all hover:bg-[#FF8A6E] active:bg-[#C2452B]"
+              className="flex items-center gap-1.5 rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-zinc-950 shadow-[0_0_18px_rgba(255,255,255,0.2)] transition-all hover:bg-zinc-200 active:bg-zinc-300 cursor-pointer"
             >
-              <FileText className="h-3.5 w-3.5" />
+              <FileText className="h-3.5 w-3.5 text-zinc-950" />
               <span>Download PDF</span>
             </button>
           </div>
@@ -199,9 +199,9 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <p className="mt-1 text-xl font-black text-[#F2F2F3]">{analytics?.total_records || 0}</p>
           </div>
 
-          <div className="rounded-2xl border border-[#FF6B4A]/20 bg-[#FF6B4A]/5 p-3 text-center">
-            <span className="text-[10px] uppercase tracking-wider text-[#FF6B4A] font-semibold">Placed</span>
-            <p className="mt-1 text-xl font-black text-[#FF6B4A]">{analytics?.placed_count || 0}</p>
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center">
+            <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold">Placed</span>
+            <p className="mt-1 text-xl font-black text-emerald-300">{analytics?.placed_count || 0}</p>
           </div>
 
           <div className="rounded-2xl border border-[#2A2A30] bg-[#141417] p-3 text-center">
@@ -209,9 +209,9 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <p className="mt-1 text-xl font-black text-[#A1A1AA]">{analytics?.unplaced_count || 0}</p>
           </div>
 
-          <div className="rounded-2xl border border-[#FF6B4A]/20 bg-[#FF6B4A]/10 p-3 text-center">
-            <span className="text-[10px] uppercase tracking-wider text-[#FF8A6E] font-semibold">Placement Rate</span>
-            <p className="mt-1 text-xl font-black text-[#FF6B4A]">{analytics ? `${analytics.placement_rate.toFixed(1)}%` : "—"}</p>
+          <div className="rounded-2xl border border-white/20 bg-white/10 p-3 text-center">
+            <span className="text-[10px] uppercase tracking-wider text-zinc-300 font-semibold">Placement Rate</span>
+            <p className="mt-1 text-xl font-black text-white">{analytics ? `${analytics.placement_rate.toFixed(1)}%` : "—"}</p>
           </div>
 
           <div className="rounded-2xl border border-[#2A2A30] bg-[#141417] p-3 text-center">
@@ -221,9 +221,9 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             </p>
           </div>
 
-          <div className="rounded-2xl border border-[#FF6B4A]/20 bg-[#FF6B4A]/5 p-3 text-center">
-            <span className="text-[10px] uppercase tracking-wider text-[#FF8A6E] font-semibold">Highest Package</span>
-            <p className="mt-1 text-xl font-black text-[#FF8A6E]">
+          <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-3 text-center">
+            <span className="text-[10px] uppercase tracking-wider text-cyan-300 font-semibold">Highest Package</span>
+            <p className="mt-1 text-xl font-black text-cyan-300">
               {analytics?.highest_package ? `${analytics.highest_package.toFixed(1)} LPA` : "—"}
             </p>
           </div>
@@ -234,14 +234,14 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
       <div className="rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[#FF6B4A]" />
+            <Sparkles className="h-4 w-4 text-white" />
             <span className="text-sm font-bold text-[#F2F2F3]">AI Cohort Intelligence</span>
           </div>
 
           <button
             onClick={onSummarizeAI}
             disabled={isSummarizing}
-            className="flex items-center gap-1.5 self-start rounded-xl border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-3.5 py-1.5 text-xs font-semibold text-[#FF6B4A] hover:bg-[#FF6B4A]/20 sm:self-auto"
+            className="flex items-center gap-1.5 self-start rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition-all cursor-pointer sm:self-auto"
           >
             <Sparkles className="h-3.5 w-3.5" />
             <span>{isSummarizing ? "Synthesizing signals..." : "Summarize with Gemini AI"}</span>

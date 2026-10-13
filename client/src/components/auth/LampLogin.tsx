@@ -324,19 +324,33 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               }}
               title="Pull or click the cord to toggle lamp light"
             />
-            {/* Lamp Caption */}
-            <div className="mt-4 text-center select-none pointer-events-none">
-              <span className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-1.5 text-xs font-bold text-amber-300 backdrop-blur-md">
-                Lamp your Career
-              </span>
+            {/* Lamp Caption & One-Click Start Button */}
+            <div className="mt-4 text-center select-none">
+              <button
+                type="button"
+                id="btn-lamp-quickstart"
+                onClick={() => {
+                  setIsOn(true);
+                  onLogin({
+                    username: username.trim() || "Student",
+                    email: email.trim() || "student@pathfinder.ai",
+                    bypassOnboarding: true,
+                  });
+                }}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-300 backdrop-blur-md transition-all hover:bg-amber-400/25 hover:scale-105 active:scale-95 cursor-pointer shadow-[0_0_15px_rgba(255,214,0,0.25)]"
+                title="Click to illuminate lamp & start instant dashboard session"
+              >
+                <span>💡</span>
+                <span>Lamp your Career &rarr; Start</span>
+              </button>
             </div>
           </div>
         </section>
 
         {/* RIGHT: Glassmorphic Login Card (Always Accessible) */}
-        <section className="relative flex flex-1 items-center justify-center px-4 py-6 sm:px-6 sm:pb-12 lg:px-12 lg:pb-0">
+        <section className="relative flex flex-1 items-center justify-center px-4 py-4 sm:px-6 sm:pb-8 lg:px-8 lg:pb-0">
           <div
-            className={`relative w-full max-w-[440px] rounded-[24px] border p-8 sm:p-12 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-700 pointer-events-auto ${
+            className={`relative w-full max-w-[420px] rounded-[22px] border p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-700 pointer-events-auto ${
               isOn
                 ? "translate-x-0 opacity-100 blur-none border-white/10 bg-white/[0.05]"
                 : "translate-x-0 opacity-95 blur-none border-amber-500/30 bg-[#0c0d12]/95 shadow-[0_8px_32px_rgba(0,0,0,0.9)] ring-1 ring-amber-500/20"

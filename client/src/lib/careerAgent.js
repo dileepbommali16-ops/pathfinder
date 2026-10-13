@@ -6,5 +6,5 @@
  */
 
 export const getCareerAgentResponse = (message, history = [], profile) => {
-  return "I'm having a little trouble connecting to my AI brain right now! Please give me a second and ask me again 😊";
+  return "I'm having a little trouble reaching the AI right now! Please tap retry in a moment 😊";
 };

@@ -124,14 +124,14 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
       <div className="space-y-6">
         {/* Identified Strengths */}
         <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl ring-1 ring-white/5">
-          <div className="flex items-center gap-2 text-[#FF6B4A]">
-            <CheckCircle2 className="h-5 w-5 text-[#FF6B4A]" />
+          <div className="flex items-center gap-2 text-emerald-400">
+            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
             <h3 className="text-base font-bold text-[#F2F2F3]">Identified Competitive Strengths</h3>
           </div>
           <div className="mt-3.5 space-y-2.5">
             {strengths.map((str, idx) => (
               <div key={idx} className="flex items-start gap-2.5 rounded-xl border border-[#2A2A30] bg-[#141417] p-3 text-xs text-[#F2F2F3]">
-                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#FF6B4A]" />
+                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
                 <span>{str}</span>
               </div>
             ))}
@@ -140,8 +140,8 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
 
         {/* Critical Action Items / Priorities */}
         <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl ring-1 ring-white/5">
-          <div className="flex items-center gap-2 text-[#FF8A6E]">
-            <ShieldAlert className="h-5 w-5 text-[#FF6B4A]" />
+          <div className="flex items-center gap-2 text-cyan-400">
+            <ShieldAlert className="h-5 w-5 text-cyan-400" />
             <h3 className="text-base font-bold text-[#F2F2F3]">Priority Placement Actions</h3>
           </div>
           <div className="mt-3.5 space-y-2.5">

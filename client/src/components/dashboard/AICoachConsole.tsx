@@ -52,12 +52,12 @@ const PROMPT_SUGGESTIONS = [
 ];
 
 const QUICK_ACTIONS = [
+  { label: "💡 Explain Pathfinder simply", prompt: "Explain Pathfinder simply in 5 lines and what it does." },
+  { label: "🤝 Explain to a non-technical person", prompt: "Explain Pathfinder and how its AI works to a non-technical person with a real-life analogy." },
+  { label: "🚀 Project ideas for my branch", prompt: "Give me project ideas (small, medium, hard) for my branch with realistic architectures." },
+  { label: "🛠️ Build this project step by step", prompt: "Take the project we discussed and let's build it step by step. Start with Step 1." },
   { label: "🎙️ Start Mock Interview", prompt: "Let's do an interactive mock interview for my role. Ask me question 1." },
-  { label: "🔍 Find My Skill Gaps", prompt: "Na skills lo gaps enti? Analyze against my target role." },
   { label: "🗺️ Build 6-Week Roadmap", prompt: "Can you create a detailed 6-week milestone roadmap for my placement preparation?" },
-  { label: "📄 Review My Resume (ATS)", prompt: "Review my resume bullet points using the Google X-Y-Z formula." },
-  { label: "💡 Suggest Flagship Project", prompt: "Suggest a production-grade flagship project to close my technical gaps." },
-  { label: "🎯 Placement Preparation Plan", prompt: "naaku placement kosam em nerchukovali?" },
 ];
 
 const MOCK_QUESTIONS = [
@@ -296,29 +296,44 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 )}
 
                 {m.role === "assistant" && idx === messages.length - 1 && (() => {
-                  const hasExplicitOptions = /options?:|suggestions?:|you can:|choose one:|which one:|\?$/i.test(m.content);
-                  if (!hasExplicitOptions) return null;
+                  const contentLower = m.content.toLowerCase();
                   const chips: string[] = [];
-                  const lines = m.content.split("\n");
-                  for (const line of lines) {
-                    const trimmed = line.trim();
-                    if (/^[-*•]\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed)) {
-                      const cleaned = trimmed.replace(/^[-*•\d.]+\s+/, "").replace(/\*\*/g, "").trim();
-                      if (cleaned.length > 3 && cleaned.length < 55) {
-                        chips.push(cleaned);
+
+                  // Contextual suggestions based on discussion topic
+                  if (contentLower.includes("pathfinder") || contentLower.includes("random forest") || contentLower.includes("readiness score") || contentLower.includes("machine learning")) {
+                    chips.push("Explain simply");
+                    chips.push("Explain to my friend");
+                  } else if (contentLower.includes("project") || contentLower.includes("blueprint") || contentLower.includes("architecture")) {
+                    chips.push("Build it step by step");
+                    chips.push("Give me a small project");
+                  } else if (contentLower.includes("step 1") || contentLower.includes("step 2") || contentLower.includes("milestone")) {
+                    chips.push("Next step");
+                  } else if (/\?$/m.test(m.content)) {
+                    // If model asked an explicit question, parse potential bullets
+                    const lines = m.content.split("\n");
+                    for (const line of lines) {
+                      const trimmed = line.trim();
+                      if (/^[-*•]\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed)) {
+                        const cleaned = trimmed.replace(/^[-*•\d.]+\s+/, "").replace(/\*\*/g, "").trim();
+                        if (cleaned.length > 3 && cleaned.length < 40) {
+                          chips.push(cleaned);
+                        }
                       }
                     }
                   }
-                  if (chips.length === 0 || chips.length > 3) return null;
+
+                  const finalChips = Array.from(new Set(chips)).slice(0, 3);
+                  if (finalChips.length === 0) return null;
+
                   return (
                     <div className="mt-3.5 flex flex-wrap gap-2 pt-2.5 border-t border-[#2A2A30]">
-                      {chips.map((chip, cIdx) => (
+                      {finalChips.map((chip, cIdx) => (
                         <button
                           key={cIdx}
                           type="button"
                           onClick={() => onSendMessage(chip)}
                           disabled={isLoading}
-                          className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-white/20 hover:border-white/40 active:scale-95 disabled:opacity-50 shadow-sm"
+                          className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-white/20 hover:border-white/40 active:scale-95 disabled:opacity-50 shadow-sm cursor-pointer"
                         >
                           <Sparkles className="h-3 w-3 text-white flex-shrink-0" />
                           <span>{chip}</span>

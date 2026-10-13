@@ -284,10 +284,12 @@ python scripts/test_visitor_scenarios.py
 
 ## 🌐 Live Production Deployments
 
-- **Production Frontend (Vercel):** [https://pathfinder-client-fzom.vercel.app](https://pathfinder-client-fzom.vercel.app)
-- **Production API Server (Render):** [https://pathfinder-backend-klrp.onrender.com](https://pathfinder-backend-klrp.onrender.com)
-- **API Health Telemetry:** [https://pathfinder-backend-klrp.onrender.com/api/health](https://pathfinder-backend-klrp.onrender.com/api/health)
-- **OpenAPI Interactive Documentation:** [https://pathfinder-backend-klrp.onrender.com/docs](https://pathfinder-backend-klrp.onrender.com/docs)
+- **🚀 Live Application (Vercel Edge SPA):** [https://pathfinder-client-fzom.vercel.app](https://pathfinder-client-fzom.vercel.app)  
+  *(Instant Access: Click "Lamp your Career &rarr; Start" or "Continue in Guest Mode" to test all 15 features immediately with 0 login barriers)*
+- **⚡ Backend Cloud API (Render Web Service):** [https://pathfinder-backend-klrp.onrender.com](https://pathfinder-backend-klrp.onrender.com)  
+  *(Note: Free tier web services spin up automatically in ~30 seconds on the first request if idle)*
+- **📊 Real-time Health Telemetry:** [https://pathfinder-backend-klrp.onrender.com/api/health](https://pathfinder-backend-klrp.onrender.com/api/health)
+- **📖 OpenAPI Interactive Documentation:** [https://pathfinder-backend-klrp.onrender.com/docs](https://pathfinder-backend-klrp.onrender.com/docs)
 
 ---
 

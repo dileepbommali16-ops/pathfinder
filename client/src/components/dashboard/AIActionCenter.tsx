@@ -867,12 +867,12 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               {readinessData.recommended_skills?.length > 0 && (
                 <div className="mt-4 rounded-xl border border-[#2A2A30] bg-[#141417] p-3 text-xs">
                   <span className="font-bold text-[#F2F2F3] flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-[#FF6B4A]" />
+                    <Sparkles className="h-3.5 w-3.5 text-white" />
                     <span>Targeted Recommended Skills</span>
                   </span>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {readinessData.recommended_skills.map((sk, idx) => (
-                      <span key={idx} className="rounded-md border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-2 py-0.5 text-[11px] text-[#F2F2F3]">
+                      <span key={idx} className="rounded-md border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] text-[#F2F2F3]">
                         {sk}
                       </span>
                     ))}

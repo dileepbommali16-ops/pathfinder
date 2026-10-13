@@ -321,13 +321,13 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
 
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-semibold text-[#F2F2F3]">
-                  <Sparkles className="h-3.5 w-3.5 text-[#FF8A6E]" />
+                  <Sparkles className="h-3.5 w-3.5 text-white" />
                   <span>Graduation Year</span>
                 </label>
                 <select
                   value={profile.graduationYear}
                   onChange={(e) => onChange({ graduationYear: parseInt(e.target.value, 10) })}
-                  className="w-full rounded-xl border border-[#2A2A30] bg-[#1B1B1F] px-3 py-2.5 text-xs font-medium text-[#F2F2F3] outline-none focus:border-[#FF6B4A] focus:ring-1 focus:ring-[#FF6B4A]/20"
+                  className="w-full rounded-xl border border-[#2A2A30] bg-[#1B1B1F] px-3 py-2.5 text-xs font-medium text-[#F2F2F3] outline-none focus:border-white/50 focus:ring-1 focus:ring-white/20"
                 >
                   {[2028, 2027, 2026, 2025, 2024].map((y) => (
                     <option key={y} value={y}>
