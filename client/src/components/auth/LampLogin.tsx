@@ -8,7 +8,7 @@ interface LampLoginProps {
 }
 
 export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) => {
-  const [isOn, setIsOn] = useState(true);
+  const [isOn, setIsOn] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -307,6 +307,9 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
 
             {/* Pull String Handle */}
             <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setIsOn((prev) => !prev)}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
@@ -315,7 +318,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 isDragging ? "transition-none" : "duration-300 ease-out"
               } ${
                 !isOn
-                  ? "animate-pulse shadow-[0_0_15px_rgba(255,214,0,0.9),inset_0_2px_3px_rgba(255,255,255,0.7)] ring-1 ring-amber-300/60"
+                  ? "animate-pulse shadow-[0_0_15px_rgba(255,214,0,0.9),inset_0_2px_3px_rgba(255,255,255,0.7)] ring-2 ring-amber-300 scale-110"
                   : "shadow-[inset_0_2px_3px_rgba(255,255,255,0.5),0_3px_6px_rgba(0,0,0,0.8)]"
               }`}
               style={{
@@ -324,38 +327,55 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               }}
               title="Pull or click the cord to toggle lamp light"
             />
-            {/* Lamp Caption & One-Click Start Button */}
+            {/* Lamp Caption */}
             <div className="mt-4 text-center select-none">
               <button
                 type="button"
                 id="btn-lamp-quickstart"
-                onClick={() => {
-                  setIsOn(true);
-                  onLogin({
-                    username: username.trim() || "Student",
-                    email: email.trim() || "student@pathfinder.ai",
-                    bypassOnboarding: true,
-                  });
-                }}
+                onClick={() => setIsOn((prev) => !prev)}
                 className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-300 backdrop-blur-md transition-all hover:bg-amber-400/25 hover:scale-105 active:scale-95 cursor-pointer shadow-[0_0_15px_rgba(255,214,0,0.25)]"
-                title="Click to illuminate lamp & start instant dashboard session"
+                title="Click to toggle lamp light"
               >
                 <span>💡</span>
-                <span>Lamp your Career &rarr; Start</span>
+                <span>Lamp your Career</span>
               </button>
             </div>
           </div>
         </section>
 
-        {/* RIGHT: Glassmorphic Login Card (Always Accessible) */}
+        {/* RIGHT: Glassmorphic Login Card */}
         <section className="relative flex flex-1 items-center justify-center px-4 py-4 sm:px-6 sm:pb-8 lg:px-8 lg:pb-0">
-          <div
-            className={`relative w-full max-w-[420px] rounded-[22px] border p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-700 pointer-events-auto ${
-              isOn
-                ? "translate-x-0 opacity-100 blur-none border-white/10 bg-white/[0.05]"
-                : "translate-x-0 opacity-95 blur-none border-amber-500/30 bg-[#0c0d12]/95 shadow-[0_8px_32px_rgba(0,0,0,0.9)] ring-1 ring-amber-500/20"
-            }`}
-          >
+          {!isOn ? (
+            <div
+              onClick={() => setIsOn(true)}
+              className="group relative flex flex-col items-center justify-center rounded-[22px] border border-dashed border-amber-400/30 bg-[#0c0d12]/85 p-8 text-center max-w-[420px] w-full shadow-[0_8px_32px_rgba(0,0,0,0.8)] backdrop-blur-md cursor-pointer hover:border-amber-400/60 transition-all hover:scale-[1.02]"
+              title="Click or pull the lamp string to illuminate and enter details"
+            >
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-400/10 text-3xl text-amber-300 shadow-[0_0_25px_rgba(255,214,0,0.25)] animate-pulse group-hover:bg-amber-400/20 group-hover:scale-110 transition-all">
+                💡
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">
+                Lamp is Turned Off
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 mb-6 leading-relaxed max-w-[320px]">
+                Pull the lamp cord or click here to illuminate the desk and reveal your candidate details form.
+              </p>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOn(true);
+                }}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/50 bg-amber-400/20 px-5 py-2.5 text-xs font-bold text-amber-300 hover:bg-amber-400/30 transition-all shadow-[0_0_20px_rgba(255,214,0,0.3)] hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span>✨</span>
+                <span>Pull Cord &amp; Enter Details</span>
+              </button>
+            </div>
+          ) : (
+            <div
+              className="relative w-full max-w-[420px] rounded-[22px] border border-white/10 bg-white/[0.05] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-500 pointer-events-auto"
+            >
             {/* Glossy top border line */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
@@ -572,6 +592,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               </button>
             </div>
           </div>
+          )}
         </section>
       </div>
     </div>
