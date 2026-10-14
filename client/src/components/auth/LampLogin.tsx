@@ -64,30 +64,37 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     { top: "68%", left: "10%", size: 5, duration: "21s", delay: "0.5s" },
   ];
 
-  // Pointer drag event handlers for string handle
+  // Pointer & Click handlers for the lamp cord
+  const handleCordPull = () => {
+    setDragOffset({ x: 0, y: 35 });
+    setTimeout(() => {
+      setDragOffset({ x: 0, y: 0 });
+      setIsOn((prev) => !prev);
+    }, 150);
+  };
+
   const handlePointerDown = (e: React.PointerEvent) => {
     setIsDragging(true);
     startPos.current = { x: e.clientX, y: e.clientY };
     setDragOffset({ x: 0, y: 0 });
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging) return;
-    const dx = Math.max(-35, Math.min(35, (e.clientX - startPos.current.x) * 0.3));
-    const dy = Math.max(0, Math.min(180, (e.clientY - startPos.current.y) * 0.6));
+    const dx = Math.max(-25, Math.min(25, (e.clientX - startPos.current.x) * 0.25));
+    const dy = Math.max(0, Math.min(85, (e.clientY - startPos.current.y) * 0.7));
     setDragOffset({ x: dx, y: dy });
   };
 
   const handlePointerUp = () => {
     if (!isDragging) return;
     setIsDragging(false);
-
-    // If pulled more than 25px, or a quick click, toggle the light
-    const pulled = dragOffset.y > 25 || (dragOffset.y < 5 && Math.abs(dragOffset.x) < 5);
+    const pulledY = dragOffset.y;
     setDragOffset({ x: 0, y: 0 });
 
-    if (pulled) {
+    // If dragged more than 15px or clicked, toggle the lamp
+    if (pulledY > 15 || pulledY < 5) {
       setIsOn((prev) => !prev);
     }
   };
@@ -261,22 +268,12 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               }`}
             />
 
-            {/* Lamp Base (Clickable) */}
+            {/* Lamp Base (Visual only, cord is the exclusive trigger) */}
             <div
-              role="button"
-              tabIndex={0}
-              onClick={() => setIsOn((prev) => !prev)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setIsOn((prev) => !prev);
-                }
-              }}
-              title="Click lamp base to toggle light"
-              className={`relative z-20 h-[16px] w-[100px] rounded-t-[30px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#151515] transition-all duration-500 cursor-pointer hover:brightness-125 ${
+              className={`relative z-20 h-[16px] w-[100px] rounded-t-[30px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#151515] transition-all duration-500 ${
                 isOn
                   ? "shadow-[inset_0_2px_6px_rgba(255,220,150,0.3),0_10px_20px_rgba(0,0,0,0.9)]"
-                  : "shadow-[inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)] hover:ring-1 hover:ring-amber-400/40"
+                  : "shadow-[inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)]"
               }`}
             />
 
@@ -291,54 +288,68 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               }}
             />
 
-            {/* Pull String SVG */}
-            <svg
-              className="pointer-events-none absolute top-[45px] left-[calc(50%+55px)] z-20 h-[2px] w-[2px] overflow-visible"
-              aria-hidden="true"
-            >
-              <path
-                d={`M 0 0 L ${dragOffset.x} ${80 + dragOffset.y}`}
-                stroke={!isOn ? "#ffd600" : "#444"}
-                strokeWidth="2"
-                strokeLinecap="round"
-                fill="none"
-              />
-            </svg>
-
-            {/* Pull String Handle */}
+            {/* Pull Cord String Mechanism (Exclusive Interactive Trigger) */}
             <div
               role="button"
               tabIndex={0}
-              onClick={() => setIsOn((prev) => !prev)}
+              id="lamp-pull-string-trigger"
+              onClick={handleCordPull}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
-              className={`absolute top-[125px] left-[calc(50%+49px)] z-30 h-[22px] w-[12px] rounded-[5px] touch-none select-none cursor-grab active:cursor-grabbing transition-transform ${
-                isDragging ? "transition-none" : "duration-300 ease-out"
-              } ${
-                !isOn
-                  ? "animate-pulse shadow-[0_0_15px_rgba(255,214,0,0.9),inset_0_2px_3px_rgba(255,255,255,0.7)] ring-2 ring-amber-300 scale-110"
-                  : "shadow-[inset_0_2px_3px_rgba(255,255,255,0.5),0_3px_6px_rgba(0,0,0,0.8)]"
-              }`}
-              style={{
-                transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`,
-                background: "linear-gradient(to bottom, #ebd17a, #aa8529)",
-              }}
-              title="Pull or click the cord to toggle lamp light"
-            />
-            {/* Lamp Caption */}
-            <div className="mt-4 text-center select-none">
-              <button
-                type="button"
-                id="btn-lamp-quickstart"
-                onClick={() => setIsOn((prev) => !prev)}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-300 backdrop-blur-md transition-all hover:bg-amber-400/25 hover:scale-105 active:scale-95 cursor-pointer shadow-[0_0_15px_rgba(255,214,0,0.25)]"
-                title="Click to toggle lamp light"
+              title="Pull this string to illuminate the desk and reveal candidate details"
+              className="absolute top-[45px] left-[calc(50%+25px)] z-30 w-[60px] h-[125px] flex flex-col items-center justify-start cursor-grab active:cursor-grabbing select-none touch-none group"
+            >
+              {/* String Wire */}
+              <svg
+                className="pointer-events-none w-[60px] h-[75px] overflow-visible"
+                aria-hidden="true"
               >
-                <span>💡</span>
-                <span>Lamp your Career</span>
-              </button>
+                <path
+                  d={`M 30 0 L ${30 + dragOffset.x} ${60 + dragOffset.y}`}
+                  stroke={!isOn ? "#ffd600" : "#666"}
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  className={!isOn ? "filter drop-shadow-[0_0_8px_rgba(255,214,0,0.9)]" : ""}
+                />
+              </svg>
+
+              {/* String Pull Bead / Handle */}
+              <div
+                className={`relative -mt-1 h-[26px] w-[14px] rounded-full transition-transform ${
+                  isDragging ? "transition-none" : "duration-200 ease-out"
+                } ${
+                  !isOn
+                    ? "animate-pulse shadow-[0_0_22px_rgba(255,214,0,1),inset_0_2px_3px_rgba(255,255,255,0.85)] ring-2 ring-amber-300 scale-110 group-hover:scale-125"
+                    : "shadow-[inset_0_2px_3px_rgba(255,255,255,0.4),0_3px_6px_rgba(0,0,0,0.8)]"
+                }`}
+                style={{
+                  transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`,
+                  background: !isOn
+                    ? "linear-gradient(to bottom, #fff5b8, #ffd600, #b8860b)"
+                    : "linear-gradient(to bottom, #888, #444)",
+                }}
+              />
+            </div>
+
+            {/* Bouncing Visual Badge pointing directly to the lamp string */}
+            {!isOn && (
+              <div
+                onClick={handleCordPull}
+                className="absolute top-[108px] left-[calc(50%+85px)] z-30 flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-400/60 px-3 py-1 text-[11px] font-extrabold text-amber-300 shadow-[0_0_20px_rgba(255,214,0,0.45)] backdrop-blur-md cursor-pointer animate-bounce hover:scale-105 active:scale-95 transition-all"
+                title="Click or pull the lamp string to reveal candidate details"
+              >
+                <span>👈</span>
+                <span>Pull Cord</span>
+              </div>
+            )}
+
+            {/* Lamp Status Caption (Informative text only - NO button) */}
+            <div className="mt-5 text-center select-none">
+              <p className="text-xs font-semibold text-slate-400 tracking-wide">
+                {!isOn ? "Pull the golden lamp cord above to illuminate the desk 💡" : "Desk Illuminated ✨"}
+              </p>
             </div>
           </div>
         </section>
