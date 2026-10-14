@@ -23,11 +23,11 @@ const vitePkgDir = path.join(projectRoot, 'node_modules', 'vite');
 if (!fs.existsSync(vitePkgDir)) {
   console.log('[Pathfinder Build] node_modules or Vite not found in project root. Installing dependencies...');
   try {
-    execSync('pnpm install --no-frozen-lockfile', { cwd: projectRoot, stdio: 'inherit' });
+    execSync('pnpm install --no-frozen-lockfile --reporter=silent', { cwd: projectRoot, stdio: 'inherit' });
   } catch (err) {
     console.warn('[Pathfinder Build] pnpm install failed, falling back to npm install...');
     try {
-      execSync('npm install --legacy-peer-deps', { cwd: projectRoot, stdio: 'inherit' });
+      execSync('npm install --legacy-peer-deps --quiet --no-audit --no-fund', { cwd: projectRoot, stdio: 'inherit' });
     } catch (npmErr) {
       console.error('[Pathfinder Build] Failed to install dependencies:', npmErr);
       process.exit(1);
