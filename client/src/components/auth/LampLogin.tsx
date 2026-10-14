@@ -217,33 +217,21 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
 
           {/* Lamp Container */}
           <div className="relative flex flex-col items-center select-none scale-100 sm:scale-110">
-            {/* Lamp Head (Clickable to toggle) */}
+            {/* Lamp Head (Visual only) */}
             <div
-              role="button"
-              tabIndex={0}
-              onClick={() => setIsOn((prev) => !prev)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setIsOn((prev) => !prev);
-                }
-              }}
-              title="Click lamp head to toggle light"
-              className={`relative z-30 h-[50px] w-[140px] rounded-t-[140px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#151515] transition-all duration-500 cursor-pointer hover:brightness-125 ${
+              className={`relative z-30 h-[50px] w-[140px] rounded-t-[140px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#151515] transition-all duration-500 ${
                 isOn
                   ? "shadow-[inset_0_-3px_10px_rgba(255,220,150,0.4),inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)]"
-                  : "shadow-[inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)] hover:ring-1 hover:ring-amber-400/40"
+                  : "shadow-[inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)]"
               }`}
             />
 
-            {/* Lamp Bulb Glow (Clickable) */}
+            {/* Lamp Bulb Glow (Visual only) */}
             <div
-              onClick={() => setIsOn((prev) => !prev)}
-              title="Click bulb to toggle light"
-              className={`absolute top-[40px] z-20 h-[20px] w-[90px] rounded-full bg-white transition-opacity duration-500 cursor-pointer ${
+              className={`absolute top-[40px] z-20 h-[20px] w-[90px] rounded-full bg-white transition-opacity duration-500 pointer-events-none ${
                 isOn
                   ? "opacity-100 shadow-[0_0_40px_20px_rgba(255,230,150,0.9),0_0_80px_40px_rgba(255,200,100,0.6)]"
-                  : "opacity-10 hover:opacity-40"
+                  : "opacity-10"
               }`}
             />
 
@@ -345,12 +333,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               </div>
             )}
 
-            {/* Lamp Status Caption (Informative text only - NO button) */}
-            <div className="mt-5 text-center select-none">
-              <p className="text-xs font-semibold text-slate-400 tracking-wide">
-                {!isOn ? "Pull the golden lamp cord above to illuminate the desk 💡" : "Desk Illuminated ✨"}
-              </p>
-            </div>
+
           </div>
         </section>
 
