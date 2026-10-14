@@ -16,6 +16,58 @@ interface FireflyCoord {
   y: string[];
 }
 
+// Pre-computed swirling orbital dots (Motion ga tiruguthuu) and wandering yellow dots
+const SWIRL_RING_1 = Array.from({ length: 24 }, (_, i) => {
+  const angle = (i / 24) * 2 * Math.PI;
+  const radius = 220 + (i % 6) * 70; // 220px to 570px
+  const x = Math.round(500 + radius * Math.cos(angle));
+  const y = Math.round(500 + radius * Math.sin(angle));
+  const size = (i % 3) + 3; // 3px to 5px
+  return { id: `ring1-${i}`, x, y, size, delay: `${(i % 6) * 0.4}s` };
+});
+
+const SWIRL_RING_2 = Array.from({ length: 28 }, (_, i) => {
+  const angle = (i / 28) * 2 * Math.PI;
+  const radius = 260 + (i % 7) * 80; // 260px to 740px
+  const x = Math.round(750 + radius * Math.cos(angle));
+  const y = Math.round(750 + radius * Math.sin(angle));
+  const size = (i % 4) + 2.5; // 2.5px to 5.5px
+  return { id: `ring2-${i}`, x, y, size, delay: `${(i % 7) * 0.5}s` };
+});
+
+const WANDERING_YELLOW_DOTS = [
+  { top: "8%", left: "10%", size: 4, duration: "18s", delay: "0s" },
+  { top: "14%", left: "25%", size: 3, duration: "22s", delay: "2s" },
+  { top: "6%", left: "45%", size: 5, duration: "20s", delay: "1s" },
+  { top: "18%", left: "62%", size: 4, duration: "24s", delay: "3s" },
+  { top: "11%", left: "82%", size: 3, duration: "19s", delay: "0.5s" },
+  { top: "22%", left: "92%", size: 5, duration: "25s", delay: "2.5s" },
+  { top: "29%", left: "7%", size: 3, duration: "21s", delay: "4s" },
+  { top: "33%", left: "38%", size: 4, duration: "17s", delay: "1.5s" },
+  { top: "27%", left: "55%", size: 5, duration: "23s", delay: "3.5s" },
+  { top: "36%", left: "75%", size: 3, duration: "26s", delay: "0s" },
+  { top: "42%", left: "88%", size: 4, duration: "19s", delay: "2s" },
+  { top: "48%", left: "15%", size: 5, duration: "22s", delay: "4.5s" },
+  { top: "53%", left: "32%", size: 3, duration: "20s", delay: "1s" },
+  { top: "58%", left: "48%", size: 4, duration: "24s", delay: "3s" },
+  { top: "46%", left: "68%", size: 3, duration: "18s", delay: "0.5s" },
+  { top: "55%", left: "85%", size: 5, duration: "25s", delay: "2.5s" },
+  { top: "64%", left: "6%", size: 4, duration: "21s", delay: "4s" },
+  { top: "68%", left: "22%", size: 3, duration: "19s", delay: "1.5s" },
+  { top: "72%", left: "42%", size: 5, duration: "23s", delay: "3.5s" },
+  { top: "65%", left: "58%", size: 3, duration: "26s", delay: "0s" },
+  { top: "75%", left: "78%", size: 4, duration: "20s", delay: "2s" },
+  { top: "70%", left: "94%", size: 5, duration: "22s", delay: "4.5s" },
+  { top: "82%", left: "12%", size: 3, duration: "24s", delay: "1s" },
+  { top: "86%", left: "28%", size: 4, duration: "18s", delay: "3s" },
+  { top: "79%", left: "50%", size: 5, duration: "25s", delay: "0.5s" },
+  { top: "85%", left: "68%", size: 3, duration: "21s", delay: "2.5s" },
+  { top: "89%", left: "84%", size: 4, duration: "19s", delay: "4s" },
+  { top: "94%", left: "40%", size: 5, duration: "23s", delay: "1.5s" },
+  { top: "92%", left: "60%", size: 3, duration: "22s", delay: "3.5s" },
+  { top: "95%", left: "75%", size: 4, duration: "20s", delay: "0.5s" },
+];
+
 export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) => {
   const [isOn, setIsOn] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
@@ -30,7 +82,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
   const [fireflies, setFireflies] = useState<FireflyCoord[]>([]);
 
   const isDraggingRef = useRef(false);
-  const dragDistanceRef = useRef(0);
+  const maxDragYRef = useRef(0);
   const startPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -82,25 +134,9 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     }
   }, [isOn]);
 
-  // Static positions for ambient glowing motes
-  const ambientParticles = [
-    { top: "15%", left: "12%", size: 4, duration: "18s", delay: "0s" },
-    { top: "28%", left: "75%", size: 5, duration: "22s", delay: "2s" },
-    { top: "45%", left: "20%", size: 3, duration: "16s", delay: "4s" },
-    { top: "60%", left: "82%", size: 5, duration: "25s", delay: "1s" },
-    { top: "75%", left: "30%", size: 4, duration: "20s", delay: "3s" },
-    { top: "85%", left: "65%", size: 3, duration: "19s", delay: "5s" },
-    { top: "35%", left: "45%", size: 4, duration: "24s", delay: "2.5s" },
-    { top: "68%", left: "10%", size: 5, duration: "21s", delay: "0.5s" },
-    { top: "22%", left: "38%", size: 4, duration: "23s", delay: "1.5s" },
-    { top: "52%", left: "90%", size: 3, duration: "17s", delay: "3.5s" },
-    { top: "80%", left: "80%", size: 5, duration: "26s", delay: "2s" },
-    { top: "10%", left: "88%", size: 4, duration: "20s", delay: "4.5s" },
-  ];
-
   // Reliable lamp toggle with spring animation
   const toggleLamp = () => {
-    setDragOffset({ x: 0, y: 32 });
+    setDragOffset({ x: 0, y: 35 });
     setTimeout(() => {
       setDragOffset({ x: 0, y: 0 });
     }, 160);
@@ -111,7 +147,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     if (e.button !== 0) return;
     isDraggingRef.current = true;
     setIsDragging(true);
-    dragDistanceRef.current = 0;
+    maxDragYRef.current = 0;
     startPos.current = { x: e.clientX, y: e.clientY };
     setDragOffset({ x: 0, y: 0 });
     try {
@@ -121,9 +157,11 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDraggingRef.current) return;
-    const dy = Math.max(0, Math.min(85, (e.clientY - startPos.current.y) * 0.75));
+    const dy = Math.max(0, Math.min(90, (e.clientY - startPos.current.y) * 0.8));
     const dx = Math.max(-25, Math.min(25, (e.clientX - startPos.current.x) * 0.25));
-    dragDistanceRef.current = dy;
+    if (dy > maxDragYRef.current) {
+      maxDragYRef.current = dy;
+    }
     setDragOffset({ x: dx, y: dy });
   };
 
@@ -131,27 +169,26 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
     setIsDragging(false);
-    const pulledY = dragDistanceRef.current;
+    const pulledY = maxDragYRef.current;
     setDragOffset({ x: 0, y: 0 });
 
     try {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {}
 
-    if (pulledY > 15) {
-      // Deliberate downward cord pull
+    if (pulledY > 12) {
+      // Deliberate downward cord pull - toggle the lamp!
       toggleLamp();
-      dragDistanceRef.current = 999; // Flag to suppress immediate synthetic click
+      maxDragYRef.current = 999; // Flag to suppress immediate synthetic click
     } else {
-      // Minor click or tap, let handleCordClick toggle cleanly
-      dragDistanceRef.current = 0;
+      maxDragYRef.current = 0;
     }
   };
 
   const handleCordClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (dragDistanceRef.current === 999) {
-      dragDistanceRef.current = 0;
+    if (maxDragYRef.current === 999) {
+      maxDragYRef.current = 0;
       return;
     }
     toggleLamp();
@@ -216,10 +253,23 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
       }`}
     >
       <style>{`
-        @keyframes ambientMoteDrift {
-          0% { transform: translate3d(0, 0, 0) scale(0.85); opacity: 0.25; }
-          50% { transform: translate3d(18px, -24px, 0) scale(1.1); opacity: 0.85; }
-          100% { transform: translate3d(-14px, -45px, 0) scale(0.85); opacity: 0.25; }
+        @keyframes swirlRotateClockwise {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes swirlRotateCounter {
+          from { transform: rotate(360deg); }
+          to { transform: rotate(0deg); }
+        }
+        @keyframes yellowDotDrift {
+          0% { transform: translate3d(0, 0, 0) scale(0.9); opacity: 0.45; }
+          33% { transform: translate3d(24px, -30px, 0) scale(1.2); opacity: 0.95; }
+          66% { transform: translate3d(-18px, -55px, 0) scale(0.85); opacity: 0.55; }
+          100% { transform: translate3d(0, 0, 0) scale(0.9); opacity: 0.45; }
+        }
+        @keyframes yellowDotPulse {
+          0%, 100% { opacity: 0.4; transform: scale(0.85); }
+          50% { opacity: 1; transform: scale(1.25); }
         }
       `}</style>
 
@@ -256,7 +306,83 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
         }}
       />
 
-      {/* Floating Fireflies (Many Glowing Lights) */}
+      {/* Background Yellow Dots Swirling in Motion (Motion ga tiruguthuu) */}
+      <div
+        className={`pointer-events-none fixed inset-0 z-10 overflow-hidden transition-opacity duration-700 ${
+          isOn ? "opacity-95" : "opacity-75"
+        }`}
+        style={{ contain: "strict" }}
+      >
+        {/* Swirling Clockwise Yellow Dots Ring (Motion ga tiruguthuu) */}
+        <div
+          className="absolute -top-[150px] -left-[150px] w-[1000px] h-[1000px] pointer-events-none"
+          style={{
+            animation: "swirlRotateClockwise 38s linear infinite",
+            willChange: "transform",
+          }}
+        >
+          {SWIRL_RING_1.map((p) => (
+            <span
+              key={p.id}
+              className="absolute rounded-full bg-[#FFEA00]"
+              style={{
+                left: `${p.x}px`,
+                top: `${p.y}px`,
+                width: `${p.size}px`,
+                height: `${p.size}px`,
+                boxShadow: "0 0 10px 3px rgba(255,234,0,0.95), 0 0 20px rgba(255,200,0,0.6)",
+                animation: "yellowDotPulse 3.5s ease-in-out infinite alternate",
+                animationDelay: p.delay,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Swirling Counter-Clockwise Yellow Dots Ring (Motion ga tiruguthuu) */}
+        <div
+          className="absolute top-[5%] right-[-200px] w-[1500px] h-[1500px] pointer-events-none"
+          style={{
+            animation: "swirlRotateCounter 48s linear infinite",
+            willChange: "transform",
+          }}
+        >
+          {SWIRL_RING_2.map((p) => (
+            <span
+              key={p.id}
+              className="absolute rounded-full bg-[#FFD600]"
+              style={{
+                left: `${p.x}px`,
+                top: `${p.y}px`,
+                width: `${p.size}px`,
+                height: `${p.size}px`,
+                boxShadow: "0 0 10px 3px rgba(255,214,0,0.9), 0 0 18px rgba(255,180,0,0.55)",
+                animation: "yellowDotPulse 4s ease-in-out infinite alternate",
+                animationDelay: p.delay,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Free Floating & Wandering Yellow Dots */}
+        {WANDERING_YELLOW_DOTS.map((dot, idx) => (
+          <span
+            key={idx}
+            className="absolute rounded-full bg-[#FFEA00]"
+            style={{
+              top: dot.top,
+              left: dot.left,
+              width: `${dot.size}px`,
+              height: `${dot.size}px`,
+              boxShadow: "0 0 10px 3px rgba(255,234,0,0.9), 0 0 20px rgba(255,200,0,0.6)",
+              animation: `yellowDotDrift ${dot.duration} ease-in-out infinite alternate`,
+              animationDelay: dot.delay,
+              willChange: "transform, opacity",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Floating Fireflies (Extra Radiant Lights when lamp is turned ON) */}
       {isOn && (
         <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden" style={{ contain: "strict" }}>
           {fireflies.map((f) => (
@@ -267,7 +393,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 width: f.size,
                 height: f.size,
                 boxShadow:
-                  "0 0 12px 4px rgba(255,234,0,0.9), 0 0 24px rgba(255,180,0,0.7), 0 0 36px rgba(255,214,0,0.4)",
+                  "0 0 12px 4px rgba(255,234,0,0.95), 0 0 24px rgba(255,180,0,0.7), 0 0 36px rgba(255,214,0,0.4)",
               }}
               animate={{
                 x: f.x,
@@ -286,30 +412,6 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
         </div>
       )}
 
-      {/* Drifting Golden Ambient Motes */}
-      <div
-        className={`pointer-events-none fixed inset-0 z-10 overflow-hidden transition-opacity duration-700 ${
-          isOn ? "opacity-80" : "opacity-35"
-        }`}
-      >
-        {ambientParticles.map((p, idx) => (
-          <span
-            key={idx}
-            className="absolute rounded-full bg-[#FFEA00]"
-            style={{
-              top: p.top,
-              left: p.left,
-              width: p.size,
-              height: p.size,
-              boxShadow: "0 0 10px 3px rgba(255,234,0,0.85), 0 0 18px rgba(255,179,0,0.5)",
-              animation: `ambientMoteDrift ${p.duration} ease-in-out infinite alternate`,
-              animationDelay: p.delay,
-              willChange: "transform, opacity",
-            }}
-          />
-        ))}
-      </div>
-
       {/* Main Split Layout */}
       <div className="relative z-10 flex min-h-screen w-full flex-col lg:flex-row">
         {/* LEFT: Desk Lamp with interactive pull cord */}
@@ -322,7 +424,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               exit={{ opacity: 0, y: -20 }}
               className="pointer-events-none absolute top-4 flex flex-col items-center gap-2 text-center text-slate-400 lg:top-14"
             >
-              <span className="text-xs sm:text-sm font-medium tracking-wide uppercase">Click lamp or pull string to illuminate</span>
+              <span className="text-xs sm:text-sm font-medium tracking-wide uppercase">Pull lamp string to illuminate &amp; reveal details</span>
               <span className="h-4 w-0.5 animate-bounce bg-gradient-to-b from-amber-400/80 to-transparent" />
             </motion.div>
           )}
@@ -445,18 +547,15 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               </div>
             )}
 
-            {/* Lamp your Career Button (Restored under the lamp) */}
-            <div className="mt-5 text-center select-none z-20">
-              <button
-                type="button"
-                id="btn-lamp-quickstart"
-                onClick={toggleLamp}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-300 backdrop-blur-md transition-all hover:bg-amber-400/25 hover:scale-105 active:scale-95 cursor-pointer shadow-[0_0_15px_rgba(255,214,0,0.25)]"
-                title="Click to toggle lamp light (ON / OFF)"
+            {/* Lamp your Career Tagline (Pure caption below lamp base - Visual only) */}
+            <div className="mt-5 text-center select-none pointer-events-none z-20">
+              <span
+                id="lamp-career-caption"
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-300 backdrop-blur-md shadow-[0_0_15px_rgba(255,214,0,0.25)]"
               >
                 <span>💡</span>
                 <span>Lamp your Career</span>
-              </button>
+              </span>
             </div>
           </div>
         </section>
