@@ -346,9 +346,11 @@ export default function Home() {
     isNewUser?: boolean;
     bypassOnboarding?: boolean;
   }) => {
-    setUsername(user.username);
-    setEmail(user.email);
-    setIsAuthenticated(true);
+    startTransition(() => {
+      setUsername(user.username);
+      setEmail(user.email);
+      setIsAuthenticated(true);
+    });
 
     const storedToken = localStorage.getItem("pathfinder_token");
     const storedUser = localStorage.getItem("pathfinder_user");
@@ -375,7 +377,9 @@ export default function Home() {
             localStorage.setItem("pathfinder_token", authData.token);
             if (authData.user) {
               localStorage.setItem("pathfinder_user", JSON.stringify(authData.user));
-              setUserRole(authData.user.role || "student");
+              startTransition(() => {
+                setUserRole(authData.user.role || "student");
+              });
             }
           }
         } else {
@@ -395,8 +399,10 @@ export default function Home() {
         onboardingCompleted: false,
         wizardStep: 1,
       };
-      setProfile(freshProfile);
-      setShowResultScreen(false);
+      startTransition(() => {
+        setProfile(freshProfile);
+        setShowResultScreen(false);
+      });
       localStorage.removeItem("pathfinder_onboarding_draft");
       return;
     }
@@ -409,8 +415,10 @@ export default function Home() {
         onboardingCompleted: true,
         wizardStep: 5,
       };
-      setProfile(demoProfile);
-      setShowResultScreen(false);
+      startTransition(() => {
+        setProfile(demoProfile);
+        setShowResultScreen(false);
+      });
       fetchPrediction(demoProfile);
       return;
     }

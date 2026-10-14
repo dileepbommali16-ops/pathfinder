@@ -204,10 +204,12 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
       return;
     }
 
-    onLogin({
-      username: finalUser,
-      email: finalEmail,
-      isNewUser: authMode === "signup"
+    React.startTransition(() => {
+      onLogin({
+        username: finalUser,
+        email: finalEmail,
+        isNewUser: authMode === "signup"
+      });
     });
   };
 
@@ -757,10 +759,12 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 type="button"
                 id="btn-demo-wizard"
                 onClick={() =>
-                  onLogin({
-                    username: "New Student",
-                    email: "newstudent@pathfinder.ai",
-                    isNewUser: true
+                  React.startTransition(() => {
+                    onLogin({
+                      username: "New Student",
+                      email: "newstudent@pathfinder.ai",
+                      isNewUser: true
+                    });
                   })
                 }
                 className="block w-full text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors underline underline-offset-4"
@@ -772,10 +776,12 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 type="button"
                 id="btn-demo-guest"
                 onClick={() =>
-                  onLogin({
-                    username: "Guest Student",
-                    email: "guest@pathfinder.ai",
-                    bypassOnboarding: true
+                  React.startTransition(() => {
+                    onLogin({
+                      username: "Guest Student",
+                      email: "guest@pathfinder.ai",
+                      bypassOnboarding: true
+                    });
                   })
                 }
                 className="block w-full text-xs text-slate-400 hover:text-amber-300 transition-colors underline underline-offset-4"
