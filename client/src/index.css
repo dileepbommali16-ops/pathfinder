@@ -49,6 +49,11 @@
   --text-muted: #64748B;          /* 4.6:1 contrast (WCAG AA min 4.5:1 for body) */
   --text-heading: #FFFFFF;
 
+  /* Centralized Violet/Lavender Accent Color System for Text */
+  --text-accent: #A78BFA;        /* headings, stat numbers, section titles, links */
+  --text-accent-soft: #C4B5FD;   /* small labels, helper text, badge text, captions */
+  --text-accent-strong: #8B5CF6; /* only for large text (28px+) on dark backgrounds */
+
   /* Section Accent Themes */
   --accent-readiness: #10B981;    /* Emerald Green - Readiness Command & Overview */
   --accent-readiness-bg: rgba(16, 185, 129, 0.12);
@@ -513,7 +518,19 @@
   --tw-gradient-to: #6366F1 var(--tw-gradient-to-position) !important;
 }
 
-/* Avoid dark green, dark blue, pink, and yellow text */
+/* Centralized Violet/Lavender replacement for green, emerald, teal, and blue text */
+.text-accent {
+  color: var(--text-accent) !important;
+}
+
+.text-accent-soft {
+  color: var(--text-accent-soft) !important;
+}
+
+.text-accent-strong {
+  color: var(--text-accent-strong) !important;
+}
+
 .pathfinder-dashboard .text-green-300,
 .pathfinder-dashboard .text-green-400,
 .pathfinder-dashboard .text-green-500,
@@ -524,7 +541,7 @@
 .pathfinder-dashboard .text-cyan-400,
 .pathfinder-dashboard .text-teal-300,
 .pathfinder-dashboard .text-teal-400 {
-  color: #9CE5E0 !important;
+  color: var(--text-accent-soft) !important;
 }
 
 .pathfinder-dashboard .text-blue-300,
@@ -532,7 +549,7 @@
 .pathfinder-dashboard .text-blue-500,
 .pathfinder-dashboard .text-indigo-300,
 .pathfinder-dashboard .text-indigo-400 {
-  color: #B8A1FF !important;
+  color: var(--text-accent) !important;
 }
 
 .pathfinder-dashboard .text-rose-300,

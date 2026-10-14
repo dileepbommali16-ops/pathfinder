@@ -168,15 +168,15 @@ export default function IndustryNewsFeed({
   const getCategoryBadgeClass = (category: string) => {
     switch (category) {
       case "AI & Cloud Skills":
-        return "bg-cyan-500/15 text-cyan-300 border-cyan-500/30";
+        return "bg-cyan-500/15 text-[var(--text-accent-soft)] border-cyan-500/30";
       case "DSA & Tech Rounds":
-        return "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
+        return "bg-emerald-500/15 text-[var(--text-accent-soft)] border-emerald-500/30";
       case "Internships & Jobs":
         return "bg-violet-500/15 text-violet-300 border-violet-500/30";
       case "Tech Hiring":
         return "bg-amber-500/15 text-amber-300 border-amber-500/30";
       default:
-        return "bg-blue-500/15 text-blue-300 border-blue-500/30";
+        return "bg-blue-500/15 text-[var(--text-accent-soft)] border-blue-500/30";
     }
   };
 
@@ -191,7 +191,7 @@ export default function IndustryNewsFeed({
       >
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-[var(--text-accent-soft)]">
               <Globe size={14} /> Google Search API & Live News Intelligence
             </div>
             <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
@@ -272,7 +272,7 @@ export default function IndustryNewsFeed({
                 }}
                 className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
                   selectedCategory === cat.id && !showSavedOnly
-                    ? "border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 shadow-sm"
+                    ? "border border-cyan-500/40 bg-cyan-500/20 text-[var(--text-accent-soft)] shadow-sm"
                     : "border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200"
                 }`}
               >
@@ -304,7 +304,7 @@ export default function IndustryNewsFeed({
           animate="visible"
           className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
         >
-          <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
+          <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-accent)]">
             <Code2 size={16} /> OA Screening Benchmark
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-300">
@@ -318,7 +318,7 @@ export default function IndustryNewsFeed({
           animate="visible"
           className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
         >
-          <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
+          <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-accent-soft)]">
             <Zap size={16} /> AI Project Premium
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-300">
@@ -443,7 +443,7 @@ export default function IndustryNewsFeed({
                     href={item.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-400 transition hover:bg-slate-800 hover:text-cyan-300"
+                    className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-400 transition hover:bg-slate-800 hover:text-[var(--text-accent-soft)]"
                     title="Read original source"
                   >
                     <ExternalLink size={13} /> Source
@@ -457,7 +457,7 @@ export default function IndustryNewsFeed({
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-base font-black tracking-tight text-white transition hover:text-cyan-300 sm:text-lg"
+                  className="text-base font-black tracking-tight text-white transition hover:text-[var(--text-accent-soft)] sm:text-lg"
                 >
                   {item.title}
                 </a>
@@ -474,7 +474,7 @@ export default function IndustryNewsFeed({
                 </div>
 
                 <div className="space-y-1 sm:border-l sm:border-slate-800 sm:pl-4">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-accent)]">
                     <Target size={14} /> Actionable Placement Tip
                   </div>
                   <p className="text-xs leading-relaxed text-slate-300">{item.placementTip}</p>
@@ -538,7 +538,7 @@ export default function IndustryNewsFeed({
                     onClick={() =>
                       onConsultCoachWithTrend(item.title, item.source, item.keyTakeaway)
                     }
-                    className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-2 text-xs font-bold text-cyan-300 transition hover:bg-cyan-500/20 active:scale-98"
+                    className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-2 text-xs font-bold text-[var(--text-accent-soft)] transition hover:bg-cyan-500/20 active:scale-98"
                   >
                     <Bot size={14} /> Ask Coach About This Trend <ArrowRight size={13} />
                   </button>

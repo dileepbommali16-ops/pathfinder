@@ -193,7 +193,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                 <span className="text-[11px] font-medium text-[#A1A1AA]">Placement Rate</span>
                 <div className="mt-1 flex items-baseline gap-1.5">
                   <span className="text-2xl font-black text-[#F2F2F3]">{activeBranch.placementRate}%</span>
-                  <span className="text-[10px] font-medium text-emerald-400">cleared</span>
+                  <span className="text-[10px] font-medium text-[var(--text-accent-soft)]">cleared</span>
                 </div>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#141417]">
                   <div
@@ -224,7 +224,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
               <div className="rounded-2xl border border-[#2A2A30] bg-[#1B1B1F] p-4 backdrop-blur-xl">
                 <span className="text-[11px] font-medium text-[#A1A1AA]">Peak Package</span>
                 <div className="mt-1 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-black text-cyan-300">
+                  <span className="text-2xl font-black text-[var(--text-accent)]">
                     {activeBranch.highestPackage ? `${activeBranch.highestPackage} LPA` : "—"}
                   </span>
                 </div>
@@ -237,7 +237,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                   <span className="text-2xl font-black text-[#F2F2F3]">{activeBranch.totalStudents}</span>
                   <span className="text-[10px] text-[#A1A1AA]">records</span>
                 </div>
-                <span className="mt-2 block text-[10px] text-emerald-400">{activeBranch.placedCount} placed offers</span>
+                <span className="mt-2 block text-[10px] text-[var(--text-accent-soft)]">{activeBranch.placedCount} placed offers</span>
               </div>
             </div>
 
@@ -323,7 +323,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                             <div className="rounded-xl border border-[#2A2A30] bg-[#1B1B1F] p-3 shadow-xl backdrop-blur-xl text-xs text-[#F2F2F3]">
                               <span className="font-bold text-[#F2F2F3]">{item.name}</span>
                               <div className="mt-1 space-y-0.5 text-[#A1A1AA]">
-                                <div>Placement Rate: <strong className="text-emerald-400">{item.rate}%</strong></div>
+                                <div>Placement Rate: <strong className="text-[var(--text-accent)]">{item.rate}%</strong></div>
                                 <div>Avg CGPA: <strong className="text-white">{item.avgCgpa}</strong></div>
                                 <div>Candidates: <strong className="text-[#F2F2F3]">{item.students}</strong></div>
                               </div>

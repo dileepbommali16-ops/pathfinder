@@ -86,7 +86,6 @@ def get_gemini_models() -> List[str]:
                 ]
                 preferred_order = [
                     "gemini-2.0-flash",
-                    "gemini-2.5-flash",
                     "gemini-2.0-flash-lite",
                     "gemini-1.5-flash",
                     "gemini-1.5-pro"
@@ -105,7 +104,7 @@ def get_gemini_models() -> List[str]:
         "gemini-2.0-flash",
         "gemini-2.0-flash-lite",
         "gemini-1.5-flash",
-        "gemini-2.5-flash"
+        "gemini-1.5-pro"
     ]
     for candidate in standard_defaults:
         if candidate not in models:
@@ -567,7 +566,7 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
                     temperature=0.85,
                     max_output_tokens=2048,
                     include_thinking=False,
-                    timeout_sec=14.0
+                    timeout_sec=5.0
                 )
                 call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
                 attempts_log.append({"model": model, "duration_ms": call_duration, "status": "ok" if reply else "empty"})

@@ -42,13 +42,13 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
 
   const toneConfig = {
     strong: {
-      color: "text-emerald-400",
+      color: "text-[var(--text-accent)]",
       bg: "bg-emerald-500/10",
       border: "border-emerald-500/30",
       glow: "shadow-emerald-500/20"
     },
     steady: {
-      color: "text-cyan-400",
+      color: "text-[var(--text-accent-soft)]",
       bg: "bg-cyan-500/10",
       border: "border-cyan-500/30",
       glow: "shadow-cyan-500/20"
@@ -86,7 +86,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
               <CheckCircle2 className="h-7 w-7" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-[var(--text-accent-soft)]">
                 <Sparkles className="h-3 w-3" />
                 <span>Onboarding Complete • Single Source of Truth Established</span>
               </div>
@@ -147,7 +147,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-4xl sm:text-5xl font-black text-white">{profile.percentage.toFixed(1)}%</span>
-              <span className="text-xs font-bold text-cyan-300">({profile.cgpa.toFixed(2)} CGPA)</span>
+              <span className="text-xs font-bold text-[var(--text-accent-soft)]">({profile.cgpa.toFixed(2)} CGPA)</span>
             </div>
             <p className="mt-2 text-[11px] text-slate-400">
               Formula: CGPA × {profile.cgpaFormulaMultiplier || 9.5} (Standard AICTE multiplier)
@@ -200,7 +200,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
               <div className="flex justify-between text-xs font-semibold mb-1.5">
                 <span className="text-slate-300">Academics & CGPA</span>
-                <span className="text-emerald-400">{profile.cgpa.toFixed(1)}/10.0 ({breakdown.academics || Math.round(profile.cgpa * 10)}%)</span>
+                <span className="text-[var(--text-accent)]">{profile.cgpa.toFixed(1)}/10.0 ({breakdown.academics || Math.round(profile.cgpa * 10)}%)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
                 <div className="h-full bg-emerald-400 rounded-full" style={{ width: `${breakdown.academics || Math.round(profile.cgpa * 10)}%` }} />
@@ -211,7 +211,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
               <div className="flex justify-between text-xs font-semibold mb-1.5">
                 <span className="text-slate-300">Coding & DSA Proficiency</span>
-                <span className="text-cyan-400">{profile.coding}/10 ({breakdown.coding_dsa || profile.coding * 10}%)</span>
+                <span className="text-[var(--text-accent)]">{profile.coding}/10 ({breakdown.coding_dsa || profile.coding * 10}%)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
                 <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${breakdown.coding_dsa || profile.coding * 10}%` }} />
@@ -233,7 +233,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
               <div className="flex justify-between text-xs font-semibold mb-1.5">
                 <span className="text-slate-300">Practical Internships</span>
-                <span className="text-teal-400">{profile.internships} verified ({breakdown.internships || Math.min(100, profile.internships * 40)}%)</span>
+                <span className="text-[var(--text-accent)]">{profile.internships} verified ({breakdown.internships || Math.min(100, profile.internships * 40)}%)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
                 <div className="h-full bg-teal-400 rounded-full" style={{ width: `${breakdown.internships || Math.min(100, profile.internships * 40)}%` }} />
@@ -275,14 +275,14 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
         <div className="grid gap-4 sm:grid-cols-2 text-xs">
           {/* Strengths */}
           <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
-            <span className="font-bold text-emerald-300 flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            <span className="font-bold text-[var(--text-accent-soft)] flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-[var(--text-accent)]" />
               <span>Core Profile Strengths</span>
             </span>
             <ul className="space-y-1.5 text-slate-300 leading-relaxed">
               {(auditResult.strengths || []).map((s, i) => (
                 <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-emerald-400 font-bold">•</span>
+                  <span className="text-[var(--text-accent)] font-bold">•</span>
                   <span>{s}</span>
                 </li>
               ))}
@@ -310,7 +310,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
         {auditResult.recommended_skills && auditResult.recommended_skills.length > 0 && (
           <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-4 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-accent-soft)] flex items-center gap-1.5">
                 <Sparkles className="h-4 w-4 text-cyan-400" />
                 <span>Recommended Skills to Accelerate</span>
               </span>
@@ -320,7 +320,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
               {auditResult.recommended_skills.map((skill, sIdx) => (
                 <span
                   key={sIdx}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 shadow-sm"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-[var(--text-accent-soft)] shadow-sm"
                 >
                   <Zap className="h-3 w-3 text-cyan-400" />
                   <span>{skill}</span>
@@ -360,7 +360,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
               type="button"
               id="btn-result-mock-interview"
               onClick={onStartMockInterview}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 transition-all active:scale-95"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-xs font-semibold text-[var(--text-accent-soft)] hover:bg-cyan-500/20 transition-all active:scale-95"
             >
               <Mic className="h-4 w-4" />
               <span>Launch Mock Interview</span>

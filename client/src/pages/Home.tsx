@@ -26,6 +26,7 @@ import { ProfileSettings } from "@/components/dashboard/ProfileSettings";
 import { StudentProfileState, ReadinessAuditData, DEFAULT_STUDENT_PROFILE } from "@/types/profile";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
+import { getCareerAgentResponse } from "@/lib/careerAgent";
 import {
   Sparkles,
   ArrowRight,
@@ -829,13 +830,8 @@ export default function Home() {
         if (reply) {
           setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
         } else {
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: "I couldn't reach the AI right now. Please tap retry in a moment!",
-            },
-          ]);
+          const instantReply = getCareerAgentResponse(trimmed, cleanHistory, profile);
+          setMessages((prev) => [...prev, { role: "assistant", content: instantReply }]);
         }
       });
     } catch (err: any) {
@@ -844,14 +840,9 @@ export default function Home() {
       if (abortCtrl.signal.aborted) {
         return;
       }
+      const instantReply = getCareerAgentResponse(trimmed, cleanHistory, profile);
       startTransition(() => {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: "I couldn't reach the AI right now. Please tap retry in a moment!",
-          },
-        ]);
+        setMessages((prev) => [...prev, { role: "assistant", content: instantReply }]);
       });
     } finally {
       clearTimeout(coldStartTimer);

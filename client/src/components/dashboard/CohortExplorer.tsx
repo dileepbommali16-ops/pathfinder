@@ -200,8 +200,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
 
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center">
-            <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold">Placed</span>
-            <p className="mt-1 text-xl font-black text-emerald-300">{analytics?.placed_count || 0}</p>
+            <span className="text-[10px] uppercase tracking-wider text-[var(--text-accent-soft)] font-semibold">Placed</span>
+            <p className="mt-1 text-xl font-black text-[var(--text-accent)]">{analytics?.placed_count || 0}</p>
           </div>
 
           <div className="rounded-2xl border border-[#2A2A30] bg-[#141417] p-3 text-center">
@@ -222,8 +222,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
 
           <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-3 text-center">
-            <span className="text-[10px] uppercase tracking-wider text-cyan-300 font-semibold">Highest Package</span>
-            <p className="mt-1 text-xl font-black text-cyan-300">
+            <span className="text-[10px] uppercase tracking-wider text-[var(--text-accent-soft)] font-semibold">Highest Package</span>
+            <p className="mt-1 text-xl font-black text-[var(--text-accent)]">
               {analytics?.highest_package ? `${analytics.highest_package.toFixed(1)} LPA` : "—"}
             </p>
           </div>

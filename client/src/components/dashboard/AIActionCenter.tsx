@@ -485,7 +485,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Run Random Forest ML sensitivity on current CGPA, internships & coding scores.",
       icon: Target,
       tag: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "Report Ready ✓" : "Instant ML",
-      iconColor: "text-indigo-400",
+      iconColor: "text-[var(--text-accent)]",
       btnClass: loadingActionId === "calculate"
         ? "border-indigo-500 animate-pulse bg-indigo-500/20 ring-2 ring-indigo-500/50"
         : "border-[#2A2A30] hover:border-indigo-500/50 hover:bg-indigo-500/10",
@@ -511,7 +511,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Interactive technical & STAR behavioral questions with instant AI scoring.",
       icon: Mic,
       tag: loadingActionId === "interview" ? "Preparing..." : "Live Simulation",
-      iconColor: "text-cyan-400",
+      iconColor: "text-[var(--text-accent-soft)]",
       btnClass: loadingActionId === "interview"
         ? "border-cyan-500 animate-pulse bg-cyan-500/20"
         : "border-[#2A2A30] hover:border-cyan-500/50 hover:bg-cyan-500/10",
@@ -537,7 +537,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Compare your branch and graduation year against 650+ verified campus offers.",
       icon: TrendingUp,
       tag: loadingActionId === "analytics" ? "Querying..." : "Campus Data",
-      iconColor: "text-blue-400",
+      iconColor: "text-[var(--text-accent)]",
       btnClass: loadingActionId === "analytics"
         ? "border-blue-500 animate-pulse bg-blue-500/20"
         : "border-[#2A2A30] hover:border-blue-500/50 hover:bg-blue-500/10",
