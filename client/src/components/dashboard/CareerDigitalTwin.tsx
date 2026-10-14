@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, startTransition } from "react";
 import { motion } from "framer-motion";
 import {
   Cpu,
@@ -328,7 +328,11 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                 >
                   <button
                     type="button"
-                    onClick={() => setExpandedDimension(isExpanded ? null : dim.id)}
+                    onClick={() => {
+                      startTransition(() => {
+                        setExpandedDimension(isExpanded ? null : dim.id);
+                      });
+                    }}
                     className="flex w-full items-center justify-between p-4 text-left cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
@@ -385,7 +389,11 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                           </div>
                           <button
                             type="button"
-                            onClick={() => onNavigateTab(dim.actionTab)}
+                            onClick={() => {
+                              startTransition(() => {
+                                onNavigateTab(dim.actionTab);
+                              });
+                            }}
                             className={`mt-2.5 inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all cursor-pointer ${palette.actionBtn}`}
                           >
                             Execute Now →

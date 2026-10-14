@@ -465,7 +465,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       <div className="mb-8 overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/60 p-6 shadow-2xl backdrop-blur-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
+            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-300">
               <Sparkles className="h-3.5 w-3.5" />
               <span>Step-Wise Candidate Onboarding</span>
             </div>
@@ -478,7 +478,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-center text-xs text-slate-400 bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 rounded-xl">
-            <RefreshCw className="h-3.5 w-3.5 text-cyan-400 animate-spin" style={{ animationDuration: "8s" }} />
+            <RefreshCw className="h-3.5 w-3.5 text-violet-400 animate-spin" style={{ animationDuration: "8s" }} />
             <span>{saveIndicator}</span>
           </div>
         </div>
@@ -486,7 +486,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
         {/* Progress Bar & Steps Tabs */}
         <div className="mt-6">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-2">
-            <span className="text-emerald-400 font-bold">
+            <span className="text-violet-300 font-bold">
               Step {step} of 5: {stepsList[step - 1].label}
             </span>
             <span>{Math.round(((step - 1) / 4) * 100)}% Completed</span>
@@ -494,7 +494,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 
           <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 rounded-full"
+              className="h-full bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-full shadow-[0_0_12px_rgba(168,85,247,0.4)]"
               initial={{ width: "0%" }}
               animate={{ width: `${((step - 1) / 4) * 100}%` }}
               transition={{ duration: 0.35, ease: "easeOut" }}
@@ -517,7 +517,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   disabled={s.num > step}
                   className={`flex items-center justify-center gap-1.5 rounded-xl border p-2 text-left transition-all ${
                     isCurrent
-                      ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300 shadow-sm"
+                      ? "border-violet-500/50 bg-violet-500/20 text-violet-200 shadow-[0_0_15px_rgba(168,85,247,0.25)]"
                       : isPast
                       ? "border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/[0.08]"
                       : "border-transparent text-slate-600 cursor-not-allowed"
@@ -549,7 +549,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             >
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5 text-emerald-400" />
+                  <GraduationCap className="h-5 w-5 text-violet-400" />
                   <span>Step 1: Candidate & Academic Identity</span>
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">
@@ -1484,7 +1484,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             >
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                  <CheckCircle2 className="h-5 w-5 text-violet-400" />
                   <span>Step 5: Review Profile & Run Intelligence Audit</span>
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">
@@ -1513,7 +1513,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 {/* 1. Basic Details Card */}
                 <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 relative">
                   <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                    <span className="text-xs font-bold uppercase tracking-wider text-violet-400 flex items-center gap-1.5">
                       <GraduationCap className="h-3.5 w-3.5" />
                       <span>1. Basic Details</span>
                     </span>
@@ -1521,7 +1521,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                       type="button"
                       id="btn-edit-step-1"
                       onClick={() => setStep(1)}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold underline underline-offset-2"
+                      className="text-xs text-fuchsia-400 hover:text-fuchsia-300 font-semibold underline underline-offset-2"
                     >
                       Edit
                     </button>
@@ -1537,7 +1537,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 {/* 2. Academics Card */}
                 <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 relative">
                   <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                    <span className="text-xs font-bold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
+                    <span className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
                       <BookOpen className="h-3.5 w-3.5" />
                       <span>2. Academics & Conversion</span>
                     </span>
@@ -1545,7 +1545,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                       type="button"
                       id="btn-edit-step-2"
                       onClick={() => setStep(2)}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold underline underline-offset-2"
+                      className="text-xs text-fuchsia-400 hover:text-fuchsia-300 font-semibold underline underline-offset-2"
                     >
                       Edit
                     </button>
@@ -1553,7 +1553,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   <div className="mt-3 space-y-1 text-xs text-slate-300">
                     <p>
                       <strong className="text-white">CGPA:</strong> {profile.cgpa.toFixed(2)} / 10.0 (
-                      <span className="text-emerald-300 font-semibold">{profile.percentage.toFixed(1)}%</span>)
+                      <span className="text-violet-300 font-semibold">{profile.percentage.toFixed(1)}%</span>)
                     </p>
                     <p><strong className="text-white">Formula:</strong> CGPA × {profile.cgpaFormulaMultiplier || 9.5}</p>
                     <p><strong className="text-white">10th / 12th:</strong> {profile.tenthPercentage}% / {profile.twelfthPercentage}%</p>
@@ -1564,7 +1564,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 {/* 3. Skills & Experience Card */}
                 <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 relative">
                   <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                    <span className="text-xs font-bold uppercase tracking-wider text-fuchsia-400 flex items-center gap-1.5">
                       <Code className="h-3.5 w-3.5" />
                       <span>3. Skills & Projects</span>
                     </span>
@@ -1572,7 +1572,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                       type="button"
                       id="btn-edit-step-3"
                       onClick={() => setStep(3)}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold underline underline-offset-2"
+                      className="text-xs text-fuchsia-400 hover:text-fuchsia-300 font-semibold underline underline-offset-2"
                     >
                       Edit
                     </button>
@@ -1588,7 +1588,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 {/* 4. Career Ambitions Card */}
                 <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 relative">
                   <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                    <span className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                    <span className="text-xs font-bold uppercase tracking-wider text-pink-400 flex items-center gap-1.5">
                       <Target className="h-3.5 w-3.5" />
                       <span>4. Career Ambitions</span>
                     </span>
@@ -1596,7 +1596,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                       type="button"
                       id="btn-edit-step-4"
                       onClick={() => setStep(4)}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold underline underline-offset-2"
+                      className="text-xs text-fuchsia-400 hover:text-fuchsia-300 font-semibold underline underline-offset-2"
                     >
                       Edit
                     </button>
@@ -1610,8 +1610,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               </div>
 
               {/* Submit CTA Banner */}
-              <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-cyan-500/15 p-5 text-center">
-                <ShieldCheck className="h-8 w-8 text-emerald-400 mx-auto mb-2" />
+              <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-r from-purple-950/40 via-violet-900/30 to-fuchsia-950/40 p-5 text-center shadow-[0_8px_32px_rgba(147,51,234,0.18)]">
+                <ShieldCheck className="h-8 w-8 text-fuchsia-400 mx-auto mb-2" />
                 <h3 className="text-base font-bold text-white">Ready to Compute Your Readiness Audit</h3>
                 <p className="text-xs text-slate-300 max-w-lg mx-auto mt-1">
                   Upon submission, Pathfinder will benchmark your academic records and skillset against 972 campus placement profiles to generate your comprehensive audit report.
@@ -1623,16 +1623,16 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     id="btn-submit-wizard"
                     onClick={handleSubmitProfile}
                     disabled={isSubmitting}
-                    className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-8 py-4 text-sm font-extrabold text-slate-950 shadow-xl shadow-emerald-500/25 transition-all hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-500 px-8 py-4 text-sm font-extrabold text-white shadow-xl shadow-purple-600/30 transition-all hover:brightness-110 hover:shadow-purple-600/50 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                   >
                     {isSubmitting ? (
                       <>
                         <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>Computing Readiness & Benchmarks...</span>
+                        <span>Computing Readiness &amp; Benchmarks...</span>
                       </>
                     ) : (
                       <>
-                        <span>Submit Profile & Calculate Career Readiness</span>
+                        <span>Submit Profile &amp; Calculate Career Readiness</span>
                         <ArrowRight className="h-4 w-4" />
                       </>
                     )}

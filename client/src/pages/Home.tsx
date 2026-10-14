@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, startTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DashboardHeader, TabId } from "@/components/dashboard/DashboardHeader";
 import { HeroMetrics } from "@/components/dashboard/HeroMetrics";
@@ -700,9 +700,11 @@ export default function Home() {
     const trimmed = userText.trim();
     if (!trimmed) return;
 
-    setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
-    setIsChatLoading(true);
-    setIsChatWakingUp(false);
+    startTransition(() => {
+      setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
+      setIsChatLoading(true);
+      setIsChatWakingUp(false);
+    });
 
     if (chatAbortRef.current) {
       chatAbortRef.current.abort();
@@ -815,9 +817,26 @@ export default function Home() {
         return;
       }
 
-      if (reply) {
-        setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-      } else {
+      startTransition(() => {
+        if (reply) {
+          setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: "I couldn't reach the AI right now. Please tap retry in a moment!",
+            },
+          ]);
+        }
+      });
+    } catch (err: any) {
+      clearTimeout(coldStartTimer);
+      setIsChatWakingUp(false);
+      if (abortCtrl.signal.aborted) {
+        return;
+      }
+      startTransition(() => {
         setMessages((prev) => [
           ...prev,
           {
@@ -825,24 +844,13 @@ export default function Home() {
             content: "I couldn't reach the AI right now. Please tap retry in a moment!",
           },
         ]);
-      }
-    } catch (err: any) {
-      clearTimeout(coldStartTimer);
-      setIsChatWakingUp(false);
-      if (abortCtrl.signal.aborted) {
-        return;
-      }
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "I couldn't reach the AI right now. Please tap retry in a moment!",
-        },
-      ]);
+      });
     } finally {
       clearTimeout(coldStartTimer);
-      setIsChatLoading(false);
-      setIsChatWakingUp(false);
+      startTransition(() => {
+        setIsChatLoading(false);
+        setIsChatWakingUp(false);
+      });
       chatAbortRef.current = null;
     }
   };
@@ -1061,8 +1069,8 @@ export default function Home() {
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 shadow-md shadow-emerald-500/20">
-                <Sparkles className="h-5 w-5 text-slate-950" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 via-purple-600 to-fuchsia-500 shadow-md shadow-purple-500/25">
+                <Sparkles className="h-5 w-5 text-white" />
               </div>
               <div>
                 <h1 className="text-base font-bold text-white tracking-tight">Pathfinder Candidate Onboarding</h1>
@@ -1070,7 +1078,7 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-block rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
+              <span className="hidden sm:inline-block rounded-full border border-purple-500/30 bg-purple-500/15 px-3 py-1 text-xs font-medium text-purple-200 shadow-sm">
                 Logged in as {username}
               </span>
               <button

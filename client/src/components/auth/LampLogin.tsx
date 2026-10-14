@@ -343,35 +343,10 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
           </div>
         </section>
 
-        {/* RIGHT: Glassmorphic Login Card */}
+        {/* RIGHT: Glassmorphic Login Card - Revealed only after lamp cord is pulled */}
         <section className="relative flex flex-1 items-center justify-center px-4 py-4 sm:px-6 sm:pb-8 lg:px-8 lg:pb-0">
           {!isOn ? (
-            <div
-              onClick={() => setIsOn(true)}
-              className="group relative flex flex-col items-center justify-center rounded-[22px] border border-dashed border-amber-400/30 bg-[#0c0d12]/85 p-8 text-center max-w-[420px] w-full shadow-[0_8px_32px_rgba(0,0,0,0.8)] backdrop-blur-md cursor-pointer hover:border-amber-400/60 transition-all hover:scale-[1.02]"
-              title="Click or pull the lamp string to illuminate and enter details"
-            >
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-400/10 text-3xl text-amber-300 shadow-[0_0_25px_rgba(255,214,0,0.25)] animate-pulse group-hover:bg-amber-400/20 group-hover:scale-110 transition-all">
-                💡
-              </div>
-              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">
-                Lamp is Turned Off
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 mb-6 leading-relaxed max-w-[320px]">
-                Pull the lamp cord or click here to illuminate the desk and reveal your candidate details form.
-              </p>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsOn(true);
-                }}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/50 bg-amber-400/20 px-5 py-2.5 text-xs font-bold text-amber-300 hover:bg-amber-400/30 transition-all shadow-[0_0_20px_rgba(255,214,0,0.3)] hover:scale-105 active:scale-95 cursor-pointer"
-              >
-                <span>✨</span>
-                <span>Pull Cord &amp; Enter Details</span>
-              </button>
-            </div>
+            <div className="hidden lg:block w-full max-w-[420px] min-h-[360px]" aria-hidden="true" />
           ) : (
             <div
               className="relative w-full max-w-[420px] rounded-[22px] border border-white/10 bg-white/[0.05] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-500 pointer-events-auto"

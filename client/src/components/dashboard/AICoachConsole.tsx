@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, startTransition } from "react";
 import {
   Bot,
   Send,
@@ -96,9 +96,12 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
-    onSendMessage(input.trim());
+    const query = input.trim();
+    if (!query || isLoading) return;
     setInput("");
+    startTransition(() => {
+      onSendMessage(query);
+    });
   };
 
   const handleCopy = (text: string, index: number) => {
@@ -202,7 +205,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             {MOCK_QUESTIONS.map((q, i) => (
               <button
                 key={i}
-                onClick={() => onSendMessage(q.prompt)}
+                onClick={() => startTransition(() => onSendMessage(q.prompt))}
                 disabled={isLoading}
                 className="rounded-lg border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-white/20 transition-all disabled:opacity-50"
               >
@@ -219,7 +222,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         {QUICK_ACTIONS.map((action, i) => (
           <button
             key={i}
-            onClick={() => onSendMessage(action.prompt)}
+            onClick={() => startTransition(() => onSendMessage(action.prompt))}
             disabled={isLoading}
             className="shrink-0 rounded-lg border border-[#2A2A30] bg-[#141417] px-2.5 py-1 text-[11px] font-medium text-[#A1A1AA] transition-all hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-95 disabled:opacity-50"
           >
@@ -245,7 +248,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               {PROMPT_SUGGESTIONS.map((s, idx) => (
                 <button
                   key={idx}
-                  onClick={() => onSendMessage(s)}
+                  onClick={() => startTransition(() => onSendMessage(s))}
                   className="rounded-xl border border-[#2A2A30] bg-[#141417] px-3 py-1.5 text-xs text-[#A1A1AA] transition-all hover:border-white/40 hover:bg-white/10 hover:text-white hover:shadow-[0_0_12px_rgba(255,255,255,0.1)] active:scale-95"
                 >
                   💡 {s}
