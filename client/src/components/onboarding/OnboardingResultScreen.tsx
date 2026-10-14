@@ -42,22 +42,22 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
 
   const toneConfig = {
     strong: {
-      color: "text-[var(--text-accent)]",
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/30",
-      glow: "shadow-emerald-500/20"
-    },
-    steady: {
-      color: "text-[var(--text-accent-soft)]",
+      color: "text-[var(--text-accent-cyan)]",
       bg: "bg-cyan-500/10",
       border: "border-cyan-500/30",
       glow: "shadow-cyan-500/20"
     },
+    steady: {
+      color: "text-[var(--text-accent-violet)]",
+      bg: "bg-violet-500/10",
+      border: "border-violet-500/30",
+      glow: "shadow-violet-500/20"
+    },
     focus: {
-      color: "text-amber-400",
-      bg: "bg-amber-500/10",
-      border: "border-amber-500/30",
-      glow: "shadow-amber-500/20"
+      color: "text-[var(--text-accent-rose)]",
+      bg: "bg-rose-500/10",
+      border: "border-rose-500/30",
+      glow: "shadow-rose-500/20"
     }
   }[tone];
 
@@ -78,15 +78,15 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
         initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="mb-6 rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-cyan-500/15 p-6 shadow-2xl backdrop-blur-2xl"
+        className="mb-6 rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/15 via-violet-500/10 to-sky-500/15 p-6 shadow-2xl backdrop-blur-2xl"
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-3.5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/30 flex-shrink-0">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30 flex-shrink-0">
               <CheckCircle2 className="h-7 w-7" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-[var(--text-accent-soft)]">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/20 px-2.5 py-0.5 text-[11px] font-bold text-[var(--text-accent-cyan)]">
                 <Sparkles className="h-3 w-3" />
                 <span>Onboarding Complete • Single Source of Truth Established</span>
               </div>

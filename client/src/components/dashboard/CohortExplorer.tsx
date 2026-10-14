@@ -199,9 +199,9 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <p className="mt-1 text-xl font-black text-[#F2F2F3]">{analytics?.total_records || 0}</p>
           </div>
 
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center">
-            <span className="text-[10px] uppercase tracking-wider text-[var(--text-accent-soft)] font-semibold">Placed</span>
-            <p className="mt-1 text-xl font-black text-[var(--text-accent)]">{analytics?.placed_count || 0}</p>
+          <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-3 text-center">
+            <span className="text-[10px] uppercase tracking-wider text-[var(--text-accent-cyan-soft)] font-semibold">Placed</span>
+            <p className="mt-1 text-xl font-black text-[var(--text-accent-cyan)]">{analytics?.placed_count || 0}</p>
           </div>
 
           <div className="rounded-2xl border border-[#2A2A30] bg-[#141417] p-3 text-center">
@@ -222,8 +222,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
 
           <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-3 text-center">
-            <span className="text-[10px] uppercase tracking-wider text-[var(--text-accent-soft)] font-semibold">Highest Package</span>
-            <p className="mt-1 text-xl font-black text-[var(--text-accent)]">
+            <span className="text-[10px] uppercase tracking-wider text-[var(--text-accent-cyan-soft)] font-semibold">Highest Package</span>
+            <p className="mt-1 text-xl font-black text-[var(--text-accent-cyan)]">
               {analytics?.highest_package ? `${analytics.highest_package.toFixed(1)} LPA` : "—"}
             </p>
           </div>
@@ -234,7 +234,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
       <div className="rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-white" />
+            <Sparkles className="h-4 w-4 text-[var(--text-accent-violet)]" />
             <span className="text-sm font-bold text-[#F2F2F3]">AI Cohort Intelligence</span>
           </div>
 

@@ -124,14 +124,14 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
       <div className="space-y-6">
         {/* Identified Strengths */}
         <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl ring-1 ring-white/5">
-          <div className="flex items-center gap-2 text-[var(--text-accent)]">
-            <CheckCircle2 className="h-5 w-5 text-[var(--text-accent)]" />
+          <div className="flex items-center gap-2 text-[var(--text-accent-cyan)]">
+            <CheckCircle2 className="h-5 w-5 text-[var(--text-accent-cyan)]" />
             <h3 className="text-base font-bold text-[#F2F2F3]">Identified Competitive Strengths</h3>
           </div>
           <div className="mt-3.5 space-y-2.5">
             {strengths.map((str, idx) => (
               <div key={idx} className="flex items-start gap-2.5 rounded-xl border border-[#2A2A30] bg-[#141417] p-3 text-xs text-[#F2F2F3]">
-                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-accent)]" />
+                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-accent-cyan)]" />
                 <span>{str}</span>
               </div>
             ))}
@@ -140,15 +140,15 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
 
         {/* Critical Action Items / Priorities */}
         <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl ring-1 ring-white/5">
-          <div className="flex items-center gap-2 text-[var(--text-accent-soft)]">
-            <ShieldAlert className="h-5 w-5 text-[var(--text-accent-soft)]" />
+          <div className="flex items-center gap-2 text-[var(--text-accent-rose)]">
+            <ShieldAlert className="h-5 w-5 text-[var(--text-accent-rose)]" />
             <h3 className="text-base font-bold text-[#F2F2F3]">Priority Placement Actions</h3>
           </div>
           <div className="mt-3.5 space-y-2.5">
             {priorities.length > 0 ? (
               priorities.map((prio, idx) => (
                 <div key={idx} className="flex items-start gap-2.5 rounded-xl border border-[#2A2A30] bg-[#141417] p-3 text-xs text-[#F2F2F3]">
-                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-400" />
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-accent-rose)]" />
                   <span>{prio}</span>
                 </div>
               ))

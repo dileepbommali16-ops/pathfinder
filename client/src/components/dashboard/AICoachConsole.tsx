@@ -352,7 +352,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                     className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100 text-[#A1A1AA] hover:text-[#F2F2F3]"
                     title="Copy response"
                   >
-                    {copiedIndex === idx ? <Check className="h-3.5 w-3.5 text-[var(--text-accent)]" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedIndex === idx ? <Check className="h-3.5 w-3.5 text-[var(--text-accent-cyan)]" /> : <Copy className="h-3.5 w-3.5" />}
                   </button>
                 )}
               </div>

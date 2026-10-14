@@ -168,15 +168,15 @@ export default function IndustryNewsFeed({
   const getCategoryBadgeClass = (category: string) => {
     switch (category) {
       case "AI & Cloud Skills":
-        return "bg-cyan-500/15 text-[var(--text-accent-soft)] border-cyan-500/30";
+        return "bg-cyan-500/15 text-[var(--text-accent-cyan)] border-cyan-500/30";
       case "DSA & Tech Rounds":
-        return "bg-emerald-500/15 text-[var(--text-accent-soft)] border-emerald-500/30";
+        return "bg-rose-500/15 text-[var(--text-accent-rose)] border-rose-500/30";
       case "Internships & Jobs":
-        return "bg-violet-500/15 text-violet-300 border-violet-500/30";
+        return "bg-violet-500/15 text-[var(--text-accent-violet)] border-violet-500/30";
       case "Tech Hiring":
-        return "bg-amber-500/15 text-amber-300 border-amber-500/30";
+        return "bg-fuchsia-500/15 text-[var(--text-accent-fuchsia)] border-fuchsia-500/30";
       default:
-        return "bg-blue-500/15 text-[var(--text-accent-soft)] border-blue-500/30";
+        return "bg-sky-500/15 text-[var(--text-accent-cyan)] border-sky-500/30";
     }
   };
 
@@ -304,7 +304,7 @@ export default function IndustryNewsFeed({
           animate="visible"
           className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
         >
-          <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-accent)]">
+          <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-accent-cyan)]">
             <Code2 size={16} /> OA Screening Benchmark
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-300">
@@ -318,7 +318,7 @@ export default function IndustryNewsFeed({
           animate="visible"
           className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
         >
-          <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-accent-soft)]">
+          <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-accent-violet)]">
             <Zap size={16} /> AI Project Premium
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-300">
@@ -332,7 +332,7 @@ export default function IndustryNewsFeed({
           animate="visible"
           className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
         >
-          <div className="flex items-center gap-2 text-xs font-bold text-violet-400">
+          <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-accent-fuchsia)]">
             <Briefcase size={16} /> Pre-Placement Offers (PPOs)
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-300">

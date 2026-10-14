@@ -485,10 +485,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Run Random Forest ML sensitivity on current CGPA, internships & coding scores.",
       icon: Target,
       tag: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "Report Ready ✓" : "Instant ML",
-      iconColor: "text-[var(--text-accent)]",
+      iconColor: "text-[var(--text-accent-cyan)]",
       btnClass: loadingActionId === "calculate"
-        ? "border-indigo-500 animate-pulse bg-indigo-500/20 ring-2 ring-indigo-500/50"
-        : "border-[#2A2A30] hover:border-indigo-500/50 hover:bg-indigo-500/10",
+        ? "border-cyan-500 animate-pulse bg-cyan-500/20 ring-2 ring-cyan-500/50"
+        : "border-[#2A2A30] hover:border-cyan-500/50 hover:bg-cyan-500/10",
       actionText: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "View Audit Report" : "Launch Tool",
     },
     {
@@ -498,7 +498,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: `Customized 6-week milestone schedule based on missing skill gaps for ${activeProfile.targetRole || "SDE"}.`,
       icon: Compass,
       tag: loadingActionId === "roadmap" ? "Synthesizing..." : "6-Week Plan",
-      iconColor: "text-purple-400",
+      iconColor: "text-[var(--text-accent-violet)]",
       btnClass: loadingActionId === "roadmap"
         ? "border-purple-500 animate-pulse bg-purple-500/20"
         : "border-[#2A2A30] hover:border-purple-500/50 hover:bg-purple-500/10",
@@ -511,7 +511,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Interactive technical & STAR behavioral questions with instant AI scoring.",
       icon: Mic,
       tag: loadingActionId === "interview" ? "Preparing..." : "Live Simulation",
-      iconColor: "text-[var(--text-accent-soft)]",
+      iconColor: "text-[var(--text-accent-cyan)]",
       btnClass: loadingActionId === "interview"
         ? "border-cyan-500 animate-pulse bg-cyan-500/20"
         : "border-[#2A2A30] hover:border-cyan-500/50 hover:bg-cyan-500/10",
@@ -524,10 +524,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Production-grade project blueprints mapped directly to your missing skill gaps.",
       icon: Lightbulb,
       tag: loadingActionId === "projects" ? "Generating..." : "Portfolio",
-      iconColor: "text-amber-400",
+      iconColor: "text-[var(--text-accent-fuchsia)]",
       btnClass: loadingActionId === "projects"
-        ? "border-amber-500 animate-pulse bg-amber-500/20"
-        : "border-[#2A2A30] hover:border-amber-500/50 hover:bg-amber-500/10",
+        ? "border-fuchsia-500 animate-pulse bg-fuchsia-500/20"
+        : "border-[#2A2A30] hover:border-fuchsia-500/50 hover:bg-fuchsia-500/10",
       actionText: loadingActionId === "projects" ? "Synthesizing..." : "View Blueprints",
     },
     {
@@ -537,10 +537,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Compare your branch and graduation year against 650+ verified campus offers.",
       icon: TrendingUp,
       tag: loadingActionId === "analytics" ? "Querying..." : "Campus Data",
-      iconColor: "text-[var(--text-accent)]",
+      iconColor: "text-[var(--text-accent-violet)]",
       btnClass: loadingActionId === "analytics"
-        ? "border-blue-500 animate-pulse bg-blue-500/20"
-        : "border-[#2A2A30] hover:border-blue-500/50 hover:bg-blue-500/10",
+        ? "border-violet-500 animate-pulse bg-violet-500/20"
+        : "border-[#2A2A30] hover:border-violet-500/50 hover:bg-violet-500/10",
       actionText: loadingActionId === "analytics" ? "Loading Data..." : "Explore Cohort",
     },
     {
@@ -550,7 +550,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Detect missing keywords, parse PDF bullet points and align with recruiter standards.",
       icon: FileText,
       tag: loadingActionId === "resume" ? "Scanning..." : "ATS Scanner",
-      iconColor: "text-rose-400",
+      iconColor: "text-[var(--text-accent-rose)]",
       btnClass: loadingActionId === "resume"
         ? "border-rose-400 animate-pulse bg-rose-500/20"
         : "border-[#2A2A30] hover:border-rose-500/50 hover:bg-rose-500/10",

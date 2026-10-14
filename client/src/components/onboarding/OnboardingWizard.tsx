@@ -699,10 +699,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               </div>
 
               {/* Live Conversion Banner */}
-              <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 p-4">
+              <div className="rounded-2xl border border-cyan-500/25 bg-gradient-to-r from-cyan-500/10 via-violet-500/5 to-sky-500/10 p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-accent-soft)] flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-accent-cyan)] flex items-center gap-1.5">
                       <Sparkles className="h-3.5 w-3.5" />
                       <span>Live CGPA ➔ Percentage Conversion</span>
                     </span>
@@ -711,7 +711,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         {profile.cgpa.toFixed(2)} CGPA
                       </span>
                       <span className="text-slate-400">=</span>
-                      <span className="text-2xl sm:text-3xl font-black text-[var(--text-accent-strong)]">
+                      <span className="text-2xl sm:text-3xl font-black text-[var(--text-accent-cyan)]">
                         {profile.percentage.toFixed(1)}%
                       </span>
                     </div>
@@ -728,7 +728,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                           cgpaFormulaMultiplier: parseFloat(e.target.value)
                         })
                       }
-                      className="rounded-xl border border-white/10 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-[var(--text-accent)] outline-none"
+                      className="rounded-xl border border-white/10 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-[var(--text-accent-cyan)] outline-none"
                     >
                       <option value={9.5}>AICTE / Standard (× 9.5)</option>
                       <option value={10.0}>Direct Scale (× 10.0)</option>
@@ -748,7 +748,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                       Current Degree CGPA <span className="text-red-400">*</span>
                     </label>
-                    <span className="text-xs font-bold text-[var(--text-accent)]">{profile.cgpa.toFixed(1)} / 10.0</span>
+                    <span className="text-xs font-bold text-[var(--text-accent-cyan)]">{profile.cgpa.toFixed(1)} / 10.0</span>
                   </div>
                   <input
                     type="number"
@@ -944,7 +944,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             >
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Code className="h-5 w-5 text-[var(--text-accent)]" />
+                  <Code className="h-5 w-5 text-[var(--text-accent-fuchsia)]" />
                   <span>Step 3: Technical Skills & Practical Experience</span>
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">
@@ -958,7 +958,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                     Core Technical Skills <span className="text-red-400">*</span>
                   </label>
-                  <span className="text-xs text-[var(--text-accent-soft)] font-semibold">
+                  <span className="text-xs text-[var(--text-accent-fuchsia)] font-semibold">
                     {profile.technicalSkills?.length || 0} skills selected
                   </span>
                 </div>
@@ -972,7 +972,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     placeholder="Search or filter technical skills (e.g. DSA, System Design, SQL)..."
                     value={skillSearch}
                     onChange={(e) => setSkillSearch(e.target.value)}
-                    className="w-full rounded-2xl border border-white/10 bg-black/40 py-2.5 pl-10 pr-4 text-xs text-white placeholder-slate-500 outline-none transition-all focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 py-2.5 pl-10 pr-4 text-xs text-white placeholder-slate-500 outline-none transition-all focus:border-fuchsia-500/50 focus:ring-2 focus:ring-fuchsia-500/20"
                   />
                 </div>
 
@@ -989,11 +989,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         onClick={() => handleToggleSkill(s)}
                         className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
                           isSelected
-                            ? "border-emerald-500 bg-emerald-500/20 text-[var(--text-accent-soft)] shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+                            ? "border-fuchsia-500 bg-fuchsia-500/20 text-[var(--text-accent-fuchsia)] shadow-[0_0_12px_rgba(232,121,249,0.2)]"
                             : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
                         }`}
                       >
-                        {isSelected && <Check className="h-3 w-3 text-[var(--text-accent)]" />}
+                        {isSelected && <Check className="h-3 w-3 text-[var(--text-accent-fuchsia)]" />}
                         <span>{s}</span>
                       </button>
                     );
@@ -1047,11 +1047,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         onClick={() => handleToggleLanguage(lang)}
                         className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
                           isSelected
-                            ? "border-cyan-500 bg-cyan-500/20 text-[var(--text-accent-soft)]"
+                            ? "border-cyan-500 bg-cyan-500/20 text-[var(--text-accent-cyan)]"
                             : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
                         }`}
                       >
-                        {isSelected && <Check className="h-3 w-3 text-[var(--text-accent)]" />}
+                        {isSelected && <Check className="h-3 w-3 text-[var(--text-accent-cyan)]" />}
                         <span>{lang}</span>
                       </button>
                     );
@@ -1074,11 +1074,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         onClick={() => handleToggleTool(tool)}
                         className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
                           isSelected
-                            ? "border-purple-500 bg-purple-500/20 text-purple-300"
+                            ? "border-purple-500 bg-purple-500/20 text-[var(--text-accent-violet)]"
                             : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
                         }`}
                       >
-                        {isSelected && <Check className="h-3 w-3 text-purple-400" />}
+                        {isSelected && <Check className="h-3 w-3 text-[var(--text-accent-violet)]" />}
                         <span>{tool}</span>
                       </button>
                     );
@@ -1094,7 +1094,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                       Flagship Projects Built
                     </label>
-                    <span className="text-xs font-bold text-[var(--text-accent)]">{profile.projectsCount} Projects</span>
+                    <span className="text-xs font-bold text-[var(--text-accent-cyan)]">{profile.projectsCount} Projects</span>
                   </div>
                   <input
                     type="number"
@@ -1116,7 +1116,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                       Industrial Internships
                     </label>
-                    <span className="text-xs font-bold text-purple-400">{profile.internships} Internships</span>
+                    <span className="text-xs font-bold text-[var(--text-accent-violet)]">{profile.internships} Internships</span>
                   </div>
                   <input
                     type="number"
@@ -1138,7 +1138,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                       Coding & DSA Confidence
                     </label>
-                    <span className="text-xs font-bold text-[var(--text-accent)]">{profile.coding}/10</span>
+                    <span className="text-xs font-bold text-[var(--text-accent-cyan)]">{profile.coding}/10</span>
                   </div>
                   <input
                     type="range"
@@ -1147,7 +1147,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     max="10"
                     value={profile.coding}
                     onChange={(e) => setProfile({ ...profile, coding: parseInt(e.target.value, 10) })}
-                    className="w-full accent-emerald-400"
+                    className="w-full accent-cyan-400"
                   />
                   <div className="flex justify-between text-[10px] text-slate-500">
                     <span>Beginner (1-4)</span>
@@ -1341,7 +1341,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             >
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Target className="h-5 w-5 text-[var(--text-accent)]" />
+                  <Target className="h-5 w-5 text-[var(--text-accent-violet)]" />
                   <span>Step 4: Target Career Trajectory & Preferences</span>
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">
@@ -1370,13 +1370,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         }
                         className={`rounded-2xl border p-4 text-left transition-all ${
                           isSelected
-                            ? "border-emerald-500 bg-emerald-500/15 shadow-[0_0_18px_rgba(16,185,129,0.2)]"
+                            ? "border-violet-500 bg-violet-500/15 shadow-[0_0_18px_rgba(168,85,247,0.2)]"
                             : "border-white/10 bg-white/[0.02] hover:bg-white/[0.06]"
                         }`}
                       >
                         <div className="flex items-start justify-between">
                           <span className="text-sm font-bold text-white">{r.title}</span>
-                          {isSelected && <Check className="h-4 w-4 text-[var(--text-accent)] flex-shrink-0" />}
+                          {isSelected && <Check className="h-4 w-4 text-[var(--text-accent-violet)] flex-shrink-0" />}
                         </div>
                         <p className="mt-1.5 text-xs text-slate-400 leading-relaxed">{r.desc}</p>
                         <span className="mt-2.5 inline-block rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-slate-300">

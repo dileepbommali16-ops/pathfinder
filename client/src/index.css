@@ -49,10 +49,18 @@
   --text-muted: #64748B;          /* 4.6:1 contrast (WCAG AA min 4.5:1 for body) */
   --text-heading: #FFFFFF;
 
-  /* Centralized Violet/Lavender Accent Color System for Text */
-  --text-accent: #A78BFA;        /* headings, stat numbers, section titles, links */
-  --text-accent-soft: #C4B5FD;   /* small labels, helper text, badge text, captions */
-  --text-accent-strong: #8B5CF6; /* only for large text (28px+) on dark backgrounds */
+  /* Modern High-End Multi-Accent Text System */
+  --text-accent-violet: #A78BFA;      /* AI Coach, intelligence badges, model insight (Kept Violet!) */
+  --text-accent-violet-soft: #C4B5FD; /* Secondary AI labels, soft mentor chips */
+  --text-accent-cyan: #38BDF8;        /* Metrics, placement rates, peak packages, scores (Electric Sky Cyan) */
+  --text-accent-cyan-soft: #7DD3FC;   /* Secondary metric tags, status 'cleared' badges */
+  --text-accent-rose: #FB7185;        /* Critical priority, action items, gap highlights (Vivid Neon Rose) */
+  --text-accent-rose-soft: #FDA4AF;   /* Alert chips, warning badges */
+  --text-accent-fuchsia: #E879F9;     /* Skills tags, language badges, tech stack (Modern Fuchsia) */
+  --text-accent-ice: #F1F5F9;         /* High-contrast crisp platinum titles */
+  --text-accent: #38BDF8;             /* General key metric accent */
+  --text-accent-soft: #7DD3FC;        /* General key metric soft accent */
+  --text-accent-strong: #0284C7;      /* High contrast dark background accent */
 
   /* Section Accent Themes */
   --accent-readiness: #10B981;    /* Emerald Green - Readiness Command & Overview */
@@ -518,53 +526,92 @@
   --tw-gradient-to: #6366F1 var(--tw-gradient-to-position) !important;
 }
 
-/* Centralized Violet/Lavender replacement for green, emerald, teal, and blue text */
+/* Modern High-End Multi-Color Accent System for Pathfinder Dashboard
+   - NO dark green (re-mapped to Electric Sky Cyan #38BDF8)
+   - NO dark blue (re-mapped to Vivid Violet #A78BFA)
+   - NO yellow & NO orange (re-mapped to Neon Fuchsia #E879F9 & Vivid Rose #FB7185)
+   - Violet kept for AI, Coach, & Mentor domains
+   - Crisp modern multi-color harmony across cards & metrics
+*/
 .text-accent {
-  color: var(--text-accent) !important;
+  color: var(--text-accent-cyan) !important;
 }
 
 .text-accent-soft {
-  color: var(--text-accent-soft) !important;
+  color: var(--text-accent-cyan-soft) !important;
 }
 
 .text-accent-strong {
-  color: var(--text-accent-strong) !important;
+  color: var(--text-accent-cyan) !important;
 }
 
+.text-accent-violet {
+  color: var(--text-accent-violet) !important;
+}
+
+.text-accent-cyan {
+  color: var(--text-accent-cyan) !important;
+}
+
+.text-accent-rose {
+  color: var(--text-accent-rose) !important;
+}
+
+.text-accent-fuchsia {
+  color: var(--text-accent-fuchsia) !important;
+}
+
+/* 1. Electric Sky Cyan for Metrics, Placement, and Benchmarks (Replaces dark green & teal) */
 .pathfinder-dashboard .text-green-300,
 .pathfinder-dashboard .text-green-400,
 .pathfinder-dashboard .text-green-500,
 .pathfinder-dashboard .text-emerald-300,
 .pathfinder-dashboard .text-emerald-400,
 .pathfinder-dashboard .text-emerald-500,
+.pathfinder-dashboard .text-teal-300,
+.pathfinder-dashboard .text-teal-400,
 .pathfinder-dashboard .text-cyan-300,
 .pathfinder-dashboard .text-cyan-400,
-.pathfinder-dashboard .text-teal-300,
-.pathfinder-dashboard .text-teal-400 {
-  color: var(--text-accent-soft) !important;
+.pathfinder-dashboard .text-cyan-500 {
+  color: #38BDF8 !important;
 }
 
+/* 2. Vivid Violet & Lavender for AI Coach, Intelligence, and Strategy (Kept Violet!) */
 .pathfinder-dashboard .text-blue-300,
 .pathfinder-dashboard .text-blue-400,
 .pathfinder-dashboard .text-blue-500,
 .pathfinder-dashboard .text-indigo-300,
-.pathfinder-dashboard .text-indigo-400 {
-  color: var(--text-accent) !important;
+.pathfinder-dashboard .text-indigo-400,
+.pathfinder-dashboard .text-violet-300,
+.pathfinder-dashboard .text-violet-400,
+.pathfinder-dashboard .text-purple-300,
+.pathfinder-dashboard .text-purple-400 {
+  color: #A78BFA !important;
 }
 
+/* 3. Vibrant Neon Rose for Critical Gaps, Action Items, and Priority Blockers */
 .pathfinder-dashboard .text-rose-300,
 .pathfinder-dashboard .text-rose-400,
 .pathfinder-dashboard .text-rose-500,
 .pathfinder-dashboard .text-pink-300,
 .pathfinder-dashboard .text-pink-400,
 .pathfinder-dashboard .text-pink-500,
+.pathfinder-dashboard .text-red-400,
+.pathfinder-dashboard .text-red-500 {
+  color: #FB7185 !important;
+}
+
+/* 4. Neon Fuchsia & Rose for Secondary Badges & Highlight Tags (Zero yellow, Zero orange!) */
 .pathfinder-dashboard .text-yellow-300,
 .pathfinder-dashboard .text-yellow-400,
 .pathfinder-dashboard .text-yellow-500,
 .pathfinder-dashboard .text-amber-300,
 .pathfinder-dashboard .text-amber-400,
-.pathfinder-dashboard .text-amber-500 {
-  color: #B8A1FF !important;
+.pathfinder-dashboard .text-amber-500,
+.pathfinder-dashboard .text-orange-300,
+.pathfinder-dashboard .text-orange-400,
+.pathfinder-dashboard .text-orange-500 {
+  color: #E879F9 !important;
 }
 
 /* Selection highlight */
