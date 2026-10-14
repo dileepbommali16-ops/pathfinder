@@ -562,12 +562,16 @@
 #vercel-toolbar,
 vercel-toolbar,
 vercel-live-feedback,
+#__next-live-feedback,
 [data-vercel-toolbar],
 [data-testid="vercel-toolbar"],
 [class*="vercel-toolbar"],
 [class*="feedback_widget"],
 [id*="vercel-live-feedback"],
-div[data-testid="indicator"] {
+div[data-testid="indicator"],
+aside[class*="vercel"],
+div[class*="live_feedback"],
+div:has(> button[data-testid="indicator"]) {
   display: none !important;
   opacity: 0 !important;
   pointer-events: none !important;
@@ -577,6 +581,11 @@ div[data-testid="indicator"] {
   bottom: -99999px !important;
   width: 0 !important;
   height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  clip-path: inset(100%) !important;
+  z-index: -99999 !important;
 }
 
 

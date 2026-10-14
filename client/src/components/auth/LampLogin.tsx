@@ -140,7 +140,9 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     setTimeout(() => {
       setDragOffset({ x: 0, y: 0 });
     }, 160);
-    setIsOn((prev) => !prev);
+    React.startTransition(() => {
+      setIsOn((prev) => !prev);
+    });
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {

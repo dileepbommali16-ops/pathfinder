@@ -44,14 +44,18 @@
       // Completely disable and remove Vercel Toolbar, Live Feedback, and INP debug overlay
       window.__VERCEL_TOOLBAR_HIDDEN__ = true;
       try {
+        document.cookie = "__vercel_toolbar=0; path=/; max-age=31536000";
         sessionStorage.setItem('__vercel_toolbar_hidden', '1');
         localStorage.setItem('__vercel_toolbar_hidden', '1');
         localStorage.setItem('vercel-toolbar-hidden', 'true');
       } catch {}
 
       const killVercelOverlay = () => {
+        // Remove script tags from vercel.live
+        document.querySelectorAll("script[src*='vercel.live']").forEach((s) => s.remove());
+        // Remove toolbar and feedback elements
         const els = document.querySelectorAll(
-          "vercel-live-feedback, vercel-toolbar, #vercel-toolbar, [data-vercel-toolbar], [data-testid='vercel-toolbar'], [class*='vercel-toolbar'], div[data-testid='indicator']"
+          "vercel-live-feedback, vercel-toolbar, #vercel-toolbar, #__next-live-feedback, [data-vercel-toolbar], [data-testid='vercel-toolbar'], [class*='vercel-toolbar'], div[data-testid='indicator'], aside[class*='vercel'], div[class*='live_feedback']"
         );
         els.forEach((el) => {
           try {
@@ -63,6 +67,7 @@
       };
 
       if (typeof window !== "undefined") {
+        killVercelOverlay();
         window.addEventListener("DOMContentLoaded", killVercelOverlay);
         const obs = new MutationObserver(killVercelOverlay);
         obs.observe(document.documentElement, { childList: true, subtree: true });
@@ -72,10 +77,13 @@
       vercel-live-feedback,
       vercel-toolbar,
       #vercel-toolbar,
+      #__next-live-feedback,
       [data-vercel-toolbar],
       [data-testid='vercel-toolbar'],
       [class*='vercel-toolbar'],
-      div[data-testid='indicator'] {
+      div[data-testid='indicator'],
+      aside[class*='vercel'],
+      div[class*='live_feedback'] {
         display: none !important;
         opacity: 0 !important;
         visibility: hidden !important;
@@ -84,6 +92,8 @@
         height: 0 !important;
         position: fixed !important;
         left: -99999px !important;
+        bottom: -99999px !important;
+        z-index: -99999 !important;
       }
     </style>
   </head>
