@@ -7,6 +7,15 @@ interface LampLoginProps {
   initialError?: string | null;
 }
 
+interface FireflyCoord {
+  id: number;
+  size: number;
+  duration: number;
+  delay: number;
+  x: string[];
+  y: string[];
+}
+
 export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) => {
   const [isOn, setIsOn] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
@@ -18,6 +27,10 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
   const [errorMessage, setErrorMessage] = useState<string | null>(initialError || null);
   const [socialLoading, setSocialLoading] = useState<"google" | "github" | null>(null);
   const [socialError, setSocialError] = useState<string | null>(null);
+  const [fireflies, setFireflies] = useState<FireflyCoord[]>([]);
+
+  const isDraggingRef = useRef(false);
+  const dragDistanceRef = useRef(0);
   const startPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -52,7 +65,24 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     return () => clearTimeout(timer);
   }, [socialLoading]);
 
-  // Static positions for lightweight GPU CSS particles
+  // Generate glowing firefly lights when the lamp turns on
+  useEffect(() => {
+    if (isOn) {
+      const generated: FireflyCoord[] = Array.from({ length: 28 }, (_, i) => ({
+        id: i,
+        size: Math.random() * 5 + 3,
+        duration: Math.random() * 15 + 20,
+        delay: Math.random() * 2,
+        x: Array.from({ length: 5 }, () => `${Math.random() * 95}vw`),
+        y: Array.from({ length: 5 }, () => `${Math.random() * 92}vh`),
+      }));
+      setFireflies(generated);
+    } else {
+      setFireflies([]);
+    }
+  }, [isOn]);
+
+  // Static positions for ambient glowing motes
   const ambientParticles = [
     { top: "15%", left: "12%", size: 4, duration: "18s", delay: "0s" },
     { top: "28%", left: "75%", size: 5, duration: "22s", delay: "2s" },
@@ -62,41 +92,69 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     { top: "85%", left: "65%", size: 3, duration: "19s", delay: "5s" },
     { top: "35%", left: "45%", size: 4, duration: "24s", delay: "2.5s" },
     { top: "68%", left: "10%", size: 5, duration: "21s", delay: "0.5s" },
+    { top: "22%", left: "38%", size: 4, duration: "23s", delay: "1.5s" },
+    { top: "52%", left: "90%", size: 3, duration: "17s", delay: "3.5s" },
+    { top: "80%", left: "80%", size: 5, duration: "26s", delay: "2s" },
+    { top: "10%", left: "88%", size: 4, duration: "20s", delay: "4.5s" },
   ];
 
-  // Pointer & Click handlers for the lamp cord
-  const handleCordPull = () => {
-    setDragOffset({ x: 0, y: 35 });
+  // Reliable lamp toggle with spring animation
+  const toggleLamp = () => {
+    setDragOffset({ x: 0, y: 32 });
     setTimeout(() => {
       setDragOffset({ x: 0, y: 0 });
-      setIsOn((prev) => !prev);
-    }, 150);
+    }, 160);
+    setIsOn((prev) => !prev);
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    isDraggingRef.current = true;
     setIsDragging(true);
+    dragDistanceRef.current = 0;
     startPos.current = { x: e.clientX, y: e.clientY };
     setDragOffset({ x: 0, y: 0 });
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
+    if (!isDraggingRef.current) return;
+    const dy = Math.max(0, Math.min(85, (e.clientY - startPos.current.y) * 0.75));
     const dx = Math.max(-25, Math.min(25, (e.clientX - startPos.current.x) * 0.25));
-    const dy = Math.max(0, Math.min(85, (e.clientY - startPos.current.y) * 0.7));
+    dragDistanceRef.current = dy;
     setDragOffset({ x: dx, y: dy });
   };
 
-  const handlePointerUp = () => {
-    if (!isDragging) return;
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
     setIsDragging(false);
-    const pulledY = dragOffset.y;
+    const pulledY = dragDistanceRef.current;
     setDragOffset({ x: 0, y: 0 });
 
-    // If dragged more than 15px or clicked, toggle the lamp
-    if (pulledY > 15 || pulledY < 5) {
-      setIsOn((prev) => !prev);
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    if (pulledY > 15) {
+      // Deliberate downward cord pull
+      toggleLamp();
+      dragDistanceRef.current = 999; // Flag to suppress immediate synthetic click
+    } else {
+      // Minor click or tap, let handleCordClick toggle cleanly
+      dragDistanceRef.current = 0;
     }
+  };
+
+  const handleCordClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (dragDistanceRef.current === 999) {
+      dragDistanceRef.current = 0;
+      return;
+    }
+    toggleLamp();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -168,35 +226,89 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
       {/* Ambient Room Light Glow */}
       <div
         className={`pointer-events-none absolute -top-[30%] left-0 h-[1000px] w-[1000px] rounded-full transition-all duration-700 ${
-          isOn ? "scale-150 opacity-100" : "scale-50 opacity-0"
+          isOn ? "scale-150 opacity-100" : "scale-50 opacity-15"
         }`}
         style={{
           background:
-            "radial-gradient(circle, rgba(255,220,100,0.15) 0%, rgba(255,214,0,0.05) 30%, transparent 70%)",
+            "radial-gradient(circle, rgba(255,220,100,0.18) 0%, rgba(255,214,0,0.08) 35%, transparent 70%)",
         }}
       />
 
-      {/* Floating Ambient Particles (Hardware Composited, Zero JS ticks) */}
+      {/* Top Right Ambient Glow */}
+      <div
+        className={`pointer-events-none absolute -top-[10%] -right-[10%] h-[700px] w-[700px] rounded-full transition-all duration-1000 ${
+          isOn ? "opacity-40 scale-125" : "opacity-10 scale-90"
+        }`}
+        style={{
+          background:
+            "radial-gradient(circle, rgba(255,200,60,0.12) 0%, rgba(217,70,239,0.06) 40%, transparent 70%)",
+        }}
+      />
+
+      {/* Bottom Center Desk Radiance */}
+      <div
+        className={`pointer-events-none absolute -bottom-[20%] left-[20%] h-[600px] w-[900px] rounded-full transition-all duration-700 ${
+          isOn ? "opacity-60 scale-110" : "opacity-0 scale-75"
+        }`}
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(255,214,0,0.12) 0%, rgba(255,180,50,0.04) 50%, transparent 75%)",
+        }}
+      />
+
+      {/* Floating Fireflies (Many Glowing Lights) */}
       {isOn && (
         <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden" style={{ contain: "strict" }}>
-          {ambientParticles.map((p, idx) => (
-            <span
-              key={idx}
+          {fireflies.map((f) => (
+            <motion.span
+              key={f.id}
               className="absolute rounded-full bg-[#FFEA00]"
               style={{
-                top: p.top,
-                left: p.left,
-                width: p.size,
-                height: p.size,
-                boxShadow: "0 0 10px 3px rgba(255,234,0,0.8), 0 0 18px rgba(255,179,0,0.5)",
-                animation: `ambientMoteDrift ${p.duration} ease-in-out infinite alternate`,
-                animationDelay: p.delay,
-                willChange: "transform, opacity",
+                width: f.size,
+                height: f.size,
+                boxShadow:
+                  "0 0 12px 4px rgba(255,234,0,0.9), 0 0 24px rgba(255,180,0,0.7), 0 0 36px rgba(255,214,0,0.4)",
+              }}
+              animate={{
+                x: f.x,
+                y: f.y,
+                opacity: [0.35, 0.95, 0.45, 1, 0.35],
+              }}
+              transition={{
+                duration: f.duration,
+                repeat: Infinity,
+                repeatType: "mirror",
+                ease: "easeInOut",
+                delay: f.delay,
               }}
             />
           ))}
         </div>
       )}
+
+      {/* Drifting Golden Ambient Motes */}
+      <div
+        className={`pointer-events-none fixed inset-0 z-10 overflow-hidden transition-opacity duration-700 ${
+          isOn ? "opacity-80" : "opacity-35"
+        }`}
+      >
+        {ambientParticles.map((p, idx) => (
+          <span
+            key={idx}
+            className="absolute rounded-full bg-[#FFEA00]"
+            style={{
+              top: p.top,
+              left: p.left,
+              width: p.size,
+              height: p.size,
+              boxShadow: "0 0 10px 3px rgba(255,234,0,0.85), 0 0 18px rgba(255,179,0,0.5)",
+              animation: `ambientMoteDrift ${p.duration} ease-in-out infinite alternate`,
+              animationDelay: p.delay,
+              willChange: "transform, opacity",
+            }}
+          />
+        ))}
+      </div>
 
       {/* Main Split Layout */}
       <div className="relative z-10 flex min-h-screen w-full flex-col lg:flex-row">
@@ -276,18 +388,18 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               }}
             />
 
-            {/* Pull Cord String Mechanism (Exclusive Interactive Trigger) */}
+            {/* Pull Cord String Mechanism (Interactive Trigger) */}
             <div
               role="button"
               tabIndex={0}
               id="lamp-pull-string-trigger"
-              onClick={handleCordPull}
+              onClick={handleCordClick}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
-              title="Pull this string to illuminate the desk and reveal candidate details"
-              className="absolute top-[45px] left-[calc(50%+25px)] z-30 w-[60px] h-[125px] flex flex-col items-center justify-start cursor-grab active:cursor-grabbing select-none touch-none group"
+              title="Pull or click this string to toggle the lamp (ON / OFF)"
+              className="absolute top-[45px] left-[calc(50%+25px)] z-30 w-[60px] h-[125px] flex flex-col items-center justify-start cursor-pointer select-none touch-none group"
             >
               {/* String Wire */}
               <svg
@@ -296,7 +408,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               >
                 <path
                   d={`M 30 0 L ${30 + dragOffset.x} ${60 + dragOffset.y}`}
-                  stroke={!isOn ? "#ffd600" : "#666"}
+                  stroke={!isOn ? "#ffd600" : "#888"}
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   className={!isOn ? "filter drop-shadow-[0_0_8px_rgba(255,214,0,0.9)]" : ""}
@@ -310,13 +422,13 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 } ${
                   !isOn
                     ? "animate-pulse shadow-[0_0_22px_rgba(255,214,0,1),inset_0_2px_3px_rgba(255,255,255,0.85)] ring-2 ring-amber-300 scale-110 group-hover:scale-125"
-                    : "shadow-[inset_0_2px_3px_rgba(255,255,255,0.4),0_3px_6px_rgba(0,0,0,0.8)]"
+                    : "shadow-[inset_0_2px_3px_rgba(255,255,255,0.4),0_3px_6px_rgba(0,0,0,0.8)] group-hover:scale-110"
                 }`}
                 style={{
                   transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`,
                   background: !isOn
                     ? "linear-gradient(to bottom, #fff5b8, #ffd600, #b8860b)"
-                    : "linear-gradient(to bottom, #888, #444)",
+                    : "linear-gradient(to bottom, #aaa, #555)",
                 }}
               />
             </div>
@@ -324,7 +436,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
             {/* Bouncing Visual Badge pointing directly to the lamp string */}
             {!isOn && (
               <div
-                onClick={handleCordPull}
+                onClick={toggleLamp}
                 className="absolute top-[108px] left-[calc(50%+85px)] z-30 flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-400/60 px-3 py-1 text-[11px] font-extrabold text-amber-300 shadow-[0_0_20px_rgba(255,214,0,0.45)] backdrop-blur-md cursor-pointer animate-bounce hover:scale-105 active:scale-95 transition-all"
                 title="Click or pull the lamp string to reveal candidate details"
               >
@@ -333,7 +445,19 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               </div>
             )}
 
-
+            {/* Lamp your Career Button (Restored under the lamp) */}
+            <div className="mt-5 text-center select-none z-20">
+              <button
+                type="button"
+                id="btn-lamp-quickstart"
+                onClick={toggleLamp}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-300 backdrop-blur-md transition-all hover:bg-amber-400/25 hover:scale-105 active:scale-95 cursor-pointer shadow-[0_0_15px_rgba(255,214,0,0.25)]"
+                title="Click to toggle lamp light (ON / OFF)"
+              >
+                <span>💡</span>
+                <span>Lamp your Career</span>
+              </button>
+            </div>
           </div>
         </section>
 
