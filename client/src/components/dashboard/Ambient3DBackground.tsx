@@ -54,9 +54,13 @@ const UnicornTorusBackground: React.FC = () => {
         script.onload = () => {
           setTimeout(initStudio, 40);
         };
+        script.onerror = () => {
+          // Graceful fallback: silently continue with native shader background
+        };
         (document.head || document.body).appendChild(script);
       } else {
         existingScript.addEventListener("load", () => setTimeout(initStudio, 40));
+        existingScript.addEventListener("error", () => {});
       }
     }
 
