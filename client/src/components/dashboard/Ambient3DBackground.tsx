@@ -119,7 +119,11 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
             />
           )}
           {variant === "predictive" && (
-            <UnicornTorusBackground />
+            <SphereShieldTiled
+              speed={speed * 50}
+              background="transparent"
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", minWidth: 0, minHeight: 0 }}
+            />
           )}
           {variant === "void-field" && (
             <SphereShieldTiled
