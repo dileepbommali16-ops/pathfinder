@@ -69,7 +69,7 @@ graph TB
     %% =========================================================================
     subgraph CLIENT["🖥️ CLIENT PRESENTATION LAYER (Vercel Global Edge Network)"]
         direction TB
-        UI["⚡ <b>React 19 + TypeScript SPA</b><br/>Obsidian Titanium Theme • Tailwind CSS v4"]
+        UI["⚡ <b>React 19 + TypeScript SPA</b><br/>Crimson Charcoal Theme • Tailwind CSS v4"]
         
         subgraph AUDIOPROC["🎙️ Reactive Voice & Audio Pipeline"]
             VoiceIn["🎤 <b>SpeechRecognition Web API</b><br/>1.5s Natural Silence Detection<br/>Echo Rejection & Debounced Barge-in"]
