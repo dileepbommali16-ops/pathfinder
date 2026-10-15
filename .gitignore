@@ -130,4 +130,6 @@ temp/
 playwright_report.json
 .project-config.json
 .agent/
+.agents/
+skills-lock.json
 .planning/
