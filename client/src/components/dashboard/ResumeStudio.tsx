@@ -9,7 +9,11 @@ import {
   Key,
   LayoutTemplate,
   Loader2,
-  FileCheck
+  FileCheck,
+  Building,
+  Target,
+  ArrowRight,
+  ShieldCheck
 } from "lucide-react";
 import { ShaderButtons } from "@designcodeio/threeui";
 import "@designcodeio/threeui/style.css";
@@ -28,6 +32,7 @@ interface ResumeStudioProps {
   onAnalyze: (file: File | null, text: string) => void;
   isLoading: boolean;
   onDownloadFeedbackPDF: () => void;
+  onApplyResumeSkills?: (skills: string[]) => void;
 }
 
 const DEFAULT_FEEDBACK: ResumeFeedbackData = {
@@ -51,14 +56,25 @@ const DEFAULT_FEEDBACK: ResumeFeedbackData = {
   ]
 };
 
+const TARGET_COMPANIES = [
+  { id: "amazon", name: "Amazon", reqKeywords: ["AWS", "Microservices", "Scalability", "System Design"], benchmark: 82 },
+  { id: "google", name: "Google", reqKeywords: ["Algorithms", "Data Structures", "Distributed Systems", "C++"], benchmark: 88 },
+  { id: "microsoft", name: "Microsoft", reqKeywords: ["Azure", "TypeScript", "CI/CD", "Testing"], benchmark: 80 },
+  { id: "tcs", name: "TCS / Infosys", reqKeywords: ["Java", "SQL", "OOPs", "Agile"], benchmark: 70 },
+  { id: "startup", name: "Fast-Growth AI Startup", reqKeywords: ["FastAPI", "React", "Docker", "LLMs"], benchmark: 76 }
+];
+
 export const ResumeStudio: React.FC<ResumeStudioProps> = ({
   feedback,
   onAnalyze,
   isLoading,
   onDownloadFeedbackPDF,
+  onApplyResumeSkills,
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [rawText, setRawText] = useState("");
+  const [targetCompany, setTargetCompany] = useState(TARGET_COMPANIES[0].id);
+  const [applied, setApplied] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const activeFeedback = feedback || DEFAULT_FEEDBACK;
 
@@ -71,6 +87,17 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
   const handleTriggerAnalysis = () => {
     onAnalyze(selectedFile, rawText);
   };
+
+  const handleSyncToProfile = () => {
+    if (onApplyResumeSkills && activeFeedback.ats_keywords?.length) {
+      onApplyResumeSkills(activeFeedback.ats_keywords);
+      setApplied(true);
+      setTimeout(() => setApplied(false), 3000);
+    }
+  };
+
+  const activeCompanyData = TARGET_COMPANIES.find(c => c.id === targetCompany) || TARGET_COMPANIES[0];
+  const companyMatchScore = Math.min(99, Math.max(30, Math.round(activeFeedback.score * (activeCompanyData.benchmark / 80))));
 
   return (
     <div className="space-y-6">
@@ -86,13 +113,13 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold tracking-tight text-[#F2F2F3]">ATS Resume Intelligence Studio</h2>
+                  <h2 className="text-lg font-bold tracking-tight text-[#F2F2F3]">ATS Resume Intelligence & Auto-Sync</h2>
                   <span className="rounded-full border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FF6B4A]">
                     Gemini Multimodal
                   </span>
                 </div>
                 <p className="text-xs text-[#A1A1AA]">
-                  Upload your PDF resume or paste project bullets for automated ATS scoring, keyword detection, and structural improvement suggestions.
+                  Upload your PDF resume or paste project bullets for automated ATS scoring, company-specific match indexing, and 1-click profile synchronization.
                 </p>
               </div>
             </div>
@@ -168,7 +195,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
             <button
               onClick={handleTriggerAnalysis}
               disabled={isLoading || (!selectedFile && !rawText.trim())}
-              className="flex items-center gap-2 rounded-xl bg-[#FF6B4A] px-6 py-3 text-xs font-bold text-white shadow-[0_0_25px_rgba(255,107,74,0.3)] transition-all hover:bg-[#FF8A6E] active:bg-[#C2452B] disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-[#FF6B4A] px-6 py-3 text-xs font-bold text-white shadow-[0_0_25px_rgba(255,107,74,0.3)] transition-all hover:bg-[#FF8A6E] active:bg-[#C2452B] disabled:opacity-50 cursor-pointer"
             >
               {isLoading ? (
                 <>
@@ -199,7 +226,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#A1A1AA]">ATS Match Readiness</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#A1A1AA]">ATS Baseline Match</span>
                   <span className="rounded-full border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#FF8A6E]">
                     {activeFeedback.score >= 75 ? "Tier-1 Ready" : "Competitive"}
                   </span>
@@ -208,13 +235,81 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               </div>
             </div>
 
-            <button
-              onClick={onDownloadFeedbackPDF}
-              className="flex items-center gap-2 self-start rounded-xl border border-[#2A2A30] bg-white/[0.04] px-4 py-2.5 text-xs font-semibold text-[#F2F2F3] transition-all hover:bg-white/[0.08] hover:text-white hover:border-white/20 sm:self-auto"
-            >
-              <Download className="h-3.5 w-3.5 text-[#FF6B4A]" />
-              <span>Download Feedback PDF</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+              {onApplyResumeSkills && (
+                <button
+                  type="button"
+                  onClick={handleSyncToProfile}
+                  className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-xs font-bold text-zinc-950 transition-all hover:bg-emerald-400 active:scale-95 shadow-sm cursor-pointer"
+                >
+                  {applied ? (
+                    <>
+                      <CheckCircle2 className="h-3.5 w-3.5 stroke-[3]" />
+                      <span>Skills Synced to Profile!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Sync Keywords to Profile</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              <button
+                onClick={onDownloadFeedbackPDF}
+                className="flex items-center gap-2 rounded-xl border border-[#2A2A30] bg-white/[0.04] px-4 py-2.5 text-xs font-semibold text-[#F2F2F3] transition-all hover:bg-white/[0.08] hover:text-white hover:border-white/20"
+              >
+                <Download className="h-3.5 w-3.5 text-[#FF6B4A]" />
+                <span>Download Feedback PDF</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Company Target ATS Benchmarker */}
+          <div className="mt-6 rounded-2xl border border-white/10 bg-[#141417] p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Building className="h-4 w-4 text-[#FF6B4A]" />
+                <span className="text-xs font-bold text-[#F2F2F3]">Target Recruiter ATS Match Index:</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {TARGET_COMPANIES.map(company => (
+                  <button
+                    key={company.id}
+                    type="button"
+                    onClick={() => setTargetCompany(company.id)}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                      targetCompany === company.id
+                        ? "bg-[#FF6B4A] text-white shadow-sm"
+                        : "border border-[#2A2A30] bg-[#1B1B1F] text-[#A1A1AA] hover:text-white"
+                    }`}
+                  >
+                    {company.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#2A2A30] pt-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-[#A1A1AA]">Recruiter Cutoff Score:</span>
+                <span className="font-bold text-white">{activeCompanyData.benchmark}/100</span>
+                <span className="text-[#A1A1AA]">· Your Match:</span>
+                <span className={`font-black ${companyMatchScore >= activeCompanyData.benchmark ? "text-emerald-400" : "text-amber-400"}`}>
+                  {companyMatchScore}%
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-[11px] text-[#A1A1AA]">
+                <span>Essential Keywords for {activeCompanyData.name}:</span>
+                <div className="flex gap-1 font-semibold text-white">
+                  {activeCompanyData.reqKeywords.map((k, i) => (
+                    <span key={i} className="rounded bg-white/10 px-1.5 py-0.5">{k}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* 4 Detail Feedback Cards */}
@@ -287,4 +382,3 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
     </div>
   );
 };
-

@@ -1,0 +1,147 @@
+{
+  "platform": "Pathfinder 2.0",
+  "tagline": "AI Placement Architecture & Career Co-Pilot",
+  "version": "2.0.0",
+  "features": [
+    {
+      "id": "overview",
+      "name": "Placement Readiness Dashboard",
+      "tab": "overview",
+      "path": "/",
+      "icon": "Target",
+      "whatItDoes": "Central analytics hub predicting your probability of campus placement (0-100%) using a calibrated Random Forest model trained on 972 historical student records. Includes HeroMetrics, continuous What-If Career Trajectory Simulator, and Live GitHub Fraud Shield.",
+      "whoItIsFor": "Every engineering student wanting an immediate, data-backed assessment of their placement standing and projected CTC salary tier.",
+      "howToUse": [
+        "Step 1: Check your Placement Readiness gauge and key metrics (CGPA, Coding score, Backlogs, Communication) on the Hero banner.",
+        "Step 2: Scroll to the What-If Sandbox to drag sliders and see how solving more LeetCode problems or shipping projects boosts your CTC in real time."
+      ],
+      "voiceCommands": ["dashboard ki teesukelli", "open dashboard", "show my readiness", "ee page enti", "dashboard enti"]
+    },
+    {
+      "id": "action",
+      "name": "Readiness Command Hub",
+      "tab": "action",
+      "path": "/#action",
+      "icon": "Zap",
+      "whatItDoes": "Tactical action engine that translates your skill gaps into immediate high-impact tasks, diagnostic audits, and focused preparation sprints.",
+      "whoItIsFor": "Students looking for actionable daily directives instead of passive dashboards.",
+      "howToUse": [
+        "Step 1: Review your prioritized Next Actions cards tailored to your target role.",
+        "Step 2: Click 'Launch Diagnostic' or 'Start Sprint' to immediately execute that preparation task."
+      ],
+      "voiceCommands": ["action tab ki teesukelli", "open actions", "what should I do next", "readiness command"]
+    },
+    {
+      "id": "skills",
+      "name": "6-Week Placement Roadmap & Missions",
+      "tab": "skills",
+      "path": "/#skills",
+      "icon": "Compass",
+      "whatItDoes": "Constructs an adaptive semester-by-semester 6-week milestone roadmap targeting your dream role, detailing DSA patterns, CS core subjects, and project builds for each week.",
+      "whoItIsFor": "Students preparing for campus drive seasons who need a clear week-by-week study syllabus.",
+      "howToUse": [
+        "Step 1: Inspect the current week's mission deliverables and recommended study resources.",
+        "Step 2: Mark completed weekly milestones to advance your preparation progress and recalibrate odds."
+      ],
+      "voiceCommands": ["roadmap chupinchu", "skills tab ki teesukelli", "show 6 week roadmap", "my study plan"]
+    },
+    {
+      "id": "coach",
+      "name": "AI Career Coach & Voice Interviewer",
+      "tab": "coach",
+      "path": "/#coach",
+      "icon": "Bot",
+      "whatItDoes": "Screen-aware, bilingual (English & Telugu) conversational AI mentor and real-time voice mock interviewer powered by Gemini Flash. Evaluates candidate answers using the STAR method, analyzes speech cadence, and tracks filler words.",
+      "whoItIsFor": "Students practicing technical viva, behavioral rounds, or needing quick senior guidance on projects, roles, and resume doubts.",
+      "howToUse": [
+        "Step 1: Click the microphone button and select your language (English, Telugu, or Hindi).",
+        "Step 2: Answer the interview questions aloud to receive real-time sentence-by-sentence voice feedback and clarity scores."
+      ],
+      "voiceCommands": ["coach tab ki teesukelli", "open ai coach", "take my mock interview", "start voice interview"]
+    },
+    {
+      "id": "projects",
+      "name": "Project Blueprints Catalog (23 Architectures)",
+      "tab": "projects",
+      "path": "/#projects",
+      "icon": "Lightbulb",
+      "whatItDoes": "Curated catalog of 23 production-grade portfolio architectures (6 flagship + 17 Smart India Hackathon blueprints) with difficulty tiers, component stacks, system schemas, and viva defense talking points.",
+      "whoItIsFor": "Students wanting to replace tutorial clones with high-impact, recruiter-ready full-stack, AI, and embedded architectures.",
+      "howToUse": [
+        "Step 1: Filter projects by your branch or difficulty level (Small, Medium, Hard).",
+        "Step 2: Click on any blueprint card to open its step-by-step build order, architecture diagram, and Google X-Y-Z resume bullet."
+      ],
+      "voiceCommands": ["projects tab ki teesukelli", "show project blueprints", "suggest a project", "open 23 projects"]
+    },
+    {
+      "id": "analytics",
+      "name": "Cohort Analytics & TPO Command Center",
+      "tab": "analytics",
+      "path": "/#analytics",
+      "icon": "TrendingUp",
+      "whatItDoes": "Analyzes 972 verified student placement records across 9 engineering disciplines. Features an institutional TPO mode with early-warning at-risk student tracking and 1-click NAAC Criterion 5.2.1 / NIRF compliance reports.",
+      "whoItIsFor": "Students researching branch hiring cutoffs, and college Placement Officers (TPOs) conducting accreditation audits.",
+      "howToUse": [
+        "Step 1: Use the interactive dropdowns to filter by graduation year, engineering branch, and skill domain.",
+        "Step 2: Switch to 'TPO & NAAC 5.2' mode to audit at-risk candidate cohorts or export the printable compliance report."
+      ],
+      "voiceCommands": ["analytics tab ki teesukelli", "open cohort analytics", "show tpo report", "naac report print cheyyi"]
+    },
+    {
+      "id": "resume",
+      "name": "ATS Resume Studio & Resume Builder",
+      "tab": "resume",
+      "path": "/#resume",
+      "icon": "FileText",
+      "whatItDoes": "Multimodal PDF resume intelligence that benchmarks your resume against Amazon, Google, Microsoft, and TCS recruitment standards. Includes 1-click profile sync and a built-in one-page ATS Resume Builder.",
+      "whoItIsFor": "Students optimizing their CV to clear automated ATS applicant screening algorithms.",
+      "howToUse": [
+        "Step 1: Drag and drop your PDF resume to generate ATS compatibility scores and missing keyword breakdowns.",
+        "Step 2: Click 'Sync Keywords to Profile' or 'Build Resume' to generate and download an ATS-compliant 1-page PDF resume."
+      ],
+      "voiceCommands": ["resume studio ki teesukelli", "open resume studio", "review my resume", "resume build cheyyi"]
+    },
+    {
+      "id": "branches",
+      "name": "Branch Intelligence & Course Trends",
+      "tab": "branches",
+      "path": "/#branches",
+      "icon": "GraduationCap",
+      "whatItDoes": "Presents comparative departmental placement statistics, salary distributions, and high-converting course trends across 9 engineering branches (CSE, IT, ECE, EEE, MECH, CIVIL, AIML, CSD).",
+      "whoItIsFor": "Students comparing branch-specific recruitment trends or non-CS students targeting software roles.",
+      "howToUse": [
+        "Step 1: Select your target department from the branch selector.",
+        "Step 2: Review median packages, top recruiter patterns, and core technical courses driving placement conversion."
+      ],
+      "voiceCommands": ["branches tab ki teesukelli", "open branch intelligence", "compare branches"]
+    },
+    {
+      "id": "defense",
+      "name": "Project Architecture Defense Simulator",
+      "tab": "defense",
+      "path": "/#defense",
+      "icon": "ShieldAlert",
+      "whatItDoes": "Simulates Round 2 technical interview architecture questioning, testing system design choices, caching strategies, and edge-case failure handling for your portfolio project.",
+      "whoItIsFor": "Final year students preparing for rigorous technical interview rounds.",
+      "howToUse": [
+        "Step 1: Select your project architecture blueprint.",
+        "Step 2: Defend your design against the interviewer's failure scenarios and receive instant STAR scoring."
+      ],
+      "voiceCommands": ["defense tab ki teesukelli", "open project defense", "interview defense practice"]
+    },
+    {
+      "id": "profile",
+      "name": "Candidate Profile & Settings (SSOT)",
+      "tab": "profile",
+      "path": "/#profile",
+      "icon": "User",
+      "whatItDoes": "Single Source of Truth (SSOT) managing your academic records (CGPA, backlogs, branch), coding handles (GitHub, LeetCode), and target company compensation tiers.",
+      "whoItIsFor": "Students updating their profile parameters to recalibrate all AI prediction models.",
+      "howToUse": [
+        "Step 1: Update your academic details, verified skills, or coding profile links.",
+        "Step 2: Click 'Save Profile' to immediately synchronize changes across all AI features."
+      ],
+      "voiceCommands": ["profile tab ki teesukelli", "open profile settings", "update my cgpa"]
+    }
+  ]
+}

@@ -22,6 +22,7 @@ from backend.gemini_engine import (
     generate_smart_fallback_reply
 )
 from backend.pdf_engine import extract_text_from_pdf
+from backend.voice_engine import stream_voice_tokens
 
 ai_router = APIRouter(tags=["AI Mentor & Coaching"])
 
@@ -152,6 +153,53 @@ async def chat_stream_endpoint(request_body: ChatRequest, request: Request):
         except Exception as e:
             err_data = json.dumps({"error": str(e), "done": True})
             yield f"data: {err_data}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+
+@ai_router.post("/api/voice/stream")
+@ai_router.post("/api/ai/voice/stream")
+async def voice_stream_endpoint(request_body: Dict[str, Any], request: Request):
+    """
+    Ultra-low latency streaming voice endpoint using Server-Sent Events (SSE).
+    Streams tokens in real time from Gemini Flash with sentence-by-sentence TTS delivery.
+    """
+    client_ip = get_client_ip(request)
+    allowed, _ = rate_limiter.check(f"voice_stream:{client_ip}", max_requests=40, window_seconds=60)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Too many voice requests. Please take a brief breath.")
+
+    message = sanitize_user_input(str(request_body.get("message", "")), max_length=2000)
+    history = request_body.get("history", []) or request_body.get("chat_history", [])
+    profile = request_body.get("profile", None)
+    language = request_body.get("language", "en-IN")
+    active_tab = request_body.get("active_tab", "coach")
+    tutor_state = request_body.get("tutor_state", None)
+
+    async def event_generator():
+        try:
+            async for token in stream_voice_tokens(
+                message=message,
+                history=history,
+                profile=profile,
+                language=language,
+                active_tab=active_tab,
+                tutor_state=tutor_state
+            ):
+                data = json.dumps({"token": token, "done": False})
+                yield f"data: {data}\n\n"
+            yield f"data: {json.dumps({'token': '', 'done': True})}\n\n"
+        except Exception as e:
+            logger.error(f"[Voice Stream Router] Error during voice stream: {e}", exc_info=True)
+            yield f"data: {json.dumps({'error': 'Voice service temporary error', 'done': True})}\n\n"
 
     return StreamingResponse(
         event_generator(),

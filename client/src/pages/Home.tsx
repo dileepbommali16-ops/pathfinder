@@ -23,6 +23,8 @@ import { SkillIntelligence } from "@/components/dashboard/SkillIntelligence";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { OnboardingResultScreen } from "@/components/onboarding/OnboardingResultScreen";
 import { ProfileSettings } from "@/components/dashboard/ProfileSettings";
+import { LiveSkillVerifier } from "@/components/dashboard/LiveSkillVerifier";
+import { OnePageResumeModal } from "@/components/dashboard/OnePageResumeModal";
 import { StudentProfileState, ReadinessAuditData, DEFAULT_STUDENT_PROFILE } from "@/types/profile";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
@@ -39,6 +41,7 @@ import {
   FileText,
   GraduationCap,
   ShieldAlert,
+  ShieldCheck,
   User,
   Target,
   Loader2
@@ -62,6 +65,7 @@ export default function Home() {
 
   const [auditResult, setAuditResult] = useState<ReadinessAuditData | null>(null);
   const [showResultScreen, setShowResultScreen] = useState<boolean>(false);
+  const [showOnePageResume, setShowOnePageResume] = useState<boolean>(false);
 
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -1130,7 +1134,7 @@ export default function Home() {
               setActiveTab("coach");
               handleSendMessage("Let's do an interactive mock interview for my role. Ask me question 1.");
             }}
-            onNavigateTab={(tab) => {
+            onNavigateTab={(tab: string) => {
               setShowResultScreen(false);
               setActiveTab(tab as TabId);
             }}
@@ -1368,6 +1372,11 @@ export default function Home() {
                 <WhatIfSimulator
                   currentProfile={profile}
                   currentScore={prediction.chance}
+                  onApplySimulatedProfile={(updated) => {
+                    const merged = { ...profile, ...updated };
+                    setProfile(merged);
+                    fetchPrediction(merged);
+                  }}
                 />
               </section>
 
@@ -1393,6 +1402,28 @@ export default function Home() {
                     fetchPrediction(DEFAULT_STUDENT_PROFILE);
                   }}
                   isCalculating={isCalculating}
+                />
+              </section>
+
+              {/* Section 6.5: Live Technical Footprint & Fraud Shield */}
+              <section id="career-live-skill-verifier" className="space-y-4">
+                <SectionHeader
+                  title="Live Technical Footprint & Fraud Shield"
+                  description="Audit real-time GitHub repositories, programming languages, and cryptographic authenticity badge"
+                  badge="Anti-Padding"
+                  accent="cyan"
+                  icon={ShieldCheck}
+                  helperLabel="Validates original code authorship and syncs verified technologies"
+                />
+                <LiveSkillVerifier
+                  currentProfile={profile}
+                  onApplyVerifiedSkills={(skills) => {
+                    const updatedSkills = Array.from(new Set([...(profile.technicalSkills || []), ...skills]));
+                    const merged = { ...profile, technicalSkills: updatedSkills };
+                    setProfile(merged);
+                    handleSaveProfile(merged);
+                    fetchPrediction(merged);
+                  }}
                 />
               </section>
 
@@ -1580,6 +1611,10 @@ export default function Home() {
                 isLoading={isChatLoading}
                 isServerWakingUp={isChatWakingUp}
                 targetRole={profile.targetRole}
+                profile={profile}
+                activeTab={activeTab}
+                onNavigateTab={(tab) => setActiveTab(tab as TabId)}
+                onOpenResumeBuilder={() => setShowOnePageResume(true)}
               />
             </motion.div>
           )}
@@ -1637,6 +1672,13 @@ export default function Home() {
                 onAnalyze={handleAnalyzeResume}
                 isLoading={isAnalyzingResume}
                 onDownloadFeedbackPDF={handleDownloadResumePDF}
+                onApplyResumeSkills={(skills) => {
+                  const updatedSkills = Array.from(new Set([...(profile.technicalSkills || []), ...skills]));
+                  const merged = { ...profile, technicalSkills: updatedSkills };
+                  setProfile(merged);
+                  handleSaveProfile(merged);
+                  fetchPrediction(merged);
+                }}
               />
             </motion.div>
           )}
@@ -1745,6 +1787,13 @@ export default function Home() {
             <span>Ask Coach About This Page</span>
           </button>
         )}
+
+        {/* 1-Page ATS Engineering Resume Modal */}
+        <OnePageResumeModal
+          isOpen={showOnePageResume}
+          onClose={() => setShowOnePageResume(false)}
+          profile={profile}
+        />
       </main>
     </div>
   );
