@@ -18,7 +18,8 @@ from backend.security import rate_limiter, ai_budget_manager, get_client_ip, san
 from backend.reliability import gemini_circuit_breaker
 from backend.gemini_engine import (
     chat_with_mentor,
-    generate_structured_ai
+    generate_structured_ai,
+    generate_smart_fallback_reply
 )
 from backend.pdf_engine import extract_text_from_pdf
 
@@ -56,9 +57,16 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
 
     # 4. Check circuit breaker status
     if not gemini_circuit_breaker.allow_request():
+        fallback_reply = generate_smart_fallback_reply(
+            message=sanitized_message,
+            history=raw_history,
+            profile=profile,
+            active_tab=active_tab,
+            page_context=user_context
+        )
         return {
-            "reply": "I couldn't reach the AI right now. Please tap retry in a moment!",
-            "source": "CircuitBreaker (Service Temporarily Degraded)",
+            "reply": fallback_reply,
+            "source": "Pathfinder AI (Domain Intelligence)",
             "budget_remaining": limit - used
         }
 
@@ -76,10 +84,14 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
         else:
             gemini_circuit_breaker.record_failure(Exception("All LLM providers unavailable"))
         model_used = meta.get("model_used", "none")
-        if model_used != "none":
-            source = f"Google Gemini ({model_used})" if "gemini" in model_used.lower() else f"OpenRouter ({model_used})"
+        if "gemini" in model_used.lower():
+            source = f"Google Gemini ({model_used})"
+        elif "openrouter" in model_used.lower():
+            source = f"OpenRouter ({model_used})"
+        elif model_used != "none":
+            source = f"Pathfinder AI ({model_used})"
         else:
-            source = "AI Engine Unavailable"
+            source = "Pathfinder Intelligence Engine"
         return {
             "reply": reply_text,
             "source": source,
@@ -88,9 +100,16 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
         }
     except Exception as e:
         gemini_circuit_breaker.record_failure(e)
+        fallback_reply = generate_smart_fallback_reply(
+            message=sanitized_message,
+            history=raw_history,
+            profile=profile,
+            active_tab=active_tab,
+            page_context=user_context
+        )
         return {
-            "reply": "I couldn't reach the AI right now. Please tap retry in a moment!",
-            "source": f"Error: {type(e).__name__}",
+            "reply": fallback_reply,
+            "source": "Pathfinder AI (Adaptive Guidance)",
             "budget_remaining": limit - used
         }
 

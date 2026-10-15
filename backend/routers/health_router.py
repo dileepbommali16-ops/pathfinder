@@ -132,7 +132,7 @@ def cache_stats_endpoint():
 
 @health_router.get("/api/gemini/ping")
 def gemini_ping():
-    """Diagnostic ping testing connectivity to Google Gemini API."""
+    """Diagnostic ping testing connectivity to Google Gemini API and finding working models."""
     import urllib.request
     import urllib.error
     import json
@@ -141,15 +141,37 @@ def gemini_ping():
     if not api_key:
         return {"status": "no_key", "message": "GEMINI_API_KEY is not set"}
 
+    # 1. Fetch available models from API
+    available_models = []
+    try:
+        req = urllib.request.Request(
+            f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}",
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            for m in data.get("models", []):
+                name = m.get("name", "").replace("models/", "")
+                methods = m.get("supportedGenerationMethods", [])
+                if "generateContent" in methods:
+                    available_models.append(name)
+    except Exception as e:
+        return {"status": "list_models_failed", "error": str(e)}
+
+    # 2. Test candidate models
     results = {}
-    test_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
-    for m in test_models:
+    working_models = []
+    candidates_to_test = [m for m in available_models if "flash" in m.lower() or "gemini" in m.lower()][:10]
+
+    for m in candidates_to_test:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
-        payload = json.dumps({"contents": [{"parts": [{"text": "ping"}]}]}).encode("utf-8")
+        payload = json.dumps({"contents": [{"parts": [{"text": "Hi"}]}]}).encode("utf-8")
         req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
         try:
-            with urllib.request.urlopen(req, timeout=8) as resp:
+            with urllib.request.urlopen(req, timeout=6) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
                 results[m] = {"status": "ok", "code": resp.status}
+                working_models.append(m)
         except urllib.error.HTTPError as he:
             b = ""
             try:
@@ -160,4 +182,11 @@ def gemini_ping():
         except Exception as e:
             results[m] = {"status": "error", "message": str(e)}
 
-    return {"configured": True, "results": results}
+    return {
+        "configured": True,
+        "available_models_count": len(available_models),
+        "available_models": available_models,
+        "tested": results,
+        "working_models": working_models
+    }
+
