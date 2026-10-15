@@ -31,8 +31,11 @@ Pathfinder bridges this divide by synthesizing academic parameters, verified ski
   - English (`en-IN`)
   - Telugu (`te-IN`): Spoken text is rendered in native Telugu script (`తెలుగు`) so OS speech engines pronounce it phonetically.
   - Hindi (`hi-IN`)
+- **🔊 "Test Speaker" Audio Diagnostic Engine**: One-click instant audio hardware check! Generates a crystal-clear 3-tone harmonic chime (C5-E5-G5 via HTML5 Web Audio API) coupled with native speech synthesis test phrases in English, Telugu, or Hindi to immediately verify speaker health and sound drivers.
+- **🛡️ Chromium Audio Garbage-Collection Armor**: Maintains persistent active utterance references (`activeUtterancesRef`) to eliminate the infamous Chromium V8 bug on Chrome & Edge where speech synthesis abruptly dies mid-sentence.
 - **TTS-Safe Acronym Expansion**: Automatically expands technical jargon for natural speech synthesis (`CGPA` $\to$ `C G P A`, `DSA` $\to$ `D S A`, `DBMS` $\to$ `D B M S`, `SQL` $\to$ `Sequel`, $O(n \log n) \to$ `O of N log N`, `SDE` $\to$ `S D E`).
-- **1-Second Silence Auto-Stop & Instant Barge-in**: Automatically submits speech after ~1000ms of user silence; clicking Stop or Mic immediately halts speech synthesis and aborts pending streams.
+- **1.8s Natural Pause Silence Detection & Instant Barge-in**: Intelligently submits speech after ~1800ms of user silence for natural speech cadence; clicking Stop or Mic immediately halts speech synthesis and aborts pending streams.
+- **Voice-Triggered Universal Auto-Speech**: Any query initiated by microphone automatically reads the AI answer aloud across both standard Chat and Mock Interview modes.
 
 ### 2. 🛠️ 23-Project Blueprint Interactive Voice Tutor
 - Full catalog of **23 production-grade portfolio architectures** (6 flagship systems + 17 Smart India Hackathon problem statements).
@@ -48,17 +51,26 @@ Pathfinder bridges this divide by synthesizing academic parameters, verified ski
 - Comprehensive site knowledge cataloging all 10 platform tabs, their target audience, and two-step action guides.
 - Safe allowlisted voice navigation commands (e.g., *"Skills tab ki teesukelli"* $\to$ `[[NAVIGATE:skills]]`).
 
-### 5. 🧠 Calibrated ML Placement Probability Engine
+### 5. 👁️ Hacker Eye — Show/Hide Password Security Toggle
+- Sleek, cyber-styled interactive visibility toggle directly integrated into the LampLogin authentication card.
+- Allows students and evaluators to instantly inspect password entry without accidental submission errors.
+
+### 6. ⚡ Zero-Cold-Start Health & Keep-Alive Resilience
+- Instant pre-warm signal dispatched on initial SPA mount (`/api/health`), waking the backend container before the student even enters their query.
+- Automated 9-minute background heartbeat keeps the cloud deployment active while evaluators and LinkedIn visitors explore the live demo.
+- Automatic retry on 502/503/504 gateway wake-up events with user-friendly *"Waking up server..."* progress indicators.
+
+### 7. 🧠 Calibrated ML Placement Probability Engine
 - Scikit-Learn **Random Forest Classifier (120 trees, 88% accuracy)** trained on 972 historical records across 9 branches.
 - Outputs calibrated placement probabilities (0–100%), salary tier bands (Service, Product, Unicorn), and SHAP-like feature importance breakdowns.
 
-### 6. 🛡️ Live Skill Verifier & Fraud Shield
+### 8. 🛡️ Live Skill Verifier & Fraud Shield
 - Dual-layer audit engine that validates claimed skills against GitHub commit trees and LeetCode algorithmic benchmarks to prevent resume inflation.
 
-### 7. ⚖️ What-If Simulator & Sensitivity Matrix
+### 9. ⚖️ What-If Simulator & Sensitivity Matrix
 - Real-time parameter sliders allowing candidates to simulate how boosting CGPA, clearing backlogs, or gaining an internship shifts placement probability and package expectations.
 
-### 8. 📊 Cohort Analytics & TPO Command Center
+### 10. 📊 Cohort Analytics & TPO Command Center
 - Institutional governance dashboard analyzing 972 student records, salary distributions, department cutoffs, and NAAC 5.2 placement criteria.
 
 ---

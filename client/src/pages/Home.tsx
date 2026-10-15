@@ -137,6 +137,16 @@ export default function Home() {
     return () => window.removeEventListener("pathfinder_logout", handleRemoteLogout);
   }, []);
 
+  // Pre-warm backend immediately on mount (wakes up sleeping Render instance early)
+  // and keep-alive every 9 minutes so visitors browsing the demo never hit cold starts
+  useEffect(() => {
+    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
+    const interval = setInterval(() => {
+      fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
+    }, 9 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Complete OAuth returns before rendering either the login card or dashboard.
   useEffect(() => {
     if (typeof window === "undefined") return;
