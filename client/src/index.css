@@ -42,137 +42,149 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* ==========================================================================
+   SINGLE SOURCE OF TRUTH: CRIMSON-CHARCOAL PALETTE
+   - Base background: near-black charcoal (#0a0a0c)
+   - Card/panel background: #16161a
+   - Primary text: off-white (#f2f2f0)
+   - Secondary/muted text: #8a8a92
+   - Borders: rgba(255,255,255,0.08)
+   - PRIMARY ACCENT: crimson-red (#ff3b5c)
+   - Secondary accent: neutral silver/grey (#c7c7cf)
+   ========================================================================== */
+
 :root {
-  /* Centralized Text Color System (WCAG AA compliant against #07111f / #05070e) */
-  --text-primary: #F8FAFC;        /* 17.5:1 contrast against dark background */
-  --text-secondary: #94A3B8;      /* 8.5:1 contrast */
-  --text-muted: #64748B;          /* 4.6:1 contrast (WCAG AA min 4.5:1 for body) */
-  --text-heading: #FFFFFF;
+  --background: #0a0a0c;
+  --foreground: #f2f2f0;
 
-  /* Modern High-End Multi-Accent Text System */
-  --text-accent-violet: #A78BFA;      /* AI Coach, intelligence badges, model insight (Kept Violet!) */
-  --text-accent-violet-soft: #C4B5FD; /* Secondary AI labels, soft mentor chips */
-  --text-accent-cyan: #38BDF8;        /* Metrics, placement rates, peak packages, scores (Electric Sky Cyan) */
-  --text-accent-cyan-soft: #7DD3FC;   /* Secondary metric tags, status 'cleared' badges */
-  --text-accent-rose: #FB7185;        /* Critical priority, action items, gap highlights (Vivid Neon Rose) */
-  --text-accent-rose-soft: #FDA4AF;   /* Alert chips, warning badges */
-  --text-accent-fuchsia: #E879F9;     /* Skills tags, language badges, tech stack (Modern Fuchsia) */
-  --text-accent-ice: #F1F5F9;         /* High-contrast crisp platinum titles */
-  --text-accent: #38BDF8;             /* General key metric accent */
-  --text-accent-soft: #7DD3FC;        /* General key metric soft accent */
-  --text-accent-strong: #0284C7;      /* High contrast dark background accent */
-
-  /* Section Accent Themes */
-  --accent-readiness: #10B981;    /* Emerald Green - Readiness Command & Overview */
-  --accent-readiness-bg: rgba(16, 185, 129, 0.12);
-  --accent-readiness-border: rgba(16, 185, 129, 0.30);
-
-  --accent-roadmap: #A855F7;      /* Purple - 6-Week Roadmap & Skills */
-  --accent-roadmap-bg: rgba(168, 85, 247, 0.12);
-  --accent-roadmap-border: rgba(168, 85, 247, 0.30);
-
-  --accent-coach: #06B6D4;        /* Cyan/Teal - AI Career Coach */
-  --accent-coach-bg: rgba(6, 182, 212, 0.12);
-  --accent-coach-border: rgba(6, 182, 212, 0.30);
-
-  --accent-projects: #F59E0B;     /* Amber - Project Blueprints */
-  --accent-projects-bg: rgba(245, 158, 11, 0.12);
-  --accent-projects-border: rgba(245, 158, 11, 0.30);
-
-  --accent-cohort: #3B82F6;       /* Blue - Cohort Analytics */
-  --accent-cohort-bg: rgba(59, 130, 246, 0.12);
-  --accent-cohort-border: rgba(59, 130, 246, 0.30);
-
-  --accent-resume: #F43F5E;       /* Rose/Pink - ATS Resume Studio */
-  --accent-resume-bg: rgba(244, 63, 94, 0.12);
-  --accent-resume-border: rgba(244, 63, 94, 0.30);
-
-  /* Semantic Meaning Colors */
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #3B82F6;
-
-  /* Layout, Card, and Spacing Tokens */
-  --card-bg: rgba(15, 23, 42, 0.70);
+  --card: #16161a;
+  --card-foreground: #f2f2f0;
+  --card-bg: #16161a;
   --card-border: rgba(255, 255, 255, 0.08);
-  --card-radius: 1.25rem;
-  --card-padding: 1.75rem; /* 28px consistent padding */
-  --card-gap: 1.5rem;      /* 24px consistent gap */
 
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-600);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --radius: 0.75rem;
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: #F8FAFC;
-  --card: rgba(15, 23, 42, 0.70);
-  --card-foreground: #F8FAFC;
-  --popover: rgba(15, 23, 42, 0.95);
-  --popover-foreground: #F8FAFC;
-  --secondary: rgba(30, 41, 59, 0.7);
-  --secondary-foreground: #94A3B8;
-  --muted: rgba(30, 41, 59, 0.5);
-  --muted-foreground: #64748B;
-  --accent: rgba(51, 65, 85, 0.5);
-  --accent-foreground: #FFFFFF;
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
+  --popover: #16161a;
+  --popover-foreground: #f2f2f0;
+
+  --primary: #ff3b5c;
+  --primary-foreground: #ffffff;
+
+  --secondary: #16161a;
+  --secondary-foreground: #c7c7cf;
+
+  --muted: #16161a;
+  --muted-foreground: #8a8a92;
+
+  --accent: #ff3b5c;
+  --accent-foreground: #ffffff;
+
+  --destructive: #ff3b5c;
+  --destructive-foreground: #ffffff;
+
   --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #3B82F6;
-  --sidebar: rgba(15, 23, 42, 0.9);
-  --sidebar-foreground: #F8FAFC;
-  --sidebar-accent: rgba(30, 41, 59, 0.8);
-  --sidebar-accent-foreground: #FFFFFF;
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #ff3b5c;
+
+  --sidebar: #0a0a0c;
+  --sidebar-foreground: #f2f2f0;
+  --sidebar-primary: #ff3b5c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #16161a;
+  --sidebar-accent-foreground: #f2f2f0;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #3B82F6;
+  --sidebar-ring: #ff3b5c;
+
+  --chart-1: #ff3b5c;
+  --chart-2: #c7c7cf;
+  --chart-3: #8a8a92;
+  --chart-4: #4a4a52;
+  --chart-5: #2a2a30;
+
+  --radius: 0.75rem;
+  --card-radius: 1.25rem;
+  --card-padding: 1.75rem;
+  --card-gap: 1.5rem;
+
+  /* Centralized Text Color Tokens */
+  --text-primary: #f2f2f0;
+  --text-secondary: #8a8a92;
+  --text-muted: #8a8a92;
+  --text-heading: #f2f2f0;
+
+  /* Unified Single-Accent System */
+  --text-accent: #ff3b5c;
+  --text-accent-soft: #c7c7cf;
+  --text-accent-strong: #ff3b5c;
+  --text-accent-crimson: #ff3b5c;
+  --text-accent-silver: #c7c7cf;
+
+  /* Section Accent Unified Tokens */
+  --accent-readiness: #ff3b5c;
+  --accent-readiness-bg: rgba(255, 59, 92, 0.12);
+  --accent-readiness-border: rgba(255, 59, 92, 0.30);
+
+  --accent-roadmap: #ff3b5c;
+  --accent-roadmap-bg: rgba(255, 59, 92, 0.12);
+  --accent-roadmap-border: rgba(255, 59, 92, 0.30);
+
+  --accent-coach: #ff3b5c;
+  --accent-coach-bg: rgba(255, 59, 92, 0.12);
+  --accent-coach-border: rgba(255, 59, 92, 0.30);
+
+  --accent-projects: #ff3b5c;
+  --accent-projects-bg: rgba(255, 59, 92, 0.12);
+  --accent-projects-border: rgba(255, 59, 92, 0.30);
+
+  --accent-cohort: #ff3b5c;
+  --accent-cohort-bg: rgba(255, 59, 92, 0.12);
+  --accent-cohort-border: rgba(255, 59, 92, 0.30);
+
+  --accent-resume: #ff3b5c;
+  --accent-resume-bg: rgba(255, 59, 92, 0.12);
+  --accent-resume-border: rgba(255, 59, 92, 0.30);
+
+  --color-success: #c7c7cf;
+  --color-warning: #ff3b5c;
+  --color-error: #ff3b5c;
+  --color-info: #c7c7cf;
 }
 
 .dark {
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --text-heading: #FFFFFF;
-
-  --accent-readiness: #10B981;
-  --accent-roadmap: #A855F7;
-  --accent-coach: #06B6D4;
-  --accent-projects: #F59E0B;
-  --accent-cohort: #3B82F6;
-  --accent-resume: #F43F5E;
-
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #3B82F6;
-
-  --card-bg: rgba(15, 23, 42, 0.70);
+  --background: #0a0a0c;
+  --foreground: #f2f2f0;
+  --card: #16161a;
+  --card-foreground: #f2f2f0;
+  --card-bg: #16161a;
   --card-border: rgba(255, 255, 255, 0.08);
-
-  --background: #07111f;
-  --foreground: #F8FAFC;
-  --card: rgba(15, 23, 42, 0.70);
-  --card-foreground: #F8FAFC;
-  --popover: rgba(15, 23, 42, 0.95);
-  --popover-foreground: #F8FAFC;
-  --secondary: rgba(30, 41, 59, 0.7);
-  --secondary-foreground: #94A3B8;
-  --muted: rgba(30, 41, 59, 0.5);
-  --muted-foreground: #64748B;
-  --accent: rgba(51, 65, 85, 0.5);
-  --accent-foreground: #FFFFFF;
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
+  --popover: #16161a;
+  --popover-foreground: #f2f2f0;
+  --secondary: #16161a;
+  --secondary-foreground: #c7c7cf;
+  --muted: #16161a;
+  --muted-foreground: #8a8a92;
+  --accent: #ff3b5c;
+  --accent-foreground: #ffffff;
+  --destructive: #ff3b5c;
+  --destructive-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #3B82F6;
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #ff3b5c;
+
+  --text-primary: #f2f2f0;
+  --text-secondary: #8a8a92;
+  --text-muted: #8a8a92;
+  --text-heading: #f2f2f0;
+
+  --accent-readiness: #ff3b5c;
+  --accent-roadmap: #ff3b5c;
+  --accent-coach: #ff3b5c;
+  --accent-projects: #ff3b5c;
+  --accent-cohort: #ff3b5c;
+  --accent-resume: #ff3b5c;
+
+  --color-success: #c7c7cf;
+  --color-warning: #ff3b5c;
+  --color-error: #ff3b5c;
+  --color-info: #c7c7cf;
 }
 
 @layer base {
@@ -181,10 +193,10 @@
     outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
   }
   body {
-    background-color: var(--background);
-    color: var(--foreground);
+    background-color: #0a0a0c;
+    color: #f2f2f0;
     font-family: "DM Sans", sans-serif;
-    background: #07111f;
+    background: #0a0a0c;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: "Space Grotesk", sans-serif;
@@ -203,24 +215,11 @@
 }
 
 @layer components {
-  /**
-   * Custom container utility that centers content and adds responsive padding.
-   *
-   * This overrides Tailwind's default container behavior to:
-   * - Auto-center content (mx-auto)
-   * - Add responsive horizontal padding
-   * - Set max-width for large screens
-   *
-   * Usage: <div className="container">...</div>
-   *
-   * For custom widths, use max-w-* utilities directly:
-   * <div className="max-w-6xl mx-auto px-4">...</div>
-   */
   .container {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
+    padding-left: 1rem;
     padding-right: 1rem;
   }
 
@@ -231,145 +230,46 @@
 
   @media (min-width: 640px) {
     .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
+      padding-left: 1.5rem;
       padding-right: 1.5rem;
     }
   }
 
   @media (min-width: 1024px) {
     .container {
-      padding-left: 2rem; /* 32px - desktop padding */
+      padding-left: 2rem;
       padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
+      max-width: 1280px;
     }
   }
 }
 
-
-/* Sylva-inspired living-green ambience: decorative only, with low contrast so dashboard content stays crisp. */
+/* Subtle Crimson-Charcoal Ambient Light: No green, No blue, No purple */
 .pathfinder-ambient {
   isolation: isolate;
-  opacity: 0.76;
+  opacity: 0.45;
 }
 
 .pathfinder-ambient__wash {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 12% 8%, rgba(74, 222, 128, 0.12), transparent 28%),
-    radial-gradient(circle at 86% 18%, rgba(34, 211, 238, 0.10), transparent 24%),
-    radial-gradient(circle at 52% 96%, rgba(139, 92, 246, 0.08), transparent 32%);
+    radial-gradient(circle at 14% 10%, rgba(255, 59, 92, 0.05), transparent 30%),
+    radial-gradient(circle at 86% 16%, rgba(255, 255, 255, 0.03), transparent 25%),
+    radial-gradient(circle at 50% 95%, rgba(255, 59, 92, 0.03), transparent 35%);
 }
 
-.pathfinder-ambient__moss {
-  position: absolute;
-  width: min(42vw, 520px);
-  height: min(24vw, 300px);
-  border: 1px solid rgba(134, 239, 172, 0.10);
-  border-radius: 48% 52% 62% 38% / 42% 35% 65% 58%;
-  background: radial-gradient(ellipse at 35% 42%, rgba(74, 222, 128, 0.10), transparent 67%);
-  filter: blur(1px);
-  transform: rotate(-12deg);
-  animation: pathfinder-moss-drift 18s ease-in-out infinite alternate;
-}
-
-.pathfinder-ambient__moss--one {
-  left: -11vw;
-  top: 15vh;
-}
-
-.pathfinder-ambient__moss--two {
-  right: -13vw;
-  bottom: 12vh;
-  transform: rotate(22deg) scale(0.8);
-  animation-delay: -7s;
-}
-
-.pathfinder-ambient__ring {
-  position: absolute;
-  width: min(34vw, 420px);
-  aspect-ratio: 1;
-  border: 1px solid rgba(103, 232, 249, 0.10);
-  border-radius: 50%;
-  transform: rotate(18deg) scaleY(0.22);
-  box-shadow: 0 0 80px rgba(34, 211, 238, 0.08);
-  animation: pathfinder-ring-breathe 12s ease-in-out infinite;
-}
-
-.pathfinder-ambient__ring--one {
-  right: 5vw;
-  top: 8vh;
-}
-
-.pathfinder-ambient__ring--two {
-  left: 23vw;
-  bottom: -18vh;
-  animation-delay: -5s;
-}
-
+.pathfinder-ambient__moss,
+.pathfinder-ambient__ring,
 .pathfinder-ambient__pollen {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: rgba(187, 247, 208, 0.64);
-  box-shadow: 0 0 12px rgba(134, 239, 172, 0.72);
-  animation: pathfinder-pollen-float 9s ease-in-out infinite;
+  display: none !important;
 }
 
-.pathfinder-ambient__pollen--one { left: 23%; top: 28%; animation-delay: -2s; }
-.pathfinder-ambient__pollen--two { left: 72%; top: 34%; animation-delay: -5s; transform: scale(0.72); }
-.pathfinder-ambient__pollen--three { left: 61%; top: 76%; animation-delay: -7s; transform: scale(0.56); }
-
-@keyframes pathfinder-moss-drift {
-  from { transform: translate3d(-1%, -1%, 0) rotate(-12deg); }
-  to { transform: translate3d(2%, 2%, 0) rotate(-8deg) scale(1.03); }
-}
-
-@keyframes pathfinder-ring-breathe {
-  0%, 100% { opacity: 0.42; transform: rotate(18deg) scaleY(0.22) scale(0.96); }
-  50% { opacity: 0.82; transform: rotate(14deg) scaleY(0.22) scale(1.04); }
-}
-
-@keyframes pathfinder-pollen-float {
-  0%, 100% { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.72); }
-  30%, 70% { opacity: 0.72; }
-  50% { transform: translate3d(12px, -18px, 0) scale(1); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pathfinder-ambient__moss,
-  .pathfinder-ambient__ring,
-  .pathfinder-ambient__pollen { animation: none; }
-}
-
-
-/* Exact ThreeUI Data Pixel Arc, used as a restrained analytics horizon. */
-.pathfinder-arc-layer {
-  opacity: 0.18;
-  -webkit-mask-image: linear-gradient(to top, black 0%, rgba(0, 0, 0, 0.72) 42%, transparent 100%);
-  mask-image: linear-gradient(to top, black 0%, rgba(0, 0, 0, 0.72) 42%, transparent 100%);
-}
-
-.pathfinder-arc-layer .data-pixel-arc {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  background: transparent;
-}
-
-.pathfinder-arc-layer .data-pixel-arc canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  mix-blend-mode: screen;
-}
-
-/* Performant Layered 3D Depth & Elevation Tokens (60fps, WCAG AA contrast) */
+/* Layered 3D Depth & Elevation Tokens */
 .glass-depth-card {
-  background: rgba(15, 23, 42, 0.65);
+  background: #16161a;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease;
@@ -377,8 +277,9 @@
 }
 
 .glass-depth-card:hover {
-  transform: translateY(-3px) scale(1.004);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  border-color: rgba(255, 59, 92, 0.3);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.85), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -390,80 +291,82 @@
 }
 
 /* ==========================================================================
-   HACKATHON-LEVEL TYPOGRAPHY RESTYLING SYSTEM (PATHFINDER DASHBOARD)
-   Strictly scoped to .pathfinder-dashboard to never touch LampLogin/Auth
-   Palette:
-     - Main page titles & primary headings: #FFFFFF
-     - AI-highlighted words & accents:      #B8A1FF (Electric Lavender)
-     - Section headings & subheadings:     #E5E1EF (Soft Silver)
-     - Paragraphs, descriptions, body:      #B9B5C7 (Muted Silver)
-     - AI labels, small interactive accents: #9CE5E0 (Ice Mint)
-     - Key metrics & statistics:            #F1F0F7 (Frost White)
+   CONSOLIDATED TYPOGRAPHY & DESIGN SYSTEM (.pathfinder-dashboard)
+   Strictly enforces Crimson (#ff3b5c) + Charcoal (#0a0a0c) + Off-White (#f2f2f0)
+   ZERO green, ZERO blue, ZERO violet/purple, ZERO yellow, ZERO orange!
    ========================================================================== */
 
 .pathfinder-dashboard {
-  --pf-heading-primary: #FFFFFF;
-  --pf-ai-accent: #B8A1FF;
-  --pf-heading-secondary: #E5E1EF;
-  --pf-text-body: #B9B5C7;
-  --pf-ai-label: #9CE5E0;
-  --pf-metric-value: #F1F0F7;
+  --pf-heading-primary: #f2f2f0;
+  --pf-ai-accent: #ff3b5c;
+  --pf-heading-secondary: #c7c7cf;
+  --pf-text-body: #8a8a92;
+  --pf-ai-label: #ff3b5c;
+  --pf-metric-value: #f2f2f0;
 
   font-family: "Outfit", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #B9B5C7;
+  color: #8a8a92;
+  background-color: #0a0a0c;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 1. Main page titles and primary headings: #FFFFFF */
+/* 1. Main Headings: Off-white #f2f2f0 */
 .pathfinder-dashboard h1 {
   font-family: "Space Grotesk", "Outfit", sans-serif;
-  color: #FFFFFF !important;
+  color: #f2f2f0 !important;
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.18;
 }
 
-/* 2. Section headings and subheadings: #E5E1EF */
+/* 2. Subheadings: Off-white #f2f2f0 */
 .pathfinder-dashboard h2,
 .pathfinder-dashboard h3,
 .pathfinder-dashboard h4,
 .pathfinder-dashboard h5,
 .pathfinder-dashboard h6 {
   font-family: "Space Grotesk", "Outfit", sans-serif;
-  color: #E5E1EF !important;
+  color: #f2f2f0 !important;
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.28;
 }
 
-/* 3. Paragraphs, descriptions, supporting text: #B9B5C7 */
+/* 3. Paragraphs and secondary text: #8a8a92 */
 .pathfinder-dashboard p {
-  color: #B9B5C7;
+  color: #8a8a92;
   font-weight: 400;
   line-height: 1.65;
 }
 
-/* 4. AI-highlighted words and selected heading accents: #B8A1FF (Electric Lavender) */
+/* 4. AI-highlighted words & accents: Crimson #ff3b5c */
 .pathfinder-dashboard .ai-highlight,
 .pathfinder-dashboard .ai-accent,
-.pathfinder-dashboard .text-accent-ai {
-  color: #B8A1FF !important;
+.pathfinder-dashboard .text-accent-ai,
+.text-accent,
+.text-accent-strong,
+.text-accent-crimson {
+  color: #ff3b5c !important;
   font-weight: 600;
 }
 
-/* 5. AI labels, small interactive text accents, secondary highlights: #9CE5E0 (Ice Mint) */
-.pathfinder-dashboard .ai-label,
-.pathfinder-dashboard .ai-badge {
-  color: #9CE5E0 !important;
-  font-weight: 500;
+.text-accent-soft,
+.text-accent-silver {
+  color: #c7c7cf !important;
 }
 
-/* 6. Utility class color mappings to the hackathon palette */
+.pathfinder-dashboard .ai-label,
+.pathfinder-dashboard .ai-badge {
+  color: #ff3b5c !important;
+  font-weight: 600;
+}
+
+/* 5. Clean text utility mappings */
 .pathfinder-dashboard .text-\[\#F2F2F3\],
 .pathfinder-dashboard .text-slate-100,
 .pathfinder-dashboard .text-slate-200 {
-  color: #F1F0F7 !important;
+  color: #f2f2f0 !important;
 }
 
 .pathfinder-dashboard .text-\[\#A1A1AA\],
@@ -473,151 +376,30 @@
 .pathfinder-dashboard .text-zinc-500,
 .pathfinder-dashboard .text-gray-400,
 .pathfinder-dashboard .text-gray-500 {
-  color: #B9B5C7 !important;
+  color: #8a8a92 !important;
 }
 
-/* ELEGANT DARK THEME ACCENTS FOR ANY LEGACY ACCENT REFERENCES */
-[class*="text-[#FF6B4A]"],
-[class*="text-[#FF8A6E]"],
-[class*="text-[#C2452B]"],
-.pathfinder-dashboard .text-\[\#FF6B4A\],
-.pathfinder-dashboard .text-\[\#FF8A6E\],
-.text-\[\#FF6B4A\],
-.text-\[\#FF8A6E\] {
-  color: #B8A1FF !important;
+/* 6. Unified Crimson Accent (#ff3b5c) & Neutral Silver (#c7c7cf) */
+.btn-primary,
+button.btn-primary,
+.bg-primary-accent {
+  background: #ff3b5c !important;
+  color: #ffffff !important;
 }
 
-[class*="bg-[#FF6B4A]/"],
-[class*="bg-[#C2452B]/"],
-[class*="bg-[#FF8A6E]/"] {
-  background-color: rgba(184, 161, 255, 0.12) !important;
+.border-primary-accent {
+  border-color: rgba(255, 59, 92, 0.35) !important;
 }
 
-/* Primary Action Buttons: Modern Rich Indigo Gradient, Never Blinding White */
-.bg-\[\#FF6B4A\],
-.bg-\[\#C2452B\] {
-  background: linear-gradient(135deg, #7C3AED, #6366F1) !important;
-  color: #FFFFFF !important;
-}
-
-[class*="border-[#FF6B4A]"],
-[class*="border-[#C2452B]"],
-[class*="border-[#FF8A6E]"],
-.border-\[\#FF6B4A\],
-.border-\[\#C2452B\] {
-  border-color: rgba(184, 161, 255, 0.28) !important;
-}
-
-[class*="shadow-[#FF6B4A]"],
-[class*="shadow-[#C2452B]"] {
-  --tw-shadow-color: rgba(184, 161, 255, 0.2) !important;
-  box-shadow: 0 4px 20px rgba(184, 161, 255, 0.15) !important;
-}
-
-[class*="from-[#C2452B]"],
-[class*="from-[#FF6B4A]"] {
-  --tw-gradient-from: #7C3AED var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: #6366F1 var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-
-[class*="to-[#FF6B4A]"],
-[class*="to-[#FF8A6E]"] {
-  --tw-gradient-to: #6366F1 var(--tw-gradient-to-position) !important;
-}
-
-/* Modern High-End Multi-Color Accent System for Pathfinder Dashboard
-   - NO dark green (re-mapped to Electric Sky Cyan #38BDF8)
-   - NO dark blue (re-mapped to Vivid Violet #A78BFA)
-   - NO yellow & NO orange (re-mapped to Neon Fuchsia #E879F9 & Vivid Rose #FB7185)
-   - Violet kept for AI, Coach, & Mentor domains
-   - Crisp modern multi-color harmony across cards & metrics
-*/
-.text-accent {
-  color: var(--text-accent-cyan) !important;
-}
-
-.text-accent-soft {
-  color: var(--text-accent-cyan-soft) !important;
-}
-
-.text-accent-strong {
-  color: var(--text-accent-cyan) !important;
-}
-
-.text-accent-violet {
-  color: var(--text-accent-violet) !important;
-}
-
-.text-accent-cyan {
-  color: var(--text-accent-cyan) !important;
-}
-
-.text-accent-rose {
-  color: var(--text-accent-rose) !important;
-}
-
-.text-accent-fuchsia {
-  color: var(--text-accent-fuchsia) !important;
-}
-
-/* 1. Electric Sky Cyan for Metrics, Placement, and Benchmarks (Replaces dark green & teal) */
-.pathfinder-dashboard .text-green-300,
-.pathfinder-dashboard .text-green-400,
-.pathfinder-dashboard .text-green-500,
-.pathfinder-dashboard .text-emerald-300,
-.pathfinder-dashboard .text-emerald-400,
-.pathfinder-dashboard .text-emerald-500,
-.pathfinder-dashboard .text-teal-300,
-.pathfinder-dashboard .text-teal-400,
-.pathfinder-dashboard .text-cyan-300,
-.pathfinder-dashboard .text-cyan-400,
-.pathfinder-dashboard .text-cyan-500 {
-  color: #38BDF8 !important;
-}
-
-/* 2. Vivid Violet & Lavender for AI Coach, Intelligence, and Strategy (Kept Violet!) */
-.pathfinder-dashboard .text-blue-300,
-.pathfinder-dashboard .text-blue-400,
-.pathfinder-dashboard .text-blue-500,
-.pathfinder-dashboard .text-indigo-300,
-.pathfinder-dashboard .text-indigo-400,
-.pathfinder-dashboard .text-violet-300,
-.pathfinder-dashboard .text-violet-400,
-.pathfinder-dashboard .text-purple-300,
-.pathfinder-dashboard .text-purple-400 {
-  color: #A78BFA !important;
-}
-
-/* 3. Vibrant Neon Rose for Critical Gaps, Action Items, and Priority Blockers */
-.pathfinder-dashboard .text-rose-300,
-.pathfinder-dashboard .text-rose-400,
-.pathfinder-dashboard .text-rose-500,
-.pathfinder-dashboard .text-pink-300,
-.pathfinder-dashboard .text-pink-400,
-.pathfinder-dashboard .text-pink-500,
-.pathfinder-dashboard .text-red-400,
-.pathfinder-dashboard .text-red-500 {
-  color: #FB7185 !important;
-}
-
-/* 4. Neon Fuchsia & Rose for Secondary Badges & Highlight Tags (Zero yellow, Zero orange!) */
-.pathfinder-dashboard .text-yellow-300,
-.pathfinder-dashboard .text-yellow-400,
-.pathfinder-dashboard .text-yellow-500,
-.pathfinder-dashboard .text-amber-300,
-.pathfinder-dashboard .text-amber-400,
-.pathfinder-dashboard .text-amber-500,
-.pathfinder-dashboard .text-orange-300,
-.pathfinder-dashboard .text-orange-400,
-.pathfinder-dashboard .text-orange-500 {
-  color: #E879F9 !important;
+.shadow-primary-accent {
+  box-shadow: 0 4px 20px rgba(255, 59, 92, 0.25) !important;
 }
 
 /* Selection highlight */
+::selection,
 .pathfinder-dashboard ::selection {
-  background: rgba(184, 161, 255, 0.35);
-  color: #FFFFFF;
+  background: rgba(255, 59, 92, 0.35);
+  color: #ffffff;
 }
 
 /* ==========================================================================
@@ -651,5 +433,3 @@ div:has(> button[data-testid="indicator"]) {
   clip-path: inset(100%) !important;
   z-index: -99999 !important;
 }
-
-

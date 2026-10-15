@@ -118,8 +118,8 @@ export const GALLERY_HEADING_VARIANTS = {
     direction: 1,
     field: "matte",
     palette: [
-      "#e9e5dd", "#20232a", "#c25a43", "#2f5b4e", "#d6cfc2", "#3a4763",
-      "#dda45c", "#14161a", "#a7b3a4", "#f3f1ec", "#5a6670", "#8c4b3f",
+      "#e9e5dd", "#20232a", "#c25a43", "#24242a", "#d6cfc2", "#16161a",
+      "#ff3b5c", "#14161a", "#8a8a92", "#f3f1ec", "#5a6670", "#8c4b3f",
     ],
     /* headline ink: [muted line, emphasis line, offset plate] */
     ink: { dark: ["#8d949c", "#ffffff", "#20232a"], light: ["#6b7280", "#111827", "#e9e5dd"] },
@@ -137,8 +137,8 @@ export const GALLERY_HEADING_VARIANTS = {
     direction: -1,
     field: "glitch",
     palette: [
-      "#0b0b12", "#ff2f6d", "#00e6ff", "#13f28a", "#f2f2f8", "#7a1bff",
-      "#101018", "#ff7a1a", "#141a2e", "#e01f52", "#1a1a26", "#0ac2d8",
+      "#0b0b12", "#ff2f6d", "#c7c7cf", "#8a8a92", "#f2f2f8", "#e0304f",
+      "#101018", "#ff3b5c", "#141a2e", "#e01f52", "#1a1a26", "#c7c7cf",
     ],
     /* headline ink: [muted line, emphasis line, offset plate] */
     ink: { dark: ["#ff2f6d", "#f2f2f8", "#0b0b12"], light: ["#c81049", "#111827", "#f2f2f8"] },
@@ -156,11 +156,11 @@ export const GALLERY_HEADING_VARIANTS = {
     direction: 1,
     field: "riso",
     palette: [
-      "#e0b64a", "#b1512a", "#6d7638", "#ecdfc2", "#2f6b66", "#8a3a2b",
-      "#d69b3e", "#3c4630", "#c06e3a", "#e6d3a8", "#546d76", "#7a4726",
+      "#ff3b5c", "#e0304f", "#8a8a92", "#f2f2f0", "#24242a", "#b3203b",
+      "#ff5470", "#16161a", "#ff3b5c", "#c7c7cf", "#8a8a92", "#e0304f",
     ],
     /* headline ink: [muted line, emphasis line, offset plate] */
-    ink: { dark: ["#e0b64a", "#f4e9d2", "#6d2a16"], light: ["#8a3a2b", "#2b2018", "#e0b64a"] },
+    ink: { dark: ["#ff3b5c", "#f4e9d2", "#b3203b"], light: ["#b3203b", "#2b2018", "#ff3b5c"] },
     type: { font: "oldstyle", weight: "700", headlineSize: 1.2, tracking: 0.03 },
     motion: { spring: false, ease: 0.9 },
   },
@@ -210,10 +210,10 @@ export const GALLERY_HEADING_DEFAULTS = {
 } as const;
 
 function transformThinkingButtonSource(source: string, mode: EffectMode) {
-  const background = mode === "light" ? "#f4f7fb" : "#111318";
+  const background = mode === "light" ? "#16161a" : "#0a0a0c";
   const plate = mode === "light"
-    ? ["#60a5fa", "#3b82f6", "#2563eb"]
-    : ["#2563eb", "#1d4ed8", "#1e40af"];
+    ? ["#ff3b5c", "#ff5470", "#ff6b85"]
+    : ["#ff3b5c", "#e0304f", "#b3203b"];
 
   return source
     .replace("<title>Uploading — glowing border microinteraction</title>", "<title>Thinking — glowing border microinteraction</title>")
@@ -528,7 +528,7 @@ function paintGlitch(x, base, i){
     gx.fillStyle = color; gx.fillRect(0,0,TS,TS);
     return g;
   };
-  var red = channel('#ff3050'), cyan = channel('#30e0ff');
+  var red = channel('#ff3050'), cyan = channel('#c7c7cf');
   x.save();
   x.globalCompositeOperation = 'lighter';
   x.globalAlpha = 0.3;
@@ -716,7 +716,7 @@ function transformGalleryHeadingSource(
         + `var HEAD_TRACK = ${variant.type.tracking};   /* headline tracking, in cap heights */\n`
         + `var HEAD_STYLE = '${variant.field}';\n`
         + `var HEAD_SHADOW = '${ink[2]}';  /* riso: the plate under the ink */\n`
-        + `var HEAD_GHOST = ['#ff2f6d','#00e6ff'];  /* glitch: the two channel ghosts */\n`
+        + `var HEAD_GHOST = ['#ff2f6d','#c7c7cf'];  /* glitch: the two channel ghosts */\n`
         + `var PLATES = ${JSON.stringify(variant.palette)};\n`
         + `var FIELD = '${variant.field}';       /* which painter shades the plates */\n`
         + `var EASE = ${variant.motion.ease};        /* seconds for the orbit to reach hover speed */\n`
@@ -1357,7 +1357,7 @@ function transformAudioWordmarkSource(source: string, mode: EffectMode) {
   const background = mode === "light" ? "#f4f7fb" : "#000";
   const ink = mode === "light" ? "#172033" : "#E8EEE9";
   const secondaryInk = mode === "light" ? "#536076" : "#c9d4cc";
-  const accent = mode === "light" ? "#315efb" : "#7080ff";
+  const accent = mode === "light" ? "#ff3b5c" : "#ff3b5c";
 
   return source
     .replace("<title>Supreme Radio — Graphic Identity</title>", "<title>ThreeUI — Audio Wordmark</title>")

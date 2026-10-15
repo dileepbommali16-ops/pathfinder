@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { PredictiveArcCanvas, SphereShieldTiled } from "@designcodeio/threeui";
-import "@designcodeio/threeui/style.css";
+import { PredictiveArcCanvas } from "@/shaders/predictive-arc/PredictiveArcCanvas";
+import SphereShieldTiled from "@/shaders/SphereShieldTiled";
 
 export type BackgroundVariant = "predictive-void" | "predictive" | "void-field";
 
@@ -107,7 +107,7 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
         <div className="absolute inset-0">
           {variant === "predictive-void" && (
             <PredictiveArcCanvas
-              variant="predictive-void"
+              variant="predictive"
               speed={speed}
               hue={0}
               saturation={1.0}
@@ -127,17 +127,17 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
         </div>
       )}
 
-      {/* Atmospheric Neutral Slate Radial Color Grading & Subtle Vignette */}
+      {/* Atmospheric Neutral Charcoal Radial Color Grading & Subtle Crimson Vignette */}
       <div
-        className="absolute inset-0 pointer-events-none mix-blend-screen opacity-20"
+        className="absolute inset-0 pointer-events-none mix-blend-screen opacity-15"
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 50% 25%, rgba(255, 255, 255, 0.08), rgba(148, 163, 184, 0.04) 45%, transparent 75%)",
+            "radial-gradient(ellipse 80% 60% at 50% 25%, rgba(255, 255, 255, 0.05), rgba(255, 59, 92, 0.02) 45%, transparent 75%)",
         }}
       />
 
-      {/* Horizon Accent Line - Clean Silver / Slate */}
-      <div className="absolute top-[35%] left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none blur-[0.5px]" />
+      {/* Horizon Accent Line - Clean Neutral Silver */}
+      <div className="absolute top-[35%] left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent pointer-events-none blur-[0.5px]" />
     </div>
   );
 };

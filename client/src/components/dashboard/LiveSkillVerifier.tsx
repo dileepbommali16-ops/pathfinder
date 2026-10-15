@@ -183,26 +183,26 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
-      <div className="absolute -left-20 -top-20 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#16161a] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+      <div className="absolute -left-20 -top-20 h-56 w-56 rounded-full bg-[#ff3b5c]/10 blur-3xl pointer-events-none" />
 
       <div className="relative z-10">
         {/* Header */}
-        <div className="flex flex-col gap-4 border-b border-[#2A2A30] pb-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 text-[#ff3b5c] shadow-[0_0_20px_rgba(255,59,92,0.2)]">
               <ShieldCheck className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-black tracking-tight text-[#F2F2F3] sm:text-2xl">
+                <h3 className="text-xl font-black tracking-tight text-[#f2f2f0] sm:text-2xl">
                   Live Technical Footprint & Fraud Shield
                 </h3>
-                <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-400">
+                <span className="rounded-full border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ff3b5c]">
                   Anti-Resume Padding
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-[#A1A1AA]">
+              <p className="mt-0.5 text-xs text-[#8a8a92]">
                 Verify authentic GitHub commit cadence, repository originality, and language breakdown to earn the Cryptographic Verified Engineer badge.
               </p>
             </div>
@@ -212,7 +212,7 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
         {/* Search Bar */}
         <form onSubmit={handleVerify} className="mt-6 grid gap-4 sm:grid-cols-3">
           <div className="relative sm:col-span-2">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-[#A1A1AA]">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-[#8a8a92]">
               <GitBranch className="h-4 w-4" />
             </div>
             <input
@@ -220,14 +220,14 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
               value={githubInput}
               onChange={(e) => setGithubInput(e.target.value)}
               placeholder="Enter GitHub username (e.g. torvalds or your username)..."
-              className="w-full rounded-2xl border border-[#2A2A30] bg-[#141417] py-3.5 pl-10 pr-4 text-xs font-medium text-[#F2F2F3] outline-none transition-all placeholder:text-[#A1A1AA] focus:border-cyan-400/60 focus:ring-1 focus:ring-cyan-400/20"
+              className="w-full rounded-2xl border border-white/10 bg-black/40 py-3.5 pl-10 pr-4 text-xs font-medium text-[#f2f2f0] outline-none transition-all placeholder:text-[#8a8a92] focus:border-[#ff3b5c]/60 focus:ring-1 focus:ring-[#ff3b5c]/20"
             />
           </div>
 
           <button
             type="submit"
             disabled={isVerifying || !githubInput.trim()}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-6 py-3.5 text-xs font-bold text-zinc-950 shadow-[0_0_25px_rgba(6,182,212,0.3)] transition-all hover:bg-cyan-400 active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-[#ff3b5c] px-6 py-3.5 text-xs font-bold text-white shadow-[0_0_25px_rgba(255,59,92,0.3)] transition-all hover:bg-[#ff3b5c]/90 active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {isVerifying ? (
               <>
@@ -252,14 +252,14 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
 
         {/* Verification Result Card */}
         {result && (
-          <div className="mt-6 rounded-2xl border border-cyan-500/30 bg-[#141417] p-6 shadow-[0_4px_24px_rgba(6,182,212,0.1)]">
+          <div className="mt-6 rounded-2xl border border-white/[0.08] bg-[#16161a] p-6 shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               {/* User Profile */}
               <div className="flex items-center gap-4">
                 <img
                   src={result.avatarUrl}
                   alt={result.username}
-                  className="h-16 w-16 rounded-2xl border border-cyan-500/40 object-cover shadow-md"
+                  className="h-16 w-16 rounded-2xl border border-white/10 object-cover shadow-md"
                   onError={(e) => {
                     // Fallback to placeholder avatar if image fails
                     (e.target as any).src = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
@@ -267,61 +267,61 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
                 />
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="text-base font-bold text-[#F2F2F3]">{result.name}</h4>
-                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                    <h4 className="text-base font-bold text-[#f2f2f0]">{result.name}</h4>
+                    <span className="rounded-full border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-2 py-0.5 text-[10px] font-bold text-[#ff3b5c]">
                       ✓ Authentic Author
                     </span>
                   </div>
-                  <p className="text-xs text-[#A1A1AA]">@{result.username} · {result.accountAgeYears}+ Years on GitHub</p>
+                  <p className="text-xs text-[#8a8a92]">@{result.username} · {result.accountAgeYears}+ Years on GitHub</p>
                   <p className="mt-1 text-xs text-zinc-300 line-clamp-1">{result.bio}</p>
                 </div>
               </div>
 
               {/* Verified Badge */}
               <div className="flex flex-wrap items-center gap-4">
-                <div className="rounded-xl border border-white/10 bg-[#1B1B1F] p-3 text-center min-w-[90px]">
-                  <span className="text-[10px] uppercase font-bold text-[#A1A1AA]">Public Repos</span>
-                  <div className="text-lg font-black text-[#F2F2F3]">{result.publicRepos}</div>
+                <div className="rounded-xl border border-white/10 bg-black/40 p-3 text-center min-w-[90px]">
+                  <span className="text-[10px] uppercase font-bold text-[#8a8a92]">Public Repos</span>
+                  <div className="text-lg font-black text-[#f2f2f0]">{result.publicRepos}</div>
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-[#1B1B1F] p-3 text-center min-w-[90px]">
-                  <span className="text-[10px] uppercase font-bold text-[#A1A1AA]">Stars Earned</span>
-                  <div className="text-lg font-black text-amber-400 flex items-center justify-center gap-1">
-                    <Star className="h-4 w-4 fill-amber-400" />
+                <div className="rounded-xl border border-white/10 bg-black/40 p-3 text-center min-w-[90px]">
+                  <span className="text-[10px] uppercase font-bold text-[#8a8a92]">Stars Earned</span>
+                  <div className="text-lg font-black text-[#ff3b5c] flex items-center justify-center gap-1">
+                    <Star className="h-4 w-4 fill-[#ff3b5c]" />
                     <span>{result.totalStars}</span>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-3 text-center min-w-[120px]">
-                  <span className="text-[10px] uppercase font-bold text-cyan-300">Authenticity</span>
-                  <div className="text-lg font-black text-cyan-400">{result.authenticityScore}%</div>
+                <div className="rounded-xl border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 p-3 text-center min-w-[120px]">
+                  <span className="text-[10px] uppercase font-bold text-[#c7c7cf]">Authenticity</span>
+                  <div className="text-lg font-black text-[#ff3b5c]">{result.authenticityScore}%</div>
                 </div>
               </div>
             </div>
 
             {/* Language Breakdown */}
-            <div className="mt-6 border-t border-[#2A2A30] pt-4">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#A1A1AA]">
+            <div className="mt-6 border-t border-white/[0.08] pt-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#8a8a92]">
                 Verified Codebase Languages:
               </span>
               <div className="mt-2 flex flex-wrap gap-2">
                 {result.topLanguages.map((lang) => (
                   <div
                     key={lang.name}
-                    className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#1B1B1F] px-3 py-1 text-xs text-[#F2F2F3]"
+                    className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1 text-xs text-[#f2f2f0]"
                   >
-                    <Code2 className="h-3.5 w-3.5 text-cyan-400" />
+                    <Code2 className="h-3.5 w-3.5 text-[#ff3b5c]" />
                     <span className="font-semibold">{lang.name}</span>
-                    <span className="text-[11px] text-[#A1A1AA]">({lang.percentage}%)</span>
+                    <span className="text-[11px] text-[#8a8a92]">({lang.percentage}%)</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Verdict & Sync */}
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs">
-              <div className="flex items-center gap-2 text-emerald-300">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-black/40 p-3.5 text-xs">
+              <div className="flex items-center gap-2 text-[#f2f2f0]">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#ff3b5c]" />
                 <span>
                   <strong>Audit Status:</strong> {result.verdict}
                 </span>
@@ -331,7 +331,7 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
                 <button
                   type="button"
                   onClick={handleSyncToProfile}
-                  className="flex items-center gap-1.5 rounded-xl bg-emerald-500 px-3.5 py-1.5 text-xs font-bold text-zinc-950 transition-all hover:bg-emerald-400 active:scale-95 shadow-sm cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl bg-[#ff3b5c] px-3.5 py-1.5 text-xs font-bold text-white transition-all hover:bg-[#ff3b5c]/90 active:scale-95 shadow-sm cursor-pointer"
                 >
                   {applied ? (
                     <>

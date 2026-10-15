@@ -195,10 +195,9 @@ const EFFECTS = {
         .replace("node.x += node.vx;", "node.x += node.vx * ((window.__SF_CONTROLS&&window.__SF_CONTROLS.speed)||1);")
         .replace("node.y += node.vy;", "node.y += node.vy * ((window.__SF_CONTROLS&&window.__SF_CONTROLS.speed)||1);");
       if (mode === "light") {
-        // Deeper bronze ink so gold nodes stay readable on paper.
         next = next
-          .replace("ctx.strokeStyle = '#E6C879';", "ctx.strokeStyle = '#8B6914';")
-          .replace("ctx.fillStyle = '#E6C879';", "ctx.fillStyle = '#8B6914';");
+          .replace("ctx.strokeStyle = '#c7c7cf';", "ctx.strokeStyle = '#8a8a92';")
+          .replace("ctx.fillStyle = '#c7c7cf';", "ctx.fillStyle = '#8a8a92';");
       }
       return next;
     },
@@ -223,9 +222,8 @@ const EFFECTS = {
         .replace("ctx.lineWidth = 1.5;", `ctx.lineWidth = ${Number((1.5 * size).toFixed(2))};`);
       if (mode === "light") {
         next = next
-          .replaceAll("rgba(96, 165, 250,", "rgba(37, 99, 235,")
-          .replaceAll("rgba(156, 163, 175,", "rgba(36, 48, 68,")
-          .replace("ctx.fillStyle = dist < 180 ? '#60A5FA' : 'rgba(36, 48, 68, 0.4)';", "ctx.fillStyle = dist < 180 ? '#2563EB' : 'rgba(36, 48, 68, 0.55)';");
+          .replaceAll("rgba(96, 165, 250,", "rgba(255, 59, 92,")
+          .replaceAll("rgba(156, 163, 175,", "rgba(138, 138, 146,");
       }
       return next;
     },
@@ -379,9 +377,9 @@ const EFFECTS = {
         .replace("time += 0.02;", "time += 0.02 * ((window.__SF_CONTROLS&&window.__SF_CONTROLS.speed)||1);");
       if (mode === "light") {
         next = next
-          .replace("ctx.fillStyle = '#3b82f6'; // Blue highlight", "ctx.fillStyle = '#1d4ed8'; // Blue highlight")
-          .replace("ctx.fillStyle = '#8b5cf6'; // Purple highlight", "ctx.fillStyle = '#5b21b6'; // Purple highlight")
-          .replace("ctx.fillStyle = `rgba(148, 163, 184, ${alpha})`;", `ctx.fillStyle = \`rgba(36, 48, 68, \${alpha})\`;`);
+          .replace("ctx.fillStyle = '#ff3b5c'; // Crimson highlight", "ctx.fillStyle = '#ff3b5c'; // Crimson highlight")
+          .replace("ctx.fillStyle = '#c7c7cf'; // Silver highlight", "ctx.fillStyle = '#c7c7cf'; // Silver highlight")
+          .replace("ctx.fillStyle = `rgba(138, 138, 146, ${alpha})`;", `ctx.fillStyle = \`rgba(138, 138, 146, \${alpha})\`;`);
       }
       return next;
     },
@@ -391,7 +389,7 @@ const EFFECTS = {
     source: skeuomorphicToggleSource,
     supportsMode: true,
     defaultMode: "auto",
-    background: (mode) => (mode === "light" ? "#f8fafc" : "#0b1220"),
+    background: (mode) => (mode === "light" ? "#f8fafc" : "#0a0a0c"),
     targets: [{ selector: "#skeuomorphic-toggle", role: "ui", width: "192px" }],
     focusCss: `
 #skeuomorphic-toggle {
@@ -402,32 +400,8 @@ const EFFECTS = {
   max-height: none !important;
 }
 `,
-    patch(source, { mode }) {
-      if (mode !== "dark") return source;
-      return source
-        .replace(
-          "var ON_BG = 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px), linear-gradient(180deg, #dbeafe 0%, #93c5fd 100%)';",
-          "var ON_BG = 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.035) 2px, rgba(255,255,255,0.035) 4px), linear-gradient(180deg, #1e3a8a 0%, #172554 100%)';",
-        )
-        .replace(
-          "var OFF_BG = 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px), linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%)';",
-          "var OFF_BG = 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.025) 2px, rgba(255,255,255,0.025) 4px), linear-gradient(180deg, #1e293b 0%, #0f172a 100%)';",
-        )
-        .replace(
-          "var ON_SHADOW = 'inset 0 4px 8px rgba(0,0,0,0.1), inset 0 -2px 4px rgba(255,255,255,0.7), 0 0 0 6px rgba(239, 246, 255, 0.8), 0 0 25px 5px rgba(96, 165, 250, 0.4)';",
-          "var ON_SHADOW = 'inset 0 5px 10px rgba(0,0,0,0.52), inset 0 -2px 4px rgba(147,197,253,0.24), 0 0 0 6px rgba(15,23,42,0.96), 0 0 26px 5px rgba(59,130,246,0.42)';",
-        )
-        .replace(
-          "var OFF_SHADOW = 'inset 0 4px 8px rgba(0,0,0,0.12), inset 0 -2px 4px rgba(255,255,255,0.55), 0 0 0 6px rgba(241, 245, 249, 0.9), 0 0 18px 2px rgba(148, 163, 184, 0.25)';",
-          "var OFF_SHADOW = 'inset 0 5px 10px rgba(0,0,0,0.56), inset 0 -2px 4px rgba(148,163,184,0.12), 0 0 0 6px rgba(15,23,42,0.96), 0 0 18px 2px rgba(30,64,175,0.2)';",
-        )
-        .replace("var ON_BORDER = '#60a5fa';", "var ON_BORDER = '#3b82f6';")
-        .replace("var OFF_BORDER = '#94a3b8';", "var OFF_BORDER = '#334155';")
-        .replace(
-          "background: linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);",
-          "background: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);",
-        )
-        .replace("border: 1px solid #e0edfa;", "border: 1px solid #64748b;");
+    patch(source) {
+      return source;
     },
   },
   matrixField: {

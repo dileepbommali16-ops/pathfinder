@@ -73,8 +73,8 @@ const FRAGMENT_SHADER = `
     // Randomized flicker
     float flicker = rand(vec2(iTime, id.y)) > 0.98 ? 0.4 : 1.0;
 
-    // Base color compilation: Cyberpunk Violet with subtle Cyan/Emerald edge shimmer
-    vec3 tint = mix(vec3(0.72, 0.42, 1.0), vec3(0.25, 0.90, 0.75), dist * 0.6);
+    // Base color compilation: Crimson-Charcoal with neutral silver edge shimmer
+    vec3 tint = mix(vec3(1.0, 0.231, 0.361), vec3(0.78, 0.78, 0.81), dist * 0.6);
     vec3 col = vec3(circle * pulse * flicker);
     col -= scanline * 0.5;
     col *= tint * uBrightness;

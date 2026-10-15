@@ -48,19 +48,19 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
       <div className="relative w-full max-w-4xl rounded-3xl border border-[#2A2A30] bg-[#141417] shadow-[0_16px_64px_rgba(0,0,0,0.8)] overflow-hidden my-8">
         
         {/* Top Controls Bar (Hidden during Print) */}
-        <div className="print:hidden flex items-center justify-between border-b border-[#2A2A30] bg-[#1B1B1F] px-6 py-4">
+        <div className="print:hidden flex items-center justify-between border-b border-white/[0.08] bg-[#16161a] px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FF6B4A]/10 border border-[#FF6B4A]/30 text-[#FF6B4A]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#ff3b5c]/10 border border-[#ff3b5c]/30 text-[#ff3b5c]">
               <FileText className="h-4 w-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white">One-Page ATS Engineering Resume</h3>
-                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                <h3 className="text-sm font-bold text-[#f2f2f0]">One-Page ATS Engineering Resume</h3>
+                <span className="rounded-full border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-2 py-0.5 text-[10px] font-bold text-[#ff3b5c]">
                   Google X-Y-Z Standard
                 </span>
               </div>
-              <p className="text-[11px] text-[#A1A1AA]">
+              <p className="text-[11px] text-[#8a8a92]">
                 Single-column, text-selectable layout optimized for automated recruiter parsers.
               </p>
             </div>
@@ -69,14 +69,14 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-bold text-zinc-950 transition-all hover:bg-zinc-200 active:scale-95 shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl bg-[#ff3b5c] px-4 py-2 text-xs font-bold text-white transition-all hover:bg-[#e0304f] active:scale-95 shadow-sm cursor-pointer"
             >
               <Printer className="h-3.5 w-3.5" />
               <span>Download PDF / Print</span>
             </button>
             <button
               onClick={onClose}
-              className="rounded-xl border border-[#2A2A30] bg-[#141417] p-2 text-[#A1A1AA] hover:text-white hover:border-white/20 transition-all"
+              className="rounded-xl border border-white/[0.08] bg-[#121215] p-2 text-[#8a8a92] hover:text-white hover:border-white/20 transition-all cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -84,7 +84,7 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
         </div>
 
         {/* Resume Sheet Preview (Prints as clean white page) */}
-        <div className="p-4 sm:p-8 flex justify-center bg-zinc-950/50">
+        <div className="p-4 sm:p-8 flex justify-center bg-black/60">
           <div
             id="printable-ats-resume"
             className="w-full max-w-[800px] bg-white text-zinc-900 p-8 sm:p-12 shadow-2xl rounded-sm font-sans text-xs leading-relaxed print:shadow-none print:p-0 print:m-0 print:w-full"
@@ -100,12 +100,12 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
                 <span>•</span>
                 <span>{profile.preferredLocation || "India"}</span>
               </div>
-              <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-blue-700 font-medium">
-                <a href={githubUrl} target="_blank" rel="noreferrer" className="hover:underline">
+              <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-zinc-900 font-semibold">
+                <a href={githubUrl} target="_blank" rel="noreferrer" className="underline hover:opacity-75">
                   GitHub Profile
                 </a>
                 <span>•</span>
-                <a href={leetcodeUrl} target="_blank" rel="noreferrer" className="hover:underline">
+                <a href={leetcodeUrl} target="_blank" rel="noreferrer" className="underline hover:opacity-75">
                   LeetCode Profile
                 </a>
               </div>

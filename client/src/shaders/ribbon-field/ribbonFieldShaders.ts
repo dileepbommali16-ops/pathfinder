@@ -40,22 +40,21 @@ export const RIBBON_FIELD_FRAGMENT_SHADER = `
 
           float glow = r1 * 1.14 + r2 * 1.05 + r3 * 0.48;
 
-          vec3 teal = vec3(0.17, 0.83, 0.75);
-          vec3 cyan = vec3(0.22, 0.82, 0.96);
-          vec3 indigo = vec3(0.39, 0.38, 0.92);
-          vec3 purple = vec3(0.66, 0.33, 0.98);
-          vec3 blue = vec3(0.23, 0.51, 0.96);
+          vec3 crimson = vec3(1.0, 0.231, 0.361);
+          vec3 silver = vec3(0.78, 0.78, 0.81);
+          vec3 deepRed = vec3(0.65, 0.08, 0.18);
+          vec3 softSilver = vec3(0.55, 0.55, 0.60);
 
           vec3 col = vec3(0.0);
-          col += cyan * r1 * 0.92;
-          col += teal * r1 * 0.62;
-          col += indigo * r3 * 0.42;
-          col += blue * r2 * 0.66;
-          col += purple * (r2 + r3) * 0.30;
+          col += crimson * r1 * 0.92;
+          col += silver * r1 * 0.52;
+          col += deepRed * r3 * 0.42;
+          col += crimson * r2 * 0.66;
+          col += softSilver * (r2 + r3) * 0.30;
 
           float bloom = exp(-pow(distance(uv, vec2(0.76, 0.40 + 0.035 * sin(t))), 2.0) / 0.050);
           bloom += exp(-pow(distance(uv, vec2(0.71, 0.75 + 0.025 * cos(t))), 2.0) / 0.030);
-          col += vec3(0.42, 0.85, 1.0) * bloom * 0.34;
+          col += crimson * bloom * 0.34;
 
           vec2 grid = fract(gl_FragCoord.xy / 7.0) - 0.5;
           float dotShape = smoothstep(0.29, 0.11, length(grid));
@@ -67,7 +66,7 @@ export const RIBBON_FIELD_FRAGMENT_SHADER = `
           float alpha = clamp((glow * 1.55 + bloom * 0.50) * dots * rightFade, 0.0, 1.0);
           alpha *= 1.0 - centerDark * 0.56;
 
-          vec3 base = vec3(0.005, 0.005, 0.005);
+          vec3 base = vec3(0.039, 0.039, 0.047);
           vec3 finalColor = mix(base, col, clamp(alpha * 1.55, 0.0, 1.0));
           finalColor += micro * rightFade;
 

@@ -98,7 +98,7 @@ export function PredictiveArcCanvas(props: PredictiveArcCanvasProps) {
           thickness={thickness}
         />
         {/* Cyberpunk Hybrid Matrix Watermark Accent */}
-        <div className="pointer-events-none absolute top-6 left-8 font-mono text-[9px] tracking-[0.3em] uppercase text-emerald-400/20 select-none hidden sm:block">
+        <div className="pointer-events-none absolute top-6 left-8 font-mono text-[9px] tracking-[0.3em] uppercase text-[#ff3b5c]/20 select-none hidden sm:block">
           SYS.HYBRID.DUAL // VOID_042 x PREDICTIVE_ARC
         </div>
       </div>

@@ -88,21 +88,21 @@ export const NextActionsWidget: React.FC<NextActionsWidgetProps> = ({
   });
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
+    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#16161a] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FF6B4A]/10 text-[#FF6B4A] border border-[#FF6B4A]/20 shadow-[0_0_12px_rgba(255,107,74,0.2)]">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#ff3b5c]/10 text-[#ff3b5c] border border-[#ff3b5c]/20 shadow-[0_0_12px_rgba(255, 59, 92,0.2)]">
             <ListTodo className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-[#F2F2F3] flex items-center gap-2">
+            <h2 className="text-xl font-bold tracking-tight text-[#f2f2f0] flex items-center gap-2">
               <span>Personalized Next Actions</span>
-              <span className="rounded-md border border-[#FF6B4A]/30 bg-[#FF6B4A]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#FF6B4A]">
+              <span className="rounded-md border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#ff3b5c]">
                 What to do next
               </span>
             </h2>
-            <p className="text-xs text-[#A1A1AA]">
+            <p className="text-xs text-[#8a8a92]">
               Immediate high-yield steps calculated to elevate your placement probability
             </p>
           </div>
@@ -118,20 +118,20 @@ export const NextActionsWidget: React.FC<NextActionsWidgetProps> = ({
               key={task.id}
               className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border p-4 transition-all duration-200 ${
                 isDone
-                  ? "border-[#FF6B4A]/30 bg-[#FF6B4A]/10 opacity-70"
-                  : "border-[#2A2A30] bg-[#141417] hover:border-[#FF6B4A]/30"
+                  ? "border-[#ff3b5c]/30 bg-[#ff3b5c]/10 opacity-70"
+                  : "border-white/[0.08] bg-[#0a0a0c] hover:border-[#ff3b5c]/30"
               }`}
             >
               <div className="flex items-start gap-3">
                 <button
                   type="button"
                   onClick={() => toggleCheck(task.id)}
-                  className="mt-0.5 text-[#A1A1AA] hover:text-[#FF6B4A] transition-colors cursor-pointer"
+                  className="mt-0.5 text-[#8a8a92] hover:text-[#ff3b5c] transition-colors cursor-pointer"
                 >
                   {isDone ? (
-                    <CheckCircle2 className="h-5 w-5 text-[#FF6B4A]" />
+                    <CheckCircle2 className="h-5 w-5 text-[#ff3b5c]" />
                   ) : (
-                    <Circle className="h-5 w-5 text-[#A1A1AA]" />
+                    <Circle className="h-5 w-5 text-[#8a8a92]" />
                   )}
                 </button>
 
@@ -140,21 +140,21 @@ export const NextActionsWidget: React.FC<NextActionsWidgetProps> = ({
                     <span
                       className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
                         task.priority.includes("High") || task.priority.includes("Crucial")
-                          ? "border-rose-500/30 bg-rose-500/10 text-rose-400"
-                          : "border-[#2A2A30] bg-[#1B1B1F] text-[#F2F2F3]"
+                          ? "border-[#ff3b5c]/40 bg-[#ff3b5c]/10 text-[#ff3b5c]"
+                          : "border-white/[0.08] bg-[#16161a] text-[#f2f2f0]"
                       }`}
                     >
                       {task.priority}
                     </span>
                     <h3
                       className={`text-sm font-semibold ${
-                        isDone ? "line-through text-[#A1A1AA]" : "text-[#F2F2F3]"
+                        isDone ? "line-through text-[#8a8a92]" : "text-[#f2f2f0]"
                       }`}
                     >
                       {task.title}
                     </h3>
                   </div>
-                  <p className="text-xs text-[#A1A1AA] leading-relaxed max-w-2xl">
+                  <p className="text-xs text-[#8a8a92] leading-relaxed max-w-2xl">
                     {task.detail}
                   </p>
                 </div>
@@ -164,7 +164,7 @@ export const NextActionsWidget: React.FC<NextActionsWidgetProps> = ({
                 <button
                   type="button"
                   onClick={task.action}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#2A2A30] bg-[#1B1B1F] px-3 py-1.5 text-xs font-semibold text-[#F2F2F3] transition-all hover:border-[#FF6B4A]/40 hover:bg-[#FF6B4A]/10 hover:text-[#FF8A6E] active:scale-95 shadow-sm cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#16161a] px-3 py-1.5 text-xs font-semibold text-[#f2f2f0] transition-all hover:border-[#ff3b5c]/40 hover:bg-[#ff3b5c]/10 hover:text-[#ff3b5c] active:scale-95 shadow-sm cursor-pointer"
                 >
                   <span>{task.actionLabel}</span>
                   <ChevronRight className="h-3 w-3" />

@@ -54,13 +54,13 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string 
 ];
 
 const DEFAULT_ACTIVE_THEME = {
-  activeBg: "bg-white/10",
-  text: "text-white",
-  icon: "text-white",
-  border: "border-white/20",
-  glow: "shadow-[0_0_15px_rgba(255,255,255,0.12)]",
-  badge: "bg-white/15 text-white border-white/30",
-  indicator: "from-white/60 via-white to-white/60"
+  activeBg: "bg-[#ff3b5c]/15",
+  text: "text-white font-semibold",
+  icon: "text-[#ff3b5c]",
+  border: "border-[#ff3b5c]/40",
+  glow: "shadow-[0_0_15px_rgba(255,59,92,0.2)]",
+  badge: "bg-[#ff3b5c]/20 text-[#ff3b5c] border-[#ff3b5c]/40",
+  indicator: "from-transparent via-[#ff3b5c] to-transparent"
 };
 
 const TAB_THEMES: Record<TabId, typeof DEFAULT_ACTIVE_THEME> = {
@@ -87,34 +87,36 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   userRole = "student",
 }) => {
   return (
-    <header className="sticky top-0 z-50 border-b border-[#2A2A30] bg-[#141417]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-      {/* Subtle Glowing Horizon Accent */}
-      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#0a0a0c]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.8)]">
+      {/* Subtle Crimson Horizon Accent */}
+      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#ff3b5c]/30 to-transparent" />
 
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         {/* Brand & Status */}
         <div className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-zinc-800 via-zinc-700 to-zinc-600 shadow-md ring-1 ring-white/20">
-            <GraduationCap className="h-5 w-5 text-white" />
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#16161a] via-[#202026] to-[#2a2a34] shadow-md ring-1 ring-[#ff3b5c]/40">
+            <GraduationCap className="h-5 w-5 text-[#ff3b5c]" />
             <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff3b5c] opacity-75"></span>
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#ff3b5c] shadow-[0_0_8px_rgba(255,59,92,0.9)]"></span>
             </span>
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold tracking-tight text-white drop-shadow-sm font-['Space_Grotesk']">Pathfinder</span>
-              <span className="rounded-md border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium tracking-wider text-zinc-200 uppercase shadow-sm">
-                AI 2.0
+              <span className="text-lg font-bold tracking-tight text-[#f2f2f0] drop-shadow-sm font-['Space_Grotesk']">
+                Pathfinder <span className="text-[#ff3b5c]">2.0</span>
+              </span>
+              <span className="rounded-md border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#ff3b5c] uppercase shadow-sm">
+                AI
               </span>
               {userRole === "admin" && (
-                <span className="rounded-md border border-white/30 bg-white/15 px-2 py-0.5 text-[10px] font-medium text-white uppercase tracking-wider">
+                <span className="rounded-md border border-white/[0.12] bg-[#16161a] px-2 py-0.5 text-[10px] font-medium text-[#f2f2f0] uppercase tracking-wider">
                   Admin Portal
                 </span>
               )}
             </div>
-            <p className="text-xs text-zinc-400">Campus Placement & Engineering Intelligence</p>
+            <p className="text-xs text-[#8a8a92]">Campus Placement & Engineering Intelligence</p>
           </div>
         </div>
 
@@ -124,27 +126,27 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             type="button"
             onClick={() => setActiveTab("profile")}
             title="View & Edit Candidate Profile"
-            className="hidden sm:flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 shadow-sm backdrop-blur-xl hover:border-white/30 hover:bg-white/[0.08] transition-all cursor-pointer text-left"
+            className="hidden sm:flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-[#16161a] px-3.5 py-1.5 shadow-sm backdrop-blur-xl hover:border-[#ff3b5c]/40 hover:bg-[#1a1a20] transition-all cursor-pointer text-left"
           >
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-500 text-[11px] font-bold text-white shadow-sm ring-1 ring-white/20">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#ff3b5c]/20 text-[11px] font-bold text-[#ff3b5c] shadow-sm ring-1 ring-[#ff3b5c]/40">
               {username ? username.charAt(0).toUpperCase() : "U"}
             </div>
             <div>
               <div className="flex items-center gap-1.5 leading-none">
-                <span className="text-xs font-semibold text-zinc-100">{username || "Student"}</span>
+                <span className="text-xs font-semibold text-[#f2f2f0]">{username || "Student"}</span>
                 {userRole === "admin" ? (
-                  <span className="text-[9px] font-medium text-white bg-white/15 border border-white/30 px-1 rounded">ADMIN</span>
+                  <span className="text-[9px] font-medium text-[#ff3b5c] bg-[#ff3b5c]/10 border border-[#ff3b5c]/30 px-1 rounded">ADMIN</span>
                 ) : (
-                  <ShieldCheck className="h-3 w-3 text-zinc-300" />
+                  <ShieldCheck className="h-3 w-3 text-[#c7c7cf]" />
                 )}
               </div>
-              {email && <span className="text-[10px] text-zinc-400 leading-none">{email}</span>}
+              {email && <span className="text-[10px] text-[#8a8a92] leading-none">{email}</span>}
             </div>
           </button>
 
           <button
             onClick={onLogout}
-            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-zinc-300 transition-all hover:border-white/30 hover:bg-white/[0.08] hover:text-white active:scale-95 shadow-sm"
+            className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#16161a] px-3 py-1.5 text-xs font-medium text-[#c7c7cf] transition-all hover:border-[#ff3b5c]/40 hover:text-white active:scale-95 shadow-sm cursor-pointer"
             title="Sign out of Pathfinder"
           >
             <LogOut className="h-3.5 w-3.5" />
@@ -154,7 +156,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       </div>
 
       {/* Navigation Tabs Bar */}
-      <div className="border-t border-[#2A2A30] bg-black/30 px-4 sm:px-6">
+      <div className="border-t border-white/[0.08] bg-[#0a0a0c]/80 px-4 sm:px-6">
         <div className="mx-auto flex max-w-7xl flex-nowrap items-center gap-2 overflow-x-auto py-2.5 scrollbar-none">
           {TABS.map((tab) => {
             const Icon = tab.icon;
@@ -165,16 +167,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 key={tab.id}
                 id={`tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-semibold transition-all ${
+                className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
                   isActive
                     ? `${theme.activeBg} ${theme.text} border ${theme.border} ${theme.glow}`
-                    : "text-zinc-400 hover:bg-white/[0.04] hover:text-white border border-transparent"
+                    : "text-[#8a8a92] hover:bg-white/[0.04] hover:text-[#f2f2f0] border border-transparent"
                 }`}
               >
-                <Icon className={`h-4 w-4 ${isActive ? theme.icon : "text-zinc-400"}`} />
+                <Icon className={`h-4 w-4 ${isActive ? theme.icon : "text-[#8a8a92]"}`} />
                 <span>{tab.label}</span>
                 {tab.badge && (
-                  <span className={`rounded border px-1.5 py-0.5 text-[9px] font-medium ${isActive ? theme.badge : "bg-[#141417] text-zinc-300 border-[#2A2A30]"}`}>
+                  <span className={`rounded border px-1.5 py-0.5 text-[9px] font-medium ${isActive ? theme.badge : "bg-[#16161a] text-[#8a8a92] border-white/[0.08]"}`}>
                     {tab.badge}
                   </span>
                 )}

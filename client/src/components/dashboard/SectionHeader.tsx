@@ -42,12 +42,12 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
   const styles = ACCENT_STYLES[accent] || ACCENT_STYLES.accent;
 
   return (
-    <div className="mb-6 sm:mb-8 pb-3 border-b border-[#2A2A30]">
+    <div className="mb-6 sm:mb-8 pb-3 border-b border-white/[0.08]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           {Icon && (
             <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${styles.icon}`}>
-              <Icon className="h-5 w-5" />
+              <Icon className="h-5 w-5 text-[#ff3b5c]" />
             </div>
           )}
           <div>
@@ -59,14 +59,14 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
                 </span>
               )}
             </div>
-            <p className="mt-0.5 text-xs sm:text-sm text-[#B9B5C7] leading-relaxed">{description}</p>
+            <p className="mt-0.5 text-xs sm:text-sm text-[#8a8a92] leading-relaxed">{description}</p>
           </div>
         </div>
 
         {(action || helperLabel || onAskCoach) && (
           <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
             {helperLabel && (
-              <span className="text-[11px] font-medium text-[#B9B5C7] bg-white/[0.02] border border-[#2A2A30] px-2.5 py-1 rounded-lg">
+              <span className="text-[11px] font-medium text-[#8a8a92] bg-white/[0.02] border border-white/[0.08] px-2.5 py-1 rounded-lg">
                 ℹ️ {helperLabel}
               </span>
             )}
@@ -74,9 +74,9 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
               <button
                 type="button"
                 onClick={() => onAskCoach(`Can you explain the '${title}' section? What is this showing and what should I do here?`)}
-                className="flex items-center gap-1.5 rounded-lg border border-[#B8A1FF]/30 bg-[#B8A1FF]/10 px-2.5 py-1 text-[11px] font-semibold text-[#9CE5E0] hover:bg-[#B8A1FF]/20 hover:border-[#B8A1FF] transition-all active:scale-95 shadow-sm"
+                className="flex items-center gap-1.5 rounded-lg border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-2.5 py-1 text-[11px] font-semibold text-[#f2f2f0] hover:bg-[#ff3b5c]/20 hover:border-[#ff3b5c] transition-all active:scale-95 shadow-sm"
               >
-                <Sparkles className="h-3 w-3 text-[#B8A1FF]" />
+                <Sparkles className="h-3 w-3 text-[#ff3b5c]" />
                 <span>Ask Coach about this</span>
               </button>
             )}

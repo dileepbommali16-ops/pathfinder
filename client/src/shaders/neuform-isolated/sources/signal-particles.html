@@ -248,12 +248,12 @@
                                 const highlightCheck = Math.sin(i * 12.34) * Math.cos(j * 56.78);
                                 
                                 if (highlightCheck > 0.98) {
-                                    ctx.fillStyle = '#3b82f6'; // Blue highlight
+                                    ctx.fillStyle = '#ff3b5c'; // Crimson highlight
                                 } else if (highlightCheck < -0.98) {
-                                    ctx.fillStyle = '#8b5cf6'; // Purple highlight
+                                    ctx.fillStyle = '#c7c7cf'; // Silver highlight
                                 } else {
                                     const alpha = Math.min(0.6, (value - 0.1) * 0.8);
-                                    ctx.fillStyle = `rgba(148, 163, 184, ${alpha})`;
+                                    ctx.fillStyle = `rgba(138, 138, 146, ${alpha})`;
                                 }
                                 
                                 ctx.fill();

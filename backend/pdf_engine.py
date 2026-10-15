@@ -56,19 +56,19 @@ def generate_analytics_pdf(
         parent=styles["Title"],
         fontSize=20,
         leading=24,
-        textColor=colors.HexColor("#06120d")
+        textColor=colors.HexColor("#0a0a0c")
     )
     header_style = ParagraphStyle(
         "ReportSub",
         parent=styles["Heading2"],
         fontSize=12,
         leading=16,
-        textColor=colors.HexColor("#10B981")
+        textColor=colors.HexColor("#ff3b5c")
     )
     normal_style = styles["Normal"]
 
     story = [
-        Paragraph("🎓 Pathfinder AI · Placement Analytics & Cohort Report", title_style),
+        Paragraph("Pathfinder AI · Placement Analytics & Cohort Report", title_style),
         Spacer(1, 8),
         Paragraph(f"<b>Applied Filters:</b> " + " | ".join(f"<b>{k}:</b> {v}" for k, v in filters.items()), normal_style),
         Spacer(1, 6),
@@ -105,7 +105,7 @@ def generate_analytics_pdf(
     if len(table_rows) > 1:
         tbl = Table(table_rows, repeatRows=1)
         tbl.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#10B981")),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#ff3b5c")),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTSIZE", (0, 0), (-1, 0), 9),
@@ -141,21 +141,21 @@ def generate_resume_pdf(feedback: ResumeFeedback) -> bytes:
         parent=styles["Title"],
         fontSize=20,
         leading=24,
-        textColor=colors.HexColor("#0f172a")
+        textColor=colors.HexColor("#0a0a0c")
     )
     score_style = ParagraphStyle(
         "ScoreHeader",
         parent=styles["Heading2"],
         fontSize=14,
         leading=18,
-        textColor=colors.HexColor("#10b981") if feedback.score >= 70 else colors.HexColor("#f59e0b")
+        textColor=colors.HexColor("#ff3b5c") if feedback.score >= 70 else colors.HexColor("#c7c7cf")
     )
     section_style = ParagraphStyle(
         "SecHeader",
         parent=styles["Heading3"],
         fontSize=11,
         leading=15,
-        textColor=colors.HexColor("#1e293b")
+        textColor=colors.HexColor("#16161a")
     )
 
     story = [

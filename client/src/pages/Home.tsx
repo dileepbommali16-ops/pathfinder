@@ -1158,7 +1158,7 @@ export default function Home() {
   // 1. LANDING & AUTH SCREEN
   if (oauthSigningIn && !isAuthenticated) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-[#111111] font-['Outfit',sans-serif] text-slate-200">
+      <div className="flex min-h-screen w-full items-center justify-center bg-[#0a0a0c] font-['Outfit',sans-serif] text-[#f2f2f0]">
         <p className="animate-pulse text-sm font-medium tracking-wide">Signing you in...</p>
       </div>
     );
@@ -1170,30 +1170,30 @@ export default function Home() {
   // 2. ONBOARDING WIZARD (STRICT STEP-WISE FLOW FOR NEW USERS)
   if (!profile.onboardingCompleted) {
     return (
-      <div className="pathfinder-dashboard relative min-h-screen bg-[#05070e] text-slate-100 font-sans overflow-x-hidden">
+      <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0a0c] text-[#f2f2f0] font-sans overflow-x-hidden">
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#070b16] via-[#05070f] to-[#03040a]" />
+          <div className="absolute inset-0 bg-[#0a0a0c]" />
           <Ambient3DBackground />
         </div>
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-zinc-800 via-zinc-700 to-zinc-600 shadow-md ring-1 ring-white/20">
-                <Sparkles className="h-5 w-5 text-white" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#16161a] border border-[#ff3b5c]/30 text-[#ff3b5c] shadow-md">
+                <Sparkles className="h-5 w-5 text-[#ff3b5c]" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-white tracking-tight">Pathfinder Candidate Onboarding</h1>
-                <p className="text-xs text-zinc-400">Step-Wise Profile Setup for AI Career Readiness Assessment</p>
+                <h1 className="text-base font-bold text-[#f2f2f0] tracking-tight">Pathfinder Candidate Onboarding</h1>
+                <p className="text-xs text-[#8a8a92]">Step-Wise Profile Setup for AI Career Readiness Assessment</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-block rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-zinc-200 shadow-sm">
+              <span className="hidden sm:inline-block rounded-full border border-white/[0.08] bg-[#16161a] px-3 py-1 text-xs font-medium text-[#f2f2f0] shadow-sm">
                 Logged in as {username}
               </span>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                className="text-xs font-semibold text-[#8a8a92] hover:text-[#f2f2f0] transition-colors cursor-pointer"
               >
                 Sign Out
               </button>
@@ -1213,9 +1213,9 @@ export default function Home() {
   // 3. IMMEDIATE RESULT SCREEN POST-SUBMIT
   if (showResultScreen && auditResult) {
     return (
-      <div className="pathfinder-dashboard relative min-h-screen bg-[#05070e] text-slate-100 font-sans overflow-x-hidden">
+      <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0a0c] text-[#f2f2f0] font-sans overflow-x-hidden">
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#070b16] via-[#05070f] to-[#03040a]" />
+          <div className="absolute inset-0 bg-[#0a0a0c]" />
           <Ambient3DBackground />
         </div>
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -1247,18 +1247,18 @@ export default function Home() {
 
   // 4. MAIN DASHBOARD & PLATFORM NAVIGATION
   return (
-    <div className="pathfinder-dashboard relative min-h-screen bg-[#05070e] text-slate-100 selection:bg-white selection:text-zinc-950 font-sans overflow-x-hidden">
+    <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0a0c] text-[#f2f2f0] selection:bg-[#ff3b5c]/35 selection:text-white font-sans overflow-x-hidden">
       {/* Graceful Cold-Start Wake-Up Notification */}
       {isGlobalServerWakingUp && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-white/20 bg-[#1B1B1F]/95 px-4 py-2 text-xs font-medium text-white shadow-[0_4px_24px_rgba(0,0,0,0.6)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-[#16161a]/95 px-4 py-2 text-xs font-medium text-white shadow-[0_4px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#ff3b5c]" />
           <span>Waking up the server, this can take up to a minute...</span>
         </div>
       )}
 
       {/* ================= PREMIUM AI STARTUP BACKGROUND SYSTEM ================= */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#070b16] via-[#05070f] to-[#03040a]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0c] via-[#0d0d10] to-[#0a0a0c]" />
         <Ambient3DBackground />
 
         {/* Matrix Grid */}
