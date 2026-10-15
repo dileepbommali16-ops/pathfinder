@@ -178,9 +178,135 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const isSpeakingSentenceRef = useRef<boolean>(false);
   const teluguVoiceWarnedRef = useRef<boolean>(false);
 
+  // Utterance Reference to prevent Chromium V8 garbage collection mid-speech
+  const activeUtterancesRef = useRef<SpeechSynthesisUtterance[]>([]);
+  // Track if query was triggered by voice so assistant response always auto-speaks
+  const isVoiceTriggeredRef = useRef<boolean>(false);
+
+  // Speaker Diagnostic Test States
+  const [speakerTestState, setSpeakerTestState] = useState<"idle" | "testing" | "success" | "error">("idle");
+  const [speakerTestMsg, setSpeakerTestMsg] = useState<string | null>(null);
+
   // Fallback Audio Reader
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const [autoSpeakQuestions, setAutoSpeakQuestions] = useState(true);
+
+  // Diagnostic: Tests browser audio hardware and speech synthesis on demand
+  const testSpeakerAudio = async () => {
+    if (typeof window === "undefined") return;
+    setSpeakerTestState("testing");
+    setSpeakerTestMsg("Testing audio hardware & speakers...");
+
+    try {
+      // 1. Play diagnostic 3-tone chime (C5-E5-G5) via Web Audio API to verify physical sound card & speakers
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        if (ctx.state === "suspended") {
+          await ctx.resume();
+        }
+        const now = ctx.currentTime;
+
+        // Tone 1: C5 (523.25 Hz)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = "sine";
+        osc1.frequency.setValueAtTime(523.25, now);
+        gain1.gain.setValueAtTime(0.18, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.3);
+
+        // Tone 2: E5 (659.25 Hz)
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = "sine";
+        osc2.frequency.setValueAtTime(659.25, now + 0.15);
+        gain2.gain.setValueAtTime(0.18, now + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.15);
+        osc2.stop(now + 0.45);
+
+        // Tone 3: G5 (783.99 Hz)
+        const osc3 = ctx.createOscillator();
+        const gain3 = ctx.createGain();
+        osc3.type = "sine";
+        osc3.frequency.setValueAtTime(783.99, now + 0.3);
+        gain3.gain.setValueAtTime(0.22, now + 0.3);
+        gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        osc3.connect(gain3);
+        gain3.connect(ctx.destination);
+        osc3.start(now + 0.3);
+        osc3.stop(now + 0.8);
+      }
+
+      // 2. Play speech test via SpeechSynthesis
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+
+        const testPhrase =
+          voiceLang === "te-IN"
+            ? "స్పీకర్ మరియు ఆడియో ఖచ్చితంగా పనిచేస్తున్నాయి. Pathfinder వాయిస్ ఏజెంట్ సిద్ధంగా ఉంది."
+            : voiceLang === "hi-IN"
+            ? "स्पीकर और ऑडियो बिल्कुल सही काम कर रहे हैं। पाथफाइंडर वॉइस एजेंट तैयार है।"
+            : "Speaker test successful. Pathfinder voice agent audio is loud and clear.";
+
+        const utt = new SpeechSynthesisUtterance(testPhrase);
+        activeUtterancesRef.current.push(utt);
+        utt.rate = 1.0;
+        utt.pitch = 1.0;
+
+        const voices = window.speechSynthesis.getVoices();
+        if (voiceLang === "te-IN") {
+          const teVoice = voices.find(
+            (v) => v.lang.toLowerCase().includes("te") || v.name.toLowerCase().includes("telugu")
+          );
+          if (teVoice) utt.voice = teVoice;
+        } else if (voiceLang === "hi-IN") {
+          const hiVoice = voices.find(
+            (v) => v.lang.toLowerCase().includes("hi") || v.name.toLowerCase().includes("hindi")
+          );
+          if (hiVoice) utt.voice = hiVoice;
+        } else {
+          const enVoice = voices.find(
+            (v) => v.lang.toLowerCase().includes("en-in") || v.name.toLowerCase().includes("india")
+          );
+          if (enVoice) utt.voice = enVoice;
+        }
+
+        utt.onend = () => {
+          activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utt);
+          setSpeakerTestState("success");
+          setSpeakerTestMsg("✅ Speaker Working! Sound chime and speech played successfully.");
+          setTimeout(() => setSpeakerTestState("idle"), 5000);
+        };
+        utt.onerror = () => {
+          activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utt);
+          setSpeakerTestState("success");
+          setSpeakerTestMsg("✅ Audio Chime Played! Device speakers are operational.");
+          setTimeout(() => setSpeakerTestState("idle"), 5000);
+        };
+
+        window.speechSynthesis.speak(utt);
+      } else {
+        setSpeakerTestState("success");
+        setSpeakerTestMsg("✅ Audio Chime Played! Device speakers are operational.");
+        setTimeout(() => setSpeakerTestState("idle"), 5000);
+      }
+    } catch (err: any) {
+      console.error("[SpeakerTest] Error:", err);
+      setSpeakerTestState("error");
+      setSpeakerTestMsg("❌ Audio blocked or muted. Please check Windows speaker volume in taskbar.");
+      setTimeout(() => setSpeakerTestState("idle"), 6000);
+    }
+  };
 
   // Analyze filler words and speech cadence in real-time
   const analyzeCandidateSpeech = (text: string) => {
@@ -207,9 +333,11 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const handleStopAll = () => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
+      activeUtterancesRef.current = [];
     }
     isSpeakingSentenceRef.current = false;
     speechQueueRef.current = [];
+    isVoiceTriggeredRef.current = false;
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -236,6 +364,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
     isSpeakingSentenceRef.current = true;
     const utterance = new SpeechSynthesisUtterance(nextText);
+    activeUtterancesRef.current.push(utterance);
     utterance.rate = 1.05;
     utterance.pitch = 1.0;
 
@@ -280,6 +409,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     };
 
     utterance.onend = () => {
+      activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
       isSpeakingSentenceRef.current = false;
       if (speechQueueRef.current.length > 0) {
         processSpeechQueue();
@@ -289,6 +419,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     };
 
     utterance.onerror = () => {
+      activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
       isSpeakingSentenceRef.current = false;
       if (speechQueueRef.current.length > 0) {
         processSpeechQueue();
@@ -297,6 +428,9 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       }
     };
 
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
     window.speechSynthesis.speak(utterance);
   };
 
@@ -312,9 +446,12 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     const trimmed = queryText.trim();
     if (!trimmed) return;
 
+    isVoiceTriggeredRef.current = true;
+
     // Barge-in: stop any running audio
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
+      activeUtterancesRef.current = [];
     }
     isSpeakingSentenceRef.current = false;
     speechQueueRef.current = [];
@@ -435,6 +572,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 accumulatedSpoken += beforeMarker;
                 // Flush remaining pre-marker sentences
                 if (accumulatedSpoken.trim()) {
+                  isVoiceTriggeredRef.current = false;
                   queueSentenceForTts(accumulatedSpoken.trim());
                   accumulatedSpoken = "";
                 }
@@ -445,6 +583,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 if (sentenceMatch) {
                   const completedSentence = sentenceMatch[1];
                   accumulatedSpoken = sentenceMatch[2];
+                  isVoiceTriggeredRef.current = false;
                   queueSentenceForTts(completedSentence);
                 }
               }
@@ -459,12 +598,18 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
       // Flush any trailing speech before screen marker
       if (!hitScreenMarker && accumulatedSpoken.trim()) {
+        isVoiceTriggeredRef.current = false;
         queueSentenceForTts(accumulatedSpoken.trim());
       }
     } catch (err: any) {
       if (abortCtrl.signal.aborted) return;
       console.warn("[VoiceAgent] Voice stream notice:", err.message);
-      setVoiceError("Voice connection notice. Using conversational model response.");
+      // Keep isVoiceTriggeredRef.current = true so when assistant message finishes generating via chat endpoint, it will still speak aloud!
+      setVoiceError(
+        voiceLang === "te-IN"
+          ? "వాయిస్ కనెక్ట్ అవుతోంది. AI సమాధానం వచ్చిన వెంటనే చదువుతుంది."
+          : "Voice connection notice. Assistant will speak once the response completes."
+      );
       setVoiceStatus("idle");
     }
   };
@@ -520,13 +665,13 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         recognizedText = cleaned;
         setInput(cleaned);
 
-        // Reset ~1000ms silence auto-stop timer
+        // Reset ~1800ms silence auto-stop timer (natural speech pause)
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = setTimeout(() => {
           try {
             recognition.stop();
           } catch {}
-        }, 1000);
+        }, 1800);
       };
 
       recognition.onerror = (e: any) => {
@@ -548,6 +693,12 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         if (finalQuery) {
           setInput("");
           handleVoiceQuery(finalQuery);
+        } else {
+          setVoiceError(
+            voiceLang === "te-IN"
+              ? "వాయిస్ రికార్డ్ అవ్వలేదు. మైక్ అన్‌మ్యూట్ అయిందో లేదో చూడండి లేదా '🔊 Test Speaker' బటన్ నొక్కండి."
+              : "No voice detected. Please unmute your microphone, speak clearly, or click '🔊 Test Speaker' to verify audio."
+          );
         }
       };
 
@@ -564,16 +715,19 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
     if (speakingIndex === (index ?? -1)) {
       window.speechSynthesis.cancel();
+      activeUtterancesRef.current = [];
       setSpeakingIndex(null);
       setVoiceStatus("idle");
       return;
     }
 
     window.speechSynthesis.cancel();
+    activeUtterancesRef.current = [];
     const { spoken } = parseScreenMarker(text);
     const cleanText = cleanTtsSpokenText(spoken || text).slice(0, 500);
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
+    activeUtterancesRef.current.push(utterance);
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
 
@@ -588,18 +742,28 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         (v) => v.lang.toLowerCase().includes("hi") || v.name.toLowerCase().includes("hindi")
       );
       if (hiVoice) utterance.voice = hiVoice;
+    } else {
+      const enVoice = voices.find(
+        (v) => v.lang.toLowerCase().includes("en-in") || v.name.toLowerCase().includes("india")
+      );
+      if (enVoice) utterance.voice = enVoice;
     }
 
     utterance.onstart = () => setVoiceStatus("speaking");
     utterance.onend = () => {
+      activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
       setSpeakingIndex(null);
       setVoiceStatus("idle");
     };
     utterance.onerror = () => {
+      activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
       setSpeakingIndex(null);
       setVoiceStatus("idle");
     };
 
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
     setSpeakingIndex(index ?? -1);
     window.speechSynthesis.speak(utterance);
   };
@@ -609,6 +773,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     return () => {
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
+        activeUtterancesRef.current = [];
       }
       try {
         recognitionRef.current?.stop();
@@ -618,15 +783,23 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     };
   }, []);
 
-  // When a new assistant message arrives in interview mode with autoSpeak enabled, read it aloud
+  // When a new assistant message arrives:
+  // Auto-speak if the user asked via voice OR if autoSpeak is on in interview mode
   useEffect(() => {
-    if (autoSpeakQuestions && mode === "interview" && messages.length > 0) {
+    if (messages.length > 0 && !isLoading) {
       const last = messages[messages.length - 1];
-      if (last.role === "assistant" && !isLoading && voiceStatus === "idle") {
-        speakText(last.content, messages.length - 1);
+      if (last.role === "assistant") {
+        const shouldSpeak =
+          isVoiceTriggeredRef.current ||
+          (autoSpeakQuestions && mode === "interview");
+
+        if (shouldSpeak && voiceStatus === "idle") {
+          isVoiceTriggeredRef.current = false;
+          speakText(last.content, messages.length - 1);
+        }
       }
     }
-  }, [messages, isLoading, autoSpeakQuestions, mode]);
+  }, [messages, isLoading, autoSpeakQuestions, mode, voiceStatus]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -782,6 +955,27 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             </button>
           </div>
 
+          {/* Speaker Test Diagnostic Button */}
+          <button
+            type="button"
+            onClick={testSpeakerAudio}
+            disabled={speakerTestState === "testing"}
+            className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+            title="Click to verify if your speakers & browser audio are working"
+          >
+            {speakerTestState === "testing" ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+                <span className="hidden sm:inline">Testing Audio...</span>
+              </>
+            ) : (
+              <>
+                <Volume2 className="h-3.5 w-3.5 text-cyan-400" />
+                <span>Test Speaker</span>
+              </>
+            )}
+          </button>
+
           {/* Stop Button (Barge-in / Stop Audio) */}
           {(voiceStatus !== "idle" || isLoading) && (
             <button
@@ -808,6 +1002,29 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           )}
         </div>
       </div>
+
+      {/* Speaker Diagnostic Status Banner */}
+      {speakerTestMsg && (
+        <div
+          className={`flex items-center justify-between border-b px-6 py-2 text-xs font-semibold ${
+            speakerTestState === "error"
+              ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+              : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Volume2 className="h-4 w-4 shrink-0 text-cyan-400" />
+            <span>{speakerTestMsg}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSpeakerTestMsg(null)}
+            className="text-cyan-400 hover:text-white font-bold ml-2 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Voice Warning Banner (Friendly Fallback) */}
       {voiceError && (
