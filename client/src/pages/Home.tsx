@@ -1178,22 +1178,22 @@ export default function Home() {
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 via-purple-600 to-fuchsia-500 shadow-md shadow-purple-500/25">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-zinc-800 via-zinc-700 to-zinc-600 shadow-md ring-1 ring-white/20">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               <div>
                 <h1 className="text-base font-bold text-white tracking-tight">Pathfinder Candidate Onboarding</h1>
-                <p className="text-xs text-slate-400">Step-Wise Profile Setup for AI Career Readiness Assessment</p>
+                <p className="text-xs text-zinc-400">Step-Wise Profile Setup for AI Career Readiness Assessment</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-block rounded-full border border-purple-500/30 bg-purple-500/15 px-3 py-1 text-xs font-medium text-purple-200 shadow-sm">
+              <span className="hidden sm:inline-block rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-zinc-200 shadow-sm">
                 Logged in as {username}
               </span>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="text-xs font-semibold text-slate-400 hover:text-rose-400 transition-colors"
+                className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
               >
                 Sign Out
               </button>
@@ -1247,11 +1247,11 @@ export default function Home() {
 
   // 4. MAIN DASHBOARD & PLATFORM NAVIGATION
   return (
-    <div className="pathfinder-dashboard relative min-h-screen bg-[#05070e] text-slate-100 selection:bg-[#B8A1FF] selection:text-white font-sans overflow-x-hidden">
+    <div className="pathfinder-dashboard relative min-h-screen bg-[#05070e] text-slate-100 selection:bg-white selection:text-zinc-950 font-sans overflow-x-hidden">
       {/* Graceful Cold-Start Wake-Up Notification */}
       {isGlobalServerWakingUp && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[#B8A1FF]/30 bg-[#1B1B1F]/95 px-4 py-2 text-xs font-medium text-[#F1F0F7] shadow-[0_4px_24px_rgba(184,161,255,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#B8A1FF]" />
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-white/20 bg-[#1B1B1F]/95 px-4 py-2 text-xs font-medium text-white shadow-[0_4px_24px_rgba(0,0,0,0.6)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
           <span>Waking up the server, this can take up to a minute...</span>
         </div>
       )}
@@ -1263,7 +1263,7 @@ export default function Home() {
 
         {/* Matrix Grid */}
         <div
-          className="absolute inset-0 opacity-[0.032]"
+          className="absolute inset-0 opacity-[0.025]"
           style={{
             backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.7) 1px, transparent 0)`,
             backgroundSize: "32px 32px",
@@ -1272,42 +1272,42 @@ export default function Home() {
           }}
         />
 
-        {/* Ambient Glows */}
+        {/* Ambient Neutral Glows */}
         <motion.div
-          animate={{ scale: [1, 1.06, 1], opacity: [0.75, 0.9, 0.75] }}
+          animate={{ scale: [1, 1.06, 1], opacity: [0.6, 0.8, 0.6] }}
           transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
           className="absolute -top-[160px] left-1/2 -translate-x-1/2 h-[520px] w-[980px] rounded-full blur-[120px]"
           style={{
             background:
-              "radial-gradient(ellipse at center, rgba(16, 185, 129, 0.13) 0%, rgba(6, 182, 212, 0.08) 45%, transparent 72%)",
+              "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, rgba(148, 163, 184, 0.02) 45%, transparent 72%)",
           }}
         />
         <motion.div
-          animate={{ y: [-12, 16, -12], opacity: [0.55, 0.75, 0.55] }}
+          animate={{ y: [-12, 16, -12], opacity: [0.4, 0.6, 0.4] }}
           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
           className="absolute top-[220px] -left-[180px] h-[660px] w-[660px] rounded-full blur-[140px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(99, 102, 241, 0.09) 0%, rgba(168, 85, 247, 0.045) 50%, transparent 70%)",
+              "radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, rgba(100, 116, 139, 0.015) 50%, transparent 70%)",
           }}
         />
         <motion.div
-          animate={{ y: [16, -14, 16], opacity: [0.5, 0.7, 0.5] }}
+          animate={{ y: [16, -14, 16], opacity: [0.35, 0.55, 0.35] }}
           transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
           className="absolute top-[480px] -right-[160px] h-[600px] w-[600px] rounded-full blur-[130px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, rgba(16, 185, 129, 0.045) 50%, transparent 70%)",
+              "radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, rgba(100, 116, 139, 0.015) 50%, transparent 70%)",
           }}
         />
         <div
-          className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[400px] w-[1200px] rounded-full blur-[150px] opacity-45"
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[400px] w-[1200px] rounded-full blur-[150px] opacity-30"
           style={{
             background:
-              "radial-gradient(ellipse at center, rgba(30, 58, 138, 0.16) 0%, transparent 75%)",
+              "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.03) 0%, transparent 75%)",
           }}
         />
-        <div className="absolute top-[320px] left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/12 to-transparent" />
+        <div className="absolute top-[320px] left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
 
       {/* Top Header */}

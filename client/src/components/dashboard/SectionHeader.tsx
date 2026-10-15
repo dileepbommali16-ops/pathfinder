@@ -12,49 +12,21 @@ interface SectionHeaderProps {
   onAskCoach?: (query: string) => void;
 }
 
+const MONOCHROME_HEADER_STYLE = {
+  badge: "border-white/20 bg-white/10 text-white shadow-sm",
+  icon: "bg-white/[0.08] text-white border-white/20",
+  titleTint: "text-white",
+  line: "from-white/20 via-white/5 to-transparent",
+};
+
 const ACCENT_STYLES = {
-  emerald: {
-    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
-    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
-    titleTint: "text-[#E5E1EF]",
-    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
-  },
-  purple: {
-    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
-    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
-    titleTint: "text-[#E5E1EF]",
-    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
-  },
-  cyan: {
-    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
-    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
-    titleTint: "text-[#E5E1EF]",
-    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
-  },
-  amber: {
-    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
-    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
-    titleTint: "text-[#E5E1EF]",
-    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
-  },
-  blue: {
-    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
-    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
-    titleTint: "text-[#E5E1EF]",
-    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
-  },
-  rose: {
-    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
-    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
-    titleTint: "text-[#E5E1EF]",
-    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
-  },
-  accent: {
-    badge: "border-[#9CE5E0]/30 bg-[#9CE5E0]/10 text-[#9CE5E0] shadow-[0_0_12px_rgba(156,229,224,0.18)]",
-    icon: "bg-[#B8A1FF]/15 text-[#B8A1FF] border-[#B8A1FF]/30",
-    titleTint: "text-[#E5E1EF]",
-    line: "from-[#B8A1FF]/30 via-[#9CE5E0]/10 to-transparent",
-  },
+  emerald: MONOCHROME_HEADER_STYLE,
+  purple: MONOCHROME_HEADER_STYLE,
+  cyan: MONOCHROME_HEADER_STYLE,
+  amber: MONOCHROME_HEADER_STYLE,
+  blue: MONOCHROME_HEADER_STYLE,
+  rose: MONOCHROME_HEADER_STYLE,
+  accent: MONOCHROME_HEADER_STYLE,
 };
 
 export const SectionHeader: React.FC<SectionHeaderProps> = ({

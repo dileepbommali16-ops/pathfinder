@@ -1843,18 +1843,18 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               onClick={toggleAutoSpeak}
               className={`absolute right-22 flex h-8 w-8 items-center justify-center rounded-xl transition-all shadow-sm cursor-pointer ${
                 autoSpeak
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  ? "bg-white/20 text-white border border-white/40 shadow-xs"
                   : "bg-white/10 text-zinc-400 hover:bg-white/20 hover:text-white"
               }`}
               title={autoSpeak ? "Voice replies are ON (Click to mute)" : "Voice replies are OFF (Click to unmute)"}
             >
-              {autoSpeak ? <Volume2 className="h-4 w-4 text-emerald-400" /> : <VolumeX className="h-4 w-4" />}
+              {autoSpeak ? <Volume2 className="h-4 w-4 text-white" /> : <VolumeX className="h-4 w-4 text-zinc-400" />}
             </button>
 
             {/* Small Mic Button */}
             <button
               type="button"
-              onClick={toggleListening}
+              onClick={() => toggleListening()}
               className={`absolute right-12 flex h-8 w-8 items-center justify-center rounded-xl transition-all shadow-sm cursor-pointer ${
                 voiceStatus === "listening"
                   ? "bg-rose-600 text-white animate-pulse ring-2 ring-rose-400/50"
