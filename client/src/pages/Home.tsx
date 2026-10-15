@@ -701,8 +701,15 @@ export default function Home() {
       setIsGlobalServerWakingUp(Boolean(e.detail?.isWakingUp));
     };
     window.addEventListener("pathfinder_server_waking_up", handleWakingUpEvent);
+
+    // Keep-alive ping to /api/health every 4 minutes to prevent Render spin-down
+    const pingInterval = setInterval(() => {
+      fetch(`${API_BASE}/api/health`).catch(() => {});
+    }, 4 * 60 * 1000);
+
     return () => {
       window.removeEventListener("pathfinder_server_waking_up", handleWakingUpEvent);
+      clearInterval(pingInterval);
     };
   }, []);
 
@@ -786,6 +793,85 @@ export default function Home() {
       },
     };
 
+    // 1. Streaming response handler with SSE (High responsiveness, instant TTFT)
+    const streamBackend = async (): Promise<boolean> => {
+      try {
+        const resp = await fetch(`${API_BASE}/api/chat/stream`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: abortCtrl.signal,
+          body: JSON.stringify(chatPayload),
+        });
+
+        if (!resp.ok || !resp.body) {
+          return false;
+        }
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let accumulated = "";
+        let hasAppendedPlaceholder = false;
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (abortCtrl.signal.aborted) {
+            reader.cancel().catch(() => {});
+            return true;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (!trimmedLine.startsWith("data:")) continue;
+            const jsonStr = trimmedLine.replace(/^data:\s*/, "").trim();
+            if (!jsonStr) continue;
+
+            try {
+              const parsed = JSON.parse(jsonStr);
+              if (parsed.token) {
+                clearTimeout(coldStartTimer);
+                setIsChatWakingUp(false);
+                accumulated += parsed.token;
+                const currentContent = accumulated;
+
+                if (!hasAppendedPlaceholder) {
+                  hasAppendedPlaceholder = true;
+                  startTransition(() => {
+                    setMessages((prev) => [...prev, { role: "assistant", content: currentContent }]);
+                  });
+                } else {
+                  startTransition(() => {
+                    setMessages((prev) => {
+                      const updated = [...prev];
+                      if (updated.length > 0 && updated[updated.length - 1].role === "assistant") {
+                        updated[updated.length - 1] = {
+                          ...updated[updated.length - 1],
+                          content: currentContent,
+                        };
+                      }
+                      return updated;
+                    });
+                  });
+                }
+              }
+              if (parsed.done) break;
+            } catch {}
+          }
+        }
+
+        return accumulated.trim().length > 0;
+      } catch (err: any) {
+        if (abortCtrl.signal.aborted) return true;
+        return false;
+      }
+    };
+
+    // 2. Fallback blocking call
     const callBackend = async (isRetry = false): Promise<string | null> => {
       try {
         const resp = await fetchWithTimeout(
@@ -835,7 +921,7 @@ export default function Home() {
     };
 
     try {
-      const reply = await callBackend(false);
+      const streamSuccess = await streamBackend();
       clearTimeout(coldStartTimer);
       setIsChatWakingUp(false);
 
@@ -843,14 +929,19 @@ export default function Home() {
         return;
       }
 
-      startTransition(() => {
-        if (reply) {
-          setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-        } else {
-          const instantReply = getCareerAgentResponse(trimmed, cleanHistory, profile);
-          setMessages((prev) => [...prev, { role: "assistant", content: instantReply }]);
-        }
-      });
+      if (!streamSuccess) {
+        const reply = await callBackend(false);
+        if (abortCtrl.signal.aborted) return;
+
+        startTransition(() => {
+          if (reply) {
+            setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+          } else {
+            const instantReply = getCareerAgentResponse(trimmed, cleanHistory, profile);
+            setMessages((prev) => [...prev, { role: "assistant", content: instantReply }]);
+          }
+        });
+      }
     } catch (err: any) {
       clearTimeout(coldStartTimer);
       setIsChatWakingUp(false);

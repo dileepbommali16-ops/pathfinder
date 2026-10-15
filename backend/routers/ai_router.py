@@ -18,6 +18,7 @@ from backend.security import rate_limiter, ai_budget_manager, get_client_ip, san
 from backend.reliability import gemini_circuit_breaker
 from backend.gemini_engine import (
     chat_with_mentor,
+    stream_chat_with_mentor,
     generate_structured_ai,
     generate_smart_fallback_reply
 )
@@ -140,20 +141,15 @@ async def chat_stream_endpoint(request_body: ChatRequest, request: Request):
 
     async def event_generator():
         try:
-            full_reply = await asyncio.to_thread(
-                chat_with_mentor,
+            async for chunk in stream_chat_with_mentor(
                 message=sanitized_message,
                 history=raw_history,
                 profile=profile,
                 active_tab=active_tab,
                 page_context=user_context
-            )
-            words = full_reply.split(" ")
-            for i, word in enumerate(words):
-                chunk = word + (" " if i < len(words) - 1 else "")
+            ):
                 data = json.dumps({"token": chunk, "done": False})
                 yield f"data: {data}\n\n"
-                await asyncio.sleep(0.02)
             yield f"data: {json.dumps({'token': '', 'done': True})}\n\n"
         except Exception as e:
             err_data = json.dumps({"error": str(e), "done": True})

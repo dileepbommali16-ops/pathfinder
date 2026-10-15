@@ -141,7 +141,7 @@ class TestProjectTutorCatalogAndStateMachine(unittest.TestCase):
             tutor_state=None
         )
         self.assertIn("Step 1 of 9", reply)
-        self.assertIn("Does this step make sense?", reply)
+        self.assertIn("Want me to continue?", reply)
 
     def test_tutor_simpler_command(self):
         reply = generate_local_voice_reply(
@@ -251,6 +251,39 @@ class TestTutorResumeAndInterruptionRecovery(unittest.TestCase):
         )
         self.assertIn("Step 5", reply)
         self.assertTrue("continue" in reply.lower() or "resume" in reply.lower() or "step 5" in reply.lower())
+
+
+class TestShortSpokenReplies(unittest.TestCase):
+    """Verifies that voice replies are 2-4 sentences max, offer to continue, and have zero markdown/URLs."""
+
+    def test_local_voice_reply_short_sentences(self):
+        reply = generate_local_voice_reply(
+            message="Tell me about project Distributed Asynchronous Job Queue",
+            language="en-IN"
+        )
+        spoken_part = reply.split("---SCREEN---")[0].strip()
+        # Cleaned spoken part
+        cleaned = clean_tts_speech(spoken_part)
+        self.assertNotIn("https://", cleaned)
+        self.assertNotIn("```", cleaned)
+        self.assertNotIn("*", cleaned)
+        self.assertNotIn("#", cleaned)
+        # Verify continuation offer
+        self.assertTrue("continue" in cleaned.lower() or "want me to continue" in cleaned.lower())
+
+    def test_telugu_continuation_offer(self):
+        reply = generate_local_voice_reply(
+            message="Tell me about project Distributed Asynchronous Job Queue",
+            language="te-IN"
+        )
+        spoken_part = reply.split("---SCREEN---")[0].strip()
+        self.assertIn("కొనసాగించమంటారా", spoken_part)
+
+    def test_system_prompt_specifies_short_limits(self):
+        prompt = build_voice_system_prompt(language="en-IN")
+        self.assertIn("STRICTLY 2 to 4 sentences maximum", prompt)
+        self.assertIn("Want me to continue?", prompt)
+        self.assertIn("Zero markdown", prompt)
 
 
 if __name__ == "__main__":

@@ -74,8 +74,11 @@ export const cleanTtsSpokenText = (text: string): string => {
     .replace(/https?:\/\/[^\s]+/g, "")
     .replace(/```[\s\S]*?```/g, "")
     .replace(/`([^`]+)`/g, "$1")
-    .replace(/[#*_~>|]/g, "")
-    .replace(/^\s*[-•]\s*/gm, "")
+    .replace(/`+/g, "")
+    .replace(/[#*_~>|\\{}[\]()]/g, "")
+    .replace(/^\s*[-•+*]\s*/gm, "")
+    .replace(/^\s*\d+\.\s*/gm, "")
+    .replace(/<[^>]+>/g, "")
     .replace(/\bCGPA\b/g, "C G P A")
     .replace(/\bDSA\b/g, "D S A")
     .replace(/\bDBMS\b/g, "D B M S")
@@ -140,6 +143,61 @@ export const splitSentences = (text: string): string[] => {
   if (!text.trim()) return [];
   const raw = text.split(/(?<=[.!?])\s+|\n\n+/);
   return raw.map((s) => s.trim()).filter((s) => s.length > 0);
+};
+
+export const isAssistantEcho = (transcript: string, assistantReply: string): boolean => {
+  if (!transcript || !assistantReply) return false;
+  const normT = transcript.toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim();
+  const normA = assistantReply.toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim();
+  if (normT.length < 5 || normA.length < 5) return false;
+
+  // Exact substring match
+  if (normT.length >= 8 && normA.includes(normT)) {
+    return true;
+  }
+  // Word overlap match (65%+)
+  const wordsT = normT.split(/\s+/).filter((w) => w.length > 2);
+  if (wordsT.length >= 3) {
+    const matchingWords = wordsT.filter((w) => normA.includes(w));
+    if (matchingWords.length / wordsT.length >= 0.65) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export const extractShortSpokenReply = (
+  text: string,
+  lang: "te-IN" | "hi-IN" | "en-IN" = "en-IN"
+): string => {
+  if (!text) return "";
+  const { spoken } = parseScreenMarker(text);
+  const clean = cleanTtsSpokenText(spoken || text);
+  if (!clean) return "";
+
+  const sentences = splitSentences(clean);
+  const offer =
+    lang === "te-IN"
+      ? "నేను ముందుకు కొనసాగించమంటారా?"
+      : lang === "hi-IN"
+      ? "क्या मैं आगे जारी रखूं?"
+      : "Want me to continue?";
+
+  // Strictly cap at 2-3 sentences and offer to continue
+  if (sentences.length > 3) {
+    const shortList = sentences.slice(0, 3);
+    const joined = shortList.join(" ").trim();
+    if (!joined.toLowerCase().includes("continue") && !joined.includes("కొనసాగించ") && !joined.includes("जारी")) {
+      return `${joined} ${offer}`;
+    }
+    return joined;
+  }
+
+  const joined = sentences.join(" ").trim();
+  if (sentences.length >= 2 && !joined.endsWith("?") && !joined.toLowerCase().includes("continue") && !joined.includes("కొనసాగించ") && !joined.includes("जारी")) {
+    return `${joined} ${offer}`;
+  }
+  return joined;
 };
 
 const PROMPT_SUGGESTIONS = [
@@ -272,6 +330,15 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   // Track if query was triggered by voice so assistant response always auto-speaks
   const isVoiceTriggeredRef = useRef<boolean>(false);
 
+  // Critical Voice Agent Loop & Echo Prevention Refs
+  const isSpeakingRef = useRef<boolean>(false);
+  const userTurnedListeningOnRef = useRef<boolean>(false);
+  const lastSentTranscriptRef = useRef<string>("");
+  const lastSentTimeRef = useRef<number>(0);
+  const lastAssistantReplyRef = useRef<string>("");
+  const voiceStreamHandledRef = useRef<boolean>(false);
+  const [hasTeluguVoice, setHasTeluguVoice] = useState<boolean>(true);
+
   // Speaker Diagnostic Test States
   const [speakerTestState, setSpeakerTestState] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [speakerTestMsg, setSpeakerTestMsg] = useState<string | null>(null);
@@ -285,7 +352,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         if (stored !== null) return stored === "true";
       } catch {}
     }
-    return true; // Default ON so voice answers automatically
+    return false; // Default false so voice only speaks on voice queries or explicit user click
   });
 
   const toggleAutoSpeak = () => {
@@ -298,19 +365,65 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     }
   };
 
-  // Listen for voices asynchronously to populate voices on Chromium
+  // Listen for voices asynchronously and check Telugu availability
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     const loadVoices = () => {
       const v = window.speechSynthesis.getVoices();
       if (v && v.length > 0) {
         voicesRef.current = v;
+        const te = v.some(
+          (voice) =>
+            voice.lang.toLowerCase().includes("te-in") ||
+            voice.lang.toLowerCase().includes("te_in") ||
+            voice.lang.toLowerCase().startsWith("te-") ||
+            voice.name.toLowerCase().includes("telugu")
+        );
+        setHasTeluguVoice(te);
       }
     };
     loadVoices();
     window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
     return () => {
       window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+    };
+  }, []);
+
+  // Chrome 15s SpeechSynthesis freeze prevention: periodically pause & resume if speaking
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }
+      }
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Keep-alive ping to /api/health every 4 minutes to keep Render alive
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetch(`${API_BASE}/api/health`).catch(() => {});
+    }, 4 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Cancel any active speech when changing page tabs or when tab is hidden
+  useEffect(() => {
+    handleStopAll();
+  }, [activeTab]);
+
+  useEffect(() => {
+    const handleVisChange = () => {
+      if (document.hidden) {
+        handleStopAll();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisChange);
     };
   }, []);
 
@@ -499,12 +612,34 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     return list[0] || null;
   };
 
+  // Safe microphone abort helper
+  const stopMicrophone = () => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    if (recognitionRef.current) {
+      try {
+        if (typeof recognitionRef.current.abort === "function") {
+          recognitionRef.current.abort();
+        } else {
+          recognitionRef.current.stop();
+        }
+      } catch {}
+      recognitionRef.current = null;
+    }
+  };
+
   // Immediate Stop & Barge-in with Incremental Generation Cancellation
   const handleStopAll = () => {
     generationIdRef.current += 1;
     speechQueueRef.current = [];
     isSpeakingSentenceRef.current = false;
+    isSpeakingRef.current = false;
+    userTurnedListeningOnRef.current = false;
     isVoiceTriggeredRef.current = false;
+
+    stopMicrophone();
 
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
@@ -516,22 +651,6 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         console.warn("[VoiceAgent] cancel error:", err);
       }
       activeUtterancesRef.current = [];
-    }
-
-    if (recognitionRef.current) {
-      try {
-        if (typeof recognitionRef.current.abort === "function") {
-          recognitionRef.current.abort();
-        } else {
-          recognitionRef.current.stop();
-        }
-      } catch {}
-      recognitionRef.current = null;
-    }
-
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
     }
 
     if (voiceAbortRef.current) {
@@ -569,6 +688,9 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     if (!nextText) return;
 
     isSpeakingSentenceRef.current = true;
+    isSpeakingRef.current = true;
+    stopMicrophone();
+
     const sentenceScript = detectTextLanguage(nextText);
     const effectiveLang = sentenceScript !== "en-IN" ? sentenceScript : targetLang;
 
@@ -592,7 +714,11 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           const audio = new Audio(audioUrl);
           serverAudioRef.current = audio;
 
-          audio.onplay = () => setVoiceStatus("speaking");
+          audio.onplay = () => {
+            stopMicrophone();
+            isSpeakingRef.current = true;
+            setVoiceStatus("speaking");
+          };
           audio.onended = () => {
             URL.revokeObjectURL(audioUrl);
             serverAudioRef.current = null;
@@ -600,8 +726,16 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
               processSpeechQueue(targetLang, genId);
             } else {
+              isSpeakingRef.current = false;
               setVoiceStatus("idle");
               setSpeakingIndex(null);
+              if (userTurnedListeningOnRef.current) {
+                setTimeout(() => {
+                  if (!isSpeakingRef.current && userTurnedListeningOnRef.current) {
+                    toggleListening(true);
+                  }
+                }, 600);
+              }
             }
           };
           audio.onerror = () => {
@@ -646,6 +780,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         } catch {}
         return;
       }
+      stopMicrophone();
+      isSpeakingRef.current = true;
       if (!firstAudioLoggedRef.current) {
         firstAudioLoggedRef.current = true;
         const ttfa = Math.round(performance.now() - speechStartTimeRef.current);
@@ -660,8 +796,16 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
         processSpeechQueue(targetLang, genId);
       } else {
+        isSpeakingRef.current = false;
         setVoiceStatus("idle");
         setSpeakingIndex(null);
+        if (userTurnedListeningOnRef.current) {
+          setTimeout(() => {
+            if (!isSpeakingRef.current && userTurnedListeningOnRef.current) {
+              toggleListening(true);
+            }
+          }, 600);
+        }
       }
     };
 
@@ -671,8 +815,16 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
         processSpeechQueue(targetLang, genId);
       } else {
+        isSpeakingRef.current = false;
         setVoiceStatus("idle");
         setSpeakingIndex(null);
+        if (userTurnedListeningOnRef.current) {
+          setTimeout(() => {
+            if (!isSpeakingRef.current && userTurnedListeningOnRef.current) {
+              toggleListening(true);
+            }
+          }, 600);
+        }
       }
     };
 
@@ -694,13 +846,21 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     const trimmed = queryText.trim();
     if (!trimmed) return;
 
-    isVoiceTriggeredRef.current = true;
+    // Reject echo of previous assistant message
+    if (isAssistantEcho(trimmed, lastAssistantReplyRef.current)) {
+      console.log("[VoiceAgent] Ignored query matching assistant reply (echo):", trimmed);
+      return;
+    }
+
     handleStopAll();
+    stopMicrophone();
 
     const currentGen = generationIdRef.current;
     const abortCtrl = new AbortController();
     voiceAbortRef.current = abortCtrl;
 
+    voiceStreamHandledRef.current = true;
+    isVoiceTriggeredRef.current = true;
     speechStartTimeRef.current = performance.now();
     firstTokenLoggedRef.current = false;
     firstAudioLoggedRef.current = false;
@@ -721,7 +881,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
     const cleanHistory = messages
       .filter((m, idx) => !(idx === 0 && m.role === "assistant"))
-      .slice(-12)
+      .slice(-6)
       .map((m) => ({ role: m.role, content: m.content }));
 
     const payload = {
@@ -770,6 +930,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       let buffer = "";
       let accumulatedSpoken = "";
       let hitScreenMarker = false;
+      let spokenSentenceCount = 0;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -822,13 +983,14 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             }
 
             // Split sentence-by-sentence for TTS before ---SCREEN---
-            if (!hitScreenMarker) {
+            // Strict cap of 3 sentences max for spoken voice
+            if (!hitScreenMarker && spokenSentenceCount < 3) {
               if (token.includes("---SCREEN---")) {
                 hitScreenMarker = true;
                 const beforeMarker = token.split("---SCREEN---")[0];
                 accumulatedSpoken += beforeMarker;
                 if (accumulatedSpoken.trim()) {
-                  isVoiceTriggeredRef.current = false;
+                  spokenSentenceCount += 1;
                   queueSentenceForTts(accumulatedSpoken.trim(), targetAudioLang, currentGen);
                   accumulatedSpoken = "";
                 }
@@ -838,10 +1000,15 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 if (sentenceMatch) {
                   const completedSentence = sentenceMatch[1];
                   accumulatedSpoken = sentenceMatch[2];
-                  isVoiceTriggeredRef.current = false;
+                  spokenSentenceCount += 1;
                   queueSentenceForTts(completedSentence, targetAudioLang, currentGen);
+                  if (spokenSentenceCount >= 3) {
+                    accumulatedSpoken = "";
+                  }
                 }
               }
+            } else if (token.includes("---SCREEN---")) {
+              hitScreenMarker = true;
             }
 
             if (parsed.done) {
@@ -851,8 +1018,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         }
       }
 
-      if (!hitScreenMarker && accumulatedSpoken.trim() && currentGen === generationIdRef.current) {
-        isVoiceTriggeredRef.current = false;
+      if (!hitScreenMarker && accumulatedSpoken.trim() && spokenSentenceCount < 3 && currentGen === generationIdRef.current) {
         queueSentenceForTts(accumulatedSpoken.trim(), targetAudioLang, currentGen);
       }
     } catch (err: any) {
@@ -868,7 +1034,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   };
 
   // Toggle browser microphone speech recognition with ~1.5s silence detection
-  const toggleListening = () => {
+  const toggleListening = (autoRestart = false) => {
     if (typeof window === "undefined") return;
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -878,12 +1044,20 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       return;
     }
 
-    if (voiceStatus === "listening") {
+    // If already listening and user clicked mic button, turn off listening
+    if (voiceStatus === "listening" && !autoRestart) {
+      userTurnedListeningOnRef.current = false;
       handleStopAll();
       return;
     }
 
+    // Never listen while agent is actively speaking
+    if (isSpeakingRef.current) {
+      return;
+    }
+
     handleStopAll();
+    userTurnedListeningOnRef.current = true;
 
     try {
       fetch(`${API_BASE}/api/health`).catch(() => {});
@@ -907,11 +1081,21 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       };
 
       recognition.onresult = (event: any) => {
+        // Drop any results if agent started speaking
+        if (isSpeakingRef.current) return;
+
         let transcript = "";
         for (let i = 0; i < event.results.length; i++) {
           transcript += event.results[i][0].transcript + " ";
         }
         const cleaned = transcript.trim();
+
+        // Echo rejection: reject if transcript is echo of assistant reply
+        if (isAssistantEcho(cleaned, lastAssistantReplyRef.current)) {
+          console.log("[VoiceAgent] Mic heard assistant echo, ignored");
+          return;
+        }
+
         recognizedText = cleaned;
         setInput(cleaned);
 
@@ -926,28 +1110,52 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       recognition.onerror = (e: any) => {
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         if (e.error === "not-allowed" || e.error === "permission-denied") {
+          userTurnedListeningOnRef.current = false;
           setVoiceError("Microphone permission was denied. Please allow microphone access in your browser settings to speak.");
         } else if (e.error === "no-speech") {
-          setVoiceError("Malli cheppandi — no speech detected. Click the mic to try again.");
-        } else {
+          // Waiting for user to speak
+        } else if (e.error !== "aborted") {
           setVoiceError(`Voice input notice (${e.error || "interrupted"}). Click mic to retry.`);
         }
-        setVoiceStatus("idle");
+        if (!isSpeakingRef.current) {
+          setVoiceStatus("idle");
+        }
       };
 
       recognition.onend = () => {
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-        setVoiceStatus((prev) => (prev === "listening" ? "idle" : prev));
+        if (!isSpeakingRef.current) {
+          setVoiceStatus((prev) => (prev === "listening" ? "idle" : prev));
+        }
+
+        if (isSpeakingRef.current) return;
+
         const finalQuery = recognizedText.trim();
         if (finalQuery) {
           setInput("");
+
+          // 1. Debounce rapid duplicate sends (< 1500ms)
+          const now = Date.now();
+          if (now - lastSentTimeRef.current < 1500) {
+            console.log("[VoiceAgent] Debounced rapid duplicate send:", finalQuery);
+            return;
+          }
+
+          // 2. Reject repeated transcript
+          if (finalQuery.toLowerCase() === lastSentTranscriptRef.current.toLowerCase()) {
+            console.log("[VoiceAgent] Ignored repeated transcript:", finalQuery);
+            return;
+          }
+
+          // 3. Reject echo of assistant answer
+          if (isAssistantEcho(finalQuery, lastAssistantReplyRef.current)) {
+            console.log("[VoiceAgent] Ignored echo of assistant reply:", finalQuery);
+            return;
+          }
+
+          lastSentTranscriptRef.current = finalQuery;
+          lastSentTimeRef.current = now;
           handleVoiceQuery(finalQuery);
-        } else {
-          setVoiceError(
-            voiceLang === "te-IN"
-              ? "వాయిస్ రికార్డ్ అవ్వలేదు. మైక్ అన్‌మ్యూట్ అయిందో లేదో చూడండి లేదా '🔊 Test Speaker' బటన్ నొక్కండి."
-              : "No voice detected. Please unmute your microphone, speak clearly, or click '🔊 Test Speaker' to verify audio."
-          );
         }
       };
 
@@ -968,18 +1176,21 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     }
 
     handleStopAll();
-    const currentGen = generationIdRef.current;
-    const { spoken } = parseScreenMarker(text);
-    const cleanSpoken = cleanTtsSpokenText(spoken || text);
-    if (!cleanSpoken) return;
+    stopMicrophone();
 
-    const textLang = detectTextLanguage(cleanSpoken);
+    const currentGen = generationIdRef.current;
+    const textLang = detectTextLanguage(text);
     const targetLang: "te-IN" | "hi-IN" | "en-IN" =
       voiceLang === "auto" ? textLang : (voiceLang as "te-IN" | "hi-IN" | "en-IN");
 
-    const sentences = splitSentences(cleanSpoken);
+    // Strictly SHORT spoken reply (2-4 sentences max, no markdown, no URLs, offer to continue)
+    const shortSpoken = extractShortSpokenReply(text, targetLang);
+    if (!shortSpoken) return;
+
+    const sentences = splitSentences(shortSpoken);
     if (sentences.length === 0) return;
 
+    isSpeakingRef.current = true;
     setSpeakingIndex(index ?? -1);
     speechQueueRef.current = sentences;
     processSpeechQueue(targetLang, currentGen);
@@ -993,14 +1204,23 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   }, []);
 
   // When a new assistant message arrives:
-  // Auto-speak if the user asked via voice OR if triggered by Blueprints handoff OR if autoSpeak is enabled
   useEffect(() => {
     if (messages.length > 0 && !isLoading) {
       const last = messages[messages.length - 1];
       if (last.role === "assistant") {
+        // Record last assistant reply for echo rejection
+        lastAssistantReplyRef.current = last.content;
+
         const tutor = parseTutorState(last.content);
         if (tutor) {
           updateTutorState(tutor);
+        }
+
+        // If this turn was already streamed and spoken by voice, do NOT speak it again!
+        if (voiceStreamHandledRef.current) {
+          voiceStreamHandledRef.current = false;
+          isVoiceTriggeredRef.current = false;
+          return;
         }
 
         let isBlueprintTrigger = false;
@@ -1011,7 +1231,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           }
         } catch {}
 
-        const shouldSpeak = isVoiceTriggeredRef.current || isBlueprintTrigger || autoSpeak;
+        const shouldSpeak = (isVoiceTriggeredRef.current || isBlueprintTrigger) && !isSpeakingRef.current;
 
         if (shouldSpeak && voiceStatus === "idle") {
           isVoiceTriggeredRef.current = false;
@@ -1019,7 +1239,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         }
       }
     }
-  }, [messages, isLoading, autoSpeak, voiceStatus]);
+  }, [messages, isLoading, voiceStatus]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1228,7 +1448,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           </button>
 
           {/* Stop Button (Barge-in / Stop Audio & Generation) */}
-          {(voiceStatus !== "idle" || isLoading || isSpeakingSentenceRef.current) && (
+          {(voiceStatus !== "idle" || isLoading || isSpeakingSentenceRef.current || isSpeakingRef.current || speakingIndex !== null) && (
             <button
               type="button"
               onClick={handleStopAll}
@@ -1291,6 +1511,18 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           >
             ✕
           </button>
+        </div>
+      )}
+
+      {/* Telugu Voice Fallback Banner */}
+      {voiceLang === "te-IN" && !hasTeluguVoice && (
+        <div className="flex items-center justify-between border-b border-indigo-500/30 bg-indigo-500/10 px-6 py-2 text-xs text-indigo-300">
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 shrink-0 text-indigo-400" />
+            <span>
+              ℹ️ <strong>Telugu Text Fallback Active:</strong> Your browser does not have a native Telugu voice installed. Full Telugu responses are displayed on screen below.
+            </span>
+          </div>
         </div>
       )}
 

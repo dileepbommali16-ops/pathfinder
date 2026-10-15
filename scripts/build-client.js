@@ -103,15 +103,31 @@ if (fs.existsSync(path.join(distRoot, 'index.html'))) {
   console.log(`[Pathfinder Build] Synchronizing build artifacts from ${distRoot}...`);
 
   const copyContents = (srcDir, targetDir) => {
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
-    const items = fs.readdirSync(srcDir);
-    for (const item of items) {
-      if (item === 'public') continue;
-      const src = path.join(srcDir, item);
-      const dest = path.join(targetDir, item);
-      fs.cpSync(src, dest, { recursive: true });
+    try {
+      if (!fs.existsSync(srcDir)) return;
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+      const items = fs.readdirSync(srcDir);
+      for (const item of items) {
+        if (item === 'public') continue;
+        const src = path.join(srcDir, item);
+        const dest = path.join(targetDir, item);
+        try {
+          fs.cpSync(src, dest, { recursive: true, force: true, dereference: true });
+        } catch (cpErr) {
+          try {
+            if (fs.statSync(src).isDirectory()) {
+              if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+              copyContents(src, dest);
+            } else {
+              fs.copyFileSync(src, dest);
+            }
+          } catch {}
+        }
+      }
+    } catch (err) {
+      console.warn(`[Pathfinder Build] Notice mirroring from ${srcDir} to ${targetDir}:`, err.message);
     }
   };
 

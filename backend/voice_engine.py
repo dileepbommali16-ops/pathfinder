@@ -197,9 +197,15 @@ def clean_tts_speech(text: str) -> str:
     for pattern, repl in replacements:
         s = re.sub(pattern, repl, s, flags=re.IGNORECASE)
 
+    # Remove URLs
+    s = re.sub(r"https?://\S+", "", s)
+    # Remove code blocks and inline code
+    s = re.sub(r"```[\s\S]*?```", "", s)
+    s = re.sub(r"`[^`]*`", "", s)
+    s = re.sub(r"`+", "", s)
     # Remove markdown symbols and brackets
     s = re.sub(r"[*#_~>\[\]\(\)\{\}\\]", "", s)
-    # Remove bullet markers
+    # Remove bullet markers and numbering
     s = re.sub(r"^\s*[-•+]\s*", "", s, flags=re.MULTILINE)
     s = re.sub(r"^\s*\d+\.\s*", "", s, flags=re.MULTILINE)
     # Remove emojis
@@ -262,9 +268,7 @@ def build_voice_system_prompt(
 [ACTIVE PROJECT TUTOR SESSION]
 - Project: {p_name} ({t_id})
 - Current Step: Step {t_step} of 9
-- Instruction: Teach ONLY Step {t_step}. Conclude Part 1 with a short check: "Does this step make sense?" (or Telugu: "ఈ స్టెప్ అర్థమైందా?", Hindi: "क्या यह समझ आया?").
-- If user said continue/resume: give a one-line recap of Step {t_step} and ask if clear.
-- If user said simpler/repeat: explain Step {t_step} with a real-life analogy and simpler terms.
+- Instruction: Teach ONLY Step {t_step}. Conclude Part 1 with a short check: "Want me to continue?" (or Telugu: "నేను ముందుకు కొనసాగించమంటారా?", Hindi: "क्या मैं आगे जारी रखूं?").
 - Put code and detailed steps strictly in Part 2 after '---SCREEN---'. Include [[TUTOR:{{"projectId": "{t_id}", "stepIndex": {t_step}, "stepCount": 9}}]]
 """
 
@@ -288,9 +292,11 @@ Your response MUST consist of two distinct parts separated by the exact delimite
 ---SCREEN---
 
 PART 1: SPOKEN RESPONSE (BEFORE '---SCREEN---')
-- Maximum Output Length: 45 to 50 words (2 to 3 natural spoken sentences maximum).
-- Speed Optimization: Zero preamble, zero pleasantries ("Hi", "Sure", "Great question"). Jump straight to the core answer.
-- Zero markdown: Absolutely NO asterisks (*), hashtags (#), backticks (`), bullet points, numbers, or emojis.
+- Output Length: STRICTLY 2 to 4 sentences maximum (approx 35 to 55 words total).
+- Core Principle: Give a direct, punchy answer. Never read long lists or code aloud.
+- Offer Continuation: Always conclude your spoken response with: "Want me to continue?" (or in Telugu: "నేను ముందుకు కొనసాగించమంటారా?", in Hindi: "क्या मैं आगे जारी रखूं?").
+- Zero markdown: Absolutely NO asterisks (*), hashtags (#), backticks (`), bullet points, numbers, links, or URLs.
+- Zero preamble: Zero pleasantries ("Hi", "Sure", "Great question"). Jump straight to the core answer.
 - Spell out abbreviations for speech: "C G P A", "D S A", "Sequel", "O of N log N", "L P A".
 - Language & Script Rule (CRITICAL):
   * Reply in the exact language and script the user spoke.
@@ -298,11 +304,9 @@ PART 1: SPOKEN RESPONSE (BEFORE '---SCREEN---')
   * Telugu speech or language is te-IN -> Pure Telugu script (తెలుగు) so browser speech synthesis pronounces it naturally. Never mix Latin and Telugu randomly.
   * Hindi speech or language is hi-IN -> Hindi in Devanagari script (हिंदी).
   * If the user switches language mid-conversation, switch with them immediately.
-  * Never read code aloud. Describe what the code achieves in plain words.
 
 PART 2: VISUAL RESPONSE (AFTER '---SCREEN---')
-- Rendered on the student's screen with full formatting.
-- Include structured steps, code blocks, technical tables, and links.
+- Rendered on the student's screen with full formatting, code blocks, technical tables, and markdown.
 - If the user asked to navigate to a tab (e.g., 'skills tab ki teesukelli', 'open resume studio'), include the navigation tag:
   [[NAVIGATE:<tab_id>]] (valid: overview, action, skills, coach, projects, analytics, resume, branches, defense, profile).
 - If the user asked to build or download a resume ('resume build cheyyi'), include:
@@ -433,31 +437,31 @@ We previously covered up to **Step {current_step}: {step_info['title']}**.
 
         if is_summary:
             if is_telugu:
-                spoken = f"{p_title} లో మనం ఇప్పటివరకు స్టెప్ {current_step} వరకు చూశాం: {step_title}. నెక్స్ట్ స్టెప్ కి వెళ్దామా?"
+                spoken = f"{p_title} లో మనం ఇప్పటివరకు స్టెప్ {current_step} వరకు చూశాం: {step_title}. నేను ముందుకు కొనసాగించమంటారా?"
             elif is_hindi:
-                spoken = f"{p_title} में हम अब तक स्टेप {current_step} तक देख चुके हैं: {step_title}। क्या आगे बढ़ें?"
+                spoken = f"{p_title} में हम अब तक स्टेप {current_step} तक देख चुके हैं: {step_title}। क्या मैं आगे जारी रखूं?"
             else:
-                spoken = f"So far in {p_title} we have progressed through Step {current_step}: {step_title}. Ready to advance?"
+                spoken = f"So far in {p_title} we have progressed through Step {current_step}: {step_title}. Want me to continue?"
         elif is_continue:
             if is_telugu:
-                spoken = f"మనం {p_title} లో స్టెప్ {current_step} దగ్గర ఉన్నాం: {step_title}. ఆలోచించండి, {analogy} ఈ స్టెప్ అర్థమైందా?"
+                spoken = f"మనం {p_title} లో స్టెప్ {current_step} దగ్గర ఉన్నాం: {step_title}. ఆలోచించండి, {analogy} నేను ముందుకు కొనసాగించమంటారా?"
             elif is_hindi:
-                spoken = f"हम {p_title} के स्टेप {current_step} पर थे: {step_title}। उदाहरण के लिए, {analogy} क्या यह समझ आया?"
+                spoken = f"हम {p_title} के स्टेप {current_step} पर थे: {step_title}। उदाहरण के लिए, {analogy} क्या मैं आगे जारी रखूं?"
             else:
-                spoken = f"We are on Step {current_step} of 9 for {p_title}: {step_title}. Think of it {analogy} Does this step make sense?"
+                spoken = f"We are on Step {current_step} of 9 for {p_title}: {step_title}. Think of it {analogy} Want me to continue?"
         elif is_simpler:
             if is_telugu:
-                spoken = f"ఏమీ కంగారు పడకండి, మరింత సరళంగా చెబుతాను. {p_title} లోని {step_title} కోసం చిన్న ఉదాహరణ: {analogy} ఇప్పుడు అర్థమైందా?"
+                spoken = f"ఏమీ కంగారు పడకండి, మరింత సరళంగా చెబుతాను. {p_title} లోని {step_title} కోసం చిన్న ఉదాహరణ: {analogy} నేను ముందుకు కొనసాగించమంటారా?"
             elif is_hindi:
-                spoken = f"कोई बात नहीं, इसे और आसान शब्दों में समझते हैं। {p_title} के लिए सरल उदाहरण: {analogy} क्या अब यह समझ आया?"
+                spoken = f"कोई बात नहीं, इसे और आसान शब्दों में समझते हैं। {p_title} के लिए सरल उदाहरण: {analogy} क्या मैं आगे जारी रखूं?"
             else:
-                spoken = f"No problem at all, let us simplify this. Real-life analogy for {p_title}: {analogy} Does this make the concept clearer?"
+                spoken = f"No problem at all, let us simplify this. Real-life analogy for {p_title}: {analogy} Want me to continue?"
         elif is_telugu:
-            spoken = f"ప్రాజెక్ట్ {p_title} లో మనం స్టెప్ {current_step} లో ఉన్నాం. ఇది {step_title}. ఆలోచించండి, {analogy} మీకు ఈ కాన్సెప్ట్ అర్థమైందా?"
+            spoken = f"ప్రాజెక్ట్ {p_title} లో మనం స్టెప్ {current_step} లో ఉన్నాం. ఇది {step_title}. ఆలోచించండి, {analogy} నేను ముందుకు కొనసాగించమంటారా?"
         elif is_hindi:
-            spoken = f"प्रोजेक्ट {p_title} में हम स्टेप {current_step} पर हैं: {step_title}। सोचिए, {analogy} क्या यह समझ आया?"
+            spoken = f"प्रोजेक्ट {p_title} में हम स्टेप {current_step} पर हैं: {step_title}। सोचिए, {analogy} क्या मैं आगे जारी रखूं?"
         else:
-            spoken = f"We are on Step {current_step} of 9 for {p_title}: {step_title}. Think of it {analogy} Does this step make sense?"
+            spoken = f"We are on Step {current_step} of 9 for {p_title}: {step_title}. Think of it {analogy} Want me to continue?"
 
         screen = f"""### 🛠️ {p_title} — Step {current_step} of 9: {step_title}
 
@@ -480,11 +484,11 @@ We previously covered up to **Step {current_step}: {step_info['title']}**.
     # 4. ACID properties in DBMS
     if "acid" in low:
         if is_telugu:
-            spoken = "ఏ సి ఐ డి అంటే అటామిసిటీ, కన్సిస్టెన్సీ, ఐసోలేషన్ మరియు డ్యూరబిలిటీ. ఇంటర్వ్యూలో అటామిసిటీ అంతా లేదా ఏమీ కాదని, ఐసోలేషన్ ఒకేసారి జరిగే డేటా లోపాలను నివారిస్తుందని చెప్పండి."
+            spoken = "ఏ సి ఐ డి అంటే అటామిసిటీ, కన్సిస్టెన్సీ, ఐసోలేషన్ మరియు డ్యూరబిలిటీ. ఇంటర్వ్యూలో అటామిసిటీ అంతా లేదా ఏమీ కాదని, ఐసోలేషన్ ఒకేసారి జరిగే డేటా లోపాలను నివారిస్తుందని చెప్పండి. నేను ముందుకు కొనసాగించమంటారా?"
         elif is_hindi:
-            spoken = "ए सी आई डी का मतलब है एटॉमिसीटी, कंसिस्टेंसी, आइसोलेशन और ड्यूरेबिलिटी। इंटरव्यू में बताएं कि एटॉमिसीटी सब या कुछ नहीं निष्पादित करती है।"
+            spoken = "ए सी आई डी का मतलब है एटॉमिसीटी, कंसिस्टेंसी, आइसोलेशन और ड्यूरेबिलिटी। इंटरव्यू में बताएं कि एटॉमिसीटी सब या कुछ नहीं निष्पादित करती है। क्या मैं आगे जारी रखूं?"
         else:
-            spoken = "ACID guarantees transaction reliability through Atomicity, Consistency, Isolation, and Durability. In interviews emphasize that Atomicity enforces all or nothing execution while Isolation prevents concurrent data corruption."
+            spoken = "ACID guarantees transaction reliability through Atomicity, Consistency, Isolation, and Durability. In interviews emphasize that Atomicity enforces all or nothing execution while Isolation prevents concurrent data corruption. Want me to continue?"
         screen = """### 💾 ACID Properties in DBMS (Interview Quick Reference)
 
 1. **Atomicity (All or Nothing)**: Entire transaction executes successfully or rolls back completely (e.g., Bank transfer debit + credit).
@@ -501,11 +505,11 @@ We previously covered up to **Step {current_step}: {step_info['title']}**.
     # 5. Service vs Product Company query
     if any(k in low for k in ["service", "product"]) and "difference" in low:
         if is_telugu:
-            spoken = "సర్వీస్ కంపెనీలు ఆప్టిట్యూడ్ మరియు బేసిక్ కమ్యూనికేషన్ చూస్తాయి. ప్రోడక్ట్ కంపెనీలు డి ఎస్ ఎ సామర్థ్యం, సిస్టమ్ డిజైన్ మరియు రియల్ టైమ్ ప్రాజెక్ట్‌లను పరీక్షిస్తాయి."
+            spoken = "సర్వీస్ కంపెనీలు ఆప్టిట్యూడ్ మరియు బేసిక్ కమ్యూనికేషన్ చూస్తాయి. ప్రోడక్ట్ కంపెనీలు డి ఎస్ ఎ సామర్థ్యం, సిస్టమ్ డిజైన్ మరియు రియల్ టైమ్ ప్రాజెక్ట్‌లను పరీక్షిస్తాయి. నేను ముందుకు కొనసాగించమంటారా?"
         elif is_hindi:
-            spoken = "सर्विस कंपनियां एप्टीट्यूड और बेसिक कम्युनिकेशन देखती हैं, जबकि प्रोडक्ट कंपनियां डेटा स्ट्रक्चर्स, एल्गोरिदम और सिस्टम आर्किटेक्चर पर टेस्ट करती हैं।"
+            spoken = "सर्विस कंपनियां एप्टीट्यूड और बेसिक कम्युनिकेशन देखती हैं, जबकि प्रोडक्ट कंपनियां डेटा स्ट्रक्चर्स, एल्गोरिदम और सिस्टम आर्किटेक्चर पर टेस्ट करती हैं। क्या मैं आगे जारी रखूं?"
         else:
-            spoken = "Service drives evaluate speed in quantitative aptitude, basic C S fundamentals, and communication skills. Product companies assess you on Data Structures, Algorithms, and production project architecture."
+            spoken = "Service drives evaluate speed in quantitative aptitude, basic C S fundamentals, and communication skills. Product companies assess you on Data Structures, Algorithms, and production project architecture. Want me to continue?"
         screen = """### ⚖️ Service vs. Product Placement Criteria
 
 | Dimension | Mass IT Service Firms (TCS, Infosys, Wipro) | Tier-1 Product Companies (Amazon, Startups, Uber) |
@@ -520,11 +524,11 @@ We previously covered up to **Step {current_step}: {step_info['title']}**.
 
     # 6. Default placement answer
     if is_telugu:
-        spoken = "మీరు అడిగిన ప్రశ్నకు పాత్‌ఫైండర్ 23 ప్రాజెక్ట్ బ్లూప్రింట్లు మరియు 972 క్యాంపస్ రికార్డులతో గైడెన్స్ ఇస్తుంది. మీరు నిర్దిష్టంగా ఏ రోల్ లేదా ప్రాజెక్ట్ గురించి తెలుసుకోవాలనుకుంటున్నారు?"
+        spoken = "మీరు అడిగిన ప్రశ్నకు పాత్‌ఫైండర్ 23 ప్రాజెక్ట్ బ్లూప్రింట్లు మరియు 972 క్యాంపస్ రికార్డులతో గైడెన్స్ ఇస్తుంది. నేను ముందుకు కొనసాగించమంటారా?"
     elif is_hindi:
-        spoken = "पाथफाइंडर 23 प्रोजेक्ट ब्लूप्रिंट और 972 कैंपस रिकॉर्ड के साथ तैयारी कराता है। आप किस रोल या प्रोजेक्ट के बारे में जानना चाहते हैं?"
+        spoken = "पाथफाइंडर 23 प्रोजेक्ट ब्लूप्रिंट और 972 कैंपस रिकॉर्ड के साथ तैयारी कराता है। क्या मैं आगे जारी रखूं?"
     else:
-        spoken = "Pathfinder provides data-backed guidance across our 23 engineering blueprints and 972 placement records. What specific role, project architecture, or interview topic would you like to prepare for?"
+        spoken = "Pathfinder provides data-backed guidance across our 23 engineering blueprints and 972 placement records. What specific role or project would you like to prepare for? Want me to continue?"
 
     screen = f"""### 🎯 Pathfinder Placement Intelligence
 

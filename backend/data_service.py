@@ -27,6 +27,19 @@ _cached_skills: Optional[List[Dict[str, Any]]] = None
 _cached_projects: Optional[List[Dict[str, Any]]] = None
 _cached_branches: Optional[List[Dict[str, Any]]] = None
 
+# In-memory cached dataset aggregates (NOT replies)
+_cached_cohort_aggregates: Dict[tuple, Dict[str, Any]] = {}
+_cached_branch_aggregates: Dict[int, Dict[str, Any]] = {}
+_cached_skills_aggregates: Dict[tuple, Dict[str, Any]] = {}
+_cached_tool_aggregates: Dict[str, Any] = {}
+
+def clear_aggregates_cache():
+    """Flushes in-memory dataset aggregate caches when records reload."""
+    _cached_cohort_aggregates.clear()
+    _cached_branch_aggregates.clear()
+    _cached_skills_aggregates.clear()
+    _cached_tool_aggregates.clear()
+
 
 # ============================================================================
 # 1. TYPED SCHEMAS
@@ -133,6 +146,8 @@ class CohortSummary(BaseModel):
 
 def get_placement_df(force_reload: bool = False) -> pd.DataFrame:
     global _cached_df
+    if force_reload:
+        clear_aggregates_cache()
     if _cached_df is not None and not force_reload:
         return _cached_df
 
@@ -264,6 +279,11 @@ def get_cohort_analytics_data(
     page_size: Optional[int] = None
 ) -> Dict[str, Any]:
     """Generates complete aggregated metrics, distributions, and record slices."""
+    is_pure_aggregate = (page is None and page_size is None)
+    cache_key = (year, branch, gender, skill)
+    if is_pure_aggregate and cache_key in _cached_cohort_aggregates:
+        return dict(_cached_cohort_aggregates[cache_key])
+
     raw_df = get_placement_df()
     filtered = filter_records(year=year, branch=branch, gender=gender, skill=skill)
 
@@ -402,7 +422,7 @@ def get_cohort_analytics_data(
         r["source_id"] = r.get("source_id") or r.get("sourceId") or f"src_{r.get('id', 0)}"
         records_slice.append(r)
 
-    return {
+    result_payload = {
         "total_records": total,
         "placed_count": placed,
         "unplaced_count": unplaced,
@@ -425,10 +445,17 @@ def get_cohort_analytics_data(
         "records": records_slice,
         "pagination": pagination_info
     }
+    if is_pure_aggregate:
+        _cached_cohort_aggregates[cache_key] = result_payload
+    return result_payload
 
 
 def get_branch_deep_analytics(year: Optional[int] = 2026) -> Dict[str, Any]:
     """Generates branch-by-branch comparative analytics and curriculum requirements."""
+    year_val = int(year or 2026)
+    if year_val in _cached_branch_aggregates:
+        return _cached_branch_aggregates[year_val]
+
     df = filter_records(year=year, branch="All", gender="All", skill="All")
     branches_config = {b["code"]: b for b in get_branches()}
 
@@ -482,14 +509,20 @@ def get_branch_deep_analytics(year: Optional[int] = 2026) -> Dict[str, Any]:
             "topSkills": top_skills
         })
 
-    return {
+    res_branches = {
         "year": year or 2026,
         "branches": branch_results
     }
+    _cached_branch_aggregates[year_val] = res_branches
+    return res_branches
 
 
 def get_skills_deep_analytics(year: Optional[int] = 2026, branch: Optional[str] = "All") -> Dict[str, Any]:
     """Generates comparative skill performance, placement multipliers, and benchmark data."""
+    cache_key = (int(year or 2026), str(branch or "All"))
+    if cache_key in _cached_skills_aggregates:
+        return _cached_skills_aggregates[cache_key]
+
     df = filter_records(year=year, branch=branch, gender="All", skill="All")
     baseline_placement_rate = round((df["placed"].sum() / len(df)) * 100.0, 1) if not df.empty else 75.0
     skills_config = {s["name"]: s for s in get_skills()}
@@ -531,13 +564,15 @@ def get_skills_deep_analytics(year: Optional[int] = 2026, branch: Optional[str] 
 
     skill_rows.sort(key=lambda x: x["placementRate"], reverse=True)
 
-    return {
+    res_skills = {
         "year": year or 2026,
         "branch": branch or "All",
         "baselinePlacementRate": baseline_placement_rate,
         "skillAnalytics": skill_rows,
         "canonicalBenchmarks": get_skills()
     }
+    _cached_skills_aggregates[cache_key] = res_skills
+    return res_skills
 
 
 # ============================================================================
@@ -547,8 +582,23 @@ def get_skills_deep_analytics(year: Optional[int] = 2026, branch: Optional[str] 
 def execute_data_tool(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     """
     Executes a structured tool call directly against the single data service.
-    Returns authoritative data numbers to ground the AI agent.
+    Returns authoritative data numbers to ground the AI agent with in-memory caching.
     """
+    cache_key = None
+    try:
+        cache_key = f"{tool_name}:{json.dumps(arguments or {}, sort_keys=True)}"
+        if cache_key in _cached_tool_aggregates:
+            return dict(_cached_tool_aggregates[cache_key])
+    except Exception:
+        pass
+
+    result = _execute_data_tool_internal(tool_name, arguments)
+    if cache_key and isinstance(result, dict) and "error" not in result:
+        _cached_tool_aggregates[cache_key] = result
+    return result
+
+
+def _execute_data_tool_internal(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     if tool_name == "query_cohort_stats":
         year = arguments.get("year", 2026)
         branch = arguments.get("branch", "All")
