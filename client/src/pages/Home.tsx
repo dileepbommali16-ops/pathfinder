@@ -680,6 +680,7 @@ export default function Home() {
   const [isChatWakingUp, setIsChatWakingUp] = useState(false);
   const [isGlobalServerWakingUp, setIsGlobalServerWakingUp] = useState(false);
   const chatAbortRef = useRef<AbortController | null>(null);
+  const isChatSendingRef = useRef(false);
 
   useEffect(() => {
     const handleWakingUpEvent = (e: any) => {
@@ -696,6 +697,7 @@ export default function Home() {
       chatAbortRef.current.abort();
       chatAbortRef.current = null;
     }
+    isChatSendingRef.current = false;
     setIsChatLoading(false);
     setIsChatWakingUp(false);
   };
@@ -707,7 +709,8 @@ export default function Home() {
     cardContext?: string
   ) => {
     const trimmed = userText.trim();
-    if (!trimmed) return;
+    if (!trimmed || isChatSendingRef.current) return;
+    isChatSendingRef.current = true;
 
     startTransition(() => {
       setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
@@ -846,6 +849,7 @@ export default function Home() {
       });
     } finally {
       clearTimeout(coldStartTimer);
+      isChatSendingRef.current = false;
       startTransition(() => {
         setIsChatLoading(false);
         setIsChatWakingUp(false);
@@ -863,6 +867,7 @@ export default function Home() {
   };
 
   const handleRegenerateChat = () => {
+    if (isChatSendingRef.current) return;
     // Find the last user message and re-send it
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === "user") {

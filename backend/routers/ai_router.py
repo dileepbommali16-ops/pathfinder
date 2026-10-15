@@ -71,7 +71,10 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
             page_context=user_context,
             return_meta=True
         )
-        gemini_circuit_breaker.record_success()
+        if meta.get("status") == "success":
+            gemini_circuit_breaker.record_success()
+        else:
+            gemini_circuit_breaker.record_failure(Exception("All LLM providers unavailable"))
         model_used = meta.get("model_used", "none")
         if model_used != "none":
             source = f"Google Gemini ({model_used})" if "gemini" in model_used.lower() else f"OpenRouter ({model_used})"

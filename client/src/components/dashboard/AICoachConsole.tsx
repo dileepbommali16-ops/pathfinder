@@ -89,19 +89,28 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const [mode, setMode] = useState<"chat" | "interview">("chat");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const lastActionTimeRef = useRef(0);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  const handleSafeSend = (text: string) => {
+    const trimmed = text.trim();
+    const now = Date.now();
+    if (!trimmed || isLoading || now - lastActionTimeRef.current < 600) return;
+    lastActionTimeRef.current = now;
+    startTransition(() => {
+      onSendMessage(trimmed);
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const query = input.trim();
     if (!query || isLoading) return;
     setInput("");
-    startTransition(() => {
-      onSendMessage(query);
-    });
+    handleSafeSend(query);
   };
 
   const handleCopy = (text: string, index: number) => {
@@ -205,7 +214,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             {MOCK_QUESTIONS.map((q, i) => (
               <button
                 key={i}
-                onClick={() => startTransition(() => onSendMessage(q.prompt))}
+                onClick={() => handleSafeSend(q.prompt)}
                 disabled={isLoading}
                 className="rounded-lg border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-white/20 transition-all disabled:opacity-50"
               >
@@ -222,7 +231,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         {QUICK_ACTIONS.map((action, i) => (
           <button
             key={i}
-            onClick={() => startTransition(() => onSendMessage(action.prompt))}
+            onClick={() => handleSafeSend(action.prompt)}
             disabled={isLoading}
             className="shrink-0 rounded-lg border border-[#2A2A30] bg-[#141417] px-2.5 py-1 text-[11px] font-medium text-[#A1A1AA] transition-all hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-95 disabled:opacity-50"
           >
@@ -248,8 +257,9 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               {PROMPT_SUGGESTIONS.map((s, idx) => (
                 <button
                   key={idx}
-                  onClick={() => startTransition(() => onSendMessage(s))}
-                  className="rounded-xl border border-[#2A2A30] bg-[#141417] px-3 py-1.5 text-xs text-[#A1A1AA] transition-all hover:border-white/40 hover:bg-white/10 hover:text-white hover:shadow-[0_0_12px_rgba(255,255,255,0.1)] active:scale-95"
+                  onClick={() => handleSafeSend(s)}
+                  disabled={isLoading}
+                  className="rounded-xl border border-[#2A2A30] bg-[#141417] px-3 py-1.5 text-xs text-[#A1A1AA] transition-all hover:border-white/40 hover:bg-white/10 hover:text-white hover:shadow-[0_0_12px_rgba(255,255,255,0.1)] active:scale-95 disabled:opacity-50"
                 >
                   💡 {s}
                 </button>
@@ -290,7 +300,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                     <button
                       type="button"
                       onClick={onRegenerate}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 active:scale-95 transition-all cursor-pointer"
+                      disabled={isLoading}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
                     >
                       <RefreshCw className="h-3 w-3" />
                       <span>Retry</span>
@@ -334,7 +345,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                         <button
                           key={cIdx}
                           type="button"
-                          onClick={() => onSendMessage(chip)}
+                          onClick={() => handleSafeSend(chip)}
                           disabled={isLoading}
                           className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-white/20 hover:border-white/40 active:scale-95 disabled:opacity-50 shadow-sm cursor-pointer"
                         >

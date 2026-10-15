@@ -50,6 +50,58 @@ OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip() or "
 _validated_gemini_models: Optional[List[str]] = None
 _last_gemini_diagnostic: Dict[str, Any] = {"status": "none"}
 
+DISALLOWED_MODEL_PATTERNS = (
+    "-tts",
+    "-image",
+    "imagen",
+    "embed",
+    "audio",
+    "transcription",
+    "robotics",
+    "computer-use",
+    "vision-preview",
+)
+
+PREFERRED_MODELS_ORDER = [
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-8b",
+    "gemini-3-flash-preview",
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
+    "gemini-1.5-pro",
+]
+
+
+def evict_gemini_model(model: str):
+    """Permanently evicts a model that returns 404 Not Found or 400 Bad Request."""
+    global _validated_gemini_models
+    if _validated_gemini_models and model in _validated_gemini_models:
+        _validated_gemini_models = [m for m in _validated_gemini_models if m != model]
+        logger.warning(f"[Gemini Engine] Evicted invalid/unsupported model '{model}'. Remaining candidates: {_validated_gemini_models}")
+
+
+def promote_gemini_model(model: str):
+    """Promotes a proven successful model to index 0 so future requests hit it immediately."""
+    global _validated_gemini_models
+    if not _validated_gemini_models:
+        _validated_gemini_models = [model]
+    else:
+        if model in _validated_gemini_models:
+            _validated_gemini_models.remove(model)
+        _validated_gemini_models.insert(0, model)
+        logger.info(f"[Gemini Engine] Promoted active working model '{model}' to primary position.")
+
+
+def deprioritize_gemini_model(model: str):
+    """Moves a temporarily overloaded model (503/429) to the back of the queue."""
+    global _validated_gemini_models
+    if _validated_gemini_models and model in _validated_gemini_models and len(_validated_gemini_models) > 1:
+        _validated_gemini_models.remove(model)
+        _validated_gemini_models.append(model)
+        logger.info(f"[Gemini Engine] Deprioritized model '{model}' to end of list.")
+
 
 def get_last_gemini_diagnostic() -> Dict[str, Any]:
     return _last_gemini_diagnostic
@@ -58,17 +110,19 @@ def get_last_gemini_diagnostic() -> Dict[str, Any]:
 def get_gemini_models() -> List[str]:
     """
     Returns active Google Gemini models supporting generateContent in priority order.
+    Excludes non-chat, audio/TTS, and image-only models.
     Validates against the models list endpoint at startup if an API key is present.
-    Always respects GEMINI_MODEL as primary override.
+    Always respects valid GEMINI_MODEL as primary override.
     """
     global _validated_gemini_models
-    if _validated_gemini_models is not None:
+    if _validated_gemini_models is not None and len(_validated_gemini_models) > 0:
         return _validated_gemini_models
 
     models: List[str] = []
     env_m = os.getenv("GEMINI_MODEL", "").strip()
-    if env_m and "3.8" not in env_m:
-        models.append(env_m)
+    if env_m and not any(bad in env_m.lower() for bad in DISALLOWED_MODEL_PATTERNS):
+        if env_m not in ("gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.8-flash"):
+            models.append(env_m)
 
     key = os.getenv("GEMINI_API_KEY", "").strip()
     if key:
@@ -83,30 +137,21 @@ def get_gemini_models() -> List[str]:
                     m["name"].replace("models/", "")
                     for m in data.get("models", [])
                     if "generateContent" in m.get("supportedGenerationMethods", [])
+                    and not any(bad in m.get("name", "").lower() for bad in DISALLOWED_MODEL_PATTERNS)
                 ]
-                preferred_order = [
-                    "gemini-2.0-flash",
-                    "gemini-2.0-flash-lite",
-                    "gemini-1.5-flash",
-                    "gemini-1.5-pro"
-                ]
-                for pref in preferred_order:
+                for pref in PREFERRED_MODELS_ORDER:
                     if pref in available and pref not in models:
                         models.append(pref)
                 for av in available:
-                    if "flash" in av and av not in models:
+                    if any(bad in av.lower() for bad in DISALLOWED_MODEL_PATTERNS):
+                        continue
+                    if ("flash" in av.lower() or "gemini" in av.lower()) and av not in models:
                         models.append(av)
         except Exception as exc:
             logger.debug(f"[Gemini Engine] Model discovery endpoint check skipped: {exc}")
 
     # Standard fallback models with generateContent capability
-    standard_defaults = [
-        "gemini-2.0-flash",
-        "gemini-2.0-flash-lite",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro"
-    ]
-    for candidate in standard_defaults:
+    for candidate in PREFERRED_MODELS_ORDER:
         if candidate not in models:
             models.append(candidate)
 
@@ -548,12 +593,12 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
     gemini_call_ms = 0.0
     model_used = "none"
 
-    # 6. Execute with retries across verified Gemini models (total budget ~25s)
-    models_to_try = get_gemini_models()
+    # 6. Execute with retries across verified Gemini models (total budget ~20s)
+    models_to_try = list(get_gemini_models())
     if api_key:
         for model in models_to_try:
-            if (time.perf_counter() - t_start) > 30.0:
-                logger.warning("[Gemini Engine] Time budget exhausted (30s), moving to fallback.")
+            if (time.perf_counter() - t_start) > 20.0:
+                logger.warning("[Gemini Engine] Time budget exhausted (20s), moving to fallback.")
                 break
 
             t_call_start = time.perf_counter()
@@ -566,11 +611,12 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
                     temperature=0.85,
                     max_output_tokens=2048,
                     include_thinking=False,
-                    timeout_sec=5.0
+                    timeout_sec=3.5
                 )
                 call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
                 attempts_log.append({"model": model, "duration_ms": call_duration, "status": "ok" if reply else "empty"})
                 if reply and reply.strip():
+                    promote_gemini_model(model)
                     global _last_gemini_diagnostic
                     _last_gemini_diagnostic = {"status": "success", "model": model, "duration_ms": call_duration}
                     model_used = model
@@ -601,15 +647,20 @@ SAVED CANDIDATE PROFILE (Use when answering career, skill, or project queries):
                 sanitized_body = re.sub(r"key=[a-zA-Z0-9_\-]+", "key=[REDACTED]", err_body[:300])
                 attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"HTTP {http_err.code}"})
                 logger.warning(
-                    f"[Gemini Engine] Model '{model}' HTTP {http_err.code} ({http_err.reason}) in {call_duration}ms: {sanitized_body}. Trying next model..."
+                    f"[Gemini Engine] Model '{model}' HTTP {http_err.code} ({http_err.reason}) in {call_duration}ms: {sanitized_body}."
                 )
+                if http_err.code in (400, 404):
+                    evict_gemini_model(model)
+                elif http_err.code in (429, 503):
+                    deprioritize_gemini_model(model)
                 continue
             except Exception as exc:
                 call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
                 attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"Exception {type(exc).__name__}"})
                 logger.warning(
-                    f"[Gemini Engine] Model '{model}' exception in {call_duration}ms: {exc}. Trying next model..."
+                    f"[Gemini Engine] Model '{model}' exception in {call_duration}ms: {exc}."
                 )
+                deprioritize_gemini_model(model)
                 continue
 
     # 7. OpenRouter fallback if configured
