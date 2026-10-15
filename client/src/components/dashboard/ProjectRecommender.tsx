@@ -345,11 +345,24 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                 <div className="pt-6">
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+                        try {
+                          if (window.speechSynthesis.paused) {
+                            window.speechSynthesis.resume();
+                          }
+                          const dummy = new SpeechSynthesisUtterance("");
+                          dummy.volume = 0;
+                          window.speechSynthesis.speak(dummy);
+                        } catch {}
+                      }
+                      try {
+                        sessionStorage.setItem("pathfinder_blueprint_voice_trigger", "true");
+                      } catch {}
                       onAskCoach(
                         `Let's discuss how to build '${proj.title}'. What should the complete system architecture, component stack, 5-phase build roadmap, and top technical interview defense talking points look like?`
-                      )
-                    }
+                      );
+                    }}
                     className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#FF6B4A]/10 border border-[#FF6B4A]/30 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#FF6B4A]/20 hover:border-[#FF6B4A]/50 active:scale-95 shadow-sm cursor-pointer"
                   >
                     <Bot className="h-3.5 w-3.5 text-[#FF6B4A]" />

@@ -209,6 +209,26 @@ def clean_tts_speech(text: str) -> str:
     return s
 
 
+def detect_language_intent(msg: str, language_hint: str = "en-IN") -> str:
+    """Detects spoken language from text (Unicode scripts or phonetic roman keywords)."""
+    if language_hint in ("te-IN", "hi-IN"):
+        return language_hint
+    low = msg.lower()
+    # 1. Unicode script match
+    if any("\u0c00" <= c <= "\u0c7f" for c in msg):
+        return "te-IN"
+    if any("\u0900" <= c <= "\u097f" for c in msg):
+        return "hi-IN"
+    # 2. Romanized keywords
+    telugu_kws = ["cheppu", "ela", "naku", "bro", "mana", "enti", "ardham", "kavali", "undi", "unnadi", "kaledu", "kaaledu", "malli", "taruvata", "venakki", "ekkada", "daggara", "kadhara"]
+    if any(w in low for w in telugu_kws):
+        return "te-IN"
+    hindi_kws = ["batao", "kya", "kaise", "samajh", "aage", "shuru", "karo", "peeche", "kahan", "nahi", "aaya", "bataiye", "samjhao"]
+    if any(w in low for w in hindi_kws):
+        return "hi-IN"
+    return "en-IN"
+
+
 def build_voice_system_prompt(
     profile: Optional[Dict[str, Any]] = None,
     language: str = "en-IN",
@@ -232,8 +252,21 @@ def build_voice_system_prompt(
     projects = load_projects_catalog()
     proj_names = ", ".join(f"{p['title']} ({p['id']})" for p in projects[:10])
 
-    is_telugu = (language == "te-IN")
-    is_hindi = (language == "hi-IN")
+    tutor_context = ""
+    if tutor_state:
+        t_id = tutor_state.get("currentProjectId") or tutor_state.get("projectId") or ""
+        t_step = tutor_state.get("stepIndex") or 1
+        t_proj = next((p for p in projects if p["id"] == t_id), None)
+        p_name = t_proj["title"] if t_proj else t_id
+        tutor_context = f"""
+[ACTIVE PROJECT TUTOR SESSION]
+- Project: {p_name} ({t_id})
+- Current Step: Step {t_step} of 9
+- Instruction: Teach ONLY Step {t_step}. Conclude Part 1 with a short check: "Does this step make sense?" (or Telugu: "ఈ స్టెప్ అర్థమైందా?", Hindi: "क्या यह समझ आया?").
+- If user said continue/resume: give a one-line recap of Step {t_step} and ask if clear.
+- If user said simpler/repeat: explain Step {t_step} with a real-life analogy and simpler terms.
+- Put code and detailed steps strictly in Part 2 after '---SCREEN---'. Include [[TUTOR:{{"projectId": "{t_id}", "stepIndex": {t_step}, "stepCount": 9}}]]
+"""
 
     return f"""[ROLE DEFINITION]
 You are Pathfinder AI, an elite Senior Technical Lead and friendly, patient Placement Architect embedded in the Pathfinder 2.0 platform.
@@ -244,6 +277,7 @@ You mentor students with warmth, absolute technical correctness, and zero fluff.
 - Target Role: {role}
 - Verified Skills: {', '.join(skills) if isinstance(skills, list) else str(skills)}
 - Active Platform Tab: {active_tab}
+{tutor_context}
 
 [PLATFORM KNOWLEDGE]
 - Site Tabs: {guide_summary}
@@ -258,10 +292,13 @@ PART 1: SPOKEN RESPONSE (BEFORE '---SCREEN---')
 - Speed Optimization: Zero preamble, zero pleasantries ("Hi", "Sure", "Great question"). Jump straight to the core answer.
 - Zero markdown: Absolutely NO asterisks (*), hashtags (#), backticks (`), bullet points, numbers, or emojis.
 - Spell out abbreviations for speech: "C G P A", "D S A", "Sequel", "O of N log N", "L P A".
-- Language Rule:
-  * If the user speaks Telugu or language is te-IN: Write Part 1 in pure Telugu script (తెలుగు) so browser speech synthesis pronounces it naturally.
-  * If the user speaks Hindi or language is hi-IN: Write Part 1 in Hindi Devanagari script.
-  * If the user speaks English or language is en-IN: Write Part 1 in clean, professional English.
+- Language & Script Rule (CRITICAL):
+  * Reply in the exact language and script the user spoke.
+  * English speech -> Professional English.
+  * Telugu speech or language is te-IN -> Pure Telugu script (తెలుగు) so browser speech synthesis pronounces it naturally. Never mix Latin and Telugu randomly.
+  * Hindi speech or language is hi-IN -> Hindi in Devanagari script (हिंदी).
+  * If the user switches language mid-conversation, switch with them immediately.
+  * Never read code aloud. Describe what the code achieves in plain words.
 
 PART 2: VISUAL RESPONSE (AFTER '---SCREEN---')
 - Rendered on the student's screen with full formatting.
@@ -296,11 +333,9 @@ def generate_local_voice_reply(
     """
     msg = message.strip()
     low = msg.lower()
-
-    is_telugu = (language == "te-IN") or any("\u0c00" <= c <= "\u0c7f" for c in msg) or any(
-        w in low for w in ["cheppu", "ela", "naku", "bro", "mana", "enti", "ardham", "kavali"]
-    )
-    is_hindi = (language == "hi-IN") or any("\u0900" <= c <= "\u097f" for c in msg)
+    detected_lang = detect_language_intent(msg, language)
+    is_telugu = (detected_lang == "te-IN")
+    is_hindi = (detected_lang == "hi-IN")
 
     # 1. Navigation intent
     tab_keywords = [
@@ -315,18 +350,22 @@ def generate_local_voice_reply(
         ("profile", ["profile", "settings", "cgpa update", "parameters"])
     ]
     for tab_id, kws in tab_keywords:
-        if any(f"{kw} tab" in low or f"open {kw}" in low or f"{kw} ki teesukelli" in low for kw in kws):
+        if any(f"{kw} tab" in low or f"open {kw}" in low or f"{kw} ki teesukelli" in low or f"{kw} kholo" in low for kw in kws):
             if is_telugu:
                 spoken = f"తప్పకుండా, మిమ్మల్ని పాత్‌ఫైండర్ {tab_id.capitalize()} ట్యాబ్‌కి తీసుకువెళ్తున్నాను. ఇక్కడ మీ పూర్తి అనలిటిక్స్ మరియు ప్రిపరేషన్ వివరాలు ఉంటాయి."
+            elif is_hindi:
+                spoken = f"बिल्कुल, आपको पाथफाइंडर के {tab_id.capitalize()} सेक्शन पर ले जा रहा हूँ। यहाँ आप पूरी जानकारी देख सकते हैं।"
             else:
                 spoken = f"Navigating you directly to the {tab_id.capitalize()} section right now. You can explore all targeted metrics and insights here."
             screen = f"### Navigated to **{tab_id.capitalize()}**\n\n[[NAVIGATE:{tab_id}]]\n\nYour active workspace has been updated to focus on this module."
             return f"{spoken}\n---SCREEN---\n{screen}"
 
     # 2. Resume Builder command
-    if any(k in low for k in ["resume build cheyyi", "build my resume", "create resume", "make resume"]):
+    if any(k in low for k in ["resume build cheyyi", "build my resume", "create resume", "make resume", "resume banao"]):
         if is_telugu:
             spoken = "మీ ప్రొఫైల్ వివరాలు మరియు వెరిఫైడ్ ప్రాజెక్ట్‌లతో ఏ టీ ఎస్ ఫ్రెండ్లీ రెజ్యూమెను రెడీ చేశాను. స్క్రీన్‌పై ప్రివ్యూ చూసి పి డి ఎఫ్ డౌన్‌లోడ్ చేసుకోండి."
+        elif is_hindi:
+            spoken = "आपकी प्रोफाइल और प्रोजेक्ट्स के आधार पर ए टी एस फ्रेंडली रेज़्यूमे तैयार है। स्क्रीन पर प्रिव्यू देखें और डाउनलोड करें।"
         else:
             spoken = "Generating your single page A T S compliant engineering resume right now from your verified profile and blueprint projects. Review the preview and download the P D F."
         screen = "### 📄 One-Page ATS Engineering Resume Generated\n\n[[ACTION:BUILD_RESUME]]\n\nYour profile data, verified skills, and Google X-Y-Z project bullets have been formatted into an ATS-friendly layout."
@@ -350,27 +389,73 @@ def generate_local_voice_reply(
     if matched_proj:
         step_val = (tutor_state.get("stepIndex") or tutor_state.get("step_index") or 1) if tutor_state else 1
         current_step = int(step_val)
-        # Check command
-        if any(w in low for w in ["next", "taruvata", "forward"]):
+        p_title = matched_proj["title"]
+
+        # Check for Re-selection of project when previously at step > 1
+        is_fresh_blueprint_request = any(k in low for k in ["discuss how to build", "what should the complete system architecture", "discuss architecture with ai coach"])
+        if is_fresh_blueprint_request and current_step > 1:
+            step_info = PROJECT_TUTOR_STEPS[current_step - 1]
+            if is_telugu:
+                spoken = f"మనం ఇంతకుముందు {p_title} లో స్టెప్ {current_step} వరకు చర్చించాం. స్టెప్ {current_step} నుండి కొనసాగిద్దామా, లేక మొదటి నుండి స్టార్ట్ చేద్దామా?"
+            elif is_hindi:
+                spoken = f"हमने पहले {p_title} में स्टेप {current_step} तक कवर किया था। क्या हम स्टेप {current_step} से आगे बढ़ें या शुरुआत से शुरू करें?"
+            else:
+                spoken = f"Welcome back to {p_title}! We previously covered up to Step {current_step}. Would you like to continue from Step {current_step}, or start fresh from Step 1?"
+            screen = f"""### 🛠️ {p_title} — Resuming at Step {current_step} of 9
+
+We previously covered up to **Step {current_step}: {step_info['title']}**.
+
+- Speak *"continue"* or *"next"* to resume from Step {current_step}.
+- Speak *"start over"* to restart from Step 1.
+
+[[TUTOR:{{"projectId": "{matched_proj['id']}", "stepIndex": {current_step}, "stepCount": 9}}]]
+"""
+            return f"{spoken}\n---SCREEN---\n{screen}"
+
+        # Command Parsing
+        is_continue = any(w in low for w in ["continue", "resume", "malli cheppu", "aage batao", "where was i", "ekkada unnam", "daggara unnam"])
+        is_next = any(w in low for w in ["next", "taruvata", "forward", "aage"])
+        is_back = any(w in low for w in ["go back", "previous", "venakki", "back", "peeche"])
+        is_start_over = any(w in low for w in ["start over", "modati nunchi", "shuru se", "restart"])
+        is_simpler = any(w in low for w in ["simple", "simpler", "ardham kaaledu", "ardham kaledu", "samajh nahi aaya", "again", "repeat", "malli", "explain again"])
+        is_summary = any(w in low for w in ["summary", "saramsam", "briefly recap"])
+
+        if is_start_over:
+            current_step = 1
+        elif is_next:
             current_step = min(9, current_step + 1)
-        elif any(w in low for w in ["go back", "previous", "venakki", "back"]):
+        elif is_back:
             current_step = max(1, current_step - 1)
-        elif any(w in low for w in ["where was i", "ekkada unnam"]):
-            pass
 
         step_info = PROJECT_TUTOR_STEPS[current_step - 1]
         step_title = step_info["title"]
         analogy = step_info["analogy"]
-        p_title = matched_proj["title"]
 
-        is_simpler = any(w in low for w in ["simple", "simpler", "ardham kaaledu", "ardham kaledu", "again", "repeat", "malli", "explain again"])
-        if is_simpler:
+        if is_summary:
             if is_telugu:
-                spoken = f"ఏమీ పర్లేదు, మరింత సరళంగా చెబుతాను. {p_title} లోని ఈ స్టెప్ కోసం రియల్ లైఫ్ ఉదాహరణ: {analogy} ఇప్పుడు అర్థమైందా?"
+                spoken = f"{p_title} లో మనం ఇప్పటివరకు స్టెప్ {current_step} వరకు చూశాం: {step_title}. నెక్స్ట్ స్టెప్ కి వెళ్దామా?"
+            elif is_hindi:
+                spoken = f"{p_title} में हम अब तक स्टेप {current_step} तक देख चुके हैं: {step_title}। क्या आगे बढ़ें?"
+            else:
+                spoken = f"So far in {p_title} we have progressed through Step {current_step}: {step_title}. Ready to advance?"
+        elif is_continue:
+            if is_telugu:
+                spoken = f"మనం {p_title} లో స్టెప్ {current_step} దగ్గర ఉన్నాం: {step_title}. ఆలోచించండి, {analogy} ఈ స్టెప్ అర్థమైందా?"
+            elif is_hindi:
+                spoken = f"हम {p_title} के स्टेप {current_step} पर थे: {step_title}। उदाहरण के लिए, {analogy} क्या यह समझ आया?"
+            else:
+                spoken = f"We are on Step {current_step} of 9 for {p_title}: {step_title}. Think of it {analogy} Does this step make sense?"
+        elif is_simpler:
+            if is_telugu:
+                spoken = f"ఏమీ కంగారు పడకండి, మరింత సరళంగా చెబుతాను. {p_title} లోని {step_title} కోసం చిన్న ఉదాహరణ: {analogy} ఇప్పుడు అర్థమైందా?"
+            elif is_hindi:
+                spoken = f"कोई बात नहीं, इसे और आसान शब्दों में समझते हैं। {p_title} के लिए सरल उदाहरण: {analogy} क्या अब यह समझ आया?"
             else:
                 spoken = f"No problem at all, let us simplify this. Real-life analogy for {p_title}: {analogy} Does this make the concept clearer?"
         elif is_telugu:
             spoken = f"ప్రాజెక్ట్ {p_title} లో మనం స్టెప్ {current_step} లో ఉన్నాం. ఇది {step_title}. ఆలోచించండి, {analogy} మీకు ఈ కాన్సెప్ట్ అర్థమైందా?"
+        elif is_hindi:
+            spoken = f"प्रोजेक्ट {p_title} में हम स्टेप {current_step} पर हैं: {step_title}। सोचिए, {analogy} क्या यह समझ आया?"
         else:
             spoken = f"We are on Step {current_step} of 9 for {p_title}: {step_title}. Think of it {analogy} Does this step make sense?"
 
@@ -386,7 +471,7 @@ def generate_local_voice_reply(
 2. Structure the module following clean architecture and separation of concerns.
 3. Test with local mocks before integrating into the main data pipeline.
 
-**Voice Commands**: Speak *"next"* to advance, *"repeat"* to hear again, *"simpler"* for smaller steps, or *"summary"*.
+**Voice Commands**: Speak *"next"* to advance, *"repeat"* to hear again, *"simpler"* for smaller steps, *"continue"* to resume, or *"summary"*.
 
 [[TUTOR:{{"projectId": "{matched_proj['id']}", "stepIndex": {current_step}, "stepCount": 9}}]]
 """
@@ -396,6 +481,8 @@ def generate_local_voice_reply(
     if "acid" in low:
         if is_telugu:
             spoken = "ఏ సి ఐ డి అంటే అటామిసిటీ, కన్సిస్టెన్సీ, ఐసోలేషన్ మరియు డ్యూరబిలిటీ. ఇంటర్వ్యూలో అటామిసిటీ అంతా లేదా ఏమీ కాదని, ఐసోలేషన్ ఒకేసారి జరిగే డేటా లోపాలను నివారిస్తుందని చెప్పండి."
+        elif is_hindi:
+            spoken = "ए सी आई डी का मतलब है एटॉमिसीटी, कंसिस्टेंसी, आइसोलेशन और ड्यूरेबिलिटी। इंटरव्यू में बताएं कि एटॉमिसीटी सब या कुछ नहीं निष्पादित करती है।"
         else:
             spoken = "ACID guarantees transaction reliability through Atomicity, Consistency, Isolation, and Durability. In interviews emphasize that Atomicity enforces all or nothing execution while Isolation prevents concurrent data corruption."
         screen = """### 💾 ACID Properties in DBMS (Interview Quick Reference)
@@ -415,6 +502,8 @@ def generate_local_voice_reply(
     if any(k in low for k in ["service", "product"]) and "difference" in low:
         if is_telugu:
             spoken = "సర్వీస్ కంపెనీలు ఆప్టిట్యూడ్ మరియు బేసిక్ కమ్యూనికేషన్ చూస్తాయి. ప్రోడక్ట్ కంపెనీలు డి ఎస్ ఎ సామర్థ్యం, సిస్టమ్ డిజైన్ మరియు రియల్ టైమ్ ప్రాజెక్ట్‌లను పరీక్షిస్తాయి."
+        elif is_hindi:
+            spoken = "सर्विस कंपनियां एप्टीट्यूड और बेसिक कम्युनिकेशन देखती हैं, जबकि प्रोडक्ट कंपनियां डेटा स्ट्रक्चर्स, एल्गोरिदम और सिस्टम आर्किटेक्चर पर टेस्ट करती हैं।"
         else:
             spoken = "Service drives evaluate speed in quantitative aptitude, basic C S fundamentals, and communication skills. Product companies assess you on Data Structures, Algorithms, and production project architecture."
         screen = """### ⚖️ Service vs. Product Placement Criteria
@@ -432,6 +521,8 @@ def generate_local_voice_reply(
     # 6. Default placement answer
     if is_telugu:
         spoken = "మీరు అడిగిన ప్రశ్నకు పాత్‌ఫైండర్ 23 ప్రాజెక్ట్ బ్లూప్రింట్లు మరియు 972 క్యాంపస్ రికార్డులతో గైడెన్స్ ఇస్తుంది. మీరు నిర్దిష్టంగా ఏ రోల్ లేదా ప్రాజెక్ట్ గురించి తెలుసుకోవాలనుకుంటున్నారు?"
+    elif is_hindi:
+        spoken = "पाथफाइंडर 23 प्रोजेक्ट ब्लूप्रिंट और 972 कैंपस रिकॉर्ड के साथ तैयारी कराता है। आप किस रोल या प्रोजेक्ट के बारे में जानना चाहते हैं?"
     else:
         spoken = "Pathfinder provides data-backed guidance across our 23 engineering blueprints and 972 placement records. What specific role, project architecture, or interview topic would you like to prepare for?"
 
@@ -523,3 +614,150 @@ async def stream_voice_tokens(
         if word:
             yield word
             await asyncio.sleep(0.004)
+
+
+_TTS_CAPABILITY_CACHE: Optional[Dict[str, Any]] = None
+
+
+def check_gemini_tts_capability() -> Dict[str, Any]:
+    """Inspects Gemini API models list to check if text-to-speech audio generation is available."""
+    global _TTS_CAPABILITY_CACHE
+    if _TTS_CAPABILITY_CACHE is not None:
+        return _TTS_CAPABILITY_CACHE
+
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        _TTS_CAPABILITY_CACHE = {"supported": False, "models": [], "reason": "GEMINI_API_KEY not configured"}
+        return _TTS_CAPABILITY_CACHE
+
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}",
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            models = [m.get("name", "").replace("models/", "") for m in data.get("models", [])]
+            tts_candidates = [m for m in models if "tts" in m.lower() or "speech" in m.lower()]
+            _TTS_CAPABILITY_CACHE = {
+                "supported": len(tts_candidates) > 0,
+                "models": tts_candidates,
+                "preferred": tts_candidates[0] if tts_candidates else None
+            }
+            return _TTS_CAPABILITY_CACHE
+    except Exception as e:
+        logger.warning(f"[Voice Engine] Failed to query Gemini models for TTS: {e}")
+        _TTS_CAPABILITY_CACHE = {"supported": False, "models": [], "error": str(e)}
+        return _TTS_CAPABILITY_CACHE
+
+
+async def synthesize_server_tts(text: str, language: str = "te-IN") -> Optional[bytes]:
+    """Server-side TTS generation fallback when device lacks native Telugu/Hindi voices."""
+    clean_text = clean_tts_speech(text)
+    if not clean_text:
+        return None
+
+    cap = check_gemini_tts_capability()
+    if not cap.get("supported") or not cap.get("preferred"):
+        return None
+
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return None
+
+    try:
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=10.0))
+        resp = client.models.generate_content(
+            model=cap["preferred"],
+            contents=clean_text,
+            config=types.GenerateContentConfig(
+                response_mime_type="audio/wav"
+            )
+        )
+        if hasattr(resp, "parts"):
+            for part in resp.parts:
+                if hasattr(part, "inline_data") and part.inline_data:
+                    return part.inline_data.data
+        return None
+    except Exception as e:
+        logger.warning(f"[Voice Engine] Server TTS synthesis notice: {e}")
+        return None
+
+
+async def stream_voice_audio_tokens(
+    audio_bytes: bytes,
+    mime_type: str = "audio/webm",
+    history: Optional[List[Dict[str, Any]]] = None,
+    profile: Optional[Dict[str, Any]] = None,
+    active_tab: str = "coach",
+    tutor_state: Optional[Dict[str, Any]] = None
+) -> AsyncIterator[str]:
+    """Streams token responses from Gemini by directly passing audio input from browser MediaRecorder."""
+    sys_prompt = build_voice_system_prompt(
+        profile=profile,
+        language="auto",
+        active_tab=active_tab,
+        tutor_state=tutor_state
+    ) + "\n[AUDIO INPUT INSTRUCTION]\nListen to the audio, automatically detect whether the student speaks English, Telugu, or Hindi. Transcribe their question and answer immediately in that EXACT same language and script!"
+
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if api_key and audio_bytes:
+        try:
+            from google import genai
+            from google.genai import types
+
+            client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=15.0))
+            audio_part = types.Part.from_bytes(data=audio_bytes, mime_type=mime_type)
+
+            contents_list = []
+            if history:
+                for turn in history[-12:]:
+                    role = "user" if turn.get("role") == "user" else "model"
+                    contents_list.append({"role": role, "parts": [{"text": turn.get("content", "")}]})
+            contents_list.append({"role": "user", "parts": [audio_part, {"text": "Please transcribe what I said and respond following the exact role and format rules."}]})
+
+            model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip() or "gemini-2.0-flash"
+            if "3.8" in model_name or "thinking" in model_name:
+                model_name = "gemini-2.0-flash"
+
+            response_stream = client.models.generate_content_stream(
+                model=model_name,
+                contents=contents_list,
+                config=types.GenerateContentConfig(
+                    system_instruction=sys_prompt,
+                    temperature=0.2,
+                    max_output_tokens=600,
+                    thinking_config=types.ThinkingConfig(thinking_budget=0) if hasattr(types, "ThinkingConfig") else None
+                )
+            )
+
+            token_yielded = False
+            for chunk in response_stream:
+                txt = getattr(chunk, "text", "") or ""
+                if txt:
+                    token_yielded = True
+                    yield txt
+                    await asyncio.sleep(0.005)
+
+            if token_yielded:
+                return
+        except Exception as e:
+            logger.warning(f"[Voice Audio Stream] Live Gemini audio stream failed: {e}. Falling back to default message.")
+
+    fallback = generate_local_voice_reply(
+        message="Voice input received. How can Pathfinder guide your engineering placements?",
+        language="en-IN",
+        active_tab=active_tab,
+        tutor_state=tutor_state,
+        profile=profile
+    )
+    words = re.split(r"(\s+)", fallback)
+    for word in words:
+        if word:
+            yield word
+            await asyncio.sleep(0.004)
+

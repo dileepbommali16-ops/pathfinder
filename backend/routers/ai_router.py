@@ -22,7 +22,12 @@ from backend.gemini_engine import (
     generate_smart_fallback_reply
 )
 from backend.pdf_engine import extract_text_from_pdf
-from backend.voice_engine import stream_voice_tokens
+from backend.voice_engine import (
+    stream_voice_tokens,
+    stream_voice_audio_tokens,
+    synthesize_server_tts,
+    check_gemini_tts_capability
+)
 
 ai_router = APIRouter(tags=["AI Mentor & Coaching"])
 
@@ -210,6 +215,86 @@ async def voice_stream_endpoint(request_body: Dict[str, Any], request: Request):
             "X-Accel-Buffering": "no"
         }
     )
+
+
+@ai_router.post("/api/voice/audio-stream")
+@ai_router.post("/api/ai/voice/audio-stream")
+async def voice_audio_stream_endpoint(request_body: Dict[str, Any], request: Request):
+    """
+    Ultra-low latency streaming voice endpoint accepting base64 encoded audio from browser MediaRecorder.
+    Transcribes audio, detects language, and streams token reply in that language via SSE.
+    """
+    import base64
+    client_ip = get_client_ip(request)
+    allowed, _ = rate_limiter.check(f"voice_audio:{client_ip}", max_requests=40, window_seconds=60)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Too many voice audio requests. Please take a brief breath.")
+
+    audio_base64 = request_body.get("audio_base64", "")
+    mime_type = request_body.get("mime_type", "audio/webm")
+    history = request_body.get("history", []) or request_body.get("chat_history", [])
+    profile = request_body.get("profile", None)
+    active_tab = request_body.get("active_tab", "coach")
+    tutor_state = request_body.get("tutor_state", None)
+
+    audio_bytes = b""
+    if audio_base64:
+        try:
+            if "," in audio_base64:
+                audio_base64 = audio_base64.split(",", 1)[1]
+            audio_bytes = base64.b64decode(audio_base64)
+        except Exception as e:
+            logger.warning(f"[Voice Audio] Failed to decode base64 audio: {e}")
+
+    async def event_generator():
+        try:
+            async for token in stream_voice_audio_tokens(
+                audio_bytes=audio_bytes,
+                mime_type=mime_type,
+                history=history,
+                profile=profile,
+                active_tab=active_tab,
+                tutor_state=tutor_state
+            ):
+                data = json.dumps({"token": token, "done": False})
+                yield f"data: {data}\n\n"
+            yield f"data: {json.dumps({'token': '', 'done': True})}\n\n"
+        except Exception as e:
+            logger.error(f"[Voice Audio Router] Error during audio stream: {e}", exc_info=True)
+            yield f"data: {json.dumps({'error': 'Voice service temporary error', 'done': True})}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+
+@ai_router.get("/api/voice/tts-status")
+def voice_tts_status_endpoint():
+    """Checks whether server-side TTS is available for devices without native voices."""
+    return check_gemini_tts_capability()
+
+
+@ai_router.post("/api/voice/tts")
+async def voice_tts_endpoint(request_body: Dict[str, Any], request: Request):
+    """Server-side TTS synthesis endpoint for languages missing on client device."""
+    text = str(request_body.get("text", "")).strip()
+    language = str(request_body.get("language", "te-IN")).strip()
+
+    if not text:
+        raise HTTPException(status_code=400, detail="Missing text parameter")
+
+    audio_bytes = await synthesize_server_tts(text, language)
+    if audio_bytes:
+        import io
+        return StreamingResponse(io.BytesIO(audio_bytes), media_type="audio/wav")
+
+    return {"available": False, "reason": "No server TTS model available on current configuration"}
 
 
 @ai_router.post("/api/roadmap", response_model=Roadmap)

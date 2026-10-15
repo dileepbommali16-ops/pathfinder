@@ -24,6 +24,67 @@ const getInitialVariant = (): BackgroundVariant => {
   return "predictive-void";
 };
 
+const UnicornTorusBackground: React.FC = () => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const initStudio = () => {
+      if (cancelled) return;
+      const u = (window as any).UnicornStudio;
+      if (u) {
+        try {
+          if (typeof u.init === "function") {
+            u.init();
+          }
+        } catch (err) {
+          console.warn("[UnicornStudio] init notice:", err);
+        }
+      }
+    };
+
+    if ((window as any).UnicornStudio) {
+      setTimeout(initStudio, 40);
+    } else {
+      const existingScript = document.querySelector('script[src*="unicornStudio.umd.js"]');
+      if (!existingScript) {
+        const script = document.createElement("script");
+        script.type = "text/javascript";
+        script.src = "https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.4.2/dist/unicornStudio.umd.js";
+        script.async = true;
+        script.onload = () => {
+          setTimeout(initStudio, 40);
+        };
+        (document.head || document.body).appendChild(script);
+      } else {
+        existingScript.addEventListener("load", () => setTimeout(initStudio, 40));
+      }
+    }
+
+    return () => {
+      cancelled = true;
+      try {
+        const u = (window as any).UnicornStudio;
+        if (u && typeof u.destroy === "function") {
+          u.destroy();
+        }
+      } catch {}
+    };
+  }, []);
+
+  return (
+    <div className="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center pointer-events-none">
+      <div
+        ref={containerRef}
+        data-us-project="nqacDzsDqT8ctMiK19aE"
+        className="w-full h-full"
+        style={{ width: "100%", height: "100%", minHeight: "100vh" }}
+      />
+    </div>
+  );
+};
+
 export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ className = "" }) => {
   const [variant, setVariantState] = useState<BackgroundVariant>(getInitialVariant);
   const [speed] = useState<number>(1.0);
@@ -82,15 +143,15 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
           e.stopPropagation();
           setVariant("predictive");
         }}
-        title="Predictive Neural Arc: Luminous 3D AI Trajectory"
+        title="3D Neural Torus Glow"
         className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all cursor-pointer ${
           variant === "predictive"
             ? "bg-white/20 text-white border border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.2)]"
             : "text-[#A1A1AA] hover:text-[#F2F2F3] hover:bg-white/[0.06]"
         }`}
       >
-        <Orbit className="h-2.5 w-2.5 text-white" />
-        <span>Predictive Arc</span>
+        <Orbit className="h-2.5 w-2.5 text-amber-400" />
+        <span>Torus Glow</span>
       </button>
 
       <button
@@ -131,14 +192,7 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
               />
             )}
             {variant === "predictive" && (
-              <PredictiveArcCanvas
-                variant="predictive"
-                mode="dark"
-                speed={speed}
-                hue={0}
-                saturation={1.0}
-                brightness={brightness}
-              />
+              <UnicornTorusBackground />
             )}
             {variant === "void-field" && (
               <SphereShieldTiled

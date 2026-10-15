@@ -39,7 +39,16 @@ export interface Message {
   content: string;
 }
 
-export type VoiceLanguage = "en-IN" | "te-IN" | "hi-IN";
+export type VoiceLanguage = "auto" | "en-IN" | "te-IN" | "hi-IN";
+
+export interface VoiceTutorState {
+  currentProjectId?: string;
+  projectTitle?: string;
+  stepIndex: number;
+  totalSteps: number;
+  language?: string;
+  lastUpdated?: number;
+}
 
 interface AICoachConsoleProps {
   messages: Message[];
@@ -61,6 +70,7 @@ export const cleanTtsSpokenText = (text: string): string => {
   return text
     .replace(/\[\[NAVIGATE:[^\]]+\]\]/g, "")
     .replace(/\[\[ACTION:[^\]]+\]\]/g, "")
+    .replace(/\[\[TUTOR:[^\]]+\]\]/g, "")
     .replace(/https?:\/\/[^\s]+/g, "")
     .replace(/```[\s\S]*?```/g, "")
     .replace(/`([^`]+)`/g, "$1")
@@ -79,6 +89,35 @@ export const cleanTtsSpokenText = (text: string): string => {
     .replace(/\bO\(1\)/gi, "O of 1")
     .replace(/\s+/g, " ")
     .trim();
+};
+
+export const detectTextLanguage = (text: string): "te-IN" | "hi-IN" | "en-IN" => {
+  if (!text) return "en-IN";
+  // Telugu Unicode block
+  if (/[\u0C00-\u0C7F]/.test(text)) return "te-IN";
+  // Devanagari (Hindi) Unicode block
+  if (/[\u0900-\u097F]/.test(text)) return "hi-IN";
+  return "en-IN";
+};
+
+export const parseTutorState = (content: string): VoiceTutorState | null => {
+  if (!content) return null;
+  const match = content.match(/\[\[TUTOR:([\s\S]*?)\]\]/);
+  if (match) {
+    try {
+      const parsed = JSON.parse(match[1]);
+      return {
+        currentProjectId: parsed.projectId || parsed.currentProjectId,
+        projectTitle: parsed.projectTitle,
+        stepIndex: typeof parsed.stepIndex === "number" ? parsed.stepIndex : 1,
+        totalSteps: typeof parsed.totalSteps === "number" ? parsed.totalSteps : (parsed.stepCount || 9),
+        lastUpdated: Date.now(),
+      };
+    } catch {
+      return null;
+    }
+  }
+  return null;
 };
 
 export const parseScreenMarker = (content: string): { spoken: string; screen: string; hasScreen: boolean } => {
@@ -160,12 +199,57 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const endRef = useRef<HTMLDivElement>(null);
   const lastActionTimeRef = useRef(0);
 
-  // Voice Pipeline States
-  const [voiceLang, setVoiceLang] = useState<VoiceLanguage>("en-IN");
+  // Voice Pipeline States (auto, en-IN, te-IN, hi-IN)
+  const [voiceLang, setVoiceLang] = useState<VoiceLanguage>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("pathfinder_voice_lang");
+        if (stored === "auto" || stored === "en-IN" || stored === "te-IN" || stored === "hi-IN") {
+          return stored as VoiceLanguage;
+        }
+      } catch {}
+    }
+    return "auto";
+  });
   const [voiceStatus, setVoiceStatus] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [collapsedScreenMap, setCollapsedScreenMap] = useState<Record<number, boolean>>({});
-  const [tutorState, setTutorState] = useState<{ currentProjectId?: string; stepIndex: number } | null>(null);
+
+  // Tutor state with persistent local storage
+  const [tutorState, setTutorState] = useState<VoiceTutorState | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("pathfinder_voice_tutor_state");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed.stepIndex === "number") return parsed;
+        }
+      } catch {}
+    }
+    return null;
+  });
+
+  const updateTutorState = (st: VoiceTutorState | null) => {
+    setTutorState(st);
+    if (typeof window !== "undefined") {
+      try {
+        if (st) {
+          localStorage.setItem("pathfinder_voice_tutor_state", JSON.stringify(st));
+        } else {
+          localStorage.removeItem("pathfinder_voice_tutor_state");
+        }
+      } catch {}
+    }
+  };
+
+  const setVoiceLanguage = (lang: VoiceLanguage) => {
+    setVoiceLang(lang);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("pathfinder_voice_lang", lang);
+      } catch {}
+    }
+  };
 
   // Audio & Speech References
   const recognitionRef = useRef<any>(null);
@@ -177,6 +261,11 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const speechQueueRef = useRef<string[]>([]);
   const isSpeakingSentenceRef = useRef<boolean>(false);
   const teluguVoiceWarnedRef = useRef<boolean>(false);
+  const serverAudioRef = useRef<HTMLAudioElement | null>(null);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+
+  // Incremental generation token for 100% reliable instantaneous cancellation (Barge-in / Stop)
+  const generationIdRef = useRef<number>(0);
 
   // Utterance Reference to prevent Chromium V8 garbage collection mid-speech
   const activeUtterancesRef = useRef<SpeechSynthesisUtterance[]>([]);
@@ -187,9 +276,43 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const [speakerTestState, setSpeakerTestState] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [speakerTestMsg, setSpeakerTestMsg] = useState<string | null>(null);
 
-  // Fallback Audio Reader
+  // Fallback Audio Reader & Persistent Auto-Speak
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
-  const [autoSpeakQuestions, setAutoSpeakQuestions] = useState(true);
+  const [autoSpeak, setAutoSpeak] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("pathfinder_voice_reply_enabled");
+        if (stored !== null) return stored === "true";
+      } catch {}
+    }
+    return true; // Default ON so voice answers automatically
+  });
+
+  const toggleAutoSpeak = () => {
+    const next = !autoSpeak;
+    setAutoSpeak(next);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("pathfinder_voice_reply_enabled", String(next));
+      } catch {}
+    }
+  };
+
+  // Listen for voices asynchronously to populate voices on Chromium
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const loadVoices = () => {
+      const v = window.speechSynthesis.getVoices();
+      if (v && v.length > 0) {
+        voicesRef.current = v;
+      }
+    };
+    loadVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+    return () => {
+      window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+    };
+  }, []);
 
   // Diagnostic: Tests browser audio hardware and speech synthesis on demand
   const testSpeakerAudio = async () => {
@@ -322,84 +445,207 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
   const speechMetrics = analyzeCandidateSpeech(input);
 
-  // Clean navigation / action markers from user-facing text
+  // Clean navigation / action / tutor markers from user-facing text
   const cleanDisplayContent = (content: string) => {
     return content
       .replace(/\[\[NAVIGATE:[^\]]+\]\]/g, "")
-      .replace(/\[\[ACTION:[^\]]+\]\]/g, "");
+      .replace(/\[\[ACTION:[^\]]+\]\]/g, "")
+      .replace(/\[\[TUTOR:[^\]]+\]\]/g, "");
   };
 
-  // Immediate Stop & Barge-in
+  // Voice selection helper matching language code and regional pronunciations
+  const selectVoiceForLanguage = (targetLang: "te-IN" | "hi-IN" | "en-IN"): SpeechSynthesisVoice | null => {
+    const list = voicesRef.current.length > 0
+      ? voicesRef.current
+      : (typeof window !== "undefined" && "speechSynthesis" in window ? window.speechSynthesis.getVoices() : []);
+    if (!list || list.length === 0) return null;
+
+    if (targetLang === "te-IN") {
+      const te = list.find(
+        (v) =>
+          v.lang.toLowerCase() === "te-in" ||
+          v.lang.toLowerCase() === "te_in" ||
+          v.lang.toLowerCase().startsWith("te-") ||
+          v.name.toLowerCase().includes("telugu")
+      );
+      if (te) return te;
+      const inEn = list.find((v) => v.lang.toLowerCase().includes("en-in") || v.name.toLowerCase().includes("india"));
+      if (inEn) return inEn;
+    } else if (targetLang === "hi-IN") {
+      const hi = list.find(
+        (v) =>
+          v.lang.toLowerCase() === "hi-in" ||
+          v.lang.toLowerCase() === "hi_in" ||
+          v.lang.toLowerCase().startsWith("hi-") ||
+          v.name.toLowerCase().includes("hindi") ||
+          v.name.toLowerCase().includes("kalpana") ||
+          v.name.toLowerCase().includes("hemant")
+      );
+      if (hi) return hi;
+      const inEn = list.find((v) => v.lang.toLowerCase().includes("en-in") || v.name.toLowerCase().includes("india"));
+      if (inEn) return inEn;
+    } else {
+      const enIn = list.find(
+        (v) =>
+          v.lang.toLowerCase().includes("en-in") ||
+          v.name.toLowerCase().includes("india") ||
+          v.name.toLowerCase().includes("neerja") ||
+          v.name.toLowerCase().includes("prabhat")
+      );
+      if (enIn) return enIn;
+      const anyEn = list.find((v) => v.lang.toLowerCase().startsWith("en"));
+      if (anyEn) return anyEn;
+    }
+    return list[0] || null;
+  };
+
+  // Immediate Stop & Barge-in with Incremental Generation Cancellation
   const handleStopAll = () => {
+    generationIdRef.current += 1;
+    speechQueueRef.current = [];
+    isSpeakingSentenceRef.current = false;
+    isVoiceTriggeredRef.current = false;
+
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
+      try {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+        window.speechSynthesis.cancel();
+      } catch (err) {
+        console.warn("[VoiceAgent] cancel error:", err);
+      }
       activeUtterancesRef.current = [];
     }
-    isSpeakingSentenceRef.current = false;
-    speechQueueRef.current = [];
-    isVoiceTriggeredRef.current = false;
+
     if (recognitionRef.current) {
       try {
-        recognitionRef.current.stop();
+        if (typeof recognitionRef.current.abort === "function") {
+          recognitionRef.current.abort();
+        } else {
+          recognitionRef.current.stop();
+        }
       } catch {}
+      recognitionRef.current = null;
     }
+
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+
     if (voiceAbortRef.current) {
-      voiceAbortRef.current.abort();
+      try {
+        voiceAbortRef.current.abort();
+      } catch {}
       voiceAbortRef.current = null;
     }
+
+    if (serverAudioRef.current) {
+      try {
+        serverAudioRef.current.pause();
+        serverAudioRef.current.currentTime = 0;
+      } catch {}
+      serverAudioRef.current = null;
+    }
+
     setVoiceStatus("idle");
     setSpeakingIndex(null);
+
     if (onStopGeneration) {
-      onStopGeneration();
+      try {
+        onStopGeneration();
+      } catch {}
     }
   };
 
-  // Speech Queue Processor: Speaks sentences sequentially
-  const processSpeechQueue = () => {
+  // Speech Queue Processor: Speaks sentences sequentially in correct language
+  const processSpeechQueue = async (targetLang: "te-IN" | "hi-IN" | "en-IN", genId: number) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    if (genId !== generationIdRef.current) return;
     if (isSpeakingSentenceRef.current || speechQueueRef.current.length === 0) return;
 
     const nextText = speechQueueRef.current.shift();
     if (!nextText) return;
 
     isSpeakingSentenceRef.current = true;
-    const utterance = new SpeechSynthesisUtterance(nextText);
-    activeUtterancesRef.current.push(utterance);
-    utterance.rate = 1.05;
-    utterance.pitch = 1.0;
+    const sentenceScript = detectTextLanguage(nextText);
+    const effectiveLang = sentenceScript !== "en-IN" ? sentenceScript : targetLang;
 
-    const voices = window.speechSynthesis.getVoices();
-    if (voiceLang === "te-IN") {
-      const teVoice = voices.find(
-        (v) => v.lang.toLowerCase().includes("te") || v.name.toLowerCase().includes("telugu")
-      );
-      if (teVoice) {
-        utterance.voice = teVoice;
-        utterance.lang = "te-IN";
-      } else {
-        if (!teluguVoiceWarnedRef.current) {
-          teluguVoiceWarnedRef.current = true;
-          console.warn("[VoiceAgent] Native Telugu voice not installed on device. Displaying Telugu script on screen with default speech voice.");
+    const matchedVoice = selectVoiceForLanguage(effectiveLang);
+    const isTelugu = effectiveLang === "te-IN";
+    const hasTeluguVoice =
+      matchedVoice &&
+      (matchedVoice.lang.toLowerCase().includes("te") || matchedVoice.name.toLowerCase().includes("telugu"));
+
+    // If Telugu and device lacks local Telugu voice, try server-side TTS fallback
+    if (isTelugu && !hasTeluguVoice) {
+      try {
+        const resp = await fetch(`${API_BASE}/api/voice/tts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: nextText, language: "te-IN" }),
+        });
+        if (resp.ok && resp.headers.get("content-type")?.includes("audio") && genId === generationIdRef.current) {
+          const blob = await resp.blob();
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          serverAudioRef.current = audio;
+
+          audio.onplay = () => setVoiceStatus("speaking");
+          audio.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+            serverAudioRef.current = null;
+            isSpeakingSentenceRef.current = false;
+            if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
+              processSpeechQueue(targetLang, genId);
+            } else {
+              setVoiceStatus("idle");
+              setSpeakingIndex(null);
+            }
+          };
+          audio.onerror = () => {
+            URL.revokeObjectURL(audioUrl);
+            serverAudioRef.current = null;
+            isSpeakingSentenceRef.current = false;
+            fallbackSpeakUtterance(nextText, effectiveLang, matchedVoice, targetLang, genId);
+          };
+          await audio.play();
+          return;
         }
-        const inVoice = voices.find((v) => v.lang.toLowerCase().includes("in"));
-        if (inVoice) utterance.voice = inVoice;
+      } catch {
+        // Fallback to browser utterance
       }
-    } else if (voiceLang === "hi-IN") {
-      const hiVoice = voices.find(
-        (v) => v.lang.toLowerCase().includes("hi") || v.name.toLowerCase().includes("hindi")
-      );
-      if (hiVoice) {
-        utterance.voice = hiVoice;
-        utterance.lang = "hi-IN";
-      }
-    } else {
-      const enVoice = voices.find(
-        (v) => v.lang.toLowerCase().includes("en-in") || v.name.toLowerCase().includes("india")
-      );
-      if (enVoice) utterance.voice = enVoice;
     }
 
+    fallbackSpeakUtterance(nextText, effectiveLang, matchedVoice, targetLang, genId);
+  };
+
+  const fallbackSpeakUtterance = (
+    text: string,
+    lang: "te-IN" | "hi-IN" | "en-IN",
+    voice: SpeechSynthesisVoice | null,
+    targetLang: "te-IN" | "hi-IN" | "en-IN",
+    genId: number
+  ) => {
+    if (genId !== generationIdRef.current) return;
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    activeUtterancesRef.current.push(utterance);
+    utterance.lang = lang;
+    if (voice) {
+      utterance.voice = voice;
+    }
+    utterance.rate = lang === "en-IN" ? 1.05 : 0.95;
+    utterance.pitch = 1.0;
+
     utterance.onstart = () => {
+      if (genId !== generationIdRef.current) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch {}
+        return;
+      }
       if (!firstAudioLoggedRef.current) {
         firstAudioLoggedRef.current = true;
         const ttfa = Math.round(performance.now() - speechStartTimeRef.current);
@@ -411,20 +657,22 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     utterance.onend = () => {
       activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
       isSpeakingSentenceRef.current = false;
-      if (speechQueueRef.current.length > 0) {
-        processSpeechQueue();
+      if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
+        processSpeechQueue(targetLang, genId);
       } else {
         setVoiceStatus("idle");
+        setSpeakingIndex(null);
       }
     };
 
     utterance.onerror = () => {
       activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
       isSpeakingSentenceRef.current = false;
-      if (speechQueueRef.current.length > 0) {
-        processSpeechQueue();
+      if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
+        processSpeechQueue(targetLang, genId);
       } else {
         setVoiceStatus("idle");
+        setSpeakingIndex(null);
       }
     };
 
@@ -434,11 +682,11 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     window.speechSynthesis.speak(utterance);
   };
 
-  const queueSentenceForTts = (sentence: string) => {
+  const queueSentenceForTts = (sentence: string, targetLang: "te-IN" | "hi-IN" | "en-IN", genId: number) => {
     const cleaned = cleanTtsSpokenText(sentence);
     if (!cleaned) return;
     speechQueueRef.current.push(cleaned);
-    processSpeechQueue();
+    processSpeechQueue(targetLang, genId);
   };
 
   // Streaming Voice Query Handler: POST /api/voice/stream with Sentence-by-Sentence TTS
@@ -447,18 +695,9 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     if (!trimmed) return;
 
     isVoiceTriggeredRef.current = true;
+    handleStopAll();
 
-    // Barge-in: stop any running audio
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      activeUtterancesRef.current = [];
-    }
-    isSpeakingSentenceRef.current = false;
-    speechQueueRef.current = [];
-
-    if (voiceAbortRef.current) {
-      voiceAbortRef.current.abort();
-    }
+    const currentGen = generationIdRef.current;
     const abortCtrl = new AbortController();
     voiceAbortRef.current = abortCtrl;
 
@@ -474,6 +713,12 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       window.speechSynthesis.getVoices();
     }
 
+    const queryScript = detectTextLanguage(trimmed);
+    const streamLang: "auto" | "en-IN" | "te-IN" | "hi-IN" =
+      voiceLang === "auto" ? (queryScript !== "en-IN" ? queryScript : "auto") : voiceLang;
+    const targetAudioLang: "te-IN" | "hi-IN" | "en-IN" =
+      streamLang === "auto" ? queryScript : streamLang;
+
     const cleanHistory = messages
       .filter((m, idx) => !(idx === 0 && m.role === "assistant"))
       .slice(-12)
@@ -481,7 +726,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
     const payload = {
       message: trimmed,
-      language: voiceLang,
+      language: streamLang,
       history: cleanHistory,
       profile: profile
         ? {
@@ -529,6 +774,10 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
+        if (currentGen !== generationIdRef.current) {
+          reader.cancel().catch(() => {});
+          break;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
@@ -551,6 +800,14 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               console.log(`[VoiceAgent] Time to first token: ${ttft}ms`);
             }
 
+            // Check tutor marker
+            if (token.includes("[[TUTOR:")) {
+              const tutor = parseTutorState(token);
+              if (tutor) {
+                updateTutorState(tutor);
+              }
+            }
+
             // Check actions & navigation
             if (token.includes("[[NAVIGATE:")) {
               const match = token.match(/\[\[NAVIGATE:([a-z0-9_-]+)\]\]/);
@@ -570,21 +827,19 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 hitScreenMarker = true;
                 const beforeMarker = token.split("---SCREEN---")[0];
                 accumulatedSpoken += beforeMarker;
-                // Flush remaining pre-marker sentences
                 if (accumulatedSpoken.trim()) {
                   isVoiceTriggeredRef.current = false;
-                  queueSentenceForTts(accumulatedSpoken.trim());
+                  queueSentenceForTts(accumulatedSpoken.trim(), targetAudioLang, currentGen);
                   accumulatedSpoken = "";
                 }
               } else {
                 accumulatedSpoken += token;
-                // Check if a full sentence is ready (. ! ? \n)
                 const sentenceMatch = accumulatedSpoken.match(/^(.*?[.!?])(?:\s+|$)([\s\S]*)$/);
                 if (sentenceMatch) {
                   const completedSentence = sentenceMatch[1];
                   accumulatedSpoken = sentenceMatch[2];
                   isVoiceTriggeredRef.current = false;
-                  queueSentenceForTts(completedSentence);
+                  queueSentenceForTts(completedSentence, targetAudioLang, currentGen);
                 }
               }
             }
@@ -596,17 +851,15 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         }
       }
 
-      // Flush any trailing speech before screen marker
-      if (!hitScreenMarker && accumulatedSpoken.trim()) {
+      if (!hitScreenMarker && accumulatedSpoken.trim() && currentGen === generationIdRef.current) {
         isVoiceTriggeredRef.current = false;
-        queueSentenceForTts(accumulatedSpoken.trim());
+        queueSentenceForTts(accumulatedSpoken.trim(), targetAudioLang, currentGen);
       }
     } catch (err: any) {
       if (abortCtrl.signal.aborted) return;
       console.warn("[VoiceAgent] Voice stream notice:", err.message);
-      // Keep isVoiceTriggeredRef.current = true so when assistant message finishes generating via chat endpoint, it will still speak aloud!
       setVoiceError(
-        voiceLang === "te-IN"
+        targetAudioLang === "te-IN"
           ? "వాయిస్ కనెక్ట్ అవుతోంది. AI సమాధానం వచ్చిన వెంటనే చదువుతుంది."
           : "Voice connection notice. Assistant will speak once the response completes."
       );
@@ -614,7 +867,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     }
   };
 
-  // Toggle browser microphone speech recognition with ~1s silence detection
+  // Toggle browser microphone speech recognition with ~1.5s silence detection
   const toggleListening = () => {
     if (typeof window === "undefined") return;
     const SpeechRecognition =
@@ -626,19 +879,13 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     }
 
     if (voiceStatus === "listening") {
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      try {
-        recognitionRef.current?.stop();
-      } catch {}
-      setVoiceStatus("idle");
+      handleStopAll();
       return;
     }
 
-    // Barge-in: cancel any running TTS immediately
     handleStopAll();
 
     try {
-      // Warm backend & voices on initial mic click
       fetch(`${API_BASE}/api/health`).catch(() => {});
       if ("speechSynthesis" in window) {
         window.speechSynthesis.getVoices();
@@ -647,7 +894,10 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = voiceLang;
+      recognition.lang =
+        voiceLang === "auto"
+          ? ((typeof navigator !== "undefined" && navigator.language) ? navigator.language : "en-IN")
+          : voiceLang;
 
       let recognizedText = "";
 
@@ -665,13 +915,12 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         recognizedText = cleaned;
         setInput(cleaned);
 
-        // Reset ~1800ms silence auto-stop timer (natural speech pause)
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = setTimeout(() => {
           try {
             recognition.stop();
           } catch {}
-        }, 1800);
+        }, 1500);
       };
 
       recognition.onerror = (e: any) => {
@@ -710,88 +959,59 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   };
 
   // Text-to-Speech audio reader for individual messages
-  const speakText = (text: string, index?: number) => {
+  const speakText = async (text: string, index?: number) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
     if (speakingIndex === (index ?? -1)) {
-      window.speechSynthesis.cancel();
-      activeUtterancesRef.current = [];
-      setSpeakingIndex(null);
-      setVoiceStatus("idle");
+      handleStopAll();
       return;
     }
 
-    window.speechSynthesis.cancel();
-    activeUtterancesRef.current = [];
+    handleStopAll();
+    const currentGen = generationIdRef.current;
     const { spoken } = parseScreenMarker(text);
-    const cleanText = cleanTtsSpokenText(spoken || text).slice(0, 500);
+    const cleanSpoken = cleanTtsSpokenText(spoken || text);
+    if (!cleanSpoken) return;
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    activeUtterancesRef.current.push(utterance);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
+    const textLang = detectTextLanguage(cleanSpoken);
+    const targetLang: "te-IN" | "hi-IN" | "en-IN" =
+      voiceLang === "auto" ? textLang : (voiceLang as "te-IN" | "hi-IN" | "en-IN");
 
-    const voices = window.speechSynthesis.getVoices();
-    if (voiceLang === "te-IN") {
-      const teVoice = voices.find(
-        (v) => v.lang.toLowerCase().includes("te") || v.name.toLowerCase().includes("telugu")
-      );
-      if (teVoice) utterance.voice = teVoice;
-    } else if (voiceLang === "hi-IN") {
-      const hiVoice = voices.find(
-        (v) => v.lang.toLowerCase().includes("hi") || v.name.toLowerCase().includes("hindi")
-      );
-      if (hiVoice) utterance.voice = hiVoice;
-    } else {
-      const enVoice = voices.find(
-        (v) => v.lang.toLowerCase().includes("en-in") || v.name.toLowerCase().includes("india")
-      );
-      if (enVoice) utterance.voice = enVoice;
-    }
+    const sentences = splitSentences(cleanSpoken);
+    if (sentences.length === 0) return;
 
-    utterance.onstart = () => setVoiceStatus("speaking");
-    utterance.onend = () => {
-      activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
-      setSpeakingIndex(null);
-      setVoiceStatus("idle");
-    };
-    utterance.onerror = () => {
-      activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
-      setSpeakingIndex(null);
-      setVoiceStatus("idle");
-    };
-
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-    }
     setSpeakingIndex(index ?? -1);
-    window.speechSynthesis.speak(utterance);
+    speechQueueRef.current = sentences;
+    processSpeechQueue(targetLang, currentGen);
   };
 
   // Cleanup speech synthesis and listeners on unmount
   useEffect(() => {
     return () => {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-        activeUtterancesRef.current = [];
-      }
-      try {
-        recognitionRef.current?.stop();
-      } catch {}
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      if (voiceAbortRef.current) voiceAbortRef.current.abort();
+      handleStopAll();
     };
   }, []);
 
   // When a new assistant message arrives:
-  // Auto-speak if the user asked via voice OR if autoSpeak is on in interview mode
+  // Auto-speak if the user asked via voice OR if triggered by Blueprints handoff OR if autoSpeak is enabled
   useEffect(() => {
     if (messages.length > 0 && !isLoading) {
       const last = messages[messages.length - 1];
       if (last.role === "assistant") {
-        const shouldSpeak =
-          isVoiceTriggeredRef.current ||
-          (autoSpeakQuestions && mode === "interview");
+        const tutor = parseTutorState(last.content);
+        if (tutor) {
+          updateTutorState(tutor);
+        }
+
+        let isBlueprintTrigger = false;
+        try {
+          if (sessionStorage.getItem("pathfinder_blueprint_voice_trigger") === "true") {
+            isBlueprintTrigger = true;
+            sessionStorage.removeItem("pathfinder_blueprint_voice_trigger");
+          }
+        } catch {}
+
+        const shouldSpeak = isVoiceTriggeredRef.current || isBlueprintTrigger || autoSpeak;
 
         if (shouldSpeak && voiceStatus === "idle") {
           isVoiceTriggeredRef.current = false;
@@ -799,7 +1019,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         }
       }
     }
-  }, [messages, isLoading, autoSpeakQuestions, mode, voiceStatus]);
+  }, [messages, isLoading, autoSpeak, voiceStatus]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -887,12 +1107,24 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             )}
           </div>
 
-          {/* Language Toggle (en-IN, te-IN, hi-IN) */}
+          {/* Language Toggle (Auto, EN, te-IN, hi-IN) */}
           <div className="flex items-center rounded-xl border border-[#2A2A30] bg-[#141417] p-0.5">
             <button
               type="button"
-              onClick={() => setVoiceLang("en-IN")}
-              className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all ${
+              onClick={() => setVoiceLanguage("auto")}
+              className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
+                voiceLang === "auto"
+                  ? "bg-white/20 text-white border border-white/30 shadow-xs"
+                  : "text-[#A1A1AA] hover:text-white"
+              }`}
+              title="Auto-Detect Spoken Language (English, Telugu, or Hindi)"
+            >
+              Auto
+            </button>
+            <button
+              type="button"
+              onClick={() => setVoiceLanguage("en-IN")}
+              className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
                 voiceLang === "en-IN"
                   ? "bg-white/20 text-white border border-white/30 shadow-xs"
                   : "text-[#A1A1AA] hover:text-white"
@@ -903,8 +1135,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setVoiceLang("te-IN")}
-              className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all ${
+              onClick={() => setVoiceLanguage("te-IN")}
+              className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
                 voiceLang === "te-IN"
                   ? "bg-white/20 text-white border border-white/30 shadow-xs"
                   : "text-[#A1A1AA] hover:text-white"
@@ -915,8 +1147,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setVoiceLang("hi-IN")}
-              className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all ${
+              onClick={() => setVoiceLanguage("hi-IN")}
+              className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
                 voiceLang === "hi-IN"
                   ? "bg-white/20 text-white border border-white/30 shadow-xs"
                   : "text-[#A1A1AA] hover:text-white"
@@ -926,6 +1158,25 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               हिंदी
             </button>
           </div>
+
+          {/* Voice Reply Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleAutoSpeak}
+            className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+              autoSpeak
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+                : "border-[#2A2A30] bg-[#141417] text-[#A1A1AA] hover:text-white"
+            }`}
+            title={autoSpeak ? "Voice replies are ON — Click to mute auto-speaking" : "Voice replies are OFF — Click to enable auto-speaking"}
+          >
+            {autoSpeak ? (
+              <Volume2 className="h-3.5 w-3.5 text-emerald-400" />
+            ) : (
+              <VolumeX className="h-3.5 w-3.5 text-zinc-400" />
+            )}
+            <span className="hidden sm:inline">{autoSpeak ? "Voice Reply ON" : "Voice Reply OFF"}</span>
+          </button>
 
           {/* Mode Switcher */}
           <div className="flex items-center rounded-xl border border-[#2A2A30] bg-[#141417] p-1">
@@ -976,15 +1227,15 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             )}
           </button>
 
-          {/* Stop Button (Barge-in / Stop Audio) */}
-          {(voiceStatus !== "idle" || isLoading) && (
+          {/* Stop Button (Barge-in / Stop Audio & Generation) */}
+          {(voiceStatus !== "idle" || isLoading || isSpeakingSentenceRef.current) && (
             <button
               type="button"
               onClick={handleStopAll}
-              className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-2.5 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-500/20 active:scale-95 transition-all shadow-sm cursor-pointer"
-              title="Stop voice output / generation"
+              className="flex items-center gap-1.5 rounded-xl border border-rose-500/50 bg-rose-500/20 px-3 py-1.5 text-xs font-bold text-rose-200 hover:bg-rose-500/30 active:scale-95 transition-all shadow-[0_0_12px_rgba(244,63,94,0.3)] cursor-pointer"
+              title="Stop voice output and assistant response immediately"
             >
-              <Square className="h-3 w-3 fill-rose-400 text-rose-400" />
+              <Square className="h-3 w-3 fill-rose-300 text-rose-300" />
               <span>Stop</span>
             </button>
           )}
@@ -1347,18 +1598,32 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                   ? "Click the mic to speak or type your answer (STAR method)..."
                   : "Click mic to speak in English, Telugu, or Hindi, or type your query..."
               }
-              className={`w-full rounded-2xl border bg-[#141417] py-3.5 pl-4 pr-24 text-xs font-medium text-[#F2F2F3] outline-none transition-all placeholder:text-[#A1A1AA] ${
+              className={`w-full rounded-2xl border bg-[#141417] py-3.5 pl-4 pr-32 text-xs font-medium text-[#F2F2F3] outline-none transition-all placeholder:text-[#A1A1AA] ${
                 voiceStatus === "listening"
                   ? "border-rose-500/60 ring-2 ring-rose-500/20"
                   : "border-[#2A2A30] focus:border-white/40 focus:ring-1 focus:ring-white/20"
               }`}
             />
 
+            {/* Quick Speaker Reply Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleAutoSpeak}
+              className={`absolute right-22 flex h-8 w-8 items-center justify-center rounded-xl transition-all shadow-sm cursor-pointer ${
+                autoSpeak
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  : "bg-white/10 text-zinc-400 hover:bg-white/20 hover:text-white"
+              }`}
+              title={autoSpeak ? "Voice replies are ON (Click to mute)" : "Voice replies are OFF (Click to unmute)"}
+            >
+              {autoSpeak ? <Volume2 className="h-4 w-4 text-emerald-400" /> : <VolumeX className="h-4 w-4" />}
+            </button>
+
             {/* Small Mic Button */}
             <button
               type="button"
               onClick={toggleListening}
-              className={`absolute right-12 flex h-8 w-8 items-center justify-center rounded-xl transition-all shadow-sm ${
+              className={`absolute right-12 flex h-8 w-8 items-center justify-center rounded-xl transition-all shadow-sm cursor-pointer ${
                 voiceStatus === "listening"
                   ? "bg-rose-600 text-white animate-pulse ring-2 ring-rose-400/50"
                   : "bg-white/10 text-white hover:bg-white/20 active:scale-95"

@@ -188,18 +188,69 @@ class TestSiteGuideAndActions(unittest.TestCase):
         self.assertIn("ATS Engineering Resume", reply)
 
 
-class TestPromptAndHistoryGrounding(unittest.TestCase):
-    """Verifies prompt construction constraints and latency bounds."""
+class TestLanguageIntentAndScriptRules(unittest.TestCase):
+    """Verifies that queries in Telugu/Hindi/English map to pure script responses."""
 
-    def test_system_prompt_brevity_constraint(self):
-        prompt = build_voice_system_prompt(
-            profile={"cgpa": 7.8, "targetRole": "SDE"},
-            language="en-IN",
-            active_tab="coach"
+    def test_language_intent_detection(self):
+        from backend.voice_engine import detect_language_intent
+        self.assertEqual(detect_language_intent("naaku telugu lo cheppu bro", "auto"), "te-IN")
+        self.assertEqual(detect_language_intent("malli cheppu", "auto"), "te-IN")
+        self.assertEqual(detect_language_intent("mujhe hindi me batao", "auto"), "hi-IN")
+        self.assertEqual(detect_language_intent("aage batao", "auto"), "hi-IN")
+        self.assertEqual(detect_language_intent("How can I prepare for Amazon SDE?", "auto"), "en-IN")
+
+    def test_telugu_reply_contains_telugu_script(self):
+        reply = generate_local_voice_reply(
+            message="naaku placement gurinchi cheppu",
+            language="te-IN"
         )
-        self.assertIn("Maximum Output Length: 45 to 50 words", prompt)
-        self.assertIn("---SCREEN---", prompt)
-        self.assertIn("Pathfinder AI", prompt)
+        spoken_part = reply.split("---SCREEN---")[0]
+        # Must contain Telugu Unicode characters (0x0C00 - 0x0C7F)
+        has_telugu = any('\u0C00' <= char <= '\u0C7F' for char in spoken_part)
+        self.assertTrue(has_telugu, "Spoken reply for Telugu query must use pure Telugu script for natural TTS.")
+
+    def test_hindi_reply_contains_devanagari_script(self):
+        reply = generate_local_voice_reply(
+            message="mujhe placement ke baare me batao",
+            language="hi-IN"
+        )
+        spoken_part = reply.split("---SCREEN---")[0]
+        # Must contain Devanagari Unicode characters (0x0900 - 0x097F)
+        has_devanagari = any('\u0900' <= char <= '\u097F' for char in spoken_part)
+        self.assertTrue(has_devanagari, "Spoken reply for Hindi query must use Devanagari script for natural TTS.")
+
+
+class TestTutorResumeAndInterruptionRecovery(unittest.TestCase):
+    """Verifies that stopping and resuming continues from step N instead of restarting at 1."""
+
+    def test_resume_from_interrupted_step(self):
+        # Student was stopped at step 3, now asks to continue
+        reply = generate_local_voice_reply(
+            message="continue",
+            language="en-IN",
+            tutor_state={"currentProjectId": "proj-sde-1", "stepIndex": 3}
+        )
+        self.assertIn("Step 3 of 9", reply, "Continuing should resume from the current step instead of restarting at Step 1.")
+        self.assertNotIn("Step 1 of 9", reply)
+
+    def test_resume_in_telugu_query(self):
+        # Student was stopped at step 4, asks in Telugu "malli cheppu"
+        reply = generate_local_voice_reply(
+            message="malli cheppu",
+            language="te-IN",
+            tutor_state={"currentProjectId": "proj-sde-1", "stepIndex": 4}
+        )
+        self.assertIn("Step 4 of 9", reply)
+
+    def test_reselecting_same_project_prompts_resume(self):
+        # Student clicks the same blueprint when already at step 5
+        reply = generate_local_voice_reply(
+            message="Teach me the Distributed Asynchronous Job Queue project step by step",
+            language="en-IN",
+            tutor_state={"currentProjectId": "proj-sde-1", "stepIndex": 5}
+        )
+        self.assertIn("Step 5", reply)
+        self.assertTrue("continue" in reply.lower() or "resume" in reply.lower() or "step 5" in reply.lower())
 
 
 if __name__ == "__main__":
