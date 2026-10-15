@@ -3,7 +3,7 @@
 > **An elite AI career co-pilot and real-time streaming voice architect that analyzes student skills, projects, and cohort metrics to predict campus placement odds, teach 23 production blueprints step-by-step, and generate ATS-friendly resumes in seconds.**
 
 [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Try_Pathfinder_Now-0070F3?style=for-the-badge&logo=vercel&logoColor=white)](https://pathfinder-client-fzom.vercel.app)
-[![API Engine](https://img.shields.io/badge/⚡_API_Engine-Render_Active-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://pathfinder-1-xhme.onrender.com/api/health)
+[![API Engine](https://img.shields.io/badge/⚡_API_Engine-Render_Active-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://pathfinder-backend-klrp.onrender.com/api/health)
 [![Open Source](https://img.shields.io/badge/GitHub-Public_Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/dileepbommali16-ops/pathfinder)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
@@ -233,7 +233,7 @@ Measured using `scripts/voice_latency_test.py` across real-time scenarios:
 | **Telugu Voice Navigation** | *"Skills tab ki teesukelli bro"* (`te-IN`) | **29.22 ms** | **29.69 ms** | **14 words** (`తెలుగు`) | ✅ Verified |
 | **23-Blueprint Project Tutor** | *"Teach me Asynchronous Job Queue step by step"* | **59.96 ms** | **61.61 ms** | **42 words** | ✅ Verified |
 | **ATS Resume Builder Trigger** | *"Build my resume with my projects"* (`en-IN`) | **39.04 ms** | **40.17 ms** | **28 words** | ✅ Verified |
-| **Production Health Check** | `https://pathfinder-1-xhme.onrender.com/api/health` | **200 OK** | **10.19 s** (cold) | Healthy | ✅ Verified |
+| **Production Health Check** | `https://pathfinder-backend-klrp.onrender.com/api/health` | **200 OK** | **10.19 s** (cold) | Healthy | ✅ Verified |
 
 ---
 
@@ -374,10 +374,10 @@ python -m compileall backend scripts -q
 
 - **🚀 Live Application (Vercel Edge SPA):** [https://pathfinder-client-fzom.vercel.app](https://pathfinder-client-fzom.vercel.app)  
   *(Instant Guest Access: Click "Lamp your Career &rarr; Start" to test all features with 0 login friction)*
-- **⚡ Backend Cloud API (Render Web Service):** [https://pathfinder-1-xhme.onrender.com](https://pathfinder-1-xhme.onrender.com)  
-  *(HTTP 200 Healthy, active Git SHA `f131ddd`)*
-- **📊 Real-time Health Telemetry:** [https://pathfinder-1-xhme.onrender.com/api/health](https://pathfinder-1-xhme.onrender.com/api/health)
-- **📖 OpenAPI Interactive Documentation:** [https://pathfinder-1-xhme.onrender.com/docs](https://pathfinder-1-xhme.onrender.com/docs)
+- **⚡ Backend Cloud API (Render Web Service):** [https://pathfinder-backend-klrp.onrender.com](https://pathfinder-backend-klrp.onrender.com)  
+  *(HTTP 200 Healthy, active Git SHA `e8c4cab`)*
+- **📊 Real-time Health Telemetry:** [https://pathfinder-backend-klrp.onrender.com/api/health](https://pathfinder-backend-klrp.onrender.com/api/health)
+- **📖 OpenAPI Interactive Documentation:** [https://pathfinder-backend-klrp.onrender.com/docs](https://pathfinder-backend-klrp.onrender.com/docs)
 
 ---
 

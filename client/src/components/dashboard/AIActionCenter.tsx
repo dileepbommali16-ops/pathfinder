@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { TabId } from "./DashboardHeader";
 import { StudentProfileState, DEFAULT_STUDENT_PROFILE } from "@/types/profile";
+import { API_BASE } from "@/lib/apiClient";
 
 export interface ReadinessAuditResultData {
   chance: number;
@@ -67,7 +68,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
   targetRole,
   profile,
   prediction,
-  apiBase = "http://127.0.0.1:8000",
+  apiBase = API_BASE,
 }) => {
   // Action execution state
   const [loadingActionId, setLoadingActionId] = useState<string | null>(null);

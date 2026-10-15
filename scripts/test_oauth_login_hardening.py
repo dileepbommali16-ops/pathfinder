@@ -18,7 +18,7 @@ if str(REPO_ROOT) not in sys.path:
 import httpx
 
 os.environ["FRONTEND_URL"] = "http://localhost:3000,https://app.example.vercel.app"
-os.environ["BACKEND_PUBLIC_URL"] = "http://pathfinder-1-xhme.onrender.com/"  # http + trailing slash on purpose
+os.environ["BACKEND_PUBLIC_URL"] = "http://pathfinder-backend-klrp.onrender.com/"  # http + trailing slash on purpose
 os.environ["JWT_SECRET"] = "unit-test-secret-unit-test-secret"
 os.environ["GOOGLE_CLIENT_ID"] = "gid"
 os.environ["GOOGLE_CLIENT_SECRET"] = "gsecret"
@@ -30,7 +30,7 @@ from backend.api import app  # noqa: E402
 from backend import oauth  # noqa: E402
 
 VERCEL = "https://app.example.vercel.app"
-BACKEND = "https://pathfinder-1-xhme.onrender.com"
+BACKEND = "https://pathfinder-backend-klrp.onrender.com"
 
 
 def _resp(status=200, payload=None):

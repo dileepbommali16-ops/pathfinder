@@ -7,6 +7,7 @@ import os
 import time
 import secrets
 import logging
+import re
 import urllib.parse
 from typing import Dict, Any, Optional, List
 import httpx
@@ -166,6 +167,23 @@ _LOCAL_HOSTS = ("localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]")
 _DEFAULT_DEPLOYED_FRONTEND = "https://pathfinder-client-fzom.vercel.app"
 
 
+def _clean_origin_url(raw_url: Optional[str]) -> str:
+    """Sanitizes origin URLs, correcting accidental malformed protocols like 'hhttps://' without corrupting valid 'https://'."""
+    if not raw_url:
+        return ""
+    url = str(raw_url).strip().rstrip("/")
+    # Fix accidental multi-h or missing-h like 'hhttps://', 'hhhttps://', or bare 'ttps://'
+    url = re.sub(r'^[hH]+[tT]+[pP][sS]?://', 'https://', url)
+    url = re.sub(r'^[tT]+[pP][sS]?://', 'https://', url)
+    # Ensure scheme delimiter is properly formatted
+    url = re.sub(r'^https?:/*(?=[^/])', 'https://', url)
+    if url.startswith("http://") and not any(h in url for h in _LOCAL_HOSTS):
+        url = "https://" + url[len("http://"):]
+    if any(h in url for h in _LOCAL_HOSTS):
+        url = url.replace("https://localhost", "http://localhost").replace("https://127.0.0.1", "http://127.0.0.1")
+    return url.rstrip("/")
+
+
 def _is_local_url(url: str) -> bool:
     try:
         host = urllib.parse.urlparse(url).hostname or ""
@@ -177,11 +195,13 @@ def _is_local_url(url: str) -> bool:
 def get_allowed_frontend_origins() -> List[str]:
     """Retrieves list of allowlisted frontend origins from the comma-separated FRONTEND_URL env var."""
     raw = os.getenv("FRONTEND_URL", f"http://localhost:3000,http://localhost:5173,{_DEFAULT_DEPLOYED_FRONTEND}").strip()
-    raw = raw.replace("hhttps://", "https://").replace("ttps://", "https://")
-    origins = [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
+    origins: List[str] = []
+    for o in raw.split(","):
+        cleaned = _clean_origin_url(o)
+        if cleaned and cleaned not in origins:
+            origins.append(cleaned)
     if _DEFAULT_DEPLOYED_FRONTEND not in origins:
         origins.append(_DEFAULT_DEPLOYED_FRONTEND)
-    return origins
     return origins if origins else ["http://localhost:3000"]
 
 
@@ -190,7 +210,8 @@ def _is_allowed_origin(url: Optional[str]) -> bool:
     if not url:
         return False
     try:
-        parsed = urllib.parse.urlparse(str(url).strip())
+        clean_url = _clean_origin_url(url)
+        parsed = urllib.parse.urlparse(clean_url)
         scheme = (parsed.scheme or "").lower()
         if scheme not in ("http", "https"):
             return False
@@ -210,7 +231,7 @@ def _is_allowed_origin(url: Optional[str]) -> bool:
                 pass
         # Verified Pathfinder HTTPS Vercel and Render deployments/previews
         if scheme == "https" and (
-            hostname.startswith("pathfinder-")
+            hostname.startswith("pathfinder")
             and (hostname.endswith(".vercel.app") or hostname.endswith(".onrender.com"))
         ):
             return True
@@ -223,9 +244,10 @@ def get_default_frontend_base() -> str:
     """Default redirect target: the first non-localhost origin if any, so production never lands on localhost."""
     allowed = get_allowed_frontend_origins()
     for origin in allowed:
-        if not _is_local_url(origin):
-            return origin
-    return allowed[0]
+        clean = _clean_origin_url(origin)
+        if clean and not _is_local_url(clean):
+            return clean
+    return _clean_origin_url(allowed[0]) if allowed else _DEFAULT_DEPLOYED_FRONTEND
 
 
 def resolve_frontend_redirect_base(candidate_origin: Optional[str] = None) -> str:
@@ -235,7 +257,7 @@ def resolve_frontend_redirect_base(candidate_origin: Optional[str] = None) -> st
     Falls back to the default (first non-localhost if available) entry if not matched or empty.
     """
     if candidate_origin:
-        clean = candidate_origin.strip().rstrip("/")
+        clean = _clean_origin_url(candidate_origin.strip().rstrip("/"))
         if _is_allowed_origin(clean):
             return clean
     return get_default_frontend_base()
@@ -249,7 +271,7 @@ def _candidate_origin(request: Request, origin_param: Optional[str]) -> Optional
         try:
             parsed = urllib.parse.urlparse(raw.strip())
             if parsed.scheme and parsed.netloc:
-                candidate = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+                candidate = _clean_origin_url(f"{parsed.scheme}://{parsed.netloc}".rstrip("/"))
                 if _is_allowed_origin(candidate):
                     return candidate
         except Exception:
@@ -258,11 +280,7 @@ def _candidate_origin(request: Request, origin_param: Optional[str]) -> Optional
 
 
 def _normalize_backend_url(url: str) -> str:
-    url = url.strip().rstrip("/")
-    if url.startswith("ttps://"):
-        url = "https://" + url[len("ttps://"):]
-    if url.startswith("http://") and not _is_local_url(url):
-        url = "https://" + url[len("http://"):]
+    url = _clean_origin_url(url)
     return url
 
 

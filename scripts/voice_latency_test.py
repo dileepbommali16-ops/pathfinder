@@ -172,7 +172,7 @@ async def main():
             results.append(res_d)
 
     # 2. Remote Render Cloud Deployment Benchmark
-    remote_base = os.getenv("RENDER_URL", "https://pathfinder-1-xhme.onrender.com").rstrip("/")
+    remote_base = os.getenv("RENDER_URL", "https://pathfinder-backend-klrp.onrender.com").rstrip("/")
     print(f"\n========================================================")
     print(f"BENCHMARK: Live Cloud Deployment ({remote_base})")
     print(f"--------------------------------------------------------")

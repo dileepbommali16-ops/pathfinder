@@ -61,10 +61,15 @@ class Settings:
             "http://127.0.0.1:5173",
             "http://localhost:8501",
             "http://127.0.0.1:8501",
+            "https://pathfinder-client-fzom.vercel.app",
         ]
         if frontend_env:
+            import re
             for item in frontend_env.split(","):
                 cleaned = item.strip().rstrip("/")
+                cleaned = re.sub(r'^[hH]+[tT]+[pP][sS]?://', 'https://', cleaned)
+                cleaned = re.sub(r'^[tT]+[pP][sS]?://', 'https://', cleaned)
+                cleaned = re.sub(r'^https?:/*(?=[^/])', 'https://', cleaned)
                 if cleaned and cleaned not in origins:
                     origins.append(cleaned)
         self.allowed_origins: List[str] = origins

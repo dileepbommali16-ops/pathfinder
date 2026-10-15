@@ -13,7 +13,7 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 EDGE_PATH = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-LIVE_URL = "https://pathfinder-1-xhme.onrender.com/?demo=1"
+LIVE_URL = "https://pathfinder-backend-klrp.onrender.com/?demo=1"
 ARTIFACT_DIR = r"C:\Users\Priyanka\.gemini\antigravity-ide\brain\cd1a03ec-8af0-418b-9ffd-1b8950860fae"
 
 from playwright.sync_api import sync_playwright

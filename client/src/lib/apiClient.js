@@ -18,7 +18,7 @@ export const getApiBase = () => {
       if (window.location.hostname.includes("onrender.com")) {
         return window.location.origin;
       }
-      return "https://pathfinder-1-xhme.onrender.com";
+      return "https://pathfinder-backend-klrp.onrender.com";
     }
   }
   return "http://127.0.0.1:8000";
