@@ -358,7 +358,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const [speakerTestState, setSpeakerTestState] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [speakerTestMsg, setSpeakerTestMsg] = useState<string | null>(null);
 
-  // Fallback Audio Reader & Persistent Auto-Speak
+  // Fallback Audio Reader & Persistent Auto-Speak (default false: typing is for visual reading)
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const [autoSpeak, setAutoSpeak] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -367,7 +367,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         if (stored !== null) return stored === "true";
       } catch {}
     }
-    return true; // Default true for voice-first DAS AI assistant
+    return false; // Default false: voice synthesis only runs for active voice turns or manual play
   });
 
   const toggleAutoSpeak = () => {
@@ -1246,7 +1246,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           }
         } catch {}
 
-        const shouldSpeak = (autoSpeak || isVoiceTriggeredRef.current || isBlueprintTrigger) && !isSpeakingRef.current;
+        // Strictly speak ONLY if this turn was explicitly initiated by microphone voice or interactive voice trigger
+        const shouldSpeak = (isVoiceTriggeredRef.current || isBlueprintTrigger) && !isSpeakingRef.current;
 
         if (shouldSpeak && voiceStatus === "idle") {
           isVoiceTriggeredRef.current = false;
@@ -1254,17 +1255,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         }
       }
     }
-  }, [messages, isLoading, voiceStatus, autoSpeak]);
-
-  // Speak initial greeting once on mount if autoSpeak is enabled
-  useEffect(() => {
-    const greetingTimer = setTimeout(() => {
-      if (autoSpeak && messages.length === 1 && messages[0].role === "assistant" && !isSpeakingRef.current) {
-        speakText(messages[0].content, 0);
-      }
-    }, 600);
-    return () => clearTimeout(greetingTimer);
-  }, []);
+  }, [messages, isLoading, voiceStatus]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });

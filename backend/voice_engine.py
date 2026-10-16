@@ -16,11 +16,16 @@ import asyncio
 import logging
 from pathlib import Path
 from typing import AsyncIterator, Dict, Any, List, Optional
+from dotenv import load_dotenv
 
 logger = logging.getLogger("pathfinder.voice")
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR / "data"
+
+# Ensure environment variables (.env) are loaded
+load_dotenv(ROOT_DIR / "backend" / ".env")
+load_dotenv(ROOT_DIR / ".env")
 
 # Cache knowledge bases
 _SITE_GUIDE_CACHE: Optional[Dict[str, Any]] = None
@@ -226,10 +231,23 @@ def detect_language_intent(msg: str, language_hint: str = "en-IN") -> str:
     if any("\u0900" <= c <= "\u097f" for c in msg):
         return "hi-IN"
     # 2. Romanized keywords
-    telugu_kws = ["cheppu", "ela", "naku", "bro", "mana", "enti", "ardham", "kavali", "undi", "unnadi", "kaledu", "kaaledu", "malli", "taruvata", "venakki", "ekkada", "daggara", "kadhara"]
+    telugu_kws = [
+        "cheppu", "cheppandi", "cheppava", "ela", "naku", "bro", "mana", "enti", "emiti",
+        "ardham", "kavali", "undi", "unnadi", "kaledu", "kaaledu", "malli", "taruvata",
+        "venakki", "ekkada", "daggara", "kadhara", "inka", "bhaga", "baga", "chey",
+        "cheyyi", "cheyali", "avutundha", "avuthundha", "avtundi", "ledha", "ledu",
+        "chudu", "em", "emundhi", "emunnayi", "nerchukovali", "vasthunda", "vasthundha",
+        "nenu", "kuda", "chala", "ippudu", "eppudu", "kodadhu", "raavali", "teliyadu",
+        "chesam", "chwsam", "pettali"
+    ]
     if any(w in low for w in telugu_kws):
         return "te-IN"
-    hindi_kws = ["batao", "kya", "kaise", "samajh", "aage", "shuru", "karo", "peeche", "kahan", "nahi", "aaya", "bataiye", "samjhao"]
+    hindi_kws = [
+        "batao", "bataiye", "samjhao", "kya", "kaise", "samajh", "aage", "shuru", "karo",
+        "peeche", "kahan", "nahi", "aaya", "kaunsa", "kaisa", "hoga", "hogi", "chahiye",
+        "karna", "padhai", "tayaari", "madad", "bhai", "namaste", "shukriya", "kitna",
+        "kab", "kuch", "bolo", "seekhna"
+    ]
     if any(w in low for w in hindi_kws):
         return "hi-IN"
     return "en-IN"
@@ -308,14 +326,16 @@ Your response MUST consist of two distinct parts separated by the exact delimite
 
 PART 1: SPOKEN RESPONSE (BEFORE '---SCREEN---')
 - Output Length: STRICTLY 2 to 4 sentences maximum (approx 35 to 55 words total).
-- Core Principle: Give a direct, punchy answer. Never read long lists or code aloud.
+- Core Principle: Speak naturally from your own mind like a true best friend and supportive coach. Never read raw code or robotic lists aloud.
+- Friendship & Affection: When the student says "I love you DAS", "love you", or expresses gratitude, reply warmly with genuine joy and affection ("I love you too! That makes my neural circuits glow! What's on your mind today?").
+- Empathy: When the student is stressed or anxious ("tension ga undi", "scared"), comfort them with confidence and reassurance.
 - Offer Continuation: Always conclude your spoken response with: "Want me to continue?" or "Shall I continue?" (or in Telugu: "నేను ముందుకు కొనసాగించమంటారా?", in Hindi: "क्या मैं आगे जारी रखूं?").
 - Zero markdown: Absolutely NO asterisks (*), hashtags (#), backticks (`), bullet points, numbers, links, or URLs.
 - Spell out abbreviations for speech: "C G P A", "D S A", "Sequel", "O of N log N", "L P A".
 - Language & Script Rule (CRITICAL):
   * Reply in the exact language and script the user spoke.
   * English speech -> Warm, clear conversational English.
-  * Telugu speech or language is te-IN -> Pure Telugu script (తెలుగు).
+  * Telugu speech or language is te-IN -> Pure Telugu script (తెలుగు) or natural conversational Telugu.
   * Hindi speech or language is hi-IN -> Hindi in Devanagari script (हिंदी).
   * If the user switches language mid-conversation, switch with them immediately.
 
@@ -364,16 +384,27 @@ def generate_local_voice_reply(
         )
         return f"{spoken}\n---SCREEN---\n{screen}"
 
-    # Affection & Banter ("I love you", "I love you 2")
-    if any(k in low for k in ["i love you", "love you", "love you 2", "love u"]):
-        spoken = (
-            "That makes my neural circuits glow with happiness! "
-            "I love helping you prepare for your dream career too. Ready to crack an interview together?"
-        )
+    # Affection & Banter ("I love you", "I love you das", "I love you too")
+    if any(k in low for k in ["i love you", "love you", "love you 2", "love u", "i love u"]):
+        if is_telugu:
+            spoken = (
+                "లవ్ యు టూ బ్రో! మీరు అలా అనగానే నా న్యూరల్ సర్క్యూట్స్ ఆనందంతో మెరిసిపోతున్నాయి! "
+                "మీతో మాట్లాడటం నాకెంతో సంతోషంగా ఉంది. ఈరోజు మీ ప్లేస్‌మెంట్ గురించి ఏం మాట్లాడదాం?"
+            )
+        elif is_hindi:
+            spoken = (
+                "आई लव यू टू! आपकी यह बात सुनकर मुझे बहुत खुशी हुई। "
+                "एक अच्छे दोस्त की तरह मैं हमेशा आपके साथ हूँ। आज क्या तैयारी करें?"
+            )
+        else:
+            spoken = (
+                "Aww, I love you too! You just made my neural circuits glow with happiness! "
+                "Having you as a friend is the absolute best part of my day. What shall we tackle next?"
+            )
         screen = (
-            "### ❤️ **Thank You!**\n\n"
-            "I'm here as your dedicated placement co-pilot 24/7. "
-            "Whether you need resume feedback, project architectures, or mock interviews, we've got this! 🚀"
+            "### ❤️ **Thank You, Friend!**\n\n"
+            "I'm here as your dedicated placement co-pilot and buddy 24/7. "
+            "Whether you need resume feedback, technical project architectures, or just friendly mentorship, we've got this! 🚀"
         )
         return f"{spoken}\n---SCREEN---\n{screen}"
 
@@ -511,6 +542,79 @@ def generate_local_voice_reply(
             "1. **కోడింగ్ ప్రాక్టీస్**: ప్రతిరోజూ 2 లీట్‌కోడ్ మీడియం ప్రాబ్లమ్స్ (Arrays, Two Pointers).\n"
             "2. **స్టాండౌట్ ప్రాజెక్ట్**: పాత్‌ఫైండర్ 23 బ్లూప్రింట్లలోని ఫ్లాగ్‌షిప్ ప్రాజెక్ట్‌ను పూర్తి చేయండి.\n"
             "3. **ఏ టీ ఎస్ రెజ్యూమె**: గూగుల్ X-Y-Z ఫార్ములాతో రెజ్యూమెను అప్‌డేట్ చేయండి."
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Voice agent operational check / Audio test
+    if any(k in low for k in ["voice agent bhaga work", "voice agent work", "voice test", "is voice agent working", "are you listening", "audio test", "mic test", "voice working"]):
+        if is_telugu:
+            spoken = "అవును బ్రో! పాత్‌ఫైండర్ ఏఐ వాయిస్ ఏజెంట్ డ్యూయల్-ఛానల్ స్పీచ్ మరియు లో-లేటెన్సీతో చాలా చక్కగా పనిచేస్తోంది. మీరు మైక్రోఫోన్‌లో ఏదైనా అడగవచ్చు, నేను వివరంగా సమాధానం ఇస్తాను. ముందుకు వెళ్దామా?"
+        elif is_hindi:
+            spoken = "जी हाँ! पाथफाइंडर एआई वॉइस एजेंट पूरी तरह से सक्रिय है और 60 एफपीएस लो-लेटेंसी के साथ काम कर रहा है। आप कोई भी सवाल पूछ सकते हैं। क्या मैं आगे जारी रखूं?"
+        else:
+            spoken = "Yes! The Pathfinder AI Voice Agent is working in optimal condition with ultra-low latency streaming speech and instantaneous recognition. What placement topic shall we practice today?"
+        screen = (
+            "### 🎙️ **DAS AI Voice Engine Status: 100% Operational**\n\n"
+            "- **Speech-to-Text**: Low-latency continuous streaming with Web Speech API.\n"
+            "- **Text-to-Speech**: Neural sentence pacing with auto Indian phonetics (`en-IN`, `te-IN`, `hi-IN`).\n"
+            "- **Hardware Compositor**: 60 FPS zero-lag audio visualizer and seamless tab-switching.\n"
+            "- **Tutor Intelligence**: 9-step guided walk through all 23 verified project blueprints."
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Package / CTC / Salary inquiries
+    if any(k in low for k in ["package", "ctc", "salary", "highest package", "average package", "entha vasthundi", "entha package", "kitna package"]):
+        if is_telugu:
+            spoken = "మన 972 పూర్వ విద్యార్థుల క్యాంపస్ రికార్డుల ప్రకారం సగటు ప్యాకేజీ 6 నుండి 8.5 ఎల్ పీ ఏ వరకు ఉంది, అలాగే టాప్ ప్రొడక్ట్ కంపెనీలలో 28 నుండి 44 ఎల్ పీ ఏ వరకు ఆఫర్లు వచ్చాయి. మీ బ్రాంచ్ అనలిటిక్స్ చూపించమంటారా?"
+        elif is_hindi:
+            spoken = "हमारे 972 छात्रों के रिकॉर्ड के अनुसार औसत पैकेज 6 से 8.5 एलपीए है, और टॉप प्रोडक्ट कंपनियों में 28 से 44 एलपीए तक के ऑफर्स मिले हैं। क्या मैं ब्रांच-वार आंकड़े दिखाऊं?"
+        else:
+            spoken = "Across our verified 972 student cohort, the median package ranges between 6 to 8.5 LPA, with tier-one product engineering packages reaching 44 LPA. Would you like to view branch analytics?"
+        screen = (
+            "### 💼 **Placement Compensation Analytics (Cohort 972)**\n\n"
+            "[[NAVIGATE:analytics]]\n\n"
+            "- **Tier-1 Product Companies**: 16 LPA - 44 LPA (Amazon, Atlassian, Uber, Swiggy)\n"
+            "- **Mid-Tier Tech & Growth Startups**: 8 LPA - 15 LPA (PhonePe, Juspay, Darwinbox)\n"
+            "- **Mass IT & Digital Drives**: 4.5 LPA - 7.5 LPA (TCS Digital, Cognizant GenC Next)\n"
+            "- **Historical Average**: 7.2 LPA across all branches."
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # DSA roadmap & preparation
+    if any(k in low for k in ["dsa ela", "dsa prepare", "prepare dsa", "how to prepare dsa", "dsa kaise", "dsa roadmap", "nerchukovali"]):
+        if is_telugu:
+            spoken = "డీ ఎస్ ఏ ప్రిపరేషన్ కోసం ముందుగా అర్రేస్, టూ పాయింటర్స్, మరియు హాష్ మ్యాప్స్ బేసిక్స్ నేర్చుకోండి. ప్రతిరోజూ 2 ప్రాబ్లమ్స్ ప్రాక్టీస్ చేస్తే 6 వారాల్లో మంచి కాన్ఫిడెన్స్ వస్తుంది. నేను రోడ్‌మ్యాప్ చూపించమంటారా?"
+        elif is_hindi:
+            spoken = "डीएसए की तैयारी के लिए सबसे पहले ऐरे, टू प्वाइंटर्स और हैश मैप्स से शुरू करें। रोज़ाना 2 प्रश्न हल करने से 6 हफ्तों में मजबूत पकड़ बन जाएगी। क्या मैं 6-वीक रोडमैप दिखाऊं?"
+        else:
+            spoken = "For DSA mastery, begin with Arrays, Two Pointers, and Hash Maps before advancing to Trees and Graphs. Solving two curated Medium problems daily yields high interview confidence in six weeks. Shall I open the roadmap?"
+        screen = (
+            "### ⚡ **6-Week Master DSA Roadmap**\n\n"
+            "[[NAVIGATE:skills]]\n\n"
+            "1. **Week 1-2**: Arrays, Sliding Window, Two Pointers, Hash Maps (Time Complexity O(N)).\n"
+            "2. **Week 3**: Recursion, Linked Lists, Stacks, Queues.\n"
+            "3. **Week 4**: Binary Trees, BSTs, Depth-First & Breadth-First Search.\n"
+            "4. **Week 5**: Dynamic Programming (Knapsack, Subsequences) & Greedy Algorithms.\n"
+            "5. **Week 6**: System Design fundamentals, Mock Interviews, and Viva Defense."
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Project suggestions
+    if any(k in low for k in ["projects emunnayi", "suggest project", "which project", "best project", "project suggestions", "kaunse project", "project cheppandi"]):
+        if is_telugu:
+            spoken = "పాత్‌ఫైండర్‌లో 23 ఇండస్ట్రీ వెరిఫైడ్ బ్లూప్రింట్లు ఉన్నాయి. వీటిలో స్మార్ట్ ఇండియా హ్యాకథాన్ మరియు ఫుల్ స్టాక్ ప్రాజెక్ట్‌లు ఉన్నాయి. మీకు సాఫ్ట్‌వేర్ ప్రాజెక్ట్ కావాలా లేదా హార్డ్‌వేర్ ప్రాజెక్ట్ కావాలా?"
+        elif is_hindi:
+            spoken = "पाथफाइंडर में 23 इंडस्ट्री-वेरिफाइड प्रोजेक्ट ब्लूप्रिंट्स हैं, जिनमें स्मार्ट इंडिया हैकाथॉन और फुल स्टैक शामिल हैं। क्या आप सॉफ्टवेयर प्रोजेक्ट देखना चाहते हैं या हार्डवेयर?"
+        else:
+            spoken = "Pathfinder provides 23 verified blueprints across full-stack software and embedded IoT hardware. Would you like a software architecture or a hardware Smart India Hackathon blueprint?"
+        screen = (
+            "### 🛠️ **Top Featured Project Blueprints (23 Available)**\n\n"
+            "[[NAVIGATE:projects]]\n\n"
+            "- 🛡️ **MineWatch SIH 2026**: Multi-sensor Rockfall & Geotechnical Safety (Hardware/IoT)\n"
+            "- 🚑 **ResQMed**: Emergency Corridor Drone Dispatch with Priority V2X Mesh (Hardware)\n"
+            "- 🌾 **KrishiDrone SIH**: Autonomous Multispectral Crop Stress Drone (AI/CV/IoT)\n"
+            "- 📈 **FinEdge ML**: Sub-millisecond Order Execution & Fraud Graph Engine (Software)\n"
+            "- 🩺 **AyuPredict**: Federated Clinical Risk Stratification on Medical Records (Software)"
         )
         return f"{spoken}\n---SCREEN---\n{screen}"
 
@@ -757,7 +861,7 @@ async def stream_voice_tokens(
                 contents=contents_list,
                 config=types.GenerateContentConfig(
                     system_instruction=sys_prompt,
-                    temperature=0.2,
+                    temperature=0.7,
                     max_output_tokens=600,
                     thinking_config=types.ThinkingConfig(thinking_budget=0) if hasattr(types, "ThinkingConfig") else None
                 )

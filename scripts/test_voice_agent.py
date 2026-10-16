@@ -286,5 +286,45 @@ class TestShortSpokenReplies(unittest.TestCase):
         self.assertIn("Zero markdown", prompt)
 
 
+class TestMultilingualVoiceRefinements(unittest.TestCase):
+    """Verifies multilingual Romanized detection, voice status checks, compensation, and DSA intents."""
+
+    def test_romanized_tenglish_detection(self):
+        from backend.voice_engine import detect_language_intent
+        self.assertEqual(detect_language_intent("voice agent bhaga work avutundha"), "te-IN")
+        self.assertEqual(detect_language_intent("inka placement chance ela undi bro"), "te-IN")
+        self.assertEqual(detect_language_intent("dsa lo em nerchukovali"), "te-IN")
+        self.assertEqual(detect_language_intent("projects emunnayi cheppu"), "te-IN")
+
+    def test_romanized_hindi_detection(self):
+        from backend.voice_engine import detect_language_intent
+        self.assertEqual(detect_language_intent("kaunsa project banaye bhai"), "hi-IN")
+        self.assertEqual(detect_language_intent("dsa kaise shuru kare"), "hi-IN")
+
+    def test_voice_agent_health_check_intent(self):
+        reply = generate_local_voice_reply(message="voice agent bhaga work avutundha", language="auto")
+        spoken = reply.split("---SCREEN---")[0]
+        self.assertIn("పాత్‌ఫైండర్", spoken)
+        self.assertIn("---SCREEN---", reply)
+
+    def test_package_salary_intent(self):
+        reply = generate_local_voice_reply(message="campus placements package entha vasthundi", language="auto")
+        self.assertIn("[[NAVIGATE:analytics]]", reply)
+        spoken = reply.split("---SCREEN---")[0]
+        self.assertIn("972", spoken)
+
+    def test_dsa_roadmap_intent(self):
+        reply = generate_local_voice_reply(message="dsa ela prepare avvali", language="auto")
+        self.assertIn("[[NAVIGATE:skills]]", reply)
+        spoken = reply.split("---SCREEN---")[0]
+        self.assertIn("డీ ఎస్ ఏ", spoken)
+
+    def test_projects_suggestion_intent(self):
+        reply = generate_local_voice_reply(message="projects emunnayi cheppu", language="auto")
+        self.assertIn("[[NAVIGATE:projects]]", reply)
+        self.assertIn("23", reply)
+
+
 if __name__ == "__main__":
     unittest.main()
+
