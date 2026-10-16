@@ -24,6 +24,8 @@ import { OnboardingResultScreen } from "@/components/onboarding/OnboardingResult
 import { ProfileSettings } from "@/components/dashboard/ProfileSettings";
 import { LiveSkillVerifier } from "@/components/dashboard/LiveSkillVerifier";
 import { OnePageResumeModal } from "@/components/dashboard/OnePageResumeModal";
+import { CompanyPlacementRadar } from "@/components/dashboard/CompanyPlacementRadar";
+import { MockInterviewConsole } from "@/components/dashboard/MockInterviewConsole";
 import { StudentProfileState, ReadinessAuditData, DEFAULT_STUDENT_PROFILE } from "@/types/profile";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
@@ -43,7 +45,9 @@ import {
   ShieldCheck,
   User,
   Target,
-  Loader2
+  Loader2,
+  Mic,
+  Building2
 } from "lucide-react";
 import { getApiBase, API_BASE, fetchWithTimeout, api } from "@/lib/apiClient";
 import { getTabKnowledge } from "@/lib/siteKnowledge";
@@ -65,6 +69,14 @@ export default function Home() {
   const [auditResult, setAuditResult] = useState<ReadinessAuditData | null>(null);
   const [showResultScreen, setShowResultScreen] = useState<boolean>(false);
   const [showOnePageResume, setShowOnePageResume] = useState<boolean>(false);
+  const [interviewCompany, setInterviewCompany] = useState<string>("Razorpay / Fintech");
+  const [interviewRole, setInterviewRole] = useState<string>("Full Stack Engineer");
+
+  const handleLaunchMockInterview = (companyName: string, roleTitle: string) => {
+    setInterviewCompany(companyName);
+    setInterviewRole(roleTitle);
+    setActiveTab("interview");
+  };
 
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -1169,7 +1181,7 @@ export default function Home() {
   // 1. LANDING & AUTH SCREEN
   if (oauthSigningIn && !isAuthenticated) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-[#0a0a0c] font-['Outfit',sans-serif] text-[#f2f2f0]">
+      <div className="flex min-h-screen w-full items-center justify-center bg-[#141318] font-['Outfit',sans-serif] text-[#eae6e0]">
         <p className="animate-pulse text-sm font-medium tracking-wide">Signing you in...</p>
       </div>
     );
@@ -1181,30 +1193,30 @@ export default function Home() {
   // 2. ONBOARDING WIZARD (STRICT STEP-WISE FLOW FOR NEW USERS)
   if (!profile.onboardingCompleted) {
     return (
-      <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0a0c] text-[#f2f2f0] font-sans overflow-x-hidden">
+      <div className="pathfinder-dashboard relative min-h-screen bg-[#141318] text-[#eae6e0] font-sans overflow-x-hidden">
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 bg-[#0a0a0c]" />
+          <div className="absolute inset-0 bg-[#141318]" />
           <Ambient3DBackground />
         </div>
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#16161a] border border-[#ff3b5c]/30 text-[#ff3b5c] shadow-md">
-                <Sparkles className="h-5 w-5 text-[#ff3b5c]" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1c1a22] border border-[#c76f3b]/30 text-[#c76f3b] shadow-md">
+                <Sparkles className="h-5 w-5 text-[#c76f3b]" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-[#f2f2f0] tracking-tight">Pathfinder Candidate Onboarding</h1>
-                <p className="text-xs text-[#8a8a92]">Step-Wise Profile Setup for AI Career Readiness Assessment</p>
+                <h1 className="text-base font-bold text-[#eae6e0] tracking-tight">Pathfinder Candidate Onboarding</h1>
+                <p className="text-xs text-[#938e87]">Step-Wise Profile Setup for AI Career Readiness Assessment</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-block rounded-full border border-white/[0.08] bg-[#16161a] px-3 py-1 text-xs font-medium text-[#f2f2f0] shadow-sm">
+              <span className="hidden sm:inline-block rounded-full border border-white/[0.08] bg-[#1c1a22] px-3 py-1 text-xs font-medium text-[#eae6e0] shadow-sm">
                 Logged in as {username}
               </span>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="text-xs font-semibold text-[#8a8a92] hover:text-[#f2f2f0] transition-colors cursor-pointer"
+                className="text-xs font-semibold text-[#938e87] hover:text-[#eae6e0] transition-colors cursor-pointer"
               >
                 Sign Out
               </button>
@@ -1224,9 +1236,9 @@ export default function Home() {
   // 3. IMMEDIATE RESULT SCREEN POST-SUBMIT
   if (showResultScreen && auditResult) {
     return (
-      <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0a0c] text-[#f2f2f0] font-sans overflow-x-hidden">
+      <div className="pathfinder-dashboard relative min-h-screen bg-[#141318] text-[#eae6e0] font-sans overflow-x-hidden">
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 bg-[#0a0a0c]" />
+          <div className="absolute inset-0 bg-[#141318]" />
           <Ambient3DBackground />
         </div>
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -1258,25 +1270,25 @@ export default function Home() {
 
   // 4. MAIN DASHBOARD & PLATFORM NAVIGATION
   return (
-    <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0a0c] text-[#f2f2f0] selection:bg-[#ff3b5c]/35 selection:text-white font-sans overflow-x-hidden">
+    <div className="pathfinder-dashboard relative min-h-screen bg-[#141318] text-[#eae6e0] selection:bg-[#c76f3b]/35 selection:text-[#eae6e0] font-sans overflow-x-hidden">
       {/* Graceful Cold-Start Wake-Up Notification */}
       {isGlobalServerWakingUp && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-[#16161a]/95 px-4 py-2 text-xs font-medium text-white shadow-[0_4px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#ff3b5c]" />
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[rgba(234,230,224,0.08)] bg-[#1c1a22]/95 px-4 py-2 text-xs font-medium text-[#eae6e0] shadow-[0_4px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#c76f3b]" />
           <span>Waking up the server, this can take up to a minute...</span>
         </div>
       )}
 
       {/* ================= PREMIUM AI STARTUP BACKGROUND SYSTEM ================= */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0c] via-[#0d0d10] to-[#0a0a0c]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#141318] via-[#1a1921] to-[#141318]" />
         <Ambient3DBackground />
 
         {/* Matrix Grid */}
         <div
           className="absolute inset-0 opacity-[0.025]"
           style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.7) 1px, transparent 0)`,
+            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(234,230,224,0.7) 1px, transparent 0)`,
             backgroundSize: "32px 32px",
             maskImage: "radial-gradient(ellipse 75% 65% at 50% 20%, black 30%, transparent 85%)",
             WebkitMaskImage: "radial-gradient(ellipse 75% 65% at 50% 20%, black 30%, transparent 85%)",
@@ -1290,7 +1302,7 @@ export default function Home() {
           className="absolute -top-[160px] left-1/2 -translate-x-1/2 h-[520px] w-[980px] rounded-full blur-[120px]"
           style={{
             background:
-              "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, rgba(148, 163, 184, 0.02) 45%, transparent 72%)",
+              "radial-gradient(ellipse at center, rgba(199, 111, 59, 0.05) 0%, rgba(184, 103, 58, 0.02) 45%, transparent 72%)",
           }}
         />
         <motion.div
@@ -1299,7 +1311,7 @@ export default function Home() {
           className="absolute top-[220px] -left-[180px] h-[660px] w-[660px] rounded-full blur-[140px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, rgba(100, 116, 139, 0.015) 50%, transparent 70%)",
+              "radial-gradient(circle, rgba(199, 111, 59, 0.03) 0%, rgba(140, 58, 46, 0.015) 50%, transparent 70%)",
           }}
         />
         <motion.div
@@ -1308,17 +1320,17 @@ export default function Home() {
           className="absolute top-[480px] -right-[160px] h-[600px] w-[600px] rounded-full blur-[130px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, rgba(100, 116, 139, 0.015) 50%, transparent 70%)",
+              "radial-gradient(circle, rgba(199, 111, 59, 0.03) 0%, rgba(140, 58, 46, 0.015) 50%, transparent 70%)",
           }}
         />
         <div
           className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[400px] w-[1200px] rounded-full blur-[150px] opacity-30"
           style={{
             background:
-              "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.03) 0%, transparent 75%)",
+              "radial-gradient(ellipse at center, rgba(199, 111, 59, 0.03) 0%, transparent 75%)",
           }}
         />
-        <div className="absolute top-[320px] left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="absolute top-[320px] left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(234,230,224,0.08)] to-transparent" />
       </div>
 
       {/* Top Header */}
@@ -1334,7 +1346,7 @@ export default function Home() {
 
       {/* Render Cold-Start Alert Banner */}
       {isServerWakingUp && (
-        <div className="relative z-40 border-b border-[#2A2A30] bg-[#141417] px-4 py-2 text-center text-xs font-medium text-[#F2F2F3] backdrop-blur-md">
+        <div className="relative z-40 border-b border-[#24222b] bg-[#141318] px-4 py-2 text-center text-xs font-medium text-[#eae6e0] backdrop-blur-md">
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
@@ -1360,14 +1372,14 @@ export default function Home() {
             >
               {/* Optional Profile Completion Banner */}
               {isProfilePartiallyIncomplete && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#2A2A30] bg-[#1B1B1F] p-5 backdrop-blur-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#24222b] bg-[#1c1a22] p-5 backdrop-blur-md">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
                       <Sparkles className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-[#F2F2F3]">Profile Acceleration Available</p>
-                      <p className="text-xs text-[#A1A1AA]">
+                      <p className="text-sm font-semibold text-[#eae6e0]">Profile Acceleration Available</p>
+                      <p className="text-xs text-[#938e87]">
                         Add your GitHub / LeetCode profiles or certifications in Profile / Settings to elevate your career readiness score by up to +12%.
                       </p>
                     </div>
@@ -1405,6 +1417,25 @@ export default function Home() {
                   coding={profile.coding}
                   communication={profile.communication}
                   onNavigateTab={setActiveTab}
+                  onAskCoach={handleAskCoach}
+                />
+              </section>
+
+              {/* Section 1.5: Target Company Placement Radar */}
+              <section id="career-company-radar" className="space-y-4">
+                <SectionHeader
+                  title="Target Company Placement Radar"
+                  description="Real-time hiring compatibility score mapped against historical campus drive cutoffs and technical rubrics"
+                  badge="Placement Radar"
+                  accent="accent"
+                  icon={Building2}
+                  helperLabel="Evaluates eligibility for Google, Razorpay, Amazon, and TCS Digital"
+                  onAskCoach={handleAskCoach}
+                />
+                <CompanyPlacementRadar
+                  profile={profile}
+                  predictionChance={prediction.chance}
+                  onLaunchMockInterview={handleLaunchMockInterview}
                   onAskCoach={handleAskCoach}
                 />
               </section>
@@ -1461,8 +1492,7 @@ export default function Home() {
                   onNavigateTab={setActiveTab}
                   onTriggerCalculate={() => fetchPrediction(profile)}
                   onStartMockInterview={() => {
-                    setActiveTab("coach");
-                    handleSendMessage("Let's do an interactive mock interview for my role. Ask me question 1.");
+                    setActiveTab("interview");
                   }}
                   targetRole={profile.targetRole}
                   profile={profile}
@@ -1534,6 +1564,35 @@ export default function Home() {
             </motion.div>
           )}
 
+          {/* TAB: LIVE AI MOCK INTERVIEW SIMULATOR */}
+          {activeTab === "interview" && (
+            <motion.div
+              key="interview"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-12 sm:space-y-16"
+            >
+              <SectionHeader
+                title="Live AI Mock Interview Simulator"
+                description="Rapid 60-second technical and behavioral interview practice with real-time scoring and voice recognition"
+                badge="Live Audio & Grading"
+                accent="accent"
+                icon={Mic}
+                helperLabel="Speak or type your answer for instant multi-vector scorecard"
+                onAskCoach={handleAskCoach}
+              />
+              <MockInterviewConsole
+                profile={profile}
+                initialCompany={interviewCompany}
+                initialRole={interviewRole}
+                onNavigateTab={(tab) => setActiveTab(tab as TabId)}
+                onAskCoach={handleAskCoach}
+              />
+            </motion.div>
+          )}
+
           {/* TAB 2: AI ACTION CENTRE */}
           {activeTab === "action" && (
             <motion.div
@@ -1556,8 +1615,7 @@ export default function Home() {
                 onNavigateTab={setActiveTab}
                 onTriggerCalculate={() => fetchPrediction(profile)}
                 onStartMockInterview={() => {
-                  setActiveTab("coach");
-                  handleSendMessage("Let's do an interactive mock interview for my role. Ask me question 1.");
+                  setActiveTab("interview");
                 }}
                 targetRole={profile.targetRole}
                 profile={profile}
@@ -1867,7 +1925,7 @@ export default function Home() {
               const tabTitle = getTabKnowledge(activeTab)?.title || activeTab;
               handleAskCoach(`Explain the '${tabTitle}' tab and what actions I should take here to improve my placement readiness.`);
             }}
-            className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full border border-white/20 bg-[#1B1B1F]/95 px-4 py-2.5 text-xs font-semibold text-white shadow-xl shadow-white/10 backdrop-blur-xl transition-all hover:scale-105 hover:border-white/40 hover:text-white hover:shadow-white/20 active:scale-95 cursor-pointer"
+            className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full border border-white/20 bg-[#1c1a22]/95 px-4 py-2.5 text-xs font-semibold text-white shadow-xl shadow-white/10 backdrop-blur-xl transition-all hover:scale-105 hover:border-white/40 hover:text-white hover:shadow-white/20 active:scale-95 cursor-pointer"
             title="Ask AI Coach about this page"
           >
             <Bot className="h-4 w-4 text-white" />

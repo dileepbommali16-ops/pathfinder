@@ -29,6 +29,20 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
     howToUse: "Review your overall readiness gauge. Click 'What-If Simulator' or 'Readiness Command' to see which exact skill lever provides the highest score delta.",
     limitations: "The percentage score is a statistical probability estimation based on historical placement distributions, not a contractual employment guarantee."
   },
+  interview: {
+    id: "interview",
+    title: "AI Mock Interview Simulator",
+    purpose: "Interactive rapid-fire technical and behavioral interview practice with real-time speech recognition, text-to-speech audio, and AI scoring.",
+    widgets: [
+      "Company & Role Selection: Google, Razorpay, Amazon AWS, TCS Digital, and Fintech unicorns.",
+      "Audio Controls: Listen to questions aloud via Text-to-Speech and speak answers using the live microphone.",
+      "1-Click Benchmark Answer: Instant sample response insertion for live demonstrations.",
+      "Multi-Vector AI Scorecard: Technical Depth, Communication & Clarity, Problem Solving, and Keyword Gap Analysis."
+    ],
+    dataSource: "Real-world engineering interview questions curated from Tier-1 tech campus and off-campus hiring drives.",
+    howToUse: "Select a question, speak or type your answer using the STAR format, and click 'Evaluate My Answer' to get instant feedback.",
+    limitations: "Focuses on high-frequency hiring questions; practice should be paired with deep conceptual study."
+  },
   action: {
     id: "action",
     title: "Readiness Command / AI Action Centre",

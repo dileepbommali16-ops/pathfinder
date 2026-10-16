@@ -486,10 +486,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Run Random Forest ML sensitivity on current CGPA, internships & coding scores.",
       icon: Target,
       tag: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "Report Ready ✓" : "Instant ML",
-      iconColor: "text-[#ff3b5c]",
+      iconColor: "text-[#c76f3b]",
       btnClass: loadingActionId === "calculate"
-        ? "border-[#ff3b5c]/40 animate-pulse bg-[#ff3b5c]/10 ring-2 ring-[#ff3b5c]/50"
-        : "border-white/[0.08] hover:border-[#ff3b5c]/40 hover:bg-[#ff3b5c]/10",
+        ? "border-[#c76f3b]/40 animate-pulse bg-[#c76f3b]/10 ring-2 ring-[#c76f3b]/50"
+        : "border-white/[0.08] hover:border-[#c76f3b]/40 hover:bg-[#c76f3b]/10",
       actionText: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "View Audit Report" : "Launch Tool",
     },
     {
@@ -499,10 +499,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: `Customized 6-week milestone schedule based on missing skill gaps for ${activeProfile.targetRole || "SDE"}.`,
       icon: Compass,
       tag: loadingActionId === "roadmap" ? "Synthesizing..." : "6-Week Plan",
-      iconColor: "text-[#ff3b5c]",
+      iconColor: "text-[#c76f3b]",
       btnClass: loadingActionId === "roadmap"
-        ? "border-[#ff3b5c]/40 animate-pulse bg-[#ff3b5c]/10"
-        : "border-white/[0.08] hover:border-[#ff3b5c]/40 hover:bg-[#ff3b5c]/10",
+        ? "border-[#c76f3b]/40 animate-pulse bg-[#c76f3b]/10"
+        : "border-white/[0.08] hover:border-[#c76f3b]/40 hover:bg-[#c76f3b]/10",
       actionText: loadingActionId === "roadmap" ? "Building Schedule..." : "Open 6-Week Roadmap",
     },
     {
@@ -512,10 +512,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Interactive technical & STAR behavioral questions with instant AI scoring.",
       icon: Mic,
       tag: loadingActionId === "interview" ? "Preparing..." : "Live Simulation",
-      iconColor: "text-[#ff3b5c]",
+      iconColor: "text-[#c76f3b]",
       btnClass: loadingActionId === "interview"
-        ? "border-[#ff3b5c]/40 animate-pulse bg-[#ff3b5c]/10"
-        : "border-white/[0.08] hover:border-[#ff3b5c]/40 hover:bg-[#ff3b5c]/10",
+        ? "border-[#c76f3b]/40 animate-pulse bg-[#c76f3b]/10"
+        : "border-white/[0.08] hover:border-[#c76f3b]/40 hover:bg-[#c76f3b]/10",
       actionText: loadingActionId === "interview" ? "Loading Interviewer..." : "Begin Interview",
     },
     {
@@ -525,10 +525,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Production-grade project blueprints mapped directly to your missing skill gaps.",
       icon: Lightbulb,
       tag: loadingActionId === "projects" ? "Generating..." : "Portfolio",
-      iconColor: "text-[#ff3b5c]",
+      iconColor: "text-[#c76f3b]",
       btnClass: loadingActionId === "projects"
-        ? "border-[#ff3b5c]/40 animate-pulse bg-[#ff3b5c]/10"
-        : "border-white/[0.08] hover:border-[#ff3b5c]/40 hover:bg-[#ff3b5c]/10",
+        ? "border-[#c76f3b]/40 animate-pulse bg-[#c76f3b]/10"
+        : "border-white/[0.08] hover:border-[#c76f3b]/40 hover:bg-[#c76f3b]/10",
       actionText: loadingActionId === "projects" ? "Synthesizing..." : "View Blueprints",
     },
     {
@@ -538,10 +538,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Compare your branch and graduation year against 650+ verified campus offers.",
       icon: TrendingUp,
       tag: loadingActionId === "analytics" ? "Querying..." : "Campus Data",
-      iconColor: "text-[#ff3b5c]",
+      iconColor: "text-[#c76f3b]",
       btnClass: loadingActionId === "analytics"
-        ? "border-[#ff3b5c]/40 animate-pulse bg-[#ff3b5c]/10"
-        : "border-white/[0.08] hover:border-[#ff3b5c]/40 hover:bg-[#ff3b5c]/10",
+        ? "border-[#c76f3b]/40 animate-pulse bg-[#c76f3b]/10"
+        : "border-white/[0.08] hover:border-[#c76f3b]/40 hover:bg-[#c76f3b]/10",
       actionText: loadingActionId === "analytics" ? "Loading Data..." : "Explore Cohort",
     },
     {
@@ -551,38 +551,38 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       description: "Detect missing keywords, parse PDF bullet points and align with recruiter standards.",
       icon: FileText,
       tag: loadingActionId === "resume" ? "Scanning..." : "ATS Scanner",
-      iconColor: "text-[#ff3b5c]",
+      iconColor: "text-[#c76f3b]",
       btnClass: loadingActionId === "resume"
-        ? "border-[#ff3b5c]/40 animate-pulse bg-[#ff3b5c]/10"
-        : "border-white/[0.08] hover:border-[#ff3b5c]/40 hover:bg-[#ff3b5c]/10",
+        ? "border-[#c76f3b]/40 animate-pulse bg-[#c76f3b]/10"
+        : "border-white/[0.08] hover:border-[#c76f3b]/40 hover:bg-[#c76f3b]/10",
       actionText: loadingActionId === "resume" ? "Parsing Vectors..." : "Scan Resume",
     },
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#16161a] p-6 shadow-2xl backdrop-blur-2xl sm:p-8">
+    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 shadow-2xl backdrop-blur-2xl sm:p-8">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#ff3b5c]/10 text-[#ff3b5c] border border-[#ff3b5c]/30 shadow-[0_0_12px_rgba(255, 59, 92,0.2)]">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#c76f3b]/10 text-[#c76f3b] border border-[#c76f3b]/30 shadow-[0_0_12px_rgba(199, 111, 59,0.2)]">
             <Zap className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-[#f2f2f0] flex items-center gap-2">
+            <h2 className="text-xl font-bold tracking-tight text-[#eae6e0] flex items-center gap-2">
               <span>AI Action Center</span>
-              <span className="rounded-md border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#ff3b5c]">
+              <span className="rounded-md border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#c76f3b]">
                 Command Hub
               </span>
             </h2>
-            <p className="text-xs text-[#8a8a92]">
+            <p className="text-xs text-[#938e87]">
               One-click career intelligence tools integrated with your active candidate profile
             </p>
           </div>
         </div>
 
         {readinessData && (
-          <div className="flex items-center gap-1.5 rounded-full border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-3 py-1 text-xs font-semibold text-[#f2f2f0] animate-fadeIn">
-            <CheckCircle2 className="h-3.5 w-3.5 text-[#ff3b5c]" />
+          <div className="flex items-center gap-1.5 rounded-full border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-3 py-1 text-xs font-semibold text-[#eae6e0] animate-fadeIn">
+            <CheckCircle2 className="h-3.5 w-3.5 text-[#c76f3b]" />
             <span>Latest Readiness: {readinessData.chance}%</span>
           </div>
         )}
@@ -590,25 +590,25 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
       {/* Cold Start Indicator Banner */}
       {isColdStarting && (
-        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 p-3.5 text-xs text-[#f2f2f0] animate-pulse">
-          <Loader2 className="h-4 w-4 animate-spin text-[#ff3b5c] flex-shrink-0" />
+        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-[#c76f3b]/30 bg-[#c76f3b]/10 p-3.5 text-xs text-[#eae6e0] animate-pulse">
+          <Loader2 className="h-4 w-4 animate-spin text-[#c76f3b] flex-shrink-0" />
           <div className="flex-1">
-            <span className="font-semibold text-[#ff3b5c]">Waking up the server... </span>
-            <span className="text-[#8a8a92]">Pathfinder runs on Render cloud service. Cold start from idle may take a few moments. Hanging tight!</span>
+            <span className="font-semibold text-[#c76f3b]">Waking up the server... </span>
+            <span className="text-[#938e87]">Pathfinder runs on Render cloud service. Cold start from idle may take a few moments. Hanging tight!</span>
           </div>
         </div>
       )}
 
       {/* Global Inline Error Banner */}
       {errorMessage && (
-        <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-[#ff3b5c]/40 bg-[#ff3b5c]/10 p-3.5 text-xs text-[#ff3b5c]">
+        <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-[#c76f3b]/40 bg-[#c76f3b]/10 p-3.5 text-xs text-[#c76f3b]">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-[#ff3b5c] flex-shrink-0" />
+            <AlertTriangle className="h-4 w-4 text-[#c76f3b] flex-shrink-0" />
             <span>{errorMessage.message}</span>
           </div>
           <button
             onClick={handleRetry}
-            className="flex items-center gap-1 rounded-lg border border-[#ff3b5c]/40 bg-[#ff3b5c]/10 px-3 py-1 text-xs font-semibold text-[#ff3b5c] hover:bg-[#ff3b5c]/10 transition-colors cursor-pointer self-start sm:self-auto"
+            className="flex items-center gap-1 rounded-lg border border-[#c76f3b]/40 bg-[#c76f3b]/10 px-3 py-1 text-xs font-semibold text-[#c76f3b] hover:bg-[#c76f3b]/10 transition-colors cursor-pointer self-start sm:self-auto"
           >
             <RefreshCw className="h-3 w-3" />
             <span>Retry</span>
@@ -629,7 +629,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               data-testid={`btn-action-${act.id}`}
               disabled={Boolean(loadingActionId)}
               onClick={() => executeCardAction(act.id)}
-              className={`group flex flex-col justify-between rounded-2xl border bg-[#0a0a0c] p-4 text-left transition-all duration-200 active:scale-[0.98] shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${act.btnClass}`}
+              className={`group flex flex-col justify-between rounded-2xl border bg-[#141318] p-4 text-left transition-all duration-200 active:scale-[0.98] shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${act.btnClass}`}
             >
               <div>
                 <div className="flex items-center justify-between">
@@ -640,22 +640,22 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                       <Icon className="h-4 w-4" />
                     )}
                   </div>
-                  <span className="rounded-full border border-white/[0.08] bg-[#16161a] px-2 py-0.5 text-[10px] font-semibold text-[#8a8a92]">
+                  <span className="rounded-full border border-white/[0.08] bg-[#1c1a22] px-2 py-0.5 text-[10px] font-semibold text-[#938e87]">
                     {act.tag}
                   </span>
                 </div>
-                <h3 className="mt-3 text-sm font-bold text-[#f2f2f0] group-hover:text-white transition-colors flex items-center gap-1.5 flex-wrap">
+                <h3 className="mt-3 text-sm font-bold text-[#eae6e0] group-hover:text-white transition-colors flex items-center gap-1.5 flex-wrap">
                   <span>{act.title}</span>
                   {act.subtitle && (
-                    <span className="text-[11px] font-normal text-[#8a8a92]">{act.subtitle}</span>
+                    <span className="text-[11px] font-normal text-[#938e87]">{act.subtitle}</span>
                   )}
                 </h3>
-                <p className="mt-1 text-xs text-[#8a8a92] line-clamp-2 leading-relaxed">
+                <p className="mt-1 text-xs text-[#938e87] line-clamp-2 leading-relaxed">
                   {act.description}
                 </p>
               </div>
 
-              <div className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-[#8a8a92] group-hover:text-[#f2f2f0] transition-colors">
+              <div className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-[#938e87] group-hover:text-[#eae6e0] transition-colors">
                 {isLoading ? (
                   <>
                     <Loader2 className={`h-3.5 w-3.5 animate-spin ${act.iconColor}`} />
@@ -684,30 +684,30 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
               transition={{ duration: 0.2 }}
-              className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/[0.08] bg-[#16161a] p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8)]"
+              className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8)]"
             >
               {/* Decorative Horizon Glow */}
-              <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-[#ff3b5c]/10 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-[#ff3b5c]/10 blur-3xl" />
+              <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-[#c76f3b]/10 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-[#c76f3b]/10 blur-3xl" />
 
               {/* Header */}
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#ff3b5c]/10 border border-[#ff3b5c]/30 text-[#ff3b5c] shadow-inner">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#c76f3b]/10 border border-[#c76f3b]/30 text-[#c76f3b] shadow-inner">
                     <Target className="h-6 w-6" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-[#f2f2f0] flex items-center gap-2 flex-wrap">
+                    <h3 className="text-lg font-bold text-[#eae6e0] flex items-center gap-2 flex-wrap">
                       <span>Career Readiness Intelligence Audit</span>
                       <span className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase ${
                         readinessData.is_estimated
-                          ? "border-[#ff3b5c]/30 bg-[#ff3b5c]/10 text-[#ff3b5c]"
-                          : "border-[#ff3b5c]/30 bg-[#ff3b5c]/10 text-[#ff3b5c]"
+                          ? "border-[#c76f3b]/30 bg-[#c76f3b]/10 text-[#c76f3b]"
+                          : "border-[#c76f3b]/30 bg-[#c76f3b]/10 text-[#c76f3b]"
                       }`}>
                         {readinessData.is_estimated ? "Estimated (Calibrated)" : "Verified Random Forest ML"}
                       </span>
                     </h3>
-                    <p className="text-xs text-[#8a8a92]">
+                    <p className="text-xs text-[#938e87]">
                       Multi-dimensional placement sensitivity analysis for {activeProfile.targetRole}
                     </p>
                   </div>
@@ -716,7 +716,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                 <button
                   id="btn-close-readiness-modal"
                   onClick={() => setActiveModal(null)}
-                  className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-2 text-[#8a8a92] hover:text-[#f2f2f0] hover:bg-white/10 transition-colors cursor-pointer"
+                  className="rounded-xl border border-white/[0.08] bg-[#141318] p-2 text-[#938e87] hover:text-[#eae6e0] hover:bg-white/10 transition-colors cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -724,9 +724,9 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
               {/* Server Warming-Up / Estimated Status Banner */}
               {readinessData.is_estimated && (
-                <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 p-3 text-xs text-[#f2f2f0]">
+                <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-[#c76f3b]/30 bg-[#c76f3b]/10 p-3 text-xs text-[#eae6e0]">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-[#ff3b5c] flex-shrink-0" />
+                    <AlertTriangle className="h-4 w-4 text-[#c76f3b] flex-shrink-0" />
                     <span>
                       {readinessData.data_source?.includes("Warming Up")
                         ? "Server is spinning up from idle sleep. Instant calibrated audit displayed based on candidate vectors."
@@ -735,7 +735,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                   </div>
                   <button
                     onClick={() => executeCardAction("calculate")}
-                    className="flex items-center gap-1 rounded-lg border border-[#ff3b5c]/40 bg-[#ff3b5c]/20 px-2.5 py-1 text-[11px] font-semibold text-[#ff3b5c] hover:bg-[#ff3b5c]/30 transition-colors cursor-pointer self-start sm:self-auto"
+                    className="flex items-center gap-1 rounded-lg border border-[#c76f3b]/40 bg-[#c76f3b]/20 px-2.5 py-1 text-[11px] font-semibold text-[#c76f3b] hover:bg-[#c76f3b]/30 transition-colors cursor-pointer self-start sm:self-auto"
                   >
                     <RefreshCw className="h-3 w-3" />
                     <span>Sync Live Model</span>
@@ -744,21 +744,21 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               )}
 
               {/* Main Score Banner */}
-              <div className="mt-6 rounded-2xl border border-[#ff3b5c]/30 bg-[#0a0a0c] p-5 backdrop-blur-md">
+              <div className="mt-6 rounded-2xl border border-[#c76f3b]/30 bg-[#141318] p-5 backdrop-blur-md">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#ff3b5c]">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#c76f3b]">
                       Overall Placement Readiness Score
                     </span>
                     <div className="mt-1 flex items-baseline gap-2">
-                      <span className="text-3xl sm:text-4xl font-black text-[#f2f2f0]">{readinessData.chance}%</span>
-                      <span className="text-xs font-semibold text-[#8a8a92]">• {readinessData.label}</span>
+                      <span className="text-3xl sm:text-4xl font-black text-[#eae6e0]">{readinessData.chance}%</span>
+                      <span className="text-xs font-semibold text-[#938e87]">• {readinessData.label}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#16161a] px-3.5 py-2">
-                    <ShieldCheck className="h-4 w-4 text-[#ff3b5c] flex-shrink-0" />
-                    <span className="text-xs font-medium text-[#f2f2f0]">
+                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#1c1a22] px-3.5 py-2">
+                    <ShieldCheck className="h-4 w-4 text-[#c76f3b] flex-shrink-0" />
+                    <span className="text-xs font-medium text-[#eae6e0]">
                       {activeProfile.cgpa >= 7.5 && activeProfile.backlogs === 0
                         ? "Tier-1 MNC Cutoffs Cleared"
                         : "Cutoff Notice: Target CGPA 7.5+ & 0 Backlogs"}
@@ -769,69 +769,69 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
               {/* 5-Dimensional Readiness Vectors */}
               <div className="mt-6 space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#8a8a92] flex items-center gap-1.5">
-                  <BarChart3 className="h-3.5 w-3.5 text-[#ff3b5c]" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#938e87] flex items-center gap-1.5">
+                  <BarChart3 className="h-3.5 w-3.5 text-[#c76f3b]" />
                   <span>Multi-Dimensional Vectors</span>
                 </h4>
 
                 <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#141318] p-3">
                     <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-[#8a8a92]">Academics</span>
-                      <span className="text-[#ff3b5c]">{readinessData.cgpa ?? activeProfile.cgpa}/10 ({readinessData.breakdown.academics ?? 0}%)</span>
+                      <span className="text-[#938e87]">Academics</span>
+                      <span className="text-[#c76f3b]">{readinessData.cgpa ?? activeProfile.cgpa}/10 ({readinessData.breakdown.academics ?? 0}%)</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-black/40 overflow-hidden">
-                      <div className="h-full bg-[#ff3b5c] rounded-full" style={{ width: `${readinessData.breakdown.academics ?? 0}%` }} />
+                      <div className="h-full bg-[#c76f3b] rounded-full" style={{ width: `${readinessData.breakdown.academics ?? 0}%` }} />
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#141318] p-3">
                     <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-[#8a8a92]">Skills</span>
-                      <span className="text-[#ff3b5c]">{readinessData.breakdown.skills ?? readinessData.breakdown.coding ?? 70}%</span>
+                      <span className="text-[#938e87]">Skills</span>
+                      <span className="text-[#c76f3b]">{readinessData.breakdown.skills ?? readinessData.breakdown.coding ?? 70}%</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-black/40 overflow-hidden">
-                      <div className="h-full bg-[#ff3b5c] rounded-full" style={{ width: `${readinessData.breakdown.skills ?? readinessData.breakdown.coding ?? 70}%` }} />
+                      <div className="h-full bg-[#c76f3b] rounded-full" style={{ width: `${readinessData.breakdown.skills ?? readinessData.breakdown.coding ?? 70}%` }} />
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#141318] p-3">
                     <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-[#8a8a92]">Projects</span>
-                      <span className="text-[#ff3b5c]">{activeProfile.projectsCount} portfolio ({readinessData.breakdown.projects ?? 50}%)</span>
+                      <span className="text-[#938e87]">Projects</span>
+                      <span className="text-[#c76f3b]">{activeProfile.projectsCount} portfolio ({readinessData.breakdown.projects ?? 50}%)</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-black/40 overflow-hidden">
-                      <div className="h-full bg-[#ff3b5c] rounded-full" style={{ width: `${readinessData.breakdown.projects ?? 50}%` }} />
+                      <div className="h-full bg-[#c76f3b] rounded-full" style={{ width: `${readinessData.breakdown.projects ?? 50}%` }} />
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#141318] p-3">
                     <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-[#8a8a92]">Internships</span>
-                      <span className="text-[#ff3b5c]">{activeProfile.internships} verified ({readinessData.breakdown.internships ?? 0}%)</span>
+                      <span className="text-[#938e87]">Internships</span>
+                      <span className="text-[#c76f3b]">{activeProfile.internships} verified ({readinessData.breakdown.internships ?? 0}%)</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-black/40 overflow-hidden">
-                      <div className="h-full bg-[#ff3b5c] rounded-full" style={{ width: `${readinessData.breakdown.internships ?? 0}%` }} />
+                      <div className="h-full bg-[#c76f3b] rounded-full" style={{ width: `${readinessData.breakdown.internships ?? 0}%` }} />
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#141318] p-3">
                     <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-[#8a8a92]">Coding</span>
-                      <span className="text-[#ff3b5c]">{activeProfile.coding}/10 ({readinessData.breakdown.coding ?? readinessData.breakdown.coding_dsa ?? 70}%)</span>
+                      <span className="text-[#938e87]">Coding</span>
+                      <span className="text-[#c76f3b]">{activeProfile.coding}/10 ({readinessData.breakdown.coding ?? readinessData.breakdown.coding_dsa ?? 70}%)</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-black/40 overflow-hidden">
-                      <div className="h-full bg-[#ff3b5c] rounded-full" style={{ width: `${readinessData.breakdown.coding ?? readinessData.breakdown.coding_dsa ?? 70}%` }} />
+                      <div className="h-full bg-[#c76f3b] rounded-full" style={{ width: `${readinessData.breakdown.coding ?? readinessData.breakdown.coding_dsa ?? 70}%` }} />
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#141318] p-3">
                     <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-[#8a8a92]">Communication</span>
-                      <span className="text-[#f2f2f0]">{activeProfile.communication}/10 ({readinessData.breakdown.communication ?? 70}%)</span>
+                      <span className="text-[#938e87]">Communication</span>
+                      <span className="text-[#eae6e0]">{activeProfile.communication}/10 ({readinessData.breakdown.communication ?? 70}%)</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-black/40 overflow-hidden">
-                      <div className="h-full bg-[#8a8a92] rounded-full" style={{ width: `${readinessData.breakdown.communication ?? 70}%` }} />
+                      <div className="h-full bg-[#938e87] rounded-full" style={{ width: `${readinessData.breakdown.communication ?? 70}%` }} />
                     </div>
                   </div>
                 </div>
@@ -839,24 +839,24 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
               {/* Strengths & Priority Milestones */}
               <div className="mt-5 grid gap-3 sm:grid-cols-2 text-xs">
-                <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-3.5">
-                  <span className="font-bold text-[#f2f2f0] flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[#ff3b5c]" />
+                <div className="rounded-xl border border-white/[0.08] bg-[#141318] p-3.5">
+                  <span className="font-bold text-[#eae6e0] flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[#c76f3b]" />
                     <span>Top Candidate Strengths</span>
                   </span>
-                  <ul className="mt-2 space-y-1 text-[#8a8a92] leading-relaxed">
+                  <ul className="mt-2 space-y-1 text-[#938e87] leading-relaxed">
                     {readinessData.strengths.slice(0, 3).map((st, i) => (
                       <li key={i}>• {st}</li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="rounded-xl border border-[#ff3b5c]/40 bg-[#ff3b5c]/10 p-3.5">
-                  <span className="font-bold text-[#ff3b5c] flex items-center gap-1.5">
-                    <AlertTriangle className="h-3.5 w-3.5 text-[#ff3b5c]" />
+                <div className="rounded-xl border border-[#c76f3b]/40 bg-[#c76f3b]/10 p-3.5">
+                  <span className="font-bold text-[#c76f3b] flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5 text-[#c76f3b]" />
                     <span>Critical Gaps & Focus</span>
                   </span>
-                  <ul className="mt-2 space-y-1 text-[#8a8a92] leading-relaxed">
+                  <ul className="mt-2 space-y-1 text-[#938e87] leading-relaxed">
                     {readinessData.gaps.slice(0, 3).map((gp, i) => (
                       <li key={i}>• {gp}</li>
                     ))}
@@ -866,14 +866,14 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
               {/* Recommended Skills */}
               {readinessData.recommended_skills?.length > 0 && (
-                <div className="mt-4 rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-3 text-xs">
-                  <span className="font-bold text-[#f2f2f0] flex items-center gap-1.5">
+                <div className="mt-4 rounded-xl border border-white/[0.08] bg-[#141318] p-3 text-xs">
+                  <span className="font-bold text-[#eae6e0] flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5 text-white" />
                     <span>Targeted Recommended Skills</span>
                   </span>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {readinessData.recommended_skills.map((sk, idx) => (
-                      <span key={idx} className="rounded-md border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] text-[#f2f2f0]">
+                      <span key={idx} className="rounded-md border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] text-[#eae6e0]">
                         {sk}
                       </span>
                     ))}
@@ -888,7 +888,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onStartMockInterview();
                   }}
-                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#0a0a0c] px-4 py-2 text-xs font-semibold text-[#8a8a92] hover:text-[#f2f2f0] hover:border-[#ff3b5c]/50 transition-all cursor-pointer"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#141318] px-4 py-2 text-xs font-semibold text-[#938e87] hover:text-[#eae6e0] hover:border-[#c76f3b]/50 transition-all cursor-pointer"
                 >
                   <Mic className="h-3.5 w-3.5" />
                   <span>Start Mock Interview</span>
@@ -899,7 +899,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("skills");
                   }}
-                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-[#ff3b5c] hover:bg-[#ff3b5c] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-[#ff3b5c]/25 transition-all cursor-pointer"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-[#c76f3b] hover:bg-[#c76f3b] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-[#c76f3b]/25 transition-all cursor-pointer"
                 >
                   <Compass className="h-3.5 w-3.5" />
                   <span>Open 6-Week Roadmap</span>
@@ -920,30 +920,30 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-2xl rounded-3xl border border-white/[0.08] bg-[#16161a] p-6 sm:p-8 text-[#f2f2f0] shadow-2xl"
+              className="relative w-full max-w-2xl rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 sm:p-8 text-[#eae6e0] shadow-2xl"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-bold flex items-center gap-2 text-[#f2f2f0]">
-                    <Compass className="h-5 w-5 text-[#ff3b5c]" />
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-[#eae6e0]">
+                    <Compass className="h-5 w-5 text-[#c76f3b]" />
                     <span>6-Week Accelerated Placement Sprint</span>
                   </h3>
-                  <p className="text-xs text-[#8a8a92] mt-1">{roadmapData.headline}</p>
+                  <p className="text-xs text-[#938e87] mt-1">{roadmapData.headline}</p>
                 </div>
-                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-2 text-[#8a8a92] hover:text-[#f2f2f0] cursor-pointer">
+                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#141318] p-2 text-[#938e87] hover:text-[#eae6e0] cursor-pointer">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               <div className="mt-6 space-y-2.5">
                 {(roadmapData.weeks || []).map((w: any) => (
-                  <div key={w.week} className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-3 text-xs">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ff3b5c]/10 text-[#ff3b5c] font-bold border border-[#ff3b5c]/30 flex-shrink-0">
+                  <div key={w.week} className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-[#141318] p-3 text-xs">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#c76f3b]/10 text-[#c76f3b] font-bold border border-[#c76f3b]/30 flex-shrink-0">
                       W{w.week}
                     </span>
                     <div className="flex-1">
-                      <p className="font-semibold text-[#f2f2f0]">{w.title}</p>
-                      <p className="text-[#8a8a92] text-[11px]">{w.focus}</p>
+                      <p className="font-semibold text-[#eae6e0]">{w.title}</p>
+                      <p className="text-[#938e87] text-[11px]">{w.focus}</p>
                     </div>
                   </div>
                 ))}
@@ -955,7 +955,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("skills");
                   }}
-                  className="rounded-xl bg-[#ff3b5c] hover:bg-[#ff3b5c] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
+                  className="rounded-xl bg-[#c76f3b] hover:bg-[#c76f3b] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
                 >
                   Explore Full Roadmap Tab
                 </button>
@@ -975,37 +975,37 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-xl rounded-3xl border border-white/[0.08] bg-[#16161a] p-6 sm:p-8 text-[#f2f2f0] shadow-2xl"
+              className="relative w-full max-w-xl rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 sm:p-8 text-[#eae6e0] shadow-2xl"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-bold flex items-center gap-2 text-[#f2f2f0]">
-                    <FileText className="h-5 w-5 text-[#ff3b5c]" />
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-[#eae6e0]">
+                    <FileText className="h-5 w-5 text-[#c76f3b]" />
                     <span>ATS Resume Diagnostic Preview</span>
                   </h3>
-                  <p className="text-xs text-[#8a8a92] mt-1">Profile alignment against standard recruiter ATS filters</p>
+                  <p className="text-xs text-[#938e87] mt-1">Profile alignment against standard recruiter ATS filters</p>
                 </div>
-                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-2 text-[#8a8a92] hover:text-[#f2f2f0] cursor-pointer">
+                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#141318] p-2 text-[#938e87] hover:text-[#eae6e0] cursor-pointer">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-[#ff3b5c]/30 bg-[#0a0a0c] p-4 flex items-center justify-between">
+              <div className="mt-5 rounded-2xl border border-[#c76f3b]/30 bg-[#141318] p-4 flex items-center justify-between">
                 <div>
-                  <span className="text-[11px] font-bold text-[#ff3b5c] uppercase">Estimated ATS Match</span>
-                  <div className="text-3xl font-black text-[#f2f2f0]">{resumeData.matchScore}%</div>
+                  <span className="text-[11px] font-bold text-[#c76f3b] uppercase">Estimated ATS Match</span>
+                  <div className="text-3xl font-black text-[#eae6e0]">{resumeData.matchScore}%</div>
                 </div>
-                <span className="rounded-xl border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-3 py-1 text-xs font-semibold text-[#f2f2f0]">
+                <span className="rounded-xl border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-3 py-1 text-xs font-semibold text-[#eae6e0]">
                   {resumeData.matchScore >= 80 ? "High Compatibility" : "Needs Keyword Optimization"}
                 </span>
               </div>
 
               <div className="mt-4 space-y-3 text-xs">
                 <div>
-                  <p className="font-semibold text-[#8a8a92] mb-1.5">Detected Technical Keywords:</p>
+                  <p className="font-semibold text-[#938e87] mb-1.5">Detected Technical Keywords:</p>
                   <div className="flex flex-wrap gap-1.5">
                     {resumeData.detectedKeywords.map((kw: string, i: number) => (
-                      <span key={i} className="rounded-md bg-[#0a0a0c] border border-white/[0.08] px-2 py-0.5 text-[#f2f2f0] text-[11px]">
+                      <span key={i} className="rounded-md bg-[#141318] border border-white/[0.08] px-2 py-0.5 text-[#eae6e0] text-[11px]">
                         ✓ {kw}
                       </span>
                     ))}
@@ -1013,10 +1013,10 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                 </div>
 
                 <div>
-                  <p className="font-semibold text-[#8a8a92] mb-1.5">Recommended Keywords to Add:</p>
+                  <p className="font-semibold text-[#938e87] mb-1.5">Recommended Keywords to Add:</p>
                   <div className="flex flex-wrap gap-1.5">
                     {resumeData.missingKeywords.map((kw: string, i: number) => (
-                      <span key={i} className="rounded-md bg-[#ff3b5c]/10 border border-[#ff3b5c]/40 px-2 py-0.5 text-[#ff3b5c] text-[11px]">
+                      <span key={i} className="rounded-md bg-[#c76f3b]/10 border border-[#c76f3b]/40 px-2 py-0.5 text-[#c76f3b] text-[11px]">
                         + {kw}
                       </span>
                     ))}
@@ -1030,7 +1030,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("resume");
                   }}
-                  className="rounded-xl bg-[#ff3b5c] hover:bg-[#ff3b5c] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
+                  className="rounded-xl bg-[#c76f3b] hover:bg-[#c76f3b] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
                 >
                   Open ATS Resume Studio
                 </button>
@@ -1050,34 +1050,34 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-2xl rounded-3xl border border-white/[0.08] bg-[#16161a] p-6 sm:p-8 text-[#f2f2f0] shadow-2xl"
+              className="relative w-full max-w-2xl rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 sm:p-8 text-[#eae6e0] shadow-2xl"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-bold flex items-center gap-2 text-[#f2f2f0]">
-                    <Lightbulb className="h-5 w-5 text-[#ff3b5c]" />
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-[#eae6e0]">
+                    <Lightbulb className="h-5 w-5 text-[#c76f3b]" />
                     <span>Recommended Flagship Projects</span>
                   </h3>
-                  <p className="text-xs text-[#8a8a92] mt-1">Production-ready projects to demonstrate high-value engineering skills</p>
+                  <p className="text-xs text-[#938e87] mt-1">Production-ready projects to demonstrate high-value engineering skills</p>
                 </div>
-                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-2 text-[#8a8a92] hover:text-[#f2f2f0] cursor-pointer">
+                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#141318] p-2 text-[#938e87] hover:text-[#eae6e0] cursor-pointer">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               <div className="mt-5 space-y-3">
                 {projectsData.map((proj: any, idx: number) => (
-                  <div key={idx} className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-4 text-xs">
+                  <div key={idx} className="rounded-2xl border border-white/[0.08] bg-[#141318] p-4 text-xs">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-[#f2f2f0] text-sm">{proj.title}</h4>
-                      <span className="rounded-full bg-[#ff3b5c]/10 border border-[#ff3b5c]/30 px-2 py-0.5 text-[10px] text-[#ff3b5c] font-semibold">
+                      <h4 className="font-bold text-[#eae6e0] text-sm">{proj.title}</h4>
+                      <span className="rounded-full bg-[#c76f3b]/10 border border-[#c76f3b]/30 px-2 py-0.5 text-[10px] text-[#c76f3b] font-semibold">
                         {proj.difficulty || "Flagship"}
                       </span>
                     </div>
-                    <p className="text-[#8a8a92] mt-1 leading-relaxed">{proj.impact || proj.description}</p>
+                    <p className="text-[#938e87] mt-1 leading-relaxed">{proj.impact || proj.description}</p>
                     <div className="mt-2.5 flex flex-wrap gap-1.5">
                       {(proj.stack || proj.techStack || []).map((t: string, i: number) => (
-                        <span key={i} className="rounded-md bg-[#16161a] border border-white/[0.08] px-2 py-0.5 text-[10px] text-[#8a8a92] font-mono">
+                        <span key={i} className="rounded-md bg-[#1c1a22] border border-white/[0.08] px-2 py-0.5 text-[10px] text-[#938e87] font-mono">
                           {t}
                         </span>
                       ))}
@@ -1092,7 +1092,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("projects");
                   }}
-                  className="rounded-xl bg-[#ff3b5c] hover:bg-[#ff3b5c] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
+                  className="rounded-xl bg-[#c76f3b] hover:bg-[#c76f3b] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
                 >
                   View All Project Blueprints
                 </button>
@@ -1112,41 +1112,41 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-xl rounded-3xl border border-white/[0.08] bg-[#16161a] p-6 sm:p-8 text-[#f2f2f0] shadow-2xl"
+              className="relative w-full max-w-xl rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 sm:p-8 text-[#eae6e0] shadow-2xl"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-bold flex items-center gap-2 text-[#f2f2f0]">
-                    <TrendingUp className="h-5 w-5 text-[#ff3b5c]" />
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-[#eae6e0]">
+                    <TrendingUp className="h-5 w-5 text-[#c76f3b]" />
                     <span>Campus Placement Trends ({analyticsData.branch})</span>
                   </h3>
-                  <p className="text-xs text-[#8a8a92] mt-1">Verified 2024–2026 data across 972 engineering candidates</p>
+                  <p className="text-xs text-[#938e87] mt-1">Verified 2024–2026 data across 972 engineering candidates</p>
                 </div>
-                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-2 text-[#8a8a92] hover:text-[#f2f2f0] cursor-pointer">
+                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#141318] p-2 text-[#938e87] hover:text-[#eae6e0] cursor-pointer">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-3.5">
-                  <span className="text-[10px] uppercase font-bold text-[#ff3b5c]">Branch Placement Rate</span>
-                  <div className="text-2xl font-black text-[#f2f2f0] mt-1">{analyticsData.placementRate}%</div>
+                <div className="rounded-2xl border border-white/[0.08] bg-[#141318] p-3.5">
+                  <span className="text-[10px] uppercase font-bold text-[#c76f3b]">Branch Placement Rate</span>
+                  <div className="text-2xl font-black text-[#eae6e0] mt-1">{analyticsData.placementRate}%</div>
                 </div>
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-3.5">
-                  <span className="text-[10px] uppercase font-bold text-[#ff3b5c]">Highest Package</span>
-                  <div className="text-2xl font-black text-[#f2f2f0] mt-1">{analyticsData.highestPackage} LPA</div>
+                <div className="rounded-2xl border border-white/[0.08] bg-[#141318] p-3.5">
+                  <span className="text-[10px] uppercase font-bold text-[#c76f3b]">Highest Package</span>
+                  <div className="text-2xl font-black text-[#eae6e0] mt-1">{analyticsData.highestPackage} LPA</div>
                 </div>
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-3.5 col-span-2 sm:col-span-1">
-                  <span className="text-[10px] uppercase font-bold text-[#ff3b5c]">Median Package</span>
-                  <div className="text-2xl font-black text-[#f2f2f0] mt-1">{analyticsData.medianPackage} LPA</div>
+                <div className="rounded-2xl border border-white/[0.08] bg-[#141318] p-3.5 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] uppercase font-bold text-[#c76f3b]">Median Package</span>
+                  <div className="text-2xl font-black text-[#eae6e0] mt-1">{analyticsData.medianPackage} LPA</div>
                 </div>
               </div>
 
               <div className="mt-4 text-xs">
-                <p className="font-semibold text-[#8a8a92] mb-1.5">Top Frequent Campus Recruiters:</p>
+                <p className="font-semibold text-[#938e87] mb-1.5">Top Frequent Campus Recruiters:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {analyticsData.topRecruiters.map((rec: string, i: number) => (
-                    <span key={i} className="rounded-md bg-[#0a0a0c] border border-white/[0.08] px-2.5 py-1 text-[#f2f2f0]">
+                    <span key={i} className="rounded-md bg-[#141318] border border-white/[0.08] px-2.5 py-1 text-[#eae6e0]">
                       {rec}
                     </span>
                   ))}
@@ -1159,7 +1159,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("analytics");
                   }}
-                  className="rounded-xl bg-[#ff3b5c] hover:bg-[#ff3b5c] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
+                  className="rounded-xl bg-[#c76f3b] hover:bg-[#c76f3b] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
                 >
                   Explore Full Cohort Analytics
                 </button>
@@ -1179,17 +1179,17 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md rounded-3xl border border-[#ff3b5c]/40 bg-[#16161a] p-6 sm:p-8 text-[#f2f2f0] shadow-2xl"
+              className="relative w-full max-w-md rounded-3xl border border-[#c76f3b]/40 bg-[#1c1a22] p-6 sm:p-8 text-[#eae6e0] shadow-2xl"
             >
-              <div className="flex items-center gap-3 text-[#ff3b5c]">
+              <div className="flex items-center gap-3 text-[#c76f3b]">
                 <AlertTriangle className="h-6 w-6" />
-                <h3 className="text-lg font-bold text-[#f2f2f0]">Profile Incomplete</h3>
+                <h3 className="text-lg font-bold text-[#eae6e0]">Profile Incomplete</h3>
               </div>
-              <p className="mt-3 text-xs text-[#8a8a92] leading-relaxed">
+              <p className="mt-3 text-xs text-[#938e87] leading-relaxed">
                 Pathfinder’s AI models require your academic details, skills, and target role to generate accurate placement predictions and roadmaps.
               </p>
 
-              <div className="mt-4 rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-3 text-xs text-[#8a8a92] space-y-1">
+              <div className="mt-4 rounded-xl border border-white/[0.08] bg-[#141318] p-3 text-xs text-[#938e87] space-y-1">
                 <p>• Academic CGPA and active backlog count</p>
                 <p>• Technical skills and preferred programming stack</p>
                 <p>• Target role and industry preferences</p>
@@ -1199,7 +1199,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveModal(null)}
-                  className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] px-3.5 py-2 text-xs text-[#8a8a92] hover:text-[#f2f2f0] cursor-pointer"
+                  className="rounded-xl border border-white/[0.08] bg-[#141318] px-3.5 py-2 text-xs text-[#938e87] hover:text-[#eae6e0] cursor-pointer"
                 >
                   Dismiss
                 </button>
@@ -1211,7 +1211,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("profile");
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#ff3b5c] hover:bg-[#ff3b5c] px-4 py-2 text-xs font-bold text-white cursor-pointer shadow-lg shadow-[#ff3b5c]/20 transition-all"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#c76f3b] hover:bg-[#c76f3b] px-4 py-2 text-xs font-bold text-white cursor-pointer shadow-lg shadow-[#c76f3b]/20 transition-all"
                 >
                   <span>Go to Profile Page</span>
                   <ExternalLink className="h-3.5 w-3.5" />

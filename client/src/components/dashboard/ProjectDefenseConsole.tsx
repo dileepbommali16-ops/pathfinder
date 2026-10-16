@@ -111,24 +111,24 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#16161a] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#ff3b5c]/10 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#c76f3b]/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 text-[#ff3b5c] shadow-[0_0_20px_rgba(255, 59, 92,0.2)]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#c76f3b]/30 bg-[#c76f3b]/10 text-[#c76f3b] shadow-[0_0_20px_rgba(199, 111, 59,0.2)]">
               <ShieldAlert className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black tracking-tight text-[#f2f2f0] sm:text-2xl">
+                <h2 className="text-xl font-black tracking-tight text-[#eae6e0] sm:text-2xl">
                   Project Defense & Mock Interview Simulator
                 </h2>
-                <span className="rounded-full border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ff3b5c]">
+                <span className="rounded-full border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#c76f3b]">
                   STAR Evaluation
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-[#8a8a92]">
+              <p className="mt-0.5 text-xs text-[#938e87]">
                 Simulate tough technical rounds where senior interviewers dissect your project architecture, scaling limits, and security trade-offs.
               </p>
             </div>
@@ -137,7 +137,7 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
           <button
             type="button"
             onClick={() => onAskCoach("Let's do an interactive mock technical interview for my role. Ask me question 1.")}
-            className="flex items-center gap-2 rounded-xl bg-[#ff3b5c] px-4 py-2 text-xs font-bold text-white hover:bg-[#ff3b5c] active:bg-[#ff3b5c] transition-colors shadow-lg cursor-pointer"
+            className="flex items-center gap-2 rounded-xl bg-[#c76f3b] px-4 py-2 text-xs font-bold text-white hover:bg-[#c76f3b] active:bg-[#c76f3b] transition-colors shadow-lg cursor-pointer"
           >
             <Mic className="h-4 w-4" />
             <span>Launch Live AI Voice/Chat Interview</span>
@@ -159,14 +159,14 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
                 }}
                 className={`rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
                   isSelected
-                    ? "border-[#ff3b5c]/50 bg-[#ff3b5c]/15 shadow-md ring-1 ring-[#ff3b5c]/30"
-                    : "border-white/[0.08] bg-[#0a0a0c] hover:border-[#ff3b5c]/30"
+                    ? "border-[#c76f3b]/50 bg-[#c76f3b]/15 shadow-md ring-1 ring-[#c76f3b]/30"
+                    : "border-white/[0.08] bg-[#141318] hover:border-[#c76f3b]/30"
                 }`}
               >
-                <span className="rounded-md border border-white/[0.08] bg-[#16161a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ff3b5c]">
+                <span className="rounded-md border border-white/[0.08] bg-[#1c1a22] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#c76f3b]">
                   {q.category}
                 </span>
-                <p className="mt-2 text-xs font-medium text-[#f2f2f0] line-clamp-2">
+                <p className="mt-2 text-xs font-medium text-[#eae6e0] line-clamp-2">
                   {q.prompt}
                 </p>
               </button>
@@ -178,36 +178,36 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
       {/* Active Defense Question & Response Arena */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left Column: Interrogation Arena */}
-        <div className="rounded-3xl border border-white/[0.08] bg-[#16161a] p-6 backdrop-blur-2xl">
+        <div className="rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 backdrop-blur-2xl">
           <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
-            <div className="flex items-center gap-2 text-[#ff3b5c]">
+            <div className="flex items-center gap-2 text-[#c76f3b]">
               <Bot className="h-5 w-5" />
               <h3 className="text-xs font-bold uppercase tracking-wider">Interviewer Technical Challenge</h3>
             </div>
-            <span className="rounded-lg border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-2 py-0.5 text-[10px] font-bold text-[#ff3b5c]">
+            <span className="rounded-lg border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2 py-0.5 text-[10px] font-bold text-[#c76f3b]">
               {activeQuestion.category}
             </span>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-4 text-xs font-semibold text-[#f2f2f0] leading-relaxed">
+          <div className="mt-4 rounded-2xl border border-white/[0.08] bg-[#141318] p-4 text-xs font-semibold text-[#eae6e0] leading-relaxed">
             "{activeQuestion.prompt}"
           </div>
 
-          <p className="mt-2 text-[11px] text-[#8a8a92]">
+          <p className="mt-2 text-[11px] text-[#938e87]">
             🔍 <strong>Context:</strong> {activeQuestion.context}
           </p>
 
           <div className="mt-5 space-y-2">
-            <label className="text-xs font-bold text-[#f2f2f0] flex items-center justify-between">
+            <label className="text-xs font-bold text-[#eae6e0] flex items-center justify-between">
               <span>Your Technical Defense Answer:</span>
-              <span className="text-[11px] text-[#8a8a92] font-normal">Use STAR format</span>
+              <span className="text-[11px] text-[#938e87] font-normal">Use STAR format</span>
             </label>
             <textarea
               rows={5}
               value={candidateAnswer}
               onChange={e => setCandidateAnswer(e.target.value)}
               placeholder="State your technical justification: Why this decision? What trade-offs were considered? How did you verify latency or consistency?..."
-              className="w-full rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-4 text-xs font-medium text-[#f2f2f0] placeholder:text-neutral-600 outline-none focus:border-[#ff3b5c]/50 focus:ring-1 focus:ring-[#ff3b5c]/20"
+              className="w-full rounded-2xl border border-white/[0.08] bg-[#141318] p-4 text-xs font-medium text-[#eae6e0] placeholder:text-neutral-600 outline-none focus:border-[#c76f3b]/50 focus:ring-1 focus:ring-[#c76f3b]/20"
             />
           </div>
 
@@ -215,7 +215,7 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
             <button
               type="button"
               onClick={() => setCandidateAnswer("")}
-              className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] px-3 py-2 text-xs font-medium text-[#8a8a92] hover:text-[#f2f2f0] transition-colors cursor-pointer"
+              className="rounded-xl border border-white/[0.08] bg-[#141318] px-3 py-2 text-xs font-medium text-[#938e87] hover:text-[#eae6e0] transition-colors cursor-pointer"
             >
               Clear
             </button>
@@ -223,7 +223,7 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
               type="button"
               onClick={handleEvaluateAnswer}
               disabled={!candidateAnswer.trim() || isEvaluating}
-              className="flex items-center gap-1.5 rounded-xl bg-[#ff3b5c] px-5 py-2 text-xs font-bold text-white hover:bg-[#ff3b5c] active:bg-[#ff3b5c] transition-colors disabled:opacity-50 shadow-md cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl bg-[#c76f3b] px-5 py-2 text-xs font-bold text-white hover:bg-[#c76f3b] active:bg-[#c76f3b] transition-colors disabled:opacity-50 shadow-md cursor-pointer"
             >
               <Sparkles className="h-4 w-4" />
               <span>{isEvaluating ? "Evaluating..." : "Evaluate My Defense"}</span>
@@ -232,24 +232,24 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
         </div>
 
         {/* Right Column: AI Defense Evaluation */}
-        <div className="rounded-3xl border border-white/[0.08] bg-[#16161a] p-6 backdrop-blur-2xl">
+        <div className="rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 backdrop-blur-2xl">
           <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
-            <div className="flex items-center gap-2 text-[#ff3b5c]">
+            <div className="flex items-center gap-2 text-[#c76f3b]">
               <Sparkles className="h-5 w-5" />
               <h3 className="text-xs font-bold uppercase tracking-wider">Interviewer Evaluation & Feedback</h3>
             </div>
             {evaluation && (
-              <span className="rounded-lg border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-2.5 py-0.5 text-xs font-black text-[#ff3b5c]">
+              <span className="rounded-lg border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2.5 py-0.5 text-xs font-black text-[#c76f3b]">
                 Score: {evaluation.score}/100
               </span>
             )}
           </div>
 
           {!evaluation ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center text-[#8a8a92]">
-              <Bot className="h-10 w-10 text-[#8a8a92]/60 mb-3" />
-              <h4 className="text-sm font-bold text-[#f2f2f0]">No Answer Evaluated Yet</h4>
-              <p className="mt-1 max-w-xs text-xs text-[#8a8a92]">
+            <div className="flex flex-col items-center justify-center py-16 text-center text-[#938e87]">
+              <Bot className="h-10 w-10 text-[#938e87]/60 mb-3" />
+              <h4 className="text-sm font-bold text-[#eae6e0]">No Answer Evaluated Yet</h4>
+              <p className="mt-1 max-w-xs text-xs text-[#938e87]">
                 Type your technical answer on the left and click "Evaluate My Defense" to get scored on technical clarity and STAR structure.
               </p>
             </div>
@@ -260,15 +260,15 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
               className="mt-4 space-y-4"
             >
               {/* Strengths */}
-              <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-4">
-                <div className="flex items-center gap-2 text-[#ff3b5c] text-xs font-bold uppercase tracking-wider">
+              <div className="rounded-2xl border border-white/[0.08] bg-[#141318] p-4">
+                <div className="flex items-center gap-2 text-[#c76f3b] text-xs font-bold uppercase tracking-wider">
                   <CheckCircle2 className="h-4 w-4" />
                   <span>Strong Points</span>
                 </div>
-                <ul className="mt-2 space-y-1.5 text-xs text-[#f2f2f0]">
+                <ul className="mt-2 space-y-1.5 text-xs text-[#eae6e0]">
                   {evaluation.strengths.map((str, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <span className="text-[#ff3b5c] font-bold">•</span>
+                      <span className="text-[#c76f3b] font-bold">•</span>
                       <span>{str}</span>
                     </li>
                   ))}
@@ -276,15 +276,15 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
               </div>
 
               {/* Gaps */}
-              <div className="rounded-2xl border border-[#ff3b5c]/40 bg-[#0a0a0c] p-4">
-                <div className="flex items-center gap-2 text-[#ff3b5c] text-xs font-bold uppercase tracking-wider">
+              <div className="rounded-2xl border border-[#c76f3b]/40 bg-[#141318] p-4">
+                <div className="flex items-center gap-2 text-[#c76f3b] text-xs font-bold uppercase tracking-wider">
                   <AlertTriangle className="h-4 w-4" />
                   <span>Missing Technical Nuances</span>
                 </div>
-                <ul className="mt-2 space-y-1.5 text-xs text-[#f2f2f0]">
+                <ul className="mt-2 space-y-1.5 text-xs text-[#eae6e0]">
                   {evaluation.gaps.map((g, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <span className="text-[#ff3b5c] font-bold">•</span>
+                      <span className="text-[#c76f3b] font-bold">•</span>
                       <span>{g}</span>
                     </li>
                   ))}
@@ -292,19 +292,19 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
               </div>
 
               {/* Model Answer */}
-              <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-4">
+              <div className="rounded-2xl border border-white/[0.08] bg-[#141318] p-4">
                 <div className="flex items-center justify-between border-b border-white/[0.08] pb-2">
-                  <span className="text-xs font-bold text-[#ff3b5c]">Model Interviewer Response</span>
+                  <span className="text-xs font-bold text-[#c76f3b]">Model Interviewer Response</span>
                   <button
                     type="button"
                     onClick={handleCopyModelAnswer}
-                    className="flex items-center gap-1 text-[11px] text-[#8a8a92] hover:text-[#f2f2f0] cursor-pointer"
+                    className="flex items-center gap-1 text-[11px] text-[#938e87] hover:text-[#eae6e0] cursor-pointer"
                   >
-                    {copied ? <Check className="h-3.5 w-3.5 text-[#ff3b5c]" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copied ? <Check className="h-3.5 w-3.5 text-[#c76f3b]" /> : <Copy className="h-3.5 w-3.5" />}
                     <span>{copied ? "Copied" : "Copy"}</span>
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-[#f2f2f0] leading-relaxed font-mono text-[11px]">
+                <p className="mt-2 text-xs text-[#eae6e0] leading-relaxed font-mono text-[11px]">
                   {evaluation.modelAnswer}
                 </p>
               </div>

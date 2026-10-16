@@ -17,7 +17,7 @@ export interface GenerateButtonProps extends React.ButtonHTMLAttributes<HTMLButt
 }
 
 export function GenerateButton({
-  hue = 210,
+  hue = 25,
   isGenerating: controlledIsGenerating,
   className,
   onClick,
@@ -34,7 +34,7 @@ export function GenerateButton({
           --border-radius: 24px;
           --padding: 4px;
           --transition: 0.4s;
-          --button-color: #101010;
+          --button-color: #141318;
           --highlight-color-hue: ${hue}deg;
 
           user-select: none;
@@ -98,7 +98,7 @@ export function GenerateButton({
           pointer-events: none;
           background-image: linear-gradient(
             0deg,
-            #fff,
+            #eae6e0,
             hsl(var(--highlight-color-hue), 100%, 70%),
             hsla(var(--highlight-color-hue), 100%, 70%, 50%),
             8%,
@@ -120,7 +120,7 @@ export function GenerateButton({
         @keyframes gen-letter-anim {
           50% {
             text-shadow: 0 0 3px rgba(255,255,255,0.533);
-            color: #fff;
+            color: #eae6e0;
           }
         }
 
@@ -128,10 +128,10 @@ export function GenerateButton({
           flex-grow: 1;
           height: 24px;
           margin-right: 0.5rem;
-          fill: #e8e8e8;
+          fill: #eae6e0;
           animation: gen-flicker 2s linear infinite;
           animation-delay: 0.5s;
-          filter: drop-shadow(0 0 2px rgba(255,255,255,0.6));
+          filter: drop-shadow(0 0 2px rgba(199,111,59,0.5));
           transition: fill var(--transition), filter var(--transition), opacity var(--transition);
         }
         
@@ -209,7 +209,7 @@ export function GenerateButton({
         
         .gen-btn[data-generating="true"]::after {
           opacity: 0.6;
-          mask-image: linear-gradient(0deg, #fff, transparent);
+          mask-image: linear-gradient(0deg, #eae6e0, transparent);
           filter: brightness(100%);
         }
 
@@ -243,7 +243,7 @@ export function GenerateButton({
         }
         .gen-btn:active::after {
           opacity: 1;
-          mask-image: linear-gradient(0deg, #fff, transparent);
+          mask-image: linear-gradient(0deg, #eae6e0, transparent);
           filter: brightness(200%);
         }
         .gen-btn:active .gen-btn-letter {
@@ -264,10 +264,10 @@ export function GenerateButton({
         }
         .gen-btn:hover::after {
           opacity: 1;
-          mask-image: linear-gradient(0deg, #fff, transparent);
+          mask-image: linear-gradient(0deg, #eae6e0, transparent);
         }
         .gen-btn:hover .gen-btn-svg {
-          fill: #fff;
+          fill: #eae6e0;
           filter: drop-shadow(0 0 3px hsl(var(--highlight-color-hue), 100%, 70%)) drop-shadow(0 -4px 6px rgba(0,0,0,0.6));
           animation: none;
         }

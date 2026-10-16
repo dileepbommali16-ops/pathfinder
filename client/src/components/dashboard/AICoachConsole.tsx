@@ -1276,22 +1276,22 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   };
 
   return (
-    <div className="relative flex h-[760px] flex-col overflow-hidden rounded-3xl border border-[#2A2A30] bg-[#1B1B1F] shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+    <div className="relative flex h-[760px] flex-col overflow-hidden rounded-3xl border border-[#24222b] bg-[#1c1a22] shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
       {/* Console Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#2A2A30] bg-[#141417]/90 px-6 py-3.5 gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#24222b] bg-[#141318]/90 px-6 py-3.5 gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white shadow-sm ring-1 ring-white/10">
             <Bot className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-[#F2F2F3]">Pathfinder AI Voice & Career Mentor</h2>
+              <h2 className="text-sm font-bold text-[#eae6e0]">Pathfinder AI Voice & Career Mentor</h2>
               <span className="flex items-center gap-1.5 rounded border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white shadow-[0_0_8px_rgba(255,255,255,0.15)]">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#c76f3b] animate-pulse" />
                 Gemini 2.0 Flash
               </span>
             </div>
-            <p className="text-[11px] text-[#A1A1AA]">
+            <p className="text-[11px] text-[#938e87]">
               Target: <span className="font-semibold text-white">{targetRole}</span> • Low Latency Voice Pipeline
             </p>
           </div>
@@ -1300,22 +1300,22 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         {/* Voice Status Indicator, Language Toggle & Controls */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Voice State Indicator */}
-          <div className="flex items-center gap-1.5 rounded-xl border border-[#2A2A30] bg-[#141417] px-2.5 py-1 text-xs">
+          <div className="flex items-center gap-1.5 rounded-xl border border-[#24222b] bg-[#141318] px-2.5 py-1 text-xs">
             {voiceStatus === "listening" && (
-              <span className="flex items-center gap-1.5 text-rose-400 font-bold animate-pulse">
-                <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
+              <span className="flex items-center gap-1.5 text-[#8c3a2e] font-bold animate-pulse">
+                <span className="h-2 w-2 rounded-full bg-[#8c3a2e] animate-ping" />
                 Listening...
               </span>
             )}
             {voiceStatus === "thinking" && (
-              <span className="flex items-center gap-1.5 text-amber-400 font-bold">
-                <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
+              <span className="flex items-center gap-1.5 text-[#b8673a] font-bold">
+                <Loader2 className="h-3 w-3 animate-spin text-[#b8673a]" />
                 Thinking...
               </span>
             )}
             {voiceStatus === "speaking" && (
-              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                <Volume2 className="h-3.5 w-3.5 animate-pulse text-emerald-400" />
+              <span className="flex items-center gap-1.5 text-[#c76f3b] font-bold">
+                <Volume2 className="h-3.5 w-3.5 animate-pulse text-[#c76f3b]" />
                 Speaking...
               </span>
             )}
@@ -1328,14 +1328,14 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           </div>
 
           {/* Language Toggle (Auto, EN, te-IN, hi-IN) */}
-          <div className="flex items-center rounded-xl border border-[#2A2A30] bg-[#141417] p-0.5">
+          <div className="flex items-center rounded-xl border border-[#24222b] bg-[#141318] p-0.5">
             <button
               type="button"
               onClick={() => setVoiceLanguage("auto")}
               className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
                 voiceLang === "auto"
                   ? "bg-white/20 text-white border border-white/30 shadow-xs"
-                  : "text-[#A1A1AA] hover:text-white"
+                  : "text-[#938e87] hover:text-white"
               }`}
               title="Auto-Detect Spoken Language (English, Telugu, or Hindi)"
             >
@@ -1347,7 +1347,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
                 voiceLang === "en-IN"
                   ? "bg-white/20 text-white border border-white/30 shadow-xs"
-                  : "text-[#A1A1AA] hover:text-white"
+                  : "text-[#938e87] hover:text-white"
               }`}
               title="English (India)"
             >
@@ -1359,7 +1359,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
                 voiceLang === "te-IN"
                   ? "bg-white/20 text-white border border-white/30 shadow-xs"
-                  : "text-[#A1A1AA] hover:text-white"
+                  : "text-[#938e87] hover:text-white"
               }`}
               title="Telugu (తెలుగు)"
             >
@@ -1371,7 +1371,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
                 voiceLang === "hi-IN"
                   ? "bg-white/20 text-white border border-white/30 shadow-xs"
-                  : "text-[#A1A1AA] hover:text-white"
+                  : "text-[#938e87] hover:text-white"
               }`}
               title="Hindi (हिंदी)"
             >
@@ -1385,13 +1385,13 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             onClick={toggleAutoSpeak}
             className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
               autoSpeak
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
-                : "border-[#2A2A30] bg-[#141417] text-[#A1A1AA] hover:text-white"
+                ? "border-[#c76f3b]/40 bg-[#c76f3b]/10 text-[#c76f3b] shadow-[0_0_10px_rgba(199, 111, 59,0.15)]"
+                : "border-[#24222b] bg-[#141318] text-[#938e87] hover:text-white"
             }`}
             title={autoSpeak ? "Voice replies are ON — Click to mute auto-speaking" : "Voice replies are OFF — Click to enable auto-speaking"}
           >
             {autoSpeak ? (
-              <Volume2 className="h-3.5 w-3.5 text-emerald-400" />
+              <Volume2 className="h-3.5 w-3.5 text-[#c76f3b]" />
             ) : (
               <VolumeX className="h-3.5 w-3.5 text-zinc-400" />
             )}
@@ -1399,14 +1399,14 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           </button>
 
           {/* Mode Switcher */}
-          <div className="flex items-center rounded-xl border border-[#2A2A30] bg-[#141417] p-1">
+          <div className="flex items-center rounded-xl border border-[#24222b] bg-[#141318] p-1">
             <button
               type="button"
               onClick={() => setMode("chat")}
               className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                 mode === "chat"
                   ? "bg-white/20 text-white border border-white/30 shadow-sm"
-                  : "text-[#A1A1AA] hover:text-[#F2F2F3]"
+                  : "text-[#938e87] hover:text-[#eae6e0]"
               }`}
             >
               <MessageSquare className="h-3.5 w-3.5" />
@@ -1418,7 +1418,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                 mode === "interview"
                   ? "bg-white/20 text-white border border-white/30 shadow-sm"
-                  : "text-[#A1A1AA] hover:text-[#F2F2F3]"
+                  : "text-[#938e87] hover:text-[#eae6e0]"
               }`}
             >
               <Mic className="h-3.5 w-3.5" />
@@ -1431,17 +1431,17 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             type="button"
             onClick={testSpeakerAudio}
             disabled={speakerTestState === "testing"}
-            className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2.5 py-1.5 text-xs font-bold text-[#c76f3b] hover:bg-[#c76f3b]/20 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-50"
             title="Click to verify if your speakers & browser audio are working"
           >
             {speakerTestState === "testing" ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-[#c76f3b]" />
                 <span className="hidden sm:inline">Testing Audio...</span>
               </>
             ) : (
               <>
-                <Volume2 className="h-3.5 w-3.5 text-cyan-400" />
+                <Volume2 className="h-3.5 w-3.5 text-[#c76f3b]" />
                 <span>Test Speaker</span>
               </>
             )}
@@ -1452,10 +1452,10 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             <button
               type="button"
               onClick={handleStopAll}
-              className="flex items-center gap-1.5 rounded-xl border border-rose-500/50 bg-rose-500/20 px-3 py-1.5 text-xs font-bold text-rose-200 hover:bg-rose-500/30 active:scale-95 transition-all shadow-[0_0_12px_rgba(244,63,94,0.3)] cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl border border-[#8c3a2e]/50 bg-[#8c3a2e]/20 px-3 py-1.5 text-xs font-bold text-[#8c3a2e] hover:bg-[#8c3a2e]/30 active:scale-95 transition-all shadow-[0_0_12px_rgba(140, 58, 46,0.3)] cursor-pointer"
               title="Stop voice output and assistant response immediately"
             >
-              <Square className="h-3 w-3 fill-rose-300 text-rose-300" />
+              <Square className="h-3 w-3 fill-[#8c3a2e] text-[#8c3a2e]" />
               <span>Stop</span>
             </button>
           )}
@@ -1464,7 +1464,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           {messages.length > 0 && (
             <button
               onClick={onClearChat}
-              className="flex items-center gap-1.5 rounded-xl border border-[#2A2A30] bg-[#141417] px-2.5 py-1.5 text-xs text-[#A1A1AA] transition-colors hover:border-red-500/40 hover:text-red-400"
+              className="flex items-center gap-1.5 rounded-xl border border-[#24222b] bg-[#141318] px-2.5 py-1.5 text-xs text-[#938e87] transition-colors hover:border-red-500/40 hover:text-red-400"
               title="Clear chat history"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -1479,18 +1479,18 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         <div
           className={`flex items-center justify-between border-b px-6 py-2 text-xs font-semibold ${
             speakerTestState === "error"
-              ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
-              : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
+              ? "border-[#8c3a2e]/30 bg-[#8c3a2e]/10 text-[#8c3a2e]"
+              : "border-[#c76f3b]/30 bg-[#c76f3b]/10 text-[#c76f3b]"
           }`}
         >
           <div className="flex items-center gap-2">
-            <Volume2 className="h-4 w-4 shrink-0 text-cyan-400" />
+            <Volume2 className="h-4 w-4 shrink-0 text-[#c76f3b]" />
             <span>{speakerTestMsg}</span>
           </div>
           <button
             type="button"
             onClick={() => setSpeakerTestMsg(null)}
-            className="text-cyan-400 hover:text-white font-bold ml-2 cursor-pointer"
+            className="text-[#c76f3b] hover:text-white font-bold ml-2 cursor-pointer"
           >
             ✕
           </button>
@@ -1499,15 +1499,15 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
       {/* Voice Warning Banner (Friendly Fallback) */}
       {voiceError && (
-        <div className="flex items-center justify-between border-b border-amber-500/30 bg-amber-500/10 px-6 py-2 text-xs text-amber-300">
+        <div className="flex items-center justify-between border-b border-[#b8673a]/30 bg-[#b8673a]/10 px-6 py-2 text-xs text-[#b8673a]">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
+            <AlertCircle className="h-4 w-4 shrink-0 text-[#b8673a]" />
             <span>{voiceError}</span>
           </div>
           <button
             type="button"
             onClick={() => setVoiceError(null)}
-            className="text-amber-400 hover:text-white font-bold ml-2"
+            className="text-[#b8673a] hover:text-white font-bold ml-2"
           >
             ✕
           </button>
@@ -1516,9 +1516,9 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
       {/* Telugu Voice Fallback Banner */}
       {voiceLang === "te-IN" && !hasTeluguVoice && (
-        <div className="flex items-center justify-between border-b border-indigo-500/30 bg-indigo-500/10 px-6 py-2 text-xs text-indigo-300">
+        <div className="flex items-center justify-between border-b border-[#b8673a]/30 bg-[#b8673a]/10 px-6 py-2 text-xs text-[#b8673a]">
           <div className="flex items-center gap-2">
-            <Globe className="h-4 w-4 shrink-0 text-indigo-400" />
+            <Globe className="h-4 w-4 shrink-0 text-[#b8673a]" />
             <span>
               ℹ️ <strong>Telugu Text Fallback Active:</strong> Your browser does not have a native Telugu voice installed. Full Telugu responses are displayed on screen below.
             </span>
@@ -1528,13 +1528,13 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
       {/* Mock Interview Ribbon */}
       {mode === "interview" && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#2A2A30] bg-[#141417] px-6 py-2.5 gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#24222b] bg-[#141318] px-6 py-2.5 gap-2">
           <div className="flex items-center gap-2">
             <Mic className="h-4 w-4 text-white animate-pulse" />
             <span className="text-xs font-bold text-white">
               Live Mock Interview Simulator:
             </span>
-            <span className="text-xs text-[#A1A1AA] hidden md:inline">
+            <span className="text-xs text-[#938e87] hidden md:inline">
               Answer aloud or type your solution. The AI evaluates with STAR scoring.
             </span>
           </div>
@@ -1555,13 +1555,13 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       )}
 
       {/* Quick Action Chips Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b border-[#2A2A30] bg-black/10 px-6 py-2 scrollbar-none">
-        <span className="text-[11px] font-medium text-[#A1A1AA] shrink-0">Quick Commands:</span>
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-[#24222b] bg-black/10 px-6 py-2 scrollbar-none">
+        <span className="text-[11px] font-medium text-[#938e87] shrink-0">Quick Commands:</span>
         {onOpenResumeBuilder && (
           <button
             type="button"
             onClick={onOpenResumeBuilder}
-            className="shrink-0 flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-400 hover:bg-emerald-500/20 transition-all"
+            className="shrink-0 flex items-center gap-1 rounded-lg border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2.5 py-1 text-[11px] font-bold text-[#c76f3b] hover:bg-[#c76f3b]/20 transition-all"
           >
             <FileText className="h-3 w-3" />
             <span>📄 Build 1-Page Resume</span>
@@ -1572,7 +1572,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             key={i}
             onClick={() => handleSafeSend(action.prompt)}
             disabled={isLoading}
-            className="shrink-0 rounded-lg border border-[#2A2A30] bg-[#141417] px-2.5 py-1 text-[11px] font-medium text-[#A1A1AA] transition-all hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-95 disabled:opacity-50"
+            className="shrink-0 rounded-lg border border-[#24222b] bg-[#141318] px-2.5 py-1 text-[11px] font-medium text-[#938e87] transition-all hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-95 disabled:opacity-50"
           >
             {action.label}
           </button>
@@ -1586,8 +1586,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.1)]">
               <Headphones className="h-7 w-7 text-white" />
             </div>
-            <h3 className="mt-4 text-base font-bold text-[#F2F2F3]">AI Placement Voice Agent Ready</h3>
-            <p className="mt-1 max-w-md text-xs text-[#A1A1AA] leading-relaxed">
+            <h3 className="mt-4 text-base font-bold text-[#eae6e0]">AI Placement Voice Agent Ready</h3>
+            <p className="mt-1 max-w-md text-xs text-[#938e87] leading-relaxed">
               Click the microphone to speak naturally in English, Telugu, or Hindi. Speak your question and pause for 1 second to receive instant spoken analysis.
             </p>
 
@@ -1597,7 +1597,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                   key={idx}
                   onClick={() => handleSafeSend(s)}
                   disabled={isLoading}
-                  className="rounded-xl border border-[#2A2A30] bg-[#141417] px-3 py-1.5 text-xs text-[#A1A1AA] transition-all hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-95 disabled:opacity-50"
+                  className="rounded-xl border border-[#24222b] bg-[#141318] px-3 py-1.5 text-xs text-[#938e87] transition-all hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-95 disabled:opacity-50"
                 >
                   💡 {s}
                 </button>
@@ -1624,8 +1624,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                   data-message-role={m.role}
                   className={`group relative max-w-[85%] rounded-2xl px-4.5 py-3 text-xs sm:text-sm leading-relaxed ${
                     m.role === "user"
-                      ? "rounded-tr-none bg-gradient-to-r from-[#FFFFFF] to-[#F4F4F5] text-zinc-950 font-medium shadow-md shadow-white/10"
-                      : "rounded-tl-none border border-[#2A2A30] bg-[#141417] text-[#F2F2F3] shadow-[0_4px_20px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+                      ? "rounded-tr-none bg-gradient-to-r from-[#eae6e0] to-[#eae6e0] text-zinc-950 font-medium shadow-md shadow-white/10"
+                      : "rounded-tl-none border border-[#24222b] bg-[#141318] text-[#eae6e0] shadow-[0_4px_20px_rgba(0,0,0,0.25)] backdrop-blur-xl"
                   }`}
                 >
                   {m.role === "assistant" ? (
@@ -1633,10 +1633,10 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                       {hasScreen ? (
                         <>
                           {/* 1. Spoken Summary Block */}
-                          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs sm:text-sm font-medium text-white shadow-sm flex items-start gap-2.5">
-                            <Volume2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                          <div className="rounded-xl border border-[#c76f3b]/20 bg-[#c76f3b]/5 p-3 text-xs sm:text-sm font-medium text-white shadow-sm flex items-start gap-2.5">
+                            <Volume2 className="h-4 w-4 text-[#c76f3b] shrink-0 mt-0.5" />
                             <div className="flex-1 leading-relaxed">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block mb-1">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#c76f3b] block mb-1">
                                 🎙️ Spoken Direct Insight
                               </span>
                               {spoken}
@@ -1644,7 +1644,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                           </div>
 
                           {/* 2. Expandable Screen Architecture Details */}
-                          <div className="rounded-xl border border-[#2A2A30] bg-[#1B1B1F]/70 overflow-hidden">
+                          <div className="rounded-xl border border-[#24222b] bg-[#1c1a22]/70 overflow-hidden">
                             <button
                               type="button"
                               onClick={() =>
@@ -1653,7 +1653,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                                   [idx]: !prev[idx],
                                 }))
                               }
-                              className="w-full flex items-center justify-between px-3.5 py-2 text-xs font-semibold text-[#A1A1AA] hover:text-white transition-all bg-black/30"
+                              className="w-full flex items-center justify-between px-3.5 py-2 text-xs font-semibold text-[#938e87] hover:text-white transition-all bg-black/30"
                             >
                               <span className="flex items-center gap-2">
                                 <Layers className="h-3.5 w-3.5 text-white" />
@@ -1670,14 +1670,14 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                             </button>
 
                             {isScreenExpanded && (
-                              <div className="p-4 border-t border-[#2A2A30] prose prose-sm dark:prose-invert max-w-none text-[#F2F2F3] leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-xs [&>strong]:text-white [&>code]:bg-white/10 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded">
+                              <div className="p-4 border-t border-[#24222b] prose prose-sm dark:prose-invert max-w-none text-[#eae6e0] leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-xs [&>strong]:text-white [&>code]:bg-white/10 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded">
                                 <Streamdown>{screen}</Streamdown>
                               </div>
                             )}
                           </div>
                         </>
                       ) : (
-                        <div className="prose prose-sm dark:prose-invert max-w-none text-[#F2F2F3] leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-xs [&>strong]:text-white [&>code]:bg-white/10 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded">
+                        <div className="prose prose-sm dark:prose-invert max-w-none text-[#eae6e0] leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-xs [&>strong]:text-white [&>code]:bg-white/10 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded">
                           <Streamdown>{cleanDisplayContent(m.content)}</Streamdown>
                         </div>
                       )}
@@ -1686,11 +1686,11 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                       {(m.content.toLowerCase().includes("resume") ||
                         m.content.includes("[[ACTION:BUILD_RESUME]]")) &&
                         onOpenResumeBuilder && (
-                          <div className="pt-2 border-t border-[#2A2A30] flex items-center gap-2">
+                          <div className="pt-2 border-t border-[#24222b] flex items-center gap-2">
                             <button
                               type="button"
                               onClick={onOpenResumeBuilder}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all shadow-sm cursor-pointer"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-3 py-1.5 text-xs font-bold text-[#c76f3b] hover:bg-[#c76f3b]/20 active:scale-95 transition-all shadow-sm cursor-pointer"
                             >
                               <FileText className="h-3.5 w-3.5" />
                               <span>Open One-Page ATS Resume Builder</span>
@@ -1710,8 +1710,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                         onClick={() => speakText(m.content, idx)}
                         className={`rounded p-1 transition-colors ${
                           speakingIndex === idx
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : "text-[#A1A1AA] hover:text-[#F2F2F3]"
+                            ? "bg-[#c76f3b]/20 text-[#c76f3b]"
+                            : "text-[#938e87] hover:text-[#eae6e0]"
                         }`}
                         title={speakingIndex === idx ? "Stop audio" : "Listen aloud"}
                       >
@@ -1724,11 +1724,11 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCopy(m.content, idx)}
-                        className="rounded p-1 text-[#A1A1AA] hover:text-[#F2F2F3]"
+                        className="rounded p-1 text-[#938e87] hover:text-[#eae6e0]"
                         title="Copy text"
                       >
                         {copiedIndex === idx ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                          <Check className="h-3.5 w-3.5 text-[#c76f3b]" />
                         ) : (
                           <Copy className="h-3.5 w-3.5" />
                         )}
@@ -1738,7 +1738,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                 </div>
 
                 {m.role === "user" && (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#2A2A30] bg-[#141417] text-[#A1A1AA] mt-0.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#24222b] bg-[#141318] text-[#938e87] mt-0.5">
                     <User className="h-4 w-4" />
                   </div>
                 )}
@@ -1753,7 +1753,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white shadow-sm">
                 <Bot className="h-4 w-4" />
               </div>
-              <div className="flex items-center gap-2.5 rounded-2xl border border-[#2A2A30] bg-[#141417] px-4 py-3 text-xs text-[#A1A1AA] shadow-md">
+              <div className="flex items-center gap-2.5 rounded-2xl border border-[#24222b] bg-[#141318] px-4 py-3 text-xs text-[#938e87] shadow-md">
                 <Loader2 className="h-4 w-4 animate-spin text-white" />
                 <span>
                   {isServerWakingUp
@@ -1771,9 +1771,9 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               <button
                 type="button"
                 onClick={handleStopAll}
-                className="flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 hover:border-rose-400 transition-all active:scale-95 shadow-sm"
+                className="flex items-center gap-1.5 rounded-xl border border-[#8c3a2e]/30 bg-[#8c3a2e]/10 px-3 py-1.5 text-xs font-semibold text-[#8c3a2e] hover:bg-[#8c3a2e]/20 hover:border-[#8c3a2e] transition-all active:scale-95 shadow-sm"
               >
-                <Square className="h-3 w-3 fill-rose-400 text-rose-400" />
+                <Square className="h-3 w-3 fill-[#8c3a2e] text-[#8c3a2e]" />
                 <span>Stop</span>
               </button>
             )}
@@ -1785,24 +1785,24 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
       {/* Real-time Filler Word & Speech Clarity Bar */}
       {(voiceStatus === "listening" || (mode === "interview" && speechMetrics.words > 0)) && (
-        <div className="flex flex-wrap items-center justify-between border-t border-[#2A2A30] bg-[#141417] px-4 py-2 text-[11px] gap-2">
+        <div className="flex flex-wrap items-center justify-between border-t border-[#24222b] bg-[#141318] px-4 py-2 text-[11px] gap-2">
           <div className="flex items-center gap-2">
             {voiceStatus === "listening" ? (
-              <span className="flex items-center gap-1.5 text-rose-400 font-bold">
-                <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
+              <span className="flex items-center gap-1.5 text-[#8c3a2e] font-bold">
+                <span className="h-2 w-2 rounded-full bg-[#8c3a2e] animate-ping" />
                 🎙️ Listening... Auto-stops after 1s of silence
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+              <span className="flex items-center gap-1.5 text-[#c76f3b] font-bold">
                 <Activity className="h-3.5 w-3.5" />
                 Interview Speech Cadence:
               </span>
             )}
-            <span className="text-[#A1A1AA]">{speechMetrics.words} words</span>
+            <span className="text-[#938e87]">{speechMetrics.words} words</span>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className={`font-semibold ${speechMetrics.fillers > 0 ? "text-amber-400" : "text-emerald-400"}`}>
+            <span className={`font-semibold ${speechMetrics.fillers > 0 ? "text-[#b8673a]" : "text-[#c76f3b]"}`}>
               {speechMetrics.fillers > 0
                 ? `⚠️ ${speechMetrics.fillers} filler word${speechMetrics.fillers > 1 ? "s" : ""} (${speechMetrics.list.join(", ")})`
                 : "✨ Zero filler words (Crisp delivery)"}
@@ -1815,7 +1815,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       )}
 
       {/* Input Bar with Voice Mic, Privacy Note & Send */}
-      <div className="border-t border-[#2A2A30] bg-black/20 p-4">
+      <div className="border-t border-[#24222b] bg-black/20 p-4">
         <form onSubmit={handleSubmit}>
           <div className="relative flex items-center">
             <input
@@ -1830,10 +1830,10 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
                   ? "Click the mic to speak or type your answer (STAR method)..."
                   : "Click mic to speak in English, Telugu, or Hindi, or type your query..."
               }
-              className={`w-full rounded-2xl border bg-[#141417] py-3.5 pl-4 pr-32 text-xs font-medium text-[#F2F2F3] outline-none transition-all placeholder:text-[#A1A1AA] ${
+              className={`w-full rounded-2xl border bg-[#141318] py-3.5 pl-4 pr-32 text-xs font-medium text-[#eae6e0] outline-none transition-all placeholder:text-[#938e87] ${
                 voiceStatus === "listening"
-                  ? "border-rose-500/60 ring-2 ring-rose-500/20"
-                  : "border-[#2A2A30] focus:border-white/40 focus:ring-1 focus:ring-white/20"
+                  ? "border-[#8c3a2e]/60 ring-2 ring-[#8c3a2e]/20"
+                  : "border-[#24222b] focus:border-white/40 focus:ring-1 focus:ring-white/20"
               }`}
             />
 
@@ -1857,7 +1857,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               onClick={() => toggleListening()}
               className={`absolute right-12 flex h-8 w-8 items-center justify-center rounded-xl transition-all shadow-sm cursor-pointer ${
                 voiceStatus === "listening"
-                  ? "bg-rose-600 text-white animate-pulse ring-2 ring-rose-400/50"
+                  ? "bg-[#8c3a2e] text-white animate-pulse ring-2 ring-[#8c3a2e]/50"
                   : "bg-white/10 text-white hover:bg-white/20 active:scale-95"
               }`}
               title={voiceStatus === "listening" ? "Stop listening" : "Click to speak with microphone"}

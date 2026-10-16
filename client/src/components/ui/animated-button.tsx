@@ -12,8 +12,7 @@ export type AnimatedButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> 
 
 /**
  * AnimatedButton
- * - theme-aware: uses Tailwind `dark:` classes so it works in both light and dark mode
- * - accepts all native button props (onClick, className, type, etc.)
+ * - Luxury Copper / Charcoal styled with smooth shine animation
  */
 export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   children = "Browse Components",
@@ -34,11 +33,10 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
         damping: 30,
         mass: 0.5,
       }}
-      // Set a CSS variable `--shine` that we override for dark mode via Tailwind.
       className={cn(
-        "group inline-flex items-center justify-center px-6 py-2 rounded-md relative overflow-hidden bg-background border border-border",
-        "text-foreground font-medium transition-colors duration-[var(--vng-transition-speed,150ms)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
-        "[--shine:rgba(0,0,0,.66)] dark:[--shine:rgba(255,255,255,.66)]",
+        "group inline-flex items-center justify-center px-6 py-2 rounded-xl relative overflow-hidden bg-[#1c1a22] border border-[rgba(234,230,224,0.08)]",
+        "text-[#eae6e0] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#c76f3b] disabled:pointer-events-none disabled:opacity-50",
+        "[--shine:rgba(199,111,59,0.5)]",
         className,
       )}
     >
@@ -47,9 +45,9 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
         className="tracking-wide font-light flex items-center justify-center h-full w-full relative z-10"
         style={{
           WebkitMaskImage:
-            "linear-gradient(-75deg, white calc(var(--mask-x) + 20%), transparent calc(var(--mask-x) + 30%), white calc(var(--mask-x) + 100%))",
+            "linear-gradient(-75deg, #eae6e0 calc(var(--mask-x) + 20%), transparent calc(var(--mask-x) + 30%), #eae6e0 calc(var(--mask-x) + 100%))",
           maskImage:
-            "linear-gradient(-75deg, white calc(var(--mask-x) + 20%), transparent calc(var(--mask-x) + 30%), white calc(var(--mask-x) + 100%))",
+            "linear-gradient(-75deg, #eae6e0 calc(var(--mask-x) + 20%), transparent calc(var(--mask-x) + 30%), #eae6e0 calc(var(--mask-x) + 100%))",
         }}
         initial={{ ["--mask-x" as any]: "100%" } as any}
         animate={{ ["--mask-x" as any]: "-100%" } as any}
@@ -63,17 +61,17 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
         {children}
       </motion.span>
 
-      {/* Border shine effect uses the --shine variable so it adapts to theme */}
+      {/* Border shine effect uses the --shine variable */}
       <motion.span
-        className="block absolute inset-0 rounded-md p-px"
+        className="block absolute inset-0 rounded-xl p-px"
         style={{
           background:
             "linear-gradient(-75deg, transparent 30%, var(--shine) 50%, transparent 70%)",
           backgroundSize: "200% 100%",
-          mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+          mask: "linear-gradient(#eae6e0 0 0) content-box, linear-gradient(#eae6e0 0 0)",
           maskComposite: "exclude",
           WebkitMask:
-            "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+            "linear-gradient(#eae6e0 0 0) content-box, linear-gradient(#eae6e0 0 0)",
           WebkitMaskComposite: "xor",
         }}
         initial={{ backgroundPosition: "100% 0", opacity: 0 }}

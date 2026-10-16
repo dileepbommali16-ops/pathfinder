@@ -35,17 +35,17 @@ class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen p-8 bg-[#0a0a0c] text-[#f2f2f0]">
-          <div className="flex flex-col items-center w-full max-w-2xl p-8 rounded-3xl border border-white/[0.08] bg-[#16161a] shadow-2xl">
+        <div className="flex items-center justify-center min-h-screen p-8 bg-[#141318] text-[#eae6e0]">
+          <div className="flex flex-col items-center w-full max-w-2xl p-8 rounded-3xl border border-white/[0.08] bg-[#1c1a22] shadow-2xl">
             <AlertTriangle
               size={48}
-              className="text-[#ff3b5c] mb-6 flex-shrink-0"
+              className="text-[#c76f3b] mb-6 flex-shrink-0"
             />
 
-            <h2 className="text-xl font-bold mb-4 text-[#f2f2f0]">An unexpected error occurred.</h2>
+            <h2 className="text-xl font-bold mb-4 text-[#eae6e0]">An unexpected error occurred.</h2>
 
-            <div className="p-4 w-full rounded-2xl bg-[#0a0a0c] border border-white/[0.08] overflow-auto mb-6">
-              <pre className="text-xs text-[#8a8a92] whitespace-break-spaces">
+            <div className="p-4 w-full rounded-2xl bg-[#141318] border border-white/[0.08] overflow-auto mb-6">
+              <pre className="text-xs text-[#938e87] whitespace-break-spaces">
                 {this.state.error?.message || this.state.error?.stack}
               </pre>
             </div>
@@ -57,8 +57,8 @@ class ErrorBoundary extends Component<Props, State> {
               }}
               className={cn(
                 "flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-xs",
-                "bg-[#ff3b5c] text-white",
-                "hover:bg-[#e0304f] active:scale-95 cursor-pointer shadow-[0_0_20px_rgba(255,59,92,0.3)] transition-all"
+                "bg-[#c76f3b] text-white",
+                "hover:bg-[#8c3a2e] active:scale-95 cursor-pointer shadow-[0_0_20px_rgba(199, 111, 59,0.3)] transition-all"
               )}
             >
               <RotateCcw size={16} />
