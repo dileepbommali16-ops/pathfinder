@@ -3,6 +3,9 @@ name: Datadog Synthetics
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   synthetics:
     name: Synthetic Health Check
