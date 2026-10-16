@@ -2,6 +2,7 @@ import os
 import json
 import re
 import time
+import asyncio
 import logging
 import urllib.request
 import urllib.error
@@ -448,7 +449,7 @@ def generate_smart_fallback_reply(
             )
 
     # 4. Quick Action: Explain to a non-technical person
-    if any(k in low_msg for k in ("explain to a non-technical", "explain to parents", "non technical", "layman")):
+    if any(k in low_msg for k in ("non-technical", "non technical", "analogy", "explain to parents", "layman")):
         return (
             "💡 **Explaining Pathfinder to a Non-Technical Person / Parents**\n\n"
             "Imagine preparing to run a competitive marathon, but you don't know if your current running speed is enough to win a medal. "

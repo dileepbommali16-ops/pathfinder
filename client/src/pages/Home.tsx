@@ -864,7 +864,19 @@ export default function Home() {
           }
         }
 
-        return accumulated.trim().length > 0;
+        const isSubstantialStream = accumulated.trim().length >= 10;
+        if (!isSubstantialStream && hasAppendedPlaceholder) {
+          // Stream truncated or aborted before meaningful text; revert placeholder so full fallback can populate
+          startTransition(() => {
+            setMessages((prev) => {
+              if (prev.length > 0 && prev[prev.length - 1].role === "assistant") {
+                return prev.slice(0, -1);
+              }
+              return prev;
+            });
+          });
+        }
+        return isSubstantialStream;
       } catch (err: any) {
         if (abortCtrl.signal.aborted) return true;
         return false;

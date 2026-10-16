@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   X,
   Printer,
@@ -8,7 +8,8 @@ import {
   Sparkles,
   CheckCircle2,
   Building,
-  GraduationCap
+  GraduationCap,
+  ArrowLeft
 } from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
 
@@ -23,6 +24,17 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
   onClose,
   profile,
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handlePrint = () => {
@@ -43,40 +55,51 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
   const leetcodeUrl = profile.codingProfiles?.leetcode || "https://leetcode.com/candidate";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto cursor-pointer"
+    >
       {/* Modal Container */}
-      <div className="relative w-full max-w-4xl rounded-3xl border border-[#2A2A30] bg-[#141417] shadow-[0_16px_64px_rgba(0,0,0,0.8)] overflow-hidden my-8">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-4xl rounded-3xl border border-white/10 bg-[#141417] shadow-[0_16px_64px_rgba(0,0,0,0.85)] overflow-hidden my-8 cursor-default"
+      >
         
-        {/* Top Controls Bar (Hidden during Print) */}
-        <div className="print:hidden flex items-center justify-between border-b border-white/[0.08] bg-[#16161a] px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#ff3b5c]/10 border border-[#ff3b5c]/30 text-[#ff3b5c]">
-              <FileText className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-[#f2f2f0]">One-Page ATS Engineering Resume</h3>
-                <span className="rounded-full border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-2 py-0.5 text-[10px] font-bold text-[#ff3b5c]">
-                  Google X-Y-Z Standard
-                </span>
-              </div>
-              <p className="text-[11px] text-[#8a8a92]">
-                Single-column, text-selectable layout optimized for automated recruiter parsers.
-              </p>
+        {/* Top Controls Bar (Sticky, Hidden during Print) */}
+        <div className="print:hidden sticky top-0 z-40 flex items-center justify-between border-b border-white/[0.08] bg-[#16161a]/95 backdrop-blur-xl px-4 sm:px-6 py-3.5 shadow-md">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onClose}
+              className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 hover:border-white/40 transition-all cursor-pointer shadow-sm active:scale-95"
+              title="Return to AI Coach / Main Dashboard (Esc)"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Dashboard</span>
+            </button>
+            <div className="hidden sm:flex items-center gap-2">
+              <h3 className="text-sm font-bold text-[#f2f2f0]">One-Page ATS Resume</h3>
+              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                Google X-Y-Z
+              </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 rounded-xl bg-[#ff3b5c] px-4 py-2 text-xs font-bold text-white transition-all hover:bg-[#e0304f] active:scale-95 shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl bg-white text-zinc-950 px-3.5 py-2 text-xs font-bold transition-all hover:bg-zinc-200 active:scale-95 shadow-sm cursor-pointer"
             >
               <Printer className="h-3.5 w-3.5" />
-              <span>Download PDF / Print</span>
+              <span>Download PDF</span>
             </button>
             <button
               onClick={onClose}
-              className="rounded-xl border border-white/[0.08] bg-[#121215] p-2 text-[#8a8a92] hover:text-white hover:border-white/20 transition-all cursor-pointer"
+              aria-label="Close resume modal"
+              className="rounded-xl border border-white/10 bg-black/40 p-2 text-[#8a8a92] hover:text-white hover:border-white/20 transition-all cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -216,6 +239,25 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
               </ul>
             </div>
           </div>
+        </div>
+
+        {/* Bottom Controls Bar (Hidden during Print) */}
+        <div className="print:hidden sticky bottom-0 z-40 flex items-center justify-between border-t border-white/[0.08] bg-[#16161a]/95 backdrop-blur-xl px-6 py-3.5 shadow-lg">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white hover:bg-white/20 hover:border-white/40 transition-all cursor-pointer active:scale-95 shadow-sm"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>← Back to AI Coach / Dashboard</span>
+          </button>
+
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 rounded-xl bg-white text-zinc-950 px-4 py-2.5 text-xs font-bold transition-all hover:bg-zinc-200 active:scale-95 shadow-sm cursor-pointer"
+          >
+            <Printer className="h-4 w-4" />
+            <span>Download PDF / Print</span>
+          </button>
         </div>
       </div>
     </div>

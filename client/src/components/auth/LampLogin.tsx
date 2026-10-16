@@ -254,7 +254,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
   return (
     <div
       className={`relative min-h-screen w-full overflow-hidden transition-colors duration-700 font-['Outfit',sans-serif] ${
-        isOn ? "bg-[#0a0a0c]" : "bg-[#050507]"
+        isOn ? "bg-[#111111]" : "bg-[#050505]"
       }`}
     >
       <style>{`
@@ -285,40 +285,40 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
         }`}
         style={{
           background:
-            "radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(199,199,207,0.03) 35%, transparent 70%)",
+            "radial-gradient(circle, rgba(255,220,100,0.18) 0%, rgba(255,214,0,0.08) 35%, transparent 70%)",
         }}
       />
 
       {/* Top Right Ambient Glow */}
       <div
         className={`pointer-events-none absolute -top-[10%] -right-[10%] h-[700px] w-[700px] rounded-full transition-all duration-1000 ${
-          isOn ? "opacity-30 scale-125" : "opacity-10 scale-90"
+          isOn ? "opacity-40 scale-125" : "opacity-10 scale-90"
         }`}
         style={{
           background:
-            "radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(255,59,92,0.03) 40%, transparent 70%)",
+            "radial-gradient(circle, rgba(255,200,60,0.12) 0%, rgba(217,70,239,0.06) 40%, transparent 70%)",
         }}
       />
 
       {/* Bottom Center Desk Radiance */}
       <div
         className={`pointer-events-none absolute -bottom-[20%] left-[20%] h-[600px] w-[900px] rounded-full transition-all duration-700 ${
-          isOn ? "opacity-40 scale-110" : "opacity-0 scale-75"
+          isOn ? "opacity-60 scale-110" : "opacity-0 scale-75"
         }`}
         style={{
           background:
-            "radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, rgba(255,59,92,0.02) 50%, transparent 75%)",
+            "radial-gradient(ellipse at center, rgba(255,214,0,0.12) 0%, rgba(255,180,50,0.04) 50%, transparent 75%)",
         }}
       />
 
-      {/* Background Starlight Dots Swirling in Motion */}
+      {/* Background Yellow Dots Swirling in Motion (Motion ga tiruguthuu) */}
       <div
         className={`pointer-events-none fixed inset-0 z-10 overflow-hidden transition-opacity duration-700 ${
           isOn ? "opacity-95" : "opacity-75"
         }`}
         style={{ contain: "strict" }}
       >
-        {/* Swirling Clockwise Dots Ring */}
+        {/* Swirling Clockwise Yellow Dots Ring (Motion ga tiruguthuu) */}
         <div
           className="absolute -top-[150px] -left-[150px] w-[1000px] h-[1000px] pointer-events-none"
           style={{
@@ -329,13 +329,13 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
           {SWIRL_RING_1.map((p) => (
             <span
               key={p.id}
-              className="absolute rounded-full bg-white"
+              className="absolute rounded-full bg-[#FFEA00]"
               style={{
                 left: `${p.x}px`,
                 top: `${p.y}px`,
                 width: `${p.size}px`,
                 height: `${p.size}px`,
-                boxShadow: "0 0 8px 2px rgba(255,255,255,0.9), 0 0 16px rgba(220,225,240,0.5)",
+                boxShadow: "0 0 10px 3px rgba(255,234,0,0.95), 0 0 20px rgba(255,200,0,0.6)",
                 animation: "yellowDotPulse 3.5s ease-in-out infinite alternate",
                 animationDelay: p.delay,
               }}
@@ -343,7 +343,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
           ))}
         </div>
 
-        {/* Swirling Counter-Clockwise Dots Ring */}
+        {/* Swirling Counter-Clockwise Yellow Dots Ring (Motion ga tiruguthuu) */}
         <div
           className="absolute top-[5%] right-[-200px] w-[1500px] h-[1500px] pointer-events-none"
           style={{
@@ -354,13 +354,13 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
           {SWIRL_RING_2.map((p) => (
             <span
               key={p.id}
-              className="absolute rounded-full bg-white"
+              className="absolute rounded-full bg-[#FFD600]"
               style={{
                 left: `${p.x}px`,
                 top: `${p.y}px`,
                 width: `${p.size}px`,
                 height: `${p.size}px`,
-                boxShadow: "0 0 8px 2px rgba(255,255,255,0.85), 0 0 16px rgba(200,210,230,0.5)",
+                boxShadow: "0 0 10px 3px rgba(255,214,0,0.9), 0 0 18px rgba(255,180,0,0.55)",
                 animation: "yellowDotPulse 4s ease-in-out infinite alternate",
                 animationDelay: p.delay,
               }}
@@ -368,17 +368,17 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
           ))}
         </div>
 
-        {/* Free Floating & Wandering Starlight Dots */}
+        {/* Free Floating & Wandering Yellow Dots */}
         {WANDERING_YELLOW_DOTS.map((dot, idx) => (
           <span
             key={idx}
-            className="absolute rounded-full bg-white"
+            className="absolute rounded-full bg-[#FFEA00]"
             style={{
               top: dot.top,
               left: dot.left,
               width: `${dot.size}px`,
               height: `${dot.size}px`,
-              boxShadow: "0 0 8px 2px rgba(255,255,255,0.9), 0 0 16px rgba(220,225,240,0.5)",
+              boxShadow: "0 0 10px 3px rgba(255,234,0,0.9), 0 0 20px rgba(255,200,0,0.6)",
               animation: `yellowDotDrift ${dot.duration} ease-in-out infinite alternate`,
               animationDelay: dot.delay,
               willChange: "transform, opacity",
@@ -387,18 +387,18 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
         ))}
       </div>
 
-      {/* Floating Fireflies (Radiant Starlight when lamp is turned ON) */}
+      {/* Floating Fireflies (Extra Radiant Lights when lamp is turned ON) */}
       {isOn && (
         <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden" style={{ contain: "strict" }}>
           {fireflies.map((f) => (
             <motion.span
               key={f.id}
-              className="absolute rounded-full bg-white"
+              className="absolute rounded-full bg-[#FFEA00]"
               style={{
                 width: f.size,
                 height: f.size,
                 boxShadow:
-                  "0 0 10px 3px rgba(255,255,255,0.95), 0 0 20px rgba(220,225,245,0.6)",
+                  "0 0 12px 4px rgba(255,234,0,0.95), 0 0 24px rgba(255,180,0,0.7), 0 0 36px rgba(255,214,0,0.4)",
               }}
               animate={{
                 x: f.x,
@@ -427,10 +427,10 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="pointer-events-none absolute top-4 flex flex-col items-center gap-2 text-center text-[#8a8a92] lg:top-14"
+              className="pointer-events-none absolute top-4 flex flex-col items-center gap-2 text-center text-slate-400 lg:top-14"
             >
               <span className="text-xs sm:text-sm font-medium tracking-wide uppercase">Pull lamp string to illuminate &amp; reveal details</span>
-              <span className="h-4 w-0.5 animate-bounce bg-gradient-to-b from-[#ff3b5c]/80 to-transparent" />
+              <span className="h-4 w-0.5 animate-bounce bg-gradient-to-b from-amber-400/80 to-transparent" />
             </motion.div>
           )}
 
@@ -438,9 +438,9 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
           <div className="relative flex flex-col items-center select-none scale-100 sm:scale-110">
             {/* Lamp Head (Visual only) */}
             <div
-              className={`relative z-30 h-[50px] w-[140px] rounded-t-[140px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#16161a] transition-all duration-500 ${
+              className={`relative z-30 h-[50px] w-[140px] rounded-t-[140px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#151515] transition-all duration-500 ${
                 isOn
-                  ? "shadow-[inset_0_-3px_10px_rgba(255,59,92,0.3),inset_0_2px_5px_rgba(255,255,255,0.15),0_10px_20px_rgba(0,0,0,0.9)]"
+                  ? "shadow-[inset_0_-3px_10px_rgba(255,220,150,0.4),inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)]"
                   : "shadow-[inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)]"
               }`}
             />
@@ -449,7 +449,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
             <div
               className={`absolute top-[40px] z-20 h-[20px] w-[90px] rounded-full bg-white transition-opacity duration-500 pointer-events-none ${
                 isOn
-                  ? "opacity-100 shadow-[0_0_40px_20px_rgba(255,255,255,0.9),0_0_80px_40px_rgba(255,59,92,0.4)]"
+                  ? "opacity-100 shadow-[0_0_40px_20px_rgba(255,230,150,0.9),0_0_80px_40px_rgba(255,200,100,0.6)]"
                   : "opacity-10"
               }`}
             />
@@ -462,7 +462,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               style={{
                 clipPath: "polygon(40% 0, 60% 0, 100% 100%, 0 100%)",
                 background:
-                  "linear-gradient(to bottom, rgba(242, 242, 240, 0.85) 0%, rgba(255, 59, 92, 0.2) 60%, transparent 100%)",
+                  "linear-gradient(to bottom, rgba(255,230,140,0.85) 0%, rgba(255,200,80,0.2) 60%, transparent 100%)",
               }}
             />
 
@@ -470,16 +470,16 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
             <div
               className={`relative z-20 h-[290px] w-[6px] transition-all duration-500 ${
                 isOn
-                  ? "bg-gradient-to-r from-[#050505] via-[#241c20] to-[#050505] shadow-[0_0_10px_rgba(255,59,92,0.2)]"
+                  ? "bg-gradient-to-r from-[#050505] via-[#2a2010] to-[#050505] shadow-[0_0_10px_rgba(255,200,100,0.2)]"
                   : "bg-gradient-to-r from-[#050505] via-[#2a2a2a] to-[#050505]"
               }`}
             />
 
             {/* Lamp Base (Visual only, cord is the exclusive trigger) */}
             <div
-              className={`relative z-20 h-[16px] w-[100px] rounded-t-[30px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#16161a] transition-all duration-500 ${
+              className={`relative z-20 h-[16px] w-[100px] rounded-t-[30px] rounded-b-[4px] border-b-2 border-[#050505] bg-[#151515] transition-all duration-500 ${
                 isOn
-                  ? "shadow-[inset_0_2px_6px_rgba(255,59,92,0.25),0_10px_20px_rgba(0,0,0,0.9)]"
+                  ? "shadow-[inset_0_2px_6px_rgba(255,220,150,0.3),0_10px_20px_rgba(0,0,0,0.9)]"
                   : "shadow-[inset_0_2px_5px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.9)]"
               }`}
             />
@@ -491,7 +491,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               }`}
               style={{
                 background:
-                  "radial-gradient(ellipse at center, rgba(255,255,255,0.2) 0%, rgba(255,59,92,0.08) 50%, transparent 70%)",
+                  "radial-gradient(ellipse at center, rgba(255,220,120,0.25) 0%, rgba(255,180,50,0.05) 50%, transparent 70%)",
               }}
             />
 
@@ -515,10 +515,10 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               >
                 <path
                   d={`M 30 0 L ${30 + dragOffset.x} ${60 + dragOffset.y}`}
-                  stroke={!isOn ? "#ffffff" : "#71717a"}
+                  stroke={!isOn ? "#ffd600" : "#888"}
                   strokeWidth="2.5"
                   strokeLinecap="round"
-                  className={!isOn ? "filter drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]" : ""}
+                  className={!isOn ? "filter drop-shadow-[0_0_8px_rgba(255,214,0,0.9)]" : ""}
                 />
               </svg>
 
@@ -528,14 +528,14 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                   isDragging ? "transition-none" : "duration-200 ease-out"
                 } ${
                   !isOn
-                    ? "animate-pulse shadow-[0_0_20px_rgba(255,59,92,0.9),inset_0_2px_3px_rgba(255,255,255,0.9)] ring-2 ring-[#ff3b5c]/80 scale-110 group-hover:scale-125"
+                    ? "animate-pulse shadow-[0_0_22px_rgba(255,214,0,1),inset_0_2px_3px_rgba(255,255,255,0.85)] ring-2 ring-amber-300 scale-110 group-hover:scale-125"
                     : "shadow-[inset_0_2px_3px_rgba(255,255,255,0.4),0_3px_6px_rgba(0,0,0,0.8)] group-hover:scale-110"
                 }`}
                 style={{
                   transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`,
                   background: !isOn
-                    ? "linear-gradient(to bottom, #ffffff, #ff3b5c, #c7c7cf)"
-                    : "linear-gradient(to bottom, #71717a, #3f3f46)",
+                    ? "linear-gradient(to bottom, #fff5b8, #ffd600, #b8860b)"
+                    : "linear-gradient(to bottom, #aaa, #555)",
                 }}
               />
             </div>
@@ -544,7 +544,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
             {!isOn && (
               <div
                 onClick={toggleLamp}
-                className="absolute top-[108px] left-[calc(50%+85px)] z-30 flex items-center gap-1.5 rounded-full bg-[#16161a] border border-[#ff3b5c]/40 px-3 py-1 text-[11px] font-extrabold text-[#f2f2f0] shadow-[0_0_20px_rgba(255,59,92,0.3)] backdrop-blur-md cursor-pointer animate-bounce hover:scale-105 active:scale-95 transition-all"
+                className="absolute top-[108px] left-[calc(50%+85px)] z-30 flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-400/60 px-3 py-1 text-[11px] font-extrabold text-amber-300 shadow-[0_0_20px_rgba(255,214,0,0.45)] backdrop-blur-md cursor-pointer animate-bounce hover:scale-105 active:scale-95 transition-all"
                 title="Click or pull the lamp string to reveal candidate details"
               >
                 <span>👈</span>
@@ -556,9 +556,9 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
             <div className="mt-5 text-center select-none pointer-events-none z-20">
               <span
                 id="lamp-career-caption"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#16161a] px-4 py-2 text-xs font-bold text-[#f2f2f0] backdrop-blur-md shadow-[0_0_15px_rgba(255,59,92,0.15)]"
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-300 backdrop-blur-md shadow-[0_0_15px_rgba(255,214,0,0.25)]"
               >
-                <span className="text-[#ff3b5c]">✦</span>
+                <span>💡</span>
                 <span>Lamp your Career</span>
               </span>
             </div>
@@ -571,20 +571,20 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
             <div className="hidden lg:block w-full max-w-[420px] min-h-[360px]" aria-hidden="true" />
           ) : (
             <div
-              className="relative w-full max-w-[420px] rounded-[22px] border border-white/[0.08] bg-[#16161a] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.8)] backdrop-blur-2xl transition-all duration-500 pointer-events-auto"
+              className="relative w-full max-w-[420px] rounded-[22px] border border-white/10 bg-white/[0.05] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-500 pointer-events-auto"
             >
             {/* Glossy top border line */}
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#ff3b5c]/30 to-transparent" />
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
             {/* Header */}
             <div className="mb-4 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ff3b5c] font-bold text-white shadow-[0_10px_25px_rgba(255,59,92,0.35)]">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ffd600] font-bold text-slate-950 shadow-[0_10px_25px_rgba(255,214,0,0.3)]">
                 AI
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#f2f2f0]">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
                 {authMode === "signup" ? "Create Account" : "Welcome Back"}
               </h2>
-              <p className="mt-1 text-sm text-[#8a8a92]">
+              <p className="mt-1 text-sm text-slate-400">
                 {authMode === "signup"
                   ? "Join Pathfinder & unlock step-wise career onboarding"
                   : "Sign in to Pathfinder Career Intelligence"}
@@ -592,7 +592,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
             </div>
 
             {/* Mode Switcher: Sign In vs Sign Up */}
-            <div className="mb-5 flex rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-1">
+            <div className="mb-5 flex rounded-xl border border-white/10 bg-black/40 p-1">
               <button
                 type="button"
                 id="tab-auth-signin"
@@ -600,10 +600,10 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                   setAuthMode("signin");
                   setErrorMessage(null);
                 }}
-                className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all cursor-pointer ${
+                className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all ${
                   authMode === "signin"
-                    ? "bg-[#ff3b5c] text-white shadow-md"
-                    : "text-[#8a8a92] hover:text-[#f2f2f0]"
+                    ? "bg-[#ffd600] text-slate-950 shadow-md"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
                 Sign In
@@ -615,10 +615,10 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                   setAuthMode("signup");
                   setErrorMessage(null);
                 }}
-                className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all cursor-pointer ${
+                className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all ${
                   authMode === "signup"
-                    ? "bg-[#ff3b5c] text-white shadow-md"
-                    : "text-[#8a8a92] hover:text-[#f2f2f0]"
+                    ? "bg-[#ffd600] text-slate-950 shadow-md"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
                 Sign Up / New Student
@@ -627,7 +627,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
 
             {/* Error Message */}
             {errorMessage && (
-              <div className="mb-4 rounded-xl border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 px-3.5 py-2 text-center text-xs text-[#ff3b5c]">
+              <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2 text-center text-xs text-red-300">
                 {errorMessage}
               </div>
             )}
@@ -636,7 +636,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Username Input */}
               <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8a8a92]">
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       strokeLinecap="round"
@@ -651,13 +651,13 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                   placeholder="Username or Student ID"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full rounded-2xl border border-white/[0.08] bg-[#121215] py-3.5 pl-11 pr-4 text-sm text-[#f2f2f0] placeholder-[#8a8a92]/60 outline-none transition-all focus:border-[#ff3b5c]/60 focus:ring-2 focus:ring-[#ff3b5c]/20"
+                  className="w-full rounded-2xl border border-white/10 bg-black/40 py-3.5 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-[#ffd600]/50 focus:ring-2 focus:ring-[#ffd600]/20"
                 />
               </div>
 
               {/* Email Input */}
               <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8a8a92]">
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       strokeLinecap="round"
@@ -672,13 +672,13 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                   placeholder="Email Address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-white/[0.08] bg-[#121215] py-3.5 pl-11 pr-4 text-sm text-[#f2f2f0] placeholder-[#8a8a92]/60 outline-none transition-all focus:border-[#ff3b5c]/60 focus:ring-2 focus:ring-[#ff3b5c]/20"
+                  className="w-full rounded-2xl border border-white/10 bg-black/40 py-3.5 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-[#ffd600]/50 focus:ring-2 focus:ring-[#ffd600]/20"
                 />
               </div>
 
               {/* Password Input with Hacker Eye Toggle */}
               <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8a8a92]">
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       strokeLinecap="round"
@@ -694,13 +694,13 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-white/[0.08] bg-[#121215] py-3.5 pl-11 pr-12 text-sm text-[#f2f2f0] placeholder-[#8a8a92]/60 outline-none transition-all focus:border-[#ff3b5c]/60 focus:ring-2 focus:ring-[#ff3b5c]/20"
+                  className="w-full rounded-2xl border border-white/10 bg-black/40 py-3.5 pl-11 pr-12 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-[#ffd600]/50 focus:ring-2 focus:ring-[#ffd600]/20"
                 />
                 <button
                   type="button"
                   id="btn-toggle-password"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-[#8a8a92] hover:text-[#ff3b5c] hover:bg-white/[0.06] active:scale-90 transition-all cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-slate-400 hover:text-[#ffd600] hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
                   title={showPassword ? "Hide password" : "Show password (Hacker Eye)"}
                 >
                   {showPassword ? (
@@ -737,7 +737,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               <button
                 type="submit"
                 id="btn-auth-submit"
-                className="w-full rounded-2xl bg-[#ff3b5c] py-3.5 text-base font-semibold text-white transition-all hover:bg-[#e0304f] hover:shadow-[0_0_25px_rgba(255,59,92,0.4)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full rounded-2xl bg-[#ffd600] py-3.5 text-base font-semibold text-slate-950 transition-all hover:bg-[#ffdc64] hover:shadow-[0_0_20px_rgba(255,220,100,0.4)] hover:scale-[1.02] active:scale-[0.98]"
               >
                 {authMode === "signup" ? "Create Account & Start Onboarding" : "Sign In to Dashboard"}
               </button>
@@ -745,11 +745,11 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
 
             {/* Divider */}
             <div className="my-5 flex items-center gap-3">
-              <span className="h-[1px] flex-1 bg-white/[0.08]" />
-              <span className="text-[11px] font-semibold tracking-wider text-[#8a8a92] uppercase">
+              <span className="h-[1px] flex-1 bg-white/10" />
+              <span className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
                 Or Continue With
               </span>
-              <span className="h-[1px] flex-1 bg-white/[0.08]" />
+              <span className="h-[1px] flex-1 bg-white/10" />
             </div>
 
             {/* Social OAuth Buttons */}
@@ -759,13 +759,13 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 id="btn-oauth-google"
                 disabled={Boolean(socialLoading)}
                 onClick={() => handleSocialLogin("google")}
-                className={`flex items-center justify-center gap-2.5 rounded-2xl border border-white/[0.08] bg-[#121215] py-3 text-sm font-medium text-[#f2f2f0] transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] py-3 text-sm font-medium text-white transition-all ${
                   socialLoading
                     ? "opacity-60 cursor-not-allowed"
-                    : "hover:border-[#ff3b5c]/30 hover:bg-white/[0.06] hover:scale-[1.02] active:scale-[0.98]"
+                    : "hover:bg-white/[0.12] hover:scale-[1.02] active:scale-[0.98]"
                 }`}
               >
-                <span className="text-base font-bold text-[#ff3b5c]">G</span>
+                <span className="text-base font-bold text-[#4285F4]">G</span>
                 <span>{socialLoading === "google" ? "Redirecting..." : "Google"}</span>
               </button>
 
@@ -774,43 +774,26 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 id="btn-oauth-github"
                 disabled={Boolean(socialLoading)}
                 onClick={() => handleSocialLogin("github")}
-                className={`flex items-center justify-center gap-2.5 rounded-2xl border border-white/[0.08] bg-[#121215] py-3 text-sm font-medium text-[#f2f2f0] transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] py-3 text-sm font-medium text-white transition-all ${
                   socialLoading
                     ? "opacity-60 cursor-not-allowed"
-                    : "hover:border-[#ff3b5c]/30 hover:bg-white/[0.06] hover:scale-[1.02] active:scale-[0.98]"
+                    : "hover:bg-white/[0.12] hover:scale-[1.02] active:scale-[0.98]"
                 }`}
               >
-                <span className="text-sm text-[#ff3b5c]">●</span>
+                <span className="text-sm">●</span>
                 <span>{socialLoading === "github" ? "Redirecting..." : "GitHub"}</span>
               </button>
             </div>
 
-            {/* Inline notice for unconfigured provider */}
+            {/* Inline error for unconfigured provider */}
             {socialError && (
-              <p className="mt-2 text-center text-xs font-medium text-[#ff3b5c]">
+              <p className="mt-2 text-center text-xs font-medium text-amber-300">
                 {socialError}
               </p>
             )}
 
             {/* Demo / Guest shortcuts */}
-            <div className="mt-5 space-y-2.5 text-center">
-              <button
-                type="button"
-                id="btn-demo-guest"
-                onClick={() =>
-                  React.startTransition(() => {
-                    onLogin({
-                      username: "Guest Evaluator",
-                      email: "evaluator@pathfinder.ai",
-                      bypassOnboarding: true
-                    });
-                  })
-                }
-                className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-white/[0.08] bg-white/[0.05] px-4 py-2.5 text-xs font-bold text-[#f2f2f0] hover:bg-white/[0.1] hover:border-[#ff3b5c]/40 transition-all shadow-[0_0_15px_rgba(255,59,92,0.15)] active:scale-[0.98] cursor-pointer"
-              >
-                <span>⚡ Continue in Guest / Demo Mode &rarr;</span>
-              </button>
-
+            <div className="mt-5 space-y-2 text-center">
               <button
                 type="button"
                 id="btn-demo-wizard"
@@ -823,9 +806,26 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                     });
                   })
                 }
-                className="block w-full text-xs text-[#8a8a92] hover:text-[#f2f2f0] font-medium transition-colors underline underline-offset-4 cursor-pointer"
+                className="block w-full text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors underline underline-offset-4"
               >
                 Start as New Student (Step-Wise Onboarding Wizard) &rarr;
+              </button>
+
+              <button
+                type="button"
+                id="btn-demo-guest"
+                onClick={() =>
+                  React.startTransition(() => {
+                    onLogin({
+                      username: "Guest Student",
+                      email: "guest@pathfinder.ai",
+                      bypassOnboarding: true
+                    });
+                  })
+                }
+                className="block w-full text-xs text-slate-400 hover:text-amber-300 transition-colors underline underline-offset-4"
+              >
+                Continue in Guest / Demo Mode &rarr;
               </button>
             </div>
           </div>
