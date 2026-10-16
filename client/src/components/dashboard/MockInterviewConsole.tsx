@@ -334,47 +334,47 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
   };
 
   return (
-    <div className="relative rounded-3xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-6 sm:p-8 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+    <div className="relative rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-6 sm:p-8 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.5)] overflow-hidden">
       {/* Subtle Warm Copper & Rust Ambient Glow */}
-      <div className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#c76f3b]/10 blur-[140px]" />
-      <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[#8c3a2e]/10 blur-[140px]" />
+      <div className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#ffffff]/10 blur-[140px]" />
+      <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[#9f1239]/10 blur-[140px]" />
 
       {/* Header bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[rgba(234,230,224,0.08)]">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[rgba(255,255,255,0.08)]">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#c76f3b]/40 bg-[#c76f3b]/15 text-[#c76f3b] shadow-[0_0_12px_rgba(199,111,59,0.25)]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#ffffff]/40 bg-[#ffffff]/15 text-[#ffffff] shadow-[0_0_12px_rgba(255,255,255,0.25)]">
               <Mic className="h-4 w-4" />
             </span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#938e87]">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#94a3b8]">
               Live Mock Interview Simulator
             </span>
-            <span className="rounded-full border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#c76f3b] shadow-sm">
+            <span className="rounded-full border border-[#ffffff]/30 bg-[#ffffff]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#ffffff] shadow-sm">
               AI Voice & Audio Ready
             </span>
           </div>
-          <h3 className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-[#eae6e0] font-['Space_Grotesk']">
+          <h3 className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-[#f8fafc] font-['Space_Grotesk']">
             Rapid 60-Second Interview Drill
           </h3>
-          <p className="mt-1 text-xs sm:text-sm text-[#938e87] max-w-2xl leading-relaxed">
+          <p className="mt-1 text-xs sm:text-sm text-[#94a3b8] max-w-2xl leading-relaxed">
             Practice actual technical and behavioral interview questions asked by top tech firms. Speak your answer or type it to receive an instant multi-dimensional evaluation.
           </p>
         </div>
 
         {/* Drill Timer & Switcher */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#141318] px-3.5 py-1.5 text-xs text-[#938e87]">
-            <Clock className="h-4 w-4 text-[#c76f3b]" />
-            <span className="font-mono font-bold text-[#eae6e0]">
+          <div className="flex items-center gap-2 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] px-3.5 py-1.5 text-xs text-[#94a3b8]">
+            <Clock className="h-4 w-4 text-[#ffffff]" />
+            <span className="font-mono font-bold text-[#f8fafc]">
               {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, "0")}
             </span>
-            <span className="text-[10px] text-[#938e87]">Drill Time</span>
+            <span className="text-[10px] text-[#94a3b8]">Drill Time</span>
           </div>
 
           <button
             type="button"
             onClick={resetState}
-            className="flex items-center gap-1.5 rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#24222b] hover:bg-[#292632] px-3 py-1.5 text-xs font-medium text-[#938e87] hover:text-[#eae6e0] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#161926] hover:bg-[#1c2030] px-3 py-1.5 text-xs font-medium text-[#94a3b8] hover:text-[#f8fafc] transition-colors cursor-pointer"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>Reset</span>
@@ -394,12 +394,12 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             }}
             className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all cursor-pointer ${
               selectedQuestionIndex === idx
-                ? "border border-[#c76f3b] bg-[#c76f3b] text-[#eae6e0] font-bold shadow-[0_0_15px_rgba(199,111,59,0.3)]"
-                : "border border-[rgba(234,230,224,0.08)] bg-[#24222b]/50 text-[#938e87] hover:border-[#c76f3b]/50 hover:text-[#eae6e0]"
+                ? "border border-[#ffffff] bg-[#ffffff] text-[#f8fafc] font-bold shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                : "border border-[rgba(255,255,255,0.08)] bg-[#161926]/50 text-[#94a3b8] hover:border-[#ffffff]/50 hover:text-[#f8fafc]"
             }`}
           >
             <span className="font-semibold">{q.company.split("/")[0]}</span>
-            <span className={`text-[10px] ${selectedQuestionIndex === idx ? "text-[#eae6e0] font-bold" : "text-[#938e87]"}`}>
+            <span className={`text-[10px] ${selectedQuestionIndex === idx ? "text-[#f8fafc] font-bold" : "text-[#94a3b8]"}`}>
               ({q.roundType.split(" ")[0]})
             </span>
           </button>
@@ -409,52 +409,52 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
       {/* Main Interview Stage */}
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Question Prompt Card & Audio */}
-        <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl border border-[rgba(234,230,224,0.08)] bg-[#24222b]/60 p-6 backdrop-blur-xl shadow-lg">
+        <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#161926]/60 p-6 backdrop-blur-xl shadow-lg">
           <div>
             {/* Badges */}
-            <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-[rgba(234,230,224,0.08)]">
-              <span className="rounded-md border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#c76f3b] shadow-sm">
+            <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-[rgba(255,255,255,0.08)]">
+              <span className="rounded-md border border-[#ffffff]/30 bg-[#ffffff]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ffffff] shadow-sm">
                 {currentQ.company}
               </span>
-              <span className="rounded-md border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] px-2 py-0.5 text-[10px] font-medium text-[#938e87]">
+              <span className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#11131c] px-2 py-0.5 text-[10px] font-medium text-[#94a3b8]">
                 {currentQ.roundType}
               </span>
-              <span className="rounded-md border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] px-2 py-0.5 text-[10px] font-medium text-[#938e87]">
+              <span className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#11131c] px-2 py-0.5 text-[10px] font-medium text-[#94a3b8]">
                 Difficulty: {currentQ.difficulty}
               </span>
             </div>
 
             {/* Question Text */}
             <div className="mt-4">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#938e87]">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8]">
                 Interviewer Prompt
               </span>
-              <h4 className="mt-1.5 text-base sm:text-lg font-semibold text-[#eae6e0] leading-snug">
+              <h4 className="mt-1.5 text-base sm:text-lg font-semibold text-[#f8fafc] leading-snug">
                 "{currentQ.question}"
               </h4>
             </div>
 
             {/* Context Hint */}
-            <div className="mt-5 rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-3.5">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#c76f3b]">
-                <HelpCircle className="h-4 w-4 text-[#c76f3b]" />
+            <div className="mt-5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#ffffff]">
+                <HelpCircle className="h-4 w-4 text-[#ffffff]" />
                 <span>Interviewer Expectation</span>
               </div>
-              <p className="mt-1 text-xs text-[#938e87] leading-relaxed">
+              <p className="mt-1 text-xs text-[#94a3b8] leading-relaxed">
                 {currentQ.contextHint}
               </p>
             </div>
 
             {/* Key concepts */}
             <div className="mt-4">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#938e87]">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8]">
                 Evaluation Topics
               </span>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {currentQ.keyConcepts.map((c, i) => (
                   <span
                     key={i}
-                    className="rounded-md border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] px-2 py-0.5 text-[11px] font-medium text-[#eae6e0]"
+                    className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#11131c] px-2 py-0.5 text-[11px] font-medium text-[#f8fafc]"
                   >
                     {c}
                   </span>
@@ -464,14 +464,14 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
           </div>
 
           {/* Audio Controls */}
-          <div className="mt-6 pt-4 border-t border-[rgba(234,230,224,0.08)] flex items-center justify-between">
+          <div className="mt-6 pt-4 border-t border-[rgba(255,255,255,0.08)] flex items-center justify-between">
             <button
               type="button"
               onClick={handleToggleSpeak}
               className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
                 isSpeaking
-                  ? "border border-[#8c3a2e] bg-[#8c3a2e] text-[#eae6e0] animate-pulse shadow-[0_0_15px_rgba(140,58,46,0.4)]"
-                  : "border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] text-[#938e87] hover:bg-[#24222b] hover:text-[#eae6e0]"
+                  ? "border border-[#9f1239] bg-[#9f1239] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.4)]"
+                  : "border border-[rgba(255,255,255,0.08)] bg-[#11131c] text-[#94a3b8] hover:bg-[#161926] hover:text-[#f8fafc]"
               }`}
             >
               {isSpeaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -481,10 +481,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             <button
               type="button"
               onClick={handleFillBenchmark}
-              className="flex items-center gap-1.5 rounded-xl border border-[#b8673a]/40 bg-[#1c1a22] hover:bg-[#24222b] px-3 py-2 text-xs font-semibold text-[#eae6e0] transition-colors shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl border border-[#f1f5f9]/40 bg-[#11131c] hover:bg-[#161926] px-3 py-2 text-xs font-semibold text-[#f8fafc] transition-colors shadow-sm cursor-pointer"
               title="Fills a senior engineer answer for quick hackathon presentation"
             >
-              <Sparkles className="h-3.5 w-3.5 text-[#b8673a]" />
+              <Sparkles className="h-3.5 w-3.5 text-[#f1f5f9]" />
               <span>Fill Benchmark Answer</span>
             </button>
           </div>
@@ -493,13 +493,13 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
         {/* Right Column: Answer Input & Real-Time AI Scorecard */}
         <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
           {/* Answer Workspace */}
-          <div className="rounded-2xl border border-[rgba(234,230,224,0.08)] bg-[#24222b]/60 p-5 backdrop-blur-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-[rgba(234,230,224,0.08)]">
-              <span className="text-xs font-semibold text-[#938e87]">
+          <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#161926]/60 p-5 backdrop-blur-xl">
+            <div className="flex items-center justify-between pb-3 border-b border-[rgba(255,255,255,0.08)]">
+              <span className="text-xs font-semibold text-[#94a3b8]">
                 Your Response Workspace
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-[#938e87]">
+                <span className="text-[11px] text-[#94a3b8]">
                   {userAnswer.trim() ? `${userAnswer.trim().split(/\s+/).length} words` : "0 words"}
                 </span>
 
@@ -509,8 +509,8 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                   onClick={handleToggleRecord}
                   className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
                     isRecording
-                      ? "border border-[#8c3a2e] bg-[#8c3a2e] text-[#eae6e0] animate-pulse shadow-[0_0_15px_rgba(140,58,46,0.5)]"
-                      : "border border-[rgba(234,230,224,0.08)] bg-[#141318] text-[#938e87] hover:text-[#eae6e0]"
+                      ? "border border-[#9f1239] bg-[#9f1239] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.5)]"
+                      : "border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] text-[#94a3b8] hover:text-[#f8fafc]"
                   }`}
                 >
                   {isRecording ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
@@ -527,29 +527,29 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               }}
               placeholder="Type your structured answer here, or click 'Speak Answer' to speak via microphone... (Use the STAR framework: Situation, Task, Action, Result)."
               rows={6}
-              className="mt-3 w-full rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#141318] p-4 text-xs sm:text-sm text-[#eae6e0] placeholder-[#938e87]/50 focus:border-[#c76f3b] focus:outline-none focus:ring-1 focus:ring-[#c76f3b] resize-none leading-relaxed font-sans"
+              className="mt-3 w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] p-4 text-xs sm:text-sm text-[#f8fafc] placeholder-[#94a3b8]/50 focus:border-[#ffffff] focus:outline-none focus:ring-1 focus:ring-[#ffffff] resize-none leading-relaxed font-sans"
             />
 
             {/* Submit Action */}
             <div className="mt-3 flex items-center justify-between">
-              <span className="text-[11px] text-[#938e87]">
-                Tip: Press <strong className="text-[#eae6e0]">Fill Benchmark Answer</strong> for instant demo evaluation.
+              <span className="text-[11px] text-[#94a3b8]">
+                Tip: Press <strong className="text-[#f8fafc]">Fill Benchmark Answer</strong> for instant demo evaluation.
               </span>
 
               <button
                 type="button"
                 disabled={!userAnswer.trim() || isEvaluating}
                 onClick={handleEvaluateAnswer}
-                className="flex items-center gap-2 rounded-xl border border-[#c76f3b] bg-gradient-to-r from-[#c76f3b] via-[#b8673a] to-[#a8582b] hover:from-[#b8673a] hover:to-[#9c4d23] disabled:opacity-40 px-5 py-2.5 text-xs font-bold text-[#eae6e0] shadow-[0_4px_20px_rgba(199,111,59,0.35)] transition-all active:scale-95 cursor-pointer"
+                className="flex items-center gap-2 rounded-xl border border-[#ffffff] bg-gradient-to-r from-[#ffffff] via-[#f1f5f9] to-[#e2e8f0] hover:from-[#f1f5f9] hover:to-[#cbd5e1] disabled:opacity-40 px-5 py-2.5 text-xs font-bold text-[#f8fafc] shadow-[0_4px_20px_rgba(255,255,255,0.35)] transition-all active:scale-95 cursor-pointer"
               >
                 {isEvaluating ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin text-[#eae6e0]" />
+                    <Loader2 className="h-4 w-4 animate-spin text-[#f8fafc]" />
                     <span>Grading with AI Engine...</span>
                   </>
                 ) : (
                   <>
-                    <Zap className="h-4 w-4 text-[#eae6e0]" />
+                    <Zap className="h-4 w-4 text-[#f8fafc]" />
                     <span>Evaluate My Answer</span>
                   </>
                 )}
@@ -564,26 +564,26 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -14 }}
-                className="rounded-2xl border border-[rgba(234,230,224,0.08)] bg-[#24222b]/80 p-6 backdrop-blur-xl shadow-xl space-y-5"
+                className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#161926]/80 p-6 backdrop-blur-xl shadow-xl space-y-5"
               >
                 {/* Score Summary Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[rgba(234,230,224,0.08)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[rgba(255,255,255,0.08)]">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#c76f3b]/50 bg-[#141318] shadow-[0_0_20px_rgba(199,111,59,0.25)]">
-                      <span className="text-xl font-bold font-mono text-[#c76f3b]">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#ffffff]/50 bg-[#0a0b10] shadow-[0_0_20px_rgba(255,255,255,0.25)]">
+                      <span className="text-xl font-bold font-mono text-[#ffffff]">
                         {evaluationResult.overallScore}%
                       </span>
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-[#eae6e0] font-['Space_Grotesk']">
+                        <span className="text-sm font-bold text-[#f8fafc] font-['Space_Grotesk']">
                           AI Interview Scorecard
                         </span>
-                        <span className="rounded-md border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2 py-0.5 text-[10px] font-semibold text-[#c76f3b] shadow-sm">
+                        <span className="rounded-md border border-[#ffffff]/30 bg-[#ffffff]/10 px-2 py-0.5 text-[10px] font-semibold text-[#ffffff] shadow-sm">
                           Verified Grade
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-[#938e87]">
+                      <p className="mt-0.5 text-xs text-[#94a3b8]">
                         {evaluationResult.coachVerdict}
                       </p>
                     </div>
@@ -592,46 +592,46 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
 
                 {/* Score Vector Bars */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-3">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3">
                     <div className="flex justify-between text-xs">
-                      <span className="text-[#938e87]">Technical Depth</span>
-                      <span className="font-bold font-mono text-[#eae6e0]">
+                      <span className="text-[#94a3b8]">Technical Depth</span>
+                      <span className="font-bold font-mono text-[#f8fafc]">
                         {evaluationResult.technicalPrecision}%
                       </span>
                     </div>
-                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#141318] overflow-hidden">
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#0a0b10] overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#b8673a] via-[#c76f3b] to-[#d97d48] shadow-[0_0_10px_rgba(199,111,59,0.4)]"
+                        className="h-full rounded-full bg-gradient-to-r from-[#f1f5f9] via-[#ffffff] to-[#ffffff] shadow-[0_0_10px_rgba(255,255,255,0.4)]"
                         style={{ width: `${evaluationResult.technicalPrecision}%` }}
                       />
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-3">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3">
                     <div className="flex justify-between text-xs">
-                      <span className="text-[#938e87]">Communication & Clarity</span>
-                      <span className="font-bold font-mono text-[#eae6e0]">
+                      <span className="text-[#94a3b8]">Communication & Clarity</span>
+                      <span className="font-bold font-mono text-[#f8fafc]">
                         {evaluationResult.communicationScore}%
                       </span>
                     </div>
-                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#141318] overflow-hidden">
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#0a0b10] overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#b8673a] via-[#c76f3b] to-[#d97d48] shadow-[0_0_10px_rgba(199,111,59,0.4)]"
+                        className="h-full rounded-full bg-gradient-to-r from-[#f1f5f9] via-[#ffffff] to-[#ffffff] shadow-[0_0_10px_rgba(255,255,255,0.4)]"
                         style={{ width: `${evaluationResult.communicationScore}%` }}
                       />
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-3">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3">
                     <div className="flex justify-between text-xs">
-                      <span className="text-[#938e87]">Problem Solving</span>
-                      <span className="font-bold font-mono text-[#eae6e0]">
+                      <span className="text-[#94a3b8]">Problem Solving</span>
+                      <span className="font-bold font-mono text-[#f8fafc]">
                         {evaluationResult.problemSolvingScore}%
                       </span>
                     </div>
-                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#141318] overflow-hidden">
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#0a0b10] overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#b8673a] via-[#c76f3b] to-[#d97d48] shadow-[0_0_10px_rgba(199,111,59,0.4)]"
+                        className="h-full rounded-full bg-gradient-to-r from-[#f1f5f9] via-[#ffffff] to-[#ffffff] shadow-[0_0_10px_rgba(255,255,255,0.4)]"
                         style={{ width: `${evaluationResult.problemSolvingScore}%` }}
                       />
                     </div>
@@ -640,8 +640,8 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
 
                 {/* Keyword Analysis */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-3">
-                    <span className="font-semibold text-[#c76f3b]">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3">
+                    <span className="font-semibold text-[#ffffff]">
                       ✓ Strong Key Primitives Detected
                     </span>
                     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -649,19 +649,19 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                         evaluationResult.matchedKeywords.map((kw, i) => (
                           <span
                             key={i}
-                            className="rounded-md border border-[#c76f3b]/30 bg-[#24222b] px-2 py-0.5 text-[11px] font-medium text-[#c76f3b] shadow-sm"
+                            className="rounded-md border border-[#ffffff]/30 bg-[#161926] px-2 py-0.5 text-[11px] font-medium text-[#ffffff] shadow-sm"
                           >
                             {kw}
                           </span>
                         ))
                       ) : (
-                        <span className="text-[#938e87]">None detected</span>
+                        <span className="text-[#94a3b8]">None detected</span>
                       )}
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-3">
-                    <span className="font-semibold text-[#938e87]">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3">
+                    <span className="font-semibold text-[#94a3b8]">
                       Expected Core Keywords
                     </span>
                     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -669,13 +669,13 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                         evaluationResult.missingKeywords.map((kw, i) => (
                           <span
                             key={i}
-                            className="rounded-md border border-[rgba(234,230,224,0.08)] bg-[#141318] px-2 py-0.5 text-[11px] font-medium text-[#938e87]"
+                            className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] px-2 py-0.5 text-[11px] font-medium text-[#94a3b8]"
                           >
                             {kw}
                           </span>
                         ))
                       ) : (
-                        <span className="text-[#eae6e0]">All core keywords covered!</span>
+                        <span className="text-[#f8fafc]">All core keywords covered!</span>
                       )}
                     </div>
                   </div>
@@ -690,10 +690,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                       setSelectedQuestionIndex(nextIdx);
                       resetState();
                     }}
-                    className="flex items-center gap-1.5 rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] hover:bg-[#24222b] px-4 py-2 text-xs font-semibold text-[#eae6e0] transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] hover:bg-[#161926] px-4 py-2 text-xs font-semibold text-[#f8fafc] transition-colors cursor-pointer"
                   >
                     <span>Next Drill Question</span>
-                    <ChevronRight className="h-4 w-4 text-[#c76f3b]" />
+                    <ChevronRight className="h-4 w-4 text-[#ffffff]" />
                   </button>
                 </div>
               </motion.div>

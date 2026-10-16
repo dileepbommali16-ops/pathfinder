@@ -138,20 +138,20 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
 
     // Determine target company tier
     let tierName = "Mass Recruiter (Tier-3)";
-    let tierColor = "text-[#938e87] border-[rgba(234,230,224,0.08)] bg-[rgba(234,230,224,0.04)]";
+    let tierColor = "text-[#94a3b8] border-[rgba(255,255,255,0.08)] bg-[rgba(234,230,224,0.04)]";
     let companies = "TCS, Infosys, Wipro, Cognizant";
 
     if (projectedPackage >= 18.0) {
       tierName = "Super Dream / Top Product (Tier-1)";
-      tierColor = "text-[#c76f3b] border-[#c76f3b]/30 bg-[#c76f3b]/10";
+      tierColor = "text-[#9f1239] border-[#9f1239]/30 bg-[#9f1239]/10";
       companies = "Google, Microsoft, Amazon, Uber, Atlassian";
     } else if (projectedPackage >= 10.0) {
       tierName = "High-Growth Product (Tier-1.5)";
-      tierColor = "text-[#c76f3b] border-[#c76f3b]/30 bg-[#c76f3b]/10";
+      tierColor = "text-[#9f1239] border-[#9f1239]/30 bg-[#9f1239]/10";
       companies = "Walmart, Cisco, Oracle, Zoho, Swiggy";
     } else if (projectedPackage >= 6.0) {
       tierName = "Enterprise FinTech / Specialized (Tier-2)";
-      tierColor = "text-[#b8673a] border-[#b8673a]/30 bg-[#b8673a]/10";
+      tierColor = "text-[#881337] border-[#881337]/30 bg-[#881337]/10";
       companies = "Accenture Digital, Capgemini Tech, LTI Mindtree";
     }
 
@@ -216,26 +216,26 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
   const displayDelta = activeMode === "sliders" ? simulatedStats.totalDelta : milestoneDelta;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
-      <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#c76f3b]/10 blur-3xl pointer-events-none" />
+    <div className="relative overflow-hidden rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+      <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#9f1239]/10 blur-3xl pointer-events-none" />
 
       <div className="relative z-10">
         {/* Header with Mode Switcher & Reset */}
-        <div className="flex flex-col gap-4 border-b border-[rgba(234,230,224,0.08)] pb-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-b border-[rgba(255,255,255,0.08)] pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#c76f3b]/30 bg-[#c76f3b]/10 text-[#c76f3b] shadow-[0_0_20px_rgba(199,111,59,0.2)]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#9f1239]/30 bg-[#9f1239]/10 text-[#9f1239] shadow-[0_0_20px_rgba(159,18,57,0.2)]">
               <Zap className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-black tracking-tight text-[#eae6e0] sm:text-2xl font-['Space_Grotesk']">
+                <h3 className="text-xl font-black tracking-tight text-[#f8fafc] sm:text-2xl font-['Space_Grotesk']">
                   What-If? Career Trajectory Simulator
                 </h3>
-                <span className="rounded-full border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#c76f3b]">
+                <span className="rounded-full border border-[#9f1239]/30 bg-[#9f1239]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#9f1239]">
                   Real-Time Sandbox
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-[#938e87]">
+              <p className="mt-0.5 text-xs text-[#94a3b8]">
                 Drag sliders in real time to simulate how raising CGPA, solving LeetCode problems, and shipping projects elevate your CTC package and placement odds.
               </p>
             </div>
@@ -243,14 +243,14 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
 
           <div className="flex items-center gap-2">
             {/* Mode Toggle Button */}
-            <div className="flex items-center rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#141318] p-1">
+            <div className="flex items-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] p-1">
               <button
                 type="button"
                 onClick={() => setActiveMode("sliders")}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                   activeMode === "sliders"
-                    ? "bg-[#c76f3b] text-[#eae6e0] shadow-sm"
-                    : "text-[#938e87] hover:text-[#eae6e0]"
+                    ? "bg-[#9f1239] text-[#f8fafc] shadow-sm"
+                    : "text-[#94a3b8] hover:text-[#f8fafc]"
                 }`}
               >
                 <Sliders className="h-3.5 w-3.5" />
@@ -261,8 +261,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 onClick={() => setActiveMode("milestones")}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                   activeMode === "milestones"
-                    ? "bg-[#c76f3b] text-[#eae6e0] shadow-sm"
-                    : "text-[#938e87] hover:text-[#eae6e0]"
+                    ? "bg-[#9f1239] text-[#f8fafc] shadow-sm"
+                    : "text-[#94a3b8] hover:text-[#f8fafc]"
                 }`}
               >
                 <Award className="h-3.5 w-3.5" />
@@ -272,7 +272,7 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
 
             <button
               onClick={resetAll}
-              className="flex items-center gap-1.5 rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#141318] px-3 py-1.5 text-xs text-[#938e87] hover:text-[#eae6e0] hover:bg-[rgba(234,230,224,0.08)] transition-all cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] px-3 py-1.5 text-xs text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[rgba(255,255,255,0.08)] transition-all cursor-pointer"
               title="Reset sliders to baseline"
             >
               <RotateCcw className="h-3.5 w-3.5" />
@@ -282,35 +282,35 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
         </div>
 
         {/* Dynamic Prediction Outcome Panel */}
-        <div className="mt-6 grid gap-4 rounded-2xl border border-[rgba(234,230,224,0.08)] bg-[#141318] p-5 lg:grid-cols-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-4 rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] p-5 lg:grid-cols-4 sm:grid-cols-2">
           {/* Card 1: Current Chance */}
-          <div className="flex flex-col justify-between border-b border-[rgba(234,230,224,0.08)] pb-3 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#938e87]">Current Baseline</span>
+          <div className="flex flex-col justify-between border-b border-[rgba(255,255,255,0.08)] pb-3 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">Current Baseline</span>
             <div className="my-1 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-[#eae6e0] font-['Space_Grotesk']">{currentScore.toFixed(1)}%</span>
-              <span className="text-xs text-[#938e87]">Profile Chance</span>
+              <span className="text-2xl font-black text-[#f8fafc] font-['Space_Grotesk']">{currentScore.toFixed(1)}%</span>
+              <span className="text-xs text-[#94a3b8]">Profile Chance</span>
             </div>
-            <p className="text-[11px] text-[#938e87]">Based on verified records</p>
+            <p className="text-[11px] text-[#94a3b8]">Based on verified records</p>
           </div>
 
           {/* Card 2: Simulated Chance with Delta */}
-          <div className="flex flex-col justify-between border-b border-[rgba(234,230,224,0.08)] pb-3 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#c76f3b]">Simulated Target Chance</span>
+          <div className="flex flex-col justify-between border-b border-[rgba(255,255,255,0.08)] pb-3 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#9f1239]">Simulated Target Chance</span>
             <div className="my-1 flex items-baseline gap-2">
-              <span className="text-3xl font-black text-[#c76f3b] font-['Space_Grotesk']">{displayChance}%</span>
-              <span className={`text-xs font-bold ${displayDelta >= 0 ? "text-[#c76f3b]" : "text-[#938e87]"}`}>
+              <span className="text-3xl font-black text-[#9f1239] font-['Space_Grotesk']">{displayChance}%</span>
+              <span className={`text-xs font-bold ${displayDelta >= 0 ? "text-[#9f1239]" : "text-[#94a3b8]"}`}>
                 ({displayDelta >= 0 ? `+${displayDelta}%` : `${displayDelta}%`})
               </span>
             </div>
-            <p className="text-[11px] text-[#938e87]">Projected clearance probability</p>
+            <p className="text-[11px] text-[#94a3b8]">Projected clearance probability</p>
           </div>
 
           {/* Card 3: Projected CTC */}
-          <div className="flex flex-col justify-between border-b border-[rgba(234,230,224,0.08)] pb-3 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#eae6e0]">Projected CTC Package</span>
+          <div className="flex flex-col justify-between border-b border-[rgba(255,255,255,0.08)] pb-3 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#f8fafc]">Projected CTC Package</span>
             <div className="my-1 flex items-baseline gap-1.5">
-              <span className="text-3xl font-black text-[#c76f3b] font-['Space_Grotesk']">₹{simulatedStats.projectedPackage}</span>
-              <span className="text-xs text-[#938e87] font-bold">LPA</span>
+              <span className="text-3xl font-black text-[#9f1239] font-['Space_Grotesk']">₹{simulatedStats.projectedPackage}</span>
+              <span className="text-xs text-[#94a3b8] font-bold">LPA</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${simulatedStats.tierColor}`}>
@@ -321,31 +321,31 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
 
           {/* Card 4: Target Companies */}
           <div className="flex flex-col justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#eae6e0]">Eligible Recruiters</span>
-            <p className="text-xs font-semibold text-[#eae6e0] pt-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#f8fafc]">Eligible Recruiters</span>
+            <p className="text-xs font-semibold text-[#f8fafc] pt-1">
               {simulatedStats.companies}
             </p>
-            <p className="text-[11px] text-[#938e87]">
+            <p className="text-[11px] text-[#94a3b8]">
               Matches hiring rubrics for this tier
             </p>
           </div>
         </div>
 
         {/* Highest ROI Recommendation Banner */}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-3.5 text-xs text-[#938e87]">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3.5 text-xs text-[#94a3b8]">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 shrink-0 text-[#c76f3b]" />
+            <Sparkles className="h-4 w-4 shrink-0 text-[#9f1239]" />
             <span>
               <strong>Highest ROI Action:</strong> Focus on{" "}
-              <span className="font-bold text-[#eae6e0]">{simulatedStats.bestRoi.name}</span> for an estimated{" "}
-              <strong className="underline text-[#c76f3b]">{simulatedStats.bestRoi.gain}</strong>.
+              <span className="font-bold text-[#f8fafc]">{simulatedStats.bestRoi.name}</span> for an estimated{" "}
+              <strong className="underline text-[#9f1239]">{simulatedStats.bestRoi.gain}</strong>.
             </span>
           </div>
 
           {onApplySimulatedProfile && (
             <button
               onClick={handleApplyToProfile}
-              className="flex items-center gap-1.5 rounded-xl bg-[#c76f3b] hover:bg-[#b8673a] px-3.5 py-1.5 text-xs font-bold text-[#eae6e0] transition-all active:scale-95 shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl bg-[#9f1239] hover:bg-[#881337] px-3.5 py-1.5 text-xs font-bold text-[#f8fafc] transition-all active:scale-95 shadow-sm cursor-pointer"
             >
               <Check className="h-3.5 w-3.5" />
               <span>{hasAppliedChanges ? "Saved to Dashboard!" : "Lock as Preparation Target"}</span>
@@ -357,13 +357,13 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
         {activeMode === "sliders" ? (
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             {/* Slider 1: CGPA */}
-            <div className="rounded-2xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-5 space-y-3">
+            <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <GraduationCap className="h-4 w-4 text-[#c76f3b]" />
-                  <span className="text-xs font-bold text-[#eae6e0]">Target Academic CGPA</span>
+                  <GraduationCap className="h-4 w-4 text-[#9f1239]" />
+                  <span className="text-xs font-bold text-[#f8fafc]">Target Academic CGPA</span>
                 </div>
-                <span className="text-sm font-black text-[#c76f3b]">{cgpa.toFixed(1)} / 10.0</span>
+                <span className="text-sm font-black text-[#9f1239]">{cgpa.toFixed(1)} / 10.0</span>
               </div>
               <input
                 type="range"
@@ -372,9 +372,9 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 step="0.1"
                 value={cgpa}
                 onChange={e => setCgpa(parseFloat(e.target.value))}
-                className="w-full accent-[#c76f3b] cursor-pointer"
+                className="w-full accent-[#9f1239] cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-[#938e87]">
+              <div className="flex justify-between text-[10px] text-[#94a3b8]">
                 <span>5.0 (Pass)</span>
                 <span>7.5 (Tier-1 Cutoff)</span>
                 <span>9.0+ (Dean's List)</span>
@@ -382,13 +382,13 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
             </div>
 
             {/* Slider 2: Coding & DSA */}
-            <div className="rounded-2xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-5 space-y-3">
+            <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Code2 className="h-4 w-4 text-[#c76f3b]" />
-                  <span className="text-xs font-bold text-[#eae6e0]">Coding & DSA Proficiency</span>
+                  <Code2 className="h-4 w-4 text-[#9f1239]" />
+                  <span className="text-xs font-bold text-[#f8fafc]">Coding & DSA Proficiency</span>
                 </div>
-                <span className="text-sm font-black text-[#c76f3b]">{codingScore} / 100</span>
+                <span className="text-sm font-black text-[#9f1239]">{codingScore} / 100</span>
               </div>
               <input
                 type="range"
@@ -397,9 +397,9 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 step="5"
                 value={codingScore}
                 onChange={e => setCodingScore(parseInt(e.target.value))}
-                className="w-full accent-[#c76f3b] cursor-pointer"
+                className="w-full accent-[#9f1239] cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-[#938e87]">
+              <div className="flex justify-between text-[10px] text-[#94a3b8]">
                 <span>Beginner (Arrays/Strings)</span>
                 <span>Medium (Blind 75)</span>
                 <span>Hard (DP / Graphs)</span>
@@ -407,13 +407,13 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
             </div>
 
             {/* Slider 3: Projects Count */}
-            <div className="rounded-2xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-5 space-y-3">
+            <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <FolderGit2 className="h-4 w-4 text-[#c76f3b]" />
-                  <span className="text-xs font-bold text-[#eae6e0]">Deployed Full-Stack / AI Projects</span>
+                  <FolderGit2 className="h-4 w-4 text-[#9f1239]" />
+                  <span className="text-xs font-bold text-[#f8fafc]">Deployed Full-Stack / AI Projects</span>
                 </div>
-                <span className="text-sm font-black text-[#c76f3b]">{projectsCount} Deployed</span>
+                <span className="text-sm font-black text-[#9f1239]">{projectsCount} Deployed</span>
               </div>
               <input
                 type="range"
@@ -422,9 +422,9 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 step="1"
                 value={projectsCount}
                 onChange={e => setProjectsCount(parseInt(e.target.value))}
-                className="w-full accent-[#c76f3b] cursor-pointer"
+                className="w-full accent-[#9f1239] cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-[#938e87]">
+              <div className="flex justify-between text-[10px] text-[#94a3b8]">
                 <span>0 Projects</span>
                 <span>2 Capstones (Recommended)</span>
                 <span>6+ Production Blueprints</span>
@@ -432,13 +432,13 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
             </div>
 
             {/* Slider 4: Verified Internships */}
-            <div className="rounded-2xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-5 space-y-3">
+            <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-[#938e87]" />
-                  <span className="text-xs font-bold text-[#eae6e0]">Verified Industry Internships</span>
+                  <Briefcase className="h-4 w-4 text-[#94a3b8]" />
+                  <span className="text-xs font-bold text-[#f8fafc]">Verified Industry Internships</span>
                 </div>
-                <span className="text-sm font-black text-[#c76f3b]">{internships} Completed</span>
+                <span className="text-sm font-black text-[#9f1239]">{internships} Completed</span>
               </div>
               <input
                 type="range"
@@ -447,9 +447,9 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 step="1"
                 value={internships}
                 onChange={e => setInternships(parseInt(e.target.value))}
-                className="w-full accent-[#c76f3b] cursor-pointer"
+                className="w-full accent-[#9f1239] cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-[#938e87]">
+              <div className="flex justify-between text-[10px] text-[#94a3b8]">
                 <span>0 Internships</span>
                 <span>1 Completed</span>
                 <span>4 Internships</span>
@@ -457,13 +457,13 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
             </div>
 
             {/* Slider 5: Active Backlogs */}
-            <div className="rounded-2xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-5 space-y-3 md:col-span-2">
+            <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-5 space-y-3 md:col-span-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <AlertCircle className={`h-4 w-4 ${activeBacklogs > 0 ? "text-[#8c3a2e]" : "text-[#938e87]"}`} />
-                  <span className="text-xs font-bold text-[#eae6e0]">Active Academic Backlogs</span>
+                  <AlertCircle className={`h-4 w-4 ${activeBacklogs > 0 ? "text-[#881337]" : "text-[#94a3b8]"}`} />
+                  <span className="text-xs font-bold text-[#f8fafc]">Active Academic Backlogs</span>
                 </div>
-                <span className={`text-sm font-black ${activeBacklogs > 0 ? "text-[#8c3a2e]" : "text-[#eae6e0]"}`}>
+                <span className={`text-sm font-black ${activeBacklogs > 0 ? "text-[#881337]" : "text-[#f8fafc]"}`}>
                   {activeBacklogs === 0 ? "0 (Zero Backlogs - Fully Eligible)" : `${activeBacklogs} Active`}
                 </span>
               </div>
@@ -474,10 +474,10 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 step="1"
                 value={activeBacklogs}
                 onChange={e => setActiveBacklogs(parseInt(e.target.value))}
-                className="w-full accent-[#c76f3b] cursor-pointer"
+                className="w-full accent-[#9f1239] cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-[#938e87]">
-                <span className="text-[#c76f3b] font-bold">0 (Clean record for Tier-1 drives)</span>
+              <div className="flex justify-between text-[10px] text-[#94a3b8]">
+                <span className="text-[#9f1239] font-bold">0 (Clean record for Tier-1 drives)</span>
                 <span>1 backlog</span>
                 <span>4+ backlogs (Restricted eligibility)</span>
               </div>
@@ -492,8 +492,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 onClick={() => toggleScenario(sc.id)}
                 className={`cursor-pointer rounded-2xl border p-4 transition-all duration-300 ${
                   sc.applied
-                    ? "border-[#c76f3b]/50 bg-[#c76f3b]/10 shadow-[0_4px_20px_rgba(199,111,59,0.15)] ring-1 ring-[#c76f3b]/20"
-                    : "border-[rgba(234,230,224,0.08)] bg-[#1c1a22] hover:border-[#c76f3b]/30"
+                    ? "border-[#9f1239]/50 bg-[#9f1239]/10 shadow-[0_4px_20px_rgba(159,18,57,0.15)] ring-1 ring-[#9f1239]/20"
+                    : "border-[rgba(255,255,255,0.08)] bg-[#11131c] hover:border-[#9f1239]/30"
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -501,8 +501,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                     <div
                       className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border transition-all ${
                         sc.applied
-                          ? "border-[#c76f3b] bg-[#c76f3b] text-[#eae6e0]"
-                          : "border-[rgba(234,230,224,0.12)] bg-[rgba(234,230,224,0.04)] text-transparent"
+                          ? "border-[#9f1239] bg-[#9f1239] text-[#f8fafc]"
+                          : "border-[rgba(255,255,255,0.12)] bg-[rgba(234,230,224,0.04)] text-transparent"
                       }`}
                     >
                       <Check className="h-3.5 w-3.5 stroke-[3]" />
@@ -510,20 +510,20 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
 
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-bold text-[#eae6e0]">{sc.title}</span>
-                        <span className="rounded-md border border-[rgba(234,230,224,0.12)] bg-[rgba(234,230,224,0.04)] px-2 py-0.5 text-[10px] font-semibold text-[#938e87]">
+                        <span className="text-xs font-bold text-[#f8fafc]">{sc.title}</span>
+                        <span className="rounded-md border border-[rgba(255,255,255,0.12)] bg-[rgba(234,230,224,0.04)] px-2 py-0.5 text-[10px] font-semibold text-[#94a3b8]">
                           {sc.category}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-[#938e87]">{sc.description}</p>
-                      <p className="mt-1 text-[11px] text-[#c76f3b]">
+                      <p className="mt-1 text-xs text-[#94a3b8]">{sc.description}</p>
+                      <p className="mt-1 text-[11px] text-[#9f1239]">
                         💡 <strong>Impact:</strong> {sc.explanation}
                       </p>
                     </div>
                   </div>
 
                   <div className="shrink-0 text-right">
-                    <span className="rounded-lg border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2.5 py-1 text-xs font-bold text-[#c76f3b]">
+                    <span className="rounded-lg border border-[#9f1239]/30 bg-[#9f1239]/10 px-2.5 py-1 text-xs font-bold text-[#9f1239]">
                       +{sc.impactDelta}%
                     </span>
                   </div>
@@ -534,8 +534,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
         )}
 
         {/* Disclaimer */}
-        <div className="mt-6 flex items-start gap-2 rounded-xl border border-[rgba(234,230,224,0.08)] bg-[#1c1a22] p-3 text-[11px] text-[#938e87]">
-          <Info className="h-4 w-4 shrink-0 text-[#c76f3b] mt-0.5" />
+        <div className="mt-6 flex items-start gap-2 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3 text-[11px] text-[#94a3b8]">
+          <Info className="h-4 w-4 shrink-0 text-[#9f1239] mt-0.5" />
           <p>
             <strong>Simulation Note:</strong> Simulated scores and salary tiers are mathematical projections calibrated against 972 historical campus placement records across 9 engineering disciplines. They reveal tactical high-leverage preparation priorities.
           </p>

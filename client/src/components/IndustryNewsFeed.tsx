@@ -168,15 +168,15 @@ export default function IndustryNewsFeed({
   const getCategoryBadgeClass = (category: string) => {
     switch (category) {
       case "AI & Cloud Skills":
-        return "bg-[#c76f3b]/15 text-[#c76f3b] border-[#c76f3b]/30";
+        return "bg-[#7c3aed]/15 text-[#7c3aed] border-[#7c3aed]/30";
       case "DSA & Tech Rounds":
-        return "bg-[#c76f3b]/15 text-[#c76f3b] border-[#c76f3b]/30";
+        return "bg-[#7c3aed]/15 text-[#7c3aed] border-[#7c3aed]/30";
       case "Internships & Jobs":
-        return "bg-white/10 text-[#938e87] border-white/20";
+        return "bg-white/10 text-[#94a3b8] border-white/20";
       case "Tech Hiring":
-        return "bg-[#c76f3b]/15 text-[#c76f3b] border-[#c76f3b]/30";
+        return "bg-[#7c3aed]/15 text-[#7c3aed] border-[#7c3aed]/30";
       default:
-        return "bg-white/10 text-[#938e87] border-white/20";
+        return "bg-white/10 text-[#94a3b8] border-white/20";
     }
   };
 
@@ -187,17 +187,17 @@ export default function IndustryNewsFeed({
         variants={cardVariants}
         initial="hidden"
         animate="visible"
-        className="rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 backdrop-blur-xl sm:p-8"
+        className="rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 backdrop-blur-xl sm:p-8"
       >
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-3 py-1 text-xs font-bold text-[#c76f3b]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-3 py-1 text-xs font-bold text-[#7c3aed]">
               <Globe size={14} /> Google Search API & Live News Intelligence
             </div>
-            <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl text-[#eae6e0]">
+            <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl text-[#f8fafc]">
               Industry Hiring Trends & Placement Feed
             </h2>
-            <p className="mt-1 text-xs text-[#938e87] max-w-3xl">
+            <p className="mt-1 text-xs text-[#94a3b8] max-w-3xl">
               Real-time campus drive data, recruiter evaluation criteria, algorithmic testing patterns, and actionable placement tips curated specifically for BTech students.
             </p>
           </div>
@@ -206,8 +206,8 @@ export default function IndustryNewsFeed({
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/40 px-3.5 py-2 text-xs">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c76f3b] opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#c76f3b]"></span>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7c3aed] opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#7c3aed]"></span>
               </span>
               <span className="font-semibold text-slate-300">
                 {newsQuery.data?.provider || "Google Search Engine"}
@@ -216,10 +216,10 @@ export default function IndustryNewsFeed({
             <button
               onClick={() => newsQuery.refetch()}
               disabled={newsQuery.isFetching}
-              className="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-black/40 px-3.5 py-2 text-xs font-bold text-slate-300 transition hover:border-[#c76f3b]/40 hover:text-white disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-black/40 px-3.5 py-2 text-xs font-bold text-slate-300 transition hover:border-[#7c3aed]/40 hover:text-white disabled:opacity-50"
               title="Fetch latest Google Search results"
             >
-              <RefreshCw size={14} className={newsQuery.isFetching ? "animate-spin text-[#c76f3b]" : ""} />
+              <RefreshCw size={14} className={newsQuery.isFetching ? "animate-spin text-[#7c3aed]" : ""} />
               Refresh
             </button>
           </div>
@@ -238,7 +238,7 @@ export default function IndustryNewsFeed({
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search hiring trends, company drives (e.g. 'TCS NQT 2026', 'Amazon OA', 'Fintech internships', 'DSA patterns')..."
-                className="w-full rounded-2xl border border-white/10 bg-black/40 pl-10 pr-10 py-3 text-xs text-white placeholder-slate-500 outline-none transition focus:border-[#c76f3b] focus:ring-1 focus:ring-[#c76f3b]"
+                className="w-full rounded-2xl border border-white/10 bg-black/40 pl-10 pr-10 py-3 text-xs text-white placeholder-slate-500 outline-none transition focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed]"
               />
               {searchInput && (
                 <button
@@ -252,7 +252,7 @@ export default function IndustryNewsFeed({
             </div>
             <button
               type="submit"
-              className="flex items-center gap-2 rounded-2xl bg-[#c76f3b] px-5 py-3 text-xs font-bold text-white shadow-md shadow-[#c76f3b]/20 transition hover:bg-[#c76f3b]/90 active:scale-95"
+              className="flex items-center gap-2 rounded-2xl bg-[#7c3aed] px-5 py-3 text-xs font-bold text-white shadow-md shadow-[#7c3aed]/20 transition hover:bg-[#7c3aed]/90 active:scale-95"
             >
               <Search size={14} /> Search
             </button>
@@ -272,7 +272,7 @@ export default function IndustryNewsFeed({
                 }}
                 className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
                   selectedCategory === cat.id && !showSavedOnly
-                    ? "border border-[#c76f3b]/40 bg-[#c76f3b]/20 text-[#c76f3b] shadow-sm"
+                    ? "border border-[#7c3aed]/40 bg-[#7c3aed]/20 text-[#7c3aed] shadow-sm"
                     : "border border-white/10 bg-black/40 text-slate-400 hover:border-white/20 hover:text-slate-200"
                 }`}
               >
@@ -289,7 +289,7 @@ export default function IndustryNewsFeed({
                   : "border border-white/10 bg-black/40 text-slate-400 hover:border-white/20 hover:text-slate-200"
               }`}
             >
-              <Bookmark size={13} className={showSavedOnly ? "fill-[#c76f3b] text-[#c76f3b]" : ""} />
+              <Bookmark size={13} className={showSavedOnly ? "fill-[#7c3aed] text-[#7c3aed]" : ""} />
               Saved Tips ({savedIds.length})
             </button>
           </div>
@@ -302,9 +302,9 @@ export default function IndustryNewsFeed({
           variants={cardVariants}
           initial="hidden"
           animate="visible"
-          className="rounded-2xl border border-white/[0.08] bg-[#1c1a22] p-4"
+          className="rounded-2xl border border-white/[0.08] bg-[#11131c] p-4"
         >
-          <div className="flex items-center gap-2 text-xs font-bold text-[#c76f3b]">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#7c3aed]">
             <Code2 size={16} /> OA Screening Benchmark
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-300">
@@ -316,9 +316,9 @@ export default function IndustryNewsFeed({
           variants={cardVariants}
           initial="hidden"
           animate="visible"
-          className="rounded-2xl border border-white/[0.08] bg-[#1c1a22] p-4"
+          className="rounded-2xl border border-white/[0.08] bg-[#11131c] p-4"
         >
-          <div className="flex items-center gap-2 text-xs font-bold text-[#938e87]">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#94a3b8]">
             <Zap size={16} /> AI Project Premium
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-300">
@@ -330,9 +330,9 @@ export default function IndustryNewsFeed({
           variants={cardVariants}
           initial="hidden"
           animate="visible"
-          className="rounded-2xl border border-white/[0.08] bg-[#1c1a22] p-4"
+          className="rounded-2xl border border-white/[0.08] bg-[#11131c] p-4"
         >
-          <div className="flex items-center gap-2 text-xs font-bold text-[#c76f3b]">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#7c3aed]">
             <Briefcase size={16} /> Pre-Placement Offers (PPOs)
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-300">
@@ -358,7 +358,7 @@ export default function IndustryNewsFeed({
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="animate-pulse rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6"
+              className="animate-pulse rounded-3xl border border-white/[0.08] bg-[#11131c] p-6"
             >
               <div className="h-4 w-1/4 rounded bg-white/10" />
               <div className="mt-3 h-6 w-3/4 rounded bg-white/10" />
@@ -370,7 +370,7 @@ export default function IndustryNewsFeed({
 
       {/* Empty State */}
       {!newsQuery.isLoading && filteredItems.length === 0 && (
-        <div className="rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-12 text-center">
+        <div className="rounded-3xl border border-white/[0.08] bg-[#11131c] p-12 text-center">
           <Newspaper size={40} className="mx-auto text-slate-600" />
           <h3 className="mt-3 text-lg font-bold text-slate-300">No industry trends found</h3>
           <p className="mt-1 text-xs text-slate-500">
@@ -404,7 +404,7 @@ export default function IndustryNewsFeed({
               variants={cardVariants}
               initial="hidden"
               animate="visible"
-              className="group rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 backdrop-blur-xl transition hover:border-white/20 sm:p-7"
+              className="group rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 backdrop-blur-xl transition hover:border-white/20 sm:p-7"
             >
               {/* Card Meta Top Bar */}
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-3 text-xs">
@@ -429,12 +429,12 @@ export default function IndustryNewsFeed({
                     onClick={() => toggleSaveArticle(item.id)}
                     className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
                       isSaved
-                        ? "bg-[#c76f3b]/10 text-[#c76f3b] border border-[#c76f3b]/30"
+                        ? "bg-[#7c3aed]/10 text-[#7c3aed] border border-[#7c3aed]/30"
                         : "text-slate-400 hover:bg-white/10 hover:text-white"
                     }`}
                     title={isSaved ? "Remove bookmark" : "Save placement tip"}
                   >
-                    {isSaved ? <BookmarkCheck size={14} className="text-[#c76f3b]" /> : <Bookmark size={14} />}
+                    {isSaved ? <BookmarkCheck size={14} className="text-[#7c3aed]" /> : <Bookmark size={14} />}
                     {isSaved ? "Saved" : "Save"}
                   </button>
 
@@ -457,7 +457,7 @@ export default function IndustryNewsFeed({
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-base font-black tracking-tight text-white transition hover:text-[#c76f3b] sm:text-lg"
+                  className="text-base font-black tracking-tight text-white transition hover:text-[#7c3aed] sm:text-lg"
                 >
                   {item.title}
                 </a>
@@ -467,14 +467,14 @@ export default function IndustryNewsFeed({
               {/* Dual Intelligence Callout: Key Takeaway & Placement Tip */}
               <div className="mt-4 grid gap-3 rounded-2xl border border-white/[0.08] bg-black/40 p-4 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#c76f3b]">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#7c3aed]">
                     <Lightbulb size={14} /> Key Industry Takeaway
                   </div>
                   <p className="text-xs leading-relaxed text-slate-300">{item.keyTakeaway}</p>
                 </div>
 
                 <div className="space-y-1 sm:border-l sm:border-white/[0.08] sm:pl-4">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#938e87]">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#94a3b8]">
                     <Target size={14} /> Actionable Placement Tip
                   </div>
                   <p className="text-xs leading-relaxed text-slate-300">{item.placementTip}</p>
@@ -507,13 +507,13 @@ export default function IndustryNewsFeed({
                     exit={{ opacity: 0, height: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="mt-4 rounded-2xl border border-[#c76f3b]/30 bg-black/40 p-4">
+                    <div className="mt-4 rounded-2xl border border-[#7c3aed]/30 bg-black/40 p-4">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#c76f3b]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#7c3aed]">
                           <Sparkles size={14} /> Gemini Tactical Impact Analysis (Adapted for {targetRole})
                         </div>
                         {summarizeMutation.isPending && (
-                          <div className="flex items-center gap-1 text-[11px] text-[#938e87]">
+                          <div className="flex items-center gap-1 text-[11px] text-[#94a3b8]">
                             <Loader2 size={12} className="animate-spin" /> Analyzing trend with candidate context...
                           </div>
                         )}
@@ -538,7 +538,7 @@ export default function IndustryNewsFeed({
                     onClick={() =>
                       onConsultCoachWithTrend(item.title, item.source, item.keyTakeaway)
                     }
-                    className="flex items-center gap-1.5 rounded-xl border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-3.5 py-2 text-xs font-bold text-[#c76f3b] transition hover:bg-[#c76f3b]/20 active:scale-98"
+                    className="flex items-center gap-1.5 rounded-xl border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-3.5 py-2 text-xs font-bold text-[#7c3aed] transition hover:bg-[#7c3aed]/20 active:scale-98"
                   >
                     <Bot size={14} /> Ask Coach About This Trend <ArrowRight size={13} />
                   </button>
@@ -546,7 +546,7 @@ export default function IndustryNewsFeed({
                   {/* Action 2: Deep AI Tactical Analysis */}
                   <button
                     onClick={() => handleAnalyzeArticle(item)}
-                    className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-bold text-[#938e87] transition hover:bg-white/10 active:scale-98"
+                    className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-bold text-[#94a3b8] transition hover:bg-white/10 active:scale-98"
                   >
                     <Sparkles size={14} /> {isExpanded ? "Hide AI Breakdown" : "Personalized AI Impact"}
                   </button>

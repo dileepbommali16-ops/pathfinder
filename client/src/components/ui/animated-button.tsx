@@ -34,9 +34,9 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
         mass: 0.5,
       }}
       className={cn(
-        "group inline-flex items-center justify-center px-6 py-2 rounded-xl relative overflow-hidden bg-[#1c1a22] border border-[rgba(234,230,224,0.08)]",
-        "text-[#eae6e0] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#c76f3b] disabled:pointer-events-none disabled:opacity-50",
-        "[--shine:rgba(199,111,59,0.5)]",
+        "group inline-flex items-center justify-center px-6 py-2 rounded-xl relative overflow-hidden bg-[#11131c] border border-[rgba(255,255,255,0.08)]",
+        "text-[#f8fafc] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ffffff] disabled:pointer-events-none disabled:opacity-50",
+        "[--shine:rgba(255,255,255,0.5)]",
         className,
       )}
     >
@@ -45,9 +45,9 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
         className="tracking-wide font-light flex items-center justify-center h-full w-full relative z-10"
         style={{
           WebkitMaskImage:
-            "linear-gradient(-75deg, #eae6e0 calc(var(--mask-x) + 20%), transparent calc(var(--mask-x) + 30%), #eae6e0 calc(var(--mask-x) + 100%))",
+            "linear-gradient(-75deg, #f8fafc calc(var(--mask-x) + 20%), transparent calc(var(--mask-x) + 30%), #f8fafc calc(var(--mask-x) + 100%))",
           maskImage:
-            "linear-gradient(-75deg, #eae6e0 calc(var(--mask-x) + 20%), transparent calc(var(--mask-x) + 30%), #eae6e0 calc(var(--mask-x) + 100%))",
+            "linear-gradient(-75deg, #f8fafc calc(var(--mask-x) + 20%), transparent calc(var(--mask-x) + 30%), #f8fafc calc(var(--mask-x) + 100%))",
         }}
         initial={{ ["--mask-x" as any]: "100%" } as any}
         animate={{ ["--mask-x" as any]: "-100%" } as any}
@@ -68,10 +68,10 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
           background:
             "linear-gradient(-75deg, transparent 30%, var(--shine) 50%, transparent 70%)",
           backgroundSize: "200% 100%",
-          mask: "linear-gradient(#eae6e0 0 0) content-box, linear-gradient(#eae6e0 0 0)",
+          mask: "linear-gradient(#f8fafc 0 0) content-box, linear-gradient(#f8fafc 0 0)",
           maskComposite: "exclude",
           WebkitMask:
-            "linear-gradient(#eae6e0 0 0) content-box, linear-gradient(#eae6e0 0 0)",
+            "linear-gradient(#f8fafc 0 0) content-box, linear-gradient(#f8fafc 0 0)",
           WebkitMaskComposite: "xor",
         }}
         initial={{ backgroundPosition: "100% 0", opacity: 0 }}

@@ -44,154 +44,164 @@
 
 :root {
   /* ==========================================================================
-     SINGLE SOURCE OF TRUTH (SSOT): LUXURY SAAS COPPER + CHARCOAL PALETTE
-     - Base Background: Deep Charcoal (#141318)
-     - Card / Panel: Warm Charcoal Glass (#1c1a22)
-     - Card Subtle: Lighter Warm Charcoal (#24222b)
-     - Primary Text / Headings: Warm Off-White (#eae6e0)
-     - Secondary / Muted Text: Warm Grey (#938e87)
-     - Subtle Metadata: Warm Sub-Grey (#76716a)
-     - Borders: Subtle warm off-white (rgba(234, 230, 224, 0.08))
-     - Primary Accent: Burnt Copper / Bronze (#c76f3b / #b8673a)
-     - Secondary Accent: Deep Rust-Red (#8c3a2e)
+     SINGLE SOURCE OF TRUTH (SSOT): LUXURY SAAS 3-TIER SYSTEM
+     - 2 Slides: Black + Deep Wine Velvet (#9f1239 / #881337)
+     - 2 Slides: Black + Royal Violet Amethyst (#7c3aed / #6d28d9)
+     - 2 Slides: Black + Crisp Obsidian & Platinum White (#ffffff / #f8fafc)
+     - Canvas Background: Deep Obsidian Nocturne (#0a0b10)
+     - Card / Panel: Frosted Obsidian Glass (#11131c)
+     - Card Subtle: Lighter Obsidian Module (#161926)
+     - Primary Text / Headings: Crisp Platinum White (#f8fafc)
+     - Secondary / Muted Text: Refined Silver Grey (#94a3b8)
+     - Subtle Metadata: Slate Metadata (#64748b)
+     - Borders: rgba(255, 255, 255, 0.08)
      ========================================================================== */
 
-  --bg-base: #141318;
-  --bg-card: #1c1a22;
-  --bg-card-subtle: #24222b;
-  --bg-card-hover: #292632;
+  --bg-base: #0a0b10;
+  --bg-card: #11131c;
+  --bg-card-subtle: #161926;
+  --bg-card-hover: #1c2030;
 
-  --text-primary: #eae6e0;
-  --text-secondary: #938e87;
-  --text-muted: #76716a;
-  --text-heading: #eae6e0;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-heading: #f8fafc;
 
-  --accent-copper: #c76f3b;
-  --accent-copper-hover: #b8673a;
-  --accent-copper-soft: rgba(199, 111, 59, 0.12);
-  --accent-copper-border: rgba(199, 111, 59, 0.35);
-  --accent-copper-glow: rgba(199, 111, 59, 0.25);
+  /* Tier 1: Wine + Black Accents */
+  --accent-wine: #9f1239;
+  --accent-wine-hover: #881337;
+  --accent-wine-soft: rgba(159, 18, 57, 0.14);
+  --accent-wine-border: rgba(159, 18, 57, 0.35);
+  --accent-wine-glow: rgba(159, 18, 57, 0.25);
 
-  --accent-rust: #8c3a2e;
-  --accent-rust-hover: #9c4336;
-  --accent-rust-soft: rgba(140, 58, 46, 0.14);
-  --accent-rust-border: rgba(140, 58, 46, 0.35);
+  /* Tier 2: Violet + Black Accents */
+  --accent-violet: #7c3aed;
+  --accent-violet-hover: #6d28d9;
+  --accent-violet-soft: rgba(124, 58, 237, 0.14);
+  --accent-violet-border: rgba(124, 58, 237, 0.35);
+  --accent-violet-glow: rgba(124, 58, 237, 0.25);
 
-  /* Section Tone Variations within Copper / Bronze / Rust */
-  --accent-readiness: #c76f3b;
-  --accent-readiness-bg: rgba(199, 111, 59, 0.12);
-  --accent-readiness-border: rgba(199, 111, 59, 0.30);
+  /* Tier 3: Clean Obsidian + Crisp Platinum White Accents */
+  --accent-mono: #ffffff;
+  --accent-mono-soft: rgba(255, 255, 255, 0.10);
+  --accent-mono-border: rgba(255, 255, 255, 0.20);
+  --accent-mono-glow: rgba(255, 255, 255, 0.15);
 
-  --accent-roadmap: #b8673a;
-  --accent-roadmap-bg: rgba(184, 103, 58, 0.12);
-  --accent-roadmap-border: rgba(184, 103, 58, 0.30);
+  /* Section Tone Variations */
+  --accent-readiness: #9f1239;
+  --accent-readiness-bg: rgba(159, 18, 57, 0.14);
+  --accent-readiness-border: rgba(159, 18, 57, 0.35);
 
-  --accent-coach: #c47846;
-  --accent-coach-bg: rgba(196, 120, 70, 0.12);
-  --accent-coach-border: rgba(196, 120, 70, 0.30);
+  --accent-roadmap: #881337;
+  --accent-roadmap-bg: rgba(136, 19, 55, 0.14);
+  --accent-roadmap-border: rgba(136, 19, 55, 0.35);
 
-  --accent-projects: #c76f3b;
-  --accent-projects-bg: rgba(199, 111, 59, 0.12);
-  --accent-projects-border: rgba(199, 111, 59, 0.30);
+  --accent-coach: #7c3aed;
+  --accent-coach-bg: rgba(124, 58, 237, 0.14);
+  --accent-coach-border: rgba(124, 58, 237, 0.35);
 
-  --accent-cohort: #8c3a2e;
-  --accent-cohort-bg: rgba(140, 58, 46, 0.12);
-  --accent-cohort-border: rgba(140, 58, 46, 0.30);
+  --accent-projects: #6d28d9;
+  --accent-projects-bg: rgba(109, 40, 217, 0.14);
+  --accent-projects-border: rgba(109, 40, 217, 0.35);
 
-  --accent-resume: #b8673a;
-  --accent-resume-bg: rgba(184, 103, 58, 0.12);
-  --accent-resume-border: rgba(184, 103, 58, 0.30);
+  --accent-cohort: #9f1239;
+  --accent-cohort-bg: rgba(159, 18, 57, 0.14);
+  --accent-cohort-border: rgba(159, 18, 57, 0.35);
 
-  --accent-interview: #8c3a2e;
-  --accent-interview-bg: rgba(140, 58, 46, 0.12);
-  --accent-interview-border: rgba(140, 58, 46, 0.30);
+  --accent-resume: #ffffff;
+  --accent-resume-bg: rgba(255, 255, 255, 0.08);
+  --accent-resume-border: rgba(255, 255, 255, 0.20);
 
-  /* Semantic Meaning Colors mapped to Copper / Bronze / Rust */
-  --color-success: #c76f3b;
-  --color-warning: #b8673a;
-  --color-error: #8c3a2e;
-  --color-info: #c76f3b;
+  --accent-interview: #7c3aed;
+  --accent-interview-bg: rgba(124, 58, 237, 0.14);
+  --accent-interview-border: rgba(124, 58, 237, 0.35);
+
+  /* Semantic Meaning Colors */
+  --color-success: #7c3aed;
+  --color-warning: #9f1239;
+  --color-error: #881337;
+  --color-info: #7c3aed;
 
   /* Layout, Card, and Spacing Tokens */
-  --card-bg: #1c1a22;
-  --card-border: rgba(234, 230, 224, 0.08);
+  --card-bg: #11131c;
+  --card-border: rgba(255, 255, 255, 0.08);
   --card-radius: 1.25rem;
   --card-padding: 1.75rem;
   --card-gap: 1.5rem;
 
-  --background: #141318;
-  --foreground: #eae6e0;
-  --card: #1c1a22;
-  --card-foreground: #eae6e0;
-  --popover: #1c1a22;
-  --popover-foreground: #eae6e0;
-  --primary: #c76f3b;
-  --primary-foreground: #eae6e0;
-  --secondary: #24222b;
-  --secondary-foreground: #938e87;
-  --muted: #24222b;
-  --muted-foreground: #938e87;
-  --accent: #24222b;
-  --accent-foreground: #eae6e0;
-  --destructive: #8c3a2e;
-  --destructive-foreground: #eae6e0;
-  --border: rgba(234, 230, 224, 0.08);
-  --input: rgba(234, 230, 224, 0.12);
-  --ring: #c76f3b;
-  --sidebar: #141318;
-  --sidebar-foreground: #eae6e0;
-  --sidebar-accent: #1c1a22;
-  --sidebar-accent-foreground: #eae6e0;
-  --sidebar-border: rgba(234, 230, 224, 0.08);
-  --sidebar-ring: #c76f3b;
+  --background: #0a0b10;
+  --foreground: #f8fafc;
+  --card: #11131c;
+  --card-foreground: #f8fafc;
+  --popover: #11131c;
+  --popover-foreground: #f8fafc;
+  --primary: #9f1239;
+  --primary-foreground: #f8fafc;
+  --secondary: #161926;
+  --secondary-foreground: #94a3b8;
+  --muted: #161926;
+  --muted-foreground: #94a3b8;
+  --accent: #161926;
+  --accent-foreground: #f8fafc;
+  --destructive: #881337;
+  --destructive-foreground: #f8fafc;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #9f1239;
+  --sidebar: #0a0b10;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-accent: #11131c;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #9f1239;
   --radius: 0.75rem;
 
-  --chart-1: #c76f3b;
-  --chart-2: #b8673a;
-  --chart-3: #8c3a2e;
-  --chart-4: #c47846;
-  --chart-5: #9c4336;
+  --chart-1: #9f1239;
+  --chart-2: #7c3aed;
+  --chart-3: #881337;
+  --chart-4: #6d28d9;
+  --chart-5: #ffffff;
 }
 
 .dark {
-  --text-primary: #eae6e0;
-  --text-secondary: #938e87;
-  --text-muted: #76716a;
-  --text-heading: #eae6e0;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-heading: #f8fafc;
 
-  --accent-readiness: #c76f3b;
-  --accent-roadmap: #b8673a;
-  --accent-coach: #c47846;
-  --accent-projects: #c76f3b;
-  --accent-cohort: #8c3a2e;
-  --accent-resume: #b8673a;
-  --accent-interview: #8c3a2e;
+  --accent-readiness: #9f1239;
+  --accent-roadmap: #881337;
+  --accent-coach: #7c3aed;
+  --accent-projects: #6d28d9;
+  --accent-cohort: #9f1239;
+  --accent-resume: #ffffff;
+  --accent-interview: #7c3aed;
 
-  --color-success: #c76f3b;
-  --color-warning: #b8673a;
-  --color-error: #8c3a2e;
-  --color-info: #c76f3b;
+  --color-success: #7c3aed;
+  --color-warning: #9f1239;
+  --color-error: #881337;
+  --color-info: #7c3aed;
 
-  --card-bg: #1c1a22;
-  --card-border: rgba(234, 230, 224, 0.08);
+  --card-bg: #11131c;
+  --card-border: rgba(255, 255, 255, 0.08);
 
-  --background: #141318;
-  --foreground: #eae6e0;
-  --card: #1c1a22;
-  --card-foreground: #eae6e0;
-  --popover: #1c1a22;
-  --popover-foreground: #eae6e0;
-  --secondary: #24222b;
-  --secondary-foreground: #938e87;
-  --muted: #24222b;
-  --muted-foreground: #938e87;
-  --accent: #24222b;
-  --accent-foreground: #eae6e0;
-  --destructive: #8c3a2e;
-  --destructive-foreground: #eae6e0;
-  --border: rgba(234, 230, 224, 0.08);
-  --input: rgba(234, 230, 224, 0.12);
-  --ring: #c76f3b;
+  --background: #0a0b10;
+  --foreground: #f8fafc;
+  --card: #11131c;
+  --card-foreground: #f8fafc;
+  --popover: #11131c;
+  --popover-foreground: #f8fafc;
+  --secondary: #161926;
+  --secondary-foreground: #94a3b8;
+  --muted: #161926;
+  --muted-foreground: #94a3b8;
+  --accent: #161926;
+  --accent-foreground: #f8fafc;
+  --destructive: #881337;
+  --destructive-foreground: #f8fafc;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #9f1239;
 }
 
 @layer base {
@@ -203,11 +213,11 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: "Outfit", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #141318;
+    background: #0a0b10;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: "Space Grotesk", sans-serif;
-    color: #eae6e0;
+    color: #f8fafc;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -275,9 +285,9 @@
 
 /* Performant Layered 3D Depth & Elevation Tokens (60fps, WCAG AA contrast) */
 .glass-depth-card {
-  background: rgba(28, 26, 34, 0.75);
-  border: 1px solid rgba(234, 230, 224, 0.08);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(234, 230, 224, 0.08);
+  background: rgba(17, 19, 28, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease;
@@ -286,8 +296,8 @@
 
 .glass-depth-card:hover {
   transform: translateY(-3px) scale(1.004);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(199, 111, 59, 0.15);
-  border-color: rgba(199, 111, 59, 0.25);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.85), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -302,77 +312,73 @@
    HACKATHON-LEVEL TYPOGRAPHY & DESIGN SYSTEM (PATHFINDER DASHBOARD)
    Scoped to .pathfinder-dashboard to never touch LampLogin/Auth
    Palette:
-     - Main page titles & primary headings: #eae6e0 (Warm Off-White)
-     - Primary accent (Burnt Copper):       #c76f3b
-     - Secondary accent (Burnished Bronze): #b8673a
-     - Rust accent:                         #8c3a2e
-     - Supporting & body text:             #938e87 (Warm Sand Grey)
-     - Key metrics & statistics:            #eae6e0 (Warm Off-White)
+     - Main page titles & primary headings: #f8fafc (Crisp Platinum White)
+     - Tier 1 Accent (Deep Wine Velvet):    #9f1239 / #881337
+     - Tier 2 Accent (Royal Violet Amethyst): #7c3aed / #6d28d9
+     - Tier 3 Accent (Clean Platinum White):  #ffffff / #f1f5f9
+     - Supporting & body text:             #94a3b8 (Refined Silver Grey)
+     - Key metrics & statistics:            #f8fafc (Crisp Platinum White)
    ========================================================================== */
 
 .pathfinder-dashboard {
-  --pf-heading-primary: #eae6e0;
-  --pf-ai-accent: #c76f3b;
-  --pf-heading-secondary: #eae6e0;
-  --pf-text-body: #938e87;
-  --pf-ai-label: #b8673a;
-  --pf-metric-value: #eae6e0;
+  --pf-heading-primary: #f8fafc;
+  --pf-wine-accent: #9f1239;
+  --pf-violet-accent: #7c3aed;
+  --pf-heading-secondary: #f8fafc;
+  --pf-text-body: #94a3b8;
+  --pf-metric-value: #f8fafc;
 
   font-family: "Outfit", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #938e87;
+  color: #94a3b8;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 1. Main page titles and primary headings: #eae6e0 */
+/* 1. Main page titles and primary headings: #f8fafc */
 .pathfinder-dashboard h1 {
   font-family: "Space Grotesk", "Outfit", sans-serif;
-  color: #eae6e0 !important;
+  color: #f8fafc !important;
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.18;
 }
 
-/* 2. Section headings and subheadings: #eae6e0 */
+/* 2. Section headings and subheadings: #f8fafc */
 .pathfinder-dashboard h2,
 .pathfinder-dashboard h3,
 .pathfinder-dashboard h4,
 .pathfinder-dashboard h5,
 .pathfinder-dashboard h6 {
   font-family: "Space Grotesk", "Outfit", sans-serif;
-  color: #eae6e0 !important;
+  color: #f8fafc !important;
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.28;
 }
 
-/* 3. Paragraphs, descriptions, supporting text: #938e87 */
+/* 3. Paragraphs, descriptions, supporting text: #94a3b8 */
 .pathfinder-dashboard p {
-  color: #938e87;
+  color: #94a3b8;
   font-weight: 400;
   line-height: 1.65;
 }
 
-/* 4. AI-highlighted words and selected heading accents: #c76f3b (Burnt Copper) */
-.pathfinder-dashboard .ai-highlight,
-.pathfinder-dashboard .ai-accent,
-.pathfinder-dashboard .text-accent-ai {
-  color: #c76f3b !important;
+/* 4. AI-highlighted words and accents */
+.pathfinder-dashboard .ai-highlight-wine {
+  color: #9f1239 !important;
   font-weight: 600;
 }
 
-/* 5. AI labels, small interactive text accents, secondary highlights: #b8673a (Burnished Bronze) */
-.pathfinder-dashboard .ai-label,
-.pathfinder-dashboard .ai-badge {
-  color: #b8673a !important;
-  font-weight: 500;
+.pathfinder-dashboard .ai-highlight-violet {
+  color: #7c3aed !important;
+  font-weight: 600;
 }
 
-/* 6. Utility class color mappings consolidated to SSOT */
+/* 5. Utility class color mappings consolidated to SSOT */
 .pathfinder-dashboard .text-slate-100,
 .pathfinder-dashboard .text-slate-200,
 .pathfinder-dashboard .text-white {
-  color: #eae6e0 !important;
+  color: #f8fafc !important;
 }
 
 .pathfinder-dashboard .text-slate-400,
@@ -381,25 +387,49 @@
 .pathfinder-dashboard .text-zinc-500,
 .pathfinder-dashboard .text-gray-400,
 .pathfinder-dashboard .text-gray-500 {
-  color: #938e87 !important;
+  color: #94a3b8 !important;
 }
 
-/* Consolidated Copper Button Utility */
-.pathfinder-dashboard .btn-copper {
-  background: linear-gradient(135deg, #c76f3b, #b8673a) !important;
-  color: #eae6e0 !important;
-  border: 1px solid rgba(199, 111, 59, 0.4) !important;
-  box-shadow: 0 4px 20px rgba(199, 111, 59, 0.25) !important;
+/* Wine Button Utility */
+.pathfinder-dashboard .btn-wine {
+  background: linear-gradient(135deg, #9f1239, #881337) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(159, 18, 57, 0.45) !important;
+  box-shadow: 0 4px 20px rgba(159, 18, 57, 0.3) !important;
 }
 
-.pathfinder-dashboard .btn-copper:hover {
-  background: linear-gradient(135deg, #b8673a, #a8582b) !important;
+.pathfinder-dashboard .btn-wine:hover {
+  background: linear-gradient(135deg, #881337, #701a35) !important;
+}
+
+/* Violet Button Utility */
+.pathfinder-dashboard .btn-violet {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(124, 58, 237, 0.45) !important;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3) !important;
+}
+
+.pathfinder-dashboard .btn-violet:hover {
+  background: linear-gradient(135deg, #6d28d9, #5b21b6) !important;
+}
+
+/* Crisp Monochrome Button Utility */
+.pathfinder-dashboard .btn-mono {
+  background: #ffffff !important;
+  color: #0a0b10 !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15) !important;
+}
+
+.pathfinder-dashboard .btn-mono:hover {
+  background: #f1f5f9 !important;
 }
 
 /* Selection highlight */
 .pathfinder-dashboard ::selection {
-  background: rgba(199, 111, 59, 0.35);
-  color: #eae6e0;
+  background: rgba(124, 58, 237, 0.35);
+  color: #f8fafc;
 }
 
 /* ==========================================================================

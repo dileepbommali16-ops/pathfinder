@@ -148,28 +148,28 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#1c1a22] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
       {/* Ambient background glow */}
-      <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-[#c76f3b]/10 blur-3xl pointer-events-none" />
-      <div className="absolute -right-20 -bottom-20 h-64 w-64 rounded-full bg-[#c76f3b]/10 blur-3xl pointer-events-none" />
+      <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-[#9f1239]/12 blur-3xl pointer-events-none" />
+      <div className="absolute -right-20 -bottom-20 h-64 w-64 rounded-full bg-[#9f1239]/12 blur-3xl pointer-events-none" />
 
       <div className="relative z-10">
         {/* Top Header */}
         <div className="flex flex-col gap-4 border-b border-white/[0.08] pb-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#c76f3b]/30 bg-[#c76f3b]/10 text-[#c76f3b] shadow-[0_0_20px_rgba(199, 111, 59,0.2)]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#9f1239]/40 bg-[#9f1239]/15 text-[#9f1239] shadow-[0_0_20px_rgba(159,18,57,0.25)]">
               <Cpu className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black tracking-tight text-[#eae6e0] sm:text-2xl">
+                <h2 className="text-xl font-black tracking-tight text-[#f8fafc] sm:text-2xl">
                   Student Career Digital Twin
                 </h2>
-                <span className="rounded-full border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#c76f3b]">
+                <span className="rounded-full border border-[#9f1239]/40 bg-[#9f1239]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#9f1239]">
                   Live Model
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-[#938e87]">
+              <p className="mt-0.5 text-xs text-[#94a3b8]">
                 Unified state model aggregating verified candidate attributes, ML inference, and transparent readiness vectors.
               </p>
             </div>
@@ -177,15 +177,15 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
 
           {/* Provenance Pills */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#141318] px-2.5 py-1 text-[11px] font-medium text-[#938e87]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#eae6e0]"></span>
+            <span className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#0a0b10] px-2.5 py-1 text-[11px] font-medium text-[#94a3b8]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#9f1239]"></span>
               User Verified
             </span>
-            <span className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#141318] px-2.5 py-1 text-[11px] font-medium text-[#938e87]">
-              <span className="h-1.5 w-1.5 rounded-full bg-zinc-300"></span>
+            <span className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#0a0b10] px-2.5 py-1 text-[11px] font-medium text-[#94a3b8]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#f8fafc]"></span>
               ML Inferred
             </span>
-            <span className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#141318] px-2.5 py-1 text-[11px] font-medium text-[#938e87]">
+            <span className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#0a0b10] px-2.5 py-1 text-[11px] font-medium text-[#94a3b8]">
               <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
               AI Prescribed
             </span>
@@ -194,47 +194,47 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
 
         {/* Digital Twin Snapshot Cards */}
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-          <div className="rounded-2xl border border-white/[0.08] bg-[#141318] p-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#938e87]">Target Role</span>
-            <p className="mt-1 text-sm font-bold text-[#eae6e0] truncate" title={profile.targetRole}>
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">Target Role</span>
+            <p className="mt-1 text-sm font-bold text-[#f8fafc] truncate" title={profile.targetRole}>
               {profile.targetRole.split(" ")[0]}...
             </p>
             <span className="text-[10px] text-white font-medium">User Verified</span>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.08] bg-[#141318] p-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#938e87]">Academic Standing</span>
-            <p className="mt-1 text-sm font-bold text-[#eae6e0]">
-              {profile.cgpa.toFixed(1)} <span className="text-xs text-[#938e87]">CGPA</span>
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">Academic Standing</span>
+            <p className="mt-1 text-sm font-bold text-[#f8fafc]">
+              {profile.cgpa.toFixed(1)} <span className="text-xs text-[#94a3b8]">CGPA</span>
             </p>
-            <span className={`text-[10px] font-medium ${profile.backlogs === 0 ? "text-white" : "text-[#c76f3b]"}`}>
+            <span className={`text-[10px] font-medium ${profile.backlogs === 0 ? "text-white" : "text-[#9f1239]"}`}>
               {profile.backlogs === 0 ? "0 Backlogs" : `${profile.backlogs} Backlog(s)`}
             </span>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.08] bg-[#141318] p-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#938e87]">ML Placement Readiness</span>
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">ML Placement Readiness</span>
             <p className="mt-1 text-sm font-bold text-white">
               {predictionChance.toFixed(1)}%
             </p>
-            <span className="text-[10px] text-[#938e87] font-medium">RandomForest Model</span>
+            <span className="text-[10px] text-[#94a3b8] font-medium">RandomForest Model</span>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.08] bg-[#141318] p-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#938e87]">Problem Solving</span>
-            <p className="mt-1 text-sm font-bold text-[#eae6e0]">
-              {profile.coding} <span className="text-xs text-[#938e87]">/ 10</span>
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">Problem Solving</span>
+            <p className="mt-1 text-sm font-bold text-[#f8fafc]">
+              {profile.coding} <span className="text-xs text-[#94a3b8]">/ 10</span>
             </p>
             <span className="text-[10px] text-white font-medium">DSA Confidence</span>
           </div>
 
-          <div className="col-span-2 sm:col-span-4 lg:col-span-1 rounded-2xl border border-white/[0.08] bg-[#141318] p-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#938e87]">Profile Completeness</span>
+          <div className="col-span-2 sm:col-span-4 lg:col-span-1 rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">Profile Completeness</span>
             <div className="mt-1.5 flex items-center justify-between">
-              <span className="text-sm font-bold text-[#eae6e0]">{completenessPercent}%</span>
+              <span className="text-sm font-bold text-[#f8fafc]">{completenessPercent}%</span>
               <span className="text-[10px] text-white font-medium">Active Twin</span>
             </div>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#1c1a22]">
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#11131c]">
               <div
                 className="h-full bg-gradient-to-r from-zinc-300 to-white transition-all duration-500"
                 style={{ width: `${completenessPercent}%` }}
@@ -247,10 +247,10 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
         <div className="mt-8">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-[#eae6e0]">
+              <h3 className="text-sm font-bold text-[#f8fafc]">
                 Multi-Dimensional Career Readiness Vectors
               </h3>
-              <p className="text-xs text-[#938e87]">
+              <p className="text-xs text-[#94a3b8]">
                 Transparent breakdown of what comprises your placement probability. Every dimension is independently actionable.
               </p>
             </div>
@@ -271,7 +271,7 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                   iconBg: "border-white/20 bg-white/10 text-white",
                   text: "text-white",
                   actionBtn: "bg-white hover:bg-zinc-200 active:bg-zinc-300 text-zinc-950 font-medium shadow-[0_0_12px_rgba(255,255,255,0.15)]",
-                  actionBg: "border-white/[0.08] bg-[#141318]"
+                  actionBg: "border-white/[0.08] bg-[#0a0b10]"
                 },
                 projects: {
                   border: "border-white/20",
@@ -279,7 +279,7 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                   iconBg: "border-white/20 bg-white/10 text-white",
                   text: "text-white",
                   actionBtn: "bg-white hover:bg-zinc-200 active:bg-zinc-300 text-zinc-950 font-medium shadow-[0_0_12px_rgba(255,255,255,0.15)]",
-                  actionBg: "border-white/[0.08] bg-[#141318]"
+                  actionBg: "border-white/[0.08] bg-[#0a0b10]"
                 },
                 academics: {
                   border: "border-white/20",
@@ -287,7 +287,7 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                   iconBg: "border-white/20 bg-white/10 text-white",
                   text: "text-white",
                   actionBtn: "bg-white hover:bg-zinc-200 active:bg-zinc-300 text-zinc-950 font-medium shadow-[0_0_12px_rgba(255,255,255,0.15)]",
-                  actionBg: "border-white/[0.08] bg-[#141318]"
+                  actionBg: "border-white/[0.08] bg-[#0a0b10]"
                 },
                 role_align: {
                   border: "border-white/20",
@@ -295,7 +295,7 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                   iconBg: "border-white/20 bg-white/10 text-white",
                   text: "text-white",
                   actionBtn: "bg-white hover:bg-zinc-200 active:bg-zinc-300 text-zinc-950 font-medium shadow-[0_0_12px_rgba(255,255,255,0.15)]",
-                  actionBg: "border-white/[0.08] bg-[#141318]"
+                  actionBg: "border-white/[0.08] bg-[#0a0b10]"
                 },
                 interview: {
                   border: "border-white/20",
@@ -303,7 +303,7 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                   iconBg: "border-white/20 bg-white/10 text-white",
                   text: "text-white",
                   actionBtn: "bg-white hover:bg-zinc-200 active:bg-zinc-300 text-zinc-950 font-medium shadow-[0_0_12px_rgba(255,255,255,0.15)]",
-                  actionBg: "border-white/[0.08] bg-[#141318]"
+                  actionBg: "border-white/[0.08] bg-[#0a0b10]"
                 },
                 resume: {
                   border: "border-white/20",
@@ -311,7 +311,7 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                   iconBg: "border-white/20 bg-white/10 text-white",
                   text: "text-white",
                   actionBtn: "bg-white hover:bg-zinc-200 active:bg-zinc-300 text-zinc-950 font-medium shadow-[0_0_12px_rgba(255,255,255,0.15)]",
-                  actionBg: "border-white/[0.08] bg-[#141318]"
+                  actionBg: "border-white/[0.08] bg-[#0a0b10]"
                 }
               };
 
@@ -322,8 +322,8 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                   key={dim.id}
                   className={`overflow-hidden rounded-2xl border transition-all duration-300 ${
                     isExpanded
-                      ? `${palette.border} bg-[#141318] ${palette.glow}`
-                      : "border-white/[0.08] bg-[#141318] hover:border-[#c76f3b]/30"
+                      ? `${palette.border} bg-[#0a0b10] ${palette.glow}`
+                      : "border-white/[0.08] bg-[#0a0b10] hover:border-[#9f1239]/40"
                   }`}
                 >
                   <button
@@ -341,10 +341,10 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-[#eae6e0]">{dim.name}</span>
-                          <span className="text-[10px] font-semibold text-[#938e87]">{dim.weight}</span>
+                          <span className="text-xs font-bold text-[#f8fafc]">{dim.name}</span>
+                          <span className="text-[10px] font-semibold text-[#94a3b8]">{dim.weight}</span>
                         </div>
-                        <span className="text-[11px] text-[#938e87]">{dim.currentState}</span>
+                        <span className="text-[11px] text-[#94a3b8]">{dim.currentState}</span>
                       </div>
                     </div>
 
@@ -353,14 +353,14 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                         <span className={`text-sm font-black ${palette.text}`}>
                           {dim.score}%
                         </span>
-                        <span className="block text-[9px] font-bold uppercase tracking-wider text-[#938e87]">
+                        <span className="block text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]">
                           {dim.source}
                         </span>
                       </div>
                       {isExpanded ? (
-                        <ChevronUp className="h-4 w-4 text-[#938e87]" />
+                        <ChevronUp className="h-4 w-4 text-[#94a3b8]" />
                       ) : (
-                        <ChevronDown className="h-4 w-4 text-[#938e87]" />
+                        <ChevronDown className="h-4 w-4 text-[#94a3b8]" />
                       )}
                     </div>
                   </button>
@@ -374,18 +374,18 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
                       className="border-t border-white/[0.08] bg-white/[0.01] p-4 text-xs"
                     >
                       <div className="grid gap-3 sm:grid-cols-3">
-                        <div className="rounded-xl border border-white/[0.08] bg-[#1c1a22] p-3">
-                          <span className="font-bold text-[#c76f3b] uppercase text-[10px] block">What Is Missing</span>
-                          <p className="mt-1 text-[#eae6e0] leading-relaxed">{dim.missing}</p>
+                        <div className="rounded-xl border border-white/[0.08] bg-[#11131c] p-3">
+                          <span className="font-bold text-[#ffffff] uppercase text-[10px] block">What Is Missing</span>
+                          <p className="mt-1 text-[#f8fafc] leading-relaxed">{dim.missing}</p>
                         </div>
-                        <div className="rounded-xl border border-white/[0.08] bg-[#1c1a22] p-3">
+                        <div className="rounded-xl border border-white/[0.08] bg-[#11131c] p-3">
                           <span className="font-bold text-white uppercase text-[10px] block">Why It Matters</span>
-                          <p className="mt-1 text-[#eae6e0] leading-relaxed">{dim.whyItMatters}</p>
+                          <p className="mt-1 text-[#f8fafc] leading-relaxed">{dim.whyItMatters}</p>
                         </div>
                         <div className={`flex flex-col justify-between rounded-xl border ${palette.actionBg} p-3`}>
                           <div>
                             <span className={`font-bold ${palette.text} uppercase text-[10px] block`}>Recommended Action</span>
-                            <p className="mt-1 text-[#eae6e0] leading-relaxed">{dim.nextAction}</p>
+                            <p className="mt-1 text-[#f8fafc] leading-relaxed">{dim.nextAction}</p>
                           </div>
                           <button
                             type="button"
@@ -409,10 +409,10 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
         </div>
 
         {/* Explainability & Legal Disclaimer (Strict compliance with Section 6 & 21) */}
-        <div className="mt-6 flex items-start gap-2.5 rounded-2xl border border-white/[0.08] bg-[#141318] p-3.5 text-[11px] text-[#938e87]">
+        <div className="mt-6 flex items-start gap-2.5 rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-3.5 text-[11px] text-[#94a3b8]">
           <HelpCircle className="h-4 w-4 shrink-0 text-white mt-0.5" />
           <p className="leading-relaxed">
-            <strong className="text-[#eae6e0]">ML Model Transparency Notice:</strong> The placement probability estimate is derived from a supervised <code className="text-white font-mono">RandomForestClassifier</code> trained on 650 historical student placement records (2024–2026). It represents a statistical estimation based on historical hiring criteria, <span className="text-[#eae6e0] font-semibold">not a guaranteed placement outcome</span>. Real campus placement outcomes depend on company-specific drive criteria, written test performance, and live interview rounds.
+            <strong className="text-[#f8fafc]">ML Model Transparency Notice:</strong> The placement probability estimate is derived from a supervised <code className="text-white font-mono">RandomForestClassifier</code> trained on 650 historical student placement records (2024–2026). It represents a statistical estimation based on historical hiring criteria, <span className="text-[#f8fafc] font-semibold">not a guaranteed placement outcome</span>. Real campus placement outcomes depend on company-specific drive criteria, written test performance, and live interview rounds.
           </p>
         </div>
       </div>

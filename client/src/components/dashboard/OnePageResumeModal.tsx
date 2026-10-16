@@ -66,11 +66,11 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
       {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-4xl rounded-3xl border border-white/10 bg-[#141318] shadow-[0_16px_64px_rgba(0,0,0,0.85)] overflow-hidden my-8 cursor-default"
+        className="relative w-full max-w-4xl rounded-3xl border border-white/10 bg-[#0a0b10] shadow-[0_16px_64px_rgba(0,0,0,0.85)] overflow-hidden my-8 cursor-default"
       >
         
         {/* Top Controls Bar (Sticky, Hidden during Print) */}
-        <div className="print:hidden sticky top-0 z-40 flex items-center justify-between border-b border-white/[0.08] bg-[#1c1a22]/95 backdrop-blur-xl px-4 sm:px-6 py-3.5 shadow-md">
+        <div className="print:hidden sticky top-0 z-40 flex items-center justify-between border-b border-white/[0.08] bg-[#11131c]/95 backdrop-blur-xl px-4 sm:px-6 py-3.5 shadow-md">
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
@@ -81,8 +81,8 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
               <span>Back to Dashboard</span>
             </button>
             <div className="hidden sm:flex items-center gap-2">
-              <h3 className="text-sm font-bold text-[#eae6e0]">One-Page ATS Resume</h3>
-              <span className="rounded-full border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2 py-0.5 text-[10px] font-bold text-[#c76f3b]">
+              <h3 className="text-sm font-bold text-[#f8fafc]">One-Page ATS Resume</h3>
+              <span className="rounded-full border border-[#ffffff]/30 bg-[#ffffff]/10 px-2 py-0.5 text-[10px] font-bold text-[#ffffff]">
                 Google X-Y-Z
               </span>
             </div>
@@ -99,7 +99,7 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
             <button
               onClick={onClose}
               aria-label="Close resume modal"
-              className="rounded-xl border border-white/10 bg-black/40 p-2 text-[#938e87] hover:text-white hover:border-white/20 transition-all cursor-pointer"
+              className="rounded-xl border border-white/10 bg-black/40 p-2 text-[#94a3b8] hover:text-white hover:border-white/20 transition-all cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -242,7 +242,7 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
         </div>
 
         {/* Bottom Controls Bar (Hidden during Print) */}
-        <div className="print:hidden sticky bottom-0 z-40 flex items-center justify-between border-t border-white/[0.08] bg-[#1c1a22]/95 backdrop-blur-xl px-6 py-3.5 shadow-lg">
+        <div className="print:hidden sticky bottom-0 z-40 flex items-center justify-between border-t border-white/[0.08] bg-[#11131c]/95 backdrop-blur-xl px-6 py-3.5 shadow-lg">
           <button
             onClick={onClose}
             className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white hover:bg-white/20 hover:border-white/40 transition-all cursor-pointer active:scale-95 shadow-sm"

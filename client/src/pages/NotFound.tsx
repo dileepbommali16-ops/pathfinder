@@ -12,22 +12,22 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-      <Card className="w-full max-w-lg mx-4 shadow-2xl border border-[#24222b] bg-[#1c1a22] backdrop-blur-sm">
+      <Card className="w-full max-w-lg mx-4 shadow-2xl border border-[#161926] bg-[#11131c] backdrop-blur-sm">
         <CardContent className="pt-8 pb-8 text-center">
           <div className="flex justify-center mb-6">
             <div className="relative">
-              <div className="absolute inset-0 bg-[#8c3a2e]/10 rounded-full animate-pulse" />
-              <AlertCircle className="relative h-16 w-16 text-[#8c3a2e]" />
+              <div className="absolute inset-0 bg-[#9f1239]/10 rounded-full animate-pulse" />
+              <AlertCircle className="relative h-16 w-16 text-[#9f1239]" />
             </div>
           </div>
 
-          <h1 className="text-4xl font-bold text-[#eae6e0] mb-2">404</h1>
+          <h1 className="text-4xl font-bold text-[#f8fafc] mb-2">404</h1>
 
-          <h2 className="text-xl font-semibold text-[#eae6e0] mb-4">
+          <h2 className="text-xl font-semibold text-[#f8fafc] mb-4">
             Page Not Found
           </h2>
 
-          <p className="text-[#938e87] mb-8 leading-relaxed">
+          <p className="text-[#94a3b8] mb-8 leading-relaxed">
             Sorry, the page you are looking for doesn't exist.
             <br />
             It may have been moved or deleted.

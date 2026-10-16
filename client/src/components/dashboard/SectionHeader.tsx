@@ -13,10 +13,10 @@ interface SectionHeaderProps {
 }
 
 const MONOCHROME_HEADER_STYLE = {
-  badge: "border-[#c76f3b]/30 bg-[#c76f3b]/10 text-[#c76f3b] shadow-sm",
-  icon: "bg-[#1c1a22] text-[#c76f3b] border-[rgba(234,230,224,0.08)]",
-  titleTint: "text-[#eae6e0]",
-  line: "from-[#c76f3b]/30 via-[rgba(234,230,224,0.08)] to-transparent",
+  badge: "border-[#ffffff]/30 bg-[#ffffff]/10 text-[#ffffff] shadow-sm",
+  icon: "bg-[#11131c] text-[#ffffff] border-[rgba(255,255,255,0.08)]",
+  titleTint: "text-[#f8fafc]",
+  line: "from-[#ffffff]/30 via-[rgba(255,255,255,0.08)] to-transparent",
 };
 
 const ACCENT_STYLES = {
@@ -42,12 +42,12 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
   const styles = ACCENT_STYLES[accent] || ACCENT_STYLES.accent;
 
   return (
-    <div className="mb-6 sm:mb-8 pb-3 border-b border-[rgba(234,230,224,0.08)]">
+    <div className="mb-6 sm:mb-8 pb-3 border-b border-[rgba(255,255,255,0.08)]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           {Icon && (
             <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${styles.icon}`}>
-              <Icon className="h-5 w-5 text-[#c76f3b]" />
+              <Icon className="h-5 w-5 text-[#ffffff]" />
             </div>
           )}
           <div>
@@ -59,14 +59,14 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
                 </span>
               )}
             </div>
-            <p className="mt-0.5 text-xs sm:text-sm text-[#938e87] leading-relaxed">{description}</p>
+            <p className="mt-0.5 text-xs sm:text-sm text-[#94a3b8] leading-relaxed">{description}</p>
           </div>
         </div>
 
         {(action || helperLabel || onAskCoach) && (
           <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
             {helperLabel && (
-              <span className="text-[11px] font-medium text-[#938e87] bg-[#1c1a22] border border-[rgba(234,230,224,0.08)] px-2.5 py-1 rounded-lg">
+              <span className="text-[11px] font-medium text-[#94a3b8] bg-[#11131c] border border-[rgba(255,255,255,0.08)] px-2.5 py-1 rounded-lg">
                 ℹ️ {helperLabel}
               </span>
             )}
@@ -74,9 +74,9 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
               <button
                 type="button"
                 onClick={() => onAskCoach(`Can you explain the '${title}' section? What is this showing and what should I do here?`)}
-                className="flex items-center gap-1.5 rounded-lg border border-[#c76f3b]/30 bg-[#c76f3b]/10 px-2.5 py-1 text-[11px] font-semibold text-[#eae6e0] hover:bg-[#c76f3b]/20 hover:border-[#c76f3b] transition-all active:scale-95 shadow-sm cursor-pointer"
+                className="flex items-center gap-1.5 rounded-lg border border-[#ffffff]/30 bg-[#ffffff]/10 px-2.5 py-1 text-[11px] font-semibold text-[#f8fafc] hover:bg-[#ffffff]/20 hover:border-[#ffffff] transition-all active:scale-95 shadow-sm cursor-pointer"
               >
-                <Sparkles className="h-3 w-3 text-[#c76f3b]" />
+                <Sparkles className="h-3 w-3 text-[#ffffff]" />
                 <span>Ask Coach about this</span>
               </button>
             )}
