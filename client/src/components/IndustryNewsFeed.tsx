@@ -133,7 +133,7 @@ export default function IndustryNewsFeed({
           },
         },
         {
-          onSuccess: (res) => {
+          onSuccess: (res: any) => {
             setAnalysisCache((prev) => ({ ...prev, [item.id]: res }));
           },
         }
@@ -141,10 +141,10 @@ export default function IndustryNewsFeed({
     }
   };
 
-  const allItems = newsQuery.data?.items || [];
+  const allItems = (newsQuery.data as any)?.items || [];
   const filteredItems = useMemo(() => {
     if (showSavedOnly) {
-      return allItems.filter((item) => savedIds.includes(item.id));
+      return allItems.filter((item: any) => savedIds.includes(item.id));
     }
     return allItems;
   }, [allItems, showSavedOnly, savedIds]);
@@ -393,7 +393,7 @@ export default function IndustryNewsFeed({
 
       {/* Feed Cards List */}
       <div className="space-y-4">
-        {filteredItems.map((item, index) => {
+        {filteredItems.map((item: any, index: number) => {
           const isSaved = savedIds.includes(item.id);
           const isExpanded = expandedAnalysisId === item.id;
           const deepAnalysis = analysisCache[item.id];

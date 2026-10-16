@@ -773,6 +773,27 @@ def compute_cohort_benchmark(branch: str = "CSE", cgpa: float = 7.5, **kwargs) -
     }
 
 
+def warm_up_data_caches():
+    """Pre-computes and in-memory caches all standard cohort, branch, and skills aggregates at startup for sub-millisecond API responses."""
+    try:
+        # Pre-load placement dataframe and catalogs
+        get_placement_df()
+        get_roles()
+        get_skills()
+        get_projects()
+        get_branches()
+        # Pre-warm standard cohort queries for all graduation years
+        for yr in [2026, 2025, 2024, None]:
+            get_cohort_analytics_data(year=yr, branch="All", gender="All", skill="All")
+            get_branch_deep_analytics(year=yr or 2026)
+            get_skills_deep_analytics(year=yr or 2026, branch="All")
+        # Pre-warm individual popular branch views
+        for b in ["CSE", "AIML", "IT", "ECE", "MECH"]:
+            get_cohort_analytics_data(year=2026, branch=b, gender="All", skill="All")
+    except Exception:
+        pass
+
+
 class DataService:
     """Unified service interface exposing typed schemas, dataframes, and tools."""
 

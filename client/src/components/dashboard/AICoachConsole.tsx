@@ -338,6 +338,21 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const lastAssistantReplyRef = useRef<string>("");
   const voiceStreamHandledRef = useRef<boolean>(false);
   const [hasTeluguVoice, setHasTeluguVoice] = useState<boolean>(true);
+  const [dismissTeluguNotice, setDismissTeluguNotice] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return localStorage.getItem("pathfinder_dismiss_te_notice") === "1";
+      } catch {}
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (voiceError) {
+      const timer = setTimeout(() => setVoiceError(null), 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [voiceError]);
 
   // Speaker Diagnostic Test States
   const [speakerTestState, setSpeakerTestState] = useState<"idle" | "testing" | "success" | "error">("idle");
@@ -1525,14 +1540,27 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       )}
 
       {/* Telugu Voice Fallback Banner */}
-      {voiceLang === "te-IN" && !hasTeluguVoice && (
+      {voiceLang === "te-IN" && !hasTeluguVoice && !dismissTeluguNotice && (
         <div className="flex items-center justify-between border-b border-[#6d28d9]/30 bg-[#6d28d9]/10 px-6 py-2 text-xs text-[#6d28d9]">
           <div className="flex items-center gap-2">
             <Globe className="h-4 w-4 shrink-0 text-[#6d28d9]" />
             <span>
-              ℹ️ <strong>Telugu Text Fallback Active:</strong> Your browser does not have a native Telugu voice installed. Full Telugu responses are displayed on screen below.
+              ℹ️ <strong>Telugu Mode Active:</strong> Full Telugu responses are displayed in chat.
             </span>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setDismissTeluguNotice(true);
+              try {
+                localStorage.setItem("pathfinder_dismiss_te_notice", "1");
+              } catch {}
+            }}
+            className="text-[#6d28d9] hover:text-white font-bold ml-2 cursor-pointer"
+            title="Dismiss notice"
+          >
+            ✕
+          </button>
         </div>
       )}
 

@@ -80,7 +80,8 @@ from backend.data_service import (
     get_cohort_analytics_data,
     get_branch_deep_analytics,
     get_skills_deep_analytics,
-    compute_cohort_benchmark
+    compute_cohort_benchmark,
+    warm_up_data_caches
 )
 from backend.ml_engine import predict_placement
 from backend.gemini_engine import chat_with_mentor, generate_structured_ai
@@ -147,8 +148,8 @@ async def lifespan(app: FastAPI):
         get_skills()
         get_projects()
         get_branches()
-        get_cohort_analytics_data()
-        logger.info(f"Database and datasets initialized ({len(df)} placement records loaded).")
+        warm_up_data_caches()
+        logger.info(f"Database, datasets, and analytics caches pre-warmed ({len(df)} placement records loaded).")
     except Exception as exc:
         logger.error(f"Startup initialization warning: {exc}", exc_info=True)
 

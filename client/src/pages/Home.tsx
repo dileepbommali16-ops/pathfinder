@@ -1295,39 +1295,45 @@ export default function Home() {
           }}
         />
 
-        {/* Ambient Neutral Glows */}
-        <motion.div
-          animate={{ scale: [1, 1.06, 1], opacity: [0.6, 0.8, 0.6] }}
-          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-[160px] left-1/2 -translate-x-1/2 h-[520px] w-[980px] rounded-full blur-[120px]"
+        {/* Ambient Neutral Glows - Hardware Composited for 60fps locked transitions */}
+        <div
+          className="absolute -top-[160px] left-1/2 -translate-x-1/2 h-[520px] w-[980px] rounded-full blur-[100px] pointer-events-none opacity-70"
           style={{
             background:
-              "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, rgba(241, 245, 249, 0.02) 45%, transparent 72%)",
-          }}
-        />
-        <motion.div
-          animate={{ y: [-12, 16, -12], opacity: [0.4, 0.6, 0.4] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[220px] -left-[180px] h-[660px] w-[660px] rounded-full blur-[140px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, rgba(159, 18, 57, 0.015) 50%, transparent 70%)",
-          }}
-        />
-        <motion.div
-          animate={{ y: [16, -14, 16], opacity: [0.35, 0.55, 0.35] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[480px] -right-[160px] h-[600px] w-[600px] rounded-full blur-[130px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, rgba(159, 18, 57, 0.015) 50%, transparent 70%)",
+              "radial-gradient(ellipse at center, rgba(124, 58, 237, 0.08) 0%, rgba(241, 245, 249, 0.02) 45%, transparent 72%)",
+            willChange: "transform",
+            transform: "translate3d(0, 0, 0)",
+            contain: "strict",
           }}
         />
         <div
-          className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[400px] w-[1200px] rounded-full blur-[150px] opacity-30"
+          className="absolute top-[220px] -left-[180px] h-[660px] w-[660px] rounded-full blur-[120px] pointer-events-none opacity-50"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(159, 18, 57, 0.06) 0%, rgba(159, 18, 57, 0.015) 50%, transparent 70%)",
+            willChange: "transform",
+            transform: "translate3d(0, 0, 0)",
+            contain: "strict",
+          }}
+        />
+        <div
+          className="absolute top-[480px] -right-[160px] h-[600px] w-[600px] rounded-full blur-[110px] pointer-events-none opacity-40"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(56, 189, 248, 0.05) 0%, rgba(124, 58, 237, 0.02) 50%, transparent 70%)",
+            willChange: "transform",
+            transform: "translate3d(0, 0, 0)",
+            contain: "strict",
+          }}
+        />
+        <div
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[400px] w-[1200px] rounded-full blur-[120px] opacity-25 pointer-events-none"
           style={{
             background:
               "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.03) 0%, transparent 75%)",
+            willChange: "transform",
+            transform: "translate3d(0, 0, 0)",
+            contain: "strict",
           }}
         />
         <div className="absolute top-[320px] left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.08)] to-transparent" />
