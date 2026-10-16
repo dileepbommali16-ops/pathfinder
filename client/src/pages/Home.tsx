@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, startTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DashboardHeader, TabId } from "@/components/dashboard/DashboardHeader";
 import { HeroMetrics } from "@/components/dashboard/HeroMetrics";
-import { ProfileEvaluator } from "@/components/dashboard/ProfileEvaluator";
 import { SkillGapSection } from "@/components/dashboard/SkillGapSection";
 import { RoadmapVisualizer, RoadmapData } from "@/components/dashboard/RoadmapVisualizer";
 import { AICoachConsole, Message } from "@/components/dashboard/AICoachConsole";
@@ -1490,31 +1489,6 @@ export default function Home() {
                     setProfile(merged);
                     fetchPrediction(merged);
                   }}
-                />
-              </section>
-
-              {/* Section 6: Sliders & Parameters */}
-              <section id="career-parameters-evaluator" className="space-y-4">
-                <SectionHeader
-                  title="Candidate Vector Adjustments"
-                  description="Fine-tune your verified academic standing, coding proficiency, and target company tier"
-                  badge="Profile Parameters"
-                  accent="purple"
-                  icon={Target}
-                />
-                <ProfileEvaluator
-                  profile={profile}
-                  onChange={(updated) => {
-                    const merged = { ...profile, ...updated };
-                    setProfile(merged);
-                    fetchPrediction(merged);
-                  }}
-                  onCalculate={() => fetchPrediction(profile)}
-                  onReset={() => {
-                    setProfile(DEFAULT_STUDENT_PROFILE);
-                    fetchPrediction(DEFAULT_STUDENT_PROFILE);
-                  }}
-                  isCalculating={isCalculating}
                 />
               </section>
 
