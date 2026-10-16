@@ -12,7 +12,7 @@ interface Ambient3DBackgroundProps {
 
 interface ErrorBoundaryProps {
   fallback: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -20,6 +20,8 @@ interface ErrorBoundaryState {
 }
 
 class ShaderErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  override state: ErrorBoundaryState = { hasError: false };
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -29,12 +31,12 @@ class ShaderErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySta
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(error: Error, info: ErrorInfo) {
     // Graceful silent fallback to high-speed hardware-accelerated ambient mode
     console.debug("[Ambient3DBackground] Handled shader fallback:", error.message);
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return this.props.fallback;
     }
@@ -191,7 +193,7 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = React.mem
 
       <button
         type="button"
-        onClick={(e) => {
+        onClick={(e: React.MouseEvent) => {
           e.stopPropagation();
           setVariant("smooth-speed");
         }}
@@ -208,7 +210,7 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = React.mem
 
       <button
         type="button"
-        onClick={(e) => {
+        onClick={(e: React.MouseEvent) => {
           e.stopPropagation();
           setVariant("predictive");
         }}
@@ -225,7 +227,7 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = React.mem
 
       <button
         type="button"
-        onClick={(e) => {
+        onClick={(e: React.MouseEvent) => {
           e.stopPropagation();
           setVariant("predictive-void");
         }}
@@ -242,7 +244,7 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = React.mem
 
       <button
         type="button"
-        onClick={(e) => {
+        onClick={(e: React.MouseEvent) => {
           e.stopPropagation();
           setVariant("void-field");
         }}
