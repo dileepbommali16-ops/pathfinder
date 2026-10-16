@@ -271,7 +271,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                     onClick={() => setTargetCompany(company.id)}
                     className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
                       targetCompany === company.id
-                        ? "bg-[#ffffff] text-white shadow-sm"
+                        ? "bg-[#7c3aed] text-white shadow-sm"
                         : "border border-white/[0.08] bg-[#11131c] text-[#94a3b8] hover:text-white"
                     }`}
                   >
@@ -286,7 +286,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                 <span className="text-[#94a3b8]">Recruiter Cutoff Score:</span>
                 <span className="font-bold text-[#f8fafc]">{activeCompanyData.benchmark}/100</span>
                 <span className="text-[#94a3b8]">· Your Match:</span>
-                <span className={`font-black ${companyMatchScore >= activeCompanyData.benchmark ? "text-[#ffffff]" : "text-[#94a3b8]"}`}>
+                <span className={`font-black ${companyMatchScore >= activeCompanyData.benchmark ? "text-[#7c3aed]" : "text-[#94a3b8]"}`}>
                   {companyMatchScore}%
                 </span>
               </div>
@@ -306,14 +306,14 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             {/* Strengths */}
             <div className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-5 backdrop-blur-xl">
-              <div className="flex items-center gap-2 text-[#ffffff]">
+              <div className="flex items-center gap-2 text-[#7c3aed]">
                 <CheckCircle2 className="h-4 w-4" />
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">Candidate Strengths</h4>
               </div>
               <ul className="mt-3 space-y-2">
                 {activeFeedback.strengths.map((str, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-[#f8fafc]">
-                    <span className="text-[#ffffff] font-bold">•</span>
+                    <span className="text-[#7c3aed] font-bold">•</span>
                     <span>{str}</span>
                   </li>
                 ))}
@@ -321,15 +321,15 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
             </div>
 
             {/* Gaps & Improvements */}
-            <div className="rounded-2xl border border-[#ffffff]/20 bg-[#0a0b10] p-5 backdrop-blur-xl">
-              <div className="flex items-center gap-2 text-[#ffffff]">
+            <div className="rounded-2xl border border-[#7c3aed]/30 bg-[#0a0b10] p-5 backdrop-blur-xl">
+              <div className="flex items-center gap-2 text-[#7c3aed]">
                 <AlertTriangle className="h-4 w-4" />
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">Critical Improvements</h4>
               </div>
               <ul className="mt-3 space-y-2">
                 {activeFeedback.improvements.map((imp, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-[#f8fafc]">
-                    <span className="text-[#ffffff] font-bold">•</span>
+                    <span className="text-[#7c3aed] font-bold">•</span>
                     <span>{imp}</span>
                   </li>
                 ))}
@@ -339,7 +339,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
             {/* ATS Keywords */}
             <div className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-5 backdrop-blur-xl">
               <div className="flex items-center gap-2 text-[#94a3b8]">
-                <Key className="h-4 w-4 text-[#ffffff]" />
+                <Key className="h-4 w-4 text-[#7c3aed]" />
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">Recommended ATS Keywords</h4>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -354,13 +354,13 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
             {/* Formatting Tips */}
             <div className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-5 backdrop-blur-xl">
               <div className="flex items-center gap-2 text-[#94a3b8]">
-                <LayoutTemplate className="h-4 w-4 text-[#ffffff]" />
+                <LayoutTemplate className="h-4 w-4 text-[#7c3aed]" />
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">Structural & Formatting Guidelines</h4>
               </div>
               <ul className="mt-3 space-y-2">
                 {activeFeedback.formatting_tips.map((tip, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-[#94a3b8]">
-                    <span className="text-[#ffffff] font-bold">•</span>
+                    <span className="text-[#7c3aed] font-bold">•</span>
                     <span>{tip}</span>
                   </li>
                 ))}

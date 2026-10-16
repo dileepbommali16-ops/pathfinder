@@ -409,7 +409,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             type="submit"
             id="btn-save-settings"
             disabled={isSaving}
-            className="flex items-center gap-2 rounded-2xl bg-[#ffffff] hover:bg-[#ffffff] active:bg-[#ffffff] px-6 py-3 text-xs font-bold text-white shadow-xl shadow-[#ffffff]/20 transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#9f1239] to-[#7c3aed] hover:from-[#881337] hover:to-[#6d28d9] px-6 py-3 text-xs font-bold text-white shadow-xl shadow-[#ffffff]/20 transition-all active:scale-95 disabled:opacity-50"
           >
             {isSaving ? (
               <>

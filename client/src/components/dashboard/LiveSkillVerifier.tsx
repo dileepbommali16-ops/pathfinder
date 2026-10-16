@@ -227,7 +227,7 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
           <button
             type="submit"
             disabled={isVerifying || !githubInput.trim()}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-[#ffffff] px-6 py-3.5 text-xs font-bold text-white shadow-[0_0_25px_rgba(255, 255, 255,0.3)] transition-all hover:bg-[#ffffff]/90 active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-[#7c3aed] px-6 py-3.5 text-xs font-bold text-white shadow-[0_0_25px_rgba(124,58,237,0.3)] transition-all hover:bg-[#6d28d9] active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {isVerifying ? (
               <>
@@ -331,7 +331,7 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
                 <button
                   type="button"
                   onClick={handleSyncToProfile}
-                  className="flex items-center gap-1.5 rounded-xl bg-[#ffffff] px-3.5 py-1.5 text-xs font-bold text-white transition-all hover:bg-[#ffffff]/90 active:scale-95 shadow-sm cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl bg-[#7c3aed] px-3.5 py-1.5 text-xs font-bold text-white transition-all hover:bg-[#6d28d9] active:scale-95 shadow-sm cursor-pointer"
                 >
                   {applied ? (
                     <>

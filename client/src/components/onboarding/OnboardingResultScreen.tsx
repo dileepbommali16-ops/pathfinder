@@ -82,7 +82,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-3.5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ffffff] text-white font-black shadow-lg shadow-[#ffffff]/30 flex-shrink-0">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7c3aed] text-white font-black shadow-lg shadow-[#7c3aed]/30 flex-shrink-0">
               <CheckCircle2 className="h-7 w-7" />
             </div>
             <div>
@@ -203,7 +203,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
                 <span className="text-[#ffffff]">{profile.cgpa.toFixed(1)}/10.0 ({breakdown.academics || Math.round(profile.cgpa * 10)}%)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-[#ffffff] rounded-full" style={{ width: `${breakdown.academics || Math.round(profile.cgpa * 10)}%` }} />
+                <div className="h-full bg-gradient-to-r from-[#9f1239] to-[#7c3aed] rounded-full" style={{ width: `${breakdown.academics || Math.round(profile.cgpa * 10)}%` }} />
               </div>
             </div>
 
@@ -214,7 +214,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
                 <span className="text-[#ffffff]">{profile.coding}/10 ({breakdown.coding_dsa || profile.coding * 10}%)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-[#ffffff] rounded-full" style={{ width: `${breakdown.coding_dsa || profile.coding * 10}%` }} />
+                <div className="h-full bg-gradient-to-r from-[#9f1239] to-[#7c3aed] rounded-full" style={{ width: `${breakdown.coding_dsa || profile.coding * 10}%` }} />
               </div>
             </div>
 
@@ -225,7 +225,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
                 <span className="text-[#94a3b8]">{profile.projectsCount} projects ({breakdown.projects || Math.min(100, profile.projectsCount * 25)}%)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-[#ffffff] rounded-full" style={{ width: `${breakdown.projects || Math.min(100, profile.projectsCount * 25)}%` }} />
+                <div className="h-full bg-gradient-to-r from-[#9f1239] to-[#7c3aed] rounded-full" style={{ width: `${breakdown.projects || Math.min(100, profile.projectsCount * 25)}%` }} />
               </div>
             </div>
 
@@ -236,7 +236,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
                 <span className="text-[#ffffff]">{profile.internships} verified ({breakdown.internships || Math.min(100, profile.internships * 40)}%)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-[#ffffff] rounded-full" style={{ width: `${breakdown.internships || Math.min(100, profile.internships * 40)}%` }} />
+                <div className="h-full bg-gradient-to-r from-[#9f1239] to-[#7c3aed] rounded-full" style={{ width: `${breakdown.internships || Math.min(100, profile.internships * 40)}%` }} />
               </div>
             </div>
 
@@ -250,7 +250,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
               </div>
               <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
                 <div
-                  className="h-full bg-[#ffffff] rounded-full"
+                  className="h-full bg-gradient-to-r from-[#9f1239] to-[#7c3aed] rounded-full"
                   style={{
                     width: `${breakdown.certifications || Math.min(100, Math.max(25, (profile.certifications?.length || 0) * 35))}%`
                   }}
@@ -265,7 +265,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
                 <span className="text-[#94a3b8]">{profile.communication}/10 ({breakdown.communication || profile.communication * 10}%)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-[#ffffff] rounded-full" style={{ width: `${breakdown.communication || profile.communication * 10}%` }} />
+                <div className="h-full bg-gradient-to-r from-[#9f1239] to-[#7c3aed] rounded-full" style={{ width: `${breakdown.communication || profile.communication * 10}%` }} />
               </div>
             </div>
           </div>
@@ -381,7 +381,7 @@ export const OnboardingResultScreen: React.FC<OnboardingResultScreenProps> = ({
             type="button"
             id="btn-go-to-dashboard"
             onClick={onGoToDashboard}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl bg-[#ffffff] px-8 py-3.5 text-sm font-black text-white shadow-xl shadow-[#ffffff]/25 transition-all hover:bg-[#ffffff]/90 active:scale-[0.98]"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl bg-[#7c3aed] px-8 py-3.5 text-sm font-black text-white shadow-xl shadow-[#7c3aed]/25 transition-all hover:bg-[#6d28d9] active:scale-[0.98]"
           >
             <span>Continue to Full Dashboard</span>
             <ArrowRight className="h-4 w-4" />

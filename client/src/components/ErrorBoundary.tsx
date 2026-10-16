@@ -57,7 +57,7 @@ class ErrorBoundary extends Component<Props, State> {
               }}
               className={cn(
                 "flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-xs",
-                "bg-[#ffffff] text-white",
+                "bg-[#7c3aed] text-white hover:bg-[#6d28d9]",
                 "hover:bg-[#9f1239] active:scale-95 cursor-pointer shadow-[0_0_20px_rgba(255, 255, 255,0.3)] transition-all"
               )}
             >

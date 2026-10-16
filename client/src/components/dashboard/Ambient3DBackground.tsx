@@ -89,7 +89,7 @@ const UnicornTorusBackground: React.FC = () => {
   );
 };
 
-export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ className = "" }) => {
+export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = React.memo(({ className = "" }) => {
   const [variant, setVariantState] = useState<BackgroundVariant>(getInitialVariant);
   const [speed] = useState<number>(1.0);
   const [brightness] = useState<number>(1.0);
@@ -224,4 +224,5 @@ export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ classN
       {typeof document !== "undefined" ? createPortal(switcher, document.body) : switcher}
     </>
   );
-};
+});
+Ambient3DBackground.displayName = "Ambient3DBackground";

@@ -344,7 +344,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
             <button
               onClick={onCalculate}
               disabled={isCalculating}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#ffffff] px-5 py-3 text-xs font-bold text-white shadow-[0_0_25px_rgba(255, 255, 255,0.3)] transition-all hover:bg-[#ffffff] active:scale-95 disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#7c3aed] px-5 py-3 text-xs font-bold text-white shadow-[0_0_25px_rgba(124,58,237,0.3)] transition-all hover:bg-[#6d28d9] active:scale-95 disabled:opacity-50"
             >
               <Zap className="h-4 w-4" />
               <span>{isCalculating ? "Evaluating with ML..." : "⚡ Calculate Placement Probability"}</span>

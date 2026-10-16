@@ -108,9 +108,9 @@
   --accent-cohort-bg: rgba(159, 18, 57, 0.14);
   --accent-cohort-border: rgba(159, 18, 57, 0.35);
 
-  --accent-resume: #ffffff;
-  --accent-resume-bg: rgba(255, 255, 255, 0.08);
-  --accent-resume-border: rgba(255, 255, 255, 0.20);
+  --accent-resume: #7c3aed;
+  --accent-resume-bg: rgba(124, 58, 237, 0.12);
+  --accent-resume-border: rgba(124, 58, 237, 0.30);
 
   --accent-interview: #7c3aed;
   --accent-interview-bg: rgba(124, 58, 237, 0.14);
@@ -174,7 +174,7 @@
   --accent-coach: #7c3aed;
   --accent-projects: #6d28d9;
   --accent-cohort: #9f1239;
-  --accent-resume: #ffffff;
+  --accent-resume: #7c3aed;
   --accent-interview: #7c3aed;
 
   --color-success: #7c3aed;
@@ -415,15 +415,18 @@
 }
 
 /* Crisp Monochrome Button Utility */
-.pathfinder-dashboard .btn-mono {
+.pathfinder-dashboard .btn-mono,
+.pathfinder-dashboard .btn-mono * {
   background: #ffffff !important;
   color: #0a0b10 !important;
   border: 1px solid rgba(255, 255, 255, 0.8) !important;
   box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15) !important;
 }
 
-.pathfinder-dashboard .btn-mono:hover {
+.pathfinder-dashboard .btn-mono:hover,
+.pathfinder-dashboard .btn-mono:hover * {
   background: #f1f5f9 !important;
+  color: #0a0b10 !important;
 }
 
 /* Selection highlight */

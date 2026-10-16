@@ -394,7 +394,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             }}
             className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all cursor-pointer ${
               selectedQuestionIndex === idx
-                ? "border border-[#ffffff] bg-[#ffffff] text-[#f8fafc] font-bold shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                ? "border border-[#7c3aed] bg-[#7c3aed] text-white font-bold shadow-[0_0_15px_rgba(124,58,237,0.3)]"
                 : "border border-[rgba(255,255,255,0.08)] bg-[#161926]/50 text-[#94a3b8] hover:border-[#ffffff]/50 hover:text-[#f8fafc]"
             }`}
           >
