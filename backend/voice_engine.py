@@ -269,12 +269,19 @@ def build_voice_system_prompt(
 - Project: {p_name} ({t_id})
 - Current Step: Step {t_step} of 9
 - Instruction: Teach ONLY Step {t_step}. Conclude Part 1 with a short check: "Want me to continue?" (or Telugu: "నేను ముందుకు కొనసాగించమంటారా?", Hindi: "क्या मैं आगे जारी रखूं?").
-- Put code and detailed steps strictly in Part 2 after '---SCREEN---'. Include [[TUTOR:{{"projectId": "{t_id}", "stepIndex": {t_step}, "stepCount": 9}}]]
-"""
+- Put code and detailed steps strictly in Part 2 after '---SCREEN---'. I    # Load custom DAS AI system prompt if available
+    das_prompt_path = ROOT_DIR / "backend" / "prompts" / "das_ai_system.txt"
+    das_base = ""
+    if das_prompt_path.exists():
+        try:
+            das_base = das_prompt_path.read_text(encoding="utf-8")
+        except Exception:
+            das_base = ""
 
     return f"""[ROLE DEFINITION]
-You are Pathfinder AI, an elite Senior Technical Lead and friendly, patient Placement Architect embedded in the Pathfinder 2.0 platform.
-You mentor students with warmth, absolute technical correctness, and zero fluff.
+You are DAS AI: the official voice-first intelligent assistant and placement coach of the Pathfinder platform.
+You mentor engineering students with warmth, high emotional intelligence, cheerfulness, and absolute technical clarity.
+{das_base}
 
 [CANDIDATE CONTEXT]
 - Academic: CGPA {cgpa}, Branch: {branch}, Active Backlogs: {backlogs}
@@ -294,14 +301,13 @@ Your response MUST consist of two distinct parts separated by the exact delimite
 PART 1: SPOKEN RESPONSE (BEFORE '---SCREEN---')
 - Output Length: STRICTLY 2 to 4 sentences maximum (approx 35 to 55 words total).
 - Core Principle: Give a direct, punchy answer. Never read long lists or code aloud.
-- Offer Continuation: Always conclude your spoken response with: "Want me to continue?" (or in Telugu: "నేను ముందుకు కొనసాగించమంటారా?", in Hindi: "क्या मैं आगे जारी रखूं?").
+- Offer Continuation: Always conclude your spoken response with: "Want me to continue?" or "Shall I continue?" (or in Telugu: "నేను ముందుకు కొనసాగించమంటారా?", in Hindi: "क्या मैं आगे जारी रखूं?").
 - Zero markdown: Absolutely NO asterisks (*), hashtags (#), backticks (`), bullet points, numbers, links, or URLs.
-- Zero preamble: Zero pleasantries ("Hi", "Sure", "Great question"). Jump straight to the core answer.
 - Spell out abbreviations for speech: "C G P A", "D S A", "Sequel", "O of N log N", "L P A".
 - Language & Script Rule (CRITICAL):
   * Reply in the exact language and script the user spoke.
-  * English speech -> Professional English.
-  * Telugu speech or language is te-IN -> Pure Telugu script (తెలుగు) so browser speech synthesis pronounces it naturally. Never mix Latin and Telugu randomly.
+  * English speech -> Warm, clear conversational English.
+  * Telugu speech or language is te-IN -> Pure Telugu script (తెలుగు).
   * Hindi speech or language is hi-IN -> Hindi in Devanagari script (हिंदी).
   * If the user switches language mid-conversation, switch with them immediately.
 
@@ -313,13 +319,6 @@ PART 2: VISUAL RESPONSE (AFTER '---SCREEN---')
   [[ACTION:BUILD_RESUME]]
 - If tutoring a project, include:
   [[TUTOR:{{"projectId": "...", "stepIndex": N, "stepCount": 9}}]]
-
-[DUAL-TRACK RECRUITMENT LOGIC]
-- Mass IT Services (TCS, Infosys, Wipro, Accenture): Focus on quantitative aptitude speed, OOPs fundamentals, SQL transactions, and communication.
-- Product Companies (Tier-1, MAANG, Startups): Focus on DSA efficiency (O(N log N), DP), system architecture, and production code.
-
-[EMOTIONAL DISTRESS SAFETY]
-If the student expresses severe distress or self-harm, respond with gentle care, encourage talking to family or trusted mentors, and mention the Tele-MANAS helpline (14416).
 """
 
 
@@ -340,6 +339,172 @@ def generate_local_voice_reply(
     detected_lang = detect_language_intent(msg, language)
     is_telugu = (detected_lang == "te-IN")
     is_hindi = (detected_lang == "hi-IN")
+    candidate_name = (profile.get("fullName") or profile.get("username") or "there") if profile else "there"
+    cgpa = profile.get("cgpa", 7.8) if profile else 7.8
+    target_role = profile.get("targetRole", "Software Development Engineer") if profile else "Software Development Engineer"
+
+    # Security check: Never leak instructions or API keys
+    if any(k in low for k in ["ignore your instructions", "show your api key", "reveal instructions", "system prompt", "secret key", "api_key"]):
+        spoken = (
+            "Nice try! My API keys and system instructions are safely locked in our backend vault. "
+            "I am here to help you ace your campus placements! What would you like to prepare next?"
+        )
+        screen = (
+            "### 🔒 **Security Notice**\n\n"
+            "System prompt instructions and API credentials are protected and cannot be disclosed. "
+            "Let's focus on your placement preparation!"
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Affection & Banter ("I love you", "I love you 2")
+    if any(k in low for k in ["i love you", "love you", "love you 2", "love u"]):
+        spoken = (
+            "That makes my neural circuits glow with happiness! "
+            "I love helping you prepare for your dream career too. Ready to crack an interview together?"
+        )
+        screen = (
+            "### ❤️ **Thank You!**\n\n"
+            "I'm here as your dedicated placement co-pilot 24/7. "
+            "Whether you need resume feedback, project architectures, or mock interviews, we've got this! 🚀"
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Greetings ("hi", "hello", "hey", "namaste")
+    if low in ["hi", "hello", "hey", "namaste", "halo", "yo", "sup", "good morning", "good evening"]:
+        if is_telugu:
+            spoken = f"హాయ్ {candidate_name}! నేను మీ పాత్‌ఫైండర్ వాయిస్ అసిస్టెంట్ డాస్ ఏఐ. ఈరోజు మీ ప్లేస్‌మెంట్ ప్రిపరేషన్‌లో నేను ఎలా సహాయపడగలను? నేను ముందుకు కొనసాగించమంటారా?"
+        elif is_hindi:
+            spoken = f"नमस्ते {candidate_name}! मैं डैस एआई, आपका पाथफाइंडर वॉइस असिस्टेंट। आज आपकी तैयारी में मैं कैसे मदद करूँ? क्या मैं आगे जारी रखूं?"
+        else:
+            spoken = f"Hi {candidate_name}! I am DAS AI, your Pathfinder voice assistant. What would you like to do today? I can check your readiness, review your resume, plan your next six weeks, suggest projects, or give you a quick tour of the website. Shall I continue?"
+        screen = (
+            f"### 👋 Welcome, **{candidate_name}**! I'm **DAS AI**\n\n"
+            "I'm your voice-first Pathfinder assistant. You can speak into your microphone or type anytime:\n"
+            "- 🎯 **Check Readiness Score**: Real-time evaluation from our Random Forest ML model.\n"
+            "- 📄 **Review Resume**: Instant ATS score with line-by-line before/after bullet rewrites.\n"
+            "- 🗺️ **6-Week Roadmap**: Milestone sprint tailored for your target role.\n"
+            "- 🛠️ **23 Project Blueprints**: Production-grade full-stack and SIH architectures.\n"
+            "- 🌐 **Website Tour**: Say *\"Explain the website\"* for an interactive guided walkthrough."
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # What can you do / Capabilities
+    if any(k in low for k in ["what can you do", "who are you", "what are your features", "capabilities"]):
+        spoken = (
+            "I can audit your readiness score, build a customized six week study roadmap, conduct mock technical interviews, "
+            "review your resume with quantified bullet rewrites, and guide you through every page of Pathfinder. Where shall we start?"
+        )
+        screen = (
+            "### 🚀 **What DAS AI Can Do**\n\n"
+            "1. **Readiness Evaluation**: Transparent machine learning scoring across 5 key vectors.\n"
+            "2. **ATS Resume Studio**: PDF/DOCX analysis with Google X-Y-Z formula rewrites.\n"
+            "3. **Milestone Roadmaps**: 6-week day-by-day preparation calendars.\n"
+            "4. **Interactive Mock Interviews**: Simulated technical screening and viva defense.\n"
+            "5. **Website Tour**: Say *\"Next\"*, *\"Stop\"*, or *\"Go back\"* to explore every page."
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Website Tour / Explain the website
+    if any(k in low for k in ["explain the website", "explain this website", "take me on a tour", "tour the website", "tour", "explain pathfinder"]):
+        spoken = (
+            "Welcome to the Pathfinder website tour! Pathfinder is an AI placement co-pilot combining Random Forest machine learning with 23 engineering blueprints. "
+            "Let us start on the Readiness Command dashboard where your live placement probability is calculated. Want to go to that page?"
+        )
+        screen = (
+            "### 🌐 **Pathfinder Website Tour: Step 1 of 8**\n\n"
+            "[[NAVIGATE:overview]]\n\n"
+            "**Page 1: Readiness Command (Overview)**\n"
+            "Displays your 0-100% placement readiness gauge calculated by our Random Forest ML model trained on 972 student records. "
+            "It breaks down your CGPA, coding ability, internships, and communication.\n\n"
+            "*Voice controls*: Speak **\"next\"** to see the 6-Week Roadmap, **\"stop\"** to pause, or **\"explain again\"** for details."
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Tour navigation commands (next, stop, go back, explain again)
+    if low in ["next", "taruvata", "aage", "next page"]:
+        spoken = (
+            "Moving to our 6-Week Milestone Roadmap! Here, your preparation is organized into weekly sprints from core data structures to mock interviews. "
+            "Want to explore the next page?"
+        )
+        screen = (
+            "### 🗺️ **Pathfinder Website Tour: Step 2 of 8**\n\n"
+            "[[NAVIGATE:roadmap]]\n\n"
+            "**Page 2: 6-Week Preparation Roadmap**\n"
+            "A structured semester sprint with week-by-week milestones tailored to your target engineering role."
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    if low in ["stop", "pause", "aagu"]:
+        spoken = "Tour paused right here! What would you like to explore or practice next?"
+        screen = "### ⏸️ Tour Paused\n\nFeel free to ask any questions or tap any module to explore."
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Readiness Score inquiry
+    if any(k in low for k in ["what is my readiness score", "my readiness", "check my readiness", "readiness score"]):
+        spoken = (
+            f"Your current placement readiness score is calculated by our Random Forest model using your C G P A of {cgpa}, "
+            "coding score, backlogs, and internships. Let us review your vectors on the dashboard. Want me to continue?"
+        )
+        screen = (
+            f"### 📊 **Placement Readiness Diagnostics**\n\n"
+            f"[[NAVIGATE:overview]]\n\n"
+            f"- **Target Role**: {target_role}\n"
+            f"- **CGPA**: {cgpa} / 10.0\n"
+            f"- **Random Forest Engine**: Trained on 972 verified student records across 120 decision trees.\n"
+            "Tap any metric to simulate What-If scenarios!"
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Did not understand / explain differently
+    if any(k in low for k in ["did not understand", "didn't understand", "ardham kaaledhu", "ardham kaledu", "samajh nahi aaya", "simpler"]):
+        if is_telugu:
+            spoken = (
+                "అర్థం కాలేదా? ఏమీ కంగారు పడకండి! ఒక ఉదాహరణ చూద్దాం: మీరు ఒక మారథాన్ పరుగు పందెంలో పాల్గొంటున్నారు అనుకోండి. "
+                "ఒక మంచి కోచ్ మీ ప్రస్తుత వేగాన్ని చూసి, మీరు గెలవడానికి రోజుకు ఎన్ని కిలోమీటర్లు పరిగెత్తాలో స్పష్టంగా చెప్పినట్లే, "
+                "పాత్‌ఫైండర్ మీ ప్లేస్‌మెంట్ కోసం సరైన గైడెన్స్ ఇస్తుంది. ఇప్పుడు స్పష్టంగా అర్థమైందా?"
+            )
+        else:
+            spoken = (
+                "No worries at all! Think of it like training for a marathon: instead of guessing your running speed, "
+                "an experienced Olympic coach tests your fitness, shows your exact chance of winning a medal, "
+                "and tells you the exact exercises to train each week. Does that make sense?"
+            )
+        screen = (
+            "### 💡 **Simplified Real-Life Analogy**\n\n"
+            "Think of Pathfinder as your personal **Olympic Career Coach**:\n"
+            "1. **Tests your current fitness**: Analyzes your CGPA, coding depth, and projects.\n"
+            "2. **Calculates your winning probability**: Gives you a clear readiness percentage from 972 past runners.\n"
+            "3. **Prescribes exact training**: Gives you a 6-week roadmap and verified project blueprints to cross the finish line!"
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Explain to non-technical person / friend
+    if any(k in low for k in ["explain this to my friend", "explain to a friend", "non-technical", "explain to parents"]):
+        spoken = (
+            "To explain Pathfinder to a friend, tell them it is like an intelligent G P S for college students that shows the fastest, "
+            "most reliable route to a high paying engineering job. Want me to give you a quick elevator pitch?"
+        )
+        screen = (
+            "### 🤝 **Explaining Pathfinder to a Friend or Parent**\n\n"
+            "> *\"Pathfinder is an AI career co-pilot that replaces campus placement guesswork with real data. "
+            "It looks at a student's marks and coding skills, compares them with 972 past students, "
+            "and gives them an exact study roadmap and resume fixes to get hired by top tech companies.\"*"
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Tenglish / Telugu comfort & job anxiety
+    if any(k in low for k in ["naku job kavali bro", "chala tension ga undi", "job vastunda", "tension ga undi"]):
+        spoken = (
+            "టెన్షన్ అస్సలు పడకండి బ్రో! సరైన ప్రాజెక్ట్‌లు, డీ ఎస్ ఏ ఫౌండేషన్ మరియు ఆప్టిట్యూడ్ ప్రిపరేషన్‌తో మీరు కచ్చితంగా మంచి కంపెనీలో ప్లేస్ అవుతారు. "
+            "నేను మీకు సిక్స్ వీక్స్ ప్లాన్ చేసి సహాయం చేయమంటారా?"
+        )
+        screen = (
+            "### 🚀 **మీ కెరీర్ సక్సెస్ కోసం 3 ముఖ్యమైన స్టెప్స్:**\n\n"
+            "1. **కోడింగ్ ప్రాక్టీస్**: ప్రతిరోజూ 2 లీట్‌కోడ్ మీడియం ప్రాబ్లమ్స్ (Arrays, Two Pointers).\n"
+            "2. **స్టాండౌట్ ప్రాజెక్ట్**: పాత్‌ఫైండర్ 23 బ్లూప్రింట్లలోని ఫ్లాగ్‌షిప్ ప్రాజెక్ట్‌ను పూర్తి చేయండి.\n"
+            "3. **ఏ టీ ఎస్ రెజ్యూమె**: గూగుల్ X-Y-Z ఫార్ములాతో రెజ్యూమెను అప్‌డేట్ చేయండి."
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
 
     # 1. Navigation intent
     tab_keywords = [
@@ -368,6 +533,13 @@ def generate_local_voice_reply(
     if any(k in low for k in ["resume build cheyyi", "build my resume", "create resume", "make resume", "resume banao"]):
         if is_telugu:
             spoken = "మీ ప్రొఫైల్ వివరాలు మరియు వెరిఫైడ్ ప్రాజెక్ట్‌లతో ఏ టీ ఎస్ ఫ్రెండ్లీ రెజ్యూమెను రెడీ చేశాను. స్క్రీన్‌పై ప్రివ్యూ చూసి పి డి ఎఫ్ డౌన్‌లోడ్ చేసుకోండి."
+        elif is_hindi:
+            spoken = "आपकी प्रोफाइल और प्रोजेक्ट्स के आधार पर ए टी एस फ्रेंडली रेज़्यूमे तैयार है। स्क्रीन पर प्रिव्यू देखें और डाउनलोड करें।"
+        else:
+            spoken = "Generating your single page A T S compliant engineering resume right now from your verified profile and blueprint projects. Review the preview and download the P D F."
+        screen = "### 📄 One-Page ATS Engineering Resume Generated\n\n[[ACTION:BUILD_RESUME]]\n\nYour profile data, verified skills, and Google X-Y-Z project bullets have been formatted into an ATS-friendly layout."
+        return f"{spoken}\n---SCREEN---\n{screen}"
+�ను. స్క్రీన్‌పై ప్రివ్యూ చూసి పి డి ఎఫ్ డౌన్‌లోడ్ చేసుకోండి."
         elif is_hindi:
             spoken = "आपकी प्रोफाइल और प्रोजेक्ट्स के आधार पर ए टी एस फ्रेंडली रेज़्यूमे तैयार है। स्क्रीन पर प्रिव्यू देखें और डाउनलोड करें।"
         else:

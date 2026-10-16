@@ -125,15 +125,16 @@ def sanitize_user_input(text: Optional[str], max_length: int = 4000) -> str:
 # 5. SECURE FILE UPLOAD VALIDATION
 # ==========================================
 
-MAX_RESUME_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+MAX_RESUME_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 PDF_MAGIC_BYTES = b"%PDF-"
+ZIP_MAGIC_BYTES = b"PK\x03\x04"
 
-def validate_pdf_upload(filename: str, content: bytes):
+def validate_resume_upload(filename: str, content: bytes):
     """
-    Validates file upload strictly:
-    1. Size limit <= 5MB
-    2. File extension must be .pdf
-    3. File must begin with authentic %PDF- magic bytes
+    Validates resume file uploads strictly:
+    1. Size limit <= 10MB
+    2. File extension must be .pdf, .docx, or .txt
+    3. File must match authentic format magic bytes or encoding
     """
     if len(content) > MAX_RESUME_FILE_SIZE:
         raise HTTPException(
@@ -142,17 +143,34 @@ def validate_pdf_upload(filename: str, content: bytes):
         )
     
     lower_name = filename.lower()
-    if not lower_name.endswith(".pdf"):
+    if lower_name.endswith(".pdf"):
+        if not content.startswith(PDF_MAGIC_BYTES):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File content failed PDF magic signature verification."
+            )
+    elif lower_name.endswith(".docx"):
+        if not content.startswith(ZIP_MAGIC_BYTES):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File content failed DOCX document archive verification."
+            )
+    elif lower_name.endswith(".txt"):
+        try:
+            content[:4096].decode("utf-8")
+        except UnicodeDecodeError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File content is not valid UTF-8 text."
+            )
+    else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file format. Only authentic PDF documents (.pdf) are permitted."
+            detail="Invalid file format. Please upload a PDF (.pdf), Word document (.docx), or plain text resume (.txt)."
         )
-        
-    if not content.startswith(PDF_MAGIC_BYTES):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File content failed PDF magic signature verification."
-        )
+
+# Backward-compatibility alias
+validate_pdf_upload = validate_resume_upload
 
 
 # ==========================================

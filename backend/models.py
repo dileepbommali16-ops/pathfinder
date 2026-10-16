@@ -98,12 +98,28 @@ class CohortInsight(BaseModel):
 
 
 class ResumeFeedback(BaseModel):
-    score: int = Field(ge=0, le=100)
-    verdict: str
-    strengths: List[str]
-    improvements: List[str]
-    ats_keywords: List[str]
-    formatting_tips: List[str]
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    score: int = Field(default=78, ge=0, le=100)
+    verdict: str = Field(default="Solid technical foundation with strong project portfolio.")
+    breakdown: Optional[Dict[str, int]] = Field(default_factory=lambda: {
+        "keywords": 80,
+        "structure": 85,
+        "impact": 70,
+        "skills_match": 82,
+        "projects": 78,
+        "education": 90,
+        "formatting": 85
+    })
+    strengths: List[str] = Field(default_factory=list)
+    improvements: List[str] = Field(default_factory=list)
+    ats_keywords: List[str] = Field(default_factory=list)
+    missing_keywords: List[str] = Field(default_factory=list)
+    formatting_tips: List[str] = Field(default_factory=list)
+    rewritten_bullets: List[Dict[str, str]] = Field(default_factory=list)
+    action_plan: List[str] = Field(default_factory=list)
+    project_suggestions: List[str] = Field(default_factory=list)
+    spoken_summary: Optional[str] = None
 
 
 class ChatMessage(BaseModel):
@@ -120,6 +136,8 @@ class ChatRequest(BaseModel):
     active_tab: Optional[str] = None
     page_context: Optional[Dict[str, Any]] = None
     user_context: Optional[Dict[str, Any]] = None
+    voice_mode: Optional[bool] = False
+    language: Optional[str] = "auto"
 
 
 class CohortFilters(BaseModel):

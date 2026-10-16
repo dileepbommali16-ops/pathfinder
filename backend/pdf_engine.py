@@ -10,6 +10,10 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from backend.models import ResumeFeedback
 
 
+import zipfile
+import xml.etree.ElementTree as ET
+
+
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     try:
         reader = PdfReader(BytesIO(pdf_bytes))
@@ -22,6 +26,43 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     except Exception as exc:
         print(f"[PDF Engine] Text extraction error: {exc}")
         return ""
+
+
+def extract_text_from_docx(docx_bytes: bytes) -> str:
+    """Extracts all text content from a DOCX zip container without third-party dependencies."""
+    try:
+        with zipfile.ZipFile(BytesIO(docx_bytes)) as docx_zip:
+            xml_content = docx_zip.read("word/document.xml")
+            tree = ET.fromstring(xml_content)
+            texts = [node.text for node in tree.iter() if node.tag.endswith("t") and node.text]
+            return " ".join(texts).strip()
+    except Exception as exc:
+        print(f"[DOCX Engine] Text extraction error: {exc}")
+        return ""
+
+
+def extract_resume_text(content: bytes, filename: str) -> str:
+    """Unified resume text extractor supporting PDF, DOCX, and TXT files."""
+    if not content:
+        return ""
+    fname = filename.lower()
+    if fname.endswith(".pdf"):
+        return extract_text_from_pdf(content)
+    elif fname.endswith(".docx"):
+        return extract_text_from_docx(content)
+    elif fname.endswith(".txt"):
+        try:
+            return content.decode("utf-8", errors="replace").strip()
+        except Exception:
+            return ""
+    # Try pdf first, then docx, then text
+    t = extract_text_from_pdf(content)
+    if t:
+        return t
+    t = extract_text_from_docx(content)
+    if t:
+        return t
+    return content.decode("utf-8", errors="replace").strip()
 
 
 def generate_analytics_pdf(
