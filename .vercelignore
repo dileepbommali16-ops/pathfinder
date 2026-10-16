@@ -1,0 +1,37 @@
+# Exclude large backend and non-frontend files from Vercel deployment
+backend/
+requirements.txt
+Procfile
+render.yaml
+*.py
+__pycache__/
+
+# Exclude documentation and high-resolution screenshots
+docs/
+audits/
+scratch/
+
+# Exclude mobile apps and alternative implementations
+android/
+vanilla/
+pathfinder-main/
+.gradle/
+build/
+
+# Exclude dev configurations, tools, and scripts
+.github/
+.vscode/
+.devcontainer/
+.tools/
+.agents/
+drizzle/
+scripts/*.py
+scripts/test*.js
+scripts/test*.ts
+
+# Exclude datasets and test logs
+*.csv
+*.log
+*.sqlite
+*.db
+sample-placement-2024-2026.csv

@@ -14,6 +14,7 @@ pathfinder-main/
 
 # Build outputs
 dist/
+client/dist/
 build/
 *.dist
 
