@@ -269,12 +269,20 @@ def build_voice_system_prompt(
 - Project: {p_name} ({t_id})
 - Current Step: Step {t_step} of 9
 - Instruction: Teach ONLY Step {t_step}. Conclude Part 1 with a short check: "Want me to continue?" (or Telugu: "నేను ముందుకు కొనసాగించమంటారా?", Hindi: "क्या मैं आगे जारी रखूं?").
-- Put code and detailed steps strictly in Part 2 after '---SCREEN---'. I    # Load custom DAS AI system prompt if available
+- Put code and detailed steps strictly in Part 2 after '---SCREEN---'. Include [[TUTOR:{{"projectId": "{t_id}", "stepIndex": {t_step}, "stepCount": 9}}]]
+"""
+
+    # Load custom DAS AI system prompt if available
     das_prompt_path = ROOT_DIR / "backend" / "prompts" / "das_ai_system.txt"
     das_base = ""
     if das_prompt_path.exists():
         try:
             das_base = das_prompt_path.read_text(encoding="utf-8")
+            guide_doc_path = ROOT_DIR / "backend" / "knowledge" / "pathfinder_guide.md"
+            if guide_doc_path.exists():
+                guide_text = guide_doc_path.read_text(encoding="utf-8")[:6000]
+                das_base = das_base.replace("{{PATHFINDER_KNOWLEDGE}}", guide_text)
+            das_base = das_base.replace("{{PROJECT_CATALOG}}", proj_names)
         except Exception:
             das_base = ""
 
@@ -533,13 +541,6 @@ def generate_local_voice_reply(
     if any(k in low for k in ["resume build cheyyi", "build my resume", "create resume", "make resume", "resume banao"]):
         if is_telugu:
             spoken = "మీ ప్రొఫైల్ వివరాలు మరియు వెరిఫైడ్ ప్రాజెక్ట్‌లతో ఏ టీ ఎస్ ఫ్రెండ్లీ రెజ్యూమెను రెడీ చేశాను. స్క్రీన్‌పై ప్రివ్యూ చూసి పి డి ఎఫ్ డౌన్‌లోడ్ చేసుకోండి."
-        elif is_hindi:
-            spoken = "आपकी प्रोफाइल और प्रोजेक्ट्स के आधार पर ए टी एस फ्रेंडली रेज़्यूमे तैयार है। स्क्रीन पर प्रिव्यू देखें और डाउनलोड करें।"
-        else:
-            spoken = "Generating your single page A T S compliant engineering resume right now from your verified profile and blueprint projects. Review the preview and download the P D F."
-        screen = "### 📄 One-Page ATS Engineering Resume Generated\n\n[[ACTION:BUILD_RESUME]]\n\nYour profile data, verified skills, and Google X-Y-Z project bullets have been formatted into an ATS-friendly layout."
-        return f"{spoken}\n---SCREEN---\n{screen}"
-�ను. స్క్రీన్‌పై ప్రివ్యూ చూసి పి డి ఎఫ్ డౌన్‌లోడ్ చేసుకోండి."
         elif is_hindi:
             spoken = "आपकी प्रोफाइल और प्रोजेक्ट्स के आधार पर ए टी एस फ्रेंडली रेज़्यूमे तैयार है। स्क्रीन पर प्रिव्यू देखें और डाउनलोड करें।"
         else:

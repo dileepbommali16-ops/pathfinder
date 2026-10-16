@@ -22,7 +22,7 @@ from backend.gemini_engine import (
     generate_structured_ai,
     generate_smart_fallback_reply
 )
-from backend.pdf_engine import extract_text_from_pdf
+from backend.pdf_engine import extract_text_from_pdf, extract_resume_text
 from backend.voice_engine import (
     stream_voice_tokens,
     stream_voice_audio_tokens,
@@ -389,7 +389,7 @@ async def resume_endpoint(
         if file is not None:
             pdf_bytes = await file.read()
             validate_pdf_upload(file.filename or "resume.pdf", pdf_bytes)
-            extracted_text = extract_text_from_pdf(pdf_bytes)
+            extracted_text = extract_resume_text(pdf_bytes, file.filename or "resume.pdf")
 
         text_to_analyze = sanitize_user_input(extracted_text if extracted_text else (resume_text or ""), max_length=20000)
         if not text_to_analyze.strip() and not pdf_bytes:
