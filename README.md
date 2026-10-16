@@ -58,6 +58,62 @@ Pathfinder is an enterprise-grade, real-time career intelligence platform engine
 
 ---
 
+## 🏛️ FULL STACK ARCHITECTURE & SYSTEM DESIGN
+
+Pathfinder 2.0 is built on a decoupled, production-grade full stack architecture engineered for sub-50ms deterministic voice response, 60 FPS GPU-accelerated presentation, and resilient fallback execution:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        PATHFINDER 2.0 FULL STACK ARCHITECTURE                          │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+
+ [ CLIENT TIER: REACT 19 + VITE 7 + TYPESCRIPT ]
+   │
+   ├── UI & Design System: Obsidian & Wine/Violet Tokens, Tailwind CSS, Lucide Icons
+   ├── Presentation Components: Dashboard, ATS Resume Studio, 23 Project Blueprints
+   ├── 3D Motion System: GPU-accelerated Canvas Shaders + Torus Glow / SphereShield
+   ├── Client-Side Audio Pipeline:
+   │     ├── Speech Recognition (Web Speech API) with automatic silence detection (1.5s)
+   │     ├── Streaming Sentence Splitter (TTS punctuation chunking for natural speech)
+   │     └── Multi-lingual Speech Synthesis (English en-IN, Telugu te-IN, Hindi hi-IN)
+   └── Auth & State: LampLogin with Stakeholder / Demo mode, JWT session management
+   │
+   ▼ HTTPS / SSE (Server-Sent Events)
+ [ GATEWAY & RELIABILITY TIER: FASTAPI + UVICORN ]
+   │
+   ├── Security & Gateway:
+   │     ├── Sliding-window IP Rate Limiting & Daily AI Budget Manager
+   │     ├── Argon2id Password Hashing & JWT Authorization
+   │     └── OWASP Input Sanitization & Multi-tenant CORS
+   ├── Document Parsing Engine:
+   │     ├── PyPDF Text Extraction (PDF Resumes)
+   │     ├── Zip XML DOM Tree Parser (DOCX Resumes)
+   │     └── ReportLab Dynamic 1-Page ATS PDF Generator
+   └── High-Availability Keep-Alive Daemon (Render free-tier cold-start mitigations)
+   │
+   ▼ Low Latency Context Pipeline
+ [ AI & MACHINE LEARNING INTELLIGENCE TIER ]
+   │
+   ├── DAS AI Voice Intelligence:
+   │     ├── Gemini 2.0 Flash Token Streaming (SSE ~5ms TTFT)
+   │     ├── Cognitive Analysis: Intent extraction, language detection (EN / TE / HI)
+   │     ├── Dual-Format Output: 2-4 sentence spoken response + detailed on-screen markdown
+   │     ├── Interactive Website Tour Engine (Page-by-page spoken guide with barge-in)
+   │     └── Grounded Deterministic Fallback Engine (Zero hallucination, offline safe)
+   └── Predictive Placement Analytics:
+         ├── Random Forest Classifier (120 Decision Trees trained on 972 student records)
+         └── Calibrated Probability Vectors across CGPA, Coding DSA, Projects, Internships
+```
+
+### 🎙️ DAS AI Voice Agent Highlights:
+- **Voice-First Interaction**: From panel opening to closing, DAS AI greets, listens, and answers naturally by voice and on screen.
+- **Cognitive Audio Pipeline**: Listens with speech-to-text, analyzes candidate context (CGPA, Branch, Target Role), delivers a punchy 2-4 sentence spoken answer, and renders full code/tables on screen.
+- **Multi-Lingual Mastery**: Automatic detection and conversational responses in English, pure Telugu script, Roman Telugu/Tenglish, and Hindi.
+- **Website Tour & Analogy Guide**: Interactive walkthrough of all 10 modules with voice commands (*"next"*, *"stop"*, *"explain again"*), plus simple non-technical analogies for friends and parents.
+- **Deep Resume Analysis**: PDF/DOCX/TXT extraction with structured Gemini ATS scoring, before/after Google X-Y-Z bullet rewrites, and prioritized keyword gap analysis.
+
+---
+
 ## 🏗️ Multi-Tier System Architecture
 
 Pathfinder is designed as a distributed, decoupled, multi-tier system engineered for high availability, zero cold-start latency, and concurrent throughput.

@@ -352,7 +352,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         if (stored !== null) return stored === "true";
       } catch {}
     }
-    return false; // Default false so voice only speaks on voice queries or explicit user click
+    return true; // Default true for voice-first DAS AI assistant
   });
 
   const toggleAutoSpeak = () => {
@@ -1231,7 +1231,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           }
         } catch {}
 
-        const shouldSpeak = (isVoiceTriggeredRef.current || isBlueprintTrigger) && !isSpeakingRef.current;
+        const shouldSpeak = (autoSpeak || isVoiceTriggeredRef.current || isBlueprintTrigger) && !isSpeakingRef.current;
 
         if (shouldSpeak && voiceStatus === "idle") {
           isVoiceTriggeredRef.current = false;
@@ -1239,7 +1239,17 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         }
       }
     }
-  }, [messages, isLoading, voiceStatus]);
+  }, [messages, isLoading, voiceStatus, autoSpeak]);
+
+  // Speak initial greeting once on mount if autoSpeak is enabled
+  useEffect(() => {
+    const greetingTimer = setTimeout(() => {
+      if (autoSpeak && messages.length === 1 && messages[0].role === "assistant" && !isSpeakingRef.current) {
+        speakText(messages[0].content, 0);
+      }
+    }, 600);
+    return () => clearTimeout(greetingTimer);
+  }, []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1285,7 +1295,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-[#f8fafc]">Pathfinder AI Voice & Career Mentor</h2>
+              <h2 className="text-sm font-bold text-[#f8fafc]">DAS AI: Voice-First Placement Coach</h2>
               <span className="flex items-center gap-1.5 rounded border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white shadow-[0_0_8px_rgba(255,255,255,0.15)]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#7c3aed] animate-pulse" />
                 Gemini 2.0 Flash

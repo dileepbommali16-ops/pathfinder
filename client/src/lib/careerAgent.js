@@ -1,5 +1,5 @@
 /**
- * Pathfinder AI Career Coach - Client-Side Fast Intelligence Engine
+ * DAS AI - Client-Side Fast Intelligence Engine
  *
  * Provides instantaneous, contextual, and high-fidelity career mentorship
  * when backend network latency, cloud sleep, or offline states are detected.
@@ -28,7 +28,7 @@ export const getCareerAgentResponse = (message = "", history = [], profile = {})
     if (recentAssistantTexts.length > 0 && recentAssistantTexts[recentAssistantTexts.length - 1].includes("how can i help you today")) {
       return `👋 **Hey there ${candidateName}! Ready when you are!**\n\nWhat would you like to tackle next? We can run a **mock technical interview**, review **23 production projects for ${branch}**, or build your **6-week placement sprint**. Just tap one of the quick commands above or type your question! 🚀`;
     }
-    return `👋 **Hello ${candidateName}! Welcome back to Pathfinder AI Career Coach.**\n\nI am connected to your live candidate profile (**${branch}** • **${cgpa} CGPA** • Target: **${targetRole}**).\n\nHere is what we can do right now:\n1. 💡 **Explain Pathfinder simply in 5 lines**\n2. 🎙️ **Start an interactive Mock Interview**\n3. 🗺️ **Generate your 6-Week Placement Roadmap**\n4. 🚀 **Curate high-impact project ideas for ${branch}**\n\nWhat's on your mind today?`;
+    return `👋 **Hello ${candidateName}! Welcome back to DAS AI.**\n\nI am connected to your live candidate profile (**${branch}** • **${cgpa} CGPA** • Target: **${targetRole}**).\n\nHere is what we can do right now:\n1. 💡 **Explain Pathfinder simply in 5 lines**\n2. 🎙️ **Start an interactive Mock Interview**\n3. 🗺️ **Generate your 6-Week Placement Roadmap**\n4. 🚀 **Curate high-impact project ideas for ${branch}**\n\nWhat's on your mind today?`;
   }
 
   // 2. Explain Pathfinder Simply in 5 lines
@@ -184,7 +184,7 @@ export const getCareerAgentResponse = (message = "", history = [], profile = {})
   }
 
   // 10. Default Comprehensive Career Mentorship
-  return `### 🚀 Pathfinder AI Career Coach Guidance\n` +
+  return `### 🚀 DAS AI Guidance\n` +
     `*Tailored for ${targetRole} • ${branch} Engineering Stream*\n\n` +
     `Based on your current profile metrics (${cgpa} CGPA, Coding Confidence: ${coding}/10), here are the top 3 tactical priorities to accelerate your placement readiness:\n\n` +
     `1. **Systematic Problem Solving:**\n` +

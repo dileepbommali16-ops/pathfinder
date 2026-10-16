@@ -698,7 +698,7 @@ export default function Home() {
     {
       role: "assistant",
       content:
-        "Hi! I'm your Pathfinder AI Career Coach powered by Gemini. I'm connected to your live candidate profile. Ask me anything in English, Telugu script, or Roman Telugu—placement cutoffs, mock interviews, 6-week roadmaps, skill gaps, or resume refinement!",
+        "Hi! I'm DAS AI, your Pathfinder voice-first intelligent assistant and placement coach powered by Gemini. Ask me anything in English, Telugu, or Hindi—check your readiness score, review your resume, explore our 23 project blueprints, or say 'explain the website' for an interactive tour!",
     },
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);
@@ -1740,7 +1740,7 @@ export default function Home() {
               className="space-y-12 sm:space-y-16"
             >
               <SectionHeader
-                title="Pathfinder AI Career Coach"
+                title="DAS AI Voice Coach"
                 description="Real-time conversational mentor powered by Gemini AI with live profile awareness"
                 badge="Gemini AI"
                 accent="cyan"
