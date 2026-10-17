@@ -726,8 +726,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content:
-        "Hi! I'm DAS AI, your Pathfinder voice-first intelligent assistant and placement coach powered by Gemini. Ask me anything in English, Telugu, or Hindi—check your readiness score, review your resume, explore our 23 project blueprints, or say 'explain the website' for an interactive tour!",
+      content: "I'm your AI your DAS Agent, niku em help kavali cheppu.",
     },
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);

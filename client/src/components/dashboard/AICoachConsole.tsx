@@ -940,6 +940,15 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     processSpeechQueue(targetLang, genId);
   };
 
+  // Auto-initiate DAS Voice Agent speech on initial load / trigger
+  useEffect(() => {
+    const greetingText = "I'm your AI your DAS Agent, niku em help kavali cheppu.";
+    const timer = setTimeout(() => {
+      queueSentenceForTts(greetingText, "te-IN", generationIdRef.current);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Streaming Voice Query Handler: POST /api/voice/stream with Sentence-by-Sentence TTS
   const handleVoiceQuery = async (queryText: string) => {
     const trimmed = queryText.trim();
@@ -1627,9 +1636,9 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               state={voiceStatus}
               spokenText={currentSpokenSentence}
               isSpeaking={voiceStatus === "speaking"}
-              width={280}
-              height={336}
-              className="w-auto max-h-[50vh] sm:max-h-[55vh] drop-shadow-[0_16px_48px_rgba(124,58,237,0.25)] border-violet-500/20"
+              width={340}
+              height={420}
+              className="w-full max-w-[360px] max-h-[55vh] drop-shadow-[0_20px_50px_rgba(14,165,233,0.35)] border-cyan-500/30"
             />
           </div>
 

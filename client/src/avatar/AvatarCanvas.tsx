@@ -1,21 +1,26 @@
-import React, { useRef, useEffect, useState, useMemo } from "react";
-import {
-  FaceMeshRig
-} from "./FaceMeshRig";
-import {
-  VisemeParams,
-  AvatarState,
-  DEFAULT_VISEME_PARAMS,
-  smoothParam,
-  getVisemeForCharacter,
-  clampParam
-} from "./visemeMapper";
+/**
+ * AvatarCanvas: Three.js Real-Time 3D Cybernetic Head Avatar
+ * Implements:
+ * 1. Continuous Idle Motion (micro-sway & breathing):
+ *    mesh.position.y = Math.sin(time * 1.5) * 0.05;
+ *    mesh.rotation.y = Math.cos(time * 1.0) * 0.02;
+ * 2. Automated Eye Blinking (triggers every 3-5 seconds, closes eyelids for 150ms):
+ *    scale Y down to 0, then restore to 1.
+ * 3. Audio-Reactive Lip-Sync (WebAudio API AnalyserNode / RMS):
+ *    mouthMesh.scale.y / morphTarget = 1.0 + audioVolume * 2.0.
+ */
 
-interface AvatarCanvasProps {
+import React, { useRef, useEffect, useState } from "react";
+import * as THREE from "three";
+
+export type AvatarState = "idle" | "listening" | "thinking" | "speaking";
+
+export interface AvatarCanvasProps {
   state?: AvatarState;
   spokenText?: string;
   isSpeaking?: boolean;
   audioAnalyser?: AnalyserNode | null;
+  audioElement?: HTMLAudioElement | null;
   className?: string;
   width?: number;
   height?: number;
@@ -27,285 +32,387 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
   spokenText = "",
   isSpeaking = false,
   audioAnalyser = null,
+  audioElement = null,
   className = "",
-  width = 160,
-  height = 192,
+  width = 280,
+  height = 340,
   onFpsUpdate
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rigRef = useRef<FaceMeshRig | null>(null);
+  const mountRef = useRef<HTMLDivElement | null>(null);
+  const internalAnalyserRef = useRef<AnalyserNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  // Animation references
   const animFrameRef = useRef<number | null>(null);
+  const isSpeakingRef = useRef<boolean>(isSpeaking);
+  isSpeakingRef.current = isSpeaking;
 
-  // Parameter state tracking (critically damped)
-  const currentParamsRef = useRef<VisemeParams>({ ...DEFAULT_VISEME_PARAMS });
-  const targetParamsRef = useRef<VisemeParams>({ ...DEFAULT_VISEME_PARAMS });
+  const stateRef = useRef<AvatarState>(state);
+  stateRef.current = state;
 
-  // Idle animation timers
-  const lastBlinkTimeRef = useRef<number>(Date.now());
-  const nextBlinkIntervalRef = useRef<number>(3500);
-  const blinkProgressRef = useRef<number>(0);
-  const isBlinkingRef = useRef<boolean>(false);
-
-  // Performance and fallback tracking
-  const [isLowPerformance, setIsLowPerformance] = useState<boolean>(false);
-  const [imageLoaded, setImageLoaded] = useState<boolean>(false);
-  const frameCountRef = useRef<number>(0);
-  const lastFpsCheckRef = useRef<number>(performance.now());
-  const isTabHiddenRef = useRef<boolean>(false);
-
-  // Spoken text character cursor for viseme timing
-  const textCharIndexRef = useRef<number>(0);
-  const lastCharAdvancetimeRef = useRef<number>(0);
-
-  // Check prefers-reduced-motion
-  const prefersReducedMotion = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }, []);
-
-  // Initialize Rig and Texture
+  // Connect WebAudio Analyser to audioElement if provided
   useEffect(() => {
-    const rig = new FaceMeshRig();
-    rigRef.current = rig;
+    if (!audioElement || audioAnalyser) return;
 
-    rig
-      .loadTexture("/avatar/mentor.webp")
-      .then(() => {
-        setImageLoaded(true);
-      })
-      .catch((err) => {
-        console.warn("[Avatar] Fallback to mentor.png:", err);
-        rig.loadTexture("/avatar/mentor.png").then(() => setImageLoaded(true)).catch(() => {});
-      });
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioCtx();
+      const source = ctx.createMediaElementSource(audioElement);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.25;
 
-    const handleVisibilityChange = () => {
-      isTabHiddenRef.current = document.hidden;
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
 
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-      }
-    };
-  }, []);
-
-  // Reset mouth instantly on stop/idle
-  useEffect(() => {
-    if (state === "idle" || !isSpeaking) {
-      targetParamsRef.current.jawOpen = 0.0;
-      targetParamsRef.current.mouthWide = 0.2;
-      targetParamsRef.current.mouthRound = 0.0;
-      targetParamsRef.current.upperLipRaise = 0.0;
-      textCharIndexRef.current = 0;
+      internalAnalyserRef.current = analyser;
+      audioCtxRef.current = ctx;
+    } catch (e) {
+      // Audio source may already be connected or user gesture needed
     }
-  }, [state, isSpeaking]);
+  }, [audioElement, audioAnalyser]);
 
-  // Main Render Loop
+  // Main Three.js Scene Setup & Animation Loop
   useEffect(() => {
-    if (!imageLoaded || prefersReducedMotion) return;
+    const container = mountRef.current;
+    if (!container) return;
 
-    let lastTime = performance.now();
+    const renderWidth = width || container.clientWidth || 280;
+    const renderHeight = height || container.clientHeight || 340;
 
-    const loop = (currentTime: number) => {
-      animFrameRef.current = requestAnimationFrame(loop);
+    // 1. Scene, Camera, Renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, renderWidth / renderHeight, 0.1, 100);
+    camera.position.set(0, 0, 3.8);
 
-      if (isTabHiddenRef.current) return;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(renderWidth, renderHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    container.innerHTML = "";
+    container.appendChild(renderer.domElement);
 
-      const deltaSec = Math.max(0.001, (currentTime - lastTime) / 1000);
-      lastTime = currentTime;
+    // 2. Lighting (Cyberpunk Cyan + Deep Blue Studio Lighting)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
 
-      // FPS Monitoring
-      frameCountRef.current++;
-      if (currentTime - lastFpsCheckRef.current >= 1000) {
-        const fps = Math.round((frameCountRef.current * 1000) / (currentTime - lastFpsCheckRef.current));
-        frameCountRef.current = 0;
-        lastFpsCheckRef.current = currentTime;
-        if (onFpsUpdate) onFpsUpdate(fps);
+    const keyLight = new THREE.DirectionalLight(0x38bdf8, 2.5); // Cyan key light
+    keyLight.position.set(2.5, 3.0, 3.0);
+    scene.add(keyLight);
 
-        if (fps < 24 && !isLowPerformance) {
-          setIsLowPerformance(true);
+    const fillLight = new THREE.DirectionalLight(0x6366f1, 1.8); // Indigo fill light
+    fillLight.position.set(-2.5, 1.5, 2.0);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0x0284c7, 3.0); // Electric blue rim light
+    rimLight.position.set(0, -2.0, -2.5);
+    scene.add(rimLight);
+
+    // 3. Avatar Head Group & Meshes
+    const headGroup = new THREE.Group();
+    scene.add(headGroup);
+
+    // Cranial Head Geometry
+    const headGeo = new THREE.SphereGeometry(1.15, 48, 48);
+    headGeo.scale(1.0, 1.32, 1.12);
+
+    // Right Side: Sleek Metallic Blue Solid Skin
+    const solidMat = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color("#1e3a8a"),
+      metalness: 0.45,
+      roughness: 0.28,
+      clearcoat: 0.75,
+      clearcoatRoughness: 0.2,
+      reflectivity: 0.9,
+      emissive: new THREE.Color("#0c2340"),
+      emissiveIntensity: 0.3,
+    });
+    const solidHead = new THREE.Mesh(headGeo, solidMat);
+    headGroup.add(solidHead);
+
+    // Left Side: Glowing Cyan Wireframe Matrix (matches photo prompt)
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color("#38bdf8"),
+      wireframe: true,
+      transparent: true,
+      opacity: 0.65,
+    });
+    const wireHead = new THREE.Mesh(headGeo, wireMat);
+    wireHead.scale.set(1.002, 1.002, 1.002);
+    headGroup.add(wireHead);
+
+    // Internal Glow Core
+    const coreGeo = new THREE.SphereGeometry(0.9, 24, 24);
+    coreGeo.scale(0.9, 1.2, 0.9);
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color("#0284c7"),
+      wireframe: true,
+      transparent: true,
+      opacity: 0.25,
+    });
+    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+    headGroup.add(coreMesh);
+
+    // 4. Eyes & Upper Eyelids (for automated blinking)
+    const eyeGeo = new THREE.SphereGeometry(0.13, 24, 24);
+    const eyeMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#e0f2fe"),
+      emissive: new THREE.Color("#0ea5e9"),
+      emissiveIntensity: 0.4,
+      roughness: 0.1,
+    });
+
+    // Left Eye & Eyelid
+    const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+    leftEye.position.set(-0.35, 0.18, 0.95);
+    headGroup.add(leftEye);
+
+    // Right Eye & Eyelid
+    const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+    rightEye.position.set(0.35, 0.18, 0.95);
+    headGroup.add(rightEye);
+
+    // Eyelid Covers (scaled for blinking)
+    const eyelidGeo = new THREE.SphereGeometry(0.14, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.6);
+    const eyelidMat = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color("#1e3a8a"),
+      roughness: 0.3,
+    });
+
+    const leftEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
+    leftEyelid.position.set(-0.35, 0.22, 0.96);
+    leftEyelid.rotation.x = Math.PI * 0.15;
+    headGroup.add(leftEyelid);
+
+    const rightEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
+    rightEyelid.position.set(0.35, 0.22, 0.96);
+    rightEyelid.rotation.x = Math.PI * 0.15;
+    headGroup.add(rightEyelid);
+
+    // 5. Mouth Mesh (for audio-reactive lip-syncing)
+    const mouthGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.08, 32);
+    mouthGeo.scale(1.0, 0.5, 0.3);
+    const mouthMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#0f172a"),
+      emissive: new THREE.Color("#0284c7"),
+      emissiveIntensity: 0.2,
+      roughness: 0.5,
+    });
+    const mouthMesh = new THREE.Mesh(mouthGeo, mouthMat);
+    mouthMesh.position.set(0, -0.45, 0.98);
+    mouthMesh.rotation.x = Math.PI * 0.5;
+    headGroup.add(mouthMesh);
+
+    // Subtle Upper/Lower Lips
+    const lipGeo = new THREE.TorusGeometry(0.22, 0.035, 12, 32, Math.PI);
+    const lipMat = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color("#1d4ed8"),
+      roughness: 0.4,
+      metalness: 0.2,
+    });
+    const upperLip = new THREE.Mesh(lipGeo, lipMat);
+    upperLip.position.set(0, -0.42, 0.99);
+    upperLip.rotation.x = Math.PI;
+    headGroup.add(upperLip);
+
+    const lowerLip = new THREE.Mesh(lipGeo, lipMat);
+    lowerLip.position.set(0, -0.48, 0.99);
+    headGroup.add(lowerLip);
+
+    // 6. Blink Timer State (triggers every 3 to 5 seconds, 150ms duration)
+    let lastBlinkTime = performance.now();
+    let nextBlinkDelay = 3000 + Math.random() * 2000;
+    let isBlinking = false;
+    let blinkStartTime = 0;
+
+    // 7. FPS Measurement
+    let frameCount = 0;
+    let lastFpsTime = performance.now();
+
+    // 8. Audio FFT Buffer
+    const freqData = new Uint8Array(128);
+
+    // 9. Main Render Loop
+    const clock = new THREE.Clock();
+
+    const animate = () => {
+      animFrameRef.current = requestAnimationFrame(animate);
+
+      const elapsedTime = clock.getElapsedTime();
+      const now = performance.now();
+
+      // FPS updates
+      frameCount++;
+      if (now - lastFpsTime >= 1000) {
+        if (onFpsUpdate) {
+          onFpsUpdate(Math.round((frameCount * 1000) / (now - lastFpsTime)));
         }
+        frameCount = 0;
+        lastFpsTime = now;
       }
 
-      const canvas = canvasRef.current;
-      const rig = rigRef.current;
-      if (!canvas || !rig) return;
+      // ======================================================================
+      // 1. IDLE MOTION (Micro-movement applied continuously to face mesh)
+      // ======================================================================
+      headGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.05;
+      headGroup.rotation.y = Math.cos(elapsedTime * 1.0) * 0.02;
+      headGroup.rotation.x = Math.sin(elapsedTime * 0.8) * 0.015;
 
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+      // Natural subtle breathing oscillation
+      const breathingScale = 1.0 + Math.sin(elapsedTime * 1.8) * 0.008;
+      headGroup.scale.set(breathingScale, breathingScale, breathingScale);
 
-      const timeSec = currentTime / 1000;
-
-      // 1. Natural Blinking Logic (every 3-6s, 120ms closure)
-      const now = Date.now();
-      if (!isBlinkingRef.current && now - lastBlinkTimeRef.current > nextBlinkIntervalRef.current) {
-        isBlinkingRef.current = true;
-        blinkProgressRef.current = 0;
+      // State-specific responsive gestures
+      if (stateRef.current === "listening") {
+        headGroup.rotation.y += 0.06;
+        headGroup.rotation.x += 0.04;
+      } else if (stateRef.current === "thinking") {
+        headGroup.rotation.y += 0.1;
+        headGroup.rotation.x -= 0.05;
       }
-      if (isBlinkingRef.current) {
-        blinkProgressRef.current += deltaSec * 8.5; // ~120ms total blink
-        if (blinkProgressRef.current >= 1.0) {
-          isBlinkingRef.current = false;
-          blinkProgressRef.current = 0;
-          lastBlinkTimeRef.current = now;
-          nextBlinkIntervalRef.current = 3000 + Math.random() * 3000;
-          targetParamsRef.current.eyeBlink = 0.0;
+
+      // ======================================================================
+      // 2. EYE BLINKING (Automated timer triggers every 3 to 5 seconds)
+      // ======================================================================
+      if (!isBlinking && now - lastBlinkTime > nextBlinkDelay) {
+        isBlinking = true;
+        blinkStartTime = now;
+      }
+
+      if (isBlinking) {
+        const blinkElapsed = now - blinkStartTime;
+        if (blinkElapsed < 150) {
+          // Scale upper eyelid down to 0 for 150ms, then return
+          const blinkProgress = blinkElapsed / 150;
+          // Parabolic closure: 1 -> 0 -> 1
+          const eyeScaleY = Math.max(0.05, Math.abs(Math.sin(blinkProgress * Math.PI - Math.PI / 2)));
+          leftEye.scale.y = eyeScaleY;
+          rightEye.scale.y = eyeScaleY;
+          leftEyelid.scale.y = 1.0 + (1.0 - eyeScaleY) * 1.2;
+          rightEyelid.scale.y = 1.0 + (1.0 - eyeScaleY) * 1.2;
         } else {
-          // Parabolic blink curve: 0 -> 1 -> 0
-          targetParamsRef.current.eyeBlink = Math.sin(blinkProgressRef.current * Math.PI);
+          isBlinking = false;
+          lastBlinkTime = now;
+          nextBlinkDelay = 3000 + Math.random() * 2000;
+          leftEye.scale.y = 1.0;
+          rightEye.scale.y = 1.0;
+          leftEyelid.scale.y = 1.0;
+          rightEyelid.scale.y = 1.0;
         }
+      }
+
+      // ======================================================================
+      // 3. LIP-SYNC (Audio Reactive to WebAudio AnalyserNode / Speech)
+      // ======================================================================
+      let audioVolume = 0;
+      const activeAnalyser = audioAnalyser || internalAnalyserRef.current;
+
+      if (activeAnalyser) {
+        activeAnalyser.getByteFrequencyData(freqData);
+        let sum = 0;
+        // Sample speech vowel formant bins
+        for (let i = 2; i < 28; i++) {
+          sum += freqData[i];
+        }
+        audioVolume = sum / (26 * 255);
+      } else if (isSpeakingRef.current) {
+        // High-fidelity procedural syllable synthesis when speaking
+        const syllableCadence = Math.sin(elapsedTime * 14.0) * Math.cos(elapsedTime * 7.5);
+        audioVolume = Math.max(0.12, Math.abs(syllableCadence) * 0.45);
       } else {
-        targetParamsRef.current.eyeBlink = 0.0;
+        audioVolume = 0;
       }
 
-      // 2. Idle Life Motions (Breathing & Micro-sway)
-      const breathing = Math.sin(timeSec * 1.8) * 0.03;
-      const headSway = Math.sin(timeSec * 0.9) * 0.035;
+      // Dynamically bind audio frequency value directly to mouth mesh:
+      // mouthMesh.morphTargetInfluences[mouthOpenIndex] = audioVolume * 2;
+      const targetMouthScaleY = 1.0 + Math.min(2.8, audioVolume * 2.2);
+      mouthMesh.scale.y += (targetMouthScaleY - mouthMesh.scale.y) * 0.35;
+      mouthMesh.scale.x = 1.0 + audioVolume * 0.4;
+      lowerLip.position.y = -0.48 - audioVolume * 0.07;
+      upperLip.position.y = -0.42 + audioVolume * 0.02;
 
-      // 3. State Machine Adjustments
-      if (state === "idle") {
-        targetParamsRef.current.headYaw = headSway;
-        targetParamsRef.current.headPitch = breathing;
-        targetParamsRef.current.headRoll = headSway * 0.4;
-        targetParamsRef.current.browRaise = 0.0;
-        targetParamsRef.current.mouthSmile = 0.06;
-      } else if (state === "listening") {
-        // Attentive head tilt towards user
-        targetParamsRef.current.headYaw = 0.04;
-        targetParamsRef.current.headPitch = -0.06;
-        targetParamsRef.current.headRoll = 0.08;
-        targetParamsRef.current.browRaise = 0.15;
-        targetParamsRef.current.mouthSmile = 0.10;
-        targetParamsRef.current.jawOpen = 0.0;
-      } else if (state === "thinking") {
-        // Eyes drift up/aside, thoughtful small nod
-        targetParamsRef.current.headYaw = 0.12;
-        targetParamsRef.current.headPitch = -0.10;
-        targetParamsRef.current.headRoll = -0.05;
-        targetParamsRef.current.browRaise = 0.08;
-        targetParamsRef.current.mouthSmile = 0.0;
-        targetParamsRef.current.jawOpen = 0.0;
-      } else if (state === "speaking") {
-        // Subtle speaking emphasis head nods
-        targetParamsRef.current.headPitch = breathing + Math.sin(timeSec * 4.2) * 0.045;
-        targetParamsRef.current.headYaw = headSway * 0.5;
-        targetParamsRef.current.headRoll = Math.sin(timeSec * 2.1) * 0.03;
-
-        // Lip Sync Processing
-        // Option A: Real Audio Analyser RMS
-        if (audioAnalyser) {
-          const buffer = new Uint8Array(audioAnalyser.frequencyBinCount);
-          audioAnalyser.getByteTimeDomainData(buffer);
-          let sumSquares = 0;
-          for (let i = 0; i < buffer.length; i++) {
-            const norm = (buffer[i] - 128) / 128;
-            sumSquares += norm * norm;
-          }
-          const rms = Math.sqrt(sumSquares / buffer.length);
-          targetParamsRef.current.jawOpen = clampParam("jawOpen", rms * 3.5);
-          targetParamsRef.current.mouthWide = 0.35 + rms * 0.3;
-        } else if (spokenText && isSpeaking) {
-          // Option B: Text-to-viseme timing based on syllables
-          const nowMs = performance.now();
-          if (nowMs - lastCharAdvancetimeRef.current > 75) { // ~13 chars per sec average cadence
-            lastCharAdvancetimeRef.current = nowMs;
-            textCharIndexRef.current = (textCharIndexRef.current + 1) % Math.max(1, spokenText.length);
-          }
-
-          const curChar = spokenText[textCharIndexRef.current] || "a";
-          const viseme = getVisemeForCharacter(curChar);
-
-          targetParamsRef.current.jawOpen = viseme.jawOpen ?? 0.3;
-          targetParamsRef.current.mouthWide = viseme.mouthWide ?? 0.25;
-          targetParamsRef.current.mouthRound = viseme.mouthRound ?? 0.0;
-          targetParamsRef.current.upperLipRaise = viseme.upperLipRaise ?? 0.0;
-
-          // Raise brows on question mark
-          if (spokenText.includes("?")) {
-            targetParamsRef.current.browRaise = 0.25;
-          }
-        }
-      }
-
-      // 4. Critically Damped Smoothing of all parameters
-      const smoothingSpeed = state === "speaking" ? 22.0 : 12.0;
-      const current = currentParamsRef.current;
-      const target = targetParamsRef.current;
-
-      const keys = Object.keys(DEFAULT_VISEME_PARAMS) as (keyof VisemeParams)[];
-      keys.forEach((key) => {
-        current[key] = smoothParam(current[key], target[key], deltaSec, smoothingSpeed);
-      });
-
-      // 5. Deform Mesh and Render Frame
-      rig.updateParameters(current, timeSec);
-      rig.renderCanvas2D(ctx, canvas.width, canvas.height, current, timeSec);
+      renderer.render(scene, camera);
     };
 
-    animFrameRef.current = requestAnimationFrame(loop);
+    animFrameRef.current = requestAnimationFrame(animate);
+
+    const handleResize = () => {
+      if (!container) return;
+      const w = container.clientWidth || width;
+      const h = container.clientHeight || height;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    };
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-      }
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      window.removeEventListener("resize", handleResize);
+      renderer.dispose();
+      headGeo.dispose();
+      solidMat.dispose();
+      wireMat.dispose();
+      coreGeo.dispose();
+      coreMat.dispose();
+      eyeGeo.dispose();
+      eyeMat.dispose();
+      mouthGeo.dispose();
+      mouthMat.dispose();
     };
-  }, [imageLoaded, isSpeaking, spokenText, state, audioAnalyser, prefersReducedMotion, onFpsUpdate, isLowPerformance]);
+  }, [width, height, audioAnalyser, audioElement, onFpsUpdate]);
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#07080d]/80 p-2 shadow-xl backdrop-blur-md transition-all ${className}`}
-      style={{ width: `${width + 16}px` }}
+      className={`relative flex flex-col items-center justify-center rounded-2xl border border-cyan-500/20 bg-[#060812]/90 p-2 shadow-2xl backdrop-blur-xl transition-all ${className}`}
+      style={{ width: `${width}px`, height: `${height}px` }}
     >
-      {/* AI Mentor Indicator Badge */}
-      <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-950/70 px-2 py-0.5 text-[10px] font-bold text-violet-300 shadow-sm backdrop-blur-xs">
+      {/* AI Voice Agent Badge */}
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/80 px-2.5 py-1 text-[11px] font-bold text-cyan-300 shadow-md backdrop-blur-md">
         <span
-          className={`h-1.5 w-1.5 rounded-full ${
+          className={`h-2 w-2 rounded-full ${
             state === "speaking"
-              ? "bg-violet-400 animate-ping"
+              ? "bg-emerald-400 animate-ping ring-2 ring-emerald-400/40"
               : state === "listening"
-              ? "bg-emerald-400 animate-pulse"
+              ? "bg-cyan-400 animate-pulse ring-2 ring-cyan-400/40"
               : state === "thinking"
-              ? "bg-amber-400 animate-spin"
+              ? "bg-amber-400 animate-spin ring-2 ring-amber-400/40"
               : "bg-zinc-400"
           }`}
         />
-        AI Mentor
+        <span>DAS Agent 3D</span>
       </div>
 
-      {/* Reduced Motion or Low-Performance Fallback */}
-      {isLowPerformance || prefersReducedMotion ? (
-        <div className="relative flex items-center justify-center overflow-hidden rounded-xl bg-black/40" style={{ width, height }}>
-          <img
-            src="/avatar/mentor.webp"
-            alt="AI Mentor Avatar"
-            className="h-full w-full object-cover rounded-xl"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = "/avatar/mentor.png";
-            }}
-          />
-          {/* Audio Pulsing Halo */}
-          {isSpeaking && (
-            <div className="absolute inset-0 rounded-xl border-2 border-violet-500/60 animate-pulse pointer-events-none" />
-          )}
-        </div>
-      ) : (
-        /* Real-time 2D Mesh Animated Canvas */
-        <canvas
-          ref={canvasRef}
-          width={width}
-          height={height}
-          className="rounded-xl object-contain shadow-inner transition-opacity duration-300"
-        />
-      )}
+      {/* 3D WebGL Canvas Viewport */}
+      <div ref={mountRef} className="w-full h-full flex items-center justify-center overflow-hidden rounded-xl" />
 
-      {/* Subtitle / State Indicator pill */}
-      <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-medium text-zinc-400">
-        {state === "speaking" && <span className="text-violet-400 animate-pulse">● Speaking</span>}
-        {state === "listening" && <span className="text-emerald-400 animate-pulse">● Listening...</span>}
-        {state === "thinking" && <span className="text-amber-400 animate-pulse">● Thinking...</span>}
-        {state === "idle" && <span className="text-zinc-500">Ready</span>}
+      {/* Active State / Captions Pill */}
+      <div className="absolute bottom-3 inset-x-3 z-20 flex items-center justify-between px-3 py-1.5 rounded-xl border border-white/10 bg-black/60 backdrop-blur-md">
+        <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-300">
+          <span
+            className={`font-semibold uppercase tracking-wider ${
+              state === "speaking"
+                ? "text-emerald-400"
+                : state === "listening"
+                ? "text-cyan-400"
+                : state === "thinking"
+                ? "text-amber-400"
+                : "text-zinc-400"
+            }`}
+          >
+            {state === "speaking" ? "● Speaking" : state === "listening" ? "● Listening..." : state === "thinking" ? "● Thinking..." : "Ready"}
+          </span>
+        </div>
+
+        {/* Live Audio Reaction Waveform Bars */}
+        {isSpeaking && (
+          <div className="flex items-center gap-1">
+            <span className="w-1 h-3 bg-cyan-400 animate-bounce rounded-full" style={{ animationDelay: "0ms" }} />
+            <span className="w-1 h-4 bg-emerald-400 animate-bounce rounded-full" style={{ animationDelay: "150ms" }} />
+            <span className="w-1 h-2 bg-indigo-400 animate-bounce rounded-full" style={{ animationDelay: "300ms" }} />
+          </div>
+        )}
       </div>
     </div>
   );

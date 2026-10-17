@@ -17,6 +17,9 @@
   <!-- Chart.js for Radar and Bar Visualizations (Zero React Required) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
+  <!-- Three.js CDN for 3D Cybernetic Face Avatar -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -470,51 +473,65 @@
         </div>
       </section>
 
-      <!-- ================= TAB: AI CAREER COACH ================= -->
+      <!-- ================= TAB: AI CAREER COACH (DAS 3D AGENT) ================= -->
       <section id="tab-sec-coach" class="tab-content hidden-view space-y-4">
-        <div class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 flex flex-col h-[650px]">
-          <div class="border-b border-white/10 pb-4 mb-4 flex items-center justify-between">
-            <div>
-              <h2 class="text-lg font-bold text-white">Pathfinder AI Career Coach</h2>
-              <p class="text-xs text-slate-400">Powered by Gemini AI · Live profile awareness · English & Telugu support</p>
+        <div class="rounded-3xl border border-white/10 bg-slate-900/60 p-4 sm:p-6 flex flex-col lg:flex-row gap-6 h-[720px]">
+          <!-- CENTER STAGE: 3D CYBERNETIC AVATAR -->
+          <div class="flex-1 flex flex-col items-center justify-center relative rounded-2xl border border-white/5 bg-[#060812] p-4 overflow-hidden">
+            <div id="das-avatar-container" class="w-full h-[520px] flex items-center justify-center"></div>
+            
+            <!-- Avatar Status Overlay -->
+            <div class="absolute bottom-4 flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/60 border border-white/10 backdrop-blur-md">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span id="avatar-status-badge" class="text-zinc-300 font-mono text-xs uppercase tracking-wider">DAS Ready</span>
             </div>
-            <button type="button" id="btn-clear-chat" class="text-xs text-slate-400 hover:text-white">Clear Chat</button>
           </div>
 
-          <!-- Chat Messages Container -->
-          <div id="chat-messages" class="flex-1 overflow-y-auto space-y-4 pr-2">
-            <div class="flex gap-3">
-              <div class="h-8 w-8 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center text-xs font-bold shrink-0">AI</div>
-              <div class="rounded-2xl rounded-tl-none bg-slate-800/80 p-4 text-xs text-slate-200 max-w-xl">
-                Hi! I'm your Pathfinder AI Career Coach. I'm connected to your active candidate profile. Ask me anything in English, Telugu script, or Roman Telugu—placement cutoffs, mock interviews, 6-week roadmaps, or resume refinement!
+          <!-- RIGHT SIDE: CHAT PANEL -->
+          <div class="w-full lg:w-[420px] flex flex-col border-l border-white/10 pl-0 lg:pl-6">
+            <div class="border-b border-white/10 pb-3 mb-3 flex items-center justify-between">
+              <div>
+                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                  <span>DAS Voice Coach</span>
+                  <span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded font-mono">3D AI</span>
+                </h2>
+                <p class="text-[11px] text-slate-400">Senior Systems Architect & Career Lead</p>
+              </div>
+              <button type="button" id="btn-clear-chat" class="text-xs text-slate-400 hover:text-white">Clear</button>
+            </div>
+
+            <!-- Chat Messages Container -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto space-y-3 pr-2 max-h-[460px]">
+              <div class="flex gap-3">
+                <div class="h-8 w-8 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center text-xs font-bold shrink-0">DAS</div>
+                <div class="rounded-2xl rounded-tl-none bg-slate-800/80 p-3.5 text-xs text-slate-200 leading-relaxed max-w-sm">
+                  I'm your AI your DAS Agent, niku em help kavali cheppu.
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Quick Prompt Chips -->
-          <div class="flex gap-2 overflow-x-auto py-2">
-            <button type="button" class="chip-prompt rounded-full border border-white/10 bg-slate-950/50 px-3 py-1 text-[11px] text-slate-300 hover:border-emerald-500/40">
-              Mock interview question 1
-            </button>
-            <button type="button" class="chip-prompt rounded-full border border-white/10 bg-slate-950/50 px-3 py-1 text-[11px] text-slate-300 hover:border-emerald-500/40">
-              What are Tier-1 CGPA cutoffs?
-            </button>
-            <button type="button" class="chip-prompt rounded-full border border-white/10 bg-slate-950/50 px-3 py-1 text-[11px] text-slate-300 hover:border-emerald-500/40">
-              Telugu lo explain cheyyi
-            </button>
-          </div>
+            <!-- Quick Prompt Chips -->
+            <div class="flex gap-1.5 overflow-x-auto py-2">
+              <button type="button" class="chip-prompt whitespace-nowrap rounded-full border border-white/10 bg-slate-950/50 px-2.5 py-1 text-[11px] text-slate-300 hover:border-cyan-500/40">
+                Explain this slide step-by-step
+              </button>
+              <button type="button" class="chip-prompt whitespace-nowrap rounded-full border border-white/10 bg-slate-950/50 px-2.5 py-1 text-[11px] text-slate-300 hover:border-cyan-500/40">
+                Telugu lo explain cheppu
+              </button>
+            </div>
 
-          <!-- Input Box -->
-          <form id="form-chat" class="flex gap-2 pt-2 border-t border-white/10">
-            <input type="text" id="chat-input" placeholder="Type your question or interview response..."
-                   class="flex-1 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs text-white outline-none focus:border-cyan-500" />
-            <button type="submit" id="btn-chat-send" class="rounded-2xl bg-cyan-500 px-6 py-3 text-xs font-bold text-slate-950 hover:bg-cyan-400">
-              Send
-            </button>
-            <button type="button" id="btn-chat-stop" class="hidden-view rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-xs font-bold text-rose-300">
-              Stop
-            </button>
-          </form>
+            <!-- Input Box -->
+            <form id="form-chat" class="flex gap-2 pt-2 border-t border-white/10">
+              <input type="text" id="chat-input" placeholder="Ask DAS about your placement or slides..."
+                     class="flex-1 rounded-xl border border-white/10 bg-slate-950/80 px-3.5 py-2.5 text-xs text-white outline-none focus:border-cyan-500" />
+              <button type="submit" id="btn-chat-send" class="rounded-xl bg-cyan-500 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-cyan-400 transition-colors">
+                Send
+              </button>
+              <button type="button" id="btn-chat-stop" class="hidden-view rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-xs font-bold text-rose-300">
+                Stop
+              </button>
+            </form>
+          </div>
         </div>
       </section>
 
@@ -715,5 +732,6 @@
   <!-- Scripts -->
   <script src="./api.js"></script>
   <script src="./app.js"></script>
+  <script src="./avatar.js"></script>
 </body>
 </html>

@@ -385,19 +385,31 @@ async function sendChatMessage(userText) {
 
     if (resp.ok) {
       const data = await resp.json();
-      state.messages.push({ role: "assistant", content: data.reply || "Thinking..." });
+      const reply = data.reply || "Thinking...";
+      state.messages.push({ role: "assistant", content: reply });
+      if (typeof window.speakDasResponse === "function") {
+        window.speakDasResponse(reply);
+      }
     } else {
+      const failMsg = "I am having trouble reaching my AI brain right now. Please try again.";
       state.messages.push({
         role: "assistant",
-        content: "I am having trouble reaching my AI brain right now. Please try again.",
+        content: failMsg,
       });
+      if (typeof window.speakDasResponse === "function") {
+        window.speakDasResponse(failMsg);
+      }
     }
   } catch (err) {
     if (!abortCtrl.signal.aborted) {
+      const errMsg = "Network issue contacting the AI coach. Please try again.";
       state.messages.push({
         role: "assistant",
-        content: "Network issue contacting the AI coach. Please try again.",
+        content: errMsg,
       });
+      if (typeof window.speakDasResponse === "function") {
+        window.speakDasResponse(errMsg);
+      }
     }
   } finally {
     if (stopBtn) stopBtn.classList.add("hidden-view");
