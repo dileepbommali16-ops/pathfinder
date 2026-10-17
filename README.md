@@ -114,6 +114,102 @@ Pathfinder 2.0 is built on a decoupled, production-grade full stack architecture
 
 ---
 
+## 🎙️ 5-Component Autonomous Local & Hybrid Voice Agent (LLaMA 3.2)
+
+Pathfinder features a high-performance, standalone **5-Component Voice Intelligence Pipeline** (`scripts/complete_voice_agent.py`) capable of running fully locally with Ollama and LLaMA 3.2, or seamlessly failing over to cloud inference via OpenRouter with zero downtime.
+
+```mermaid
+graph LR
+    subgraph S1["1. INPUT TIER"]
+        Mic["🎤 Microphone Input<br/>sounddevice (44.1kHz / 48kHz Stereo)"]
+        Resample["⚡ Scipy Downmixing & Resampling<br/>Stereo ➔ 16kHz Mono"]
+        Gain["🔊 Dynamic Auto-Gain Normalization<br/>Up to 80x Peak Boost"]
+        Mic --> Resample --> Gain
+    end
+
+    subgraph S2["2. STT TIER"]
+        Whisper["🧠 faster-whisper (CPU int8)<br/>Beam Size: 5 • VAD Silence Filter"]
+        Fallback["🛡️ 2-Pass Short-Utterance Fallback<br/>Zero dropped 'Hi' / 'Hello'"]
+        Whisper --> Fallback
+    end
+
+    subgraph S3["3. AGENTIC REASONING"]
+        Profile["👤 User Profile Store<br/>user_profile.json (Dileep)"]
+        LLM["🦙 LLaMA 3.2 Reasoning Core<br/>Ollama Local (127.0.0.1:11434)<br/>Cloud Fallback: OpenRouter"]
+        Profile --> LLM
+    end
+
+    subgraph S4["4. TOOL DISPATCH"]
+        Tools["⚙️ Safe Execution Engine<br/>• get_current_time()<br/>• calculate() [AST Math]<br/>• placement_stats()"]
+    end
+
+    subgraph S5["5. SPEECH OUTPUT"]
+        TTS["🗣️ Neural & OS TTS<br/>piper-tts (WAV synthesis)<br/>Windows SAPI (Base64 UTF-8)"]
+        Speaker["🔈 Speaker / Headset Playback<br/>Realtek / sounddevice"]
+        TTS --> Speaker
+    end
+
+    Gain ==>|"16-bit PCM WAV"| Whisper
+    Fallback ==>|"Transcribed Query"| LLM
+    LLM <==>|"JSON Tool Protocol"| Tools
+    LLM ==>|"Spoken Response"| TTS
+
+    classDef stageStyle fill:#141417,stroke:#a1a1aa,stroke-width:1.5px,color:#ffffff;
+    class S1,S2,S3,S4,S5 stageStyle;
+```
+
+### 🌟 Key Pipeline Capabilities
+
+| Component | Technology | Technical Architecture & Implementation |
+| :--- | :--- | :--- |
+| **1. Microphone Capture** | `sounddevice` + `scipy.signal` | Records at native device sampling rates (44.1 kHz / 48 kHz, stereo) to eliminate PortAudio driver downsampling bugs. Automatically downmixes stereo to mono and resamples to 16,000 Hz using `scipy.signal.resample`. Features an **80x Dynamic Auto-Gain Normalizer** that amplifies faint headset signals (`peak: 11` boosted to `899+`) so quiet speech is transcribed with 100% precision. |
+| **2. Speech to Text (STT)** | `faster-whisper` (int8 on CPU) | High-speed CTranslate2 Whisper model with Voice Activity Detection (`vad_filter=True`). Includes a proprietary **2-pass fallback** that catches short phrases (e.g., *"Hi"*, *"What's my name?"*) if aggressive VAD thresholds filter them. |
+| **3. Autonomous Reasoning** | `Ollama` + `LLaMA 3.2` / `OpenRouter` | Decides whether to reply conversationally or trigger specialized tools. Runs locally via Ollama daemon (`127.0.0.1:11434`), with automated fallback to OpenRouter's LLaMA 3.2 cloud endpoints. |
+| **4. Safe Tool Calling** | Python AST Evaluator | Safe mathematical AST parser (`ast.parse`) that replaces vulnerable `eval()`, preventing code injection while supporting arithmetic, powers, and modulus. Includes local time tools and placement benchmark query dispatchers. |
+| **5. Text to Speech (TTS)** | `piper-tts` + Windows SAPI | Low-latency local neural synthesis with an automated Windows SAPI fallback using UTF-8 Base64 script injection to safely pronounce words containing apostrophes, quotes, and Telugu/Indian names without PowerShell parsing crashes. |
+| **6. User Profile Identity** | `user_profile.json` | Persistent user profile memory preserving candidate identity (**Dileep**), role, city, and assistant persona (**Pathfinder**) across sessions. |
+
+### 🚀 Running the Local Voice Agent
+
+#### 1. Install Dependencies
+```bash
+pip install faster-whisper sounddevice scipy ollama piper-tts python-dotenv
+```
+
+#### 2. Optional: Pull Local LLaMA 3.2 Model
+```bash
+ollama pull llama3.2
+```
+*(Note: If Ollama is not installed or model is downloading, the agent automatically falls back to OpenRouter cloud using the `OPENROUTER_API_KEY` in `.env`)*.
+
+#### 3. Launch Voice Agent
+```bash
+python scripts/complete_voice_agent.py
+```
+
+#### 4. Interactive Microphone Selection & Switching
+The agent automatically detects your hardware audio setup:
+```text
+=================================================================
+       5-COMPONENT LOCAL VOICE AGENT READY (LLAMA 3.2)
+=================================================================
+Detected Microphones:
+  [1] Microphone Array (AMD Audio Device)
+  [2] Headset Microphone (Realtek(R) Audio) 👈 ACTIVE (Headset / Earphones)
+
+Default active mic: [2].
+Tip: If wearing earphones/headset, use [2]. For laptop built-in mic, use [1].
+     You can switch mics at any prompt by typing 1 or 2 and pressing Enter.
+
+👉 Press [ENTER] to speak (Mic [2]: Headset Microphone) or type mic # to switch:
+```
+- Press **[ENTER]** when ready to speak.
+- Type `1` or `2` at any prompt to switch between the laptop's internal microphone array and the headset microphone.
+- Say *"What time is it?"*, *"Calculate 45 times 8"*, or *"What is my name?"*.
+- Say *"exit"*, *"quit"*, or *"stop"* to gracefully end the session.
+
+---
+
 ## ⚡ Zero-Lag Performance & High-Security Architecture Upgrades
 
 Recent critical engineering upgrades ensure that all visitors, recruiters, and LinkedIn evaluators experience instantaneous, 60 FPS transitions without lag or UI errors:

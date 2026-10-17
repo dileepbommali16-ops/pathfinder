@@ -134,3 +134,8 @@ playwright_report.json
 .agents/
 skills-lock.json
 .planning/
+
+# Audio recordings & Temporary wav files
+*.wav
+audio.wav
+output.wav
