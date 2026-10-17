@@ -33,6 +33,7 @@ import {
 import { Streamdown } from "streamdown";
 import { StudentProfileState } from "@/types/profile";
 import { API_BASE } from "@/lib/apiClient";
+import { AvatarCanvas } from "@/avatar/AvatarCanvas";
 
 export interface Message {
   role: "user" | "assistant";
@@ -270,6 +271,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     return "auto";
   });
   const [voiceStatus, setVoiceStatus] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
+  const [currentSpokenSentence, setCurrentSpokenSentence] = useState<string>("");
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [collapsedScreenMap, setCollapsedScreenMap] = useState<Record<number, boolean>>({});
 
@@ -684,6 +686,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     }
 
     setVoiceStatus("idle");
+    setCurrentSpokenSentence("");
     setSpeakingIndex(null);
 
     if (onStopGeneration) {
@@ -797,6 +800,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       }
       stopMicrophone();
       isSpeakingRef.current = true;
+      setCurrentSpokenSentence(text);
       if (!firstAudioLoggedRef.current) {
         firstAudioLoggedRef.current = true;
         const ttfa = Math.round(performance.now() - speechStartTimeRef.current);
@@ -805,9 +809,19 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       setVoiceStatus("speaking");
     };
 
+    utterance.onboundary = (event: any) => {
+      if (event && event.name === "word") {
+        const word = text.slice(event.charIndex).split(/\s+/)[0];
+        if (word) {
+          setCurrentSpokenSentence(word);
+        }
+      }
+    };
+
     utterance.onend = () => {
       activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
       isSpeakingSentenceRef.current = false;
+      setCurrentSpokenSentence("");
       if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
         processSpeechQueue(targetLang, genId);
       } else {
@@ -827,6 +841,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     utterance.onerror = () => {
       activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
       isSpeakingSentenceRef.current = false;
+      setCurrentSpokenSentence("");
       if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
         processSpeechQueue(targetLang, genId);
       } else {
@@ -1584,7 +1599,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       )}
 
       {/* Quick Action Chips Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b border-[#161926] bg-black/10 px-6 py-2 scrollbar-none">
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-[#161926] bg-black/10 px-6 py-2 scrollbar-none shrink-0">
         <span className="text-[11px] font-medium text-[#94a3b8] shrink-0">Quick Commands:</span>
         {onOpenResumeBuilder && (
           <button
@@ -1608,8 +1623,54 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         ))}
       </div>
 
-      {/* Messages Scroll Area */}
-      <div className="flex-1 space-y-4 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-zinc-800">
+      {/* Main Console Body: Avatar & What-To-Ask (Left) + Messages & Typing Bar (Right) */}
+      <div className="flex flex-1 flex-col md:flex-row overflow-hidden min-h-0">
+        {/* Left Column: Animated Avatar + "What to Ask" Starters */}
+        <div className="w-full md:w-64 lg:w-72 shrink-0 border-b md:border-b-0 md:border-r border-[#161926] bg-[#0c0d16]/80 p-3 sm:p-4 flex flex-col items-center gap-3 overflow-y-auto scrollbar-thin">
+          <AvatarCanvas
+            state={voiceStatus}
+            spokenText={currentSpokenSentence}
+            isSpeaking={voiceStatus === "speaking"}
+            width={160}
+            height={192}
+            className="w-full"
+          />
+
+          {/* Quick "What to Ask" Suggestions for Fresh Visitors */}
+          <div className="w-full flex flex-col gap-1.5 mt-1">
+            <div className="flex items-center gap-1.5 px-1 py-1 text-[11px] font-bold text-violet-300 uppercase tracking-wider">
+              <Sparkles className="h-3 w-3 text-violet-400" />
+              <span>What to Ask (Click):</span>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              {[
+                { icon: "🎯", label: "Check my placement chances", prompt: "Evaluate my placement readiness score and odds for Tier-1 companies." },
+                { icon: "💻", label: "Mock interview question 1", prompt: "Start an interactive technical mock interview for SDE role. Ask me question 1." },
+                { icon: "🗣️", label: "తెలుగులో ప్రిపరేషన్ టిప్స్", prompt: "నా ప్లేస్‌మెంట్ ప్రిపరేషన్ ఎలా మొదలుపెట్టాలో తెలుగులో వివరించండి." },
+                { icon: "🇮🇳", label: "प्लेसमेंट की तैयारी कैसे करें?", prompt: "कैंपस प्लेसमेंट के लिए सबसे महत्वपूर्ण कोडिंग टॉपिक्स क्या हैं?" },
+                { icon: "📄", label: "Review my resume for ATS", prompt: "How do I optimize my resume to pass ATS filters at top tech companies?" },
+                { icon: "🚀", label: "Project ideas for my branch", prompt: "Suggest top production project architectures suitable for campus placements." }
+              ].map((item, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSafeSend(item.prompt)}
+                  disabled={isLoading}
+                  className="w-full flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] hover:bg-violet-600/15 hover:border-violet-500/30 p-2 text-left text-[11px] text-zinc-300 hover:text-white transition-all group cursor-pointer disabled:opacity-50"
+                >
+                  <span className="text-xs shrink-0 group-hover:scale-110 transition-transform">{item.icon}</span>
+                  <span className="truncate font-medium">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Messages Thread & Always-Visible Typing Input Bar */}
+        <div className="flex-1 flex flex-col min-w-0 bg-[#0a0b12] overflow-hidden">
+          {/* Messages Scroll Area */}
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-zinc-800">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.1)]">
@@ -1913,6 +1974,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         </p>
       </div>
     </div>
+  </div>
+</div>
   );
 };
 

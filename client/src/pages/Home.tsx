@@ -1770,7 +1770,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* TAB 6: AI CHAT ASSISTANT */}
+          {/* TAB 6: AI VOICE AGENT & CAREER COACH */}
           {activeTab === "coach" && (
             <motion.div
               key="coach"
@@ -1778,49 +1778,8 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
-              className="space-y-8 sm:space-y-12"
+              className="space-y-4"
             >
-              {/* 3D DepthText Header powered by GSAP & Gemini AI */}
-              <div className="flex flex-col items-center justify-center pt-2 pb-4 text-center">
-                <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-3.5 py-1 text-xs font-semibold text-purple-300 backdrop-blur-md mb-2 shadow-[0_0_15px_rgba(124,58,237,0.25)]">
-                  <Sparkles className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
-                  <span>Powered by Gemini 2.0 Flash Multimodal AI</span>
-                </div>
-                <div className="w-full flex justify-center overflow-hidden py-2">
-                  <DepthText
-                    text="Elevate"
-                    layers={34}
-                    depth={2.4}
-                    depthColor="#7c3aed"
-                    gradientDepth={false}
-                    hoverPush={0.5}
-                    float={false}
-                    tilt={7.5}
-                    pointerTracking
-                    smoothing={0.14}
-                    perspective={900}
-                    autoOrbit
-                    orbitSpeed={0.35}
-                    fontSize="clamp(3rem, 12cqi, 7rem)"
-                    fontWeight={900}
-                    shadow
-                    outline={false}
-                    intro
-                  />
-                </div>
-                <p className="max-w-md text-xs sm:text-sm text-slate-400 font-medium">
-                  Autonomous career coaching, real-time voice viva, and interview simulation
-                </p>
-              </div>
-
-              <SectionHeader
-                title="DAS AI Voice Coach"
-                description="Real-time conversational mentor powered by Gemini AI with live profile awareness"
-                badge="Gemini AI"
-                accent="cyan"
-                icon={Bot}
-                helperLabel="Ask anything: casual chat, Telugu, mock interviews, or placement numbers"
-              />
               <AICoachConsole
                 messages={messages}
                 onSendMessage={handleSendMessage}
