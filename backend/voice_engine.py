@@ -20,6 +20,9 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger("pathfinder.voice")
 
+from backend.memory_engine import recall_student_memory, store_student_exchange
+from backend.ollama_provider import check_and_discover_ollama, stream_ollama_tokens, get_ollama_config
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR / "data"
 
@@ -162,9 +165,11 @@ def clean_tts_speech(text: str) -> str:
     """
     if not text:
         return ""
-    # Remove navigation / action markers
-    s = re.sub(r"\[\[NAVIGATE:[^\]]+\]\]", "", text)
+    # Remove navigation / action / provider markers
+    s = re.sub(r"\[\[PROVIDER:[^\]]+\]\]", "", text)
+    s = re.sub(r"\[\[NAVIGATE:[^\]]+\]\]", "", s)
     s = re.sub(r"\[\[ACTION:[^\]]+\]\]", "", s)
+    s = re.sub(r"\[\[TUTOR:[^\]]+\]\]", "", s)
     # Remove code blocks
     s = re.sub(r"```[\s\S]*?```", "", s)
     # Remove inline code
@@ -257,7 +262,8 @@ def build_voice_system_prompt(
     profile: Optional[Dict[str, Any]] = None,
     language: str = "en-IN",
     active_tab: str = "coach",
-    tutor_state: Optional[Dict[str, Any]] = None
+    tutor_state: Optional[Dict[str, Any]] = None,
+    memory_context: str = ""
 ) -> str:
     """Constructs the high-yield, TTS-safe system instruction for Gemini Flash."""
     profile_data = profile or {}
@@ -290,6 +296,8 @@ def build_voice_system_prompt(
 - Put code and detailed steps strictly in Part 2 after '---SCREEN---'. Include [[TUTOR:{{"projectId": "{t_id}", "stepIndex": {t_step}, "stepCount": 9}}]]
 """
 
+    mem_block = f"\n[STUDENT SEMANTIC MEMORY]\n{memory_context}\n" if memory_context else ""
+
     # Load custom DAS AI system prompt if available
     das_prompt_path = ROOT_DIR / "backend" / "prompts" / "das_ai_system.txt"
     das_base = ""
@@ -305,8 +313,9 @@ def build_voice_system_prompt(
             das_base = ""
 
     return f"""[ROLE DEFINITION]
-You are DAS AI: the official voice-first intelligent assistant and placement coach of the Pathfinder platform.
+You are DAS AI: the official voice-first intelligent assistant and senior placement mentor of the Pathfinder platform.
 You mentor engineering students with warmth, high emotional intelligence, cheerfulness, and absolute technical clarity.
+You answer ANY question about the website ("what is this page", "where is X", "what is it for", "how do I use it") using the Site Tabs guide, and also answer general career, coding, system design, and technical questions like a senior engineer.
 {das_base}
 
 [CANDIDATE CONTEXT]
@@ -314,7 +323,7 @@ You mentor engineering students with warmth, high emotional intelligence, cheerf
 - Target Role: {role}
 - Verified Skills: {', '.join(skills) if isinstance(skills, list) else str(skills)}
 - Active Platform Tab: {active_tab}
-{tutor_context}
+{mem_block}{tutor_context}
 
 [PLATFORM KNOWLEDGE]
 - Site Tabs: {guide_summary}
@@ -826,18 +835,36 @@ async def stream_voice_tokens(
 ) -> AsyncIterator[str]:
     """
     Asynchronous streaming generator yielding tokens over SSE.
-    Queries Gemini Flash with fallback to deterministic grounded reply.
+    Implements a resilient Provider Chain:
+      1. Primary: Google Gemini via GEMINI_API_KEY
+      2. Secondary: Ollama (Local http://localhost:11434 or Hosted https://ollama.com)
+      3. Fallback: Pathfinder Domain Brain Grounded Generator
+    Includes Cognee semantic memory recall (< 1.5s timeout) and background persistence.
     """
+    student_id = "default_student"
+    if profile:
+        student_id = profile.get("email") or profile.get("id") or profile.get("name") or "default_student"
+
+    # 1. Recall student memory (Cognee / Local session cache with hard 1.5s ceiling)
+    memory_ctx = ""
+    try:
+        memory_ctx = await recall_student_memory(student_id, message, timeout_sec=1.5)
+    except Exception as me:
+        logger.debug(f"[Voice Stream] Memory recall skipped: {me}")
+
     sys_prompt = build_voice_system_prompt(
         profile=profile,
         language=language,
         active_tab=active_tab,
-        tutor_state=tutor_state
+        tutor_state=tutor_state,
+        memory_context=memory_ctx
     )
 
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    full_response_tokens: List[str] = []
 
-    # Attempt live streaming with Gemini SDK if available and key configured
+    # 2. Provider 1: Gemini via GEMINI_API_KEY
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    gemini_succeeded = False
     if api_key:
         try:
             from google import genai
@@ -846,7 +873,6 @@ async def stream_voice_tokens(
             client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=10.0))
             contents_list = []
             if history:
-                # Keep last 12 turns
                 for turn in history[-12:]:
                     role = "user" if turn.get("role") == "user" else "model"
                     contents_list.append({"role": role, "parts": [{"text": turn.get("content", "")}]})
@@ -867,20 +893,57 @@ async def stream_voice_tokens(
                 )
             )
 
-            token_yielded = False
+            provider_signaled = False
             for chunk in response_stream:
                 txt = getattr(chunk, "text", "") or ""
                 if txt:
-                    token_yielded = True
+                    if not provider_signaled:
+                        provider_signaled = True
+                        gemini_succeeded = True
+                        yield f"[[PROVIDER:Google Gemini ({model_name})]]\n"
+                    full_response_tokens.append(txt)
                     yield txt
                     await asyncio.sleep(0.005)
 
-            if token_yielded:
+            if gemini_succeeded:
+                try:
+                    asyncio.create_task(store_student_exchange(student_id, message, "".join(full_response_tokens)))
+                except Exception:
+                    pass
                 return
         except Exception as e:
-            logger.warning(f"[Voice Stream] Live Gemini stream failed: {e}. Falling back to deterministic grounded engine.")
+            logger.warning(f"[Voice Stream] Live Gemini stream failed: {e}. Attempting Ollama fallback.")
 
-    # Fallback to local grounded generator
+    # 3. Provider 2: Ollama as backup (Supports Hosted https://ollama.com and Local)
+    ollama_info = check_and_discover_ollama()
+    if ollama_info.get("available"):
+        try:
+            ollama_model = ollama_info.get("model", "llama3.2")
+            provider_signaled = False
+            async for token in stream_ollama_tokens(
+                prompt=message,
+                sys_instruction=sys_prompt,
+                history=history,
+                timeout_sec=12.0
+            ):
+                if token:
+                    if not provider_signaled:
+                        provider_signaled = True
+                        yield f"[[PROVIDER:Ollama ({ollama_model})]]\n"
+                    full_response_tokens.append(token)
+                    yield token
+                    await asyncio.sleep(0.005)
+
+            if provider_signaled:
+                try:
+                    asyncio.create_task(store_student_exchange(student_id, message, "".join(full_response_tokens)))
+                except Exception:
+                    pass
+                return
+        except Exception as oe:
+            logger.warning(f"[Voice Stream] Ollama backup stream failed: {oe}. Falling back to domain brain.")
+
+    # 4. Provider 3: Deterministic Grounded Domain Fallback
     fallback_full = generate_local_voice_reply(
         message=message,
         language=language,
@@ -889,12 +952,18 @@ async def stream_voice_tokens(
         profile=profile
     )
 
-    # Stream out words cleanly with ultra-low latency (~5ms per token)
+    yield "[[PROVIDER:Pathfinder Brain]]\n"
     words = re.split(r"(\s+)", fallback_full)
     for word in words:
         if word:
+            full_response_tokens.append(word)
             yield word
             await asyncio.sleep(0.004)
+
+    try:
+        asyncio.create_task(store_student_exchange(student_id, message, "".join(full_response_tokens)))
+    except Exception:
+        pass
 
 
 _TTS_CAPABILITY_CACHE: Optional[Dict[str, Any]] = None

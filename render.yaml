@@ -16,6 +16,14 @@ services:
         value: gemini-2.0-flash
       - key: GEMINI_API_KEY
         sync: false
+      - key: OLLAMA_API_KEY
+        sync: false
+      - key: OLLAMA_BASE_URL
+        sync: false
+      - key: OLLAMA_MODEL
+        sync: false
+      - key: COGNEE_ENABLED
+        sync: false
       - key: JWT_SECRET
         sync: false
       - key: FRONTEND_URL

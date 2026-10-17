@@ -28,7 +28,9 @@ import {
   Globe,
   FileText,
   AlertCircle,
-  Headphones
+  Headphones,
+  MoreVertical,
+  X
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { StudentProfileState } from "@/types/profile";
@@ -69,6 +71,7 @@ interface AICoachConsoleProps {
 export const cleanTtsSpokenText = (text: string): string => {
   if (!text) return "";
   return text
+    .replace(/\[\[PROVIDER:[^\]]+\]\]/g, "")
     .replace(/\[\[NAVIGATE:[^\]]+\]\]/g, "")
     .replace(/\[\[ACTION:[^\]]+\]\]/g, "")
     .replace(/\[\[TUTOR:[^\]]+\]\]/g, "")
@@ -223,6 +226,57 @@ const QUICK_ACTIONS = [
   { label: "🗺️ Build 6-Week Roadmap", prompt: "Can you create a detailed 6-week milestone roadmap for my placement preparation?" },
 ];
 
+const ASK_ME_QUESTIONS = [
+  {
+    icon: "🎯",
+    title: "Placement chances",
+    desc: "Tier-1 readiness & odds",
+    prompt: "Evaluate my placement readiness score and odds for Tier-1 companies.",
+  },
+  {
+    icon: "📄",
+    title: "Resume builder",
+    desc: "ATS optimization tips",
+    prompt: "How do I optimize my resume to pass ATS filters at top tech companies?",
+  },
+  {
+    icon: "🚀",
+    title: "Project ideas for my branch",
+    desc: "Capstone architectures",
+    prompt: "Suggest top production project architectures suitable for campus placements for my branch.",
+  },
+  {
+    icon: "🛠️",
+    title: "Build a project step by step",
+    desc: "Interactive tutor",
+    prompt: "Take the hardest project architecture and teach me how to build it step by step. Start with Step 1.",
+  },
+  {
+    icon: "🎙️",
+    title: "Mock interview",
+    desc: "STAR technical practice",
+    prompt: "Start an interactive technical mock interview for an SDE role. Ask me question 1.",
+  },
+  {
+    icon: "🌐",
+    title: "Explain the website",
+    desc: "Tour all tools & tabs",
+    prompt: "Explain the Pathfinder website, its key tools, and how to use them.",
+  },
+  {
+    icon: "🗣️",
+    title: "తెలుగులో ప్రిపరేషన్ టిప్స్",
+    desc: "ప్లేస్‌మెంట్ గైడెన్స్",
+    prompt: "నా ప్లేస్‌మెంట్ ప్రిపరేషన్ ఎలా మొదలుపెట్టాలో తెలుగులో వివరించండి.",
+  },
+  {
+    icon: "🇮🇳",
+    title: "प्लेसमेंट की तैयारी कैसे करें?",
+    desc: "कोडिंग और कोर तैयारी",
+    prompt: "कैंपस प्लेसमेंट के लिए सबसे महत्वपूर्ण कोडिंग और कोर टॉपिक्स क्या हैं?",
+  },
+];
+
 const MOCK_QUESTIONS = [
   {
     category: "Coding & DSA",
@@ -360,7 +414,21 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const [speakerTestState, setSpeakerTestState] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [speakerTestMsg, setSpeakerTestMsg] = useState<string | null>(null);
 
-  // Fallback Audio Reader & Persistent Auto-Speak (default false: typing is for visual reading)
+  // Real Provider Badge, Overflow Menu, and Full History Sheet States
+  const [activeProvider, setActiveProvider] = useState<string>("Gemini 2.0 Flash");
+  const [isOverflowOpen, setIsOverflowOpen] = useState<boolean>(false);
+  const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
+
+  // Audio Unlock on First User Interaction
+  const unlockAudio = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    }
+  };
+
+  // Fallback Audio Reader & Persistent Auto-Speak (default true: face speaks every answer)
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const [autoSpeak, setAutoSpeak] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -369,7 +437,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         if (stored !== null) return stored === "true";
       } catch {}
     }
-    return false; // Default false: voice synthesis only runs for active voice turns or manual play
+    return true; // Default true: voice reply is ON by default so the face speaks every answer
   });
 
   const toggleAutoSpeak = () => {
@@ -575,9 +643,10 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
   const speechMetrics = analyzeCandidateSpeech(input);
 
-  // Clean navigation / action / tutor markers from user-facing text
+  // Clean navigation / action / tutor / provider markers from user-facing text
   const cleanDisplayContent = (content: string) => {
     return content
+      .replace(/\[\[PROVIDER:[^\]]+\]\]/g, "")
       .replace(/\[\[NAVIGATE:[^\]]+\]\]/g, "")
       .replace(/\[\[ACTION:[^\]]+\]\]/g, "")
       .replace(/\[\[TUTOR:[^\]]+\]\]/g, "");
@@ -991,6 +1060,14 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               console.log(`[VoiceAgent] Time to first token: ${ttft}ms`);
             }
 
+            // Check provider tag
+            if (token.includes("[[PROVIDER:")) {
+              const match = token.match(/\[\[PROVIDER:([^\]]+)\]\]/);
+              if (match) {
+                setActiveProvider(match[1]);
+              }
+            }
+
             // Check tutor marker
             if (token.includes("[[TUTOR:")) {
               const tutor = parseTutorState(token);
@@ -1308,200 +1385,142 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
   return (
     <div className="relative flex h-[760px] flex-col overflow-hidden rounded-3xl border border-[#161926] bg-[#11131c] shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
-      {/* Console Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#161926] bg-[#0a0b10]/90 px-6 py-3.5 gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white shadow-sm ring-1 ring-white/10">
-            <Bot className="h-5 w-5" />
+      {/* 1. Slim Header Bar */}
+      <div className="flex items-center justify-between border-b border-[#161926] bg-[#0a0b10]/95 px-4 sm:px-6 py-2.5 shrink-0 z-20">
+        {/* Left: Title & Real Provider Badge */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-300">
+            <Bot className="h-4 w-4" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-[#f8fafc]">DAS AI: Voice-First Placement Coach</h2>
-              <span className="flex items-center gap-1.5 rounded border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white shadow-[0_0_8px_rgba(255,255,255,0.15)]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#7c3aed] animate-pulse" />
-                Gemini 2.0 Flash
-              </span>
-            </div>
-            <p className="text-[11px] text-[#94a3b8]">
-              Target: <span className="font-semibold text-white">{targetRole}</span> • Low Latency Voice Pipeline
-            </p>
+          <div className="flex items-center gap-2 truncate">
+            <h2 className="text-xs sm:text-sm font-bold text-white truncate">
+              DAS AI: Voice-First Placement Coach
+            </h2>
+            {/* Real Provider Badge (Never hardcoded) */}
+            <span className="shrink-0 flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-950/60 px-2.5 py-0.5 text-[10px] font-bold text-violet-300 font-mono shadow-[0_0_10px_rgba(124,58,237,0.25)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse" />
+              <span>{activeProvider}</span>
+            </span>
           </div>
         </div>
 
-        {/* Voice Status Indicator, Language Toggle & Controls */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Voice State Indicator */}
-          <div className="flex items-center gap-1.5 rounded-xl border border-[#161926] bg-[#0a0b10] px-2.5 py-1 text-xs">
-            {voiceStatus === "listening" && (
-              <span className="flex items-center gap-1.5 text-[#6d28d9] font-bold animate-pulse">
-                <span className="h-2 w-2 rounded-full bg-[#6d28d9] animate-ping" />
-                Listening...
-              </span>
-            )}
-            {voiceStatus === "thinking" && (
-              <span className="flex items-center gap-1.5 text-[#6d28d9] font-bold">
-                <Loader2 className="h-3 w-3 animate-spin text-[#6d28d9]" />
-                Thinking...
-              </span>
-            )}
-            {voiceStatus === "speaking" && (
-              <span className="flex items-center gap-1.5 text-[#7c3aed] font-bold">
-                <Volume2 className="h-3.5 w-3.5 animate-pulse text-[#7c3aed]" />
-                Speaking...
-              </span>
-            )}
-            {voiceStatus === "idle" && (
-              <span className="flex items-center gap-1.5 text-zinc-400 font-medium text-[11px]">
-                <Radio className="h-3 w-3 text-zinc-500" />
-                Voice Ready
-              </span>
-            )}
+        {/* Right: Language Selector, Mute Toggle, Stop, and Overflow Menu */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Language Selector Chips */}
+          <div className="flex items-center rounded-xl border border-white/10 bg-black/40 p-0.5">
+            {[
+              { id: "auto", label: "Auto" },
+              { id: "en-IN", label: "EN" },
+              { id: "te-IN", label: "తెలుగు" },
+              { id: "hi-IN", label: "हिंदी" },
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setVoiceLanguage(item.id as VoiceLanguage)}
+                className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
+                  voiceLang === item.id
+                    ? "bg-violet-600/30 text-white border border-violet-500/40 shadow-xs"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
 
-          {/* Language Toggle (Auto, EN, te-IN, hi-IN) */}
-          <div className="flex items-center rounded-xl border border-[#161926] bg-[#0a0b10] p-0.5">
-            <button
-              type="button"
-              onClick={() => setVoiceLanguage("auto")}
-              className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
-                voiceLang === "auto"
-                  ? "bg-white/20 text-white border border-white/30 shadow-xs"
-                  : "text-[#94a3b8] hover:text-white"
-              }`}
-              title="Auto-Detect Spoken Language (English, Telugu, or Hindi)"
-            >
-              Auto
-            </button>
-            <button
-              type="button"
-              onClick={() => setVoiceLanguage("en-IN")}
-              className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
-                voiceLang === "en-IN"
-                  ? "bg-white/20 text-white border border-white/30 shadow-xs"
-                  : "text-[#94a3b8] hover:text-white"
-              }`}
-              title="English (India)"
-            >
-              EN
-            </button>
-            <button
-              type="button"
-              onClick={() => setVoiceLanguage("te-IN")}
-              className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
-                voiceLang === "te-IN"
-                  ? "bg-white/20 text-white border border-white/30 shadow-xs"
-                  : "text-[#94a3b8] hover:text-white"
-              }`}
-              title="Telugu (తెలుగు)"
-            >
-              తెలుగు
-            </button>
-            <button
-              type="button"
-              onClick={() => setVoiceLanguage("hi-IN")}
-              className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
-                voiceLang === "hi-IN"
-                  ? "bg-white/20 text-white border border-white/30 shadow-xs"
-                  : "text-[#94a3b8] hover:text-white"
-              }`}
-              title="Hindi (हिंदी)"
-            >
-              हिंदी
-            </button>
-          </div>
-
-          {/* Voice Reply Toggle Button */}
+          {/* Voice Reply Mute Toggle */}
           <button
             type="button"
             onClick={toggleAutoSpeak}
             className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
               autoSpeak
-                ? "border-[#7c3aed]/40 bg-[#7c3aed]/10 text-[#7c3aed] shadow-[0_0_10px_rgba(124, 58, 237,0.15)]"
-                : "border-[#161926] bg-[#0a0b10] text-[#94a3b8] hover:text-white"
+                ? "border-violet-500/40 bg-violet-600/20 text-violet-300 shadow-[0_0_10px_rgba(124,58,237,0.2)]"
+                : "border-white/10 bg-black/40 text-zinc-400 hover:text-white"
             }`}
-            title={autoSpeak ? "Voice replies are ON — Click to mute auto-speaking" : "Voice replies are OFF — Click to enable auto-speaking"}
+            title={autoSpeak ? "Voice replies are ON — Click to mute" : "Voice replies are MUTED — Click to enable"}
           >
-            {autoSpeak ? (
-              <Volume2 className="h-3.5 w-3.5 text-[#7c3aed]" />
-            ) : (
-              <VolumeX className="h-3.5 w-3.5 text-zinc-400" />
-            )}
-            <span className="hidden sm:inline">{autoSpeak ? "Voice Reply ON" : "Voice Reply OFF"}</span>
+            {autoSpeak ? <Volume2 className="h-3.5 w-3.5 text-violet-400" /> : <VolumeX className="h-3.5 w-3.5 text-zinc-500" />}
+            <span className="hidden sm:inline">{autoSpeak ? "Voice Reply ON" : "Muted"}</span>
           </button>
 
-          {/* Mode Switcher */}
-          <div className="flex items-center rounded-xl border border-[#161926] bg-[#0a0b10] p-1">
-            <button
-              type="button"
-              onClick={() => setMode("chat")}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                mode === "chat"
-                  ? "bg-white/20 text-white border border-white/30 shadow-sm"
-                  : "text-[#94a3b8] hover:text-[#f8fafc]"
-              }`}
-            >
-              <MessageSquare className="h-3.5 w-3.5" />
-              <span>Chat</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("interview")}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                mode === "interview"
-                  ? "bg-white/20 text-white border border-white/30 shadow-sm"
-                  : "text-[#94a3b8] hover:text-[#f8fafc]"
-              }`}
-            >
-              <Mic className="h-3.5 w-3.5" />
-              <span>Interview</span>
-            </button>
-          </div>
-
-          {/* Speaker Test Diagnostic Button */}
+          {/* Stop Button */}
           <button
             type="button"
-            onClick={testSpeakerAudio}
-            disabled={speakerTestState === "testing"}
-            className="flex items-center gap-1.5 rounded-xl border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-2.5 py-1.5 text-xs font-bold text-[#7c3aed] hover:bg-[#7c3aed]/20 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-50"
-            title="Click to verify if your speakers & browser audio are working"
+            onClick={handleStopAll}
+            className="flex items-center gap-1.5 rounded-xl border border-red-500/40 bg-red-600/20 px-2.5 py-1 text-xs font-bold text-red-300 hover:bg-red-600/30 active:scale-95 transition-all cursor-pointer shadow-xs"
+            title="Stop speaking and audio immediately"
           >
-            {speakerTestState === "testing" ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-[#7c3aed]" />
-                <span className="hidden sm:inline">Testing Audio...</span>
-              </>
-            ) : (
-              <>
-                <Volume2 className="h-3.5 w-3.5 text-[#7c3aed]" />
-                <span>Test Speaker</span>
-              </>
-            )}
+            <Square className="h-3 w-3 fill-current" />
+            <span className="hidden sm:inline">Stop</span>
           </button>
 
-          {/* Stop Button (Barge-in / Stop Audio & Generation) */}
-          {(voiceStatus !== "idle" || isLoading || isSpeakingSentenceRef.current || isSpeakingRef.current || speakingIndex !== null) && (
+          {/* Overflow Menu Button */}
+          <div className="relative">
             <button
               type="button"
-              onClick={handleStopAll}
-              className="flex items-center gap-1.5 rounded-xl border border-[#6d28d9]/50 bg-[#6d28d9]/20 px-3 py-1.5 text-xs font-bold text-[#6d28d9] hover:bg-[#6d28d9]/30 active:scale-95 transition-all shadow-[0_0_12px_rgba(109, 40, 217,0.3)] cursor-pointer"
-              title="Stop voice output and assistant response immediately"
+              onClick={() => setIsOverflowOpen((prev) => !prev)}
+              className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-black/40 text-zinc-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+              title="More options"
             >
-              <Square className="h-3 w-3 fill-[#6d28d9] text-[#6d28d9]" />
-              <span>Stop</span>
+              <MoreVertical className="h-4 w-4" />
             </button>
-          )}
 
-          {/* Reset Chat */}
-          {messages.length > 0 && (
-            <button
-              onClick={onClearChat}
-              className="flex items-center gap-1.5 rounded-xl border border-[#161926] bg-[#0a0b10] px-2.5 py-1.5 text-xs text-[#94a3b8] transition-colors hover:border-red-500/40 hover:text-red-400"
-              title="Clear chat history"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
-          )}
+            {/* Overflow Dropdown Card */}
+            {isOverflowOpen && (
+              <div
+                className="absolute right-0 mt-2 w-56 rounded-2xl border border-white/10 bg-[#11131c] p-2 shadow-2xl z-30 space-y-1"
+                onClick={() => setIsOverflowOpen(false)}
+              >
+                {/* Chat vs Interview Mode Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setMode((prev) => (prev === "chat" ? "interview" : "chat"))}
+                  className="w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium text-zinc-200 hover:bg-white/10 transition-colors text-left"
+                >
+                  <span className="flex items-center gap-2">
+                    {mode === "chat" ? <MessageSquare className="h-3.5 w-3.5 text-violet-400" /> : <Mic className="h-3.5 w-3.5 text-emerald-400" />}
+                    <span>Mode: {mode === "chat" ? "Chat Mode" : "Mock Interview"}</span>
+                  </span>
+                  <span className="text-[10px] uppercase font-bold text-violet-400">Switch</span>
+                </button>
+
+                {/* Test Speaker */}
+                <button
+                  type="button"
+                  onClick={testSpeakerAudio}
+                  disabled={speakerTestState === "testing"}
+                  className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-zinc-200 hover:bg-white/10 transition-colors text-left disabled:opacity-50"
+                >
+                  <Volume2 className="h-3.5 w-3.5 text-violet-400" />
+                  <span>{speakerTestState === "testing" ? "Testing Audio..." : "Test Speaker"}</span>
+                </button>
+
+                {/* View Full History Sheet */}
+                <button
+                  type="button"
+                  onClick={() => setIsSheetOpen(true)}
+                  className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-zinc-200 hover:bg-white/10 transition-colors text-left"
+                >
+                  <FileText className="h-3.5 w-3.5 text-violet-400" />
+                  <span>View Full Answers & Code</span>
+                </button>
+
+                {/* Reset Conversation */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleStopAll();
+                    onClearChat();
+                  }}
+                  className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors text-left border-t border-white/5 pt-2"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                  <span>Reset Conversation</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1598,356 +1617,177 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         </div>
       )}
 
-      {/* Quick Action Chips Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b border-[#161926] bg-black/10 px-6 py-2 scrollbar-none shrink-0">
-        <span className="text-[11px] font-medium text-[#94a3b8] shrink-0">Quick Commands:</span>
-        {onOpenResumeBuilder && (
+      {/* 2. Main Body: Face-First Center Stage + Desktop "Ask Me" Sidebar */}
+      <div className="flex flex-1 flex-col lg:flex-row overflow-hidden min-h-0 relative">
+        {/* Center Stage: ONLY the human face (55-65% height), Status Word, Live Captions, and "View Full Answer" Chip */}
+        <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-0 overflow-y-auto bg-radial from-[#151726]/40 via-transparent to-transparent">
+          {/* Large Human Face Avatar (55-65% of panel height) */}
+          <div className="flex items-center justify-center w-full my-auto py-2">
+            <AvatarCanvas
+              state={voiceStatus}
+              spokenText={currentSpokenSentence}
+              isSpeaking={voiceStatus === "speaking"}
+              width={280}
+              height={336}
+              className="w-auto max-h-[50vh] sm:max-h-[55vh] drop-shadow-[0_16px_48px_rgba(124,58,237,0.25)] border-violet-500/20"
+            />
+          </div>
+
+          {/* Status Word under Face: Ready / Listening / Thinking / Speaking */}
+          <div className="mt-2 flex items-center gap-2 shrink-0">
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${
+                voiceStatus === "speaking"
+                  ? "bg-emerald-400 animate-pulse ring-4 ring-emerald-400/20"
+                  : voiceStatus === "listening"
+                  ? "bg-violet-400 animate-ping ring-4 ring-violet-400/20"
+                  : voiceStatus === "thinking"
+                  ? "bg-amber-400 animate-spin ring-4 ring-amber-400/20"
+                  : "bg-zinc-500"
+              }`}
+            />
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+              {voiceStatus === "speaking"
+                ? "Speaking"
+                : voiceStatus === "listening"
+                ? "Listening"
+                : voiceStatus === "thinking"
+                ? "Thinking"
+                : "Ready"}
+            </span>
+            {isLoading && voiceStatus !== "speaking" && (
+              <span className="text-xs text-zinc-400 font-normal">
+                ({isServerWakingUp ? "Waking up server..." : "Synthesizing answer..."})
+              </span>
+            )}
+          </div>
+
+          {/* Live Captions (Maximum 2 lines, smooth fading) */}
+          <div className="mt-2 w-full max-w-xl px-4 text-center min-h-[44px] flex items-center justify-center shrink-0">
+            <p className="text-xs sm:text-sm font-medium text-zinc-200 line-clamp-2 leading-relaxed transition-opacity duration-300">
+              {currentSpokenSentence ? (
+                currentSpokenSentence
+              ) : messages.length > 0 && messages[messages.length - 1].role === "assistant" ? (
+                parseScreenMarker(cleanDisplayContent(messages[messages.length - 1].content)).spoken || "Answer completed. Ask me anything!"
+              ) : (
+                "Hello! Ask any question about placements, resumes, projects, or this website."
+              )}
+            </p>
+          </div>
+
+          {/* "View full answer" Chip (Opens slide-over sheet with full text, code, lists & history) */}
+          {messages.length > 0 && (
+            <div className="mt-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  unlockAudio();
+                  setIsSheetOpen(true);
+                }}
+                className="inline-flex items-center gap-2 rounded-xl border border-violet-500/40 bg-violet-600/15 hover:bg-violet-600/25 px-3.5 py-1.5 text-xs font-semibold text-violet-200 transition-all active:scale-95 shadow-sm cursor-pointer hover:border-violet-400 group"
+              >
+                <FileText className="h-3.5 w-3.5 text-violet-400 group-hover:scale-110 transition-transform" />
+                <span>View full answer & details</span>
+                <span className="rounded-full bg-violet-500/20 px-1.5 py-0.5 text-[10px] text-violet-300 font-bold">
+                  {messages.length} msg{messages.length > 1 ? "s" : ""}
+                </span>
+                <ChevronRight className="h-3.5 w-3.5 text-violet-400 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Right Side Column (Desktop): "Ask me" Column with 6 to 8 Clickable Questions */}
+        <div className="hidden lg:flex w-72 lg:w-80 border-l border-[#161926] bg-[#0c0d16]/70 p-4 flex-col gap-2 shrink-0 overflow-y-auto scrollbar-thin">
+          <div className="flex items-center justify-between pb-2 border-b border-white/5">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+              Ask me
+            </span>
+            <span className="text-[10px] text-zinc-500 font-medium">Click to ask</span>
+          </div>
+
+          <div className="flex flex-col gap-1.5 mt-1">
+            {ASK_ME_QUESTIONS.map((q, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  unlockAudio();
+                  handleSafeSend(q.prompt);
+                }}
+                disabled={isLoading}
+                className="w-full text-left rounded-xl border border-white/5 bg-white/[0.03] hover:bg-violet-600/15 hover:border-violet-500/30 p-2.5 transition-all group cursor-pointer disabled:opacity-50"
+              >
+                <div className="flex items-start gap-2.5">
+                  <span className="text-sm shrink-0 group-hover:scale-110 transition-transform">{q.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-zinc-200 group-hover:text-white truncate">{q.title}</p>
+                    <p className="text-[11px] text-zinc-400 line-clamp-1 mt-0.5">{q.desc}</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Horizontal Scrollable "Ask me" Chips Row (Above input on mobile/tablet) */}
+      <div className="lg:hidden flex items-center gap-2 overflow-x-auto border-t border-[#161926] bg-[#0c0d16] px-4 py-2 scrollbar-none shrink-0">
+        <span className="text-[11px] font-bold text-violet-400 shrink-0 flex items-center gap-1">
+          <Sparkles className="h-3 w-3" />
+          Ask me:
+        </span>
+        {ASK_ME_QUESTIONS.map((q, idx) => (
           <button
+            key={idx}
             type="button"
-            onClick={onOpenResumeBuilder}
-            className="shrink-0 flex items-center gap-1 rounded-lg border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-2.5 py-1 text-[11px] font-bold text-[#7c3aed] hover:bg-[#7c3aed]/20 transition-all"
-          >
-            <FileText className="h-3 w-3" />
-            <span>📄 Build 1-Page Resume</span>
-          </button>
-        )}
-        {QUICK_ACTIONS.map((action, i) => (
-          <button
-            key={i}
-            onClick={() => handleSafeSend(action.prompt)}
+            onClick={() => {
+              unlockAudio();
+              handleSafeSend(q.prompt);
+            }}
             disabled={isLoading}
-            className="shrink-0 rounded-lg border border-[#161926] bg-[#0a0b10] px-2.5 py-1 text-[11px] font-medium text-[#94a3b8] transition-all hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-95 disabled:opacity-50"
+            className="shrink-0 flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-zinc-200 hover:bg-violet-600/20 hover:border-violet-500/30 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
           >
-            {action.label}
+            <span>{q.icon}</span>
+            <span>{q.title}</span>
           </button>
         ))}
       </div>
 
-      {/* Main Console Body: Avatar & What-To-Ask (Left) + Messages & Typing Bar (Right) */}
-      <div className="flex flex-1 flex-col md:flex-row overflow-hidden min-h-0">
-        {/* Left Column: Animated Avatar + "What to Ask" Starters */}
-        <div className="w-full md:w-64 lg:w-72 shrink-0 border-b md:border-b-0 md:border-r border-[#161926] bg-[#0c0d16]/80 p-3 sm:p-4 flex flex-col items-center gap-3 overflow-y-auto scrollbar-thin">
-          <AvatarCanvas
-            state={voiceStatus}
-            spokenText={currentSpokenSentence}
-            isSpeaking={voiceStatus === "speaking"}
-            width={160}
-            height={192}
-            className="w-full"
-          />
-
-          {/* Quick "What to Ask" Suggestions for Fresh Visitors */}
-          <div className="w-full flex flex-col gap-1.5 mt-1">
-            <div className="flex items-center gap-1.5 px-1 py-1 text-[11px] font-bold text-violet-300 uppercase tracking-wider">
-              <Sparkles className="h-3 w-3 text-violet-400" />
-              <span>What to Ask (Click):</span>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              {[
-                { icon: "🎯", label: "Check my placement chances", prompt: "Evaluate my placement readiness score and odds for Tier-1 companies." },
-                { icon: "💻", label: "Mock interview question 1", prompt: "Start an interactive technical mock interview for SDE role. Ask me question 1." },
-                { icon: "🗣️", label: "తెలుగులో ప్రిపరేషన్ టిప్స్", prompt: "నా ప్లేస్‌మెంట్ ప్రిపరేషన్ ఎలా మొదలుపెట్టాలో తెలుగులో వివరించండి." },
-                { icon: "🇮🇳", label: "प्लेसमेंट की तैयारी कैसे करें?", prompt: "कैंपस प्लेसमेंट के लिए सबसे महत्वपूर्ण कोडिंग टॉपिक्स क्या हैं?" },
-                { icon: "📄", label: "Review my resume for ATS", prompt: "How do I optimize my resume to pass ATS filters at top tech companies?" },
-                { icon: "🚀", label: "Project ideas for my branch", prompt: "Suggest top production project architectures suitable for campus placements." }
-              ].map((item, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleSafeSend(item.prompt)}
-                  disabled={isLoading}
-                  className="w-full flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] hover:bg-violet-600/15 hover:border-violet-500/30 p-2 text-left text-[11px] text-zinc-300 hover:text-white transition-all group cursor-pointer disabled:opacity-50"
-                >
-                  <span className="text-xs shrink-0 group-hover:scale-110 transition-transform">{item.icon}</span>
-                  <span className="truncate font-medium">{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Messages Thread & Always-Visible Typing Input Bar */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#0a0b12] overflow-hidden">
-          {/* Messages Scroll Area */}
-          <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-zinc-800">
-        {messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-              <Headphones className="h-7 w-7 text-white" />
-            </div>
-            <h3 className="mt-4 text-base font-bold text-[#f8fafc]">AI Placement Voice Agent Ready</h3>
-            <p className="mt-1 max-w-md text-xs text-[#94a3b8] leading-relaxed">
-              Click the microphone to speak naturally in English, Telugu, or Hindi. Speak your question and pause for 1 second to receive instant spoken analysis.
-            </p>
-
-            <div className="mt-6 flex max-w-xl flex-wrap justify-center gap-2">
-              {PROMPT_SUGGESTIONS.map((s, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSafeSend(s)}
-                  disabled={isLoading}
-                  className="rounded-xl border border-[#161926] bg-[#0a0b10] px-3 py-1.5 text-xs text-[#94a3b8] transition-all hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-95 disabled:opacity-50"
-                >
-                  💡 {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          messages.map((m, idx) => {
-            const { spoken, screen, hasScreen } = parseScreenMarker(cleanDisplayContent(m.content));
-            const isScreenExpanded = !collapsedScreenMap[idx];
-
-            return (
-              <div
-                key={idx}
-                className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                {m.role === "assistant" && (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white shadow-sm mt-0.5">
-                    <Bot className="h-4 w-4" />
-                  </div>
-                )}
-
-                <div
-                  data-message-role={m.role}
-                  className={`group relative max-w-[85%] rounded-2xl px-4.5 py-3 text-xs sm:text-sm leading-relaxed ${
-                    m.role === "user"
-                      ? "rounded-tr-none bg-gradient-to-r from-[#f8fafc] to-[#f8fafc] text-zinc-950 font-medium shadow-md shadow-white/10"
-                      : "rounded-tl-none border border-[#161926] bg-[#0a0b10] text-[#f8fafc] shadow-[0_4px_20px_rgba(0,0,0,0.25)] backdrop-blur-xl"
-                  }`}
-                >
-                  {m.role === "assistant" ? (
-                    <div className="space-y-3">
-                      {hasScreen ? (
-                        <>
-                          {/* 1. Spoken Summary Block */}
-                          <div className="rounded-xl border border-[#7c3aed]/20 bg-[#7c3aed]/5 p-3 text-xs sm:text-sm font-medium text-white shadow-sm flex items-start gap-2.5">
-                            <Volume2 className="h-4 w-4 text-[#7c3aed] shrink-0 mt-0.5" />
-                            <div className="flex-1 leading-relaxed">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c3aed] block mb-1">
-                                🎙️ Spoken Direct Insight
-                              </span>
-                              {spoken}
-                            </div>
-                          </div>
-
-                          {/* 2. Expandable Screen Architecture Details */}
-                          <div className="rounded-xl border border-[#161926] bg-[#11131c]/70 overflow-hidden">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setCollapsedScreenMap((prev) => ({
-                                  ...prev,
-                                  [idx]: !prev[idx],
-                                }))
-                              }
-                              className="w-full flex items-center justify-between px-3.5 py-2 text-xs font-semibold text-[#94a3b8] hover:text-white transition-all bg-black/30"
-                            >
-                              <span className="flex items-center gap-2">
-                                <Layers className="h-3.5 w-3.5 text-white" />
-                                <span>Full Architecture & Technical Details</span>
-                              </span>
-                              <span className="text-[11px] text-white flex items-center gap-1 font-bold">
-                                {isScreenExpanded ? "Collapse" : "Continue Reading"}
-                                <ChevronDown
-                                  className={`h-3.5 w-3.5 transition-transform ${
-                                    isScreenExpanded ? "rotate-180" : ""
-                                  }`}
-                                />
-                              </span>
-                            </button>
-
-                            {isScreenExpanded && (
-                              <div className="p-4 border-t border-[#161926] prose prose-sm dark:prose-invert max-w-none text-[#f8fafc] leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-xs [&>strong]:text-white [&>code]:bg-white/10 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded">
-                                <Streamdown>{screen}</Streamdown>
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="prose prose-sm dark:prose-invert max-w-none text-[#f8fafc] leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-xs [&>strong]:text-white [&>code]:bg-white/10 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded">
-                          <Streamdown>{cleanDisplayContent(m.content)}</Streamdown>
-                        </div>
-                      )}
-
-                      {/* Action Triggers in Assistant Message */}
-                      {(m.content.toLowerCase().includes("resume") ||
-                        m.content.includes("[[ACTION:BUILD_RESUME]]")) &&
-                        onOpenResumeBuilder && (
-                          <div className="pt-2 border-t border-[#161926] flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={onOpenResumeBuilder}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-3 py-1.5 text-xs font-bold text-[#7c3aed] hover:bg-[#7c3aed]/20 active:scale-95 transition-all shadow-sm cursor-pointer"
-                            >
-                              <FileText className="h-3.5 w-3.5" />
-                              <span>Open One-Page ATS Resume Builder</span>
-                            </button>
-                          </div>
-                        )}
-                    </div>
-                  ) : (
-                    <div className="whitespace-pre-wrap">{m.content}</div>
-                  )}
-
-                  {/* Message Copy and Speech Reader Controls */}
-                  {m.role === "assistant" && (
-                    <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      <button
-                        type="button"
-                        onClick={() => speakText(m.content, idx)}
-                        className={`rounded p-1 transition-colors ${
-                          speakingIndex === idx
-                            ? "bg-[#7c3aed]/20 text-[#7c3aed]"
-                            : "text-[#94a3b8] hover:text-[#f8fafc]"
-                        }`}
-                        title={speakingIndex === idx ? "Stop audio" : "Listen aloud"}
-                      >
-                        {speakingIndex === idx ? (
-                          <VolumeX className="h-3.5 w-3.5" />
-                        ) : (
-                          <Volume2 className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(m.content, idx)}
-                        className="rounded p-1 text-[#94a3b8] hover:text-[#f8fafc]"
-                        title="Copy text"
-                      >
-                        {copiedIndex === idx ? (
-                          <Check className="h-3.5 w-3.5 text-[#7c3aed]" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {m.role === "user" && (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#161926] bg-[#0a0b10] text-[#94a3b8] mt-0.5">
-                    <User className="h-4 w-4" />
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-
-        {isLoading && (
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white shadow-sm">
-                <Bot className="h-4 w-4" />
-              </div>
-              <div className="flex items-center gap-2.5 rounded-2xl border border-[#161926] bg-[#0a0b10] px-4 py-3 text-xs text-[#94a3b8] shadow-md">
-                <Loader2 className="h-4 w-4 animate-spin text-white" />
-                <span>
-                  {isServerWakingUp
-                    ? "Waking up server... Pathfinder AI will respond shortly."
-                    : "Pathfinder AI is synthesizing placement intelligence..."}
-                </span>
-                <span className="flex gap-1 ml-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="h-1.5 w-1.5 rounded-full bg-zinc-300 animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="h-1.5 w-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: "300ms" }} />
-                </span>
-              </div>
-            </div>
-            {onStopGeneration && (
-              <button
-                type="button"
-                onClick={handleStopAll}
-                className="flex items-center gap-1.5 rounded-xl border border-[#6d28d9]/30 bg-[#6d28d9]/10 px-3 py-1.5 text-xs font-semibold text-[#6d28d9] hover:bg-[#6d28d9]/20 hover:border-[#6d28d9] transition-all active:scale-95 shadow-sm"
-              >
-                <Square className="h-3 w-3 fill-[#6d28d9] text-[#6d28d9]" />
-                <span>Stop</span>
-              </button>
-            )}
-          </div>
-        )}
-
-        <div ref={endRef} />
-      </div>
-
-      {/* Real-time Filler Word & Speech Clarity Bar */}
-      {(voiceStatus === "listening" || (mode === "interview" && speechMetrics.words > 0)) && (
-        <div className="flex flex-wrap items-center justify-between border-t border-[#161926] bg-[#0a0b10] px-4 py-2 text-[11px] gap-2">
-          <div className="flex items-center gap-2">
-            {voiceStatus === "listening" ? (
-              <span className="flex items-center gap-1.5 text-[#6d28d9] font-bold">
-                <span className="h-2 w-2 rounded-full bg-[#6d28d9] animate-ping" />
-                🎙️ Listening... Auto-stops after 1s of silence
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-[#7c3aed] font-bold">
-                <Activity className="h-3.5 w-3.5" />
-                Interview Speech Cadence:
-              </span>
-            )}
-            <span className="text-[#94a3b8]">{speechMetrics.words} words</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className={`font-semibold ${speechMetrics.fillers > 0 ? "text-[#6d28d9]" : "text-[#7c3aed]"}`}>
-              {speechMetrics.fillers > 0
-                ? `⚠️ ${speechMetrics.fillers} filler word${speechMetrics.fillers > 1 ? "s" : ""} (${speechMetrics.list.join(", ")})`
-                : "✨ Zero filler words (Crisp delivery)"}
-            </span>
-            <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 font-bold text-white">
-              Clarity: {speechMetrics.score}%
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Input Bar with Voice Mic, Privacy Note & Send */}
-      <div className="border-t border-[#161926] bg-black/20 p-4">
-        <form onSubmit={handleSubmit}>
-          <div className="relative flex items-center">
+      {/* 3. Bottom: ONE input bar only, full width, with a send button and a small mic button inside the bar. Enter sends. No other controls down there. */}
+      <div className="border-t border-[#161926] bg-[#0a0b12] p-3 sm:p-4 shrink-0">
+        <form onSubmit={(e) => { unlockAudio(); handleSubmit(e); }} className="w-full">
+          <div className="relative flex items-center w-full">
             <input
               id="chat-console-input"
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onFocus={unlockAudio}
               placeholder={
                 voiceStatus === "listening"
-                  ? "Listening... Speak your answer into the microphone (~1s pause auto-sends)..."
-                  : mode === "interview"
-                  ? "Click the mic to speak or type your answer (STAR method)..."
-                  : "Click mic to speak in English, Telugu, or Hindi, or type your query..."
+                  ? "Listening... Speak your question into the microphone..."
+                  : "Ask anything about placement, resume, projects, or this website..."
               }
-              className={`w-full rounded-2xl border bg-[#0a0b10] py-3.5 pl-4 pr-32 text-xs font-medium text-[#f8fafc] outline-none transition-all placeholder:text-[#94a3b8] ${
+              className={`w-full rounded-2xl border bg-[#0a0b10] py-3 pl-4 pr-24 text-xs sm:text-sm font-medium text-[#f8fafc] outline-none transition-all placeholder:text-[#94a3b8] ${
                 voiceStatus === "listening"
-                  ? "border-[#6d28d9]/60 ring-2 ring-[#6d28d9]/20"
+                  ? "border-[#7c3aed] ring-2 ring-[#7c3aed]/25"
                   : "border-[#161926] focus:border-white/40 focus:ring-1 focus:ring-white/20"
               }`}
             />
 
-            {/* Quick Speaker Reply Toggle Button */}
+            {/* Small Mic Button inside input bar */}
             <button
+              id="chat-console-mic"
               type="button"
-              onClick={toggleAutoSpeak}
-              className={`absolute right-22 flex h-8 w-8 items-center justify-center rounded-xl transition-all shadow-sm cursor-pointer ${
-                autoSpeak
-                  ? "bg-white/20 text-white border border-white/40 shadow-xs"
-                  : "bg-white/10 text-zinc-400 hover:bg-white/20 hover:text-white"
-              }`}
-              title={autoSpeak ? "Voice replies are ON (Click to mute)" : "Voice replies are OFF (Click to unmute)"}
-            >
-              {autoSpeak ? <Volume2 className="h-4 w-4 text-white" /> : <VolumeX className="h-4 w-4 text-zinc-400" />}
-            </button>
-
-            {/* Small Mic Button */}
-            <button
-              type="button"
-              onClick={() => toggleListening()}
+              onClick={() => {
+                unlockAudio();
+                toggleListening();
+              }}
               className={`absolute right-12 flex h-8 w-8 items-center justify-center rounded-xl transition-all shadow-sm cursor-pointer ${
                 voiceStatus === "listening"
-                  ? "bg-[#6d28d9] text-white animate-pulse ring-2 ring-[#6d28d9]/50"
+                  ? "bg-violet-600 text-white animate-pulse ring-2 ring-violet-500/50"
                   : "bg-white/10 text-white hover:bg-white/20 active:scale-95"
               }`}
               title={voiceStatus === "listening" ? "Stop listening" : "Click to speak with microphone"}
@@ -1955,27 +1795,158 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               {voiceStatus === "listening" ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
 
-            {/* Send Button */}
+            {/* Send Button inside input bar */}
             <button
               id="chat-console-send"
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-white text-zinc-950 transition-all hover:bg-zinc-200 active:scale-95 disabled:opacity-40 shadow-sm cursor-pointer"
+              className="absolute right-2.5 flex h-8 w-8 items-center justify-center rounded-xl bg-white text-zinc-950 transition-all hover:bg-zinc-200 active:scale-95 disabled:opacity-40 shadow-sm cursor-pointer"
               title="Send text message"
             >
               <Send className="h-4 w-4" />
             </button>
           </div>
         </form>
-
-        {/* Privacy Note */}
-        <p className="mt-2 text-[10px] text-zinc-500 text-center">
-          🔒 Privacy: Speech recognition uses browser speech services. Pathfinder does not record or store your audio.
-        </p>
       </div>
+
+      {/* 4. Slide-over Sheet: Full Answer & Complete Conversation History */}
+      {isSheetOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsSheetOpen(false)}
+          />
+
+          {/* Drawer Container */}
+          <div className="relative w-full sm:w-[540px] md:w-[620px] bg-[#0c0d16] border-l border-zinc-800 shadow-2xl flex flex-col h-full z-10">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#161926] bg-[#0a0b12]">
+              <div className="flex items-center gap-2.5">
+                <FileText className="h-5 w-5 text-violet-400" />
+                <div>
+                  <h3 className="text-sm font-bold text-white">Full Answers & History</h3>
+                  <p className="text-[11px] text-zinc-400">Complete architectural blueprints & conversation records</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSheetOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+                title="Close sheet"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Messages Scroll Area inside Drawer */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 scrollbar-thin">
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center text-zinc-500 py-12">
+                  <MessageSquare className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-xs">No conversation yet. Speak or type to start!</p>
+                </div>
+              ) : (
+                messages.map((m, idx) => {
+                  const { spoken, screen, hasScreen } = parseScreenMarker(cleanDisplayContent(m.content));
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                      {m.role === "assistant" && (
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-300 shadow-sm mt-0.5">
+                          <Bot className="h-3.5 w-3.5" />
+                        </div>
+                      )}
+                      <div
+                        className={`group relative max-w-[88%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed ${
+                          m.role === "user"
+                            ? "rounded-tr-none bg-gradient-to-r from-[#f8fafc] to-[#f8fafc] text-zinc-950 font-medium shadow-md shadow-white/10"
+                            : "rounded-tl-none border border-[#161926] bg-[#0a0b10] text-[#f8fafc] shadow-[0_4px_20px_rgba(0,0,0,0.25)]"
+                        }`}
+                      >
+                        {m.role === "assistant" ? (
+                          <div className="space-y-3">
+                            {hasScreen ? (
+                              <>
+                                <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-3 text-xs sm:text-sm font-medium text-white shadow-sm flex items-start gap-2.5">
+                                  <Volume2 className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
+                                  <div className="flex-1 leading-relaxed">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400 block mb-1">
+                                      🎙️ Spoken Summary
+                                    </span>
+                                    {spoken}
+                                  </div>
+                                </div>
+                                <div className="rounded-xl border border-[#161926] bg-[#11131c]/70 p-4 prose prose-sm dark:prose-invert max-w-none text-[#f8fafc] leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-xs [&>strong]:text-white [&>code]:bg-white/10 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded">
+                                  <Streamdown>{screen}</Streamdown>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="prose prose-sm dark:prose-invert max-w-none text-[#f8fafc] leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-xs [&>strong]:text-white [&>code]:bg-white/10 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded">
+                                <Streamdown>{cleanDisplayContent(m.content)}</Streamdown>
+                              </div>
+                            )}
+
+                            {/* Action Triggers in Assistant Message */}
+                            {(m.content.toLowerCase().includes("resume") ||
+                              m.content.includes("[[ACTION:BUILD_RESUME]]")) &&
+                              onOpenResumeBuilder && (
+                                <div className="pt-2 border-t border-[#161926] flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setIsSheetOpen(false);
+                                      onOpenResumeBuilder();
+                                    }}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-3 py-1.5 text-xs font-bold text-[#7c3aed] hover:bg-[#7c3aed]/20 active:scale-95 transition-all shadow-sm cursor-pointer"
+                                  >
+                                    <FileText className="h-3.5 w-3.5" />
+                                    <span>Open One-Page ATS Resume Builder</span>
+                                  </button>
+                                </div>
+                              )}
+                          </div>
+                        ) : (
+                          <div className="whitespace-pre-wrap">{m.content}</div>
+                        )}
+
+                        {/* Actions (Copy / Read Aloud) */}
+                        {m.role === "assistant" && (
+                          <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
+                              type="button"
+                              onClick={() => speakText(m.content, idx)}
+                              className="rounded p-1 text-zinc-400 hover:text-white"
+                              title="Listen aloud"
+                            >
+                              <Volume2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(m.content, idx)}
+                              className="rounded p-1 text-zinc-400 hover:text-white"
+                              title="Copy text"
+                            >
+                              {copiedIndex === idx ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-</div>
   );
 };
 
