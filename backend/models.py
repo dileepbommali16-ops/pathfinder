@@ -172,6 +172,13 @@ class UserSession(BaseModel):
 class LoginRequest(BaseModel):
     username: str = Field(..., min_length=1, max_length=64)
     email: Optional[str] = Field(None, max_length=128)
+    honeypot: Optional[str] = Field(None, description="Honeypot anti-bot trap")
+
+
+class WebhookPayload(BaseModel):
+    event: str = Field(..., max_length=64)
+    timestamp: Optional[float] = None
+    data: Dict[str, Any] = Field(default_factory=dict)
 
 
 class LoginResponse(BaseModel):

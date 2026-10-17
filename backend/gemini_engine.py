@@ -48,6 +48,9 @@ except ImportError:
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip() or "openrouter/free"
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1").strip().rstrip("/")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3").strip() or "llama3"
 
 # Cache validated models list
 _validated_gemini_models: Optional[List[str]] = None
@@ -336,6 +339,42 @@ def openrouter_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -
             return choice.strip() if choice else None
     except Exception as exc:
         logger.warning(f"[OpenRouter Engine] Warning: {exc}")
+        return None
+
+
+def ollama_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -> Optional[str]:
+    """Chat completion using Ollama's local or cloud OpenAI-compatible API."""
+    base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1").strip().rstrip("/")
+    model = os.getenv("OLLAMA_MODEL", "llama3").strip() or "llama3"
+    api_key = os.getenv("OLLAMA_API_KEY", "").strip() or "ollama"
+
+    try:
+        endpoint = f"{base_url}/chat/completions" if not base_url.endswith("/chat/completions") else base_url
+        msgs = [{"role": "system", "content": sys_instruction}] + messages_list
+        payload = json.dumps({
+            "model": model,
+            "messages": msgs,
+            "temperature": 0.8,
+            "max_tokens": 2000
+        }).encode("utf-8")
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+
+        req = urllib.request.Request(
+            endpoint,
+            data=payload,
+            headers=headers,
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=15.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            choice = data.get("choices", [{}])[0].get("message", {}).get("content")
+            return choice.strip() if choice else None
+    except Exception as exc:
+        logger.warning(f"[Ollama Engine] Warning: {exc}")
         return None
 
 
@@ -978,7 +1017,31 @@ def chat_with_mentor(
                 deprioritize_gemini_model(model)
                 continue
 
-    # 7. OpenRouter fallback if configured
+    # 7. Ollama LLM integration (Local daemon or Ollama Cloud / API Key)
+    ollama_key = os.getenv("OLLAMA_API_KEY", "").strip()
+    ollama_url = os.getenv("OLLAMA_BASE_URL", "").strip()
+    if ollama_key or (ollama_url and "localhost" not in ollama_url) or (not api_key and not OPENROUTER_API_KEY and ollama_url):
+        t_ol_start = time.perf_counter()
+        try:
+            ol_reply = ollama_chat(openrouter_messages, sys_instruction)
+            ol_duration = round((time.perf_counter() - t_ol_start) * 1000, 2)
+            if ol_reply and ol_reply.strip():
+                final_reply = evaluate_and_enforce_novelty(ol_reply.strip(), os.getenv("OLLAMA_MODEL", "llama3"))
+                meta = {
+                    "prep_ms": prep_ms,
+                    "gemini_call_ms": ol_duration,
+                    "novelty_ms": 0.0,
+                    "model_used": f"Ollama ({os.getenv('OLLAMA_MODEL', 'llama3')})",
+                    "attempts": attempts_log,
+                    "status": "success"
+                }
+                if return_meta:
+                    return final_reply, meta
+                return final_reply
+        except Exception as ol_exc:
+            logger.warning(f"[Ollama Engine] Warning: {ol_exc}")
+
+    # 8. OpenRouter fallback if configured
     if OPENROUTER_API_KEY:
         t_or_start = time.perf_counter()
         try:

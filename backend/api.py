@@ -125,6 +125,7 @@ from backend.routers.analytics_router import analytics_router
 from backend.routers.ai_router import ai_router
 from backend.routers.predictions_router import predictions_router
 from backend.routers.export_router import export_router
+from backend.routers.webhook_router import webhook_router
 
 # Setup application logger
 setup_logging()
@@ -262,6 +263,7 @@ app.include_router(analytics_router)
 app.include_router(ai_router)
 app.include_router(predictions_router)
 app.include_router(export_router)
+app.include_router(webhook_router)
 
 # Versioned API Prefix (/api/v1) for Standard API Versioning
 v1_app = FastAPI(title="Pathfinder v1 Sub-API")
@@ -273,6 +275,7 @@ v1_app.include_router(analytics_router)
 v1_app.include_router(ai_router)
 v1_app.include_router(predictions_router)
 v1_app.include_router(export_router)
+v1_app.include_router(webhook_router)
 app.mount("/api/v1", v1_app)
 
 

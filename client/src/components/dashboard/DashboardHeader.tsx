@@ -1,5 +1,5 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Target,
   Compass,
@@ -14,7 +14,9 @@ import {
   Lightbulb,
   ShieldAlert,
   Zap,
-  Mic
+  Mic,
+  Menu,
+  X
 } from "lucide-react";
 
 export type TabId =
@@ -109,16 +111,31 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onLogout,
   userRole = "student",
 }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleSelectTab = (tabId: TabId) => {
+    setActiveTab(tabId);
+    setMobileMenuOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#0a0b10]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.85)]">
       {/* Subtle Dual Horizon Accent */}
       <div className="pointer-events-none absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#7c3aed]/30 to-transparent" />
 
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        {/* Brand & Status */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#11131c] via-[#161926] to-[#1c2030] shadow-md ring-1 ring-[#7c3aed]/40">
-            <GraduationCap className="h-5 w-5 text-[#7c3aed]" />
+        {/* Photo 3 - Item 17: Clickable Logo */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("overview");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className="flex items-center gap-3 text-left cursor-pointer group focus:outline-none"
+          title="Return to Dashboard Overview"
+        >
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#11131c] via-[#161926] to-[#1c2030] shadow-md ring-1 ring-[#7c3aed]/40 transition-transform group-hover:scale-105">
+            <GraduationCap className="h-5 w-5 text-[#7c3aed] transition-colors group-hover:text-white" />
             <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#9f1239] opacity-75"></span>
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#9f1239] shadow-[0_0_8px_rgba(159,18,57,0.9)]"></span>
@@ -127,7 +144,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold tracking-tight text-[#f8fafc] drop-shadow-sm font-['Space_Grotesk']">
+              <span className="text-lg font-bold tracking-tight text-[#f8fafc] drop-shadow-sm font-['Space_Grotesk'] group-hover:text-white">
                 Pathfinder <span className="text-[#9f1239]">2.0</span>
               </span>
               <span className="rounded-md border border-[#7c3aed]/40 bg-[#7c3aed]/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#7c3aed] uppercase shadow-sm">
@@ -141,10 +158,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </div>
             <p className="text-xs text-[#94a3b8]">Campus Placement & Engineering Intelligence</p>
           </div>
-        </div>
+        </button>
 
-        {/* User Identity & Logout */}
-        <div className="flex items-center gap-3">
+        {/* User Identity, Mobile Hamburger & Logout */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
           <button
             type="button"
             onClick={() => setActiveTab("profile")}
@@ -167,18 +184,29 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </div>
           </button>
 
+          {/* Photo 3 - Item 3: Mobile Hamburger Menu Toggle */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#11131c] text-[#f8fafc] hover:bg-white/10 transition-colors cursor-pointer"
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
+          </button>
+
           <button
             onClick={onLogout}
             className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#11131c] px-3 py-1.5 text-xs font-medium text-[#94a3b8] transition-all hover:border-[#9f1239]/40 hover:text-[#f8fafc] active:scale-95 shadow-sm cursor-pointer"
             title="Sign out of Pathfinder"
           >
             <LogOut className="h-3.5 w-3.5" />
-            <span>Logout</span>
+            <span className="hidden xs:inline">Logout</span>
           </button>
         </div>
       </div>
 
-      {/* Navigation Tabs Bar */}
+      {/* Navigation Tabs Bar (Desktop and Horizontal Scroll) */}
       <div className="border-t border-[rgba(255,255,255,0.08)] bg-[#0a0b10]/90 px-4 sm:px-6">
         <div className="mx-auto flex max-w-7xl flex-nowrap items-center gap-2 overflow-x-auto py-2.5 scrollbar-none">
           {TABS.map((tab) => {
@@ -189,7 +217,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <button
                 key={tab.id}
                 id={`tab-${tab.id}`}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleSelectTab(tab.id)}
                 className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
                   isActive
                     ? `${theme.activeBg} ${theme.text} border ${theme.border} ${theme.glow}`
@@ -215,6 +243,51 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           })}
         </div>
       </div>
+
+      {/* Photo 3 - Item 3: Mobile Menu Drawer Modal */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden border-t border-white/10 bg-[#0c0e17] px-4 py-4 shadow-2xl overflow-hidden"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {TABS.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                const theme = TAB_THEMES[tab.id] || WINE_THEME;
+                return (
+                  <button
+                    key={`mobile-${tab.id}`}
+                    onClick={() => handleSelectTab(tab.id)}
+                    className={`flex items-center justify-between rounded-xl p-3 text-left transition-all ${
+                      isActive
+                        ? `${theme.activeBg} ${theme.text} border ${theme.border}`
+                        : "bg-[#11131c]/80 text-[#94a3b8] hover:bg-white/5 hover:text-white border border-white/5"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? "bg-white/10 text-white" : "bg-white/5 text-[#94a3b8]"}`}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-semibold">{tab.label}</span>
+                    </div>
+                    {tab.badge && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${isActive ? theme.badge : "bg-white/5 text-gray-400 border-white/10"}`}>
+                        {tab.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
+

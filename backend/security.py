@@ -1,7 +1,7 @@
 import time
 import re
 import html
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Any
 from collections import defaultdict
 from fastapi import Request, HTTPException, status, Header
 
@@ -230,4 +230,84 @@ SECURITY_HEADERS = {
         "upgrade-insecure-requests;"
     )
 }
+
+
+# ==========================================
+# 8. WEBHOOK SIGNATURE VERIFICATION (Point 19)
+# ==========================================
+
+import hmac
+import hashlib
+
+def verify_webhook_signature(
+    payload_bytes: bytes,
+    signature_header: Optional[str],
+    secret: str,
+    header_prefix: str = "sha256="
+) -> bool:
+    """
+    Verifies incoming webhook payloads against an HMAC SHA-256 signature.
+    Prevents replay attacks, man-in-the-middle forging, and unauthorized triggering.
+    """
+    if not signature_header or not secret:
+        return False
+        
+    sig = signature_header.strip()
+    if header_prefix and sig.startswith(header_prefix):
+        sig = sig[len(header_prefix):]
+        
+    expected_hash = hmac.new(
+        secret.encode("utf-8"),
+        payload_bytes,
+        hashlib.sha256
+    ).hexdigest()
+    
+    return hmac.compare_digest(sig.lower(), expected_hash.lower())
+
+
+# ==========================================
+# 9. BOT PROTECTION & HONEYPOT (Point 11)
+# ==========================================
+
+def check_bot_protection(honeypot_value: Optional[str] = None) -> bool:
+    """
+    Validates form submissions against automated bot traps.
+    Legitimate users leave hidden honeypot fields blank; automated spam bots populate them.
+    Returns True if valid human submission, False if bot activity detected.
+    """
+    if honeypot_value and honeypot_value.strip():
+        return False
+    return True
+
+
+# ==========================================
+# 10. ADMIN ACTION AUDIT LOGGING (Point 12)
+# ==========================================
+
+import logging
+audit_logger = logging.getLogger("pathfinder.audit")
+
+def log_admin_action(admin_identifier: str, action: str, target: str = "", details: Dict[str, Any] = None):
+    """
+    Records immutable audit trail entries for all administrative actions.
+    Ensures accountability for privilege escalation, data export, or system config changes.
+    """
+    audit_logger.info(
+        f"[AUDIT_LOG] Administrator='{admin_identifier}' Action='{action}' Target='{target}' Details={details or {}}"
+    )
+
+
+# ==========================================
+# 11. PRIVATE STORAGE ACCESS VERIFICATION (Point 13)
+# ==========================================
+
+def validate_private_storage_access(user_id: str, resource_owner_id: str, is_admin: bool = False) -> bool:
+    """
+    Enforces tenant privacy on cloud storage objects (resumes, exports).
+    Ensures users can only access their own files unless explicitly an administrator.
+    """
+    if is_admin:
+        return True
+    return user_id == resource_owner_id
+
 

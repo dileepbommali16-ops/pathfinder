@@ -9,6 +9,7 @@ import secrets
 from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional
+from dotenv import load_dotenv
 
 
 class Settings:
@@ -18,6 +19,11 @@ class Settings:
         # Base paths
         self.root_dir: Path = Path(__file__).resolve().parent.parent
         self.backend_dir: Path = Path(__file__).resolve().parent
+
+        # Load environment files
+        load_dotenv(self.root_dir / ".env")
+        load_dotenv(self.backend_dir / ".env")
+
         self.data_dir: Path = self.root_dir / "data"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
@@ -50,6 +56,9 @@ class Settings:
         self.gemini_model: str = "gemini-2.0-flash" if "3.8" in raw_model else raw_model
         self.openrouter_api_key: Optional[str] = os.getenv("OPENROUTER_API_KEY")
         self.openrouter_model: str = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3-8b-instruct:free")
+        self.ollama_api_key: Optional[str] = os.getenv("OLLAMA_API_KEY")
+        self.ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+        self.ollama_model: str = os.getenv("OLLAMA_MODEL", "llama3")
         self.ai_daily_budget_per_user: int = int(os.getenv("AI_DAILY_BUDGET", "200"))
 
         # CORS Origins

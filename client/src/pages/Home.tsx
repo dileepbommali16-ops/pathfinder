@@ -51,9 +51,33 @@ import {
 } from "lucide-react";
 import { getApiBase, API_BASE, fetchWithTimeout, api } from "@/lib/apiClient";
 import { getTabKnowledge } from "@/lib/siteKnowledge";
+import { Footer } from "@/components/dashboard/Footer";
+import { toast } from "sonner";
+import DepthText from "@/components/dashboard/DepthText";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+
+  // Photo 3 - Item 5: Dynamic Document Page Titles based on Active Tab
+  useEffect(() => {
+    const titles: Record<TabId, string> = {
+      overview: "Executive Dashboard · Pathfinder 2.0",
+      interview: "AI Mock Interview & Viva · Pathfinder 2.0",
+      action: "Readiness Command Center · Pathfinder 2.0",
+      skills: "6-Week Sprint Roadmap · Pathfinder 2.0",
+      coach: "DAS AI Voice Coach · Pathfinder 2.0",
+      projects: "Flagship Portfolio Blueprints · Pathfinder 2.0",
+      analytics: "Cohort Placement Intelligence · Pathfinder 2.0",
+      resume: "ATS Resume Studio & Scanner · Pathfinder 2.0",
+      branches: "Branch & Degree Analytics · Pathfinder 2.0",
+      defense: "STAR Architecture Defense Simulator · Pathfinder 2.0",
+      profile: "Candidate Profile & SSOT · Pathfinder 2.0",
+      roles: "Target Role Intelligence · Pathfinder 2.0",
+      missions: "Placement Mission Tracker · Pathfinder 2.0",
+    };
+    document.title = titles[activeTab] || "Pathfinder 2.0 · Autonomous AI Career Intelligence";
+  }, [activeTab]);
+
   const [profile, setProfile] = useState<StudentProfileState>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("pathfinder_profile_draft");
@@ -546,13 +570,17 @@ export default function Home() {
         wizard_step: 5,
       };
 
-      await fetchWithTimeout(`${API_BASE}/api/profile`, {
+      const saveResp = await fetchWithTimeout(`${API_BASE}/api/profile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       }, 6000);
+      if (saveResp.ok) {
+        toast.success("Profile saved and synchronized with AI engine!");
+      }
     } catch (err) {
       console.warn("Backend save profile error:", err);
+      toast.info("Profile draft saved locally.");
     }
 
     await fetchPrediction(updated);
@@ -685,6 +713,7 @@ export default function Home() {
       if (resp.ok) {
         const data = await resp.json();
         setRoadmap(data);
+        toast.success("6-Week Placement Roadmap regenerated!");
       }
     } catch (err) {
       console.warn("Roadmap API error, using structured local plan", err);
@@ -1090,9 +1119,13 @@ export default function Home() {
       if (resp.ok) {
         const data = await resp.json();
         setResumeFeedback(data);
+        toast.success("Resume parsed and analyzed successfully against ATS screening rubrics!");
+      } else {
+        toast.error("Resume analysis could not be completed. Please check your document.");
       }
     } catch (err) {
       console.warn("Resume analysis warning:", err);
+      toast.error("Resume scanner service is currently busy. Please try again shortly.");
     } finally {
       setIsAnalyzingResume(false);
     }
@@ -1100,6 +1133,7 @@ export default function Home() {
 
   // Downloads
   const handleDownloadCSV = () => {
+    toast.success("Exporting cohort analytics spreadsheet (CSV)...");
     const q = new URLSearchParams({
       year: cohortFilters.year.toString(),
       branch: cohortFilters.branch,
@@ -1110,6 +1144,7 @@ export default function Home() {
   };
 
   const handleDownloadPDF = () => {
+    toast.success("Generating cohort placement intelligence PDF report...");
     const q = new URLSearchParams({
       year: cohortFilters.year.toString(),
       branch: cohortFilters.branch,
@@ -1743,8 +1778,41 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
+              className="space-y-8 sm:space-y-12"
             >
+              {/* 3D DepthText Header powered by GSAP & Gemini AI */}
+              <div className="flex flex-col items-center justify-center pt-2 pb-4 text-center">
+                <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-3.5 py-1 text-xs font-semibold text-purple-300 backdrop-blur-md mb-2 shadow-[0_0_15px_rgba(124,58,237,0.25)]">
+                  <Sparkles className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
+                  <span>Powered by Gemini 2.0 Flash Multimodal AI</span>
+                </div>
+                <div className="w-full flex justify-center overflow-hidden py-2">
+                  <DepthText
+                    text="Elevate"
+                    layers={34}
+                    depth={2.4}
+                    depthColor="#7c3aed"
+                    gradientDepth={false}
+                    hoverPush={0.5}
+                    float={false}
+                    tilt={7.5}
+                    pointerTracking
+                    smoothing={0.14}
+                    perspective={900}
+                    autoOrbit
+                    orbitSpeed={0.35}
+                    fontSize="clamp(3rem, 12cqi, 7rem)"
+                    fontWeight={900}
+                    shadow
+                    outline={false}
+                    intro
+                  />
+                </div>
+                <p className="max-w-md text-xs sm:text-sm text-slate-400 font-medium">
+                  Autonomous career coaching, real-time voice viva, and interview simulation
+                </p>
+              </div>
+
               <SectionHeader
                 title="DAS AI Voice Coach"
                 description="Real-time conversational mentor powered by Gemini AI with live profile awareness"
@@ -1945,6 +2013,9 @@ export default function Home() {
           onClose={() => setShowOnePageResume(false)}
           profile={profile}
         />
+
+        {/* Global Footer with Dynamic Year, Tab Links, and Contact Actions */}
+        <Footer onNavigateTab={setActiveTab} />
       </main>
     </div>
   );

@@ -11,7 +11,14 @@ from typing import Optional, Dict, Any
 from fastapi import APIRouter, Request, HTTPException, Header, Depends
 
 from backend.models import UserSession, LoginRequest, LoginResponse
-from backend.security import rate_limiter, get_client_ip, sanitize_user_input, require_role
+from backend.security import (
+    rate_limiter,
+    get_client_ip,
+    sanitize_user_input,
+    require_role,
+    log_admin_action,
+    check_bot_protection
+)
 from backend.oauth import _active_sessions, verify_signed_session_token, revoke_signed_session_token
 from backend.data_service import get_placement_df
 from backend.logging_config import logger
@@ -81,7 +88,15 @@ def require_admin(user: UserSession = Depends(require_authenticated)) -> UserSes
 
 @auth_router.post("/api/auth/login", response_model=LoginResponse)
 def login_endpoint(payload: LoginRequest, request: Request):
-    """Enforces login rate limiting and creates authenticated user session."""
+    """Enforces login rate limiting, bot protection, and creates authenticated user session."""
+    # Bot Protection / Honeypot verification (Point 11)
+    if not check_bot_protection(payload.honeypot):
+        logger.warning(f"[BOT BLOCKED] Automated bot trap triggered on login from IP: {get_client_ip(request)}")
+        raise HTTPException(
+            status_code=400,
+            detail="Automated submission detected. Request rejected."
+        )
+
     client_ip = get_client_ip(request)
     allowed, _ = rate_limiter.check(f"login_{client_ip}", max_requests=10, window_seconds=60)
     if not allowed:
@@ -103,7 +118,7 @@ def login_endpoint(payload: LoginRequest, request: Request):
         import hmac
         if hmac.compare_digest(admin_header, configured_key):
             is_admin = True
-    elif not configured_key and os.getenv("ENVIRONMENT") == "development" and not os.getenv("RENDER") and not os.getenv("VERCEL"):
+    elif not configured_key and os.getenv("ENVIRONMENT", "development") in ("development", "test") and not os.getenv("RENDER") and not os.getenv("VERCEL"):
         is_admin = (
             username.lower() in ["admin", "administrator", "faculty_admin", "staff_admin"] or
             (email and email.lower().startswith("admin@"))
@@ -149,6 +164,13 @@ def auth_me_endpoint(user: UserSession = Depends(require_authenticated)):
 @auth_router.get("/api/admin/system-stats")
 def get_system_stats(admin_user: UserSession = Depends(require_admin)):
     """Protected Admin endpoint: reports infrastructure, active sessions, and cohort metrics."""
+    # Point 12: Log admin privileged action
+    log_admin_action(
+        admin_identifier=admin_user.username,
+        action="GET_SYSTEM_STATS",
+        target="infrastructure_telemetry",
+        details={"user_id": admin_user.user_id, "role": admin_user.role}
+    )
     df = get_placement_df()
     return {
         "status": "operational",
