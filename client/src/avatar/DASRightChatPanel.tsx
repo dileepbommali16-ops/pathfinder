@@ -48,9 +48,11 @@ export const DASRightChatPanel: React.FC<DASRightChatPanelProps> = ({
   };
 
   const quickChips = [
-    "Explain this slide step-by-step",
+    "Explain Pathfinder architecture step-by-step",
     "How does the Cognee Graph RAG work?",
-    "What are the main system bottlenecks?",
+    "CSE candidate profile & 6-week DSA roadmap",
+    "Tier-1 system design & bottlenecks",
+    "Conduct a mock interview drill",
     "Telugu lo explain cheppu"
   ];
 

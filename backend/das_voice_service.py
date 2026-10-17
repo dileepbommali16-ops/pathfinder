@@ -18,16 +18,21 @@ from backend.das_ollama_engine import stream_das_response
 logger = logging.getLogger("das.voice_service")
 das_ws_router = APIRouter()
 
-INITIAL_GREETING_TEXT = "I'm your AI your DAS Agent, niku em help kavali cheppu."
+INITIAL_GREETING_TEXT = "I'm your AI, your DAS Agent. Tell me, how can I help you?"
 
-async def synthesize_speech_with_visemes(text: str, voice: str = "en-IN-NeerjaNeural") -> Dict[str, Any]:
+# Deep, natural, confident MALE voice profile (Senior Tech Lead)
+DEFAULT_MALE_VOICE = os.getenv("DAS_VOICE", "en-US-GuyNeural")
+
+async def synthesize_speech_with_visemes(text: str, voice: str = DEFAULT_MALE_VOICE) -> Dict[str, Any]:
     """
     Uses edge-tts to generate audio and word/phoneme boundary timestamps.
+    Deep male voice with sub-100ms streaming audio generation.
     Falls back gracefully if edge_tts is not installed.
     """
     try:
         import edge_tts  # type: ignore
-        communicate = edge_tts.Communicate(text, voice)
+        # Rate slightly brisk (+3%) and pitch slightly lower (-2Hz) for authoritative tech lead presence
+        communicate = edge_tts.Communicate(text, voice, rate="+3%", pitch="-2Hz")
         audio_chunks = []
         viseme_events = []
 
@@ -68,7 +73,7 @@ async def das_agent_websocket(websocket: WebSocket):
 
     try:
         # 1. LIFECYCLE RULE: Immediate greeting on connection
-        # "I'm your AI your DAS Agent, niku em help kavali cheppu."
+        # "I'm your AI, your DAS Agent. Tell me, how can I help you?"
         greeting_synth = await synthesize_speech_with_visemes(INITIAL_GREETING_TEXT)
         audio_b64 = base64.b64encode(greeting_synth["audio_bytes"]).decode("utf-8") if greeting_synth["audio_bytes"] else ""
         

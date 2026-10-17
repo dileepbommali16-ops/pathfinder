@@ -726,7 +726,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "I'm your AI your DAS Agent, niku em help kavali cheppu.",
+      content: "I'm your AI, your DAS Agent. Tell me, how can I help you?",
     },
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);

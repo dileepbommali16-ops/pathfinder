@@ -684,12 +684,26 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       const inEn = list.find((v) => v.lang.toLowerCase().includes("en-in") || v.name.toLowerCase().includes("india"));
       if (inEn) return inEn;
     } else {
+      // Prioritize deep, natural, fluent MALE voices for DAS Senior Tech Lead persona
+      const maleVoice = list.find(
+        (v) =>
+          (v.name.toLowerCase().includes("prabhat") ||
+            v.name.toLowerCase().includes("guy") ||
+            v.name.toLowerCase().includes("david") ||
+            v.name.toLowerCase().includes("christopher") ||
+            v.name.toLowerCase().includes("george") ||
+            v.name.toLowerCase().includes("male") ||
+            v.name.toLowerCase().includes("ryan") ||
+            v.name.toLowerCase().includes("ravi") ||
+            v.name.toLowerCase().includes("hemant")) &&
+          (v.lang.toLowerCase().startsWith("en") || v.lang.toLowerCase().includes("in"))
+      );
+      if (maleVoice) return maleVoice;
+
       const enIn = list.find(
         (v) =>
           v.lang.toLowerCase().includes("en-in") ||
-          v.name.toLowerCase().includes("india") ||
-          v.name.toLowerCase().includes("neerja") ||
-          v.name.toLowerCase().includes("prabhat")
+          v.name.toLowerCase().includes("india")
       );
       if (enIn) return enIn;
       const anyEn = list.find((v) => v.lang.toLowerCase().startsWith("en"));
@@ -857,8 +871,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     if (voice) {
       utterance.voice = voice;
     }
-    utterance.rate = lang === "en-IN" ? 1.05 : 0.95;
-    utterance.pitch = 1.0;
+    utterance.rate = 1.0;
+    utterance.pitch = 0.93; // Deep masculine tech lead resonance
 
     utterance.onstart = () => {
       if (genId !== generationIdRef.current) {
@@ -942,9 +956,9 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
   // Auto-initiate DAS Voice Agent speech on initial load / trigger
   useEffect(() => {
-    const greetingText = "I'm your AI your DAS Agent, niku em help kavali cheppu.";
+    const greetingText = "I'm your AI, your DAS Agent. Tell me, how can I help you?";
     const timer = setTimeout(() => {
-      queueSentenceForTts(greetingText, "te-IN", generationIdRef.current);
+      queueSentenceForTts(greetingText, "en-IN", generationIdRef.current);
     }, 1000);
     return () => clearTimeout(timer);
   }, []);

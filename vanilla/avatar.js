@@ -258,17 +258,23 @@
     if (!cleanText) return;
 
     const utter = new SpeechSynthesisUtterance(cleanText);
-    utter.rate = 1.05;
-    utter.pitch = 1.0;
+    utter.rate = 1.0;
+    utter.pitch = 0.93; // Deep masculine tech lead resonance
 
-    // Pick Telugu or Indian English voice
+    // Prioritize natural deep male voices
     const voices = window.speechSynthesis.getVoices();
     const preferredVoice = voices.find(
       (v) =>
-        v.lang.toLowerCase().includes("te-in") ||
-        v.lang.toLowerCase().includes("en-in") ||
-        v.name.toLowerCase().includes("india")
-    );
+        (v.name.toLowerCase().includes("prabhat") ||
+          v.name.toLowerCase().includes("guy") ||
+          v.name.toLowerCase().includes("david") ||
+          v.name.toLowerCase().includes("christopher") ||
+          v.name.toLowerCase().includes("george") ||
+          v.name.toLowerCase().includes("male") ||
+          v.name.toLowerCase().includes("ryan") ||
+          v.name.toLowerCase().includes("ravi")) &&
+        (v.lang.toLowerCase().startsWith("en") || v.lang.toLowerCase().includes("in"))
+    ) || voices.find((v) => v.lang.toLowerCase().startsWith("en"));
     if (preferredVoice) utter.voice = preferredVoice;
 
     utter.onstart = () => {
@@ -323,10 +329,10 @@
     if (document.getElementById("das-avatar-container")) {
       initAvatar("das-avatar-container");
 
-      // Auto-trigger initial DAS greeting on first trigger:
-      // "I'm your AI your DAS Agent, niku em help kavali cheppu."
+      // Auto-trigger initial DAS greeting on load:
+      // "I'm your AI, your DAS Agent. Tell me, how can I help you?"
       setTimeout(() => {
-        speakDasResponse("I'm your AI your DAS Agent, niku em help kavali cheppu.");
+        speakDasResponse("I'm your AI, your DAS Agent. Tell me, how can I help you?");
       }, 800);
     }
   });
