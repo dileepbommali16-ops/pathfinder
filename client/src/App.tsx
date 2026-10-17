@@ -7,12 +7,14 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import AvatarCalibrate from "./pages/AvatarCalibrate";
 import AvatarTest from "./pages/AvatarTest";
+import { DASStudioLayout } from "./avatar/DASStudioLayout";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/das-agent"} component={DASStudioLayout} />
       <Route path={"/avatar-calibrate"} component={AvatarCalibrate} />
       <Route path={"/avatar-test"} component={AvatarTest} />
       <Route path={"/404"} component={NotFound} />

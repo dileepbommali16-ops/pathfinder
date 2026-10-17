@@ -126,6 +126,7 @@ from backend.routers.ai_router import ai_router
 from backend.routers.predictions_router import predictions_router
 from backend.routers.export_router import export_router
 from backend.routers.webhook_router import webhook_router
+from backend.das_voice_service import das_ws_router
 
 # Setup application logger
 setup_logging()
@@ -264,6 +265,7 @@ app.include_router(ai_router)
 app.include_router(predictions_router)
 app.include_router(export_router)
 app.include_router(webhook_router)
+app.include_router(das_ws_router)
 
 # Versioned API Prefix (/api/v1) for Standard API Versioning
 v1_app = FastAPI(title="Pathfinder v1 Sub-API")
