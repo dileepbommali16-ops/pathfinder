@@ -23,7 +23,7 @@ export const CaptionBar: React.FC<CaptionBarProps> = ({
       {/* 2-Line Subtitle Banner */}
       <div className="w-full min-h-[44px] flex items-center justify-center text-center">
         <p className="text-xs sm:text-sm font-medium text-cyan-100 line-clamp-2 leading-relaxed tracking-wide transition-opacity duration-200">
-          {currentSentence || "I'm your AI, your DAS Agent. Tell me, how can I help you?"}
+          {currentSentence || "Hi sir, I'm your Pathfinder AI agent, how can I help you?"}
         </p>
       </div>
 

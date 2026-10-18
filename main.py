@@ -5,7 +5,7 @@ Pathfinder DAS Autonomous Core Pipeline:
 - Web-native secure architecture with zero OS control dependencies
 - 3D Cybernetic Blue Face Viewport with live idle breathing, eye blinking (3-5s), and Viseme lip-sync
 - Gemini Live WebSocket integration with 'Puck' voice configuration
-- Initial greeting: "I'm your AI, your DAS Agent. Tell me, how can I help you?"
+- Initial greeting: "Hi sir, I'm your Pathfinder AI agent, how can I help you?"
 """
 
 import os
@@ -169,7 +169,7 @@ def run():
     print(f"• Studio UI Viewport: http://localhost:{port}/")
     print(f"• Voice Profile: Puck (Male Prebuilt Config)")
     print(f"• System Persona: DAS (Dedicated Placement Strategist)")
-    print(f"• Initial Greeting: \"I'm your AI, your DAS Agent. Tell me, how can I help you?\"")
+    print(f"• Initial Greeting: \"Hi sir, I'm your Pathfinder AI agent, how can I help you?\"")
     print(f"• OS Automation: COMPLETELY REMOVED (Website-Dedicated Mode)")
     print("=" * 60 + "\n")
 

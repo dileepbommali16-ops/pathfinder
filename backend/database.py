@@ -117,6 +117,20 @@ def init_database():
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_readiness_history_created ON readiness_history(created_at);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_readiness_history_composite ON readiness_history(user_id, created_at DESC);")
 
+        # 4. Student Conversational Memory Table (Lightweight persistent SQLite store)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS student_memory (
+                user_id TEXT PRIMARY KEY,
+                goals TEXT DEFAULT '[]',
+                weak_areas TEXT DEFAULT '[]',
+                topics TEXT DEFAULT '[]',
+                last_summary TEXT DEFAULT '',
+                last_session_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_student_memory_user ON student_memory(user_id);")
+
         conn.commit()
 
     # Pre-populate cohort_placements from CSV if empty
@@ -469,6 +483,74 @@ def get_user_readiness_history(user_id: str, limit: int = 50) -> List[Dict[str, 
         """, (user_id, limit))
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
+
+
+def get_student_memory(user_id: str) -> Dict[str, Any]:
+    """Retrieves long-term lightweight conversational memory for a student from SQLite."""
+    clean_id = user_id or "default_student"
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT user_id, goals, weak_areas, topics, last_summary, last_session_at, updated_at FROM student_memory WHERE user_id = ?",
+            (clean_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            return {
+                "user_id": clean_id,
+                "goals": ["Software Development Engineer", "Product Tier 1"],
+                "weak_areas": ["Dynamic Programming", "System Design"],
+                "topics": ["DSA Practice", "Resume Feedback"],
+                "last_summary": "Initial candidate profile established.",
+                "last_session_at": datetime.now().strftime("%B %d, %Y")
+            }
+        return {
+            "user_id": row["user_id"],
+            "goals": json.loads(row["goals"]) if row["goals"] else [],
+            "weak_areas": json.loads(row["weak_areas"]) if row["weak_areas"] else [],
+            "topics": json.loads(row["topics"]) if row["topics"] else [],
+            "last_summary": row["last_summary"] or "",
+            "last_session_at": str(row["last_session_at"])
+        }
+
+
+def save_student_memory(
+    user_id: str,
+    goals: Optional[List[str]] = None,
+    weak_areas: Optional[List[str]] = None,
+    topics: Optional[List[str]] = None,
+    last_summary: Optional[str] = None
+) -> Dict[str, Any]:
+    """Saves and updates lightweight conversational memory for a student in SQLite."""
+    clean_id = user_id or "default_student"
+    existing = get_student_memory(clean_id)
+    new_goals = goals if goals is not None else existing.get("goals", [])
+    new_weak_areas = weak_areas if weak_areas is not None else existing.get("weak_areas", [])
+    new_topics = topics if topics is not None else existing.get("topics", [])
+    new_summary = last_summary if last_summary is not None else existing.get("last_summary", "")
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO student_memory (user_id, goals, weak_areas, topics, last_summary, last_session_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ON CONFLICT(user_id) DO UPDATE SET
+                goals = excluded.goals,
+                weak_areas = excluded.weak_areas,
+                topics = excluded.topics,
+                last_summary = excluded.last_summary,
+                last_session_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP;
+        """, (
+            clean_id,
+            json.dumps(new_goals),
+            json.dumps(new_weak_areas),
+            json.dumps(new_topics),
+            new_summary
+        ))
+        conn.commit()
+
+    return get_student_memory(clean_id)
 
 
 # Auto-initialize database tables and initial cohort seed on module load

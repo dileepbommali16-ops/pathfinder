@@ -5,6 +5,7 @@ import { HeroMetrics } from "@/components/dashboard/HeroMetrics";
 import { SkillGapSection } from "@/components/dashboard/SkillGapSection";
 import { RoadmapVisualizer, RoadmapData } from "@/components/dashboard/RoadmapVisualizer";
 import { AICoachConsole, Message } from "@/components/dashboard/AICoachConsole";
+import { VoicePanel } from "@/voice";
 import { CohortExplorer, CohortAnalyticsData } from "@/components/dashboard/CohortExplorer";
 import { ResumeStudio, ResumeFeedbackData } from "@/components/dashboard/ResumeStudio";
 import { LampLogin } from "@/components/auth/LampLogin";
@@ -726,7 +727,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "I'm your AI, your DAS Agent. Tell me, how can I help you?",
+      content: "Hi sir, I'm your Pathfinder AI agent, how can I help you?",
     },
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);
@@ -734,6 +735,7 @@ export default function Home() {
   const [isGlobalServerWakingUp, setIsGlobalServerWakingUp] = useState(false);
   const chatAbortRef = useRef<AbortController | null>(null);
   const isChatSendingRef = useRef(false);
+  const [coachViewMode, setCoachViewMode] = useState<"avatar" | "console">("avatar");
 
   useEffect(() => {
     const handleWakingUpEvent = (e: any) => {
@@ -1779,20 +1781,58 @@ export default function Home() {
               transition={{ duration: 0.25 }}
               className="space-y-4"
             >
-              <AICoachConsole
-                messages={messages}
-                onSendMessage={handleSendMessage}
-                onClearChat={() => setMessages([])}
-                onStopGeneration={handleStopChat}
-                onRegenerate={handleRegenerateChat}
-                isLoading={isChatLoading}
-                isServerWakingUp={isChatWakingUp}
-                targetRole={profile.targetRole}
-                profile={profile}
-                activeTab={activeTab}
-                onNavigateTab={(tab) => setActiveTab(tab as TabId)}
-                onOpenResumeBuilder={() => setShowOnePageResume(true)}
-              />
+              {/* Studio View Mode Switcher */}
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-slate-950/70 p-2 backdrop-blur-xl">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCoachViewMode("avatar")}
+                    className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+                      coachViewMode === "avatar"
+                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-md shadow-cyan-500/20"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <span>🎙️ 3D Voice Agent Studio</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCoachViewMode("console")}
+                    className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+                      coachViewMode === "console"
+                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-md shadow-cyan-500/20"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <span>💬 Text Coach & Mock Interview</span>
+                  </button>
+                </div>
+                <span className="hidden sm:inline-block text-[11px] font-mono text-cyan-400 mr-2">
+                  {coachViewMode === "avatar" ? "3D Face Mesh • Lip-Sync • Gemini Live" : "Fallback Career Coach Console"}
+                </span>
+              </div>
+
+              {coachViewMode === "avatar" ? (
+                <VoicePanel
+                  onNavigateTab={(tab) => setActiveTab(tab as TabId)}
+                  onOpenResumeBuilder={() => setShowOnePageResume(true)}
+                />
+              ) : (
+                <AICoachConsole
+                  messages={messages}
+                  onSendMessage={handleSendMessage}
+                  onClearChat={() => setMessages([])}
+                  onStopGeneration={handleStopChat}
+                  onRegenerate={handleRegenerateChat}
+                  isLoading={isChatLoading}
+                  isServerWakingUp={isChatWakingUp}
+                  targetRole={profile.targetRole}
+                  profile={profile}
+                  activeTab={activeTab}
+                  onNavigateTab={(tab) => setActiveTab(tab as TabId)}
+                  onOpenResumeBuilder={() => setShowOnePageResume(true)}
+                />
+              )}
             </motion.div>
           )}
 

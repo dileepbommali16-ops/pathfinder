@@ -8,13 +8,16 @@
  */
 
 import React, { useState } from "react";
-import { Bot, Volume2, VolumeX, Square, MoreVertical, Globe, RefreshCw, AlertCircle } from "lucide-react";
+import { Bot, Volume2, VolumeX, Square, MoreVertical, Globe, RefreshCw, AlertCircle, Radio } from "lucide-react";
 import { FaceAvatar } from "./avatar/FaceAvatar";
 import { CaptionBar } from "./CaptionBar";
 import { AskMeColumn, DEFAULT_ASK_ME_QUESTIONS } from "./AskMeColumn";
 import { InputBar } from "./InputBar";
 import { FullAnswerSheet } from "./FullAnswerSheet";
 import { useVoiceSession } from "./useVoiceSession";
+import { MicSetupModal } from "./MicSetupModal";
+import { ConfirmationGate, PendingAction } from "./ConfirmationGate";
+import { ProactiveCheckin } from "./ProactiveCheckin";
 
 export interface VoicePanelProps {
   className?: string;
@@ -31,6 +34,8 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
   const [autoSpeak, setAutoSpeak] = useState<boolean>(true);
   const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
   const [isOverflowOpen, setIsOverflowOpen] = useState<boolean>(false);
+  const [isMicModalOpen, setIsMicModalOpen] = useState<boolean>(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const {
     state,
@@ -48,7 +53,35 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
   } = useVoiceSession({ language, autoSpeak });
 
   const handleSelectPrompt = (prompt: string) => {
+    // Action intent detection for Confirmation Gate
+    const lower = prompt.toLowerCase();
+    if (lower.includes("resume") && onOpenResumeBuilder) {
+      setPendingAction({
+        id: "act_resume",
+        type: "open_resume_builder",
+        label: "Open Resume Builder",
+        description: "Agent proposed opening Pathfinder ATS Resume Builder.",
+      });
+    } else if (lower.includes("project") || lower.includes("blueprint")) {
+      setPendingAction({
+        id: "act_projects",
+        type: "navigate_tab",
+        label: "Navigate to Blueprints",
+        description: "Agent proposed navigating to Flagship Industry Blueprints tab.",
+        targetTab: "projects",
+      });
+    }
     sendMessage(prompt);
+  };
+
+  const handleConfirmAction = (action: PendingAction, uiToken: string) => {
+    console.log(`[ConfirmationGate] Action approved with UI Token ${uiToken}:`, action);
+    if (action.type === "open_resume_builder" && onOpenResumeBuilder) {
+      onOpenResumeBuilder();
+    } else if (action.type === "navigate_tab" && onNavigateTab && action.targetTab) {
+      onNavigateTab(action.targetTab);
+    }
+    setPendingAction(null);
   };
 
   return (
@@ -98,6 +131,17 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               </button>
             ))}
           </div>
+
+          {/* Test Mic & Speaker Diagnostics Button */}
+          <button
+            type="button"
+            onClick={() => setIsMicModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-950/40 px-2.5 py-1 text-xs font-semibold text-cyan-300 hover:bg-cyan-900/40 hover:border-cyan-400 transition-all cursor-pointer"
+            title="Open Microphone & Speaker Setup / Diagnostics"
+          >
+            <Radio className="h-3.5 w-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">Test Audio</span>
+          </button>
 
           {/* Voice Reply Mute Toggle */}
           <button
@@ -149,6 +193,13 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
                 </button>
                 <button
                   type="button"
+                  onClick={() => setIsMicModalOpen(true)}
+                  className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 text-left cursor-pointer"
+                >
+                  <span>Test Mic & Speaker</span>
+                </button>
+                <button
+                  type="button"
                   onClick={clearMessages}
                   className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 text-left cursor-pointer"
                 >
@@ -160,6 +211,9 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
         </div>
       </header>
 
+      {/* Proactive Check-in Banner */}
+      <ProactiveCheckin onAccept={(p) => sendMessage(p)} className="mx-4 mt-2 shrink-0 z-20" />
+
       {/* Headphone Hint Banner if Echo Detected */}
       {feedbackHint && (
         <div className="flex items-center justify-between border-b border-amber-500/30 bg-amber-950/40 px-6 py-2 text-xs text-amber-200 z-20">
@@ -170,6 +224,17 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
           <button type="button" onClick={dismissFeedbackHint} className="text-amber-300 hover:text-white font-bold ml-2">
             ✕
           </button>
+        </div>
+      )}
+
+      {/* Action Confirmation Gate */}
+      {pendingAction && (
+        <div className="mx-4 mt-2 shrink-0 z-30">
+          <ConfirmationGate
+            pendingAction={pendingAction}
+            onConfirm={handleConfirmAction}
+            onDismiss={() => setPendingAction(null)}
+          />
         </div>
       )}
 
@@ -271,6 +336,12 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
         onClose={() => setIsSheetOpen(false)}
         messages={messages}
         onClearHistory={clearMessages}
+      />
+
+      {/* Microphone & Speaker Diagnostic Modal */}
+      <MicSetupModal
+        isOpen={isMicModalOpen}
+        onClose={() => setIsMicModalOpen(false)}
       />
     </div>
   );

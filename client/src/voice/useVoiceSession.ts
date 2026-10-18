@@ -35,7 +35,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
   const [state, setState] = useState<VoiceState>("idle");
   const [messages, setMessages] = useState<MessageTurn[]>([]);
   const [currentSentence, setCurrentSentence] = useState<string>(
-    "I'm your AI, your DAS Agent. Tell me, how can I help you?"
+    "Hi sir, I'm your Pathfinder AI agent, how can I help you?"
   );
   const [activeProvider, setActiveProvider] = useState<string>("Gemini Live");
   const [isMicActive, setIsMicActive] = useState<boolean>(false);
@@ -101,7 +101,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
           const data = JSON.parse(event.data);
 
           if (data.type === "agent_greeting") {
-            const greeting = data.text || "I'm your AI, your DAS Agent. Tell me, how can I help you?";
+            const greeting = data.text || "Hi sir, I'm your Pathfinder AI agent, how can I help you?";
             setCurrentSentence(greeting);
             if (data.provider) setActiveProvider(data.provider);
             setMessages((prev) => [

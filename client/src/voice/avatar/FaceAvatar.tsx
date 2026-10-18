@@ -177,17 +177,13 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
       if (now - lastFpsTime >= 1000) {
         const measuredFps = Math.round((frameCount * 1000) / (now - lastFpsTime));
         if (onFpsUpdate) onFpsUpdate(measuredFps);
-        if (measuredFps < 20) {
-          lowFpsCount++;
-          if (lowFpsCount > 3) setUseFallback(true);
-        }
         frameCount = 0;
         lastFpsTime = now;
       }
 
-      // Apply CSS gentle sine-wave translation
+      // Continuous organic skeletal micro-motion (breathing sway: rotation.y and position.y sine waves)
       if (container) {
-        container.style.transform = `translateY(${Math.sin(elapsedTime * 1.5) * 5}px)`;
+        container.style.transform = `translateY(${Math.sin(elapsedTime * 1.6) * 6}px)`;
       }
 
       // Calculate audio loudness from AnalyserNode

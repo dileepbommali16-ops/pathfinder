@@ -140,7 +140,7 @@ def get_ui_html() -> str:
           <!-- Bottom Live Subtitle Banner -->
           <div id="das-live-caption-box" class="absolute bottom-4 left-4 right-4 z-20 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 backdrop-blur-md text-center transition-all opacity-95">
             <p id="das-live-caption-text" class="text-xs text-cyan-100 font-medium tracking-wide">
-              "I'm your AI, your DAS Agent. Tell me, how can I help you?"
+              "Hi sir, I'm your Pathfinder AI agent, how can I help you?"
             </p>
           </div>
         </div>
@@ -168,7 +168,7 @@ def get_ui_html() -> str:
             D
           </div>
           <div class="rounded-2xl rounded-tl-sm border border-cyan-500/20 bg-cyan-950/30 p-3 text-xs leading-relaxed text-slate-200 shadow-md">
-            I'm your AI, your DAS Agent. Tell me, how can I help you?
+            Hi sir, I'm your Pathfinder AI agent, how can I help you?
           </div>
         </div>
       </div>
@@ -221,7 +221,7 @@ def get_ui_html() -> str:
 
   <!-- ================= THREE.JS & GEMINI LIVE PIPELINE SCRIPT ================= -->
   <script>
-    const INITIAL_GREETING = "I'm your AI, your DAS Agent. Tell me, how can I help you?";
+    const INITIAL_GREETING = "Hi sir, I'm your Pathfinder AI agent, how can I help you?";
     let geminiApiKey = "{gemini_key}";
 
     // 1. WebAudio API & Analyser Initialization
@@ -483,7 +483,7 @@ def get_ui_html() -> str:
           }};
           geminiWs.send(JSON.stringify(setupPayload));
 
-          // Trigger initial greeting: "I'm your AI, your DAS Agent. Tell me, how can I help you?"
+          // Trigger initial greeting: "Hi sir, I'm your Pathfinder AI agent, how can I help you?"
           setTimeout(() => {{
             speakGreetingAloud();
           }}, 600);
@@ -801,7 +801,7 @@ async def das_live_websocket(websocket: WebSocket):
         # Initial greeting frame
         await websocket.send_json({
             "type": "greeting",
-            "text": "I'm your AI, your DAS Agent. Tell me, how can I help you?",
+            "text": "Hi sir, I'm your Pathfinder AI agent, how can I help you?",
             "state": "ready"
         })
 

@@ -5,3 +5,6 @@ export { AskMeColumn } from "./AskMeColumn";
 export { CaptionBar } from "./CaptionBar";
 export { FullAnswerSheet } from "./FullAnswerSheet";
 export { InputBar } from "./InputBar";
+export { MicSetupModal } from "./MicSetupModal";
+export { ConfirmationGate } from "./ConfirmationGate";
+export { ProactiveCheckin } from "./ProactiveCheckin";

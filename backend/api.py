@@ -292,6 +292,38 @@ def get_gemini_live_key():
     return {"apiKey": key, "key": key}
 
 
+@app.get("/api/student-memory")
+@v1_app.get("/api/student-memory")
+def fetch_student_memory(user_id: Optional[str] = None):
+    """Retrieves persistent lightweight conversational memory for a student."""
+    from backend.database import get_student_memory
+    target_id = user_id or "default_student"
+    memory_data = get_student_memory(target_id)
+    return {"success": True, "data": memory_data}
+
+
+@app.post("/api/student-memory")
+@v1_app.post("/api/student-memory")
+async def update_student_memory(request: Request):
+    """Updates persistent lightweight conversational memory for a student."""
+    from backend.database import save_student_memory
+    body = await request.json()
+    user_id = body.get("user_id", "default_student")
+    goals = body.get("goals")
+    weak_areas = body.get("weak_areas")
+    topics = body.get("topics")
+    last_summary = body.get("last_summary")
+
+    saved = save_student_memory(
+        user_id=user_id,
+        goals=goals,
+        weak_areas=weak_areas,
+        topics=topics,
+        last_summary=last_summary
+    )
+    return {"success": True, "data": saved}
+
+
 
 # Backward Compatibility helper for tests expecting _user_profiles dictionary
 _user_profiles: Dict[str, StudentProfile] = {}

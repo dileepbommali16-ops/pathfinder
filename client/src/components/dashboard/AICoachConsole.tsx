@@ -956,7 +956,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
   // Auto-initiate DAS Voice Agent speech on initial load / trigger
   useEffect(() => {
-    const greetingText = "I'm your AI, your DAS Agent. Tell me, how can I help you?";
+    const greetingText = "Hi sir, I'm your Pathfinder AI agent, how can I help you?";
     const timer = setTimeout(() => {
       queueSentenceForTts(greetingText, "en-IN", generationIdRef.current);
     }, 1000);

@@ -24,7 +24,7 @@ logger = logging.getLogger("pathfinder.voice.ws")
 
 voice_router = APIRouter(tags=["voice"])
 
-INITIAL_GREETING = "I'm your AI, your DAS Agent. Tell me, how can I help you?"
+INITIAL_GREETING = "Hi sir, I'm your Pathfinder AI agent, how can I help you?"
 VOICE_MAX_SESSION_MINUTES = int(os.getenv("VOICE_MAX_SESSION_MINUTES", "15"))
 MAX_MESSAGE_BYTES = 1024 * 1024  # 1 MB
 

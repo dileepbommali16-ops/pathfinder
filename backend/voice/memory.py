@@ -113,7 +113,28 @@ class VoiceMemoryManager:
             except Exception as exc:
                 logger.warning(f"[MemoryManager] Cognee query error: {exc}. Using fallback.")
 
-        # 2. Local student summary fallback
+        # 2. Local persistent SQLite student memory
+        try:
+            from backend.database import get_student_memory
+            mem = get_student_memory(clean_id)
+            goals_str = ", ".join(mem.get("goals", [])) or "SDE Placement"
+            weak_str = ", ".join(mem.get("weak_areas", [])) or "None reported"
+            topics_str = ", ".join(mem.get("topics", [])) or "Initial session"
+            last_date = mem.get("last_session_at", "recently")
+            summary = mem.get("last_summary", "")
+
+            return (
+                f"Student Memory Profile: "
+                f"Goals: [{goals_str}] | "
+                f"Weak Areas: [{weak_str}] | "
+                f"Topics Discussed: [{topics_str}] | "
+                f"Last Session Date: {last_date} | "
+                f"Summary: {summary}"
+            )
+        except Exception as e:
+            logger.debug(f"[MemoryManager] SQLite recall failed, using memory cache: {e}")
+
+        # 3. Fallback memory cache
         student_data = _FALLBACK_MEMORY.get(clean_id)
         if student_data:
             project_info = ""
@@ -137,8 +158,8 @@ class VoiceMemoryManager:
         step: Optional[int] = None
     ):
         """
-        Stores finished conversational turn asynchronously.
-        Updates fast local summary and dispatches background Cognee ingestion if enabled.
+        Stores finished conversational turn asynchronously into SQLite database and memory cache.
+        Saves student goals, weak areas mentioned, topics discussed, and session timestamp.
         """
         clean_id = student_id or "default_student"
 
@@ -167,10 +188,30 @@ class VoiceMemoryManager:
                 entry["last_topics"].append(w)
         entry["last_topics"] = entry["last_topics"][-8:]
 
-        # Compact summary
-        entry["last_summary"] = f"Discussed {words[0] if words else 'placement prep'} and candidate milestones."
+        # Check for weak areas mentioned
+        weak_keywords = ["dsa", "dynamic programming", "graphs", "trees", "system design", "sql", "math", "aptitude", "speaking", "pointers", "recursion"]
+        lower_msg = user_message.lower()
+        detected_weak = [kw.upper() for kw in weak_keywords if kw in lower_msg]
 
+        # Compact summary
+        summary_text = f"Discussed {words[0] if words else 'placement prep'} and candidate milestones."
+        entry["last_summary"] = summary_text
         _save_local_memory()
+
+        # Persist to SQLite student_memory table
+        try:
+            from backend.database import get_student_memory, save_student_memory
+            curr_mem = get_student_memory(clean_id)
+            updated_topics = list(set(curr_mem.get("topics", []) + entry["last_topics"]))[-10:]
+            updated_weak = list(set(curr_mem.get("weak_areas", []) + detected_weak))[-6:]
+            save_student_memory(
+                user_id=clean_id,
+                weak_areas=updated_weak if updated_weak else None,
+                topics=updated_topics if updated_topics else None,
+                last_summary=summary_text
+            )
+        except Exception as err:
+            logger.debug(f"[MemoryManager] SQLite save turn error: {err}")
 
         # Background Cognee storage if enabled
         if self.cognee_enabled and self.cognee_initialized:

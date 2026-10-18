@@ -482,7 +482,7 @@ def generate_smart_fallback_reply(
                 "Here is how it powers your placement preparation:\n"
                 "- **Placement Prediction**: Input your CGPA, coding confidence, backlogs, and internships to receive an instant, accurate placement probability (trained on 972 verified student placement records with 88% accuracy).\n"
                 "- **Skill Gap Identification**: Detects exact gaps between your current skill set and hiring benchmarks for top MNCs and product companies.\n"
-                "- **23 Flagship & SIH Project Blueprints**: Provides complete end-to-end architectures, component stacks, 5-phase build roadmaps, and technical interview defense talking points for your resume.\n"
+                "- **23 Flagship Industry Project Blueprints**: Provides complete end-to-end architectures, component stacks, 5-phase build roadmaps, and technical interview defense talking points for your resume.\n"
                 "- **Interactive AI Coach**: 24/7 technical mentorship, mock interviews, and personalized 6-week study roadmaps.\n\n"
                 "What role are you targeting (e.g. SDE, Frontend, Data Engineer, AI/ML)? Let me know and we will get you interview-ready!"
             )

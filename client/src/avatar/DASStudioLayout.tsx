@@ -4,7 +4,7 @@
  * 1. Dead-Center Viewport: 3D Holographic Cybernetic Avatar (Three.js)
  * 2. Right-Side: Floating Glassmorphic Chat HUD (Text & Live Mic Dual Input)
  * 3. Exact Initial Greeting on Load:
- *    "I'm your AI, your DAS Agent. Tell me, how can I help you?"
+ *    "Hi sir, I'm your Pathfinder AI agent, how can I help you?"
  * 4. Deep Male Voice Profile (Senior Tech Lead cadence)
  * 5. Full Ollama + Cognee Graph RAG integration
  */
@@ -14,7 +14,7 @@ import { AvatarCanvas } from "./AvatarCanvas";
 import { DASRightChatPanel, ChatMessage } from "./DASRightChatPanel";
 import { Radio, Sparkles, Volume2, Shield } from "lucide-react";
 
-const INITIAL_GREETING = "I'm your AI, your DAS Agent. Tell me, how can I help you?";
+const INITIAL_GREETING = "Hi sir, I'm your Pathfinder AI agent, how can I help you?";
 
 export const DASStudioLayout: React.FC = () => {
   const [agentState, setAgentState] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
