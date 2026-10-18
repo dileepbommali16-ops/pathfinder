@@ -1,0 +1,41 @@
+{
+  "test_student": {
+    "last_topics": [
+      "Herometrics",
+      "Career",
+      "Trajectory",
+      "Where",
+      "Update",
+      "Backlogs",
+      "Companies",
+      "Recruit"
+    ],
+    "current_project": null,
+    "current_step": 1,
+    "last_summary": "Discussed Companies and candidate milestones.",
+    "turns_count": 20,
+    "last_active": 1792335209.7779856
+  },
+  "tutor_student": {
+    "last_topics": [
+      "Ready",
+      "Project"
+    ],
+    "current_project": null,
+    "current_step": 1,
+    "last_summary": "Discussed Ready and candidate milestones.",
+    "turns_count": 10,
+    "last_active": 1792335224.8925035
+  },
+  "lang_test": {
+    "last_topics": [
+      "Explain",
+      "Roadmap"
+    ],
+    "current_project": null,
+    "current_step": 1,
+    "last_summary": "Discussed placement prep and candidate milestones.",
+    "turns_count": 6,
+    "last_active": 1792335233.9513826
+  }
+}

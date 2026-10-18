@@ -32,7 +32,7 @@
 - **Result they get**: Instant, empathetic, context-aware answers tailored to their active screen, target branch, and actual skill level.
 
 ### 5. Project Blueprints (23 Software & Hardware Architectures)
-- **What it does**: A curated catalog of 23 production-grade portfolio projects (6 flagship architectures + 17 Smart India Hackathon blueprints) with difficulty tiers (Small, Medium, Hard) across software, AI, hardware/IoT, and distributed systems.
+- **What it does**: A curated catalog of 23 production-grade portfolio projects (6 flagship architectures + 17 national industry engineering blueprints) with difficulty tiers (Small, Medium, Hard) across software, AI, hardware/IoT, and distributed systems.
 - **How a student uses it**: Students filter by domain/difficulty, review system architecture summaries, recommended tech stacks, key features, and defense talking points.
 - **Result they get**: Real, resume-worthy projects that impress technical recruiters instead of generic cloned tutorial apps.
 
@@ -151,7 +151,7 @@
 **Answer**: While students can adjust their profile values to simulate scenarios (via the What-If Simulator), official placement drives require institutional grade sheet verification. The score is meant as an honest self-assessment diagnostic.
 
 ### Q7: Are the 23 project blueprints just standard tutorial clones?
-**Answer**: No. They are comprehensive production-grade architectures (e.g., distributed asynchronous queues, smart IoT healthcare systems, Smart India Hackathon problem statements) complete with system architecture, edge failure modes, and viva defense questions.
+**Answer**: No. They are comprehensive production-grade architectures (e.g., distributed asynchronous queues, smart IoT healthcare systems, high-scale industry problem statements) complete with system architecture, edge failure modes, and viva defense questions.
 
 ### Q8: Does Pathfinder store or leak student passwords?
 **Answer**: No. Pathfinder uses PBKDF2-SHA256 password hashing, secure JWT tokens, session isolation, and strict OWASP security headers. Passwords are never stored in plain text.

@@ -173,21 +173,25 @@ def get_ui_html() -> str:
         </div>
       </div>
 
-      <!-- Quick Action Prompts -->
-      <div class="px-4 py-2 border-t border-white/5 flex gap-1.5 overflow-x-auto text-[11px] text-slate-300">
-        <button onclick="sendQuickPrompt('What are the placement cutoffs for CSE and CSM?')" class="whitespace-nowrap px-2.5 py-1 rounded-full border border-white/10 bg-white/5 hover:border-cyan-500/40 hover:text-cyan-300 transition-all">
-          Placement Stats
-        </button>
-        <button onclick="sendQuickPrompt('Give me a 6-week DSA roadmap for Tier-1 companies')" class="whitespace-nowrap px-2.5 py-1 rounded-full border border-white/10 bg-white/5 hover:border-cyan-500/40 hover:text-cyan-300 transition-all">
-          6-Week DSA Roadmap
-        </button>
-        <button onclick="sendQuickPrompt('Conduct a quick technical mock interview with me')" class="whitespace-nowrap px-2.5 py-1 rounded-full border border-white/10 bg-white/5 hover:border-cyan-500/40 hover:text-cyan-300 transition-all">
-          Mock Interview
-        </button>
-      </div>
+      <!-- Clean Dedicated Conversational Input Panel -->
+      <div class="p-4 border-t border-white/10 bg-slate-950/90 flex flex-col gap-2.5">
+        
+        <!-- Voice Toggle Controls & Session Status -->
+        <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium px-1">
+          <div class="flex items-center gap-2">
+            <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+            <span id="das-voice-status">Voice Ready (Puck)</span>
+          </div>
+          <button
+            type="button"
+            id="btn-voice-toggle"
+            onclick="toggleAutoVoice()"
+            class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-cyan-500/30 bg-cyan-950/40 text-cyan-300 hover:bg-cyan-500 hover:text-slate-950 transition-all text-[11px] font-semibold cursor-pointer"
+          >
+            <span id="voice-toggle-label">Voice Output ON</span>
+          </button>
+        </div>
 
-      <!-- Input HUD: Typing Input + Live Microphone Button -->
-      <div class="p-4 border-t border-white/10 bg-slate-950/80">
         <form id="das-chat-form" onsubmit="handleChatSubmit(event)" class="flex items-center gap-2">
           
           <!-- Microphone Button -->
@@ -201,7 +205,7 @@ def get_ui_html() -> str:
           <input
             type="text"
             id="chat-input"
-            placeholder="Ask DAS about placements, skills, roadmaps..."
+            placeholder="Type your question for DAS..."
             class="flex-1 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/40 transition-all"
             autocomplete="off"
           />
@@ -559,8 +563,22 @@ def get_ui_html() -> str:
       }};
     }}
 
+    let autoVoiceEnabled = true;
+
+    function toggleAutoVoice() {{
+      autoVoiceEnabled = !autoVoiceEnabled;
+      const lbl = document.getElementById("voice-toggle-label");
+      const st = document.getElementById("das-voice-status");
+      if (lbl) lbl.textContent = autoVoiceEnabled ? "Voice Output ON" : "Voice Output MUTED";
+      if (st) st.textContent = autoVoiceEnabled ? "Voice Ready (Puck)" : "Muted";
+      if (!autoVoiceEnabled && typeof window !== "undefined" && "speechSynthesis" in window) {{
+        window.speechSynthesis.cancel();
+      }}
+    }}
+
     // Spoken Greeting Aloud with Browser SpeechSynthesis Fallback
     function speakGreetingAloud(text = INITIAL_GREETING) {{
+      if (!autoVoiceEnabled) return;
       if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
       window.speechSynthesis.cancel();
 

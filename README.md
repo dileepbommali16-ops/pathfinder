@@ -51,7 +51,7 @@ Pathfinder is an enterprise-grade, real-time career intelligence platform engine
 | :--- | :--- | :--- |
 | **Executive Readiness Dashboard** | Transparent multi-vector assessment of candidate readiness, eligibility benchmarks, and personalized next best actions. | React 19, Framer Motion, Recharts |
 | **Conversational AI Voice Agent** | Bilingual real-time mentor powered by Gemini 2.0 Flash; provides crisp 2–4 sentence spoken guidance with zero audio looping. | Web Speech API, SSE, Gemini 2.0 Flash |
-| **Project Blueprint Recommender** | Catalog of 23 production architectures (6 flagship + 17 SIH problem statements) mapped directly to recruiter rubrics. | Async JSON Feature Store, FastAPI |
+| **Project Blueprint Recommender** | Catalog of 23 production architectures (6 flagship + 17 national industry problem statements) mapped directly to recruiter rubrics. | Async JSON Feature Store, FastAPI |
 | **Technical Defense Console** | Interactive viva simulation testing candidate depth on concurrency, caching, failover, and API rate limiting. | Generative Dynamic Prompting |
 | **ATS Resume Diagnostic Scanner** | Instant resume compliance audit scoring keyword relevance against Google X-Y-Z formula standards. | Client-side Canvas & Print Engine |
 | **Cohort Placement Explorer** | Granular filtering across 972 historical candidate records by branch, CGPA, graduation year, and CTC tier. | In-Memory Aggregation Engine (< 0.5ms) |

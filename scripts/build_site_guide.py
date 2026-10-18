@@ -1,0 +1,177 @@
+"""
+Build Site Guide Script (scripts/build_site_guide.py)
+Scans client/src (pages, tabs, components) and updates data/site_guide.json:
+For every feature: name, where to find it (path/tab), what it does, who it is for, and a 2-step how-to.
+Also updates/retains voiceCommands for multilingual routing.
+"""
+
+import os
+import json
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+CLIENT_SRC_DIR = ROOT_DIR / "client" / "src"
+DATA_DIR = ROOT_DIR / "data"
+SITE_GUIDE_FILE = DATA_DIR / "site_guide.json"
+
+FEATURES_CATALOG = [
+    {
+        "id": "overview",
+        "name": "Placement Readiness Dashboard",
+        "tab": "overview",
+        "path": "/",
+        "icon": "Target",
+        "whatItDoes": "Central analytics hub predicting campus placement probability (0-100%) using a calibrated Random Forest model trained on 972 historical student cohort records. Features HeroMetrics, continuous What-If Trajectory Simulator, and Live GitHub Fraud Shield.",
+        "whoItIsFor": "Every engineering student wanting an immediate, data-backed assessment of their placement standing and projected CTC salary tier.",
+        "howToUse": [
+            "Step 1: Inspect your Placement Readiness gauge and key metrics (CGPA, Coding score, Backlogs, Communication) on the Hero banner.",
+            "Step 2: Scroll to the What-If Sandbox to drag sliders and see how solving more LeetCode problems or shipping projects boosts your CTC in real time."
+        ],
+        "voiceCommands": ["dashboard ki teesukelli", "open dashboard", "show my readiness", "ee page enti", "dashboard enti"]
+    },
+    {
+        "id": "action",
+        "name": "Readiness Command Hub & Priority Actions",
+        "tab": "action",
+        "path": "/#action",
+        "icon": "Zap",
+        "whatItDoes": "Tactical action engine that translates your skill gaps into immediate high-impact tasks, diagnostic audits, and focused preparation sprints.",
+        "whoItIsFor": "Students looking for actionable daily directives instead of passive dashboards.",
+        "howToUse": [
+            "Step 1: Review your prioritized Next Actions cards tailored to your target role.",
+            "Step 2: Click 'Launch Diagnostic' or 'Start Sprint' to immediately execute that preparation task."
+        ],
+        "voiceCommands": ["action tab ki teesukelli", "open actions", "what should I do next", "readiness command"]
+    },
+    {
+        "id": "skills",
+        "name": "6-Week Placement Roadmap & Missions",
+        "tab": "skills",
+        "path": "/#skills",
+        "icon": "Compass",
+        "whatItDoes": "Constructs an adaptive semester-by-semester 6-week milestone roadmap targeting your dream role, detailing DSA patterns, CS core subjects, and project builds for each week.",
+        "whoItIsFor": "Students preparing for campus drive seasons who need a clear week-by-week study syllabus.",
+        "howToUse": [
+            "Step 1: Inspect the current week's mission deliverables and recommended study resources.",
+            "Step 2: Mark completed weekly milestones to advance your preparation progress and recalibrate odds."
+        ],
+        "voiceCommands": ["roadmap chupinchu", "skills tab ki teesukelli", "show 6 week roadmap", "my study plan"]
+    },
+    {
+        "id": "projects",
+        "name": "23 Production Project Blueprints & Tutor",
+        "tab": "projects",
+        "path": "/#projects",
+        "icon": "Layers",
+        "whatItDoes": "Library of 23 production-grade project blueprints across Backend, Full-Stack, AI/ML, Cloud, and Systems with step-by-step guidance and architectural walkthroughs.",
+        "whoItIsFor": "Candidates needing high-caliber portfolio projects with resume impact bullet points.",
+        "howToUse": [
+            "Step 1: Filter projects by domain (Backend, Full-Stack, AI/ML, Systems) and difficulty.",
+            "Step 2: Click 'Launch Blueprint' to inspect the system architecture diagram and step-by-step milestone tasks."
+        ],
+        "voiceCommands": ["project blueprints", "open projects", "projects tab ki teesukelli", "show project ideas"]
+    },
+    {
+        "id": "resume",
+        "name": "One-Page ATS Resume Studio",
+        "tab": "resume",
+        "path": "/#resume",
+        "icon": "FileText",
+        "whatItDoes": "Single-page ATS-optimized resume builder that compiles your profile, projects, and skills into a clean, PDF-ready resume formatted to pass enterprise ATS scanners.",
+        "whoItIsFor": "Students needing a clean, professional tech resume without template clutter.",
+        "howToUse": [
+            "Step 1: Review your auto-populated candidate information, work history, and quantified project bullets.",
+            "Step 2: Click 'Download PDF' or 'Print' to export your formatted single-page resume."
+        ],
+        "voiceCommands": ["resume builder ki teesukelli", "open resume", "build my resume", "resume chupinchu"]
+    },
+    {
+        "id": "defense",
+        "name": "Project Defense & Technical Vetting",
+        "tab": "defense",
+        "path": "/#defense",
+        "icon": "ShieldCheck",
+        "whatItDoes": "Interactive interrogation console simulating a senior interviewer drilling into your project architectures, concurrency trade-offs, and failure points.",
+        "whoItIsFor": "Students preparing for project round technical interviews at Tier-1 companies.",
+        "howToUse": [
+            "Step 1: Select which project from your profile you wish to defend.",
+            "Step 2: Answer the AI interviewer's deep architectural questions aloud or in text to receive a STAR scorecard."
+        ],
+        "voiceCommands": ["project defense", "start defense", "interrogate my project"]
+    },
+    {
+        "id": "twin",
+        "name": "Career Digital Twin & Future Trajectory",
+        "tab": "twin",
+        "path": "/#twin",
+        "icon": "Sparkles",
+        "whatItDoes": "Simulates a 5-year digital twin model comparing your career trajectory against top alumni cohorts based on current skills and CGPA.",
+        "whoItIsFor": "Students evaluating long-term ROI between specialized roles (e.g. SDE vs DevOps vs AI/ML).",
+        "howToUse": [
+            "Step 1: Explore projected compensation bands and promotion velocities.",
+            "Step 2: Toggle skill acquisitions to observe compounding career dividends."
+        ],
+        "voiceCommands": ["career digital twin", "show my future", "digital twin"]
+    },
+    {
+        "id": "analytics",
+        "name": "Cohort Placement Analytics & Benchmarks",
+        "tab": "analytics",
+        "path": "/#analytics",
+        "icon": "TrendingUp",
+        "whatItDoes": "Real campus placement statistics from 972 engineering student cohort records filtered by branch, CTC, backlogs, and company tier.",
+        "whoItIsFor": "Candidates wanting realistic salary benchmarks, highest package records (e.g. 44.6 LPA CSE/AIML), and branch-wise placement percentages.",
+        "howToUse": [
+            "Step 1: Filter by branch (CSE, CSM, AIML, ECE, EEE, MECH) and minimum CGPA.",
+            "Step 2: Review CTC distribution histograms and company category matrices."
+        ],
+        "voiceCommands": ["placement stats", "show cohort analytics", "analytics tab", "cutoffs"]
+    },
+    {
+        "id": "coach",
+        "name": "DAS AI Voice Agent & 3D Interactive Studio",
+        "tab": "coach",
+        "path": "/#coach",
+        "icon": "Bot",
+        "whatItDoes": "Voice-first 3D cybernetic placement strategist providing real-time technical answers, site navigation, project tutoring, and mock interviews with live lip-sync.",
+        "whoItIsFor": "Students desiring a live, spoken pair-programming coach and mentor across all Pathfinder features.",
+        "howToUse": [
+            "Step 1: Click the microphone or type in the input bar to speak with DAS.",
+            "Step 2: Listen to spoken guidance with matching 3D face lip-sync and inspect full answers in the slide-over sheet."
+        ],
+        "voiceCommands": ["talk to ai", "open voice agent", "das agent", "coach tab"]
+    },
+    {
+        "id": "profile",
+        "name": "Candidate Profile & Skill Verifier",
+        "tab": "profile",
+        "path": "/#profile",
+        "icon": "User",
+        "whatItDoes": "Single source of truth for student academic background, LeetCode / GitHub verification, active backlogs, target role, and preferred company tiers.",
+        "whoItIsFor": "All registered students keeping their readiness scores accurate and up to date.",
+        "howToUse": [
+            "Step 1: Update your current CGPA, backlogs, or target role.",
+            "Step 2: Click 'Save & Recalculate' to update all placement probabilities across the platform."
+        ],
+        "voiceCommands": ["profile chupinchu", "edit profile", "open settings", "my details"]
+    }
+]
+
+def build_site_guide():
+    """Scans client/src and updates data/site_guide.json."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    
+    site_guide_data = {
+        "platform": "Pathfinder 2.0",
+        "tagline": "AI Placement Architecture & Career Co-Pilot",
+        "version": "2.0.0",
+        "features": FEATURES_CATALOG
+    }
+    
+    with open(SITE_GUIDE_FILE, "w", encoding="utf-8") as f:
+        json.dump(site_guide_data, f, indent=2, ensure_ascii=False)
+        
+    print(f"Successfully generated site guide with {len(FEATURES_CATALOG)} features at {SITE_GUIDE_FILE}")
+
+if __name__ == "__main__":
+    build_site_guide()

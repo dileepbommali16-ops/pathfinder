@@ -8,7 +8,7 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn backend.api:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
-    autoDeploy: true
+    autoDeploy: false
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -24,6 +24,22 @@ services:
         sync: false
       - key: COGNEE_ENABLED
         sync: false
+      - key: GEMINI_LIVE_MODEL
+        sync: false
+      - key: GEMINI_TEXT_MODEL
+        sync: false
+      - key: LLM_PROVIDER
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: EMBEDDING_PROVIDER
+        sync: false
+      - key: EMBEDDING_MODEL
+        sync: false
+      - key: VOICE_MAX_SESSION_MINUTES
+        value: "15"
       - key: JWT_SECRET
         sync: false
       - key: FRONTEND_URL
@@ -44,6 +60,7 @@ services:
   # ----------------------------------------------------------------------------
   - type: static
     name: pathfinder-frontend
+    autoDeploy: false
     buildCommand: npm install --legacy-peer-deps && npm run build:client
     staticPublishPath: dist/public
     routes:

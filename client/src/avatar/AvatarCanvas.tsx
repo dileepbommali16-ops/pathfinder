@@ -123,7 +123,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     const textureLoader = new THREE.TextureLoader();
     let headTexture: THREE.Texture | null = null;
     textureLoader.load(
-      "/avatar/das_head.jpg",
+      "/avatar/das_head.webp",
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
         headTexture = tex;
@@ -134,7 +134,19 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       },
       undefined,
       () => {
-        // Fallback gracefully without texture
+        textureLoader.load(
+          "/avatar/das_head.jpg",
+          (tex2) => {
+            tex2.colorSpace = THREE.SRGBColorSpace;
+            headTexture = tex2;
+            if (solidHead && (solidHead.material as THREE.MeshPhysicalMaterial)) {
+              (solidHead.material as THREE.MeshPhysicalMaterial).map = tex2;
+              (solidHead.material as THREE.MeshPhysicalMaterial).needsUpdate = true;
+            }
+          },
+          undefined,
+          () => {}
+        );
       }
     );
 

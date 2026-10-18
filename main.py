@@ -1,8 +1,8 @@
 """
 Pathfinder DAS Agent: Standalone Web Agent Application (main.py)
-Refactored from ORION Core Pipeline:
+Pathfinder DAS Autonomous Core Pipeline:
 - Strictly isolated to Pathfinder website context
-- ALL OS automation & laptop control tools completely eliminated
+- Web-native secure architecture with zero OS control dependencies
 - 3D Cybernetic Blue Face Viewport with live idle breathing, eye blinking (3-5s), and Viseme lip-sync
 - Gemini Live WebSocket integration with 'Puck' voice configuration
 - Initial greeting: "I'm your AI, your DAS Agent. Tell me, how can I help you?"

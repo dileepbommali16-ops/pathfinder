@@ -431,7 +431,7 @@ def generate_local_voice_reply(
             "- 🎯 **Check Readiness Score**: Real-time evaluation from our Random Forest ML model.\n"
             "- 📄 **Review Resume**: Instant ATS score with line-by-line before/after bullet rewrites.\n"
             "- 🗺️ **6-Week Roadmap**: Milestone sprint tailored for your target role.\n"
-            "- 🛠️ **23 Project Blueprints**: Production-grade full-stack and SIH architectures.\n"
+            "- 🛠️ **23 Project Blueprints**: Production-grade full-stack and flagship engineering architectures.\n"
             "- 🌐 **Website Tour**: Say *\"Explain the website\"* for an interactive guided walkthrough."
         )
         return f"{spoken}\n---SCREEN---\n{screen}"
@@ -611,17 +611,17 @@ def generate_local_voice_reply(
     # Project suggestions
     if any(k in low for k in ["projects emunnayi", "suggest project", "which project", "best project", "project suggestions", "kaunse project", "project cheppandi"]):
         if is_telugu:
-            spoken = "పాత్‌ఫైండర్‌లో 23 ఇండస్ట్రీ వెరిఫైడ్ బ్లూప్రింట్లు ఉన్నాయి. వీటిలో స్మార్ట్ ఇండియా హ్యాకథాన్ మరియు ఫుల్ స్టాక్ ప్రాజెక్ట్‌లు ఉన్నాయి. మీకు సాఫ్ట్‌వేర్ ప్రాజెక్ట్ కావాలా లేదా హార్డ్‌వేర్ ప్రాజెక్ట్ కావాలా?"
+            spoken = "పాత్‌ఫైండర్‌లో 23 ఇండస్ట్రీ వెరిఫైడ్ బ్లూప్రింట్లు ఉన్నాయి. వీటిలో ఫ్లాగ్‌షిప్ ఇండస్ట్రీ మరియు ఫుల్ స్టాక్ ప్రాజెక్ట్‌లు ఉన్నాయి. మీకు సాఫ్ట్‌వేర్ ప్రాజెక్ట్ కావాలా లేదా హార్డ్‌వేర్ ప్రాజెక్ట్ కావాలా?"
         elif is_hindi:
-            spoken = "पाथफाइंडर में 23 इंडस्ट्री-वेरिफाइड प्रोजेक्ट ब्लूप्रिंट्स हैं, जिनमें स्मार्ट इंडिया हैकाथॉन और फुल स्टैक शामिल हैं। क्या आप सॉफ्टवेयर प्रोजेक्ट देखना चाहते हैं या हार्डवेयर?"
+            spoken = "पाथफाइंडर में 23 इंडस्ट्री-वेरिफाइड प्रोजेक्ट ब्लूप्रिंट्स हैं, जिनमें फ्लैगशिप इंडस्ट्री और फुल स्टैक शामिल हैं। क्या आप सॉफ्टवेयर प्रोजेक्ट देखना चाहते हैं या हार्डवेयर?"
         else:
-            spoken = "Pathfinder provides 23 verified blueprints across full-stack software and embedded IoT hardware. Would you like a software architecture or a hardware Smart India Hackathon blueprint?"
+            spoken = "Pathfinder provides 23 verified blueprints across full-stack software and embedded IoT hardware. Would you like a software architecture or a hardware flagship blueprint?"
         screen = (
             "### 🛠️ **Top Featured Project Blueprints (23 Available)**\n\n"
             "[[NAVIGATE:projects]]\n\n"
-            "- 🛡️ **MineWatch SIH 2026**: Multi-sensor Rockfall & Geotechnical Safety (Hardware/IoT)\n"
+            "- 🛡️ **MineWatch Pro**: Multi-sensor Rockfall & Geotechnical Safety (Hardware/IoT)\n"
             "- 🚑 **ResQMed**: Emergency Corridor Drone Dispatch with Priority V2X Mesh (Hardware)\n"
-            "- 🌾 **KrishiDrone SIH**: Autonomous Multispectral Crop Stress Drone (AI/CV/IoT)\n"
+            "- 🌾 **KrishiDrone Pro**: Autonomous Multispectral Crop Stress Drone (AI/CV/IoT)\n"
             "- 📈 **FinEdge ML**: Sub-millisecond Order Execution & Fraud Graph Engine (Software)\n"
             "- 🩺 **AyuPredict**: Federated Clinical Risk Stratification on Medical Records (Software)"
         )
