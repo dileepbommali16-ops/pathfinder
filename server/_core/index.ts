@@ -49,6 +49,13 @@ async function startServer() {
 
   // Health check for Render / cloud deployment
   app.get("/health", (_req, res) => res.status(200).json({ status: "healthy" }));
+
+  // Safe endpoint exposing Gemini API Key for Gemini Live WebSocket connection
+  app.get("/api/gemini-live-key", (_req, res) => {
+    const key = process.env.GEMINI_API_KEY || "";
+    res.status(200).json({ apiKey: key, key });
+  });
+
   // Configure body parser with safe size limit
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ limit: "10mb", extended: true }));

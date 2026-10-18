@@ -281,5 +281,14 @@ v1_app.include_router(webhook_router)
 app.mount("/api/v1", v1_app)
 
 
+@app.get("/api/gemini-live-key")
+@v1_app.get("/api/gemini-live-key")
+def get_gemini_live_key():
+    """Secure endpoint exposing Gemini API Key for Gemini Live WebSocket connection."""
+    key = os.getenv("GEMINI_API_KEY", "").strip()
+    return {"apiKey": key, "key": key}
+
+
+
 # Backward Compatibility helper for tests expecting _user_profiles dictionary
 _user_profiles: Dict[str, StudentProfile] = {}

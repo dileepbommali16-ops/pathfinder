@@ -304,6 +304,11 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       headGroup.rotation.x = Math.sin(elapsedTime * 0.8) * 0.015;
       headGroup.rotation.z = Math.sin(elapsedTime * 0.6) * 0.008;
 
+      // Apply gentle CSS sine-wave translation (translateY: sin(time) * 5px) so the face sways smoothly in the center
+      if (container) {
+        container.style.transform = `translateY(${Math.sin(elapsedTime * 1.5) * 5}px)`;
+      }
+
       // Subtle breathing scale oscillation
       const breathScale = 1.0 + Math.sin(elapsedTime * 1.7) * 0.006;
       headGroup.scale.set(breathScale, breathScale, breathScale);
@@ -321,9 +326,9 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       }
 
       // ======================================================================
-      // 2. PROCEDURAL EYE BLINKING (Every 3-5s, 150ms smooth eyelid closure)
+      // 2. PROCEDURAL EYE BLINKING (Scales eye region vertically to 0 every 4s for 150ms)
       // ======================================================================
-      if (!isBlinking && now - lastBlinkTime > nextBlinkInterval) {
+      if (!isBlinking && now - lastBlinkTime > 4000) {
         isBlinking = true;
         blinkStartTime = now;
       }
@@ -331,17 +336,16 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       if (isBlinking) {
         const blinkProgress = (now - blinkStartTime) / 150;
         if (blinkProgress < 1.0) {
-          // Smooth parabolic closure: 1.0 -> 0.0 -> 1.0
+          // Scale eye region coordinates vertically down to 0 for 150ms, then return to 1
           const eyelidFactor = Math.sin(blinkProgress * Math.PI);
-          const eyeScaleY = Math.max(0.08, 1.0 - eyelidFactor * 0.92);
+          const eyeScaleY = Math.max(0.0, 1.0 - eyelidFactor);
           leftEye.scale.y = eyeScaleY;
           rightEye.scale.y = eyeScaleY;
-          leftEyelid.scale.y = 1.0 + eyelidFactor * 1.25;
-          rightEyelid.scale.y = 1.0 + eyelidFactor * 1.25;
+          leftEyelid.scale.y = 1.0 + eyelidFactor * 1.5;
+          rightEyelid.scale.y = 1.0 + eyelidFactor * 1.5;
         } else {
           isBlinking = false;
           lastBlinkTime = now;
-          nextBlinkInterval = 3000 + Math.random() * 2200;
           leftEye.scale.y = 1.0;
           rightEye.scale.y = 1.0;
           leftEyelid.scale.y = 1.0;

@@ -80,6 +80,21 @@
       emissive: new THREE.Color("#0c2340"),
       emissiveIntensity: 0.3,
     });
+
+    // Load provided blue 3D face image texture inside WebGL context
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load("./avatar/das_head.jpg", (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      solidMat.map = tex;
+      solidMat.needsUpdate = true;
+    }, undefined, () => {
+      textureLoader.load("/avatar/das_head.jpg", (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        solidMat.map = tex;
+        solidMat.needsUpdate = true;
+      });
+    });
+
     solidHead = new THREE.Mesh(headGeo, solidMat);
     headGroup.add(solidHead);
 
@@ -186,10 +201,16 @@
       headGroup.rotation.x = Math.sin(time * 0.8) * 0.015;
     }
 
+    // Apply gentle CSS sine-wave translation (translateY: sin(time) * 5px) so the face sways smoothly in the center
+    const container = document.getElementById("das-avatar-container");
+    if (container) {
+      container.style.transform = `translateY(${Math.sin(time * 1.5) * 5}px)`;
+    }
+
     // ======================================================================
-    // 2. EYE BLINKING (Automated timer triggers every 3 to 5 seconds)
+    // 2. EYE BLINKING (Scales eye region vertically to 0 every 4s for 150ms)
     // ======================================================================
-    if (!isBlinking && now - lastBlinkTime > nextBlinkDelay) {
+    if (!isBlinking && now - lastBlinkTime > 4000) {
       isBlinking = true;
       blinkStartTime = now;
     }
@@ -197,21 +218,20 @@
     if (isBlinking && leftEye && rightEye) {
       const blinkElapsed = now - blinkStartTime;
       if (blinkElapsed < 150) {
-        // Scale upper eyelid down to 0 for 150ms, then return
+        // Scale eye region coordinates vertically down to 0 for 150ms, then return to 1
         const progress = blinkElapsed / 150;
-        const eyeScaleY = Math.max(0.05, Math.abs(Math.sin(progress * Math.PI - Math.PI / 2)));
+        const eyeScaleY = Math.max(0.0, 1.0 - Math.sin(progress * Math.PI));
         leftEye.scale.y = eyeScaleY;
         rightEye.scale.y = eyeScaleY;
-        leftEyelid.scale.y = 1.0 + (1.0 - eyeScaleY) * 1.2;
-        rightEyelid.scale.y = 1.0 + (1.0 - eyeScaleY) * 1.2;
+        if (leftEyelid) leftEyelid.scale.y = 1.0 + (1.0 - eyeScaleY) * 1.5;
+        if (rightEyelid) rightEyelid.scale.y = 1.0 + (1.0 - eyeScaleY) * 1.5;
       } else {
         isBlinking = false;
         lastBlinkTime = now;
-        nextBlinkDelay = 3000 + Math.random() * 2000;
         leftEye.scale.y = 1.0;
         rightEye.scale.y = 1.0;
-        leftEyelid.scale.y = 1.0;
-        rightEyelid.scale.y = 1.0;
+        if (leftEyelid) leftEyelid.scale.y = 1.0;
+        if (rightEyelid) rightEyelid.scale.y = 1.0;
       }
     }
 
@@ -328,6 +348,30 @@
   document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("das-avatar-container")) {
       initAvatar("das-avatar-container");
+
+      // Connect Gemini Live WebSocket Pipeline
+      if (typeof window.GeminiLivePipeline === "function") {
+        const livePipeline = new window.GeminiLivePipeline({
+          onAudioStart: () => {
+            isSpeaking = true;
+            updateAvatarBadge("speaking");
+          },
+          onAudioEnd: () => {
+            isSpeaking = false;
+            updateAvatarBadge("ready");
+          },
+          onStateChange: (st) => {
+            updateAvatarBadge(st);
+          }
+        });
+        livePipeline.init().then(() => {
+          if (livePipeline.analyserNode) {
+            analyserNode = livePipeline.analyserNode;
+          }
+          livePipeline.connect();
+          window.geminiLivePipeline = livePipeline;
+        });
+      }
 
       // Auto-trigger initial DAS greeting on load:
       // "I'm your AI, your DAS Agent. Tell me, how can I help you?"
