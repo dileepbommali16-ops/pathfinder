@@ -119,37 +119,6 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     const headGroup = new THREE.Group();
     scene.add(headGroup);
 
-    // Texture Loader for Head Map
-    const textureLoader = new THREE.TextureLoader();
-    let headTexture: THREE.Texture | null = null;
-    textureLoader.load(
-      "/avatar/das_head.webp",
-      (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace;
-        headTexture = tex;
-        if (solidHead && (solidHead.material as THREE.MeshPhysicalMaterial)) {
-          (solidHead.material as THREE.MeshPhysicalMaterial).map = tex;
-          (solidHead.material as THREE.MeshPhysicalMaterial).needsUpdate = true;
-        }
-      },
-      undefined,
-      () => {
-        textureLoader.load(
-          "/avatar/das_head.jpg",
-          (tex2) => {
-            tex2.colorSpace = THREE.SRGBColorSpace;
-            headTexture = tex2;
-            if (solidHead && (solidHead.material as THREE.MeshPhysicalMaterial)) {
-              (solidHead.material as THREE.MeshPhysicalMaterial).map = tex2;
-              (solidHead.material as THREE.MeshPhysicalMaterial).needsUpdate = true;
-            }
-          },
-          undefined,
-          () => {}
-        );
-      }
-    );
-
     // Anatomical Cranial Geometry
     const headGeo = new THREE.SphereGeometry(1.15, 64, 64);
     headGeo.scale(1.0, 1.34, 1.14);
@@ -437,7 +406,6 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       upperLipMat.dispose();
       neckGeo.dispose();
       neckMat.dispose();
-      if (headTexture) headTexture.dispose();
     };
   }, [width, height, audioAnalyser, audioElement, onFpsUpdate]);
 

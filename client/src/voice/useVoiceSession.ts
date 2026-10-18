@@ -48,6 +48,103 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
   const fullReplyRef = useRef<string>("");
   const autoSpeakRef = useRef<boolean>(options.autoSpeak ?? true);
   autoSpeakRef.current = options.autoSpeak ?? true;
+  const greetingRef = useRef<string>("Hi sir, I'm your Pathfinder AI agent, how can I help you?");
+  const hasSpokenGreetingRef = useRef<boolean>(false);
+
+  /**
+   * Browser SpeechSynthesis fallback for sentence-by-sentence audio
+   */
+  const speakSentences = useCallback((sentences: string[]) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      setState("idle");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    setState("speaking");
+
+    let idx = 0;
+    const playNext = () => {
+      if (idx >= sentences.length) {
+        setState("idle");
+        return;
+      }
+
+      const text = sentences[idx++];
+      setCurrentSentence(text);
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 1.0;
+      utter.pitch = 0.95; // Confident male pitch
+
+      const voices = window.speechSynthesis.getVoices();
+      const maleVoice = voices.find(
+        (v) =>
+          (v.name.includes("Guy") ||
+            v.name.includes("David") ||
+            v.name.includes("Prabhat") ||
+            v.name.includes("Christopher") ||
+            v.name.includes("Male")) &&
+          (v.lang.startsWith("en") || v.lang.includes("IN"))
+      ) || voices.find((v) => v.lang.startsWith("en"));
+
+      if (maleVoice) utter.voice = maleVoice;
+
+      utter.onend = playNext;
+      utter.onerror = () => {
+        setState("idle");
+      };
+
+      window.speechSynthesis.speak(utter);
+    };
+
+    playNext();
+  }, []);
+
+  /**
+   * Central Stop Command
+   * Stops audio, mic capture, and speech synthesis within <150ms.
+   */
+  const stopAll = useCallback(() => {
+    // 1. Stop PCM audio queue player
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.stopAll();
+    }
+    // 2. Stop browser speech synthesis
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    // 3. Stop mic capture
+    if (micRef.current) {
+      micRef.current.stop();
+      setIsMicActive(false);
+    }
+    // 4. Notify backend
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "stop" }));
+    }
+    fullReplyRef.current = "";
+    setState("idle");
+  }, []);
+
+  // Browser Audio Unlock & Spoken Greeting on first user interaction
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.resumeContext().catch(() => {});
+      }
+      if (!hasSpokenGreetingRef.current && autoSpeakRef.current && greetingRef.current) {
+        hasSpokenGreetingRef.current = true;
+        speakSentences([greetingRef.current]);
+      }
+    };
+
+    window.addEventListener("pointerdown", handleFirstInteraction, { once: true });
+    window.addEventListener("keydown", handleFirstInteraction, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", handleFirstInteraction);
+      window.removeEventListener("keydown", handleFirstInteraction);
+    };
+  }, [speakSentences]);
 
   // Initialize Audio Player & Echo Manager
   useEffect(() => {
@@ -102,6 +199,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
 
           if (data.type === "agent_greeting") {
             const greeting = data.text || "Hi sir, I'm your Pathfinder AI agent, how can I help you?";
+            greetingRef.current = greeting;
             setCurrentSentence(greeting);
             if (data.provider) setActiveProvider(data.provider);
             setMessages((prev) => [
@@ -114,6 +212,10 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
                 timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
               },
             ]);
+            if (autoSpeakRef.current && !hasSpokenGreetingRef.current) {
+              hasSpokenGreetingRef.current = true;
+              speakSentences([greeting]);
+            }
           }
 
           if (data.type === "state_change") {
@@ -203,80 +305,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
     }
   }, []);
 
-  /**
-   * Browser SpeechSynthesis fallback for sentence-by-sentence audio
-   */
-  const speakSentences = (sentences: string[]) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      setState("idle");
-      return;
-    }
 
-    window.speechSynthesis.cancel();
-    setState("speaking");
-
-    let idx = 0;
-    const playNext = () => {
-      if (idx >= sentences.length) {
-        setState("idle");
-        return;
-      }
-
-      const text = sentences[idx++];
-      setCurrentSentence(text);
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 1.0;
-      utter.pitch = 0.95; // Confident male pitch
-
-      const voices = window.speechSynthesis.getVoices();
-      const maleVoice = voices.find(
-        (v) =>
-          (v.name.includes("Guy") ||
-            v.name.includes("David") ||
-            v.name.includes("Prabhat") ||
-            v.name.includes("Christopher") ||
-            v.name.includes("Male")) &&
-          (v.lang.startsWith("en") || v.lang.includes("IN"))
-      ) || voices.find((v) => v.lang.startsWith("en"));
-
-      if (maleVoice) utter.voice = maleVoice;
-
-      utter.onend = playNext;
-      utter.onerror = () => {
-        setState("idle");
-      };
-
-      window.speechSynthesis.speak(utter);
-    };
-
-    playNext();
-  };
-
-  /**
-   * Central Stop Command
-   * Stops audio, mic capture, and speech synthesis within <150ms.
-   */
-  const stopAll = useCallback(() => {
-    // 1. Stop PCM audio queue player
-    if (audioPlayerRef.current) {
-      audioPlayerRef.current.stopAll();
-    }
-    // 2. Stop browser speech synthesis
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
-    // 3. Stop mic capture
-    if (micRef.current) {
-      micRef.current.stop();
-      setIsMicActive(false);
-    }
-    // 4. Notify backend
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "stop" }));
-    }
-    fullReplyRef.current = "";
-    setState("idle");
-  }, []);
 
   /**
    * Sends a user query (text or transcribed voice)

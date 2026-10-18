@@ -128,27 +128,9 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
     rimLight.position.set(0, 3.5, -2.0);
     scene.add(rimLight);
 
-    // 4. Mesh, Texture, and Controllers
-    const textureLoader = new THREE.TextureLoader();
+    // 4. Pure Procedural 3D Cybernetic Head Mesh & Rig (No 2D Image Textures)
     let meshParts: MeshParts = createFaceMesh();
     scene.add(meshParts.headGroup);
-
-    textureLoader.load(
-      "/avatar/das_head.webp",
-      (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace;
-        meshParts.solidMat.map = tex;
-        meshParts.solidMat.needsUpdate = true;
-      },
-      undefined,
-      () => {
-        textureLoader.load("/avatar/das_head.jpg", (tex2) => {
-          tex2.colorSpace = THREE.SRGBColorSpace;
-          meshParts.solidMat.map = tex2;
-          meshParts.solidMat.needsUpdate = true;
-        });
-      }
-    );
 
     const idleController = new IdleController();
     const visemeEngine = new VisemeEngine();
@@ -159,7 +141,6 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
     const freqData = new Uint8Array(128);
     let frameCount = 0;
     let lastFpsTime = performance.now();
-    let lowFpsCount = 0;
 
     // 6. Animation Loop
     const animate = () => {
@@ -238,29 +219,80 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
     };
   }, [width, height, audioAnalyser]);
 
-  // Fallback 2D Rendering: High-res static image with audio-reactive glow ring
+  // Fallback Rendering: Pure Procedural Cybernetic Waveform/Orb (Zero external 2D images or stickers)
   if (useFallback) {
     return (
-      <div className={`relative flex items-center justify-center ${className}`}>
-        {/* Audio Reactive Glow Ring */}
+      <div
+        className={`relative flex flex-col items-center justify-center ${className}`}
+        style={{ width: `${width}px`, height: `${height}px` }}
+      >
+        {/* Pulsing Audio Aura */}
         <div
           className="absolute rounded-full transition-transform duration-75 pointer-events-none"
           style={{
-            width: `${Math.min(width, 320)}px`,
-            height: `${Math.min(height, 380)}px`,
-            border: "2px solid rgba(56, 189, 248, 0.4)",
-            boxShadow: `0 0 ${20 + audioRMS * 45}px rgba(56, 189, 248, ${0.25 + audioRMS * 0.4})`,
-            transform: `scale(${1.0 + audioRMS * 0.06})`,
+            width: `${Math.min(width, 280)}px`,
+            height: `${Math.min(width, 280)}px`,
+            background: "radial-gradient(circle, rgba(56,189,248,0.25) 0%, rgba(2,132,199,0.08) 50%, transparent 70%)",
+            border: "1px solid rgba(56, 189, 248, 0.35)",
+            boxShadow: `0 0 ${25 + audioRMS * 50}px rgba(56, 189, 248, ${0.3 + audioRMS * 0.4})`,
+            transform: `scale(${1.0 + audioRMS * 0.08})`,
           }}
         />
-        <img
-          src="/avatar/das_head.webp"
-          alt="Pathfinder DAS 3D AI Voice Agent"
-          className="w-full max-w-[340px] max-h-[420px] object-contain rounded-3xl drop-shadow-2xl z-10"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = "/avatar/das_head.jpg";
-          }}
-        />
+
+        {/* Procedural Holographic Cybernetic Core */}
+        <svg
+          viewBox="0 0 200 240"
+          className="w-48 h-56 z-10 drop-shadow-[0_10px_35px_rgba(56,189,248,0.4)] animate-pulse"
+          style={{ animationDuration: "3s" }}
+        >
+          <defs>
+            <linearGradient id="cyberHeadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.9" />
+              <stop offset="50%" stopColor="#0284c7" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#0369a1" stopOpacity="0.4" />
+            </linearGradient>
+            <linearGradient id="cyberWireGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#0284c7" stopOpacity="0.2" />
+            </linearGradient>
+          </defs>
+
+          {/* Cranial Silhouette */}
+          <path
+            d="M 100,20 C 145,20 175,55 175,105 C 175,145 155,185 130,210 C 115,225 85,225 70,210 C 45,185 25,145 25,105 C 25,55 55,20 100,20 Z"
+            fill="none"
+            stroke="url(#cyberHeadGrad)"
+            strokeWidth="2.5"
+          />
+
+          {/* Split Cybernetic Grid (Left Wireframe) */}
+          <line x1="100" y1="20" x2="100" y2="225" stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
+          <path d="M 40,70 Q 100,90 100,90" fill="none" stroke="url(#cyberWireGrad)" strokeWidth="1.2" />
+          <path d="M 30,110 Q 100,120 100,120" fill="none" stroke="url(#cyberWireGrad)" strokeWidth="1.2" />
+          <path d="M 40,150 Q 100,150 100,150" fill="none" stroke="url(#cyberWireGrad)" strokeWidth="1.2" />
+          <path d="M 60,185 Q 100,180 100,180" fill="none" stroke="url(#cyberWireGrad)" strokeWidth="1.2" />
+
+          {/* Solid Metallic Right Hemisphere */}
+          <path
+            d="M 100,20 C 145,20 175,55 175,105 C 175,145 155,185 130,210 C 115,225 100,225 100,225 Z"
+            fill="url(#cyberHeadGrad)"
+            opacity="0.25"
+          />
+
+          {/* Glowing Cyber Eyes */}
+          <circle cx="70" cy="100" r={4 + audioRMS * 2} fill="#67e8f9" />
+          <circle cx="130" cy="100" r={4 + audioRMS * 2} fill="#67e8f9" />
+
+          {/* Audio-Reactive Hologram Mouth */}
+          <ellipse
+            cx="100"
+            cy="165"
+            rx={14 + audioRMS * 6}
+            ry={3 + audioRMS * 9}
+            fill="#38bdf8"
+            opacity={0.85 + audioRMS * 0.15}
+          />
+        </svg>
       </div>
     );
   }
