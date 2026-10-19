@@ -463,6 +463,78 @@ def generate_smart_fallback_reply(
         for kw in ["ela", "cheyyali", "cheppu", "bro", "enti", "naku", "mana", "kuda", "ikkada", "chudu", "em cheyyali", "avvatledhu", "ravatledu"]
     ) or any("\u0c00" <= c <= "\u0c7f" for c in clean_msg)
 
+    # Normalize typos (e.g. roadap -> roadmap)
+    norm_msg = re.sub(r"\b(roadap|rodmap|roamap|rdmap)\b", "roadmap", low_msg)
+
+    # Social Banter, Humor & Emotional Intelligence
+    if any(k in norm_msg for k in ("i love you", "love you bro", "love you", "i love u", "love u")):
+        if is_telugu:
+            return (
+                "❤️ **Haha, Love You Too Bro!**\n\n"
+                "చాలా సంతోషం! కానీ మీ సీనియర్ ప్లేస్‌మెంట్ మెంటార్‌గా నా లక్ష్యం ఒక్కటే — **Google, Microsoft, Amazon రిక్రూటర్లు మీ రెజ్యూమ్‌ను చూసి ఆఫర్ లెటర్ ఇవ్వాలి!** 😉🚀\n\n"
+                "ఈ ఉత్సాహాన్ని మన ప్రిపరేషన్‌పై పెడదాం! ఈరోజు ఏమి చేద్దాం:\n"
+                "- 🗺️ **6-Week DSA Roadmap** లో హై-ఫ్రీక్వెన్సీ ప్యాటర్న్స్ ప్రాక్టీస్ చేద్దామా?\n"
+                "- 🚀 ఒక ఫ్లాగ్‌షిప్ **Distributed Systems Project** ప్లాన్ చేద్దామా?\n"
+                "- 📄 **ATS Resume Studio** లో మీ రెజ్యూమ్ స్కోర్ చెక్ చేద్దామా?"
+            )
+        else:
+            return (
+                "❤️ **Haha, Love You Too Bro!**\n\n"
+                "I really appreciate the good vibes! But as your personal placement mentor, my ultimate mission is to make sure **top product companies and hiring managers fall head-over-heels in love with your resume and problem-solving skills!** 😉🚀\n\n"
+                "Let's channel that positive energy into solid career milestones:\n"
+                "- 🗺️ **6-Week DSA Sprint**: Master the 75 patterns tested by Tier-1 companies.\n"
+                "- 🚀 **Flagship Project**: Build a distributed system architecture that amazes interviewers.\n"
+                "- 📄 **ATS Resume Studio**: Format bullet points with quantifiable impact metrics.\n\n"
+                "*What are we tackling today? Let me know!*"
+            )
+
+    if any(k in norm_msg for k in ("tell me a joke", "joke", "funny", "make me laugh")):
+        return (
+            "😂 **Developer Humor**\n\n"
+            "> **Why do programmers always prefer dark mode?**\n"
+            "> *Because light attracts bugs!* 🐛💻\n\n"
+            "---\n\n"
+            "> **There are only 10 types of people in the world:**\n"
+            "> *Those who understand binary, and those who secure Tier-1 campus placement offers!* 🎯✨\n\n"
+            "---\n\n"
+            "Feeling refreshed? Let's take that energy and conquer another coding milestone!"
+        )
+
+    # Purpose / Use of the Roadmap (Deep, Inspiring Explanation)
+    if any(k in norm_msg for k in ("use of roadmap", "why roadmap", "what is roadmap", "explain roadmap", "benefit of roadmap", "roadmap use", "how does roadmap help", "use of roadap")):
+        if is_telugu:
+            return (
+                "🗺️ **6-Week Placement Roadmap అసలు ఎందుకు ఉపయోగపడుతుంది?**\n\n"
+                "చాలామంది ఇంజనీరింగ్ విద్యార్థులు చేసే అతి పెద్ద పొరపాటు — **ఏ డైరెక్షన్ లేకుండా వందలకొద్దీ LeetCode ప్రశ్నలు సాల్వ్ చేయడం**, చివరికి ఇంటర్వ్యూలో కొత్త క్వశ్చన్ రాగానే తడబడటం!\n\n"
+                "మన **6-Week Sprint Roadmap** మీకు ఇచ్చే సూపర్ పవర్స్ ఇవి:\n\n"
+                "1. 🎯 **బట్టీ పట్టడం కాదు, 75 కోర్ ప్యాటర్న్స్ నేర్చుకోవడం**:\n"
+                "   - 500 ప్రశ్నలు చేయక్కర్లేదు! కేవలం 7 ఫండమెంటల్ ప్యాటర్న్స్ (*Sliding Window, Monotonic Stack, Two Pointers, BFS/DFS, 1D/2D Dynamic Programming*) నేర్చుకుంటే చాలు — **Amazon, Google, Microsoft అడిగే 90% కోడింగ్ రౌండ్లను క్రాక్ చేయవచ్చు**.\n"
+                "2. ⏱️ **వారం వారం పక్కా ప్లానింగ్**:\n"
+                "   - **Week 1-2**: Linear Data Structures & Fast Pointers.\n"
+                "   - **Week 3-4**: Trees, BSTs & Graph Traversals.\n"
+                "   - **Week 5**: Concurrency, Caching & System Design.\n"
+                "   - **Week 6**: Behavioral STAR stories & Live Mock Viva.\n"
+                "3. 🚫 **జీరో బ్లైండ్‌స్పాట్స్**:\n"
+                "   - కేవలం Arrays మాత్రమే నేర్చుకుని Graphs లేదా Dynamic Programming మిస్సయ్యే రిస్క్ ఉండదు.\n\n"
+                "*ఈ రోడ్‌మ్యాప్‌ని ఫాలో అయితే రోజుకు 2 గంటల ప్రాక్టీస్‌తో 6 వారాల్లో పూర్తి ఇంటర్వ్యూ-రెడీ అవుతారు!*"
+            )
+        else:
+            return (
+                "🗺️ **Why Follow the 6-Week Placement Roadmap?**\n\n"
+                "The biggest mistake engineering students make is **randomly grinding 300+ LeetCode problems without direction**, only to freeze when a recruiter asks an unseen variation in a live interview!\n\n"
+                "Here is the exact strategic advantage our **6-Week Sprint Roadmap** gives you:\n\n"
+                "1. 🎯 **Master Patterns, Not Individual Questions**:\n"
+                "   - You don't need to solve 1,000 problems! Mastering **7 fundamental patterns** (*Sliding Window, Fast & Slow Pointers, Monotonic Stack, BFS/DFS, Binary Search, and 1D/2D Dynamic Programming*) covers **90% of technical interview questions at Google, Amazon, and Microsoft**.\n"
+                "2. ⏱️ **Paced, Systematic Milestones**:\n"
+                "   - **Weeks 1–2**: Core Arrays, Hashing, Two Pointers, and Linked Lists.\n"
+                "   - **Weeks 3–4**: Hierarchical data — Trees, BSTs, and Graph Traversals.\n"
+                "   - **Week 5**: Scalability — Caching, Concurrency, and System Design basics.\n"
+                "   - **Week 6**: STAR Behavioral stories, Resume polishing, and Mock Viva grilling.\n"
+                "3. 🛡️ **Guarantees Zero Technical Blindspots**:\n"
+                "   - Prevents the fatal trap of being great at Arrays while completely failing Graph algorithms or Token-Bucket Rate Limiters.\n\n"
+                "*Following this roadmap for just 2 hours a day will put you ahead of 85% of campus applicants!*"
+            )
+
     # 3. Quick Action: Explain Pathfinder simply
     if any(k in low_msg for k in ("explain pathfinder simply", "what is pathfinder", "how does pathfinder work", "explain simply")):
         if is_telugu:
