@@ -43,12 +43,11 @@ export function getVoiceBackendUrls() {
       apiUrl: "http://127.0.0.1:8000/api/voice/chat",
     };
   }
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const httpProto = window.location.protocol;
-  const host = window.location.host;
+  // Production / Vercel cloud environment -> directly target Render Cloud API
+  const renderHost = "pathfinder-backend-klrp.onrender.com";
   return {
-    wsUrl: `${protocol}//${host}/ws/voice`,
-    apiUrl: `${httpProto}//${host}/api/voice/chat`,
+    wsUrl: `wss://${renderHost}/ws/voice`,
+    apiUrl: `https://${renderHost}/api/voice/chat`,
   };
 }
 

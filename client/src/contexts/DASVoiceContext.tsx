@@ -18,6 +18,7 @@ import React, {
   ReactNode,
 } from "react";
 import { getApiBase, API_BASE } from "@/lib/apiClient";
+import { clientBrain } from "@/voice/client_brain";
 
 export type DASMode = "idle" | "listening" | "thinking" | "speaking" | "error";
 
@@ -326,9 +327,13 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
 
       try {
         const endpoint = `${API_BASE}/api/chat`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+
         const resp = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
           body: JSON.stringify({
             message: clean,
             session_id: sessionId,
@@ -338,6 +343,7 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
             history: messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
           }),
         });
+        clearTimeout(timeoutId);
 
         if (resp.ok) {
           const data = await resp.json();
@@ -368,17 +374,21 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
           throw new Error("HTTP error " + resp.status);
         }
       } catch (err) {
-        console.warn("[DASVoiceContext] Network fallback:", err);
-        const fallbackSpoken = "I am DAS, your Pathfinder Career Coach. Ask me anything about placement cutoffs, DSA roadmaps, resumes, or mock interviews!";
-        const fallbackMsg: DASMessage = {
-          id: "msg_fallback_" + Date.now(),
+        console.info("[DASVoiceContext] Autonomous client-side AI brain answering:", err);
+        const brainRes = clientBrain.process(clean, language);
+        const dasMsg: DASMessage = {
+          id: "msg_brain_" + Date.now(),
           role: "assistant",
-          content: fallbackSpoken,
-          spoken: fallbackSpoken,
+          content: brainRes.display,
+          spoken: brainRes.spoken,
+          display: brainRes.display,
+          actions: brainRes.actions,
+          followups: brainRes.followups,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         };
-        setMessages((prev) => [...prev, fallbackMsg]);
-        speakNatural(fallbackSpoken);
+        setMessages((prev) => [...prev, dasMsg]);
+        brainRes.actions.forEach((act: any) => executeDASAction(act));
+        speakNatural(brainRes.spoken);
       }
     },
     [cancelSpeech, sessionId, pageContext, language, messages, executeDASAction, speakNatural]
