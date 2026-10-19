@@ -96,7 +96,6 @@ class GeminiLiveSession:
             )
 
             self.ws = await websockets.connect(ws_url, ping_interval=20, ping_timeout=20)
-            self.is_connected = True
 
             # Send Setup Handshake
             setup_msg = {
@@ -122,6 +121,29 @@ class GeminiLiveSession:
             }
 
             await self.ws.send(json.dumps(setup_msg))
+
+            # Verify Google setup handshake was accepted
+            try:
+                raw_init = await asyncio.wait_for(self.ws.recv(), timeout=3.5)
+                init_data = json.loads(raw_init)
+                if "setupComplete" not in init_data:
+                    logger.warning(f"[GeminiLive] Handshake failed or rejected by Gemini: {init_data}")
+                    try:
+                        await self.ws.close()
+                    except Exception:
+                        pass
+                    self.is_connected = False
+                    return False
+            except Exception as hs_err:
+                logger.warning(f"[GeminiLive] Handshake validation failed: {hs_err}")
+                try:
+                    await self.ws.close()
+                except Exception:
+                    pass
+                self.is_connected = False
+                return False
+
+            self.is_connected = True
             self._receive_task = asyncio.create_task(self._listen_loop())
             logger.info(f"[GeminiLive] Connected successfully with voice '{self.voice_name}'.")
             return True

@@ -1,129 +1,278 @@
 /**
- * VoicePanel.tsx: Production Studio Layout for Pathfinder DAS Voice Agent
- * Adheres strictly to the architectural layout specifications:
- * 1. Slim header with Language selector (Auto / EN / తెలుగు / हिन्दी), mute toggle, stop button, overflow menu, and real Provider badge.
- * 2. Center stage: ONLY the 3D Cybernetic Face (55-65% height), status word, live 2-line subtitles, and "View Full Answer" trigger.
- * 3. Right side: Ask me column with 8 clickable questions (collapses to horizontal chips on mobile).
- * 4. Bottom: Single unified input bar with mic trigger, text typing box, and send button.
+ * VoicePanel.tsx - Pathfinder DAS Cybernetic Command Center HUD
+ * Designed specifically for Pathfinder Autonomous Website Intelligence.
+ * Layout:
+ * - Top Bar: Pathfinder DAS Branding, System Telemetry Pills, Wake-Word Badge, Live Clock, Settings Cog & Audio Controls.
+ * - Left Stage: 3D Holographic Cybernetic Face Avatar, audio equalizer waveform, telemetry monitors,
+ *   and autonomous website action live report.
+ * - Right Stage: Activity Log (live conversation transcript), File/Resume Dropzone (Instant ATS Scanner),
+ *   Command Input, and prominent Glowing Microphone & Interrupt action controls.
  */
 
-import React, { useState } from "react";
-import { Bot, Volume2, VolumeX, Square, MoreVertical, Globe, RefreshCw, AlertCircle, Radio } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Bot,
+  Volume2,
+  VolumeX,
+  Square,
+  Radio,
+  Mic,
+  MicOff,
+  Sparkles,
+  Upload,
+  Send,
+  CornerDownLeft,
+  ShieldCheck,
+  Cpu,
+  Activity,
+  Terminal,
+  Zap,
+  Sliders,
+  RotateCcw,
+  Layers,
+  FileText,
+  AlertCircle,
+  Clock,
+  Compass,
+} from "lucide-react";
 import { FaceAvatar } from "./avatar/FaceAvatar";
-import { CaptionBar } from "./CaptionBar";
-import { AskMeColumn, DEFAULT_ASK_ME_QUESTIONS } from "./AskMeColumn";
-import { InputBar } from "./InputBar";
-import { FullAnswerSheet } from "./FullAnswerSheet";
 import { useVoiceSession } from "./useVoiceSession";
 import { MicSetupModal } from "./MicSetupModal";
-import { ConfirmationGate, PendingAction } from "./ConfirmationGate";
-import { ProactiveCheckin } from "./ProactiveCheckin";
+import { VoiceSettingsModal } from "./VoiceSettingsModal";
+import { memoryManager, StudentMemory } from "./memory";
+import { WebsiteActionContext } from "./actions";
+import { WakeWordDetector } from "./wakeWord";
+import { analyzeResumeFile } from "./resumeScanner";
 
 export interface VoicePanelProps {
   className?: string;
+  activeTab?: string;
   onNavigateTab?: (tab: string) => void;
   onOpenResumeBuilder?: () => void;
+  onLaunchMockInterview?: (company: string, role: string) => void;
+  onUpdateProfile?: (updates: any) => void;
 }
 
 export const VoicePanel: React.FC<VoicePanelProps> = ({
   className = "",
+  activeTab = "coach",
   onNavigateTab,
   onOpenResumeBuilder,
+  onLaunchMockInterview,
+  onUpdateProfile,
 }) => {
   const [language, setLanguage] = useState<string>("auto");
   const [autoSpeak, setAutoSpeak] = useState<boolean>(true);
-  const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
-  const [isOverflowOpen, setIsOverflowOpen] = useState<boolean>(false);
+  const [speechRate, setSpeechRate] = useState<number>(1.0);
+  const [wakeWordEnabled, setWakeWordEnabled] = useState<boolean>(true);
+  const [typedInput, setTypedInput] = useState<string>("");
   const [isMicModalOpen, setIsMicModalOpen] = useState<boolean>(false);
-  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isScanningResume, setIsScanningResume] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<string>("");
+  const [currentDate, setCurrentDate] = useState<string>("");
+  const [memory, setMemory] = useState<StudentMemory>(() => memoryManager.getMemory());
+
+  const logEndRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const wakeDetectorRef = useRef<WakeWordDetector | null>(null);
+
+  // Live Digital Clock
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString("en-US", { hour12: false }));
+      setCurrentDate(now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "2-digit", year: "numeric" }));
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Action context for website control
+  const actionContext: WebsiteActionContext = {
+    activeTab,
+    onNavigateTab,
+    onOpenResumeBuilder,
+    onLaunchMockInterview,
+    onUpdateProfile,
+    onLanguageChange: (lang) => setLanguage(lang),
+    onAutoSpeakToggle: (speak) => setAutoSpeak(speak),
+  };
 
   const {
     state,
     messages,
     currentSentence,
+    interimTranscript,
     activeProvider,
     isMicActive,
     feedbackHint,
+    lastAction,
     audioAnalyser,
     sendMessage,
     toggleMicrophone,
     stopAll,
     clearMessages,
     dismissFeedbackHint,
-  } = useVoiceSession({ language, autoSpeak });
+  } = useVoiceSession({ language, autoSpeak, speechRate, actionContext });
 
-  const handleSelectPrompt = (prompt: string) => {
-    // Action intent detection for Confirmation Gate
-    const lower = prompt.toLowerCase();
-    if (lower.includes("resume") && onOpenResumeBuilder) {
-      setPendingAction({
-        id: "act_resume",
-        type: "open_resume_builder",
-        label: "Open Resume Builder",
-        description: "Agent proposed opening Pathfinder ATS Resume Builder.",
-      });
-    } else if (lower.includes("project") || lower.includes("blueprint")) {
-      setPendingAction({
-        id: "act_projects",
-        type: "navigate_tab",
-        label: "Navigate to Blueprints",
-        description: "Agent proposed navigating to Flagship Industry Blueprints tab.",
-        targetTab: "projects",
-      });
+  // 1. Hands-Free Wake Word Detector ("Hey Pathfinder" / "Hey DAS")
+  useEffect(() => {
+    const detector = new WakeWordDetector({
+      enabled: wakeWordEnabled,
+      onWake: (detectedPhrase) => {
+        console.log(`[WakeWord] Activated by "${detectedPhrase}"`);
+        if (!isMicActive) {
+          if (wakeDetectorRef.current) {
+            wakeDetectorRef.current.stop();
+          }
+          toggleMicrophone();
+        }
+      },
+    });
+    wakeDetectorRef.current = detector;
+    if (wakeWordEnabled && !isMicActive && state !== "speaking") {
+      detector.start();
     }
-    sendMessage(prompt);
+    return () => {
+      detector.stop();
+    };
+  }, [wakeWordEnabled, isMicActive, state, toggleMicrophone]);
+
+  // Pause wake-word detector while agent is speaking or actively listening
+  useEffect(() => {
+    if (wakeDetectorRef.current) {
+      if (isMicActive || state === "speaking") {
+        wakeDetectorRef.current.stop();
+      } else if (wakeWordEnabled) {
+        wakeDetectorRef.current.start();
+      }
+    }
+  }, [isMicActive, state, wakeWordEnabled]);
+
+  // Auto-scroll activity log to bottom
+  useEffect(() => {
+    if (logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, interimTranscript]);
+
+  // Handle command submit
+  const handleCommandSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!typedInput.trim()) return;
+    sendMessage(typedInput.trim());
+    setTypedInput("");
   };
 
-  const handleConfirmAction = (action: PendingAction, uiToken: string) => {
-    console.log(`[ConfirmationGate] Action approved with UI Token ${uiToken}:`, action);
-    if (action.type === "open_resume_builder" && onOpenResumeBuilder) {
-      onOpenResumeBuilder();
-    } else if (action.type === "navigate_tab" && onNavigateTab && action.targetTab) {
-      onNavigateTab(action.targetTab);
+  // Handle keyboard shortcut [ESC] to interrupt
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        stopAll();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [stopAll]);
+
+  // 2. Instant Drag-and-Drop Resume Deep Scanner
+  const processUploadedResume = async (file: File) => {
+    setIsScanningResume(true);
+    try {
+      const audit = await analyzeResumeFile(file);
+      setIsScanningResume(false);
+      // Send audit report to chat and speak aloud
+      sendMessage(audit.spokenFeedback);
+    } catch (err) {
+      setIsScanningResume(false);
+      sendMessage(`I uploaded ${file.name}. Please open ATS Resume Builder.`);
+      if (onOpenResumeBuilder) onOpenResumeBuilder();
     }
-    setPendingAction(null);
+  };
+
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processUploadedResume(files[0]);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      processUploadedResume(files[0]);
+    }
   };
 
   return (
     <div
-      className={`relative flex h-[780px] w-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#060a14] shadow-2xl backdrop-blur-2xl select-none ${className}`}
+      className={`relative flex h-[820px] w-full flex-col overflow-hidden rounded-2xl border border-cyan-500/20 bg-[#030712] text-slate-200 shadow-[0_0_50px_rgba(6,182,212,0.12)] font-mono select-none ${className}`}
     >
-      {/* 1. SLIM HEADER BAR */}
-      <header className="flex items-center justify-between border-b border-white/5 bg-slate-950/70 px-4 sm:px-6 py-3 z-30 shrink-0">
-        {/* Left: Branding & Dynamic Provider Badge */}
+      {/* ============================================================== */}
+      {/* 1. TOP COMMAND BAR                                             */}
+      {/* ============================================================== */}
+      <header className="flex h-12 items-center justify-between border-b border-cyan-500/20 bg-[#060d1f]/90 px-4 sm:px-6 z-30 shrink-0">
+        {/* Left: Branding & Core Badges */}
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 font-bold text-xs shadow-md shadow-cyan-500/20">
-            P
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 font-bold text-xs shadow-[0_0_12px_rgba(6,182,212,0.4)]">
+            <Compass className="h-4 w-4 animate-spin-slow" />
           </div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xs sm:text-sm font-bold tracking-wide text-white">
-              PATHFINDER <span className="text-cyan-400 font-mono text-xs">DAS AGENT</span>
-            </h2>
-            {/* Real Provider Badge */}
-            <span className="flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/70 px-2.5 py-0.5 text-[10px] font-bold text-cyan-300 font-mono">
-              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span>{activeProvider}</span>
+            <h1 className="text-xs sm:text-sm font-extrabold tracking-wider text-white">
+              PATHFINDER <span className="text-cyan-400">DAS</span>
+            </h1>
+            <span className="hidden md:inline-block text-[11px] text-slate-400">
+              | Autonomous Career Assistant
             </span>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-2 ml-3">
+            <span className="flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-950/60 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              AI CORE: ONLINE
+            </span>
+            <button
+              type="button"
+              onClick={() => setWakeWordEnabled((prev) => !prev)}
+              className={`flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold cursor-pointer transition-all ${
+                wakeWordEnabled
+                  ? "border-cyan-500/30 bg-cyan-950/60 text-cyan-300 shadow-sm"
+                  : "border-white/10 bg-black/40 text-slate-500"
+              }`}
+              title="Toggle Hands-Free 'Hey Pathfinder' Wake Word"
+            >
+              <Mic className="h-2.5 w-2.5 text-cyan-400" />
+              <span>WAKE WORD: {wakeWordEnabled ? "ON" : "OFF"}</span>
+            </button>
           </div>
         </div>
 
-        {/* Right: Controls (Language Selector, Mute, Stop, Overflow) */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right: Live Digital Clock, Language & Hardware Controls */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Live Clock Display */}
+          <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-2.5 py-1 text-[11px] text-cyan-300">
+            <Clock className="h-3 w-3 text-cyan-400" />
+            <span className="font-bold">{currentTime || "00:00:00"}</span>
+            <span className="text-slate-400 text-[10px] hidden md:inline">{currentDate}</span>
+          </div>
+
           {/* Language Selector */}
-          <div className="flex items-center rounded-xl border border-white/10 bg-black/40 p-0.5">
+          <div className="flex items-center rounded-lg border border-white/10 bg-black/50 p-0.5">
             {[
-              { id: "auto", label: "Auto" },
+              { id: "auto", label: "AUTO" },
               { id: "en", label: "EN" },
               { id: "te", label: "తెలుగు" },
-              { id: "hi", label: "हिंदी" },
             ].map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => setLanguage(item.id)}
-                className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer ${
+                className={`rounded px-1.5 py-0.5 text-[10px] font-bold transition-all cursor-pointer ${
                   language === item.id
-                    ? "bg-cyan-500/30 text-white border border-cyan-400/40 shadow-xs"
+                    ? "bg-cyan-500/30 text-cyan-200 border border-cyan-400/40"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -132,93 +281,49 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
             ))}
           </div>
 
-          {/* Test Mic & Speaker Diagnostics Button */}
+          {/* Settings Drawer Trigger */}
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[11px] font-medium text-slate-300 hover:text-cyan-300 hover:border-cyan-400/40 cursor-pointer transition-all"
+            title="Configure Voice Speed, Wake Word & Placement Parameters"
+          >
+            <Sliders className="h-3.5 w-3.5 text-cyan-400" />
+            <span className="hidden md:inline">Settings</span>
+          </button>
+
+          {/* Audio Test Diagnostics */}
           <button
             type="button"
             onClick={() => setIsMicModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-950/40 px-2.5 py-1 text-xs font-semibold text-cyan-300 hover:bg-cyan-900/40 hover:border-cyan-400 transition-all cursor-pointer"
-            title="Open Microphone & Speaker Setup / Diagnostics"
+            className="flex items-center gap-1 rounded-lg border border-cyan-500/30 bg-cyan-950/40 px-2 py-1 text-[11px] font-medium text-cyan-300 hover:bg-cyan-900/40 cursor-pointer"
+            title="Microphone & Speaker Diagnostics"
           >
-            <Radio className="h-3.5 w-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Test Audio</span>
+            <Radio className="h-3 w-3 text-cyan-400" />
+            <span className="hidden md:inline">Test Audio</span>
           </button>
 
-          {/* Voice Reply Mute Toggle */}
+          {/* Voice Mute Toggle */}
           <button
             type="button"
             onClick={() => setAutoSpeak((prev) => !prev)}
-            className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-medium cursor-pointer ${
               autoSpeak
-                ? "border-cyan-500/40 bg-cyan-950/60 text-cyan-300 shadow-sm"
-                : "border-white/10 bg-black/40 text-slate-400 hover:text-white"
+                ? "border-cyan-500/40 bg-cyan-950/60 text-cyan-300"
+                : "border-white/10 bg-black/40 text-slate-500"
             }`}
-            title={autoSpeak ? "Voice reply is ON" : "Voice reply is MUTED"}
+            title={autoSpeak ? "Voice reply is active" : "Voice reply is muted"}
           >
-            {autoSpeak ? <Volume2 className="h-3.5 w-3.5 text-cyan-400" /> : <VolumeX className="h-3.5 w-3.5 text-slate-500" />}
-            <span className="hidden sm:inline">{autoSpeak ? "Voice ON" : "Muted"}</span>
+            {autoSpeak ? <Volume2 className="h-3 w-3 text-cyan-400" /> : <VolumeX className="h-3 w-3 text-slate-500" />}
           </button>
-
-          {/* Stop Button */}
-          <button
-            type="button"
-            onClick={stopAll}
-            className="flex items-center gap-1.5 rounded-xl border border-red-500/40 bg-red-600/20 px-2.5 py-1 text-xs font-bold text-red-300 hover:bg-red-600/30 active:scale-95 transition-all cursor-pointer shadow-xs"
-            title="Stop speaking and streams immediately"
-          >
-            <Square className="h-3 w-3 fill-current" />
-            <span className="hidden sm:inline">Stop</span>
-          </button>
-
-          {/* Overflow Menu */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsOverflowOpen((prev) => !prev)}
-              className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-black/40 text-slate-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </button>
-
-            {isOverflowOpen && (
-              <div
-                className="absolute right-0 mt-2 w-52 rounded-2xl border border-white/10 bg-slate-950 p-2 shadow-2xl z-40 space-y-1"
-                onClick={() => setIsOverflowOpen(false)}
-              >
-                <button
-                  type="button"
-                  onClick={() => setIsSheetOpen(true)}
-                  className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/10 text-left cursor-pointer"
-                >
-                  <span>View Transcript History</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsMicModalOpen(true)}
-                  className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 text-left cursor-pointer"
-                >
-                  <span>Test Mic & Speaker</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={clearMessages}
-                  className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 text-left cursor-pointer"
-                >
-                  <span>Clear Conversation</span>
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </header>
 
-      {/* Proactive Check-in Banner */}
-      <ProactiveCheckin onAccept={(p) => sendMessage(p)} className="mx-4 mt-2 shrink-0 z-20" />
-
       {/* Headphone Hint Banner if Echo Detected */}
       {feedbackHint && (
-        <div className="flex items-center justify-between border-b border-amber-500/30 bg-amber-950/40 px-6 py-2 text-xs text-amber-200 z-20">
+        <div className="flex items-center justify-between border-b border-amber-500/30 bg-amber-950/40 px-4 py-1.5 text-xs text-amber-200 z-20">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
+            <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
             <span>{feedbackHint}</span>
           </div>
           <button type="button" onClick={dismissFeedbackHint} className="text-amber-300 hover:text-white font-bold ml-2">
@@ -227,121 +332,328 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
         </div>
       )}
 
-      {/* Action Confirmation Gate */}
-      {pendingAction && (
-        <div className="mx-4 mt-2 shrink-0 z-30">
-          <ConfirmationGate
-            pendingAction={pendingAction}
-            onConfirm={handleConfirmAction}
-            onDismiss={() => setPendingAction(null)}
-          />
-        </div>
-      )}
-
-      {/* 2. MAIN DUAL PANE WORKSPACE */}
-      <div className="flex flex-1 flex-col lg:flex-row overflow-hidden relative min-h-0">
+      {/* ============================================================== */}
+      {/* 2. MAIN SPLIT STAGE (LEFT: AGENT & HUD | RIGHT: ACTIVITY & MIC) */}
+      {/* ============================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden min-h-0">
         
-        {/* CENTER STAGE: ONLY THE HUMAN FACE + CAPTION BANNER */}
-        <section className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-0 relative overflow-hidden">
+        {/* ------------------------------------------------------------ */}
+        {/* LEFT COLUMN (7 COLS): 3D AVATAR, TELEMETRY & LIVE INSIGHTS   */}
+        {/* ------------------------------------------------------------ */}
+        <div className="lg:col-span-7 flex flex-col border-b lg:border-b-0 lg:border-r border-cyan-500/20 bg-[#02050e] relative min-h-0 p-3 sm:p-4 justify-between overflow-hidden">
           
-          {/* Ambient Lighting Ring */}
-          <div className="pointer-events-none absolute h-[440px] w-[440px] rounded-full border border-cyan-500/15 bg-cyan-500/5 blur-3xl" />
+          {/* Subtle Cyber Grid Background */}
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#06b6d408_1px,transparent_1px),linear-gradient(to_bottom,#06b6d408_1px,transparent_1px)] bg-[size:24px_24px]" />
+          
+          {/* Ambient Avatar Glow */}
+          <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[380px] w-[380px] rounded-full bg-cyan-500/10 blur-[100px]" />
 
-          {/* Large Dead-Center 3D Avatar (55-65% height) */}
-          <div className="flex items-center justify-center w-full my-auto py-2 z-10">
+          {/* Top Left: System Telemetry HUD Box */}
+          <div className="flex items-center justify-between border border-cyan-500/20 bg-black/60 rounded-xl p-2.5 z-10 shrink-0 backdrop-blur-md">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full text-[10px]">
+              <div>
+                <span className="text-slate-500 block">PLACEMENT READY</span>
+                <span className="font-bold text-emerald-400 text-xs">84% · TIER 1</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">DREAM COMPANY</span>
+                <span className="font-bold text-cyan-300 text-xs truncate block">{memory.dreamCompany}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">CURRENT CGPA</span>
+                <span className="font-bold text-cyan-300 text-xs">{memory.cgpa} / 10.0</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">WAKE WORD STATUS</span>
+                <span className={`font-bold text-xs ${wakeWordEnabled ? "text-emerald-400" : "text-slate-500"}`}>
+                  {wakeWordEnabled ? "LISTENING (HEY DAS)" : "OFF"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Center: 3D Holographic Cybernetic Face Avatar */}
+          <div className="flex flex-1 items-center justify-center w-full min-h-0 my-auto py-1 z-10">
             <FaceAvatar
               state={state}
               spokenText={currentSentence}
               isSpeaking={state === "speaking"}
               audioAnalyser={audioAnalyser}
               width={340}
-              height={420}
-              className="w-full max-w-[360px] max-h-[55vh] drop-shadow-[0_20px_50px_rgba(56,189,248,0.3)]"
+              height={380}
+              className="w-full max-w-[360px] max-h-[44vh] drop-shadow-[0_15px_45px_rgba(6,182,212,0.4)]"
             />
           </div>
 
-          {/* Status Word under Face */}
-          <div className="mt-2 flex items-center gap-2 shrink-0 z-10">
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                state === "speaking"
-                  ? "bg-emerald-400 animate-pulse ring-4 ring-emerald-400/20"
-                  : state === "listening"
-                  ? "bg-cyan-400 animate-ping ring-4 ring-cyan-400/20"
+          {/* Under Avatar: Live Status & Reactive Audio Waveform */}
+          <div className="flex flex-col items-center justify-center gap-1.5 shrink-0 z-10">
+            {/* Live State Badge */}
+            <div className="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-black/70 px-3 py-1">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  state === "speaking"
+                    ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]"
+                    : state === "listening" || isMicActive
+                    ? "bg-cyan-400 animate-ping shadow-[0_0_8px_#38bdf8]"
+                    : state === "thinking"
+                    ? "bg-amber-400 animate-spin"
+                    : "bg-slate-500"
+                }`}
+              />
+              <span
+                className={`text-[11px] font-bold tracking-widest uppercase ${
+                  state === "speaking"
+                    ? "text-emerald-400"
+                    : state === "listening" || isMicActive
+                    ? "text-cyan-400"
+                    : state === "thinking"
+                    ? "text-amber-400"
+                    : "text-slate-400"
+                }`}
+              >
+                {state === "speaking"
+                  ? "● SPEAKING"
+                  : state === "listening" || isMicActive
+                  ? "● LISTENING..."
                   : state === "thinking"
-                  ? "bg-amber-400 animate-spin ring-4 ring-amber-400/20"
-                  : "bg-slate-500"
-              }`}
+                  ? "● THINKING"
+                  : wakeWordEnabled
+                  ? "● WAKE WORD ARMED ('HEY DAS')"
+                  : "● STANDBY"}
+              </span>
+            </div>
+
+            {/* Audio Waveform Equalizer Bar */}
+            <div className="flex items-end justify-center gap-1 h-6 w-48 py-1">
+              {[18, 42, 65, 80, 52, 90, 75, 40, 85, 60, 30, 70, 45, 20].map((h, i) => (
+                <div
+                  key={i}
+                  style={{
+                    height:
+                      state === "speaking" || isMicActive
+                        ? `${Math.max(15, (h * (Math.sin(Date.now() / 150 + i) + 1.2)) / 2)}%`
+                        : "20%",
+                  }}
+                  className={`w-1 rounded-full transition-all duration-75 ${
+                    state === "speaking"
+                      ? "bg-emerald-400"
+                      : isMicActive
+                      ? "bg-cyan-400"
+                      : "bg-cyan-900/60"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom Box: Pathfinder Live Placement Intelligence & Autonomous Action Feed */}
+          <div className="mt-2 shrink-0 border border-cyan-500/20 bg-[#040916]/80 rounded-xl p-3 z-10 backdrop-blur-md">
+            <div className="flex items-center justify-between border-b border-cyan-500/10 pb-1 mb-1.5 text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
+              <span className="flex items-center gap-1">
+                <Activity className="h-3 w-3 text-cyan-400" />
+                PATHFINDER PLACEMENT INTELLIGENCE & ACTION FEED
+              </span>
+              <span className="text-slate-500">AUTONOMOUS DISPATCH</span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed font-sans line-clamp-2">
+              {currentSentence || "Pathfinder DAS is ready to autonomously manage your campus placement preparation."}
+            </p>
+            {lastAction && (
+              <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-cyan-400 bg-cyan-950/40 rounded px-2 py-0.5 border border-cyan-500/20">
+                <Zap className="h-2.5 w-2.5 text-cyan-300" />
+                <span className="font-bold">Autonomous Action Executed:</span>
+                <span className="text-slate-300 truncate">{lastAction}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ------------------------------------------------------------ */}
+        {/* RIGHT COLUMN (5 COLS): ACTIVITY LOG, FILE UPLOAD & CONTROLS  */}
+        {/* ------------------------------------------------------------ */}
+        <div className="lg:col-span-5 flex flex-col bg-[#050b18] min-h-0 p-3 sm:p-4 justify-between border-t lg:border-t-0">
+          
+          {/* 1. ACTIVITY LOG (PERSISTENT MEMORY SYNCED) */}
+          <div className="flex flex-col flex-1 min-h-[220px] max-h-[360px] border border-cyan-500/20 bg-black/60 rounded-xl overflow-hidden mb-3">
+            <div className="flex items-center justify-between border-b border-cyan-500/20 bg-[#071126] px-3 py-1.5 text-[10px] text-cyan-300 font-bold tracking-wider uppercase">
+              <span className="flex items-center gap-1.5">
+                <Terminal className="h-3 w-3 text-cyan-400" />
+                ACTIVITY LOG (VOICE & VIVA AUDIT)
+              </span>
+              <button
+                type="button"
+                onClick={clearMessages}
+                className="text-slate-500 hover:text-red-400 transition-colors text-[9px] cursor-pointer"
+                title="Clear Activity Log"
+              >
+                [CLEAR]
+              </button>
+            </div>
+
+            {/* Scrollable Conversation Stream */}
+            <div className="flex-1 overflow-y-auto p-2.5 space-y-2 text-xs font-mono scrollbar-thin scrollbar-thumb-cyan-500/20">
+              {messages.map((msg, idx) => (
+                <div key={idx} className="leading-relaxed">
+                  {msg.role === "system" && (
+                    <div className="text-[11px] text-cyan-400/80">
+                      <span className="text-cyan-500 font-bold">[SYS]:</span> {msg.content}
+                    </div>
+                  )}
+                  {msg.role === "user" && (
+                    <div className="text-[11px] text-slate-200">
+                      <span className="text-cyan-400 font-bold">[YOU]:</span> {msg.content}
+                    </div>
+                  )}
+                  {msg.role === "assistant" && (
+                    <div className="text-[11px] text-emerald-300">
+                      <span className="text-emerald-400 font-bold">[DAS]:</span> {msg.content}
+                      {msg.action && (
+                        <div className="mt-0.5 text-[10px] text-cyan-300 italic pl-3">
+                          ↳ Action: {msg.action}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Interim Real-time Speech Preview */}
+              {interimTranscript && (
+                <div className="text-[11px] text-amber-300 italic animate-pulse">
+                  <span className="text-amber-400 font-bold">[HEARING]:</span> "{interimTranscript}"
+                </div>
+              )}
+              <div ref={logEndRef} />
+            </div>
+          </div>
+
+          {/* 2. FILE / RESUME UPLOAD DROPZONE */}
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleFileDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className="flex flex-col items-center justify-center border border-dashed border-cyan-500/30 bg-black/40 hover:bg-cyan-950/20 hover:border-cyan-400/60 transition-all rounded-xl p-2.5 mb-3 cursor-pointer text-center group"
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileInputChange}
+              accept=".pdf,.docx,.txt"
+              className="hidden"
             />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              {state === "speaking"
-                ? "Speaking"
-                : state === "listening"
-                ? "Listening"
-                : state === "thinking"
-                ? "Thinking"
-                : "Ready"}
+            <div className="flex items-center gap-2 text-cyan-400 group-hover:scale-105 transition-transform">
+              <Upload className="h-4 w-4" />
+              <span className="text-[11px] font-bold uppercase tracking-wider">
+                {isScanningResume ? "PARSING RESUME & ATS METRICS..." : "DROP RESUME PDF HERE TO SCAN"}
+              </span>
+            </div>
+            <span className="text-[9px] text-slate-500 mt-0.5">
+              [PDF, DOCX, Code] · Triggers Instant Spoken ATS Placement Audit
             </span>
           </div>
 
-          {/* Live Captions (2 Lines max) + View Full Answer Button */}
-          <div className="mt-2 shrink-0 z-10 w-full flex justify-center">
-            <CaptionBar
-              currentSentence={currentSentence}
-              hasFullAnswer={messages.length > 0}
-              messageCount={messages.length}
-              onOpenFullAnswer={() => setIsSheetOpen(true)}
+          {/* 3. COMMAND INPUT BAR */}
+          <form onSubmit={handleCommandSubmit} className="relative flex items-center mb-3">
+            <input
+              type="text"
+              value={typedInput}
+              onChange={(e) => setTypedInput(e.target.value)}
+              placeholder="Type a command, ask a question, or test by voice..."
+              className="w-full rounded-xl border border-white/10 bg-black/70 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all font-mono"
             />
+            <button
+              type="submit"
+              className="absolute right-1.5 flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/40 transition-colors cursor-pointer"
+              title="Execute Command"
+            >
+              <Send className="h-3.5 w-3.5" />
+            </button>
+          </form>
+
+          {/* 4. PROMINENT ACTION BUTTONS (INTERRUPT & MICROPHONE ACTIVE) */}
+          <div className="grid grid-cols-2 gap-2 mb-2.5">
+            {/* Red Glowing Interrupt Button */}
+            <button
+              type="button"
+              onClick={stopAll}
+              className="flex items-center justify-center gap-2 rounded-xl border border-rose-500/40 bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 py-2.5 px-3 text-xs font-bold transition-all active:scale-95 shadow-[0_0_15px_rgba(244,63,94,0.2)] cursor-pointer"
+              title="Interrupt and stop speaking immediately (ESC)"
+            >
+              <Square className="h-3.5 w-3.5 fill-current" />
+              <span>INTERRUPT [ESC]</span>
+            </button>
+
+            {/* Bright Glowing Microphone Button */}
+            <button
+              type="button"
+              onClick={async () => {
+                if (wakeDetectorRef.current) {
+                  wakeDetectorRef.current.stop();
+                }
+                await toggleMicrophone();
+              }}
+              className={`flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 text-xs font-bold transition-all active:scale-95 cursor-pointer ${
+                isMicActive
+                  ? "border-emerald-400 bg-emerald-500/30 text-emerald-300 shadow-[0_0_25px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/40 animate-pulse"
+                  : state === "speaking"
+                  ? "border-cyan-400/40 bg-cyan-950/50 text-cyan-300"
+                  : "border-cyan-500/40 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:scale-[1.02]"
+              }`}
+              title={isMicActive ? "Microphone active · Tap to finish" : "Tap to speak aloud"}
+            >
+              {isMicActive ? (
+                <>
+                  <Mic className="h-4 w-4 text-emerald-400 animate-bounce" />
+                  <span>MIC ACTIVE (SPEAK)</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="h-4 w-4 text-cyan-400" />
+                  <span>MICROPHONE ACTIVE</span>
+                </>
+              )}
+            </button>
           </div>
-        </section>
 
-        {/* RIGHT SIDE: DESKTOP "ASK ME" COLUMN (6 to 8 questions) */}
-        <aside className="hidden lg:flex w-72 lg:w-80 border-l border-white/5 bg-slate-950/60 p-4 flex-col shrink-0 overflow-y-auto">
-          <AskMeColumn
-            onSelectPrompt={handleSelectPrompt}
-            disabled={state === "thinking"}
-          />
-        </aside>
+          {/* 5. QUICK COMMAND STARTER CHIPS (VIVA, ROADMAP, RESUME, BLUEPRINTS) */}
+          <div className="flex flex-wrap gap-1">
+            {[
+              "Explain about Pathfinder",
+              "Start Viva Mode",
+              "Open Blueprints",
+              "Open Resume Builder",
+              "Start Mock Interview",
+              "Tier-1 DSA Roadmap",
+              "Check 44.6 LPA Package",
+            ].map((chip, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => sendMessage(chip)}
+                className="rounded-lg border border-white/5 bg-white/5 hover:border-cyan-400/40 hover:bg-cyan-500/10 text-slate-300 hover:text-cyan-200 px-2 py-1 text-[10px] transition-all cursor-pointer truncate"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
-
-      {/* MOBILE HORIZONTAL CHIPS ROW (shown above input on mobile) */}
-      <div className="lg:hidden flex items-center gap-1.5 px-4 py-2 border-t border-white/5 overflow-x-auto bg-slate-950/80 z-20">
-        {DEFAULT_ASK_ME_QUESTIONS.slice(0, 5).map((q) => (
-          <button
-            key={q.id}
-            type="button"
-            onClick={() => handleSelectPrompt(q.prompt)}
-            className="whitespace-nowrap rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-slate-300 hover:border-cyan-500/40 hover:text-cyan-300 transition-all shrink-0"
-          >
-            {q.title}
-          </button>
-        ))}
-      </div>
-
-      {/* 3. BOTTOM: UNIFIED INPUT BAR */}
-      <div className="p-4 border-t border-white/10 bg-slate-950/90 z-20">
-        <InputBar
-          onSendMessage={sendMessage}
-          onToggleMic={toggleMicrophone}
-          isMicActive={isMicActive}
-          isLoading={state === "thinking"}
-          autoSpeak={autoSpeak}
-          onToggleAutoSpeak={() => setAutoSpeak((prev) => !prev)}
-        />
-      </div>
-
-      {/* Slide-over Full Answer Sheet */}
-      <FullAnswerSheet
-        isOpen={isSheetOpen}
-        onClose={() => setIsSheetOpen(false)}
-        messages={messages}
-        onClearHistory={clearMessages}
-      />
 
       {/* Microphone & Speaker Diagnostic Modal */}
       <MicSetupModal
         isOpen={isMicModalOpen}
         onClose={() => setIsMicModalOpen(false)}
+      />
+
+      {/* Settings & Voice Customization Drawer */}
+      <VoiceSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        wakeWordEnabled={wakeWordEnabled}
+        onToggleWakeWord={(enabled) => setWakeWordEnabled(enabled)}
+        speechRate={speechRate}
+        onChangeSpeechRate={(rate) => setSpeechRate(rate)}
+        onMemoryUpdate={(updated) => setMemory(updated)}
       />
     </div>
   );

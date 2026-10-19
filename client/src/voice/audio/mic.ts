@@ -23,20 +23,24 @@ export class MicrophoneCapture {
     this.onError = options.onError;
   }
 
-  public async start(): Promise<boolean> {
+  public async start(existingStream?: MediaStream): Promise<boolean> {
     if (this.isCapturing) return true;
 
     try {
-      // 1. Request microphone with browser native AEC, AGC, and NS
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-        video: false,
-      });
+      // 1. Request microphone with browser native AEC, AGC, and NS if not already provided
+      if (existingStream) {
+        this.stream = existingStream;
+      } else {
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+          video: false,
+        });
+      }
 
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       this.audioCtx = new AudioCtx();

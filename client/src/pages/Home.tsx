@@ -1782,8 +1782,11 @@ export default function Home() {
             >
               {/* Dedicated 3D Voice Agent Studio */}
               <VoicePanel
+                activeTab={activeTab}
                 onNavigateTab={(tab) => setActiveTab(tab as TabId)}
                 onOpenResumeBuilder={() => setShowOnePageResume(true)}
+                onLaunchMockInterview={handleLaunchMockInterview}
+                onUpdateProfile={(updates) => setProfile((prev) => ({ ...prev, ...updates }))}
               />
             </motion.div>
           )}

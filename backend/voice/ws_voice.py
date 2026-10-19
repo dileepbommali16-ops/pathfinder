@@ -115,10 +115,8 @@ async def websocket_voice_endpoint(websocket: WebSocket):
         except Exception:
             pass
 
-    # Attempt to initialize Gemini Live Session
-    if gemini_key:
-
-
+    # Attempt to initialize Gemini Live Session (requires valid Google AI Studio key starting with AIzaSy)
+    if gemini_key and gemini_key.startswith("AIzaSy"):
         live_session = GeminiLiveSession(
             api_key=gemini_key,
             system_instruction=fallback_pipeline.prompt_template,
@@ -131,6 +129,8 @@ async def websocket_voice_endpoint(websocket: WebSocket):
         is_live_ready = await live_session.connect()
         if not is_live_ready:
             live_session = None
+    else:
+        live_session = None
 
     # Send Initial Greeting on Connect
     await websocket.send_json({

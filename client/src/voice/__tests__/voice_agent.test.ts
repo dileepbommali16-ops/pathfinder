@@ -3,6 +3,10 @@ import { VisemeEngine, NEUTRAL_VISEMES } from "../avatar/visemes";
 import { IdleController } from "../avatar/idle";
 import { EchoGateManager } from "../echo";
 import { AudioQueuePlayer } from "../audio/player";
+import { actionEngine } from "../actions";
+import { memoryManager } from "../memory";
+import { quizManager } from "../quiz";
+import { analyzeResumeFile } from "../resumeScanner";
 
 describe("Pathfinder Voice Agent Architecture Unit Tests", () => {
   describe("1. Multilingual Viseme Mapping (English, Hindi, Telugu)", () => {
@@ -138,6 +142,106 @@ describe("Pathfinder Voice Agent Architecture Unit Tests", () => {
       player.stopAll();
       expect(player.isPlaying).toBe(false);
       expect(player.getRMS()).toBe(0);
+    });
+  });
+
+  describe("5. Autonomous Website Action Engine", () => {
+    it("autonomously triggers tab navigation for projects, analytics, and resume", () => {
+      let navigatedTab = "";
+      const context = {
+        onNavigateTab: (tab: string) => {
+          navigatedTab = tab;
+        },
+      };
+
+      const resProjects = actionEngine.executeCommand("show me project blueprints", context);
+      expect(resProjects?.handled).toBe(true);
+      expect(resProjects?.actionType).toBe("NAVIGATE_TAB");
+      expect(navigatedTab).toBe("projects");
+
+      const resAnalytics = actionEngine.executeCommand("open cohort analytics", context);
+      expect(resAnalytics?.handled).toBe(true);
+      expect(navigatedTab).toBe("analytics");
+    });
+
+    it("triggers ATS Resume Builder modal when requested", () => {
+      let openedModal = false;
+      const context = {
+        onOpenResumeBuilder: () => {
+          openedModal = true;
+        },
+      };
+
+      const res = actionEngine.executeCommand("open resume builder", context);
+      expect(res?.handled).toBe(true);
+      expect(res?.actionType).toBe("OPEN_RESUME_BUILDER");
+      expect(openedModal).toBe(true);
+    });
+
+    it("supports undo stack to reverse autonomous actions", () => {
+      let currentTab = "coach";
+      const context = {
+        onNavigateTab: (tab: string) => {
+          currentTab = tab;
+        },
+      };
+
+      actionEngine.setCurrentTab("coach");
+      actionEngine.executeCommand("go to blueprints", context);
+      expect(currentTab).toBe("projects");
+
+      const undoRes = actionEngine.executeCommand("undo", context);
+      expect(undoRes?.handled).toBe(true);
+      expect(currentTab).toBe("coach");
+    });
+  });
+
+  describe("6. Persistent Memory Manager", () => {
+    it("stores and recalls student dream company and notes", () => {
+      memoryManager.updateProfile({ dreamCompany: "Microsoft" });
+      const mem = memoryManager.getMemory();
+      expect(mem.dreamCompany).toBe("Microsoft");
+
+      const note = memoryManager.addNote("Master Dynamic Programming by November");
+      expect(note.text).toContain("Dynamic Programming");
+      const updatedMem = memoryManager.getMemory();
+      expect(updatedMem.notes.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("7. Technical Placement Viva & Quiz Mode", () => {
+    it("initiates viva session and dispatches question", () => {
+      const q = quizManager.startQuiz();
+      expect(q.id).toBe("q_1");
+      expect(q.topic).toContain("DSA");
+      expect(quizManager.inProgress).toBe(true);
+    });
+
+    it("evaluates student viva answers and returns score and explanation", () => {
+      const evalGood = quizManager.evaluateAnswer("QuickSort worst case is O(N^2) when array is sorted, prevented by random pivot");
+      expect(evalGood.score).toBeGreaterThanOrEqual(7);
+      expect(evalGood.isCorrect).toBe(true);
+      expect(evalGood.spokenFeedback).toContain("out of 10");
+
+      const nextQ = quizManager.nextQuestion();
+      expect(nextQ?.topic).toContain("Database");
+    });
+  });
+
+  describe("8. Instant Drag-and-Drop Resume Deep Scanner", () => {
+    it("parses resume skills and calculates ATS placement readiness score", async () => {
+      const mockResumeContent = `
+        Senior Software Engineer.
+        Skills: Docker, Kubernetes, Redis, PostgreSQL, System Design, TypeScript, Python, DSA.
+        Experience: Optimized microservices latency by 45%, handling 500000 requests daily.
+      `;
+      const file = new File([mockResumeContent], "priyanka_resume.txt", { type: "text/plain" });
+
+      const audit = await analyzeResumeFile(file);
+      expect(audit.atsScore).toBeGreaterThanOrEqual(75);
+      expect(audit.extractedSkills).toContain("Docker");
+      expect(audit.extractedSkills).toContain("Redis");
+      expect(audit.spokenFeedback).toContain("ATS Placement Match");
     });
   });
 });
