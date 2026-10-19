@@ -192,6 +192,14 @@ def get_ui_html() -> str:
           </button>
         </div>
 
+        <!-- Quick Topic Chips -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px]">
+          <button type="button" onclick="sendQuickPrompt('How to build projects step by step?')" class="px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-500/40 hover:bg-cyan-950/40 text-slate-300 hover:text-cyan-300 transition-all shrink-0 cursor-pointer">🛠️ Build Projects</button>
+          <button type="button" onclick="sendQuickPrompt('Why should students use Pathfinder in real world?')" class="px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-500/40 hover:bg-cyan-950/40 text-slate-300 hover:text-cyan-300 transition-all shrink-0 cursor-pointer">🎯 Why Pathfinder?</button>
+          <button type="button" onclick="sendQuickPrompt('Explain all components of Pathfinder')" class="px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-500/40 hover:bg-cyan-950/40 text-slate-300 hover:text-cyan-300 transition-all shrink-0 cursor-pointer">⚡ All Components</button>
+          <button type="button" onclick="sendQuickPrompt('What is the 6-week DSA roadmap?')" class="px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-500/40 hover:bg-cyan-950/40 text-slate-300 hover:text-cyan-300 transition-all shrink-0 cursor-pointer">📚 DSA Roadmap</button>
+        </div>
+
         <form id="das-chat-form" onsubmit="handleChatSubmit(event)" class="flex items-center gap-2">
           
           <!-- Microphone Button -->
@@ -215,6 +223,10 @@ def get_ui_html() -> str:
             <span>Send</span>
           </button>
         </form>
+        <div class="flex items-center justify-between text-[11px] text-cyan-400/80 px-1 mt-1 font-medium">
+          <span>💡 Click the 🎙️ mic button & speak into your microphone</span>
+          <span class="text-slate-400">⚡ Speech Audio Enabled</span>
+        </div>
       </div>
     </aside>
   </main>
@@ -659,28 +671,15 @@ def get_ui_html() -> str:
       appendChatMessage("user", text);
       updateStatus("thinking", "THINKING");
 
-      // 1. Send via Gemini Live WebSocket if connected
-      if (geminiWs && geminiWs.readyState === WebSocket.OPEN) {{
-        const clientContent = {{
-          clientContent: {{
-            turns: [{{ role: "user", parts: [{{ text }}] }}],
-            turnComplete: true
-          }}
-        }};
-        geminiWs.send(JSON.stringify(clientContent));
-        return;
-      }}
-
-      // 2. Fallback to Local Pathfinder REST endpoint
       try {{
         const resp = await fetch("/api/chat", {{
           method: "POST",
           headers: {{ "Content-Type": "application/json" }},
-          body: JSON.stringify({{ message: text }})
+          body: JSON.stringify({{ message: text, text: text }})
         }});
         if (resp.ok) {{
           const res = await resp.json();
-          const reply = res.reply || "I am connected to your Pathfinder candidate profile.";
+          const reply = res.reply || res.spoken || res.spoken_summary || "I am connected to your Pathfinder candidate profile.";
           appendChatMessage("das", reply);
           speakGreetingAloud(reply);
         }} else {{
@@ -699,7 +698,7 @@ def get_ui_html() -> str:
       const input = document.getElementById("chat-input");
       if (input) {{
         input.value = text;
-        document.getElementById("das-chat-form").dispatchEvent(new Event("submit"));
+        handleChatSubmit({{ preventDefault: () => {{}} }});
       }}
     }}
 
@@ -710,53 +709,77 @@ def get_ui_html() -> str:
     function toggleMicrophone() {{
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {{
-        alert("Microphone recognition is not supported in this browser. Please type in the chat.");
+        alert("Microphone speech recognition is not supported in this browser. Please use Google Chrome, Microsoft Edge, or Safari, or type in the chat box.");
         return;
       }}
 
       const micBtn = document.getElementById("btn-mic");
+      const input = document.getElementById("chat-input");
 
       if (isMicActive) {{
-        if (recognition) recognition.stop();
+        try {{ if (recognition) recognition.stop(); }} catch {{}}
         isMicActive = false;
-        micBtn.classList.remove("bg-rose-500", "text-white", "animate-pulse");
+        if (micBtn) micBtn.classList.remove("bg-rose-500", "text-white", "animate-pulse");
+        if (input) input.placeholder = "Type your question for DAS...";
         updateStatus("ready", "READY");
         return;
       }}
 
-      recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = "en-US";
+      try {{
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = "en-US";
 
-      recognition.onstart = () => {{
-        isMicActive = true;
-        micBtn.classList.add("bg-rose-500", "text-white", "animate-pulse");
-        updateStatus("listening", "LISTENING...");
-      }};
+        recognition.onstart = () => {{
+          isMicActive = true;
+          if (micBtn) micBtn.classList.add("bg-rose-500", "text-white", "animate-pulse");
+          if (input) {{
+            input.placeholder = "🔴 Listening... Speak into your microphone now...";
+            input.focus();
+          }}
+          updateStatus("listening", "LISTENING...");
+        }};
 
-      recognition.onresult = (event) => {{
-        const transcript = event.results[0][0].transcript;
-        if (transcript) {{
-          const input = document.getElementById("chat-input");
-          input.value = transcript;
-          document.getElementById("das-chat-form").dispatchEvent(new Event("submit"));
-        }}
-      }};
+        recognition.onresult = (event) => {{
+          if (event.results && event.results[0] && event.results[0][0]) {{
+            const transcript = event.results[0][0].transcript.trim();
+            if (transcript) {{
+              if (input) input.value = transcript;
+              handleChatSubmit({{ preventDefault: () => {{}} }});
+            }}
+          }}
+        }};
 
-      recognition.onend = () => {{
+        recognition.onerror = (e) => {{
+          console.warn("[SpeechRecognition] Error:", e.error);
+          isMicActive = false;
+          if (micBtn) micBtn.classList.remove("bg-rose-500", "text-white", "animate-pulse");
+          if (input) input.placeholder = "Type your question for DAS...";
+          updateStatus("ready", "READY");
+
+          if (e.error === "not-allowed") {{
+            alert("Microphone permission was blocked by your browser! Please click the camera/microphone icon in the URL bar (near localhost:8000) and choose 'Allow'.");
+          }} else if (e.error === "network") {{
+            alert("Network error occurred during speech recognition. Please check your internet connection.");
+          }}
+        }};
+
+        recognition.onend = () => {{
+          isMicActive = false;
+          if (micBtn) micBtn.classList.remove("bg-rose-500", "text-white", "animate-pulse");
+          if (input) input.placeholder = "Type your question for DAS...";
+          updateStatus("ready", "READY");
+        }};
+
+        recognition.start();
+      }} catch (err) {{
+        console.error("[SpeechRecognition] Failed to start:", err);
         isMicActive = false;
-        micBtn.classList.remove("bg-rose-500", "text-white", "animate-pulse");
+        if (micBtn) micBtn.classList.remove("bg-rose-500", "text-white", "animate-pulse");
+        if (input) input.placeholder = "Type your question for DAS...";
         updateStatus("ready", "READY");
-      }};
-
-      recognition.onerror = () => {{
-        isMicActive = false;
-        micBtn.classList.remove("bg-rose-500", "text-white", "animate-pulse");
-        updateStatus("ready", "READY");
-      }};
-
-      recognition.start();
+      }}
     }}
 
     // Auto-init on page load

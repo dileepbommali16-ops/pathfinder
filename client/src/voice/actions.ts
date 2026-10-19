@@ -216,14 +216,53 @@ export class PathfinderActionEngine {
       }
     }
 
-    // 4. TAB NAVIGATION COMMANDS
+    // 4. STEP-BY-STEP PROJECT TUTORING (Persisted across tab switches)
+    if (lower === "next step" || lower === "next" || lower.includes("what is next step") || lower === "taruvatha step") {
+      const tutoring = memoryManager.getProjectTutoring();
+      if (tutoring) {
+        const nextStepNum = memoryManager.advanceProjectStep();
+        if (nextStepNum && nextStepNum <= tutoring.totalSteps) {
+          const stepGuide = `[${tutoring.projectTitle.toUpperCase()} - STEP ${nextStepNum}/${tutoring.totalSteps}]\nProceed with implementation module ${nextStepNum}. Verify with terminal tests before continuing.`;
+          const spoken = `Step ${nextStepNum} of ${tutoring.projectTitle}: proceed with module ${nextStepNum} and verify your tests. Say next step when ready!`;
+          return {
+            handled: true,
+            actionType: "PROJECT_STEP_ADVANCE",
+            feedbackText: stepGuide,
+            spokenFeedback: spoken,
+            target: "projects",
+          };
+        } else {
+          memoryManager.clearProjectTutoring();
+          return {
+            handled: true,
+            actionType: "PROJECT_COMPLETE",
+            feedbackText: `Congratulations! You have completed all steps for ${tutoring.projectTitle}.`,
+            spokenFeedback: `Congratulations! You have finished building ${tutoring.projectTitle}. Would you like to practice viva defense for it?`,
+            target: "projects",
+          };
+        }
+      }
+    }
+
+    if (lower.includes("build it step by step") || lower.includes("start project") || lower.includes("build project")) {
+      memoryManager.setProjectTutoring("proj-sde-1", "Distributed Task Queue", 1, 4);
+      return {
+        handled: true,
+        actionType: "START_PROJECT_TUTORING",
+        feedbackText: "[PROJECT MENTOR: Distributed Task Queue - STEP 1/4]\nStep 1: Design clean REST API schemas and thread-safe store. Test with pytest.",
+        spokenFeedback: "Starting Step 1 of the Distributed Task Queue project: design the thread-safe engine and test locally. Say 'next step' when ready!",
+        target: "projects",
+      };
+    }
+
+    // 5. TAB NAVIGATION COMMANDS
     const tabMatches: { pattern: RegExp; tab: string; name: string }[] = [
       { pattern: /(project|blueprint|portfolio|flagship)/, tab: "projects", name: "Flagship Portfolio Blueprints" },
-      { pattern: /(analytic|cohort|placement stat|salary|package)/, tab: "analytics", name: "Cohort Placement Intelligence" },
-      { pattern: /(roadmap|sprint|dsa schedule|week)/, tab: "skills", name: "6-Week Sprint Roadmap" },
-      { pattern: /(resume studio|ats scanner|resume score)/, tab: "resume", name: "ATS Resume Studio" },
+      { pattern: /(analytic|cohort|placement stat|salary|package|dataset|records|cohorts)/, tab: "analytics", name: "Cohort Placement Intelligence" },
+      { pattern: /(roadmap|sprint|dsa schedule|week|syllabus)/, tab: "skills", name: "6-Week Sprint Roadmap" },
+      { pattern: /(resume studio|ats scanner|resume score|resume)/, tab: "resume", name: "ATS Resume Studio" },
       { pattern: /(defense|star method|project viva|architecture defense)/, tab: "defense", name: "STAR Architecture Defense" },
-      { pattern: /(readiness|command center|audit)/, tab: "action", name: "Readiness Command Center" },
+      { pattern: /(readiness|command center|audit|actions)/, tab: "action", name: "Readiness Command Center" },
       { pattern: /(profile|setting|cgpa update|ssot)/, tab: "profile", name: "Candidate Profile & Settings" },
       { pattern: /(branch|degree|tier cutoff)/, tab: "branches", name: "Branch & Degree Analytics" },
       { pattern: /(overview|dashboard|home)/, tab: "overview", name: "Executive Overview Dashboard" },
@@ -236,12 +275,19 @@ export class PathfinderActionEngine {
       lower.startsWith("go to") ||
       lower.startsWith("open") ||
       lower.startsWith("show") ||
+      lower.startsWith("take me to") ||
       lower.startsWith("navigate") ||
       lower.startsWith("switch to") ||
       lower.includes("tab") ||
       lower.includes("page") ||
+      lower.includes("slide") ||
       lower.includes("blueprints") ||
-      lower.includes("analytics")
+      lower.includes("analytics") ||
+      lower.includes("dataset") ||
+      lower.includes("teesukelli") ||
+      lower.includes("chupinchu") ||
+      lower.includes("vellu") ||
+      lower.includes("veldam")
     ) {
       for (const item of tabMatches) {
         if (item.pattern.test(lower)) {

@@ -2,7 +2,7 @@
 
 > **Production-grade full-stack AI career intelligence platform and real-time streaming voice architect that benchmarks student profiles against 972 verified campus placement records, predicts placement odds with 88% ML accuracy, tutors 23 production blueprints, and prepares engineering candidates for Tier-1 recruitment filters.**
 
-[![Live Platform](https://img.shields.io/badge/🚀_Live_Demo-Vercel_Edge-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://pathfinder-client-fzom.vercel.app)
+[![Live Platform](https://img.shields.io/badge/🚀_Live_Demo-Vercel_Edge-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://pathfinder-client-v727.vercel.app/?demo=1)
 [![Cloud Engine](https://img.shields.io/badge/⚡_API_Gateway-Render_Cloud-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://pathfinder-backend-klrp.onrender.com/api/health)
 [![AI Engine](https://img.shields.io/badge/🧠_LLM_Core-Gemini_2.0_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![ML Accuracy](https://img.shields.io/badge/📈_Model_Accuracy-88%25_Random_Forest-success?style=for-the-badge)](https://github.com/dileepbommali16-ops/pathfinder)
@@ -11,7 +11,7 @@
 ---
 
 ### 🌟 Experience the Live Platform
-👉 **[Launch Pathfinder Live Demo (Vercel)](https://pathfinder-client-fzom.vercel.app)**  
+👉 **[Launch Pathfinder Live Demo (Vercel)](https://pathfinder-client-v727.vercel.app/?demo=1)**  
 *(⚡ Instant 1-Click Guest & Recruiter Evaluation Access — No signup or onboarding required!)*
 
 ---
@@ -473,7 +473,7 @@ python scripts/voice_latency_test.py
 
 ## 🌐 Live Production Deployments
 
-- **🚀 Live Application (Vercel Global Edge):** [https://pathfinder-client-fzom.vercel.app](https://pathfinder-client-fzom.vercel.app)  
+- **🚀 Live Application (Vercel Global Edge):** [https://pathfinder-client-v727.vercel.app/?demo=1](https://pathfinder-client-v727.vercel.app/?demo=1)  
   *(Instant 1-Click Guest & Recruiter Demo: Bypasses onboarding and loads verified student profile immediately)*
 - **⚡ Backend Cloud API (Render Cloud Service):** [https://pathfinder-backend-klrp.onrender.com](https://pathfinder-backend-klrp.onrender.com)
 - **📊 Real-time Health Telemetry:** [https://pathfinder-backend-klrp.onrender.com/api/health](https://pathfinder-backend-klrp.onrender.com/api/health)

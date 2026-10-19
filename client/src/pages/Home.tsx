@@ -55,9 +55,47 @@ import { getTabKnowledge } from "@/lib/siteKnowledge";
 import { Footer } from "@/components/dashboard/Footer";
 import { toast } from "sonner";
 import DepthText from "@/components/dashboard/DepthText";
+import { useDASVoice } from "@/contexts/DASVoiceContext";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const { setPageContext } = useDASVoice();
+
+  // Sync activeTab and title to global DAS voice context
+  useEffect(() => {
+    setPageContext({
+      route: "/",
+      activeTab: activeTab,
+      pageTitle: document.title,
+    });
+  }, [activeTab, setPageContext]);
+
+  // Central DAS action listeners for tab navigation & modals
+  useEffect(() => {
+    const handleDASNavigate = (e: any) => {
+      if (e.detail && e.detail.tab) {
+        setActiveTab(e.detail.tab as TabId);
+      }
+    };
+    const handleDASResume = () => setShowOnePageResume(true);
+    const handleDASInterview = (e: any) => {
+      if (e.detail) {
+        handleLaunchMockInterview(e.detail.company || "Razorpay / Fintech", e.detail.role || "Full Stack Engineer");
+      } else {
+        setActiveTab("interview");
+      }
+    };
+
+    window.addEventListener("das-navigate-tab", handleDASNavigate);
+    window.addEventListener("das-open-resume-builder", handleDASResume);
+    window.addEventListener("das-open-mock-interview", handleDASInterview);
+
+    return () => {
+      window.removeEventListener("das-navigate-tab", handleDASNavigate);
+      window.removeEventListener("das-open-resume-builder", handleDASResume);
+      window.removeEventListener("das-open-mock-interview", handleDASInterview);
+    };
+  }, []);
 
   // Photo 3 - Item 5: Dynamic Document Page Titles based on Active Tab
   useEffect(() => {
@@ -1437,7 +1475,7 @@ export default function Home() {
               )}
 
               {/* Section 1: Hero KPI Metrics */}
-              <section id="career-readiness-assessment" className="space-y-4">
+              <section id="career-readiness-assessment" data-das-id="hero-metrics" className="space-y-4">
                 <SectionHeader
                   title="Campus Placement Readiness Overview"
                   description="Real-time placement probability and primary eligibility benchmark"
@@ -1463,7 +1501,7 @@ export default function Home() {
               </section>
 
               {/* Section 1.5: Target Company Placement Radar */}
-              <section id="career-company-radar" className="space-y-4">
+              <section id="career-company-radar" data-das-id="company-radar" className="space-y-4">
                 <SectionHeader
                   title="Target Company Placement Radar"
                   description="Real-time hiring compatibility score mapped against historical campus drive cutoffs and technical rubrics"
@@ -1482,7 +1520,7 @@ export default function Home() {
               </section>
 
               {/* Section 2: Career Digital Twin */}
-              <section id="career-digital-twin" className="space-y-4">
+              <section id="career-digital-twin" data-das-id="career-twin" className="space-y-4">
                 <SectionHeader
                   title="Candidate Readiness Vectors"
                   description="Transparent multi-dimensional evaluation of your academic standing, practical coding, and communication confidence"
@@ -1501,7 +1539,7 @@ export default function Home() {
               </section>
 
               {/* Section 3: Priority Next Actions */}
-              <section id="career-next-actions" className="space-y-4">
+              <section id="career-next-actions" data-das-id="next-actions" className="space-y-4">
                 <SectionHeader
                   title="Priority Next Best Actions"
                   description="Targeted high-leverage steps recommended specifically for your active bottlenecks"
@@ -1519,7 +1557,7 @@ export default function Home() {
               </section>
 
               {/* Section 4: AI Action Center */}
-              <section id="career-action-center" className="space-y-4">
+              <section id="career-action-center" data-das-id="action-center" className="space-y-4">
                 <SectionHeader
                   title="AI Action Center"
                   description="One-click automated intelligence tools integrated with your candidate profile"
@@ -1543,7 +1581,7 @@ export default function Home() {
               </section>
 
               {/* Section 5: What-If? Trajectory Simulator */}
-              <section id="career-trajectory-simulator" className="space-y-4">
+              <section id="career-trajectory-simulator" data-das-id="whatif-simulator" className="space-y-4">
                 <SectionHeader
                   title="What-If? Career Trajectory Simulator"
                   description="Simulate the immediate placement probability boost of boosting CGPA, clearing backlogs, or shipping an internship"
@@ -1564,7 +1602,7 @@ export default function Home() {
               </section>
 
               {/* Section 6.5: Live Technical Footprint & Fraud Shield */}
-              <section id="career-live-skill-verifier" className="space-y-4">
+              <section id="career-live-skill-verifier" data-das-id="live-verifier" className="space-y-4">
                 <SectionHeader
                   title="Live Technical Footprint & Fraud Shield"
                   description="Audit real-time GitHub repositories, programming languages, and cryptographic authenticity badge"
@@ -1586,7 +1624,7 @@ export default function Home() {
               </section>
 
               {/* Section 7: Skill-Gap & Strengths */}
-              <section id="career-skill-gap" className="space-y-4">
+              <section id="career-skill-gap" data-das-id="skill-gap" className="space-y-4">
                 <SectionHeader
                   title="Target Role Skill Gap Analysis"
                   description="Direct alignment of your competencies against hiring cutoffs for your chosen domain"
@@ -1675,6 +1713,7 @@ export default function Home() {
           {activeTab === "skills" && (
             <motion.div
               key="skills"
+              data-das-id="roadmap-visualizer"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -1712,6 +1751,7 @@ export default function Home() {
           {activeTab === "branches" && (
             <motion.div
               key="branches"
+              data-das-id="branch-intelligence"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -1740,6 +1780,7 @@ export default function Home() {
           {activeTab === "analytics" && (
             <motion.div
               key="analytics"
+              data-das-id="cohort-explorer"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -1770,31 +1811,24 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* TAB 6: AI VOICE AGENT & CAREER COACH */}
-          {activeTab === "coach" && (
-            <motion.div
-              key="coach"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-4"
-            >
-              {/* Dedicated 3D Voice Agent Studio */}
-              <VoicePanel
-                activeTab={activeTab}
-                onNavigateTab={(tab) => setActiveTab(tab as TabId)}
-                onOpenResumeBuilder={() => setShowOnePageResume(true)}
-                onLaunchMockInterview={handleLaunchMockInterview}
-                onUpdateProfile={(updates) => setProfile((prev) => ({ ...prev, ...updates }))}
-              />
-            </motion.div>
-          )}
+          {/* TAB 6: AI VOICE AGENT & CAREER COACH (Persistent audio across tab switches) */}
+          <div data-das-id="voice-panel" className={activeTab === "coach" ? "block space-y-4" : "hidden"}>
+            <VoicePanel
+              activeTab={activeTab}
+              onNavigateTab={(tab) => setActiveTab(tab as TabId)}
+              onOpenResumeBuilder={() => setShowOnePageResume(true)}
+              onLaunchMockInterview={handleLaunchMockInterview}
+              onUpdateProfile={(updates) => setProfile((prev) => ({ ...prev, ...updates }))}
+            />
+          </div>
+
+
 
           {/* TAB 7: PROFILE / SETTINGS (EDIT DETAILS ANYTIME & SSOT SYNC) */}
           {activeTab === "profile" && (
             <motion.div
               key="profile"
+              data-das-id="profile-settings"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}

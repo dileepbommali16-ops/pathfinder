@@ -18,6 +18,16 @@ export interface StudentMemory {
     autoSpeak: boolean;
     speechRate: number;
   };
+  projectTutoringState?: {
+    projectId: string;
+    projectTitle: string;
+    currentStep: number;
+    totalSteps: number;
+  } | null;
+  tourState?: {
+    active: boolean;
+    currentStepIndex: number;
+  } | null;
 }
 
 const STORAGE_KEY = "pathfinder_das_memory";
@@ -138,6 +148,38 @@ export class PathfinderMemoryManager {
   public updateVoiceSettings(settings: Partial<StudentMemory["voiceSettings"]>): void {
     this.memory.voiceSettings = { ...this.memory.voiceSettings, ...settings };
     this.save();
+  }
+
+  public setProjectTutoring(projectId: string, projectTitle: string, currentStep: number, totalSteps: number): void {
+    this.memory.projectTutoringState = { projectId, projectTitle, currentStep, totalSteps };
+    this.save();
+  }
+
+  public advanceProjectStep(): number | null {
+    if (!this.memory.projectTutoringState) return null;
+    if (this.memory.projectTutoringState.currentStep < this.memory.projectTutoringState.totalSteps) {
+      this.memory.projectTutoringState.currentStep += 1;
+      this.save();
+    }
+    return this.memory.projectTutoringState.currentStep;
+  }
+
+  public getProjectTutoring(): StudentMemory["projectTutoringState"] {
+    return this.memory.projectTutoringState || null;
+  }
+
+  public clearProjectTutoring(): void {
+    this.memory.projectTutoringState = null;
+    this.save();
+  }
+
+  public setTourState(active: boolean, currentStepIndex: number): void {
+    this.memory.tourState = { active, currentStepIndex };
+    this.save();
+  }
+
+  public getTourState(): StudentMemory["tourState"] {
+    return this.memory.tourState || null;
   }
 }
 

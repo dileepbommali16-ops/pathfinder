@@ -233,6 +233,26 @@ def get_branches(force_reload: bool = False) -> List[Dict[str, Any]]:
     return _cached_branches
 
 
+def get_branch_by_code(code: str) -> Optional[Dict[str, Any]]:
+    """Retrieves single branch profile by code e.g. 'CSE', 'AIML'."""
+    clean = (code or "").strip().upper()
+    for b in get_branches():
+        if b.get("code", "").upper() == clean:
+            return b
+    return None
+
+
+def get_skills_by_branch(branch: str) -> List[Dict[str, Any]]:
+    """Retrieves top skills aligned to a branch's curriculum and recruiters."""
+    branch_info = get_branch_by_code(branch)
+    all_skills = get_skills()
+    if not branch_info:
+        return all_skills[:6]
+    recommended = set(s.lower() for s in branch_info.get("topRecommendedSkills", []))
+    matched = [s for s in all_skills if s.get("name", "").lower() in recommended or any(rec in s.get("name", "").lower() for rec in recommended)]
+    return matched if matched else all_skills[:6]
+
+
 # ============================================================================
 # 3. HIGH PERFORMANCE QUERY & AGGREGATION FUNCTIONS
 # ============================================================================
@@ -596,6 +616,20 @@ def execute_data_tool(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, An
     if cache_key and isinstance(result, dict) and "error" not in result:
         _cached_tool_aggregates[cache_key] = result
     return result
+
+
+def query_cohort_stats(branch: Optional[str] = None, year: Optional[int] = None, gender: Optional[str] = "All", skill: Optional[str] = "All") -> Dict[str, Any]:
+    """Queries verified cohort placement statistics across student records."""
+    args: Dict[str, Any] = {}
+    if branch:
+        args["branch"] = branch
+    if year:
+        args["year"] = year
+    if gender:
+        args["gender"] = gender
+    if skill:
+        args["skill"] = skill
+    return execute_data_tool("query_cohort_stats", args)
 
 
 def _execute_data_tool_internal(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:

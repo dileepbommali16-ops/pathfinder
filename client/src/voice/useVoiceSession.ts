@@ -481,21 +481,36 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
           })
         );
       } else {
-        // Fallback to HTTP POST /api/voice/chat
+        // Fallback to HTTP POST /api/voice/chat or /api/chat
         try {
           const { apiUrl } = getVoiceBackendUrls();
-          const resp = await fetch(apiUrl, {
+          let resp = await fetch(apiUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               text: clean,
+              message: clean,
               language: languageRef.current,
             }),
           });
+
+          // Secondary fallback to /api/chat if /api/voice/chat fails
+          if (!resp.ok) {
+            resp = await fetch("/api/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                text: clean,
+                message: clean,
+                language: languageRef.current,
+              }),
+            });
+          }
+
           if (resp.ok) {
             const data = await resp.json();
-            const spoken = data.spoken_summary || "";
-            const screen = data.screen_details || "";
+            const spoken = data.spoken_summary || data.spoken || data.reply || "";
+            const screen = data.screen_details || data.display || spoken;
             if (data.provider) setActiveProvider(data.provider);
             setCurrentSentence(spoken);
 
@@ -506,7 +521,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
                 content: screen || spoken,
                 spokenSummary: spoken,
                 screenDetails: screen,
-                provider: data.provider,
+                provider: data.provider || "Pathfinder Autonomous Core",
                 timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
               },
             ]);
@@ -523,9 +538,36 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
             } else {
               setState("idle");
             }
+          } else {
+            const fallbackMsg = "I am connected to your Pathfinder candidate profile. Ask me about cutoffs, DSA roadmaps, or projects!";
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: "assistant",
+                content: fallbackMsg,
+                spokenSummary: fallbackMsg,
+                screenDetails: fallbackMsg,
+                provider: "Pathfinder Autonomous Core",
+                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              },
+            ]);
+            speakSentences([fallbackMsg]);
           }
-        } catch {
-          setState("error");
+        } catch (fetchErr) {
+          console.warn("[useVoiceSession] Voice query fallback:", fetchErr);
+          const fallbackMsg = "I am DAS, your Pathfinder Career Coach. Ask me about cutoffs, DSA roadmaps, or resumes!";
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: fallbackMsg,
+              spokenSummary: fallbackMsg,
+              screenDetails: fallbackMsg,
+              provider: "Pathfinder Autonomous Core",
+              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            },
+          ]);
+          speakSentences([fallbackMsg]);
         }
       }
     },

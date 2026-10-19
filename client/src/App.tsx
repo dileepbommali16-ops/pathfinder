@@ -29,6 +29,9 @@ function Router() {
 //   to keep consistent foreground/background color across components
 // - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
+import { DASVoiceProvider } from "./contexts/DASVoiceContext";
+import { DASGlobalDock } from "./components/voice/DASGlobalDock";
+
 function App() {
   return (
     <ErrorBoundary>
@@ -38,7 +41,10 @@ function App() {
       >
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <DASVoiceProvider>
+            <Router />
+            <DASGlobalDock />
+          </DASVoiceProvider>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

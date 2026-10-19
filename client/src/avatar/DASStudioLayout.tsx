@@ -169,6 +169,22 @@ export const DASStudioLayout: React.FC = () => {
           setAgentState(data.state);
         }
 
+        if (data.type === "turn_response") {
+          const reply = data.spoken_summary || data.screen_details || data.text || "";
+          if (reply) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: String(Date.now()),
+                sender: "das",
+                text: reply,
+                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              },
+            ]);
+            speakWithBrowserSpeech(reply);
+          }
+        }
+
         if (data.type === "text_delta") {
           fullReplyRef.current += data.delta;
           setStreamingText((prev) => prev + data.delta);

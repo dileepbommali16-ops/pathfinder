@@ -1,0 +1,139 @@
+{
+  "pages": [
+    {
+      "id": "overview",
+      "title": "Executive Dashboard",
+      "route": "/",
+      "tab": "overview",
+      "purpose": "Executive summary of placement readiness, core KPIs, radar matching, and career progression digital twin.",
+      "sections": [
+        { "id": "hero-metrics", "name": "Readiness KPI Cards", "selector": "[data-das-id='hero-metrics']" },
+        { "id": "skill-gap", "name": "Skill Gap Analysis", "selector": "[data-das-id='skill-gap']" },
+        { "id": "career-twin", "name": "Career Digital Twin", "selector": "[data-das-id='career-twin']" },
+        { "id": "company-radar", "name": "Company Placement Radar", "selector": "[data-das-id='company-radar']" }
+      ]
+    },
+    {
+      "id": "action",
+      "title": "Readiness Command Center",
+      "route": "/",
+      "tab": "action",
+      "purpose": "Interactive What-If sensitivity simulator and prioritized weekly action center.",
+      "sections": [
+        { "id": "whatif-simulator", "name": "What-If Simulator", "selector": "[data-das-id='whatif-simulator']" },
+        { "id": "next-actions", "name": "Next Actions Widget", "selector": "[data-das-id='next-actions']" }
+      ]
+    },
+    {
+      "id": "skills",
+      "title": "6-Week Sprint Roadmap",
+      "route": "/",
+      "tab": "skills",
+      "purpose": "Structured daily curriculum for algorithmic mastery, LeetCode patterns, and behavioral prep.",
+      "sections": [
+        { "id": "roadmap-visualizer", "name": "6-Week Roadmap Visualizer", "selector": "[data-das-id='roadmap-visualizer']" }
+      ]
+    },
+    {
+      "id": "projects",
+      "title": "Flagship Portfolio Blueprints",
+      "route": "/",
+      "tab": "projects",
+      "purpose": "23 production-grade project architectures across all branches with folder trees and defense guides.",
+      "sections": [
+        { "id": "project-recommender", "name": "Project Recommender Grid", "selector": "[data-das-id='project-recommender']" }
+      ]
+    },
+    {
+      "id": "analytics",
+      "title": "Cohort Placement Intelligence",
+      "route": "/",
+      "tab": "analytics",
+      "purpose": "Real-time recruitment data explorer across 972 cohort student records and salary distributions.",
+      "sections": [
+        { "id": "cohort-explorer", "name": "Cohort Data Explorer", "selector": "[data-das-id='cohort-explorer']" },
+        { "id": "cohort-filters", "name": "Cohort Filters", "selector": "[data-das-id='cohort-filters']" }
+      ]
+    },
+    {
+      "id": "coach",
+      "title": "DAS AI Voice Studio",
+      "route": "/",
+      "tab": "coach",
+      "purpose": "Full-screen 3D conversational career coach with real-time lip-sync, voice input, and guidance.",
+      "sections": [
+        { "id": "voice-panel", "name": "3D Voice Panel", "selector": "[data-das-id='voice-panel']" }
+      ]
+    },
+    {
+      "id": "resume",
+      "title": "ATS Resume Studio",
+      "route": "/",
+      "tab": "resume",
+      "purpose": "Instant ATS resume scanning, Google X-Y-Z formula rewriting, and one-page PDF generation.",
+      "sections": [
+        { "id": "resume-studio", "name": "Resume Studio Scanner", "selector": "[data-das-id='resume-studio']" }
+      ]
+    },
+    {
+      "id": "branches",
+      "title": "Branch & Degree Analytics",
+      "route": "/",
+      "tab": "branches",
+      "purpose": "Comparative placement rates, salary bands, and top recruiting companies across 9 departments.",
+      "sections": [
+        { "id": "branch-intelligence", "name": "Branch Intelligence Dashboard", "selector": "[data-das-id='branch-intelligence']" }
+      ]
+    },
+    {
+      "id": "defense",
+      "title": "STAR Architecture Defense Simulator",
+      "route": "/",
+      "tab": "defense",
+      "purpose": "Simulated high-pressure technical viva testing candidate project architecture justifications.",
+      "sections": [
+        { "id": "project-defense", "name": "Defense Console", "selector": "[data-das-id='project-defense']" }
+      ]
+    },
+    {
+      "id": "roles",
+      "title": "Target Role Intelligence",
+      "route": "/",
+      "tab": "roles",
+      "purpose": "Deep-dive prerequisites and hiring requirements for industry software and engineering roles.",
+      "sections": [
+        { "id": "role-intelligence", "name": "Role Intelligence Explorer", "selector": "[data-das-id='role-intelligence']" }
+      ]
+    },
+    {
+      "id": "missions",
+      "title": "Placement Mission Tracker",
+      "route": "/",
+      "tab": "missions",
+      "purpose": "Gamified milestone progression board tracking daily preparation tasks and achievements.",
+      "sections": [
+        { "id": "mission-tracker", "name": "Mission Progress Cards", "selector": "[data-das-id='mission-tracker']" }
+      ]
+    },
+    {
+      "id": "interview",
+      "title": "AI Mock Interview & Viva",
+      "route": "/",
+      "tab": "interview",
+      "purpose": "Simulated technical interview with live speech interaction and instant rubric scoring.",
+      "sections": [
+        { "id": "mock-interview-console", "name": "Mock Interview Console", "selector": "[data-das-id='mock-interview-console']" }
+      ]
+    },
+    {
+      "id": "profile",
+      "title": "Candidate Profile & SSOT Settings",
+      "route": "/",
+      "tab": "profile",
+      "purpose": "Central Single Source of Truth for academic parameters, target companies, and skill verification.",
+      "sections": [
+        { "id": "profile-settings", "name": "Profile Settings Form", "selector": "[data-das-id='profile-settings']" }
+      ]
+    }
+  ]
+}
