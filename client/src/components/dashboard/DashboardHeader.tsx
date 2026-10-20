@@ -87,12 +87,23 @@ const MONO_THEME = {
   indicator: "from-transparent via-white to-transparent"
 };
 
+// AI Voice Agent Custom Theme: Eclipse (#343148), Beige (#D4B996), Soybean (#D7C49E)
+const VOICE_AGENT_THEME = {
+  activeBg: "bg-[#343148] text-[#D7C49E]",
+  text: "text-[#D7C49E] font-semibold",
+  icon: "text-[#D4B996]",
+  border: "border-[#D4B996]/80",
+  glow: "shadow-[0_0_20px_rgba(212,185,150,0.35)]",
+  badge: "bg-[#343148] text-[#D4B996] border-[#D7C49E]/50",
+  indicator: "from-transparent via-[#D4B996] to-transparent"
+};
+
 const TAB_THEMES: Record<TabId, typeof WINE_THEME> = {
   overview: WINE_THEME,
   interview: VIOLET_THEME,
   action: WINE_THEME,
   skills: WINE_THEME,
-  coach: VIOLET_THEME,
+  coach: VOICE_AGENT_THEME,
   projects: VIOLET_THEME,
   analytics: WINE_THEME,
   resume: MONO_THEME,

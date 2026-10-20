@@ -209,22 +209,22 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
 
   return (
     <div
-      className={`relative flex h-[820px] w-full flex-col overflow-hidden rounded-2xl border border-cyan-500/20 bg-[#030712] text-slate-200 shadow-[0_0_50px_rgba(6,182,212,0.12)] font-mono select-none ${className}`}
+      className={`relative flex h-[820px] w-full flex-col overflow-hidden rounded-2xl border border-[#343148] bg-[#0c0d14] text-slate-200 shadow-[0_0_50px_rgba(52,49,72,0.4)] font-mono select-none ${className}`}
     >
       {/* ============================================================== */}
       {/* 1. TOP COMMAND BAR                                             */}
       {/* ============================================================== */}
-      <header className="flex h-12 items-center justify-between border-b border-cyan-500/20 bg-[#060d1f]/90 px-4 sm:px-6 z-30 shrink-0">
+      <header className="flex h-12 items-center justify-between border-b border-[#343148] bg-[#161722]/95 px-4 sm:px-6 z-30 shrink-0">
         {/* Left: Branding & Core Badges */}
         <div className="flex items-center gap-3">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 font-bold text-xs shadow-[0_0_12px_rgba(6,182,212,0.4)]">
-            <Compass className="h-4 w-4 animate-spin-slow" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#343148] border border-[#D4B996]/50 text-[#D7C49E] font-bold text-xs shadow-[0_0_12px_rgba(212,185,150,0.3)]">
+            <Compass className="h-4 w-4 animate-spin-slow text-[#D4B996]" />
           </div>
           <div className="flex items-center gap-2">
             <h1 className="text-xs sm:text-sm font-extrabold tracking-wider text-white">
-              PATHFINDER <span className="text-cyan-400">DAS</span>
+              PATHFINDER <span className="text-[#D4B996]">DAS</span>
             </h1>
-            <span className="hidden md:inline-block text-[11px] text-slate-400">
+            <span className="hidden md:inline-block text-[11px] text-[#D7C49E]/70">
               | Autonomous Career Assistant
             </span>
           </div>
@@ -239,12 +239,12 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               onClick={() => setWakeWordEnabled((prev) => !prev)}
               className={`flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold cursor-pointer transition-all ${
                 wakeWordEnabled
-                  ? "border-cyan-500/30 bg-cyan-950/60 text-cyan-300 shadow-sm"
+                  ? "border-[#D4B996]/50 bg-[#343148] text-[#D7C49E] shadow-sm"
                   : "border-white/10 bg-black/40 text-slate-500"
               }`}
               title="Toggle Hands-Free 'Hey Pathfinder' Wake Word"
             >
-              <Mic className="h-2.5 w-2.5 text-cyan-400" />
+              <Mic className="h-2.5 w-2.5 text-[#D4B996]" />
               <span>WAKE WORD: {wakeWordEnabled ? "ON" : "OFF"}</span>
             </button>
           </div>
@@ -253,14 +253,14 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
         {/* Right: Live Digital Clock, Language & Hardware Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Live Clock Display */}
-          <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-2.5 py-1 text-[11px] text-cyan-300">
-            <Clock className="h-3 w-3 text-cyan-400" />
+          <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[#343148] bg-[#161722] px-2.5 py-1 text-[11px] text-[#D7C49E]">
+            <Clock className="h-3 w-3 text-[#D4B996]" />
             <span className="font-bold">{currentTime || "00:00:00"}</span>
-            <span className="text-slate-400 text-[10px] hidden md:inline">{currentDate}</span>
+            <span className="text-[#D7C49E]/60 text-[10px] hidden md:inline">{currentDate}</span>
           </div>
 
           {/* Language Selector */}
-          <div className="flex items-center rounded-lg border border-white/10 bg-black/50 p-0.5">
+          <div className="flex items-center rounded-lg border border-[#343148] bg-black/50 p-0.5">
             {[
               { id: "auto", label: "AUTO" },
               { id: "en", label: "EN" },
@@ -272,7 +272,7 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
                 onClick={() => setLanguage(item.id)}
                 className={`rounded px-1.5 py-0.5 text-[10px] font-bold transition-all cursor-pointer ${
                   language === item.id
-                    ? "bg-cyan-500/30 text-cyan-200 border border-cyan-400/40"
+                    ? "bg-[#343148] text-[#D7C49E] border border-[#D4B996]/60 shadow-sm"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -285,10 +285,10 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[11px] font-medium text-slate-300 hover:text-cyan-300 hover:border-cyan-400/40 cursor-pointer transition-all"
+            className="flex items-center gap-1 rounded-lg border border-[#343148] bg-[#161722] px-2 py-1 text-[11px] font-medium text-slate-300 hover:text-[#D7C49E] hover:border-[#D4B996]/60 cursor-pointer transition-all"
             title="Configure Voice Speed, Wake Word & Placement Parameters"
           >
-            <Sliders className="h-3.5 w-3.5 text-cyan-400" />
+            <Sliders className="h-3.5 w-3.5 text-[#D4B996]" />
             <span className="hidden md:inline">Settings</span>
           </button>
 
@@ -296,10 +296,10 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
           <button
             type="button"
             onClick={() => setIsMicModalOpen(true)}
-            className="flex items-center gap-1 rounded-lg border border-cyan-500/30 bg-cyan-950/40 px-2 py-1 text-[11px] font-medium text-cyan-300 hover:bg-cyan-900/40 cursor-pointer"
+            className="flex items-center gap-1 rounded-lg border border-[#D4B996]/40 bg-[#343148] px-2 py-1 text-[11px] font-medium text-[#D7C49E] hover:border-[#D4B996] cursor-pointer"
             title="Microphone & Speaker Diagnostics"
           >
-            <Radio className="h-3 w-3 text-cyan-400" />
+            <Radio className="h-3 w-3 text-[#D4B996]" />
             <span className="hidden md:inline">Test Audio</span>
           </button>
 
@@ -309,12 +309,12 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
             onClick={() => setAutoSpeak((prev) => !prev)}
             className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-medium cursor-pointer ${
               autoSpeak
-                ? "border-cyan-500/40 bg-cyan-950/60 text-cyan-300"
+                ? "border-[#D4B996]/40 bg-[#343148] text-[#D7C49E]"
                 : "border-white/10 bg-black/40 text-slate-500"
             }`}
             title={autoSpeak ? "Voice reply is active" : "Voice reply is muted"}
           >
-            {autoSpeak ? <Volume2 className="h-3 w-3 text-cyan-400" /> : <VolumeX className="h-3 w-3 text-slate-500" />}
+            {autoSpeak ? <Volume2 className="h-3 w-3 text-[#D4B996]" /> : <VolumeX className="h-3 w-3 text-slate-500" />}
           </button>
         </div>
       </header>
@@ -340,16 +340,16 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
         {/* ------------------------------------------------------------ */}
         {/* LEFT COLUMN (7 COLS): 3D AVATAR, TELEMETRY & LIVE INSIGHTS   */}
         {/* ------------------------------------------------------------ */}
-        <div className="lg:col-span-7 flex flex-col border-b lg:border-b-0 lg:border-r border-cyan-500/20 bg-[#02050e] relative min-h-0 p-3 sm:p-4 justify-between overflow-hidden">
+        <div className="lg:col-span-7 flex flex-col border-b lg:border-b-0 lg:border-r border-[#343148] bg-[#0c0d14] relative min-h-0 p-3 sm:p-4 justify-between overflow-hidden">
           
           {/* Subtle Cyber Grid Background */}
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#06b6d408_1px,transparent_1px),linear-gradient(to_bottom,#06b6d408_1px,transparent_1px)] bg-[size:24px_24px]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#34314815_1px,transparent_1px),linear-gradient(to_bottom,#34314815_1px,transparent_1px)] bg-[size:24px_24px]" />
           
-          {/* Ambient Avatar Glow */}
-          <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[380px] w-[380px] rounded-full bg-cyan-500/10 blur-[100px]" />
+          {/* Ambient Avatar Glow (Beige #D4B996) */}
+          <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[380px] w-[380px] rounded-full bg-[#D4B996]/10 blur-[100px]" />
 
           {/* Top Left: System Telemetry HUD Box */}
-          <div className="flex items-center justify-between border border-cyan-500/20 bg-black/60 rounded-xl p-2.5 z-10 shrink-0 backdrop-blur-md">
+          <div className="flex items-center justify-between border border-[#343148] bg-[#161722]/85 rounded-xl p-2.5 z-10 shrink-0 backdrop-blur-md">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full text-[10px]">
               <div>
                 <span className="text-slate-500 block">PLACEMENT READY</span>
@@ -357,11 +357,11 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               </div>
               <div>
                 <span className="text-slate-500 block">DREAM COMPANY</span>
-                <span className="font-bold text-cyan-300 text-xs truncate block">{memory.dreamCompany}</span>
+                <span className="font-bold text-[#D7C49E] text-xs truncate block">{memory.dreamCompany}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">CURRENT CGPA</span>
-                <span className="font-bold text-cyan-300 text-xs">{memory.cgpa} / 10.0</span>
+                <span className="font-bold text-[#D7C49E] text-xs">{memory.cgpa} / 10.0</span>
               </div>
               <div>
                 <span className="text-slate-500 block">WAKE WORD STATUS</span>
@@ -381,22 +381,22 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               audioAnalyser={audioAnalyser}
               width={340}
               height={380}
-              className="w-full max-w-[360px] max-h-[44vh] drop-shadow-[0_15px_45px_rgba(6,182,212,0.4)]"
+              className="w-full max-w-[360px] max-h-[44vh] drop-shadow-[0_15px_45px_rgba(212,185,150,0.25)]"
             />
           </div>
 
           {/* Under Avatar: Live Status & Reactive Audio Waveform */}
           <div className="flex flex-col items-center justify-center gap-1.5 shrink-0 z-10">
             {/* Live State Badge */}
-            <div className="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-black/70 px-3 py-1">
+            <div className="flex items-center gap-2 rounded-full border border-[#343148] bg-[#161722] px-3 py-1">
               <span
                 className={`h-2 w-2 rounded-full ${
                   state === "speaking"
                     ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]"
                     : state === "listening" || isMicActive
-                    ? "bg-cyan-400 animate-ping shadow-[0_0_8px_#38bdf8]"
+                    ? "bg-[#D4B996] animate-ping shadow-[0_0_8px_#D4B996]"
                     : state === "thinking"
-                    ? "bg-amber-400 animate-spin"
+                    ? "bg-[#D7C49E] animate-spin"
                     : "bg-slate-500"
                 }`}
               />
@@ -405,9 +405,9 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
                   state === "speaking"
                     ? "text-emerald-400"
                     : state === "listening" || isMicActive
-                    ? "text-cyan-400"
+                    ? "text-[#D7C49E]"
                     : state === "thinking"
-                    ? "text-amber-400"
+                    ? "text-[#D7C49E]"
                     : "text-slate-400"
                 }`}
               >
@@ -423,7 +423,7 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               </span>
             </div>
 
-            {/* Audio Waveform Equalizer Bar */}
+            {/* Audio Waveform Equalizer Bar (Soybean #D7C49E & Beige #D4B996) */}
             <div className="flex items-end justify-center gap-1 h-6 w-48 py-1">
               {[18, 42, 65, 80, 52, 90, 75, 40, 85, 60, 30, 70, 45, 20].map((h, i) => (
                 <div
@@ -438,8 +438,8 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
                     state === "speaking"
                       ? "bg-emerald-400"
                       : isMicActive
-                      ? "bg-cyan-400"
-                      : "bg-cyan-900/60"
+                      ? "bg-[#D7C49E]"
+                      : "bg-[#343148]"
                   }`}
                 />
               ))}
@@ -447,10 +447,10 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
           </div>
 
           {/* Bottom Box: Pathfinder Live Placement Intelligence & Autonomous Action Feed */}
-          <div className="mt-2 shrink-0 border border-cyan-500/20 bg-[#040916]/80 rounded-xl p-3 z-10 backdrop-blur-md">
-            <div className="flex items-center justify-between border-b border-cyan-500/10 pb-1 mb-1.5 text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
+          <div className="mt-2 shrink-0 border border-[#343148] bg-[#161722]/85 rounded-xl p-3 z-10 backdrop-blur-md">
+            <div className="flex items-center justify-between border-b border-[#343148]/60 pb-1 mb-1.5 text-[10px] text-[#D7C49E] font-bold uppercase tracking-wider">
               <span className="flex items-center gap-1">
-                <Activity className="h-3 w-3 text-cyan-400" />
+                <Activity className="h-3 w-3 text-[#D4B996]" />
                 PATHFINDER PLACEMENT INTELLIGENCE & ACTION FEED
               </span>
               <span className="text-slate-500">AUTONOMOUS DISPATCH</span>
@@ -459,8 +459,8 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               {currentSentence || "Pathfinder DAS is ready to autonomously manage your campus placement preparation."}
             </p>
             {lastAction && (
-              <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-cyan-400 bg-cyan-950/40 rounded px-2 py-0.5 border border-cyan-500/20">
-                <Zap className="h-2.5 w-2.5 text-cyan-300" />
+              <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-[#D7C49E] bg-[#343148]/60 rounded px-2 py-0.5 border border-[#D4B996]/30">
+                <Zap className="h-2.5 w-2.5 text-[#D4B996]" />
                 <span className="font-bold">Autonomous Action Executed:</span>
                 <span className="text-slate-300 truncate">{lastAction}</span>
               </div>
@@ -471,13 +471,13 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
         {/* ------------------------------------------------------------ */}
         {/* RIGHT COLUMN (5 COLS): ACTIVITY LOG, FILE UPLOAD & CONTROLS  */}
         {/* ------------------------------------------------------------ */}
-        <div className="lg:col-span-5 flex flex-col bg-[#050b18] min-h-0 p-3 sm:p-4 justify-between border-t lg:border-t-0">
+        <div className="lg:col-span-5 flex flex-col bg-[#0e0f18] min-h-0 p-3 sm:p-4 justify-between border-t lg:border-t-0">
           
           {/* 1. ACTIVITY LOG (PERSISTENT MEMORY SYNCED) */}
-          <div className="flex flex-col flex-1 min-h-[220px] max-h-[360px] border border-cyan-500/20 bg-black/60 rounded-xl overflow-hidden mb-3">
-            <div className="flex items-center justify-between border-b border-cyan-500/20 bg-[#071126] px-3 py-1.5 text-[10px] text-cyan-300 font-bold tracking-wider uppercase">
+          <div className="flex flex-col flex-1 min-h-[220px] max-h-[360px] border border-[#343148] bg-[#161722]/70 rounded-xl overflow-hidden mb-3">
+            <div className="flex items-center justify-between border-b border-[#343148] bg-[#1a1b29] px-3 py-1.5 text-[10px] text-[#D7C49E] font-bold tracking-wider uppercase">
               <span className="flex items-center gap-1.5">
-                <Terminal className="h-3 w-3 text-cyan-400" />
+                <Terminal className="h-3 w-3 text-[#D4B996]" />
                 ACTIVITY LOG (VOICE & VIVA AUDIT)
               </span>
               <button
@@ -491,24 +491,24 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
             </div>
 
             {/* Scrollable Conversation Stream */}
-            <div className="flex-1 overflow-y-auto p-2.5 space-y-2 text-xs font-mono scrollbar-thin scrollbar-thumb-cyan-500/20">
+            <div className="flex-1 overflow-y-auto p-2.5 space-y-2 text-xs font-mono scrollbar-thin scrollbar-thumb-[#343148]">
               {messages.map((msg, idx) => (
                 <div key={idx} className="leading-relaxed">
                   {msg.role === "system" && (
-                    <div className="text-[11px] text-cyan-400/80">
-                      <span className="text-cyan-500 font-bold">[SYS]:</span> {msg.content}
+                    <div className="text-[11px] text-[#D4B996]/80">
+                      <span className="text-[#D4B996] font-bold">[SYS]:</span> {msg.content}
                     </div>
                   )}
                   {msg.role === "user" && (
                     <div className="text-[11px] text-slate-200">
-                      <span className="text-cyan-400 font-bold">[YOU]:</span> {msg.content}
+                      <span className="text-[#D7C49E] font-bold">[YOU]:</span> {msg.content}
                     </div>
                   )}
                   {msg.role === "assistant" && (
                     <div className="text-[11px] text-emerald-300">
                       <span className="text-emerald-400 font-bold">[DAS]:</span> {msg.content}
                       {msg.action && (
-                        <div className="mt-0.5 text-[10px] text-cyan-300 italic pl-3">
+                        <div className="mt-0.5 text-[10px] text-[#D7C49E] italic pl-3">
                           ↳ Action: {msg.action}
                         </div>
                       )}
@@ -532,7 +532,7 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleFileDrop}
             onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-center justify-center border border-dashed border-cyan-500/30 bg-black/40 hover:bg-cyan-950/20 hover:border-cyan-400/60 transition-all rounded-xl p-2.5 mb-3 cursor-pointer text-center group"
+            className="flex flex-col items-center justify-center border border-dashed border-[#D4B996]/40 bg-[#161722]/50 hover:bg-[#343148]/40 hover:border-[#D7C49E] transition-all rounded-xl p-2.5 mb-3 cursor-pointer text-center group"
           >
             <input
               type="file"
@@ -541,7 +541,7 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               accept=".pdf,.docx,.txt"
               className="hidden"
             />
-            <div className="flex items-center gap-2 text-cyan-400 group-hover:scale-105 transition-transform">
+            <div className="flex items-center gap-2 text-[#D4B996] group-hover:scale-105 transition-transform">
               <Upload className="h-4 w-4" />
               <span className="text-[11px] font-bold uppercase tracking-wider">
                 {isScanningResume ? "PARSING RESUME & ATS METRICS..." : "DROP RESUME PDF HERE TO SCAN"}
@@ -559,14 +559,14 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               value={typedInput}
               onChange={(e) => setTypedInput(e.target.value)}
               placeholder="Type a command, ask a question, or test by voice..."
-              className="w-full rounded-xl border border-white/10 bg-black/70 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all font-mono"
+              className="w-full rounded-xl border border-[#343148] bg-black/70 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-[#D4B996] focus:outline-none focus:ring-1 focus:ring-[#D4B996] transition-all font-mono"
             />
             <button
               type="submit"
-              className="absolute right-1.5 flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/40 transition-colors cursor-pointer"
+              className="absolute right-1.5 flex h-7 w-7 items-center justify-center rounded-lg bg-[#343148] border border-[#D4B996]/40 text-[#D7C49E] hover:bg-[#343148]/80 hover:text-white transition-colors cursor-pointer"
               title="Execute Command"
             >
-              <Send className="h-3.5 w-3.5" />
+              <Send className="h-3.5 w-3.5 text-[#D4B996]" />
             </button>
           </form>
 
@@ -583,7 +583,7 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               <span>INTERRUPT [ESC]</span>
             </button>
 
-            {/* Bright Glowing Microphone Button */}
+            {/* Bright Glowing Microphone Button (Eclipse #343148 + Beige #D4B996 + Soybean #D7C49E) */}
             <button
               type="button"
               onClick={async () => {
@@ -594,21 +594,21 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               }}
               className={`flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 text-xs font-bold transition-all active:scale-95 cursor-pointer ${
                 isMicActive
-                  ? "border-emerald-400 bg-emerald-500/30 text-emerald-300 shadow-[0_0_25px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/40 animate-pulse"
+                  ? "border-[#D7C49E] bg-[#343148] text-[#D7C49E] shadow-[0_0_25px_rgba(215,196,158,0.5)] ring-2 ring-[#D4B996]/60 animate-pulse"
                   : state === "speaking"
-                  ? "border-cyan-400/40 bg-cyan-950/50 text-cyan-300"
-                  : "border-cyan-500/40 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:scale-[1.02]"
+                  ? "border-[#D4B996]/60 bg-[#343148] text-[#D7C49E]"
+                  : "border-[#D4B996] bg-[#343148] hover:bg-[#343148]/90 text-[#D7C49E] shadow-[0_0_20px_rgba(212,185,150,0.35)] hover:border-[#D7C49E] hover:scale-[1.02]"
               }`}
               title={isMicActive ? "Microphone active · Tap to finish" : "Tap to speak aloud"}
             >
               {isMicActive ? (
                 <>
-                  <Mic className="h-4 w-4 text-emerald-400 animate-bounce" />
+                  <Mic className="h-4 w-4 text-[#D4B996] animate-bounce" />
                   <span>MIC ACTIVE (SPEAK)</span>
                 </>
               ) : (
                 <>
-                  <Mic className="h-4 w-4 text-cyan-400" />
+                  <Mic className="h-4 w-4 text-[#D4B996]" />
                   <span>MICROPHONE ACTIVE</span>
                 </>
               )}
@@ -630,7 +630,7 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
                 key={idx}
                 type="button"
                 onClick={() => sendMessage(chip)}
-                className="rounded-lg border border-white/5 bg-white/5 hover:border-cyan-400/40 hover:bg-cyan-500/10 text-slate-300 hover:text-cyan-200 px-2 py-1 text-[10px] transition-all cursor-pointer truncate"
+                className="rounded-lg border border-[#343148] bg-[#161722] hover:border-[#D4B996]/60 hover:bg-[#343148] text-slate-300 hover:text-[#D7C49E] px-2 py-1 text-[10px] transition-all cursor-pointer truncate"
               >
                 {chip}
               </button>

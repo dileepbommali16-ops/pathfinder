@@ -71,27 +71,27 @@ export class DASAvatarMesh {
       }
     }
 
-    // Material 1: Solid futuristic metallic blue (Right side & base)
+    // Material 1: Realistic Natural Human Skin Tone
     const solidMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color("#185a9d"),
-      metalness: 0.35,
-      roughness: 0.25,
-      clearcoat: 0.6,
-      clearcoatRoughness: 0.15,
-      reflectivity: 0.8,
-      emissive: new THREE.Color("#0b2b4f"),
-      emissiveIntensity: 0.25,
+      color: new THREE.Color("#c89a74"), // Natural warm human skin tone
+      metalness: 0.04,                  // Low metalness for organic human skin
+      roughness: 0.48,                  // Natural soft diffuse dermal texture
+      clearcoat: 0.15,
+      clearcoatRoughness: 0.35,
+      reflectivity: 0.35,
+      emissive: new THREE.Color("#2a1810"), // Subsurface blood circulation warmth
+      emissiveIntensity: 0.12,
     });
 
     this.headMesh = new THREE.Mesh(this.geometry, solidMaterial);
     this.group.add(this.headMesh);
 
-    // Material 2: Left-side Wireframe Matrix (matches attached prompt visual)
+    // Material 2: Left-side Wireframe Matrix in Soybean (#D7C49E)
     const wireframeMaterial = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#5eead4"),
+      color: new THREE.Color("#D7C49E"),
       wireframe: true,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.65,
     });
 
     this.wireframeMesh = new THREE.Mesh(this.geometry, wireframeMaterial);

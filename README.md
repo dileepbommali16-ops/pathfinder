@@ -107,6 +107,9 @@ Pathfinder 2.0 is built on a decoupled, production-grade full stack architecture
 
 ### 🎙️ DAS AI Voice Agent Highlights:
 - **Voice-First Interaction**: From panel opening to closing, DAS AI greets, listens, and answers naturally by voice and on screen.
+- **Realistic Human Avatar Experience**: Anatomical 3D cranial mesh with organic human skin complexion, natural lip synchronization, procedural eyelid blinking, and Soybean/Beige matrix accents.
+- **Rethemed Executive Voice HUD**: Precision interface styled in Eclipse (`#343148`), Beige (`#D4B996`), and Soybean (`#D7C49E`) with tactile feedback and high-contrast WCAG AAA legibility.
+- **Zero-Lag Background Throttling**: Intelligent GPU/CPU pause detection that stops Three.js render loops when tabs or panels are inactive, guaranteeing buttery-smooth 60 FPS across all dashboard modules.
 - **Cognitive Audio Pipeline**: Listens with speech-to-text, analyzes candidate context (CGPA, Branch, Target Role), delivers a punchy 2-4 sentence spoken answer, and renders full code/tables on screen.
 - **Multi-Lingual Mastery**: Automatic detection and conversational responses in English, pure Telugu script, Roman Telugu/Tenglish, and Hindi.
 - **Website Tour & Analogy Guide**: Interactive walkthrough of all 10 modules with voice commands (*"next"*, *"stop"*, *"explain again"*), plus simple non-technical analogies for friends and parents.

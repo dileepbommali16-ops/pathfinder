@@ -112,23 +112,23 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
       return;
     }
 
-    // 3. Cybernetic Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.95);
+    // 3. Warm Studio Lighting (Enhances natural human skin complexion and Beige/Soybean accents)
+    const ambientLight = new THREE.AmbientLight(0xfffbf0, 0.95);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0x38bdf8, 2.9);
+    const keyLight = new THREE.DirectionalLight(0xfff1e0, 2.6);
     keyLight.position.set(-2.5, 3.0, 3.0);
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0x1d4ed8, 2.3);
+    const fillLight = new THREE.DirectionalLight(0xecd8c5, 1.8);
     fillLight.position.set(2.5, 1.5, 2.5);
     scene.add(fillLight);
 
-    const rimLight = new THREE.DirectionalLight(0x67e8f9, 3.3);
+    const rimLight = new THREE.DirectionalLight(0xd7c49e, 2.4); // Soybean (#D7C49E) rim light
     rimLight.position.set(0, 3.5, -2.0);
     scene.add(rimLight);
 
-    // 4. Pure Procedural 3D Cybernetic Head Mesh & Rig (No 2D Image Textures)
+    // 4. Pure Procedural 3D Cybernetic Head Mesh & Rig (Realistic Human Skin + Soybean Matrix)
     let meshParts: MeshParts = createFaceMesh();
     scene.add(meshParts.headGroup);
 
@@ -142,12 +142,12 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
     let frameCount = 0;
     let lastFpsTime = performance.now();
 
-    // 6. Animation Loop
+    // 6. Animation Loop (Lag-free: pauses immediately when tab/panel is hidden)
     const animate = () => {
       animFrameRef.current = requestAnimationFrame(animate);
 
-      // Pause rendering if document is hidden to conserve GPU/battery
-      if (document.hidden) return;
+      // Pause rendering if document is hidden or element is not displayed to eliminate GPU lag
+      if (document.hidden || (container.offsetParent === null && container.clientWidth === 0)) return;
 
       const elapsedTime = clock.getElapsedTime();
       const deltaTime = clock.getDelta();
@@ -226,34 +226,34 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
         className={`relative flex flex-col items-center justify-center ${className}`}
         style={{ width: `${width}px`, height: `${height}px` }}
       >
-        {/* Pulsing Audio Aura */}
+        {/* Pulsing Audio Aura (Warm Beige / Soybean) */}
         <div
           className="absolute rounded-full transition-transform duration-75 pointer-events-none"
           style={{
             width: `${Math.min(width, 280)}px`,
             height: `${Math.min(width, 280)}px`,
-            background: "radial-gradient(circle, rgba(56,189,248,0.25) 0%, rgba(2,132,199,0.08) 50%, transparent 70%)",
-            border: "1px solid rgba(56, 189, 248, 0.35)",
-            boxShadow: `0 0 ${25 + audioRMS * 50}px rgba(56, 189, 248, ${0.3 + audioRMS * 0.4})`,
+            background: "radial-gradient(circle, rgba(215,196,158,0.25) 0%, rgba(212,185,150,0.08) 50%, transparent 70%)",
+            border: "1px solid rgba(212, 185, 150, 0.35)",
+            boxShadow: `0 0 ${25 + audioRMS * 50}px rgba(212, 185, 150, ${0.3 + audioRMS * 0.4})`,
             transform: `scale(${1.0 + audioRMS * 0.08})`,
           }}
         />
 
-        {/* Procedural Holographic Cybernetic Core */}
+        {/* Procedural Realistic Human Face Silhouette */}
         <svg
           viewBox="0 0 200 240"
-          className="w-48 h-56 z-10 drop-shadow-[0_10px_35px_rgba(56,189,248,0.4)] animate-pulse"
+          className="w-48 h-56 z-10 drop-shadow-[0_10px_35px_rgba(212,185,150,0.3)] animate-pulse"
           style={{ animationDuration: "3s" }}
         >
           <defs>
             <linearGradient id="cyberHeadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.9" />
-              <stop offset="50%" stopColor="#0284c7" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#0369a1" stopOpacity="0.4" />
+              <stop offset="0%" stopColor="#d4a373" stopOpacity="0.95" />
+              <stop offset="50%" stopColor="#c89a74" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#b88965" stopOpacity="0.6" />
             </linearGradient>
             <linearGradient id="cyberWireGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#0284c7" stopOpacity="0.2" />
+              <stop offset="0%" stopColor="#D7C49E" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#D4B996" stopOpacity="0.3" />
             </linearGradient>
           </defs>
 
@@ -265,32 +265,34 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
             strokeWidth="2.5"
           />
 
-          {/* Split Cybernetic Grid (Left Wireframe) */}
-          <line x1="100" y1="20" x2="100" y2="225" stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
+          {/* Split Subtle Grid (Left Wireframe Matrix in Soybean) */}
+          <line x1="100" y1="20" x2="100" y2="225" stroke="#D7C49E" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
           <path d="M 40,70 Q 100,90 100,90" fill="none" stroke="url(#cyberWireGrad)" strokeWidth="1.2" />
           <path d="M 30,110 Q 100,120 100,120" fill="none" stroke="url(#cyberWireGrad)" strokeWidth="1.2" />
           <path d="M 40,150 Q 100,150 100,150" fill="none" stroke="url(#cyberWireGrad)" strokeWidth="1.2" />
           <path d="M 60,185 Q 100,180 100,180" fill="none" stroke="url(#cyberWireGrad)" strokeWidth="1.2" />
 
-          {/* Solid Metallic Right Hemisphere */}
+          {/* Solid Warm Natural Skin Right Hemisphere */}
           <path
             d="M 100,20 C 145,20 175,55 175,105 C 175,145 155,185 130,210 C 115,225 100,225 100,225 Z"
             fill="url(#cyberHeadGrad)"
-            opacity="0.25"
+            opacity="0.35"
           />
 
-          {/* Glowing Cyber Eyes */}
-          <circle cx="70" cy="100" r={4 + audioRMS * 2} fill="#67e8f9" />
-          <circle cx="130" cy="100" r={4 + audioRMS * 2} fill="#67e8f9" />
+          {/* Natural Human Eyes */}
+          <circle cx="70" cy="100" r={4 + audioRMS * 2} fill="#fbf9f5" />
+          <circle cx="70" cy="100" r={2.5 + audioRMS * 1.5} fill="#4a2e18" />
+          <circle cx="130" cy="100" r={4 + audioRMS * 2} fill="#fbf9f5" />
+          <circle cx="130" cy="100" r={2.5 + audioRMS * 1.5} fill="#4a2e18" />
 
-          {/* Audio-Reactive Hologram Mouth */}
+          {/* Audio-Reactive Natural Rosy Lips */}
           <ellipse
             cx="100"
             cy="165"
             rx={14 + audioRMS * 6}
             ry={3 + audioRMS * 9}
-            fill="#38bdf8"
-            opacity={0.85 + audioRMS * 0.15}
+            fill="#b8655d"
+            opacity={0.9}
           />
         </svg>
       </div>

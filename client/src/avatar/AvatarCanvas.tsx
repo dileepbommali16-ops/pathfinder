@@ -91,27 +91,27 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
 
-    // 3. Cybernetic Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.9);
+    // 3. Warm Natural Studio Lighting (Enhances skin tones and Soybean/Beige accents)
+    const ambientLight = new THREE.AmbientLight(0xfffbf0, 0.95);
     scene.add(ambientLight);
 
-    // Key Light (Cyan Glow on Wireframe side)
-    const keyLight = new THREE.DirectionalLight(0x38bdf8, 2.8);
+    // Key Light (Warm Sunlight key)
+    const keyLight = new THREE.DirectionalLight(0xfff1e0, 2.6);
     keyLight.position.set(-2.5, 3.0, 3.0);
     scene.add(keyLight);
 
-    // Fill Light (Deep Metallic Blue on Solid side)
-    const fillLight = new THREE.DirectionalLight(0x1d4ed8, 2.2);
+    // Fill Light (Soft warm dermal fill)
+    const fillLight = new THREE.DirectionalLight(0xecd8c5, 1.8);
     fillLight.position.set(2.5, 1.5, 2.5);
     scene.add(fillLight);
 
-    // Rim Light (Top-down Specular Edge Highlight)
-    const rimLight = new THREE.DirectionalLight(0x67e8f9, 3.2);
+    // Rim Light (Soybean #D7C49E rim highlight)
+    const rimLight = new THREE.DirectionalLight(0xd7c49e, 2.4);
     rimLight.position.set(0, 3.5, -2.0);
     scene.add(rimLight);
 
-    // Bottom Ambient Bounce
-    const bounceLight = new THREE.DirectionalLight(0x0284c7, 1.5);
+    // Bottom Ambient Warm Bounce
+    const bounceLight = new THREE.DirectionalLight(0xd4b996, 1.2);
     bounceLight.position.set(0, -3.0, 1.0);
     scene.add(bounceLight);
 
@@ -119,30 +119,30 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     const headGroup = new THREE.Group();
     scene.add(headGroup);
 
-    // Anatomical Cranial Geometry
+    // Anatomical Cranial Geometry (Realistic Human Head Proportion)
     const headGeo = new THREE.SphereGeometry(1.15, 64, 64);
     headGeo.scale(1.0, 1.34, 1.14);
 
-    // Material 1: Solid Metallic Blue (Right side of face)
+    // Material 1: Realistic Natural Human Skin (Warm human complexion, organic subsurface glow)
     const solidMat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color("#185a9d"),
-      metalness: 0.55,
-      roughness: 0.22,
-      clearcoat: 0.9,
-      clearcoatRoughness: 0.15,
-      reflectivity: 0.85,
-      emissive: new THREE.Color("#0c2340"),
-      emissiveIntensity: 0.25,
+      color: new THREE.Color("#c89a74"), // Natural warm human skin tone
+      metalness: 0.04,                  // Low metalness for organic human skin
+      roughness: 0.48,                  // Natural soft diffuse dermal texture
+      clearcoat: 0.15,
+      clearcoatRoughness: 0.35,
+      reflectivity: 0.35,
+      emissive: new THREE.Color("#2a1810"), // Subsurface blood circulation warmth
+      emissiveIntensity: 0.12,
     });
     const solidHead = new THREE.Mesh(headGeo, solidMat);
     headGroup.add(solidHead);
 
-    // Material 2: Holographic Cyan Wireframe Matrix (Left side of face)
+    // Material 2: Elegant Soybean (#D7C49E) Neural Matrix (Left side of face)
     const wireMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#38bdf8"),
+      color: new THREE.Color("#D7C49E"),
       wireframe: true,
       transparent: true,
-      opacity: 0.72,
+      opacity: 0.55,
     });
     const wireHead = new THREE.Mesh(headGeo, wireMat);
     wireHead.scale.set(1.003, 1.003, 1.003);
@@ -156,24 +156,24 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     wireMat.clippingPlanes = [rightClipPlane];
     renderer.localClippingEnabled = true;
 
-    // Glowing Inner Cranial Core
+    // Warm Cognitive Core in Beige (#D4B996)
     const coreGeo = new THREE.SphereGeometry(0.92, 32, 32);
     coreGeo.scale(0.92, 1.22, 0.92);
     const coreMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#0284c7"),
+      color: new THREE.Color("#D4B996"),
       wireframe: true,
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.22,
     });
     const coreMesh = new THREE.Mesh(coreGeo, coreMat);
     headGroup.add(coreMesh);
 
-    // Anatomical Neck & Shoulders
+    // Anatomical Neck & Shoulders (Matching natural skin tone)
     const neckGeo = new THREE.CylinderGeometry(0.55, 0.75, 0.85, 32);
     const neckMat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color("#0f2744"),
-      metalness: 0.4,
-      roughness: 0.35,
+      color: new THREE.Color("#b88965"), // Shaded throat/neck skin
+      metalness: 0.04,
+      roughness: 0.5,
     });
     const neckMesh = new THREE.Mesh(neckGeo, neckMat);
     neckMesh.position.set(0, -1.5, -0.1);
@@ -182,11 +182,11 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     // 5. Dual Anatomical Eyes & Upper Eyelids
     const eyeGeo = new THREE.SphereGeometry(0.135, 32, 32);
     const eyeMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#f0f9ff"),
-      emissive: new THREE.Color("#0284c7"),
-      emissiveIntensity: 0.4,
-      roughness: 0.1,
-      metalness: 0.2,
+      color: new THREE.Color("#fbf9f5"), // Realistic off-white sclera
+      emissive: new THREE.Color("#1a1410"),
+      emissiveIntensity: 0.05,
+      roughness: 0.08,
+      metalness: 0.0,
     });
 
     const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
@@ -197,12 +197,12 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     rightEye.position.set(0.36, 0.19, 0.96);
     headGroup.add(rightEye);
 
-    // Upper Eyelids (Scale Y down for 150ms natural blinking)
+    // Upper Eyelids (Natural skin matching)
     const eyelidGeo = new THREE.SphereGeometry(0.142, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.55);
     const eyelidMat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color("#185a9d"),
-      roughness: 0.25,
-      metalness: 0.4,
+      color: new THREE.Color("#c89a74"),
+      roughness: 0.45,
+      metalness: 0.04,
     });
 
     const leftEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
@@ -223,21 +223,21 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     const mouthGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.08, 32);
     mouthGeo.scale(1.0, 0.5, 0.35);
     const mouthMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#060a14"),
-      emissive: new THREE.Color("#0284c7"),
-      emissiveIntensity: 0.3,
+      color: new THREE.Color("#2a0e0e"), // Anatomical oral cavity depth
+      emissive: new THREE.Color("#180606"),
+      emissiveIntensity: 0.05,
       roughness: 0.6,
     });
     const mouthMesh = new THREE.Mesh(mouthGeo, mouthMat);
     mouthMesh.rotation.x = Math.PI * 0.5;
     mouthGroup.add(mouthMesh);
 
-    // Upper Lip
+    // Upper Lip (Natural warm rosy-nude lip color)
     const upperLipGeo = new THREE.TorusGeometry(0.23, 0.038, 16, 32, Math.PI);
     const upperLipMat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color("#1e40af"),
-      roughness: 0.35,
-      metalness: 0.3,
+      color: new THREE.Color("#b8655d"), // Warm natural human lip vermilion
+      roughness: 0.35,                   // Natural lip moisture
+      metalness: 0.02,
     });
     const upperLip = new THREE.Mesh(upperLipGeo, upperLipMat);
     upperLip.position.set(0, 0.03, 0.02);
@@ -262,9 +262,12 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     const freqData = new Uint8Array(128);
     const clock = new THREE.Clock();
 
-    // 9. Continuous Animation Loop
+    // 9. Continuous Animation Loop (Lag-free: pauses immediately when tab/panel is hidden)
     const animate = () => {
       animFrameRef.current = requestAnimationFrame(animate);
+
+      // Pause rendering if document is hidden or element is not displayed to eliminate GPU lag
+      if (document.hidden || (container.offsetParent === null && container.clientWidth === 0)) return;
 
       const elapsedTime = clock.getElapsedTime();
       const now = performance.now();
