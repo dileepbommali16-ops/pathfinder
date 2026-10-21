@@ -60,6 +60,7 @@ export interface DASVoiceContextType {
   cancelSpeech: () => void;
   sendMessage: (text: string) => Promise<void>;
   sendMessageToDAS?: (text: string) => Promise<void>;
+  playJarvisSound?: (type: 'start' | 'action') => void;
   newConversation: () => void;
   clearHistory: () => void;
   onLogout: () => void;
@@ -224,6 +225,37 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
     [isMuted, cancelSpeech]
   );
 
+  // Feature 3: Futuristic Beep Sound Effects (JARVIS Web Audio API without external files)
+  const playJarvisSound = useCallback((type: 'start' | 'action') => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === 'start') {
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+      } else {
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.1);
+      }
+
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+    } catch {
+      // AudioContext gestures handled safely
+    }
+  }, []);
+
   // Central DAS Action Dispatcher
   const executeDASAction = useCallback((action: { name: string; arguments?: Record<string, any> }) => {
     if (!action || !action.name) return;
@@ -231,6 +263,7 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
     const args = action.arguments || {};
 
     try {
+      playJarvisSound('action');
       if (name === "navigate_to" || name === "navigate" || name === "navigateToTab") {
         const targetTab = args.page_id || args.tab || args.tabName;
         if (targetTab && typeof window !== "undefined") {
@@ -261,7 +294,7 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
     } catch (e) {
       console.warn("[DAS Action Dispatcher] Error executing action:", action, e);
     }
-  }, []);
+  }, [playJarvisSound]);
 
   // Update Page Context without interrupting voice
   const setPageContext = useCallback((ctx: Partial<PageContext>) => {
@@ -308,6 +341,7 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
 
       // User interrupted ongoing speech with a new question
       cancelSpeech();
+      playJarvisSound('start');
 
       const userMsg: DASMessage = {
         id: "msg_" + Date.now(),
@@ -338,6 +372,8 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
           body: JSON.stringify({
             message: clean,
             session_id: sessionId,
+            currentPage: pageContext.route || (typeof window !== "undefined" ? window.location.pathname : "/"),
+            currentTab: pageContext.activeTab || "overview",
             page_context: pageContext,
             profile: profileDraft,
             language: language,
@@ -392,7 +428,7 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
         speakNatural(brainRes.spoken);
       }
     },
-    [cancelSpeech, sessionId, pageContext, language, messages, executeDASAction, speakNatural]
+    [cancelSpeech, sessionId, pageContext, language, messages, executeDASAction, speakNatural, playJarvisSound]
   );
 
   // Stop Listening
@@ -575,6 +611,7 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
         cancelSpeech,
         sendMessage,
         sendMessageToDAS: sendMessage,
+        playJarvisSound,
         newConversation,
         clearHistory,
         onLogout,

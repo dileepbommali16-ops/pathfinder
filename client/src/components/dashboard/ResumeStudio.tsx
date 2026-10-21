@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useDASVoice } from "@/contexts/DASVoiceContext";
 import {
   FileText,
   UploadCloud,
@@ -66,6 +67,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
   onDownloadFeedbackPDF,
   onApplyResumeSkills,
 }) => {
+  const { sendMessage } = useDASVoice();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [rawText, setRawText] = useState("");
   const [targetCompany, setTargetCompany] = useState(TARGET_COMPANIES[0].id);
@@ -75,7 +77,14 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      // Feature 4: Trigger DAS Voice Audit Feedback
+      if (sendMessage) {
+        sendMessage(
+          `Candidate uploaded a new resume named "${file.name}". Perform an instant JARVIS-style ATS audio evaluation and give placement readiness status!`
+        );
+      }
     }
   };
 

@@ -180,6 +180,10 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
   // 2. Instant Drag-and-Drop Resume Deep Scanner
   const processUploadedResume = async (file: File) => {
     setIsScanningResume(true);
+    // Feature 4: Trigger DAS Voice Audit Feedback
+    sendMessage(
+      `Candidate uploaded a new resume named "${file.name}". Perform an instant JARVIS-style ATS audio evaluation and give placement readiness status!`
+    );
     try {
       const audit = await analyzeResumeFile(file);
       setIsScanningResume(false);
