@@ -1,5 +1,7 @@
 process.env.NODE_ENV = process.env.NODE_ENV || "development";
 import "dotenv/config";
+import { processUserQuery } from '../services/gemini_engine.js';
+import knowledgeLoader from '../services/knowledge_loader.js';
 import express from "express";
 import { createServer } from "http";
 import net from "net";
@@ -31,6 +33,10 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 
 async function startServer() {
   const app = express();
+  app.use(express.json());
+
+  // Initialize Knowledge Base for DAS AI
+  knowledgeLoader.loadKnowledge();
   const server = createServer(app);
 
   // Security Hardening: Disable X-Powered-By to prevent framework banner fingerprinting

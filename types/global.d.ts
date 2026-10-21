@@ -45,3 +45,11 @@ declare module "node:path" {
 declare module "node:module" {
   export function createRequire(url: string | URL): (id: string) => any;
 }
+
+declare module "@google/generative-ai" {
+  export class GoogleGenerativeAI {
+    constructor(apiKey: string);
+    getGenerativeModel(options: any): any;
+  }
+}
+

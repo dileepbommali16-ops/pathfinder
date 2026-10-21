@@ -1,0 +1,59 @@
+{
+    "routes": [
+        {
+            "path": "/dashboard",
+            "name": "Dashboard",
+            "id": "dashboard-view"
+        },
+        {
+            "path": "/mock-interview",
+            "name": "AI Mock Interview",
+            "id": "mock-interview-view"
+        },
+        {
+            "path": "/readiness",
+            "name": "Readiness Command",
+            "id": "readiness-view"
+        },
+        {
+            "path": "/roadmap",
+            "name": "6-Week Roadmap",
+            "id": "roadmap-view"
+        },
+        {
+            "path": "/voice-agent",
+            "name": "DAS AI Coach",
+            "id": "voice-agent-view"
+        },
+        {
+            "path": "/projects",
+            "name": "Project Blueprints",
+            "id": "projects-view"
+        },
+        {
+            "path": "/cohort-analytics",
+            "name": "Cohort Analytics",
+            "id": "cohort-view"
+        },
+        {
+            "path": "/resume",
+            "name": "ATS Resume Studio",
+            "id": "resume-view"
+        },
+        {
+            "path": "/branches",
+            "name": "Branches & Courses",
+            "id": "branches-view"
+        },
+        {
+            "path": "/project-defense",
+            "name": "Project Defense",
+            "id": "defense-view"
+        },
+        {
+            "path": "/profile",
+            "name": "Profile & Settings",
+            "id": "profile-view"
+        }
+    ]
+}
