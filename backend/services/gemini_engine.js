@@ -1,46 +1,48 @@
-let GoogleGenerativeAI;
-try {
-    GoogleGenerativeAI = require('@google/generative-ai').GoogleGenerativeAI;
-} catch {
-    GoogleGenerativeAI = null;
-}
-const fs = require('fs');
-const path = require('path');
-const knowledgeLoader = require('./knowledge_loader');
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = GoogleGenerativeAI ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '') : null;
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-
-async function processUserQuery(userMessage, currentStep = 1) {
+export async function processUserQuery(userMessage, step = 1) {
     try {
-        const systemPromptPath = path.join(__dirname, '../prompts/das_ai_system.md');
-        let systemInstruction = fs.existsSync(systemPromptPath)
-            ? fs.readFileSync(systemPromptPath, 'utf-8')
-            : 'You are DAS AI, a helpful Pathfinder voice agent.';
-
-        const knowledgeContext = knowledgeLoader.getAllKnowledge();
-
         const model = genAI.getGenerativeModel({
-            model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
-            systemInstruction: `${systemInstruction}\n\n=== WEBSITE KNOWLEDGE BASE ===\n${knowledgeContext}`
+            model: 'gemini-1.5-flash',
+            systemInstruction: `You are DAS (Autonomous Career Assistant & JARVIS-style Mentor) for Pathfinder. 
+      You have absolute control over the platform, placement data, and navigation. 
+      Persona: Highly intelligent, witty, slightly sarcastic yet deeply loyal and helpful (Iron Man's JARVIS style). 
+      Proactively greet users when they enter, guide them smoothly across all 11 core Pathfinder pages, and explain features smartly.
+      If the user wants to go to a tab or page (like dashboard, mock interview, roadmap, blueprints), respond with spoken text and include an action target.`
         });
 
-        const prompt = `User Message: "${userMessage}". Current Step Context: ${currentStep}. Return purely valid JSON output.`;
-
-        const result = await model.generateContent(prompt);
+        const result = await model.generateContent(userMessage);
         const responseText = result.response.text();
 
-        const cleanedJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanedJson);
-    } catch (error) {
-        console.error('[GeminiEngine] Error:', error);
+        // Simple action parsing check for navigation
+        let action = null;
+        let target = null;
+        const lower = userMessage.toLowerCase();
+
+        if (lower.includes('mock interview') || lower.includes('coach')) {
+            action = 'NAVIGATE';
+            target = '/coach';
+        } else if (lower.includes('dashboard') || lower.includes('home')) {
+            action = 'NAVIGATE';
+            target = '/dashboard';
+        } else if (lower.includes('roadmap')) {
+            action = 'NAVIGATE';
+            target = '/roadmap';
+        }
+
         return {
-            spoken: "I'm your AI, your DAS Agent. Tell me, how can I help you?",
-            display: "### DAS AI Voice Agent\nReady to help with your project blueprints and placement preparation.",
-            actions: [],
-            followups: []
+            spoken: responseText,
+            display: responseText,
+            action: action,
+            target: target
+        };
+    } catch (error) {
+        console.error('Gemini Engine Error:', error);
+        return {
+            spoken: "Systems are recalculating. I'm right here with you!",
+            display: "Error processing query."
         };
     }
 }
-
-module.exports = { processUserQuery };
