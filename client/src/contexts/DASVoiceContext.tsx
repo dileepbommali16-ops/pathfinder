@@ -59,6 +59,7 @@ export interface DASVoiceContextType {
   toggleMicrophone: () => void;
   cancelSpeech: () => void;
   sendMessage: (text: string) => Promise<void>;
+  sendMessageToDAS?: (text: string) => Promise<void>;
   newConversation: () => void;
   clearHistory: () => void;
   onLogout: () => void;
@@ -230,17 +231,17 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
     const args = action.arguments || {};
 
     try {
-      if (name === "navigate_to" || name === "navigate") {
-        const targetTab = args.page_id || args.tab;
+      if (name === "navigate_to" || name === "navigate" || name === "navigateToTab") {
+        const targetTab = args.page_id || args.tab || args.tabName;
         if (targetTab && typeof window !== "undefined") {
           window.dispatchEvent(
             new CustomEvent("das-navigate-tab", { detail: { tab: targetTab } })
           );
         }
-      } else if (name === "highlight") {
-        const sectionId = args.section_id || args.target;
+      } else if (name === "highlight" || name === "highlightWidget") {
+        const sectionId = args.section_id || args.target || args.widgetName;
         if (sectionId && typeof window !== "undefined") {
-          const el = document.querySelector(`[data-das-id="${sectionId}"]`);
+          const el = document.querySelector(`[data-das-id="${sectionId}"]`) || document.querySelector(`#${sectionId}`);
           if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "center" });
             el.classList.add("ring-2", "ring-cyan-400", "ring-offset-2", "transition-all");
@@ -573,6 +574,7 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
         toggleMicrophone,
         cancelSpeech,
         sendMessage,
+        sendMessageToDAS: sendMessage,
         newConversation,
         clearHistory,
         onLogout,
