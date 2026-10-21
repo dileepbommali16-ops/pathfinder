@@ -1,0 +1,26 @@
+# ==============================================================================
+# Pathfinder 2.0 - Netlify Production Deployment Configuration
+# ==============================================================================
+
+[build]
+  command = "node scripts/build-client.js"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps --include=dev"
+
+# Single-Page Application (SPA) Client Routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Strict Security Headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
