@@ -40,17 +40,24 @@ if (fs.existsSync(rootNodeModules) && !fs.existsSync(clientNodeModules)) {
   }
 }
 
-const hasTailwindVite = fs.existsSync(path.join(rootNodeModules, '@tailwindcss', 'vite')) ||
-                       fs.existsSync(path.join(clientNodeModules, '@tailwindcss', 'vite'));
+const hasCoreDeps = (fs.existsSync(path.join(rootNodeModules, '@tailwindcss', 'vite')) ||
+                     fs.existsSync(path.join(clientNodeModules, '@tailwindcss', 'vite'))) &&
+                    (fs.existsSync(path.join(rootNodeModules, 'three')) ||
+                     fs.existsSync(path.join(clientNodeModules, 'three')));
 
-if (!hasTailwindVite) {
-  console.log('[Pathfinder Build] @tailwindcss/vite not found. Installing dependencies in project root...');
+// Clean environment to prevent npm 10+ cache-dir deprecation warning
+const cleanProcessEnv = { ...process.env };
+delete cleanProcessEnv.npm_config_cache_dir;
+delete cleanProcessEnv.NPM_CONFIG_CACHE_DIR;
+
+if (!hasCoreDeps) {
+  console.log('[Pathfinder Build] Core dependencies (@tailwindcss/vite or three) not found. Installing dependencies...');
   try {
-    execSync('pnpm install --no-frozen-lockfile --reporter=silent', { cwd: projectRoot, stdio: 'inherit' });
+    execSync('pnpm install --no-frozen-lockfile --reporter=silent', { cwd: projectRoot, stdio: 'inherit', env: cleanProcessEnv });
   } catch (err) {
     console.warn('[Pathfinder Build] pnpm install failed, falling back to npm install...');
     try {
-      execSync('npm install --legacy-peer-deps --include=dev --quiet --no-audit --no-fund', { cwd: projectRoot, stdio: 'inherit' });
+      execSync('npm install --legacy-peer-deps --include=dev --quiet --no-audit --no-fund', { cwd: projectRoot, stdio: 'inherit', env: cleanProcessEnv });
     } catch (npmErr) {
       console.error('[Pathfinder Build] Failed to install dependencies:', npmErr);
       process.exit(1);
@@ -81,7 +88,7 @@ const nodePathEnv = [
 ].filter(Boolean).join(path.delimiter);
 
 const buildEnv = {
-  ...process.env,
+  ...cleanProcessEnv,
   NODE_ENV: 'production',
   NODE_PATH: nodePathEnv
 };

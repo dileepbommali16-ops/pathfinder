@@ -29,6 +29,7 @@ export default defineConfig({
       "@designcodeio/threeui/style.css": path.resolve(rootDir, "client", "src", "shaders", "threeui.css"),
       "@designcodeio/threeui": path.resolve(rootDir, "client", "src", "shaders", "index.ts"),
     },
+    dedupe: ["three", "react", "react-dom"],
   },
   envDir: path.resolve(rootDir),
   root: path.resolve(rootDir, "client"),
