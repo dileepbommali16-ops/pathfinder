@@ -18,16 +18,33 @@ while (projectRoot !== path.dirname(projectRoot)) {
 console.log(`[Pathfinder Build] Project root: ${projectRoot}`);
 console.log(`[Pathfinder Build] Execution directory: ${process.cwd()}`);
 
-// Auto-install dependencies if node_modules or vite is missing
-let vitePkgDir = path.join(projectRoot, 'node_modules', 'vite');
-if (!fs.existsSync(vitePkgDir)) {
-  const clientVite = path.join(projectRoot, 'client', 'node_modules', 'vite');
-  if (fs.existsSync(clientVite)) {
-    vitePkgDir = clientVite;
+// Auto-install and cross-link dependencies between projectRoot and client
+const rootNodeModules = path.join(projectRoot, 'node_modules');
+const clientNodeModules = path.join(projectRoot, 'client', 'node_modules');
+
+// Link client/node_modules and root/node_modules so Vite config at projectRoot always resolves packages
+if (fs.existsSync(clientNodeModules) && !fs.existsSync(rootNodeModules)) {
+  try {
+    fs.symlinkSync(clientNodeModules, rootNodeModules, 'junction');
+    console.log('[Pathfinder Build] Linked client/node_modules to root node_modules');
+  } catch (symlinkErr) {
+    console.warn('[Pathfinder Build] Could not create junction/symlink to root:', symlinkErr.message);
   }
 }
-if (!fs.existsSync(vitePkgDir)) {
-  console.log('[Pathfinder Build] node_modules or Vite not found in project root. Installing dependencies...');
+if (fs.existsSync(rootNodeModules) && !fs.existsSync(clientNodeModules)) {
+  try {
+    fs.symlinkSync(rootNodeModules, clientNodeModules, 'junction');
+    console.log('[Pathfinder Build] Linked root node_modules to client/node_modules');
+  } catch (symlinkErr) {
+    console.warn('[Pathfinder Build] Could not create junction/symlink to client:', symlinkErr.message);
+  }
+}
+
+const hasTailwindVite = fs.existsSync(path.join(rootNodeModules, '@tailwindcss', 'vite')) ||
+                       fs.existsSync(path.join(clientNodeModules, '@tailwindcss', 'vite'));
+
+if (!hasTailwindVite) {
+  console.log('[Pathfinder Build] @tailwindcss/vite not found. Installing dependencies in project root...');
   try {
     execSync('pnpm install --no-frozen-lockfile --reporter=silent', { cwd: projectRoot, stdio: 'inherit' });
   } catch (err) {
@@ -38,6 +55,10 @@ if (!fs.existsSync(vitePkgDir)) {
       console.error('[Pathfinder Build] Failed to install dependencies:', npmErr);
       process.exit(1);
     }
+  }
+  // Retry link after installation
+  if (fs.existsSync(clientNodeModules) && !fs.existsSync(rootNodeModules)) {
+    try { fs.symlinkSync(clientNodeModules, rootNodeModules, 'junction'); } catch {}
   }
 }
 
@@ -52,16 +73,29 @@ const possibleViteJs = [
 ];
 let viteJs = possibleViteJs.find(p => fs.existsSync(p)) || '';
 
+// Configure NODE_PATH so Node and Vite search both root and client node_modules
+const nodePathEnv = [
+  rootNodeModules,
+  clientNodeModules,
+  process.env.NODE_PATH || ''
+].filter(Boolean).join(path.delimiter);
+
+const buildEnv = {
+  ...process.env,
+  NODE_ENV: 'production',
+  NODE_PATH: nodePathEnv
+};
+
 console.log(`[Pathfinder Build] Running Vite production build with config: ${viteConfig}`);
 let buildSuccess = false;
 
-// Strategy 1: Direct node invocation of vite.js from project root
+// Strategy 1: Direct node invocation of vite.js with NODE_PATH
 if (fs.existsSync(viteJs)) {
   try {
     execSync(`"${nodePath}" "${viteJs}" build --config "${viteConfig}"`, {
       cwd: projectRoot,
       stdio: 'inherit',
-      env: { ...process.env, NODE_ENV: 'production' }
+      env: buildEnv
     });
     buildSuccess = true;
   } catch (e) {
@@ -75,7 +109,7 @@ if (!buildSuccess) {
     execSync(`pnpm exec vite build --config "${viteConfig}"`, {
       cwd: projectRoot,
       stdio: 'inherit',
-      env: { ...process.env, NODE_ENV: 'production' }
+      env: buildEnv
     });
     buildSuccess = true;
   } catch (e) {
@@ -89,7 +123,7 @@ if (!buildSuccess) {
     execSync(`npx vite build --config "${viteConfig}"`, {
       cwd: projectRoot,
       stdio: 'inherit',
-      env: { ...process.env, NODE_ENV: 'production' }
+      env: buildEnv
     });
     buildSuccess = true;
   } catch (e) {
