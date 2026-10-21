@@ -64,16 +64,10 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
 
     # 4. Check circuit breaker status
     if not gemini_circuit_breaker.allow_request():
-        fallback_reply = generate_smart_fallback_reply(
-            message=sanitized_message,
-            history=raw_history,
-            profile=profile,
-            active_tab=active_tab,
-            page_context=user_context
-        )
+        honest_error = "I couldn't reach the AI right now. Please tap retry in a moment!"
         return {
-            "reply": fallback_reply,
-            "source": "Pathfinder AI (Domain Intelligence)",
+            "reply": honest_error,
+            "source": "Pathfinder AI (Circuit Breaker)",
             "budget_remaining": limit - used
         }
 
@@ -107,15 +101,9 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
         }
     except Exception as e:
         gemini_circuit_breaker.record_failure(e)
-        fallback_reply = generate_smart_fallback_reply(
-            message=sanitized_message,
-            history=raw_history,
-            profile=profile,
-            active_tab=active_tab,
-            page_context=user_context
-        )
+        honest_error = "I couldn't reach the AI right now. Please tap retry in a moment!"
         return {
-            "reply": fallback_reply,
+            "reply": honest_error,
             "source": "Pathfinder AI (Adaptive Guidance)",
             "budget_remaining": limit - used
         }

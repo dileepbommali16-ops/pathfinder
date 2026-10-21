@@ -2,7 +2,7 @@
 
 > **Production-grade full-stack AI career intelligence platform and real-time streaming voice architect that benchmarks student profiles against 972 verified campus placement records, predicts placement odds with 88% ML accuracy, tutors 23 production blueprints, and prepares engineering candidates for Tier-1 recruitment filters.**
 
-[![Live Platform](https://img.shields.io/badge/🚀_Live_Demo-Vercel_Edge-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://pathfinder-client-v727.vercel.app/?demo=1)
+[![Live Platform](https://img.shields.io/badge/🚀_Live_Demo-Vercel_Edge-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://pathfinder-client-fzom.vercel.app/?demo=1)
 [![Cloud Engine](https://img.shields.io/badge/⚡_API_Gateway-Render_Cloud-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://pathfinder-backend-klrp.onrender.com/api/health)
 [![AI Engine](https://img.shields.io/badge/🧠_LLM_Core-Gemini_2.0_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![ML Accuracy](https://img.shields.io/badge/📈_Model_Accuracy-88%25_Random_Forest-success?style=for-the-badge)](https://github.com/dileepbommali16-ops/pathfinder)
@@ -11,7 +11,7 @@
 ---
 
 ### 🌟 Experience the Live Platform
-👉 **[Launch Pathfinder Live Demo (Vercel)](https://pathfinder-client-v727.vercel.app/?demo=1)**  
+👉 **[Launch Pathfinder Live Demo (Vercel)](https://pathfinder-client-fzom.vercel.app/?demo=1)**  
 *(⚡ Instant 1-Click Guest & Recruiter Evaluation Access — No signup or onboarding required!)*
 
 ---
@@ -399,7 +399,7 @@ All metrics verified using automated benchmarking suites across production infra
 - **Primary Database**: SQLite 3 configured with Write-Ahead Logging (`WAL` mode)
 
 ### Infrastructure & Deployment
-- **Frontend Edge**: Vercel Global Edge Network with zero-toolbar suppression
+- **Frontend Edge**: Vercel Global Edge Network with root Vite pipeline
 - **Backend Container**: Render Cloud Web Service with automated keep-alive daemon
 
 ---
@@ -407,7 +407,7 @@ All metrics verified using automated benchmarking suites across production infra
 ## 🚀 Local Development Setup
 
 ### Prerequisites
-- **Node.js** v18+ and **npm**
+- **Node.js** v20+ / v22+ and **pnpm** (or **npm**)
 - **Python** 3.11+
 
 ### 1. Clone the Repository
@@ -446,37 +446,74 @@ API server will be active at `http://127.0.0.1:8000` with interactive Swagger do
 ### 4. Start Frontend Client
 In a separate terminal:
 ```bash
-cd client
-npm install
+# Install dependencies and start Vite dev server
+pnpm install || npm install
 npm run dev
 ```
-Open `http://localhost:5173` in Google Chrome or Microsoft Edge to test speech recognition.
+Open `http://localhost:5173` in Google Chrome or Microsoft Edge.
 
 ---
 
-## 🧪 Automated Verification Suite
+## ☁️ Cloud Deployment Guide (Vercel & Render)
 
-Run automated diagnostics to verify the full stack:
+Pathfinder 2.0 uses a decoupled cloud architecture: **Frontend on Vercel** and **Backend on Render**.
+
+### 1. Frontend Deployment on Vercel
+1. In Vercel, click **Add New... ➔ Project** and import the `pathfinder` repository.
+2. **Project Settings**:
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: `./` (Default root directory; the project's root `vercel.json` and `scripts/build-client.js` handle dependency installation and bundle synchronization).
+   - **Build Command**: `node scripts/build-client.js` (managed automatically by `vercel.json`).
+   - **Output Directory**: `dist`
+3. **Environment Variables**:
+   - `VITE_API_BASE_URL`: `https://pathfinder-backend-klrp.onrender.com` (Links your client to the production backend).
+   *(Note: Do not put backend API keys like `GEMINI_API_KEY` on Vercel).*
+4. **Auto-Deploy Management**:
+   - To prevent unnecessary builds and save monthly build minutes, delete any duplicate project instances in your Vercel dashboard (*Project Settings ➔ General ➔ Delete Project*). Keep only one primary project (`pathfinder-client`).
+
+### 2. Backend Deployment on Render
+1. In Render, select **New Web Service** connected to `dileepbommali16-ops/pathfinder`.
+2. **Configuration** (matching `render.yaml`):
+   - **Runtime**: `Python 3.11`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn backend.api:app --host 0.0.0.0 --port $PORT`
+   - **Health Check Path**: `/api/health`
+3. **Environment Variables** (set in Render Environment tab):
+   - `GEMINI_API_KEY`: Your Google Gemini API key
+   - `GEMINI_MODEL`: `gemini-2.0-flash`
+   - `FRONTEND_URL`: `http://localhost:5173,https://pathfinder-client-fzom.vercel.app`
+   - `JWT_SECRET`: Random 32+ character hexadecimal string
+4. **Auto-Deploy Control**:
+   - In Render service settings, set **Auto-Deploy** to `No` if you prefer manual deployments to protect your free 750 monthly runtime hours.
+
+---
+
+## 🧪 Automated Verification & CI Suite
+
+Pathfinder incorporates a strict 4-stage automated verification pipeline matching GitHub Actions CI:
 
 ```bash
-# 1. Voice Agent Unit & Loop Prevention Tests (25 tests)
-python -m unittest scripts/test_voice_agent.py
+# 1. 7 Pillars Architectural Verification (Fundamentals, APIs, DB, Perf, Scaling, Reliability, Security)
+python scripts/verify_seven_pillars.py
 
-# 2. TypeScript Static Compilation
-cd client && npx tsc --noEmit
+# 2. Production-Readiness & OWASP Security Audit (16/16 tests)
+python scripts/test_production_readiness.py
 
-# 3. Production Bundle Build Check
+# 3. Security Audit Test Suite (Data isolation, rate limits, token revocation)
+python scripts/security_audit_test.py
+
+# 4. AI Career Coach Smoke & Conversational Sequences Suite
+python scripts/chat_smoke_test.py
+
+# 5. Production Bundle Build Verification
 npm run build
-
-# 4. Latency & Streaming TTFT Benchmark
-python scripts/voice_latency_test.py
 ```
 
 ---
 
 ## 🌐 Live Production Deployments
 
-- **🚀 Live Application (Vercel Global Edge):** [https://pathfinder-client-v727.vercel.app/?demo=1](https://pathfinder-client-v727.vercel.app/?demo=1)  
+- **🚀 Live Application (Vercel Global Edge):** [https://pathfinder-client-fzom.vercel.app/?demo=1](https://pathfinder-client-fzom.vercel.app/?demo=1)  
   *(Instant 1-Click Guest & Recruiter Demo: Bypasses onboarding and loads verified student profile immediately)*
 - **⚡ Backend Cloud API (Render Cloud Service):** [https://pathfinder-backend-klrp.onrender.com](https://pathfinder-backend-klrp.onrender.com)
 - **📊 Real-time Health Telemetry:** [https://pathfinder-backend-klrp.onrender.com/api/health](https://pathfinder-backend-klrp.onrender.com/api/health)

@@ -56,6 +56,13 @@ class CircuitBreaker:
         else:
             self.failure_count = 0
 
+    def reset(self):
+        """Resets the circuit breaker to closed state."""
+        self.state = CircuitState.CLOSED
+        self.failure_count = 0
+        self.success_count = 0
+        self.last_state_change = time.time()
+
     def record_failure(self, exception: Exception):
         """Records a failure from the upstream call."""
         self.failure_count += 1

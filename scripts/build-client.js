@@ -33,7 +33,7 @@ if (!fs.existsSync(vitePkgDir)) {
   } catch (err) {
     console.warn('[Pathfinder Build] pnpm install failed, falling back to npm install...');
     try {
-      execSync('npm install --legacy-peer-deps --quiet --no-audit --no-fund', { cwd: projectRoot, stdio: 'inherit' });
+      execSync('npm install --legacy-peer-deps --include=dev --quiet --no-audit --no-fund', { cwd: projectRoot, stdio: 'inherit' });
     } catch (npmErr) {
       console.error('[Pathfinder Build] Failed to install dependencies:', npmErr);
       process.exit(1);

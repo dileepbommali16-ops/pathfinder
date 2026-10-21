@@ -47,6 +47,10 @@ FORBIDDEN_CANNED_STRINGS = [
 
 class TestChatSmokeSuite(unittest.TestCase):
 
+    def setUp(self):
+        from backend.reliability import gemini_circuit_breaker
+        gemini_circuit_breaker.reset()
+
     def test_guide_and_catalog_grounding(self):
         """Verifies that pathfinder_guide.md and 23 projects catalog are loaded properly."""
         guide = load_pathfinder_guide()
