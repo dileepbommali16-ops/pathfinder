@@ -362,22 +362,22 @@ export const DASStudioLayout: React.FC = () => {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-[#04060d] flex flex-col lg:flex-row">
-      {/* Background Cybernetic Ambient Radial Glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_45%_50%,rgba(14,165,233,0.14),transparent_65%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#38bdf808_1px,transparent_1px),linear-gradient(to_bottom,#38bdf808_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
+    <div className="relative w-screen h-screen overflow-hidden bg-[#000000] flex flex-col lg:flex-row">
+      {/* Background Cybernetic Ambient Radial Glow with Cobalt Blue Deep (#2C3480) & Cyan */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_45%_50%,rgba(44,52,128,0.28),transparent_65%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#2C348015_1px,transparent_1px),linear-gradient(to_bottom,#2C348015_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
       {/* Top Left Header Telemetry */}
       <header className="absolute top-5 left-6 z-30 flex items-center gap-3 pointer-events-none">
-        <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-2xl bg-white/[0.04] border border-cyan-500/25 backdrop-blur-md shadow-lg shadow-cyan-500/5">
-          <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
+        <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-2xl bg-[#000000]/80 border border-[#2C3480]/60 backdrop-blur-md shadow-lg shadow-[#2C3480]/20">
+          <Radio className="w-4 h-4 text-sky-400 animate-pulse" />
           <span className="text-xs font-mono font-bold tracking-wider text-zinc-100">PATHFINDER · DAS 3D</span>
-          <span className="text-[10px] text-cyan-400/80 font-mono">| OLLAMA + COGNEE</span>
+          <span className="text-[10px] text-sky-400 font-mono">| COBALT #2C3480</span>
         </div>
       </header>
 
       {/* CENTER STAGE: Dead-Center 3D Holographic Wireframe/Solid Avatar */}
-      <main className="flex-1 h-full flex flex-col items-center justify-center relative p-6">
+      <main className="flex-1 h-full flex flex-col items-center justify-center relative p-6 bg-[#000000]">
         <div className="w-full max-w-xl h-[72vh] flex items-center justify-center relative">
           <AvatarCanvas
             state={agentState}
@@ -391,8 +391,8 @@ export const DASStudioLayout: React.FC = () => {
           />
         </div>
 
-        {/* Status Callout Pill under Avatar */}
-        <div className="mt-3 flex items-center gap-2.5 px-5 py-2 rounded-full bg-black/60 border border-cyan-500/20 backdrop-blur-xl shadow-lg">
+        {/* Status Callout Pill under Avatar in True Black (#000000) */}
+        <div className="mt-3 flex items-center gap-2.5 px-5 py-2 rounded-full bg-[#000000]/90 border border-[#2C3480]/60 backdrop-blur-xl shadow-xl shadow-[#2C3480]/20">
           <span
             className={`w-2 h-2 rounded-full ${
               agentState === "speaking"
@@ -400,8 +400,8 @@ export const DASStudioLayout: React.FC = () => {
                 : agentState === "thinking"
                 ? "bg-amber-400 animate-spin"
                 : agentState === "listening"
-                ? "bg-cyan-400 animate-pulse"
-                : "bg-zinc-400"
+                ? "bg-sky-400 animate-pulse"
+                : "bg-[#2C3480]"
             }`}
           />
           <span className="text-xs font-mono uppercase tracking-wider text-zinc-200">

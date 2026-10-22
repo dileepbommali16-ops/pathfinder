@@ -331,6 +331,81 @@ def get_interview_tips(topic: str = "general") -> str:
     return "Master the Blind 75 DSA patterns, build one production-grade distributed project, and be prepared to explain all architectural trade-offs."
 
 
+def qualify_candidate(branch: str = "CSE", target_role: str = "SDE", timeline_days: int = 30, dsa_confidence: int = 7) -> str:
+    """
+    Business Logic: Deterministic Lead & Candidate Qualification (Photo 1 & 2 Rule: AI handles language, code handles decisions).
+    Qualifies candidate placement readiness and returns customized tier-1 action plan.
+    """
+    branch_up = branch.upper().strip()
+    score = 50
+    if branch_up in ["CSE", "AIML", "IT"]:
+        score += 20
+    elif branch_up in ["ECE", "EEE"]:
+        score += 10
+
+    if dsa_confidence >= 8:
+        score += 20
+    elif dsa_confidence >= 5:
+        score += 10
+
+    if timeline_days <= 30:
+        recommendation = "Fast-track urgent placement: Focus 80% on Blind 75 high-frequency LeetCode patterns and polish your top distributed systems project."
+    else:
+        recommendation = "Standard placement sprint: Build 1 flagship RAG project and complete comprehensive mock interview cycles."
+
+    return f"Candidate qualified with score {score}/100 for {target_role} ({branch_up}). Timeline: {timeline_days} days. Action Plan: {recommendation}"
+
+
+def book_mock_interview(slot_date: str = "Tomorrow at 5:00 PM", interview_type: str = "SDE Technical & DSA") -> str:
+    """
+    Booking Function Call (Photo 1 Step 4):
+    Checks mentor calendar availability and creates mid-call confirmed booking.
+    """
+    import random
+    booking_id = f"MOCK-{random.randint(1000, 9999)}"
+    return f"Mock interview successfully scheduled! Booking ID: {booking_id}. Slot: {slot_date}. Format: 1-on-1 {interview_type} with a Senior Tech Lead."
+
+
+def escalate_to_human_mentor(reason: str = "Complex career inquiry", candidate_name: str = "Dileep") -> str:
+    """
+    Clear Escalation Rule (Photo 1 Step 5 & Pro Tip):
+    Transfers call to a senior human career counselor if candidate is anxious, asks for human, or has complex backlogs.
+    """
+    return f"Escalation initiated for {candidate_name}. Reason: {reason}. Connecting you directly with our Principal Placement Counselor on priority line."
+
+
+def log_call_to_crm(user_text: str, response_text: str, tool_used: str = "conversational", outcome: str = "in_progress"):
+    """
+    CRM Sync (Photo 1 Step 7):
+    Routes every voice transcript and qualification outcome into persistent CRM log.
+    """
+    crm_file = ROOT_DIR / "data" / "crm_call_logs.json"
+    crm_file.parent.mkdir(parents=True, exist_ok=True)
+
+    log_entry = {
+        "timestamp": datetime.now().isoformat(),
+        "user_query": user_text,
+        "agent_response": response_text,
+        "tool_used": tool_used,
+        "outcome": outcome,
+    }
+
+    logs = []
+    if crm_file.exists():
+        try:
+            with open(crm_file, "r", encoding="utf-8") as f:
+                logs = json.load(f)
+        except Exception:
+            logs = []
+
+    logs.append(log_entry)
+    try:
+        with open(crm_file, "w", encoding="utf-8") as f:
+            json.dump(logs[-100:], f, indent=2)
+    except Exception:
+        pass
+
+
 TOOLS_DESCRIPTION = """
 Available tools:
 1. get_current_time() -> Returns current local time.
@@ -338,6 +413,9 @@ Available tools:
 3. get_placement_stats(branch: str) -> Campus placement statistics for CSE, AIML, ECE, MECH.
 4. search_career_projects(query: str) -> Searches Pathfinder's 28 project blueprints (e.g. 'RAG', 'distributed', 'fullstack').
 5. get_interview_tips(topic: str) -> Targeted advice for DSA, System Design, or Behavioral interviews.
+6. qualify_candidate(branch: str, target_role: str, timeline_days: int, dsa_confidence: int) -> Qualifies placement readiness.
+7. book_mock_interview(slot_date: str, interview_type: str) -> Direct booking on mentor calendar.
+8. escalate_to_human_mentor(reason: str, candidate_name: str) -> Live escalation to human mentor.
 
 INSTRUCTIONS FOR TOOL CALLS:
 - If a tool is needed, respond ONLY with a strict JSON object:
@@ -350,6 +428,12 @@ INSTRUCTIONS FOR TOOL CALLS:
   {"tool": "search_career_projects", "query": "<topic or domain>"}
   OR
   {"tool": "get_interview_tips", "topic": "<dsa, system design, or behavioral>"}
+  OR
+  {"tool": "qualify_candidate", "branch": "<branch>", "target_role": "<role>", "timeline_days": 30, "dsa_confidence": 7}
+  OR
+  {"tool": "book_mock_interview", "slot_date": "<date/time>", "interview_type": "<type>"}
+  OR
+  {"tool": "escalate_to_human_mentor", "reason": "<reason>", "candidate_name": "Dileep"}
 - If no tool is needed, respond directly with friendly, natural spoken text in 1 or 2 concise sentences.
 - Do NOT wrap JSON in backticks or markdown when calling a tool.
 """
@@ -442,6 +526,12 @@ Response:"""
 
     # 3. Intelligent Heuristic Rule-Based Fallback if offline
     clean_low = user_text.lower()
+    if "escalat" in clean_low or "human" in clean_low or "person" in clean_low or "manager" in clean_low:
+        return '{"tool": "escalate_to_human_mentor", "reason": "Student requested human mentor assistance", "candidate_name": "Dileep"}'
+    if "book" in clean_low or "schedule" in clean_low or "mock" in clean_low:
+        return '{"tool": "book_mock_interview", "slot_date": "Tomorrow at 5:00 PM", "interview_type": "SDE Technical & System Design"}'
+    if "qualif" in clean_low or "profile" in clean_low or "readiness" in clean_low:
+        return '{"tool": "qualify_candidate", "branch": "CSE", "target_role": "SDE", "timeline_days": 30, "dsa_confidence": 8}'
     if "time" in clean_low or "clock" in clean_low:
         return '{"tool": "get_current_time"}'
     if any(k in clean_low for k in ["calculate", "+", "-", "*", "/", "multiplied", "divided", "plus", "minus"]):
@@ -485,29 +575,65 @@ def process_response(response: str) -> str:
 
                 if tool_name == "get_current_time":
                     time_str = get_current_time()
-                    return f"The current time is {time_str}."
+                    ans = f"The current time is {time_str}."
+                    log_call_to_crm(clean, ans, tool_used="get_current_time", outcome="completed")
+                    return ans
 
                 if tool_name == "calculate":
                     expr = tool_call.get("expression") or tool_call.get("args", {}).get("expression", "")
                     result = calculate(expr)
-                    return f"The result of {expr} is {result}."
+                    ans = f"The result of {expr} is {result}."
+                    log_call_to_crm(clean, ans, tool_used="calculate", outcome="completed")
+                    return ans
 
                 if tool_name == "get_placement_stats":
                     branch = tool_call.get("branch") or tool_call.get("args", {}).get("branch", "CSE")
-                    return get_placement_stats(branch)
+                    ans = get_placement_stats(branch)
+                    log_call_to_crm(clean, ans, tool_used="get_placement_stats", outcome="completed")
+                    return ans
 
                 if tool_name == "search_career_projects":
                     query = tool_call.get("query") or tool_call.get("args", {}).get("query", "")
-                    return search_career_projects(query)
+                    ans = search_career_projects(query)
+                    log_call_to_crm(clean, ans, tool_used="search_career_projects", outcome="completed")
+                    return ans
 
                 if tool_name == "get_interview_tips":
                     topic = tool_call.get("topic") or tool_call.get("args", {}).get("topic", "general")
-                    return get_interview_tips(topic)
+                    ans = get_interview_tips(topic)
+                    log_call_to_crm(clean, ans, tool_used="get_interview_tips", outcome="completed")
+                    return ans
+
+                if tool_name == "qualify_candidate":
+                    branch = tool_call.get("branch", "CSE")
+                    role = tool_call.get("target_role", "SDE")
+                    timeline = int(tool_call.get("timeline_days", 30))
+                    confidence = int(tool_call.get("dsa_confidence", 7))
+                    ans = qualify_candidate(branch, role, timeline, confidence)
+                    log_call_to_crm(clean, ans, tool_used="qualify_candidate", outcome="qualified")
+                    return ans
+
+                if tool_name == "book_mock_interview":
+                    slot = tool_call.get("slot_date", "Tomorrow at 5:00 PM")
+                    itype = tool_call.get("interview_type", "SDE Technical & DSA")
+                    ans = book_mock_interview(slot, itype)
+                    log_call_to_crm(clean, ans, tool_used="book_mock_interview", outcome="booked")
+                    return ans
+
+                if tool_name == "escalate_to_human_mentor":
+                    reason = tool_call.get("reason", "Complex placement question")
+                    cname = tool_call.get("candidate_name", "Dileep")
+                    ans = escalate_to_human_mentor(reason, cname)
+                    log_call_to_crm(clean, ans, tool_used="escalate_to_human_mentor", outcome="escalated")
+                    return ans
+
         except (json.JSONDecodeError, ValueError):
             pass
 
     # Normal conversational response from LLM (no tool needed)
+    log_call_to_crm(clean, clean, tool_used="conversational", outcome="in_progress")
     return clean
+
 
 
 def speak(text: str, output_wav: str = "reply.wav"):

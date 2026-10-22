@@ -30,7 +30,22 @@ def test_pipeline():
     print("Test 5 Result:", r5)
     assert "Hello Dileep" in r5
 
-    print("\nALL 5 PIPELINE TESTS PASSED SUCCESSFULY!")
+    # Test 6: Qualification tool JSON (Photos 1 & 2)
+    r6 = cva.process_response('{"tool": "qualify_candidate", "branch": "CSE", "target_role": "SDE", "timeline_days": 30, "dsa_confidence": 8}')
+    print("Test 6 Result:", r6)
+    assert "Candidate qualified" in r6
+
+    # Test 7: Booking mock interview tool JSON (Photos 1 & 2)
+    r7 = cva.process_response('{"tool": "book_mock_interview", "slot_date": "Tomorrow at 5:00 PM", "interview_type": "SDE Technical"}')
+    print("Test 7 Result:", r7)
+    assert "Mock interview successfully scheduled" in r7
+
+    # Test 8: Escalation to human mentor tool JSON (Photos 1 & 2)
+    r8 = cva.process_response('{"tool": "escalate_to_human_mentor", "reason": "Complex backlog advice", "candidate_name": "Dileep"}')
+    print("Test 8 Result:", r8)
+    assert "Escalation initiated" in r8
+
+    print("\nALL 8 ADVANCED PIPELINE TESTS PASSED SUCCESSFULLY!")
 
 if __name__ == "__main__":
     test_pipeline()

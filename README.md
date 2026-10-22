@@ -1,6 +1,6 @@
 # Pathfinder 2.0 · Autonomous AI Career Intelligence & Placement Predictor
 
-> **Production-grade full-stack AI career intelligence platform and real-time streaming voice architect that benchmarks student profiles against 972 verified campus placement records, predicts placement odds with 88% ML accuracy, tutors 23 production blueprints, and prepares engineering candidates for Tier-1 recruitment filters.**
+> **Production-grade full-stack AI career intelligence platform and real-time streaming voice architect that benchmarks student profiles against 972 verified campus placement records, predicts placement odds with 88% ML accuracy, tutors 28 production blueprints (including 5 real-world RAG architectures), and prepares engineering candidates for Tier-1 recruitment filters.**
 
 [![Live Platform](https://img.shields.io/badge/🚀_Live_Demo-Vercel_Edge-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://pathfinder-client-fzom.vercel.app/?demo=1)
 [![Cloud Engine](https://img.shields.io/badge/⚡_API_Gateway-Render_Cloud-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://pathfinder-backend-klrp.onrender.com/api/health)
@@ -38,7 +38,8 @@ Pathfinder is an enterprise-grade, real-time career intelligence platform engine
 
 - **Calibrated Placement Probability**: Ingests student CGPA, active backlogs, internships, coding proficiency, and communication skills to output a statistically calibrated placement probability (0–100%) alongside salary tier projections (Service, Product, Unicorn).
 - **Sub-300ms Conversational AI Voice Coach**: Provides conversational technical mentoring and mock interview grilling across **English, Telugu, and Hindi** with sentence-by-sentence streaming TTS and instant barge-in support.
-- **23 Production-Grade Flagship Project Blueprints**: Structured across a 9-step pedagogical roadmap (from architecture design and data modeling to cloud deployment and Google X-Y-Z resume bullet points).
+- **Cobalt Blue Deep (`#2C3480`) Real Man Cybernetic Avatar**: Ultra-realistic 3D holographic male avatar with left-side cyan wireframe matrix, organic swaying motion, procedural eye blinking, and WebAudio lip-sync against a True Black (`#000000`) OLED canvas.
+- **28 Production-Grade Flagship Project Blueprints**: Structured across a 9-step pedagogical roadmap (6 flagship + 17 national industry + 5 advanced real-world RAG architectures).
 - **STAR Architecture Defense Simulator**: Simulates grueling Round 2 system design questioning, evaluating how candidates defend architectural trade-offs, database bottlenecks, and scalability decisions.
 - **One-Page ATS Resume Studio**: Automatically diagnoses and formats single-column, ATS-parseable resumes aligned with recruiter screening algorithms.
 - **Institutional TPO Analytics**: Grants college administrators cohort-level intelligence into placement clearance rates, branch-wise cutoffs, and NAAC 5.2 placement governance metrics.
@@ -50,8 +51,9 @@ Pathfinder is an enterprise-grade, real-time career intelligence platform engine
 | Module | Purpose & User Experience | Primary Technology |
 | :--- | :--- | :--- |
 | **Executive Readiness Dashboard** | Transparent multi-vector assessment of candidate readiness, eligibility benchmarks, and personalized next best actions. | React 19, Framer Motion, Recharts |
-| **Conversational AI Voice Agent** | Bilingual real-time mentor powered by Gemini 2.0 Flash; provides crisp 2–4 sentence spoken guidance with zero audio looping. | Web Speech API, SSE, Gemini 2.0 Flash |
-| **Project Blueprint Recommender** | Catalog of 23 production architectures (6 flagship + 17 national industry problem statements) mapped directly to recruiter rubrics. | Async JSON Feature Store, FastAPI |
+| **Autonomous AI Voice Agent** | 6-step loop (Record, STT, Tools, LLM, Execute, Speak) with Ollama Llama 3.2, faster-whisper, and Windows SAPI fallback. | faster-whisper, sounddevice, Ollama, Piper |
+| **Cybernetic Avatar Canvas** | Dual 3D Neural Mesh & High-Res Real Face in Cobalt Blue Deep (`#2C3480`) against OLED True Black (`#000000`). | Three.js, WebGL, WebAudio Analyser |
+| **Project Blueprint Recommender** | Catalog of 28 production architectures (including 5 cutting-edge RAG engines) mapped directly to recruiter rubrics. | Async JSON Feature Store, FastAPI |
 | **Technical Defense Console** | Interactive viva simulation testing candidate depth on concurrency, caching, failover, and API rate limiting. | Generative Dynamic Prompting |
 | **ATS Resume Diagnostic Scanner** | Instant resume compliance audit scoring keyword relevance against Google X-Y-Z formula standards. | Client-side Canvas & Print Engine |
 | **Cohort Placement Explorer** | Granular filtering across 972 historical candidate records by branch, CGPA, graduation year, and CTC tier. | In-Memory Aggregation Engine (< 0.5ms) |
