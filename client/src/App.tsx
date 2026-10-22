@@ -5,15 +5,18 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 import AvatarCalibrate from "./pages/AvatarCalibrate";
 import AvatarTest from "./pages/AvatarTest";
 import { DASStudioLayout } from "./avatar/DASStudioLayout";
+import { DasVoiceProvider } from "./context/DasVoiceContext";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/das-agent"} component={DASStudioLayout} />
       <Route path={"/avatar-calibrate"} component={AvatarCalibrate} />
       <Route path={"/avatar-test"} component={AvatarTest} />
@@ -42,8 +45,10 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <DASVoiceProvider>
-            <Router />
-            <DASGlobalDock />
+            <DasVoiceProvider>
+              <Router />
+              <DASGlobalDock />
+            </DasVoiceProvider>
           </DASVoiceProvider>
         </TooltipProvider>
       </ThemeProvider>

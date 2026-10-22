@@ -1,6 +1,12 @@
 /**
  * 3D Face Mesh Geometry & UV Mapping (client/src/voice/avatar/faceMesh.ts)
- * Generates anatomical cranial geometry and sets up split wireframe vs solid material partitioning.
+ * Creates the sleek Cobalt Blue & Cyan 3D Cybernetic Wireframe Male Head.
+ * Features:
+ * - High-density wireframe cranial matrix
+ * - Dark inner absorption core for true 3D holographic depth
+ * - Eyelid shutter meshes for automated blinking
+ * - Separated upper and lower wireframe lip/jaw meshes for real-time lip sync
+ * - Orbiting background rings & 3D grid
  */
 
 import * as THREE from "three";
@@ -9,8 +15,8 @@ export interface MeshParts {
   headGroup: THREE.Group;
   solidHead: THREE.Mesh;
   wireHead: THREE.Mesh;
-  solidMat: THREE.MeshPhysicalMaterial;
-  wireMat: THREE.MeshBasicMaterial;
+  solidMat: THREE.Material;
+  wireMat: THREE.Material;
   coreMesh: THREE.Mesh;
   neckMesh: THREE.Mesh;
   leftEye: THREE.Mesh;
@@ -26,20 +32,34 @@ export interface MeshParts {
 export function createFaceMesh(texture?: THREE.Texture | null): MeshParts {
   const headGroup = new THREE.Group();
 
-  // 1. Anatomical Cranial Geometry (Realistic Human Head Proportion)
-  const headGeo = new THREE.SphereGeometry(1.15, 64, 64);
-  headGeo.scale(1.0, 1.34, 1.14);
+  // 1. Anatomical Cranial Geometry (Realistic Male Head Proportion)
+  const headGeo = new THREE.SphereGeometry(1.08, 36, 36);
+  headGeo.scale(1.0, 1.34, 1.10);
 
-  // Material 1: Realistic Natural Human Skin (Warm human complexion, organic subsurface glow)
+  // Material 1: Cobalt Blue & Cyan Wireframe Grid (#00d8ff / #2C3480)
+  const wireMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#00d8ff"),
+    wireframe: true,
+    emissive: new THREE.Color("#0284c7"),
+    emissiveIntensity: 0.35,
+    roughness: 0.3,
+    metalness: 0.8,
+    transparent: true,
+    opacity: 0.75,
+  });
+
+  const wireHead = new THREE.Mesh(headGeo, wireMat);
+  headGroup.add(wireHead);
+
+  // Material 2: Deep Obsidian Metallic Core (#020617 / #0b1120)
+  // Gives solid form behind the wireframe so it feels like a real cybernetic face
   const solidMat = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color("#c89a74"), // Natural warm human skin tone
-    metalness: 0.04,                  // Low metalness for organic human skin
-    roughness: 0.48,                  // Natural soft diffuse dermal texture
-    clearcoat: 0.15,                  // Subtle natural dermal moisture sheen
-    clearcoatRoughness: 0.35,
-    reflectivity: 0.35,
-    emissive: new THREE.Color("#2a1810"), // Subsurface blood circulation warmth
-    emissiveIntensity: 0.12,
+    color: new THREE.Color("#030712"),
+    roughness: 0.2,
+    metalness: 0.9,
+    clearcoat: 0.8,
+    clearcoatRoughness: 0.1,
+    reflectivity: 0.9,
   });
 
   if (texture) {
@@ -48,118 +68,99 @@ export function createFaceMesh(texture?: THREE.Texture | null): MeshParts {
     solidMat.needsUpdate = true;
   }
 
-  const solidHead = new THREE.Mesh(headGeo, solidMat);
+  const innerGeo = new THREE.SphereGeometry(1.03, 28, 28);
+  innerGeo.scale(0.98, 1.30, 1.05);
+  const solidHead = new THREE.Mesh(innerGeo, solidMat);
   headGroup.add(solidHead);
 
-  // Material 2: Elegant Soybean/Beige Neural Matrix (Left side face accent)
-  const wireMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color("#D7C49E"), // Soybean (#D7C49E)
-    wireframe: true,
-    transparent: true,
-    opacity: 0.55,
-  });
-  const wireHead = new THREE.Mesh(headGeo, wireMat);
-  wireHead.scale.set(1.003, 1.003, 1.003);
-  headGroup.add(wireHead);
-
-  // Split Local Clipping Planes
-  const leftClipPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
-  const rightClipPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
-  solidMat.clippingPlanes = [leftClipPlane];
-  wireMat.clippingPlanes = [rightClipPlane];
-
-  // 2. Warm Cognitive Core (Beige #D4B996)
-  const coreGeo = new THREE.SphereGeometry(0.92, 32, 32);
-  coreGeo.scale(0.92, 1.22, 0.92);
+  // 2. Cognitive Matrix Core (Electric Cyan Pulsing Lattice)
+  const coreGeo = new THREE.IcosahedronGeometry(0.75, 2);
   const coreMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color("#D4B996"), // Beige (#D4B996)
+    color: new THREE.Color("#00f0ff"),
     wireframe: true,
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.3,
   });
   const coreMesh = new THREE.Mesh(coreGeo, coreMat);
   headGroup.add(coreMesh);
 
-  // 3. Anatomical Neck & Throat (Matching natural skin tone)
-  const neckGeo = new THREE.CylinderGeometry(0.55, 0.75, 0.85, 32);
-  const neckMat = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color("#b88965"), // Shaded natural throat/neck skin
-    metalness: 0.04,
-    roughness: 0.5,
+  // 3. Anatomical Cybernetic Neck & Trapezius Wireframe
+  const neckGeo = new THREE.CylinderGeometry(0.52, 0.82, 0.8, 24, 6, true);
+  const neckMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color("#0284c7"),
+    wireframe: true,
+    transparent: true,
+    opacity: 0.45,
   });
   const neckMesh = new THREE.Mesh(neckGeo, neckMat);
-  neckMesh.position.set(0, -1.5, -0.1);
+  neckMesh.position.set(0, -1.42, -0.05);
   headGroup.add(neckMesh);
 
-  // 4. Natural Human Eyes (Warm Sclera & Iris)
-  const eyeGeo = new THREE.SphereGeometry(0.135, 32, 32);
+  // 4. Cybernetic Optical Sockets & Glowing Irises
+  const eyeGeo = new THREE.SphereGeometry(0.12, 20, 20);
   const eyeMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#fbf9f5"), // Realistic warm off-white sclera
-    emissive: new THREE.Color("#1a1410"),
-    emissiveIntensity: 0.05,
-    roughness: 0.08,                   // Glossy corneal reflection
-    metalness: 0.0,
+    color: new THREE.Color("#38bdf8"),
+    wireframe: true,
+    emissive: new THREE.Color("#00d8ff"),
+    emissiveIntensity: 0.6,
   });
 
   const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-  leftEye.position.set(-0.36, 0.19, 0.96);
+  leftEye.position.set(-0.35, 0.22, 0.96);
+  leftEye.scale.set(1.15, 0.72, 0.45);
   headGroup.add(leftEye);
 
   const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-  rightEye.position.set(0.36, 0.19, 0.96);
+  rightEye.position.set(0.35, 0.22, 0.96);
+  rightEye.scale.set(1.15, 0.72, 0.45);
   headGroup.add(rightEye);
 
-  // 5. Upper Eyelids (Natural skin matching)
-  const eyelidGeo = new THREE.SphereGeometry(0.142, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.55);
-  const eyelidMat = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color("#c89a74"), // Natural eyelid skin tone
-    roughness: 0.45,
-    metalness: 0.04,
+  // 5. Automated Eyelid Blinking Shutters
+  const eyelidGeo = new THREE.BoxGeometry(0.28, 0.05, 0.12);
+  const eyelidMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color("#0284c7"),
+    wireframe: true,
   });
 
   const leftEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
-  leftEyelid.position.set(-0.36, 0.22, 0.97);
-  leftEyelid.rotation.x = Math.PI * 0.18;
+  leftEyelid.position.set(-0.35, 0.26, 0.99);
   headGroup.add(leftEyelid);
 
   const rightEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
-  rightEyelid.position.set(0.36, 0.22, 0.97);
-  rightEyelid.rotation.x = Math.PI * 0.18;
+  rightEyelid.position.set(0.35, 0.26, 0.99);
   headGroup.add(rightEyelid);
 
-  // 6. Mouth Group & Cavity
+  // 6. Jaw & Mouth Mesh Group (Controlled by Viseme / Audio RMS for Lip Sync)
   const mouthGroup = new THREE.Group();
-  mouthGroup.position.set(0, -0.45, 0.98);
+  mouthGroup.position.set(0, -0.42, 0.98);
   headGroup.add(mouthGroup);
 
-  const mouthGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.08, 32);
-  mouthGeo.scale(1.0, 0.5, 0.35);
-  const mouthMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#2a0e0e"), // Anatomical oral cavity depth
-    emissive: new THREE.Color("#180606"),
-    emissiveIntensity: 0.05,
-    roughness: 0.6,
+  // Inner Oral Cavity with Glowing Cyan Aperture
+  const mouthGeo = new THREE.PlaneGeometry(0.42, 0.06);
+  const mouthMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color("#00f0ff"),
+    transparent: true,
+    opacity: 0.55,
+    side: THREE.DoubleSide,
   });
   const mouthMesh = new THREE.Mesh(mouthGeo, mouthMat);
-  mouthMesh.rotation.x = Math.PI * 0.5;
+  mouthMesh.position.set(0, 0, -0.01);
   mouthGroup.add(mouthMesh);
 
-  // Upper Lip (Natural warm rosy-nude lip color)
-  const upperLipGeo = new THREE.TorusGeometry(0.23, 0.038, 16, 32, Math.PI);
-  const upperLipMat = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color("#b8655d"), // Warm natural human lip vermilion
-    roughness: 0.35,                   // Natural lip moisture
-    metalness: 0.02,
+  // Upper Lip
+  const upperLipGeo = new THREE.BoxGeometry(0.46, 0.04, 0.08);
+  const lipMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color("#38bdf8"),
+    wireframe: true,
   });
-  const upperLip = new THREE.Mesh(upperLipGeo, upperLipMat);
-  upperLip.position.set(0, 0.03, 0.02);
-  upperLip.rotation.x = Math.PI;
+  const upperLip = new THREE.Mesh(upperLipGeo, lipMat);
+  upperLip.position.set(0, 0.03, 0.01);
   mouthGroup.add(upperLip);
 
   // Lower Lip
-  const lowerLipGeo = new THREE.TorusGeometry(0.23, 0.038, 16, 32, Math.PI);
-  const lowerLip = new THREE.Mesh(lowerLipGeo, upperLipMat);
-  lowerLip.position.set(0, -0.03, 0.02);
+  const lowerLipGeo = new THREE.BoxGeometry(0.44, 0.05, 0.08);
+  const lowerLip = new THREE.Mesh(lowerLipGeo, lipMat);
+  lowerLip.position.set(0, -0.03, 0.01);
   mouthGroup.add(lowerLip);
 
   return {

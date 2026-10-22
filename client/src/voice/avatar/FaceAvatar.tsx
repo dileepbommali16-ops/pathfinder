@@ -112,23 +112,43 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
       return;
     }
 
-    // 3. Warm Studio Lighting (Enhances natural human skin complexion and Beige/Soybean accents)
-    const ambientLight = new THREE.AmbientLight(0xfffbf0, 0.95);
+    // 3. Cybernetic Holographic Lighting (Cobalt Blue #2C3480 and Electric Cyan #00d8ff)
+    const ambientLight = new THREE.AmbientLight(0x0a192f, 1.8);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xfff1e0, 2.6);
-    keyLight.position.set(-2.5, 3.0, 3.0);
-    scene.add(keyLight);
+    const cyanPointLight = new THREE.PointLight(0x00d8ff, 3.2, 10);
+    cyanPointLight.position.set(0, 1.5, 2.5);
+    scene.add(cyanPointLight);
 
-    const fillLight = new THREE.DirectionalLight(0xecd8c5, 1.8);
-    fillLight.position.set(2.5, 1.5, 2.5);
-    scene.add(fillLight);
+    const cobaltBackLight = new THREE.PointLight(0x2C3480, 4.5, 12);
+    cobaltBackLight.position.set(0, -1.0, -1.5);
+    scene.add(cobaltBackLight);
 
-    const rimLight = new THREE.DirectionalLight(0xd7c49e, 2.4); // Soybean (#D7C49E) rim light
-    rimLight.position.set(0, 3.5, -2.0);
-    scene.add(rimLight);
+    // Moving Background Grid (venakala 3D UI motion)
+    const gridGeo = new THREE.PlaneGeometry(12, 12, 24, 24);
+    const gridMat = new THREE.MeshBasicMaterial({
+      color: 0x0369a1,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.18,
+    });
+    const bgGrid = new THREE.Mesh(gridGeo, gridMat);
+    bgGrid.position.set(0, 0, -2.2);
+    scene.add(bgGrid);
 
-    // 4. Pure Procedural 3D Cybernetic Head Mesh & Rig (Realistic Human Skin + Soybean Matrix)
+    // Background Cybernetic Radial Rings
+    const ringGeo = new THREE.RingGeometry(1.45, 1.48, 64);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x00d8ff,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.22,
+    });
+    const bgRing = new THREE.Mesh(ringGeo, ringMat);
+    bgRing.position.set(0, 0, -1.5);
+    scene.add(bgRing);
+
+    // 4. Pure Procedural 3D Cybernetic Head Mesh & Rig (Cobalt Blue & Cyan Wireframe)
     let meshParts: MeshParts = createFaceMesh();
     scene.add(meshParts.headGroup);
 
@@ -167,11 +187,16 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
         container.style.transform = `translateY(${Math.sin(elapsedTime * 1.6) * 6}px)`;
       }
 
+      // 3D Background Grid and Radial Ring Motion (venakala 3D UI motion)
+      bgGrid.rotation.z = elapsedTime * 0.04;
+      bgRing.rotation.z = -elapsedTime * 0.07;
+      bgRing.scale.setScalar(1.0 + Math.sin(elapsedTime * 2.2) * 0.025);
+
       // Calculate audio loudness from AnalyserNode
       let currentRMS = 0;
       const activeAnalyser = audioAnalyser || internalAnalyserRef.current;
       if (activeAnalyser) {
-        (activeAnalyser as any).getByteFrequencyData(freqData);
+        (activeAnalyser as any).getByteFrequencyData(freqData as any);
         let sum = 0;
         for (let i = 2; i < 28; i++) {
           sum += freqData[i];

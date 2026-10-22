@@ -379,7 +379,7 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
           {/* Center: 3D Holographic Cybernetic Face Avatar */}
           <div className="flex flex-1 items-center justify-center w-full min-h-0 my-auto py-1 z-10">
             <FaceAvatar
-              state={state}
+              state={state as any}
               spokenText={currentSentence}
               isSpeaking={state === "speaking"}
               audioAnalyser={audioAnalyser}

@@ -174,7 +174,7 @@ class ProviderChain:
                 }
             )
             try:
-                with urllib.request.urlopen(req, timeout=8) as resp:
+                with urllib.request.urlopen(req, timeout=2.0) as resp:
                     if resp.status == 200:
                         body = json.loads(resp.read().decode("utf-8"))
                         choices = body.get("choices", [])
@@ -185,6 +185,11 @@ class ProviderChain:
                                 self.last_used_provider = provider_name
                                 logger.info(f"[Providers] Answered by {provider_name}")
                                 return reply, provider_name
+            except urllib.error.HTTPError as http_err:
+                logger.debug(f"[Providers] OpenRouter HTTP {http_err.code}: {http_err.reason}")
+                if http_err.code in (401, 402, 403):
+                    # Invalid key or out of credits, abort loop immediately to prevent hanging
+                    break
             except Exception as e:
                 logger.debug(f"[Providers] OpenRouter model '{model}' skipped: {e}")
                 continue

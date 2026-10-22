@@ -86,7 +86,8 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
   speechRateRef.current = options.speechRate || 1.0;
 
   const greetingRef = useRef<string>("");
-  const hasSpokenGreetingRef = useRef<boolean>(true);
+  const hasSpokenGreetingRef = useRef<boolean>(false);
+  const pendingReplyTimerRef = useRef<any>(null);
 
   // References to keep utterances alive against Chromium V8 garbage collection
   const activeUtterancesRef = useRef<SpeechSynthesisUtterance[]>([]);
@@ -255,6 +256,40 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
     };
   }, [speakSentences]);
 
+  // Proactive automatic voice greeting upon dashboard load
+  useEffect(() => {
+    const greetingTimer = setTimeout(() => {
+      if (!hasSpokenGreetingRef.current) {
+        hasSpokenGreetingRef.current = true;
+        const initialGreeting =
+          languageRef.current === "te"
+            ? "నమస్కారం! నేను మీ పాత్‌ఫైండర్ AI కెరీర్ అసిస్టెంట్‌ని. మీ ప్లేస్‌మెంట్స్ మరియు రెజ్యూమ్ కోసం నేను సిద్ధంగా ఉన్నాను. ఎలా సహాయం చేయమంటారు?"
+            : "Hello! I am DAS, your autonomous Pathfinder AI Placement Coach. System online. How can I assist your placement preparation today?";
+        greetingRef.current = initialGreeting;
+        setCurrentSentence(initialGreeting);
+        setMessages((prev) => {
+          if (prev.length <= 1) {
+            return [
+              ...prev,
+              {
+                role: "assistant",
+                content: initialGreeting,
+                spokenSummary: initialGreeting,
+                provider: "Pathfinder Autonomous Intelligence",
+                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              },
+            ];
+          }
+          return prev;
+        });
+        if (autoSpeakRef.current) {
+          speakSentences([initialGreeting]);
+        }
+      }
+    }, 700);
+    return () => clearTimeout(greetingTimer);
+  }, [speakSentences]);
+
   // Connect to WebSocket gateway
   useEffect(() => {
     const player = new AudioQueuePlayer(() => {
@@ -340,6 +375,10 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
           }
 
           if (data.type === "turn_response") {
+            if (pendingReplyTimerRef.current) {
+              clearTimeout(pendingReplyTimerRef.current);
+              pendingReplyTimerRef.current = null;
+            }
             const spoken = data.spoken_summary || "";
             const screen = data.screen_details || "";
             if (data.provider) setActiveProvider(data.provider);
@@ -372,6 +411,10 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
           }
 
           if (data.type === "turn_complete") {
+            if (pendingReplyTimerRef.current) {
+              clearTimeout(pendingReplyTimerRef.current);
+              pendingReplyTimerRef.current = null;
+            }
             if (fullReplyRef.current) {
               const fullText = fullReplyRef.current;
               fullReplyRef.current = "";
@@ -471,6 +514,45 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
       // 2. KNOWLEDGE ENGINE / GEMINI LIVE RELAY
       setState("thinking");
 
+      let resolved = false;
+
+      // Local fallback trigger function
+      const triggerClientFallback = (reason: string) => {
+        if (resolved) return;
+        resolved = true;
+        if (pendingReplyTimerRef.current) {
+          clearTimeout(pendingReplyTimerRef.current);
+          pendingReplyTimerRef.current = null;
+        }
+        console.info(`[useVoiceSession] ${reason} Engaging local autonomous brain.`);
+        const brainRes = clientBrain.process(clean, languageRef.current, { activeTab: options.actionContext?.activeTab || "coach" });
+        const spoken = brainRes.spoken;
+        const screen = brainRes.display;
+        setCurrentSentence(spoken);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: screen || spoken,
+            spokenSummary: spoken,
+            screenDetails: screen,
+            provider: "Pathfinder Autonomous Intelligence (Fast Local)",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+        ]);
+        if (autoSpeakRef.current && spoken) {
+          speakSentences([spoken]);
+        } else {
+          setState("idle");
+        }
+      };
+
+      // Guaranteed 2.2 second fallback timer - ensures agent NEVER gets stuck on THINKING
+      if (pendingReplyTimerRef.current) clearTimeout(pendingReplyTimerRef.current);
+      pendingReplyTimerRef.current = setTimeout(() => {
+        triggerClientFallback("Backend response timer (2.2s) expired.");
+      }, 2200);
+
       // Send via WebSocket if open
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(
@@ -481,33 +563,32 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
           })
         );
       } else {
-        // Fallback to HTTP POST /api/voice/chat or /api/chat
+        // Fallback to HTTP POST with 2-second hard timeout
         try {
           const { apiUrl } = getVoiceBackendUrls();
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2000);
+
           let resp = await fetch(apiUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
             body: JSON.stringify({
               text: clean,
               message: clean,
               language: languageRef.current,
             }),
-          });
+          }).catch(() => null);
 
-          // Secondary fallback to /api/chat if /api/voice/chat fails
-          if (!resp.ok) {
-            resp = await fetch("/api/chat", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                text: clean,
-                message: clean,
-                language: languageRef.current,
-              }),
-            });
-          }
+          clearTimeout(timeoutId);
 
-          if (resp.ok) {
+          if (resp && resp.ok) {
+            if (resolved) return;
+            resolved = true;
+            if (pendingReplyTimerRef.current) {
+              clearTimeout(pendingReplyTimerRef.current);
+              pendingReplyTimerRef.current = null;
+            }
             const data = await resp.json();
             const spoken = data.spoken_summary || data.spoken || data.reply || "";
             const screen = data.screen_details || data.display || spoken;
@@ -539,49 +620,10 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
               setState("idle");
             }
           } else {
-            const brainRes = clientBrain.process(clean, languageRef.current, { activeTab: options.actionContext?.getCurrentTab() || "coach" });
-            const spoken = brainRes.spoken;
-            const screen = brainRes.display;
-            setCurrentSentence(spoken);
-            setMessages((prev) => [
-              ...prev,
-              {
-                role: "assistant",
-                content: screen || spoken,
-                spokenSummary: spoken,
-                screenDetails: screen,
-                provider: "Pathfinder Autonomous Intelligence",
-                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-              },
-            ]);
-            if (autoSpeakRef.current && spoken) {
-              speakSentences([spoken]);
-            } else {
-              setState("idle");
-            }
+            triggerClientFallback("HTTP endpoint unavailable.");
           }
         } catch (fetchErr) {
-          console.info("[useVoiceSession] Running autonomous client brain:", fetchErr);
-          const brainRes = clientBrain.process(clean, languageRef.current, { activeTab: options.actionContext?.getCurrentTab() || "coach" });
-          const spoken = brainRes.spoken;
-          const screen = brainRes.display;
-          setCurrentSentence(spoken);
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: screen || spoken,
-              spokenSummary: spoken,
-              screenDetails: screen,
-              provider: "Pathfinder Autonomous Intelligence",
-              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            },
-          ]);
-          if (autoSpeakRef.current && spoken) {
-            speakSentences([spoken]);
-          } else {
-            setState("idle");
-          }
+          triggerClientFallback("Network exception caught.");
         }
       }
     },
