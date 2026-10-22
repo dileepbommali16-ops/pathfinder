@@ -64,24 +64,6 @@ export default function Home() {
   const { setPageContext, sendMessage } = useDASVoice();
   const { getScreenPayload } = useScreenWatcher(activeTab);
 
-  // Proactively trigger a welcome greeting when dashboard loads (once per session)
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const hasGreeted = sessionStorage.getItem("pathfinder_das_dashboard_greeted");
-      if (!hasGreeted) {
-        sessionStorage.setItem("pathfinder_das_dashboard_greeted", "true");
-        const returnGreeting = getProactiveGreeting();
-        const timer = setTimeout(() => {
-          sendMessage(
-            returnGreeting ||
-            "System online. User entered the main dashboard. Greet them proactively, explain what the dashboard is, and ask how you can assist them further, sir."
-          );
-        }, 1500);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [sendMessage]);
-
   // Sync activeTab and title to global DAS voice context
   useEffect(() => {
     setPageContext({

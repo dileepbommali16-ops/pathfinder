@@ -9,6 +9,7 @@ import { MicrophoneCapture } from "./audio/mic";
 import { EchoGateManager } from "./echo";
 import { actionEngine, WebsiteActionContext, ActionResult } from "./actions";
 import { memoryManager } from "./memory";
+import { clientBrain } from "./client_brain";
 
 export type VoiceState = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "error";
 
@@ -63,7 +64,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
     ];
   });
   const [currentSentence, setCurrentSentence] = useState<string>(
-    "Hi sir, I'm your Pathfinder AI agent. Speak or tap the mic to control any part of our website."
+    "Ready for your questions. Tap the mic or type below."
   );
   const [activeProvider, setActiveProvider] = useState<string>("Pathfinder Knowledge Engine");
   const [isMicActive, setIsMicActive] = useState<boolean>(false);
@@ -84,8 +85,8 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
   const speechRateRef = useRef<number>(options.speechRate || 1.0);
   speechRateRef.current = options.speechRate || 1.0;
 
-  const greetingRef = useRef<string>("Hi sir, I'm your Pathfinder AI agent. How can I help you with your placements today?");
-  const hasSpokenGreetingRef = useRef<boolean>(false);
+  const greetingRef = useRef<string>("");
+  const hasSpokenGreetingRef = useRef<boolean>(true);
 
   // References to keep utterances alive against Chromium V8 garbage collection
   const activeUtterancesRef = useRef<SpeechSynthesisUtterance[]>([]);
@@ -538,35 +539,49 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
               setState("idle");
             }
           } else {
-            const fallbackMsg = "I am connected to your Pathfinder candidate profile. Ask me about cutoffs, DSA roadmaps, or projects!";
+            const brainRes = clientBrain.process(clean, languageRef.current, { activeTab: options.actionContext?.getCurrentTab() || "coach" });
+            const spoken = brainRes.spoken;
+            const screen = brainRes.display;
+            setCurrentSentence(spoken);
             setMessages((prev) => [
               ...prev,
               {
                 role: "assistant",
-                content: fallbackMsg,
-                spokenSummary: fallbackMsg,
-                screenDetails: fallbackMsg,
-                provider: "Pathfinder Autonomous Core",
+                content: screen || spoken,
+                spokenSummary: spoken,
+                screenDetails: screen,
+                provider: "Pathfinder Autonomous Intelligence",
                 timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
               },
             ]);
-            speakSentences([fallbackMsg]);
+            if (autoSpeakRef.current && spoken) {
+              speakSentences([spoken]);
+            } else {
+              setState("idle");
+            }
           }
         } catch (fetchErr) {
-          console.warn("[useVoiceSession] Voice query fallback:", fetchErr);
-          const fallbackMsg = "I am DAS, your Pathfinder Career Coach. Ask me about cutoffs, DSA roadmaps, or resumes!";
+          console.info("[useVoiceSession] Running autonomous client brain:", fetchErr);
+          const brainRes = clientBrain.process(clean, languageRef.current, { activeTab: options.actionContext?.getCurrentTab() || "coach" });
+          const spoken = brainRes.spoken;
+          const screen = brainRes.display;
+          setCurrentSentence(spoken);
           setMessages((prev) => [
             ...prev,
             {
               role: "assistant",
-              content: fallbackMsg,
-              spokenSummary: fallbackMsg,
-              screenDetails: fallbackMsg,
-              provider: "Pathfinder Autonomous Core",
+              content: screen || spoken,
+              spokenSummary: spoken,
+              screenDetails: screen,
+              provider: "Pathfinder Autonomous Intelligence",
               timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             },
           ]);
-          speakSentences([fallbackMsg]);
+          if (autoSpeakRef.current && spoken) {
+            speakSentences([spoken]);
+          } else {
+            setState("idle");
+          }
         }
       }
     },
@@ -658,6 +673,11 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
       isListeningRef.current = false;
       setState("error");
       return;
+    }
+
+    // Release direct audioStream so SpeechRecognition can access mic on Windows without contention
+    if (audioStream && (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN)) {
+      audioStream.getTracks().forEach((track) => track.stop());
     }
 
     speechTranscriptRef.current = "";

@@ -12,7 +12,7 @@ import { loadMemory } from "./memory";
 const API_BASE =
   ((import.meta.env.VITE_API_BASE_URL as string | undefined) || "https://pathfinder-1-xhme.onrender.com").replace(/\/+$/, "");
 
-const REQUEST_TIMEOUT_MS = 60_000; // Render free tier can take 30-60 s to wake up
+const REQUEST_TIMEOUT_MS = 2000; // Fail-fast to autonomous client brain on Vercel without waiting
 
 export interface AgentAction {
   type: "navigate_to" | "highlight" | "scroll_to" | "open_panel";

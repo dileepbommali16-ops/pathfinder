@@ -134,6 +134,7 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const isSpeakingRef = useRef<boolean>(false);
   const isListeningRef = useRef<boolean>(false);
+  const interimTranscriptRef = useRef<string>("");
   const utteranceQueueRef = useRef<SpeechSynthesisUtterance[]>([]);
 
   // Setup browser SpeechSynthesis reference
@@ -424,7 +425,7 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
       } catch (err) {
         if (err instanceof AgentRequestError && err.kind === "cancelled") return;
         console.info("[DASVoiceContext] Agent error, falling back to autonomous client brain:", err);
-        const brainRes = clientBrain.process(clean, language);
+        const brainRes = clientBrain.process(clean, language, { activeTab: pageContext.activeTab });
         const dasMsg: DASMessage = {
           id: "msg_brain_" + Date.now(),
           role: "assistant",
@@ -489,19 +490,23 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
 
       rec.onresult = (event: any) => {
         let interim = "";
+        let finalTranscript = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            const finalTranscript = event.results[i][0].transcript.trim();
-            if (finalTranscript) {
-              stopListening();
-              sendMessage(finalTranscript);
-              return;
-            }
+            finalTranscript += event.results[i][0].transcript + " ";
           } else {
-            interim += event.results[i][0].transcript;
+            interim += event.results[i][0].transcript + " ";
           }
         }
-        setInterimTranscript(interim);
+        if (finalTranscript.trim()) {
+          interimTranscriptRef.current = "";
+          setInterimTranscript("");
+          stopListening();
+          sendMessage(finalTranscript.trim());
+          return;
+        }
+        interimTranscriptRef.current = interim.trim();
+        setInterimTranscript(interim.trim());
       };
 
       rec.onerror = (e: any) => {
@@ -517,6 +522,12 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
         isListeningRef.current = false;
         if (mode === "listening") {
           setMode("idle");
+        }
+        const pending = interimTranscriptRef.current.trim();
+        if (pending) {
+          interimTranscriptRef.current = "";
+          setInterimTranscript("");
+          sendMessage(pending);
         }
       };
 
@@ -557,12 +568,11 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, [speakNatural]);
 
-  // When panel is opened for the first time in a session, trigger greeting
   useEffect(() => {
-    if (isOpen) {
-      triggerInitialGreeting();
+    if (isOpen && typeof window !== "undefined") {
+      sessionStorage.setItem(GREETING_KEY, "true");
     }
-  }, [isOpen, triggerInitialGreeting]);
+  }, [isOpen]);
 
   // New Conversation & Clear History
   const newConversation = useCallback(() => {

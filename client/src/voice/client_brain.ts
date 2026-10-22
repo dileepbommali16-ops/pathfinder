@@ -159,19 +159,188 @@ export class ClientBrainEngine {
    * Processes a user question and returns a structured response with spoken text,
    * markdown display, followups, and UI execution actions.
    */
-  public process(query: string, language: string = "auto"): BrainResponse {
+  public process(
+    query: string,
+    language: string = "auto",
+    context?: { activeTab?: string; focusedWidget?: string; userState?: string }
+  ): BrainResponse {
     const raw = (query || "").trim();
     const low = normalizeQuery(raw);
 
     const isTelugu =
       language === "te" ||
-      anyMatch(low, ["ela", "cheyyali", "cheppu", "bro", "enti", "naku", "mana", "kuda", "ikkada", "chudu", "em cheyyali", "avvatledhu", "ravatledu", "namaskaram", "namaste", "anna"]) ||
+      anyMatch(low, ["ela", "cheyyali", "cheppu", "bro", "enti", "naku", "mana", "kuda", "ikkada", "chudu", "em cheyyali", "avvatledhu", "ravatledu", "namaskaram", "namaste", "anna", "cheppakaraledhu"]) ||
       /[\u0C00-\u0C7F]/.test(raw);
 
     const isHindi =
       language === "hi" ||
       anyMatch(low, ["namaste", "kaise", "batao", "kya", "mera", "karo", "suno", "samjhao"]) ||
       /[\u0900-\u097F]/.test(raw);
+
+    // =======================================================================
+    // 0. CONTEXT-AWARE INQUIRY (Where am I? What am I doing right now?)
+    // =======================================================================
+    if (anyMatch(low, ["where am i", "what is this page", "what am i doing", "what am i doing here", "explain this page", "explain current page", "explain this dashboard", "what is on screen", "what is this screen", "ekkada vunna", "em chesthunna", "dashboard gurinchi", "explain screen", "what am i looking at"])) {
+      const tab = context?.activeTab || "overview";
+      const tabExplanations: Record<string, { spoken: string; display: string; tabId: string }> = {
+        overview: {
+          tabId: "overview",
+          spoken: isTelugu
+            ? "ప్రస్తుతం మీరు ఎగ్జిక్యూటివ్ డ్యాష్‌బోర్డ్‌లో ఉన్నారు. ఇక్కడ మీ ప్లేస్‌మెంట్ సంసిద్ధత స్కోరు, టార్గెట్ కంపెనీలు మరియు లైవ్ మైల్‌స్టోన్స్ ఉన్నాయి. ఏ అంశం గురించి సమాచారం కావాలి?"
+            : "You are currently on the Executive Dashboard overview. Here you can inspect your live placement readiness percentage, dream company aspirations, and active milestones.",
+          display: `### 🧭 Current Screen: Executive Dashboard Overview\n\nYou are on the main mission control overview for Pathfinder.\n- **Placement Readiness**: Live statistical index calibrated against 972 cohort alumni.\n- **Target Roles & Cutoffs**: Verified requirements for companies like Google and Razorpay.\n- **Next Steps**: You can explore Cohort Analytics, check your Skill Gap matrix, or launch a mock interview.`
+        },
+        predictive: {
+          tabId: "predictive",
+          spoken: isTelugu
+            ? "మీరు ప్రిడిక్టివ్ ప్లేస్‌మెంట్ ఆర్క్ స్క్రీన్‌లో ఉన్నారు. ఇక్కడ మెషిన్ లెర్నింగ్ మోడల్ మీ CGPA, కోడింగ్ స్కోర్ ఆధారంగా ప్లేస్‌మెంట్ అవకాశాలను లెక్కిస్తుంది."
+            : "You are on the Predictive Placement Arc. Here our machine learning model evaluates your CGPA, coding score, and backlogs to predict your placement tier.",
+          display: `### 🧭 Current Screen: Predictive Placement Arc\n\nThis module computes your calibrated placement probability using our verified Random Forest model trained on 972 engineering records.`
+        },
+        skills: {
+          tabId: "skills",
+          spoken: isTelugu
+            ? "మీరు స్కిల్ గ్యాప్ మరియు 6-వీక్ DSA రోడ్‌మ్యాప్ పేజీలో ఉన్నారు. ఇక్కడ మీ లీట్‌కోడ్ ప్యాటర్న్స్ సంసిద్ధత మరియు వారపు ప్రిపరేషన్ షెడ్యూల్ కనిపిస్తాయి."
+            : "You are looking at the Skill Gap Matrix and 6-Week DSA Roadmap. It diagnoses your core LeetCode pattern strengths and gives you a structured weekly practice schedule.",
+          display: `### 🧭 Current Screen: Skill Gap Matrix & 6-Week DSA Roadmap\n\nBenchmarking your current problem-solving skills against Tier-1 product cutoffs.`
+        },
+        projects: {
+          tabId: "projects",
+          spoken: isTelugu
+            ? "మీరు 23 ప్రొడక్షన్ ప్రాజెక్ట్ బ్లూప్రింట్స్ లో ఉన్నారు. ఇక్కడ డిస్ట్రిబ్యూటెడ్ సిస్టమ్స్ మరియు AI పైప్‌లైన్స్ వంటి ఫ్లాగ్‌షిప్ ప్రాజెక్ట్స్ ఎంచుకోవచ్చు."
+            : "You are in the 23 Production Project Blueprints catalog. Here you can pick flagship architectures like Distributed Rate Limiters and RAG pipelines to build step-by-step.",
+          display: `### 🧭 Current Screen: 23 Production Project Blueprints\n\nFull production-grade architectures designed to stand out in Round 2 interview defense.`
+        },
+        analytics: {
+          tabId: "analytics",
+          spoken: isTelugu
+            ? "మీరు 972 మంది స్టూడెంట్స్ ప్లేస్‌మెంట్ రికార్డ్స్ అనలిటిక్స్ చూస్తున్నారు. 9 ఇంజనీరింగ్ బ్రాంచ్‌ల సాలరీ మరియు కటాఫ్ వివరాలు ఇక్కడ ఉన్నాయి."
+            : "You are viewing the 972 Verified Student Placement Records analytics, showing real hiring cutoffs and salary packages across 9 engineering departments.",
+          display: `### 🧭 Current Screen: 972 Cohort Placement Analytics\n\nEmpirical salary percentiles, recruiter rosters, and departmental hiring trends.`
+        },
+        defense: {
+          tabId: "defense",
+          spoken: isTelugu
+            ? "మీరు STAR టెక్నికల్ డిఫెన్స్ సిమ్యులేటర్‌లో ఉన్నారు. ఇక్కడ రౌండ్ 2 ఆర్కిటెక్చర్ మరియు కన్‌కరెన్సీ వైవా ప్రశ్నలను ప్రాక్టీస్ చేయవచ్చు."
+            : "You are on the STAR Technical Defense Simulator Console, where you can practice answering grueling Round 2 architecture and concurrency questions.",
+          display: `### 🧭 Current Screen: STAR Technical Defense Simulator\n\nInteractive viva console to defend your projects against interviewer grilling.`
+        },
+        coach: {
+          tabId: "coach",
+          spoken: isTelugu
+            ? "మీరు DAS AI వాయిస్ కోచ్ స్టూడియోలో ఉన్నారు. మైక్రోఫోన్ ద్వారా మాట్లాడవచ్చు లేదా ప్రశ్న టైప్ చేయవచ్చు."
+            : "You are in the DAS AI Voice Coach Cybernetic Studio with the 3D holographic avatar. You can speak directly through your microphone or type any question.",
+          display: `### 🧭 Current Screen: DAS AI Voice Coach Studio\n\nReal-time voice and text conversational command center.`
+        }
+      };
+      const info = tabExplanations[tab] || tabExplanations.overview;
+      return {
+        spoken: info.spoken,
+        display: info.display,
+        actions: [],
+        followups: ["Why should students use Pathfinder in the real world?", "Explain all components of Pathfinder", "How to build projects step by step?"]
+      };
+    }
+
+    // =======================================================================
+    // 0.5. IDENTITY: WHO ARE YOU & WHO INVENTED YOU?
+    // =======================================================================
+    if (anyMatch(low, ["who invented you", "who made you", "who created you", "who are you", "what is your name", "what is ur name", "ur name", "your name", "ne peru enti", "ninnu evaru chesaru", "who built you", "invented you"])) {
+      if (isTelugu) {
+        return {
+          spoken: "నా పేరు దాస్ (DAS) - డిజిటల్ అటానమస్ స్ట్రాటజిస్ట్. పాత్‌ఫైండర్ ఇంజనీరింగ్ టీమ్ నన్ను క్యాంపస్ ప్లేస్‌మెంట్స్‌లో విద్యార్థులకు సహాయం చేయడానికి అభివృద్ధి చేసింది. నేను రోడ్‌మ్యాప్స్, ప్రాజెక్ట్స్ మరియు ఇంటర్వ్యూ ప్రిపరేషన్‌లో మీకు గైడ్ చేస్తాను!",
+          display: `### 🤖 నేను DAS — Digital Autonomous Strategist\n\nనన్ను **Pathfinder Core Engineering & AI Systems Team** క్యాంపస్ ప్లేస్‌మెంట్లలో విద్యార్థులకు రియల్-టైమ్ కెరీర్ స్ట్రాటజిస్ట్‌గా సపోర్ట్ చేయడానికి రూపొందించింది.\n\n**నా సూపర్ పవర్స్:**\n- 📊 **972 Student Records Insight**: రియల్ ప్లేస్‌మెంట్ కటాఫ్‌లు & కంపెనీ రిక్వైర్‌మెంట్స్.\n- 🚀 **23 Flagship Architectures**: సిస్టమ్ డిజైన్ బ్లూప్రింట్స్ & కోడ్ గైడెన్స్.\n- 🗺️ **6-Week DSA Roadmap**: హై-ఫ్రీక్వెన్సీ ఇంటర్వ్యూ ప్యాటర్న్స్.\n- 🎙️ **Autonomous Web Navigation**: మీరు అడిగిన పేజీలను స్వయంగా ఓపెన్ చేసి చూపిస్తాను.`,
+          actions: [],
+          followups: ["Why should students use Pathfinder in the real world?", "Explain all components of Pathfinder", "How to build projects step by step?"]
+        };
+      }
+      return {
+        spoken: "I am DAS, which stands for Digital Autonomous Strategist. I was developed by the Pathfinder engineering team to serve as your dedicated AI Placement Coach and Career Architect. Ask me about roadmaps, real-world project blueprints, or ATS resume secrets!",
+        display: `### 🤖 I am DAS — Digital Autonomous Strategist\n\nI was created by the **Pathfinder Engineering & AI Systems team** as an autonomous placement mentor designed specifically for engineering students.\n\n**Key Capabilities:**\n- 🎯 **88% Accuracy Placement Predictor**: Benchmarked on 972 verified student placement records.\n- 🚀 **23 Production Project Blueprints**: Architectural system designs with database schemas and interview defense points.\n- 🗺️ **6-Week DSA Sprint**: Pattern-based coding curriculum covering Google, Amazon, and Microsoft interview standards.\n- ⚡ **Autonomous Website Navigation**: I can scroll to widgets, switch tabs, and highlight key metrics directly on your screen!`,
+        actions: [],
+        followups: ["Why should students use Pathfinder in the real world?", "Explain all components of Pathfinder", "How to build projects step by step?"]
+      };
+    }
+
+    // =======================================================================
+    // 0.6. WHY SHOULD STUDENTS USE PATHFINDER IN THE REAL WORLD?
+    // =======================================================================
+    if (anyMatch(low, ["why should students use pathfinder in the real world", "why should students use pathfinder", "why pathfinder", "why use pathfinder", "why should students use", "real world", "pathfinder enduku", "pathfinder use"])) {
+      if (isTelugu) {
+        return {
+          spoken: "రియల్ వరల్డ్‌లో చాలామంది విద్యార్థులు థియరీ చదువుతారు కానీ కంపెనీలకు కావాల్సిన ప్రాక్టికల్ ప్రాజెక్ట్స్, డీఎస్‌ఏ ప్యాటర్న్స్ ఉండవు. పాత్‌ఫైండర్ 972 రియల్ ప్లేస్‌మెంట్ రికార్డ్స్‌తో సరైన రోడ్‌మ్యాప్, 23 ప్రొడక్షన్ ప్రాజెక్ట్స్ మరియు ఏటీఎస్ రెజ్యూమ్ ఇచ్చి మిమ్మల్ని జాబ్-రెడీ చేస్తుంది!",
+          display: `### 🌍 Why Should Students Use Pathfinder in the Real World?\n\nక్యాంపస్ ప్లేస్‌మెంట్లలో **80% విద్యార్థులు ఫెయిల్ అవ్వడానికి కారణం టాలెంట్ లేకపోవడం కాదు — సరైన డైరెక్షన్ లేకపోవడం!**\n\nరియల్ వరల్డ్‌లో Pathfinder మీకు అందించే 4 కీలక ప్రయోజనాలు ఇవి:\n\n1. 📊 **నిజమైన 972 స్టూడెంట్స్ డేటా (No Guesswork)**:\n   - మీ CGPA మరియు స్కిల్స్ బట్టి కంపెనీలు మిమ్మల్ని ఎలిమినేట్ చేసే ముందే మీ ప్లేస్‌మెంట్ ప్రాబబిలిటీని ఖచ్చితంగా తెలుసుకోవచ్చు.\n2. 🚀 **ట్యుటోరియల్ హెల్ నుండి బయటకు రావడం (23 Flagship Blueprints)**:\n   - ప్రతి ఒక్కరూ చేసే Todo-app, Weather-app కాకుండా, ఇంటర్వ్యూయర్‌ని ఆకట్టుకునే Distributed Rate Limiters, RAG Pipelines వంటి ఇండస్ట్రీ ఆర్కిటెక్చర్స్ నేర్పిస్తుంది.\n3. 📄 **ATS Screening లో రిజెక్ట్ అవ్వకుండా కాపాడటం**:\n   - గూగుల్ X-Y-Z ఫార్ములాతో రెజ్యూమ్ బుల్లెట్ పాయింట్లను ఆప్టిమైజ్ చేస్తుంది.\n4. 🛡️ **Round 2 టెక్నికల్ డిఫెన్స్ విస్టా**:\n   - ఇంటర్వ్యూయర్లు అడిగే సిస్టమ్ డిజైన్ ట్రేడ్-ఆఫ్స్ మరియు డీప్ క్వశ్చన్స్ కి సమాధానాలు ప్రాక్టీస్ చేయిస్తుంది.`,
+          actions: [{ name: "navigate_to", arguments: { page_id: "analytics" } }],
+          followups: ["Explain all components of Pathfinder", "How to build projects step by step?", "Show 6-week roadmap"]
+        };
+      }
+      return {
+        spoken: "In the real world, over 80% of applicants get filtered out because of generic resumes and unstructured preparation. Pathfinder solves this by providing calibrated placement prediction from 972 alumni records, 23 production blueprints, and a 6-week DSA roadmap.",
+        display: `### 🌍 Why Should Students Use Pathfinder in the Real World?\n\nIn modern tech recruitment, **talent alone isn't enough — direction and evidence of impact are everything!** Most students get rejected because of three fatal traps: generic resumes, tutorial-clone projects, and unstructured DSA practice.\n\nHere is how Pathfinder gives you an unfair advantage in the real world:\n\n1. 🎯 **Calibrated Truth, Zero Guesswork**:\n   - Trained on **972 verified alumni placement records**. You know your exact odds before stepping into a campus drive, identifying backlogs and skill deficits early.\n2. 🚀 **Escape Tutorial Hell with 23 Flagship Blueprints**:\n   - Replaces generic calculator or e-commerce apps with **enterprise architectures** (*Distributed Token-Bucket Limiters, Event Buses, Multi-Agent Swarms*) that impress senior engineering managers.\n3. 📄 **Beat the 6-Second ATS Screening Algorithm**:\n   - Formats your resume with the **Google X-Y-Z metric formula** (*Accomplished [X], measured by [Y], by doing [Z]*).\n4. 🛡️ **Technical Viva & System Design Defense**:\n   - Prepares you to defend your code against grueling Round 2 interviewer interrogation (*race conditions, Redis caching strategies, database indexing*).`,
+        actions: [{ name: "navigate_to", arguments: { page_id: "analytics" } }],
+        followups: ["Explain all components of Pathfinder", "How to build projects step by step?", "What is use of roadmap?"]
+      };
+    }
+
+    // =======================================================================
+    // 0.7. HOW TO BUILD PROJECTS STEP BY STEP?
+    // =======================================================================
+    if (anyMatch(low, ["how to build projects step by step", "how to build projects", "build projects step by step", "build projects", "how to build project", "step by step project", "build project step", "project ela cheyyali"])) {
+      if (isTelugu) {
+        return {
+          spoken: "ప్రాజెక్ట్ నిర్మించడానికి 5 దశలు ఉన్నాయి: మొదటిది ఆర్కిటెక్చర్ డిజైన్, రెండవది డేటాబేస్ స్కీమా, మూడవది కోర్ API లాజిక్, నాల్గవది డాకర్ డిప్లాయ్‌మెంట్, ఐదవది ఇంటర్వ్యూ డిఫెన్స్. మన 23 ప్రాజెక్ట్ బ్లూప్రింట్స్ లో ప్రతి ప్రాజెక్ట్ కి ఈ గైడ్ ఉంది!",
+          display: `### 🛠️ How to Build Production Projects Step-by-Step\n\nఒక హై-ఇంపాక్ట్ ప్రాజెక్ట్‌ను ఇండస్ట్రీ స్టాండర్డ్స్‌తో నిర్మించడానికి **5-దశల ఫ్రేమ్‌వర్క్**:\n\n1. 📐 **దశ 1: System Architecture & Requirements**\n   - సిస్టమ్ ఫంక్షనల్ (Latency, Throughput) మరియు నాన్-ఫంక్షనల్ రిక్వైర్‌మెంట్స్ డాక్యుమెంట్ చేయండి.\n2. 🗄️ **దశ 2: Data Modeling & Schema Design**\n   - PostgreSQL / Redis లో సరైన రిలేషన్స్, ఇండెక్స్‌లు మరియు క్యాషింగ్ స్ట్రాటజీని రూపొందించండి.\n3. ⚙️ **దశ 3: Core API & Concurrency Handling**\n   - FastAPI / Node.js లో రోబస్ట్ API లు రాయండి. Race conditions రాకుండా Mutex / Lock mechanisms వాడండి.\n4. 🐳 **దశ 4: Containerization & CI/CD**\n   - Dockerfile మరియు GitHub Actions వర్క్‌ఫ్లో సెటప్ చేసి Vercel / Render లో లైవ్ చేయండి.\n5. 🛡️ **దశ 5: Technical Defense Preparation**\n   - "సిస్టమ్ లో 10,000 యూజర్లు ఒకేసారి వస్తే ఏమవుతుంది?" అనే రౌండ్ 2 ప్రశ్నలకు సమాధానాలు సిద్ధం చేసుకోండి.\n\n*Projects ట్యాబ్ లో 23 కంప్లీట్ బ్లూప్రింట్స్ సిద్ధంగా ఉన్నాయి!*`,
+          actions: [{ name: "navigate_to", arguments: { page_id: "projects" } }],
+          followups: ["Show flagship Distributed Rate Limiter", "Explain all components of Pathfinder", "How to format ATS resume?"]
+        };
+      }
+      return {
+        spoken: "Building an interview-winning project follows 5 phases: Architecture design, Database schema modeling, Core API implementation, Docker containerization, and Technical viva defense. Let me navigate you to our 23 blueprints to pick one!",
+        display: `### 🛠️ How to Build Flagship Projects Step-by-Step\n\nRecruiters ignore basic clones. To build a project that commands **20+ LPA salary offers**, follow this **5-Phase Engineering Framework**:\n\n1. 📐 **Phase 1: Architecture & Scope Specification**\n   - Define scale parameters: Target QPS (queries per sec), latency budgets (<50ms), and storage trade-offs.\n2. 🗄️ **Phase 2: Data Schema & Storage Architecture**\n   - Design normalized relational models (Postgres) paired with high-speed key-value caches (Redis LRU).\n3. ⚡ **Phase 3: Core Business Logic & Concurrency**\n   - Implement thread-safe operations, idempotent endpoints, and clean error boundaries in FastAPI/Go/Node.js.\n4. 🐳 **Phase 4: Containerization & Production Observability**\n   - Package services in Docker, set up Prometheus/Grafana metrics, and write automated integration tests.\n5. 🛡️ **Phase 5: Technical Interview Defense Preparation**\n   - Master answers to trade-off questions: *Why Redis over Memcached? How do you prevent cache stampedes?*\n\n*Check the Projects tab for complete step-by-step implementations!*`,
+        actions: [{ name: "navigate_to", arguments: { page_id: "projects" } }],
+        followups: ["Show flagship Distributed Rate Limiter", "Why should students use Pathfinder in the real world?", "Explain all components of Pathfinder"]
+      };
+    }
+
+    // =======================================================================
+    // 0.8. EXPLAIN ALL COMPONENTS OF PATHFINDER
+    // =======================================================================
+    if (anyMatch(low, ["explain all components of pathfinder", "all components of pathfinder", "all components", "explain components", "pathfinder components", "components of pathfinder", "anni components cheppu", "components"])) {
+      if (isTelugu) {
+        return {
+          spoken: "పాత్‌ఫైండర్‌లో 6 ముఖ్యమైన కాంపోనెంట్స్ ఉన్నాయి: ప్రిడిక్టివ్ ప్లేస్‌మెంట్ ఆర్క్, కోహోర్ట్ అనలిటిక్స్, స్కిల్ గ్యాప్ మరియు 6-వీక్ రోడ్‌మ్యాప్, 23 ప్రాజెక్ట్ బ్లూప్రింట్స్, ఏటీఎస్ రెజ్యూమ్ స్టూడియో మరియు డిఫెన్స్ సిమ్యులేటర్!",
+          display: `### ⚡ All Components of Pathfinder 2.0\n\nపాత్‌ఫైండర్ 2.0 పూర్తి ప్లేస్‌మెంట్ ఎకోసిస్టమ్‌ను కవర్ చేసే **6 ముఖ్యమైన కాంపోనెంట్స్**:\n\n1. 🎯 **Placement Probability Predictor**:\n   - 972 పూర్వ విద్యార్థుల డేటాతో 88% ఆక్యూరసీతో మీ ప్లేస్‌మెంట్ అవకాశాలను లెక్కిస్తుంది.\n2. 📊 **Cohort Analytics Explorer**:\n   - 9 బ్రాంచ్‌ల సాలరీ గ్రాఫ్‌లు, హైయెస్ట్ ప్యాకేజీలు మరియు కటాఫ్ మార్కులు.\n3. 🗺️ **Skill Gap Matrix & 6-Week DSA Roadmap**:\n   - 75 కోర్ లీట్‌కోడ్ ప్యాటర్న్స్ తో వారం వారం ప్రిపరేషన్ షెడ్యూల్.\n4. 🚀 **23 Production Project Blueprints**:\n   - ఇంటర్వ్యూయర్లను ఇంప్రెస్ చేసే పూర్తి ఆర్కిటెక్చర్ గైడ్లు.\n5. 📄 **1-Page ATS Resume Studio**:\n   - గూగుల్ X-Y-Z ఫార్ములాతో రెజ్యూమ్ స్కానింగ్.\n6. 🛡️ **STAR Technical Defense Simulator**:\n   - రౌండ్ 2 సిస్టమ్ డిజైన్ వైవా ప్రశ్నల మాక్ ఇంటర్వ్యూయర్.\n7. 🎙️ **DAS Autonomous Voice Agent**:\n   - వెబ్‌సైట్‌ను స్వయంగా కంట్రోల్ చేస్తూ మీకు గైడ్ చేసే AI మెంటార్!`,
+          actions: [],
+          followups: ["Why should students use Pathfinder in the real world?", "How to build projects step by step?", "Open projects tab"]
+        };
+      }
+      return {
+        spoken: "Pathfinder consists of 6 core components: The Predictive Placement Arc, 972-Cohort Analytics Explorer, Skill Gap Matrix with 6-Week DSA Roadmap, 23 Project Blueprints, ATS Resume Studio, and the STAR Defense Simulator with DAS Voice Agent.",
+        display: `### ⚡ All Components of Pathfinder 2.0\n\nPathfinder is architected as an end-to-end placement intelligence suite comprising **6 flagship modules**:\n\n1. 🎯 **Predictive Placement Engine**: Machine-learning calibrated scoring that models your probability of cracking Tier-1, Tier-2, or Core tech placements based on 8 weighted factors.\n2. 📊 **972 Verified Cohort Analytics**: Real empirical hiring trends across 9 engineering departments showing historical CGPA cutoffs and salary distributions (up to 44.6 LPA).\n3. 🗺️ **Skill Gap Matrix & 6-Week DSA Roadmap**: Diagnostic benchmark comparing your coding confidence against company cutoffs, backed by a phased curriculum covering 75 high-frequency patterns.\n4. 🚀 **23 Production Project Blueprints**: Fully architected engineering blueprints with database models, microservice boundaries, and deployment recipes.\n5. 📄 **ATS One-Page Resume Studio**: Live recruiter audit flagging parsing errors, missing metrics, and reformatting bullets into the Google X-Y-Z achievement structure.\n6. 🛡️ **STAR Technical Defense Console**: Interactive viva grilling you on race conditions, database bottlenecks, and scalability trade-offs.\n7. 🎙️ **DAS AI Cybernetic Agent**: Full-duplex conversational voice intelligence that can navigate, highlight widgets, and mentor you 24/7.`,
+        actions: [],
+        followups: ["Why should students use Pathfinder in the real world?", "How to build projects step by step?", "Show 6-week roadmap"]
+      };
+    }
+
+    // =======================================================================
+    // 0.9. TELL ABOUT RESUME
+    // =======================================================================
+    if (anyMatch(low, ["tell about resume", "tell me about resume", "about resume", "resume gurinchi cheppu", "explain resume", "how to make resume", "resume tips", "resume", "ats resume"])) {
+      if (isTelugu) {
+        return {
+          spoken: "రెజ్యూమ్ అనేది ఇంటర్వ్యూకి మీ టికెట్. టాప్ కంపెనీల ఏటీఎస్ రిక్రూటర్లు ప్రతి రెజ్యూమ్‌ను కేవలం 6 సెకన్లు మాత్రమే చూస్తారు. అందువల్ల గూగుల్ X-Y-Z ఫార్ములాతో ఒకే పేజీలో స్పష్టమైన ఇంపాక్ట్ మెట్రిక్స్ ఉండేలా రూపొందించాలి!",
+          display: `### 📄 High-Impact ATS Resume Strategy\n\nక్యాంపస్ ప్లేస్‌మెంట్లలో రిక్రూటర్లు ప్రతి రెజ్యూమ్‌ను చూడటానికి కేవలం **6 సెకన్లు మాత్రమే వెచ్చిస్తారు!**\n\n**విజేతల రెజ్యూమ్ ఫార్ములా:**\n\n1. 🎯 **Google X-Y-Z Formula**:\n   - ❌ సాధారణ బుల్లెట్: *"Created a rate limiter using Redis."*\n   - ✅ గూగుల్ స్టాండర్డ్: *"Implemented Token-Bucket rate limiter using Redis, **reducing API latency by 34%** and successfully handling **5,000 requests/sec**."*\n2. 📏 **Strict One-Page Format**:\n   - కాలేజ్ స్టూడెంట్స్‌కి 2-పేజీల రెజ్యూమ్ ఉండకూడదు. క్లీన్ సింగిల్ కాలమ్ డిజైన్ వాడండి.\n3. 🚫 **ATS Traps to Avoid**:\n   - టేబుల్స్, ఐకాన్స్ లేదా మల్టీ-కాలమ్ లేఅవుట్స్ వాడకండి; ఏటీఎస్ సాఫ్ట్‌వేర్ వాటిని సరిగ్గా చదవలేదు.\n4. 🔗 **Live Verifiable Proof**:\n   - పని చేసే GitHub రిపోజిటరీ మరియు లైవ్ డెమో లింక్ తప్పనిసరిగా చేర్చండి.`,
+          actions: [{ name: "open_panel", arguments: { name: "resume_builder" } }],
+          followups: ["Open ATS Resume Studio", "Show recommended projects for resume", "What is use of roadmap?"]
+        };
+      }
+      return {
+        spoken: "A great technical resume must pass the 6-second ATS recruiter scan. Keep it strictly to one page, use a clean single-column layout, and write every project bullet using the Google X-Y-Z formula showing measurable impact.",
+        display: `### 📄 High-Impact ATS Resume Strategy\n\nTechnical recruiters spend an average of **6 seconds** reviewing a candidate's resume before deciding whether to interview or reject them.\n\nHere are the critical rules for an **interview-guaranteed resume**:\n\n1. 🎯 **The Google X-Y-Z Formula**:\n   - ❌ *Weak*: "Built an image recognition model using PyTorch."\n   - ✅ *Winning*: "Engineered a medical image segmentation pipeline in PyTorch with U-Net architecture, achieving **94.2% dice coefficient accuracy** and **processing 120 scans/sec**."\n2. 📏 **Strict 1-Page Layout**:\n   - Unless you have 10+ years of experience, two-page resumes get penalized by recruiters.\n3. 🚫 **Zero Formatting Traps**:\n   - Avoid tables, graphic rating bars (e.g. "Python 4/5 stars"), and multiple columns that break ATS parsers.\n4. 🔗 **Verified Proof of Work**:\n   - Every project must link to a live GitHub repository with a detailed README and deployment URL.\n\n*Click below to launch the One-Page ATS Resume Studio to scan your CV!*`,
+        actions: [{ name: "open_panel", arguments: { name: "resume_builder" } }],
+        followups: ["Open ATS Resume Studio", "Show 23 project blueprints", "How to build projects step by step?"]
+      };
+    }
 
     // =======================================================================
     // 1. SOCIAL BANTER, HUMOR & EMOTIONAL INTELLIGENCE (Warm, Cheerful Mentor)
