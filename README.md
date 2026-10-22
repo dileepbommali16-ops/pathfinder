@@ -476,11 +476,17 @@ Pathfinder 2.0 uses a decoupled cloud architecture: **Frontend on Vercel** and *
    - **Root Directory**: `./` (Default root directory; the project's root `vercel.json` and `scripts/build-client.js` handle dependency installation and bundle synchronization).
    - **Build Command**: `node scripts/build-client.js` (managed automatically by `vercel.json`).
    - **Output Directory**: `dist`
-3. **Environment Variables**:
-   - `VITE_API_BASE_URL`: `https://pathfinder-backend-klrp.onrender.com` (Links your client to the production backend).
-   *(Note: Do not put backend API keys like `GEMINI_API_KEY` on Vercel).*
-4. **Auto-Deploy Management**:
-   - To prevent unnecessary builds and save monthly build minutes, delete any duplicate project instances in your Vercel dashboard (*Project Settings ➔ General ➔ Delete Project*). Keep only one primary project (`pathfinder-client`).
+3. **Autonomous Resilience (Zero Localhost Dependency)**:
+   - Pathfinder 2.0 embeds a **100% Pure Client-Side Autonomous AI Brain (`client_brain.ts`)** that operates directly on Vercel Edge.
+   - It answers complex inquiries ("Why should students use Pathfinder in the real world?", "How to build projects step-by-step?", "Explain all components of Pathfinder", identity, and resume strategy) without requiring an active localhost or Python server.
+   - Fully context-aware: Tracks the user's active tab and explains what they are looking at in real-time.
+   - Includes Windows Chrome microphone hardware lock fixes for seamless speech recognition.
+4. **Preventing Multiple Builds (Free Tier Optimization)**:
+   - Under **Project Settings ➔ Git ➔ Ignored Build Step**, set **Behavior** to `Custom` and use:
+     ```bash
+     if [ "$VERCEL_GIT_COMMIT_REF" = "main" ]; then exit 1; else exit 0; fi
+     ```
+   - This ensures Vercel only executes **one single production build** per push to `main` and cancels preview branch builds, saving your monthly Hobby plan limits.
 
 ### 2. Backend Deployment on Render
 1. In Render, select **New Web Service** connected to `dileepbommali16-ops/pathfinder`.
