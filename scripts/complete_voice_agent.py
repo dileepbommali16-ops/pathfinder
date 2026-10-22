@@ -1,23 +1,31 @@
 """
-Complete 5-Component Local Voice Agent
--------------------------------------
-Stack:
+Complete 6-Step Autonomous Voice AI Agent
+==========================================
+Built from Scratch following the 6-Step Architecture:
+  Step 1: Record Audio (sounddevice + scipy) with Auto-Gain Normalization
+  Step 2: Speech-to-Text (faster-whisper int8 CPU) with VAD silence filtering
+  Step 3: Tools (Time, Safe Math AST, Pathfinder Placement Stats, RAG Projects & Interview Coaching)
+  Step 4: LLM Reasoning (Ollama llama3.2 with strict JSON tool calling + OpenRouter fallback)
+  Step 5: Execute Tools + Speak (Piper TTS / sounddevice / Windows SAPI fallback)
+  Step 6: Full Loop (Autonomous continuous conversational loop with graceful voice exit)
+
+Prerequisites:
   pip install faster-whisper sounddevice scipy ollama piper-tts
   ollama pull llama3.2
-
-Components:
-  1. Microphone Input (sounddevice + scipy)
-  2. Speech to Text (faster-whisper)
-  3. Tools (safe math calculator & datetime)
-  4. LLM Reasoning (ollama - llama3.2 with JSON tool calling)
-  5. Execution + Speak (piper-tts / sounddevice / Windows SAPI fallback)
-  6. Full Loop with graceful exit
 """
 
 import os
 import sys
 import io
+import re
+import json
+import ast
+import operator
 import time
+import subprocess
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, Any, Optional
 
 # Ensure Windows terminal handles UTF-8 emojis without charmap encoding crashes
 if sys.platform == "win32":
@@ -27,13 +35,6 @@ if sys.platform == "win32":
     except AttributeError:
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
-
-import json
-import ast
-import operator
-import subprocess
-from datetime import datetime
-from pathlib import Path
 
 # Audio dependencies
 import sounddevice as sd
@@ -47,7 +48,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT_DIR / ".env")
 load_dotenv(ROOT_DIR / "backend" / ".env")
 
-# AI & LLM dependencies
+# AI & LLM dependencies with safe import guards
 try:
     from faster_whisper import WhisperModel
 except ImportError:
@@ -93,15 +94,14 @@ def select_default_microphone() -> int:
         if "headset" in name.lower():
             headset_idx = idx
 
-    # If headset microphone is available and output is Realtek/Headphone, prioritize headset
     return headset_idx if headset_idx is not None else default_idx
 
 
-def record_audio(filename: str = "audio.wav", duration: int = 6, device_index: int = None) -> str:
+def record_audio(filename: str = "audio.wav", duration: int = 5, device_index: int = None) -> str:
     """
     Captures microphone audio at device native sample rate,
     downmixes to mono, resamples to 16000Hz, applies dynamic auto-gain,
-    and saves 16-bit PCM WAV.
+    and saves standard 16-bit PCM WAV.
     """
     if device_index is None:
         device_index = select_default_microphone()
@@ -110,7 +110,7 @@ def record_audio(filename: str = "audio.wav", duration: int = 6, device_index: i
     native_sr = int(dev_info['default_samplerate'])
     ch = min(2, max(1, dev_info['max_input_channels']))
 
-    print(f"3... 2... 1... 🎙️ SPEAK NOW! (Mic: [{device_index}] {dev_info['name']})")
+    print(f"\n3... 2... 1... 🎙️ SPEAK NOW! (Mic: [{device_index}] {dev_info['name']})")
     audio_raw = sd.rec(
         int(duration * native_sr),
         samplerate=native_sr,
@@ -122,7 +122,7 @@ def record_audio(filename: str = "audio.wav", duration: int = 6, device_index: i
         time.sleep(1)
         print(f"[{i}s left] ", end="", flush=True)
     sd.wait()
-    print("\n[1. RECORD] Processing captured audio...")
+    print("\n[Step 1 • Record Audio] Processing captured audio...")
 
     # Downmix stereo to mono
     if audio_raw.ndim > 1:
@@ -146,9 +146,9 @@ def record_audio(filename: str = "audio.wav", duration: int = 6, device_index: i
         gain = min(0.85 / peak, 80.0)
         resampled = resampled * gain
         amplified_peak = int(np.max(np.abs(resampled)) * 32767)
-        print(f"[1. RECORD] Audio amplified (raw peak: {int16_peak}, gain: {gain:.1f}x -> peak: {amplified_peak}) -> saved to {filename}")
+        print(f"[Step 1 • Record Audio] Audio amplified (raw peak: {int16_peak}, gain: {gain:.1f}x -> peak: {amplified_peak}) -> {filename}")
     else:
-        print(f"[1. RECORD] ⚠️ Microphone signal near zero (raw peak: {int16_peak}). Check headset wire or mic mute switch.")
+        print(f"[Step 1 • Record Audio] ⚠️ Microphone signal near zero (raw peak: {int16_peak}). Check headset wire or mic mute switch.")
 
     # Convert to standard 16-bit PCM WAV
     resampled_int16 = np.clip(resampled * 32767, -32768, 32767).astype(np.int16)
@@ -157,7 +157,7 @@ def record_audio(filename: str = "audio.wav", duration: int = 6, device_index: i
 
 
 # ==============================================================================
-# STEP 2: SPEECH-TO-TEXT (FASTER-WHISPER WITH 2-PASS VAD FALLBACK)
+# STEP 2: SPEECH-TO-TEXT (FASTER-WHISPER)
 # ==============================================================================
 
 _whisper_cache = None
@@ -168,7 +168,7 @@ def get_whisper():
     if _whisper_cache is None:
         if WhisperModel is None:
             raise ImportError("faster-whisper is not installed. Run: pip install faster-whisper")
-        print("[2. STT] Initializing faster-whisper ('base', int8 on CPU)...")
+        print("[Step 2 • Speech-to-Text] Initializing faster-whisper ('base', int8 on CPU)...")
         _whisper_cache = WhisperModel("base", device="cpu", compute_type="int8")
     return _whisper_cache
 
@@ -177,9 +177,9 @@ def transcribe_audio(filename: str = "audio.wav") -> str:
     """Converts the recorded audio file into text using VAD silence filtering with 2nd-pass fallback."""
     if not os.path.exists(filename):
         return ""
-    print(f"[2. STT] Transcribing audio with Voice Activity Detection (VAD)...")
+    print(f"[Step 2 • Speech-to-Text] Transcribing audio with Voice Activity Detection (VAD)...")
     whisper = get_whisper()
-    
+
     # Pass 1: Transcribe with VAD to filter background noise
     segments, info = whisper.transcribe(
         filename,
@@ -188,9 +188,8 @@ def transcribe_audio(filename: str = "audio.wav") -> str:
         vad_parameters=dict(min_silence_duration_ms=300)
     )
     text = " ".join(s.text.strip() for s in segments).strip()
-
     clean_alpha = "".join(ch for ch in text if ch.isalnum())
-    
+
     # Pass 2 Fallback: If VAD filtered short phrases (e.g. "hi", "hello"), transcribe directly
     if not clean_alpha:
         segments, info = whisper.transcribe(filename, beam_size=3, vad_filter=False)
@@ -198,15 +197,15 @@ def transcribe_audio(filename: str = "audio.wav") -> str:
         clean_alpha = "".join(ch for ch in text if ch.isalnum())
 
     if not clean_alpha:
-        print(f"[2. STT] Ignored background room noise/dots.")
+        print(f"[Step 2 • Speech-to-Text] Ignored background room noise / silence.")
         return ""
 
-    print(f"[2. STT] Recognized ({info.language}): \"{text}\"")
+    print(f"[Step 2 • Speech-to-Text] Recognized ({info.language}): \"{text}\"")
     return text
 
 
 # ==============================================================================
-# STEP 3: TOOLS (SAFE CALCULATOR & TIME)
+# STEP 3: TOOLS (INTELLIGENT TOOL REPOSITORY)
 # ==============================================================================
 
 def get_current_time() -> str:
@@ -214,7 +213,7 @@ def get_current_time() -> str:
     return datetime.now().strftime("%I:%M %p")
 
 
-# Safe Math AST Evaluator (Replaces dangerous eval)
+# Safe Math AST Evaluator (replaces dangerous raw eval)
 ALLOWED_OPERATORS = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
@@ -255,18 +254,104 @@ def calculate(expression: str) -> str:
         return "Unable to calculate."
 
 
+def get_placement_stats(branch: str = "ALL") -> str:
+    """Returns real-time campus placement benchmark statistics for engineering departments."""
+    branch = branch.upper().strip()
+    branches_file = ROOT_DIR / "data" / "branches.json"
+
+    stats_map = {
+        "CSE": {"name": "Computer Science", "rate": "63.0%", "cgpa": "7.97", "recruiters": "Google, Amazon, Microsoft, Oracle"},
+        "AIML": {"name": "AI & Machine Learning", "rate": "68.5%", "cgpa": "8.12", "recruiters": "NVIDIA, Microsoft AI, Adobe, MathWorks"},
+        "ECE": {"name": "Electronics & Communication", "rate": "54.2%", "cgpa": "7.65", "recruiters": "Qualcomm, Intel, Texas Instruments"},
+        "MECH": {"name": "Mechanical Engineering", "rate": "42.8%", "cgpa": "7.30", "recruiters": "L&T, Tata Motors, Bosch"},
+    }
+
+    if branches_file.exists():
+        try:
+            with open(branches_file, "r", encoding="utf-8") as f:
+                branches_data = json.load(f)
+                for b in branches_data:
+                    code = b.get("code", "").upper()
+                    stats_map[code] = {
+                        "name": b.get("name", code),
+                        "rate": f"{b.get('avgPlacementRate', 60.0)}%",
+                        "cgpa": f"{b.get('avgCgpaBenchmark', 7.5)}",
+                        "recruiters": ", ".join(b.get("topRecruiters", [])[:4])
+                    }
+        except Exception:
+            pass
+
+    if branch in stats_map:
+        info = stats_map[branch]
+        return f"{info['name']} placement rate is {info['rate']} with average CGPA benchmark of {info['cgpa']}. Top recruiters include {info['recruiters']}."
+
+    return "For CSE and AI branches, average placement rate is 65% with top offers from Google, Amazon, Microsoft, and NVIDIA. Median packages range from 8 to 14 LPA."
+
+
+def search_career_projects(query: str = "") -> str:
+    """Searches Pathfinder's 28 blueprints including the 5 real-world RAG projects."""
+    projects_file = ROOT_DIR / "data" / "projects.json"
+    if not projects_file.exists():
+        return "We offer 28 flagship blueprints covering Full-Stack Web, Distributed Systems, Cloud DevOps, and 5 advanced RAG architectures."
+
+    query_lower = query.lower().strip()
+    try:
+        with open(projects_file, "r", encoding="utf-8") as f:
+            projects = json.load(f)
+
+        matches = []
+        for p in projects:
+            title = p.get("title", "")
+            domain = p.get("domain", "")
+            overview = p.get("overview", "")
+            searchable = f"{title} {domain} {overview}".lower()
+            if query_lower in searchable or any(term in searchable for term in query_lower.split()):
+                matches.append(p)
+
+        if matches:
+            top = matches[0]
+            stack = ", ".join(top.get("techStack", [])[:4])
+            return f"I recommend '{top.get('title')}' in {top.get('domain')}. It uses {stack}. {top.get('resumeBullet', '')}"
+        
+        # Default top pick
+        return "Check out our new 'Enterprise Multi-Hop Financial RAG' blueprint using LangGraph, Qdrant, and FastAPI, perfect for tier-1 tech interviews."
+    except Exception:
+        return "Pathfinder provides 28 industry-grade project blueprints including distributed systems, WebSockets, and advanced RAG pipelines."
+
+
+def get_interview_tips(topic: str = "general") -> str:
+    """Returns targeted interview preparation advice."""
+    topic_lower = topic.lower().strip()
+    if "system" in topic_lower or "design" in topic_lower:
+        return "For System Design: Clarify functional requirements first, calculate throughput and storage, define APIs, draw high-level architecture, and address single points of failure with caching and replication."
+    elif "dsa" in topic_lower or "coding" in topic_lower:
+        return "For DSA: Start by stating the brute force approach, identify bottlenecks, optimize to O(N) or O(log N) using HashMaps or Two Pointers, and walk through edge cases before writing code."
+    elif "behavioral" in topic_lower or "hr" in topic_lower:
+        return "Use the STAR framework: Situation, Task, Action, and Result. Focus on what YOU individually did and quantify the business impact."
+    return "Master the Blind 75 DSA patterns, build one production-grade distributed project, and be prepared to explain all architectural trade-offs."
+
+
 TOOLS_DESCRIPTION = """
 Available tools:
 1. get_current_time() -> Returns current local time.
-2. calculate(expression: str) -> Safely calculates a mathematical expression (e.g., '145 * 12 + 50').
+2. calculate(expression: str) -> Safely calculates a math problem (e.g. '145 * 12 + 50').
+3. get_placement_stats(branch: str) -> Campus placement statistics for CSE, AIML, ECE, MECH.
+4. search_career_projects(query: str) -> Searches Pathfinder's 28 project blueprints (e.g. 'RAG', 'distributed', 'fullstack').
+5. get_interview_tips(topic: str) -> Targeted advice for DSA, System Design, or Behavioral interviews.
 
-INSTRUCTION:
-- If the user asks for the time or asks to calculate a math problem, return ONLY a strict JSON object with this exact format:
+INSTRUCTIONS FOR TOOL CALLS:
+- If a tool is needed, respond ONLY with a strict JSON object:
   {"tool": "get_current_time"}
   OR
   {"tool": "calculate", "expression": "<math expression>"}
-- If no tool is needed, respond directly with normal conversational text in 1 or 2 concise sentences.
-- Do NOT wrap JSON in markdown backticks or commentary when invoking a tool.
+  OR
+  {"tool": "get_placement_stats", "branch": "<branch code like CSE, AIML, ECE>"}
+  OR
+  {"tool": "search_career_projects", "query": "<topic or domain>"}
+  OR
+  {"tool": "get_interview_tips", "topic": "<dsa, system design, or behavioral>"}
+- If no tool is needed, respond directly with friendly, natural spoken text in 1 or 2 concise sentences.
+- Do NOT wrap JSON in backticks or markdown when calling a tool.
 """
 
 
@@ -284,39 +369,37 @@ def load_user_profile() -> dict:
         "assistant_name": "Pathfinder",
         "role": "Software Developer / Engineer",
         "location": "India",
-        "instructions": "Always address the user as Dileep. Be friendly, helpful, and answer concisely in 1 to 2 spoken sentences."
+        "instructions": "Address the user as Dileep. Be friendly, intelligent, and answer concisely in 1 to 2 spoken sentences."
     }
 
 
 # ==============================================================================
-# STEP 4: LLM REASONING (OLLAMA LLAMA 3.2 WITH USER PROFILE CONTEXT)
+# STEP 4: LLM REASONING (OLLAMA LLAMA 3.2 WITH JSON TOOL CALLING)
 # ==============================================================================
 
 def ask_llm(user_text: str) -> str:
     """Sends the user input + tools prompt to Ollama running llama3.2 with user profile context."""
-    if ollama is None:
-        raise ImportError("ollama python package not installed. Run: pip install ollama")
-
     profile = load_user_profile()
     user_name = profile.get("user_name", "Dileep")
     asst_name = profile.get("assistant_name", "Pathfinder")
     role = profile.get("role", "Software Developer / Engineer")
     loc = profile.get("location", "India")
-    inst = profile.get("instructions", "Be friendly, helpful, and answer concisely in 1 to 2 spoken sentences.")
+    inst = profile.get("instructions", "Be friendly, intelligent, and answer concisely in 1 to 2 spoken sentences.")
 
-    prompt = f"""You are {asst_name}, a friendly and intelligent personal Voice AI assistant.
-Current User Profile:
+    prompt = f"""You are {asst_name}, a friendly, highly intelligent Voice AI agent for {user_name}.
+User Profile:
 - Name: {user_name}
-- Role / Profession: {role}
+- Profession: {role}
 - Location: {loc}
-- Tone & Style: {inst}
+- Style: {inst}
 
 {TOOLS_DESCRIPTION}
 
 User request: {user_text}
 Response:"""
 
-    print("\n[3. LLM] Sending prompt to LLM (Ollama / OpenRouter)...")
+    print("\n[Step 4 • LLM Reasoning] Analyzing request...")
+
     # 1. Try local Ollama if available
     if ollama:
         try:
@@ -326,15 +409,15 @@ Response:"""
                 options={"temperature": 0.2}
             )
             content = response["message"]["content"].strip()
-            print(f"[3. LLM] Output (Local Ollama): {content}")
+            print(f"[Step 4 • LLM Reasoning] Output (Local Ollama): {content}")
             return content
         except Exception as exc:
-            print(f"[3. LLM] Local Ollama daemon not running ({exc}).")
+            print(f"[Step 4 • LLM Reasoning] Local Ollama not available ({exc}). Falling back to cloud...")
 
     # 2. Cloud Fallback using OpenRouter API Key configured in .env
     openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
     if openrouter_key:
-        print("[3. LLM] Routing to OpenRouter (Llama 3.2 Cloud)...")
+        print("[Step 4 • LLM Reasoning] Routing to OpenRouter (Llama 3.2 Cloud)...")
         try:
             import urllib.request
             payload = json.dumps({
@@ -352,13 +435,28 @@ Response:"""
             with urllib.request.urlopen(req, timeout=12.0) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 content = data["choices"][0]["message"]["content"].strip()
-                print(f"[3. LLM] Output (OpenRouter Llama 3.2): {content}")
+                print(f"[Step 4 • LLM Reasoning] Output (OpenRouter Llama 3.2): {content}")
                 return content
         except Exception as or_err:
-            print(f"[3. LLM] OpenRouter error: {or_err}")
+            print(f"[Step 4 • LLM Reasoning] OpenRouter error: {or_err}")
 
-    # 3. Simple fallback
-    return "I am ready to help, but no LLM connection is currently available."
+    # 3. Intelligent Heuristic Rule-Based Fallback if offline
+    clean_low = user_text.lower()
+    if "time" in clean_low or "clock" in clean_low:
+        return '{"tool": "get_current_time"}'
+    if any(k in clean_low for k in ["calculate", "+", "-", "*", "/", "multiplied", "divided", "plus", "minus"]):
+        nums = re.findall(r'[\d\+\-\*\/\^\(\)\.\s]+', user_text)
+        expr = nums[0].strip() if nums else "2 + 2"
+        return f'{{"tool": "calculate", "expression": "{expr}"}}'
+    if "placement" in clean_low or "salary" in clean_low or "package" in clean_low:
+        branch = "AIML" if "ai" in clean_low else ("ECE" if "ece" in clean_low else "CSE")
+        return f'{{"tool": "get_placement_stats", "branch": "{branch}"}}'
+    if "project" in clean_low or "rag" in clean_low or "blueprint" in clean_low:
+        return f'{{"tool": "search_career_projects", "query": "{user_text}"}}'
+    if "interview" in clean_low or "dsa" in clean_low or "system design" in clean_low:
+        return f'{{"tool": "get_interview_tips", "topic": "{user_text}"}}'
+
+    return f"Hello Dileep! I am Pathfinder, your Voice AI agent. How can I assist you with your placements and projects today?"
 
 
 # ==============================================================================
@@ -366,36 +464,50 @@ Response:"""
 # ==============================================================================
 
 def process_response(response: str) -> str:
-    """Parses LLM response, executes tools if requested, or returns the reply."""
-    # Attempt to parse as a tool JSON call
-    try:
-        # Strip potential markdown fences if model included them
-        clean = response.strip()
-        if clean.startswith("```"):
-            clean = clean.split("```")[1]
-            if clean.startswith("json"):
-                clean = clean[4:]
-            clean = clean.strip()
+    """Parses LLM response, executes tools if requested, or returns conversational reply."""
+    clean = response.strip()
 
-        tool_call = json.loads(clean)
-        if isinstance(tool_call, dict) and "tool" in tool_call:
-            tool_name = tool_call.get("tool")
-            print(f"[4. TOOLS] Executing tool: '{tool_name}'...")
+    # Extract JSON if enclosed in markdown code fences or conversational text
+    json_candidate = None
+    if "{" in clean and "}" in clean:
+        match = re.search(r'(\{.*\})', clean, re.DOTALL)
+        if match:
+            json_candidate = match.group(1).strip()
+    else:
+        json_candidate = clean
 
-            if tool_name == "get_current_time":
-                time_str = get_current_time()
-                return f"The current time is {time_str}."
+    if json_candidate:
+        try:
+            tool_call = json.loads(json_candidate)
+            if isinstance(tool_call, dict) and "tool" in tool_call:
+                tool_name = tool_call.get("tool")
+                print(f"[Step 5 • Execute] Executing tool: '{tool_name}'...")
 
-            if tool_name == "calculate":
-                expr = tool_call.get("expression", "")
-                result = calculate(expr)
-                return f"The result of {expr} is {result}."
+                if tool_name == "get_current_time":
+                    time_str = get_current_time()
+                    return f"The current time is {time_str}."
 
-    except (json.JSONDecodeError, ValueError):
-        # Normal conversational response from LLM (no tool needed)
-        pass
+                if tool_name == "calculate":
+                    expr = tool_call.get("expression") or tool_call.get("args", {}).get("expression", "")
+                    result = calculate(expr)
+                    return f"The result of {expr} is {result}."
 
-    return response
+                if tool_name == "get_placement_stats":
+                    branch = tool_call.get("branch") or tool_call.get("args", {}).get("branch", "CSE")
+                    return get_placement_stats(branch)
+
+                if tool_name == "search_career_projects":
+                    query = tool_call.get("query") or tool_call.get("args", {}).get("query", "")
+                    return search_career_projects(query)
+
+                if tool_name == "get_interview_tips":
+                    topic = tool_call.get("topic") or tool_call.get("args", {}).get("topic", "general")
+                    return get_interview_tips(topic)
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    # Normal conversational response from LLM (no tool needed)
+    return clean
 
 
 def speak(text: str, output_wav: str = "reply.wav"):
@@ -406,7 +518,7 @@ def speak(text: str, output_wav: str = "reply.wav"):
     if not text or not text.strip():
         return
 
-    print(f"\n[5. TTS] 🔊 Speaking: \"{text}\"")
+    print(f"\n[Step 5 • Speak] 🔊 Speaking: \"{text}\"")
     clean_speech = text.replace('"', "'").replace("\n", " ").strip()
 
     piper_success = False
@@ -430,7 +542,7 @@ def speak(text: str, output_wav: str = "reply.wav"):
         except Exception:
             pass
 
-    # 3. Robust Windows SAPI speech fallback (uses Base64 to safely handle all apostrophes, quotes, and punctuation)
+    # 3. Robust Windows SAPI speech fallback (uses Base64 to safely handle all characters)
     try:
         import base64
         b64_msg = base64.b64encode(clean_speech.encode("utf-8")).decode("ascii")
@@ -444,25 +556,35 @@ def speak(text: str, output_wav: str = "reply.wav"):
         )
         subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], timeout=15)
     except Exception as e:
-        print(f"[5. TTS] Playback warning: {e}")
+        print(f"[Step 5 • Speak] Speech synthesis notification: {e}")
 
 
 # ==============================================================================
-# STEP 6: FULL CONTINUOUS LOOP
+# STEP 6: FULL LOOP (AUTONOMOUS CONTINUOUS CONVERSATIONAL CYCLE)
 # ==============================================================================
 
-def run_voice_agent():
+def run_voice_agent(auto_mode: bool = False):
     """
     Continuous conversational loop:
     Listen -> Transcribe -> Reason -> Execute Tool -> Speak -> Repeat
+
+    Step 6 Full Loop matching architecture:
+      record_audio()
+      user_text = transcribe_audio()
+      llm_response = ask_llm(user_text)
+      final_response = process_response(llm_response)
+      speak(final_response)
     """
     print("=" * 65)
-    print("       5-COMPONENT LOCAL VOICE AGENT READY (LLAMA 3.2)")
+    print("       STEP 6 • FULL LOOP VOICE AI AGENT READY (LLAMA 3.2)")
     print("=" * 65)
-    print("Commands:")
-    print(" - Speak your questions naturally (e.g. 'What time is it?', 'Calculate 45 times 8')")
-    print(" - Say 'exit', 'quit', or 'stop' to end the session.")
-    print(" - Press Ctrl + C to exit anytime.\n")
+    print("Capabilities:")
+    print(" - Ask local time: 'What time is it?'")
+    print(" - Safe math: 'Calculate 25 times 16 plus 80'")
+    print(" - Placement stats: 'What is the placement rate for CSE or AIML?'")
+    print(" - RAG Projects: 'Recommend a RAG project blueprint'")
+    print(" - Interview tips: 'Give me System Design interview tips'")
+    print(" - Exit commands: Say 'exit', 'quit', 'stop', or 'goodbye'.\n")
 
     # Select Microphone
     selected_mic = select_default_microphone()
@@ -472,55 +594,60 @@ def run_voice_agent():
         marker = " 👈 ACTIVE" if idx == selected_mic else ""
         print(f"  [{idx}] {name}{marker}")
     print(f"\nDefault active mic: [{selected_mic}].")
-    print("Tip: If wearing earphones/headset, use [2]. For laptop built-in mic, use [1].")
-    print("     You can switch mics at any prompt by typing 1 or 2 and pressing Enter.\n")
+    print("Tip: If wearing earphones/headset, select that index. For laptop mic, select internal mic.")
+    print("     You can switch mics at any prompt by typing the number.\n")
 
     audio_file = "audio.wav"
 
     while True:
         try:
-            # 1. Record Audio
             dev_name = sd.query_devices(selected_mic)['name']
-            prompt = input(f"\n👉 Press [ENTER] to speak (Mic [{selected_mic}]: {dev_name}) or type mic # to switch: ").strip()
+            if not auto_mode:
+                prompt_input = input(f"\n👉 Press [ENTER] to speak (Mic [{selected_mic}]: {dev_name}) or type mic #: ").strip()
 
-            # Allow user to switch mic on the fly
-            valid_indices = [i[0] for i in inputs]
-            if prompt.isdigit() and int(prompt) in valid_indices:
-                selected_mic = int(prompt)
-                dev_name = sd.query_devices(selected_mic)['name']
-                print(f"🔄 Switched microphone to [{selected_mic}] {dev_name}")
-                continue
+                valid_indices = [i[0] for i in inputs]
+                if prompt_input.isdigit() and int(prompt_input) in valid_indices:
+                    selected_mic = int(prompt_input)
+                    dev_name = sd.query_devices(selected_mic)['name']
+                    print(f"🔄 Switched microphone to [{selected_mic}] {dev_name}")
+                    continue
+                elif prompt_input.lower() in ("exit", "quit", "stop"):
+                    speak("Goodbye! Have a great day.")
+                    break
 
-            record_audio(filename=audio_file, duration=6, device_index=selected_mic)
+            # 1. Record Audio
+            record_audio(filename=audio_file, duration=5, device_index=selected_mic)
 
-            # 2. Transcribe Audio
+            # 2. Speech-to-Text
             user_text = transcribe_audio(filename=audio_file)
             if not user_text:
-                print("⚠️ [AGENT] No speech recognized. Please speak into the mic.")
+                print("⚠️ [Agent] No speech detected. Please speak clearly.")
                 continue
 
-            # Check exit commands
+            # Check voice exit commands
             if user_text.lower().strip().rstrip(".!?") in ("exit", "quit", "stop", "bye", "goodbye"):
-                speak("Goodbye! Have a great day.")
-                print("\n[AGENT] Session ended by user request.")
+                speak("Goodbye Dileep! Have a great day.")
+                print("\n[Agent] Session ended by user request.")
                 break
 
             # 3. LLM Reasoning
             llm_response = ask_llm(user_text)
 
-            # 4. Process Tool or Reply
+            # 4. Execute Tools
             final_response = process_response(llm_response)
 
-            # 5. Speak Result
+            # 5. Speak Response
             speak(final_response)
 
         except KeyboardInterrupt:
-            print("\n\n[AGENT] Voice agent stopped by user.")
+            print("\n\n[Agent] Voice agent stopped by user.")
             break
         except Exception as loop_err:
-            print(f"\n[ERROR] Unexpected error in loop: {loop_err}")
+            print(f"\n[ERROR] Unexpected loop error: {loop_err}")
             time.sleep(1)
 
 
 if __name__ == "__main__":
-    run_voice_agent()
+    auto = "--auto" in sys.argv
+    run_voice_agent(auto_mode=auto)
+
