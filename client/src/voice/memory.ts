@@ -28,6 +28,8 @@ export interface StudentMemory {
     active: boolean;
     currentStepIndex: number;
   } | null;
+  lastVisitTimestamp?: string | number;
+  lastDiscussedTopic?: string;
 }
 
 const STORAGE_KEY = "pathfinder_das_memory";
@@ -181,6 +183,82 @@ export class PathfinderMemoryManager {
   public getTourState(): StudentMemory["tourState"] {
     return this.memory.tourState || null;
   }
+
+  public updateMemory(updates: Partial<StudentMemory>): void {
+    this.memory = { ...this.memory, ...updates };
+    this.save();
+  }
+
+  public clear(): void {
+    this.memory = { ...DEFAULT_MEMORY };
+    this.save();
+  }
 }
 
 export const memoryManager = PathfinderMemoryManager.getInstance();
+
+export function loadMemory(userId?: string): StudentMemory {
+  const manager = PathfinderMemoryManager.getInstance();
+  return manager.getMemory();
+}
+
+export function setStudentName(name: string, userId?: string): void {
+  const manager = PathfinderMemoryManager.getInstance();
+  manager.updateProfile({ studentName: name });
+}
+
+export function recordSessionEnd(topic?: string, userId?: string): void {
+  const manager = PathfinderMemoryManager.getInstance();
+  const mem = manager.getMemory();
+  manager.updateMemory({
+    lastDiscussedTopic: topic || mem.lastDiscussedTopic || "",
+    lastVisitTimestamp: new Date().toISOString(),
+  });
+}
+
+export function registerSessionEnd(getTopic: () => string, userId?: string): () => void {
+  const onEnd = () => {
+    try {
+      const topic = getTopic();
+      recordSessionEnd(topic, userId);
+    } catch {}
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("beforeunload", onEnd);
+    window.addEventListener("pagehide", onEnd);
+  }
+
+  return () => {
+    onEnd();
+    if (typeof window !== "undefined") {
+      window.removeEventListener("beforeunload", onEnd);
+      window.removeEventListener("pagehide", onEnd);
+    }
+  };
+}
+
+export function getProactiveGreeting(userId?: string): string | null {
+  const manager = PathfinderMemoryManager.getInstance();
+  const mem = manager.getMemory();
+  if (!mem.lastVisitTimestamp) return null;
+
+  const last = new Date(mem.lastVisitTimestamp).getTime();
+  const now = Date.now();
+  const hours = (now - last) / (1000 * 60 * 60);
+
+  if (hours < 12) return null; // Only greet if 12+ hours or next day
+
+  const topic = mem.lastDiscussedTopic;
+  const name = mem.studentName && mem.studentName !== "Student" ? `, ${mem.studentName}` : "";
+  if (topic) {
+    return `Welcome back${name}! Yesterday we were discussing ${topic}. Shall we continue from where we left off, or tell me what you'd like me to explain today?`;
+  }
+  return `Welcome back${name}! Shall we continue where we left off, or tell me what you'd like me to explain today?`;
+}
+
+export function clearMemory(userId?: string): void {
+  const manager = PathfinderMemoryManager.getInstance();
+  manager.clear();
+}
+

@@ -490,3 +490,12 @@ pre, code {
   overflow-x: auto;
 }
 
+/* Agent Action Highlight */
+.das-highlight {
+  outline: 2px solid var(--primary, #FF6B4A);
+  outline-offset: 4px;
+  border-radius: 8px;
+  transition: outline 0.2s ease;
+}
+
+
