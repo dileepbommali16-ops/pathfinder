@@ -153,26 +153,26 @@ def run_audit():
     # ---------------------------------------------------------
     # 6. Project Blueprints & Industry Problem Statements
     # ---------------------------------------------------------
-    print("\n[6/7] Testing Project Blueprints & Industry Catalog (23 Projects)...")
+    print("\n[6/7] Testing Project Blueprints & Industry Catalog (28 Projects)...")
     proj_resp = client.get("/api/data/projects")
     assert proj_resp.status_code == 200, "Projects endpoint failed"
     projects = proj_resp.json()
-    assert len(projects) == 23, f"Expected 23 projects, got {len(projects)}"
+    assert len(projects) == 28, f"Expected 28 projects, got {len(projects)}"
 
     software_projs = [p for p in projects if (p.get("category") or "").lower() == "software"]
     hardware_projs = [p for p in projects if (p.get("category") or "").lower() == "hardware"]
     industry_projs = [p for p in projects if p.get("psCode")]
 
-    assert len(software_projs) == 15, f"Expected 15 software projects, got {len(software_projs)}"
+    assert len(software_projs) == 20, f"Expected 20 software projects, got {len(software_projs)}"
     assert len(hardware_projs) == 8, f"Expected 8 hardware projects, got {len(hardware_projs)}"
-    assert len(industry_projs) == 17, f"Expected 17 Industry problem statements, got {len(industry_projs)}"
+    assert len(industry_projs) == 22, f"Expected 22 Industry & RAG statements, got {len(industry_projs)}"
 
-    # Check key Industry problem statement presence
+    # Check key Industry & RAG problem statement presence
     ps_codes = [p.get("psCode") for p in industry_projs]
-    for required_code in ["PF-IND-146", "PF-IND-112", "PF-IND-167", "PF-IND-020", "PF-IND-025", "PF-IND-026"]:
-        assert required_code in ps_codes, f"Missing expected industry statement: {required_code}"
+    for required_code in ["PF-IND-146", "PF-IND-112", "PF-IND-167", "PF-IND-020", "PF-IND-025", "PF-IND-026", "PF-RAG-001", "PF-RAG-002"]:
+        assert required_code in ps_codes, f"Missing expected statement: {required_code}"
 
-    print(f"  ✅ Project Blueprints verified: Total=23 (Software=15, Hardware=8, Industry Statements=17)")
+    print(f"  ✅ Project Blueprints verified: Total=28 (Software=20, Hardware=8, Industry & RAG Statements=22)")
 
     # ---------------------------------------------------------
     # 7. AI Coach Multi-Question Dialogue Test

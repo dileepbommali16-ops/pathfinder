@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # Pathfinder Full Stack AI Placement Platform
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pathfinder-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
+      - JWT_SECRET=${JWT_SECRET:-pathfinder_production_secret_minimum_32_chars_2026}
+      - FRONTEND_URL=http://localhost:5173,https://pathfinder-client-fzom.vercel.app
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: pathfinder-client
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+  # Optional local vector database for air-gapped sovereign RAG
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: pathfinder-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./data/qdrant_storage:/qdrant/storage
+    profiles:
+      - rag-extended

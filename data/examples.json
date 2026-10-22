@@ -1,0 +1,32 @@
+{
+  "sample_evaluation_queries": [
+    {
+      "query": "Which branch has the highest package?",
+      "expected_category": "cohort_statistics",
+      "expected_answer_highlight": "AIML & CSM at 44.6 LPA, followed by CSE at 44.0 LPA"
+    },
+    {
+      "query": "What are my placement chances with 8.2 CGPA and 0 backlogs?",
+      "expected_category": "placement_prediction",
+      "expected_answer_highlight": "High Tier-1 product placement probability (>85%)"
+    },
+    {
+      "query": "Explain the architecture of GraphRAG project",
+      "expected_category": "system_design",
+      "expected_project": "PF-RAG-001"
+    }
+  ],
+  "sample_candidate_profiles": [
+    {
+      "fullName": "Demo Candidate",
+      "branch": "AIML",
+      "degree": "B.Tech",
+      "cgpa": 8.8,
+      "backlogs": 0,
+      "codingScore": 9,
+      "communicationScore": 8,
+      "targetRole": "ai-engineer",
+      "internships": 1
+    }
+  ]
+}

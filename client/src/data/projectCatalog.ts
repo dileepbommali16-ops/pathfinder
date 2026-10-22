@@ -641,5 +641,150 @@ export const DEFAULT_PROJECT_CATALOG: ProjectBlueprint[] = [
     ],
     "architectureSummary": "Air Sniffer Micro-Pump -> Multi-Channel Chemical Sensor Chamber -> 16-Bit ADC Digitizer -> Jetson Nano 1D-CNN Fingerprint Classifier -> Audio/Visual Alert -> RPF Control Room Stream.",
     "resumeBullet": "Engineered a robotic chemical sniffer platform for railway security detecting trace explosive and narcotic vapors down to 2 ppm within 3.5 seconds using a MOS sensor array and Jetson Orin Nano CNN inference."
+  },
+  {
+    "id": "pf-rag-graphrag-pipeline",
+    "psCode": "PF-RAG-001",
+    "roleId": "ai-engineer",
+    "category": "software",
+    "branch": "CSE / AIML / Data Science",
+    "title": "Enterprise GraphRAG: Knowledge Graph-Augmented RAG with Community Summarization",
+    "domain": "Enterprise GenAI & Graph Systems",
+    "organization": "Enterprise Knowledge Intelligence Labs",
+    "difficulty": "Advanced",
+    "techStack": [
+      "Python 3.11",
+      "Neo4j",
+      "GraphRAG",
+      "LlamaIndex",
+      "Qdrant",
+      "FastAPI",
+      "Gemini 2.0 Flash"
+    ],
+    "overview": "Enterprise-scale Knowledge Graph-augmented retrieval system resolving multi-hop reasoning bottlenecks across 50,000+ technical documents using hierarchical Leiden community summarization.",
+    "features": [
+      "Automated entity-relation triple extraction using LLM structured output parsing",
+      "Neo4j property graph modeling storing domain entities, relationships, and source provenance",
+      "Hierarchical Leiden community clustering producing global summarization indices",
+      "Hybrid vector + graph traversal routing queries between localized chunks and global themes"
+    ],
+    "architectureSummary": "50k Enterprise PDFs -> Chunking & LLM Entity Extraction -> Neo4j Knowledge Graph -> Leiden Community Clustering -> Hybrid Vector + Graph Search -> Gemini 2.0 Synthesis -> React Canvas Visualizer.",
+    "resumeBullet": "Architected an enterprise GraphRAG pipeline in Neo4j indexing 45k technical documents into 120k entity subgraphs, improving complex multi-hop question accuracy by 48% over vanilla vector RAG."
+  },
+  {
+    "id": "pf-rag-agentic-multidoc",
+    "psCode": "PF-RAG-002",
+    "roleId": "ai-engineer",
+    "category": "software",
+    "branch": "CSE / IT / AIML",
+    "title": "Agentic Multi-Document Financial & Regulatory RAG with Self-Correction & Reflection",
+    "domain": "FinTech & Regulatory Compliance AI",
+    "organization": "Financial Technology & Quantitative AI Labs",
+    "difficulty": "Advanced",
+    "techStack": [
+      "Python 3.11",
+      "LangGraph",
+      "ChromaDB",
+      "BM25 + Dense Hybrid",
+      "Cohere Rerank",
+      "FastAPI",
+      "Docker"
+    ],
+    "overview": "Autonomous multi-agent document analysis framework resolving cross-document contradictions across SEC 10-K, 10-Q, and audit filings with automated citation validation and self-reflection loops.",
+    "features": [
+      "Reciprocal Rank Fusion (RRF) combining dense semantic embeddings with BM25 sparse keyword retrieval",
+      "Cohere Rerank cross-encoder re-ranking top-50 candidates down to top-5 high-signal chunks",
+      "LangGraph state machine with automated hallucination grader and query re-writer",
+      "Strict citation grounding verifying numerical metrics against original tabular balance sheets"
+    ],
+    "architectureSummary": "Regulatory PDF Corpus -> PDF Table Parser -> Dense & BM25 Hybrid Retrieval -> Cohere Cross-Encoder Reranker -> LangGraph Self-Correction Agent -> Markdown Report with Page Citations.",
+    "resumeBullet": "Built an Agentic Multi-Document RAG system with LangGraph and Cohere Rerank, implementing automated citation validation and self-reflection to achieve 99.1% factual faithfulness across 500-page financial filings."
+  },
+  {
+    "id": "pf-rag-local-sovereign",
+    "psCode": "PF-RAG-003",
+    "roleId": "ai-engineer",
+    "category": "software",
+    "branch": "Cybersecurity / CSE / Systems",
+    "title": "Sovereign Air-Gapped Local RAG Engine with Quantized Open-Source LLMs",
+    "domain": "Air-Gapped Systems & Sovereign AI",
+    "organization": "National Cyber Security & Sovereign Systems Lab",
+    "difficulty": "Advanced",
+    "techStack": [
+      "Python 3.11",
+      "vLLM / Ollama",
+      "LLaMA 3.2 (3B/8B)",
+      "BGE-M3 Embeddings",
+      "Qdrant Local",
+      "FastAPI",
+      "Docker"
+    ],
+    "overview": "100% offline, zero-telemetry sovereign enterprise RAG engine running on local GPU/CPU hardware for defense, healthcare, and banking institutions with strict data residency mandates.",
+    "features": [
+      "Completely isolated local inference pipeline with zero external API calls or telemetry egress",
+      "vLLM high-throughput inference serving 4-bit AWQ quantized LLaMA 3.2 models",
+      "BGE-M3 dense multilingual embeddings generating 1024-dim vectors locally",
+      "Role-based vector namespace partitioning ensuring strict multi-tenant confidentiality"
+    ],
+    "architectureSummary": "Air-Gapped Client -> NGINX Reverse Proxy -> BGE-M3 Embedding Engine -> Qdrant On-Premise Vector DB -> vLLM LLaMA 3.2 4-bit Engine -> Encrypted Audit Log.",
+    "resumeBullet": "Engineered an air-gapped sovereign RAG pipeline using vLLM and quantized LLaMA 3.2, achieving 42 tokens/sec local throughput with zero external internet egress or data leakage."
+  },
+  {
+    "id": "pf-rag-multimodal-colpali",
+    "psCode": "PF-RAG-004",
+    "roleId": "ai-engineer",
+    "category": "software",
+    "branch": "CSE / ECE / Robotics",
+    "title": "Multimodal Vision-RAG for Complex Technical Schematics, Blueprints & Circuit Diagrams",
+    "domain": "Multimodal Computer Vision & Engineering AI",
+    "organization": "Industrial AI & Autonomous Engineering Research",
+    "difficulty": "Advanced",
+    "techStack": [
+      "Python 3.11",
+      "ColPali",
+      "PaliGemma Vision",
+      "Qdrant Multi-Vector",
+      "PyMuPDF",
+      "FastAPI",
+      "Three.js"
+    ],
+    "overview": "Late-interaction vision-language RAG pipeline retrieving and reasoning directly over raw page images of technical blueprints, electrical schematics, and mechanical CAD drawings without OCR degradation.",
+    "features": [
+      "ColPali multi-vector late interaction computing token-to-patch similarity matrices",
+      "Elimination of fragile OCR parsing: ingests high-resolution 300 DPI technical PDF raster pages",
+      "Interactive bounding box grounding localizing circuit components and measurement callouts",
+      "Sub-150ms multi-vector similarity search over 100,000 schematic pages in Qdrant"
+    ],
+    "architectureSummary": "Engineering PDF Blueprints -> High-Res Page Renderer -> ColPali Vision Transformer -> Qdrant Multi-Vector Index -> Late Interaction MaxSim Scorer -> Visual Grounding Bounding Box Canvas.",
+    "resumeBullet": "Designed a multimodal vision RAG engine using ColPali late-interaction patch embeddings, preserving spatial layout in 10,000+ circuit blueprints with an 84% reduction in visual information loss."
+  },
+  {
+    "id": "pf-rag-multilingual-vernacular",
+    "psCode": "PF-RAG-005",
+    "roleId": "ai-engineer",
+    "category": "software",
+    "branch": "CSE / IT / AIML",
+    "title": "Cross-Lingual Vernacular RAG Pipeline for Public Governance & Healthcare Documents",
+    "domain": "Vernacular NLP & Civic Tech Intelligence",
+    "organization": "Public Digital Infrastructure & Language AI Lab",
+    "difficulty": "Advanced",
+    "techStack": [
+      "Python 3.11",
+      "AI4Bharat IndicTrans2",
+      "IndicBERT",
+      "FAISS",
+      "FastAPI",
+      "Web Speech API",
+      "React"
+    ],
+    "overview": "Inclusive civic intelligence system indexing complex English public welfare policies and land records, answering queries via conversational voice in Telugu, Hindi, and English with cross-lingual semantic alignment.",
+    "features": [
+      "Cross-lingual semantic embedding mapping Telugu and Hindi questions directly into English legal text vectors",
+      "IndicTrans2 neural machine translation fine-tuned on administrative and medical terminology",
+      "Bidirectional speech pipeline supporting Telugu (te-IN) and Hindi (hi-IN) voice input and synthesis",
+      "Dynamic policy eligibility checker calculating candidate entitlement based on citizen profile"
+    ],
+    "architectureSummary": "English Gazette Documents -> IndicBERT Cross-Lingual Chunker -> FAISS Vector Index -> Spoken Telugu/Hindi Query -> Web Speech API -> Cross-Lingual Retrieval -> Spoken Vernacular Response.",
+    "resumeBullet": "Deployed a cross-lingual Indic RAG platform processing 1,200+ government gazettes, enabling conversational Telugu and Hindi policy queries with 94.6% semantic alignment and real-time audio playback."
   }
 ];

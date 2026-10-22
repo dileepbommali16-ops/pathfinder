@@ -132,7 +132,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
           </h1>
 
           <p className="text-sm leading-relaxed text-[#94a3b8]">
-            Top recruiters and technical evaluators look for production-grade end-to-end engineered systems over simple tutorials. Explore <strong className="text-[#7c3aed]">15 Software</strong> and <strong className="text-[#7c3aed]">8 Hardware & IoT</strong> architectures spanning full-stack pipelines, robotics, ML computer vision, and embedded firmware. Click any project to discuss system architecture with the AI Coach!
+            Top recruiters and technical evaluators look for production-grade end-to-end engineered systems over simple tutorials. Explore <strong className="text-[#7c3aed]">{counts.software} Software & GenAI RAG</strong> and <strong className="text-[#7c3aed]">{counts.hardware} Hardware & IoT</strong> architectures spanning full-stack pipelines, robotics, enterprise GraphRAG, and embedded firmware. Click any project to discuss system architecture with the AI Coach!
           </p>
         </div>
       </div>

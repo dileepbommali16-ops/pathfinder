@@ -569,10 +569,91 @@ INDUSTRY_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
     }
 }
 
-# Unified 23 Projects Registry
+
+RAG_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
+    "PF-RAG-001": {
+        "ps_code": "PF-RAG-001",
+        "category": "Software",
+        "title": "Enterprise GraphRAG: Knowledge Graph-Augmented RAG with Community Summarization",
+        "org": "Enterprise Knowledge Intelligence Labs",
+        "branches": "CSE, AIML, Data Science",
+        "problem_statement": "Standard vector similarity RAG fails on global questions requiring multi-hop synthesis across 50,000+ technical documents. It retrieves disconnected snippets without understanding cross-document relationships.",
+        "stack_rationale": "• Python 3.11 + LlamaIndex: Orchestration and modular retrieval graph nodes.\n• Neo4j Graph DB: Property graph storing extracted domain entities and semantic relations.\n• Leiden Algorithm: Hierarchical graph community clustering producing macroscopic summary indices.\n• Qdrant Vector DB: Dense semantic vector retrieval for localized chunk matching.\n• Gemini 2.0 Flash: Structured triple extraction and final answer synthesis.",
+        "architecture": "Enterprise Document Corpus -> LLM Triple Extraction -> Neo4j Graph DB -> Leiden Community Clustering -> Dual Vector + Graph Traversal -> Gemini 2.0 Flash Synthesizer -> Cytoscape Graph Canvas",
+        "roadmap": "Phase 1: Ingest PDF corpus and extract entity-relation-entity triples via Gemini structured output; Phase 2: Ingest triples into Neo4j with source document provenance; Phase 3: Run Leiden community detection algorithm to partition graph into thematic clusters; Phase 4: Generate hierarchical community summaries stored with dense vector embeddings; Phase 5: Implement hybrid search (local vector similarity + global community traversal); Phase 6: Render interactive graph exploration interface.",
+        "implementation_details": "• Libraries: `neo4j`, `llama-index`, `qdrant-client`, `networkx`, `fastapi`.\n• Leiden Modularity: Discovers non-overlapping document clusters with high intra-cluster edge density.",
+        "pitfalls": "1. Naive triple extraction: Over-extracting common pronouns; must enforce strict typed entity ontologies.\n2. Graph traversal explosion: Unbounded BFS traversal causes latency spikes; enforce max 2-hop neighborhood bounds.",
+        "database_design": "• Neo4j Property Graph Schema:\n  - `(:Entity {name: string, type: string, description: string})`\n  - `(:Document {doc_id: string, path: string, checksum: string})`\n  - `(:Community {id: int, level: int, summary: string})`\n  - `(:Entity)-[:RELATION {verb: string, weight: float}]->(:Entity)`\n  - `(:Entity)-[:MENTIONED_IN]->(:Document)`",
+        "defense": "Interviewer will ask: 'Why GraphRAG over standard vector RAG?' Answer: 'Vector RAG retrieves top-k chunks based on semantic proximity, which works well for localized facts but completely fails on holistic queries like "What are the main systemic architecture risks across all documents?" GraphRAG builds hierarchical community summaries using the Leiden algorithm, allowing the LLM to traverse global themes and multi-hop relationships without retrieving thousands of raw text chunks.'"
+    },
+    "PF-RAG-002": {
+        "ps_code": "PF-RAG-002",
+        "category": "Software",
+        "title": "Agentic Multi-Document Financial & Regulatory RAG with Self-Correction & Reflection",
+        "org": "Financial Technology & Quantitative AI Labs",
+        "branches": "CSE, IT, AIML",
+        "problem_statement": "Financial analysts struggle with contradictory disclosures across 10-K, 10-Q, and annual audit reports where hallucinations lead to multi-million dollar compliance violations.",
+        "stack_rationale": "• Python 3.11 + LangGraph: Cyclic agent state graph supporting reflection and self-correction.\n• ChromaDB / Qdrant: Dense vector storage with Reciprocal Rank Fusion (RRF).\n• Cohere Rerank: Cross-encoder re-ranking top-50 candidates down to top-5 high-signal chunks.\n• FastEmbed / BGE-Large: High-dimensional semantic embeddings capturing fiscal terminology.",
+        "architecture": "Regulatory PDF Corpus -> Tabular Layout Parser -> Dense & BM25 Hybrid Retrieval -> Cohere Cross-Encoder Reranker -> LangGraph Self-Correction Agent -> Markdown Report with Page Citations",
+        "roadmap": "Phase 1: Parse complex financial PDFs preserving table row-column hierarchies; Phase 2: Implement hybrid dense + BM25 keyword retrieval; Phase 3: Apply cross-encoder reranking to isolate highest precision chunks; Phase 4: Construct LangGraph state graph with Hallucination Grader and Query Re-writer nodes; Phase 5: Implement citation verification verifying generated metrics against source balance sheets.",
+        "implementation_details": "• Core Frameworks: `langgraph`, `langchain`, `cohere`, `fastapi`, `chromadb`.\n• Evaluation: RAGAS automated evaluation metric measuring Context Precision, Faithfulness, and Answer Relevance.",
+        "pitfalls": "1. Flattening financial tables to markdown: Confuses row-column relationships; use specialized layout-aware table parsers.\n2. Endless re-write loops: If retrieval fails repeatedly, LangGraph must have a max-retry limit (e.g. 3 attempts) before fallback.",
+        "database_design": "• Vector Collection `financial_filings` with metadata partitioning:\n  - `company_ticker` (keyword), `fiscal_year` (int), `filing_type` (10-K/10-Q), `section` (MD&A/Notes), `page_number` (int)",
+        "defense": "Interviewer will ask: 'How does your Agentic RAG handle hallucinations in critical financial calculations?' Answer: 'We implement a dual-gate validation loop in LangGraph: First, an automated Hallucination Grader cross-references every numerical claim in the generated answer against the source chunk. If ungrounded metrics are detected, the agent routes back to the Query Re-writer node to refine the retrieval focus before presenting the output.'"
+    },
+    "PF-RAG-003": {
+        "ps_code": "PF-RAG-003",
+        "category": "Software",
+        "title": "Sovereign Air-Gapped Local RAG Engine with Quantized Open-Source LLMs",
+        "org": "National Cyber Security & Sovereign Systems Lab",
+        "branches": "Cybersecurity, CSE, Systems",
+        "problem_statement": "Defense, healthcare, and banking institutions cannot send proprietary data to public cloud LLM APIs due to strict data sovereignty and GDPR/HIPAA regulations.",
+        "stack_rationale": "• Python 3.11 + vLLM / Ollama: High-throughput local model serving with PagedAttention.\n• LLaMA 3.2 (3B/8B): 4-bit AWQ quantized open-weight reasoning model running on single workstation GPUs.\n• BGE-M3: Dense 1024-dim local multilingual embeddings with zero cloud dependencies.\n• Qdrant On-Premise: Dockerized high-performance vector database with encrypted volume persistence.",
+        "architecture": "Air-Gapped Client -> Local NGINX Reverse Proxy -> BGE-M3 Local Embeddings -> Qdrant On-Premise Vector DB -> vLLM LLaMA 3.2 4-bit Engine -> Encrypted Audit Log",
+        "roadmap": "Phase 1: Set up air-gapped Linux workstation with zero internet routing; Phase 2: Deploy Qdrant vector database via local Docker container; Phase 3: Spin up vLLM server serving quantized LLaMA 3.2 4-bit AWQ; Phase 4: Implement local document ingestion pipeline using BGE-M3 embeddings; Phase 5: Build local streaming chat UI with role-based access control.",
+        "implementation_details": "• Quantization: AWQ 4-bit cuts VRAM usage from 16GB to 5.4GB with < 1% perplexity penalty.\n• PagedAttention: Eliminates memory fragmentation, supporting 20+ concurrent local streams.",
+        "pitfalls": "1. Thermal throttling on local GPUs: Monitor GPU temperatures and configure dynamic batch limits.\n2. Out-of-memory during long context retrieval: Set strict sliding context windows (e.g. 4096 tokens).",
+        "database_design": "• Qdrant Vector Collection `sovereign_docs` with AES-256 encrypted host volume storage.",
+        "defense": "Interviewer will ask: 'How do you guarantee zero data leakage in your sovereign RAG architecture?' Answer: 'The entire stack is deployed inside a private, physically air-gapped Docker network with iptables rules explicitly dropping all outbound packets to external IP ranges. All embeddings, vector indexing, and LLM inference execute on local GPU hardware with encrypted volume storage.'"
+    },
+    "PF-RAG-004": {
+        "ps_code": "PF-RAG-004",
+        "category": "Software",
+        "title": "Multimodal Vision-RAG for Complex Technical Schematics, Blueprints & Circuit Diagrams",
+        "org": "Industrial AI & Autonomous Engineering Research",
+        "branches": "CSE, ECE, Robotics",
+        "problem_statement": "Traditional text-based OCR destroys electrical schematics, mechanical CAD layouts, and architectural floorplans, turning rich 2D spatial relationships into gibberish.",
+        "stack_rationale": "• Python 3.11 + ColPali: Late-interaction Vision Transformer embedding raw page patches directly into multi-vector representations.\n• PaliGemma: Vision-Language Model grounding spatial bounding boxes on technical schematics.\n• Qdrant Multi-Vector Store: Specialized index searching token-to-patch late-interaction MaxSim similarity.\n• PyMuPDF: High-fidelity 300 DPI PDF raster page rendering.",
+        "architecture": "Engineering PDF Blueprints -> High-Res Page Renderer -> ColPali Vision Transformer -> Qdrant Multi-Vector Index -> Late Interaction MaxSim Scorer -> Visual Grounding Bounding Box Canvas",
+        "roadmap": "Phase 1: Convert blueprint PDFs into high-resolution 300 DPI PNG raster pages; Phase 2: Pass page images through ColPali vision backbone generating 1024-dim patch embeddings; Phase 3: Ingest multi-vectors into Qdrant multi-vector collection; Phase 4: Implement MaxSim late-interaction scoring matching query text tokens to visual patches; Phase 5: Render retrieved blueprint with interactive canvas bounding box overlays.",
+        "implementation_details": "• ColPali Innovation: Bypasses OCR entirely; reasons about arrows, dimension callouts, and circuit component symbols visually.\n• MaxSim Operator: Computes sum of maximum cosine similarities between query tokens and document image patches.",
+        "pitfalls": "1. Multi-vector storage footprint: 1,024 patch vectors per page; use binary or scalar quantization in Qdrant to reduce RAM by 75%.\n2. Low DPI rendering: 72 DPI blurs resistor values; always render at minimum 300 DPI for schematics.",
+        "database_design": "• Qdrant Multi-Vector Collection `engineering_blueprints` with `multivector: true` and scalar quantization.",
+        "defense": "Interviewer will ask: 'Why use ColPali vision RAG instead of OCR + traditional embeddings?' Answer: 'OCR is fundamentally 1D text extraction; it cannot capture whether a capacitor is connected in series or parallel, or which room a load-bearing wall supports. ColPali represents the entire page image as a matrix of visual patch embeddings, enabling the model to retrieve schematics based on spatial layout and electrical connectivity without losing visual context.'"
+    },
+    "PF-RAG-005": {
+        "ps_code": "PF-RAG-005",
+        "category": "Software",
+        "title": "Cross-Lingual Vernacular RAG Pipeline for Public Governance & Healthcare Documents",
+        "org": "Public Digital Infrastructure & Language AI Lab",
+        "branches": "CSE, IT, AIML",
+        "problem_statement": "Rural citizens cannot access complex English government gazettes, health schemes, and land records in their mother tongue (Telugu, Hindi), creating a massive digital divide.",
+        "stack_rationale": "• Python 3.11 + IndicBERT: Multilingual transformer mapping Indian language tokens into shared semantic embedding space.\n• AI4Bharat IndicTrans2: State-of-the-art neural translation fine-tuned on Indic governance domains.\n• FAISS Vector Store: High-speed GPU/CPU similarity indexing.\n• Web Speech API: Voice recognition and synthesis for regional vernacular languages (te-IN, hi-IN).",
+        "architecture": "English Gazette Corpus -> IndicBERT Multilingual Chunker -> FAISS Vector Store -> Spoken Telugu/Hindi Query -> Web Speech API -> Cross-Lingual Semantic Retrieval -> Spoken Vernacular Response",
+        "roadmap": "Phase 1: Ingest English government policy gazettes and chunk by legal clauses; Phase 2: Generate cross-lingual embeddings using IndicBERT; Phase 3: Ingest into FAISS vector index; Phase 4: Capture spoken Telugu / Hindi queries via Web Speech API; Phase 5: Retrieve relevant English policy clauses directly using cross-lingual semantic alignment; Phase 6: Synthesize regional spoken audio reply via IndicTrans2 and TTS.",
+        "implementation_details": "• Shared Semantic Space: Query "రైతు రుణమాఫీ పథకం అర్హతలు ఏమిటి?" maps directly to English clause "Farmer Loan Waiver Scheme Eligibility Criteria".\n• Real-time Voice: Sub-500ms pipeline latency from audio query to spoken regional playback.",
+        "pitfalls": "1. Literal word-by-word translation: Distorts administrative legal meaning; use domain-fine-tuned IndicTrans2.\n2. Audio clipping on non-standard accents: Use dynamic gain normalization and noise threshold filters.",
+        "database_design": "• FAISS Index with metadata store linking English policy sections with translated Telugu/Hindi audio transcripts.",
+        "defense": "Interviewer will ask: 'How does your cross-lingual RAG retrieve English documents when the user asks in Telugu?' Answer: 'We utilize multilingual sentence encoders like IndicBERT that map semantically identical sentences across Telugu, Hindi, and English into the exact same vector neighborhood. Therefore, cosine similarity between a Telugu query vector and an English policy chunk vector is naturally high, allowing zero-shot cross-lingual retrieval without slow translation preprocessing.'"
+    }
+}
+
+# Unified 28 Projects Registry (Flagship + Industry + Real-World RAG)
+
 ALL_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
     **FLAGSHIP_PROJECTS_DIRECTORY,
-    **INDUSTRY_PROJECTS_DIRECTORY
+    **INDUSTRY_PROJECTS_DIRECTORY,
+    **RAG_PROJECTS_DIRECTORY
 }
 
 
@@ -710,7 +791,18 @@ def find_project_blueprint(
         ("solar-powered drying", "PF-IND-022"),
         ("mine subsidence", "PF-IND-025"),
         ("narcotics", "PF-IND-026"),
-        ("explosives", "PF-IND-026")
+        ("explosives", "PF-IND-026"),
+        # Real-World RAG Projects 5
+        ("graphrag", "PF-RAG-001"),
+        ("leiden", "PF-RAG-001"),
+        ("agentic rag", "PF-RAG-002"),
+        ("financial rag", "PF-RAG-002"),
+        ("sovereign rag", "PF-RAG-003"),
+        ("air-gapped rag", "PF-RAG-003"),
+        ("colpali", "PF-RAG-004"),
+        ("multimodal rag", "PF-RAG-004"),
+        ("indic rag", "PF-RAG-005"),
+        ("multilingual rag", "PF-RAG-005")
     ]
 
     for kw, target_id in keyword_map:

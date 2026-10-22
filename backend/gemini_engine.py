@@ -289,7 +289,17 @@ def get_detailed_project_context(
             ("solar spinning", "pf-ind-020-solar-hybrid-spinning"),
             ("drying", "pf-ind-022-solar-drying-vacuum-pack"),
             ("mine subsidence", "pf-ind-025-mine-subsidence-warning"),
-            ("narcotics", "pf-ind-026-narcotics-explosives-sniffer")
+            ("narcotics", "pf-ind-026-narcotics-explosives-sniffer"),
+            ("graphrag", "pf-rag-graphrag-pipeline"),
+            ("leiden", "pf-rag-graphrag-pipeline"),
+            ("agentic rag", "pf-rag-agentic-multidoc"),
+            ("financial rag", "pf-rag-agentic-multidoc"),
+            ("sovereign rag", "pf-rag-local-sovereign"),
+            ("air-gapped rag", "pf-rag-local-sovereign"),
+            ("colpali", "pf-rag-multimodal-colpali"),
+            ("multimodal rag", "pf-rag-multimodal-colpali"),
+            ("indic rag", "pf-rag-multilingual-vernacular"),
+            ("multilingual rag", "pf-rag-multilingual-vernacular")
         ]
         for kw, target_id in keywords:
             if kw in clean_q:
