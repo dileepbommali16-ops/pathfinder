@@ -16,9 +16,9 @@ class Settings:
     """Central configuration for Pathfinder 2.0 Backend."""
 
     def __init__(self):
-        # Base paths
-        self.root_dir: Path = Path(__file__).resolve().parent.parent
-        self.backend_dir: Path = Path(__file__).resolve().parent
+        # Base paths: settings.py is in backend/config/
+        self.backend_dir: Path = Path(__file__).resolve().parent.parent
+        self.root_dir: Path = self.backend_dir.parent
 
         # Load environment files
         load_dotenv(self.root_dir / ".env")

@@ -1,24 +1,44 @@
 """
-Backend Models Package (Photo 4 Architecture)
-Defines the structure and validation of database collections, tables, and API schemas.
+Backend Models Package
+Defines database models, Pydantic schemas, and API contracts.
 """
 
-from backend.models import (
+from backend.models.schemas import (
     StudentProfile,
+    ReadinessAuditResult,
     PredictionResult,
+    Roadmap,
+    CohortInsight,
+    ResumeFeedback,
     ChatMessage,
+    ChatRequest,
+    CohortFilters,
+    PaginatedCohortResponse,
     UserSession,
-    ProjectBlueprint,
+    LoginRequest,
+    WebhookPayload,
+    LoginResponse,
+    OAuthUrlsResponse,
     SkillGapItem,
-    PlacementInsight
+    SkillGapAnalysis,
 )
 
 __all__ = [
     "StudentProfile",
+    "ReadinessAuditResult",
     "PredictionResult",
+    "Roadmap",
+    "CohortInsight",
+    "ResumeFeedback",
     "ChatMessage",
+    "ChatRequest",
+    "CohortFilters",
+    "PaginatedCohortResponse",
     "UserSession",
-    "ProjectBlueprint",
+    "LoginRequest",
+    "WebhookPayload",
+    "LoginResponse",
+    "OAuthUrlsResponse",
     "SkillGapItem",
-    "PlacementInsight"
+    "SkillGapAnalysis",
 ]
