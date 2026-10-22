@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.abspath('.'))
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-from backend.gemini_engine import hackathon_career_agent
+from backend.gemini_engine import career_agent
 from backend.models import ChatMessage, StudentProfile
 
 profile = StudentProfile(
@@ -22,14 +22,14 @@ def test_python_gemini_engine():
     # 1. GREETING REPETITION TEST
     print("\n--- Test 1: 'hi' variation on repetition ---")
     h = []
-    r1 = hackathon_career_agent("hi", h, profile)
+    r1 = career_agent("hi", h, profile)
     print("User 1: 'hi'")
     print("Bot 1:", r1.split('\n')[0])
     assert "Welcome to Pathfinder" in r1, f"First greeting should be welcome, got: {r1}"
     
     h.append(ChatMessage(role="user", content="hi"))
     h.append(ChatMessage(role="assistant", content=r1))
-    r2 = hackathon_career_agent("hi", h, profile)
+    r2 = career_agent("hi", h, profile)
     print("User 2: 'hi'")
     print("Bot 2:", r2)
     assert "Welcome to Pathfinder" not in r2, f"Second greeting must not repeat welcome: {r2}"
@@ -37,7 +37,7 @@ def test_python_gemini_engine():
     
     h.append(ChatMessage(role="user", content="hi"))
     h.append(ChatMessage(role="assistant", content=r2))
-    r3 = hackathon_career_agent("hi", h, profile)
+    r3 = career_agent("hi", h, profile)
     print("User 3: 'hi'")
     print("Bot 3:", r3)
     assert "Welcome to Pathfinder" not in r3, f"Third greeting must not repeat welcome: {r3}"
@@ -46,7 +46,7 @@ def test_python_gemini_engine():
 
     # 2. 'I love you' TEST
     print("\n--- Test 2: 'I love you' without jumping to career advice ---")
-    r_love = hackathon_career_agent("I love you", [], profile)
+    r_love = career_agent("I love you", [], profile)
     print("User: 'I love you'")
     print("Bot:", r_love)
     assert "love you too" in r_love.lower() or "💖" in r_love, "Must respond affectionately"
@@ -58,7 +58,7 @@ def test_python_gemini_engine():
     # 3. 'what do I do now?' CONTEXTUAL & NO REPEATS TEST
     print("\n--- Test 3: 'what do I do now?' does not repeat earlier steps ---")
     h_steps = []
-    r_step1 = hackathon_career_agent("what do I do now?", h_steps, profile)
+    r_step1 = career_agent("what do I do now?", h_steps, profile)
     print("User 1: 'what do I do now?'")
     print("Bot 1 snippet:\n", r_step1[:180], "...\n")
     assert "prioritized next steps" in r_step1.lower(), "First next-steps should give profile priorities"
@@ -67,7 +67,7 @@ def test_python_gemini_engine():
     h_steps.append(ChatMessage(role="user", content="what do I do now?"))
     h_steps.append(ChatMessage(role="assistant", content=r_step1))
     
-    r_step2 = hackathon_career_agent("what do I do now?", h_steps, profile)
+    r_step2 = career_agent("what do I do now?", h_steps, profile)
     print("User 2: 'what do I do now?'")
     print("Bot 2 snippet:\n", r_step2[:180], "...\n")
     assert r_step2 != r_step1, "Must NOT repeat earlier steps word-for-word"
@@ -76,7 +76,7 @@ def test_python_gemini_engine():
     h_steps.append(ChatMessage(role="user", content="what do I do now?"))
     h_steps.append(ChatMessage(role="assistant", content=r_step2))
 
-    r_step3 = hackathon_career_agent("what do I do now?", h_steps, profile)
+    r_step3 = career_agent("what do I do now?", h_steps, profile)
     print("User 3: 'what do I do now?'")
     print("Bot 3 snippet:\n", r_step3[:180], "...\n")
     assert r_step3 != r_step2, "Must advance to interactive options on repeated query"

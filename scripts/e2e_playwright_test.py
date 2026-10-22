@@ -1,6 +1,6 @@
 """
 Pathfinder Comprehensive E2E Playwright Automation Suite
-Validates the entire Hackathon Candidate Journey:
+Validates the entire Production Candidate Journey:
 1. Landing Page & Authentication (Sign up / New Student vs Returning Demo)
 2. Onboarding Guard & Step-Wise Wizard (5 Steps, validation, live formula conversion,
    searchable skill chips, Back/Next, mid-way refresh auto-save restoration)

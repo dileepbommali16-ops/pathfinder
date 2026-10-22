@@ -150,14 +150,14 @@
     "branch": "ECE / EEE / IoT"
   },
   {
-    "id": "sih-26146-bitcoin-forensics",
-    "psCode": "SIH26146",
+    "id": "pf-ind-146-bitcoin-forensics",
+    "psCode": "PF-IND-146",
     "roleId": "sde",
     "category": "software",
     "branch": "CSE / IT / Cybersecurity",
     "title": "AI-Powered Monitoring & Analysis of Bitcoin Transaction Traffic",
     "domain": "Blockchain & Cybersecurity",
-    "organization": "National Technical Research Organisation (NTRO)",
+    "organization": "National Cyber Intelligence & FinTech Consortium",
     "difficulty": "Advanced",
     "techStack": [
       "Python",
@@ -178,14 +178,14 @@
     "resumeBullet": "Engineered an AI Bitcoin forensics platform indexing 150k+ UTXO graph edges in Neo4j, detecting anonymized mixer transactions with 96.2% precision and sub-second trace latency."
   },
   {
-    "id": "sih-26147-rf-signal-analysis",
-    "psCode": "SIH26147",
+    "id": "pf-ind-147-rf-signal-analysis",
+    "psCode": "PF-IND-147",
     "roleId": "ai-engineer",
     "category": "software",
     "branch": "ECE / CSE / Aerospace",
     "title": "Automated Model for Analysis of .IQ & .wav Radio Files with Signal Parameter Extraction",
     "domain": "Space Technology & Signal Processing",
-    "organization": "National Technical Research Organisation (NTRO)",
+    "organization": "Advanced Aerospace RF & Telemetry Labs",
     "difficulty": "Advanced",
     "techStack": [
       "Python",
@@ -206,14 +206,14 @@
     "resumeBullet": "Developed an automated RF signal classification engine parsing raw .IQ binary feeds, achieving 93.8% modulation classification accuracy under severe -6dB SNR channel noise."
   },
   {
-    "id": "sih-26153-network-attack-forecasting",
-    "psCode": "SIH26153",
+    "id": "pf-ind-153-network-attack-forecasting",
+    "psCode": "PF-IND-153",
     "roleId": "sde",
     "category": "software",
     "branch": "CSE / IT / Cybersecurity",
     "title": "AI-Based Network Attack Forecasting & Threat Detection from Raw Network Traffic Data",
     "domain": "Cybersecurity & Systems",
-    "organization": "National Technical Research Organisation (NTRO)",
+    "organization": "Enterprise Cloud Defense & Threat Intelligence Labs",
     "difficulty": "Advanced",
     "techStack": [
       "Python",
@@ -233,14 +233,14 @@
     "resumeBullet": "Architected an AI network intrusion forecasting pipeline analyzing 25k packets/sec via Zeek and Kafka, predicting multi-stage server attacks 8.4 minutes before critical asset compromise."
   },
   {
-    "id": "sih-26158-drone-3d-model-generator",
-    "psCode": "SIH26158",
+    "id": "pf-ind-158-drone-3d-model-generator",
+    "psCode": "PF-IND-158",
     "roleId": "ai-engineer",
     "category": "software",
     "branch": "CSE / ECE / Robotics",
     "title": "Single-Pass Drone Video to Accurate 3D Model Generation System",
     "domain": "Robotics & Computer Vision",
-    "organization": "National Technical Research Organisation (NTRO)",
+    "organization": "Autonomous Aerial Robotics & Spatial Vision Center",
     "difficulty": "Advanced",
     "techStack": [
       "Python",
@@ -261,14 +261,14 @@
     "resumeBullet": "Engineered an aerial 3D reconstruction system translating single-pass drone videos into dense textured 3D terrain meshes in under 12 minutes using NeRF and Gaussian Splatting."
   },
   {
-    "id": "sih-26162-nasa-fire-detection",
-    "psCode": "SIH26162",
+    "id": "pf-ind-162-nasa-fire-detection",
+    "psCode": "PF-IND-162",
     "roleId": "data-engineer",
     "category": "software",
     "branch": "CSE / Data Science / Civil",
     "title": "AI-Based Detection & Classification of Industrial Fires Using NASA FIRMS Satellite Data",
     "domain": "Disaster Management & Geospatial AI",
-    "organization": "National Technical Research Organisation (NTRO)",
+    "organization": "Global Environmental Geospatial Intelligence Lab",
     "difficulty": "Advanced",
     "techStack": [
       "Python",
@@ -289,14 +289,14 @@
     "resumeBullet": "Built an industrial disaster surveillance system monitoring 45,000 sq km from NASA FIRMS satellite telemetry, isolating industrial blazes with 97.4% precision in <3 minutes of satellite pass."
   },
   {
-    "id": "sih-26167-satquery-ai-assistant",
-    "psCode": "SIH26167",
+    "id": "pf-ind-167-satquery-ai-assistant",
+    "psCode": "PF-IND-167",
     "roleId": "ai-engineer",
     "category": "software",
     "branch": "CSE / AIML / ECE",
     "title": "SatQuery AI: Interactive Vision-Language Assistant for Remote Sensing Satellite Imagery",
     "domain": "Space Technology & Multimodal AI",
-    "organization": "Indian Space Research Organisation (ISRO)",
+    "organization": "Earth Observation & Satellite Intelligence Labs",
     "difficulty": "Advanced",
     "techStack": [
       "Python",
@@ -314,17 +314,17 @@
       "Interactive bounding box grounding and temporal change detection overlays"
     ],
     "architectureSummary": "Satellite GeoTIFF Tile -> Multispectral Normalizer -> PaliGemma Multimodal Model -> Qdrant Spatial Embeddings -> FastAPI Conversational Gateway -> React Leaflet GIS Viewer.",
-    "resumeBullet": "Created a multimodal vision-language assistant for ISRO satellite rasters enabling conversational spatial queries with 91.2% segmentation IoU and sub-4s response latency."
+    "resumeBullet": "Created a multimodal vision-language assistant for satellite rasters enabling conversational spatial queries with 91.2% segmentation IoU and sub-4s response latency."
   },
   {
-    "id": "sih-26168-dead-reckoning-navigation",
-    "psCode": "SIH26168",
+    "id": "pf-ind-168-dead-reckoning-navigation",
+    "psCode": "PF-IND-168",
     "roleId": "sde",
     "category": "software",
     "branch": "ECE / EEE / Robotics / CSE",
     "title": "AI-ML Based Intelligent Dead Reckoning System for Seamless GNSS-Denied Navigation",
     "domain": "Smart Vehicles & Sensor Fusion",
-    "organization": "Indian Space Research Organisation (ISRO)",
+    "organization": "Advanced Avionics & Inertial Navigation Research",
     "difficulty": "Advanced",
     "techStack": [
       "C++",
@@ -345,14 +345,14 @@
     "resumeBullet": "Engineered an intelligent dead-reckoning navigation system suppressing IMU drift to <1.1% over 5km in GNSS-denied tunnels using PyTorch neural networks and Extended Kalman Filters."
   },
   {
-    "id": "sih-26117-sovereign-ai-workbench",
-    "psCode": "SIH26117",
+    "id": "pf-ind-117-sovereign-ai-workbench",
+    "psCode": "PF-IND-117",
     "roleId": "ai-engineer",
     "category": "software",
     "branch": "CSE / IT / AIML",
     "title": "Sovereign On-Premise Agentic AI Workbench Using Open-Weight Multimodal LLMs",
     "domain": "Smart Automation & Industrial AI",
-    "organization": "Mangalore Refinery and Petrochemicals Limited (MRPL)",
+    "organization": "Industrial Sovereign AI Systems Consortium",
     "difficulty": "Advanced",
     "techStack": [
       "Python",
@@ -374,14 +374,14 @@
     "resumeBullet": "Deployed a sovereign on-premise agentic AI platform running 8B quantized multimodal LLMs on local GPUs with zero cloud leakage, speeding up industrial incident analysis by 60%."
   },
   {
-    "id": "sih-26123-edge-ai-fleet-coordination",
-    "psCode": "SIH26123",
+    "id": "pf-ind-123-edge-ai-fleet-coordination",
+    "psCode": "PF-IND-123",
     "roleId": "sde",
     "category": "software",
     "branch": "CSE / ECE / Robotics",
     "title": "Edge-AI Distributed Fleet Coordination & Collision Avoidance for Autonomous Mobile Robots",
     "domain": "Smart Automation & Robotics",
-    "organization": "Bharat Electronics Limited (BEL)",
+    "organization": "Connected Fleet Logistics & Robotics Research",
     "difficulty": "Advanced",
     "techStack": [
       "Python",
@@ -402,14 +402,14 @@
     "resumeBullet": "Architected a distributed fleet coordination engine for 25+ autonomous mobile robots in ROS2 with sub-10ms collision negotiation and zero operational deadlocks."
   },
   {
-    "id": "sih-26127-citywide-anpr-tracking",
-    "psCode": "SIH26127",
+    "id": "pf-ind-127-citywide-anpr-tracking",
+    "psCode": "PF-IND-127",
     "roleId": "ai-engineer",
     "category": "software",
     "branch": "CSE / IT / ECE",
     "title": "City-Wide AI Engine for Multi-Camera ANPR Trajectory Tracking & Urban Traffic Analytics",
     "domain": "Smart Automation & Computer Vision",
-    "organization": "Bharat Electronics Limited (BEL)",
+    "organization": "Intelligent Urban Mobility & Smart City Consortium",
     "difficulty": "Advanced",
     "techStack": [
       "Python",
@@ -431,14 +431,14 @@
     "resumeBullet": "Built a city-scale traffic intelligence engine processing 16 concurrent 1080p RTSP camera streams at 28 FPS with 98.1% license plate extraction accuracy using YOLOv10 and DeepSORT."
   },
   {
-    "id": "sih-26112-amr-warehouse-robot",
-    "psCode": "SIH26112",
+    "id": "pf-ind-112-amr-warehouse-robot",
+    "psCode": "PF-IND-112",
     "roleId": "embedded-iot",
     "category": "hardware",
     "branch": "Robotics / Mechanical / ECE / EEE",
     "title": "Modular Autonomous Mobile Robot (AMR) Platform for Smart Warehouse Automation",
     "domain": "Robotics & Hardware Automation",
-    "organization": "Autodesk",
+    "organization": "Industrial Robotics & Warehouse Automation Labs",
     "difficulty": "Advanced",
     "techStack": [
       "SolidWorks CAD",
@@ -459,14 +459,14 @@
     "resumeBullet": "Fabricated a 50kg-payload autonomous mobile robot chassis from scratch using SolidWorks, STM32 PID controllers, and 2D LiDAR SLAM, achieving sub-2cm localization accuracy in warehouse aisles."
   },
   {
-    "id": "sih-26113-robotic-exoskeleton",
-    "psCode": "SIH26113",
+    "id": "pf-ind-113-robotic-exoskeleton",
+    "psCode": "PF-IND-113",
     "roleId": "embedded-iot",
     "category": "hardware",
     "branch": "Biomedical / Mechanical / ECE / Mechatronics",
     "title": "Wearable Robotic Exoskeleton / Human Augmentation Mobility Assistive System",
     "domain": "MedTech & Rehabilitation Robotics",
-    "organization": "Autodesk",
+    "organization": "Biomedical Ergonomics & Rehabilitation Robotics Lab",
     "difficulty": "Advanced",
     "techStack": [
       "Carbon Fiber / AL-6061",
@@ -487,14 +487,14 @@
     "resumeBullet": "Designed an active robotic lower-limb assistive exoskeleton utilizing surface EMG sensors and harmonic BLDC actuators, delivering 30 Nm walking assistance with 16ms intention detection latency."
   },
   {
-    "id": "sih-26118-h2s-dosimeter-wristband",
-    "psCode": "SIH26118",
+    "id": "pf-ind-118-h2s-dosimeter-wristband",
+    "psCode": "PF-IND-118",
     "roleId": "embedded-iot",
     "category": "hardware",
     "branch": "Chemical / ECE / Instrumentation",
     "title": "Passive Colorimetric H2S Exposure-Dosimeter Wristband with Edge-AI Optical Reading",
     "domain": "Smart Automation & Industrial Safety",
-    "organization": "Mangalore Refinery and Petrochemicals Limited (MRPL)",
+    "organization": "Industrial Occupational Safety & Gas Telemetry",
     "difficulty": "Advanced",
     "techStack": [
       "Lead Acetate Reagent Strips",
@@ -514,14 +514,14 @@
     "resumeBullet": "Engineered an intrinsically safe H2S dosimeter wristband combining colorimetric reactive membranes with an ESP32-S3 optical chromaticity engine, measuring toxic exposure from 1-100 ppm with \u00b14% accuracy."
   },
   {
-    "id": "sih-26020-solar-khadi-spinning",
-    "psCode": "SIH26020",
+    "id": "pf-ind-020-solar-hybrid-spinning",
+    "psCode": "PF-IND-020",
     "roleId": "embedded-iot",
     "category": "hardware",
     "branch": "Mechanical / EEE / Production / Rural Tech",
-    "title": "Innovative Solar Hand-Spinning Equipment for Khadi Artisan Productivity Enhancement",
+    "title": "High-Efficiency Solar-Hybrid Multi-Spindle Precision Yarn Production System",
     "domain": "Agriculture & Rural Micro-Enterprise",
-    "organization": "Ministry of MSME",
+    "organization": "Renewable Energy Precision Machinery Lab",
     "difficulty": "Intermediate",
     "techStack": [
       "SolidWorks",
@@ -531,7 +531,7 @@
       "PWM Speed Controller",
       "OLED RPM"
     ],
-    "overview": "Solar-electric motorized hybrid multi-spindle yarn spinning machine designed to eliminate physical musculoskeletal strain and triple daily wage income for rural hand-spinning artisans.",
+    "overview": "Solar-electric motorized hybrid multi-spindle yarn spinning machine designed to eliminate physical musculoskeletal strain and triple daily wage income for artisan weavers.",
     "features": [
       "Low-cost rigid steel tubular frame with precision sealed bearings to minimize friction losses",
       "100W monocrystalline rooftop solar panel with MPPT charging a 12V 20Ah lithium battery",
@@ -539,17 +539,17 @@
       "Dual-drive hybrid mechanism allowing manual foot pedal operation during monsoon / grid outages"
     ],
     "architectureSummary": "100W Solar PV Module -> MPPT Charge Controller -> 12V LiFePO4 Battery -> Microcontroller PWM Driver -> High-Torque BLDC Motor -> Spindle Pulley Train -> OLED Telemetry.",
-    "resumeBullet": "Developed a solar-hybrid multi-spindle Khadi spinning machine increasing artisan daily yarn productivity by 280% with zero muscular fatigue and a continuous 8-hour solar battery runtime."
+    "resumeBullet": "Developed a solar-hybrid multi-spindle spinning machine increasing artisan daily yarn productivity by 280% with zero muscular fatigue and a continuous 8-hour solar battery runtime."
   },
   {
-    "id": "sih-26022-solar-drying-vacuum-pack",
-    "psCode": "SIH26022",
+    "id": "pf-ind-022-solar-drying-vacuum-pack",
+    "psCode": "PF-IND-022",
     "roleId": "embedded-iot",
     "category": "hardware",
     "branch": "Mechanical / EEE / AgriTech / Mechatronics",
     "title": "Smart Solar-Powered Drying & Compact Vacuum Packaging Automation System",
     "domain": "Agriculture & Rural FoodTech",
-    "organization": "Ministry of MSME",
+    "organization": "Clean Energy AgriTech & Cold-Chain Systems",
     "difficulty": "Advanced",
     "techStack": [
       "Solar Thermal Air Collector",
@@ -569,14 +569,14 @@
     "resumeBullet": "Designed an off-grid solar thermal drying and automated vacuum packaging machine for rural artisans, reducing product drying time by 82% while maintaining optimal 7% moisture equilibrium."
   },
   {
-    "id": "sih-26025-mine-subsidence-warning",
-    "psCode": "SIH26025",
+    "id": "pf-ind-025-mine-subsidence-warning",
+    "psCode": "PF-IND-025",
     "roleId": "embedded-iot",
     "category": "hardware",
     "branch": "Mining / Civil / ECE / EEE / IoT",
     "title": "AI-Enabled Low-Cost Real-Time Mine Subsidence Monitoring & Early Warning System",
     "domain": "Smart Automation & Geotechnical Safety",
-    "organization": "Ministry of Coal",
+    "organization": "Geotechnical Subterranean Hazards & Safety Labs",
     "difficulty": "Advanced",
     "techStack": [
       "Dual-Axis MEMS Tilt Sensor",
@@ -597,14 +597,14 @@
     "resumeBullet": "Built a low-cost LoRa geotechnical sensor mesh for underground coal mine monitoring, detecting surface tilt variations down to 0.005\u00b0 and providing automated subsidence alerts 36 hours in advance."
   },
   {
-    "id": "sih-26026-narcotics-explosives-sniffer",
-    "psCode": "SIH26026",
+    "id": "pf-ind-026-narcotics-explosives-sniffer",
+    "psCode": "PF-IND-026",
     "roleId": "embedded-iot",
     "category": "hardware",
     "branch": "ECE / Robotics / Instrumentation / Chemical",
-    "title": "Mobile Quadruped Robot / Handheld Chemical Sensor Device for Real-Time Narcotics & Explosives Detection",
+    "title": "Mobile Quadruped Robot / Handheld Chemical Sensor Device for Real-Time Threat Detection",
     "domain": "Homeland Security & Defense Robotics",
-    "organization": "Ministry of Railways",
+    "organization": "Defense CBRN Sensing & Autonomous Security Systems",
     "difficulty": "Advanced",
     "techStack": [
       "MOS Gas Sensor Array",

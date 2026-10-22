@@ -267,28 +267,29 @@ def get_detailed_project_context(
             ("canary", "proj-devops-1"),
             ("industrial edge", "proj-embedded-1"),
             ("anomaly node", "proj-embedded-1"),
-            ("bitcoin", "sih-26146-bitcoin-forensics"),
-            ("crypto", "sih-26146-bitcoin-forensics"),
-            ("radio files", "sih-26147-rf-signal-analysis"),
-            (".iq", "sih-26147-rf-signal-analysis"),
-            ("network attack", "sih-26153-network-attack-forecasting"),
-            ("drone 3d", "sih-26158-drone-3d-model-generator"),
-            ("industrial fires", "sih-26162-nasa-fire-detection"),
-            ("firms", "sih-26162-nasa-fire-detection"),
-            ("satquery", "sih-26167-satquery-ai-assistant"),
-            ("dead reckoning", "sih-26168-dead-reckoning-navigation"),
-            ("gnss", "sih-26168-dead-reckoning-navigation"),
-            ("workbench", "sih-26117-sovereign-ai-workbench"),
-            ("fleet coordination", "sih-26123-edge-ai-fleet-coordination"),
-            ("anpr", "sih-26127-citywide-anpr-tracking"),
-            ("warehouse robot", "sih-26112-amr-warehouse-robot"),
-            ("exoskeleton", "sih-26113-robotic-exoskeleton"),
-            ("dosimeter", "sih-26118-h2s-dosimeter-wristband"),
-            ("h2s", "sih-26118-h2s-dosimeter-wristband"),
-            ("solar khadi", "sih-26020-solar-khadi-spinning"),
-            ("drying", "sih-26022-solar-drying-vacuum-pack"),
-            ("mine subsidence", "sih-26025-mine-subsidence-warning"),
-            ("narcotics", "sih-26026-narcotics-explosives-sniffer")
+            ("bitcoin", "pf-ind-146-bitcoin-forensics"),
+            ("crypto", "pf-ind-146-bitcoin-forensics"),
+            ("radio files", "pf-ind-147-rf-signal-analysis"),
+            (".iq", "pf-ind-147-rf-signal-analysis"),
+            ("network attack", "pf-ind-153-network-attack-forecasting"),
+            ("drone 3d", "pf-ind-158-drone-3d-model-generator"),
+            ("industrial fires", "pf-ind-162-nasa-fire-detection"),
+            ("firms", "pf-ind-162-nasa-fire-detection"),
+            ("satquery", "pf-ind-167-satquery-ai-assistant"),
+            ("dead reckoning", "pf-ind-168-dead-reckoning-navigation"),
+            ("gnss", "pf-ind-168-dead-reckoning-navigation"),
+            ("workbench", "pf-ind-117-sovereign-ai-workbench"),
+            ("fleet coordination", "pf-ind-123-edge-ai-fleet-coordination"),
+            ("anpr", "pf-ind-127-citywide-anpr-tracking"),
+            ("warehouse robot", "pf-ind-112-amr-warehouse-robot"),
+            ("exoskeleton", "pf-ind-113-robotic-exoskeleton"),
+            ("dosimeter", "pf-ind-118-h2s-dosimeter-wristband"),
+            ("h2s", "pf-ind-118-h2s-dosimeter-wristband"),
+            ("solar hybrid spinning", "pf-ind-020-solar-hybrid-spinning"),
+            ("solar spinning", "pf-ind-020-solar-hybrid-spinning"),
+            ("drying", "pf-ind-022-solar-drying-vacuum-pack"),
+            ("mine subsidence", "pf-ind-025-mine-subsidence-warning"),
+            ("narcotics", "pf-ind-026-narcotics-explosives-sniffer")
         ]
         for kw, target_id in keywords:
             if kw in clean_q:
@@ -1204,5 +1205,7 @@ def generate_structured_ai(prompt: str, schema: Type[BaseModel], pdf_bytes: Opti
     return local_structured_fallback(schema)
 
 
-# Backwards compatibility alias for older test scripts
+# Career mentor agent entrypoint
+career_agent = chat_with_mentor
 hackathon_career_agent = chat_with_mentor
+

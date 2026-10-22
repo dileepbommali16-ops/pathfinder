@@ -141,13 +141,13 @@ def init_database():
 
 
 def seed_demo_candidate_profile():
-    """Seeds pre-filled demo candidate profiles for live hackathon judge demonstrations."""
+    """Seeds pre-filled demo candidate profiles for live technical interview & recruiter demonstrations."""
     demo_profiles = [
         {
             "user_id": "usr_demo_judge",
             "username": "Demo Candidate",
             "email": "demo@pathfinder.ai",
-            "full_name": "Dileep Bommali (Judge Demo)",
+            "full_name": "Dileep Bommali (Recruiter Demo)",
             "college": "National Institute of Technology",
             "branch": "AIML",
             "course": "B.Tech",

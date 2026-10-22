@@ -75,7 +75,7 @@ def audit_all_endpoints():
 
     # Login
     t0 = time.perf_counter()
-    login_payload = {"username": "evaluator_judge", "email": "judge@hackathon.org"}
+    login_payload = {"username": "evaluator_recruiter", "email": "recruiter@enterprise.org"}
     r = client.post("/api/auth/login", json=login_payload)
     login_data = r.json()
     token = login_data.get("token", "")
@@ -89,8 +89,8 @@ def audit_all_endpoints():
 
     # 3. PROFILE CRUD (SSOT)
     sample_profile = {
-        "fullName": "Evaluator Judge",
-        "email": "judge@hackathon.org",
+        "fullName": "Evaluator Recruiter",
+        "email": "recruiter@enterprise.org",
         "branch": "CSE",
         "degree": "B.Tech",
         "cgpa": 8.8,

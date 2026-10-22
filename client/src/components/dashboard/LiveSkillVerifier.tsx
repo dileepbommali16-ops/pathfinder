@@ -143,7 +143,7 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
         accountAgeYears,
       });
     } catch (err: any) {
-      // Deterministic realistic fallback to ensure smooth hackathon demo
+      // Deterministic realistic fallback to ensure smooth production evaluation
       generateFallbackVerification(cleanUsername);
     } finally {
       setIsVerifying(false);

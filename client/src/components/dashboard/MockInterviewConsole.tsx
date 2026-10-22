@@ -269,7 +269,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     setIsRecording(false);
   };
 
-  // 1-Click Benchmark Auto-fill for live hackathon demo
+  // 1-Click Benchmark Auto-fill for live evaluation demo
   const handleFillBenchmark = () => {
     setUserAnswer(currentQ.benchmarkAnswer);
     setTimerActive(false);
@@ -482,7 +482,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               type="button"
               onClick={handleFillBenchmark}
               className="flex items-center gap-1.5 rounded-xl border border-[#f1f5f9]/40 bg-[#11131c] hover:bg-[#161926] px-3 py-2 text-xs font-semibold text-[#f8fafc] transition-colors shadow-sm cursor-pointer"
-              title="Fills a senior engineer answer for quick hackathon presentation"
+              title="Fills a senior engineer answer for quick interview evaluation"
             >
               <Sparkles className="h-3.5 w-3.5 text-[#f1f5f9]" />
               <span>Fill Benchmark Answer</span>

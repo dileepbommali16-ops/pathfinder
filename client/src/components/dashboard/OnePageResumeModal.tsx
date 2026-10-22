@@ -234,7 +234,7 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
                   Maintained strict <strong>zero active backlogs</strong> throughout academic semesters, qualifying for 100% of Tier-1 campus recruitment drives.
                 </li>
                 <li>
-                  Active participant in National Hackathons & Open Source engineering initiatives with verified GitHub contributions.
+                  Active participant in National Engineering Challenges & Open Source engineering initiatives with verified GitHub contributions.
                 </li>
               </ul>
             </div>

@@ -222,7 +222,7 @@ FLAGSHIP_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Core Libraries: `fastapi`, `uvicorn[standard]`, `redis-py` (asyncio), `asyncpg`, `pydantic v2`, `prometheus-client`.\n• Rate Limiting: Lua script executes atomic check-and-decrement on token bucket with 60 tokens/min burst tolerance.\n• Worker Resiliency: Worker reads with `XREADGROUP GROUP workers consumer_1 BLOCK 2000 COUNT 5 STREAMS jobs >`. Upon successful completion, emits `XACK` to remove task from PEL.",
         "pitfalls": "1. Forgetting to acknowledge tasks with `XACK`: If workers crash or omit `XACK`, tasks remain trapped in the Pending Entries List (PEL) and are endlessly redelivered upon restart.\n2. Unbounded Redis Stream memory growth: Always set `maxlen ~ 100000` on `XADD` to automatically prune processed tasks and avoid memory overflow.\n3. Synchronous database calls in async worker loops: Blocks the asyncio event loop; always use `asyncpg` or run blocking operations in `asyncio.to_thread`.",
         "database_design": "• PostgreSQL Table `jobs`:\n  - `id`: UUID PRIMARY KEY DEFAULT gen_random_uuid()\n  - `user_id`: VARCHAR(64) NOT NULL\n  - `job_type`: VARCHAR(50) NOT NULL (e.g. 'pdf_render', 'csv_export')\n  - `status`: VARCHAR(20) NOT NULL (ENUM: 'pending', 'processing', 'completed', 'failed')\n  - `payload`: JSONB NOT NULL\n  - `retry_count`: INT DEFAULT 0\n  - `max_retries`: INT DEFAULT 3\n  - `error_message`: TEXT NULL\n  - `created_at`: TIMESTAMPTZ DEFAULT NOW()\n  - `completed_at`: TIMESTAMPTZ NULL\n  - Index: `CREATE INDEX idx_jobs_status_created ON jobs (status, created_at DESC)`\n• Redis Keys:\n  - `stream:jobs`: Redis Stream storing serialized job payloads\n  - `ratelimit:{client_ip}`: Redis Hash tracking `{tokens, last_updated}` with 60s TTL\n  - `dlq:jobs`: Dead-letter stream storing jobs that exceeded max_retries",
-        "defense": "Judges will ask: 'Why Redis Streams instead of Celery or RabbitMQ?' Answer: 'Celery introduces heavy framework coupling and complex serialization. RabbitMQ requires a separate Erlang runtime and clustering overhead. Redis Streams provides native consumer groups with acknowledgment semantics at sub-millisecond latencies, and allows us to reuse our existing Redis instance for both atomic Token-Bucket rate limiting and task streaming, drastically reducing operational complexity.'"
+        "defense": "Interviewer will ask: 'Why Redis Streams instead of Celery or RabbitMQ?' Answer: 'Celery introduces heavy framework coupling and complex serialization. RabbitMQ requires a separate Erlang runtime and clustering overhead. Redis Streams provides native consumer groups with acknowledgment semantics at sub-millisecond latencies, and allows us to reuse our existing Redis instance for both atomic Token-Bucket rate limiting and task streaming, drastically reducing operational complexity.'"
     },
     "proj-fullstack-1": {
         "id": "proj-fullstack-1",
@@ -239,7 +239,7 @@ FLAGSHIP_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Core Libraries: `react@19`, `@monaco-editor/react`, `yjs`, `y-websocket`, `y-monaco`, `ws`, `ioredis`.\n• Conflict Resolution: Yjs assigns each character a unique Lamport timestamp and client ID, creating a deterministic CRDT tree that converges identically across all peers.\n• Awareness Protocol: Broadcasts cursor position `{anchor, head}`, user name, and cursor color without persisting cursor movements to document history.",
         "pitfalls": "1. Sending full document strings over WebSockets on every keystroke: Saturates network bandwidth within seconds; must emit binary delta updates via Yjs.\n2. Unhandled WebSocket disconnections: Clients must implement exponential backoff reconnection with state vector catchup.\n3. Memory leaks from stale client awareness states: Must listen to connection close and evict disconnected user cursors.",
         "database_design": "• SQLite / PostgreSQL Table `code_rooms`:\n  - `id`: VARCHAR(64) PRIMARY KEY\n  - `title`: VARCHAR(120) NOT NULL\n  - `language`: VARCHAR(32) DEFAULT 'python'\n  - `created_by`: VARCHAR(64) NOT NULL\n  - `last_snapshot`: BLOB NULL (Yjs binary state document)\n  - `created_at`: TIMESTAMPTZ DEFAULT NOW()\n  - `updated_at`: TIMESTAMPTZ DEFAULT NOW()\n• In-Memory Redis Keys:\n  - `room:{id}:clients`: Redis Set tracking connected socket IDs\n  - `channel:room:{id}`: Redis Pub/Sub channel multiplexing cross-pod updates",
-        "defense": "Judges will ask: 'How do you handle two developers typing on the exact same character position simultaneously?' Answer: 'We use Yjs CRDTs (Conflict-free Replicated Data Types). Each character inserted is assigned a unique Lamport timestamp and client ID, creating a deterministic tree structure. Both clients converge to identical text deterministically without central locks or merge conflicts.'"
+        "defense": "Interviewer will ask: 'How do you handle two developers typing on the exact same character position simultaneously?' Answer: 'We use Yjs CRDTs (Conflict-free Replicated Data Types). Each character inserted is assigned a unique Lamport timestamp and client ID, creating a deterministic tree structure. Both clients converge to identical text deterministically without central locks or merge conflicts.'"
     },
     "proj-ai-1": {
         "id": "proj-ai-1",
@@ -256,7 +256,7 @@ FLAGSHIP_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Core Libraries: `fastapi`, `pymupdf`, `google-genai`, `qdrant-client`, `rank_bm25`, `langgraph`, `pydantic`.\n• Chunking Strategy: Section-aware recursive splitter (512 tokens, 64 token overlap) retaining document parent-child hierarchical trees.\n• Hallucination Defense: The Critic Agent checks if every factual statement in the generated draft has a direct textual quotation in the retrieved passage; if not, triggers re-retrieval.",
         "pitfalls": "1. Fixed-character naive chunking: Splits tables and sentences in half, causing vector search to miss context. Always use structural semantic chunking.\n2. Pure vector search on domain acronyms: Dense embeddings frequently miss exact regulatory clause numbers (e.g. 'Section 404(b)'); hybrid search with BM25 keyword matching solves this.\n3. Failing to cache embeddings: Re-embedding 100-page PDFs on every query costs money and causes latency; always index once in Qdrant with persistent storage.",
         "database_design": "• Qdrant Collection `regulatory_chunks`:\n  - Vector Dimension: 768 (Cosine distance)\n  - Payload Schema: `{doc_id: str, chunk_id: str, page_number: int, section_title: str, text: str, bbox: [x0, y0, x1, y1]}`\n• SQLite Table `documents`:\n  - `id`: VARCHAR(64) PRIMARY KEY\n  - `filename`: VARCHAR(255) NOT NULL\n  - `page_count`: INT NOT NULL\n  - `file_hash`: VARCHAR(64) UNIQUE NOT NULL\n  - `status`: VARCHAR(20) DEFAULT 'indexed'\n  - `created_at`: TIMESTAMPTZ DEFAULT NOW()",
-        "defense": "Judges will ask: 'How do you guarantee the LLM isn\'t hallucinating answers about legal regulations?' Answer: 'We implement an autonomous Reflection Verification Agent. Before returning the answer, a critic LLM evaluates the generated response strictly against the retrieved source chunks. If a claim lacks exact coordinate backing in the source text, the critic rejects it and prompts the retrieval agent to re-query.'"
+        "defense": "Interviewer will ask: 'How do you guarantee the LLM isn\'t hallucinating answers about legal regulations?' Answer: 'We implement an autonomous Reflection Verification Agent. Before returning the answer, a critic LLM evaluates the generated response strictly against the retrieved source chunks. If a claim lacks exact coordinate backing in the source text, the critic rejects it and prompts the retrieval agent to re-query.'"
     },
     "proj-data-1": {
         "id": "proj-data-1",
@@ -273,7 +273,7 @@ FLAGSHIP_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Core Libraries: `kafka-python`, `duckdb`, `pyarrow`, `pandas`, `fastapi`, `streamlit`.\n• Windowing & Watermarking: 10-second watermarking tolerance buffer handling late-arriving network packets without corrupting candle intervals.\n• Vectorized Scanning: DuckDB uses SIMD-accelerated Parquet readers, reading only the requested price columns and skipping entire row groups using Parquet min/max statistics.",
         "pitfalls": "1. The 'Small Files Problem': Writing a separate Parquet file for every tick generates millions of tiny files, destroying query performance. Must buffer in memory and flush in 5-minute batches.\n2. Out-of-memory crashes on continuous streaming: Consumer loops must implement backpressure and avoid accumulating unbounded Python lists in RAM.\n3. Timezone discrepancies: Always normalize timestamps to UTC nanoseconds at the ingestion gateway before publishing to Kafka.",
         "database_design": "• Parquet Columnar Lakehouse Schema:\n  - `timestamp`: TIMESTAMP_NS (UTC)\n  - `symbol`: VARCHAR(16) (e.g. 'BTCUSDT', 'AAPL')\n  - `open`: DECIMAL(12, 4)\n  - `high`: DECIMAL(12, 4)\n  - `low`: DECIMAL(12, 4)\n  - `close`: DECIMAL(12, 4)\n  - `volume`: DECIMAL(18, 8)\n  - `trade_count`: INT\n• Partitioning Scheme: `/lake/ticks/year=YYYY/month=MM/day=DD/symbol=TICKER/data.parquet`\n• DuckDB Query View: `CREATE VIEW v_candlesticks AS SELECT * FROM read_parquet('/lake/ticks/*/*/*/*/*.parquet')`",
-        "defense": "Judges will ask: 'Why write to a Parquet data lake instead of a standard PostgreSQL database?' Answer: 'PostgreSQL row-oriented storage slows down exponentially under millions of append operations and takes seconds to scan millions of ticks for analytics. Columnar Parquet compressed with Snappy uses 75% less storage, and DuckDB executes vectorized analytical queries over 10M rows in under 80 milliseconds.'"
+        "defense": "Interviewer will ask: 'Why write to a Parquet data lake instead of a standard PostgreSQL database?' Answer: 'PostgreSQL row-oriented storage slows down exponentially under millions of append operations and takes seconds to scan millions of ticks for analytics. Columnar Parquet compressed with Snappy uses 75% less storage, and DuckDB executes vectorized analytical queries over 10M rows in under 80 milliseconds.'"
     },
     "proj-devops-1": {
         "id": "proj-devops-1",
@@ -290,7 +290,7 @@ FLAGSHIP_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Core Tools: `k3s`, `argo-rollouts`, `helm`, `traefik`, `prometheus`, `github-actions`.\n• Progressive Shifting: Argo Rollouts splits ingress traffic using weighted service endpoints without duplicating stateful dependencies.\n• Analysis Metrics: Prometheus query `sum(rate(http_requests_total{status=~'5..'}[1m])) / sum(rate(http_requests_total[1m])) * 100` evaluated every 30 seconds during rollout.",
         "pitfalls": "1. Stateful database changes during canary rollbacks: If the canary version executes an irreversible destructive database migration (e.g. dropping a column), rolling back crashes the stable version. Must always follow the expand-and-contract migration pattern.\n2. Premature canary promotion: Pausing for only 10 seconds before 100% rollout fails to uncover memory leaks or cache warm-up delays. Always evaluate telemetry for at least 3-5 minutes under realistic traffic.",
         "database_design": "• GitOps Repository Single Source of Truth:\n  - `deploy/base/`: Common Kubernetes Service, ConfigMap, and Secrets\n  - `deploy/overlays/preview/`: Ephemeral namespace manifests for pull requests\n  - `deploy/overlays/staging/`: Staging environment configurations\n  - `deploy/overlays/production/`: Production Rollout manifest with Canary AnalysisTemplate\n• Prometheus Metric Store: Time-series database storing HTTP status codes, request latencies, and container memory utilization.",
-        "defense": "Judges will ask: 'What happens if a canary release introduces a subtle bug that only affects 2% of users?' Answer: 'Our Prometheus AnalysisTemplate continuously queries error rates and p99 latency during each canary traffic step. The moment error rate spikes above 0.5% or latency exceeds 250ms, the Argo Rollout controller immediately terminates the canary pods and reverts 100% of traffic to the stable revision in under 12 seconds.'"
+        "defense": "Interviewer will ask: 'What happens if a canary release introduces a subtle bug that only affects 2% of users?' Answer: 'Our Prometheus AnalysisTemplate continuously queries error rates and p99 latency during each canary traffic step. The moment error rate spikes above 0.5% or latency exceeds 250ms, the Argo Rollout controller immediately terminates the canary pods and reverts 100% of traffic to the stable revision in under 12 seconds.'"
     },
     "proj-embedded-1": {
         "id": "proj-embedded-1",
@@ -307,16 +307,16 @@ FLAGSHIP_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Core Tools: `ESP-IDF / Arduino C++`, `FreeRTOS`, `PubSubClient`, `Edge Impulse TinyML`, `Mosquitto MQTT`, `InfluxDB`.\n• Power Optimization: CPU runs in active mode for 80ms during sampling/inference, then sleeps at 15µA in deep sleep until next timer or vibration spike.\n• Hardware Watchdog: FreeRTOS task watchdog timer (WDT) triggers automatic microcontroller reboot if sensor bus hangs.",
         "pitfalls": "1. Using blocking `delay()` functions in FreeRTOS: Blocks other critical real-time tasks and starves the Wi-Fi watchdog, causing kernel panic. Always use `vTaskDelayUntil()` for deterministic scheduling.\n2. Connecting Wi-Fi continuously: Consumes 120-180mA continuously, killing batteries in 36 hours. Always buffer samples in RTC memory and connect in short bursts.\n3. Floating I2C bus lines: Missing pull-up resistors on SDA/SCL lines causes bus lockups in noisy industrial environments. Always use 4.7kΩ pull-up resistors.",
         "database_design": "• InfluxDB Time-Series Measurement `industrial_telemetry`:\n  - Tags: `device_id`, `machine_id`, `location`\n  - Fields: `vibration_rms` (float), `peak_frequency_hz` (float), `temp_celsius` (float), `anomaly_score` (float), `battery_voltage` (float)\n  - Retention Policy: 90 days with continuous downsampling queries to 1-hour averages for historical trending.",
-        "defense": "Judges will ask: 'Why do anomaly detection on the edge instead of streaming raw vibration data to the cloud?' Answer: 'Streaming raw 100Hz 3-axis accelerometer data continuously consumes high Wi-Fi bandwidth and drains batteries within hours. By running a TinyML anomaly detection model directly on the ESP32, we transmit only summarized statistics and critical anomaly alerts, extending battery life from 2 days to over 9 months.'"
+        "defense": "Interviewer will ask: 'Why do anomaly detection on the edge instead of streaming raw vibration data to the cloud?' Answer: 'Streaming raw 100Hz 3-axis accelerometer data continuously consumes high Wi-Fi bandwidth and drains batteries within hours. By running a TinyML anomaly detection model directly on the ESP32, we transmit only summarized statistics and critical anomaly alerts, extending battery life from 2 days to over 9 months.'"
     }
 }
 
-SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
-    "SIH26146": {
-        "ps_code": "SIH26146",
+INDUSTRY_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
+    "PF-IND-146": {
+        "ps_code": "PF-IND-146",
         "category": "Software",
         "title": "AI-Powered Monitoring & Analysis of Bitcoin Transaction Traffic",
-        "org": "National Technical Research Organisation (NTRO)",
+        "org": "National Cyber Intelligence & FinTech Consortium",
         "branches": "CSE, IT, Cybersecurity, Data Science",
         "problem_statement": "Illicit actors exploit cryptocurrency mixers (Wasabi, CoinJoin) and complex multi-hop peeling chains to obscure the provenance of ransom and fraud funds, rendering conventional linear transaction lookups ineffective.",
         "stack_rationale": "• Python 3.11 + Web3.py / Bitcoin RPC: Real-time mempool WebSocket streaming.\n• Neo4j Graph DB: Graph property model storing UTXO transaction addresses as nodes and transfers as directed edges.\n• PyTorch Geometric (PyG): Graph Convolutional Networks (GCN) classifying automated mixing topologies.\n• FastAPI + Cytoscape.js: Interactive real-time graph visualization for forensics investigators.",
@@ -325,13 +325,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Libraries: `networkx`, `web3`, `neo4j`, `torch-geometric`, `fastapi`, `redis`.\n• Heuristics: Multi-input clustering heuristic associates inputs signed in the same transaction with a single entity, collapsing address graphs.",
         "pitfalls": "1. Ingesting full Bitcoin blockchain into memory: Over 600GB; must stream only active mempool and sliding window transactions.\n2. Circular references in graph traversal: Peeling chain traversals must set max hop depth limits to prevent infinite loops.",
         "database_design": "• Neo4j Graph Schema:\n  - `(:Address {hash: string, cluster_id: string, risk_score: float})`\n  - `(:Transaction {txid: string, timestamp: datetime, total_btc: float})`\n  - `(:Address)-[:SENT {amount: float}]->(:Transaction)`\n  - `(:Transaction)-[:RECEIVED {amount: float}]->(:Address)`",
-        "defense": "Judges will ask: 'How do you handle Bitcoin transaction anonymity?' Answer: 'We use heuristic address clustering (multi-input ownership heuristics) and Graph Neural Networks to identify structural peeling-chain patterns characteristic of automated mixing protocols.'"
+        "defense": "Interviewer will ask: 'How do you handle Bitcoin transaction anonymity?' Answer: 'We use heuristic address clustering (multi-input ownership heuristics) and Graph Neural Networks to identify structural peeling-chain patterns characteristic of automated mixing protocols.'"
     },
-    "SIH26147": {
-        "ps_code": "SIH26147",
+    "PF-IND-147": {
+        "ps_code": "PF-IND-147",
         "category": "Software",
         "title": "Automated Model for Analysis of .IQ and .wav Radio Files with Signal Parameter Extraction",
-        "org": "National Technical Research Organisation (NTRO)",
+        "org": "National Cyber Intelligence & FinTech Consortium",
         "branches": "ECE, CSE, Aerospace, Telecommunications",
         "problem_statement": "Electronic surveillance operators must rapidly identify unknown radio frequency transmissions buried under heavy electromagnetic interference and noise, where manual spectrogram inspection is too slow.",
         "stack_rationale": "• Python + SciPy + NumPy: High-speed Fourier transform (FFT) and Welch power spectral density calculation.\n• PyTorch ResNet-18: 2D convolutional neural network trained on RadioML modulation datasets (QPSK, FSK, 16-QAM).\n• FastAPI + Three.js / WebGL: Real-time interactive waterfall spectrogram visualization in the browser.",
@@ -340,13 +340,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Libraries: `scipy`, `numpy`, `torch`, `torchvision`, `fastapi`.\n• Signal Parsing: Raw .IQ samples interleaved as 16-bit signed integers converted to `I + 1j * Q` complex float32 arrays.",
         "pitfalls": "1. High noise floor masking weak carriers: Preprocessing must include adaptive bandpass filtering and spectral subtraction.\n2. Frequency offset from oscillator drift: Must calculate center of mass in frequency domain before modulation classification.",
         "database_design": "• SQLite / TimescaleDB `signal_records`:\n  - `id`: UUID PRIMARY KEY\n  - `carrier_freq_mhz`: FLOAT, `bandwidth_khz`: FLOAT, `snr_db`: FLOAT\n  - `modulation`: VARCHAR(32), `confidence`: FLOAT\n  - `spectrogram_path`: VARCHAR(255), `timestamp`: TIMESTAMPTZ",
-        "defense": "Judges will ask: 'How does your model perform under heavy noise?' Answer: 'We preprocess signals using adaptive bandpass filtering and train on augmented synthetic noise profiles down to -6dB SNR, achieving 93.8% classification accuracy.'"
+        "defense": "Interviewer will ask: 'How does your model perform under heavy noise?' Answer: 'We preprocess signals using adaptive bandpass filtering and train on augmented synthetic noise profiles down to -6dB SNR, achieving 93.8% classification accuracy.'"
     },
-    "SIH26153": {
-        "ps_code": "SIH26153",
+    "PF-IND-153": {
+        "ps_code": "PF-IND-153",
         "category": "Software",
         "title": "AI-Based Network Attack Forecasting & Threat Detection from Raw Network Traffic Data",
-        "org": "National Technical Research Organisation (NTRO)",
+        "org": "National Cyber Intelligence & FinTech Consortium",
         "branches": "CSE, IT, Cybersecurity",
         "problem_statement": "Traditional Intrusion Detection Systems (IDS) detect attacks only after payloads hit servers. Organizations need predictive security engines that forecast multi-stage cyber-attacks during initial reconnaissance beacons.",
         "stack_rationale": "• Zeek / Suricata: High-throughput packet parsing extracting flow connection records from raw PCAP streams.\n• Apache Kafka: High-velocity message queue streaming 25k connection events/sec.\n• PyTorch Temporal Graph Attention Network (GAT): Graph attention model forecasting attack kill-chain progression.\n• Elasticsearch & Kibana: Real-time SIEM security visualization.",
@@ -355,13 +355,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Libraries: `torch`, `torch-geometric`, `kafka-python`, `elasticsearch`, `scapy`.\n• Kill-Chain Modeling: Graph nodes represent IP addresses; edges represent ports/protocols weighted by connection frequency.",
         "pitfalls": "1. Massive alert fatigue from false positives: Dynamic thresholding and graph temporal pooling filter out transient connection drops.\n2. Dropping packets under high bandwidth: Kernel-level ring buffers (PF_RING) must be used for packet capture.",
         "database_design": "• Elasticsearch Index `network-threats`:\n  - `@timestamp`: date, `src_ip`: ip, `dest_ip`: ip, `protocol`: keyword, `threat_level`: keyword, `predicted_next_step`: text",
-        "defense": "Judges will ask: 'Why forecasting instead of traditional detection?' Answer: 'Traditional IDS detects attacks after the payload hits. Our temporal graph attention model identifies initial port scans and reconnaissance beacons, forecasting full multi-stage compromises 8.4 minutes in advance.'"
+        "defense": "Interviewer will ask: 'Why forecasting instead of traditional detection?' Answer: 'Traditional IDS detects attacks after the payload hits. Our temporal graph attention model identifies initial port scans and reconnaissance beacons, forecasting full multi-stage compromises 8.4 minutes in advance.'"
     },
-    "SIH26158": {
-        "ps_code": "SIH26158",
+    "PF-IND-158": {
+        "ps_code": "PF-IND-158",
         "category": "Software",
         "title": "Single-Pass Drone Video to Accurate 3D Model Generation System",
-        "org": "National Technical Research Organisation (NTRO)",
+        "org": "National Cyber Intelligence & FinTech Consortium",
         "branches": "CSE, ECE, Robotics, Civil Engineering",
         "problem_statement": "Surveying disaster zones or infrastructure via aerial drones requires accurate 3D spatial reconstructions, but traditional photogrammetry takes hours of computation on high-end desktop workstations.",
         "stack_rationale": "• Python + PyTorch + CUDA: Accelerated GPU computation.\n• SuperPoint + LightGlue: High-speed feature extraction and matching robust to illumination changes.\n• COLMAP + Instant-NGP / 3D Gaussian Splatting: State-of-the-art novel view synthesis rendering 3D scenes in minutes.\n• Three.js: Browser-based measurement canvas for interactive inspection.",
@@ -370,13 +370,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Libraries: `torch`, `colmap`, `open3d`, `opencv-python`, `three.js`.\n• Keyframe Filter: Frames with Laplacian blur score below threshold are automatically discarded.",
         "pitfalls": "1. Camera pose drift on straight flight paths: Integrate drone onboard GPS/IMU metadata as priors in COLMAP bundle adjustment.\n2. Excessive polygon count crashing web browsers: Must decimate output meshes to <200k polygons using quadric mesh decimation.",
         "database_design": "• Storage: S3 / MinIO storing keyframe images, camera pose JSONs, and `.ply` / `.splat` 3D Gaussian models.",
-        "defense": "Judges will ask: 'How do you prevent motion blur from drone flight?' Answer: 'We filter keyframes based on blur metrics and integrate drone gimbal IMU telemetry into COLMAP\'s initial pose priors to accelerate convergence.'"
+        "defense": "Interviewer will ask: 'How do you prevent motion blur from drone flight?' Answer: 'We filter keyframes based on blur metrics and integrate drone gimbal IMU telemetry into COLMAP\'s initial pose priors to accelerate convergence.'"
     },
-    "SIH26162": {
-        "ps_code": "SIH26162",
+    "PF-IND-162": {
+        "ps_code": "PF-IND-162",
         "category": "Software",
         "title": "AI-Based Detection and Classification of Industrial Fires Using NASA FIRMS Satellite Data",
-        "org": "National Technical Research Organisation (NTRO)",
+        "org": "National Cyber Intelligence & FinTech Consortium",
         "branches": "CSE, IT, Data Science, Civil, Environmental",
         "problem_statement": "Industrial conflagrations in oil refineries and chemical plants require instant satellite detection, but standard thermal imagery triggers false alarms on permitted industrial gas flares.",
         "stack_rationale": "• GeoPandas + GDAL: Spatial analysis intersecting satellite fire coordinates with OpenStreetMap industrial polygons.\n• XGBoost: Gradient boosting classifying licensed flare stacks vs uncontrolled conflagrations.\n• NASA FIRMS API: 375m VIIRS thermal anomaly streaming.\n• Leaflet.js + PostGIS: Real-time map dashboard with geo-spatial queries.",
@@ -385,13 +385,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Libraries: `geopandas`, `xgboost`, `shapely`, `leaflet`, `postgis`.\n• Temporal Persistence: Flare stacks burn continuously with steady Brightness Temperature; accidental fires show rapid radiant power spikes.",
         "pitfalls": "1. Cloud cover obscuring thermal signatures: Must combine infrared VIIRS with radar SAR imagery (Sentinel-1) during cloudy conditions.",
         "database_design": "• PostGIS Table `fire_events`:\n  - `id`: UUID PRIMARY KEY, `geom`: GEOMETRY(Point, 4326), `brightness_temp_kelvin`: FLOAT, `frp_mw`: FLOAT, `is_flare`: BOOLEAN, `recorded_at`: TIMESTAMPTZ",
-        "defense": "Judges will ask: 'How do you avoid false alarms from legal refinery flare stacks?' Answer: 'We maintain a spatial registry of licensed industrial flare points and cross-check temporal thermal persistence: flare stacks exhibit steady heat, while accidental fires show exponential radiant power growth.'"
+        "defense": "Interviewer will ask: 'How do you avoid false alarms from legal refinery flare stacks?' Answer: 'We maintain a spatial registry of licensed industrial flare points and cross-check temporal thermal persistence: flare stacks exhibit steady heat, while accidental fires show exponential radiant power growth.'"
     },
-    "SIH26167": {
-        "ps_code": "SIH26167",
+    "PF-IND-167": {
+        "ps_code": "PF-IND-167",
         "category": "Software",
         "title": "SatQuery AI: Interactive Vision-Language Assistant for Remote Sensing Satellite Imagery",
-        "org": "Indian Space Research Organisation (ISRO)",
+        "org": "Earth Observation & Satellite Intelligence Labs",
         "branches": "CSE, AIML, ECE, Aerospace",
         "problem_statement": "Remote sensing analysts must manually query multi-gigabyte satellite rasters for land changes, flood zones, and urban sprawl. A conversational vision-language model enables natural-language geospatial inquiries.",
         "stack_rationale": "• Python + Rasterio + GDAL: Parsing multispectral GeoTIFF imagery from ISRO Bhuvan and Sentinel satellites.\n• PaliGemma / CLIP: Vision-language multimodal embeddings bridging geospatial imagery and natural language.\n• Qdrant Vector DB: Indexing multispectral tile vectors with geospatial coordinates.\n• FastAPI + React: Interactive chat canvas with bounding box overlays.",
@@ -400,13 +400,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Libraries: `rasterio`, `transformers`, `qdrant-client`, `fastapi`, `leaflet`.\n• Band Normalization: Calculates NDVI (Normalized Difference Vegetation Index) and NDWI (Water Index) before passing to transformer.",
         "pitfalls": "1. Geospatial coordinate loss during resizing: Always maintain affine transform matrices to project model predictions back onto real GPS coordinates.",
         "database_design": "• Qdrant Collection `satellite_tiles` (768-dim embeddings with metadata: `bbox`, `cloud_cover`, `sensor`, `date`).",
-        "defense": "Judges will ask: 'How does this handle multispectral bands beyond RGB?' Answer: 'We project 4-band and 8-band rasters into dense latent embeddings using custom band-weighting layers before passing them into the multimodal transformer.'"
+        "defense": "Interviewer will ask: 'How does this handle multispectral bands beyond RGB?' Answer: 'We project 4-band and 8-band rasters into dense latent embeddings using custom band-weighting layers before passing them into the multimodal transformer.'"
     },
-    "SIH26168": {
-        "ps_code": "SIH26168",
+    "PF-IND-168": {
+        "ps_code": "PF-IND-168",
         "category": "Software",
         "title": "AI-ML Based Intelligent Dead Reckoning System for Seamless GNSS-Denied Navigation",
-        "org": "Indian Space Research Organisation (ISRO)",
+        "org": "Earth Observation & Satellite Intelligence Labs",
         "branches": "ECE, EEE, Robotics, Smart Vehicles, CSE",
         "problem_statement": "In tunnels, dense urban canyons, or military jamming environments, GPS/GNSS signals are completely blocked. Standard IMU double-integration accumulates quadratic drift errors, rendering navigation useless within minutes.",
         "stack_rationale": "• C++ / Python + Eigen3: High-speed matrix algebra.\n• Extended Kalman Filter (EKF): Sensor fusion combining accelerometer, gyroscope, and magnetometer readings.\n• Physics-Informed Neural Network (PINN): Real-time IMU bias drift estimation and Zero-Velocity Update (ZUPT) trigger detection.\n• ROS2 Humble: Standard robotics odometry streaming.",
@@ -415,13 +415,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Algorithms: Zero-Velocity Updates (ZUPT) detect moments when vehicle/foot is stationary to reset velocity error to 0.0.",
         "pitfalls": "1. Sensor temperature drift: Accelerometer bias changes with chip temperature; must calibrate with polynomial temperature lookup curves.",
         "database_design": "• Binary Rosbag2 storage tracking 3D trajectory tuples: `{timestamp, pos_x, pos_y, pos_z, q_w, q_x, q_y, q_z, covariance}`.",
-        "defense": "Judges will ask: 'Why does standard IMU integration fail?' Answer: 'Double integrating accelerometer bias produces quadratic distance error over time. Our PINN continuously predicts sensor bias and applies ZUPT zero-velocity constraints to limit drift to <1.1% over 5km.'"
+        "defense": "Interviewer will ask: 'Why does standard IMU integration fail?' Answer: 'Double integrating accelerometer bias produces quadratic distance error over time. Our PINN continuously predicts sensor bias and applies ZUPT zero-velocity constraints to limit drift to <1.1% over 5km.'"
     },
-    "SIH26117": {
-        "ps_code": "SIH26117",
+    "PF-IND-117": {
+        "ps_code": "PF-IND-117",
         "category": "Software",
         "title": "Sovereign On-Premise Agentic AI Workbench Using Open-Weight Multimodal LLMs",
-        "org": "Mangalore Refinery and Petrochemicals Limited (MRPL)",
+        "org": "Industrial Sovereign AI Systems Consortium",
         "branches": "CSE, IT, AIML",
         "problem_statement": "Critical infrastructure and petrochemical refineries possess confidential P&ID blueprints and operating manuals that cannot be uploaded to public cloud AI APIs due to national security regulations.",
         "stack_rationale": "• vLLM + Llama-3-Vision (8B AWQ): High-throughput local GPU inference running 4-bit quantized open-weight vision models.\n• LangGraph: Autonomous multi-agent pipeline parsing complex engineering diagrams.\n• ChromaDB (AES-256 encrypted): Air-gapped local vector database.\n• Docker: Air-gapped network namespace with zero internet access.",
@@ -430,13 +430,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Offline Assurance: Docker container runs with `--network none` verifying zero outbound packets.",
         "pitfalls": "1. GPU VRAM exhaustion: 8B vision models require 16GB+ VRAM unquantized; must use AWQ/GPTQ 4-bit quantization to fit into single consumer RTX GPU.",
         "database_design": "• Encrypted SQLite / ChromaDB storing documents with AES-GCM 256-bit encryption keys stored in TPM.",
-        "defense": "Judges will ask: 'How do you guarantee zero data leakage?' Answer: 'The system is deployed inside an isolated Docker network with zero egress routes, verifying that no external API calls or telemetry packets leave the on-premise hardware.'"
+        "defense": "Interviewer will ask: 'How do you guarantee zero data leakage?' Answer: 'The system is deployed inside an isolated Docker network with zero egress routes, verifying that no external API calls or telemetry packets leave the on-premise hardware.'"
     },
-    "SIH26123": {
-        "ps_code": "SIH26123",
+    "PF-IND-123": {
+        "ps_code": "PF-IND-123",
         "category": "Software",
         "title": "Edge-AI Distributed Fleet Coordination & Collision Avoidance for Autonomous Mobile Robots",
-        "org": "Bharat Electronics Limited (BEL)",
+        "org": "Advanced Robotics & Edge Fleet Systems",
         "branches": "CSE, ECE, Robotics, EEE",
         "problem_statement": "Automated warehouses operating dozens of mobile robots suffer bottlenecks and gridlock at high-traffic intersections, especially when centralized Wi-Fi drops.",
         "stack_rationale": "• ROS2 Humble: Distributed robotics middleware.\n• Zenoh Protocol: Decentralized peer-to-peer pub/sub networking with microsecond latencies.\n• Conflict-Based Search (CBS): Multi-agent pathfinding algorithm generating collision-free trajectories.\n• TEB Local Planner: Dynamic obstacle avoidance for non-holonomic mobile robots.",
@@ -445,13 +445,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Decentralized Negotiation: If central dispatch drops, robots broadcast speed vectors to nearby peers using Zenoh mesh.",
         "pitfalls": "1. Deadlock in narrow corridors: Must establish virtual one-way directional priorities in space-time reservation tables.",
         "database_design": "• Redis In-Memory Spatial Index storing real-time coordinates `{robot_id, x, y, theta, linear_vel, battery}`.",
-        "defense": "Judges will ask: 'What happens if Wi-Fi disconnects between robots?' Answer: 'We use decentralized peer-to-peer Zenoh mesh networking. If central connection drops, robots negotiate right-of-way locally using prioritized velocity obstacle protocols without colliding.'"
+        "defense": "Interviewer will ask: 'What happens if Wi-Fi disconnects between robots?' Answer: 'We use decentralized peer-to-peer Zenoh mesh networking. If central connection drops, robots negotiate right-of-way locally using prioritized velocity obstacle protocols without colliding.'"
     },
-    "SIH26127": {
-        "ps_code": "SIH26127",
+    "PF-IND-127": {
+        "ps_code": "PF-IND-127",
         "category": "Software",
         "title": "City-Wide AI Engine for Multi-Camera ANPR Trajectory Tracking & Urban Traffic Analytics",
-        "org": "Bharat Electronics Limited (BEL)",
+        "org": "Advanced Robotics & Edge Fleet Systems",
         "branches": "CSE, IT, ECE, Data Science",
         "problem_statement": "Traffic authorities tracking suspicious vehicles across city camera networks must correlate vehicle identities across non-overlapping camera feeds under occlusions and variable lighting.",
         "stack_rationale": "• YOLOv10: Real-time vehicle and license plate bounding box detector.\n• DeepSORT + OSNet ReID: Deep appearance feature extractor for cross-camera vehicle re-identification.\n• Redis Streams + ClickHouse: High-throughput ingestion of 100k vehicle passage records/hour.\n• FastAPI + React: Live traffic heatmaps and trajectory tracking.",
@@ -460,13 +460,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Perspective Rectification: Warps angled plates into flat rectangular crops before OCR character recognition.",
         "pitfalls": "1. Occluded plates in heavy traffic: Combine plate text with vehicle color/make/model ReID embeddings.",
         "database_design": "• ClickHouse Table `vehicle_passages`:\n  - `timestamp`: DateTime64, `camera_id`: LowCardinality(String), `plate_text`: String, `vehicle_type`: LowCardinality(String), `reid_vector`: Array(Float32)\n  - ENGINE = MergeTree() ORDER BY (plate_text, timestamp)",
-        "defense": "Judges will ask: 'How do you handle occluded or high-speed license plates?' Answer: 'We combine high-speed frame interpolation with perspective warp rectification, ensuring clear plate text extraction even at 60 km/h and skewed 45° camera angles.'"
+        "defense": "Interviewer will ask: 'How do you handle occluded or high-speed license plates?' Answer: 'We combine high-speed frame interpolation with perspective warp rectification, ensuring clear plate text extraction even at 60 km/h and skewed 45° camera angles.'"
     },
-    "SIH26112": {
-        "ps_code": "SIH26112",
+    "PF-IND-112": {
+        "ps_code": "PF-IND-112",
         "category": "Hardware",
         "title": "Modular Autonomous Mobile Robot (AMR) Platform for Smart Warehouse Automation",
-        "org": "Autodesk",
+        "org": "Industrial Robotics & Warehouse Automation Labs",
         "branches": "Robotics, Mechatronics, Mechanical, ECE, EEE",
         "problem_statement": "Small manufacturing warehouses require affordable autonomous material transport, but commercial AMRs cost upwards of $25,000 and have closed proprietary software.",
         "stack_rationale": "• STM32 Nucleo (C++): Hard real-time closed-loop PID velocity motor control with optical encoder feedback.\n• Raspberry Pi 5 (ROS2 Nav2): High-level SLAM mapping and path planning.\n• 2D RPLiDAR A1: 360-degree laser scanning for 12m obstacle detection.\n• NEMA 23 Steppers + Planetary Gearbox: High-torque 50kg payload drive.",
@@ -475,13 +475,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Master-Slave Architecture: Raspberry Pi 5 runs high-level navigation; STM32 handles deterministic real-time motor pulses.",
         "pitfalls": "1. Linux OS scheduling jitter: Running motor PWM directly from Raspberry Pi causes jerky wheel motion; always offload to dedicated microcontroller.",
         "database_design": "• Hardware Config: EEPROM calibration parameters `{wheel_radius_mm, wheel_base_mm, pid_kp, pid_ki, pid_kd}`.",
-        "defense": "Judges will ask: 'Why dual controllers instead of just a Raspberry Pi?' Answer: 'Raspberry Pi runs a non-real-time Linux OS which can experience microsecond jitter during heavy computing. The STM32 microcontroller guarantees deterministic, real-time PID motor timing and safety cutoffs.'"
+        "defense": "Interviewer will ask: 'Why dual controllers instead of just a Raspberry Pi?' Answer: 'Raspberry Pi runs a non-real-time Linux OS which can experience microsecond jitter during heavy computing. The STM32 microcontroller guarantees deterministic, real-time PID motor timing and safety cutoffs.'"
     },
-    "SIH26113": {
-        "ps_code": "SIH26113",
+    "PF-IND-113": {
+        "ps_code": "PF-IND-113",
         "category": "Hardware",
         "title": "Wearable Robotic Exoskeleton / Human Augmentation Mobility Assistive System",
-        "org": "Autodesk",
+        "org": "Industrial Robotics & Warehouse Automation Labs",
         "branches": "Biomedical, Mechanical, ECE, Mechatronics",
         "problem_statement": "Industrial factory workers lifting heavy crates suffer chronic lumbar and knee fatigue, leading to musculoskeletal injuries and lost workdays.",
         "stack_rationale": "• Carbon Fiber & Al-6061: Lightweight ergonomic structural frame (<3.2kg total weight).\n• MyoWare 2.0 sEMG: Surface electromyography detecting quadriceps muscle activation before joint motion.\n• ESP32 (FreeRTOS): 18ms real-time gait phase estimation.\n• Harmonic BLDC Motor: High-torque density 35Nm knee torque assistance.",
@@ -490,13 +490,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Triple Safety Cutoffs: Mechanical hard-stops at 120°, motor current limiters, and physical emergency stop lanyard.",
         "pitfalls": "1. Sweat degrading EMG signal: Use dry conductive silicone electrodes with differential filtering.",
         "database_design": "• SD Card Telemetry: Logs `{timestamp, emg_mv, knee_angle_deg, motor_torque_nm, battery_pct}` at 50Hz.",
-        "defense": "Judges will ask: 'How do you prevent the motor from injuring the user\'s joint?' Answer: 'We implement a triple safety architecture: hardware mechanical hard-stops limiting knee angle to 120°, software current limiters cutting motor torque if back-EMF spikes, and an instant emergency kill-switch.'"
+        "defense": "Interviewer will ask: 'How do you prevent the motor from injuring the user\'s joint?' Answer: 'We implement a triple safety architecture: hardware mechanical hard-stops limiting knee angle to 120°, software current limiters cutting motor torque if back-EMF spikes, and an instant emergency kill-switch.'"
     },
-    "SIH26118": {
-        "ps_code": "SIH26118",
+    "PF-IND-118": {
+        "ps_code": "PF-IND-118",
         "category": "Hardware",
         "title": "Passive Colorimetric H2S Exposure-Dosimeter Wristband with Edge-AI Optical Reading",
-        "org": "Mangalore Refinery and Petrochemicals Limited (MRPL)",
+        "org": "Industrial Sovereign AI Systems Consortium",
         "branches": "Chemical, ECE, Instrumentation, Materials Science",
         "problem_statement": "Refinery workers risk sudden lethal poisoning from Hydrogen Sulfide (H2S) gas. Active battery-powered detectors are bulky, fail in rain/humidity, and workers forget to recharge them.",
         "stack_rationale": "• Passive Chemical Matrix: Lead acetate paper darkening proportionally to cumulative H2S ppm-hours with zero electrical power.\n• ESP32-S3-CAM: Ultra-low-power optical chamber taking hourly RGB photos under calibrated LED lighting.\n• TinyML Polynomial Regression: Converts color darkness into exact cumulative ppm-hour exposure.\n• BLE 5.0 Beacon: Broadcasts worker exposure logs to plant gateways.",
@@ -505,13 +505,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Deep Sleep: ESP32 sleeps 59 minutes and 55 seconds every hour, yielding 6+ months battery life on a tiny 200mAh coin cell.",
         "pitfalls": "1. Ambient light interference: Must use light-sealed internal optical cavity with known CRI LED pulse.",
         "database_design": "• BLE Telemetry Packet: `[Device_ID (2B), Cumulative_PPM_Hours (2B), Battery_mV (2B), Timestamp (4B)]`.",
-        "defense": "Judges will ask: 'Why not use standard electrochemical sensors?' Answer: 'Electrochemical sensors require continuous battery power, need recalibration every few months, and fail in high humidity. Our passive chemical matrix requires ZERO power to absorb gas, and the camera wakes up only once an hour, yielding 6+ months battery life.'"
+        "defense": "Interviewer will ask: 'Why not use standard electrochemical sensors?' Answer: 'Electrochemical sensors require continuous battery power, need recalibration every few months, and fail in high humidity. Our passive chemical matrix requires ZERO power to absorb gas, and the camera wakes up only once an hour, yielding 6+ months battery life.'"
     },
-    "SIH26020": {
-        "ps_code": "SIH26020",
+    "PF-IND-020": {
+        "ps_code": "PF-IND-020",
         "category": "Hardware",
         "title": "Innovative Solar Hand-Spinning Equipment for Khadi Artisan Productivity Enhancement",
-        "org": "Ministry of MSME",
+        "org": "Renewable Energy Precision Machinery Lab",
         "branches": "Mechanical, EEE, Production Engineering, Rural Tech",
         "problem_statement": "Rural Khadi artisans spinning yarn on manual charkhas suffer severe shoulder fatigue and earn low daily wages due to limited spindle speeds and frequent power cuts.",
         "stack_rationale": "• 100W Solar PV + MPPT: Clean renewable power charging 12V LiFePO4 battery.\n• 12V 100W BLDC Motor: Highly efficient brushless motor driving multi-spindle pulleys.\n• Ergonomic Flywheel: Low-friction sealed ball bearing gear train.\n• Hybrid Foot Pedal Disengage: Allows manual mechanical spinning on cloudy days.",
@@ -520,13 +520,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Variable Speed Dial: Potentiometer controls motor RPM smoothly from 200 to 1200 RPM preventing thread snapping.",
         "pitfalls": "1. Thread breakage from motor jerk: Soft-start PWM ramp-up prevents sudden tension spikes on fragile cotton fibers.",
         "database_design": "• OLED Display showing live RPM, battery percentage, and operating hours.",
-        "defense": "Judges will ask: 'What happens on cloudy days in rural areas?' Answer: 'The system has a hybrid pedal mechanism. When solar battery charge is depleted, artisans can disengage the motor and spin manually via mechanical foot treadle without losing production.'"
+        "defense": "Interviewer will ask: 'What happens on cloudy days in rural areas?' Answer: 'The system has a hybrid pedal mechanism. When solar battery charge is depleted, artisans can disengage the motor and spin manually via mechanical foot treadle without losing production.'"
     },
-    "SIH26022": {
-        "ps_code": "SIH26022",
+    "PF-IND-022": {
+        "ps_code": "PF-IND-022",
         "category": "Hardware",
         "title": "Smart Solar-Powered Drying & Compact Vacuum Packaging Automation System",
-        "org": "Ministry of MSME",
+        "org": "Renewable Energy Precision Machinery Lab",
         "branches": "Mechanical, EEE, AgriTech, Mechatronics",
         "problem_statement": "Rural self-help groups drying spices, fruits, and agarbatti lose 30%+ of produce to moisture damage, insect infestations, and inadequate manual sealing.",
         "stack_rationale": "• Parabolic Solar Air Collector: Generates 55°C warm dry air using solar thermal energy.\n• SHT31 Temp & Humidity Array: Accurate real-time chamber moisture monitoring.\n• ESP32 Controller: Regulates automated air dampers and fan speeds.\n• 12V Diaphragm Vacuum Pump + Thermal Impulse Wire: Compact packaging sealing food at 0.8 bar vacuum.",
@@ -535,13 +535,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Closed Thermal Loop: Cuts drying time from 36 hours (open sun) to 4.5 hours with zero insect exposure.",
         "pitfalls": "1. Case hardening from excessive heat: Drying temperatures must be modulated below 60°C to prevent surface crusting.",
         "database_design": "• ESP32 EEPROM profiles: Pre-stored drying recipes for spices, herbs, fruits, and agarbatti.",
-        "defense": "Judges will ask: 'How does this protect product quality compared to open sun drying?' Answer: 'Open drying exposes goods to rain, bird droppings, and uneven UV degradation. Our closed solar collector cuts drying time from 36 hours to 4.5 hours while maintaining hygienic 10% moisture uniformity.'"
+        "defense": "Interviewer will ask: 'How does this protect product quality compared to open sun drying?' Answer: 'Open drying exposes goods to rain, bird droppings, and uneven UV degradation. Our closed solar collector cuts drying time from 36 hours to 4.5 hours while maintaining hygienic 10% moisture uniformity.'"
     },
-    "SIH26025": {
-        "ps_code": "SIH26025",
+    "PF-IND-025": {
+        "ps_code": "PF-IND-025",
         "category": "Hardware",
         "title": "AI-Enabled Low-Cost Real-Time Mine Subsidence Monitoring & Early Warning System",
-        "org": "Ministry of Coal",
+        "org": "Geotechnical Subterranean Hazards & Safety Labs",
         "branches": "Mining, Civil, ECE, EEE, IoT",
         "problem_statement": "Underground coal and mineral mines suffer sudden strata collapse and surface subsidence, endangering villages above the mine void with zero early evacuation warning.",
         "stack_rationale": "• Dual-Axis MEMS Inclinometer: Measures ground tilt down to 0.001-degree angular resolution.\n• Geophone Seismic Sensor: Measures low-frequency ground vibration velocity.\n• STM32 Low-Power MCU + LoRa SX1262 (868MHz): 10km wireless telemetry across rugged mining terrain.\n• Solar Harvester + IP68 Enclosure: Maintenance-free outdoor node.",
@@ -550,13 +550,13 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Frequency Filtering: Haul trucks generate >30Hz vibrations with 0° net tilt; true subsidence causes <5Hz seismic waves and permanent angular ground shift.",
         "pitfalls": "1. LoRa packet loss from pit topology: Deploy repeaters on elevated overburden dumps to maintain line of sight.",
         "database_design": "• Gateway SQLite Database logging `{sensor_node_id, pitch_deg, roll_deg, geophone_velocity, battery_v, alert_state}`.",
-        "defense": "Judges will ask: 'How do you prevent false alarms from heavy mining haul trucks?' Answer: 'Haul trucks generate high-frequency surface vibration (> 30Hz) with zero net angular ground tilt. Strata subsidence generates low-frequency seismic waves (< 5Hz) coupled with permanent angular displacement. Our onboard filter isolates this signature.'"
+        "defense": "Interviewer will ask: 'How do you prevent false alarms from heavy mining haul trucks?' Answer: 'Haul trucks generate high-frequency surface vibration (> 30Hz) with zero net angular ground tilt. Strata subsidence generates low-frequency seismic waves (< 5Hz) coupled with permanent angular displacement. Our onboard filter isolates this signature.'"
     },
-    "SIH26026": {
-        "ps_code": "SIH26026",
+    "PF-IND-026": {
+        "ps_code": "PF-IND-026",
         "category": "Hardware",
         "title": "Mobile Quadruped Robot / Handheld Chemical Sensor Device for Real-Time Narcotics & Explosives Detection",
-        "org": "Ministry of Railways",
+        "org": "Defense CBRN Sensing & Autonomous Security Systems",
         "branches": "ECE, Robotics, Instrumentation, Chemical, CSE",
         "problem_statement": "Railway stations and transit hubs require continuous screening for concealed explosives (RDX, TNT, PETN) and narcotics. Sniffer dogs fatigue after 30 minutes and static X-ray scanners miss trace chemical vapors.",
         "stack_rationale": "• Heated Metal-Oxide (MOS) Sensor Array: Multi-channel chemical sensor reacting to volatile organic and nitro vapors.\n• Micro-Diaphragm Intake Pump: Continuous 1.5 L/min air volume sampling.\n• Jetson Orin Nano: Edge AI running 1D-CNN chemical fingerprint classification in <1.2 seconds.\n• Unitree Quadruped Robot Chassis: Autonomous patrol across station platforms.",
@@ -565,14 +565,14 @@ SIH_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
         "implementation_details": "• Chemometrics: Normalizes baseline resistance ratio `Rs/Ro` across 8 sensor channels to produce invariant chemical fingerprints.",
         "pitfalls": "1. Cross-contamination from perfume/alcohol vapors: Sensor array combines differential response signatures to distinguish ethanol from aromatic nitro explosives.",
         "database_design": "• Secure Flash DB storing encrypted vapor spectral profiles and geo-tagged incident logs.",
-        "defense": "Judges will ask: 'Why a robotic sniffer instead of trained dogs?' Answer: 'Sniffer dogs suffer from fatigue after 30 minutes, require extensive handler training, and can be distracted. Our robotic electronic nose operates 24/7 without sensory adaptation and logs quantitative chemical ppm levels for legal evidence.'"
+        "defense": "Interviewer will ask: 'Why a robotic sniffer instead of trained dogs?' Answer: 'Sniffer dogs suffer from fatigue after 30 minutes, require extensive handler training, and can be distracted. Our robotic electronic nose operates 24/7 without sensory adaptation and logs quantitative chemical ppm levels for legal evidence.'"
     }
 }
 
 # Unified 23 Projects Registry
 ALL_PROJECTS_DIRECTORY: Dict[str, Dict[str, Any]] = {
     **FLAGSHIP_PROJECTS_DIRECTORY,
-    **SIH_PROJECTS_DIRECTORY
+    **INDUSTRY_PROJECTS_DIRECTORY
 }
 
 
@@ -678,39 +678,39 @@ def find_project_blueprint(
         ("canary deployment", "proj-devops-1"),
         ("industrial edge sensor", "proj-embedded-1"),
         ("anomaly node", "proj-embedded-1"),
-        # SIH 17
-        ("bitcoin", "SIH26146"),
-        ("crypto", "SIH26146"),
-        (".iq", "SIH26147"),
-        ("radio files", "SIH26147"),
-        ("network attack", "SIH26153"),
-        ("forecasting attack", "SIH26153"),
-        ("drone video", "SIH26158"),
-        ("3d model generation", "SIH26158"),
-        ("industrial fires", "SIH26162"),
-        ("firms", "SIH26162"),
-        ("satquery", "SIH26167"),
-        ("satellite", "SIH26167"),
-        ("dead reckoning", "SIH26168"),
-        ("gnss-denied", "SIH26168"),
-        ("agentic ai workbench", "SIH26117"),
-        ("mrpl", "SIH26117"),
-        ("fleet coordination", "SIH26123"),
-        ("bel", "SIH26123"),
-        ("anpr", "SIH26127"),
-        ("camera trajectory", "SIH26127"),
-        ("amr platform", "SIH26112"),
-        ("warehouse automation", "SIH26112"),
-        ("exoskeleton", "SIH26113"),
-        ("human augmentation", "SIH26113"),
-        ("colorimetric", "SIH26118"),
-        ("h2s", "SIH26118"),
-        ("hand-spinning", "SIH26020"),
-        ("khadi", "SIH26020"),
-        ("solar-powered drying", "SIH26022"),
-        ("mine subsidence", "SIH26025"),
-        ("narcotics", "SIH26026"),
-        ("explosives", "SIH26026")
+        # Industry Blueprints 17
+        ("bitcoin", "PF-IND-146"),
+        ("crypto", "PF-IND-146"),
+        (".iq", "PF-IND-147"),
+        ("radio files", "PF-IND-147"),
+        ("network attack", "PF-IND-153"),
+        ("forecasting attack", "PF-IND-153"),
+        ("drone video", "PF-IND-158"),
+        ("3d model generation", "PF-IND-158"),
+        ("industrial fires", "PF-IND-162"),
+        ("firms", "PF-IND-162"),
+        ("satquery", "PF-IND-167"),
+        ("satellite", "PF-IND-167"),
+        ("dead reckoning", "PF-IND-168"),
+        ("gnss-denied", "PF-IND-168"),
+        ("agentic ai workbench", "PF-IND-117"),
+        ("mrpl", "PF-IND-117"),
+        ("fleet coordination", "PF-IND-123"),
+        ("bel", "PF-IND-123"),
+        ("anpr", "PF-IND-127"),
+        ("camera trajectory", "PF-IND-127"),
+        ("amr platform", "PF-IND-112"),
+        ("warehouse automation", "PF-IND-112"),
+        ("exoskeleton", "PF-IND-113"),
+        ("human augmentation", "PF-IND-113"),
+        ("colorimetric", "PF-IND-118"),
+        ("h2s", "PF-IND-118"),
+        ("hand-spinning", "PF-IND-020"),
+        ("khadi", "PF-IND-020"),
+        ("solar-powered drying", "PF-IND-022"),
+        ("mine subsidence", "PF-IND-025"),
+        ("narcotics", "PF-IND-026"),
+        ("explosives", "PF-IND-026")
     ]
 
     for kw, target_id in keyword_map:
@@ -883,8 +883,8 @@ When building and defending this architecture, avoid these critical mistakes:
 
 ---
 
-### 7. 🛡️ Hackathon Judges & Viva Defense Masterclass
-> **Key Judge Inquiry**:
+### 7. 🛡️ Technical Viva & System Architecture Defense
+> **Key Technical Inquiry**:
 > {defense}
 
 ---

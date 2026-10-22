@@ -1,6 +1,6 @@
 """
 Comprehensive End-to-End System Integration & Acceptance Verification Suite
-Validates 100% of Hackathon Acceptance Criteria:
+Validates 100% of Production Platform Acceptance Criteria:
 1. Health endpoint (GET /api/health)
 2. Unified Data Layer (9 Branches, 972 Records, Packages, zero drift)
 3. AI Agent Single Endpoint (POST /api/chat):

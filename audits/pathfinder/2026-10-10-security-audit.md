@@ -1,4 +1,4 @@
-# Pathfinder 2.0 — Pre-Public & Hackathon Security Audit Report
+# Pathfinder 2.0 — Pre-Public & Production Security Audit Report
 
 **Audit Target:** Pathfinder 2.0 AI Placement Platform  
 **Scope:** `/backend`, `/client/src`, `.env.example`, `render.yaml`, `vercel.json`, `package.json`, `pnpm-lock.yaml`, `requirements.txt`, `.github/workflows`  
@@ -51,7 +51,7 @@ A comprehensive pre-public deployment security audit was conducted on the **Path
   Two critical flaws exist:
   1. **Unauthenticated Bypass:** If `user.is_authenticated` is `False` (guest), the `if user.is_authenticated ...` check is bypassed entirely. An unauthenticated attacker can call `DELETE /api/profile?user_id=usr_victim` and erase any candidate profile.
   2. **Parameter Bypass:** If an authenticated user passes `?email=victim@example.com`, `user_id` is `None`, so `user_id and user_id != user.user_id` evaluates to `False`. The attacker successfully deletes the victim's profile using their email.
-- **Why It Matters:** Any malicious actor or script can wipe the persistent SQLite profile database without credentials before a hackathon demo.
+- **Why It Matters:** Any malicious actor or script can wipe the persistent SQLite profile database without credentials before a production evaluation.
 - **Concrete Fix:**
   Require strict authentication and enforce that users can only delete their own session-bound ID:
   ```python
