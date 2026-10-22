@@ -281,9 +281,14 @@ v1_app.include_router(webhook_router)
 from backend.voice.ws_voice import voice_router
 app.include_router(voice_router)
 v1_app.include_router(voice_router)
-from backend.agent_router import create_agent_router
-app.include_router(create_agent_router())
-v1_app.include_router(create_agent_router())
+try:
+    from backend.agent_router import create_agent_router
+    agent_r = create_agent_router()
+    app.include_router(agent_r)
+    v1_app.include_router(agent_r)
+except Exception as exc:  # the agent must never take the whole API down
+    import logging
+    logging.getLogger("api").warning("agent router disabled: %s", exc)
 app.mount("/api/v1", v1_app)
 
 
