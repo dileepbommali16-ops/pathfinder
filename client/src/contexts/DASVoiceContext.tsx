@@ -19,6 +19,9 @@ import React, {
 } from "react";
 import { getApiBase, API_BASE } from "@/lib/apiClient";
 import { clientBrain } from "@/voice/client_brain";
+import { askAgent, type ChatTurn, AgentRequestError } from "@/voice/agentClient";
+import { runActions } from "@/voice/dasActions";
+import { recordSessionEnd, registerSessionEnd } from "@/voice/memory";
 
 export type DASMode = "idle" | "listening" | "thinking" | "speaking" | "error";
 
@@ -361,57 +364,66 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
       } catch {}
 
       try {
-        const endpoint = `${API_BASE}/api/chat`;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const historyTurns: ChatTurn[] = messages.slice(-12).map((m) => ({
+          role: m.role === "assistant" ? "model" : "user",
+          text: m.content,
+        }));
 
-        const resp = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            message: clean,
-            session_id: sessionId,
-            currentPage: pageContext.route || (typeof window !== "undefined" ? window.location.pathname : "/"),
-            currentTab: pageContext.activeTab || "overview",
-            page_context: pageContext,
-            profile: profileDraft,
-            language: language,
-            history: messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
-          }),
-        });
-        clearTimeout(timeoutId);
-
-        if (resp.ok) {
-          const data = await resp.json();
-          const spokenText = data.spoken || data.reply || "I have updated your placement recommendations.";
-          const displayText = data.display || data.reply || spokenText;
-          const actions = data.actions || [];
-          const followups = data.followups || [];
-
-          const dasMsg: DASMessage = {
-            id: "msg_" + Date.now(),
-            role: "assistant",
-            content: displayText,
-            spoken: spokenText,
-            display: displayText,
-            actions: actions,
-            followups: followups,
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          };
-
-          setMessages((prev) => [...prev, dasMsg]);
-
-          // Execute returned UI actions
-          actions.forEach((act: any) => executeDASAction(act));
-
-          // Speak response
-          speakNatural(spokenText);
-        } else {
-          throw new Error("HTTP error " + resp.status);
+        let focusedWidget = "";
+        if (typeof document !== "undefined") {
+          const hovered = document.querySelector(":hover[data-das-id]") || document.querySelector("[data-das-id]");
+          focusedWidget = hovered?.getAttribute("data-das-id") || "";
         }
+
+        const reply = await askAgent({
+          message: clean,
+          getScreenPayload: () => ({
+            activeTab: pageContext.activeTab || "overview",
+            focusedWidget: focusedWidget,
+            userState: "active",
+          }),
+          history: historyTurns,
+        });
+
+        const spokenText = reply.spoken || "I have updated your placement recommendations.";
+        const displayText = reply.display || spokenText;
+        const actions = reply.actions || [];
+
+        const dasMsg: DASMessage = {
+          id: "msg_" + Date.now(),
+          role: "assistant",
+          content: displayText,
+          spoken: spokenText,
+          display: displayText,
+          actions: actions.map((a) => ({ name: a.type, arguments: { target: a.target } })),
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        };
+
+        setMessages((prev) => [...prev, dasMsg]);
+
+        // Run actions with dasActions allowlist
+        runActions(actions, {
+          goToTab: (tab) => {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab } }));
+            }
+          },
+          openPanel: (panel) => {
+            if (typeof window !== "undefined") {
+              if (panel === "resume_builder" || panel === "resume") {
+                window.dispatchEvent(new CustomEvent("das-open-resume-builder"));
+              } else if (panel === "mock_interview" || panel === "interview") {
+                window.dispatchEvent(new CustomEvent("das-open-mock-interview"));
+              }
+            }
+          },
+        });
+
+        recordSessionEnd(clean);
+        speakNatural(spokenText);
       } catch (err) {
-        console.info("[DASVoiceContext] Autonomous client-side AI brain answering:", err);
+        if (err instanceof AgentRequestError && err.kind === "cancelled") return;
+        console.info("[DASVoiceContext] Agent error, falling back to autonomous client brain:", err);
         const brainRes = clientBrain.process(clean, language);
         const dasMsg: DASMessage = {
           id: "msg_brain_" + Date.now(),

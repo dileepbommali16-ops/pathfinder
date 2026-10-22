@@ -6,6 +6,8 @@ import { SkillGapSection } from "@/components/dashboard/SkillGapSection";
 import { RoadmapVisualizer, RoadmapData } from "@/components/dashboard/RoadmapVisualizer";
 import type { Message } from "@/components/dashboard/AICoachConsole";
 import { VoicePanel } from "@/voice";
+import { getProactiveGreeting, setStudentName } from "@/voice/memory";
+import { useScreenWatcher } from "@/hooks/useScreenWatcher";
 import { CohortExplorer, CohortAnalyticsData } from "@/components/dashboard/CohortExplorer";
 import { ResumeStudio, ResumeFeedbackData } from "@/components/dashboard/ResumeStudio";
 import { LampLogin } from "@/components/auth/LampLogin";
@@ -60,6 +62,7 @@ import { useDASVoice } from "@/contexts/DASVoiceContext";
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const { setPageContext, sendMessage } = useDASVoice();
+  const { getScreenPayload } = useScreenWatcher(activeTab);
 
   // Proactively trigger a welcome greeting when dashboard loads (once per session)
   useEffect(() => {
@@ -67,8 +70,10 @@ export default function Home() {
       const hasGreeted = sessionStorage.getItem("pathfinder_das_dashboard_greeted");
       if (!hasGreeted) {
         sessionStorage.setItem("pathfinder_das_dashboard_greeted", "true");
+        const returnGreeting = getProactiveGreeting();
         const timer = setTimeout(() => {
           sendMessage(
+            returnGreeting ||
             "System online. User entered the main dashboard. Greet them proactively, explain what the dashboard is, and ask how you can assist them further, sir."
           );
         }, 1500);
