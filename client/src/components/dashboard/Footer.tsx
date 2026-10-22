@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   GraduationCap,
   ShieldCheck,
@@ -14,6 +14,7 @@ import {
   ArrowUp
 } from "lucide-react";
 import { TabId } from "./DashboardHeader";
+import { ComplianceModal } from "./ComplianceModals";
 
 interface FooterProps {
   onNavigateTab: (tab: TabId) => void;
@@ -21,6 +22,13 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
   const currentYear = new Date().getFullYear();
+  const [modalType, setModalType] = useState<"privacy" | "terms">("privacy");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openCompliance = (type: "privacy" | "terms") => {
+    setModalType(type);
+    setIsModalOpen(true);
+  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -215,11 +223,27 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
 
         {/* Bottom Bar: Copyright & Compliance */}
         <div className="mt-12 pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748b]">
-          {/* Photo 3 - Item 9: Dynamic Copyright Year */}
-          <div className="flex items-center gap-2">
+          {/* Dynamic Copyright Year & Open Source */}
+          <div className="flex flex-wrap items-center gap-2">
             <span>© {currentYear} Pathfinder 2.0. All rights reserved.</span>
             <span className="hidden sm:inline">•</span>
             <span className="text-[#94a3b8]">MIT License Open Verification</span>
+            <span className="hidden sm:inline">•</span>
+            <button
+              type="button"
+              onClick={() => openCompliance("privacy")}
+              className="text-[#94a3b8] hover:text-[#f8fafc] underline-offset-4 hover:underline transition-colors cursor-pointer"
+            >
+              Privacy Policy
+            </button>
+            <span className="hidden sm:inline">•</span>
+            <button
+              type="button"
+              onClick={() => openCompliance("terms")}
+              className="text-[#94a3b8] hover:text-[#f8fafc] underline-offset-4 hover:underline transition-colors cursor-pointer"
+            >
+              Terms of Service
+            </button>
           </div>
 
           <div className="flex items-center gap-4">
@@ -240,6 +264,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
           </div>
         </div>
       </div>
+
+      {/* Enterprise Compliance & Governance Modal */}
+      <ComplianceModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        type={modalType}
+      />
     </footer>
   );
 };
