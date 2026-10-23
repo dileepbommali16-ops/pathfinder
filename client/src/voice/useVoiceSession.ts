@@ -260,11 +260,13 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
   useEffect(() => {
     const greetingTimer = setTimeout(() => {
       if (!hasSpokenGreetingRef.current) {
-        hasSpokenGreetingRef.current = true;
+        const nowHour = new Date().getHours();
+        const timeGreetingEn = nowHour < 12 ? "Good morning" : (nowHour < 17 ? "Good afternoon" : "Good evening");
+        const timeGreetingTe = nowHour < 12 ? "గుడ్ మార్నింగ్" : (nowHour < 17 ? "గుడ్ ఆఫ్టర్నూన్" : "గుడ్ ఈవినింగ్");
         const initialGreeting =
           languageRef.current === "te"
-            ? "నమస్కారం! నేను మీ పాత్‌ఫైండర్ AI కెరీర్ అసిస్టెంట్‌ని. మీ ప్లేస్‌మెంట్స్ మరియు రెజ్యూమ్ కోసం నేను సిద్ధంగా ఉన్నాను. ఎలా సహాయం చేయమంటారు?"
-            : "Hello! I am DAS, your autonomous Pathfinder AI Placement Coach. System online. How can I assist your placement preparation today?";
+            ? `హాయ్ బాస్, ${timeGreetingTe}! నేను మీ పర్సనల్ పాత్‌ఫైండర్ AI ఏజెంట్ దాస్ ని. సిస్టమ్స్ అన్నీ సిద్ధంగా ఉన్నాయి. ఈరోజు మన ప్లేస్‌మెంట్స్ కోసం ఏం మొదలుపెడదాం?`
+            : `Hi Boss, ${timeGreetingEn}! I am DAS, your autonomous Pathfinder AI co-pilot. Systems online and calibrated. How can I assist you right now?`;
         greetingRef.current = initialGreeting;
         setCurrentSentence(initialGreeting);
         setMessages((prev) => {

@@ -96,38 +96,43 @@ export function createFaceMesh(texture?: THREE.Texture | null): MeshParts {
   neckMesh.position.set(0, -1.42, -0.05);
   headGroup.add(neckMesh);
 
-  // 4. Cybernetic Optical Sockets & Glowing Irises
-  const eyeGeo = new THREE.SphereGeometry(0.12, 20, 20);
+  // 4. Cybernetic Optical Sockets & Glowing Luminous Crimson RED Eyes
+  const eyeGeo = new THREE.SphereGeometry(0.12, 24, 24);
   const eyeMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#38bdf8"),
-    wireframe: true,
-    emissive: new THREE.Color("#00d8ff"),
-    emissiveIntensity: 0.6,
+    color: new THREE.Color("#ff1744"),
+    roughness: 0.15,
+    metalness: 0.85,
+    emissive: new THREE.Color("#ff0033"),
+    emissiveIntensity: 2.4,
   });
 
   const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-  leftEye.position.set(-0.35, 0.22, 0.96);
+  leftEye.position.set(-0.35, 0.22, 0.98);
   leftEye.scale.set(1.15, 0.72, 0.45);
   headGroup.add(leftEye);
 
   const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-  rightEye.position.set(0.35, 0.22, 0.96);
+  rightEye.position.set(0.35, 0.22, 0.98);
   rightEye.scale.set(1.15, 0.72, 0.45);
   headGroup.add(rightEye);
 
-  // 5. Automated Eyelid Blinking Shutters
-  const eyelidGeo = new THREE.BoxGeometry(0.28, 0.05, 0.12);
-  const eyelidMat = new THREE.MeshBasicMaterial({
+  // 5. Automated Eyelid Blinking Shutters (Procedural Cybernetic Blue Shutter)
+  const eyelidGeo = new THREE.BoxGeometry(0.32, 0.16, 0.14);
+  const eyelidMat = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#0284c7"),
     wireframe: true,
+    emissive: new THREE.Color("#0369a1"),
+    emissiveIntensity: 0.5,
   });
 
   const leftEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
-  leftEyelid.position.set(-0.35, 0.26, 0.99);
+  leftEyelid.position.set(-0.35, 0.28, 1.01);
+  leftEyelid.scale.set(1.0, 0.05, 1.0);
   headGroup.add(leftEyelid);
 
   const rightEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
-  rightEyelid.position.set(0.35, 0.26, 0.99);
+  rightEyelid.position.set(0.35, 0.28, 1.01);
+  rightEyelid.scale.set(1.0, 0.05, 1.0);
   headGroup.add(rightEyelid);
 
   // 6. Jaw & Mouth Mesh Group (Controlled by Viseme / Audio RMS for Lip Sync)

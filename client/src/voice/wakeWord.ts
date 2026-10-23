@@ -105,10 +105,16 @@ export class WakeWordDetector {
   public stop() {
     this.isRunning = false;
     if (this.recognition) {
-      try {
-        this.recognition.abort();
-      } catch {}
+      const rec = this.recognition;
       this.recognition = null;
+      // Detach handlers first so the onend soft-restart loop cannot revive this
+      // listener while the main microphone session owns the speech engine.
+      rec.onresult = null;
+      rec.onerror = null;
+      rec.onend = null;
+      try {
+        rec.abort();
+      } catch {}
     }
   }
 

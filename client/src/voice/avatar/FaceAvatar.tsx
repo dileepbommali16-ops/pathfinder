@@ -124,6 +124,11 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
     cobaltBackLight.position.set(0, -1.0, -1.5);
     scene.add(cobaltBackLight);
 
+    // Glowing Crimson Red Optical Eye PointLight (eye illumination)
+    const redEyeLight = new THREE.PointLight(0xff1744, 2.8, 4.5);
+    redEyeLight.position.set(0, 0.22, 1.45);
+    scene.add(redEyeLight);
+
     // Moving Background Grid (venakala 3D UI motion)
     const gridGeo = new THREE.PlaneGeometry(12, 12, 24, 24);
     const gridMat = new THREE.MeshBasicMaterial({
@@ -304,11 +309,11 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
             opacity="0.35"
           />
 
-          {/* Natural Human Eyes */}
-          <circle cx="70" cy="100" r={4 + audioRMS * 2} fill="#fbf9f5" />
-          <circle cx="70" cy="100" r={2.5 + audioRMS * 1.5} fill="#4a2e18" />
-          <circle cx="130" cy="100" r={4 + audioRMS * 2} fill="#fbf9f5" />
-          <circle cx="130" cy="100" r={2.5 + audioRMS * 1.5} fill="#4a2e18" />
+          {/* Glowing Luminous Red Cybernetic Eyes */}
+          <circle cx="70" cy="100" r={4.5 + audioRMS * 2} fill="#ff1744" filter="drop-shadow(0 0 6px #ff0033)" />
+          <circle cx="70" cy="100" r={2.5 + audioRMS * 1.5} fill="#ffffff" />
+          <circle cx="130" cy="100" r={4.5 + audioRMS * 2} fill="#ff1744" filter="drop-shadow(0 0 6px #ff0033)" />
+          <circle cx="130" cy="100" r={2.5 + audioRMS * 1.5} fill="#ffffff" />
 
           {/* Audio-Reactive Natural Rosy Lips */}
           <ellipse

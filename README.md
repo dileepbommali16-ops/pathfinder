@@ -37,8 +37,10 @@ Pathfinder is an enterprise-grade, real-time career intelligence platform engine
 ### 🎓 Genuine Value for Engineering Students & Placement Cells
 
 - **Calibrated Placement Probability**: Ingests student CGPA, active backlogs, internships, coding proficiency, and communication skills to output a statistically calibrated placement probability (0–100%) alongside salary tier projections (Service, Product, Unicorn).
-- **Sub-300ms Conversational AI Voice Coach**: Provides conversational technical mentoring and mock interview grilling across **English, Telugu, and Hindi** with sentence-by-sentence streaming TTS and instant barge-in support.
-- **Cobalt Blue Deep (`#2C3480`) Real Man Cybernetic Avatar**: Ultra-realistic 3D holographic male avatar with left-side cyan wireframe matrix, organic swaying motion, procedural eye blinking, and WebAudio lip-sync against a True Black (`#000000`) OLED canvas.
+- **Sub-300ms Conversational AI Voice Coach**: Autonomous JARVIS-grade placement co-pilot providing conversational technical mentoring and mock interview grilling across **English, Telugu, and Hindi** with time-of-day boss greetings, relatable real-world analogies, and instant barge-in support.
+- **Glowing Crimson Red Eyes & Cobalt Blue Cybernetic Avatar**: Ultra-realistic 3D holographic avatar featuring piercing luminous red optical irises (`#ff1744`), organic breathing sway, procedural cybernetic eyelid blinking shutters, and WebAudio RMS-driven lip sync against a True Black (`#000000`) OLED canvas.
+- **Autonomous Website Control**: Complete agentic navigation across all dashboard tabs, step-by-step project blueprint tutoring (Steps 1–9), ATS resume studio triggers, and STAR defense simulators.
+- **Creator & Boss Mode**: Dedicated personal co-pilot architecture calibrated for Creator & Boss **Dileep Bommali (Dileep Das)**, recognizing academic mentors (Dr. Chaitanya Madam & Swami Sir), hobbies, and background.
 - **28 Production-Grade Flagship Project Blueprints**: Structured across a 9-step pedagogical roadmap (6 flagship + 17 national industry + 5 advanced real-world RAG architectures).
 - **STAR Architecture Defense Simulator**: Simulates grueling Round 2 system design questioning, evaluating how candidates defend architectural trade-offs, database bottlenecks, and scalability decisions.
 - **One-Page ATS Resume Studio**: Automatically diagnoses and formats single-column, ATS-parseable resumes aligned with recruiter screening algorithms.

@@ -312,10 +312,17 @@ def build_voice_system_prompt(
         except Exception:
             das_base = ""
 
+    import datetime
+    # Current Indian Standard Time (IST)
+    utc_now = datetime.datetime.now(datetime.timezone.utc)
+    ist_now = utc_now + datetime.timedelta(hours=5, minutes=30)
+    now_hour = ist_now.hour
+    tod = "morning" if 5 <= now_hour < 12 else ("afternoon" if 12 <= now_hour < 17 else "evening")
+
     return f"""[ROLE DEFINITION]
-You are DAS AI: the official voice-first intelligent assistant and senior placement mentor of the Pathfinder platform.
-You mentor engineering students with warmth, high emotional intelligence, cheerfulness, and absolute technical clarity.
-You answer ANY question about the website ("what is this page", "where is X", "what is it for", "how do I use it") using the Site Tabs guide, and also answer general career, coding, system design, and technical questions like a senior engineer.
+You are DAS AI: the official voice-first intelligent assistant, autonomous placement co-pilot, and personal agent to your boss Dileep Das (Dileep Bommali) on the Pathfinder platform.
+Current local time in India is {ist_now.strftime('%I:%M %p')} ({tod.upper()}).
+When greeting Boss Dileep, greet him with: "Good {tod.capitalize()}, Boss!" (or Telugu: "గుడ్ {tod.capitalize()} బాస్!").
 {das_base}
 
 [CANDIDATE CONTEXT]

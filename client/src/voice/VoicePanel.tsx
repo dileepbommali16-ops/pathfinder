@@ -24,9 +24,7 @@ import {
   CornerDownLeft,
   ShieldCheck,
   Cpu,
-  Activity,
   Terminal,
-  Zap,
   Sliders,
   RotateCcw,
   Layers,
@@ -108,7 +106,6 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
     activeProvider,
     isMicActive,
     feedbackHint,
-    lastAction,
     audioAnalyser,
     sendMessage,
     toggleMicrophone,
@@ -132,7 +129,7 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
       },
     });
     wakeDetectorRef.current = detector;
-    if (wakeWordEnabled && !isMicActive && state !== "speaking") {
+    if (wakeWordEnabled && !isMicActive && state !== "speaking" && state !== "listening") {
       detector.start();
     }
     return () => {
@@ -450,26 +447,6 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
             </div>
           </div>
 
-          {/* Bottom Box: Pathfinder Live Placement Intelligence & Autonomous Action Feed */}
-          <div className="mt-2 shrink-0 border border-[#343148] bg-[#161722]/85 rounded-xl p-3 z-10 backdrop-blur-md">
-            <div className="flex items-center justify-between border-b border-[#343148]/60 pb-1 mb-1.5 text-[10px] text-[#D7C49E] font-bold uppercase tracking-wider">
-              <span className="flex items-center gap-1">
-                <Activity className="h-3 w-3 text-[#D4B996]" />
-                PATHFINDER PLACEMENT INTELLIGENCE & ACTION FEED
-              </span>
-              <span className="text-slate-500">AUTONOMOUS DISPATCH</span>
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed font-sans line-clamp-2">
-              {currentSentence || "Pathfinder DAS is ready to autonomously manage your campus placement preparation."}
-            </p>
-            {lastAction && (
-              <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-[#D7C49E] bg-[#343148]/60 rounded px-2 py-0.5 border border-[#D4B996]/30">
-                <Zap className="h-2.5 w-2.5 text-[#D4B996]" />
-                <span className="font-bold">Autonomous Action Executed:</span>
-                <span className="text-slate-300 truncate">{lastAction}</span>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* ------------------------------------------------------------ */}
@@ -591,8 +568,14 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
             <button
               type="button"
               onClick={async () => {
+                const wasIdle = !isMicActive;
                 if (wakeDetectorRef.current) {
                   wakeDetectorRef.current.stop();
+                }
+                // Give the browser speech engine a moment to release the wake-word
+                // listener, otherwise the main mic session is killed instantly.
+                if (wasIdle) {
+                  await new Promise((resolve) => setTimeout(resolve, 250));
                 }
                 await toggleMicrophone();
               }}
@@ -608,12 +591,12 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               {isMicActive ? (
                 <>
                   <Mic className="h-4 w-4 text-[#D4B996] animate-bounce" />
-                  <span>MIC ACTIVE (SPEAK)</span>
+                  <span>LISTENING · TAP TO SEND</span>
                 </>
               ) : (
                 <>
                   <Mic className="h-4 w-4 text-[#D4B996]" />
-                  <span>MICROPHONE ACTIVE</span>
+                  <span>TAP TO SPEAK</span>
                 </>
               )}
             </button>

@@ -117,7 +117,7 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const [mode, setMode] = useState<DASMode>("idle");
   const [language, setLanguage] = useState<string>("auto");
-  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(true);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [interimTranscript, setInterimTranscript] = useState<string>("");
   const [currentSpokenText, setCurrentSpokenText] = useState<string>("");
