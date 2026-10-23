@@ -27,6 +27,10 @@ class ProviderChain:
     """
 
     def __init__(self):
+        self.grok_key = (os.getenv("GROK_API_KEY", "") or os.getenv("XAI_API_KEY", "")).strip()
+        self.grok_model = os.getenv("GROK_MODEL", "grok-2-latest").strip() or "grok-2-latest"
+        self.groq_key = os.getenv("GROQ_API_KEY", "").strip()
+        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip() or "llama-3.3-70b-versatile"
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
         self.openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
         self.openrouter_model = os.getenv("OPENROUTER_MODEL", "").strip()
@@ -34,6 +38,60 @@ class ProviderChain:
         self.ollama_api_key = os.getenv("OLLAMA_API_KEY", "").strip()
         self.ollama_model = os.getenv("OLLAMA_MODEL", "gpt-oss:20b").replace(":cloud", "").strip()
         self.last_used_provider: str = "Initializing"
+
+    def _try_openai_compatible(
+        self,
+        base_url: str,
+        api_key: str,
+        model: str,
+        provider_label: str,
+        prompt: str,
+        system: str = "",
+        history: Optional[List[Dict[str, str]]] = None,
+        max_tokens: int = 400
+    ) -> Optional[Tuple[str, str]]:
+        """Queries any standard OpenAI-compatible API (xAI Grok, Groq, OpenRouter)."""
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        if history:
+            for turn in history[-4:]:
+                messages.append(turn)
+        messages.append({"role": "user", "content": prompt})
+
+        payload = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": 0.7
+        }
+        req_data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            base_url,
+            data=req_data,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "User-Agent": "PathfinderDAS/2.0"
+            }
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=4.0) as resp:
+                if resp.status == 200:
+                    body = json.loads(resp.read().decode("utf-8"))
+                    choices = body.get("choices", [])
+                    if choices:
+                        reply = choices[0].get("message", {}).get("content", "").strip()
+                        if reply:
+                            full_name = f"{provider_label} ({model})"
+                            self.last_used_provider = full_name
+                            logger.info(f"[Providers] Answered by {full_name}")
+                            return reply, full_name
+        except urllib.error.HTTPError as http_err:
+            logger.debug(f"[Providers] {provider_label} HTTP {http_err.code}: {http_err.reason}")
+        except Exception as e:
+            logger.debug(f"[Providers] {provider_label} error: {e}")
+        return None
 
     async def generate_response(
         self,
@@ -44,19 +102,58 @@ class ProviderChain:
     ) -> Tuple[str, str]:
         """
         Attempts to generate response through providers in order:
-        1. Gemini -> 2. OpenRouter -> 3. Hosted Ollama -> 4. Local Ollama -> 5. Pathfinder Knowledge Engine.
+        1. xAI Grok -> 2. Groq LPU -> 3. Gemini -> 4. OpenRouter -> 5. Hosted Ollama -> 6. Local Ollama -> 7. Pathfinder Knowledge Engine.
         Returns: (response_text, provider_name)
         """
+        # Dynamic check for runtime updates to .env
+        grok_key = (os.getenv("GROK_API_KEY", "") or os.getenv("XAI_API_KEY", "")).strip() or self.grok_key
+        groq_key = os.getenv("GROQ_API_KEY", "").strip() or self.groq_key
+        gemini_key = os.getenv("GEMINI_API_KEY", "").strip() or self.gemini_key
+
         # =====================================================================
-        # 1. Primary: Gemini (requires valid AIzaSy... key without periods/corruptions)
+        # 1. Primary: xAI Grok (grok-2-latest, grok-beta)
         # =====================================================================
-        if self.gemini_key and self.gemini_key.startswith("AIzaSy") and "." not in self.gemini_key:
+        if grok_key:
+            grok_res = self._try_openai_compatible(
+                base_url="https://api.x.ai/v1/chat/completions",
+                api_key=grok_key,
+                model=os.getenv("GROK_MODEL", self.grok_model),
+                provider_label="xAI Grok",
+                prompt=prompt,
+                system=system_instruction,
+                history=history,
+                max_tokens=max_tokens
+            )
+            if grok_res:
+                return grok_res
+
+        # =====================================================================
+        # 2. Secondary: Groq LPU (Ultra-fast ~150ms speech inference)
+        # =====================================================================
+        if groq_key:
+            groq_res = self._try_openai_compatible(
+                base_url="https://api.groq.com/openai/v1/chat/completions",
+                api_key=groq_key,
+                model=os.getenv("GROQ_MODEL", self.groq_model),
+                provider_label="Groq LPU",
+                prompt=prompt,
+                system=system_instruction,
+                history=history,
+                max_tokens=max_tokens
+            )
+            if groq_res:
+                return groq_res
+
+        # =====================================================================
+        # 3. Tertiary: Gemini (requires valid AIzaSy... key without periods/corruptions)
+        # =====================================================================
+        if gemini_key and gemini_key.startswith("AIzaSy") and "." not in gemini_key:
             try:
                 try:
                     import google.genai as genai
                     from google.genai import types
 
-                    client = genai.Client(api_key=self.gemini_key)
+                    client = genai.Client(api_key=gemini_key)
                     model_name = os.getenv("GEMINI_TEXT_MODEL", os.getenv("GEMINI_MODEL", "gemini-2.0-flash"))
 
                     config = types.GenerateContentConfig(

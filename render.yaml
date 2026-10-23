@@ -12,6 +12,14 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: qwen/qwen3.8-27b
+      - key: GROK_API_KEY
+        sync: false
+      - key: GROK_MODEL
+        value: grok-2-latest
       - key: GEMINI_MODEL
         value: gemini-2.0-flash
       - key: GEMINI_API_KEY
@@ -43,7 +51,7 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: FRONTEND_URL
-        value: http://localhost:3000,http://localhost:5173,https://pathfinder-client-fzom.vercel.app
+        value: https://pathfinder-client-fzom.vercel.app,http://localhost:3000,http://localhost:5173
       - key: BACKEND_PUBLIC_URL
         value: https://pathfinder-backend-klrp.onrender.com
       - key: GOOGLE_CLIENT_ID

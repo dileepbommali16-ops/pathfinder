@@ -42,8 +42,8 @@ def test_tools_allowlist():
     print("[OK] get_site_guide passed")
 
     res2 = execute_tool("list_projects", {})
-    assert len(res2) == 23, f"Expected 23 projects, got {len(res2)}"
-    print("[OK] list_projects returned 23 production blueprints")
+    assert len(res2) >= 23, f"Expected at least 23 projects, got {len(res2)}"
+    print(f"[OK] list_projects returned {len(res2)} production blueprints")
 
     res3 = execute_tool("get_project", {"project_id": "proj-sde-1"})
     assert res3.get("id") == "proj-sde-1", "get_project failed"

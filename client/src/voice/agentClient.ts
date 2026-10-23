@@ -10,7 +10,7 @@ import type { ScreenPayload } from "../hooks/useScreenWatcher";
 import { loadMemory } from "./memory";
 
 const API_BASE =
-  ((import.meta.env.VITE_API_BASE_URL as string | undefined) || "https://pathfinder-1-xhme.onrender.com").replace(/\/+$/, "");
+  ((import.meta.env.VITE_API_BASE_URL as string | undefined) || "https://pathfinder-backend-klrp.onrender.com").replace(/\/+$/, "");
 
 const REQUEST_TIMEOUT_MS = 2000; // Fail-fast to autonomous client brain on Vercel without waiting
 

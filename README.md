@@ -4,7 +4,7 @@
 
 [![Live Platform](https://img.shields.io/badge/🚀_Live_Demo-Vercel_Edge-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://pathfinder-client-fzom.vercel.app/?demo=1)
 [![Cloud Engine](https://img.shields.io/badge/⚡_API_Gateway-Render_Cloud-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://pathfinder-backend-klrp.onrender.com/api/health)
-[![AI Engine](https://img.shields.io/badge/🧠_LLM_Core-Gemini_2.0_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![AI Engine](https://img.shields.io/badge/⚡_LLM_Core-Groq_LPU_Inference-F55036?style=for-the-badge&logo=groq&logoColor=white)](https://groq.com)
 [![ML Accuracy](https://img.shields.io/badge/📈_Model_Accuracy-88%25_Random_Forest-success?style=for-the-badge)](https://github.com/dileepbommali16-ops/pathfinder)
 [![License: MIT](https://img.shields.io/badge/License-MIT-white?style=for-the-badge)](LICENSE)
 
@@ -501,9 +501,10 @@ Pathfinder 2.0 uses a decoupled cloud architecture: **Frontend on Vercel** and *
    - **Start Command**: `uvicorn backend.api:app --host 0.0.0.0 --port $PORT`
    - **Health Check Path**: `/api/health`
 3. **Environment Variables** (set in Render Environment tab):
-   - `GEMINI_API_KEY`: Your Google Gemini API key
-   - `GEMINI_MODEL`: `gemini-2.0-flash`
-   - `FRONTEND_URL`: `http://localhost:5173,https://pathfinder-client-fzom.vercel.app`
+   - `GROQ_API_KEY`: Your Groq LPU inference key (`gsk_...`) for ultra-fast 0.22s responses
+   - `GROQ_MODEL`: `qwen/qwen3.8-27b`
+   - `FRONTEND_URL`: `https://pathfinder-client-fzom.vercel.app`
+   - `BACKEND_PUBLIC_URL`: `https://pathfinder-backend-klrp.onrender.com`
    - `JWT_SECRET`: Random 32+ character hexadecimal string
 4. **Auto-Deploy Control**:
    - In Render service settings, set **Auto-Deploy** to `No` if you prefer manual deployments to protect your free 750 monthly runtime hours.

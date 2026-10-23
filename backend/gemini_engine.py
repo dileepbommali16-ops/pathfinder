@@ -325,6 +325,69 @@ def get_detailed_project_context(
         )
     return ""
 
+def grok_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -> Optional[str]:
+    """Chat completion using xAI Grok API."""
+    api_key = (os.getenv("GROK_API_KEY", "") or os.getenv("XAI_API_KEY", "")).strip()
+    if not api_key:
+        return None
+    model = os.getenv("GROK_MODEL", "grok-2-latest").strip() or "grok-2-latest"
+    try:
+        msgs = [{"role": "system", "content": sys_instruction}] + messages_list
+        payload = json.dumps({
+            "model": model,
+            "messages": msgs,
+            "temperature": 0.7,
+            "max_tokens": 2000
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            "https://api.x.ai/v1/chat/completions",
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=12.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            choice = data.get("choices", [{}])[0].get("message", {}).get("content")
+            return choice.strip() if choice else None
+    except Exception as exc:
+        logger.warning(f"[Grok Engine] Warning: {exc}")
+        return None
+
+
+def groq_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -> Optional[str]:
+    """High-speed chat completion using Groq LPU API."""
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
+    if not api_key:
+        return None
+    model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip() or "llama-3.3-70b-versatile"
+    try:
+        msgs = [{"role": "system", "content": sys_instruction}] + messages_list
+        payload = json.dumps({
+            "model": model,
+            "messages": msgs,
+            "temperature": 0.7,
+            "max_tokens": 2000
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            "https://api.groq.com/openai/v1/chat/completions",
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=8.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            choice = data.get("choices", [{}])[0].get("message", {}).get("content")
+            return choice.strip() if choice else None
+    except Exception as exc:
+        logger.warning(f"[Groq Engine] Warning: {exc}")
+        return None
+
 
 def openrouter_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -> Optional[str]:
     """Fallback LLM chat using OpenRouter API with full multi-turn history."""
@@ -1081,6 +1144,54 @@ def chat_with_mentor(
                 )
                 deprioritize_gemini_model(model)
                 continue
+
+    # 6a. xAI Grok (if GROK_API_KEY / XAI_API_KEY is configured)
+    grok_key = (os.getenv("GROK_API_KEY", "") or os.getenv("XAI_API_KEY", "")).strip()
+    if grok_key:
+        t_gk_start = time.perf_counter()
+        try:
+            gk_reply = grok_chat(openrouter_messages, sys_instruction)
+            gk_duration = round((time.perf_counter() - t_gk_start) * 1000, 2)
+            if gk_reply and gk_reply.strip():
+                grok_model_name = os.getenv("GROK_MODEL", "grok-2-latest")
+                final_reply = evaluate_and_enforce_novelty(gk_reply.strip(), grok_model_name)
+                meta = {
+                    "prep_ms": prep_ms,
+                    "gemini_call_ms": gk_duration,
+                    "novelty_ms": 0.0,
+                    "model_used": f"xAI Grok ({grok_model_name})",
+                    "attempts": attempts_log,
+                    "status": "success"
+                }
+                if return_meta:
+                    return final_reply, meta
+                return final_reply
+        except Exception as gk_exc:
+            logger.warning(f"[Grok Engine] Warning: {gk_exc}")
+
+    # 6b. Groq LPU high-speed inference (if GROQ_API_KEY is configured)
+    groq_key = os.getenv("GROQ_API_KEY", "").strip()
+    if groq_key:
+        t_gq_start = time.perf_counter()
+        try:
+            gq_reply = groq_chat(openrouter_messages, sys_instruction)
+            gq_duration = round((time.perf_counter() - t_gq_start) * 1000, 2)
+            if gq_reply and gq_reply.strip():
+                groq_model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+                final_reply = evaluate_and_enforce_novelty(gq_reply.strip(), groq_model_name)
+                meta = {
+                    "prep_ms": prep_ms,
+                    "gemini_call_ms": gq_duration,
+                    "novelty_ms": 0.0,
+                    "model_used": f"Groq LPU ({groq_model_name})",
+                    "attempts": attempts_log,
+                    "status": "success"
+                }
+                if return_meta:
+                    return final_reply, meta
+                return final_reply
+        except Exception as gq_exc:
+            logger.warning(f"[Groq Engine] Warning: {gq_exc}")
 
     # 7. Ollama LLM integration (Local daemon or Ollama Cloud / API Key)
     ollama_key = os.getenv("OLLAMA_API_KEY", "").strip()
