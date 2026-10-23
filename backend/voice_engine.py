@@ -22,7 +22,7 @@ logger = logging.getLogger("pathfinder.voice")
 
 from backend.memory_engine import recall_student_memory, store_student_exchange
 from backend.ollama_provider import check_and_discover_ollama, stream_ollama_tokens, get_ollama_config
-from backend.services.owner_profile import is_owner_user, get_context_for_user, OWNER_PUBLIC_BIO, OWNER_PROFILE
+from backend.owner_profile import is_owner_user, get_context_for_user, OWNER_PUBLIC_BIO, OWNER_PROFILE
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR / "data"

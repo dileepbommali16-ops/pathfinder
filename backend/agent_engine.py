@@ -134,7 +134,7 @@ def clean(value: Any, max_len: int) -> str:
     return text[:max_len]
 
 
-from backend.services.owner_profile import is_owner_user, get_context_for_user, OWNER_PUBLIC_BIO
+from backend.owner_profile import is_owner_user, get_context_for_user, OWNER_PUBLIC_BIO
 
 # --------------------------------------------------------------------------- system instruction
 

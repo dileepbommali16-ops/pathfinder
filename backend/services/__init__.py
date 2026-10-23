@@ -20,16 +20,18 @@ from backend.gemini_engine import (
     chat_with_mentor,
     generate_structured_ai
 )
-from backend.voice_engine import (
-    handle_voice_turn,
-    generate_spoken_briefing
-)
 from backend.pdf_engine import (
     extract_text_from_pdf,
     generate_analytics_pdf,
     generate_resume_pdf
 )
 from backend.cache import cache
+
+def __getattr__(name):
+    if name in ("handle_voice_turn", "generate_spoken_briefing"):
+        import backend.voice_engine as _ve
+        return getattr(_ve, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
     "get_placement_df",
