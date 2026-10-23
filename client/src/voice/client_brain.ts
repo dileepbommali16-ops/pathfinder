@@ -248,6 +248,41 @@ export class ClientBrainEngine {
       /[\u0900-\u097F]/.test(raw);
 
     // =======================================================================
+    // 0.0. SUPREME BOSS & CREATOR PRIORITY: DILEEP BOMMALI (DILEEP DAS)
+    // =======================================================================
+    const isBossQuery =
+      anyMatch(low, [
+        "boss", "ur boss", "your boss", "the boss", "creator", "owner",
+        "who made you", "who made u", "who created you", "who created u",
+        "who built you", "who built u", "who invented you", "who is your boss",
+        "who is ur boss", "who is the boss", "tell me about your boss",
+        "dileep", "bommali", "dileep das", "dileep bommali",
+        "boss evaru", "ninnu evaru chesaru", "ninnu evaru chesharu",
+        "ne creator evaru", "ni creator evaru", "who designed you"
+      ]);
+
+    if (isBossQuery) {
+      if (isOwner) {
+        return {
+          spoken: isTelugu
+            ? "మీరే నా సృష్టికర్త మరియు బాస్ దిలీప్ దాస్ (దిలీప్ బొమ్మాలి)! పాత్‌ఫైండర్ మరియు నా డిజిటల్ ఆర్కిటెక్చర్ మొత్తం మీ ఆదేశానుసారం రన్ అవుతున్నాయి, బాస్!"
+            : "At your command, Boss Dileep! You are my creator, architect, and supreme boss. All autonomous placement engines, live roadmaps, and neural systems are operating at peak efficiency under your directive.",
+          display: `### 👑 Boss Verified: Dileep Bommali (Dileep Das)\n\nWelcome back, **Boss Dileep**! I am **DAS**, your autonomous placement co-pilot.\n\n- 🎓 **Engineering**: B.Tech CSE (Data Science), NRI Institute of Technology\n- 📍 **Headquarters**: Gunadala, Vijayawada, AP\n- 🎸 **Passions**: Lead Guitarist, high-energy dancer, and vocalist\n- 🤖 **Vision**: Eliminating the campus-to-tier-1 placement gap with autonomous AI coaching and 972 empirical student records.\n\nAll systems standing by for your command!`,
+          actions: [],
+          followups: ["Show live placement telemetry", "Explain 23 production blueprints", "Run STAR interview defense"]
+        };
+      }
+      return {
+        spoken: isTelugu
+          ? "నా సృష్టికర్త మరియు బాస్ దిలీప్ బొమ్మాలి (దిలీప్ దాస్)! ఆయన NRI కాలేజీలో B.Tech CSE డేటా సైన్స్ చదువుతూ పాత్‌ఫైండర్ మరియు నన్ను రూపొందించారు. నేను ఆయన పర్యవేక్షణలో పనిచేస్తూ విద్యార్థులకు ప్లేస్‌మెంట్స్ లో మార్గదర్శనం చేస్తాను!"
+          : "My creator and supreme boss is Dileep Bommali, also known as Dileep Das! He engineered the entire Pathfinder platform and my DAS autonomous AI architecture while studying B.Tech CSE Data Science at NRI Institute of Technology. I report directly to him while helping engineers conquer high-tier placements!",
+        display: `### 👑 Boss & Visionary Creator: Dileep Bommali (Dileep Das)\n\n**Dileep Bommali (Dileep Das)** is the architect, developer, and boss of Pathfinder and the DAS AI Intelligence System:\n\n- 🎓 **Academics**: B.Tech Computer Science & Engineering (Data Science), NRI Institute of Technology\n- 📍 **Native Place**: Gunadala, Vijayawada, Andhra Pradesh\n- 🎸 **Creative Talents**: Lead Guitarist, dancer, and singer\n- 🤖 **Architectural Feat**: Engineered Pathfinder's 88% accuracy ML predictor, 23 enterprise blueprints, and autonomous voice intelligence.\n- 💼 **Mission**: Empowering tier-2/3 engineering students to crack top-tier product company offers with empirical data and system design defense.`,
+        actions: [],
+        followups: ["Explain about Pathfinder", "Show 23 project blueprints", "Check my placement readiness"]
+      };
+    }
+
+    // =======================================================================
     // 0. CONTEXT-AWARE INQUIRY (Where am I? What am I doing right now?)
     // =======================================================================
     if (anyMatch(low, ["where am i", "what is this page", "what am i doing", "what am i doing here", "explain this page", "explain current page", "explain this dashboard", "what is on screen", "what is this screen", "ekkada vunna", "em chesthunna", "dashboard gurinchi", "explain screen", "what am i looking at"])) {
@@ -715,7 +750,7 @@ export class ClientBrainEngine {
     // =======================================================================
     // 5.1. GENERAL GREETINGS & TIME-OF-DAY BOSS GREETING
     // =======================================================================
-    if (anyMatch(low, ["hi", "hello", "hey", "namaskaram", "namaste", "good morning", "good afternoon", "good evening", "who are you"])) {
+    if (isPureGreeting(low) || low === "hi" || low === "hello" || low === "hey") {
       const nowHour = new Date().getHours();
       const tod = nowHour < 12 ? "morning" : (nowHour < 17 ? "afternoon" : "evening");
       const todTe = tod === "morning" ? "మార్నింగ్" : (tod === "afternoon" ? "ఆఫ్టర్నూన్" : "ఈవినింగ్");
@@ -792,8 +827,21 @@ export class ClientBrainEngine {
   }
 }
 
+function isPureGreeting(text: string): boolean {
+  if (/\b(boss|who|what|where|how|why|which|explain|show|open|roadmap|resume|project|predict|analytics|dileep|help|ats|score|odds)\b/i.test(text)) {
+    return false;
+  }
+  return /\b(hi|hello|hey|namaskaram|namaste|good morning|good afternoon|good evening|sup)\b/i.test(text);
+}
+
 function anyMatch(text: string, keywords: string[]): boolean {
-  return keywords.some(k => text.includes(k));
+  return keywords.some(k => {
+    if (k.length <= 4) {
+      const reg = new RegExp(`(^|\\s|[^a-zA-Z0-9])${k}($|\\s|[^a-zA-Z0-9])`, "i");
+      return reg.test(text);
+    }
+    return text.includes(k);
+  });
 }
 
 export const clientBrain = new ClientBrainEngine();
