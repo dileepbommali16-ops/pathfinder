@@ -257,9 +257,22 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
   }, [speakSentences]);
 
   // Proactive automatic voice greeting upon dashboard load
+  // Proactive automatic voice greeting upon dashboard load (STRICTLY ONCE per browser session!)
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const alreadyGreeted = sessionStorage.getItem("das_boss_greeted");
+      if (alreadyGreeted) {
+        hasSpokenGreetingRef.current = true;
+        return;
+      }
+    }
+
     const greetingTimer = setTimeout(() => {
       if (!hasSpokenGreetingRef.current) {
+        hasSpokenGreetingRef.current = true;
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("das_boss_greeted", "true");
+        }
         const nowHour = new Date().getHours();
         const timeGreetingEn = nowHour < 12 ? "Good morning" : (nowHour < 17 ? "Good afternoon" : "Good evening");
         const timeGreetingTe = nowHour < 12 ? "గుడ్ మార్నింగ్" : (nowHour < 17 ? "గుడ్ ఆఫ్టర్నూన్" : "గుడ్ ఈవినింగ్");
@@ -542,6 +555,50 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           },
         ]);
+        // Dispatch client actions if specified
+        if (brainRes.actions && brainRes.actions.length > 0) {
+          for (const act of brainRes.actions) {
+            try {
+              if (act.name === "navigate_to") {
+                const targetTab = act.arguments?.page_id || act.arguments?.tab;
+                if (targetTab) {
+                  options.actionContext?.onNavigateTab?.(targetTab);
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: targetTab } }));
+                  }
+                }
+              } else if (act.name === "open_panel") {
+                const panel = act.arguments?.name || act.arguments?.panel;
+                if (panel === "resume_builder") {
+                  options.actionContext?.onOpenResumeBuilder?.();
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("das-open-resume-builder"));
+                  }
+                } else if (panel === "mock_interview") {
+                  options.actionContext?.onLaunchMockInterview?.("Google", "SDE");
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("das-open-mock-interview"));
+                  }
+                }
+              } else if (act.name === "highlight") {
+                const sectionId = act.arguments?.section_id || act.arguments?.target;
+                if (sectionId && typeof window !== "undefined") {
+                  const el = document.querySelector(`[data-das-id="${sectionId}"]`) || document.querySelector(`#${sectionId}`);
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    el.classList.add("ring-2", "ring-cyan-400", "ring-offset-2", "transition-all");
+                    setTimeout(() => {
+                      el.classList.remove("ring-2", "ring-cyan-400", "ring-offset-2");
+                    }, 3000);
+                  }
+                }
+              }
+            } catch (actErr) {
+              console.warn("[useVoiceSession] Error dispatching client action:", actErr);
+            }
+          }
+        }
+
         if (autoSpeakRef.current && spoken) {
           speakSentences([spoken]);
         } else {
@@ -796,23 +853,35 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
             isListeningRef.current = false;
             setState("error");
           } else if (event.error !== "no-speech" && event.error !== "aborted") {
-            setIsMicActive(false);
-            isListeningRef.current = false;
-            setState("idle");
+            // For other transient errors, don't crash session if still listening
+            if (!isListeningRef.current) {
+              setIsMicActive(false);
+              setState("idle");
+            }
           }
         };
 
         recognition.onend = () => {
           if (isListeningRef.current) {
             const spoken = speechTranscriptRef.current.trim();
-            speechTranscriptRef.current = "";
-            setInterimTranscript("");
-            isListeningRef.current = false;
-            setIsMicActive(false);
-
             if (spoken) {
+              speechTranscriptRef.current = "";
+              setInterimTranscript("");
+              isListeningRef.current = false;
+              setIsMicActive(false);
               sendMessage(spoken);
             } else {
+              // User has not spoken yet or brief silence; restart recognition so mic stays active
+              try {
+                if (isListeningRef.current) {
+                  recognition.start();
+                  return;
+                }
+              } catch {
+                // Ignore duplicate start errors
+              }
+              isListeningRef.current = false;
+              setIsMicActive(false);
               setState("idle");
             }
           }
@@ -825,27 +894,37 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
       }
     }
 
-    // Start PCM streaming for Gemini Live
-    const mic = new MicrophoneCapture({
-      onAudioChunk: (base64Chunk) => {
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(
-            JSON.stringify({
-              type: "user_mic_chunk",
-              audio_base64: base64Chunk,
-            })
-          );
-        }
-      },
-      onError: () => {
-        setIsMicActive(false);
-        isListeningRef.current = false;
-        setState("idle");
-      },
-    });
+    // Start PCM streaming ONLY for Gemini Live if WebSocket is connected and open
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && audioStream && audioStream.active) {
+      const mic = new MicrophoneCapture({
+        onAudioChunk: (base64Chunk) => {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(
+              JSON.stringify({
+                type: "user_mic_chunk",
+                audio_base64: base64Chunk,
+              })
+            );
+          }
+        },
+        onError: (err) => {
+          console.warn("[useVoiceSession] PCM stream error:", err);
+          // Only shutdown if Web Speech API is not active
+          if (!SpeechRec) {
+            setIsMicActive(false);
+            isListeningRef.current = false;
+            setState("idle");
+          }
+        },
+      });
 
-    micRef.current = mic;
-    await mic.start(audioStream || undefined);
+      micRef.current = mic;
+      try {
+        await mic.start(audioStream);
+      } catch (e) {
+        console.warn("[useVoiceSession] Failed to start PCM capture:", e);
+      }
+    }
   }, [isMicActive, state, sendMessage, stopAll]);
 
   return {

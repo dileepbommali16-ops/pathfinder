@@ -303,21 +303,28 @@ export class ClientBrainEngine {
     }
 
     // =======================================================================
-    // 0.8. EXPLAIN ALL COMPONENTS OF PATHFINDER
+    // 0.8. EXPLAIN ABOUT PATHFINDER & ITS CORE PLATFORM ARCHITECTURE
     // =======================================================================
-    if (anyMatch(low, ["explain all components of pathfinder", "all components of pathfinder", "all components", "explain components", "pathfinder components", "components of pathfinder", "anni components cheppu", "components"])) {
+    if (anyMatch(low, [
+      "explain about pathfinder", "explain pathfinder", "what is pathfinder", "about pathfinder",
+      "tell me about pathfinder", "tell about pathfinder", "pathfinder gurinchi cheppu",
+      "pathfinder gurinchi", "pathfinder enti", "what does pathfinder do", "what is this platform",
+      "what is this app", "explain all components of pathfinder", "all components of pathfinder",
+      "all components", "explain components", "pathfinder components", "components of pathfinder",
+      "anni components cheppu", "components"
+    ])) {
       if (isTelugu) {
         return {
-          spoken: "పాత్‌ఫైండర్‌లో 6 ముఖ్యమైన కాంపోనెంట్స్ ఉన్నాయి: ప్రిడిక్టివ్ ప్లేస్‌మెంట్ ఆర్క్, కోహోర్ట్ అనలిటిక్స్, స్కిల్ గ్యాప్ మరియు 6-వీక్ రోడ్‌మ్యాప్, 23 ప్రాజెక్ట్ బ్లూప్రింట్స్, ఏటీఎస్ రెజ్యూమ్ స్టూడియో మరియు డిఫెన్స్ సిమ్యులేటర్!",
-          display: `### ⚡ All Components of Pathfinder 2.0\n\nపాత్‌ఫైండర్ 2.0 పూర్తి ప్లేస్‌మెంట్ ఎకోసిస్టమ్‌ను కవర్ చేసే **6 ముఖ్యమైన కాంపోనెంట్స్**:\n\n1. 🎯 **Placement Probability Predictor**:\n   - 972 పూర్వ విద్యార్థుల డేటాతో 88% ఆక్యూరసీతో మీ ప్లేస్‌మెంట్ అవకాశాలను లెక్కిస్తుంది.\n2. 📊 **Cohort Analytics Explorer**:\n   - 9 బ్రాంచ్‌ల సాలరీ గ్రాఫ్‌లు, హైయెస్ట్ ప్యాకేజీలు మరియు కటాఫ్ మార్కులు.\n3. 🗺️ **Skill Gap Matrix & 6-Week DSA Roadmap**:\n   - 75 కోర్ లీట్‌కోడ్ ప్యాటర్న్స్ తో వారం వారం ప్రిపరేషన్ షెడ్యూల్.\n4. 🚀 **23 Production Project Blueprints**:\n   - ఇంటర్వ్యూయర్లను ఇంప్రెస్ చేసే పూర్తి ఆర్కిటెక్చర్ గైడ్లు.\n5. 📄 **1-Page ATS Resume Studio**:\n   - గూగుల్ X-Y-Z ఫార్ములాతో రెజ్యూమ్ స్కానింగ్.\n6. 🛡️ **STAR Technical Defense Simulator**:\n   - రౌండ్ 2 సిస్టమ్ డిజైన్ వైవా ప్రశ్నల మాక్ ఇంటర్వ్యూయర్.\n7. 🎙️ **DAS Autonomous Voice Agent**:\n   - వెబ్‌సైట్‌ను స్వయంగా కంట్రోల్ చేస్తూ మీకు గైడ్ చేసే AI మెంటార్!`,
-          actions: [],
+          spoken: "పాత్‌ఫైండర్ అనేది ఇంజనీరింగ్ విద్యార్థుల కోసం రూపొందించిన అటానమస్ కెరీర్ ఇంటెలిజెన్స్ ఆపరేటింగ్ సిస్టమ్. ఇందులో 972 పూర్వ విద్యార్థుల డేటాతో పనిచేసే ప్రిడిక్షన్ మోడల్, 23 ప్రొడక్షన్ ప్రాజెక్ట్ బ్లూప్రింట్స్, 6-వారాల డీఎస్‌ఏ రోడ్‌మ్యాప్ మరియు ఏటీఎస్ రెజ్యూమ్ స్టూడియో ఉన్నాయి.",
+          display: `### Pathfinder 2.0: Autonomous Placement Intelligence Platform\n\nపాత్‌ఫైండర్ 2.0 అనేది ఇంజనీరింగ్ విద్యార్థులను Tier-1 ప్రొడక్ట్ కంపెనీలు (Google, Microsoft, Amazon) మరియు హై-గ్రోత్ టెక్ స్టార్టప్‌లలో ప్లేస్ అయ్యేలా సిద్ధం చేసే పూర్తి స్థాయి కెరీర్ ప్లాట్‌ఫామ్.\n\n**కోర్ ఆర్కిటెక్చర్ & మోడ్యూల్స్:**\n\n1. **Predictive Placement Engine**: 972 పూర్వ విద్యార్థుల డేటా ఆధారంగా 88% ఖచ్చితత్వంతో మీ ప్లేస్‌మెంట్ అవకాశాలను మరియు కటాఫ్ మార్కులను లెక్కిస్తుంది.\n2. **Cohort Analytics Explorer**: 9 ఇంజనీరింగ్ బ్రాంచ్‌ల సాలరీ గ్రాఫ్‌లు, రిక్రూటర్ల వివరాలు మరియు కటాఫ్ మార్కులను అందిస్తుంది.\n3. **Skill Gap Matrix & 6-Week DSA Roadmap**: బ్లైండ్ 75 కోర్ ప్యాటర్న్స్ ఆధారంగా రూపొందించిన వారం వారీ ప్రిపరేషన్ షెడ్యూల్.\n4. **23 Production Project Blueprints**: డిస్ట్రిబ్యూటెడ్ సిస్టమ్స్, ఈవెంట్ బస్సులు మరియు జెన్-AI పైప్‌లైన్స్ వంటి హై-ఇంపాక్ట్ ప్రాజెక్ట్ ఆర్కిటెక్చర్లు.\n5. **One-Page ATS Resume Studio**: గూగుల్ X-Y-Z ఫార్ములాతో రిక్రూటర్ల స్క్రీనింగ్ ఫిల్టర్ పాస్ అయ్యేలా రెజ్యూమ్ ఆడిట్.\n6. **STAR Technical Defense Simulator**: రౌండ్ 2 సిస్టమ్ డిజైన్ మరియు కన్‌కరెన్సీ వైవా ప్రశ్నలకు సమాధానాలు సిద్ధం చేసే మాక్ ఇంటర్వ్యూయర్.\n7. **DAS Autonomous AI Agent**: వెబ్‌సైట్ మొత్తం నావిగేట్ చేస్తూ మీకు మార్గనిర్దేశం చేసే మీ పర్సనల్ కో-పైలట్.\n\n*ఏ మోడ్యూల్ గురించి మరింత వివరంగా తెలుసుకోవాలనుకుంటున్నారు?*`,
+          actions: [{ name: "navigate_to", arguments: { page_id: "overview" } }],
           followups: ["Why should students use Pathfinder in the real world?", "How to build projects step by step?", "Open projects tab"]
         };
       }
       return {
-        spoken: "Pathfinder consists of 6 core components: The Predictive Placement Arc, 972-Cohort Analytics Explorer, Skill Gap Matrix with 6-Week DSA Roadmap, 23 Project Blueprints, ATS Resume Studio, and the STAR Defense Simulator with DAS Voice Agent.",
-        display: `### ⚡ All Components of Pathfinder 2.0\n\nPathfinder is architected as an end-to-end placement intelligence suite comprising **6 flagship modules**:\n\n1. 🎯 **Predictive Placement Engine**: Machine-learning calibrated scoring that models your probability of cracking Tier-1, Tier-2, or Core tech placements based on 8 weighted factors.\n2. 📊 **972 Verified Cohort Analytics**: Real empirical hiring trends across 9 engineering departments showing historical CGPA cutoffs and salary distributions (up to 44.6 LPA).\n3. 🗺️ **Skill Gap Matrix & 6-Week DSA Roadmap**: Diagnostic benchmark comparing your coding confidence against company cutoffs, backed by a phased curriculum covering 75 high-frequency patterns.\n4. 🚀 **23 Production Project Blueprints**: Fully architected engineering blueprints with database models, microservice boundaries, and deployment recipes.\n5. 📄 **ATS One-Page Resume Studio**: Live recruiter audit flagging parsing errors, missing metrics, and reformatting bullets into the Google X-Y-Z achievement structure.\n6. 🛡️ **STAR Technical Defense Console**: Interactive viva grilling you on race conditions, database bottlenecks, and scalability trade-offs.\n7. 🎙️ **DAS AI Cybernetic Agent**: Full-duplex conversational voice intelligence that can navigate, highlight widgets, and mentor you 24/7.`,
-        actions: [],
+        spoken: "Pathfinder is an autonomous career intelligence operating system built for engineering students. It combines an 88% precision ML placement predictor calibrated on 972 alumni records, 23 production project blueprints, a 6-week Blind 75 DSA roadmap, and an ATS resume studio with live website navigation.",
+        display: `### Pathfinder 2.0: Autonomous Career Intelligence Platform\n\nPathfinder is an end-to-end placement engineering platform designed to eliminate the guesswork from campus recruitment and qualify students for Tier-1 technology companies (Google, Amazon, Microsoft, Goldman Sachs).\n\n**Core Architectural Modules:**\n\n1. **Calibrated ML Placement Predictor**: An 88% precision classification model benchmarked on 972 verified student records. It calculates your exact clearance probability based on CGPA, pattern DSA confidence, and project complexity.\n2. **972-Cohort Placement Analytics**: Transparent departmental hiring telemetry across 9 engineering disciplines, detailing packages up to 44.6 LPA and recruiter cutoff thresholds.\n3. **Skill Gap Matrix & 6-Week DSA Roadmap**: A phased problem-solving curriculum targeting the 75 most frequent algorithmic patterns tested in technical rounds.\n4. **23 Production Project Blueprints**: Enterprise-grade systems architecture guides (Distributed Rate Limiters, OT Collaborative Editors, High-Throughput Matching Engines, RAG Agents) equipped with database schemas and interview defense points.\n5. **One-Page ATS Resume Studio**: Real-time diagnostic parser enforcing the Google X-Y-Z metric formula to survive the 6-second recruiter audit.\n6. **STAR Technical Defense Simulator**: Rigorous Round 2 viva interrogation console to defend concurrency, database indexing, and caching trade-offs.\n7. **DAS Cybernetic Voice Agent**: Full-duplex conversational co-pilot with complete autonomous website control and visual holographic presence.\n\n*Would you like to examine our project blueprints, check cohort statistics, or review your placement odds?*`,
+        actions: [{ name: "navigate_to", arguments: { page_id: "overview" } }],
         followups: ["Why should students use Pathfinder in the real world?", "How to build projects step by step?", "Show 6-week roadmap"]
       };
     }
@@ -575,7 +582,27 @@ export class ClientBrainEngine {
     }
 
     // =======================================================================
-    // 5. GREETINGS & TIME-OF-DAY BOSS GREETING
+    // 5. DAS PERSONAL CALL & CO-PILOT COMMAND ("hey das", "das", etc.)
+    // =======================================================================
+    if (anyMatch(low, ["hey das", "hi das", "hello das", "das bro", "das ai", "ok das", "hey boss das", "listen das"]) || low === "das") {
+      if (isTelugu) {
+        return {
+          spoken: "చెప్పండి బాస్! DAS సిస్టమ్స్ అన్నీ 100% రెడీగా ఉన్నాయి. ఈరోజు ఏ ప్రాజెక్ట్ లేదా డీఎస్‌ఏ ప్యాటర్న్ మొదలుపెడదాం? వెబ్‌సైట్ మొత్తం మీ చేతుల్లోనే ఉంది!",
+          display: `### DAS Co-Pilot: Systems Calibrated & Online\n\nచెప్పండి బాస్! మీ డిజిటల్ అటానమస్ కో-పైలట్ సిద్ధంగా ఉంది. పాత్‌ఫైండర్ ప్లాట్‌ఫామ్‌ను పూర్తి స్థాయిలో కంట్రోల్ చేయడానికి నేను రెడీ:\n\n- **Predictive Placement Arc**: మీ CGPA మరియు స్కిల్స్ బట్టి ఎలిజిబిలిటీ స్కోర్.\n- **23 Flagship Architectures**: సిస్టమ్ డిజైన్ బ్లూప్రింట్స్ & కోడ్ గైడ్లు.\n- **6-Week DSA Roadmap**: హై-ఫ్రీక్వెన్సీ లీట్‌కోడ్ ప్యాటర్న్స్.\n- **Autonomous Navigation**: ఏ పేజీ అయినా చెప్పండి, నేను ఓపెన్ చేసి చూపిస్తాను.\n\n*ఈరోజు మనం ఏ డైరెక్షన్‌లో వెళ్దాం బాస్?*`,
+          actions: [],
+          followups: ["Explain about Pathfinder", "Show project blueprints", "Check placement stats"]
+        };
+      }
+      return {
+        spoken: "At your command, Boss! All neural circuits and placement telemetry are 100% online. Ready to crack system design, conquer high-frequency algorithms, or command the website.",
+        display: `### DAS Co-Pilot: Systems Calibrated & Standing By\n\nReporting for duty, Boss. All placement intelligence engines are fully synchronized:\n\n- **ML Placement Predictor**: Calibrated on 972 verified student placement records.\n- **23 Production Blueprints**: Enterprise architectures with database schemas and interview defense points.\n- **6-Week DSA Roadmap**: 75 high-frequency patterns covering Tier-1 technical rounds.\n- **Full Autonomous Control**: Ask me to open any tab, highlight metrics, or launch interview defense.\n\n*What is our objective today, Boss?*`,
+        actions: [],
+        followups: ["Explain about Pathfinder", "Show project blueprints", "Check placement stats"]
+      };
+    }
+
+    // =======================================================================
+    // 5.1. GENERAL GREETINGS & TIME-OF-DAY BOSS GREETING
     // =======================================================================
     if (anyMatch(low, ["hi", "hello", "hey", "namaskaram", "namaste", "good morning", "good afternoon", "good evening", "who are you"])) {
       const nowHour = new Date().getHours();
@@ -585,14 +612,14 @@ export class ClientBrainEngine {
       if (isTelugu) {
         return {
           spoken: `నమస్కారం! ${timeGreetingTe} నేను మీ పాత్‌ఫైండర్ AI కోచ్ దాస్ ని. ఈరోజు ప్లేస్‌మెంట్స్ లో ఏం సాధిద్దాం?`,
-          display: `### 👋 నమస్కారం! ${timeGreetingTe} నేను DAS — మీ పర్సనల్ AI కో-పైలట్\n\nపాత్‌ఫైండర్ సిస్టమ్స్ అన్నీ ఆన్‌లైన్ లో ఉన్నాయి:\n- 🎯 **88% Accuracy ML Predictor**: మీ CGPA మరియు స్కిల్స్ బట్టి రియల్ ప్లేస్‌మెంట్ ఛాన్సెస్.\n- 🚀 **23 Production Project Blueprints**: రెజ్యూమ్‌కి వెయిటేజ్ తెచ్చే టాప్ ప్రాజెక్ట్స్.\n- 🗺️ **6-Week DSA Roadmap**: హై-ఫ్రీక్వెన్సీ ఇంటర్వ్యూ పాటర్న్స్.\n- 📄 **1-Page ATS Resume Studio**: రిక్రూటర్ స్క్రీనింగ్ ఫిల్టర్ పాస్ అయ్యే ఫార్మాట్.\n\n*ఏ విషయాన్ని గురించి డిస్కస్ చేద్దాం? చెప్పండి బాస్!*`,
+          display: `### నమస్కారం! ${timeGreetingTe} నేను DAS — మీ పర్సనల్ AI కో-పైలట్\n\nపాత్‌ఫైండర్ సిస్టమ్స్ అన్నీ ఆన్‌లైన్ లో ఉన్నాయి:\n- **88% Accuracy ML Predictor**: మీ CGPA మరియు స్కిల్స్ బట్టి రియల్ ప్లేస్‌మెంట్ ఛాన్సెస్.\n- **23 Production Project Blueprints**: రెజ్యూమ్‌కి వెయిటేజ్ తెచ్చే టాప్ ప్రాజెక్ట్స్.\n- **6-Week DSA Roadmap**: హై-ఫ్రీక్వెన్సీ ఇంటర్వ్యూ పాటర్న్స్.\n- **1-Page ATS Resume Studio**: రిక్రూటర్ స్క్రీనింగ్ ఫిల్టర్ పాస్ అయ్యే ఫార్మాట్.\n\n*ఏ విషయాన్ని గురించి డిస్కస్ చేద్దాం? చెప్పండి బాస్!*`,
           actions: [],
           followups: ["Who is your boss?", "Show project blueprints", "Calculate my placement readiness"]
         };
       }
       return {
         spoken: `Hello! ${timeGreetingEn} I am DAS, your autonomous Pathfinder AI Placement Co-pilot. Systems online and ready. How can I assist you right now?`,
-        display: `### 👋 Welcome! ${timeGreetingEn} I am DAS — Your Pathfinder AI Career Architect\n\nAll autonomous modules are calibrated and standing by:\n- 🎯 **Calibrated Placement Odds**: ML statistical inference trained on 972 real alumni records.\n- 🚀 **23 Production Project Blueprints**: Architectural roadmaps with database schemas and interview defense.\n- 🗺️ **6-Week DSA Sprint**: High-frequency LeetCode and System Design curriculum.\n- 📄 **ATS Resume Studio**: Real-time diagnostic audit formatted to recruiter screening algorithms.\n\n*Ask me anything, or tell me which tab you would like to open!*`,
+        display: `### Welcome! ${timeGreetingEn} I am DAS — Your Pathfinder AI Career Architect\n\nAll autonomous modules are calibrated and standing by:\n- **Calibrated Placement Odds**: ML statistical inference trained on 972 real alumni records.\n- **23 Production Project Blueprints**: Architectural roadmaps with database schemas and interview defense.\n- **6-Week DSA Sprint**: High-frequency LeetCode and System Design curriculum.\n- **ATS Resume Studio**: Real-time diagnostic audit formatted to recruiter screening algorithms.\n\n*Ask me anything, or tell me which tab you would like to open!*`,
         actions: [],
         followups: ["Who is your boss?", "Go to blueprints and explain a small project", "What is use of roadmap?"]
       };
@@ -607,7 +634,7 @@ export class ClientBrainEngine {
           const spoken = `${info.name} has a verified placement clearance rate of ${info.placementRate}, with the highest package reaching ${info.highestPkg} and an average of ${info.avgPkg}. Top recruiters include ${info.topRecruiters.slice(0, 3).join(", ")}.`;
           return {
             spoken,
-            display: `### 🎓 ${info.name} (${code}) Placement Intelligence\n\n- **Placement Clearance Rate**: \`${info.placementRate}\`\n- **Highest Salary Package**: \`${info.highestPkg}\`\n- **Average Salary Benchmark**: \`${info.avgPkg}\`\n- **Minimum Eligibility Cutoff**: ${info.cutoff}\n- **Top Hiring Companies**: ${info.topRecruiters.join(", ")}\n\n💡 **Departmental Strategy**: ${info.roadmap}`,
+            display: `### ${info.name} (${code}) Placement Intelligence\n\n- **Placement Clearance Rate**: \`${info.placementRate}\`\n- **Highest Salary Package**: \`${info.highestPkg}\`\n- **Average Salary Benchmark**: \`${info.avgPkg}\`\n- **Minimum Eligibility Cutoff**: ${info.cutoff}\n- **Top Hiring Companies**: ${info.topRecruiters.join(", ")}\n\nStrategic Guidance: ${info.roadmap}`,
             actions: [{ name: "navigate_to", arguments: { page_id: "analytics" } }],
             followups: [`Recommend project for ${code}`, `How to achieve highest package in ${code}?`, "What is use of roadmap?"]
           };
@@ -616,17 +643,17 @@ export class ClientBrainEngine {
     }
 
     // =======================================================================
-    // 7. THOUGHTFUL, INTELLIGENT FALLBACK (NEVER Robotic, NEVER "Go look yourself")
+    // 7. THOUGHTFUL, PROFESSIONAL EXECUTIVE GUIDANCE
     // =======================================================================
     const spoken = isTelugu
-      ? `మీరు అడిగిన '${raw}' గురించి నేను విశ్లేషించాను. మీ ప్లేస్‌మెంట్ ప్రిపరేషన్ కోసం సరైన రోడ్‌మ్యాప్, ప్రాజెక్ట్ గైడెన్స్ మరియు రెజ్యూమ్ టిప్స్ సిద్ధంగా ఉన్నాయి. ఏ అంశం గురించి మరింత వివరంగా మాట్లాడదాం?`
-      : `I hear you on that! Looking at your placement journey from an engineering recruiter's perspective, having a clear roadmap and a strong flagship project is what sets you apart. How can I best guide you on this right now?`;
+      ? `మీరు అడిగిన '${raw}' గురించి నేను విశ్లేషించాను. మీ ప్లేస్‌మెంట్ ప్రిపరేషన్ కోసం స్పష్టమైన రోడ్‌మ్యాప్, ప్రాజెక్ట్ బ్లూప్రింట్స్ మరియు ఏటీఎస్ రెజ్యూమ్ గైడెన్స్ సిద్ధంగా ఉన్నాయి. ఏ అంశం గురించి మరింత వివరంగా మాట్లాడదాం?`
+      : `I have analyzed your query regarding "${raw}". From an engineering placement perspective, structured preparation and defensible system projects create the winning difference. How would you like to proceed?`;
 
     return {
       spoken,
-      display: `### 💡 Placement Strategist Guidance\n\nRegarding your question: **"${raw}"**\n\nHere is how we tackle this strategically:\n\n1. 🎯 **Keep Your Goal Clear**: Whether it's cracking Tier-1 product firms (Google, Amazon) or high-growth tech startups, recruiters evaluate **practical depth over theoretical memorization**.\n2. 🗺️ **Follow the 6-Week Sprints**: Don't waste time solving random problems without structure. Master core Blind 75 patterns systematically.\n3. 🚀 **Anchor Your Resume with 1 Flagship System**: An interviewer spends 80% of Round 2 diving into your most complex project.\n\n*Tell me more about what you're thinking, or click one of the quick options below!*`,
+      display: `### Placement Strategic Assessment\n\nInquiry: **"${raw}"**\n\nKey Strategic Pillars:\n\n1. **Practical Engineering Depth**: Tier-1 engineering organizations evaluate architectural depth, data integrity, and trade-off justification over memorized syntax.\n2. **Pattern-Driven Coding Sprints**: Systematic progression through the 75 high-frequency algorithm patterns eliminates wasted preparation time.\n3. **Production-Grade Project Defense**: Backing your credentials with a live, distributed flagship system secures Round 2 technical clearances.\n\n*Choose a module to explore, or ask me to navigate directly:*`,
       actions: [],
-      followups: ["What is use of roadmap?", "Show 23 project blueprints", "How to format ATS resume?"]
+      followups: ["Explain about Pathfinder", "Show 23 project blueprints", "How to format ATS resume?"]
     };
   }
 }

@@ -1,6 +1,7 @@
 /**
  * Avatar Deformation Rig (client/src/voice/avatar/rig.ts)
- * Applies idle skeletal transforms, eyelid blink scaling (0 to 1), and mouth morphing.
+ * Applies idle skeletal transforms, realistic eyelid rotation blinking (0 to 1),
+ * ocular gaze saccades, and responsive lip-sync mouth morphing.
  */
 
 import { MeshParts } from "./faceMesh";
@@ -19,6 +20,8 @@ export class AvatarRig {
       headGroup,
       leftEye,
       rightEye,
+      leftPupil,
+      rightPupil,
       leftEyelid,
       rightEyelid,
       mouthMesh,
@@ -26,42 +29,55 @@ export class AvatarRig {
       lowerLip,
     } = this.parts;
 
-    // 1. Skeletal Micro-motion
+    // 1. Skeletal Breathing Micro-motion & Natural Head Sway
     headGroup.position.y = idle.positionY;
     headGroup.rotation.x = idle.rotationX;
     headGroup.rotation.y = idle.rotationY;
     headGroup.rotation.z = idle.rotationZ;
 
-    // 2. Gaze Shift
-    leftEye.position.x = -0.35 + idle.gazeX * 0.05;
-    leftEye.position.y = 0.22 + idle.gazeY * 0.04;
-    rightEye.position.x = 0.35 + idle.gazeX * 0.05;
-    rightEye.position.y = 0.22 + idle.gazeY * 0.04;
+    // 2. Ocular Gaze Tracking & Micro-Saccades
+    const gazeOffsetX = idle.gazeX * 0.04;
+    const gazeOffsetY = idle.gazeY * 0.035;
 
-    // 3. Eyelid Blinking (Smooth parabolic shutter close & eye squash)
+    leftEye.position.x = -0.35 + gazeOffsetX;
+    leftEye.position.y = 0.22 + gazeOffsetY;
+    rightEye.position.x = 0.35 + gazeOffsetX;
+    rightEye.position.y = 0.22 + gazeOffsetY;
+
+    if (leftPupil && rightPupil) {
+      leftPupil.position.x = -0.35 + gazeOffsetX * 1.2;
+      leftPupil.position.y = 0.22 + gazeOffsetY * 1.2;
+      rightPupil.position.x = 0.35 + gazeOffsetX * 1.2;
+      rightPupil.position.y = 0.22 + gazeOffsetY * 1.2;
+    }
+
+    // 3. Realistic Anatomical Eyelid Blinking (Shell Rotates Down Smoothly)
     const blinkAmount = Math.max(0.0, Math.min(1.0, idle.eyeBlinkProgress));
-    const eyeScaleY = 0.72 * Math.max(0.05, 1.0 - blinkAmount * 0.95);
+    
+    // Rotate eyelid shell down over the sphere (from -Math.PI * 0.55 open down to 0 closed)
+    const targetEyelidRotX = -Math.PI * 0.55 + blinkAmount * Math.PI * 0.55;
+    leftEyelid.rotation.x = targetEyelidRotX;
+    rightEyelid.rotation.x = targetEyelidRotX;
+
+    // Subtle eye squash on blink
+    const eyeScaleY = 0.72 * Math.max(0.12, 1.0 - blinkAmount * 0.88);
     leftEye.scale.y = eyeScaleY;
     rightEye.scale.y = eyeScaleY;
 
-    // Eyelid Shutter Descends smoothly over the glowing red optical sockets
-    const eyelidScaleY = 0.08 + blinkAmount * 1.35;
-    leftEyelid.scale.y = eyelidScaleY;
-    rightEyelid.scale.y = eyelidScaleY;
-    leftEyelid.position.y = 0.28 - blinkAmount * 0.06;
-    rightEyelid.position.y = 0.28 - blinkAmount * 0.06;
+    // 4. Real-Time Lip-Sync & Jaw Morphing
+    const speechActiveRMS = audioRMS > 0.02 ? audioRMS : (visemes.jawOpen > 0.04 ? 0.4 : 0.0);
+    const jawDrop = Math.max(visemes.jawOpen * 1.35, speechActiveRMS * 1.15);
 
-    // 4. Mouth Morphing & Jaw Drop (Zero-latency natural lip sync)
-    // Blend phonetic viseme weights with live audio RMS loudness
-    const speechActiveRMS = audioRMS > 0.02 ? audioRMS : (visemes.jawOpen > 0.05 ? 0.35 : 0.0);
-    const jawDrop = Math.max(visemes.jawOpen * 1.2, speechActiveRMS * 0.95);
-    const targetScaleY = 1.0 + jawDrop * 3.8;
-    const targetScaleX = 1.0 + visemes.mouthWide * 0.5 - visemes.mouthRound * 0.35;
+    // Expand oral cavity
+    const targetScaleY = 1.0 + jawDrop * 4.2;
+    const targetScaleX = 1.0 + visemes.mouthWide * 0.55 - visemes.mouthRound * 0.4;
+    mouthMesh.scale.y += (targetScaleY - mouthMesh.scale.y) * 0.5;
+    mouthMesh.scale.x += (targetScaleX - mouthMesh.scale.x) * 0.5;
 
-    mouthMesh.scale.y += (targetScaleY - mouthMesh.scale.y) * 0.45;
-    mouthMesh.scale.x += (targetScaleX - mouthMesh.scale.x) * 0.45;
-
-    lowerLip.position.y = -0.03 - jawDrop * 0.22;
-    upperLip.position.y = 0.03 + (visemes.upperLipRaise * 0.06);
+    // Separate upper Cupid's bow and plump lower lip
+    lowerLip.position.y = -0.04 - jawDrop * 0.28;
+    upperLip.position.y = 0.04 + (visemes.upperLipRaise * 0.09);
+    lowerLip.scale.x = 1.0 + visemes.mouthWide * 0.3;
+    upperLip.scale.x = 1.0 + visemes.mouthWide * 0.3;
   }
 }

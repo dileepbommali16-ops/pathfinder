@@ -91,10 +91,10 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
     const renderWidth = width || container.clientWidth || 360;
     const renderHeight = height || container.clientHeight || 440;
 
-    // 1. Scene & Camera (Dead Center Framing)
+    // 1. Scene & Camera (Framed Closer for Grand, Prominent Humanoid Presence)
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, renderWidth / renderHeight, 0.1, 100);
-    camera.position.set(0, 0, 3.85);
+    camera.position.set(0, -0.08, 2.75);
 
     // 2. High-Performance WebGL Renderer
     let renderer: THREE.WebGLRenderer;
@@ -124,10 +124,14 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
     cobaltBackLight.position.set(0, -1.0, -1.5);
     scene.add(cobaltBackLight);
 
-    // Glowing Crimson Red Optical Eye PointLight (eye illumination)
-    const redEyeLight = new THREE.PointLight(0xff1744, 2.8, 4.5);
-    redEyeLight.position.set(0, 0.22, 1.45);
-    scene.add(redEyeLight);
+    // Dual Glowing Crimson Red Ocular PointLights (Positioned Directly in Front of Left & Right Eyes)
+    const leftEyeLight = new THREE.PointLight(0xff0033, 3.2, 3.0);
+    leftEyeLight.position.set(-0.35, 0.22, 1.35);
+    scene.add(leftEyeLight);
+
+    const rightEyeLight = new THREE.PointLight(0xff0033, 3.2, 3.0);
+    rightEyeLight.position.set(0.35, 0.22, 1.35);
+    scene.add(rightEyeLight);
 
     // Moving Background Grid (venakala 3D UI motion)
     const gridGeo = new THREE.PlaneGeometry(12, 12, 24, 24);
@@ -218,6 +222,15 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
       const currentText = spokenTextRef.current;
       const charIndex = Math.floor((elapsedTime * 10) % (currentText.length || 1));
       const activeChar = currentText[charIndex] || "";
+
+      // Dynamic Glowing Animated Red Eyes (Pulsating Luminescence & Sparkle)
+      const eyeSparkle = 2.6 + Math.sin(elapsedTime * 5.5) * 0.9;
+      leftEyeLight.intensity = eyeSparkle;
+      rightEyeLight.intensity = eyeSparkle;
+      if (meshParts.leftEye.material && (meshParts.leftEye.material as any).emissiveIntensity !== undefined) {
+        (meshParts.leftEye.material as any).emissiveIntensity = 2.8 + Math.sin(elapsedTime * 5.5) * 0.8;
+        (meshParts.rightEye.material as any).emissiveIntensity = 2.8 + Math.sin(elapsedTime * 5.5) * 0.8;
+      }
 
       // Compute idle transforms & viseme weights
       const idle = idleController.update(now, stateRef.current, elapsedTime);
@@ -310,19 +323,25 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
           />
 
           {/* Glowing Luminous Red Cybernetic Eyes */}
-          <circle cx="70" cy="100" r={4.5 + audioRMS * 2} fill="#ff1744" filter="drop-shadow(0 0 6px #ff0033)" />
+          <circle cx="70" cy="100" r={5 + audioRMS * 2} fill="#ff1744" filter="drop-shadow(0 0 8px #ff0033)" />
           <circle cx="70" cy="100" r={2.5 + audioRMS * 1.5} fill="#ffffff" />
-          <circle cx="130" cy="100" r={4.5 + audioRMS * 2} fill="#ff1744" filter="drop-shadow(0 0 6px #ff0033)" />
+          <circle cx="130" cy="100" r={5 + audioRMS * 2} fill="#ff1744" filter="drop-shadow(0 0 8px #ff0033)" />
           <circle cx="130" cy="100" r={2.5 + audioRMS * 1.5} fill="#ffffff" />
 
-          {/* Audio-Reactive Natural Rosy Lips */}
+          {/* Anatomical Human Nose Bridge, Tip & Nostrils */}
+          <path d="M 100,92 L 100,132 L 94,138 Q 100,141 106,138 L 100,132" fill="none" stroke="#D7C49E" strokeWidth="1.8" />
+          <ellipse cx="94" cy="138" rx="2" ry="1.2" fill="#343148" />
+          <ellipse cx="106" cy="138" rx="2" ry="1.2" fill="#343148" />
+
+          {/* Sculpted Cupid's Bow Upper Lip & Responsive Lower Lip */}
+          <path d="M 86,158 Q 93,154 100,157 Q 107,154 114,158 Q 100,161 86,158 Z" fill="#b8655d" />
           <ellipse
             cx="100"
-            cy="165"
-            rx={14 + audioRMS * 6}
-            ry={3 + audioRMS * 9}
-            fill="#b8655d"
-            opacity={0.9}
+            cy={163 + audioRMS * 3}
+            rx={14 + audioRMS * 5}
+            ry={3.5 + audioRMS * 8}
+            fill="#a2544c"
+            opacity={0.95}
           />
         </svg>
       </div>
