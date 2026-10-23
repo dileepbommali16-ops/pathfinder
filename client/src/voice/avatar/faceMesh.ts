@@ -57,14 +57,16 @@ export function createFaceMesh(texture?: THREE.Texture | null): MeshParts {
   const wireHead = new THREE.Mesh(headGeo, wireMat);
   headGroup.add(wireHead);
 
-  // Material 2: Deep Obsidian Metallic Core (#030712)
+  // Material 2: Light Blue Cybernetic Metallic Core (#7dd3fc)
   const solidMat = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color("#030712"),
-    roughness: 0.25,
-    metalness: 0.9,
-    clearcoat: 0.8,
-    clearcoatRoughness: 0.1,
-    reflectivity: 0.9,
+    color: new THREE.Color("#7dd3fc"), // Light Cybernetic Blue
+    roughness: 0.22,
+    metalness: 0.72,
+    clearcoat: 0.85,
+    clearcoatRoughness: 0.12,
+    reflectivity: 0.88,
+    emissive: new THREE.Color("#0284c7"),
+    emissiveIntensity: 0.2,
   });
 
   if (texture) {
@@ -157,16 +159,25 @@ export function createFaceMesh(texture?: THREE.Texture | null): MeshParts {
   rightEyeSocket.position.set(0.35, 0.22, 1.02);
   headGroup.add(rightEyeSocket);
 
-  // Human Eye Iris: Radiant Crimson/Ruby with Natural Luster
+  // Human Eye Iris: Vampire Glowing Crimson Red
   const irisGeo = new THREE.SphereGeometry(0.065, 24, 24);
   irisGeo.scale(1.0, 1.0, 0.4);
   const irisMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#dc2626"),
-    emissive: new THREE.Color("#e11d48"),
-    emissiveIntensity: 1.4,
-    roughness: 0.2,
-    metalness: 0.7,
+    color: new THREE.Color("#ff0033"),
+    emissive: new THREE.Color("#ff0033"),
+    emissiveIntensity: 3.5, // Vampire glowing crimson luminescence
+    roughness: 0.05,
+    metalness: 0.2,
   });
+
+  // Vampire Red Eye Point Lights
+  const leftEyeLight = new THREE.PointLight(0xff0033, 2.5, 2.5);
+  leftEyeLight.position.set(-0.35, 0.22, 1.12);
+  headGroup.add(leftEyeLight);
+
+  const rightEyeLight = new THREE.PointLight(0xff0033, 2.5, 2.5);
+  rightEyeLight.position.set(0.35, 0.22, 1.12);
+  headGroup.add(rightEyeLight);
 
   // Left Eye Iris
   const leftEye = new THREE.Mesh(irisGeo, irisMat);

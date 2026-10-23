@@ -611,11 +611,11 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
         }
       };
 
-      // Guaranteed 2.2 second fallback timer - ensures agent NEVER gets stuck on THINKING
+      // Guaranteed 15-second fallback timer - allows cloud backend and Groq LPU time to respond
       if (pendingReplyTimerRef.current) clearTimeout(pendingReplyTimerRef.current);
       pendingReplyTimerRef.current = setTimeout(() => {
-        triggerClientFallback("Backend response timer (2.2s) expired.");
-      }, 2200);
+        triggerClientFallback("Backend response timer (15s) expired.");
+      }, 15000);
 
       // Send via WebSocket if open
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -627,11 +627,11 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
           })
         );
       } else {
-        // Fallback to HTTP POST with 2-second hard timeout
+        // Fallback to HTTP POST with 15-second timeout
         try {
           const { apiUrl } = getVoiceBackendUrls();
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 2000);
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
 
           let resp = await fetch(apiUrl, {
             method: "POST",
@@ -943,6 +943,22 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
     lastAction,
     audioAnalyser: audioPlayerRef.current?.analyserNode || null,
     sendMessage,
+    appendAssistantMessage: (display: string, spoken?: string) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: display,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        },
+      ]);
+      if (spoken && autoSpeakRef.current) {
+        speakSentences([spoken]);
+      }
+    },
+    speakText: (text: string) => {
+      if (text) speakSentences([text]);
+    },
     toggleMicrophone,
     stopAll,
     clearMessages: () => setMessages([]),

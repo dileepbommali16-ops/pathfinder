@@ -71,24 +71,24 @@ export class DASAvatarMesh {
       }
     }
 
-    // Material 1: Realistic Natural Human Skin Tone
+    // Material 1: Light Blue Cybernetic Metallic Android Skin
     const solidMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color("#c89a74"), // Natural warm human skin tone
-      metalness: 0.04,                  // Low metalness for organic human skin
-      roughness: 0.48,                  // Natural soft diffuse dermal texture
-      clearcoat: 0.15,
-      clearcoatRoughness: 0.35,
-      reflectivity: 0.35,
-      emissive: new THREE.Color("#2a1810"), // Subsurface blood circulation warmth
-      emissiveIntensity: 0.12,
+      color: new THREE.Color("#7dd3fc"), // Light Cybernetic Blue
+      metalness: 0.72,                  // High-tech cybernetic gloss
+      roughness: 0.22,
+      clearcoat: 0.85,
+      clearcoatRoughness: 0.12,
+      reflectivity: 0.88,
+      emissive: new THREE.Color("#0284c7"),
+      emissiveIntensity: 0.22,
     });
 
     this.headMesh = new THREE.Mesh(this.geometry, solidMaterial);
     this.group.add(this.headMesh);
 
-    // Material 2: Left-side Wireframe Matrix in Soybean (#D7C49E)
+    // Material 2: Electric Cyan-Blue Wireframe Matrix
     const wireframeMaterial = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#D7C49E"),
+      color: new THREE.Color("#38bdf8"),
       wireframe: true,
       transparent: true,
       opacity: 0.65,
@@ -97,6 +97,28 @@ export class DASAvatarMesh {
     this.wireframeMesh = new THREE.Mesh(this.geometry, wireframeMaterial);
     this.wireframeMesh.scale.set(1.002, 1.002, 1.002);
     this.group.add(this.wireframeMesh);
+
+    // Vampire Glowing Red Eyes
+    const redEyeMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#ff0033"),
+      emissive: new THREE.Color("#ff0033"),
+      emissiveIntensity: 3.5,
+      roughness: 0.1,
+    });
+    const redEyeGeo = new THREE.SphereGeometry(0.08, 16, 16);
+    const leftEye = new THREE.Mesh(redEyeGeo, redEyeMat);
+    leftEye.position.set(-0.35, 0.25, 1.25);
+    const rightEye = new THREE.Mesh(redEyeGeo, redEyeMat);
+    rightEye.position.set(0.35, 0.25, 1.25);
+    this.group.add(leftEye);
+    this.group.add(rightEye);
+
+    const redLightL = new THREE.PointLight(0xff0033, 2.5, 2.5);
+    redLightL.position.set(-0.35, 0.25, 1.35);
+    const redLightR = new THREE.PointLight(0xff0033, 2.5, 2.5);
+    redLightR.position.set(0.35, 0.25, 1.35);
+    this.group.add(redLightL);
+    this.group.add(redLightR);
   }
 
   /**
@@ -115,7 +137,7 @@ export class DASAvatarMesh {
     for (const idx of this.jawVertices) {
       const yOrig = this.basePositions[idx * 3 + 1];
       const factor = THREE.MathUtils.clamp((-yOrig) / 1.4, 0, 1);
-      
+
       array[idx * 3 + 1] -= jawDrop * factor;
       array[idx * 3 + 2] += mouthRound * 0.1 * factor;
     }

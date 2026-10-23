@@ -13,6 +13,7 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export type AvatarState = "idle" | "listening" | "thinking" | "speaking";
 
@@ -134,23 +135,23 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     const headGeo = new THREE.SphereGeometry(1.15, 64, 64);
     headGeo.scale(1.0, 1.35, 1.15);
 
-    // Material 1: Glossy Cybernetic Metallic Male Face in COBALT BLUE DEEP (#2C3480 / RGB 44, 52, 128)
+    // Material 1: Glossy Cybernetic Metallic Face in LIGHT BLUE (#7dd3fc)
     const solidMat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color("#2C3480"), // Cobalt Blue Deep
-      metalness: 0.35,                  // Metallic gloss sheen
-      roughness: 0.28,                  // Smooth polished cybernetic surface
-      clearcoat: 0.85,                  // Mirror-like protective coating
-      clearcoatRoughness: 0.15,
-      reflectivity: 0.75,
-      emissive: new THREE.Color("#161a48"), // Inner cognitive depth glow
-      emissiveIntensity: 0.25,
+      color: new THREE.Color("#7dd3fc"), // Light Cybernetic Blue
+      metalness: 0.68,                  // Metallic gloss sheen
+      roughness: 0.22,                  // Smooth polished cybernetic surface
+      clearcoat: 0.88,                  // Mirror-like protective coating
+      clearcoatRoughness: 0.12,
+      reflectivity: 0.85,
+      emissive: new THREE.Color("#0284c7"), // Inner cognitive depth glow
+      emissiveIntensity: 0.22,
     });
     const solidHead = new THREE.Mesh(headGeo, solidMat);
     headGroup.add(solidHead);
 
-    // Material 2: High-Tech Electric Blue Wireframe Neural Matrix (Left half matching Photo 3)
+    // Material 2: High-Tech Electric Blue Wireframe Neural Matrix (Left half)
     const wireMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#40c9ff"), // Electric Cyan-Blue wireframe
+      color: new THREE.Color("#38bdf8"), // Electric Sky-Blue wireframe
       wireframe: true,
       transparent: true,
       opacity: 0.65,
@@ -159,7 +160,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     wireHead.scale.set(1.003, 1.003, 1.003);
     headGroup.add(wireHead);
 
-    // Split Clipping: Left half is Wireframe, Right half is Solid Cobalt Blue
+    // Split Clipping: Left half is Wireframe, Right half is Solid Light Blue
     const leftClipPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
     const rightClipPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
     solidMat.clippingPlanes = [leftClipPlane];
@@ -178,24 +179,24 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     const coreMesh = new THREE.Mesh(coreGeo, coreMat);
     headGroup.add(coreMesh);
 
-    // Anatomical Neck & Trapezius (Matching Cobalt Blue Deep #2C3480)
+    // Anatomical Neck & Trapezius (Light Blue metallic matching)
     const neckGeo = new THREE.CylinderGeometry(0.55, 0.78, 0.85, 32);
     const neckMat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color("#222866"),
-      metalness: 0.3,
-      roughness: 0.35,
-      clearcoat: 0.5,
+      color: new THREE.Color("#0284c7"),
+      metalness: 0.5,
+      roughness: 0.3,
+      clearcoat: 0.6,
     });
     const neckMesh = new THREE.Mesh(neckGeo, neckMat);
     neckMesh.position.set(0, -1.5, -0.1);
     headGroup.add(neckMesh);
 
-    // 5. Dual Cybernetic Male Eyes & Eyelids
+    // 5. Dual Cybernetic Vampire Glowing Red Eyes & Eyelids
     const eyeGeo = new THREE.SphereGeometry(0.135, 32, 32);
     const eyeMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#e0f2fe"),
-      emissive: new THREE.Color("#0284c7"),
-      emissiveIntensity: 0.35,
+      color: new THREE.Color("#ff0033"), // Vampire Glowing Crimson Red
+      emissive: new THREE.Color("#ff0033"),
+      emissiveIntensity: 3.5,            // Glowing intense vampire beam
       roughness: 0.05,
       metalness: 0.1,
     });
@@ -208,12 +209,21 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     rightEye.position.set(0.36, 0.19, 0.96);
     headGroup.add(rightEye);
 
-    // Upper Eyelids (Cobalt Blue Deep matching)
+    // Vampire Red Point Lights illuminating the face
+    const leftVampireLight = new THREE.PointLight(0xff0033, 2.5, 3.0);
+    leftVampireLight.position.set(-0.36, 0.19, 1.15);
+    headGroup.add(leftVampireLight);
+
+    const rightVampireLight = new THREE.PointLight(0xff0033, 2.5, 3.0);
+    rightVampireLight.position.set(0.36, 0.19, 1.15);
+    headGroup.add(rightVampireLight);
+
+    // Upper Eyelids
     const eyelidGeo = new THREE.SphereGeometry(0.142, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.55);
     const eyelidMat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color("#2C3480"),
+      color: new THREE.Color("#0284c7"),
       roughness: 0.3,
-      metalness: 0.3,
+      metalness: 0.4,
     });
 
     const leftEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
@@ -225,6 +235,66 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     rightEyelid.position.set(0.36, 0.22, 0.97);
     rightEyelid.rotation.x = Math.PI * 0.18;
     headGroup.add(rightEyelid);
+
+    // Load High-Res Android 3D Model (RomulusCreative CC-BY-4.0)
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load(
+      "/models/avatar.glb",
+      (gltf) => {
+        const model = gltf.scene;
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 2.45 / maxDim;
+        model.scale.set(scale, scale, scale);
+        model.position.sub(center.multiplyScalar(scale));
+        model.position.y -= 0.15;
+
+        // Apply Light Blue Cybernetic Skin to the 3D Android Mesh
+        model.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const m = child as THREE.Mesh;
+            m.material = new THREE.MeshPhysicalMaterial({
+              color: new THREE.Color("#7dd3fc"), // Light Cybernetic Blue
+              metalness: 0.72,
+              roughness: 0.22,
+              clearcoat: 0.85,
+              clearcoatRoughness: 0.1,
+              emissive: new THREE.Color("#0284c7"),
+              emissiveIntensity: 0.18,
+            });
+            m.castShadow = true;
+            m.receiveShadow = true;
+          }
+        });
+
+        // Attach Vampire Glowing Red Eyes to the Android Model
+        const redOrbMat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color("#ff0033"),
+          emissive: new THREE.Color("#ff0033"),
+          emissiveIntensity: 4.2,
+          roughness: 0.05,
+        });
+        const redOrbGeo = new THREE.SphereGeometry(0.065, 16, 16);
+        const redL = new THREE.Mesh(redOrbGeo, redOrbMat);
+        redL.position.set(-0.35, 0.18, 0.88);
+        const redR = new THREE.Mesh(redOrbGeo, redOrbMat);
+        redR.position.set(0.35, 0.18, 0.88);
+        model.add(redL);
+        model.add(redR);
+
+        // Hide procedural fallback and display realistic Android model
+        solidHead.visible = false;
+        wireHead.visible = false;
+        coreMesh.visible = false;
+        headGroup.add(model);
+      },
+      undefined,
+      (err) => {
+        console.info("[AvatarCanvas] Model load fallback active:", err);
+      }
+    );
 
     // 6. Responsive Lower Jaw & Mouth Mesh (WebAudio Lip-Sync)
     const mouthGroup = new THREE.Group();
@@ -522,7 +592,9 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
             <span className="w-1 h-2.5 bg-emerald-400 animate-bounce rounded-full" style={{ animationDelay: "240ms" }} />
           </div>
         ) : (
-          <span className="text-[10px] font-mono text-zinc-500">COBALT #2C3480 · OLED #000</span>
+          <span className="text-[10px] font-mono text-zinc-400" title="3D Android by RomulusCreative under CC-BY-4.0">
+            CYBER ANDROID · VAMPIRE RED EYES
+          </span>
         )}
       </div>
 

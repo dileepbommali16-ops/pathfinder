@@ -544,8 +544,9 @@ npm run build
 
 ---
 
-## 📜 License
+## 📜 License & Attributions
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+- Distributed under the **MIT License**. See `LICENSE` for more information.
+- **3D Model Attribution**: The 3D cybernetic android avatar is based on ["Practice in human form for android"](https://sketchfab.com/3d-models/practice-in-human-form-for-android-2614fde73a7749019f60e50d237719a7) by [RomulusCreative](https://sketchfab.com/altitudecinematic) licensed under [CC-BY-4.0](http://creativecommons.org/licenses/by/4.0/).
 
 Developed by **Dileep Bommali** ([@dileepbommali16-ops](https://github.com/dileepbommali16-ops)).

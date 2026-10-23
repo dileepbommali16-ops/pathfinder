@@ -5,9 +5,9 @@
  * - Organic procedural eye blinking (non-repetitive Poisson algorithm)
  * - Real-time Viseme & Audio FFT Lip-Sync (<50ms latency) via Critically Damped Spring Smoothing
  */
-
 import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DASAvatarMesh, MorphTargetWeights } from "./DASAvatarMesh";
 
 interface ThreeAvatarCanvasProps {
@@ -106,6 +106,56 @@ export const ThreeAvatarCanvas: React.FC<ThreeAvatarCanvasProps> = ({
     const avatar = new DASAvatarMesh();
     scene.add(avatar.group);
     avatarRigRef.current = avatar;
+
+    // Load High-Res Android 3D Model (RomulusCreative CC-BY-4.0)
+    const loader = new GLTFLoader();
+    loader.load(
+      "/models/avatar.glb",
+      (gltf) => {
+        const model = gltf.scene;
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 2.45 / maxDim;
+        model.scale.set(scale, scale, scale);
+        model.position.sub(center.multiplyScalar(scale));
+        model.position.y -= 0.15;
+
+        model.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const m = child as THREE.Mesh;
+            m.material = new THREE.MeshPhysicalMaterial({
+              color: new THREE.Color("#7dd3fc"), // Light blue
+              metalness: 0.72,
+              roughness: 0.22,
+              clearcoat: 0.85,
+              emissive: new THREE.Color("#0284c7"),
+              emissiveIntensity: 0.2,
+            });
+          }
+        });
+
+        // Vampire Glowing Red Eyes
+        const redOrbMat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color("#ff0033"),
+          emissive: new THREE.Color("#ff0033"),
+          emissiveIntensity: 4.0,
+        });
+        const redOrbGeo = new THREE.SphereGeometry(0.065, 16, 16);
+        const redL = new THREE.Mesh(redOrbGeo, redOrbMat);
+        redL.position.set(-0.35, 0.18, 0.88);
+        const redR = new THREE.Mesh(redOrbGeo, redOrbMat);
+        redR.position.set(0.35, 0.18, 0.88);
+        model.add(redL);
+        model.add(redR);
+
+        avatar.group.clear();
+        avatar.group.add(model);
+      },
+      undefined,
+      (err) => console.info("[ThreeAvatarCanvas] Model load fallback active:", err)
+    );
 
     let animId: number;
     let lastTime = performance.now();

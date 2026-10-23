@@ -12,7 +12,7 @@ import { loadMemory } from "./memory";
 const API_BASE =
   ((import.meta.env.VITE_API_BASE_URL as string | undefined) || "https://pathfinder-backend-klrp.onrender.com").replace(/\/+$/, "");
 
-const REQUEST_TIMEOUT_MS = 2000; // Fail-fast to autonomous client brain on Vercel without waiting
+const REQUEST_TIMEOUT_MS = 15000; // Fail-fast to autonomous client brain on Vercel without waiting
 
 export interface AgentAction {
   type: "navigate_to" | "highlight" | "scroll_to" | "open_panel";
@@ -62,6 +62,15 @@ export async function askAgent({ message, getScreenPayload, userId, history = []
   const screen = getScreenPayload();
   const memory = loadMemory(userId);
 
+  let userEmail = "";
+  try {
+    const storedUser = window.localStorage.getItem("pathfinder_user");
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      userEmail = parsed.email || parsed.username || "";
+    }
+  } catch {}
+
   const body = {
     message,
     screenContext: {
@@ -73,6 +82,7 @@ export async function askAgent({ message, getScreenPayload, userId, history = []
       lastVisit: memory.lastVisitTimestamp ? new Date(memory.lastVisitTimestamp).toISOString() : "",
       lastDiscussedTopic: memory.lastDiscussedTopic,
       studentName: memory.studentName,
+      email: userEmail,
     },
     history: history.slice(-12),
   };

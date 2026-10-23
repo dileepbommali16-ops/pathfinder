@@ -765,17 +765,29 @@ export class ClientBrainEngine {
     }
 
     // =======================================================================
-    // 7. THOUGHTFUL, PROFESSIONAL EXECUTIVE GUIDANCE
+    // 7. CREATOR & BOSS RECOGNITION (Dileep Bommali / Dileep Das)
+    // =======================================================================
+    if (anyMatch(low, ["who is your boss", "who is ur boss", "who is boss", "boss evaru", "who created you", "who made you", "creator", "owner", "dileep"])) {
+      return {
+        spoken: "My creator and boss is Dileep Bommali, also known as Dileep Das. He is a B.Tech Data Science engineer who built Pathfinder and created me as his autonomous AI co-pilot.",
+        display: "### Pathfinder Creator & Boss: Dileep Bommali (Dileep Das)\n\n- **Creator & Lead Architect**: Dileep Bommali (@dileepdasss)\n- **Specialization**: B.Tech CSE (Data Science), NRI Institute of Technology\n- **Mission**: Built Pathfinder to provide predictive placement analytics, Tier-1 system blueprints, and voice-guided interview intelligence.",
+        actions: [{ name: "navigate_to", arguments: { page_id: "overview" } }],
+        followups: ["Tell me about Dileep", "Show project blueprints", "Explain placement analytics"]
+      };
+    }
+
+    // =======================================================================
+    // 8. NATURAL CONVERSATIONAL EXECUTIVE GUIDANCE
     // =======================================================================
     const spoken = isTelugu
-      ? `మీరు అడిగిన '${raw}' గురించి నేను విశ్లేషించాను. మీ ప్లేస్‌మెంట్ ప్రిపరేషన్ కోసం స్పష్టమైన రోడ్‌మ్యాప్, ప్రాజెక్ట్ బ్లూప్రింట్స్ మరియు ఏటీఎస్ రెజ్యూమ్ గైడెన్స్ సిద్ధంగా ఉన్నాయి. ఏ అంశం గురించి మరింత వివరంగా మాట్లాడదాం?`
-      : `I have analyzed your query regarding "${raw}". From an engineering placement perspective, structured preparation and defensible system projects create the winning difference. How would you like to proceed?`;
+      ? `నమస్తే! నేను పాత్‌ఫైండర్ డీఏఎస్ ఏఐ అసిస్టెంట్‌ని. మీ ప్లేస్‌మెంట్ ప్రిపరేషన్, ఏటీఎస్ రెజ్యూమ్ మరియు ప్రాజెక్ట్ బ్లూప్రింట్స్ కోసం నేను సిద్ధంగా ఉన్నాను. ఎలా సహాయం చేయమంటారు?`
+      : `Hello! I am DAS, your Pathfinder autonomous co-pilot. I can guide you through verified placement analytics, Tier-1 DSA roadmaps, production blueprints, or ATS resume review. What would you like to explore?`;
 
     return {
       spoken,
-      display: `### Placement Strategic Assessment\n\nInquiry: **"${raw}"**\n\nKey Strategic Pillars:\n\n1. **Practical Engineering Depth**: Tier-1 engineering organizations evaluate architectural depth, data integrity, and trade-off justification over memorized syntax.\n2. **Pattern-Driven Coding Sprints**: Systematic progression through the 75 high-frequency algorithm patterns eliminates wasted preparation time.\n3. **Production-Grade Project Defense**: Backing your credentials with a live, distributed flagship system secures Round 2 technical clearances.\n\n*Choose a module to explore, or ask me to navigate directly:*`,
+      display: `### 🧭 Pathfinder DAS Autonomous Assistant\n\nI am online and ready to assist with:\n\n1. **Placement Probability ML**: 88% accuracy benchmarked on 972 cohort records.\n2. **28 Production Blueprints**: Distributed systems, microservices, and AI pipelines.\n3. **6-Week DSA Roadmap**: 75 high-frequency patterns for Tier-1 hiring rounds.\n4. **ATS Resume Optimization**: Google X-Y-Z bullet rewrites and skill alignment.\n\n*Speak or type an instruction, e.g., 'Open analytics', 'Show project blueprints', or 'Qualify my profile'.*`,
       actions: [],
-      followups: ["Explain about Pathfinder", "Show 23 project blueprints", "How to format ATS resume?"]
+      followups: ["Open placement analytics", "Show 28 project blueprints", "How to format ATS resume?"]
     };
   }
 }

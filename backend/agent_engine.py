@@ -241,7 +241,10 @@ def strip_for_speech(text: str) -> str:
     plain = re.sub(r"`([^`]*)`", r"\1", plain)
     plain = re.sub(r"https?://\S+", " ", plain)
     plain = re.sub(r"[*_#>~|]", " ", plain)
-    plain = re.sub(r"(?m)^\s*[-+]\s+", "", plain)
+    plain = re.sub(r"(?m)^\s*[-+•]\s+", "", plain)
+    # Strip emojis and pictographs (🚀, ✨, 🔥, 🤖, etc.) so speech sounds natural
+    plain = re.sub(r"[\U00010000-\U0010ffff]", "", plain)
+    plain = re.sub(r"[\u2600-\u27BF\uE000-\uF8FF]", "", plain)
     plain = re.sub(r"\s+", " ", plain).strip()
     if len(plain) <= MAX_SPOKEN_CHARS:
         return plain
@@ -389,9 +392,11 @@ async def generate_agent_reply(
     }
 
     models: List[str] = []
-    for name in (primary_model(), fallback_model()):
-        if name and name not in models:
-            models.append(name)
+    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if gemini_key:
+        for name in (primary_model(), fallback_model()):
+            if name and name not in models:
+                models.append(name)
 
     last_error: Optional[BaseException] = None
     for model in models:
@@ -405,13 +410,57 @@ async def generate_agent_reply(
                     return parsed
                 last_error = AgentEngineError(f"{model} returned no usable text (finishReason={finish})")
                 logger.warning("no usable text from %s (attempt %d, finishReason=%s)", model, attempt + 1, finish)
-            except AgentEngineError:
-                raise  # e.g. missing API key: retrying will not help
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 last_error = err
                 logger.warning("%s failed (attempt %d): %s", model, attempt + 1, str(err)[:200])
                 if not _is_transient(err):
-                    break  # 400/401/403/404: same model will fail again, go to the fallback model
-                await asyncio.sleep(0.4)
+                    break
+                await asyncio.sleep(0.3)
 
-    raise AgentEngineError(f"Gemini could not produce a reply: {last_error}")
+    # 2. Resilient Multi-Provider Fallback (Groq LPU -> Ollama -> Knowledge Engine)
+    try:
+        from backend.voice.providers import ProviderChain
+        chain = ProviderChain()
+        sys_inst = build_system_instruction(screen_context, user_memory)
+        openai_history = []
+        for turn in (history or [])[-8:]:
+            r = turn.get("role")
+            t = turn.get("text")
+            if r and t:
+                openai_history.append({"role": "assistant" if r == "model" else "user", "content": t})
+
+        reply_text, provider_name = await chain.generate_response(
+            prompt=message,
+            system_instruction=sys_inst,
+            history=openai_history,
+            max_tokens=600
+        )
+        parsed = parse_reply(reply_text)
+        if not parsed:
+            parsed = salvage_plain_text(reply_text) or {
+                "spoken": strip_for_speech(reply_text),
+                "display": reply_text,
+                "actions": []
+            }
+
+        if not parsed.get("actions"):
+            low = (message + " " + reply_text).lower()
+            actions = []
+            if any(w in low for w in ["analytics", "placement stats", "package", "cse stats", "highest package"]):
+                actions.append({"type": "navigate_to", "target": "analytics"})
+            elif any(w in low for w in ["project", "blueprint", "architectures"]):
+                actions.append({"type": "navigate_to", "target": "projects"})
+            elif any(w in low for w in ["skills", "roadmap", "dsa"]):
+                actions.append({"type": "navigate_to", "target": "skills"})
+            elif any(w in low for w in ["resume builder", "open resume"]):
+                actions.append({"type": "open_panel", "target": "resume_builder"})
+            elif any(w in low for w in ["mock interview", "interview round"]):
+                actions.append({"type": "open_panel", "target": "mock_interview"})
+            parsed["actions"] = actions
+
+        parsed["model"] = provider_name
+        return parsed
+    except Exception as chain_err:
+        logger.warning(f"ProviderChain fallback error: {chain_err}")
+
+    raise AgentEngineError(f"AI could not produce a reply: {last_error}")
