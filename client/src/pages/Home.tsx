@@ -60,7 +60,16 @@ import DepthText from "@/components/dashboard/DepthText";
 import { useDASVoice } from "@/contexts/DASVoiceContext";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get("tab");
+      if (t && ["overview", "interview", "action", "skills", "coach", "projects", "analytics", "resume", "branches", "defense"].includes(t)) {
+        return t as TabId;
+      }
+    }
+    return "overview";
+  });
   const { setPageContext, sendMessage } = useDASVoice();
   const { getScreenPayload } = useScreenWatcher(activeTab);
 

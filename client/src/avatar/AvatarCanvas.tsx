@@ -134,6 +134,10 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     let eyeRNode: THREE.Object3D | null = null;
     let initialJawY = 0;
     let initialJawZ = 0;
+    let initialEyeScaleY_L = 1.0;
+    let initialEyeScaleY_R = 1.0;
+    let ocularLightL: THREE.PointLight | null = null;
+    let ocularLightR: THREE.PointLight | null = null;
 
     // 5. Load Humanoid Robot Face GLB (by kito1704 under CC-BY-4.0)
     const gltfLoader = new GLTFLoader();
@@ -180,8 +184,8 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
         const vampireEyeMat = new THREE.MeshStandardMaterial({
           color: new THREE.Color("#ff0033"),
           emissive: new THREE.Color("#ff0033"),
-          emissiveIntensity: 5.5,
-          roughness: 0.05,
+          emissiveIntensity: 4.5,
+          roughness: 0.08,
           metalness: 0.2,
         });
 
@@ -209,31 +213,40 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
           }
         });
 
-        // Locate and store articulated nodes
-        jawNode = model.getObjectByName("JawR_19") || null;
+        // Locate and store articulated nodes (supporting both dot and clean naming)
+        jawNode = model.getObjectByName("Jaw.R_19") || model.getObjectByName("JawR_19") || null;
         if (jawNode) {
           initialJawY = jawNode.position.y;
           initialJawZ = jawNode.position.z;
         }
 
-        eyeLNode = model.getObjectByName("Kito6_FaceMesh_EyeL_20") || null;
-        eyeRNode = model.getObjectByName("Kito6_FaceMesh_EyeR_21") || null;
+        eyeLNode = model.getObjectByName("Kito6_FaceMesh_Eye.L_20") || model.getObjectByName("Kito6_FaceMesh_EyeL_20") || null;
+        eyeRNode = model.getObjectByName("Kito6_FaceMesh_Eye.R_21") || model.getObjectByName("Kito6_FaceMesh_EyeR_21") || null;
 
-        // Add radiant ocular red point lights in front of both eyes
+        if (eyeLNode) initialEyeScaleY_L = eyeLNode.scale.y;
+        if (eyeRNode) initialEyeScaleY_R = eyeRNode.scale.y;
+
+        // Add radiant ocular red point lights in headGroup at eye world positions
         if (eyeLNode && eyeRNode) {
-          const eyeLWorld = new THREE.Box3().setFromObject(eyeLNode).getCenter(new THREE.Vector3());
-          const eyeRWorld = new THREE.Box3().setFromObject(eyeRNode).getCenter(new THREE.Vector3());
+          const eyeLWorld = new THREE.Vector3();
+          eyeLNode.getWorldPosition(eyeLWorld);
+          headGroup.worldToLocal(eyeLWorld);
 
-          const lightL = new THREE.PointLight(0xff0033, 3.2, 2.5);
-          lightL.position.set(0, 0, 0.08);
-          eyeLNode.add(lightL);
+          const eyeRWorld = new THREE.Vector3();
+          eyeRNode.getWorldPosition(eyeRWorld);
+          headGroup.worldToLocal(eyeRWorld);
 
-          const lightR = new THREE.PointLight(0xff0033, 3.2, 2.5);
-          lightR.position.set(0, 0, 0.08);
-          eyeRNode.add(lightR);
+          ocularLightL = new THREE.PointLight(0xff0033, 2.5, 2.0);
+          ocularLightL.position.copy(eyeLWorld).add(new THREE.Vector3(0, 0, 0.05));
+          headGroup.add(ocularLightL);
+
+          ocularLightR = new THREE.PointLight(0xff0033, 2.5, 2.0);
+          ocularLightR.position.copy(eyeRWorld).add(new THREE.Vector3(0, 0, 0.05));
+          headGroup.add(ocularLightR);
         }
 
         headGroup.add(model);
+        setModelLoaded(true);
         setModelLoaded(true);
       },
       undefined,
@@ -296,26 +309,33 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       }
 
       // ======================================================================
-      // 2. PROCEDURAL ORGANIC EYE BLINKING (Poisson 130ms closure)
+      // 2. PROCEDURAL ORGANIC EYE BLINKING (Poisson 140ms closure)
       // ======================================================================
       if (!isBlinking && now - lastBlinkTime > nextBlinkDelay) {
         isBlinking = true;
         blinkStartTime = now;
       }
 
-      if (isBlinking && eyeLNode && eyeRNode) {
-        const blinkProgress = (now - blinkStartTime) / 130;
+      if (isBlinking) {
+        const blinkProgress = (now - blinkStartTime) / 140;
         if (blinkProgress < 1.0) {
           const eyeFactor = Math.sin(blinkProgress * Math.PI);
-          const eyeScaleY = Math.max(0.06, 1.0 - eyeFactor);
-          eyeLNode.scale.y = eyeScaleY;
-          eyeRNode.scale.y = eyeScaleY;
+          // Scale relative to original mesh scale (never hardcode 1.0)
+          if (eyeLNode) eyeLNode.scale.y = initialEyeScaleY_L * Math.max(0.08, 1.0 - eyeFactor);
+          if (eyeRNode) eyeRNode.scale.y = initialEyeScaleY_R * Math.max(0.08, 1.0 - eyeFactor);
+          // Ocular vampire glow dim during eyelid blink
+          vampireEyeMat.emissiveIntensity = 4.5 * (1.0 - eyeFactor * 0.85);
+          if (ocularLightL) ocularLightL.intensity = 2.5 * (1.0 - eyeFactor * 0.85);
+          if (ocularLightR) ocularLightR.intensity = 2.5 * (1.0 - eyeFactor * 0.85);
         } else {
           isBlinking = false;
           lastBlinkTime = now;
           nextBlinkDelay = 2800 + Math.random() * 2800; // 2.8s to 5.6s
-          eyeLNode.scale.y = 1.0;
-          eyeRNode.scale.y = 1.0;
+          if (eyeLNode) eyeLNode.scale.y = initialEyeScaleY_L;
+          if (eyeRNode) eyeRNode.scale.y = initialEyeScaleY_R;
+          vampireEyeMat.emissiveIntensity = 4.5;
+          if (ocularLightL) ocularLightL.intensity = 2.5;
+          if (ocularLightR) ocularLightR.intensity = 2.5;
         }
       }
 
@@ -340,12 +360,12 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
         audioVolume = 0;
       }
 
-      // Articulate Mechanical Jaw (JawR_19) dynamically
+      // Articulate Mechanical Jaw (Jaw.R_19) dynamically
       if (jawNode) {
         const jawDrop = Math.min(1.0, audioVolume * 1.8);
-        jawNode.rotation.x = -jawDrop * 0.09;
-        jawNode.position.y = initialJawY - jawDrop * 0.015;
-        jawNode.position.z = initialJawZ + jawDrop * 0.005;
+        jawNode.rotation.x = -jawDrop * 0.08;
+        jawNode.position.y = initialJawY - jawDrop * 0.008;
+        jawNode.position.z = initialJawZ + jawDrop * 0.003;
       }
 
       renderer.render(scene, camera);
@@ -377,17 +397,16 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
 
   return (
     <div className={`relative w-full h-full min-h-[460px] flex flex-col items-center justify-center rounded-2xl overflow-hidden bg-[#000000] border border-sky-950/40 select-none shadow-[0_0_50px_rgba(2,132,199,0.15)] ${className}`}>
-      
+
       {/* Top Left Controls: 3D Android Mesh vs Real Face Photo */}
       <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 p-1 rounded-xl bg-[#000000]/80 border border-white/10 backdrop-blur-md">
         <button
           type="button"
           onClick={() => setRenderMode("3d_mesh")}
-          className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
-            renderMode === "3d_mesh"
+          className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${renderMode === "3d_mesh"
               ? "bg-[#0284c7] text-white font-bold shadow-md shadow-sky-900/40"
               : "text-zinc-400 hover:text-white"
-          }`}
+            }`}
           title="3D Humanoid Robot Face (by kito1704 under CC-BY-4.0)"
         >
           3D HUMANOID
@@ -395,11 +414,10 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
         <button
           type="button"
           onClick={() => setRenderMode("motion_photo")}
-          className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
-            renderMode === "motion_photo"
+          className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${renderMode === "motion_photo"
               ? "bg-[#0284c7] text-white font-bold shadow-md shadow-sky-900/40"
               : "text-zinc-400 hover:text-white"
-          }`}
+            }`}
           title="Motion Real Human Face"
         >
           REAL FACE
@@ -416,7 +434,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       {renderMode === "3d_mesh" ? (
         <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-2xl bg-[#000000]">
           <div ref={mountRef} className="w-full h-full flex items-center justify-center" />
-          
+
           {/* Subtle loading spinner while WebGL initializes */}
           {!modelLoaded && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 z-10 pointer-events-none">
@@ -431,11 +449,10 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
             <img
               src="/avatar/das_head.jpg"
               alt="Pathfinder AI Voice Agent Real Face"
-              className={`w-auto h-[90%] object-contain select-none transition-transform duration-700 ${
-                isSpeaking
+              className={`w-auto h-[90%] object-contain select-none transition-transform duration-700 ${isSpeaking
                   ? "scale-105 filter drop-shadow-[0_0_35px_rgba(2,132,199,0.7)]"
                   : "scale-100 filter drop-shadow-[0_0_25px_rgba(2,132,199,0.4)]"
-              }`}
+                }`}
               style={{
                 animation: "avatarSway 4s ease-in-out infinite alternate"
               }}
@@ -451,15 +468,14 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       <div className="absolute bottom-3 inset-x-3 z-20 flex items-center justify-between px-3.5 py-1.5 rounded-xl border border-white/10 bg-[#000000]/90 backdrop-blur-md">
         <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-300">
           <span
-            className={`font-semibold uppercase tracking-wider ${
-              state === "speaking"
+            className={`font-semibold uppercase tracking-wider ${state === "speaking"
                 ? "text-emerald-400"
                 : state === "listening"
-                ? "text-sky-400"
-                : state === "thinking"
-                ? "text-amber-400"
-                : "text-zinc-400"
-            }`}
+                  ? "text-sky-400"
+                  : state === "thinking"
+                    ? "text-amber-400"
+                    : "text-zinc-400"
+              }`}
           >
             {state === "speaking" ? "● Speaking" : state === "listening" ? "● Listening..." : state === "thinking" ? "● Reasoning..." : "Ready"}
           </span>
