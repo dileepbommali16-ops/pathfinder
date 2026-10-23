@@ -124,14 +124,10 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
     cobaltBackLight.position.set(0, -1.0, -1.5);
     scene.add(cobaltBackLight);
 
-    // Dual Glowing Crimson Red Ocular PointLights (Positioned Directly in Front of Left & Right Eyes)
-    const leftEyeLight = new THREE.PointLight(0xff0033, 3.2, 3.0);
-    leftEyeLight.position.set(-0.35, 0.22, 1.35);
-    scene.add(leftEyeLight);
-
-    const rightEyeLight = new THREE.PointLight(0xff0033, 3.2, 3.0);
-    rightEyeLight.position.set(0.35, 0.22, 1.35);
-    scene.add(rightEyeLight);
+    // Subtle Ambient Eye Rim Light (Electric Cyan #00d8ff)
+    const eyeRimLight = new THREE.PointLight(0x00d8ff, 1.2, 4.0);
+    eyeRimLight.position.set(0, 0.3, 1.8);
+    scene.add(eyeRimLight);
 
     // Moving Background Grid (venakala 3D UI motion)
     const gridGeo = new THREE.PlaneGeometry(12, 12, 24, 24);
@@ -224,12 +220,10 @@ export const FaceAvatar: React.FC<FaceAvatarProps> = ({
       const activeChar = currentText[charIndex] || "";
 
       // Dynamic Glowing Animated Red Eyes (Pulsating Luminescence & Sparkle)
-      const eyeSparkle = 2.6 + Math.sin(elapsedTime * 5.5) * 0.9;
-      leftEyeLight.intensity = eyeSparkle;
-      rightEyeLight.intensity = eyeSparkle;
       if (meshParts.leftEye.material && (meshParts.leftEye.material as any).emissiveIntensity !== undefined) {
-        (meshParts.leftEye.material as any).emissiveIntensity = 2.8 + Math.sin(elapsedTime * 5.5) * 0.8;
-        (meshParts.rightEye.material as any).emissiveIntensity = 2.8 + Math.sin(elapsedTime * 5.5) * 0.8;
+        const eyeSparkle = 1.35 + Math.sin(elapsedTime * 4.0) * 0.35 + currentRMS * 0.5;
+        (meshParts.leftEye.material as any).emissiveIntensity = eyeSparkle;
+        (meshParts.rightEye.material as any).emissiveIntensity = eyeSparkle;
       }
 
       // Compute idle transforms & viseme weights

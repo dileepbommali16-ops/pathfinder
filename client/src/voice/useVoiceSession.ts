@@ -9,7 +9,7 @@ import { MicrophoneCapture } from "./audio/mic";
 import { EchoGateManager } from "./echo";
 import { actionEngine, WebsiteActionContext, ActionResult } from "./actions";
 import { memoryManager } from "./memory";
-import { clientBrain } from "./client_brain";
+import { clientBrain, checkIsOwner } from "./client_brain";
 
 export type VoiceState = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "error";
 
@@ -273,13 +273,18 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
         if (typeof window !== "undefined") {
           sessionStorage.setItem("das_boss_greeted", "true");
         }
+        const isOwner = checkIsOwner();
         const nowHour = new Date().getHours();
-        const timeGreetingEn = nowHour < 12 ? "Good morning" : (nowHour < 17 ? "Good afternoon" : "Good evening");
-        const timeGreetingTe = nowHour < 12 ? "గుడ్ మార్నింగ్" : (nowHour < 17 ? "గుడ్ ఆఫ్టర్నూన్" : "గుడ్ ఈవినింగ్");
+        const tod = nowHour < 12 ? "morning" : (nowHour < 17 ? "afternoon" : "evening");
+        const todTe = tod === "morning" ? "మార్నింగ్" : (tod === "afternoon" ? "ఆఫ్టర్నూన్" : "ఈవినింగ్");
         const initialGreeting =
           languageRef.current === "te"
-            ? `హాయ్ బాస్, ${timeGreetingTe}! నేను మీ పర్సనల్ పాత్‌ఫైండర్ AI ఏజెంట్ దాస్ ని. సిస్టమ్స్ అన్నీ సిద్ధంగా ఉన్నాయి. ఈరోజు మన ప్లేస్‌మెంట్స్ కోసం ఏం మొదలుపెడదాం?`
-            : `Hi Boss, ${timeGreetingEn}! I am DAS, your autonomous Pathfinder AI co-pilot. Systems online and calibrated. How can I assist you right now?`;
+            ? (isOwner
+                ? `హాయ్ బాస్, గుడ్ ${todTe}! నేను మీ పర్సనల్ పాత్‌ఫైండర్ AI ఏజెంట్ దాస్ ని. సిస్టమ్స్ అన్నీ సిద్ధంగా ఉన్నాయి. ఈరోజు మన ప్లేస్‌మెంట్స్ కోసం ఏం మొదలుపెడదాం?`
+                : `నమస్కారం, గుడ్ ${todTe}! పాత్‌ఫైండర్‌కి స్వాగతం. నేను DAS, మీ అటానమస్ ప్లేస్‌మెంట్ కో-పైలట్. ఈరోజు మీకు ఎలా సహాయపడగలను?`)
+            : (isOwner
+                ? `Hi Boss, Good ${tod}! I am DAS, your autonomous Pathfinder AI co-pilot. Systems online and calibrated. How can I assist you right now?`
+                : `Hello, Good ${tod}! Welcome to Pathfinder. I am DAS, your autonomous placement co-pilot. Systems online and calibrated. How can I assist you today?`);
         greetingRef.current = initialGreeting;
         setCurrentSentence(initialGreeting);
         setMessages((prev) => {

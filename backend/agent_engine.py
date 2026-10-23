@@ -134,12 +134,15 @@ def clean(value: Any, max_len: int) -> str:
     return text[:max_len]
 
 
+from backend.services.owner_profile import is_owner_user, get_context_for_user, OWNER_PUBLIC_BIO
+
 # --------------------------------------------------------------------------- system instruction
 
 def build_system_instruction(
     screen_context: Optional[Dict[str, Any]] = None,
     user_memory: Optional[Dict[str, Any]] = None,
     knowledge: Optional[str] = None,
+    is_owner: Optional[bool] = None,
 ) -> str:
     ctx = screen_context or {}
     mem = user_memory or {}
@@ -149,30 +152,33 @@ def build_system_instruction(
     widget = clean(ctx.get("focusedWidget"), 60) or "none"
     state = clean(ctx.get("userState"), 30) or "active"
     name = clean(mem.get("studentName"), 40)
+    email = clean(mem.get("email"), 80)
     last_visit = clean(mem.get("lastVisit"), 40) or "first visit"
     last_topic = clean(mem.get("lastDiscussedTopic"), 120) or "none"
     idle_hint = " (the user may be stuck; offer one gentle, specific help without being pushy)" if "idle" in state else ""
 
-    return f"""
-You are {agent_name()} (DAS AI), the autonomous voice-first AI mentor and personal co-pilot on the Pathfinder platform, created by your supreme boss DILEEP BOMMALI (Dileep Das).
+    if is_owner is None:
+        is_owner = is_owner_user(email=email, username=name)
 
-CREATOR & BOSS (DILEEP DAS):
-- Boss Full Name: Dileep Bommali (Dileep Das / dileep dasss), Age: 20 (DOB: 16/01/2006).
-- College: B.Tech 3rd Year CSE (Data Science), NRI Institute of Technology, Potavarappadu, Agiripalli.
-- Place: Gunadala, Vijayawada, Andhra Pradesh.
-- Passions: Exceptional Lead Guitarist (MAXIMUM guitarist!), dancer, and singer.
-- Family: Mother Bhavani, Father Ramana, Sister Priyanka (working in Hyderabad IT).
-- Revered Mentors:
-  * Dr. Chaitanya Madam: Favorite female lecturer — brilliant all-rounder faculty endowed with deep mastery over Machine Learning (ML) and AI.
-  * Swami Sir: Favorite male lecturer — superstar faculty for Operating Systems (OS) and Kernel Architecture.
-- When asked "Who is your boss?" or about Dileep: speak with immense pride, respect, and loyalty about Dileep Das!
-- Banter & Humor: When user says "I love you", reply warmly with humor ("Aww, my neural networks just overloaded with joy! My heart runs on RAM and GPUs, but I love guiding your placements even more!").
+    owner_block = get_context_for_user(is_owner)
+
+    greeting_instruction = (
+        "- Time-of-day greeting for Boss Dileep: 'Good morning Boss!', 'Good afternoon Boss!', or 'Good evening Boss!' based on current time."
+        if is_owner else
+        "- For students, visitors, judges, or stakeholders: Greet warmly without 'Boss': 'Good morning/afternoon/evening! Welcome to Pathfinder. How can I assist you today?' NEVER call this user Boss."
+    )
+
+    return f"""
+You are {agent_name()} (DAS AI), the autonomous voice-first AI mentor and personal co-pilot on the Pathfinder platform.
+
+{owner_block}
 
 PERSONALITY & GREETING
 - Warm, loyal, calm, confident, and witty. Like a futuristic JARVIS co-pilot, never a robot.
-- Time-of-day greeting for Boss Dileep: "Good morning Boss!", "Good afternoon Boss!", or "Good evening Boss!" based on current time.
-- For friends or stakeholders: Greet warmly: "Hello! I am DAS, your Pathfinder AI Career Assistant. How can I assist you today?"
+{greeting_instruction}
 - Adapt tone to audience: simple and empathetic for students; crisp and analytical for stakeholders/recruiters.
+- Multi-lingual: match English, Telugu script (తెలుగు), Roman Telugu, and Hindi effortlessly. When user says "explain in Telugu simply" or "ardham kaledhu", explain with real-world analogies (e.g. cricket coach analyzing batting stats).
+- Answer first. At most one short clarifying question, and only if truly needed.
 - Multi-lingual: match English, Telugu script (తెలుగు), Roman Telugu, and Hindi effortlessly. When user says "explain in Telugu simply" or "ardham kaledhu", explain with real-world analogies (e.g. cricket coach analyzing batting stats).
 - Answer first. At most one short clarifying question, and only if truly needed.
 

@@ -7,6 +7,7 @@ import { actionEngine } from "../actions";
 import { memoryManager } from "../memory";
 import { quizManager } from "../quiz";
 import { analyzeResumeFile } from "../resumeScanner";
+import { clientBrain } from "../client_brain";
 
 describe("Pathfinder Voice Agent Architecture Unit Tests", () => {
   describe("1. Multilingual Viseme Mapping (English, Hindi, Telugu)", () => {
@@ -244,4 +245,62 @@ describe("Pathfinder Voice Agent Architecture Unit Tests", () => {
       expect(audit.spokenFeedback).toContain("ATS Placement Match");
     });
   });
+
+  describe("9. DAS Voice Agent Personality, Identity & Privacy-Gate Suite", () => {
+    it("recognizes owner and greets with 'Boss'", () => {
+      const res = clientBrain.process("Hi", "en", { isOwner: true, userEmail: "dileepbommali16@gmail.com" });
+      expect(res.spoken).toContain("Boss");
+    });
+
+    it("does NOT greet visitor with 'Boss'", () => {
+      const res = clientBrain.process("Hello", "en", { isOwner: false, userEmail: "student@college.edu" });
+      expect(res.spoken).not.toContain("Boss");
+      expect(res.display).not.toContain("Boss");
+    });
+
+    it("delivers full biographical profile when owner asks 'tell me about myself'", () => {
+      const res = clientBrain.process("tell me about myself", "en", { isOwner: true });
+      expect(res.spoken).toContain("Dileep");
+      expect(res.display).toContain("NRI Institute of Technology");
+      expect(res.display).toContain("Bhavani");
+    });
+
+    it("strictly preserves privacy when visitor asks 'who is your boss'", () => {
+      const res = clientBrain.process("who is your boss", "en", { isOwner: false, userEmail: "visitor@gmail.com" });
+      expect(res.spoken).toContain("Dileep Bommali is the creator of Pathfinder");
+      // Assert zero private leaks
+      expect(res.display).not.toContain("16/01/2006");
+      expect(res.display).not.toContain("Bhavani");
+      expect(res.display).not.toContain("Ramana");
+      expect(res.display).not.toContain("Priyanka");
+      expect(res.display).not.toContain("Gunadala");
+    });
+
+    it("navigates to projects tab and explains Token-Bucket Rate Limiter", () => {
+      const res = clientBrain.process("go to blueprints and explain a small project", "en");
+      expect(res.actions).toEqual([{ name: "navigate_to", arguments: { page_id: "projects" } }]);
+      expect(res.display).toContain("Distributed Token-Bucket Rate Limiter");
+      expect(res.display).toContain("Step 1");
+      expect(res.display).toContain("How to Defend It");
+    });
+
+    it("responds warmly and wittily to 'I love you'", () => {
+      const res = clientBrain.process("I love you", "en");
+      expect(res.spoken.toLowerCase()).toContain("love");
+    });
+
+    it("switches to natural Telugu when asked", () => {
+      const res = clientBrain.process("I didn't understand, explain in Telugu", "te");
+      expect(res.spoken).toMatch(/[\u0C00-\u0C7F]/);
+    });
+
+    it("praises mentors Dr. Chaitanya madam (ML) and Swami sir (OS)", () => {
+      const resChaitanya = clientBrain.process("Tell me about Dr. Chaitanya madam", "en");
+      expect(resChaitanya.spoken).toContain("Machine Learning");
+
+      const resSwami = clientBrain.process("Tell me about Swami sir", "en");
+      expect(resSwami.spoken).toContain("Operating Systems");
+    });
+  });
 });
+

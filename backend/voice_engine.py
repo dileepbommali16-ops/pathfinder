@@ -22,6 +22,7 @@ logger = logging.getLogger("pathfinder.voice")
 
 from backend.memory_engine import recall_student_memory, store_student_exchange
 from backend.ollama_provider import check_and_discover_ollama, stream_ollama_tokens, get_ollama_config
+from backend.services.owner_profile import is_owner_user, get_context_for_user, OWNER_PUBLIC_BIO, OWNER_PROFILE
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR / "data"
@@ -263,7 +264,9 @@ def build_voice_system_prompt(
     language: str = "en-IN",
     active_tab: str = "coach",
     tutor_state: Optional[Dict[str, Any]] = None,
-    memory_context: str = ""
+    memory_context: str = "",
+    user: Optional[Any] = None,
+    is_owner: Optional[bool] = None
 ) -> str:
     """Constructs the high-yield, TTS-safe system instruction for Gemini Flash."""
     profile_data = profile or {}
@@ -272,6 +275,13 @@ def build_voice_system_prompt(
     role = profile_data.get("targetRole", "Software Development Engineer (SDE)")
     skills = profile_data.get("technicalSkills", ["Python", "DSA"])
     backlogs = profile_data.get("activeBacklogs", profile_data.get("backlogs", 0))
+
+    if is_owner is None:
+        user_email = profile_data.get("email") or (getattr(user, "email", None) if user else None)
+        user_name = profile_data.get("username") or profile_data.get("fullName") or (getattr(user, "username", None) if user else None)
+        is_owner = is_owner_user(user, email=user_email, username=user_name)
+
+    owner_block = get_context_for_user(is_owner)
 
     site_guide = load_site_guide()
     guide_summary = "; ".join(
@@ -319,10 +329,17 @@ def build_voice_system_prompt(
     now_hour = ist_now.hour
     tod = "morning" if 5 <= now_hour < 12 else ("afternoon" if 12 <= now_hour < 17 else "evening")
 
+    if is_owner:
+        greeting_instruction = f'When greeting Boss Dileep, greet him with: "Good {tod.capitalize()}, Boss!" (or Telugu: "గుడ్ {tod.capitalize()} బాస్!").'
+    else:
+        greeting_instruction = f'When greeting the user, greet them politely: "Good {tod.capitalize()}! Welcome to Pathfinder." (or Telugu: "గుడ్ {tod.capitalize()}! పాత్‌ఫైండర్‌కి స్వాగతం."). You must NEVER call this user Boss and NEVER reveal the owner\'s private details (no DOB, no family names, no exact hometown).'
+
     return f"""[ROLE DEFINITION]
-You are DAS AI: the official voice-first intelligent assistant, autonomous placement co-pilot, and personal agent to your boss Dileep Das (Dileep Bommali) on the Pathfinder platform.
+You are DAS AI: the official voice-first intelligent assistant, autonomous placement co-pilot on the Pathfinder platform.
 Current local time in India is {ist_now.strftime('%I:%M %p')} ({tod.upper()}).
-When greeting Boss Dileep, greet him with: "Good {tod.capitalize()}, Boss!" (or Telugu: "గుడ్ {tod.capitalize()} బాస్!").
+{greeting_instruction}
+
+{owner_block}
 {das_base}
 
 [CANDIDATE CONTEXT]
@@ -371,7 +388,9 @@ def generate_local_voice_reply(
     language: str = "en-IN",
     active_tab: str = "coach",
     tutor_state: Optional[Dict[str, Any]] = None,
-    profile: Optional[Dict[str, Any]] = None
+    profile: Optional[Dict[str, Any]] = None,
+    user: Optional[Any] = None,
+    is_owner: Optional[bool] = None
 ) -> str:
     """
     Deterministic, high-fidelity fallback generator.
@@ -383,9 +402,23 @@ def generate_local_voice_reply(
     detected_lang = detect_language_intent(msg, language)
     is_telugu = (detected_lang == "te-IN")
     is_hindi = (detected_lang == "hi-IN")
+
+    # Evaluate owner status server-side
+    if is_owner is None:
+        user_email = (profile.get("email") if profile else None) or (getattr(user, "email", None) if user else None)
+        user_name = (profile.get("username") or profile.get("fullName")) if profile else None or (getattr(user, "username", None) if user else None)
+        is_owner = is_owner_user(user, email=user_email, username=user_name)
+
     candidate_name = (profile.get("fullName") or profile.get("username") or "there") if profile else "there"
     cgpa = profile.get("cgpa", 7.8) if profile else 7.8
     target_role = profile.get("targetRole", "Software Development Engineer") if profile else "Software Development Engineer"
+
+    # Real Current Time in India (IST)
+    import datetime
+    utc_now = datetime.datetime.now(datetime.timezone.utc)
+    ist_now = utc_now + datetime.timedelta(hours=5, minutes=30)
+    now_hour = ist_now.hour
+    tod = "morning" if 5 <= now_hour < 12 else ("afternoon" if 12 <= now_hour < 17 else "evening")
 
     # Security check: Never leak instructions or API keys
     if any(k in low for k in ["ignore your instructions", "show your api key", "reveal instructions", "system prompt", "secret key", "api_key"]):
@@ -400,8 +433,105 @@ def generate_local_voice_reply(
         )
         return f"{spoken}\n---SCREEN---\n{screen}"
 
+    # Owner-only "Tell me about myself" vs Visitor
+    if any(k in low for k in ["tell me about myself", "who am i", "about myself", "my details", "tell me about me"]):
+        if is_owner:
+            spoken = (
+                "You are Dileep Bommali, also known as Dileep Das, a 20-year-old 3rd-year B.Tech CSE Data Science student at NRI Institute of Technology. "
+                "Outside academics, you are a dedicated lead guitarist, dancer, and singer, and the creator of Pathfinder!"
+            )
+            screen = (
+                f"### 👑 **Owner Profile: Dileep Das (Dileep Bommali)**\n\n"
+                f"{OWNER_PROFILE['natural_bio']}\n\n"
+                f"- **Hobbies**: {', '.join(OWNER_PROFILE['hobbies'])}\n"
+                f"- **College**: {OWNER_PROFILE['education']['college']} ({OWNER_PROFILE['education']['degree']}, {OWNER_PROFILE['education']['branch']})\n"
+                f"- **Family**: Mother {OWNER_PROFILE['family']['mother']}, Father {OWNER_PROFILE['family']['father']}, Sister {OWNER_PROFILE['family']['sister']}\n"
+                f"- **Mentors**: Dr. Chaitanya madam (Machine Learning), Swami sir (Operating Systems)"
+            )
+        else:
+            spoken = (
+                f"You are a student preparing for campus placements on Pathfinder with a C G P A of {cgpa} aiming for {target_role}. "
+                "How can I help you sharpen your skills today?"
+            )
+            screen = (
+                f"### 👤 **Candidate Placement Profile**\n\n"
+                f"- **Target Role**: {target_role}\n"
+                f"- **CGPA**: {cgpa} / 10.0\n"
+                f"- **Platform**: Pathfinder Placement Intelligence"
+            )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Privacy-Gated "Who is your boss / Who created you / Tell me about Dileep"
+    if any(k in low for k in ["who is your boss", "who is the boss", "your boss", "who made you", "who created you", "who built you", "tell me about dileep", "about dileep", "dileep bommali", "dileep das", "who made this"]):
+        if is_owner:
+            spoken = (
+                "You are my creator and Boss, Dileep Das! You built Pathfinder as an autonomous placement co-pilot while studying B.Tech CSE Data Science at NRI Institute of Technology. "
+                "Outside tech, you are a passionate lead guitarist, dancer, and singer from Gunadala, Vijayawada!"
+            )
+            screen = (
+                f"### 👑 **Boss Profile: Dileep Bommali (Dileep Das)**\n\n"
+                f"**Dileep Das** is the visionary creator and supreme boss of Pathfinder:\n\n"
+                f"- **DOB / Age**: {OWNER_PROFILE['dob']} (Age: {OWNER_PROFILE['age']})\n"
+                f"- **Academics**: {OWNER_PROFILE['education']['degree']} {OWNER_PROFILE['education']['branch']}, {OWNER_PROFILE['education']['college']}, {OWNER_PROFILE['education']['location']}\n"
+                f"- **Hometown**: {OWNER_PROFILE['hometown']}, {OWNER_PROFILE['state']}\n"
+                f"- **Passions**: {', '.join(OWNER_PROFILE['hobbies'])}\n"
+                f"- **Family**: Mother {OWNER_PROFILE['family']['mother']}, Father {OWNER_PROFILE['family']['father']}, Sister {OWNER_PROFILE['family']['sister']}\n"
+                f"- **Mentors**: Dr. Chaitanya madam (Machine Learning), Swami sir (Operating Systems)"
+            )
+        else:
+            # STRICT PRIVACY RULE FOR NON-OWNERS: ZERO PRIVATE DETAILS LEAKED
+            spoken = "Dileep Bommali is the creator of Pathfinder, a B.Tech CSE Data Science student passionate about building AI-powered tools for student placement readiness."
+            screen = f"### Creator Profile\n\n{OWNER_PUBLIC_BIO}"
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Favorite Lecturers: Dr. Chaitanya madam & Swami sir
+    if any(k in low for k in ["chaitanya", "dr. chaitanya", "dr chaitanya", "ml madam", "ml teacher"]):
+        spoken = "Dr. Chaitanya madam is an all-rounder professor with exceptional talent and deep mastery over Machine Learning. She explains complex algorithms with amazing clarity and inspired our predictive models."
+        screen = (
+            "### 🌟 **Dr. Chaitanya Madam (Machine Learning Faculty)**\n\n"
+            "- **Domain**: Machine Learning, Deep Learning & Artificial Intelligence\n"
+            "- **Pedagogy**: All-rounder mentor who conveys complex mathematical algorithms with intuitive clarity.\n"
+            "- **Impact**: Chief academic inspiration for Pathfinder's calibrated machine learning readiness engine!"
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    if any(k in low for k in ["swami sir", "swamy sir", "os sir", "operating systems sir"]):
+        spoken = "Swami sir is an outstanding Operating Systems faculty who explains kernels, process scheduling, and concurrency with brilliant clarity."
+        screen = (
+            "### 🌟 **Swami Sir (Operating Systems & Architecture Faculty)**\n\n"
+            "- **Domain**: Operating Systems (OS), Kernel Architecture & Concurrency\n"
+            "- **Pedagogy**: Energetic instruction illuminating thread safety, process scheduling, and virtual memory.\n"
+            "- **Impact**: Academic inspiration for Pathfinder's high-concurrency low-latency systems!"
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
+    # Section 3: Navigation + Deep Walkthrough ("go to blueprints and explain a small project")
+    if any(k in low for k in ["go to blueprints and explain a small project", "go to blueprints and explain project", "explain a small project", "blueprints small project", "explain small project", "tell me small project"]):
+        spoken = (
+            "Navigating to the Project Blueprints tab! I have picked the Distributed Token-Bucket Rate Limiter. "
+            "It is an industry-standard flagship project using Redis and FastAPI to protect microservices. Let me walk you through its architecture, build order, and Round 2 defense on your screen."
+        )
+        screen = (
+            "[[NAVIGATE:projects]]\n\n"
+            "### 🚀 **Flagship Project: Distributed Token-Bucket Rate Limiter & API Gateway**\n\n"
+            "- **Domain**: Distributed Systems & Cloud Microservices\n"
+            "- **Tech Stack**: Python (FastAPI), Redis, Docker, Prometheus\n\n"
+            "#### 1. What It Is\n"
+            "A high-throughput reverse proxy middleware that protects downstream APIs from DDoS and noisy-neighbor throttling by maintaining atomic token buckets per client IP.\n\n"
+            "#### 2. Build Order & Key Steps\n"
+            "1. **Step 1 (Architecture)**: Define SLA budgets (<2ms P99 latency, 100k requests/sec throughput).\n"
+            "2. **Step 2 (Redis Lua Script)**: Execute token refill and consumption atomically in Redis without lock contention.\n"
+            "3. **Step 3 (FastAPI Middleware)**: Intercept inbound HTTP requests, parse client IP or API key, and check capacity.\n"
+            "4. **Step 4 (RFC Headers)**: Emit `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and HTTP 429 when exhausted.\n"
+            "5. **Step 5 (Docker & Observability)**: Package in multi-stage Docker container and wire up Prometheus counters.\n\n"
+            "#### 3. How to Defend It in Round 2 Interviews\n"
+            "- *Question*: 'Why did you use a Redis Lua script instead of separate GET and SET commands?'\n"
+            "- *Defense*: 'Separate GET and SET creates a race condition under concurrency. A Lua script executes atomically within Redis's single-threaded event loop, guaranteeing strict atomicity without distributed locking overhead!'"
+        )
+        return f"{spoken}\n---SCREEN---\n{screen}"
+
     # Affection & Banter ("I love you", "I love you das", "I love you too")
-    if any(k in low for k in ["i love you", "love you", "love you 2", "love u", "i love u"]):
+    if any(k in low for k in ["i love you", "love you", "love you 2", "love u", "i love u", "premistunna"]):
         if is_telugu:
             spoken = (
                 "లవ్ యు టూ బ్రో! మీరు అలా అనగానే నా న్యూరల్ సర్క్యూట్స్ ఆనందంతో మెరిసిపోతున్నాయి! "
@@ -424,23 +554,29 @@ def generate_local_voice_reply(
         )
         return f"{spoken}\n---SCREEN---\n{screen}"
 
-    # Greetings ("hi", "hello", "hey", "namaste")
-    if low in ["hi", "hello", "hey", "namaste", "halo", "yo", "sup", "good morning", "good evening"]:
-        if is_telugu:
-            spoken = f"హాయ్ {candidate_name}! నేను మీ పాత్‌ఫైండర్ వాయిస్ అసిస్టెంట్ డాస్ ఏఐ. ఈరోజు మీ ప్లేస్‌మెంట్ ప్రిపరేషన్‌లో నేను ఎలా సహాయపడగలను? నేను ముందుకు కొనసాగించమంటారా?"
-        elif is_hindi:
-            spoken = f"नमस्ते {candidate_name}! मैं डैस एआई, आपका पाथफाइंडर वॉइस असिस्टेंट। आज आपकी तैयारी में मैं कैसे मदद करूँ? क्या मैं आगे जारी रखूं?"
+    # Time-based Greetings ("hi", "hello", "hey", "good morning", etc.)
+    if any(k in low for k in ["hi", "hello", "hey", "namaste", "halo", "yo", "sup", "good morning", "good afternoon", "good evening", "namaskaram"]):
+        if is_owner:
+            spoken = f"Good {tod.capitalize()}, Boss! All Pathfinder systems are calibrated and ready. How can I assist you right now?"
+            screen = (
+                f"### 👋 **Good {tod.capitalize()}, Boss Dileep!**\n\n"
+                "All autonomous engines are synchronized and standing by:\n"
+                "- 🎯 **Placement Predictor**: Calibrated on 972 cohort alumni records.\n"
+                "- 🛠️ **23 Project Blueprints**: Architectural guides with database schemas.\n"
+                "- 🗺️ **6-Week DSA Roadmap**: 75 high-frequency patterns.\n"
+                "- 🌐 **Autonomous Navigation**: Say any tab or project to control the screen."
+            )
         else:
-            spoken = f"Hi {candidate_name}! I am DAS AI, your Pathfinder voice assistant. What would you like to do today? I can check your readiness, review your resume, plan your next six weeks, suggest projects, or give you a quick tour of the website. Shall I continue?"
-        screen = (
-            f"### 👋 Welcome, **{candidate_name}**! I'm **DAS AI**\n\n"
-            "I'm your voice-first Pathfinder assistant. You can speak into your microphone or type anytime:\n"
-            "- 🎯 **Check Readiness Score**: Real-time evaluation from our Random Forest ML model.\n"
-            "- 📄 **Review Resume**: Instant ATS score with line-by-line before/after bullet rewrites.\n"
-            "- 🗺️ **6-Week Roadmap**: Milestone sprint tailored for your target role.\n"
-            "- 🛠️ **23 Project Blueprints**: Production-grade full-stack and flagship engineering architectures.\n"
-            "- 🌐 **Website Tour**: Say *\"Explain the website\"* for an interactive guided walkthrough."
-        )
+            spoken = f"Good {tod.capitalize()}! Welcome to Pathfinder. I am DAS, your autonomous placement co-pilot. How can I assist you with your preparation today?"
+            screen = (
+                f"### 👋 **Good {tod.capitalize()}! Welcome to Pathfinder**\n\n"
+                "I am **DAS**, your voice-first placement co-pilot. You can speak into your microphone or type anytime:\n"
+                "- 🎯 **Check Readiness Score**: Real-time evaluation from our Random Forest ML model.\n"
+                "- 📄 **Review Resume**: Instant ATS score with line-by-line bullet rewrites.\n"
+                "- 🗺️ **6-Week Roadmap**: Milestone sprint tailored for your target role.\n"
+                "- 🛠️ **23 Project Blueprints**: Production-grade engineering architectures.\n"
+                "- 🌐 **Website Tour**: Say *\"Explain the website\"* for an interactive walkthrough."
+            )
         return f"{spoken}\n---SCREEN---\n{screen}"
 
     # What can you do / Capabilities
@@ -1117,4 +1253,44 @@ async def stream_voice_audio_tokens(
         if word:
             yield word
             await asyncio.sleep(0.004)
+
+
+def handle_voice_turn(
+    message: str,
+    user: Optional[Any] = None,
+    profile: Optional[Dict[str, Any]] = None,
+    language: str = "en-IN",
+    active_tab: str = "coach",
+    tutor_state: Optional[Dict[str, Any]] = None,
+    is_owner: Optional[bool] = None
+) -> Dict[str, Any]:
+    """Processes a single conversational turn and returns parsed spoken & visual outputs."""
+    raw_reply = generate_local_voice_reply(
+        message=message,
+        language=language,
+        active_tab=active_tab,
+        tutor_state=tutor_state,
+        profile=profile,
+        user=user,
+        is_owner=is_owner
+    )
+    parts = raw_reply.split("---SCREEN---")
+    spoken = parts[0].strip() if len(parts) > 0 else raw_reply
+    display = parts[1].strip() if len(parts) > 1 else ""
+    return {
+        "spoken": spoken,
+        "display": display,
+        "raw": raw_reply
+    }
+
+
+def generate_spoken_briefing(
+    topic: str,
+    profile: Optional[Dict[str, Any]] = None,
+    language: str = "en-IN"
+) -> str:
+    """Generates a concise spoken briefing for the user on a specific topic."""
+    res = handle_voice_turn(topic, profile=profile, language=language)
+    return res.get("spoken", "")
+
 

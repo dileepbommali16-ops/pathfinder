@@ -102,152 +102,172 @@ export function createFaceMesh(texture?: THREE.Texture | null): MeshParts {
   headGroup.add(neckMesh);
 
   // =========================================================================
-  // 4. ANATOMICAL REAL HUMAN NOSE (Bridge, Tip, Nostrils)
+  // 4. SUBTLE, SLEEK HUMANOID NOSE (Delicate, Elegant, No Cartoon Snout)
   // =========================================================================
   const noseMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#0284c7"),
-    roughness: 0.25,
-    metalness: 0.9,
-    emissive: new THREE.Color("#0369a1"),
-    emissiveIntensity: 0.35,
-    wireframe: false,
-  });
-
-  // Nose Bridge (Sleek tapered cylindrical prism from brow to tip)
-  const bridgeGeo = new THREE.CylinderGeometry(0.045, 0.08, 0.38, 16);
-  const noseBridge = new THREE.Mesh(bridgeGeo, noseMat);
-  noseBridge.position.set(0, 0.04, 1.16);
-  noseBridge.rotation.x = 0.28;
-  headGroup.add(noseBridge);
-
-  // Nose Tip (Anatomical rounded apex)
-  const tipGeo = new THREE.SphereGeometry(0.085, 20, 20);
-  const noseTip = new THREE.Mesh(tipGeo, noseMat);
-  noseTip.position.set(0, -0.14, 1.25);
-  noseTip.scale.set(1.15, 0.95, 1.05);
-  headGroup.add(noseTip);
-
-  // Nostrils (Left and Right alar wings)
-  const nostrilGeo = new THREE.SphereGeometry(0.05, 16, 16);
-  const nostrilMat = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#00d8ff"),
     wireframe: true,
     emissive: new THREE.Color("#0284c7"),
-    emissiveIntensity: 0.5,
+    emissiveIntensity: 0.4,
+    transparent: true,
+    opacity: 0.8,
   });
 
-  const leftNostril = new THREE.Mesh(nostrilGeo, nostrilMat);
-  leftNostril.position.set(-0.09, -0.16, 1.18);
+  // Nose Bridge: A delicate, ultra-thin ridge line (no giant cylinder)
+  const bridgeGeo = new THREE.CylinderGeometry(0.012, 0.018, 0.28, 8);
+  const noseBridge = new THREE.Mesh(bridgeGeo, noseMat);
+  noseBridge.position.set(0, 0.05, 1.09);
+  noseBridge.rotation.x = 0.15;
+  headGroup.add(noseBridge);
+
+  // Subtle Nose Tip: A tiny refined apex flush with cranial contour
+  const tipGeo = new THREE.SphereGeometry(0.028, 12, 12);
+  tipGeo.scale(1.0, 0.8, 0.8);
+  const noseTip = new THREE.Mesh(tipGeo, noseMat);
+  noseTip.position.set(0, -0.09, 1.12);
+  headGroup.add(noseTip);
+
+  // Subtle Alar Curves: Tiny refined accents (no protruding balls)
+  const nostrilGeo = new THREE.SphereGeometry(0.016, 8, 8);
+  const leftNostril = new THREE.Mesh(nostrilGeo, noseMat);
+  leftNostril.position.set(-0.045, -0.10, 1.09);
   headGroup.add(leftNostril);
 
-  const rightNostril = new THREE.Mesh(nostrilGeo, nostrilMat);
-  rightNostril.position.set(0.09, -0.16, 1.18);
+  const rightNostril = new THREE.Mesh(nostrilGeo, noseMat);
+  rightNostril.position.set(0.045, -0.10, 1.09);
   headGroup.add(rightNostril);
 
   // =========================================================================
-  // 5. GLOWING LUMINOUS CRIMSON RED EYES & PUPILS
+  // 5. ANATOMICAL HUMAN EYE (Sclera, Crimson Iris, Deep Pupil, Glossy Glint)
   // =========================================================================
-  const eyeSocketGeo = new THREE.SphereGeometry(0.15, 28, 28);
-  const eyeMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#ff0033"),
-    roughness: 0.1,
-    metalness: 0.8,
-    emissive: new THREE.Color("#ff0033"),
-    emissiveIntensity: 3.2,
+  // Eye Sclera (Natural Eyeball Base)
+  const scleraGeo = new THREE.SphereGeometry(0.12, 24, 24);
+  scleraGeo.scale(1.15, 0.70, 0.5);
+  const scleraMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#0c1524"),
+    roughness: 0.2,
+    metalness: 0.6,
+  });
+
+  const leftEyeSocket = new THREE.Mesh(scleraGeo, scleraMat);
+  leftEyeSocket.position.set(-0.35, 0.22, 1.02);
+  headGroup.add(leftEyeSocket);
+
+  const rightEyeSocket = new THREE.Mesh(scleraGeo, scleraMat);
+  rightEyeSocket.position.set(0.35, 0.22, 1.02);
+  headGroup.add(rightEyeSocket);
+
+  // Human Eye Iris: Radiant Crimson/Ruby with Natural Luster
+  const irisGeo = new THREE.SphereGeometry(0.065, 24, 24);
+  irisGeo.scale(1.0, 1.0, 0.4);
+  const irisMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#dc2626"),
+    emissive: new THREE.Color("#e11d48"),
+    emissiveIntensity: 1.4,
+    roughness: 0.2,
+    metalness: 0.7,
   });
 
   // Left Eye Iris
-  const leftEye = new THREE.Mesh(eyeSocketGeo, eyeMat);
-  leftEye.position.set(-0.35, 0.22, 1.05);
-  leftEye.scale.set(1.1, 0.72, 0.45);
+  const leftEye = new THREE.Mesh(irisGeo, irisMat);
+  leftEye.position.set(-0.35, 0.22, 1.06);
   headGroup.add(leftEye);
 
   // Right Eye Iris
-  const rightEye = new THREE.Mesh(eyeSocketGeo, eyeMat);
-  rightEye.position.set(0.35, 0.22, 1.05);
-  rightEye.scale.set(1.1, 0.72, 0.45);
+  const rightEye = new THREE.Mesh(irisGeo, irisMat.clone());
+  rightEye.position.set(0.35, 0.22, 1.06);
   headGroup.add(rightEye);
 
-  // Glowing High-Intensity Crimson Pupils
-  const pupilGeo = new THREE.SphereGeometry(0.05, 16, 16);
+  // Human Eye Pupil: Deep Obsidian Core
+  const pupilGeo = new THREE.SphereGeometry(0.032, 16, 16);
+  pupilGeo.scale(1.0, 1.0, 0.3);
   const pupilMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color("#ffffff"),
+    color: new THREE.Color("#030712"),
   });
 
   const leftPupil = new THREE.Mesh(pupilGeo, pupilMat);
-  leftPupil.position.set(-0.35, 0.22, 1.13);
+  leftPupil.position.set(-0.35, 0.22, 1.08);
   headGroup.add(leftPupil);
 
   const rightPupil = new THREE.Mesh(pupilGeo, pupilMat);
-  rightPupil.position.set(0.35, 0.22, 1.13);
+  rightPupil.position.set(0.35, 0.22, 1.08);
   headGroup.add(rightPupil);
 
+  // High-Gloss Specular Eye Reflection (Brings Human Eyes to Life!)
+  const glintGeo = new THREE.SphereGeometry(0.012, 10, 10);
+  const glintMat = new THREE.MeshBasicMaterial({ color: new THREE.Color("#ffffff") });
+
+  const leftGlint = new THREE.Mesh(glintGeo, glintMat);
+  leftGlint.position.set(-0.33, 0.24, 1.09);
+  headGroup.add(leftGlint);
+
+  const rightGlint = new THREE.Mesh(glintGeo, glintMat);
+  rightGlint.position.set(0.37, 0.24, 1.09);
+  headGroup.add(rightGlint);
+
   // =========================================================================
-  // 6. ANATOMICAL EYELIDS (Realistic Curving Blinking Shutters)
+  // 6. ANATOMICAL EYELIDS (Smooth Realistic Blinking Shells)
   // =========================================================================
-  const eyelidGeo = new THREE.SphereGeometry(0.165, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.55);
+  const eyelidGeo = new THREE.SphereGeometry(0.135, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52);
   const eyelidMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#0284c7"),
-    wireframe: true,
-    emissive: new THREE.Color("#0369a1"),
-    emissiveIntensity: 0.6,
+    color: new THREE.Color("#030712"),
+    roughness: 0.3,
+    metalness: 0.85,
     side: THREE.DoubleSide,
   });
 
   // Left Eyelid Shell
   const leftEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
-  leftEyelid.position.set(-0.35, 0.22, 1.05);
-  leftEyelid.rotation.x = -Math.PI * 0.55; // Tucked open above eye
+  leftEyelid.position.set(-0.35, 0.22, 1.04);
+  leftEyelid.rotation.x = -Math.PI * 0.52; // Tucked open above eye
   headGroup.add(leftEyelid);
 
   // Right Eyelid Shell
-  const rightEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
-  rightEyelid.position.set(0.35, 0.22, 1.05);
-  rightEyelid.rotation.x = -Math.PI * 0.55; // Tucked open above eye
+  const rightEyelid = new THREE.Mesh(eyelidGeo, eyelidMat.clone());
+  rightEyelid.position.set(0.35, 0.22, 1.04);
+  rightEyelid.rotation.x = -Math.PI * 0.52; // Tucked open above eye
   headGroup.add(rightEyelid);
 
   // =========================================================================
-  // 7. REAL HUMAN DNA CONTOURED LIPS & MOUTH
+  // 7. SMOOTH HUMAN LIPS (Curved Cupid's Bow, NO Wireframe Grid/Ladder)
   // =========================================================================
   const mouthGroup = new THREE.Group();
-  mouthGroup.position.set(0, -0.42, 1.08);
+  mouthGroup.position.set(0, -0.40, 1.05);
   headGroup.add(mouthGroup);
 
-  // Inner Oral Cavity
-  const mouthCavityGeo = new THREE.PlaneGeometry(0.44, 0.12);
+  // Inner Oral Cavity (Dark, Non-Grid)
+  const mouthCavityGeo = new THREE.PlaneGeometry(0.36, 0.08);
   const mouthCavityMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color("#00f0ff"),
-    transparent: true,
-    opacity: 0.4,
+    color: new THREE.Color("#020617"),
     side: THREE.DoubleSide,
   });
   const mouthMesh = new THREE.Mesh(mouthCavityGeo, mouthCavityMat);
-  mouthMesh.position.set(0, 0, -0.02);
+  mouthMesh.position.set(0, 0, -0.01);
   mouthGroup.add(mouthMesh);
 
-  // Anatomical Lip Material: Metallic Cyan/Cobalt with Sleek Human Texture
+  // Smooth Shaded Human Lip Material (Sleek Cybernetic Cobalt with Gloss Highlight)
   const lipMat = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#0284c7"),
-    wireframe: true,
-    emissive: new THREE.Color("#00d8ff"),
-    emissiveIntensity: 0.65,
-    roughness: 0.3,
-    metalness: 0.8,
+    wireframe: false,
+    roughness: 0.25,
+    metalness: 0.85,
+    emissive: new THREE.Color("#0369a1"),
+    emissiveIntensity: 0.45,
   });
 
-  // Upper Lip (Sculpted Curved M-Shape / Cupid's Bow)
-  const upperLipGeo = new THREE.CylinderGeometry(0.045, 0.05, 0.44, 20);
-  upperLipGeo.scale(1.0, 1.0, 0.45);
+  // Upper Lip: Smooth Anatomical Cupid's Bow Curve (Cylinder scale flat and smooth)
+  const upperLipGeo = new THREE.CylinderGeometry(0.022, 0.028, 0.36, 24);
+  upperLipGeo.scale(1.0, 1.0, 0.4);
   const upperLip = new THREE.Mesh(upperLipGeo, lipMat);
-  upperLip.position.set(0, 0.04, 0.02);
+  upperLip.position.set(0, 0.025, 0.02);
   upperLip.rotation.z = Math.PI * 0.5;
   mouthGroup.add(upperLip);
 
-  // Lower Lip (Plump Curved Crescent Anatomy)
-  const lowerLipGeo = new THREE.CylinderGeometry(0.05, 0.055, 0.40, 20);
-  lowerLipGeo.scale(1.0, 1.0, 0.5);
-  const lowerLip = new THREE.Mesh(lowerLipGeo, lipMat);
-  lowerLip.position.set(0, -0.04, 0.02);
+  // Lower Lip: Smooth Curved Crescent Lip
+  const lowerLipGeo = new THREE.CylinderGeometry(0.026, 0.030, 0.32, 24);
+  lowerLipGeo.scale(1.0, 1.0, 0.45);
+  const lowerLip = new THREE.Mesh(lowerLipGeo, lipMat.clone());
+  lowerLip.position.set(0, -0.025, 0.02);
   lowerLip.rotation.z = Math.PI * 0.5;
   mouthGroup.add(lowerLip);
 

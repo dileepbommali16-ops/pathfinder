@@ -154,6 +154,68 @@ function normalizeQuery(input: string): string {
   return text;
 }
 
+// ---------------------------------------------------------------------------
+// Owner Identity & Privacy Gating (Dileep Bommali / Dileep Das)
+// ---------------------------------------------------------------------------
+export const OWNER_EMAILS = [
+  "dileepbommali16@gmail.com",
+  "dileepbommali16@users.noreply.github.com",
+  "dileep@pathfinder.ai",
+  "dileep",
+];
+
+export const OWNER_PROFILE = {
+  fullName: "Dileep Bommali",
+  preferredName: "Dileep Das",
+  dob: "16/01/2006",
+  age: 20,
+  education: {
+    degree: "B.Tech 3rd year",
+    branch: "CSE (Data Science)",
+    college: "NRI Institute of Technology",
+    location: "Pothavarappadu, Agiripalli",
+  },
+  hometown: "Gunadala, Vijayawada",
+  state: "Andhra Pradesh",
+  hobbies: ["guitarist (primary — his strongest passion)", "dancer", "singer"],
+  family: {
+    mother: "Bhavani",
+    father: "Ramana",
+    sister: "Priyanka (works in Hyderabad)",
+  },
+  favoriteLecturers: {
+    chaitanya: "Dr. Chaitanya madam: Teaches Machine Learning. An all-rounder with many talents who explains ML concepts really well.",
+    swami: "Swami sir: Teaches Operating Systems. An excellent teacher who explains OS concepts clearly.",
+  },
+  naturalBio:
+    "Dileep Bommali — goes by Dileep Das — is a 20-year-old B.Tech 3rd year student in CSE with a specialization in Data Science at NRI Institute of Technology, Pothavarappadu, Agiripalli. He's originally from Gunadala, Vijayawada, in Andhra Pradesh. Outside academics, music is a big part of who he is — he's a guitarist first and foremost, and also dances and sings. He comes from a close family: his mother Bhavani, father Ramana, and his sister Priyanka, who works in Hyderabad. He built Pathfinder himself, as a B.Tech student passionate about using AI to help other students figure out where they stand for placements and what to do about it.",
+};
+
+export const OWNER_PUBLIC_BIO =
+  "Dileep Bommali is the creator of Pathfinder, a B.Tech CSE (Data Science) student passionate about building AI-powered tools for student placement readiness.";
+
+export function checkIsOwner(emailOrUsername?: string | null): boolean {
+  if (emailOrUsername) {
+    const clean = emailOrUsername.trim().toLowerCase();
+    if (OWNER_EMAILS.some((o) => clean === o || (clean.startsWith("dileep") && clean.length >= 6))) {
+      return true;
+    }
+  }
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("pathfinder_user") || localStorage.getItem("user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        const candidate = (u.email || u.username || "").trim().toLowerCase();
+        if (OWNER_EMAILS.some((o) => candidate === o || (candidate.startsWith("dileep") && candidate.length >= 6))) {
+          return true;
+        }
+      }
+    } catch {}
+  }
+  return false;
+}
+
 export class ClientBrainEngine {
   /**
    * Processes a user question and returns a structured response with spoken text,
@@ -162,10 +224,18 @@ export class ClientBrainEngine {
   public process(
     query: string,
     language: string = "auto",
-    context?: { activeTab?: string; focusedWidget?: string; userState?: string }
+    context?: {
+      activeTab?: string;
+      focusedWidget?: string;
+      userState?: string;
+      isOwner?: boolean;
+      userEmail?: string;
+      userName?: string;
+    }
   ): BrainResponse {
     const raw = (query || "").trim();
     const low = normalizeQuery(raw);
+    const isOwner = context?.isOwner !== undefined ? context.isOwner : checkIsOwner(context?.userEmail || context?.userName);
 
     const isTelugu =
       language === "te" ||
@@ -446,6 +516,20 @@ export class ClientBrainEngine {
     }
 
     // =======================================================================
+    // 3.9 BLUEPRINTS NAVIGATION & STEP 1-9 STEP-BY-STEP GUIDANCE
+    // =======================================================================
+    if (anyMatch(low, ["go to blueprints and explain", "explain a small project", "explain small project", "tell me small project", "explain that one", "step 1 to all", "explain project step by step", "blueprints and explain"])) {
+      return {
+        spoken: isTelugu
+          ? "ఖచ్చితంగా! బ్లూప్రింట్స్ ట్యాబ్ కి వెళ్లి, టోకెన్ బకెట్ రేట్ లిమిటర్ ప్రాజెక్ట్ ని స్టెప్ వన్ నుండి స్టెప్ నైన్ వరకు పూర్తిగా వివరిస్తున్నాను."
+          : "Navigating to the Project Blueprints tab! I have picked the Distributed Token-Bucket Rate Limiter. It is an industry-standard flagship project using Redis and FastAPI to protect microservices. Let me walk you through its architecture, build order, and Round 2 defense on your screen.",
+        display: `### 🚀 Flagship Project: Distributed Token-Bucket Rate Limiter & API Gateway\n\nNavigating to **Project Blueprints**. Here is your complete 9-Step production blueprint:\n\n#### 1. What It Is\nA high-throughput reverse proxy middleware that protects downstream APIs from DDoS and noisy-neighbor throttling by maintaining atomic token buckets per client IP.\n\n#### 2. Tech Stack\nPython (FastAPI), Redis, Docker, Prometheus, Locust/k6\n\n#### 3. Build Order & Key Steps\n1. **Step 1: System Requirements & SLA** — Define 100k requests/sec throughput with <2ms P99 latency.\n2. **Step 2: Architecture & Topology** — Reverse proxy layer, Redis distributed in-memory cache, and fallback token bucket.\n3. **Step 3: Token Bucket Algorithm** — Implement thread-safe token refill formula: \`tokens = min(capacity, prev_tokens + elapsed_time * refill_rate)\`.\n4. **Step 4: Atomic Redis Operations** — Execute atomic Lua scripts to prevent distributed race conditions without lock bottlenecks.\n5. **Step 5: API Gateway Integration** — Middleware interceptor evaluating \`X-Forwarded-For\` client IP & user API keys.\n6. **Step 6: High Concurrency Testing** — Benchmark with \`k6\` and \`Vegeta\` under 50,000 concurrent virtual users.\n7. **Step 7: Observability & Metrics** — Expose Prometheus metrics (\`rate_limit_exceeded_total\`, \`request_duration_ms\`) and Grafana dashboard.\n8. **Step 8: Docker Containerization** — Multi-stage alpine Dockerfile producing a lean <25MB deployment image.\n9. **Step 9: Round 2 Viva Defense** — Practice answering: *"How do you handle Redis cluster split-brain or clock drift in distributed rate limiting?"*\n\n#### 4. How to Defend It in Round 2 Interviews\n- *Interviewer Question*: "Why did you use a Redis Lua script instead of separate GET and SET commands?"\n- *Your Winning Defense*: "Separate GET and SET creates a race condition under concurrency. A Lua script executes atomically within Redis's single-threaded event loop, guaranteeing strict atomicity without distributed locking overhead!"`,
+        actions: [{ name: "navigate_to", arguments: { page_id: "projects" } }],
+        followups: ["Explain Step 3 Token Bucket math", "How to answer Round 2 Redis split-brain?", "Show another small project"]
+      };
+    }
+
+    // =======================================================================
     // 4. NAVIGATION COMMANDS
     // =======================================================================
     if (anyMatch(low, ["open project", "go to project", "show project", "projects tab", "blueprints", "recommend project", "which project"])) {
@@ -494,24 +578,57 @@ export class ClientBrainEngine {
     }
 
     // =======================================================================
-    // 4.1 BOSS DILEEP DAS IDENTITY & KNOWLEDGE
+    // 4.0 OWNER-ONLY "TELL ME ABOUT MYSELF" VS CANDIDATE PROFILE
     // =======================================================================
-    if (anyMatch(low, ["who is your boss", "who is the boss", "your boss", "who made you", "who created you", "dileep", "bommali", "dileep das", "tell me about dileep", "about your boss"])) {
-      const isTe = isTelugu || anyMatch(low, ["telugu", "cheppu"]);
-      if (isTe) {
+    if (anyMatch(low, ["tell me about myself", "who am i", "about myself", "my details", "tell me about me"])) {
+      if (isOwner) {
         return {
-          spoken: "నా బాస్ దిలీప్ దాస్ (దిలీప్ బొమ్మాలి)! ఆయన ఎంతో టాలెంటెడ్ ఇంజనీర్, పాషనేట్ గిటారిస్ట్, డాన్సర్ మరియు సింగర్. ఎన్నారై కాలేజీలో బిటెక్ చదువుతున్నారు!",
-          display: `### 👑 Boss Profile: Dileep Bommali (Dileep Das)\n\n**Dileep Das** is my creator and the supreme boss of Pathfinder:\n\n- 🎂 **DOB / Age**: 16/01/2006 (Age 20)\n- 🎓 **Academics**: B.Tech 3rd Year CSE (Data Science), NRI Institute of Technology, Potavarappadu, Agiripalli\n- 📍 **Native Place**: Gunadala, Vijayawada, Andhra Pradesh\n- 🎸 **Passions & Hobbies**: Lead Guitarist (Maximum passionate guitarist!), high-energy dancer, and singer\n- 👨‍👩‍👧 **Family**: Loving Mother Bhavani, Father Ramana, and Sister Priyanka (working in Hyderabad IT industry)\n- 🌟 **Revered Mentors**:\n  * **Dr. Chaitanya Madam**: Favorite female lecturer — all-rounder genius who breaks down Machine Learning and AI with unmatched mastery.\n  * **Swami Sir**: Favorite male lecturer — phenomenal Operating Systems (OS) faculty who brings process scheduling and kernels alive!`,
+          spoken:
+            "You are Dileep Bommali, also known as Dileep Das, a 20-year-old 3rd-year B.Tech CSE Data Science student at NRI Institute of Technology. Outside academics, you are a dedicated lead guitarist, dancer, and singer, and the creator of Pathfinder!",
+          display: `### 👑 Owner Profile: Dileep Das (Dileep Bommali)\n\n${OWNER_PROFILE.naturalBio}\n\n- **Hobbies**: ${OWNER_PROFILE.hobbies.join(", ")}\n- **College**: ${OWNER_PROFILE.education.college} (${OWNER_PROFILE.education.degree}, ${OWNER_PROFILE.education.branch})\n- **Family**: Mother ${OWNER_PROFILE.family.mother}, Father ${OWNER_PROFILE.family.father}, Sister ${OWNER_PROFILE.family.sister}\n- **Mentors**: Dr. Chaitanya madam (Machine Learning), Swami sir (Operating Systems)`,
           actions: [],
-          followups: ["Tell me about Dr. Chaitanya Madam", "Tell me about Swami Sir", "Show project blueprints"]
+          followups: ["Show project blueprints", "Check placement stats", "Open ATS resume studio"],
+        };
+      } else {
+        return {
+          spoken:
+            "You are a student preparing for campus placements on Pathfinder. I am here to help you practice DSA patterns, review your resume, and navigate 23 project blueprints. What would you like to focus on?",
+          display: `### 👤 Candidate Placement Profile\n\n- **Platform Role**: Registered Pathfinder Candidate\n- **Objective**: Tier-1 Engineering Campus Placement Readiness\n- **Available Modules**: ML Placement Predictor, 23 Production Blueprints, 6-Week DSA Roadmap, One-Page ATS Resume Studio.`,
+          actions: [],
+          followups: ["Calculate my placement odds", "Show 6-week roadmap", "Open 23 project blueprints"],
         };
       }
-      return {
-        spoken: "My boss is Dileep Das (Dileep Bommali)! He is an exceptionally talented Data Science engineer, passionate lead guitarist, dancer, and singer studying B.Tech 3rd year CSE at NRI Institute of Technology, Agiripalli!",
-        display: `### 👑 Boss Profile: Dileep Bommali (Dileep Das)\n\n**Dileep Das** is my visionary creator and boss of Pathfinder:\n\n- 🎂 **DOB / Age**: 16/01/2006 (Age 20)\n- 🎓 **Academics**: B.Tech 3rd Year CSE (Data Science), NRI Institute of Technology, Potavarappadu, Agiripalli\n- 📍 **Hometown**: Gunadala, Vijayawada, Andhra Pradesh\n- 🎸 **Passions & Talents**: Lead Guitarist (MAXIMUM guitarist!), dancer, and singer\n- 👨‍👩‍👧 **Family**: Mother Bhavani, Father Ramana, and Sister Priyanka (Software Engineer in Hyderabad)\n- 🌟 **Favorite Academic Mentors**:\n  * **Dr. Chaitanya Madam**: Favorite lady lecturer — brilliant all-rounder professor renowned for Machine Learning (ML) and Data Science.\n  * **Swami Sir**: Favorite male lecturer — superstar faculty for Operating Systems (OS) and Kernel Architecture!`,
-        actions: [],
-        followups: ["Who are Dileep's mentors?", "What are Dileep's hobbies?", "Show 23 project blueprints"]
-      };
+    }
+
+    // =======================================================================
+    // 4.1 BOSS DILEEP DAS IDENTITY & PRIVACY-GATED BIO
+    // =======================================================================
+    if (anyMatch(low, ["who is your boss", "who is the boss", "your boss", "who made you", "who created you", "dileep", "bommali", "dileep das", "tell me about dileep", "about your boss", "who built you", "who made this"])) {
+      if (isOwner) {
+        const isTe = isTelugu || anyMatch(low, ["telugu", "cheppu"]);
+        if (isTe) {
+          return {
+            spoken: "మీరే నా సృష్టికర్త మరియు బాస్ దిలీప్ దాస్ (దిలీప్ బొమ్మాలి)! మీరు NRI కాలేజీలో B.Tech CSE డేటా సైన్స్ చదువుతూ పాత్‌ఫైండర్ రూపొందించారు. సంగీతంలో మీరు అద్భుతమైన లీడ్ గిటారిస్ట్, డాన్సర్ మరియు సింగర్!",
+            display: `### 👑 Boss Profile: Dileep Bommali (Dileep Das)\n\n**Dileep Das** is my visionary creator and supreme boss of Pathfinder:\n\n- 🎂 **DOB / Age**: ${OWNER_PROFILE.dob} (Age ${OWNER_PROFILE.age})\n- 🎓 **Academics**: ${OWNER_PROFILE.education.degree} ${OWNER_PROFILE.education.branch}, ${OWNER_PROFILE.education.college}, ${OWNER_PROFILE.education.location}\n- 📍 **Native Place**: ${OWNER_PROFILE.hometown}, ${OWNER_PROFILE.state}\n- 🎸 **Passions & Hobbies**: Lead Guitarist (primary passion), high-energy dancer, and singer\n- 👨‍👩‍👧 **Family**: Loving Mother ${OWNER_PROFILE.family.mother}, Father ${OWNER_PROFILE.family.father}, and Sister ${OWNER_PROFILE.family.sister}\n- 🌟 **Revered Mentors**:\n  * **Dr. Chaitanya Madam**: Favorite female lecturer — all-rounder genius who breaks down Machine Learning and AI with unmatched mastery.\n  * **Swami Sir**: Favorite male lecturer — phenomenal Operating Systems (OS) faculty who brings process scheduling and kernels alive!`,
+            actions: [],
+            followups: ["Tell me about Dr. Chaitanya Madam", "Tell me about Swami Sir", "Show project blueprints"]
+          };
+        }
+        return {
+          spoken: "You are my creator and Boss, Dileep Das! You built Pathfinder as an autonomous placement co-pilot while studying B.Tech CSE Data Science at NRI Institute of Technology. Outside tech, you are a passionate lead guitarist, dancer, and singer from Gunadala, Vijayawada!",
+          display: `### 👑 Boss Profile: Dileep Bommali (Dileep Das)\n\n**Dileep Das** is my visionary creator and boss of Pathfinder:\n\n- 🎂 **DOB / Age**: ${OWNER_PROFILE.dob} (Age ${OWNER_PROFILE.age})\n- 🎓 **Academics**: ${OWNER_PROFILE.education.degree} ${OWNER_PROFILE.education.branch}, ${OWNER_PROFILE.education.college}, ${OWNER_PROFILE.education.location}\n- 📍 **Hometown**: ${OWNER_PROFILE.hometown}, ${OWNER_PROFILE.state}\n- 🎸 **Passions & Talents**: ${OWNER_PROFILE.hobbies.join(", ")}\n- 👨‍👩‍👧 **Family**: Mother ${OWNER_PROFILE.family.mother}, Father ${OWNER_PROFILE.family.father}, and Sister ${OWNER_PROFILE.family.sister}\n- 🌟 **Favorite Academic Mentors**:\n  * **Dr. Chaitanya Madam**: Favorite lady lecturer — brilliant all-rounder professor renowned for Machine Learning (ML) and Data Science.\n  * **Swami Sir**: Favorite male lecturer — superstar faculty for Operating Systems (OS) and Kernel Architecture!`,
+          actions: [],
+          followups: ["Who are Dileep's mentors?", "What are Dileep's hobbies?", "Show 23 project blueprints"]
+        };
+      } else {
+        // STRICT PRIVACY RULE FOR NON-OWNERS: ZERO PRIVATE DETAILS LEAKED
+        return {
+          spoken: "Dileep Bommali is the creator of Pathfinder, a B.Tech CSE Data Science student passionate about building AI-powered tools for student placement readiness.",
+          display: `### Creator Profile\n\n${OWNER_PUBLIC_BIO}`,
+          actions: [],
+          followups: ["Why should students use Pathfinder?", "Show 23 project blueprints", "Check my placement odds"]
+        };
+      }
     }
 
     // =======================================================================
@@ -519,7 +636,9 @@ export class ClientBrainEngine {
     // =======================================================================
     if (anyMatch(low, ["chaitanya", "lady lecturer", "ml teacher", "machine learning madam"])) {
       return {
-        spoken: isTelugu ? "డాక్టర్ చైతన్య మేడం దిలీప్ గారికి ఇష్టమైన లెక్చరర్. ఆమె మెషిన్ లెర్నింగ్ లో ఆల్ రౌండర్ మరియు గ్రేట్ టాలెంట్!" : "Dr. Chaitanya Madam is Dileep's favorite lady lecturer. She is an all-rounder professor with exceptional mastery over Machine Learning and Data Science!",
+        spoken: isTelugu
+          ? "డాక్టర్ చైతన్య మేడం మెషిన్ లెర్నింగ్ బోధిస్తారు. ఆమె ఎన్నో టాలెంట్స్ ఉన్న ఆల్ రౌండర్ ప్రొఫెసర్, మరియు క్లిష్టమైన కాన్సెప్ట్‌లను ఎంతో అద్భుతంగా వివరిస్తారు!"
+          : "Dr. Chaitanya madam teaches Machine Learning. She is an all-rounder professor with many talents and someone who explains ML concepts really well!",
         display: `### 🌟 Dr. Chaitanya Madam (All-Rounder ML & AI Faculty)\n\n- **Specialization**: Machine Learning, Deep Learning, Predictive Analytics & AI Research\n- **Teaching Style**: All-rounder mentor who breaks down complex mathematical algorithms into intuitive, practical applications.\n- **Significance**: Chief academic inspiration for Pathfinder's calibrated machine learning readiness engine!`,
         actions: [],
         followups: ["Tell me about Swami Sir", "Who is your boss?", "Explain Random Forest"]
@@ -528,7 +647,9 @@ export class ClientBrainEngine {
 
     if (anyMatch(low, ["swami sir", "swamy sir", "os sir", "operating systems sir"])) {
       return {
-        spoken: isTelugu ? "స్వామి సర్ దిలీప్ గారికి ఇష్టమైన లెక్చరర్. ఆయన ఆపరేటింగ్ సిస్టమ్స్ ని అద్భుతంగా వివరిస్తారు!" : "Swami Sir is Dileep's favorite male lecturer. He is super energetic and explains Operating Systems and kernel architecture with brilliant clarity!",
+        spoken: isTelugu
+          ? "స్వామి సర్ ఆపరేటింగ్ సిస్టమ్స్ బోధిస్తారు. ఆయన ఎంతో ఎనర్జిటిక్ గా, ఆపరేటింగ్ సిస్టమ్స్ మరియు కెర్నల్ ఆర్కిటెక్చర్ ని స్పష్టంగా వివరిస్తారు!"
+          : "Swami sir teaches Operating Systems. He is an excellent teacher who explains OS concepts, process scheduling, and kernels clearly!",
         display: `### 🌟 Swami Sir (Operating Systems & Architecture Mentor)\n\n- **Specialization**: Operating Systems (OS), Kernel Architecture, Concurrency, Virtual Memory & Paging\n- **Teaching Style**: Super engaging, practical real-world analogies of CPU scheduling and thread safety.\n- **Significance**: Inspired the high-concurrency low-latency voice pipeline of Pathfinder!`,
         actions: [],
         followups: ["Tell me about Dr. Chaitanya Madam", "Explain OS Concurrency in Viva", "Who is your boss?"]
@@ -556,26 +677,12 @@ export class ClientBrainEngine {
     }
 
     // =======================================================================
-    // 4.4 BLUEPRINTS STEP 1-9 STEP-BY-STEP GUIDANCE
-    // =======================================================================
-    if (anyMatch(low, ["go to blueprints", "tell me small project", "explain small project", "explain that one", "step 1 to all", "explain project step by step"])) {
-      return {
-        spoken: isTelugu
-          ? "ఖచ్చితంగా బాస్! బ్లూప్రింట్స్ ట్యాబ్ కి వెళ్లి, టోకెన్ బకెట్ రేట్ లిమిటర్ ప్రాజెక్ట్ ని స్టెప్ వన్ నుండి స్టెప్ నైన్ వరకు పూర్తిగా వివరిస్తున్నాను."
-          : "Sure Boss! Navigating to Project Blueprints right now. Here is the Distributed Token-Bucket Rate Limiter flagship from Step 1 through Step 9!",
-        display: `### 🚀 Flagship Project: Distributed Token-Bucket Rate Limiter & API Gateway\n\nNavigating to **Project Blueprints**. Here is your complete 9-Step production blueprint:\n\n1. **Step 1: System Requirements & SLA** — Define 100k requests/sec throughput with <2ms P99 latency.\n2. **Step 2: Architecture & Topology** — Reverse proxy layer, Redis distributed in-memory cache, and fallback token bucket.\n3. **Step 3: Token Bucket Algorithm** — Implement thread-safe token refill formula: \`tokens = min(capacity, prev_tokens + elapsed_time * refill_rate)\`.\n4. **Step 4: Atomic Redis Operations** — Execute atomic Lua scripts to prevent distributed race conditions without lock bottlenecks.\n5. **Step 5: API Gateway Integration** — Middleware interceptor evaluating \`X-Forwarded-For\` client IP & user API keys.\n6. **Step 6: High Concurrency Testing** — Benchmark with \`k6\` and \`Vegeta\` under 50,000 concurrent virtual users.\n7. **Step 7: Observability & Metrics** — Expose Prometheus metrics (\`rate_limit_exceeded_total\`, \`request_duration_ms\`) and Grafana dashboard.\n8. **Step 8: Docker Containerization** — Multi-stage alpine Dockerfile producing a lean <25MB deployment image.\n9. **Step 9: Round 2 Viva Defense** — Practice answering: *"How do you handle Redis cluster split-brain or clock drift in distributed rate limiting?"*`,
-        actions: [{ name: "navigate_to", arguments: { page_id: "projects" } }],
-        followups: ["Explain Step 3 Token Bucket math", "How to answer Round 2 Redis split-brain?", "Show another small project"]
-      };
-    }
-
-    // =======================================================================
     // 4.5 SIMPLE TELUGU / ANALOGY EXPLANATION
     // =======================================================================
-    if (anyMatch(low, ["ardham kaledhu", "ardham kaledu", "didn't understand", "did not understand", "explain in telugu simply", "simple telugu", "tell me simply"])) {
+    if (anyMatch(low, ["ardham kaledhu", "ardham kaledu", "ardham kaaledhu", "didn't understand", "did not understand", "explain in telugu simply", "simple telugu", "tell me simply", "explain in telugu"])) {
       return {
-        spoken: "చాలా సింపుల్ గా చెబుతాను బాస్! పాత్‌ఫైండర్ అనేది ఒక స్టార్ క్రికెట్ కోచ్ లాంటిది. మీ ప్రాక్టీస్ స్కోర్స్, వీక్‌నెసెస్ ని ముందే కనిపెట్టి, ప్లేస్‌మెంట్స్ లో సెంచరీ కొట్టేలా చేస్తుంది!",
-        display: `### 🏏 సులభంగా అర్థమయ్యే రియల్ వరల్డ్ ఉదాహరణ (Simple Real-World Analogy)\n\nమీకు సులభంగా అర్థం కావడానికి ఒక ఉదాహరణ చెబుతాను:\n\n1. 🏟️ **క్రికెట్ సెలెక్టర్ లాంటిది**: మీరు క్రికెట్ టీమ్ లోకి ఎంపిక అవ్వాలంటే సెలెక్టర్లు మీ బ్యాటింగ్ యావరేజ్, ఫిట్‌నెస్ చూస్తారు కదా? అలాగే క్యాంపస్ ప్లేస్‌మెంట్స్ లో రిక్రూటర్లు మీ **CGPA, కోడింగ్ స్కిల్స్** చూస్తారు.\n2. 🎯 **మెషిన్ లెర్నింగ్ ప్రిడిక్టర్**: 972 మంది సీనియర్ల రికార్డ్స్ చూసి, మీరు ఇంటర్వ్యూ క్లియర్ చేసే ఛాన్స్ ఎంత శాతమో ముందే ఖచ్చితంగా లెక్కిస్తుంది.\n3. 🚀 **ప్రాజెక్ట్స్ & రోడ్‌మ్యాప్**: మీ రెజ్యూమ్‌లో రిక్రూటర్స్ మెచ్చేలా స్ట్రాంగ్ ప్రాజెక్ట్స్ పెట్టడానికి 23 బ్లూప్రింట్స్ మరియు 6 వారాల DSA ప్లాన్ సిద్ధంగా ఉన్నాయి.\n\n*ఏ విషయాన్ని గురించి ఇప్పుడు మొదలుపెడదాం? చెప్పండి బాస్!*`,
+        spoken: "చాలా సింపుల్ గా చెబుతాను! పాత్‌ఫైండర్ అనేది ఒక స్టార్ క్రికెట్ కోచ్ లాంటిది. ఒక కోచ్ మీ బ్యాటింగ్ చూసి మీరు సెంచరీ కొట్టేలా ఎలా గైడ్ చేస్తాడో, అలాగే పాత్‌ఫైండర్ మీ CGPA మరియు కోడింగ్ స్కిల్స్ చూసి మంచి కంపెనీలో ప్లేస్ అయ్యేలా చేస్తుంది!",
+        display: `### 🏏 సులభంగా అర్థమయ్యే రియల్ వరల్డ్ ఉదాహరణ (Simple Real-World Analogy)\n\nమీకు సులభంగా అర్థం కావడానికి ఒక ఉదాహరణ చెబుతాను:\n\n1. 🏟️ **క్రికెట్ సెలెక్టర్ లాంటిది**: మీరు క్రికెట్ టీమ్ లోకి ఎంపిక అవ్వాలంటే సెలెక్టర్లు మీ బ్యాటింగ్ యావరేజ్, ఫిట్‌నెస్ చూస్తారు కదా? అలాగే క్యాంపస్ ప్లేస్‌మెంట్స్ లో రిక్రూటర్లు మీ **CGPA, కోడింగ్ స్కిల్స్** చూస్తారు.\n2. 🎯 **మెషిన్ లెర్నింగ్ ప్రిడిక్టర్**: 972 మంది సీనియర్ల రికార్డ్స్ చూసి, మీరు ఇంటర్వ్యూ క్లియర్ చేసే ఛాన్స్ ఎంత శాతమో ముందే ఖచ్చితంగా లెక్కిస్తుంది.\n3. 🚀 **ప్రాజెక్ట్స్ & రోడ్‌మ్యాప్**: మీ రెజ్యూమ్‌లో రిక్రూటర్స్ మెచ్చేలా స్ట్రాంగ్ ప్రాజెక్ట్స్ పెట్టడానికి 23 బ్లూప్రింట్స్ మరియు 6 వారాల DSA ప్లాన్ సిద్ధంగా ఉన్నాయి.\n\n*ఏ విషయాన్ని గురించి ఇప్పుడు మొదలుపెడదాం?*`,
         actions: [],
         followups: ["Show project blueprints", "Open 6-week roadmap", "Check placement stats"]
       };
@@ -585,17 +692,21 @@ export class ClientBrainEngine {
     // 5. DAS PERSONAL CALL & CO-PILOT COMMAND ("hey das", "das", etc.)
     // =======================================================================
     if (anyMatch(low, ["hey das", "hi das", "hello das", "das bro", "das ai", "ok das", "hey boss das", "listen das"]) || low === "das") {
+      const promptName = isOwner ? "బాస్" : "ఫ్రెండ్";
+      const promptNameEn = isOwner ? "Boss" : "there";
       if (isTelugu) {
         return {
-          spoken: "చెప్పండి బాస్! DAS సిస్టమ్స్ అన్నీ 100% రెడీగా ఉన్నాయి. ఈరోజు ఏ ప్రాజెక్ట్ లేదా డీఎస్‌ఏ ప్యాటర్న్ మొదలుపెడదాం? వెబ్‌సైట్ మొత్తం మీ చేతుల్లోనే ఉంది!",
-          display: `### DAS Co-Pilot: Systems Calibrated & Online\n\nచెప్పండి బాస్! మీ డిజిటల్ అటానమస్ కో-పైలట్ సిద్ధంగా ఉంది. పాత్‌ఫైండర్ ప్లాట్‌ఫామ్‌ను పూర్తి స్థాయిలో కంట్రోల్ చేయడానికి నేను రెడీ:\n\n- **Predictive Placement Arc**: మీ CGPA మరియు స్కిల్స్ బట్టి ఎలిజిబిలిటీ స్కోర్.\n- **23 Flagship Architectures**: సిస్టమ్ డిజైన్ బ్లూప్రింట్స్ & కోడ్ గైడ్లు.\n- **6-Week DSA Roadmap**: హై-ఫ్రీక్వెన్సీ లీట్‌కోడ్ ప్యాటర్న్స్.\n- **Autonomous Navigation**: ఏ పేజీ అయినా చెప్పండి, నేను ఓపెన్ చేసి చూపిస్తాను.\n\n*ఈరోజు మనం ఏ డైరెక్షన్‌లో వెళ్దాం బాస్?*`,
+          spoken: `చెప్పండి ${promptName}! DAS సిస్టమ్స్ అన్నీ 100% రెడీగా ఉన్నాయి. ఈరోజు ఏ ప్రాజెక్ట్ లేదా డీఎస్‌ఏ ప్యాటర్న్ మొదలుపెడదాం?`,
+          display: `### DAS Co-Pilot: Systems Calibrated & Online\n\nచెప్పండి ${promptName}! మీ డిజిటల్ అటానమస్ కో-పైలట్ సిద్ధంగా ఉంది. పాత్‌ఫైండర్ ప్లాట్‌ఫామ్‌ను పూర్తి స్థాయిలో ఉపయోగించుకోవడానికి నేను రెడీ:\n\n- **Predictive Placement Arc**: మీ CGPA మరియు స్కిల్స్ బట్టి ఎలిజిబిలిటీ స్కోర్.\n- **23 Flagship Architectures**: సిస్టమ్ డిజైన్ బ్లూప్రింట్స్ & కోడ్ గైడ్లు.\n- **6-Week DSA Roadmap**: హై-ఫ్రీక్వెన్సీ లీట్‌కోడ్ ప్యాటర్న్స్.\n- **Autonomous Navigation**: ఏ పేజీ అయినా చెప్పండి, నేను ఓపెన్ చేసి చూపిస్తాను.`,
           actions: [],
           followups: ["Explain about Pathfinder", "Show project blueprints", "Check placement stats"]
         };
       }
       return {
-        spoken: "At your command, Boss! All neural circuits and placement telemetry are 100% online. Ready to crack system design, conquer high-frequency algorithms, or command the website.",
-        display: `### DAS Co-Pilot: Systems Calibrated & Standing By\n\nReporting for duty, Boss. All placement intelligence engines are fully synchronized:\n\n- **ML Placement Predictor**: Calibrated on 972 verified student placement records.\n- **23 Production Blueprints**: Enterprise architectures with database schemas and interview defense points.\n- **6-Week DSA Roadmap**: 75 high-frequency patterns covering Tier-1 technical rounds.\n- **Full Autonomous Control**: Ask me to open any tab, highlight metrics, or launch interview defense.\n\n*What is our objective today, Boss?*`,
+        spoken: isOwner
+          ? "At your command, Boss! All neural circuits and placement telemetry are 100% online. Ready to crack system design, conquer high-frequency algorithms, or command the website."
+          : "Hello there! All placement intelligence engines are fully online. How can I assist you with your campus preparation right now?",
+        display: `### DAS Co-Pilot: Systems Calibrated & Standing By\n\nReporting for duty, ${promptNameEn}. All placement intelligence engines are fully synchronized:\n\n- **ML Placement Predictor**: Calibrated on 972 verified student placement records.\n- **23 Production Blueprints**: Enterprise architectures with database schemas and interview defense points.\n- **6-Week DSA Roadmap**: 75 high-frequency patterns covering Tier-1 technical rounds.\n- **Full Autonomous Control**: Ask me to open any tab, highlight metrics, or launch interview defense.`,
         actions: [],
         followups: ["Explain about Pathfinder", "Show project blueprints", "Check placement stats"]
       };
@@ -606,22 +717,33 @@ export class ClientBrainEngine {
     // =======================================================================
     if (anyMatch(low, ["hi", "hello", "hey", "namaskaram", "namaste", "good morning", "good afternoon", "good evening", "who are you"])) {
       const nowHour = new Date().getHours();
-      const timeGreetingEn = nowHour < 12 ? "Good morning Boss!" : (nowHour < 17 ? "Good afternoon Boss!" : "Good evening Boss!");
-      const timeGreetingTe = nowHour < 12 ? "గుడ్ మార్నింగ్ బాస్!" : (nowHour < 17 ? "గుడ్ ఆఫ్టర్నూన్ బాస్!" : "గుడ్ ఈవినింగ్ బాస్!");
+      const tod = nowHour < 12 ? "morning" : (nowHour < 17 ? "afternoon" : "evening");
+      const todTe = tod === "morning" ? "మార్నింగ్" : (tod === "afternoon" ? "ఆఫ్టర్నూన్" : "ఈవినింగ్");
+
+      const timeGreetingEn = isOwner
+        ? `Good ${tod}, Boss!`
+        : `Good ${tod}! Welcome to Pathfinder.`;
+      const timeGreetingTe = isOwner
+        ? `గుడ్ ${todTe}, బాస్!`
+        : `గుడ్ ${todTe}! పాత్‌ఫైండర్‌కి స్వాగతం.`;
 
       if (isTelugu) {
         return {
           spoken: `నమస్కారం! ${timeGreetingTe} నేను మీ పాత్‌ఫైండర్ AI కోచ్ దాస్ ని. ఈరోజు ప్లేస్‌మెంట్స్ లో ఏం సాధిద్దాం?`,
-          display: `### నమస్కారం! ${timeGreetingTe} నేను DAS — మీ పర్సనల్ AI కో-పైలట్\n\nపాత్‌ఫైండర్ సిస్టమ్స్ అన్నీ ఆన్‌లైన్ లో ఉన్నాయి:\n- **88% Accuracy ML Predictor**: మీ CGPA మరియు స్కిల్స్ బట్టి రియల్ ప్లేస్‌మెంట్ ఛాన్సెస్.\n- **23 Production Project Blueprints**: రెజ్యూమ్‌కి వెయిటేజ్ తెచ్చే టాప్ ప్రాజెక్ట్స్.\n- **6-Week DSA Roadmap**: హై-ఫ్రీక్వెన్సీ ఇంటర్వ్యూ పాటర్న్స్.\n- **1-Page ATS Resume Studio**: రిక్రూటర్ స్క్రీనింగ్ ఫిల్టర్ పాస్ అయ్యే ఫార్మాట్.\n\n*ఏ విషయాన్ని గురించి డిస్కస్ చేద్దాం? చెప్పండి బాస్!*`,
+          display: `### నమస్కారం! ${timeGreetingTe} నేను DAS — మీ పర్సనల్ AI కో-పైలట్\n\nపాత్‌ఫైండర్ సిస్టమ్స్ అన్నీ ఆన్‌లైన్ లో ఉన్నాయి:\n- **88% Accuracy ML Predictor**: మీ CGPA మరియు స్కిల్స్ బట్టి రియల్ ప్లేస్‌మెంట్ ఛాన్సెస్.\n- **23 Production Project Blueprints**: రెజ్యూమ్‌కి వెయిటేజ్ తెచ్చే టాప్ ప్రాజెక్ట్స్.\n- **6-Week DSA Roadmap**: హై-ఫ్రీక్వెన్సీ ఇంటర్వ్యూ పాటర్న్స్.\n- **1-Page ATS Resume Studio**: రిక్రూటర్ స్క్రీనింగ్ ఫిల్టర్ పాస్ అయ్యే ఫార్మాట్.`,
           actions: [],
-          followups: ["Who is your boss?", "Show project blueprints", "Calculate my placement readiness"]
+          followups: [isOwner ? "Tell me about myself" : "Who is your boss?", "Show project blueprints", "Calculate my placement readiness"]
         };
       }
       return {
-        spoken: `Hello! ${timeGreetingEn} I am DAS, your autonomous Pathfinder AI Placement Co-pilot. Systems online and ready. How can I assist you right now?`,
-        display: `### Welcome! ${timeGreetingEn} I am DAS — Your Pathfinder AI Career Architect\n\nAll autonomous modules are calibrated and standing by:\n- **Calibrated Placement Odds**: ML statistical inference trained on 972 real alumni records.\n- **23 Production Project Blueprints**: Architectural roadmaps with database schemas and interview defense.\n- **6-Week DSA Sprint**: High-frequency LeetCode and System Design curriculum.\n- **ATS Resume Studio**: Real-time diagnostic audit formatted to recruiter screening algorithms.\n\n*Ask me anything, or tell me which tab you would like to open!*`,
+        spoken: isOwner
+          ? `Hello! ${timeGreetingEn} I am DAS, your autonomous Pathfinder AI Placement Co-pilot. Systems online and ready. How can I assist you right now?`
+          : `Hello! ${timeGreetingEn} I am DAS, your autonomous placement co-pilot. Systems online and ready. How can I assist you today?`,
+        display: isOwner
+          ? `### Welcome! ${timeGreetingEn} I am DAS — Your Pathfinder AI Career Architect\n\nAll autonomous modules are calibrated and standing by:\n- **Calibrated Placement Odds**: ML statistical inference trained on 972 real alumni records.\n- **23 Production Project Blueprints**: Architectural roadmaps with database schemas and interview defense.\n- **6-Week DSA Sprint**: High-frequency LeetCode and System Design curriculum.\n- **ATS Resume Studio**: Real-time diagnostic audit formatted to recruiter screening algorithms.`
+          : `### Welcome! ${timeGreetingEn}\n\nI am **DAS**, your autonomous placement co-pilot:\n- **88% Accuracy ML Predictor**: Benchmarked on 972 verified student records.\n- **23 Production Blueprints**: Ready-to-build distributed systems and AI pipelines.\n- **6-Week DSA Roadmap**: 75 high-frequency patterns for Tier-1 coding interviews.\n- **One-Page ATS Resume Studio**: Google X-Y-Z formula optimization.`,
         actions: [],
-        followups: ["Who is your boss?", "Go to blueprints and explain a small project", "What is use of roadmap?"]
+        followups: [isOwner ? "Tell me about myself" : "Who is your boss?", "Go to blueprints and explain a small project", "What is use of roadmap?"]
       };
     }
 
