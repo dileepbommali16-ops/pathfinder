@@ -33,7 +33,7 @@ import {
   Clock,
   Compass,
 } from "lucide-react";
-import { FaceAvatar } from "./avatar/FaceAvatar";
+import { AvatarCanvas as FaceAvatar } from "../avatar/AvatarCanvas";
 import { useVoiceSession } from "./useVoiceSession";
 import { MicSetupModal } from "./MicSetupModal";
 import { VoiceSettingsModal } from "./VoiceSettingsModal";
