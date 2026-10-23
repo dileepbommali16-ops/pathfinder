@@ -107,7 +107,7 @@ export const ThreeAvatarCanvas: React.FC<ThreeAvatarCanvasProps> = ({
     scene.add(avatar.group);
     avatarRigRef.current = avatar;
 
-    // Load High-Res Android 3D Model (RomulusCreative CC-BY-4.0)
+    // Load High-Res Humanoid Robot Face (kito1704 CC-BY-4.0)
     const loader = new GLTFLoader();
     loader.load(
       "/models/avatar.glb",
@@ -116,39 +116,50 @@ export const ThreeAvatarCanvas: React.FC<ThreeAvatarCanvasProps> = ({
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 2.45 / maxDim;
+        const scale = 2.1 / size.y;
         model.scale.set(scale, scale, scale);
-        model.position.sub(center.multiplyScalar(scale));
-        model.position.y -= 0.15;
+        model.position.x = -center.x * scale;
+        model.position.y = -center.y * scale - 0.05;
+        model.position.z = -center.z * scale;
+
+        const lightBlueFaceMat = new THREE.MeshPhysicalMaterial({
+          color: new THREE.Color("#7dd3fc"),
+          metalness: 0.68,
+          roughness: 0.22,
+          clearcoat: 0.85,
+          emissive: new THREE.Color("#0284c7"),
+          emissiveIntensity: 0.16,
+        });
+
+        const vampireEyeMat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color("#ff0033"),
+          emissive: new THREE.Color("#ff0033"),
+          emissiveIntensity: 5.5,
+          roughness: 0.05,
+        });
 
         model.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
             const m = child as THREE.Mesh;
-            m.material = new THREE.MeshPhysicalMaterial({
-              color: new THREE.Color("#7dd3fc"), // Light blue
-              metalness: 0.72,
-              roughness: 0.22,
-              clearcoat: 0.85,
-              emissive: new THREE.Color("#0284c7"),
-              emissiveIntensity: 0.2,
-            });
+            const matName = (m.material as THREE.Material)?.name || "";
+            if (matName.includes("IRIS") || matName.includes("EyeRefractive")) {
+              m.material = vampireEyeMat;
+            } else {
+              m.material = lightBlueFaceMat;
+            }
           }
         });
 
-        // Vampire Glowing Red Eyes
-        const redOrbMat = new THREE.MeshStandardMaterial({
-          color: new THREE.Color("#ff0033"),
-          emissive: new THREE.Color("#ff0033"),
-          emissiveIntensity: 4.0,
-        });
-        const redOrbGeo = new THREE.SphereGeometry(0.065, 16, 16);
-        const redL = new THREE.Mesh(redOrbGeo, redOrbMat);
-        redL.position.set(-0.35, 0.18, 0.88);
-        const redR = new THREE.Mesh(redOrbGeo, redOrbMat);
-        redR.position.set(0.35, 0.18, 0.88);
-        model.add(redL);
-        model.add(redR);
+        const eyeL = model.getObjectByName("Kito6_FaceMesh_EyeL_20");
+        const eyeR = model.getObjectByName("Kito6_FaceMesh_EyeR_21");
+        if (eyeL && eyeR) {
+          const lLight = new THREE.PointLight(0xff0033, 3.0, 2.5);
+          lLight.position.set(0, 0, 0.08);
+          eyeL.add(lLight);
+          const rLight = new THREE.PointLight(0xff0033, 3.0, 2.5);
+          rLight.position.set(0, 0, 0.08);
+          eyeR.add(rLight);
+        }
 
         avatar.group.clear();
         avatar.group.add(model);

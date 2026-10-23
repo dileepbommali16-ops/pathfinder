@@ -1,15 +1,14 @@
 /**
- * AvatarCanvas: High-Performance 3D Holographic Cybernetic Android Face
- * Powered by Three.js WebGL & GLTFLoader.
+ * AvatarCanvas: High-Performance 3D Holographic Humanoid Robot Face
+ * Model: "Humanoid Robot Face" by kito1704 (https://sketchfab.com/kito1704) under CC-BY-4.0
  * 
  * Features:
- * - Real 3D Human-Form Android Head (RomulusCreative CC-BY-4.0)
- * - Light Cybernetic Blue Metallic Skin (#7dd3fc with high clearcoat & cyan depth glow)
- * - Radiant Glowing Vampire Red Eyes (#ff0033 emissive intensity 5.0 + ocular point lights)
- * - Organic Poisson Procedural Eye Blinking (natural 130ms closure every 3.2-5.5s)
- * - Continuous Respiratory Breathing Sway & Conversational Head Nodding
- * - Real-Time Audio-Reactive Lip-Sync (<50ms latency via WebAudio frequency analyser)
- * - Mode switch between 3D Android Mesh & 2D/3D Motion Real Face Photo
+ * - Real Articulated Mechanical Jaw (JawR_19) driven by WebAudio FFT for ultra-fast lip-sync
+ * - Dual High-Resolution Eyes (Kito6_FaceMesh_EyeL_20, Kito6_FaceMesh_EyeR_21) with Vampire Glowing Crimson Red Iris (#ff0033) & ocular point lights
+ * - Cybernetic Metallic Light Blue Face Plates (#7dd3fc) paired with deep Obsidian Chrome accents
+ * - Poisson non-repetitive procedural eye blinking (130ms closure)
+ * - Organic respiratory breathing sway and conversational head nodding
+ * - Toggle between 3D Android Mesh & 2D/3D Motion Real Face
  */
 
 import React, { useRef, useEffect, useState } from "react";
@@ -46,7 +45,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // Toggle between 3D Android Neural Mesh and 2D/3D Motion Real Face
+  // Toggle between 3D Android Model and Real Face Photo
   const [renderMode, setRenderMode] = useState<"3d_mesh" | "motion_photo">("3d_mesh");
   const [modelLoaded, setModelLoaded] = useState<boolean>(false);
 
@@ -56,7 +55,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
   const stateRef = useRef<AvatarState>(state);
   stateRef.current = state;
 
-  // WebAudio API connection to audioElement for lip-sync analysis
+  // WebAudio API connection to audioElement for real-time lip-sync
   useEffect(() => {
     if (!audioElement || audioAnalyser) return;
 
@@ -74,11 +73,11 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       internalAnalyserRef.current = analyser;
       audioCtxRef.current = ctx;
     } catch {
-      // Audio element source already bound or awaiting user gesture
+      // Audio element source already bound or awaiting user interaction
     }
   }, [audioElement, audioAnalyser]);
 
-  // Main Three.js Scene Setup & Render Loop
+  // Main Three.js Scene Setup & Animation Loop
   useEffect(() => {
     if (renderMode !== "3d_mesh") return;
 
@@ -88,13 +87,13 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     const renderWidth = width || container.clientWidth || 380;
     const renderHeight = height || container.clientHeight || 480;
 
-    // 1. Scene & OLED Black Backdrop
+    // 1. Scene & True OLED Black Background
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#000000");
 
-    // Camera calibrated for perfect head framing (crown to chin)
-    const camera = new THREE.PerspectiveCamera(36, renderWidth / renderHeight, 0.1, 100);
-    camera.position.set(0, 0, 4.3);
+    // Camera calibrated for perfect head framing
+    const camera = new THREE.PerspectiveCamera(35, renderWidth / renderHeight, 0.1, 100);
+    camera.position.set(0, 0, 3.8);
     camera.lookAt(0, 0, 0);
 
     // 2. High-Performance WebGL Renderer
@@ -102,63 +101,63 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     renderer.setSize(renderWidth, renderHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.2;
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
 
     // 3. Cybernetic Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
     scene.add(ambientLight);
 
-    // Key Light: Electric Sky-Blue highlight on cheekbones & cranial contours
-    const keyLight = new THREE.DirectionalLight(0x38bdf8, 2.5);
+    // Key Light: Electric sky-blue directional highlight
+    const keyLight = new THREE.DirectionalLight(0x38bdf8, 2.8);
     keyLight.position.set(2.5, 3.5, 3.5);
     scene.add(keyLight);
 
-    // Rim Light: Deep Violet/Indigo edge reflection
-    const rimLight = new THREE.DirectionalLight(0x818cf8, 3.0);
+    // Rim Light: Vivid indigo rim reflection on silhouette
+    const rimLight = new THREE.DirectionalLight(0x818cf8, 3.2);
     rimLight.position.set(-3.0, 2.5, -2.5);
     scene.add(rimLight);
 
-    // Fill Light: Soft cyan fill from bottom left
-    const fillLight = new THREE.DirectionalLight(0x0284c7, 1.5);
+    // Fill Light: Soft cyan bounce
+    const fillLight = new THREE.DirectionalLight(0x0284c7, 1.8);
     fillLight.position.set(-2.0, -1.5, 2.5);
     scene.add(fillLight);
 
-    // 4. Head Group (Root for idle breathing sway and head nodding)
+    // 4. Head Group (Hierarchical Root for idle sway & nodding)
     const headGroup = new THREE.Group();
     scene.add(headGroup);
 
-    // References for dynamic eye animation
-    let leftEyeMesh: THREE.Mesh | null = null;
-    let rightEyeMesh: THREE.Mesh | null = null;
-    let modelRoot: THREE.Group | null = null;
-    let jawPivotOffset = 0;
+    // References to animated parts in "Humanoid Robot Face"
+    let jawNode: THREE.Object3D | null = null;
+    let eyeLNode: THREE.Object3D | null = null;
+    let eyeRNode: THREE.Object3D | null = null;
+    let initialJawY = 0;
+    let initialJawZ = 0;
 
-    // 5. Load High-Resolution 3D Android Model (RomulusCreative CC-BY-4.0)
+    // 5. Load Humanoid Robot Face GLB (by kito1704 under CC-BY-4.0)
     const gltfLoader = new GLTFLoader();
     gltfLoader.load(
       "/models/avatar.glb",
       (gltf) => {
         const model = gltf.scene;
-        modelRoot = model;
 
-        // Measure geometry bounding box to frame dead-center
+        // Bounding box measurement
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
 
-        // Target height ~2.15 units inside camera view
-        const scale = 2.15 / size.y;
+        // Target height ~2.1 units in camera view
+        const scale = 2.1 / size.y;
         model.scale.set(scale, scale, scale);
 
-        // Center precisely on origin with slight offset for chin clearance
+        // Center dead-center on origin
         model.position.x = -center.x * scale;
-        model.position.y = -center.y * scale - 0.08;
+        model.position.y = -center.y * scale - 0.05;
         model.position.z = -center.z * scale;
 
-        // Apply Metallic Cybernetic Light Blue Skin
-        const cyberMaterial = new THREE.MeshPhysicalMaterial({
+        // Custom High-End Cybernetic Materials
+        const lightBlueFaceMat = new THREE.MeshPhysicalMaterial({
           color: new THREE.Color("#7dd3fc"), // Light Cybernetic Blue
           metalness: 0.68,
           roughness: 0.22,
@@ -166,68 +165,95 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
           clearcoatRoughness: 0.12,
           emissive: new THREE.Color("#0284c7"),
           emissiveIntensity: 0.16,
-          reflectivity: 0.8,
+          reflectivity: 0.85,
         });
 
+        const obsidianMat = new THREE.MeshPhysicalMaterial({
+          color: new THREE.Color("#0f172a"), // Deep obsidian chrome
+          metalness: 0.88,
+          roughness: 0.18,
+          clearcoat: 0.9,
+          clearcoatRoughness: 0.1,
+        });
+
+        // Glowing Vampire Crimson Red Eye Material
+        const vampireEyeMat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color("#ff0033"),
+          emissive: new THREE.Color("#ff0033"),
+          emissiveIntensity: 5.5,
+          roughness: 0.05,
+          metalness: 0.2,
+        });
+
+        // Traverse and customize model parts
         model.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
             const m = child as THREE.Mesh;
-            m.material = cyberMaterial;
             m.castShadow = true;
             m.receiveShadow = true;
+
+            const matName = (m.material as THREE.Material)?.name || "";
+
+            if (matName.includes("IRIS") || matName.includes("EyeRefractive")) {
+              // Vampire Glowing Red Eyes
+              m.material = vampireEyeMat;
+            } else if (matName.includes("Material.001") || matName.includes("material_0")) {
+              // Main Face Plates: Cybernetic Light Blue
+              m.material = lightBlueFaceMat;
+            } else if (matName.includes("Black") || matName.includes("cutter") || matName.includes("shiny")) {
+              // Contrast details: Obsidian Dark Chrome
+              m.material = obsidianMat;
+            } else {
+              m.material = lightBlueFaceMat;
+            }
           }
         });
 
-        // 6. Radiant Glowing Vampire Red Eyes (Exact Ocular Sockets)
-        const redEyeMat = new THREE.MeshStandardMaterial({
-          color: new THREE.Color("#ff0033"),
-          emissive: new THREE.Color("#ff0033"),
-          emissiveIntensity: 5.0,
-          roughness: 0.05,
-          metalness: 0.1,
-        });
+        // Locate and store articulated nodes
+        jawNode = model.getObjectByName("JawR_19") || null;
+        if (jawNode) {
+          initialJawY = jawNode.position.y;
+          initialJawZ = jawNode.position.z;
+        }
 
-        const eyeGeo = new THREE.SphereGeometry(0.20, 24, 24);
+        eyeLNode = model.getObjectByName("Kito6_FaceMesh_EyeL_20") || null;
+        eyeRNode = model.getObjectByName("Kito6_FaceMesh_EyeR_21") || null;
 
-        // Exact eye socket centers measured from mesh vertex topology
-        leftEyeMesh = new THREE.Mesh(eyeGeo, redEyeMat);
-        leftEyeMesh.position.set(-1.29, 0.40, 3.02);
-        model.add(leftEyeMesh);
+        // Add radiant ocular red point lights in front of both eyes
+        if (eyeLNode && eyeRNode) {
+          const eyeLWorld = new THREE.Box3().setFromObject(eyeLNode).getCenter(new THREE.Vector3());
+          const eyeRWorld = new THREE.Box3().setFromObject(eyeRNode).getCenter(new THREE.Vector3());
 
-        rightEyeMesh = new THREE.Mesh(eyeGeo, redEyeMat);
-        rightEyeMesh.position.set(1.23, 0.40, 3.00);
-        model.add(rightEyeMesh);
+          const lightL = new THREE.PointLight(0xff0033, 3.2, 2.5);
+          lightL.position.set(0, 0, 0.08);
+          eyeLNode.add(lightL);
 
-        // Vampire Red Point Lights casting radiant crimson luminescence on cheekbones
-        const leftEyeLight = new THREE.PointLight(0xff0033, 2.8, 3.5);
-        leftEyeLight.position.set(-1.29, 0.40, 3.35);
-        model.add(leftEyeLight);
-
-        const rightEyeLight = new THREE.PointLight(0xff0033, 2.8, 3.5);
-        rightEyeLight.position.set(1.23, 0.40, 3.35);
-        model.add(rightEyeLight);
+          const lightR = new THREE.PointLight(0xff0033, 3.2, 2.5);
+          lightR.position.set(0, 0, 0.08);
+          eyeRNode.add(lightR);
+        }
 
         headGroup.add(model);
         setModelLoaded(true);
       },
       undefined,
       (err) => {
-        console.warn("[AvatarCanvas] avatar.glb load notice:", err);
+        console.warn("[AvatarCanvas] avatar.glb load error:", err);
       }
     );
 
-    // 7. Animation & Audio Variables
+    // 6. Animation Variables
     let lastBlinkTime = performance.now();
     let isBlinking = false;
     let blinkStartTime = 0;
-    let nextBlinkDelay = 3400;
+    let nextBlinkDelay = 3200;
 
     let frameCount = 0;
     let lastFpsTime = performance.now();
     const freqData = new Uint8Array(128);
     const clock = new THREE.Clock();
 
-    // 8. Continuous High-FPS Animation Loop
+    // 7. Continuous Animation Render Loop
     const animate = () => {
       animFrameRef.current = requestAnimationFrame(animate);
 
@@ -236,7 +262,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       const elapsedTime = clock.getElapsedTime();
       const now = performance.now();
 
-      // FPS Calculation
+      // FPS tracking
       frameCount++;
       if (now - lastFpsTime >= 1000) {
         if (onFpsUpdate) onFpsUpdate(Math.round((frameCount * 1000) / (now - lastFpsTime)));
@@ -264,38 +290,37 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
         headGroup.rotation.y += 0.08;
         headGroup.rotation.x -= 0.04;
       } else if (curState === "speaking") {
-        // Natural human head cadence nodding while speaking
+        // Human conversational nodding while speaking
         headGroup.rotation.x += Math.sin(elapsedTime * 4.8) * 0.035;
         headGroup.rotation.y += Math.sin(elapsedTime * 2.8) * 0.018;
       }
 
       // ======================================================================
-      // 2. PROCEDURAL ORGANIC EYE BLINKING (Non-Repetitive Poisson Timing)
+      // 2. PROCEDURAL ORGANIC EYE BLINKING (Poisson 130ms closure)
       // ======================================================================
       if (!isBlinking && now - lastBlinkTime > nextBlinkDelay) {
         isBlinking = true;
         blinkStartTime = now;
       }
 
-      if (isBlinking && leftEyeMesh && rightEyeMesh) {
-        const blinkProgress = (now - blinkStartTime) / 130; // 130ms quick natural blink
+      if (isBlinking && eyeLNode && eyeRNode) {
+        const blinkProgress = (now - blinkStartTime) / 130;
         if (blinkProgress < 1.0) {
           const eyeFactor = Math.sin(blinkProgress * Math.PI);
           const eyeScaleY = Math.max(0.06, 1.0 - eyeFactor);
-          leftEyeMesh.scale.y = eyeScaleY;
-          rightEyeMesh.scale.y = eyeScaleY;
+          eyeLNode.scale.y = eyeScaleY;
+          eyeRNode.scale.y = eyeScaleY;
         } else {
           isBlinking = false;
           lastBlinkTime = now;
-          // Randomized interval for organic non-robotic feel (2.8s to 5.6s)
-          nextBlinkDelay = 2800 + Math.random() * 2800;
-          leftEyeMesh.scale.y = 1.0;
-          rightEyeMesh.scale.y = 1.0;
+          nextBlinkDelay = 2800 + Math.random() * 2800; // 2.8s to 5.6s
+          eyeLNode.scale.y = 1.0;
+          eyeRNode.scale.y = 1.0;
         }
       }
 
       // ======================================================================
-      // 3. REAL-TIME WEBAUDIO LIP-SYNC (<50ms Formant Reaction)
+      // 3. WEBAUDIO REAL-TIME LIP-SYNC (<50ms Latency)
       // ======================================================================
       let audioVolume = 0;
       const activeAnalyser = audioAnalyser || internalAnalyserRef.current;
@@ -303,7 +328,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       if (activeAnalyser) {
         activeAnalyser.getByteFrequencyData(freqData);
         let sum = 0;
-        // Sample speech vowel formant bins (150Hz - 2500Hz)
+        // Sample speech formant range (150Hz - 2500Hz)
         for (let i = 2; i < 28; i++) {
           sum += freqData[i];
         }
@@ -315,12 +340,12 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
         audioVolume = 0;
       }
 
-      // Subtle dynamic jaw drop and speaking articulation
-      const jawDrop = Math.min(1.0, audioVolume * 1.8);
-      if (modelRoot) {
-        // Articulate vertical jaw / lower head extension subtly with volume
-        modelRoot.rotation.x = -jawDrop * 0.04;
-        modelRoot.position.y = -0.08 - jawDrop * 0.02;
+      // Articulate Mechanical Jaw (JawR_19) dynamically
+      if (jawNode) {
+        const jawDrop = Math.min(1.0, audioVolume * 1.8);
+        jawNode.rotation.x = -jawDrop * 0.09;
+        jawNode.position.y = initialJawY - jawDrop * 0.015;
+        jawNode.position.z = initialJawZ + jawDrop * 0.005;
       }
 
       renderer.render(scene, camera);
@@ -328,7 +353,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
 
     animate();
 
-    // Dynamic Viewport Resize Handler
+    // Viewport Resize Handler
     const handleResize = () => {
       if (!container) return;
       const w = width || container.clientWidth || 380;
@@ -353,7 +378,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
   return (
     <div className={`relative w-full h-full min-h-[460px] flex flex-col items-center justify-center rounded-2xl overflow-hidden bg-[#000000] border border-sky-950/40 select-none shadow-[0_0_50px_rgba(2,132,199,0.15)] ${className}`}>
       
-      {/* Top Controls: 3D Android Mesh vs Real Face Photo Toggle */}
+      {/* Top Left Controls: 3D Android Mesh vs Real Face Photo */}
       <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 p-1 rounded-xl bg-[#000000]/80 border border-white/10 backdrop-blur-md">
         <button
           type="button"
@@ -363,9 +388,9 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
               ? "bg-[#0284c7] text-white font-bold shadow-md shadow-sky-900/40"
               : "text-zinc-400 hover:text-white"
           }`}
-          title="3D Android Human Model (RomulusCreative CC-BY-4.0)"
+          title="3D Humanoid Robot Face (by kito1704 under CC-BY-4.0)"
         >
-          3D ANDROID
+          3D HUMANOID
         </button>
         <button
           type="button"
@@ -381,16 +406,22 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
         </button>
       </div>
 
-      {/* Center Viewport: Either 3D WebGL Android Head OR 2D/3D Motion Real Face */}
+      {/* Top Right Credit Badge (kito1704 CC-BY-4.0) */}
+      <div className="absolute top-3 right-3 z-20 pointer-events-none opacity-85 hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/70 border border-white/10 text-[9px] font-mono text-zinc-300">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+        <span>3D FACE: KITO1704 (CC-BY-4.0)</span>
+      </div>
+
+      {/* Center Viewport: 3D WebGL Humanoid Robot Face OR 2D/3D Motion Real Face */}
       {renderMode === "3d_mesh" ? (
         <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-2xl bg-[#000000]">
           <div ref={mountRef} className="w-full h-full flex items-center justify-center" />
           
-          {/* Subtle loading indicator before WebGL completes parsing 3.3MB GLB */}
+          {/* Subtle loading spinner while WebGL initializes */}
           {!modelLoaded && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 z-10 pointer-events-none">
               <div className="w-8 h-8 rounded-full border-2 border-sky-500 border-t-transparent animate-spin" />
-              <span className="text-[11px] font-mono text-sky-300 tracking-wider">CALIBRATING 3D ANDROID...</span>
+              <span className="text-[11px] font-mono text-sky-300 tracking-wider">CALIBRATING HUMANOID ROBOT...</span>
             </div>
           )}
         </div>
@@ -415,12 +446,6 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
           </div>
         </div>
       )}
-
-      {/* Top Right Credit Badge (RomulusCreative CC-BY-4.0) */}
-      <div className="absolute top-3 right-3 z-20 pointer-events-none opacity-80 hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/70 border border-white/10 text-[9px] font-mono text-zinc-400">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-        <span>3D HEAD: ROMULUSCREATIVE (CC-BY-4.0)</span>
-      </div>
 
       {/* Bottom Telemetry Bar in True Black (#000000) */}
       <div className="absolute bottom-3 inset-x-3 z-20 flex items-center justify-between px-3.5 py-1.5 rounded-xl border border-white/10 bg-[#000000]/90 backdrop-blur-md">
@@ -449,7 +474,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
           </div>
         ) : (
           <span className="text-[10px] font-mono text-zinc-400 tracking-wider">
-            CYBER ANDROID · VAMPIRE RED EYES
+            HUMANOID ROBOT · VAMPIRE RED EYES
           </span>
         )}
       </div>
