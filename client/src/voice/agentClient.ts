@@ -126,3 +126,130 @@ export async function askAgent({ message, getScreenPayload, userId, history = []
     signal?.removeEventListener("abort", onExternalAbort);
   }
 }
+
+export interface StreamAgentArgs {
+  message: string;
+  sessionId: string;
+  pageContext?: {
+    route?: string;
+    activeTab?: string;
+    visibleSectionIds?: string[];
+  };
+  language?: string;
+  mode?: string;
+  onToken?: (text: string) => void;
+  onAction?: (action: any) => void;
+  onToolResult?: (tool: string, result: any) => void;
+  onSpoken?: (sentence: string) => void;
+  onDisplay?: (markdown: string) => void;
+  onDone?: (data: { runId: string; status: string; followups: string[] }) => void;
+  onError?: (err: Error) => void;
+  signal?: AbortSignal;
+}
+
+/**
+ * Autonomous Multi-Step SSE Agent Stream:
+ * Streams tokens, actions, tool results, spoken chunks, and full screen display markdown.
+ * UI actions dispatched by the backend are automatically executed by actionDispatcher
+ * and observations are posted back to resume the agent reasoning loop.
+ */
+export async function streamAgent({
+  message,
+  sessionId,
+  pageContext,
+  language = "auto",
+  mode = "agent",
+  onToken,
+  onAction,
+  onToolResult,
+  onSpoken,
+  onDisplay,
+  onDone,
+  onError,
+  signal,
+}: StreamAgentArgs): Promise<void> {
+  const { uiRegistry } = await import("./uiRegistry");
+  const { actionDispatcher } = await import("./actionDispatcher");
+
+  const snapshot = uiRegistry.getRegistrySnapshot();
+  const body = {
+    message,
+    sessionId,
+    pageContext: {
+      route: pageContext?.route || (typeof window !== "undefined" ? window.location.pathname : "/"),
+      activeTab: pageContext?.activeTab || "overview",
+      visibleSectionIds: pageContext?.visibleSectionIds || [],
+      registrySnapshot: snapshot,
+    },
+    language,
+    mode,
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/api/agent/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeader() },
+      body: JSON.stringify(body),
+      signal,
+    });
+
+    if (!res.ok) {
+      throw new Error(`SSE stream failed with HTTP ${res.status}`);
+    }
+
+    if (!res.body) {
+      throw new Error("No response stream body available");
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split("\n\n");
+      buffer = events.pop() || "";
+
+      for (const ev of events) {
+        if (!ev.trim()) continue;
+        const lines = ev.split("\n");
+        let eventType = "message";
+        let eventData = "";
+
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith("data: ")) {
+            eventData = line.slice(6).trim();
+          }
+        }
+
+        try {
+          const parsed = JSON.parse(eventData);
+          if (eventType === "token" && onToken) {
+            onToken(parsed.text || "");
+          } else if (eventType === "action") {
+            onAction?.(parsed);
+            await actionDispatcher.executeUIAction(parsed);
+          } else if (eventType === "tool_result" && onToolResult) {
+            onToolResult(parsed.tool, parsed.result);
+          } else if (eventType === "spoken" && onSpoken) {
+            onSpoken(parsed.sentence || "");
+          } else if (eventType === "display" && onDisplay) {
+            onDisplay(parsed.markdown || "");
+          } else if (eventType === "done" && onDone) {
+            onDone(parsed);
+          }
+        } catch {}
+      }
+    }
+  } catch (err: any) {
+    if (signal?.aborted) return;
+    onError?.(err);
+    throw err;
+  }
+}
+

@@ -19,7 +19,7 @@ import React, {
 } from "react";
 import { getApiBase, API_BASE } from "@/lib/apiClient";
 import { clientBrain } from "@/voice/client_brain";
-import { askAgent, type ChatTurn, AgentRequestError } from "@/voice/agentClient";
+import { askAgent, streamAgent, type ChatTurn, AgentRequestError } from "@/voice/agentClient";
 import { runActions } from "@/voice/dasActions";
 import { recordSessionEnd, registerSessionEnd } from "@/voice/memory";
 
@@ -365,66 +365,56 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
       } catch {}
 
       try {
-        const historyTurns: ChatTurn[] = messages.slice(-12).map((m) => ({
-          role: m.role === "assistant" ? "model" : "user",
-          text: m.content,
-        }));
+        let streamAssistantMsgId = "msg_" + Date.now();
+        let fullSpoken = "";
+        let fullDisplay = "";
+        let actionsList: any[] = [];
 
-        let focusedWidget = "";
-        if (typeof document !== "undefined") {
-          const hovered = document.querySelector(":hover[data-das-id]") || document.querySelector("[data-das-id]");
-          focusedWidget = hovered?.getAttribute("data-das-id") || "";
-        }
-
-        const reply = await askAgent({
+        await streamAgent({
           message: clean,
-          getScreenPayload: () => ({
-            activeTab: pageContext.activeTab || "overview",
-            focusedWidget: focusedWidget,
-            userState: "active",
-          }),
-          history: historyTurns,
-        });
-
-        const spokenText = reply.spoken || "I have updated your placement recommendations.";
-        const displayText = reply.display || spokenText;
-        const actions = reply.actions || [];
-
-        const dasMsg: DASMessage = {
-          id: "msg_" + Date.now(),
-          role: "assistant",
-          content: displayText,
-          spoken: spokenText,
-          display: displayText,
-          actions: actions.map((a) => ({ name: a.type, arguments: { target: a.target } })),
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        };
-
-        setMessages((prev) => [...prev, dasMsg]);
-
-        // Run actions with dasActions allowlist
-        runActions(actions, {
-          goToTab: (tab) => {
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab } }));
-            }
+          sessionId: sessionId,
+          pageContext: {
+            route: pageContext.route,
+            activeTab: pageContext.activeTab,
+            visibleSectionIds: pageContext.visibleSections || [],
           },
-          openPanel: (panel) => {
-            if (typeof window !== "undefined") {
-              if (panel === "resume_builder" || panel === "resume") {
-                window.dispatchEvent(new CustomEvent("das-open-resume-builder"));
-              } else if (panel === "mock_interview" || panel === "interview") {
-                window.dispatchEvent(new CustomEvent("das-open-mock-interview"));
+          language,
+          mode: "agent",
+          onSpoken: (sentence) => {
+            fullSpoken += (fullSpoken ? " " : "") + sentence;
+            speakNatural(sentence);
+          },
+          onDisplay: (markdown) => {
+            fullDisplay = markdown;
+            setMessages((prev) => {
+              const existingIdx = prev.findIndex((m) => m.id === streamAssistantMsgId);
+              const updatedMsg: DASMessage = {
+                id: streamAssistantMsgId,
+                role: "assistant",
+                content: markdown,
+                spoken: fullSpoken,
+                display: markdown,
+                actions: actionsList,
+                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              };
+              if (existingIdx >= 0) {
+                const next = [...prev];
+                next[existingIdx] = updatedMsg;
+                return next;
               }
-            }
+              return [...prev, updatedMsg];
+            });
+          },
+          onAction: (act) => {
+            actionsList.push({ name: act.name, arguments: act.params });
+          },
+          onDone: (doneData) => {
+            recordSessionEnd(clean);
           },
         });
-
-        recordSessionEnd(clean);
-        speakNatural(spokenText);
       } catch (err) {
         if (err instanceof AgentRequestError && err.kind === "cancelled") return;
-        console.info("[DASVoiceContext] Agent error, falling back to autonomous client brain:", err);
+        console.info("[DASVoiceContext] Stream error, falling back to client brain:", err);
         const brainRes = clientBrain.process(clean, language, { activeTab: pageContext.activeTab });
         const dasMsg: DASMessage = {
           id: "msg_brain_" + Date.now(),
