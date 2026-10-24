@@ -276,7 +276,8 @@ async def voice_tts_endpoint(request_body: Dict[str, Any], request: Request):
     audio_bytes = await synthesize_server_tts(text, language)
     if audio_bytes:
         import io
-        return StreamingResponse(io.BytesIO(audio_bytes), media_type="audio/wav")
+        media_type = "audio/mpeg" if audio_bytes[:3] == b'ID3' or audio_bytes[:2] in (b'\xff\xfb', b'\xff\xf3', b'\xff\xf2') else "audio/wav"
+        return StreamingResponse(io.BytesIO(audio_bytes), media_type=media_type)
 
     return {"available": False, "reason": "No server TTS model available on current configuration"}
 

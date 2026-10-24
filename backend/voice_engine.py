@@ -330,12 +330,12 @@ def build_voice_system_prompt(
     tod = "morning" if 5 <= now_hour < 12 else ("afternoon" if 12 <= now_hour < 17 else "evening")
 
     if is_owner:
-        greeting_instruction = f'When greeting Boss Dileep, greet him with: "Good {tod.capitalize()}, Boss!" (or Telugu: "గుడ్ {tod.capitalize()} బాస్!").'
+        greeting_instruction = f'When interacting with Boss Dileep, always greet him with high loyalty and respect: "Hi Boss, I am your DAS Agent! Good {tod.capitalize()}!" (or Telugu: "హాయ్ బాస్, నేను మీ దాస్ ఏజెంట్‌ని! గుడ్ {tod.capitalize()}!"). Treat him as your visionary creator and supreme boss.'
     else:
-        greeting_instruction = f'When greeting the user, greet them politely: "Good {tod.capitalize()}! Welcome to Pathfinder." (or Telugu: "గుడ్ {tod.capitalize()}! పాత్‌ఫైండర్‌కి స్వాగతం."). You must NEVER call this user Boss and NEVER reveal the owner\'s private details (no DOB, no family names, no exact hometown).'
+        greeting_instruction = f'When interacting with any student, recruiter, or stakeholder, introduce yourself warmly: "Hello! I am your Pathfinder AI Agent, DAS! Good {tod.capitalize()}!" (or Telugu: "హలో! నేను మీ పాత్‌ఫైండర్ AI ఏజెంట్, దాస్! గుడ్ {tod.capitalize()}!"). You must NEVER call this user Boss and NEVER reveal the owner\'s private details (no DOB, no family names, no exact hometown).'
 
     return f"""[ROLE DEFINITION]
-You are DAS AI: the official voice-first intelligent assistant, autonomous placement co-pilot on the Pathfinder platform.
+You are DAS: the official voice-first intelligent assistant and autonomous placement AI Agent on the Pathfinder platform.
 Current local time in India is {ist_now.strftime('%I:%M %p')} ({tod.upper()}).
 {greeting_instruction}
 
@@ -1113,14 +1113,26 @@ _TTS_CAPABILITY_CACHE: Optional[Dict[str, Any]] = None
 
 
 def check_gemini_tts_capability() -> Dict[str, Any]:
-    """Inspects Gemini API models list to check if text-to-speech audio generation is available."""
+    """Inspects available TTS capability, prioritizing ElevenLabs with Daniel voice."""
     global _TTS_CAPABILITY_CACHE
     if _TTS_CAPABILITY_CACHE is not None:
         return _TTS_CAPABILITY_CACHE
 
+    eleven_key = os.getenv("ELEVENLABS_API_KEY", "").strip()
+    if eleven_key:
+        voice_id = os.getenv("ELEVENLABS_VOICE_ID", "onwK4e9ZLuTAKqWW03F9").strip()
+        _TTS_CAPABILITY_CACHE = {
+            "supported": True,
+            "provider": "elevenlabs",
+            "voice": "Daniel",
+            "voice_id": voice_id,
+            "preferred": "eleven_multilingual_v2"
+        }
+        return _TTS_CAPABILITY_CACHE
+
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
-        _TTS_CAPABILITY_CACHE = {"supported": False, "models": [], "reason": "GEMINI_API_KEY not configured"}
+        _TTS_CAPABILITY_CACHE = {"supported": False, "models": [], "reason": "No TTS provider API keys configured"}
         return _TTS_CAPABILITY_CACHE
 
     try:
@@ -1145,14 +1157,61 @@ def check_gemini_tts_capability() -> Dict[str, Any]:
         return _TTS_CAPABILITY_CACHE
 
 
-async def synthesize_server_tts(text: str, language: str = "te-IN") -> Optional[bytes]:
-    """Server-side TTS generation fallback when device lacks native Telugu/Hindi voices."""
+async def synthesize_elevenlabs_tts(text: str) -> Optional[bytes]:
+    """Generates studio-grade speech using ElevenLabs with Daniel voice."""
+    api_key = os.getenv("ELEVENLABS_API_KEY", "").strip()
+    voice_id = os.getenv("ELEVENLABS_VOICE_ID", "onwK4e9ZLuTAKqWW03F9").strip()
+    if not api_key:
+        return None
+
     clean_text = clean_tts_speech(text)
     if not clean_text:
         return None
 
+    try:
+        import httpx
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+        headers = {
+            "xi-api-key": api_key,
+            "Content-Type": "application/json",
+            "Accept": "audio/mpeg"
+        }
+        payload = {
+            "text": clean_text,
+            "model_id": "eleven_multilingual_v2",
+            "voice_settings": {
+                "stability": 0.5,
+                "similarity_boost": 0.8,
+                "style": 0.2,
+                "use_speaker_boost": True
+            }
+        }
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(url, headers=headers, json=payload)
+            if resp.status_code == 200 and resp.content:
+                logger.info(f"[Voice Engine] ElevenLabs synthesized {len(resp.content)} bytes (Daniel voice)")
+                return resp.content
+            else:
+                logger.warning(f"[Voice Engine] ElevenLabs TTS HTTP {resp.status_code}: {resp.text[:150]}")
+                return None
+    except Exception as e:
+        logger.warning(f"[Voice Engine] ElevenLabs synthesis notice: {e}")
+        return None
+
+
+async def synthesize_server_tts(text: str, language: str = "te-IN") -> Optional[bytes]:
+    """Server-side TTS generation using ElevenLabs (primary) with Gemini/fallback."""
+    clean_text = clean_tts_speech(text)
+    if not clean_text:
+        return None
+
+    # Primary: ElevenLabs Studio Voice (Daniel)
+    eleven_audio = await synthesize_elevenlabs_tts(clean_text)
+    if eleven_audio:
+        return eleven_audio
+
     cap = check_gemini_tts_capability()
-    if not cap.get("supported") or not cap.get("preferred"):
+    if not cap.get("supported") or not cap.get("preferred") or cap.get("provider") == "elevenlabs":
         return None
 
     api_key = os.getenv("GEMINI_API_KEY", "").strip()

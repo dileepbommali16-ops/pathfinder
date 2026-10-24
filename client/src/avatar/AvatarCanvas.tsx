@@ -138,6 +138,13 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     let initialEyeScaleY_R = 1.0;
     let ocularLightL: THREE.PointLight | null = null;
     let ocularLightR: THREE.PointLight | null = null;
+    const vampireEyeMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#ff0033"),
+      emissive: new THREE.Color("#ff0033"),
+      emissiveIntensity: 4.5,
+      roughness: 0.08,
+      metalness: 0.2,
+    });
 
     // 5. Load Humanoid Robot Face GLB (by kito1704 under CC-BY-4.0)
     const gltfLoader = new GLTFLoader();
@@ -178,15 +185,6 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
           roughness: 0.18,
           clearcoat: 0.9,
           clearcoatRoughness: 0.1,
-        });
-
-        // Glowing Vampire Crimson Red Eye Material
-        const vampireEyeMat = new THREE.MeshStandardMaterial({
-          color: new THREE.Color("#ff0033"),
-          emissive: new THREE.Color("#ff0033"),
-          emissiveIntensity: 4.5,
-          roughness: 0.08,
-          metalness: 0.2,
         });
 
         // Traverse and customize model parts
@@ -324,7 +322,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
           if (eyeLNode) eyeLNode.scale.y = initialEyeScaleY_L * Math.max(0.08, 1.0 - eyeFactor);
           if (eyeRNode) eyeRNode.scale.y = initialEyeScaleY_R * Math.max(0.08, 1.0 - eyeFactor);
           // Ocular vampire glow dim during eyelid blink
-          vampireEyeMat.emissiveIntensity = 4.5 * (1.0 - eyeFactor * 0.85);
+          if (vampireEyeMat) vampireEyeMat.emissiveIntensity = 4.5 * (1.0 - eyeFactor * 0.85);
           if (ocularLightL) ocularLightL.intensity = 2.5 * (1.0 - eyeFactor * 0.85);
           if (ocularLightR) ocularLightR.intensity = 2.5 * (1.0 - eyeFactor * 0.85);
         } else {
@@ -333,7 +331,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
           nextBlinkDelay = 2800 + Math.random() * 2800; // 2.8s to 5.6s
           if (eyeLNode) eyeLNode.scale.y = initialEyeScaleY_L;
           if (eyeRNode) eyeRNode.scale.y = initialEyeScaleY_R;
-          vampireEyeMat.emissiveIntensity = 4.5;
+          if (vampireEyeMat) vampireEyeMat.emissiveIntensity = 4.5;
           if (ocularLightL) ocularLightL.intensity = 2.5;
           if (ocularLightR) ocularLightR.intensity = 2.5;
         }

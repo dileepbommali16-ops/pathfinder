@@ -19,7 +19,16 @@ export const DasVoiceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const intervalRef = useRef<any>(null);
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const stopSpeaking = useCallback(() => {
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      } catch {}
+      audioRef.current = null;
+    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -31,16 +40,12 @@ export const DasVoiceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setIsSpeaking(false);
   }, []);
 
-  const speakText = useCallback((text: string) => {
+  const fallbackUtterance = useCallback((text: string) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-
-    stopSpeaking();
-
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.0;
     utterance.pitch = 0.95;
 
-    // Select natural voice if available
     const voices = window.speechSynthesis.getVoices();
     const naturalVoice = voices.find(
       (v) =>
@@ -55,7 +60,6 @@ export const DasVoiceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     utterance.onstart = () => {
       setIsSpeaking(true);
       if (intervalRef.current) clearInterval(intervalRef.current);
-
       intervalRef.current = setInterval(() => {
         if (!window.speechSynthesis.speaking) {
           setAudioLevel(0);
@@ -65,7 +69,6 @@ export const DasVoiceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             intervalRef.current = null;
           }
         } else {
-          // Dynamic audio frequency simulation for real-time lip sync
           setAudioLevel(Math.random() * 0.75 + 0.25);
         }
       }, 90);
@@ -90,7 +93,57 @@ export const DasVoiceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     window.speechSynthesis.speak(utterance);
-  }, [stopSpeaking]);
+  }, []);
+
+  const speakText = useCallback(async (text: string) => {
+    if (!text || typeof window === 'undefined') return;
+    stopSpeaking();
+
+    // 1. Try ElevenLabs server-side studio TTS
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || "";
+      const resp = await fetch(`${apiBase}/api/voice/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, language: "en-IN" }),
+      });
+      if (resp.ok && resp.headers.get("content-type")?.includes("audio")) {
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audioRef.current = audio;
+
+        audio.onplay = () => {
+          setIsSpeaking(true);
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          intervalRef.current = setInterval(() => {
+            setAudioLevel(Math.random() * 0.75 + 0.25);
+          }, 90);
+        };
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          audioRef.current = null;
+          setAudioLevel(0);
+          setIsSpeaking(false);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(url);
+          audioRef.current = null;
+          fallbackUtterance(text);
+        };
+        await audio.play();
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+
+    fallbackUtterance(text);
+  }, [stopSpeaking, fallbackUtterance]);
 
   useEffect(() => {
     return () => {

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-24T06:17:00Z",
+  "title": "Design System: Pathfinder 2.0",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Deep Wine Velvet", "canonical": "#9f1239" },
+      "secondary": { "role": "secondary", "displayName": "Royal Violet Amethyst", "canonical": "#7c3aed" },
+      "bg-base": { "role": "neutral", "displayName": "Deep Obsidian Nocturne", "canonical": "#0a0b10" },
+      "bg-card": { "role": "neutral", "displayName": "Frosted Obsidian Glass", "canonical": "#11131c" },
+      "avatar-canvas": { "role": "neutral", "displayName": "OLED True Black", "canonical": "#000000" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero metrics and dashboard scores." },
+      "body": { "displayName": "Body", "purpose": "Placement advice, blueprint cards, and viva questions." }
+    },
+    "shadows": [
+      { "name": "wine-glow", "value": "0 0 25px rgba(159, 18, 57, 0.25)", "purpose": "Readiness indicator elevation." },
+      { "name": "violet-glow", "value": "0 0 25px rgba(124, 58, 237, 0.25)", "purpose": "AI Voice Coach activity elevation." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Wine velvet CTA button with smooth hover state.",
+      "html": "<button class=\"ds-btn-primary\">LAUNCH PREDICTOR</button>",
+      "css": ".ds-btn-primary { background: #9f1239; color: #f8fafc; padding: 12px 24px; font-weight: 600; border: none; border-radius: 8px; transition: background 0.2s; cursor: pointer; } .ds-btn-primary:hover { background: #881337; }"
+    },
+    {
+      "name": "Obsidian Card",
+      "kind": "card",
+      "refersTo": "card-panel",
+      "description": "Frosted obsidian glass panel with hairline border.",
+      "html": "<div class=\"ds-card-obsidian\"><h3 class=\"ds-card-title\">Placement Probability</h3><p class=\"ds-card-metric\">88%</p></div>",
+      "css": ".ds-card-obsidian { background: #11131c; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 28px; } .ds-card-title { color: #94a3b8; font-size: 14px; margin: 0 0 8px 0; } .ds-card-metric { color: #f8fafc; font-size: 32px; font-weight: 700; margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Cybernetic Obsidian Observatory",
+    "overview": "Pathfinder 2.0 embodies an ultra-luxury, dark-mode cybersecurity and career intelligence aesthetic.",
+    "keyCharacteristics": [
+      "OLED Grounding with zero-light backdrop",
+      "Glassmorphic Frosted Obsidian Cards",
+      "Biometric 3D Cybernetic Avatar Canvas",
+      "Deterministic 3-tier color signaling"
+    ],
+    "rules": [
+      { "name": "The Protected Canvas Rule", "body": "The global background (#0a0b10), the OLED avatar viewport (#000000), LampLogin, and 3D WebGL motion are protected anchors.", "section": "colors" },
+      { "name": "The Tonal Layering Rule", "body": "Surfaces are separated by border contrast and background tone shifts, never by blurry colored shadows.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do preserve the OLED True Black (#000000) container around the AI Avatar Canvas.",
+      "Do preserve the LampLogin page styling, shaders, and animations.",
+      "Do preserve the 3D WebGL background motion and shader loops."
+    ],
+    "donts": [
+      "Don't modify the AI voice agent face or avatar dimensions.",
+      "Don't alter the main dashboard dark background (#0a0b10).",
+      "Don't introduce bright white card backgrounds or light mode themes."
+    ]
+  }
+}

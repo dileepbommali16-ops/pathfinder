@@ -140,3 +140,7 @@ skills-lock.json
 *.wav
 audio.wav
 output.wav
+
+# Native binaries
+*.exe
+**/scripts/bin/

@@ -801,56 +801,54 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       matchedVoice &&
       (matchedVoice.lang.toLowerCase().includes("te") || matchedVoice.name.toLowerCase().includes("telugu"));
 
-    // If Telugu and device lacks local Telugu voice, try server-side TTS fallback
-    if (isTelugu && !hasTeluguVoice) {
-      try {
-        const resp = await fetch(`${API_BASE}/api/voice/tts`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: nextText, language: "te-IN" }),
-        });
-        if (resp.ok && resp.headers.get("content-type")?.includes("audio") && genId === generationIdRef.current) {
-          const blob = await resp.blob();
-          const audioUrl = URL.createObjectURL(blob);
-          const audio = new Audio(audioUrl);
-          serverAudioRef.current = audio;
+    // 1. Try ElevenLabs server-side studio TTS first for ultra-realistic human voice
+    try {
+      const resp = await fetch(`${API_BASE}/api/voice/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: nextText, language: effectiveLang }),
+      });
+      if (resp.ok && resp.headers.get("content-type")?.includes("audio") && genId === generationIdRef.current) {
+        const blob = await resp.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        serverAudioRef.current = audio;
 
-          audio.onplay = () => {
-            stopMicrophone();
-            isSpeakingRef.current = true;
-            setVoiceStatus("speaking");
-          };
-          audio.onended = () => {
-            URL.revokeObjectURL(audioUrl);
-            serverAudioRef.current = null;
-            isSpeakingSentenceRef.current = false;
-            if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
-              processSpeechQueue(targetLang, genId);
-            } else {
-              isSpeakingRef.current = false;
-              setVoiceStatus("idle");
-              setSpeakingIndex(null);
-              if (userTurnedListeningOnRef.current) {
-                setTimeout(() => {
-                  if (!isSpeakingRef.current && userTurnedListeningOnRef.current) {
-                    toggleListening(true);
-                  }
-                }, 600);
-              }
+        audio.onplay = () => {
+          stopMicrophone();
+          isSpeakingRef.current = true;
+          setVoiceStatus("speaking");
+        };
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          serverAudioRef.current = null;
+          isSpeakingSentenceRef.current = false;
+          if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
+            processSpeechQueue(targetLang, genId);
+          } else {
+            isSpeakingRef.current = false;
+            setVoiceStatus("idle");
+            setSpeakingIndex(null);
+            if (userTurnedListeningOnRef.current) {
+              setTimeout(() => {
+                if (!isSpeakingRef.current && userTurnedListeningOnRef.current) {
+                  toggleListening(true);
+                }
+              }, 600);
             }
-          };
-          audio.onerror = () => {
-            URL.revokeObjectURL(audioUrl);
-            serverAudioRef.current = null;
-            isSpeakingSentenceRef.current = false;
-            fallbackSpeakUtterance(nextText, effectiveLang, matchedVoice, targetLang, genId);
-          };
-          await audio.play();
-          return;
-        }
-      } catch {
-        // Fallback to browser utterance
+          }
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(audioUrl);
+          serverAudioRef.current = null;
+          isSpeakingSentenceRef.current = false;
+          fallbackSpeakUtterance(nextText, effectiveLang, matchedVoice, targetLang, genId);
+        };
+        await audio.play();
+        return;
       }
+    } catch {
+      // Network or server error fallback to browser utterance
     }
 
     fallbackSpeakUtterance(nextText, effectiveLang, matchedVoice, targetLang, genId);
