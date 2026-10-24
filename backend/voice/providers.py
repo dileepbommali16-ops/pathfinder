@@ -1,10 +1,10 @@
 """
 Pathfinder Voice Providers Chain (backend/voice/providers.py)
 Implements prioritized fallback reasoning chain:
-1. Gemini 2.0 Flash (Primary)
-2. OpenRouter (Free LLM models e.g. liquid/lfm-2.5-2.6b:free, openrouter/free)
-3. Hosted Ollama (https://ollama.com)
-4. Local Ollama (http://localhost:11434)
+1. xAI Grok (grok-2-latest)
+2. Groq LPU (openai/gpt-oss-120b - Ultra-fast ~200ms speech inference)
+3. Google Gemini (gemini-2.0-flash)
+4. OpenRouter (Free cloud LLMs)
 5. Comprehensive Pathfinder Multi-Lingual Knowledge & Memory Engine
 Logs which provider answered and reasons for skips, NEVER printing API keys.
 """
@@ -30,13 +30,10 @@ class ProviderChain:
         self.grok_key = (os.getenv("GROK_API_KEY", "") or os.getenv("XAI_API_KEY", "")).strip()
         self.grok_model = os.getenv("GROK_MODEL", "grok-2-latest").strip() or "grok-2-latest"
         self.groq_key = os.getenv("GROQ_API_KEY", "").strip()
-        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip() or "llama-3.3-70b-versatile"
+        self.groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
         self.openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
         self.openrouter_model = os.getenv("OPENROUTER_MODEL", "").strip()
-        self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "").strip()
-        self.ollama_api_key = os.getenv("OLLAMA_API_KEY", "").strip()
-        self.ollama_model = os.getenv("OLLAMA_MODEL", "gpt-oss:20b").replace(":cloud", "").strip()
         self.last_used_provider: str = "Initializing"
 
     def _try_openai_compatible(
@@ -179,7 +176,7 @@ class ProviderChain:
                 logger.debug(f"[Providers] Gemini provider failed: {e}")
 
         # =====================================================================
-        # 2. Secondary: OpenRouter LLM (Verified Free LLMs)
+        # 4. Quaternary: OpenRouter LLM (Verified Free LLMs)
         # =====================================================================
         if self.openrouter_key:
             openrouter_res = self._try_openrouter(
@@ -190,36 +187,6 @@ class ProviderChain:
             )
             if openrouter_res:
                 return openrouter_res
-
-        # =====================================================================
-        # 3. Tertiary: Hosted Ollama (e.g., https://ollama.com)
-        # =====================================================================
-        if self.ollama_base_url and self.ollama_base_url.startswith("https://"):
-            hosted_result = self._try_ollama(
-                base_url=self.ollama_base_url,
-                model=self.ollama_model or "gpt-oss:20b",
-                api_key=self.ollama_api_key,
-                prompt=prompt,
-                system=system_instruction,
-                label="Ollama Hosted"
-            )
-            if hosted_result:
-                return hosted_result
-
-        # =====================================================================
-        # 4. Quaternary: Local Ollama (http://localhost:11434)
-        # =====================================================================
-        if self.ollama_base_url and not self.ollama_base_url.startswith("https://"):
-            local_result = self._try_ollama(
-                base_url=self.ollama_base_url,
-                model=os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2"),
-                api_key="",
-                prompt=prompt,
-                system=system_instruction,
-                label="Ollama Local"
-            )
-            if local_result:
-                return local_result
 
         # =====================================================================
         # 5. Built-in Pathfinder Multi-Lingual Knowledge & Reasoning Engine
@@ -450,57 +417,7 @@ class ProviderChain:
             self.last_used_provider
         )
 
-    def _try_ollama(
-        self,
-        base_url: str,
-        model: str,
-        api_key: str,
-        prompt: str,
-        system: str,
-        label: str
-    ) -> Optional[Tuple[str, str]]:
-        """Validates /api/tags within 1.5s then generates text."""
-        clean_url = base_url.rstrip("/")
-        tags_url = f"{clean_url}/api/tags"
 
-        req = urllib.request.Request(tags_url)
-        if api_key:
-            req.add_header("Authorization", f"Bearer {api_key}")
-
-        try:
-            with urllib.request.urlopen(req, timeout=1.5) as probe:
-                if probe.status in (401, 403):
-                    return None
-        except Exception:
-            return None
-
-        clean_model = model.replace(":cloud", "")
-        gen_url = f"{clean_url}/api/generate"
-        payload = {
-            "model": clean_model,
-            "prompt": prompt,
-            "system": system,
-            "stream": False
-        }
-        data = json.dumps(payload).encode("utf-8")
-        gen_req = urllib.request.Request(gen_url, data=data, headers={"Content-Type": "application/json"})
-        if api_key:
-            gen_req.add_header("Authorization", f"Bearer {api_key}")
-
-        try:
-            with urllib.request.urlopen(gen_req, timeout=12) as resp:
-                if resp.status == 200:
-                    body = json.loads(resp.read().decode("utf-8"))
-                    text = body.get("response", "").strip()
-                    if text:
-                        provider_name = f"{label} ({clean_model})"
-                        self.last_used_provider = provider_name
-                        logger.info(f"[Providers] Answered by {provider_name}")
-                        return text, provider_name
-        except Exception as exc:
-            logger.debug(f"[Providers] {label} execution error: {exc}")
-
-        return None
 
 
 # Global singleton

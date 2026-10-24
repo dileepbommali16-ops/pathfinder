@@ -138,26 +138,26 @@ Pathfinder 2.0 is built on a decoupled, production-grade full stack architecture
 
 ## 🎙️ 5-Component Autonomous Local & Hybrid Voice Agent (LLaMA 3.2)
 
-Pathfinder features a high-performance, standalone **5-Component Voice Intelligence Pipeline** (`scripts/complete_voice_agent.py`) capable of running fully locally with Ollama and LLaMA 3.2, or seamlessly failing over to cloud inference via OpenRouter with zero downtime.
+Pathfinder features a high-performance, cloud-native **Voice Intelligence Pipeline** (`scripts/complete_voice_agent.py`) powered by **Groq LPU (`openai/gpt-oss-120b`)** for sub-second agentic reasoning and **ElevenLabs (`Daniel` - ID: `onwK4e9ZLuTAKqWW03F9`)** for studio-grade conversational speech, with zero localhost/Ollama daemon dependencies.
 
 ```mermaid
 graph LR
     subgraph S1["1. INPUT TIER"]
-        Mic["🎤 Microphone Input<br/>sounddevice (44.1kHz / 48kHz Stereo)"]
+        Mic["🎤 Microphone Input<br/>sounddevice / WebAudio MediaRecorder"]
         Resample["⚡ Scipy Downmixing & Resampling<br/>Stereo ➔ 16kHz Mono"]
         Gain["🔊 Dynamic Auto-Gain Normalization<br/>Up to 80x Peak Boost"]
         Mic --> Resample --> Gain
     end
 
     subgraph S2["2. STT TIER"]
-        Whisper["🧠 faster-whisper (CPU int8)<br/>Beam Size: 5 • VAD Silence Filter"]
+        Whisper["🧠 faster-whisper / Web Speech<br/>int8 CPU • VAD Silence Filter"]
         Fallback["🛡️ 2-Pass Short-Utterance Fallback<br/>Zero dropped 'Hi' / 'Hello'"]
         Whisper --> Fallback
     end
 
     subgraph S3["3. AGENTIC REASONING"]
-        Profile["👤 User Profile Store<br/>user_profile.json (Dileep)"]
-        LLM["🦙 LLaMA 3.2 Reasoning Core<br/>Ollama Local (127.0.0.1:11434)<br/>Cloud Fallback: OpenRouter"]
+        Profile["👤 Owner Identity Store<br/>Dileep Bommali (Boss Mode)"]
+        LLM["⚡ Groq LPU (openai/gpt-oss-120b)<br/>~500 tok/sec • Sub-Second Latency<br/>Cloud Fallback: OpenRouter"]
         Profile --> LLM
     end
 
@@ -165,10 +165,10 @@ graph LR
         Tools["⚙️ Safe Execution Engine<br/>• get_current_time()<br/>• calculate() [AST Math]<br/>• placement_stats()"]
     end
 
-    subgraph S5["5. SPEECH OUTPUT"]
-        TTS["🗣️ Neural & OS TTS<br/>piper-tts (WAV synthesis)<br/>Windows SAPI (Base64 UTF-8)"]
-        Speaker["🔈 Speaker / Headset Playback<br/>Realtek / sounddevice"]
-        TTS --> Speaker
+    subgraph S5["5. SPEECH & AVATAR"]
+        TTS["🎙️ ElevenLabs Daniel Voice<br/>Studio MP3 Stream (onwK4e9ZLuTAKqWW03F9)"]
+        Avatar["🤖 3D Cybernetic Humanoid Face<br/>Obsidian Pupils • Calibrated 1.2 Emissive<br/>WebAudio FFT Jaw Lip-Sync"]
+        TTS --> Avatar
     end
 
     Gain ==>|"16-bit PCM WAV"| Whisper
@@ -185,26 +185,24 @@ graph LR
 | Component | Technology | Technical Architecture & Implementation |
 | :--- | :--- | :--- |
 | **1. Microphone Capture** | `sounddevice` + `scipy.signal` | Records at native device sampling rates (44.1 kHz / 48 kHz, stereo) to eliminate PortAudio driver downsampling bugs. Automatically downmixes stereo to mono and resamples to 16,000 Hz using `scipy.signal.resample`. Features an **80x Dynamic Auto-Gain Normalizer** that amplifies faint headset signals (`peak: 11` boosted to `899+`) so quiet speech is transcribed with 100% precision. |
-| **2. Speech to Text (STT)** | `faster-whisper` (int8 on CPU) | High-speed CTranslate2 Whisper model with Voice Activity Detection (`vad_filter=True`). Includes a proprietary **2-pass fallback** that catches short phrases (e.g., *"Hi"*, *"What's my name?"*) if aggressive VAD thresholds filter them. |
-| **3. Autonomous Reasoning** | `Ollama` + `LLaMA 3.2` / `OpenRouter` | Decides whether to reply conversationally or trigger specialized tools. Runs locally via Ollama daemon (`127.0.0.1:11434`), with automated fallback to OpenRouter's LLaMA 3.2 cloud endpoints. |
+| **2. Speech to Text (STT)** | `faster-whisper` / Web Speech | High-speed Whisper model with Voice Activity Detection (`vad_filter=True`). Includes a proprietary **2-pass fallback** that catches short phrases (e.g., *"Hi"*, *"What's my name?"*) if aggressive VAD thresholds filter them. |
+| **3. Autonomous Reasoning** | `Groq LPU` (`openai/gpt-oss-120b`) / `OpenRouter` | Frontier 120-Billion parameter reasoning core executing on Groq LPUs at over 500 tokens/sec. Replaced local Ollama daemon to ensure zero cloud timeouts on Render and Vercel. |
 | **4. Safe Tool Calling** | Python AST Evaluator | Safe mathematical AST parser (`ast.parse`) that replaces vulnerable `eval()`, preventing code injection while supporting arithmetic, powers, and modulus. Includes local time tools and placement benchmark query dispatchers. |
-| **5. Text to Speech (TTS)** | `piper-tts` + Windows SAPI | Low-latency local neural synthesis with an automated Windows SAPI fallback using UTF-8 Base64 script injection to safely pronounce words containing apostrophes, quotes, and Telugu/Indian names without PowerShell parsing crashes. |
-| **6. User Profile Identity** | `user_profile.json` | Persistent user profile memory preserving candidate identity (**Dileep**), role, city, and assistant persona (**Pathfinder**) across sessions. |
+| **5. Studio Text to Speech (TTS)** | `ElevenLabs` (Daniel Voice) | Ultra-realistic masculine tech-lead voice (`onwK4e9ZLuTAKqWW03F9`) streaming 24 kHz MP3 audio via HTML5 `<audio>` and WebAudio AnalyserNode. |
+| **6. 3D Cybernetic Avatar** | Three.js + WebAudio FFT | Articulated humanoid jaw (`JawR_19`) driven by real ElevenLabs frequency amplitudes (<50ms lip deformation). Ocular point lights calibrated to 0.5 with 1.2 emissive intensity and defined obsidian black pupils. |
+| **7. Boss Identity Protocol** | `das_ai_system.txt` + `owner_profile.py` | Recognizes Dileep Bommali as Founder/Boss (*"Hi Boss, I am your DAS Agent!"*), while presenting strict placement coaching and owner privacy shielding to general visitors. |
 
-### 🚀 Running the Local Voice Agent
+### 🚀 Running the Voice Agent
 
-#### 1. Install Dependencies
+#### 1. Configure Environment (`backend/.env`)
 ```bash
-pip install faster-whisper sounddevice scipy ollama piper-tts python-dotenv
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=openai/gpt-oss-120b
+ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+ELEVENLABS_VOICE_ID=onwK4e9ZLuTAKqWW03F9
 ```
 
-#### 2. Optional: Pull Local LLaMA 3.2 Model
-```bash
-ollama pull llama3.2
-```
-*(Note: If Ollama is not installed or model is downloading, the agent automatically falls back to OpenRouter cloud using the `OPENROUTER_API_KEY` in `.env`)*.
-
-#### 3. Launch Voice Agent
+#### 2. Launch Voice Agent
 ```bash
 python scripts/complete_voice_agent.py
 ```

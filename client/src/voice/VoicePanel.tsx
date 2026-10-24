@@ -415,9 +415,9 @@ export const VoicePanel: React.FC<VoicePanelProps> = ({
               spokenText={currentSentence}
               isSpeaking={state === "speaking"}
               audioAnalyser={audioAnalyser}
-              width={340}
-              height={380}
-              className="w-full max-w-[360px] max-h-[44vh] drop-shadow-[0_15px_45px_rgba(212,185,150,0.25)]"
+              width={420}
+              height={460}
+              className="w-full max-w-[440px] max-h-[58vh] drop-shadow-[0_15px_45px_rgba(212,185,150,0.25)]"
             />
           </div>
 

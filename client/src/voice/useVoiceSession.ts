@@ -33,7 +33,11 @@ export interface UseVoiceSessionOptions {
 
 export function getVoiceBackendUrls() {
   if (typeof window === "undefined") {
-    return { wsUrl: "ws://127.0.0.1:8000/ws/voice", apiUrl: "http://127.0.0.1:8000/api/voice/chat" };
+    return {
+      wsUrl: "ws://127.0.0.1:8000/ws/voice",
+      apiUrl: "http://127.0.0.1:8000/api/voice/chat",
+      ttsUrl: "http://127.0.0.1:8000/api/voice/tts",
+    };
   }
   const isLocal =
     window.location.hostname === "localhost" ||
@@ -42,6 +46,7 @@ export function getVoiceBackendUrls() {
     return {
       wsUrl: "ws://127.0.0.1:8000/ws/voice",
       apiUrl: "http://127.0.0.1:8000/api/voice/chat",
+      ttsUrl: "http://127.0.0.1:8000/api/voice/tts",
     };
   }
   // Production / Vercel cloud environment -> directly target Render Cloud API
@@ -49,6 +54,7 @@ export function getVoiceBackendUrls() {
   return {
     wsUrl: `wss://${renderHost}/ws/voice`,
     apiUrl: `https://${renderHost}/api/voice/chat`,
+    ttsUrl: `https://${renderHost}/api/voice/tts`,
   };
 }
 
@@ -95,12 +101,46 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
   const silenceTimerRef = useRef<any>(null);
   const isListeningRef = useRef<boolean>(false);
 
+  // Dedicated WebAudio Pipeline for ElevenLabs stream analysis and Avatar Lip-Sync
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const activeAudioElRef = useRef<HTMLAudioElement | null>(null);
+  const isCancelledRef = useRef<boolean>(false);
+
+  const getOrCreateAudioPipeline = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    if (!audioCtxRef.current) {
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 256;
+          analyser.smoothingTimeConstant = 0.2;
+          analyser.connect(ctx.destination);
+          audioCtxRef.current = ctx;
+          analyserRef.current = analyser;
+        }
+      } catch (e) {
+        console.warn("[useVoiceSession] AudioContext init defer notice:", e);
+      }
+    }
+    if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume().catch(() => {});
+    }
+    return { ctx: audioCtxRef.current, analyser: analyserRef.current };
+  }, []);
+
   /**
    * Browser SpeechSynthesis fallback for sentence-by-sentence audio
    * Hardened against Chromium V8 garbage collection bugs and queue stalls.
    */
+  /**
+   * Sentence-by-sentence audio playback using ElevenLabs Daniel voice stream
+   * Plays via HTML5 <audio> element connected to WebAudio AnalyserNode for lip-sync.
+   */
   const speakSentences = useCallback((sentences: string[]) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+    if (typeof window === "undefined") {
       setState("idle");
       return;
     }
@@ -114,94 +154,165 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
       return;
     }
 
-    // Cancel previous speech and resume in case Chrome paused
-    try {
-      window.speechSynthesis.cancel();
-    } catch {}
-    try {
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
-    } catch {}
+    // Stop previous audio playback immediately
+    isCancelledRef.current = false;
+    if (activeAudioElRef.current) {
+      try {
+        activeAudioElRef.current.pause();
+        activeAudioElRef.current.currentTime = 0;
+        activeAudioElRef.current.src = "";
+      } catch {}
+      activeAudioElRef.current = null;
+    }
+
+    if ("speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
 
     setState("speaking");
     let idx = 0;
 
-    const playNext = () => {
-      if (idx >= cleanSentences.length) {
-        activeUtterancesRef.current = [];
-        setState("idle");
+    const playNext = async () => {
+      if (isCancelledRef.current || idx >= cleanSentences.length) {
+        if (!isCancelledRef.current) setState("idle");
+        activeAudioElRef.current = null;
         return;
       }
 
       const text = cleanSentences[idx++];
       setCurrentSentence(text);
 
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = speechRateRef.current || 1.0;
-      utter.pitch = 0.95;
-      utter.volume = 1.0;
-
+      const pipeline = getOrCreateAudioPipeline();
+      const { ttsUrl } = getVoiceBackendUrls();
       const isTe = languageRef.current === "te" || /[\u0C00-\u0C7F]/.test(text);
-      if (isTe) {
-        utter.lang = "te-IN";
-      } else {
-        utter.lang = "en-US";
+      const langParam = isTe ? "te-IN" : "en-US";
+
+      let playedViaElevenLabs = false;
+
+      // 1. PRIMARY: ElevenLabs Daniel MP3 Stream through HTML5 <audio> + WebAudio Analyser
+      try {
+        const resp = await fetch(ttsUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, language: langParam }),
+        });
+
+        if (resp.ok && !isCancelledRef.current) {
+          const contentType = resp.headers.get("content-type") || "";
+          if (contentType.includes("audio") || resp.status === 200) {
+            const blob = await resp.blob();
+            if (blob.size > 200) {
+              const audioUrl = URL.createObjectURL(blob);
+              const audio = new Audio();
+              audio.crossOrigin = "anonymous";
+              audio.src = audioUrl;
+
+              if (pipeline?.ctx && pipeline?.analyser) {
+                try {
+                  const source = pipeline.ctx.createMediaElementSource(audio);
+                  source.connect(pipeline.analyser);
+                } catch (sourceErr) {
+                  // MediaElementAudioSource already bound
+                }
+              }
+
+              activeAudioElRef.current = audio;
+
+              audio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+                if (!isCancelledRef.current) {
+                  playNext();
+                }
+              };
+
+              audio.onerror = () => {
+                URL.revokeObjectURL(audioUrl);
+                if (!isCancelledRef.current) {
+                  playNext();
+                }
+              };
+
+              await audio.play();
+              playedViaElevenLabs = true;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[useVoiceSession] ElevenLabs TTS streaming notice:", e);
       }
 
-      const voices = window.speechSynthesis.getVoices();
-      if (isTe) {
-        const teluguVoice = voices.find((v) => v.lang.includes("te") || v.lang.includes("IN"));
-        if (teluguVoice) utter.voice = teluguVoice;
-      } else {
+      if (playedViaElevenLabs || isCancelledRef.current) {
+        return;
+      }
+
+      // 2. FALLBACK (Only if ElevenLabs endpoint is unreachable / offline)
+      if ("speechSynthesis" in window) {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = speechRateRef.current || 1.0;
+        utter.pitch = 0.95;
+        utter.volume = 1.0;
+        utter.lang = isTe ? "te-IN" : "en-US";
+
+        const voices = window.speechSynthesis.getVoices();
         const maleVoice = voices.find(
           (v) =>
             (v.name.includes("Guy") ||
               v.name.includes("David") ||
-              v.name.includes("Prabhat") ||
-              v.name.includes("Christopher") ||
+              v.name.includes("Daniel") ||
               v.name.includes("Natural") ||
               v.name.includes("Male")) &&
             (v.lang.startsWith("en") || v.lang.includes("IN"))
         ) || voices.find((v) => v.lang.startsWith("en"));
         if (maleVoice) utter.voice = maleVoice;
-      }
 
-      // Retain utterance in ref so V8 does not GC it
-      activeUtterancesRef.current = [utter];
+        activeUtterancesRef.current = [utter];
+        utter.onend = () => {
+          if (!isCancelledRef.current) playNext();
+        };
+        utter.onerror = () => {
+          if (!isCancelledRef.current) playNext();
+        };
 
-      utter.onend = () => {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+        window.speechSynthesis.speak(utter);
+      } else {
         playNext();
-      };
-      utter.onerror = (e) => {
-        console.warn("[useVoiceSession] Utterance error:", e);
-        playNext();
-      };
-
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
       }
-      window.speechSynthesis.speak(utter);
     };
 
-    // 40ms micro-delay prevents Chromium cancel-and-speak conflict
     setTimeout(() => {
       playNext();
-    }, 40);
-  }, []);
+    }, 30);
+  }, [getOrCreateAudioPipeline]);
 
   /**
    * Central Stop Command
    * Stops audio, mic capture, and speech synthesis within <100ms.
    */
   const stopAll = useCallback(() => {
-    // 1. Stop PCM audio queue player
+    isCancelledRef.current = true;
+    // 1. Stop HTML5 audio playback immediately
+    if (activeAudioElRef.current) {
+      try {
+        activeAudioElRef.current.pause();
+        activeAudioElRef.current.currentTime = 0;
+        activeAudioElRef.current.src = "";
+      } catch {}
+      activeAudioElRef.current = null;
+    }
+    // 2. Stop PCM audio queue player
     if (audioPlayerRef.current) {
       audioPlayerRef.current.stopAll();
     }
-    // 2. Stop browser speech synthesis
+    // 3. Stop browser speech synthesis
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
     }
     activeUtterancesRef.current = [];
 
@@ -236,6 +347,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
   // Browser Audio Unlock on first user interaction
   useEffect(() => {
     const handleFirstInteraction = () => {
+      getOrCreateAudioPipeline();
       if (audioPlayerRef.current) {
         audioPlayerRef.current.resumeContext().catch(() => {});
       }
@@ -941,7 +1053,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
     isMicActive,
     feedbackHint,
     lastAction,
-    audioAnalyser: audioPlayerRef.current?.analyserNode || null,
+    audioAnalyser: analyserRef.current,
     sendMessage,
     appendAssistantMessage: (display: string, spoken?: string) => {
       setMessages((prev) => [

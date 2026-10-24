@@ -21,7 +21,6 @@ from dotenv import load_dotenv
 logger = logging.getLogger("pathfinder.voice")
 
 from backend.memory_engine import recall_student_memory, store_student_exchange
-from backend.ollama_provider import check_and_discover_ollama, stream_ollama_tokens, get_ollama_config
 from backend.owner_profile import is_owner_user, get_context_for_user, OWNER_PUBLIC_BIO, OWNER_PROFILE
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -1055,36 +1054,7 @@ async def stream_voice_tokens(
                     pass
                 return
         except Exception as e:
-            logger.warning(f"[Voice Stream] Live Gemini stream failed: {e}. Attempting Ollama fallback.")
-
-    # 3. Provider 2: Ollama as backup (Supports Hosted https://ollama.com and Local)
-    ollama_info = check_and_discover_ollama()
-    if ollama_info.get("available"):
-        try:
-            ollama_model = ollama_info.get("model", "llama3.2")
-            provider_signaled = False
-            async for token in stream_ollama_tokens(
-                prompt=message,
-                sys_instruction=sys_prompt,
-                history=history,
-                timeout_sec=12.0
-            ):
-                if token:
-                    if not provider_signaled:
-                        provider_signaled = True
-                        yield f"[[PROVIDER:Ollama ({ollama_model})]]\n"
-                    full_response_tokens.append(token)
-                    yield token
-                    await asyncio.sleep(0.005)
-
-            if provider_signaled:
-                try:
-                    asyncio.create_task(store_student_exchange(student_id, message, "".join(full_response_tokens)))
-                except Exception:
-                    pass
-                return
-        except Exception as oe:
-            logger.warning(f"[Voice Stream] Ollama backup stream failed: {oe}. Falling back to domain brain.")
+            logger.warning(f"[Voice Stream] Live Gemini stream failed: {e}. Falling back to domain brain.")
 
     # 4. Provider 3: Deterministic Grounded Domain Fallback
     fallback_full = generate_local_voice_reply(

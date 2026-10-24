@@ -54,10 +54,7 @@ try:
 except ImportError:
     WhisperModel = None
 
-try:
-    import ollama
-except ImportError:
-    ollama = None
+# Ollama removed - Groq LPU and ElevenLabs are primary cloud engines
 
 
 # ==============================================================================
@@ -484,19 +481,34 @@ Response:"""
 
     print("\n[Step 4 • LLM Reasoning] Analyzing request...")
 
-    # 1. Try local Ollama if available
-    if ollama:
+    # 1. Try Groq LPU (Ultra-fast openai/gpt-oss-120b)
+    groq_key = os.getenv("GROQ_API_KEY", "").strip()
+    groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
+    if groq_key:
         try:
-            response = ollama.chat(
-                model="llama3.2",
-                messages=[{"role": "user", "content": prompt}],
-                options={"temperature": 0.2}
+            import urllib.request
+            payload = json.dumps({
+                "model": groq_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.2,
+                "max_tokens": 500
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                "https://api.groq.com/openai/v1/chat/completions",
+                data=payload,
+                headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                method="POST"
             )
-            content = response["message"]["content"].strip()
-            print(f"[Step 4 • LLM Reasoning] Output (Local Ollama): {content}")
-            return content
+            with urllib.request.urlopen(req, timeout=8.0) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                choices = data.get("choices", [])
+                if choices:
+                    content = choices[0].get("message", {}).get("content", "").strip()
+                    if content:
+                        print(f"[Step 4 • LLM Reasoning] Output (Groq LPU {groq_model}): {content}")
+                        return content
         except Exception as exc:
-            print(f"[Step 4 • LLM Reasoning] Local Ollama not available ({exc}). Falling back to cloud...")
+            print(f"[Step 4 • LLM Reasoning] Groq notice ({exc}). Trying OpenRouter...")
 
     # 2. Cloud Fallback using OpenRouter API Key configured in .env
     openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
