@@ -144,8 +144,18 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, []);
 
+  const activeAudioElRef = useRef<HTMLAudioElement | null>(null);
+
   // Safe Speech Cancellation
   const cancelSpeech = useCallback(() => {
+    if (activeAudioElRef.current) {
+      try {
+        activeAudioElRef.current.pause();
+        activeAudioElRef.current.currentTime = 0;
+        activeAudioElRef.current.src = "";
+      } catch {}
+      activeAudioElRef.current = null;
+    }
     if (synthRef.current) {
       synthRef.current.cancel();
     }
@@ -157,10 +167,10 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, [mode]);
 
-  // Clean Natural Text-to-Speech with Sentence Chunking (prevents Chrome 15s cutoff)
+  // Clean Natural Text-to-Speech with Sentence Chunking & ElevenLabs TTS
   const speakNatural = useCallback(
     (textToSpeak: string, lang = "en") => {
-      if (isMuted || !textToSpeak || typeof window === "undefined" || !("speechSynthesis" in window)) {
+      if (isMuted || !textToSpeak || typeof window === "undefined") {
         return;
       }
 
@@ -179,52 +189,95 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
       setMode("speaking");
       setCurrentSpokenText(clean);
 
-      // Break into 1-2 sentence chunks so Chrome Web Speech never freezes or times out
-      const sentences = clean.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g) || [clean];
-      const voices = window.speechSynthesis.getVoices();
+      const fallbackSpeechSynthesis = () => {
+        if (!("speechSynthesis" in window)) {
+          isSpeakingRef.current = false;
+          setMode("idle");
+          return;
+        }
+        const sentences = clean.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g) || [clean];
+        const voices = window.speechSynthesis.getVoices();
 
-      // Find preferred natural voice
-      let selectedVoice: SpeechSynthesisVoice | null = null;
-      if (lang === "te") {
-        selectedVoice = voices.find((v) => v.lang.startsWith("te")) || null;
-      } else if (lang === "hi") {
-        selectedVoice = voices.find((v) => v.lang.startsWith("hi")) || null;
-      }
-      if (!selectedVoice) {
-        selectedVoice =
-          voices.find(
-            (v) =>
-              (v.name.includes("Natural") ||
-                v.name.includes("Guy") ||
-                v.name.includes("Google") ||
-                v.name.includes("David") ||
-                v.name.includes("Prabhat")) &&
-              v.lang.startsWith("en")
-          ) || voices.find((v) => v.lang.startsWith("en")) || null;
-      }
-
-      sentences.forEach((chunk, index) => {
-        const trimmed = chunk.trim();
-        if (!trimmed) return;
-
-        const utter = new SpeechSynthesisUtterance(trimmed);
-        utter.rate = 1.0;
-        utter.pitch = 0.98;
-        if (selectedVoice) utter.voice = selectedVoice;
-
-        if (index === sentences.length - 1) {
-          utter.onend = () => {
-            isSpeakingRef.current = false;
-            setMode("idle");
-          };
-          utter.onerror = () => {
-            isSpeakingRef.current = false;
-            setMode("idle");
-          };
+        let selectedVoice: SpeechSynthesisVoice | null = null;
+        if (lang === "te") {
+          selectedVoice = voices.find((v) => v.lang.startsWith("te")) || null;
+        } else if (lang === "hi") {
+          selectedVoice = voices.find((v) => v.lang.startsWith("hi")) || null;
+        }
+        if (!selectedVoice) {
+          selectedVoice =
+            voices.find(
+              (v) =>
+                (v.name.includes("Natural") ||
+                  v.name.includes("Guy") ||
+                  v.name.includes("Google") ||
+                  v.name.includes("David") ||
+                  v.name.includes("Prabhat")) &&
+                v.lang.startsWith("en")
+            ) || voices.find((v) => v.lang.startsWith("en")) || null;
         }
 
-        window.speechSynthesis.speak(utter);
-      });
+        sentences.forEach((chunk, index) => {
+          const trimmed = chunk.trim();
+          if (!trimmed) return;
+
+          const utter = new SpeechSynthesisUtterance(trimmed);
+          utter.rate = 1.0;
+          utter.pitch = 0.98;
+          if (selectedVoice) utter.voice = selectedVoice;
+
+          if (index === sentences.length - 1) {
+            utter.onend = () => {
+              isSpeakingRef.current = false;
+              setMode("idle");
+            };
+            utter.onerror = () => {
+              isSpeakingRef.current = false;
+              setMode("idle");
+            };
+          }
+
+          window.speechSynthesis.speak(utter);
+        });
+      };
+
+      // 1. PRIMARY: ElevenLabs Daniel voice stream from backend
+      const apiBase = getApiBase();
+      const langParam = lang === "te" || /[\u0C00-\u0C7F]/.test(clean) ? "te-IN" : "en-US";
+      fetch(`${apiBase}/api/voice/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: clean, language: langParam }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("TTS endpoint returned " + res.status);
+          return res.blob();
+        })
+        .then((blob) => {
+          if (!isSpeakingRef.current) return;
+          const blobUrl = URL.createObjectURL(blob);
+          const audio = new Audio(blobUrl);
+          activeAudioElRef.current = audio;
+
+          audio.onended = () => {
+            URL.revokeObjectURL(blobUrl);
+            activeAudioElRef.current = null;
+            isSpeakingRef.current = false;
+            setMode("idle");
+          };
+          audio.onerror = () => {
+            URL.revokeObjectURL(blobUrl);
+            activeAudioElRef.current = null;
+            fallbackSpeechSynthesis();
+          };
+
+          return audio.play().catch(() => {
+            fallbackSpeechSynthesis();
+          });
+        })
+        .catch(() => {
+          fallbackSpeechSynthesis();
+        });
     },
     [isMuted, cancelSpeech]
   );

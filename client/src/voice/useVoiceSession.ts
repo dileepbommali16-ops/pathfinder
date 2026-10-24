@@ -39,6 +39,17 @@ export function getVoiceBackendUrls() {
       ttsUrl: "http://127.0.0.1:8000/api/voice/tts",
     };
   }
+  const envUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+  if (envUrl) {
+    const cleanUrl = envUrl.replace(/\/+$/, "");
+    const isHttps = cleanUrl.startsWith("https://");
+    const host = cleanUrl.replace(/^https?:\/\//, "");
+    return {
+      wsUrl: `${isHttps ? "wss:" : "ws:"}//${host}/ws/voice`,
+      apiUrl: `${cleanUrl}/api/voice/chat`,
+      ttsUrl: `${cleanUrl}/api/voice/tts`,
+    };
+  }
   const isLocal =
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1";
@@ -50,7 +61,7 @@ export function getVoiceBackendUrls() {
     };
   }
   // Production / Vercel cloud environment -> directly target Render Cloud API
-  const renderHost = "pathfinder-backend-klrp.onrender.com";
+  const renderHost = "pathfinder-1-xhme.onrender.com";
   return {
     wsUrl: `wss://${renderHost}/ws/voice`,
     apiUrl: `https://${renderHost}/api/voice/chat`,
@@ -102,6 +113,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
   const isListeningRef = useRef<boolean>(false);
 
   // Dedicated WebAudio Pipeline for ElevenLabs stream analysis and Avatar Lip-Sync
+  const [audioAnalyser, setAudioAnalyser] = useState<AnalyserNode | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const activeAudioElRef = useRef<HTMLAudioElement | null>(null);
@@ -121,6 +133,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
           analyser.connect(ctx.destination);
           audioCtxRef.current = ctx;
           analyserRef.current = analyser;
+          setAudioAnalyser(analyser);
         }
       } catch (e) {
         console.warn("[useVoiceSession] AudioContext init defer notice:", e);
@@ -131,6 +144,24 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
     }
     return { ctx: audioCtxRef.current, analyser: analyserRef.current };
   }, []);
+
+  // Proactively unlock WebAudio on first user interaction (click, keydown, touch)
+  useEffect(() => {
+    const unlock = () => {
+      const pipeline = getOrCreateAudioPipeline();
+      if (pipeline?.ctx && pipeline.ctx.state === "suspended") {
+        pipeline.ctx.resume().catch(() => {});
+      }
+    };
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    window.addEventListener("touchstart", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+      window.removeEventListener("touchstart", unlock);
+    };
+  }, [getOrCreateAudioPipeline]);
 
   /**
    * Browser SpeechSynthesis fallback for sentence-by-sentence audio
@@ -206,27 +237,54 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
             const arrayBuffer = await resp.arrayBuffer();
             if (arrayBuffer.byteLength > 200 && pipeline?.ctx && pipeline?.analyser) {
               if (pipeline.ctx.state === "suspended") {
-                await pipeline.ctx.resume();
+                await pipeline.ctx.resume().catch(() => {});
               }
-              const audioBuffer = await pipeline.ctx.decodeAudioData(arrayBuffer.slice(0));
-              const sourceNode = pipeline.ctx.createBufferSource();
-              sourceNode.buffer = audioBuffer;
-              sourceNode.connect(pipeline.analyser);
-              // pipeline.analyser is already connected to destination
+              if (pipeline.ctx.state === "running") {
+                const audioBuffer = await pipeline.ctx.decodeAudioData(arrayBuffer.slice(0));
+                const sourceNode = pipeline.ctx.createBufferSource();
+                sourceNode.buffer = audioBuffer;
+                sourceNode.connect(pipeline.analyser);
+                // pipeline.analyser is already connected to destination
 
-              activeBufferSourceRef.current = sourceNode;
+                activeBufferSourceRef.current = sourceNode;
 
-              sourceNode.onended = () => {
-                if (activeBufferSourceRef.current === sourceNode) {
-                  activeBufferSourceRef.current = null;
+                sourceNode.onended = () => {
+                  if (activeBufferSourceRef.current === sourceNode) {
+                    activeBufferSourceRef.current = null;
+                  }
+                  if (!isCancelledRef.current) {
+                    playNext();
+                  }
+                };
+
+                sourceNode.start(0);
+                playedViaElevenLabs = true;
+              } else {
+                // If WebAudio is still suspended due to browser autoplay restriction (prior to user gesture),
+                // play via HTML5 Audio element
+                try {
+                  const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
+                  const blobUrl = URL.createObjectURL(blob);
+                  const audioEl = new Audio(blobUrl);
+                  activeAudioElRef.current = audioEl;
+
+                  audioEl.onended = () => {
+                    URL.revokeObjectURL(blobUrl);
+                    activeAudioElRef.current = null;
+                    if (!isCancelledRef.current) playNext();
+                  };
+                  audioEl.onerror = () => {
+                    URL.revokeObjectURL(blobUrl);
+                    activeAudioElRef.current = null;
+                    if (!isCancelledRef.current) playNext();
+                  };
+
+                  await audioEl.play();
+                  playedViaElevenLabs = true;
+                } catch {
+                  // Autoplay completely blocked; fall through to speech synthesis
                 }
-                if (!isCancelledRef.current) {
-                  playNext();
-                }
-              };
-
-              sourceNode.start(0);
-              playedViaElevenLabs = true;
+              }
             }
           }
         }
@@ -1049,7 +1107,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
     isMicActive,
     feedbackHint,
     lastAction,
-    audioAnalyser: analyserRef.current,
+    audioAnalyser: audioAnalyser || analyserRef.current,
     sendMessage,
     appendAssistantMessage: (display: string, spoken?: string) => {
       setMessages((prev) => [

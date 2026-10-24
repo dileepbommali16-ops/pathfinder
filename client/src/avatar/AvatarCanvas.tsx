@@ -145,6 +145,9 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
   const isSpeakingRef = useRef<boolean>(isSpeaking);
   isSpeakingRef.current = isSpeaking;
 
+  const audioAnalyserRef = useRef<AnalyserNode | null>(audioAnalyser);
+  audioAnalyserRef.current = audioAnalyser;
+
   const stateRef = useRef<AvatarState>(state);
   stateRef.current = state;
 
@@ -434,7 +437,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       // Driven by ElevenLabs audio stream frequency amplitudes through AnalyserNode
       // ======================================================================
       let audioVolume = 0;
-      const activeAnalyser = audioAnalyser || internalAnalyserRef.current;
+      const activeAnalyser = audioAnalyserRef.current || internalAnalyserRef.current;
 
       if (activeAnalyser) {
         activeAnalyser.getByteFrequencyData(freqData);
@@ -446,17 +449,23 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
         audioVolume = sum / (26 * 255);
       } else if (isSpeakingRef.current) {
         const syllableCadence = Math.sin(elapsedTime * 14.0) * Math.cos(elapsedTime * 7.5);
-        audioVolume = Math.max(0.15, Math.abs(syllableCadence) * 0.52);
+        audioVolume = Math.max(0.18, Math.abs(syllableCadence) * 0.55);
       } else {
         audioVolume = 0;
       }
 
       // Articulate Mechanical Jaw (Jaw.R_19) with natural elasticity
       if (jawNode) {
-        const jawDrop = Math.min(1.0, audioVolume * 2.4);
-        jawNode.rotation.x = -jawDrop * 0.11;
-        jawNode.position.y = initialJawY - jawDrop * 0.012;
-        jawNode.position.z = initialJawZ + jawDrop * 0.004;
+        // If speaking but audio volume is small, provide lively syllable cadence
+        const cadenceVolume = isSpeakingRef.current
+          ? Math.max(0.22, Math.abs(Math.sin(elapsedTime * 13.5)) * 0.65)
+          : 0;
+        const effectiveVolume = Math.max(audioVolume, cadenceVolume);
+        const jawDrop = Math.min(1.0, effectiveVolume * 2.2);
+
+        jawNode.rotation.x = -jawDrop * 0.22;
+        jawNode.position.y = initialJawY - jawDrop * 0.028;
+        jawNode.position.z = initialJawZ + jawDrop * 0.008;
       }
 
       renderer.render(scene, camera);
@@ -485,7 +494,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
         container.removeChild(renderer.domElement);
       }
     };
-  }, [width, height, audioAnalyser]);
+  }, [width, height]);
 
   return (
     <div className={`relative w-full h-full min-h-[460px] flex flex-col items-center justify-center rounded-2xl overflow-hidden bg-[#000000] border border-sky-950/30 select-none shadow-[0_0_50px_rgba(2,132,199,0.15)] ${className}`}>
