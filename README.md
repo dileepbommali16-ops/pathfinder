@@ -123,15 +123,40 @@ Pathfinder 2.0 is built on a decoupled, production-grade full stack architecture
 - **Website Tour & Analogy Guide**: Interactive walkthrough of all 10 modules with voice commands (*"next"*, *"stop"*, *"explain again"*), plus simple non-technical analogies for friends and parents.
 - **Deep Resume Analysis**: PDF/DOCX/TXT extraction with structured Gemini ATS scoring, before/after Google X-Y-Z bullet rewrites, and prioritized keyword gap analysis.
 
-### 🧠 Autonomous Voice Agent Brain & Visual Grounding (NEW):
-- **Real-Time Screen Watcher (`useScreenWatcher.ts`)**: Continuous DOM observer via `IntersectionObserver` on `[data-das-id]` attributes and 35-second idle/confusion tracker. Whenever the candidate asks *"Please explain this"*, the agent grounds its answer directly in the visible component without asking for clarification.
-- **Cross-Session Memory (`memory.ts`)**: Persistent student session memory remembering previous topics discussed, visit timestamps, and providing proactive greetings (*"Welcome back! Yesterday we were discussing..."*).
-- **Autonomous Action Dispatcher (`dasActions.ts`)**: Secure allowlist executing `navigate_to`, `highlight` (with `.das-highlight` pulse), `scroll_to`, and `open_panel`.
-- **In-Memory Website Knowledge (`backend/knowledge/`)**: 8 structured markdown guides (overview, pages guide, AI/ML explanation, data disclosure, FAQs) feeding the agent 23,320 characters of verified ground-truth context with zero hallucinations.
-- **Resilient Multi-Model Failover**: Calls Gemini 2.0 Flash (`gemini-flash-latest`) via direct REST API with automatic fallback to `gemini-3.5-flash`, plus offline client brain recovery.
-- **REST & Status Endpoints**:
-  - `POST /api/agent/reply` - Real-time conversational agent reply with spoken speech, markdown display, and UI actions.
-  - `GET /api/agent/status` - Live diagnostic endpoint exposing model status and loaded knowledge file count.
+### 🧠 Autonomous Voice Agent Brain, Tool Calling Loop & Visual Grounding:
+- **Autonomous Multi-Step Gemini Tool Loop (`backend/agent/loop.py` & `backend/agent/tools.py`)**:
+  - Direct Gemini REST API tool calling (`ANY` mode) executing up to 4 iterations with parallel asynchronous worker execution and thought signature preservation.
+  - **11 Grounded Specialized Tools**:
+    1. `get_student_profile`: Accesses authenticated SQLite student profile (CGPA, active backlogs, skills, target role) with privacy filters (emails and database IDs stripped).
+    2. `get_readiness_score`: Live ML audit engine calculating calibrated placement probability %, score breakdowns, strengths, and priority skill gaps.
+    3. `query_cohort_stats`: Historical placement data filtered by year, branch, gender, and skill.
+    4. `compare_branches`: Branch placement statistics, average/highest CTC packages, and top in-demand skills.
+    5. `get_highest_package_branch`: Placement rankings of branches ordered by highest CTC package.
+    6. `get_skill_impact`: Benchmarked placement probability lift for individual technical skills.
+    7. `get_role_requirements`: Role skill benchmarks (required, existing, and missing competencies).
+    8. `list_projects`: Filterable catalog of 28 production project blueprints.
+    9. `get_project`: Detailed architecture blueprints, tech stack analysis, and Round 2 viva defense points.
+    10. `get_page_guide`: Real-time page purpose and registered section descriptions.
+    11. `respond`: Terminal action tool delivering natural spoken speech (no symbols/markdown), rich markdown for the chat HUD, follow-up suggestions, and interactive UI actions.
+- **Dynamic Site Map & Safe Action Dispatcher (`backend/agent/site_map.py` & `client/src/voice/dasActions.ts`)**:
+  - Strict allowlist of dashboard pages (`overview`, `action`, `skills`, `branches`, `analytics`, `coach`, `profile`, `resume`, `projects`, `defense`, `roles`, `missions`).
+  - DOM section targeting (`[data-das-id]`) with centered smooth scrolling and 2.5-second spotlight outline pulse (`.das-highlight`).
+  - Safe profile update proposals (`propose_profile_change`) with automatic HTML sanitization and student confirmation modal enforcement.
+- **Real-Time Screen Watcher (`useScreenWatcher.ts`) & Cross-Session Memory (`memory.ts`)**:
+  - Continuous DOM observer via `IntersectionObserver` on `[data-das-id]` attributes with 35-second idle/confusion tracker.
+  - Persistent student memory caching visit timestamps, last discussed technical topics, and proactive conversational greetings.
+- **In-Memory Website Knowledge Base (`backend/knowledge/`)**:
+  - 8 structured markdown guides (overview, pages guide, AI/ML explanation, data disclosure, FAQs, project guides) feeding 24,000 characters of verified ground-truth context with zero hallucinations.
+- **Dual Gemini Models & Multi-Model Resilience**:
+  - **Primary Model**: `gemini-3.1-flash-lite` (Sub-second response, ultra-low latency inference).
+  - **Fallback Model**: `gemini-3.5-flash` (Resilient automatic failover for high-demand spikes).
+  - **Offline Client Brain**: Client-side deterministic brain fallback (`client_brain.ts`) ensuring 100% voice continuity even if network drops.
+- **FastAPI Endpoints (`backend/agent/router.py`)**:
+  - `POST /api/agent/chat` - Full autonomous agent conversation endpoint with sliding window rate limiting (40 req/min), daily budget control, and session tutor state.
+  - `GET /api/agent/tools` - Safe live diagnostics endpoint exposing registered tools, model configuration, and knowledge file metrics.
+- **Automated Verification Suites (42 Tests Passing)**:
+  - `backend/tests/test_agent_engine.py`: 16 comprehensive unit tests covering pure functions, text sanitization, speech stripping, and failovers.
+  - `backend/tests/test_agent_loop.py`: 26 comprehensive tests covering parallel tool execution, thought signatures, profile safety, and mock data tools.
 
 
 ---
