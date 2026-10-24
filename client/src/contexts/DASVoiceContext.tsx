@@ -365,53 +365,51 @@ export const DASVoiceProvider: React.FC<{ children: ReactNode }> = ({ children }
       } catch {}
 
       try {
-        let streamAssistantMsgId = "msg_" + Date.now();
-        let fullSpoken = "";
-        let fullDisplay = "";
-        let actionsList: any[] = [];
+        const history: ChatTurn[] = messages.slice(-12).map((m) => ({
+          role: m.role === "assistant" ? "model" : "user",
+          text: m.content || m.display || m.spoken || "",
+        }));
 
-        await streamAgent({
+        const reply = await askAgent({
           message: clean,
-          sessionId: sessionId,
-          pageContext: {
-            route: pageContext.route,
-            activeTab: pageContext.activeTab,
-            visibleSectionIds: pageContext.visibleSections || [],
+          getScreenPayload: () => ({
+            activeTab: pageContext.activeTab || "overview",
+            focusedWidget: "none",
+            userState: "active",
+          }),
+          history,
+          profile: profileDraft,
+        });
+
+        const assistantMsg: DASMessage = {
+          id: "msg_" + Date.now(),
+          role: "assistant",
+          content: reply.display,
+          spoken: reply.spoken,
+          display: reply.display,
+          actions: reply.actions.map((a) => ({
+            name: a.type,
+            arguments: a.type === "navigate_to" ? { page_id: a.target } : a.type === "propose_profile_change" ? { field: a.field, value: a.value } : { target: a.target },
+          })),
+          followups: reply.followups,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        };
+
+        setMessages((prev) => [...prev, assistantMsg]);
+        runActions(reply.actions, {
+          goToTab: (tab) => {
+            window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab } }));
           },
-          language,
-          mode: "agent",
-          onSpoken: (sentence) => {
-            fullSpoken += (fullSpoken ? " " : "") + sentence;
-            speakNatural(sentence);
-          },
-          onDisplay: (markdown) => {
-            fullDisplay = markdown;
-            setMessages((prev) => {
-              const existingIdx = prev.findIndex((m) => m.id === streamAssistantMsgId);
-              const updatedMsg: DASMessage = {
-                id: streamAssistantMsgId,
-                role: "assistant",
-                content: markdown,
-                spoken: fullSpoken,
-                display: markdown,
-                actions: actionsList,
-                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-              };
-              if (existingIdx >= 0) {
-                const next = [...prev];
-                next[existingIdx] = updatedMsg;
-                return next;
-              }
-              return [...prev, updatedMsg];
-            });
-          },
-          onAction: (act) => {
-            actionsList.push({ name: act.name, arguments: act.params });
-          },
-          onDone: (doneData) => {
-            recordSessionEnd(clean);
+          proposeProfileChange: (field, value) => {
+            window.dispatchEvent(new CustomEvent("das-propose-profile-change", { detail: { field, value } }));
           },
         });
+
+        recordSessionEnd(clean);
+
+        if (reply.spoken) {
+          speakNatural(reply.spoken);
+        }
       } catch (err) {
         if (err instanceof AgentRequestError && err.kind === "cancelled") return;
         console.info("[DASVoiceContext] Stream error, falling back to client brain:", err);
