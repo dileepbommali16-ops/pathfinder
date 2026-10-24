@@ -314,6 +314,7 @@ export function AIChatBox({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
+          data-agent-id="ai-chatbox-textarea"
           className="flex-1 max-h-32 resize-none min-h-9"
           rows={1}
         />
@@ -321,6 +322,7 @@ export function AIChatBox({
           type="submit"
           size="icon"
           disabled={!input.trim() || isLoading}
+          data-agent-id="ai-chatbox-send-btn"
           className="shrink-0 h-[38px] w-[38px]"
         >
           {isLoading ? (

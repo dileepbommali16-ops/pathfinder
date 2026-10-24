@@ -5,8 +5,6 @@ import { HeroMetrics } from "@/components/dashboard/HeroMetrics";
 import { SkillGapSection } from "@/components/dashboard/SkillGapSection";
 import { RoadmapVisualizer, RoadmapData } from "@/components/dashboard/RoadmapVisualizer";
 import type { Message } from "@/components/dashboard/AICoachConsole";
-import { VoicePanel } from "@/voice";
-import { getProactiveGreeting, setStudentName } from "@/voice/memory";
 import { useScreenWatcher } from "@/hooks/useScreenWatcher";
 import { CohortExplorer, CohortAnalyticsData } from "@/components/dashboard/CohortExplorer";
 import { ResumeStudio, ResumeFeedbackData } from "@/components/dashboard/ResumeStudio";
@@ -57,7 +55,7 @@ import { getTabKnowledge } from "@/lib/siteKnowledge";
 import { Footer } from "@/components/dashboard/Footer";
 import { toast } from "sonner";
 import DepthText from "@/components/dashboard/DepthText";
-import { useDASVoice } from "@/contexts/DASVoiceContext";
+import AgentLayout from "@/agent/AgentLayout";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>(() => {
@@ -70,17 +68,7 @@ export default function Home() {
     }
     return "overview";
   });
-  const { setPageContext, sendMessage } = useDASVoice();
   const { getScreenPayload } = useScreenWatcher(activeTab);
-
-  // Sync activeTab and title to global DAS voice context
-  useEffect(() => {
-    setPageContext({
-      route: "/",
-      activeTab: activeTab,
-      pageTitle: document.title,
-    });
-  }, [activeTab, setPageContext]);
 
   // Central DAS action listeners for tab navigation & modals
   useEffect(() => {
@@ -1824,14 +1812,8 @@ export default function Home() {
           )}
 
           {/* TAB 6: AI VOICE AGENT & CAREER COACH (Persistent audio across tab switches) */}
-          <div data-das-id="voice-panel" className={activeTab === "coach" ? "block space-y-4" : "hidden"}>
-            <VoicePanel
-              activeTab={activeTab}
-              onNavigateTab={(tab) => setActiveTab(tab as TabId)}
-              onOpenResumeBuilder={() => setShowOnePageResume(true)}
-              onLaunchMockInterview={handleLaunchMockInterview}
-              onUpdateProfile={(updates) => setProfile((prev) => ({ ...prev, ...updates }))}
-            />
+          <div data-das-id="voice-panel" className={activeTab === "coach" ? "block w-full h-[82vh] rounded-2xl overflow-hidden border border-indigo-900/40 shadow-2xl" : "hidden"}>
+            <AgentLayout />
           </div>
 
 

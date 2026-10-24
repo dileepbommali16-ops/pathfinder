@@ -35,7 +35,7 @@ import {
 import { Streamdown } from "streamdown";
 import { StudentProfileState } from "@/types/profile";
 import { API_BASE } from "@/lib/apiClient";
-import { AvatarCanvas } from "@/avatar/AvatarCanvas";
+import { Avatar3D } from "@/agent/Avatar3D";
 
 export interface Message {
   role: "user" | "assistant";
@@ -1642,16 +1642,11 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden min-h-0 relative">
         {/* Center Stage: ONLY the human face (55-65% height), Status Word, Live Captions, and "View Full Answer" Chip */}
         <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-0 overflow-y-auto bg-radial from-[#151726]/40 via-transparent to-transparent">
-          {/* Large Human Face Avatar (55-65% of panel height) */}
+          {/* 3D VRM Avatar Center Stage */}
           <div className="flex items-center justify-center w-full my-auto py-2">
-            <AvatarCanvas
-              state={voiceStatus}
-              spokenText={currentSpokenSentence}
-              isSpeaking={voiceStatus === "speaking"}
-              width={340}
-              height={420}
-              className="w-full max-w-[360px] max-h-[55vh] drop-shadow-[0_20px_50px_rgba(14,165,233,0.35)] border-cyan-500/30"
-            />
+            <div className="w-full max-w-[360px] h-[400px] rounded-2xl overflow-hidden shadow-2xl border border-indigo-500/30">
+              <Avatar3D modelUrl="/avatar.vrm" />
+            </div>
           </div>
 
           {/* Status Word under Face: Ready / Listening / Thinking / Speaking */}

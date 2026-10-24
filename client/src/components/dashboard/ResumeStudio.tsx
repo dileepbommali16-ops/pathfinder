@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useDASVoice } from "@/contexts/DASVoiceContext";
 import {
   FileText,
   UploadCloud,
@@ -67,7 +66,6 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
   onDownloadFeedbackPDF,
   onApplyResumeSkills,
 }) => {
-  const { sendMessage } = useDASVoice();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [rawText, setRawText] = useState("");
   const [targetCompany, setTargetCompany] = useState(TARGET_COMPANIES[0].id);
@@ -79,12 +77,6 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      // Feature 4: Trigger DAS Voice Audit Feedback
-      if (sendMessage) {
-        sendMessage(
-          `Candidate uploaded a new resume named "${file.name}". Perform an instant JARVIS-style ATS audio evaluation and give placement readiness status!`
-        );
-      }
     }
   };
 
@@ -182,6 +174,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               <textarea
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
+                data-agent-id="resume-text-input"
                 placeholder="Paste resume text or individual project bullet points here..."
                 rows={5}
                 className="w-full rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-3.5 text-xs text-[#f8fafc] outline-none transition-all placeholder:text-[#94a3b8]/60 focus:border-[#ffffff]/60 focus:ring-1 focus:ring-[#ffffff]/20"
@@ -193,6 +186,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
           <div className="mt-6 flex justify-end">
             <button
               onClick={handleTriggerAnalysis}
+              data-agent-id="analyze-resume-btn"
               disabled={isLoading || (!selectedFile && !rawText.trim())}
               className="flex items-center gap-2 rounded-xl bg-[#ffffff] px-6 py-3 text-xs font-bold text-white shadow-[0_0_25px_rgba(255, 255, 255,0.35)] transition-all hover:bg-[#9f1239] active:scale-95 disabled:opacity-50 cursor-pointer"
             >

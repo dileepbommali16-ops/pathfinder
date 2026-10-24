@@ -27,12 +27,6 @@ from backend.pdf_engine import (
 )
 from backend.cache import cache
 
-def __getattr__(name):
-    if name in ("handle_voice_turn", "generate_spoken_briefing"):
-        import backend.voice_engine as _ve
-        return getattr(_ve, name)
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 __all__ = [
     "get_placement_df",
     "get_roles",

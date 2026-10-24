@@ -208,6 +208,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
           <button
             onClick={onLogout}
+            data-agent-id="logout-btn"
+            data-agent-danger="true"
             className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#11131c] px-3 py-1.5 text-xs font-medium text-[#94a3b8] transition-all hover:border-[#9f1239]/40 hover:text-[#f8fafc] active:scale-95 shadow-sm cursor-pointer"
             title="Sign out of Pathfinder"
           >
@@ -228,6 +230,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <button
                 key={tab.id}
                 id={`tab-${tab.id}`}
+                data-agent-id={`tab-${tab.id}`}
                 onClick={() => handleSelectTab(tab.id)}
                 className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
                   isActive

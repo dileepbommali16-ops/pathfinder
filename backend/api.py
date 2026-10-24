@@ -126,7 +126,7 @@ from backend.routers.ai_router import ai_router
 from backend.routers.predictions_router import predictions_router
 from backend.routers.export_router import export_router
 from backend.routers.webhook_router import webhook_router
-from backend.das_voice_service import das_ws_router
+from backend.agent.router import agent_router
 
 # Setup application logger
 setup_logging()
@@ -265,7 +265,7 @@ app.include_router(ai_router)
 app.include_router(predictions_router)
 app.include_router(export_router)
 app.include_router(webhook_router)
-app.include_router(das_ws_router)
+app.include_router(agent_router)
 
 # Versioned API Prefix (/api/v1) for Standard API Versioning
 v1_app = FastAPI(title="Pathfinder v1 Sub-API")
@@ -278,26 +278,7 @@ v1_app.include_router(ai_router)
 v1_app.include_router(predictions_router)
 v1_app.include_router(export_router)
 v1_app.include_router(webhook_router)
-from backend.voice.ws_voice import voice_router
-app.include_router(voice_router)
-v1_app.include_router(voice_router)
-try:
-    from backend.agent_router import create_agent_router
-    agent_r = create_agent_router()
-    app.include_router(agent_r)
-    v1_app.include_router(agent_r)
-except Exception as exc:  # the agent must never take the whole API down
-    import logging
-    logging.getLogger("api").warning("agent router disabled: %s", exc)
-
-try:
-    from backend.agent.router import create_agent_chat_router
-    agent_chat_r = create_agent_chat_router(get_current_user)
-    app.include_router(agent_chat_r)
-    v1_app.include_router(agent_chat_r)
-except Exception as exc:
-    import logging
-    logging.getLogger("api").warning("agent chat router disabled: %s", exc)
+v1_app.include_router(agent_router)
 app.mount("/api/v1", v1_app)
 
 

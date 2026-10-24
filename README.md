@@ -37,16 +37,21 @@ Pathfinder is an enterprise-grade, real-time career intelligence platform engine
 ### 🎓 Genuine Value for Engineering Students & Placement Cells
 
 - **Calibrated Placement Probability**: Ingests student CGPA, active backlogs, internships, coding proficiency, and communication skills to output a statistically calibrated placement probability (0–100%) alongside salary tier projections (Service, Product, Unicorn).
-- **Studio-Grade ElevenLabs Voice Engine (DAS Agent)**: Powered by ElevenLabs `eleven_multilingual_v2` with **Daniel** voice (`onwK4e9ZLuTAKqWW03F9`) delivering hyper-realistic, human-level speech synthesis across **English, Telugu, and Hindi** with low-latency streaming audio (<150ms). Supports both **speech-to-speech** mic interaction and **typed text** with live voice playback.
+- **Studio-Grade ElevenLabs Voice Engine (DAS Agent)**: Powered by ElevenLabs `eleven_v3` with **Daniel** voice (`onwK4e9ZLuTAKqWW03F9`) and Microsoft Edge-TTS fallback, delivering hyper-realistic, human-level speech synthesis across **English, Telugu, and Hindi** with low-latency streaming audio (<150ms). Supports both **speech-to-speech** mic interaction and **typed text** with live voice playback.
 - **Creator Recognition ("Boss" Mode) & Multi-Audience Adaptation**:
-  * **For Boss Dileep**: DAS greets with *"Hi Boss, I am your DAS Agent!"* followed by time-of-day greetings, displaying executive loyalty and unrestricted platform mastery.
-  * **For Students, Recruiters & Stakeholders**: DAS introduces itself as *"Hello! I am your Pathfinder AI Agent, DAS!"*, providing complete placement intelligence while enforcing strict privacy protection (no personal owner data leaked).
-- **Impeccable Design System Architecture**: Centralized design invariants documented in `DESIGN.md` and `.impeccable/design.json`, safeguarding the OLED True Black (`#000000`) avatar canvas, Deep Obsidian Nocturne (`#0a0b10`), Wine Velvet (`#9f1239`), and Royal Violet (`#7c3aed`) design tokens.
-- **Autonomous Website Navigation & Project Tutoring**: Complete agentic navigation across all dashboard tabs (`overview`, `predictive`, `skills`, `projects`, `analytics`, `defense`, `coach`). When asked to *"go to blueprints and explain a small project"*, DAS automatically switches to the Blueprints tab and delivers a complete 9-step architecture breakdown, tech stack analysis, and Round 2 viva defense.
-- **Anatomical 3D Cybernetic Avatar**: Features piercing luminous crimson irises (`#dc2626` / `#e11d48`), deep obsidian pupils, specular glint dots, natural hemispherical blinking eyelids, a sleek refined nose ridge, and smooth Cupid's bow human lips driven by WebAudio RMS lip-sync against an OLED True Black canvas.
-- **Academic Mentor Tributes**: Warm, specific academic recognition for esteemed faculty mentors: **Dr. Chaitanya Madam** (all-rounder Machine Learning and Data Science professor) and **Swami Sir** (Operating Systems, kernel architecture, and concurrency expert).
-- **28 Production-Grade Flagship Project Blueprints**: Structured across a 9-step pedagogical roadmap (6 flagship + 17 national industry + 5 advanced real-world RAG architectures).
-- **STAR Architecture Defense Simulator**: Simulates grueling Round 2 system design questioning, evaluating how candidates defend architectural trade-offs, database bottlenecks, and scalability decisions.
+  * **For Boss Dileep**: DAS greets with *"Hi boss, I'm your DAS agent, how can I assist you?"*, recognizing his creator via signed JWT verification and owner email match.
+  * **For Students, Recruiters & Stakeholders**: DAS introduces itself as *"Hello sir, I'm your DAS agent, how can I assist you?"*, providing complete placement intelligence while enforcing strict privacy protection (no personal owner data leaked).
+- **Interactive 3D VRM Cybernetic Avatar (`Avatar3D.tsx`)**:
+  * Direct Three.js WebGLRenderer + `@pixiv/three-vrm` GLTF loader with `/avatar.vrm`.
+  * Real-time audio volume level mapping to VRM mouth blendshapes (`aa` and `oh`).
+  * Natural randomized procedural eye blinking and subtle idle head drift motion.
+- **Autonomous Website Navigation & DOM Interaction**:
+  * Complete agentic control: `navigate_to` (with `explain=true` walkthrough), `scroll_to`, `click`, and `fill_field` targeting `data-agent-id` elements.
+  * Safety confirmation gate (`data-agent-danger`) for critical and destructive actions.
+- **Cloud Database & Web Scraping Integration**:
+  * **Supabase PostgreSQL**: Persistent cloud database for student records and audit histories.
+  * **Firecrawl.dev**: AI web scraping engine extracting live job descriptions and campus placement circulars directly into structured Markdown/JSON.
+- **23 Production-Grade Flagship Project Blueprints**: Structured across a 9-step pedagogical roadmap (including cutting-edge RAG engines, full-stack architectures, and AI microservices).
 - **One-Page ATS Resume Studio**: Automatically diagnoses and formats single-column, ATS-parseable resumes aligned with recruiter screening algorithms.
 - **Institutional TPO Analytics**: Grants college administrators cohort-level intelligence into placement clearance rates, branch-wise cutoffs, and NAAC 5.2 placement governance metrics.
 
@@ -100,17 +105,26 @@ Pathfinder 2.0 is built on a decoupled, production-grade full stack architecture
    └── High-Availability Keep-Alive Daemon (Render free-tier cold-start mitigations)
    │
    ▼ Low Latency Context Pipeline
- [ AI & MACHINE LEARNING INTELLIGENCE TIER ]
-   │
-   ├── DAS AI Voice Intelligence:
-   │     ├── Gemini 2.0 Flash Token Streaming (SSE ~5ms TTFT)
-   │     ├── Cognitive Analysis: Intent extraction, language detection (EN / TE / HI)
-   │     ├── Dual-Format Output: 2-4 sentence spoken response + detailed on-screen markdown
-   │     ├── Interactive Website Tour Engine (Page-by-page spoken guide with barge-in)
-   │     └── Grounded Deterministic Fallback Engine (Zero hallucination, offline safe)
-   └── Predictive Placement Analytics:
-         ├── Random Forest Classifier (120 Decision Trees trained on 972 student records)
-         └── Calibrated Probability Vectors across CGPA, Coding DSA, Projects, Internships
+  [ AI & MACHINE LEARNING INTELLIGENCE TIER ]
+    │
+    ├── DAS AI Voice Intelligence Architecture (`backend/agent/`):
+    │     ├── Groq LPU LLM Engine (SSE Token Streaming ~5ms TTFT, openai/gpt-oss-120b)
+    │     ├── Studio ElevenLabs TTS (`eleven_v3`) with Microsoft Edge-TTS Telugu/English fallback
+    │     ├── Cognitive Analysis: Intent extraction, multi-lingual support (EN, Telugu script, Hindi)
+    │     ├── Dual-Format Output: 1-4 sentence punchy spoken audio + ||| on-screen markdown notes
+    │     ├── Grounded Knowledge Engine: `build_knowledge.py` scanner (`site_knowledge.json` + `site_notes.md`)
+    │     └── DOM Automation Tools: `navigate_to` (with explain mode), `scroll_to`, `click`, `fill_field`
+    ├── 3D Cybernetic Presentation Tier (`client/src/agent/`):
+    │     ├── Split-screen layout: Left 3D VRM face with "Wake up DAS", Right live chat & mic
+    │     ├── `@pixiv/three-vrm` GLTF runtime with procedural eye blinking and idle head motion
+    │     ├── WebAudio RMS lip synchronization driving `aa` and `oh` mouth blendshapes
+    │     └── Web Speech Recognition with language toggle ([EN, తె, हि]) and barge-in audio interruption
+    ├── Cloud Services & Web Data Tier:
+    │     ├── Supabase PostgreSQL: Managed cloud database for profiles and audit histories
+    │     └── Firecrawl.dev: AI web scraper for live job postings and placement drive circulars
+    └── Predictive Placement Analytics:
+          ├── Random Forest Classifier (120 Decision Trees trained on 972 student records)
+          └── Calibrated Probability Vectors across CGPA, Coding DSA, Projects, Internships
 ```
 
 ### 🎙️ DAS AI Voice Agent Highlights:

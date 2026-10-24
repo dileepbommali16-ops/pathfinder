@@ -1,0 +1,1270 @@
+{
+  "platform": "Pathfinder 2.0 AI Career & Placement Readiness Intelligence Platform",
+  "creator": {
+    "name": "Dileep Bommali (Dileep Das)",
+    "role": "Full-Stack AI Engineer & Creator",
+    "college": "NRI Institute of Technology (3rd year CSE-DS)",
+    "family": "Bhavani (Mother), Ramana (Father), Priyanka (Sister)"
+  },
+  "routes": [
+    "/",
+    "/agent",
+    "/cohort",
+    "/dashboard",
+    "/resume-studio",
+    "/roadmap",
+    "/skills",
+    "/some-path"
+  ],
+  "pages": {
+    "components/AIChatBox.tsx": {
+      "text": [
+        "(null); const containerRef = useRef",
+        "(null); const inputAreaRef = useRef",
+        "(null); const textareaRef = useRef",
+        "",
+        "0 && (",
+        "(",
+        ") : (",
+        "0; return ("
+      ],
+      "agent_ids": [
+        "ai-chatbox-textarea",
+        "ai-chatbox-send-btn"
+      ]
+    },
+    "components/DashboardLayout.tsx": {
+      "text": [
+        "Sign in to continue",
+        "Access to this dashboard requires authentication. Continue to launch the login flow.",
+        "Sign in",
+        "= MIN_WIDTH && newWidth",
+        "",
+        "Navigation",
+        "Toggle navigation"
+      ],
+      "agent_ids": []
+    },
+    "components/ErrorBoundary.tsx": {
+      "text": [
+        "An unexpected error occurred.",
+        "Reload Page"
+      ],
+      "agent_ids": []
+    },
+    "components/IndustryNewsFeed.tsx": {
+      "text": [
+        "(null); const [analysisCache, setAnalysisCache] = useState",
+        "Google Search API & Live News Intelligence",
+        "Industry Hiring Trends & Placement Feed",
+        "Real-time campus drive data, recruiter evaluation criteria, algorithmic testing patterns, and actionable placement tips curated specifically for BTech students.",
+        "",
+        "Refresh",
+        "✕",
+        "Search",
+        "Topics:",
+        "(",
+        "OA Screening Benchmark",
+        "Online Assessments (OAs) in 2025/2026 are heavily prioritizing",
+        "pattern recognition",
+        "(Sliding Window, Binary Search, Trees) over brute-force solutions.",
+        "AI Project Premium",
+        "Resumes featuring deployed applications with",
+        "real-time AI APIs (Gemini/OpenAI)",
+        "and containerized pipelines receive a 35% higher interview conversion rate.",
+        "Pre-Placement Offers (PPOs)",
+        "Over",
+        "40% of full-time hires",
+        "at top product startups now originate from 6-month winter/summer internship performance.",
+        "No industry trends found",
+        "Reset All Filters",
+        "Source"
+      ],
+      "agent_ids": []
+    },
+    "components/Map.tsx": {
+      "text": [
+        "status === \"OK\" && directionsRenderer.setDirections(res) * ); * * ------------------------------- * 🌦️ MAP LAYERS (attach directly to map) * - new google.maps.TrafficLayer().setMap(map); * - new google.maps.TransitLayer().setMap(map); * - new google.maps.BicyclingLayer().setMap(map); * * ------------------------------- * ✅ SUMMARY * - “map-attached” → AdvancedMarkerElement, DirectionsRenderer, Layers. * - “standalone” → Geocoder, DirectionsService, DistanceMatrixService, ElevationService. * - “data-only” → Place, Geometry utilities. */ ///",
+        "(null); const map = useRef",
+        "Campus Placement Geographic Hub",
+        "San Francisco"
+      ],
+      "agent_ids": []
+    },
+    "components/auth/LampLogin.tsx": {
+      "text": [
+        "(initialError || null); const [socialLoading, setSocialLoading] = useState",
+        "(null); const [socialError, setSocialError] = useState",
+        "(null); const [fireflies, setFireflies] = useState",
+        "(",
+        "Pull lamp string to illuminate &amp; reveal details",
+        "",
+        "Lamp your Career",
+        ") : (",
+        "AI",
+        "Sign In",
+        "Sign Up / New Student",
+        ") : ( // Hacker Eye",
+        "Or Continue With",
+        "Start as New Student (Step-Wise Onboarding Wizard) &rarr;",
+        "Continue in Guest / Demo Mode &rarr;",
+        "Pull or click this string to toggle the lamp (ON / OFF)",
+        "Click or pull the lamp string to reveal candidate details",
+        "New Student",
+        "Guest Student"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/AIActionCenter.tsx": {
+      "text": [
+        "; cohort_comparison?: Record",
+        "(null); const [isColdStarting, setIsColdStarting] = useState(false); const [activeModal, setActiveModal] = useState",
+        "(null); const [errorMessage, setErrorMessage] = useState",
+        "(null); const [lastActionId, setLastActionId] = useState",
+        "(null); // Structured results state const [readinessData, setReadinessData] = useState",
+        "(null); const [roadmapData, setRoadmapData] = useState",
+        "(null); const [resumeData, setResumeData] = useState",
+        "(null); const [projectsData, setProjectsData] = useState",
+        "(null); const [analyticsData, setAnalyticsData] = useState",
+        "(null); const coldStartTimerRef = useRef",
+        "(null); const abortControllerRef = useRef",
+        "AI Action Center",
+        "Command Hub",
+        "One-click career intelligence tools integrated with your active candidate profile",
+        "Waking up the server...",
+        "Pathfinder runs on Render cloud service. Cold start from idle may take a few moments. Hanging tight!",
+        "",
+        ") : (",
+        "Career Readiness Intelligence Audit",
+        "Sync Live Model",
+        "Overall Placement Readiness Score",
+        "Multi-Dimensional Vectors",
+        "Top Candidate Strengths",
+        "(",
+        "Critical Gaps & Focus"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/AICoachConsole.tsx": {
+      "text": [
+        "(\"chat\"); const [copiedIndex, setCopiedIndex] = useState",
+        "(null); const endRef = useRef",
+        "(null); const lastActionTimeRef = useRef(0); // Voice Pipeline States (auto, en-IN, te-IN, hi-IN) const [voiceLang, setVoiceLang] = useState",
+        "(\"idle\"); const [currentSpokenSentence, setCurrentSpokenSentence] = useState",
+        "(\"\"); const [voiceError, setVoiceError] = useState",
+        "(null); const [collapsedScreenMap, setCollapsedScreenMap] = useState",
+        "(null); const silenceTimerRef = useRef",
+        "(null); const speechStartTimeRef = useRef",
+        "(0); const firstTokenLoggedRef = useRef",
+        "(false); const firstAudioLoggedRef = useRef",
+        "(false); const voiceAbortRef = useRef",
+        "(null); const speechQueueRef = useRef",
+        "([]); const isSpeakingSentenceRef = useRef",
+        "(false); const teluguVoiceWarnedRef = useRef",
+        "(false); const serverAudioRef = useRef",
+        "(null); const voicesRef = useRef",
+        "([]); // Incremental generation token for 100% reliable instantaneous cancellation (Barge-in / Stop) const generationIdRef = useRef",
+        "(0); // Utterance Reference to prevent Chromium V8 garbage collection mid-speech const activeUtterancesRef = useRef",
+        "([]); // Track if query was triggered by voice so assistant response always auto-speaks const isVoiceTriggeredRef = useRef",
+        "(false); // Critical Voice Agent Loop & Echo Prevention Refs const isSpeakingRef = useRef",
+        "(false); const userTurnedListeningOnRef = useRef",
+        "(false); const lastSentTranscriptRef = useRef",
+        "(\"\"); const lastSentTimeRef = useRef",
+        "(0); const lastAssistantReplyRef = useRef",
+        "(\"\"); const voiceStreamHandledRef = useRef"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/Ambient3DBackground.tsx": {
+      "text": [
+        "(getInitialVariant); const [speed] = useState",
+        "(1.0); const [brightness] = useState",
+        "(1.0); const [isVisible, setIsVisible] = useState",
+        "); // Switcher positioned safely on the BOTTOM-LEFT to eliminate any collision with the right-side AI button const switcher = (",
+        "); return (",
+        "3D Background Mode Controls",
+        "Ultra Smooth 60 FPS Mode (Zero lag, instant slide transitions)",
+        "3D Neural Torus Glow",
+        "Hybrid Mix: 3D WebGL Void Matrix + Luminous Predictive Arc",
+        "Sphere Shield WebGL2: Shield Matrix"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/BranchIntelligence.tsx": {
+      "text": [
+        "(FALLBACK_BRANCHES as unknown as BranchData[]); const [activeCode, setActiveCode] = useState",
+        "(currentBranch || \"CSE\"); const [isLoading, setIsLoading] = useState",
+        "",
+        "Course & Branch Intelligence",
+        "Single Data Layer • 2026 Cohort",
+        "Authoritative department placement benchmarks, IT pivot roadmaps, and recruiter criteria",
+        "Avg CGPA Benchmark",
+        "Avg Coding Score",
+        "Tested in screening rounds",
+        "Top recruiter offer",
+        "Students Evaluated",
+        "Department Transition & Roadmap Bridge",
+        "Proven Strategy",
+        "(",
+        "Frequent Campus Recruiters",
+        "Cross-Branch Placement Comparison",
+        "All 5 Engineering Streams",
+        "Placement Rate:",
+        "Tier-1 Screening Rules",
+        "Min CGPA for Tier-1",
+        "Max Backlogs Allowed",
+        "Coding Test Benchmark",
+        "Highest Yield Skills",
+        "View Complete Skill Matrix"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/CareerDigitalTwin.tsx": {
+      "text": [
+        "",
+        "Student Career Digital Twin",
+        "Live Model",
+        "Unified state model aggregating verified candidate attributes, ML inference, and transparent readiness vectors.",
+        "User Verified",
+        "ML Inferred",
+        "AI Prescribed",
+        "Academic Standing",
+        "ML Placement Readiness",
+        "RandomForest Model",
+        "Problem Solving",
+        "Profile Completeness",
+        "Multi-Dimensional Career Readiness Vectors",
+        "Transparent breakdown of what comprises your placement probability. Every dimension is independently actionable.",
+        "6 Core Dimensions",
+        ") : (",
+        "What Is Missing",
+        "Recommended Action",
+        "Execute Now →",
+        "ML Model Transparency Notice:",
+        "The placement probability estimate is derived from a supervised",
+        "RandomForestClassifier",
+        "trained on 650 historical student placement records (2024–2026). It represents a statistical estimation based on historical hiring criteria,",
+        "not a guaranteed placement outcome",
+        ". Real campus placement outcomes depend on company-specific drive criteria, written test performance, and live interview rounds."
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/CareerMissionTracker.tsx": {
+      "text": [
+        "t.completed).length; const progressPercent = Math.round((completedTasks / allTasks.length) * 100); return (",
+        "",
+        "Personalized 30-Day Career Mission",
+        "Sprint Roadmap",
+        "Action-oriented weekly execution plan customized for your role as",
+        ".",
+        "Overall 30-Day Execution Progress",
+        "t.completed).length; const wkPct = Math.round((wkCompleted / wk.tasks.length) * 100); return (",
+        "(",
+        "Execute →",
+        "Build rapid pattern recognition across highest-frequency campus screening topics.",
+        "Solve 10 Two-Pointer & Sliding Window LeetCode Mediums",
+        "Master Binary Search & Monotonic Stack Edge Cases",
+        "Revise DBMS Indexing, ACID Properties & B-Tree fundamentals",
+        "Engineer an authentic, production-grade application to anchor your portfolio.",
+        "Select & Initialize Flagship Project Repository",
+        "Implement FastAPI / Node Backend with Rate Limiting & Auth",
+        "Containerize application with Docker & create docker-compose.yml",
+        "Deploy project to public cloud and format accomplishments with the Google X-Y-Z formula.",
+        "Deploy live frontend to Vercel and backend to Render",
+        "Re-write 3 Project Resume Bullets using Google X-Y-Z formula",
+        "Run ATS Resume Intelligence Scanner & export ReportLab PDF",
+        "Master real-time articulation, trade-off defense, and behavioral STAR stories.",
+        "Complete 3 Interactive AI Technical Mock Interview Rounds",
+        "Practice Project Defense: Architecture, Scaling & Security Trade-offs"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/CohortExplorer.tsx": {
+      "text": [
+        "; skill_distribution: Array",
+        "; year_distribution?: Array",
+        "; cgpa_bands: Array",
+        "; available_years: number[]; available_branches: string[]; available_skills: string[]; records: Array",
+        "r.placed_label === \"Not Placed\" || (Number(r.codingScore) || 0)",
+        "",
+        "Print NAAC Report",
+        ") : (",
+        "(",
+        "Course / Branch",
+        "Male Candidates",
+        "Female Candidates",
+        "Avg Academic CGPA",
+        "Highest Package",
+        "At-Risk Student Intervention Radar (Early Warning System)",
+        "Identified",
+        "Dispatch Remedial Intervention Plan",
+        "Intervention Triggered:",
+        "NAAC Criterion 5.2.1 / NIRF Placement Audit Compliance",
+        "Accreditation Ready",
+        "Registered Candidates",
+        "Campus Placements",
+        "Median CTC Package",
+        "NAAC Benchmark Compliant",
+        "Tier-1 Product Share"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/CompanyPlacementRadar.tsx": {
+      "text": [
+        "(\"razorpay\"); const [filterCategory, setFilterCategory] = useState",
+        "b.id === selectedCompanyId) || BENCHMARKS[0]; const selectedScore = calculateCompatibility(selectedCompany); const selectedStatus = getStatusBadge(selectedScore, selectedCompany); return (",
+        "Industry Placement Benchmark",
+        "Live Hiring Matrix",
+        "Target Company Placement Radar",
+        "Real-time hiring compatibility score mapped against historical drive cutoffs, interview rounds, and skill rubrics for Tier-1 engineering recruits.",
+        "(",
+        "Target Recruiter",
+        "Match Probability",
+        "",
+        "Drive Status:",
+        "Package Compensation",
+        "Fixed Base + Stock Grants",
+        "Academic Cutoff",
+        "Core Evaluation Topics & Skills",
+        "Standard Interview Pipeline",
+        "Resume Differentiating Projects (High Shortlist Rate)",
+        "Ask Coach Strategy",
+        "Start Mock Interview",
+        "Google / Alphabet",
+        "Razorpay / Fintech",
+        "Amazon AWS",
+        "TCS Digital / Prime",
+        "Swiggy / Consumer Tech",
+        "Salesforce / Enterprise"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/ComplianceModals.tsx": {
+      "text": [
+        "",
+        "Data Privacy Policy",
+        "Effective Date: October 2026 · Standard Enterprise Governance",
+        "1. Zero Voice Retention Policy",
+        "Pathfinder 2.0 processes conversational speech streams in real time via the Web Speech API and transient server-sent events. We do not store raw microphone audio, voiceprints, or acoustic recordings on disk or cloud storage.",
+        "2. Candidate Profile Confidentiality",
+        "Academic records (CGPA, active backlogs, internship scores) are stored exclusively in an isolated SQLite database utilizing Write-Ahead Logging (WAL) and Row-Level Security (RLS). Cross-user profile access is prevented by server-side JWT session validation.",
+        "3. Benchmark Data Disclosure",
+        "The historical benchmark database comprises 972 verified campus recruitment outcomes across 9 engineering departments. All candidate names and identifiers have been fully anonymized in compliance with DPDP and FERPA privacy regulations.",
+        "4. Third-Party Intelligence Providers",
+        "Large Language Model queries are routed via encrypted HTTPS endpoints with prompt token minimization. Confidential identifiers and passwords are never transmitted to external model providers.",
+        ") : (",
+        "Terms of Service & Usage",
+        "Effective Date: October 2026 · Academic & Recruiter Evaluation",
+        "1. Placement Prediction Disclaimer",
+        "Pathfinder 2.0 provides probabilistic career readiness assessments generated by a trained Random Forest model (88% validation accuracy). Predictions reflect historical placement trends and do not constitute an official employment guarantee.",
+        "2. Project Blueprint IP & Educational Licensing",
+        "All 28 engineering project blueprints and architecture pipelines are published under the MIT License for academic learning, portfolio building, and technical interview preparation.",
+        "3. Acceptable Use & Automated Scraping",
+        "Automated scraping, denial-of-service stress testing without prior authorization, and attempted extraction of backend API credentials are strictly prohibited and actively rate-limited by sliding-window security filters.",
+        "Acknowledge & Close"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/DashboardHeader.tsx": {
+      "text": [
+        "Pathfinder",
+        "AI",
+        "Admin Portal",
+        "Campus Placement & Engineering Intelligence",
+        "",
+        ") : (",
+        "AI Mock Interview",
+        "Readiness Command",
+        "6-Week Roadmap",
+        "DAS AI Voice Coach",
+        "Project Blueprints",
+        "Cohort Analytics",
+        "ATS Resume Studio",
+        "Branches and Courses",
+        "Project Defense",
+        "Profile / Settings",
+        "Return to Dashboard Overview",
+        "View & Edit Candidate Profile",
+        "Toggle navigation menu",
+        "Sign out of Pathfinder"
+      ],
+      "agent_ids": [
+        "logout-btn"
+      ]
+    },
+    "components/dashboard/Footer.tsx": {
+      "text": [
+        "",
+        "Pathfinder",
+        "Autonomous full-stack AI career intelligence platform benchmarked on 972 verified campus records. Calibrates student profiles, tutors production architectures, and prepares engineering candidates for Tier-1 recruitment filters.",
+        "All 7 Engineering Pillars Operational",
+        "Core Intelligence",
+        "Executive Readiness Dashboard",
+        "AI Mock Interview Simulator",
+        "DAS AI Voice Coach (EN / TE / HI)",
+        "23 Production Project Blueprints",
+        "ATS Resume Studio & Scanner",
+        "STAR Architecture Defense Console",
+        "Institutional Intelligence",
+        "972 Placement Cohort Explorer",
+        "Branch Placement Cutoffs & Stats",
+        "6-Week Career Sprint Roadmap",
+        "Readiness Command Center",
+        "Single Source of Truth Profile",
+        "Placement Desk & Support",
+        "Have questions regarding placement data or AI coach benchmarking? Connect directly:",
+        "support@pathfinder-ai.io",
+        "+91 (800) 012-3456 (Placement Helpline)",
+        "National Engineering Campus, Academic Block",
+        "MIT License Open Verification",
+        "Privacy Policy",
+        "Terms of Service"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/HeroMetrics.tsx": {
+      "text": [
+        "",
+        "Random Forest ML Engine",
+        "Welcome back,",
+        "Your placement intelligence command center combines real campus recruitment cohort benchmarks (972 records), scikit-learn probability modeling, and Gemini placement coaching.",
+        "View 30-Day Mission & Plan",
+        "Ask AI Placement Coach",
+        "ATS Resume Sync",
+        "Pathfinder Career Readiness Assessment",
+        "ML Placement Probability Model",
+        "Probability",
+        "Model Confidence",
+        "Ask Coach about this score",
+        "Cumulative CGPA",
+        "= 7.5 ? (",
+        "✓ Satisfies Tier-1 criteria",
+        ") : (",
+        "⚠ Target ≥ 7.0 cutoff",
+        "Active Backlogs",
+        "✓ 100% Eligible for drives",
+        "Clear before campus drives",
+        "Internships Completed",
+        "= 1 ? (",
+        "✓ Practical work validated",
+        "Target 1 practical project",
+        "DSA & Problem Solving"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/LiveSkillVerifier.tsx": {
+      "text": [
+        "(null); const [error, setError] = useState",
+        "",
+        "Live Technical Footprint & Fraud Shield",
+        "Anti-Resume Padding",
+        "Verify authentic GitHub commit cadence, repository originality, and language breakdown to earn the Cryptographic Verified Engineer badge.",
+        "Auditing Repositories...",
+        ") : (",
+        "Verify GitHub Footprint",
+        "✓ Authentic Author",
+        "Verified Codebase Languages:",
+        "(",
+        "Sync Verified Skills to Profile",
+        "TypeScript",
+        "React / Vite"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/MockInterviewConsole.tsx": {
+      "text": [
+        "(0); const [userAnswer, setUserAnswer] = useState",
+        "(\"\"); const [isRecording, setIsRecording] = useState",
+        "(false); const [isSpeaking, setIsSpeaking] = useState",
+        "(false); const [isEvaluating, setIsEvaluating] = useState",
+        "(false); const [evaluationResult, setEvaluationResult] = useState",
+        "(null); const [timerSeconds, setTimerSeconds] = useState",
+        "(0); const [timerActive, setTimerActive] = useState",
+        "(false); const speechRecognitionRef = useRef",
+        "(null); const synthRef = useRef",
+        "Live Mock Interview Simulator",
+        "AI Voice & Audio Ready",
+        "Rapid 60-Second Interview Drill",
+        "Practice actual technical and behavioral interview questions asked by top tech firms. Speak your answer or type it to receive an instant multi-dimensional evaluation.",
+        "Interviewer Prompt",
+        "",
+        "Interviewer Expectation",
+        "Evaluation Topics",
+        "(",
+        "Fill Benchmark Answer",
+        "Your Response Workspace",
+        "Tip: Press",
+        "for instant demo evaluation.",
+        "Grading with AI Engine...",
+        ") : (",
+        "Evaluate My Answer"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/NextActionsWidget.tsx": {
+      "text": [
+        "Personalized Next Actions",
+        "What to do next",
+        "Immediate high-yield steps calculated to elevate your placement probability",
+        "",
+        ") : (",
+        "Master High-Frequency Blind 75 Patterns",
+        "Deploy 1 Flagship Production-Grade Project",
+        "Target Tier-1 Cutoff Exemption Criteria",
+        "Audit Resume for SDE Keyword Densities",
+        "Conduct 1 Mock Technical Round"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/OnePageResumeModal.tsx": {
+      "text": [
+        "Back to Dashboard",
+        "One-Page ATS Resume",
+        "Google X-Y-Z",
+        "",
+        "GitHub Profile",
+        "LeetCode Profile",
+        "Education",
+        "Technical Proficiencies",
+        "Languages & Core:",
+        "Frameworks & Cloud:",
+        "FastAPI, React 19, Node.js, Docker, Redis Streams, TailwindCSS",
+        "CS Fundamentals:",
+        "Data Structures & Algorithms, DBMS (ACID & Indexing), Operating Systems, System Design",
+        "Flagship Engineering Projects",
+        "Distributed Asynchronous Task Queue & Rate Limiter",
+        "Python, FastAPI, Redis Streams, Docker",
+        "Architected a distributed background worker system processing",
+        "3,500+ tasks/sec",
+        "using Redis Streams and token-bucket concurrency middleware.",
+        "Eliminated message loss under network partitions by implementing dead-letter queues and atomic PostgreSQL state commitments.",
+        "Reduced average job turnaround latency by",
+        "through async non-blocking FastAPI worker pipelines.",
+        "Real-Time Collaborative Code & Canvas Studio",
+        "React 19, TypeScript, WebSockets, CRDTs",
+        "Engineered browser-based multi-user code editor supporting"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/ProfileEvaluator.tsx": {
+      "text": [
+        "Evaluation Parameters",
+        "Fine-tune your academic and skill inputs to test placement chance sensitivity",
+        "Tier-1 Profile",
+        "Solid Benchmark",
+        "Needs Support",
+        "1. Core Academic & Technical Sliders",
+        "Cumulative CGPA",
+        "7.0 (MNC Cutoff)",
+        "10.0 (Distinction)",
+        "Active Academic Backlogs",
+        "0 (Clean Eligibility)",
+        "Internships Completed",
+        "0 (Academic Only)",
+        "DSA & Problem Solving Confidence",
+        "10 (Competitive)",
+        "Technical Communication Confidence",
+        "7 (STAR Fluent)",
+        "10 (Articulate)",
+        "2. Career Aspirations & Cohort Mapping",
+        "",
+        "Primary Target Role",
+        "(",
+        "Target Company Tier",
+        "Branch / Stream",
+        "Graduation Year"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/ProfileSettings.tsx": {
+      "text": [
+        "Single Source of Truth",
+        "Profile & Candidate Settings",
+        "Update your academic marks, backlogs, skills, or target role. All dashboard widgets and AI assistants will recalculate immediately.",
+        "Academic Identity",
+        "Candidate Full Name",
+        "College / Institute",
+        "Branch / Department",
+        "(",
+        "",
+        "Academic Performance & Live Conversion",
+        "Current CGPA (0 - 10)",
+        "Live Converted Percentage",
+        "Conversion Multiplier",
+        "AICTE / Standard (× 9.5)",
+        "Direct Scale (× 10.0)",
+        "State University (× 9.0)",
+        "10th Percentage (%)",
+        "12th / Diploma (%)",
+        "Active Standing Backlogs",
+        "Skills, Projects & Self-Assessments",
+        "Flagship Projects Count",
+        "Verified Internships Count",
+        "Coding & DSA Confidence",
+        "Communication & Interview Confidence",
+        "Target Role & Preferences"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/ProjectDefenseConsole.tsx": {
+      "text": [
+        "(DEFENSE_QUESTIONS[0]); const [candidateAnswer, setCandidateAnswer] = useState(\"\"); const [evaluation, setEvaluation] = useState",
+        "",
+        "Project Defense & Mock Interview Simulator",
+        "STAR Evaluation",
+        "Simulate tough technical rounds where senior interviewers dissect your project architecture, scaling limits, and security trade-offs.",
+        "Launch Live AI Voice/Chat Interview",
+        "Interviewer Technical Challenge",
+        "Your Technical Defense Answer:",
+        "Use STAR format",
+        "Clear",
+        "Interviewer Evaluation & Feedback",
+        "No Answer Evaluated Yet",
+        "Type your technical answer on the left and click \"Evaluate My Defense\" to get scored on technical clarity and STAR structure.",
+        ") : (",
+        "(",
+        "Missing Technical Nuances",
+        "Model Interviewer Response"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/ProjectRecommender.tsx": {
+      "text": [
+        "(null); const [projectsList, setProjectsList] = useState",
+        "(DEFAULT_PROJECT_CATALOG); const [activeTab, setActiveTab] = useState",
+        "(\"all\"); const [searchQuery, setSearchQuery] = useState",
+        "",
+        "Flagship Portfolio & System Architectures",
+        "Engineering Portfolio & System Architecture Blueprints",
+        "Top recruiters and technical evaluators look for production-grade end-to-end engineered systems over simple tutorials. Explore",
+        "architectures spanning full-stack pipelines, robotics, enterprise GraphRAG, and embedded firmware. Click any project to discuss system architecture with the AI Coach!",
+        "All Architectures",
+        "Software Systems",
+        "Hardware & Embedded",
+        "No project blueprints matched your filter or search criteria.",
+        "Reset Filters",
+        ") : (",
+        "(",
+        "Key Implementation Features:",
+        "Google X-Y-Z Resume Bullet:",
+        "Discuss Architecture with AI Coach",
+        "Copy bullet point to clipboard"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/ResumeStudio.tsx": {
+      "text": [
+        "(null); const [rawText, setRawText] = useState(\"\"); const [targetCompany, setTargetCompany] = useState(TARGET_COMPANIES[0].id); const [applied, setApplied] = useState(false); const fileInputRef = React.useRef",
+        "(null); const activeFeedback = feedback || DEFAULT_FEEDBACK; const handleFileChange = (e: React.ChangeEvent",
+        "c.id === targetCompany) || TARGET_COMPANIES[0]; const companyMatchScore = Math.min(99, Math.max(30, Math.round(activeFeedback.score * (activeCompanyData.benchmark / 80)))); return (",
+        "",
+        "ATS Resume Intelligence & Auto-Sync",
+        "Gemini Multimodal",
+        "Upload your PDF resume or paste project bullets for automated ATS scoring, company-specific match indexing, and 1-click profile synchronization.",
+        "PDF format · Maximum size 10MB",
+        "Select PDF Resume",
+        "Ready for ATS Extraction",
+        "Optional: Or paste project bullets / interview draft",
+        "Scanning Resume with Gemini...",
+        ") : (",
+        "Generate Tailored ATS Feedback",
+        "ATS Baseline Match",
+        "Skills Synced to Profile!",
+        "Sync Keywords to Profile",
+        "Download Feedback PDF",
+        "Target Recruiter ATS Match Index:",
+        "(",
+        "Recruiter Cutoff Score:",
+        "Candidate Strengths",
+        "Critical Improvements",
+        "Recommended ATS Keywords",
+        "Structural & Formatting Guidelines"
+      ],
+      "agent_ids": [
+        "resume-text-input",
+        "analyze-resume-btn"
+      ]
+    },
+    "components/dashboard/RoadmapVisualizer.tsx": {
+      "text": [
+        "AI-Generated Career Roadmap",
+        "Gemini Powered",
+        "Roadmap Milestone Progress",
+        "Target Skill Gaps to Close:",
+        "(",
+        "1 ? parts.slice(1).join(\":\").trim() : action; return (",
+        "",
+        "Completed"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/RoleIntelligence.tsx": {
+      "text": [
+        "(ROLES_DATA); const [selectedRoleId, setSelectedRoleId] = useState",
+        "",
+        "Target Role Intelligence Matrix",
+        "Career Path Simulator",
+        "Deep-dive into specific tech roles. Compare your profile, identify required skills, and explore tailored project blueprints.",
+        "Current Target:",
+        "Candidate Alignment",
+        "Set as My Target Role",
+        ") : (",
+        "Active Target Role",
+        "Your Existing Foundations",
+        "(",
+        "High-Priority Skill Gaps",
+        "Career Path Simulator: 4-Stage Progressive Execution",
+        "Recommended Flagship Project for this Role",
+        "View Full Blueprints →",
+        "Top Interview Topics",
+        "Start Practice Round with AI Coach →",
+        "Resume Alignment Strategy",
+        "Audit ATS Resume →",
+        "Software Development Engineer (SDE)",
+        "Distributed Asynchronous Job Queue & Rate Limiter",
+        "Full Stack Developer",
+        "Real-Time Collaborative Code & Canvas Studio",
+        "AI Engineer"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/SectionHeader.tsx": {
+      "text": [
+        "",
+        "Ask Coach about this"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/SkillGapSection.tsx": {
+      "text": [
+        "Skill Strength & Gap Analysis",
+        "5 Dimensions",
+        "Evaluated relative to tier-1 campus recruitment expectations and benchmarks",
+        "(",
+        "",
+        "High-Yield Recommended Skills:",
+        "Identified Competitive Strengths",
+        "Priority Placement Actions",
+        ")) ) : (",
+        "No critical academic or eligibility blockers detected. Focus on interview polish and mock tests.",
+        "Dynamic Programming",
+        "System Design Fundamentals",
+        "SQL & Query Optimization",
+        "Docker & Containerization",
+        "REST API Architecture",
+        "Core Java / OOP Concurrency",
+        "Academics & CGPA Cutoff",
+        "DSA & Problem Solving",
+        "Technical Communication & STAR",
+        "Practical Internships & Projects",
+        "Drive Eligibility & Clearance"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/SkillIntelligence.tsx": {
+      "text": [
+        "( (FALLBACK_SKILLS_DATA.skillAnalytics || []) as unknown as SkillMetric[] ); const [benchmarks, setBenchmarks] = useState",
+        "( (FALLBACK_SKILLS_DATA.canonicalBenchmarks || []) as unknown as CanonicalBenchmark[] ); const [baselineRate, setBaselineRate] = useState",
+        "(FALLBACK_SKILLS_DATA.baselinePlacementRate || 75.0); const [selectedSkillName, setSelectedSkillName] = useState",
+        "(\"AIML\"); const [mySkills, setMySkills] = useState",
+        "([\"Python\", \"SQL\"]); const [isLoading, setIsLoading] = useState",
+        "b.name.toLowerCase().includes(s.toLowerCase())) ); return (",
+        "",
+        "Skill Intelligence & Impact Matrix",
+        "Live Cohort Correlation • 648 Records",
+        "Verified correlation between technical skills, campus placement rate, and salary multipliers",
+        "Consult Coach on Skills",
+        "(",
+        "Placement Clearance Rate by Technical Skill",
+        "Placement Rate:",
+        "Boost over baseline:",
+        "Evaluated Candidates:",
+        "Avg Coding Benchmark:",
+        "Interactive Skill Inventory & Gap Diagnosis",
+        "Check the skills you currently possess to dynamically reveal your high-yield placement bottlenecks:",
+        "Recommended 30-Day Skill Acceleration Gaps",
+        "Skill Benchmark Focus",
+        "Evaluated across verified college drives",
+        "Delta vs Baseline",
+        "Average Coding Score",
+        "Average Communication"
+      ],
+      "agent_ids": []
+    },
+    "components/dashboard/WhatIfSimulator.tsx": {
+      "text": [
+        "(\"sliders\"); const [hasAppliedChanges, setHasAppliedChanges] = useState(false); // Dynamic continuous slider states initialized with current profile const [cgpa, setCgpa] = useState",
+        "(currentProfile.cgpa || 7.5); const [codingScore, setCodingScore] = useState",
+        "(currentProfile.coding || 65); const [projectsCount, setProjectsCount] = useState",
+        "(currentProfile.projectsCount || 2); const [internships, setInternships] = useState",
+        "(currentProfile.internships || 0); const [activeBacklogs, setActiveBacklogs] = useState",
+        "( currentProfile.activeBacklogs ?? currentProfile.backlogs ?? 0 ); // Pre-configured tactical scenarios const [scenarios, setScenarios] = useState",
+        "sum + s.impactDelta, 0); const milestoneScore = Math.min(98, Math.max(18, Math.round(currentScore + milestoneDelta))); const displayChance = activeMode === \"sliders\" ? simulatedStats.calculatedChance : milestoneScore; const displayDelta = activeMode === \"sliders\" ? simulatedStats.totalDelta : milestoneDelta; return (",
+        "",
+        "What-If? Career Trajectory Simulator",
+        "Real-Time Sandbox",
+        "Drag sliders in real time to simulate how raising CGPA, solving LeetCode problems, and shipping projects elevate your CTC package and placement odds.",
+        "Dynamic Sliders",
+        "Current Baseline",
+        "Based on verified records",
+        "Simulated Target Chance",
+        "Projected clearance probability",
+        "Projected CTC Package",
+        "Eligible Recruiters",
+        "Matches hiring rubrics for this tier",
+        "Highest ROI Action:",
+        "Target Academic CGPA",
+        "7.5 (Tier-1 Cutoff)",
+        "9.0+ (Dean's List)",
+        "Coding & DSA Proficiency",
+        "Beginner (Arrays/Strings)"
+      ],
+      "agent_ids": []
+    },
+    "components/onboarding/OnboardingResultScreen.tsx": {
+      "text": [
+        "",
+        "Onboarding Complete • Single Source of Truth Established",
+        "Career Readiness Intelligence Audit",
+        "Evaluation calculated for",
+        "Readiness Score",
+        "Academic Conversion",
+        "Cohort Benchmark",
+        "Campus Screening Filter Status:",
+        "Multi-Dimensional Competency Vectors",
+        "Academics & CGPA",
+        "Coding & DSA Proficiency",
+        "Applied Projects & Architecture",
+        "Practical Internships",
+        "Industry Certifications",
+        "Interview Defense & STAR Articulation",
+        "Core Profile Strengths",
+        "(",
+        "Identified Skill & Academic Gaps",
+        "0 && (",
+        "Recommended Skills to Accelerate",
+        "Actionable Next-Step Suggestions",
+        "Launch Mock Interview",
+        "Continue to Full Dashboard"
+      ],
+      "agent_ids": []
+    },
+    "components/onboarding/OnboardingWizard.tsx": {
+      "text": [
+        "= 1 && parsed.wizardStep",
+        "(null); const [saveIndicator, setSaveIndicator] = useState",
+        "= 7.5 to unlock Tier-1 MNC shortlists\" : \"Maintain academic distinction\", coding",
+        "Step-Wise Candidate Onboarding",
+        "Student Placement Profile Wizard",
+        "Complete your profile once to unlock live readiness scoring, tailored roadmaps, and grounded AI guidance.",
+        "",
+        "Step 1: Candidate & Academic Identity",
+        "Tell us who you are and which engineering department you are affiliated with.",
+        "Full Name",
+        "College / Institute Name",
+        "Department / Branch",
+        "(",
+        "Course / Degree",
+        "Current Academic Year",
+        "Current Semester",
+        "Step 2: Academic Metrics & Live Conversion",
+        "Enter your performance across boards and undergraduate coursework. Includes live AICTE percentage conversion.",
+        "Live CGPA ➔ Percentage Conversion",
+        "Formula Multiplier:",
+        "AICTE / Standard (× 9.5)",
+        "Direct Scale (× 10.0)",
+        "State University (× 9.0)",
+        "Formula applied:",
+        "(Complies with major placement portal shortlisting cutoffs)."
+      ],
+      "agent_ids": []
+    },
+    "components/predictive-arc/DataPixelArcCanvas.tsx": {
+      "text": [
+        "(null); const canvasRef = useRef"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/alert.tsx": {
+      "text": [
+        "& VariantProps"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/badge.tsx": {
+      "text": [
+        "& VariantProps"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/breadcrumb.tsx": {
+      "text": [
+        "breadcrumb"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/button-group.tsx": {
+      "text": [
+        "& VariantProps"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/button.tsx": {
+      "text": [
+        "& VariantProps"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/carousel.tsx": {
+      "text": [
+        "[0]; api: ReturnType"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/chart.tsx": {
+      "text": [
+        "& React.ComponentProps",
+        ") : ( !hideIndicator && (",
+        "",
+        ") : ("
+      ],
+      "agent_ids": []
+    },
+    "components/ui/command.tsx": {
+      "text": [
+        "Command Palette",
+        "Search for a command to run..."
+      ],
+      "agent_ids": []
+    },
+    "components/ui/DepthText.tsx": {
+      "text": [
+        "(null); const textStageRef = useRef"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/empty.tsx": {
+      "text": [
+        "& VariantProps"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/field.tsx": {
+      "text": [
+        "& VariantProps",
+        "error?.message &&"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/generate-button.tsx": {
+      "text": [
+        "("
+      ],
+      "agent_ids": []
+    },
+    "components/ui/input-group.tsx": {
+      "text": [
+        "& VariantProps"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/item.tsx": {
+      "text": [
+        "& VariantProps"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/pagination.tsx": {
+      "text": [
+        "& React.ComponentProps",
+        "pagination",
+        "Go to previous page",
+        "Go to next page"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/sidebar.tsx": {
+      "text": [
+        "Displays the mobile sidebar.",
+        "Toggle Sidebar"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/slider.tsx": {
+      "text": [
+        "Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max], [value, defaultValue, min, max] ); return ("
+      ],
+      "agent_ids": []
+    },
+    "components/ui/toggle-group.tsx": {
+      "text": [
+        "& VariantProps"
+      ],
+      "agent_ids": []
+    },
+    "components/ui/toggle.tsx": {
+      "text": [
+        "& VariantProps"
+      ],
+      "agent_ids": []
+    },
+    "data/projectCatalog.ts": {
+      "text": [
+        "Leaflet Geospatial Incident Map.\", \"resumeBullet\": \"Built an industrial disaster surveillance system monitoring 45,000 sq km from NASA FIRMS satellite telemetry, isolating industrial blazes with 97.4% precision in",
+        "3D Path Visualizer.\", \"resumeBullet\": \"Engineered an intelligent dead-reckoning navigation system suppressing IMU drift to"
+      ],
+      "agent_ids": []
+    },
+    "hooks/useComposition.ts": {
+      "text": [
+        "; onCompositionEnd: React.CompositionEventHandler",
+        "; onKeyDown: React.KeyboardEventHandler",
+        "; onCompositionStart?: React.CompositionEventHandler",
+        "; onCompositionEnd?: React.CompositionEventHandler",
+        "; export function useComposition",
+        "(options: UseCompositionOptions",
+        "(null); const timer2 = useRef",
+        "(null); const onCompositionStart = usePersistFn((e: React.CompositionEvent"
+      ],
+      "agent_ids": []
+    },
+    "hooks/usePersistFn.ts": {
+      "text": [
+        "any; /** * usePersistFn instead of useCallback to reduce cognitive load */ export function usePersistFn",
+        "(fn); fnRef.current = fn; const persistFn = useRef"
+      ],
+      "agent_ids": []
+    },
+    "hooks/useScreenWatcher.ts": {
+      "text": [
+        "(\"\"); const [userState, setUserState] = useState",
+        "(\"active\"); const focusedWidgetRef = useRef",
+        "(\"\"); const userStateRef = useRef"
+      ],
+      "agent_ids": []
+    },
+    "lib/siteKnowledge.ts": {
+      "text": [
+        "Dashboard / Platform Overview",
+        "AI Mock Interview Simulator",
+        "Readiness Command / AI Action Centre",
+        "6-Week Roadmap & Skill Intelligence",
+        "AI Career Coach Console",
+        "Project Blueprints & Architecture Recommender",
+        "Cohort Analytics & Placement Benchmarks",
+        "ATS Resume Studio",
+        "Branches & Courses Intelligence",
+        "Project Defense Console",
+        "Role Intelligence & Target Pathways",
+        "Career Mission Tracker",
+        "Profile & Settings (Single Source of Truth)"
+      ],
+      "agent_ids": []
+    },
+    "pages/Home.tsx": {
+      "text": [
+        "(null); const [showResultScreen, setShowResultScreen] = useState",
+        "(false); const [showOnePageResume, setShowOnePageResume] = useState",
+        "(false); const [interviewCompany, setInterviewCompany] = useState",
+        "(\"Razorpay / Fintech\"); const [interviewRole, setInterviewRole] = useState",
+        "(false); const [oauthError, setOauthError] = useState",
+        "(null); const [oauthSigningIn, setOauthSigningIn] = useState",
+        "(false); const oauthHandledRef = useRef",
+        "= 7.0 for top-tier cutoff\" : \"Maintain academic consistency\", p.coding",
+        "( FALLBACK_COHORT_ANALYTICS as unknown as CohortAnalyticsData ); const [isSummarizingCohort, setIsSummarizingCohort] = useState(false); const [cohortInsight, setCohortInsight] = useState",
+        "Signing you in...",
+        "",
+        "Pathfinder Candidate Onboarding",
+        "Step-Wise Profile Setup for AI Career Readiness Assessment",
+        "Sign Out",
+        "Waking up the server, this can take up to a minute...",
+        "Connecting to cloud backend... (free-tier servers take ~15-20s on first load). All predictions will populate automatically.",
+        "Profile Acceleration Available",
+        "Add your GitHub / LeetCode profiles or certifications in Profile / Settings to elevate your career readiness score by up to +12%.",
+        "Complete Profile",
+        "Ask Coach About This Page",
+        "Strong Candidate Profile",
+        "Campus Placement Readiness Overview",
+        "Real-time placement probability and primary eligibility benchmark",
+        "Target Company Placement Radar",
+        "Real-time hiring compatibility score mapped against historical campus drive cutoffs and technical rubrics"
+      ],
+      "agent_ids": []
+    },
+    "pages/NotFound.tsx": {
+      "text": [
+        "",
+        "Error 404 · Route Uncharted",
+        "Navigation Vector Lost",
+        "The placement roadmap coordinate or dashboard node you are trying to access does not exist or has been relocated.",
+        "Return to Executive Dashboard",
+        "Go Back",
+        "404 · Navigation Vector Lost · Pathfinder 2.0"
+      ],
+      "agent_ids": []
+    },
+    "shaders/SphereShieldTiled.tsx": {
+      "text": [
+        "r * r) break; vec3 v = vec3(q, sqrt(r * r - rho2)) / r; cell = hexCell(toSphere(v)); a = activation(cell.zw); float rn = 1.0 + uExtrude * a; if (abs(rn - r)",
+        "(null) const canvasRef = useRef",
+        "(null) const propsRef = useRef"
+      ],
+      "agent_ids": []
+    },
+    "shaders/data-pixel-arc/DataPixelArcCanvas.tsx": {
+      "text": [
+        "(null); const canvasRef = useRef"
+      ],
+      "agent_ids": []
+    },
+    "shaders/neuform-isolated/NeuformBatchEffects.tsx": {
+      "text": [
+        "\", cylinders: \"",
+        "\", sphere: \"",
+        "`; const controlScript = `",
+        "`; const focusScript = `",
+        "`; return patchedSource .replace(/",
+        "Constellation Field",
+        "Particle Drift",
+        "Particle Network",
+        "Flux Vortex",
+        "Portal Field",
+        "Flow Field",
+        "Amber Halftone",
+        "Layered Planes",
+        "Node Cubes",
+        "Flowing Mesh",
+        "Signal Particles",
+        "Skeuomorphic Toggle",
+        "Matrix Field",
+        "Gateway Flow",
+        "Connectivity Graph",
+        "Interface Lines",
+        "Wireframe Forms",
+        "Defense Lines",
+        "Override Grid",
+        "Topo Field"
+      ],
+      "agent_ids": []
+    },
+    "shaders/neuform-isolated/NeuformCraftEffects.tsx": {
+      "text": [
+        "`; const focusScript = `",
+        "`; const presentedSource = definition.presentation === \"animated-typography\" ? animatedTypographySource(definition.source) : definition.presentation === \"woven-cloth-label\" ? wovenClothLabelSource(definition.source) : definition.source; return presentedSource .replace(/",
+        "`) .replace(/",
+        "Animated neon typography",
+        "Woven Cloth kinetic textile",
+        "Julian Vance nebula background",
+        "Aura UI fluid background",
+        "Nexus unified halftone flow",
+        "Aeonix ember storm",
+        "Kinetic Lathe certificate"
+      ],
+      "agent_ids": []
+    },
+    "shaders/neuform-isolated/NeuformIsolatedEffects.tsx": {
+      "text": [
+        "`; const SHADERS_WORDMARK_SVG = `",
+        "Uploading — glowing border microinteraction",
+        "Thinking — glowing border microinteraction",
+        "\") .replace(\"",
+        "b) & 1;\\n\" + \" c.beginPath();\\n\" + \" c.arc(brailleX + (b",
+        "1 ? 1 : s; return s",
+        "0.5 ? mixRGB(base,[0,0,0],0.88) : mixRGB(base,[255,255,255],0.9); var pitch = TS/30, a = (17 + (i % 4)*9)*Math.PI/180; var ca = Math.cos(a), sa = Math.sin(a), span = Math.ceil(TS/pitch); x.save(); x.fillStyle = cssRGB(dot); x.translate(TS/2, TS/2); x.rotate(a); for (gy=-span;gy",
+        "1.1) continue; var s = fbm(n, u*2.7, v*2.7, 4)*0.95 + (0.55 - v)*0.5; var rad = pitch*0.66*(s",
+        "1 ? 1 : s); if (rad",
+        "New Grainient Collection Added — motion",
+        "0.5?0.0:2.1);',\", paths: ` var W=[], TWO=6.283185307179586; for(i=0;i",
+        "0.5?0.0:2.1);',\", points: ` var NZ=64, PER=Math.max(1,Math.floor(N/NZ)); for(var i=0;i",
+        "0.5)?3.0:1.2;',\", points: ` var LOBE=[]; for(var q=0;q",
+        "Recursive Erosion — Particle Sphere Motion Study",
+        "`) .replace(/",
+        "Epilude — Footer",
+        "Shaders Particle Wordmark",
+        "\") .replace(\"aspect-ratio: 8.541554959785524;\", \"aspect-ratio: 5.333333333333333;\") .replace(/var WORDMARK =[\\s\\S]*?\"",
+        "Supreme Radio — Graphic Identity",
+        "ThreeUI — Audio Wordmark",
+        "`; const focusScript = `",
+        "`; return source .replace(/",
+        "bounds.right || event.clientY",
+        "Twelve Works in Slow Orbit",
+        "Signal Lost, Image Holding"
+      ],
+      "agent_ids": []
+    },
+    "shaders/predictive-arc/PredictiveArcCanvas.tsx": {
+      "text": [
+        "(null); const canvasRef = useRef"
+      ],
+      "agent_ids": []
+    },
+    "shaders/predictive-arc/PredictiveArcCollection.tsx": {
+      "text": [
+        "SYS.HYBRID.DUAL // VOID_042 x PREDICTIVE_ARC"
+      ],
+      "agent_ids": []
+    },
+    "shaders/predictive-arc/predictiveArcRenderer.ts": {
+      "text": [
+        "= thickness) continue; let intensity = 1 - distanceToCurve / thickness; const waveX = Math.sin(x * 0.012 + time * 1.6); const waveY = Math.cos(y * 0.015 + time * 0.8); intensity = intensity * 0.68 + waveX * waveY * 0.32 * intensity; intensity *= Math.max(0, 1 - Math.pow(Math.abs(normX), 2.4)); if (intensity"
+      ],
+      "agent_ids": []
+    },
+    "shaders/ribbon-field/RibbonFieldBackground.tsx": {
+      "text": [
+        "(null), canvasRef = useRef"
+      ],
+      "agent_ids": []
+    },
+    "shaders/shader-buttons/RakingLightPillButton.tsx": {
+      "text": [
+        "(null); const canvasRef = useRef",
+        "Field Notes 2026"
+      ],
+      "agent_ids": []
+    },
+    "shaders/shader-buttons/SelectedButtonStudies.tsx": {
+      "text": [
+        "`; const script = `",
+        "`; return source.replace(/",
+        "focusedSource(definition.index, selectedMode, background), [definition.index, selectedMode, background], ); return (",
+        "Glassy Split",
+        "Generate Site",
+        "Chrome Upload",
+        "Book a Demo",
+        "Iridescent Glass",
+        "Create & Get Started",
+        "Soft Surface",
+        "Light Switch",
+        "Start Growing",
+        "Car Controls"
+      ],
+      "agent_ids": []
+    },
+    "shaders/shader-buttons/ShaderButtons.tsx": {
+      "text": [
+        ", LazyExoticComponent"
+      ],
+      "agent_ids": []
+    }
+  },
+  "backend_apis": [
+    "GET /api/gemini-live-key",
+    "GET /api/student-memory",
+    "GET /audit-log",
+    "GET /status",
+    "POST /action-result",
+    "POST /api/student-memory",
+    "POST /reply",
+    "POST /stream"
+  ],
+  "blueprints_count": 23,
+  "core_features": [
+    "ATS Resume Studio with 3-Layer Scoring (Lexical, Semantic, ATS Parsing)",
+    "Random Forest Placement Probability Estimator with 23 domain-tailored blueprints",
+    "Role Gap Radar & Skill Mastery Matrix",
+    "12-Week Sprint Personalized Dynamic Career Roadmap",
+    "Peer Cohort Benchmarking and Tier Percentiles",
+    "Live 3D Cybernetic Voice Agent (Groq LLM + ElevenLabs TTS + Lip Sync)"
+  ]
+}
