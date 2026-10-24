@@ -105,6 +105,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const activeAudioElRef = useRef<HTMLAudioElement | null>(null);
+  const activeBufferSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const isCancelledRef = useRef<boolean>(false);
 
   const getOrCreateAudioPipeline = useCallback(() => {
@@ -191,7 +192,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
 
       let playedViaElevenLabs = false;
 
-      // 1. PRIMARY: ElevenLabs Daniel MP3 Stream through HTML5 <audio> + WebAudio Analyser
+      // 1. PRIMARY: ElevenLabs Daniel MP3 Stream through WebAudio decodeAudioData + AnalyserNode (Perfect Lip-Sync)
       try {
         const resp = await fetch(ttsUrl, {
           method: "POST",
@@ -202,39 +203,29 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
         if (resp.ok && !isCancelledRef.current) {
           const contentType = resp.headers.get("content-type") || "";
           if (contentType.includes("audio") || resp.status === 200) {
-            const blob = await resp.blob();
-            if (blob.size > 200) {
-              const audioUrl = URL.createObjectURL(blob);
-              const audio = new Audio();
-              audio.crossOrigin = "anonymous";
-              audio.src = audioUrl;
-
-              if (pipeline?.ctx && pipeline?.analyser) {
-                try {
-                  const source = pipeline.ctx.createMediaElementSource(audio);
-                  source.connect(pipeline.analyser);
-                } catch (sourceErr) {
-                  // MediaElementAudioSource already bound
-                }
+            const arrayBuffer = await resp.arrayBuffer();
+            if (arrayBuffer.byteLength > 200 && pipeline?.ctx && pipeline?.analyser) {
+              if (pipeline.ctx.state === "suspended") {
+                await pipeline.ctx.resume();
               }
+              const audioBuffer = await pipeline.ctx.decodeAudioData(arrayBuffer.slice(0));
+              const sourceNode = pipeline.ctx.createBufferSource();
+              sourceNode.buffer = audioBuffer;
+              sourceNode.connect(pipeline.analyser);
+              // pipeline.analyser is already connected to destination
 
-              activeAudioElRef.current = audio;
+              activeBufferSourceRef.current = sourceNode;
 
-              audio.onended = () => {
-                URL.revokeObjectURL(audioUrl);
+              sourceNode.onended = () => {
+                if (activeBufferSourceRef.current === sourceNode) {
+                  activeBufferSourceRef.current = null;
+                }
                 if (!isCancelledRef.current) {
                   playNext();
                 }
               };
 
-              audio.onerror = () => {
-                URL.revokeObjectURL(audioUrl);
-                if (!isCancelledRef.current) {
-                  playNext();
-                }
-              };
-
-              await audio.play();
+              sourceNode.start(0);
               playedViaElevenLabs = true;
             }
           }
@@ -294,8 +285,13 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}) {
    * Stops audio, mic capture, and speech synthesis within <100ms.
    */
   const stopAll = useCallback(() => {
-    isCancelledRef.current = true;
-    // 1. Stop HTML5 audio playback immediately
+    // 1. Stop active WebAudio and HTML5 audio playback immediately
+    if (activeBufferSourceRef.current) {
+      try {
+        activeBufferSourceRef.current.stop();
+      } catch {}
+      activeBufferSourceRef.current = null;
+    }
     if (activeAudioElRef.current) {
       try {
         activeAudioElRef.current.pause();

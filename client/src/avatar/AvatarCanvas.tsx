@@ -4,12 +4,11 @@
  * 
  * Features:
  * - Real Articulated Mechanical Jaw (JawR_19) driven by WebAudio FFT for ultra-fast lip-sync
- * - Dual High-Resolution Eyes with Defined Obsidian Black Pupils (#000000) & Glowing Crimson Red Irises (#ff0033)
- * - Calibrated Ocular Lighting: 1.2 Emissive Intensity & 0.5 Point Lights (Zero glare wash-out)
- * - Prominent Stage Presence: Scaled ~2.75 units with 2.65 camera focal distance
- * - Cybernetic Metallic Face Plates paired with Deep Obsidian Chrome accents
- * - Poisson non-repetitive procedural eye blinking
- * - Organic respiratory breathing sway and conversational head nodding
+ * - Intense Glowing Fiery Red Irises (#ff0033 / #ff0022) with Sharp Obsidian Black Pupils (#000000)
+ * - Transparent Cornea Bypass: Iris mesh rendered directly with 3.5 Emissive Glow & Ocular Point Lights
+ * - Full-Face Framing: Scaled ~2.45 units with camera z=2.5 (chin to crown fully visible)
+ * - Organic Continuous Life Motion: 4-axis floating respiratory sway, gaze drift, conversational nodding
+ * - Clean Viewport: Zero overlay text, badges, or bars - ONLY the pure cybernetic face.
  */
 
 import React, { useRef, useEffect, useState } from "react";
@@ -31,11 +30,10 @@ export interface AvatarCanvasProps {
 }
 
 /**
- * Creates high-fidelity cybernetic eye texture featuring:
- * 1. Deep Obsidian Jet-Black Center Pupil (#000000)
- * 2. Vivid Crimson Red Iris Ring (#ff0033, #dc2626) with micro-spokes and tech rings
- * 3. Defined Outer Limbal Ring
- * 4. Crisp specular glint for lifelike cybernetic intensity
+ * Creates ultra-sharp high-intensity cybernetic eye texture:
+ * - Jet-black obsidian pupil in the exact center (#000000, 75px radius)
+ * - Radiant crimson-ruby fiery iris ring (#ff0033 / #ff0022) with micro-spokes
+ * - Specular highlight glints for lifelike cybernetic intensity
  */
 function createCyberEyeTexture(): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
@@ -47,35 +45,36 @@ function createCyberEyeTexture(): THREE.CanvasTexture {
   const cx = 256;
   const cy = 256;
 
-  // Background / Sclera edge: obsidian black
+  // Dark obsidian background
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, 512, 512);
 
-  // Outer iris gradient (Radiant crimson with dark outer limbal ring)
-  const irisGrad = ctx.createRadialGradient(cx, cy, 70, cx, cy, 220);
+  // Intense glowing ruby-crimson iris
+  const irisGrad = ctx.createRadialGradient(cx, cy, 60, cx, cy, 220);
   irisGrad.addColorStop(0.0, "#000000"); // Inner pupil border
-  irisGrad.addColorStop(0.15, "#660011"); // Deep shadow ring
-  irisGrad.addColorStop(0.40, "#c20025"); // Intense ruby crimson
-  irisGrad.addColorStop(0.70, "#ff0033"); // Vivid scarlet red glow
-  irisGrad.addColorStop(0.88, "#99001e"); // Limbal transition
-  irisGrad.addColorStop(1.0, "#000000"); // Obsidian limbal border
+  irisGrad.addColorStop(0.12, "#55000d"); // Transition shadow
+  irisGrad.addColorStop(0.35, "#dc2626"); // Vivid ruby flame
+  irisGrad.addColorStop(0.65, "#ff0033"); // Radiant glowing scarlet
+  irisGrad.addColorStop(0.85, "#ff2244"); // Glowing ring
+  irisGrad.addColorStop(0.96, "#880015"); // Limbal transition
+  irisGrad.addColorStop(1.0, "#000000"); // Jet black limbal border
 
   ctx.beginPath();
   ctx.arc(cx, cy, 220, 0, Math.PI * 2);
   ctx.fillStyle = irisGrad;
   ctx.fill();
 
-  // Cybernetic Iris Radial Micro-Spokes
+  // Cybernetic Iris Radial Spokes
   ctx.save();
   ctx.translate(cx, cy);
-  for (let i = 0; i < 48; i++) {
-    const angle = (i * Math.PI * 2) / 48;
+  for (let i = 0; i < 64; i++) {
+    const angle = (i * Math.PI * 2) / 64;
     ctx.rotate(angle);
     ctx.beginPath();
-    ctx.moveTo(90, 0);
-    ctx.lineTo(210, 0);
-    ctx.strokeStyle = i % 2 === 0 ? "rgba(255, 60, 90, 0.5)" : "rgba(200, 10, 35, 0.35)";
-    ctx.lineWidth = i % 3 === 0 ? 2.5 : 1.2;
+    ctx.moveTo(80, 0);
+    ctx.lineTo(215, 0);
+    ctx.strokeStyle = i % 2 === 0 ? "rgba(255, 90, 110, 0.6)" : "rgba(220, 20, 45, 0.4)";
+    ctx.lineWidth = i % 4 === 0 ? 3.0 : 1.5;
     ctx.stroke();
     ctx.rotate(-angle);
   }
@@ -83,40 +82,40 @@ function createCyberEyeTexture(): THREE.CanvasTexture {
 
   // Concentric cybernetic tech rings
   ctx.beginPath();
-  ctx.arc(cx, cy, 140, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(255, 120, 140, 0.4)";
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(cx, cy, 185, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(180, 0, 30, 0.6)";
+  ctx.arc(cx, cy, 130, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(255, 150, 170, 0.55)";
   ctx.lineWidth = 2.0;
   ctx.stroke();
 
+  ctx.beginPath();
+  ctx.arc(cx, cy, 175, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(255, 50, 75, 0.7)";
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
   // THE OBSIDIAN JET-BLACK PUPIL (Crisp, defined center)
-  const pupilGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80);
+  const pupilGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 75);
   pupilGrad.addColorStop(0.0, "#000000");
-  pupilGrad.addColorStop(0.88, "#000000");
-  pupilGrad.addColorStop(1.0, "#180004");
+  pupilGrad.addColorStop(0.92, "#000000");
+  pupilGrad.addColorStop(1.0, "#150003");
 
   ctx.beginPath();
-  ctx.arc(cx, cy, 80, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 75, 0, Math.PI * 2);
   ctx.fillStyle = pupilGrad;
   ctx.fill();
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.95)";
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.98)";
+  ctx.lineWidth = 4;
   ctx.stroke();
 
   // Sharp specular catchlights (glint)
   ctx.beginPath();
-  ctx.arc(cx - 30, cy - 35, 12, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+  ctx.arc(cx - 28, cy - 32, 14, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
   ctx.fill();
 
   ctx.beginPath();
-  ctx.arc(cx - 16, cy - 18, 5, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+  ctx.arc(cx - 14, cy - 16, 6, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
   ctx.fill();
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -183,40 +182,40 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#000000");
 
-    // Camera calibrated for large, commanding cybernetic face framing
-    const camera = new THREE.PerspectiveCamera(35, renderWidth / renderHeight, 0.1, 100);
-    camera.position.set(0, 0, 2.65);
-    camera.lookAt(0, 0, 0);
+    // Camera calibrated for complete face framing (chin to forehead with zero clipping)
+    const camera = new THREE.PerspectiveCamera(34, renderWidth / renderHeight, 0.1, 100);
+    camera.position.set(0, 0, 2.5);
+    camera.lookAt(0, -0.02, 0);
 
     // 2. High-Performance WebGL Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setSize(renderWidth, renderHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.25;
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
 
     // 3. Cybernetic Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
     scene.add(ambientLight);
 
     // Key Light: Electric sky-blue directional highlight
-    const keyLight = new THREE.DirectionalLight(0x38bdf8, 2.5);
+    const keyLight = new THREE.DirectionalLight(0x38bdf8, 2.6);
     keyLight.position.set(2.5, 3.5, 3.5);
     scene.add(keyLight);
 
     // Rim Light: Vivid indigo rim reflection on silhouette
-    const rimLight = new THREE.DirectionalLight(0x818cf8, 2.8);
+    const rimLight = new THREE.DirectionalLight(0x818cf8, 3.0);
     rimLight.position.set(-3.0, 2.5, -2.5);
     scene.add(rimLight);
 
     // Fill Light: Soft cyan bounce
-    const fillLight = new THREE.DirectionalLight(0x0284c7, 1.6);
+    const fillLight = new THREE.DirectionalLight(0x0284c7, 1.8);
     fillLight.position.set(-2.0, -1.5, 2.5);
     scene.add(fillLight);
 
-    // 4. Head Group (Hierarchical Root for idle sway & nodding)
+    // 4. Head Group (Hierarchical Root for continuous floating sway & nodding)
     const headGroup = new THREE.Group();
     scene.add(headGroup);
 
@@ -226,23 +225,22 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     let eyeRNode: THREE.Object3D | null = null;
     let initialJawY = 0;
     let initialJawZ = 0;
-    let initialEyeScaleY_L = 1.0;
-    let initialEyeScaleY_R = 1.0;
     let ocularLightL: THREE.PointLight | null = null;
     let ocularLightR: THREE.PointLight | null = null;
 
-    // Defined Sharp Crimson Eyes with Obsidian Black Pupil Texture
+    // Defined Vivid Glowing Crimson Eyes with Obsidian Black Pupil Texture
     const eyeTexture = createCyberEyeTexture();
     const vampireEyeMat = new THREE.MeshStandardMaterial({
       map: eyeTexture,
-      emissive: new THREE.Color("#ff0033"),
+      color: new THREE.Color("#ff0033"),
+      emissive: new THREE.Color("#ff0022"),
       emissiveMap: eyeTexture,
-      emissiveIntensity: 1.2, // Calibrated down from 4.5 to eliminate glare
-      roughness: 0.12,
-      metalness: 0.25,
+      emissiveIntensity: 3.5, // Intense radiant glowing red!
+      roughness: 0.1,
+      metalness: 0.15,
     });
 
-    // 5. Load Humanoid Robot Face GLB (by kito1704 under CC-BY-4.0)
+    // 5. Load Humanoid Robot Face GLB
     const gltfLoader = new GLTFLoader();
     gltfLoader.load(
       "/models/avatar.glb",
@@ -254,33 +252,33 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
 
-        // Target height ~2.75 units in camera view for large, commanding presence (was 2.1)
-        const scale = 2.75 / size.y;
+        // Target scale: 2.45 units perfectly frames full head (chin to crown)
+        const scale = 2.45 / size.y;
         model.scale.set(scale, scale, scale);
 
-        // Center dead-center on origin with slight offset for eye contact
+        // Center dead-center on origin with subtle vertical offset
         model.position.x = -center.x * scale;
-        model.position.y = -center.y * scale - 0.08;
+        model.position.y = -center.y * scale - 0.04;
         model.position.z = -center.z * scale;
 
         // Custom High-End Cybernetic Materials
         const lightBlueFaceMat = new THREE.MeshPhysicalMaterial({
-          color: new THREE.Color("#7dd3fc"), // Light Cybernetic Blue
-          metalness: 0.68,
-          roughness: 0.22,
-          clearcoat: 0.85,
-          clearcoatRoughness: 0.12,
+          color: new THREE.Color("#7dd3fc"),
+          metalness: 0.65,
+          roughness: 0.2,
+          clearcoat: 0.9,
+          clearcoatRoughness: 0.1,
           emissive: new THREE.Color("#0284c7"),
-          emissiveIntensity: 0.16,
+          emissiveIntensity: 0.15,
           reflectivity: 0.85,
         });
 
         const obsidianMat = new THREE.MeshPhysicalMaterial({
-          color: new THREE.Color("#0f172a"), // Deep obsidian chrome
-          metalness: 0.88,
-          roughness: 0.18,
-          clearcoat: 0.9,
-          clearcoatRoughness: 0.1,
+          color: new THREE.Color("#0b0f19"),
+          metalness: 0.9,
+          roughness: 0.15,
+          clearcoat: 0.95,
+          clearcoatRoughness: 0.08,
         });
 
         // Traverse and customize model parts
@@ -292,9 +290,13 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
 
             const matName = (m.material as THREE.Material)?.name || "";
 
-            if (matName.includes("IRIS") || matName.includes("EyeRefractive") || matName.includes("Eye")) {
-              // Vampire Glowing Red Eyes with Obsidian Black Pupil
+            if (matName.includes("IRIS")) {
+              // The TRUE IRIS MESH (Object_52, Object_55) -> Fiery glowing crimson red!
               m.material = vampireEyeMat;
+              m.renderOrder = 2;
+            } else if (matName.includes("EyeRefractive")) {
+              // The outer cornea shell (Object_53, Object_56): hide it so it does not block the red glow!
+              m.visible = false;
             } else if (matName.includes("Material.001") || matName.includes("material_0")) {
               // Main Face Plates: Cybernetic Light Blue
               m.material = lightBlueFaceMat;
@@ -317,10 +319,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
         eyeLNode = model.getObjectByName("Kito6_FaceMesh_Eye.L_20") || model.getObjectByName("Kito6_FaceMesh_EyeL_20") || null;
         eyeRNode = model.getObjectByName("Kito6_FaceMesh_Eye.R_21") || model.getObjectByName("Kito6_FaceMesh_EyeR_21") || null;
 
-        if (eyeLNode) initialEyeScaleY_L = eyeLNode.scale.y;
-        if (eyeRNode) initialEyeScaleY_R = eyeRNode.scale.y;
-
-        // Add radiant ocular red point lights calibrated to 0.5 (was 2.5) to avoid washed-out haze
+        // Radiant ocular red point lights right in front of the eyes
         if (eyeLNode && eyeRNode) {
           const eyeLWorld = new THREE.Vector3();
           eyeLNode.getWorldPosition(eyeLWorld);
@@ -330,12 +329,12 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
           eyeRNode.getWorldPosition(eyeRWorld);
           headGroup.worldToLocal(eyeRWorld);
 
-          ocularLightL = new THREE.PointLight(0xff0033, 0.5, 1.8);
-          ocularLightL.position.copy(eyeLWorld).add(new THREE.Vector3(0, 0, 0.05));
+          ocularLightL = new THREE.PointLight(0xff0033, 1.8, 1.8);
+          ocularLightL.position.copy(eyeLWorld).add(new THREE.Vector3(0, 0, 0.08));
           headGroup.add(ocularLightL);
 
-          ocularLightR = new THREE.PointLight(0xff0033, 0.5, 1.8);
-          ocularLightR.position.copy(eyeRWorld).add(new THREE.Vector3(0, 0, 0.05));
+          ocularLightR = new THREE.PointLight(0xff0033, 1.8, 1.8);
+          ocularLightR.position.copy(eyeRWorld).add(new THREE.Vector3(0, 0, 0.08));
           headGroup.add(ocularLightR);
         }
 
@@ -359,7 +358,7 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
     const freqData = new Uint8Array(128);
     const clock = new THREE.Clock();
 
-    // 7. Continuous Animation Render Loop
+    // 7. Continuous Animation Render Loop (Alive floating & swaying motion)
     const animate = () => {
       animFrameRef.current = requestAnimationFrame(animate);
 
@@ -377,31 +376,35 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       }
 
       // ======================================================================
-      // 1. ORGANIC RESPIRATORY BREATHING & CONVERSATIONAL SWAY
+      // 1. ORGANIC CONTINUOUS LIFE-MOTION & FLOATING SWAY
       // ======================================================================
-      const breathingY = Math.sin(elapsedTime * 1.6) * 0.035;
-      const breathingYaw = Math.cos(elapsedTime * 1.0) * 0.022;
-      const breathingPitch = Math.sin(elapsedTime * 0.8) * 0.015;
+      const breathingY = Math.sin(elapsedTime * 1.5) * 0.045;
+      const breathingX = Math.cos(elapsedTime * 1.1) * 0.02;
+      const breathingYaw = Math.cos(elapsedTime * 0.95) * 0.04;
+      const breathingPitch = Math.sin(elapsedTime * 0.75) * 0.03;
+      const breathingRoll = Math.sin(elapsedTime * 1.2) * 0.018;
 
       headGroup.position.y = breathingY;
+      headGroup.position.x = breathingX;
       headGroup.rotation.y = breathingYaw;
       headGroup.rotation.x = breathingPitch;
+      headGroup.rotation.z = breathingRoll;
 
       // Conversational state postures
       const curState = stateRef.current;
       if (curState === "listening") {
-        headGroup.rotation.y += 0.05;
-        headGroup.rotation.x += 0.03;
+        headGroup.rotation.y += 0.06;
+        headGroup.rotation.x += 0.04;
       } else if (curState === "thinking") {
-        headGroup.rotation.y += 0.08;
-        headGroup.rotation.x -= 0.04;
+        headGroup.rotation.y += 0.09;
+        headGroup.rotation.x -= 0.05;
       } else if (curState === "speaking") {
-        headGroup.rotation.x += Math.sin(elapsedTime * 4.8) * 0.035;
-        headGroup.rotation.y += Math.sin(elapsedTime * 2.8) * 0.018;
+        headGroup.rotation.x += Math.sin(elapsedTime * 5.2) * 0.04;
+        headGroup.rotation.y += Math.sin(elapsedTime * 3.1) * 0.022;
       }
 
       // ======================================================================
-      // 2. PROCEDURAL ORGANIC EYE BLINKING (Poisson 140ms closure)
+      // 2. CYBERNETIC INTENSE EYE PULSE & BLINK (No eyeball squashing)
       // ======================================================================
       if (!isBlinking && now - lastBlinkTime > nextBlinkDelay) {
         isBlinking = true;
@@ -409,29 +412,25 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       }
 
       if (isBlinking) {
-        const blinkProgress = (now - blinkStartTime) / 140;
+        const blinkProgress = (now - blinkStartTime) / 130;
         if (blinkProgress < 1.0) {
           const eyeFactor = Math.sin(blinkProgress * Math.PI);
-          if (eyeLNode) eyeLNode.scale.y = initialEyeScaleY_L * Math.max(0.08, 1.0 - eyeFactor);
-          if (eyeRNode) eyeRNode.scale.y = initialEyeScaleY_R * Math.max(0.08, 1.0 - eyeFactor);
-          // Ocular vampire glow dim during eyelid blink (calibrated from 1.2 and 0.5)
-          if (vampireEyeMat) vampireEyeMat.emissiveIntensity = 1.2 * (1.0 - eyeFactor * 0.85);
-          if (ocularLightL) ocularLightL.intensity = 0.5 * (1.0 - eyeFactor * 0.85);
-          if (ocularLightR) ocularLightR.intensity = 0.5 * (1.0 - eyeFactor * 0.85);
+          // Pulse the emissive glow smoothly during blink without distorting 3D eyeball geometry
+          if (vampireEyeMat) vampireEyeMat.emissiveIntensity = 3.5 * Math.max(0.1, 1.0 - eyeFactor * 0.92);
+          if (ocularLightL) ocularLightL.intensity = 1.8 * Math.max(0.1, 1.0 - eyeFactor * 0.92);
+          if (ocularLightR) ocularLightR.intensity = 1.8 * Math.max(0.1, 1.0 - eyeFactor * 0.92);
         } else {
           isBlinking = false;
           lastBlinkTime = now;
-          nextBlinkDelay = 2800 + Math.random() * 2800;
-          if (eyeLNode) eyeLNode.scale.y = initialEyeScaleY_L;
-          if (eyeRNode) eyeRNode.scale.y = initialEyeScaleY_R;
-          if (vampireEyeMat) vampireEyeMat.emissiveIntensity = 1.2;
-          if (ocularLightL) ocularLightL.intensity = 0.5;
-          if (ocularLightR) ocularLightR.intensity = 0.5;
+          nextBlinkDelay = 2500 + Math.random() * 3000;
+          if (vampireEyeMat) vampireEyeMat.emissiveIntensity = 3.5;
+          if (ocularLightL) ocularLightL.intensity = 1.8;
+          if (ocularLightR) ocularLightR.intensity = 1.8;
         }
       }
 
       // ======================================================================
-      // 3. WEBAUDIO REAL-TIME LIP-SYNC (<50ms Latency)
+      // 3. WEBAUDIO REAL-TIME MECHANICAL JAW LIP-SYNC
       // Driven by ElevenLabs audio stream frequency amplitudes through AnalyserNode
       // ======================================================================
       let audioVolume = 0;
@@ -440,24 +439,24 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
       if (activeAnalyser) {
         activeAnalyser.getByteFrequencyData(freqData);
         let sum = 0;
-        // Sample human speech formant range (150Hz - 2500Hz)
+        // Sample speech formant range (150Hz - 2500Hz)
         for (let i = 2; i < 28; i++) {
           sum += freqData[i];
         }
         audioVolume = sum / (26 * 255);
       } else if (isSpeakingRef.current) {
         const syllableCadence = Math.sin(elapsedTime * 14.0) * Math.cos(elapsedTime * 7.5);
-        audioVolume = Math.max(0.12, Math.abs(syllableCadence) * 0.48);
+        audioVolume = Math.max(0.15, Math.abs(syllableCadence) * 0.52);
       } else {
         audioVolume = 0;
       }
 
-      // Articulate Mechanical Jaw (Jaw.R_19) dynamically
+      // Articulate Mechanical Jaw (Jaw.R_19) with natural elasticity
       if (jawNode) {
-        const jawDrop = Math.min(1.0, audioVolume * 2.2);
-        jawNode.rotation.x = -jawDrop * 0.09;
-        jawNode.position.y = initialJawY - jawDrop * 0.01;
-        jawNode.position.z = initialJawZ + jawDrop * 0.003;
+        const jawDrop = Math.min(1.0, audioVolume * 2.4);
+        jawNode.rotation.x = -jawDrop * 0.11;
+        jawNode.position.y = initialJawY - jawDrop * 0.012;
+        jawNode.position.z = initialJawZ + jawDrop * 0.004;
       }
 
       renderer.render(scene, camera);
@@ -489,64 +488,18 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({
   }, [width, height, audioAnalyser]);
 
   return (
-    <div className={`relative w-full h-full min-h-[460px] flex flex-col items-center justify-center rounded-2xl overflow-hidden bg-[#000000] border border-sky-950/40 select-none shadow-[0_0_50px_rgba(2,132,199,0.15)] ${className}`}>
+    <div className={`relative w-full h-full min-h-[460px] flex flex-col items-center justify-center rounded-2xl overflow-hidden bg-[#000000] border border-sky-950/30 select-none shadow-[0_0_50px_rgba(2,132,199,0.15)] ${className}`}>
       
-      {/* Top Left Status Badge */}
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[#000000]/80 border border-white/10 backdrop-blur-md">
-        <span className="w-2 h-2 rounded-full bg-[#ff0033] shadow-[0_0_8px_#ff0033]" />
-        <span className="text-[10px] font-mono text-zinc-300 font-bold tracking-wider">
-          CYBERNETIC CORE 3.0
-        </span>
-      </div>
-
-      {/* Top Right Credit Badge (kito1704 CC-BY-4.0) */}
-      <div className="absolute top-3 right-3 z-20 pointer-events-none opacity-85 hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/70 border border-white/10 text-[9px] font-mono text-zinc-300">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-        <span>3D FACE: KITO1704 (CC-BY-4.0)</span>
-      </div>
-
-      {/* Center Viewport: 3D WebGL Humanoid Robot Face */}
+      {/* Clean Viewport: Pure 3D WebGL Humanoid Robot Face (Zero overlay badges / text) */}
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-2xl bg-[#000000]">
         <div ref={mountRef} className="w-full h-full flex items-center justify-center" />
 
-        {/* Subtle loading spinner while WebGL initializes */}
+        {/* Loading spinner while WebGL initializes */}
         {!modelLoaded && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 z-10 pointer-events-none">
             <div className="w-8 h-8 rounded-full border-2 border-sky-500 border-t-transparent animate-spin" />
-            <span className="text-[11px] font-mono text-sky-300 tracking-wider">CALIBRATING HUMANOID ROBOT...</span>
+            <span className="text-[11px] font-mono text-sky-300 tracking-wider">CALIBRATING 3D AVATAR...</span>
           </div>
-        )}
-      </div>
-
-      {/* Bottom Telemetry Bar in True Black (#000000) */}
-      <div className="absolute bottom-3 inset-x-3 z-20 flex items-center justify-between px-3.5 py-1.5 rounded-xl border border-white/10 bg-[#000000]/90 backdrop-blur-md">
-        <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-300">
-          <span
-            className={`font-semibold uppercase tracking-wider ${
-              state === "speaking"
-                ? "text-emerald-400"
-                : state === "listening"
-                ? "text-sky-400"
-                : state === "thinking"
-                ? "text-amber-400"
-                : "text-zinc-400"
-            }`}
-          >
-            {state === "speaking" ? "● Speaking" : state === "listening" ? "● Listening..." : state === "thinking" ? "● Reasoning..." : "Ready"}
-          </span>
-        </div>
-
-        {/* Live Audio Reaction Waveform Bars */}
-        {isSpeaking ? (
-          <div className="flex items-center gap-1">
-            <span className="w-1 h-3.5 bg-sky-400 animate-bounce rounded-full" style={{ animationDelay: "0ms" }} />
-            <span className="w-1 h-5 bg-[#0284c7] animate-bounce rounded-full" style={{ animationDelay: "120ms" }} />
-            <span className="w-1 h-2.5 bg-emerald-400 animate-bounce rounded-full" style={{ animationDelay: "240ms" }} />
-          </div>
-        ) : (
-          <span className="text-[10px] font-mono text-zinc-400 tracking-wider">
-            OBSIDIAN PUPILS · CRIMSON IRIS
-          </span>
         )}
       </div>
     </div>
