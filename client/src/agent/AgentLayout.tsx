@@ -17,8 +17,14 @@ export interface AgentLayoutProps {
   [key: string]: any;
 }
 
-/** Full-height slide: left = 3D face, right = chat + typing + mic.
- *  Usage: <AgentLayout getToken={() => localStorage.getItem("token")} /> */
+const QUICK_PROMPTS = [
+  "How is my placement readiness score?",
+  "Explain the 23 project blueprints",
+  "Audit my ATS resume against recruiter cutoffs",
+  "What skills should I master this week?",
+];
+
+/** Full responsive slide: left = 3D face, right = chat + typing + mic. */
 export default function AgentLayout({
   getToken = () =>
     localStorage.getItem("pathfinder_token") ||
@@ -198,17 +204,24 @@ export default function AgentLayout({
   return (
     <section
       data-agent-ignore
-      className="grid h-[100dvh] w-full grid-cols-1 bg-[#0a0a0f] text-zinc-100 md:grid-cols-2"
+      className="grid h-full min-h-[580px] w-full grid-cols-1 bg-[#0a0a0f] text-zinc-100 md:grid-cols-2 rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
     >
       {/* LEFT: 3D face */}
-      <div className="relative min-h-[40vh] overflow-hidden bg-[radial-gradient(circle_at_50%_40%,#3b0a45_0%,#0a0a0f_70%)]">
+      <div className="relative h-full min-h-[340px] overflow-hidden bg-[radial-gradient(circle_at_50%_40%,#3b0a45_0%,#0a0a0f_75%)] flex items-center justify-center">
         <Avatar3D getLevel={() => speaker.current?.level() ?? 0} />
-        <div className="absolute left-4 top-4 text-xs font-mono tracking-[0.3em] text-violet-300/70">
-          DAS AGENT
+        
+        {/* Floating Top Badge */}
+        <div className="absolute left-5 top-5 z-20 flex items-center gap-2">
+          <div className="px-3 py-1 rounded-full bg-violet-950/80 border border-violet-500/40 text-[11px] font-mono tracking-widest text-violet-300 backdrop-blur-md flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+            DAS 3D AGENT
+          </div>
         </div>
+
+        {/* Audio State Badge */}
         <div
-          className={`absolute bottom-4 left-4 flex items-center gap-2 text-xs ${
-            speaking ? "text-pink-300" : "text-zinc-500"
+          className={`absolute bottom-5 left-5 z-20 flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full bg-slate-900/80 border border-white/10 backdrop-blur-md ${
+            speaking ? "text-pink-300 border-pink-500/40" : "text-zinc-400"
           }`}
         >
           <span
@@ -217,45 +230,89 @@ export default function AgentLayout({
                 ? "animate-pulse bg-pink-400"
                 : listening
                 ? "animate-ping bg-violet-400"
-                : "bg-zinc-600"
+                : "bg-emerald-500"
             }`}
           />
           {speaking ? "speaking" : listening ? "listening" : "online"}
         </div>
+
+        {/* Activation Modal when not awake */}
         {!awake && (
-          <button
-            onClick={wake}
-            className="absolute inset-0 m-auto h-14 w-56 rounded-full bg-violet-600 font-medium text-white shadow-[0_0_40px_#7c3aed] transition-all hover:bg-violet-500 hover:scale-105 active:scale-95 cursor-pointer z-20"
-          >
-            Wake up DAS
-          </button>
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-black/40 backdrop-blur-[2px]">
+            <div className="text-center space-y-4 max-w-sm">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/20 border border-violet-500/40 text-violet-300 text-xs font-mono">
+                <span>⚡ Interactive Voice & 3D Avatar</span>
+              </div>
+              <h3 className="text-2xl font-bold tracking-tight text-white">
+                DAS Career Intelligence
+              </h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Connect with Pathfinder's autonomous 3D agent. Speak naturally in Telugu, English, or Hindi.
+              </p>
+              <button
+                type="button"
+                onClick={wake}
+                className="mt-2 h-12 px-8 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 font-semibold text-white shadow-[0_0_35px_rgba(124,58,237,0.6)] transition-all hover:scale-105 active:scale-95 cursor-pointer text-sm inline-flex items-center gap-2"
+              >
+                <span>🚀 Wake up DAS</span>
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
       {/* RIGHT: chat */}
-      <div className="flex min-h-0 flex-col border-l border-white/10">
+      <div className="flex h-full min-h-0 flex-col border-t border-white/10 md:border-t-0 md:border-l bg-[#0d0e15]">
+        {/* Messages Scroll Area */}
         <div className="flex-1 space-y-3 overflow-y-auto p-5">
-          {msgs.length === 0 && awake && (
-            <div className="text-center text-sm text-zinc-500 mt-10">
-              DAS is awake and listening. Speak or type a query!
+          {msgs.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 text-xl font-bold">
+                DAS
+              </div>
+              <div>
+                <h4 className="text-base font-semibold text-white">How can I assist you today?</h4>
+                <p className="text-xs text-zinc-400 mt-1 max-w-xs">
+                  Ask questions about your placement odds, resume score, or project blueprints.
+                </p>
+              </div>
+              {/* Quick Prompt Chips */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md pt-2">
+                {QUICK_PROMPTS.map((prompt, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      if (!awake) wake();
+                      send(prompt);
+                    }}
+                    className="p-2.5 rounded-xl bg-white/5 border border-white/5 hover:border-violet-500/40 hover:bg-violet-600/10 text-left text-xs text-zinc-300 transition-all cursor-pointer"
+                  >
+                    💬 {prompt}
+                  </button>
+                ))}
+              </div>
             </div>
+          ) : (
+            msgs.map((m, i) => (
+              <div
+                key={i}
+                className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                  m.role === "user"
+                    ? "ml-auto bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md"
+                    : "bg-white/5 text-zinc-200 border border-white/10"
+                }`}
+              >
+                {m.content}
+              </div>
+            ))
           )}
-          {msgs.map((m, i) => (
-            <div
-              key={i}
-              className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm leading-relaxed ${
-                m.role === "user"
-                  ? "ml-auto bg-violet-600/80 text-white"
-                  : "bg-white/5 text-zinc-200 border border-white/5"
-              }`}
-            >
-              {m.content}
-            </div>
-          ))}
           <div ref={endRef} />
         </div>
+
+        {/* Input Bar pinned at the bottom */}
         <form
-          className="flex items-center gap-2 border-t border-white/10 p-3"
+          className="sticky bottom-0 z-20 flex items-center gap-2 border-t border-white/10 p-3.5 bg-[#0a0b10]/95 backdrop-blur-md"
           onSubmit={(e) => {
             e.preventDefault();
             const v = input;
@@ -266,8 +323,8 @@ export default function AgentLayout({
           <button
             type="button"
             onClick={() => setLangIdx((langIdx + 1) % LANGS.length)}
-            className="h-10 w-10 rounded-full bg-white/5 text-xs font-semibold hover:bg-white/10 transition-colors text-violet-300"
-            title="Voice language"
+            className="h-10 w-11 shrink-0 rounded-full bg-white/5 hover:bg-white/10 text-xs font-semibold text-violet-300 border border-white/10 transition-colors"
+            title="Switch Spoken Language"
           >
             {LANGS[langIdx][1]}
           </button>
@@ -275,17 +332,17 @@ export default function AgentLayout({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={!awake}
-            placeholder={awake ? "Type or tap the mic…" : "Mundu Wake up DAS nokku"}
-            className="h-10 flex-1 rounded-full bg-white/5 px-4 text-sm text-white placeholder-zinc-500 outline-none focus:ring-1 focus:ring-violet-500 disabled:opacity-50"
+            placeholder={awake ? "Ask DAS anything, or tap the mic…" : "Click 'Wake up DAS' to begin…"}
+            className="h-10 flex-1 rounded-full bg-white/5 px-4 text-sm text-white placeholder-zinc-500 outline-none focus:ring-1 focus:ring-violet-500 border border-white/5 disabled:opacity-50"
           />
           <button
             type="button"
             onClick={toggleMic}
             disabled={!awake}
-            className={`h-10 w-10 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+            className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${
               listening
-                ? "animate-pulse bg-pink-600 text-white"
-                : "bg-violet-600 hover:bg-violet-500 text-white"
+                ? "animate-pulse bg-pink-600 text-white shadow-[0_0_20px_#db2777]"
+                : "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_20px_rgba(124,58,237,0.4)]"
             } disabled:opacity-50`}
             aria-label="Microphone"
           >
