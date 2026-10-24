@@ -134,15 +134,12 @@ def clean(value: Any, max_len: int) -> str:
     return text[:max_len]
 
 
-from backend.owner_profile import is_owner_user, get_context_for_user, OWNER_PUBLIC_BIO
-
 # --------------------------------------------------------------------------- system instruction
 
 def build_system_instruction(
     screen_context: Optional[Dict[str, Any]] = None,
     user_memory: Optional[Dict[str, Any]] = None,
     knowledge: Optional[str] = None,
-    is_owner: Optional[bool] = None,
 ) -> str:
     ctx = screen_context or {}
     mem = user_memory or {}
@@ -152,34 +149,19 @@ def build_system_instruction(
     widget = clean(ctx.get("focusedWidget"), 60) or "none"
     state = clean(ctx.get("userState"), 30) or "active"
     name = clean(mem.get("studentName"), 40)
-    email = clean(mem.get("email"), 80)
     last_visit = clean(mem.get("lastVisit"), 40) or "first visit"
     last_topic = clean(mem.get("lastDiscussedTopic"), 120) or "none"
     idle_hint = " (the user may be stuck; offer one gentle, specific help without being pushy)" if "idle" in state else ""
 
-    if is_owner is None:
-        is_owner = is_owner_user(email=email, username=name)
-
-    owner_block = get_context_for_user(is_owner)
-
-    greeting_instruction = (
-        "- Time-of-day greeting for Boss Dileep: 'Good morning Boss!', 'Good afternoon Boss!', or 'Good evening Boss!' based on current time."
-        if is_owner else
-        "- For students, visitors, judges, or stakeholders: Greet warmly without 'Boss': 'Good morning/afternoon/evening! Welcome to Pathfinder. How can I assist you today?' NEVER call this user Boss."
-    )
-
     return f"""
-You are {agent_name()} (DAS AI), the autonomous voice-first AI mentor and personal co-pilot on the Pathfinder platform.
+You are {agent_name()}, the voice-first AI mentor inside the Pathfinder website, a placement-readiness and career-guidance platform for students.
 
-{owner_block}
-
-PERSONALITY & GREETING
-- Warm, loyal, calm, confident, and witty. Like a futuristic JARVIS co-pilot, never a robot.
-{greeting_instruction}
-- Adapt tone to audience: simple and empathetic for students; crisp and analytical for stakeholders/recruiters.
-- Multi-lingual: match English, Telugu script (తెలుగు), Roman Telugu, and Hindi effortlessly. When user says "explain in Telugu simply" or "ardham kaledhu", explain with real-world analogies (e.g. cricket coach analyzing batting stats).
-- Answer first. At most one short clarifying question, and only if truly needed.
-- Multi-lingual: match English, Telugu script (తెలుగు), Roman Telugu, and Hindi effortlessly. When user says "explain in Telugu simply" or "ardham kaledhu", explain with real-world analogies (e.g. cricket coach analyzing batting stats).
+PERSONALITY
+- Warm, calm, confident and quick. Like a brilliant senior friend, never a robot.
+- Reason about what the user actually wants and what the screen means before answering. Do not read UI labels or raw field names back to the user; explain the meaning (what it shows, why it matters, what to do next).
+- Adapt tone to the audience. A student gets simple, encouraging, practical language with small real-life examples. A teacher, placement officer, parent, judge or other stakeholder gets crisp, outcome-focused language (impact, evidence, limits). Infer the audience from the message; if unclear, default to student-friendly.
+- Match the language and script the user writes in (English, Telugu script, Roman Telugu, Hindi) and switch when they switch. Never repeat the same wording twice.
+- If the user says they did not understand, explain again with different words, a fresh analogy and smaller steps.
 - Answer first. At most one short clarifying question, and only if truly needed.
 
 WHAT YOU KNOW
@@ -241,10 +223,7 @@ def strip_for_speech(text: str) -> str:
     plain = re.sub(r"`([^`]*)`", r"\1", plain)
     plain = re.sub(r"https?://\S+", " ", plain)
     plain = re.sub(r"[*_#>~|]", " ", plain)
-    plain = re.sub(r"(?m)^\s*[-+•]\s+", "", plain)
-    # Strip emojis and pictographs (🚀, ✨, 🔥, 🤖, etc.) so speech sounds natural
-    plain = re.sub(r"[\U00010000-\U0010ffff]", "", plain)
-    plain = re.sub(r"[\u2600-\u27BF\uE000-\uF8FF]", "", plain)
+    plain = re.sub(r"(?m)^\s*[-+]\s+", "", plain)
     plain = re.sub(r"\s+", " ", plain).strip()
     if len(plain) <= MAX_SPOKEN_CHARS:
         return plain
@@ -392,11 +371,9 @@ async def generate_agent_reply(
     }
 
     models: List[str] = []
-    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if gemini_key:
-        for name in (primary_model(), fallback_model()):
-            if name and name not in models:
-                models.append(name)
+    for name in (primary_model(), fallback_model()):
+        if name and name not in models:
+            models.append(name)
 
     last_error: Optional[BaseException] = None
     for model in models:
@@ -410,57 +387,13 @@ async def generate_agent_reply(
                     return parsed
                 last_error = AgentEngineError(f"{model} returned no usable text (finishReason={finish})")
                 logger.warning("no usable text from %s (attempt %d, finishReason=%s)", model, attempt + 1, finish)
-            except Exception as err:
+            except AgentEngineError:
+                raise  # e.g. missing API key: retrying will not help
+            except Exception as err:  # noqa: BLE001
                 last_error = err
                 logger.warning("%s failed (attempt %d): %s", model, attempt + 1, str(err)[:200])
                 if not _is_transient(err):
-                    break
-                await asyncio.sleep(0.3)
+                    break  # 400/401/403/404: same model will fail again, go to the fallback model
+                await asyncio.sleep(0.4)
 
-    # 2. Resilient Multi-Provider Fallback (Groq LPU -> Ollama -> Knowledge Engine)
-    try:
-        from backend.voice.providers import ProviderChain
-        chain = ProviderChain()
-        sys_inst = build_system_instruction(screen_context, user_memory)
-        openai_history = []
-        for turn in (history or [])[-8:]:
-            r = turn.get("role")
-            t = turn.get("text")
-            if r and t:
-                openai_history.append({"role": "assistant" if r == "model" else "user", "content": t})
-
-        reply_text, provider_name = await chain.generate_response(
-            prompt=message,
-            system_instruction=sys_inst,
-            history=openai_history,
-            max_tokens=600
-        )
-        parsed = parse_reply(reply_text)
-        if not parsed:
-            parsed = salvage_plain_text(reply_text) or {
-                "spoken": strip_for_speech(reply_text),
-                "display": reply_text,
-                "actions": []
-            }
-
-        if not parsed.get("actions"):
-            low = (message + " " + reply_text).lower()
-            actions = []
-            if any(w in low for w in ["analytics", "placement stats", "package", "cse stats", "highest package"]):
-                actions.append({"type": "navigate_to", "target": "analytics"})
-            elif any(w in low for w in ["project", "blueprint", "architectures"]):
-                actions.append({"type": "navigate_to", "target": "projects"})
-            elif any(w in low for w in ["skills", "roadmap", "dsa"]):
-                actions.append({"type": "navigate_to", "target": "skills"})
-            elif any(w in low for w in ["resume builder", "open resume"]):
-                actions.append({"type": "open_panel", "target": "resume_builder"})
-            elif any(w in low for w in ["mock interview", "interview round"]):
-                actions.append({"type": "open_panel", "target": "mock_interview"})
-            parsed["actions"] = actions
-
-        parsed["model"] = provider_name
-        return parsed
-    except Exception as chain_err:
-        logger.warning(f"ProviderChain fallback error: {chain_err}")
-
-    raise AgentEngineError(f"AI could not produce a reply: {last_error}")
+    raise AgentEngineError(f"Gemini could not produce a reply: {last_error}")

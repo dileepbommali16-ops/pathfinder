@@ -8,10 +8,14 @@
 import type { AgentAction } from "./agentClient";
 
 export interface ActionHandlers {
-  /** Switch to a page or tab by id (use your router or the activeTab setter in Home.tsx). */
+  /** Switch to a page or tab by id, for example setActiveTab(id as TabId) in Home.tsx. */
   goToTab: (pageId: string) => void;
-  /** Open a panel or drawer by id. */
-  openPanel: (panelId: string) => void;
+  /**
+   * The agent only PROPOSES a profile change. Show a confirmation card (old value, new value, Confirm / Cancel)
+   * and call your existing profile-update function only after the student presses Confirm.
+   * If you leave this out, profile proposals are ignored.
+   */
+  proposeProfileChange?: (field: string, value: string) => void;
 }
 
 const HIGHLIGHT_CLASS = "das-highlight";
@@ -28,17 +32,18 @@ export function runActions(actions: AgentAction[], handlers: ActionHandlers): vo
       case "navigate_to":
         handlers.goToTab(action.target);
         break;
-      case "open_panel":
-        handlers.openPanel(action.target);
+      case "propose_profile_change":
+        handlers.proposeProfileChange?.(action.field, action.value);
         break;
       case "scroll_to":
-      case "highlight":
+      case "highlight": {
+        const { type, target } = action;
         window.setTimeout(
           () => {
-            const el = document.querySelector(`[data-das-id="${CSS.escape(action.target)}"]`);
+            const el = document.querySelector(`[data-das-id="${CSS.escape(target)}"]`);
             if (!el) return; // element not on this page: do nothing, never guess
             el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "center" });
-            if (action.type === "highlight") {
+            if (type === "highlight") {
               el.classList.add(HIGHLIGHT_CLASS);
               window.setTimeout(() => el.classList.remove(HIGHLIGHT_CLASS), HIGHLIGHT_MS);
             }
@@ -46,6 +51,7 @@ export function runActions(actions: AgentAction[], handlers: ActionHandlers): vo
           navigated ? AFTER_NAVIGATION_MS : 0,
         );
         break;
+      }
       default:
         break; // unknown action types are ignored
     }

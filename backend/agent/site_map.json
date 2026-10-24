@@ -1,0 +1,17 @@
+{
+  "_note": "Starter map built from the dashboard tab ids and component names of an older copy of the repo. Edit the titles and purposes to match the real site, and add section ids (the same ids you put in data-das-id attributes) to each page.",
+  "pages": [
+    {"id": "overview",  "title": "Readiness overview",   "purpose": "Main dashboard with the student's readiness metrics and next actions.", "sections": []},
+    {"id": "action",    "title": "AI Action Center",     "purpose": "One-click AI actions such as analyzing career readiness.", "sections": []},
+    {"id": "skills",    "title": "Skill intelligence",   "purpose": "Skill demand, benchmarks and the student's skill gaps.", "sections": ["roadmap-6-week"]},
+    {"id": "branches",  "title": "Branch intelligence",  "purpose": "Placement picture for each branch.", "sections": []},
+    {"id": "analytics", "title": "Cohort explorer",      "purpose": "Explore placement data by year, branch, gender and skill.", "sections": []},
+    {"id": "coach",     "title": "AI career coach",      "purpose": "Chat and voice with the AI coach.", "sections": []},
+    {"id": "profile",   "title": "Profile and settings", "purpose": "The student's saved profile and settings.", "sections": []},
+    {"id": "resume",    "title": "ATS Resume Studio",    "purpose": "Resume analysis and building for ATS.", "sections": []},
+    {"id": "projects",  "title": "Project blueprints",   "purpose": "Project ideas with architecture, stack and resume bullets.", "sections": []},
+    {"id": "defense",   "title": "Project defense",      "purpose": "Practice defending a project in an interview.", "sections": []},
+    {"id": "roles",     "title": "Role intelligence",    "purpose": "What each target role needs.", "sections": []},
+    {"id": "missions",  "title": "Career missions",      "purpose": "Mission tracker for the student's career plan.", "sections": []}
+  ]
+}

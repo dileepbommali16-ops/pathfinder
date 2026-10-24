@@ -289,6 +289,15 @@ try:
 except Exception as exc:  # the agent must never take the whole API down
     import logging
     logging.getLogger("api").warning("agent router disabled: %s", exc)
+
+try:
+    from backend.agent.router import create_agent_chat_router
+    agent_chat_r = create_agent_chat_router(get_current_user)
+    app.include_router(agent_chat_r)
+    v1_app.include_router(agent_chat_r)
+except Exception as exc:
+    import logging
+    logging.getLogger("api").warning("agent chat router disabled: %s", exc)
 app.mount("/api/v1", v1_app)
 
 

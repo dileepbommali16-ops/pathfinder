@@ -104,5 +104,38 @@
     "last_summary": "Discussed Check and candidate milestones.",
     "turns_count": 3,
     "last_active": 1792431817.8743773
+  },
+  "test_sess_04": {
+    "last_topics": [
+      "Confirm",
+      "Updating"
+    ],
+    "current_project": null,
+    "current_step": 1,
+    "last_summary": "Discussed Confirm and candidate milestones.",
+    "turns_count": 1,
+    "last_active": 1792839280.8287601
+  },
+  "test_sess_05": {
+    "last_topics": [
+      "Cohort",
+      "Analytics"
+    ],
+    "current_project": null,
+    "current_step": 1,
+    "last_summary": "Discussed Cohort and candidate milestones.",
+    "turns_count": 1,
+    "last_active": 1792839280.920614
+  },
+  "test_sess_06": {
+    "last_topics": [
+      "Placement",
+      "Statistics"
+    ],
+    "current_project": null,
+    "current_step": 1,
+    "last_summary": "Discussed Placement and candidate milestones.",
+    "turns_count": 1,
+    "last_active": 1792839280.973418
   }
 }

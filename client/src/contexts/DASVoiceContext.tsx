@@ -19,7 +19,7 @@ import React, {
 } from "react";
 import { getApiBase, API_BASE } from "@/lib/apiClient";
 import { clientBrain } from "@/voice/client_brain";
-import { askAgent, streamAgent, type ChatTurn, AgentRequestError } from "@/voice/agentClient";
+import { askAgent, type ChatTurn, AgentRequestError } from "@/voice/agentClient";
 import { runActions } from "@/voice/dasActions";
 import { recordSessionEnd, registerSessionEnd } from "@/voice/memory";
 
