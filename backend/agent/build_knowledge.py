@@ -13,8 +13,11 @@ import sys
 # Locate frontend directory with sensible defaults
 fe_candidate = None
 if len(sys.argv) > 1:
-    fe_candidate = pathlib.Path(sys.argv[1])
-else:
+    p = pathlib.Path(sys.argv[1])
+    if p.exists() and p.is_dir():
+        fe_candidate = p
+
+if not fe_candidate:
     for c in [
         pathlib.Path("client/src"),
         pathlib.Path("../client/src"),
@@ -25,7 +28,7 @@ else:
             fe_candidate = c
             break
 
-fe = fe_candidate if fe_candidate and fe_candidate.exists() else pathlib.Path("client/src")
+fe = fe_candidate or pathlib.Path("client/src")
 
 # Locate backend directory
 be_candidate = None

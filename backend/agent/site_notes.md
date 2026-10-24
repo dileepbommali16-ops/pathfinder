@@ -30,3 +30,10 @@ Pathfinder 2.0 is an enterprise-grade placement readiness intelligence platform 
    - Dual-pane layout: 3D VRM cybernetic face on left, live chat + voice on right.
    - Natural Telugu, Hindi, and English multilingual conversation.
    - Real-time page navigation (`navigate_to`), scrolling (`scroll_to`), button clicking (`click`), and input interaction (`fill_field`).
+
+## Live Deployed Site Content (https://pathfinder-client-fzom.vercel.app)
+Pull lamp string to illuminate & reveal details
+
+👈Pull Cord
+
+💡Lamp your Career
