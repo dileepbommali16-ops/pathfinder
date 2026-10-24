@@ -100,10 +100,78 @@ def create_agent_router(user_dependency: Optional[Callable] = None) -> APIRouter
     async def agent_status() -> Dict[str, Any]:
         """Safe diagnostics (no secrets)."""
         return {
-            "key_present": bool(os.getenv("GEMINI_API_KEY", "").strip()),
-            "model": agent_engine.primary_model(),
-            "fallback_model": agent_engine.fallback_model(),
-            "knowledge_files": agent_engine.knowledge_file_count(),
+            "key_present": bool(os.getenv("GROQ_API_KEY", "").strip() or os.getenv("GEMINI_API_KEY", "").strip()),
+            "groq_model": os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
+            "elevenlabs_voice": os.getenv("ELEVENLABS_VOICE_ID", "onwK4e9ZLuTAKqWW03F9"),
+            "knowledge_status": "online"
+        }
+
+    @router.post("/stream")
+    async def agent_stream_endpoint(request: Request):
+        """
+        SSE Streaming endpoint for DAS Autonomous Agent Loop.
+        Emits: token, action, tool_result, spoken, display, done, error
+        """
+        _rate_limit(request)
+        from fastapi.responses import StreamingResponse
+        from backend.orchestrator import agent_orchestrator
+
+        body = await request.json()
+        message = str(body.get("message", "")).strip()
+        session_id = str(body.get("sessionId", "session_guest")).strip()
+        page_context = body.get("pageContext", {})
+        language = str(body.get("language", "auto")).strip()
+        mode = str(body.get("mode", "agent")).strip()
+
+        if not message:
+            raise HTTPException(status_code=400, detail="Missing message parameter")
+
+        return StreamingResponse(
+            agent_orchestrator.stream_agent_turn(
+                message=message,
+                session_id=session_id,
+                page_context=page_context,
+                language=language,
+                mode=mode
+            ),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
+        )
+
+    @router.post("/action-result")
+    async def agent_action_result_endpoint(request: Request):
+        """Receives browser UI action observation to resume backend agent reasoning loop."""
+        from backend.orchestrator import agent_orchestrator
+
+        body = await request.json()
+        run_id = str(body.get("runId", "")).strip()
+        action_id = str(body.get("actionId", "")).strip()
+        ok = bool(body.get("ok", True))
+        observation = str(body.get("observation", "Action completed")).strip()
+        new_page_context = body.get("newPageContext", {})
+
+        resolved = agent_orchestrator.resolve_action_observation(
+            run_id=run_id,
+            action_id=action_id,
+            ok=ok,
+            observation=observation,
+            new_page_context=new_page_context
+        )
+        return {"status": "recorded", "resolved": resolved}
+
+    @router.get("/audit-log")
+    async def agent_audit_log_endpoint(limit: int = 50) -> Dict[str, Any]:
+        """Dev audit log viewing all action tiers, decisions, and timestamps."""
+        from backend.orchestrator import agent_orchestrator
+        return {
+            "status": "success",
+            "count": len(agent_orchestrator.get_audit_log(limit)),
+            "logs": agent_orchestrator.get_audit_log(limit)
         }
 
     return router
+
