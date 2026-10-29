@@ -344,7 +344,8 @@ def grok_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -> Opti
             data=payload,
             headers={
                 "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "User-Agent": "Pathfinder/2.0"
             },
             method="POST"
         )
@@ -362,28 +363,22 @@ def groq_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -> Opti
     api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key:
         return None
-    model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip() or "llama-3.3-70b-versatile"
+    model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
     try:
         msgs = [{"role": "system", "content": sys_instruction}] + messages_list
-        payload = json.dumps({
-            "model": model,
-            "messages": msgs,
-            "temperature": 0.7,
-            "max_tokens": 2000
-        }).encode("utf-8")
-        req = urllib.request.Request(
-            "https://api.groq.com/openai/v1/chat/completions",
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            },
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=8.0) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            choice = data.get("choices", [{}])[0].get("message", {}).get("content")
-            return choice.strip() if choice else None
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "User-Agent": "Pathfinder/2.0"},
+                json={"model": model, "messages": msgs, "temperature": 0.7, "max_tokens": 1500}
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                choice = data.get("choices", [{}])[0].get("message", {}).get("content")
+                return choice.strip() if choice else None
+            else:
+                logger.warning(f"[Groq Engine] Non-200 status: {resp.status_code} {resp.text[:150]}")
+                return None
     except Exception as exc:
         logger.warning(f"[Groq Engine] Warning: {exc}")
         return None
@@ -749,6 +744,52 @@ def generate_smart_fallback_reply(
             "Candidates who achieved packages above 20 LPA had >= 1 production capstone deployment and zero active backlogs."
         )
 
+        # 8b. Active Page / Tab explanation
+    if any(k in low_msg for k in ("explain this page", "explain page", "what is this page", "what does this page do", "tell me about this page", "page overview")):
+        cur_tab = (active_tab or "coach").lower()
+        if "coach" in cur_tab or "voice" in cur_tab or "agent" in cur_tab:
+            return (
+                "🎙️ **DAS AI Voice Coach & 3D Interactive Mentor**\n\n"
+                "You are currently on the **DAS AI Voice Coach** panel! Here is what you can do here:\n"
+                "1. **3D Interactive Avatar**: Reacts to speech in real time with audio-driven lip-sync, breathing idle motion, and mood-reactive eye glow.\n"
+                "2. **Voice & Text Dual Input**: Speak naturally using the microphone in English, Telugu, or Hindi, or type your questions.\n"
+                "3. **Context-Aware Mentorship**: Connected directly to your candidate profile, placement odds, and the 23 flagship project blueprints.\n\n"
+                "Ask me anything—from debugging project code to simulating mock interview rounds!"
+            )
+        elif "dashboard" in cur_tab or "readiness" in cur_tab:
+            return (
+                "📊 **Readiness Command Center**\n\n"
+                "This dashboard evaluates your academic credentials, coding benchmarks, and tier cutoffs to give you a verified placement probability score. Check your critical skill gaps and recommended roadmap sprints below!"
+            )
+        elif "roadmap" in cur_tab:
+            return (
+                "🗺️ **6-Week Accelerated Placement Roadmap**\n\n"
+                "This page provides your structured week-by-week curriculum covering DSA patterns, system design, capstone projects, and interview viva defense."
+            )
+        elif "project" in cur_tab or "blueprint" in cur_tab:
+            return (
+                "🚀 **23 Flagship Production Project Blueprints**\n\n"
+                "Explore complete production architectures with 5-phase build roadmaps, tech stacks, and interview defense cheat sheets."
+            )
+        else:
+            return (
+                f"💡 **Pathfinder Overview**\n\n"
+                f"You are viewing the **{active_tab or 'Career Intelligence'}** section of Pathfinder. "
+                "Here we analyze your placement metrics, identify skill gaps against recruiter benchmarks, and guide you step-by-step to Tier-1 campus offers!"
+            )
+
+    # 8c. Specific Placement & Backlog Guidance
+    if any(k in low_msg for k in ("backlog", "google", "tier 1", "faang", "how to prepare for google")):
+        return (
+            "🎯 **Cracking Tier-1 / Google with an Academic Backlog: Action Plan**\n\n"
+            "Having a backlog or academic dip is common, but here is how top students still crack Tier-1 product offers:\n\n"
+            "1. **Clear Backlogs Early**: Prioritize clearing active backlogs during remedial/summer exams so you meet the 0 active backlog cutoff for standard drives.\n"
+            "2. **Master the Blind 75 / NeetCode DSA Patterns**: Tier-1 screening rounds test fundamental algorithmic problem-solving (Sliding Window, Two Pointers, Trees, Graphs, DP).\n"
+            "3. **Build a Standout Production Capstone**: A deployed distributed system project on your resume with Docker, CI/CD, and Redis caching outweighs GPA concerns for tech evaluations.\n"
+            "4. **Target Off-Campus & Referrals**: Product companies like Google, Amazon, and startups hire heavily via open challenges and employee referrals where project depth and DSA mastery matter most!\n\n"
+            "Want to start Week 1 of the DSA Sprint or pick an industry project for your branch?"
+        )
+
     # 9. General Adaptive Mentorship Fallback
     p_name = "Candidate"
     p_branch = "Engineering"
@@ -942,7 +983,7 @@ async def stream_chat_with_mentor(
         yield "Looks like your message was empty! What's on your mind? 😊"
         return
 
-    sys_instruction, contents, _, clean_msg, _ = prepare_chat_context(
+    sys_instruction, contents, openrouter_messages, clean_msg, _ = prepare_chat_context(
         message=clean_msg,
         history=history,
         profile=profile,
@@ -986,6 +1027,49 @@ async def stream_chat_with_mentor(
                 return
         except Exception as e:
             logger.warning(f"[Gemini Stream] Live SDK stream notice: {e}. Serving domain reply.")
+
+    # High-speed Groq LPU Streaming inference with full Personality System Instruction
+    groq_key = os.getenv("GROQ_API_KEY", "").strip()
+    if groq_key:
+        try:
+            groq_model_name = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
+            groq_msgs = [{"role": "system", "content": sys_instruction}] + openrouter_messages
+            groq_payload = {
+                "model": groq_model_name,
+                "messages": groq_msgs,
+                "stream": True,
+                "temperature": 0.7,
+                "max_tokens": 800,
+            }
+            async with httpx.AsyncClient(timeout=25.0) as http_client:
+                async with http_client.stream(
+                    "POST",
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {groq_key}", "User-Agent": "Pathfinder/2.0"},
+                    json=groq_payload
+                ) as resp:
+                    if resp.status_code == 200:
+                        groq_token_streamed = False
+                        async for line in resp.aiter_lines():
+                            line_str = line.strip()
+                            if not line_str.startswith("data:"):
+                                continue
+                            data_str = line_str[5:].strip()
+                            if data_str == "[DONE]":
+                                break
+                            try:
+                                delta = json.loads(data_str)["choices"][0]["delta"]
+                                token = delta.get("content")
+                                if token:
+                                    groq_token_streamed = True
+                                    yield token
+                                    await asyncio.sleep(0.002)
+                            except Exception:
+                                continue
+                        if groq_token_streamed:
+                            return
+        except Exception as groq_err:
+            logger.warning(f"[Groq Stream] Stream notice: {groq_err}. Serving domain reply.")
 
     # High-performance fallback: generate complete grounded reply and stream words
     fallback_reply = generate_smart_fallback_reply(
