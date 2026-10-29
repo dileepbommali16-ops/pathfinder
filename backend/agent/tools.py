@@ -158,7 +158,7 @@ def _as_str(value: Any, max_len: int = 80) -> Optional[str]:
 def _data_tool(name: str, allowed: Dict[str, str]) -> Callable[[Dict[str, Any], ToolContext], Any]:
     """Wrap data_service.execute_data_tool with strictly typed arguments."""
 
-    def run(args: Dict[str, Any], ctx: ToolContext) -> Any:  # noqa: ARG001, ARG002
+    def run(args: Dict[str, Any], ctx: ToolContext) -> Any:
         from backend.data_service import execute_data_tool  # lazy: keeps this module importable without pandas
 
         clean: Dict[str, Any] = {}
@@ -253,23 +253,6 @@ def _tool_get_page_guide(args: Dict[str, Any], ctx: ToolContext) -> Any:
     return {"page": page}
 
 
-def _tool_generate_resume(args: Dict[str, Any], ctx: ToolContext) -> Any:
-    """Builds a one-page ATS resume markdown from the student's profile and returns feedback."""
-    from backend.routers.voice_routes import generate_resume as _gen
-    profile = (ctx.client_profile or {}).copy()
-    # Normalize key aliases to match the unified payload schema in AgentLayout.tsx
-    for k, v in list(profile.items()):
-        if not isinstance(v, str):
-            v = str(v) if v is not None else ""
-        profile[k] = v
-    try:
-        data = _gen({"profile_fields": profile}).get("data", {})
-        return {"markdown": data.get("markdown", ""), "feedback": data.get("feedback", {})}
-    except Exception as exc:
-        logger.warning("tool generate_resume failed: %s", exc)
-        return {"markdown": "", "feedback": {"error": f"Resume generation failed: {exc}"}}
-
-
 EXECUTORS: Dict[str, Callable[[Dict[str, Any], ToolContext], Any]] = {
     "get_student_profile": _tool_get_student_profile,
     "get_readiness_score": _tool_get_readiness_score,
@@ -281,7 +264,6 @@ EXECUTORS: Dict[str, Callable[[Dict[str, Any], ToolContext], Any]] = {
     "list_projects": _tool_list_projects,
     "get_project": _tool_get_project,
     "get_page_guide": _tool_get_page_guide,
-    "generate_resume": _tool_generate_resume,
 }
 
 

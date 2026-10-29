@@ -171,12 +171,6 @@ Pathfinder 2.0 is built on a decoupled, production-grade full stack architecture
 - **Automated Verification Suites (42 Tests Passing)**:
   - `backend/tests/test_agent_engine.py`: 16 comprehensive unit tests covering pure functions, text sanitization, speech stripping, and failovers.
   - `backend/tests/test_agent_loop.py`: 26 comprehensive tests covering parallel tool execution, thought signatures, profile safety, and mock data tools.
-- **New: File Upload & Resume Generation (`backend/routers/voice_routes.py` + `backend/agent/tools.py` + `client/src/agent/AgentLayout.tsx`)**:
-  - `POST /api/voice/upload` accepts a single PDF/DOCX/TXT file (≤10MB) and stores metadata in-memory; the agent can later read it aloud via `read_page` once it knows where to surface it.
-  - `POST /api/ai/generate-resume` synthesizes a one-page ATS resume from the student's saved profile (`branch`, `cgpa`, `backlogs`, `internships`, `coding`, `communication`, `target_role`, `graduation_year`, plus any skill strings) into markdown + structured Gemini feedback (`score`, `ats_keywords`, `improvements`).
-  - `generate_resume` is wired into the Gemini Live tool schema so the model can propose it inside `respond.actions`.
-  - The client now exposes a small "📎" upload label next to the mic button on `/#coach`; students click it, upload their PDF/DOCX, then click Send to ask the agent to review the uploaded document next turn.
-  - This maps to what stakeholders hear when they ask: *"generate my resume"* or *"upload my project bullets"* — the agent replies in spoken English, with the markdown summary on screen.
 
 
 ---

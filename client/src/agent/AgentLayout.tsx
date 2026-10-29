@@ -4,11 +4,8 @@ import Avatar3D, { AvatarState } from "./Avatar3D";
 import { useAudioAnalyser } from "./useAudioAnalyser";
 import { useVoiceInput } from "./useVoiceInput";
 import { runTool, snapshot } from "./toolRunner";
-import { API_BASE, fetchWithTimeout } from "@/lib/apiClient";
-import { Toaster, toast } from "sonner";
 
 const API =
-  (API_BASE as string) ||
   ((import.meta as any).env?.VITE_API_URL as string) ||
   ((import.meta as any).env?.VITE_API_BASE_URL as string) ||
   "";
@@ -334,25 +331,6 @@ export default function AgentLayout({
     toggleListening();
   };
 
-  // Process an uploaded file into a tool-call payload to the backend voice router
-  const handleUploadedFile = async (file: File): Promise<void> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    try {
-      await fetchWithTimeout(`${API_BASE}/api/voice/upload`, {
-        method: "POST",
-        body: formData,
-        signal: AbortSignal.timeout(12000),
-      }, 12000);
-      // The file metadata has been saved on the backend; ask the user to
-      // "tell the agent to review this" (or click Send) so the agent can
-      // surface its name/URL in the reply sheet before reading it aloud.
-      toast.success("Uploaded successfully. Click Send to ask the agent to review it.");
-    } catch (e) {
-      setMicError(String(e));
-    }
-  };
-
   // Compute current visual state for Avatar3D (State Indicators: idle, listening, thinking, speaking)
   const avatarState: AvatarState = isSpeaking
     ? "speaking"
@@ -537,20 +515,6 @@ export default function AgentLayout({
               Send
             </button>
           )}
-          <label className="absolute h-10 w-10 shrink-0 cursor-pointer rounded-full flex items-center justify-center text-[#f8fafc] opacity-0 hover:opacity-100 z-30 transition-opacity">
-            📎
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.txt,.md"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleUploadedFile(f);
-              }}
-            />
-          </label>
-          <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadedFile(f); }} />
-
           <button
             type="button"
             onClick={handleToggleMic}
