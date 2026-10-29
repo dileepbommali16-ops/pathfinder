@@ -60,7 +60,19 @@ export class Speaker {
     this.chain = this.chain.then(async () => {
       try {
         const b = await p;
-        if (b && g === this.gen) await this.play(b);
+        if (g === this.gen) {
+          if (b) {
+            await this.play(b);
+          } else if (typeof window !== "undefined" && "speechSynthesis" in window) {
+            await new Promise<void>((resolve) => {
+              const u = new SpeechSynthesisUtterance(text);
+              u.rate = 1.05;
+              u.onend = () => resolve();
+              u.onerror = () => resolve();
+              window.speechSynthesis.speak(u);
+            });
+          }
+        }
       } finally {
         if (--this.pending <= 0) {
           this.pending = 0;
@@ -109,6 +121,11 @@ export class Speaker {
     this.gen++;
     try {
       this.current?.stop();
+    } catch {}
+    try {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
     } catch {}
     this.pending = 0;
     this.onState?.(false);
