@@ -120,7 +120,8 @@ export default function AgentLayout({
 
       try {
         const t = getToken();
-        const r = await fetch(`${API}/agent/chat`, {
+        let isFallback = false;
+        let r = await fetch(`${API}/agent/chat`, {
           method: "POST",
           signal: ac.signal,
           headers: {
@@ -129,6 +130,26 @@ export default function AgentLayout({
           },
           body: JSON.stringify({ messages: history, page: snapshot() }),
         });
+
+        if (!r.ok && (r.status === 404 || r.status === 502)) {
+          // Seamless fallback to /api/chat/stream
+          r = await fetch(`${API}/api/chat/stream`, {
+            method: "POST",
+            signal: ac.signal,
+            headers: {
+              "Content-Type": "application/json",
+              ...(t ? { Authorization: `Bearer ${t}` } : {}),
+            },
+            body: JSON.stringify({
+              message: q,
+              history: history.slice(0, -1),
+              profile: {},
+              page_context: snapshot(),
+            }),
+          });
+          isFallback = true;
+        }
+
         if (!r.ok || !r.body) throw new Error(String(r.status));
         const reader = r.body.getReader();
         const dec = new TextDecoder();
@@ -140,20 +161,30 @@ export default function AgentLayout({
           const parts = carry.split("\n\n");
           carry = parts.pop() || "";
           for (const p of parts) {
-            if (!p.startsWith("data:")) continue;
+            const trimmed = p.trim();
+            if (!trimmed.startsWith("data:")) continue;
             try {
-              const ev = JSON.parse(p.slice(5));
-              if (ev.t === "text") {
-                full += ev.v;
-                patchLast(full.replace("|||", "\n\n"));
-                take(false);
-              } else if (ev.t === "tool") {
-                const res = runTool(ev.name, ev.args, navigate);
-                if (res.navigated && res.explain) followUp = true;
-              } else if (ev.t === "error") {
-                full += ev.v;
-                patchLast(full);
-                say(ev.v);
+              const raw = trimmed.replace(/^data:\s*/, "").trim();
+              const ev = JSON.parse(raw);
+              if (isFallback) {
+                if (ev.token) {
+                  full += ev.token;
+                  patchLast(full.replace("|||", "\n\n"));
+                  take(false);
+                }
+              } else {
+                if (ev.t === "text") {
+                  full += ev.v;
+                  patchLast(full.replace("|||", "\n\n"));
+                  take(false);
+                } else if (ev.t === "tool") {
+                  const res = runTool(ev.name, ev.args, navigate);
+                  if (res.navigated && res.explain) followUp = true;
+                } else if (ev.t === "error") {
+                  full += ev.v;
+                  patchLast(full);
+                  say(ev.v);
+                }
               }
             } catch {}
           }

@@ -24,7 +24,7 @@ export class Speaker {
   private async fetchAudio(text: string): Promise<AudioBuffer | null> {
     try {
       const t = this.getToken();
-      const r = await fetch(`${API}/agent/tts`, {
+      let r = await fetch(`${API}/agent/tts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -32,6 +32,16 @@ export class Speaker {
         },
         body: JSON.stringify({ text }),
       });
+      if (!r.ok && (r.status === 404 || r.status === 502)) {
+        r = await fetch(`${API}/api/voice/tts`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(t ? { Authorization: `Bearer ${t}` } : {}),
+          },
+          body: JSON.stringify({ text }),
+        });
+      }
       if (!r.ok) return null;
       return await this.ctx.decodeAudioData(await r.arrayBuffer());
     } catch {
