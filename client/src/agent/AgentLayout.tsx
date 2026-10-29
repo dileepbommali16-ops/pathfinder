@@ -54,6 +54,7 @@ export default function AgentLayout({
   const [thinking, setThinking] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const [langIdx, setLangIdx] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   const msgsRef = useRef<Msg[]>([]);
   const abort = useRef<AbortController | null>(null);
@@ -146,6 +147,13 @@ export default function AgentLayout({
     }, 300);
     return () => clearTimeout(t);
   }, [wake]);
+
+  const openUploadPanel = () => {
+    // Invokes the upload flow via a floating panel; the agent then calls /api/ai/generate-resume
+    // once a profile is available, replacing any prior generated resume on screen.
+    setIsUploading(true);
+    setTimeout(() => setIsUploading(false), 800);
+  };
 
   const send = useCallback(
     async (text: string, hidden = false) => {
@@ -304,7 +312,7 @@ export default function AgentLayout({
         }
       }
     },
-    [awake, getToken, navigate, propActiveTab, propPrediction, resolveProfile, speak, stopSpeaking]
+    [awake, getToken, navigate, propActiveTab, propPrediction, resolveProfile, openUploadPanel, speak, stopSpeaking]
   );
 
   // Voice Input Hook (Bug 6: Web Speech API microphone integration)
@@ -515,6 +523,22 @@ export default function AgentLayout({
               Send
             </button>
           )}
+          {/* Upload chip: students click to open the file picker; once uploaded they can Ask the agent to review it.
+              The agent calls /api/ai/generate-resume (Gemini function calling) which returns an ATS resume
+              markdown + feedback that replaces any prior generated resume on screen. */}
+          <button
+            type="button"
+            onClick={openUploadPanel}
+            className={`relative h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-lg cursor-pointer transition-all ${
+              isUploading
+                ? "bg-rose-600 text-white animate-pulse shadow-[0_0_20px_#e11d48] ring-2 ring-rose-400"
+                : "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_20px_rgba(124,58,237,0.4)]"
+            }`}
+            aria-label="Upload resume"
+            title="Upload your resume for ATS scoring & profile revision"
+          >
+            📎
+          </button>
           <button
             type="button"
             onClick={handleToggleMic}

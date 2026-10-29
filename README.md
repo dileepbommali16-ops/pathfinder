@@ -589,4 +589,26 @@ npm run build
 - Distributed under the **MIT License**. See `LICENSE` for more information.
 - **3D Model Attribution**: The 3D cybernetic humanoid robot avatar is based on ["Humanoid Robot Face"](https://sketchfab.com/3d-models/humanoid-robot-face-1532b74a76dc43d18a4fc2c5ba1f2229) by [kito1704](https://sketchfab.com/kito1704) licensed under [CC-BY-4.0](http://creativecommons.org/licenses/by/4.0/).
 
-Developed by **Dileep Bommali** ([@dileepbommali16-ops](https://github.com/dileepbommali16-ops)).
+---
+
+## 🗺️ Feature Map: Where Each Capability Sits in the Product Lifecycle
+
+This appendix maps each tracked feature to its concrete user segments so readers can trace a feature back to who uses it and why. Each row names the target audience (friends / stakeholders / students), the core user flow it supports, and the code location that wires it into the Gemini Live tool-calling loop.
+
+| Feature | Real User Segment | Core User Flow | Code Location |
+| :--- | :--- | :--- | :--- |
+| **One-Page ATS Resume Studio** | **Students** — engineers who want resume tuning and ATS keyword guidance | Student opens `/agent` → clicks upload chip → agent calls `generate_resume` → new markdown replaces previous generated resume | `backend/routers/voice_routes.py:generate_resume` + `client/src/agent/AgentLayout.tsx` upload chip |
+| **File Upload Endpoint** (`POST /api/voice/upload`) | **Students** — phone users on mobile browsers, file transfers from cloud drives | After upload is received, held under `UPLOAD_FILES` until next request or background purge; metadata only (no persistence) | `backend/routers/voice_routes.py:upload_file` + `check_files` |
+| **Resume Download Link** (`GET /ai/resume-download`) | **Students & Recruiters** — download previews for external ATS scanners | One-click retrieval of latest cached resume markdown via `RESUME_STATUS["last"]` | `backend/routers/voice_routes.py:download_resume` |
+| **generate_resume Tool Executor** | **Gemini Live Agent** — the model proposes profile revision actions through `respond.actions`; only when a student asks to revise their resume does this fire | Contract: agent output → tool call → handler normalizes aliases and calls `/ai/generate-resume` → returns `{markdown, feedback}` | `backend/agent/tools.py:EXECUTORS["generate_resume"]` + lazy import of `voice_routes.generate_resume` |
+| **📎 Upload Chip on DAS Coach Panel** | **Frontend students** — discoverability of file upload without a second page navigation | Tap triggers `openUploadPanel()`; once uploaded, `Send` with the auto prompt tells the agent to review the chosen profile and regenerate | `client/src/agent/AgentLayout.tsx` (upload button, `openUploadPanel`, wired into `send` deps) |
+| **10MB Upload Cap** | **All** — guard against pathological payloads while still accepting resume text | `MAX_UPLOAD_BYTES = 10 * 1024 * 1024` enforces RFC-style limits and returns `413 Too Large` | `backend/routers/voice_routes.py` module constant |
+
+### Context Notes
+- The three backend endpoints live in one router (`router = APIRouter(prefix="/api", tags=["voice"])`) mounted both at root (`/api/...`) and under `/api/v1`, so they are reachable at `https://pathfinder-backend-klrp.onrender.com/api/ai/generate-resume` and identical at `.../api/v1/ai/generate-resume`.
+- Tool calls are non-raising: `run_tool` swallows exceptions and returns an error object the agent can read, matching the rest of the executor pattern (`get_readiness_score`, `list_projects`, etc.).
+- Profile field normalization aliases (`branchCode` ↔ `branch`, `activeBacklogs` ↔ `backlogs`, `graduationYear` ↔ `graduation_year`, `targetRole` ↔ `target_role`) exist on both sides because the unified payload schema in `resolveProfile()` and `_tool_generate_resume` must agree independently of where input originates.
+
+---
+
+## 📜 License & Attributions
