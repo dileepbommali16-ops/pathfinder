@@ -16,7 +16,11 @@ export class Speaker {
   private buf = new Uint8Array(512);
   onState?: (speaking: boolean) => void;
 
-  constructor(private getToken: () => string | null = () => null) {
+  constructor(
+    private getToken: () => string | null = () => null,
+    onState?: (speaking: boolean) => void
+  ) {
+    if (onState) this.onState = onState;
     this.analyser.fftSize = 512;
     this.analyser.connect(this.ctx.destination);
   }

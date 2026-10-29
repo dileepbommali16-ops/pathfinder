@@ -7,9 +7,12 @@ export function useAudioAnalyser(getToken: () => string | null) {
   const syntheticSpeechUntil = useRef<number>(0);
 
   useEffect(() => {
-    const sp = new Speaker(getToken, (speakingState) => {
+    const sp = new Speaker(getToken, (speakingState: boolean) => {
       setIsSpeaking(speakingState);
     });
+    sp.onState = (speakingState: boolean) => {
+      setIsSpeaking(speakingState);
+    };
     speakerRef.current = sp;
     return () => {
       sp.stop();
@@ -71,3 +74,4 @@ export function useAudioAnalyser(getToken: () => string | null) {
 }
 
 export default useAudioAnalyser;
+
