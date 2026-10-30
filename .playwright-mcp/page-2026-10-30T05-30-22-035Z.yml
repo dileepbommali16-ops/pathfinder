@@ -1,0 +1,57 @@
+- generic [active] [ref=f4e1]:
+  - generic: DAS NEURAL CORE • 3D AVATAR
+  - generic [ref=f4e2]:
+    - banner [ref=f4e3]:
+      - generic [ref=f4e4]:
+        - generic [ref=f4e6]: PATHFINDER 2.0
+        - generic [ref=f4e7]: GIANT 3D AVATAR • RED EYES • REAL LIP-SYNC
+      - navigation [ref=f4e8]:
+        - button "📊 Dashboard" [ref=f4e9] [cursor=pointer]
+        - button "💡 Project Blueprints" [ref=f4e10] [cursor=pointer]
+        - button "🗺️ 6-Week Roadmap" [ref=f4e11] [cursor=pointer]
+        - button "🎙️ AI Mock Interview" [ref=f4e12] [cursor=pointer]
+      - generic [ref=f4e13]:
+        - generic [ref=f4e14]:
+          - generic [ref=f4e15]: Boss (Dileep)
+          - generic [ref=f4e16]: ElevenLabs Voice Ready
+        - generic [ref=f4e18]: B
+    - main [ref=f4e19]:
+      - generic [ref=f4e20]:
+        - generic [ref=f4e21]:
+          - generic [ref=f4e22]: CANDIDATE INTELLIGENCE
+          - generic [ref=f4e23]: Placement Readiness
+          - generic [ref=f4e24]:
+            - generic [ref=f4e25]:
+              - generic [ref=f4e26]: Score
+              - generic [ref=f4e27]: 88%
+            - generic [ref=f4e28]:
+              - generic [ref=f4e29]: Sprint
+              - generic [ref=f4e30]: Week 2
+        - generic [ref=f4e31]:
+          - generic [ref=f4e32]: ELEVENLABS ACTIONS
+          - generic [ref=f4e34]: "Click below to trigger real ElevenLabs voice & lip-sync:"
+          - generic [ref=f4e35]:
+            - button "👉 \"Pathfinder blueprints loki vellu\" 🔊 Speak" [ref=f4e36] [cursor=pointer]:
+              - generic [ref=f4e37]: 👉 "Pathfinder blueprints loki vellu"
+              - generic [ref=f4e38]: 🔊 Speak
+            - button "👉 \"Show 6-week roadmap\" 🔊 Speak" [ref=f4e39] [cursor=pointer]:
+              - generic [ref=f4e40]: 👉 "Show 6-week roadmap"
+              - generic [ref=f4e41]: 🔊 Speak
+            - button "👉 \"Start mock interview\" 🔊 Speak" [ref=f4e42] [cursor=pointer]:
+              - generic [ref=f4e43]: 👉 "Start mock interview"
+              - generic [ref=f4e44]: 🔊 Speak
+      - generic [ref=f4e46]:
+        - generic [ref=f4e47]:
+          - heading "📊 Command Dashboard" [level=2] [ref=f4e48]:
+            - generic [ref=f4e49]: 📊
+            - text: Command Dashboard
+          - generic [ref=f4e50]: Active
+        - paragraph [ref=f4e51]: Welcome, Boss! The 3D robot face in the center is now scaled up large, with ruby red glowing eyes and active speech lip-sync!
+        - generic [ref=f4e52]:
+          - generic [ref=f4e53]: Active Campus Drive Track
+          - generic [ref=f4e54]: Product Engineering • Full-Stack / AI
+    - contentinfo [ref=f4e57]:
+      - generic [ref=f4e65]:
+        - button "🎤" [ref=f4e66] [cursor=pointer]
+        - 'textbox "Ask DAS anything or type: ''pathfinder blueprints loki vellu''..." [ref=f4e67]'
+        - button "EXECUTE" [ref=f4e68] [cursor=pointer]

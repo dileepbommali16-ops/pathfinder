@@ -1,0 +1,57 @@
+- generic [active] [ref=e1]:
+  - generic: DAS NEURAL AVATAR • CENTERED
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e6]: PATHFINDER 2.0
+        - generic [ref=e7]: REAL LIP-SYNC ACTIVE
+      - navigation [ref=e8]:
+        - button "📊 Dashboard" [ref=e9] [cursor=pointer]
+        - button "💡 Project Blueprints" [ref=e10] [cursor=pointer]
+        - button "🗺️ 6-Week Roadmap" [ref=e11] [cursor=pointer]
+        - button "🎙️ AI Mock Interview" [ref=e12] [cursor=pointer]
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]: Boss (Dileep)
+          - generic [ref=e16]: ElevenLabs Voice Ready
+        - generic [ref=e18]: B
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]: CANDIDATE INTELLIGENCE
+          - generic [ref=e23]: Placement Readiness
+          - generic [ref=e24]:
+            - generic [ref=e25]:
+              - generic [ref=e26]: Score
+              - generic [ref=e27]: 88%
+            - generic [ref=e28]:
+              - generic [ref=e29]: Sprint
+              - generic [ref=e30]: Week 2
+        - generic [ref=e31]:
+          - generic [ref=e32]: ELEVENLABS ACTIONS
+          - generic [ref=e34]: "Click any button below to trigger real ElevenLabs voice & lip-sync:"
+          - generic [ref=e35]:
+            - button "👉 \"Pathfinder blueprints loki vellu\" 🔊 ElevenLabs" [ref=e36] [cursor=pointer]:
+              - generic [ref=e37]: 👉 "Pathfinder blueprints loki vellu"
+              - generic [ref=e38]: 🔊 ElevenLabs
+            - button "👉 \"Show 6-week roadmap\" 🔊 ElevenLabs" [ref=e39] [cursor=pointer]:
+              - generic [ref=e40]: 👉 "Show 6-week roadmap"
+              - generic [ref=e41]: 🔊 ElevenLabs
+            - button "👉 \"Start mock interview\" 🔊 ElevenLabs" [ref=e42] [cursor=pointer]:
+              - generic [ref=e43]: 👉 "Start mock interview"
+              - generic [ref=e44]: 🔊 ElevenLabs
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - heading "📊 Command Dashboard" [level=2] [ref=e48]:
+            - generic [ref=e49]: 📊
+            - text: Command Dashboard
+          - generic [ref=e50]: Active
+        - paragraph [ref=e51]: Welcome, Boss! The avatar head is right in the center. The mouth and lips now open and close cleanly without moving the side cheek.
+        - generic [ref=e52]:
+          - generic [ref=e53]: Active Campus Drive Track
+          - generic [ref=e54]: Product Engineering • Full-Stack / AI
+    - contentinfo [ref=e57]:
+      - generic [ref=e60]:
+        - button "🎤" [ref=e61] [cursor=pointer]
+        - 'textbox "Ask DAS anything or type: ''pathfinder blueprints loki vellu''..." [ref=e62]'
+        - button "EXECUTE" [ref=e63] [cursor=pointer]

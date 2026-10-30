@@ -1,0 +1,57 @@
+- generic [active] [ref=f12e1]:
+  - generic: DAS NEURAL CORE • CYBORG AVATAR
+  - generic [ref=f12e2]:
+    - banner [ref=f12e3]:
+      - generic [ref=f12e4]:
+        - generic [ref=f12e6]: PATHFINDER 2.0
+        - generic [ref=f12e7]: ORIGINAL CYBORG 3D AVATAR • ELEVENLABS REAL LIP-SYNC
+      - navigation [ref=f12e8]:
+        - button "📊 Dashboard" [ref=f12e9] [cursor=pointer]
+        - button "💡 Project Blueprints" [ref=f12e10] [cursor=pointer]
+        - button "🗺️ 6-Week Roadmap" [ref=f12e11] [cursor=pointer]
+        - button "🎙️ AI Mock Interview" [ref=f12e12] [cursor=pointer]
+      - generic [ref=f12e13]:
+        - generic [ref=f12e14]:
+          - generic [ref=f12e15]: Boss (Dileep)
+          - generic [ref=f12e16]: ElevenLabs Voice Ready
+        - generic [ref=f12e18]: B
+    - main [ref=f12e19]:
+      - generic [ref=f12e20]:
+        - generic [ref=f12e21]:
+          - generic [ref=f12e22]: CANDIDATE INTELLIGENCE
+          - generic [ref=f12e23]: Placement Readiness
+          - generic [ref=f12e24]:
+            - generic [ref=f12e25]:
+              - generic [ref=f12e26]: Score
+              - generic [ref=f12e27]: 88%
+            - generic [ref=f12e28]:
+              - generic [ref=f12e29]: Sprint
+              - generic [ref=f12e30]: Week 2
+        - generic [ref=f12e31]:
+          - generic [ref=f12e32]: ELEVENLABS ACTIONS
+          - generic [ref=f12e34]: "Click below to hear real voice & watch mouth lip-sync:"
+          - generic [ref=f12e35]:
+            - button "👉 \"Pathfinder blueprints loki vellu\" 🔊 Speak" [ref=f12e36] [cursor=pointer]:
+              - generic [ref=f12e37]: 👉 "Pathfinder blueprints loki vellu"
+              - generic [ref=f12e38]: 🔊 Speak
+            - button "👉 \"Show 6-week roadmap\" 🔊 Speak" [ref=f12e39] [cursor=pointer]:
+              - generic [ref=f12e40]: 👉 "Show 6-week roadmap"
+              - generic [ref=f12e41]: 🔊 Speak
+            - button "👉 \"Start mock interview\" 🔊 Speak" [ref=f12e42] [cursor=pointer]:
+              - generic [ref=f12e43]: 👉 "Start mock interview"
+              - generic [ref=f12e44]: 🔊 Speak
+      - generic [ref=f12e46]:
+        - generic [ref=f12e47]:
+          - heading "📊 Command Dashboard" [level=2] [ref=f12e48]:
+            - generic [ref=f12e49]: 📊
+            - text: Command Dashboard
+          - generic [ref=f12e50]: Active
+        - paragraph [ref=f12e51]: Welcome, Boss! The original cyborg avatar is back in the center, large & focused, with ruby-red glowing bead eyes and real jaw lip-sync!
+        - generic [ref=f12e52]:
+          - generic [ref=f12e53]: Active Campus Drive Track
+          - generic [ref=f12e54]: Product Engineering • Full-Stack / AI
+    - contentinfo [ref=f12e57]:
+      - generic [ref=f12e65]:
+        - button "🎤" [ref=f12e66] [cursor=pointer]
+        - 'textbox "Ask DAS anything or type: ''pathfinder blueprints loki vellu''..." [ref=f12e67]'
+        - button "EXECUTE" [ref=f12e68] [cursor=pointer]
