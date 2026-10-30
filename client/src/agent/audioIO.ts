@@ -19,6 +19,7 @@ export class Speaker {
   private initialized = false;
   private playChain: Promise<void> = Promise.resolve();
   private backendTtsCooldownUntil = 0;
+  private elevenLabsCooldownUntil = 0;
 
   constructor(
     private getToken: () => string | null = () => null,
@@ -85,7 +86,7 @@ export class Speaker {
       const elKey =
         (import.meta as any).env?.VITE_ELEVENLABS_API_KEY ||
         ["sk", "737a42c6566aaf5f891b6c6508610f8d8bc1962b0e7e1bd9"].join("_");
-      if (elKey && this.ctxRef) {
+      if (elKey && this.ctxRef && now >= this.elevenLabsCooldownUntil) {
         try {
           const voiceId =
             (import.meta as any).env?.VITE_ELEVENLABS_VOICE_ID ||
@@ -118,8 +119,9 @@ export class Speaker {
           if (elRes.ok) {
             return await this.ctxRef.decodeAudioData(await elRes.arrayBuffer());
           }
+          this.elevenLabsCooldownUntil = now + 120_000;
         } catch {
-          // Fall through to Web Speech synthesis
+          this.elevenLabsCooldownUntil = now + 120_000;
         }
       }
       return null;
@@ -142,15 +144,12 @@ export class Speaker {
     this.pending++;
     this.onState?.(true);
 
-    // Fetch audio immediately in parallel, then play sequentially in order
-    const audioPromise = this.fetchAudio(text);
-
     this.playChain = this.playChain
       .catch(() => {})
       .then(async () => {
         if (g !== this.gen) return;
         try {
-          const b = await audioPromise;
+          const b = await this.fetchAudio(text);
           if (g !== this.gen) return;
           if (b) {
             await this.play(b);

@@ -338,16 +338,19 @@ export default function AgentLayout({
         const sp = extractSpoken(rawSpoken);
         const isFinal = final || c >= 0;
         let buf = sp.slice(spoken);
+        if (isFinal) {
+          if (buf.trim()) {
+            speak(buf.trim());
+            spoken = sp.length;
+          }
+          return;
+        }
         for (;;) {
           const m = buf.match(/^[\s\S]*?[.!?।\n]+(?:\s+|$)/);
-          if (!m || (!isFinal && !/\s$/.test(m[0]))) break;
+          if (!m || !/\s$/.test(m[0])) break;
           speak(m[0]);
           spoken += m[0].length;
           buf = buf.slice(m[0].length);
-        }
-        if (isFinal && buf.trim()) {
-          speak(buf);
-          spoken += buf.length;
         }
       };
 
@@ -452,7 +455,7 @@ PERSONALITY & FORMAT:
 - If helpful details or bullet points are needed on screen, put ||| after the spoken sentences and write the clean markdown breakdown after |||.
 - Match the user's language (English, Telugu/Tenglish, or Hindi).
 WEBSITE AUTOMATION & CONTROL:
-Whenever the user asks to open/show/navigate to any section, scroll, filter, or update their profile, append the exact action tag at the very end of your response:
+ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a section/tab, scroll, filter, or update their profile (do NOT emit NAVIGATE_TAB when the user is merely asking for advice/tips/questions), append the exact action tag at the very end of your response:
 - Dashboard / Home: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "overview"}-->
 - AI Mock Interview: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "interview"}-->
 - Readiness Command: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "action"}-->
