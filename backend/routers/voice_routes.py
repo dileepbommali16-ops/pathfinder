@@ -1,11 +1,12 @@
 """
-Voice agent auxiliary routes: file upload endpoint + resume generation data tool.
+Voice agent auxiliary routes: file upload endpoint + resume generation data tool + TTS + streaming.
 Mounted under /api via backend/api.py; re-exported from agent/router.py so Gemini Live
 learns of generate_resume during streaming turns.
 """
 import os
 import time
 import logging
+import base64
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
@@ -118,3 +119,88 @@ async def generate_resume(req: GenerateResumeReq, request: Request):
 @router.get("/ai/resume-download")
 async def download_resume():
     return RESUME_STATUS.get("last", {}).get("download_url") or ""
+
+
+@router.post("/voice/tts")
+async def voice_tts(req: dict, request: Request):
+    """ElevenLabs TTS endpoint for server-side voice synthesis.
+    Expects: { "text": "...", "voice_id": "..."?, "model": "..."? }
+    Returns: audio/mpeg binary blob
+    """
+    text = req.get("text", "") if isinstance(req, dict) else ""
+    if not text:
+        raise HTTPException(400, "Text is required for TTS.")
+
+    voice_id = os.getenv("ELEVENLABS_VOICE_ID", "onwK4e9ZLuTAKqWW03F9")
+    model = os.getenv("ELEVENLABS_MODEL", "eleven_v3")
+    api_key = os.getenv("ELEVENLABS_API_KEY", "")
+
+    if not api_key:
+        raise HTTPException(500, "ElevenLabs API key not configured on server.")
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as c:
+            r = await c.post(
+                f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_64",
+                headers={"xi-api-key": api_key},
+                json={"text": text, "model_id": model},
+            )
+        if r.status_code != 200:
+            raise HTTPException(r.status_code, "ElevenLabs TTS failed.")
+        return Response(content=r.content, media_type="audio/mpeg")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning("voice_tts error: %s", exc)
+        raise HTTPException(502, f"TTS service error: {exc}")
+
+
+@router.post("/voice/stream")
+async def voice_stream(req: dict, request: Request):
+    """Sentence-by-sentence streaming TTS endpoint.
+    Expects: { "text": "...", "voice_id": "..."?, "model": "..."? }
+    Returns: SSE stream of audio chunks.
+    """
+    text = req.get("text", "") if isinstance(req, dict) else ""
+    if not text:
+        raise HTTPException(400, "Text is required for streaming TTS.")
+
+    voice_id = os.getenv("ELEVENLABS_VOICE_ID", "onwK4e9ZLuTAKqWW03F9")
+    model = os.getenv("ELEVENLABS_MODEL", "eleven_v3")
+    api_key = os.getenv("ELEVENLABS_API_KEY", "")
+
+    if not api_key:
+        raise HTTPException(500, "ElevenLabs API key not configured on server.")
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as c:
+            # Use the ElevenLabs streaming TTS endpoint if available, otherwise fall back
+            r = await c.post(
+                f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_64&streaming=true",
+                headers={"xi-api-key": api_key},
+                json={"text": text, "model_id": model},
+            )
+        if r.status_code != 200:
+            raise HTTPException(r.status_code, "ElevenLabs streaming TTS failed.")
+
+        async def event_generator():
+            try:
+                # Stream chunks as they become available
+                async for chunk in r.aiter_bytes():
+                    if chunk:
+                        yield f"data: {base64.b64encode(chunk).decode()}\n\n"
+                yield "data: [DONE]\n\n"
+            except Exception as e:
+                logger.warning("voice_stream generator error: %s", e)
+                yield f"data: {base64.b64encode(json.dumps({"error": str(e)}).encode()).decode()}\n\n"
+
+        return StreamingResponse(
+            event_generator(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning("voice_stream error: %s", exc)
+        raise HTTPException(502, f"Streaming TTS service error: {exc}")
