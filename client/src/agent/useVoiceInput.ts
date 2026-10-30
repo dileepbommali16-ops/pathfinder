@@ -7,6 +7,8 @@ export interface UseVoiceInputOptions {
   onError?: (errorMsg: string) => void;
 }
 
+export type MicPermissionState = "prompt" | "granted" | "denied" | "unsupported" | "unknown";
+
 export function useVoiceInput({
   lang = "en-IN",
   onInterim,
@@ -15,36 +17,53 @@ export function useVoiceInput({
 }: UseVoiceInputOptions = {}) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [micPermission, setMicPermission] = useState<MicPermissionState>("unknown");
   const recognitionRef = useRef<any>(null);
   const finalTranscriptRef = useRef("");
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
       } catch {}
+      recognitionRef.current = null;
     }
     setIsListening(false);
   }, []);
 
+  // Pre-warm AudioContext on first user gesture so Web Audio never blocks TTS
+  const ensureAudioContext = useCallback(() => {
+    if (audioContextRef.current) return audioContextRef.current;
+    const AC = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AC) return null;
+    audioContextRef.current = new AC();
+    return audioContextRef.current;
+  }, []);
+
   const startListening = useCallback(async () => {
+    ensureAudioContext();
+
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
+      setMicPermission("unsupported");
       onError?.("Voice input requires Chrome or Edge browser with Web Speech API support.");
       return false;
     }
 
-    // Request microphone access explicitly first so browser prompts permission cleanly
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    // Check microphone permission without consuming the stream
+    if (navigator.permissions) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Release raw stream immediately so SpeechRecognition can bind to mic
-        stream.getTracks().forEach((track) => track.stop());
-      } catch (err) {
-        onError?.("Microphone access denied. Please allow microphone permission in browser settings.");
-        return false;
+        const perm = await navigator.permissions.query({ name: "microphone" as PermissionName });
+        setMicPermission(perm.state);
+        if (perm.state === "denied") {
+          onError?.("Microphone permission denied. Please enable it in browser settings and refresh.");
+          return false;
+        }
+      } catch {
+        // Permission API not fully supported, proceed anyway
       }
     }
 
@@ -57,6 +76,7 @@ export function useVoiceInput({
       recognition.maxAlternatives = 1;
       finalTranscriptRef.current = "";
       setTranscript("");
+      setMicPermission("granted");
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -79,13 +99,21 @@ export function useVoiceInput({
 
       recognition.onerror = (event: any) => {
         setIsListening(false);
-        if (event.error && event.error !== "no-speech" && event.error !== "aborted") {
-          onError?.(`Microphone notice: ${event.error}`);
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          setMicPermission("denied");
+          onError?.("Microphone access denied. Click the lock icon in the address bar and allow microphone.");
+        } else if (event.error === "no-speech") {
+          // Normal silence, not an error
+        } else if (event.error === "aborted") {
+          // User stopped it
+        } else {
+          onError?.(`Voice error: ${event.error}`);
         }
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        recognitionRef.current = null;
         const finalClean = finalTranscriptRef.current.trim();
         if (finalClean) {
           onFinal?.(finalClean);
@@ -97,10 +125,10 @@ export function useVoiceInput({
       return true;
     } catch (e) {
       setIsListening(false);
-      onError?.("Could not start voice recognition.");
+      onError?.("Could not start voice recognition. Try refreshing the page.");
       return false;
     }
-  }, [lang, onInterim, onFinal, onError]);
+  }, [lang, onInterim, onFinal, onError, ensureAudioContext]);
 
   const toggleListening = useCallback(() => {
     if (isListening) {
@@ -123,9 +151,11 @@ export function useVoiceInput({
   return {
     isListening,
     transcript,
+    micPermission,
     startListening,
     stopListening,
     toggleListening,
+    ensureAudioContext,
   };
 }
 

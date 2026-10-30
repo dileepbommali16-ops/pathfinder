@@ -2,13 +2,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import Avatar3D, { AvatarState } from "./Avatar3D";
 import { useAudioAnalyser } from "./useAudioAnalyser";
-import { useVoiceInput } from "./useVoiceInput";
+import { useVoiceInput, MicPermissionState } from "./useVoiceInput";
 import { runTool, snapshot } from "./toolRunner";
 
 const API =
   ((import.meta as any).env?.VITE_API_URL as string) ||
   ((import.meta as any).env?.VITE_API_BASE_URL as string) ||
-  "";
+  (typeof window !== "undefined" ? window.location.origin : "");
+
+// Ensure API doesn't end with trailing slash
+const API_BASE = API.replace(/\/$/, "");
 
 type Msg = { role: "user" | "assistant"; content: string };
 const LANGS = [
@@ -55,6 +58,7 @@ export default function AgentLayout({
   const [micError, setMicError] = useState<string | null>(null);
   const [langIdx, setLangIdx] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "error">("connected");
 
   const msgsRef = useRef<Msg[]>([]);
   const abort = useRef<AbortController | null>(null);
@@ -124,17 +128,23 @@ export default function AgentLayout({
   const wake = useCallback(async () => {
     if (awake) return;
     setAwake(true);
+    setConnectionStatus("connecting");
     let greeting = "Hello sir, I'm your DAS agent, how can I assist you?";
     try {
       const t = getToken();
-      const r = await fetch(`${API}/agent/me`, {
+      const r = await fetch(`${API_BASE}/agent/me`, {
         headers: t ? { Authorization: `Bearer ${t}` } : {},
       });
       if (r.ok) {
         const data = await r.json();
         if (data.greeting) greeting = data.greeting;
+        setConnectionStatus("connected");
+      } else {
+        setConnectionStatus("error");
       }
-    } catch {}
+    } catch {
+      setConnectionStatus("error");
+    }
     if (msgsRef.current.length === 0) {
       push({ role: "assistant", content: greeting });
       speak(greeting);
@@ -144,7 +154,7 @@ export default function AgentLayout({
   useEffect(() => {
     const t = setTimeout(() => {
       wake().catch(() => {});
-    }, 300);
+    }, 100);
     return () => clearTimeout(t);
   }, [wake]);
 
@@ -161,8 +171,9 @@ export default function AgentLayout({
       if (!q) return;
       if (!awake) setAwake(true);
 
-      abort.current?.abort();
+      // Barge-in: stop current speech immediately when user sends new message
       stopSpeaking();
+      abort.current?.abort();
       const ac = new AbortController();
       abort.current = ac;
 
@@ -174,6 +185,7 @@ export default function AgentLayout({
       if (!hidden) push({ role: "user", content: q });
       push({ role: "assistant", content: "…" });
       setThinking(true);
+      setConnectionStatus("connecting");
 
       let full = "";
       let spoken = 0;
@@ -187,7 +199,7 @@ export default function AgentLayout({
         for (;;) {
           const m = buf.match(/^[\s\S]*?[.!?।\n]+(?:\s+|$)/);
           if (!m || (!isFinal && !/\s$/.test(m[0]))) break;
-          speak(m[0]);
+          speak(m[0]); // speak immediately on each sentence for lower latency
           spoken += m[0].length;
           buf = buf.slice(m[0].length);
         }
@@ -228,7 +240,8 @@ export default function AgentLayout({
         };
 
         // 1. Primary: Unified /api/chat/stream (same personality, profile, and context as text coach)
-        let r = await fetch(`${API}/api/chat/stream`, {
+        setConnectionStatus("connecting");
+        let r = await fetch(`${API_BASE}/api/chat/stream`, {
           method: "POST",
           signal: ac.signal,
           headers: {
@@ -239,6 +252,7 @@ export default function AgentLayout({
         });
 
         if (r.ok && r.body) {
+          setConnectionStatus("connected");
           const reader = r.body.getReader();
           const dec = new TextDecoder();
           let carry = "";
@@ -260,7 +274,7 @@ export default function AgentLayout({
                   setThinking(false);
                   full += tok;
                   patchLast(full.replace("|||", "\n\n"));
-                  takeSpeech(false);
+                  takeSpeech(false); // stream speech immediately per sentence
                 } else if (ev.t === "tool") {
                   const res = runTool(ev.name, ev.args, navigate);
                   if (res.navigated && res.explain) followUp = true;
@@ -272,7 +286,7 @@ export default function AgentLayout({
 
         // 2. Fallback: Non-streaming /api/chat if stream returned empty
         if (!full.trim()) {
-          const syncRes = await fetch(`${API}/api/chat`, {
+          const syncRes = await fetch(`${API_BASE}/api/chat`, {
             method: "POST",
             signal: ac.signal,
             headers: {
@@ -293,6 +307,7 @@ export default function AgentLayout({
         }
 
         setThinking(false);
+        setConnectionStatus("connected");
         takeSpeech(true);
 
         if (followUp && !hidden) {
@@ -307,8 +322,13 @@ export default function AgentLayout({
         }
       } catch (e: any) {
         setThinking(false);
+        setConnectionStatus("error");
         if (e?.name !== "AbortError") {
-          patchLast("Oops, connection problem. Malli try chey boss.");
+          if (e?.message?.includes("fetch") || e?.type === "type-error") {
+            patchLast("Backend server not reachable. Check if Pathfinder backend is running on Render.");
+          } else {
+            patchLast("Connection problem. Malli try chey boss.");
+          }
         }
       }
     },
@@ -316,7 +336,7 @@ export default function AgentLayout({
   );
 
   // Voice Input Hook (Bug 6: Web Speech API microphone integration)
-  const { isListening, toggleListening } = useVoiceInput({
+  const { isListening, toggleListening, micPermission } = useVoiceInput({
     lang: LANGS[langIdx][0],
     onInterim: (interimText) => {
       setMicError(null);
@@ -335,6 +355,7 @@ export default function AgentLayout({
 
   const handleToggleMic = () => {
     if (!awake) setAwake(true);
+    // Barge-in: stop agent speech when user starts speaking
     stopSpeaking();
     toggleListening();
   };
@@ -364,6 +385,28 @@ export default function AgentLayout({
             DAS 3D AGENT
           </div>
         </div>
+
+        {/* Connection Status Badge */}
+        {connectionStatus !== "connected" && (
+          <div
+            className={`absolute top-5 left-5 z-30 flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full bg-rose-950/80 border border-rose-500/30 backdrop-blur-md ${
+              connectionStatus === "error"
+                ? "text-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.3)]"
+                : "text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+            }`}
+          >
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${
+                connectionStatus === "error"
+                  ? "animate-pulse bg-rose-500"
+                  : "animate-ping bg-amber-500"
+              }`}
+            />
+            {connectionStatus === "error"
+              ? "Backend unreachable"
+              : "Connecting..."}
+          </div>
+        )}
 
         {/* Dynamic State Indicator Badge (Bottom Left) */}
         <div
@@ -396,6 +439,24 @@ export default function AgentLayout({
             ? "listening to mic..."
             : "online • idle"}
         </div>
+
+        {/* Mic Permission Badge (Bottom Right) */}
+        {micPermission !== "unknown" && micPermission !== "granted" && (
+          <div
+            className={`absolute bottom-5 right-5 z-20 flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full ${
+              micPermission === "denied"
+                ? "bg-rose-950/80 border border-rose-500/30 text-rose-200"
+                : "bg-amber-950/80 border border-amber-500/30 text-amber-200"
+            } backdrop-blur-md`}
+          >
+            <span className="h-2.5 w-2.5 rounded-full animate-pulse bg-rose-500" />
+            {micPermission === "denied"
+              ? "Mic permission denied"
+              : micPermission === "unsupported"
+              ? "Voice not supported"
+              : "Mic access needed"}
+          </div>
+        )}
 
         {/* Wake-up Overlay if not yet awakened */}
         {!awake && (

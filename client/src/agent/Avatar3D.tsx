@@ -26,6 +26,7 @@ export default function Avatar3D({
   const stateRef = useRef<AvatarState>(state);
   stateRef.current = state;
   const [modelType, setModelType] = useState<"vrm" | "gltf" | "cyber">("gltf");
+  const [animFeatures, setAnimFeatures] = useState({ blink: false, lipSync: false, eyeGlow: false });
 
   useEffect(() => {
     const el = host.current;
@@ -117,8 +118,16 @@ export default function Avatar3D({
     let initialJawPosY = 0;
     let leftEyeNode: THREE.Object3D | null = null;
     let rightEyeNode: THREE.Object3D | null = null;
+    // Fallback: any eye-like meshes for blinking if specific eye nodes missing
+    const fallbackEyeMeshes: THREE.Object3D[] = [];
+    // Fallback: any mouth/jaw-like mesh for lip-sync
+    let fallbackMouthMesh: THREE.Mesh | null = null;
+    let fallbackMouthInitialScale = 1;
     const eyeGlowMaterials: THREE.MeshStandardMaterial[] = [];
     const eyePointLights: THREE.PointLight[] = [];
+    let hasBlink = false;
+    let hasLipSync = false;
+    let hasEyeGlow = false;
 
     let raf = 0;
     let dead = false;
@@ -174,14 +183,54 @@ export default function Avatar3D({
                 jawNode = child;
                 initialJawRotX = child.rotation.x;
                 initialJawPosY = child.position.y;
+                setAnimFeatures(prev => ({ ...prev, lipSync: true }));
               }
 
               // Eye parent nodes for blinking
               if (name === "Kito6_FaceMesh_Eye.L_20" || lowName.includes("eye.l")) {
                 leftEyeNode = child;
+                setAnimFeatures(prev => ({ ...prev, blink: true }));
               }
               if (name === "Kito6_FaceMesh_Eye.R_21" || lowName.includes("eye.r")) {
                 rightEyeNode = child;
+                setAnimFeatures(prev => ({ ...prev, blink: true }));
+              }
+
+              // Collect any eye-like meshes as fallback blink targets
+              if (child.isMesh && !animFeatures.blink) {
+                const matName = (child.material?.name || "").toLowerCase();
+                const isEyeLike =
+                  lowName.includes("eye") ||
+                  lowName.includes("iris") ||
+                  lowName.includes("eyelid") ||
+                  matName.includes("eye") ||
+                  matName.includes("iris") ||
+                  name === "Object_52" ||
+                  name === "Object_53" ||
+                  name === "Object_55" ||
+                  name === "Object_56";
+
+                if (isEyeLike) {
+                  fallbackEyeMeshes.push(child);
+                  setAnimFeatures(prev => ({ ...prev, blink: true }));
+                }
+              }
+
+              // Collect any mouth-like mesh as fallback lip-sync target
+              if (child.isMesh && !animFeatures.lipSync) {
+                const matName = (child.material?.name || "").toLowerCase();
+                const isMouthLike =
+                  lowName.includes("mouth") ||
+                  lowName.includes("lip") ||
+                  lowName.includes("jaw") ||
+                  matName.includes("mouth") ||
+                  matName.includes("lip");
+
+                if (isMouthLike && !fallbackMouthMesh) {
+                  fallbackMouthMesh = child;
+                  fallbackMouthInitialScale = child.scale.y || 1;
+                  setAnimFeatures(prev => ({ ...prev, lipSync: true }));
+                }
               }
 
               // Eye meshes for active glowing effect
@@ -189,6 +238,7 @@ export default function Avatar3D({
                 const matName = (child.material?.name || "").toLowerCase();
                 const isEyeMesh =
                   lowName.includes("eye") ||
+                  lowName.includes("iris") ||
                   name === "Object_52" ||
                   name === "Object_53" ||
                   name === "Object_55" ||
@@ -206,9 +256,17 @@ export default function Avatar3D({
                   });
                   child.material = glowMat;
                   eyeGlowMaterials.push(glowMat);
+                  setAnimFeatures(prev => ({ ...prev, eyeGlow: true }));
                 }
               }
             });
+
+            // If no specific eye nodes found but we have fallback eye meshes, use those for blinking
+            if (!leftEyeNode && !rightEyeNode && fallbackEyeMeshes.length > 0) {
+              // Use first two fallback eye meshes as left/right
+              leftEyeNode = fallbackEyeMeshes[0] || null;
+              rightEyeNode = fallbackEyeMeshes[1] || null;
+            }
 
             // Attach subtle glowing point lights directly to left & right eyes
             const attachEyeLight = (eyeObj: THREE.Object3D | null, fallbackX: number) => {
@@ -269,8 +327,10 @@ export default function Avatar3D({
 
     const clock = new THREE.Clock();
     let t = 0;
-    let nextBlink = 2.2;
+    let nextBlink = 1.8 + Math.random() * 2.5; // random first blink
     let blinkT = -1;
+    let leftBlinkT = -1; // asymmetric blink support
+    let rightBlinkT = -1;
     let mouth = 0;
 
     // 3. CONTINUOUS ANIMATION LOOP (Idle breathing, eye glow pulse, blinking & audio lip-sync)
@@ -287,18 +347,47 @@ export default function Avatar3D({
       const targetMouth = Math.min(1.0, activeAudio * 4.2);
       mouth += (targetMouth - mouth) * Math.min(1, dt * 22);
 
-      // Blink timer calculation
+      // Blink timer calculation (random intervals, asymmetric left/right possible)
       nextBlink -= dt;
-      if (nextBlink <= 0 && blinkT < 0) blinkT = 0;
-      let blinkScaleY = 1;
-      if (blinkT >= 0) {
+      if (nextBlink <= 0 && blinkT < 0 && leftBlinkT < 0 && rightBlinkT < 0) {
+        // 80% chance both eyes blink together, 20% chance single eye wink
+        if (Math.random() < 0.8) {
+          blinkT = 0;
+        } else {
+          leftBlinkT = Math.random() < 0.5 ? 0 : -1;
+          rightBlinkT = leftBlinkT < 0 ? 0 : -1;
+        }
+      }
+      const computeBlink = (bt: number): number => {
+        if (bt < 0) return 1;
+        bt += dt;
+        const p = Math.min(bt / 0.16, 1);
+        const s = 1 - Math.sin(p * Math.PI) * 0.92;
+        if (bt >= 0.16) return -1;
+        return s;
+      };
+      let leftScaleY = computeBlink(leftBlinkT >= 0 ? leftBlinkT : blinkT);
+      let rightScaleY = computeBlink(rightBlinkT >= 0 ? rightBlinkT : blinkT);
+      if (leftBlinkT >= 0) leftBlinkT = leftBlinkT < 0 ? -1 : leftBlinkT + (leftBlinkT >= 0 ? dt : 0);
+      if (rightBlinkT >= 0) rightBlinkT = rightBlinkT < 0 ? -1 : rightBlinkT + (rightBlinkT >= 0 ? dt : 0);
+      // reset completed blinks
+      if (leftBlinkT !== -1 && leftScaleY === -1) {
+        leftBlinkT = -1;
+        nextBlink = 2.0 + Math.random() * 3.5;
+        leftScaleY = 1;
+      }
+      if (rightBlinkT !== -1 && rightScaleY === -1) {
+        rightBlinkT = -1;
+        nextBlink = 2.0 + Math.random() * 3.5;
+        rightScaleY = 1;
+      }
+      if (blinkT !== -1) {
         blinkT += dt;
-        const p = Math.min(blinkT / 0.16, 1);
-        blinkScaleY = 1 - Math.sin(p * Math.PI) * 0.92;
         if (blinkT >= 0.16) {
           blinkT = -1;
-          nextBlink = 2.4 + Math.random() * 3.2;
-          blinkScaleY = 1;
+          nextBlink = 2.0 + Math.random() * 3.5;
+          leftScaleY = 1;
+          rightScaleY = 1;
         }
       }
 
@@ -329,15 +418,24 @@ export default function Avatar3D({
         gltfGroup.rotation.x = swayX + speechNod + thinkTilt;
         gltfGroup.rotation.z = swayZ;
 
-        // Jaw Lip-Sync Animation
+        // Jaw Lip-Sync Animation (primary jaw node or fallback mouth mesh)
         if (jawNode) {
           jawNode.rotation.x = initialJawRotX + mouth * 0.24;
           jawNode.position.y = initialJawPosY - mouth * 0.014;
+        } else if (fallbackMouthMesh && animFeatures.lipSync) {
+          fallbackMouthMesh.scale.y = fallbackMouthInitialScale * (1 + mouth * 0.8);
         }
 
-        // Eye Blinking Animation
-        if (leftEyeNode) leftEyeNode.scale.y = blinkScaleY * 0.057;
-        if (rightEyeNode) rightEyeNode.scale.y = blinkScaleY * 0.057;
+        // Eye Blinking Animation (primary nodes or fallback eye meshes)
+        const blinkAmount = Math.min(leftScaleY, rightScaleY);
+        if (leftEyeNode) leftEyeNode.scale.y = blinkAmount * 0.057;
+        if (rightEyeNode) rightEyeNode.scale.y = blinkAmount * 0.057;
+        // Fallback: scale down all fallback eye meshes
+        for (const mesh of fallbackEyeMeshes) {
+          if (mesh !== leftEyeNode && mesh !== rightEyeNode) {
+            mesh.scale.y = blinkAmount * 0.057;
+          }
+        }
 
         // Eye Glow Color & Pulsing per State (Idle / Listening / Thinking / Speaking)
         let glowColor = new THREE.Color(0xe11d48); // signature crimson-rose AI glow
@@ -379,7 +477,8 @@ export default function Avatar3D({
       if (vrm) {
         const em = vrm.expressionManager;
         if (em) {
-          em.setValue("blink", 1 - blinkScaleY);
+          const vrmBlink = 1 - Math.min(leftScaleY, rightScaleY);
+          em.setValue("blink", vrmBlink);
           em.setValue("aa", mouth * 0.9);
           em.setValue("oh", mouth > 0.5 ? (mouth - 0.5) * 0.6 : 0);
         }
@@ -395,8 +494,9 @@ export default function Avatar3D({
       if (cyberGroup.visible) {
         cyberGroup.position.y = Math.sin(t * 1.5) * 0.04;
         cyberGroup.rotation.y = Math.sin(t * 0.7) * 0.15;
-        cyberLeftEye.scale.y = blinkScaleY;
-        cyberRightEye.scale.y = blinkScaleY;
+        const cyberBlink = Math.min(leftScaleY, rightScaleY);
+        cyberLeftEye.scale.y = cyberBlink;
+        cyberRightEye.scale.y = cyberBlink;
         const ringScale = 1 + mouth * 1.8;
         mouthMesh.scale.set(ringScale, ringScale, 1);
         coreMat.emissiveIntensity = 0.9 + mouth * 2.2;
@@ -448,6 +548,13 @@ export default function Avatar3D({
           Cyber Core Rig Active
         </div>
       )}
+
+      {/* Animation debug badge - shows which features are active */}
+      <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-1">
+        <div className="px-2 py-1 rounded bg-black/60 backdrop-blur border border-white/10 text-[10px] font-mono text-zinc-400">
+          {`blink:${animFeatures.blink ? "✓" : "✗"} lipsync:${animFeatures.lipSync ? "✓" : "✗"} eyeglow:${animFeatures.eyeGlow ? "✓" : "✗"} ${modelType}`}
+        </div>
+      </div>
     </div>
   );
 }
