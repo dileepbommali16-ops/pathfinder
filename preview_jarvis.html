@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JARVIS 3D AI Command Center - Pathfinder 2.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Three.js + GLTFLoader -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <style>
     body {
       margin: 0;
@@ -40,7 +37,7 @@
       50% { opacity: 0.3; transform: scale(0.85); }
     }
     .center-reticle {
-      border: 1px dashed rgba(168, 85, 247, 0.28);
+      border: 1px dashed rgba(168, 85, 247, 0.35);
       border-radius: 50%;
       pointer-events: none;
     }
@@ -51,13 +48,15 @@
   <!-- 3D Canvas Centered in Fullscreen Background -->
   <canvas id="three-canvas"></canvas>
 
-  <!-- Large Holographic Center Target Frame -->
+  <!-- Large Holographic Center Target Reticle -->
   <div class="fixed inset-0 flex items-center justify-center pointer-events-none z-5">
-    <div class="w-[620px] h-[620px] center-reticle relative flex items-center justify-center">
-      <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded bg-black/85 border border-purple-500/50 text-[11px] text-purple-300 font-mono tracking-widest uppercase shadow-xl">
-        DAS NEURAL CORE • 3D AVATAR
+    <div class="w-[660px] h-[660px] center-reticle relative flex items-center justify-center">
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3.5 py-1 rounded-full bg-black/90 border border-red-500/50 text-[11px] text-red-300 font-mono tracking-widest uppercase shadow-xl flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+        DAS NEURAL CORE • CYBORG AVATAR
       </div>
-      <div class="w-[580px] h-[580px] rounded-full border border-red-500/25 animate-spin" style="animation-duration: 60s;"></div>
+      <div class="w-[620px] h-[620px] rounded-full border border-purple-500/20 animate-spin" style="animation-duration: 60s;"></div>
+      <div class="w-[580px] h-[580px] rounded-full border border-dashed border-red-500/25 animate-spin" style="animation-duration: 40s; animation-direction: reverse;"></div>
     </div>
   </div>
 
@@ -71,8 +70,8 @@
         <span class="text-xl font-bold tracking-wider bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent">
           PATHFINDER 2.0
         </span>
-        <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-900/60 border border-purple-500/30 text-purple-300 font-mono">
-          GIANT 3D AVATAR • RED EYES • REAL LIP-SYNC
+        <span class="text-xs px-2.5 py-0.5 rounded-full bg-red-950/70 border border-red-500/40 text-red-300 font-mono font-semibold">
+          ORIGINAL CYBORG 3D AVATAR • ELEVENLABS REAL LIP-SYNC
         </span>
       </div>
 
@@ -132,7 +131,7 @@
           <div class="text-xs font-mono text-red-400 mb-1 flex items-center gap-1.5 font-bold">
             <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span> ELEVENLABS ACTIONS
           </div>
-          <div class="text-xs text-gray-300 mb-3">Click below to trigger real ElevenLabs voice & lip-sync:</div>
+          <div class="text-xs text-gray-300 mb-3">Click below to hear real voice & watch mouth lip-sync:</div>
           <div class="space-y-2">
             <button onclick="executeElevenLabs('blueprints')" class="w-full text-left p-3 rounded-xl bg-purple-950/40 hover:bg-purple-800/50 border border-purple-500/30 hover:border-purple-400 transition-all text-xs font-medium flex items-center justify-between group cursor-pointer shadow-md">
               <span class="text-gray-200 group-hover:text-white font-semibold">👉 "Pathfinder blueprints loki vellu"</span>
@@ -165,7 +164,7 @@
             <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Active</span>
           </div>
           <p class="text-gray-300 text-xs leading-relaxed mb-4">
-            Welcome, <span class="text-purple-300 font-bold">Boss</span>! The 3D robot face in the center is now scaled up large, with ruby red glowing eyes and active speech lip-sync!
+            Welcome, <span class="text-purple-300 font-bold">Boss</span>! The original cyborg avatar is back in the center, large & focused, with ruby-red glowing bead eyes and real jaw lip-sync!
           </p>
           <div class="bg-black/50 p-4 rounded-xl border border-white/5 space-y-2">
             <div class="text-xs font-semibold text-gray-200">Active Campus Drive Track</div>
@@ -232,7 +231,7 @@
           </div>
           <h2 class="text-base font-bold text-white">Technical Viva Room</h2>
           <p class="text-gray-300 text-xs mt-1.5 leading-relaxed">
-            DAS is listening and evaluating Boss's answers in real time. The 3D robot face in the center reacts directly to your voice.
+            DAS is listening and evaluating Boss's answers in real time. The 3D cyborg face in the center speaks with ElevenLabs voice and real lip-sync.
           </p>
         </div>
 
@@ -275,287 +274,344 @@
 
   </div>
 
-  <!-- Three.js + Real GLTF Avatar + Web Audio API Analyser Script -->
-  <script>
-    let scene, camera, renderer;
-    let avatarModel = null;
-    let gltfGroup = null;
+  <!-- 3D Three.js Cyborg Avatar Script -->
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  } }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-    // Direct Mouth / Lip nodes for pure lip-sync
-    let mouthNode = null;
-    let mouthPlateNode = null;
-    let initialMouthY = 0;
-    let initialPlateY = 0;
+    window.THREE = THREE;
 
-    let eyeBeadMeshes = [];
-    let eyePointLights = [];
+    const canvas = document.getElementById('three-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
 
-    // Real Web Audio API Analyser for ElevenLabs voice waveform
-    let audioContext = null;
-    let audioAnalyser = null;
-    let dataArray = null;
-    let currentAudio = null;
-    let isSpeaking = false;
-    let audioVolumeLevel = 0;
+    const scene = new THREE.Scene();
+    window.scene = scene;
 
-    function init3D() {
-      const canvas = document.getElementById('three-canvas');
-      scene = new THREE.Scene();
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
 
-      // Camera positioned for a LARGE, IMPOSING, CENTERED HEAD VIEW
-      camera = new THREE.PerspectiveCamera(28, window.innerWidth / window.innerHeight, 0.1, 50);
-      camera.position.set(0, 0, 2.75); // Closer camera for large face!
-      camera.lookAt(0, 0, 0);
+    const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 2.15);
+    camera.lookAt(0, 0, 0);
+    window.camera = camera;
 
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Elegant Studio Lighting (from original Pathfinder Avatar3D)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.35);
+    scene.add(ambientLight);
 
-      // Balanced Studio Lighting
-      scene.add(new THREE.AmbientLight(0xffffff, 1.6));
+    const keyLight = new THREE.DirectionalLight(0xc4b5fd, 2.5);
+    keyLight.position.set(1.5, 1.8, 2.5);
+    scene.add(keyLight);
 
-      const keyLight = new THREE.DirectionalLight(0xd8b4fe, 2.8);
-      keyLight.position.set(2, 3, 4);
-      scene.add(keyLight);
+    const fillLight = new THREE.DirectionalLight(0xf472b6, 1.6);
+    fillLight.position.set(-1.8, 1.0, 1.5);
+    scene.add(fillLight);
 
-      const fillLight = new THREE.DirectionalLight(0xf472b6, 1.8);
-      fillLight.position.set(-2, 1, 2);
-      scene.add(fillLight);
+    const rimLight = new THREE.PointLight(0x9333ea, 3.2, 8);
+    rimLight.position.set(0, 0.5, -1.5);
+    scene.add(rimLight);
 
-      // Red cyber ambient light
-      const redBacklight = new THREE.PointLight(0xff002b, 5.0, 10);
-      redBacklight.position.set(0, -0.4, 2.0);
-      scene.add(redBacklight);
+    // Avatar Root Group
+    const avatarGroup = new THREE.Group();
+    scene.add(avatarGroup);
+    window.avatarGroup = avatarGroup;
 
-      gltfGroup = new THREE.Group();
-      gltfGroup.position.set(0, -0.15, 0); // Centered nicely!
-      gltfGroup.scale.set(2.45, 2.45, 2.45); // LARGE, MAJESTIC HEAD SIZE!
-      scene.add(gltfGroup);
+    // Key parts of avatar.glb
+    let lowerJawMesh = null; // Object_5
+    let chinPlateMesh = null; // Object_60
+    let leftEyeNode = null;   // Kito6_FaceMesh_EyeL_20
+    let rightEyeNode = null;  // Kito6_FaceMesh_EyeR_21
+    const eyeMats = [];
+    const eyeLights = [];
 
-      // Load avatar.glb
-      const loader = new THREE.GLTFLoader();
-      const glbPath = '/client/public/models/avatar.glb';
+    let jawInitY = 0;
+    let jawInitZ = 0;
+    let jawInitRotX = 0;
+    let plateInitY = 0;
+    let plateInitZ = 0;
 
-      loader.load(glbPath, function(gltf) {
-        avatarModel = gltf.scene;
-        avatarModel.updateMatrixWorld(true);
+    const loader = new GLTFLoader();
+    loader.load('/client/public/models/avatar.glb', (gltf) => {
+      const model = gltf.scene;
+      window._avatarModel = model;
 
-        // Auto-center avatar model inside gltfGroup
-        const box = new THREE.Box3().setFromObject(avatarModel);
-        const center = box.getCenter(new THREE.Vector3());
+      // Position & Center: Face center is around (0, 0.19, 0.08)
+      model.position.set(0, -0.19, -0.08);
 
-        // Offset avatarModel so its bounding box center sits at (0, 0, 0)
-        avatarModel.position.set(-center.x, -center.y, -center.z);
+      // Perfectly scaled to fit inside the circular HUD reticle
+      const faceScale = 1.75;
+      avatarGroup.scale.set(faceScale, faceScale, faceScale);
+      avatarGroup.position.set(0, 0.02, 0);
 
-        // 1. Create BLAZING RUBY RED EYE BEADS ("Poosalu ga red ga merise kallu")
-        const beadGeo = new THREE.SphereGeometry(0.08, 32, 32);
-        const beadMat = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Intense solid red
-        const haloGeo = new THREE.SphereGeometry(0.125, 32, 32);
-        const haloMat = new THREE.MeshBasicMaterial({ color: 0xff0033, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending });
+      avatarGroup.add(model);
 
-        // Find Mouth meshes and Eye positions
-        avatarModel.traverse(function(child) {
-          const name = child.name || '';
-
-          // Object_5 is the main lower jaw/mouth mesh
-          if (name === 'Object_5') {
-            mouthNode = child;
-            initialMouthY = child.position.y;
-          }
-          // Object_60 / RoboFace_Plate_24 is the central lower mouth plate
-          if (name === 'RoboFace_Plate_24' || name === 'Object_60') {
-            mouthPlateNode = child;
-            initialPlateY = child.position.y;
-          }
-
-          // Add glowing red eye orbs directly into the eye sockets!
-          if (name === 'Object_52') {
-            const eye1 = new THREE.Mesh(beadGeo, beadMat);
-            const h1 = new THREE.Mesh(haloGeo, haloMat);
-            eye1.add(h1);
-            const pLight1 = new THREE.PointLight(0xff0000, 16.0, 3.5);
-            eye1.add(pLight1);
-            eye1.position.set(0, 0, 0.04);
-            child.add(eye1);
-            eyeBeadMeshes.push(eye1);
-            eyePointLights.push(pLight1);
-          }
-          if (name === 'Object_55') {
-            const eye2 = new THREE.Mesh(beadGeo, beadMat);
-            const h2 = new THREE.Mesh(haloGeo, haloMat);
-            eye2.add(h2);
-            const pLight2 = new THREE.PointLight(0xff0000, 16.0, 3.5);
-            eye2.add(pLight2);
-            eye2.position.set(0, 0, 0.04);
-            child.add(eye2);
-            eyeBeadMeshes.push(eye2);
-            eyePointLights.push(pLight2);
-          }
-        });
-
-        gltfGroup.add(avatarModel);
+      // Rich Glowing Ruby Eyes Material (Exact pure ruby glow, NO giant stretched meshes!)
+      const rubyGlowMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(0xff1e56),
+        emissive: new THREE.Color(0xff0025),
+        emissiveIntensity: 3.8,
+        roughness: 0.12,
+        metalness: 0.85,
+        toneMapped: false
       });
 
-      window.addEventListener('resize', onResize);
-      animate();
+      // Traversal to wire mouth, eyes and preserve original ceramic/metal materials
+      model.traverse((child) => {
+        const name = child.name || '';
+        const lowName = name.toLowerCase();
+
+        // Lower jaw mesh: Object_5
+        if (name === 'Object_5') {
+          lowerJawMesh = child;
+          jawInitY = child.position.y;
+          jawInitZ = child.position.z;
+          jawInitRotX = child.rotation.x;
+        }
+
+        // Chin / mouth plate: Object_60
+        if (name === 'Object_60') {
+          chinPlateMesh = child;
+          plateInitY = child.position.y;
+          plateInitZ = child.position.z;
+        }
+
+        // Freeze JawR_19 (right cheek bone) completely so cheek never wobbles!
+        if (name.includes('JawR') || name.includes('Jaw.R')) {
+          child.rotation.set(0, 0, 0);
+        }
+
+        // Eyes: Kito6_FaceMesh_EyeL_20 and Kito6_FaceMesh_EyeR_21
+        if (name.includes('EyeL') || name.includes('Eye.L')) {
+          leftEyeNode = child;
+        }
+        if (name.includes('EyeR') || name.includes('Eye.R')) {
+          rightEyeNode = child;
+        }
+
+        // Apply Ruby Red Glow ONLY to the actual eyeball & pupil meshes (NEVER to Object_58 face circles!)
+        if (child.isMesh) {
+          const isEyeMesh = 
+            name === 'Object_52' || name === 'Object_53' || 
+            name === 'Object_55' || name === 'Object_56' || 
+            lowName.includes('iris') || (lowName.includes('eye') && !lowName.includes('circle'));
+
+          if (isEyeMesh && name !== 'Object_58') {
+            child.material = rubyGlowMat;
+            eyeMats.push(rubyGlowMat);
+          }
+        }
+      });
+
+      // Focused subtle Ruby point lights inside the sockets (NO facial wash-out)
+      const leftLight = new THREE.PointLight(0xff0025, 1.8, 0.6);
+      leftLight.position.set(0.065, 0.065, 0.18);
+      avatarGroup.add(leftLight);
+      eyeLights.push(leftLight);
+
+      const rightLight = new THREE.PointLight(0xff0025, 1.8, 0.6);
+      rightLight.position.set(-0.065, 0.065, 0.18);
+      avatarGroup.add(rightLight);
+      eyeLights.push(rightLight);
+
+      console.log('✅ Cyborg avatar loaded: Sleek ceramic face, glowing ruby eyes & lip-sync armed!');
+    }, undefined, (err) => {
+      console.error('❌ Failed to load avatar.glb:', err);
+    });
+
+    // ---------- ElevenLabs Web Audio Analyzer for True Lip-Sync ----------
+    let audioCtx = null, analyser = null, freq = null, currentAudio = null;
+    let speaking = false;
+    let currentMouthOpen = 0;
+    let targetMouthOpen = 0;
+
+    function analyzeAudioLipSync() {
+      if (!speaking || !analyser || !freq) {
+        targetMouthOpen = 0;
+        return;
+      }
+      analyser.getByteFrequencyData(freq);
+
+      // Human speech energy bands (~150Hz to ~3200Hz)
+      const binHz = audioCtx.sampleRate / analyser.fftSize;
+      const binLow = Math.max(1, Math.floor(150 / binHz));
+      const binHigh = Math.min(freq.length - 1, Math.ceil(3200 / binHz));
+
+      let sum = 0;
+      for (let i = binLow; i <= binHigh; i++) {
+        sum += freq[i];
+      }
+      const energy = sum / ((binHigh - binLow + 1) * 255);
+
+      // Map audio energy to natural human-like speech visemes
+      if (energy > 0.07) {
+        targetMouthOpen = THREE.MathUtils.clamp((energy - 0.07) * 2.8, 0, 1.0);
+      } else {
+        targetMouthOpen = 0;
+      }
     }
 
-    function onResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+    // Natural blinking timer
+    let nextBlink = performance.now() + 2500;
+    let blinkT = -1;
+
+    const clock = new THREE.Clock();
 
     function animate() {
       requestAnimationFrame(animate);
-      const time = performance.now() * 0.001;
+      const t = clock.getElapsedTime();
+      const now = performance.now();
 
-      // Extract real audio frequency amplitude from ElevenLabs voice
-      if (audioAnalyser && isSpeaking) {
-        audioAnalyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for (let i = 0; i < 32; i++) {
-          sum += dataArray[i];
-        }
-        audioVolumeLevel = (sum / 32) / 255.0;
-      } else if (isSpeaking) {
-        audioVolumeLevel = 0.65;
-      } else {
-        audioVolumeLevel = 0;
+      // Audio analysis
+      analyzeAudioLipSync();
+
+      // Smooth mouth movement (quick attack on syllables, smooth release)
+      const mouthSpeed = targetMouthOpen > currentMouthOpen ? 0.65 : 0.35;
+      currentMouthOpen += (targetMouthOpen - currentMouthOpen) * mouthSpeed;
+
+      // Realistic, human-scale lip-sync (subtle, natural mouth articulation)
+      // NO cheek twitch ("gooba oogadhu"), NO neck bobbing ("meda kindaki paiki oogadhu")!
+      if (lowerJawMesh) {
+        lowerJawMesh.position.y = jawInitY - currentMouthOpen * 0.016;
+        lowerJawMesh.position.z = jawInitZ - currentMouthOpen * 0.006;
+        lowerJawMesh.rotation.x = jawInitRotX + currentMouthOpen * 0.08;
+      }
+      if (chinPlateMesh) {
+        chinPlateMesh.position.y = plateInitY - currentMouthOpen * 0.014;
+        chinPlateMesh.position.z = plateInitZ - currentMouthOpen * 0.005;
       }
 
-      if (gltfGroup) {
-        // Idle gentle breathing centered in middle
-        gltfGroup.position.y = -0.15 + Math.sin(time * 1.5) * 0.02;
-        gltfGroup.rotation.y = Math.sin(time * 0.75) * 0.04;
-        gltfGroup.rotation.x = Math.cos(time * 0.5) * 0.02;
-
-        // BLAZING RED EYE GLOW ("Poosalu ga red ga meravadam"):
-        const eyeBrightness = isSpeaking ? (18.0 + Math.sin(time * 8.0) * 8.0) : (12.0 + Math.sin(time * 3.0) * 4.0);
-        eyePointLights.forEach(l => {
-          l.intensity = eyeBrightness;
-        });
-
-        // DRAMATIC, VISIBLE, REAL LIP-SYNC (Mouth visibly drops open and closes on syllables!)
-        if (mouthNode || mouthPlateNode) {
-          if (isSpeaking) {
-            // Syllabic speech cadence (natural talking viseme wave)
-            const speechMotion = (Math.sin(time * 18.0) * 0.5 + 0.5) * 0.75 + (audioVolumeLevel * 0.4);
-            const dropDistance = speechMotion * 0.22; // Very clear, wide, visible mouth opening!
-
-            if (mouthNode) mouthNode.position.y = initialMouthY - dropDistance;
-            if (mouthPlateNode) mouthPlateNode.position.y = initialPlateY - dropDistance;
-          } else {
-            if (mouthNode) mouthNode.position.y = initialMouthY;
-            if (mouthPlateNode) mouthPlateNode.position.y = initialPlateY;
-          }
+      // Natural eye blinking (keeping exact 0.057 base scale factor!)
+      if (blinkT < 0 && now > nextBlink) {
+        blinkT = now;
+      }
+      let blinkAmount = 1;
+      if (blinkT >= 0) {
+        const p = (now - blinkT) / 130;
+        blinkAmount = p < 1 ? Math.max(0.08, 1 - Math.sin(p * Math.PI)) : 1;
+        if (p >= 1) {
+          blinkT = -1;
+          nextBlink = now + 2400 + Math.random() * 3000;
         }
       }
+      if (leftEyeNode) leftEyeNode.scale.y = blinkAmount * 0.057;
+      if (rightEyeNode) rightEyeNode.scale.y = blinkAmount * 0.057;
+
+      // HEAD STABILITY: Keep head steady! Absolutely NO comical neck bobbing!
+      // Only gentle natural breathing float & slow ambient hover
+      avatarGroup.rotation.y = Math.sin(t * 0.45) * 0.035; // Gentle horizontal sway
+      avatarGroup.rotation.x = 0; // Locked pitch (NO UP/DOWN BOBBING)
+      avatarGroup.rotation.z = Math.sin(t * 0.35) * 0.012;
+      avatarGroup.position.y = 0.02 + Math.sin(t * 1.3) * 0.01; // Gentle breathing float
+
+      // Ruby Red Eye Glow Pulsing (brighter when speaking)
+      const baseGlow = speaking ? 4.8 + currentMouthOpen * 2.5 : 3.5 + Math.sin(t * 2.5) * 0.8;
+      eyeMats.forEach(m => m.emissiveIntensity = baseGlow);
+      eyeLights.forEach(l => l.intensity = baseGlow * 0.8);
 
       renderer.render(scene, camera);
     }
+    animate();
 
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // ---------- UI & Tab Navigation ----------
     function setTab(tabName) {
       document.querySelectorAll('.tab-btn').forEach(b => {
         b.className = 'tab-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5';
       });
-      const activeBtn = document.getElementById('tab-' + tabName);
-      if (activeBtn) {
-        activeBtn.className = 'tab-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-purple-600/30 text-white border border-purple-500/40';
-      }
-
+      const btn = document.getElementById('tab-' + tabName);
+      if (btn) btn.className = 'tab-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-purple-600/30 text-white border border-purple-500/40';
       document.querySelectorAll('.view-panel').forEach(v => v.classList.add('hidden'));
-      const activeView = document.getElementById('view-' + tabName);
-      if (activeView) activeView.classList.remove('hidden');
+      const view = document.getElementById('view-' + tabName);
+      if (view) view.classList.remove('hidden');
     }
 
-    // Play Natural ElevenLabs Audio with Full Web Audio API Lip-Sync
     const audioMap = {
-      'blueprints': { file: '/preview_audio/blueprints.mp3', text: 'Right away, Boss! Navigating to your Pathfinder Project Blueprints now.' },
-      'roadmap': { file: '/preview_audio/roadmap.mp3', text: 'On it, Boss! Opening your 6-Week Placement Roadmap.' },
-      'interview': { file: '/preview_audio/interview.mp3', text: 'Preparing your technical interview room, Boss. Connecting live evaluation now.' },
-      'dashboard': { file: '/preview_audio/dashboard.mp3', text: 'Returning to your Command Dashboard, Boss.' },
-      'ready': { file: '/preview_audio/ready.mp3', text: 'I am here at your service, Boss. Tell me where you want to go.' }
+      blueprints: { file: '/preview_audio/blueprints.mp3', text: 'Right away, Boss! Navigating to your Pathfinder Project Blueprints now.' },
+      roadmap:    { file: '/preview_audio/roadmap.mp3',    text: 'On it, Boss! Opening your 6-Week Placement Roadmap.' },
+      interview:  { file: '/preview_audio/interview.mp3',  text: 'Preparing your technical interview room, Boss. Connecting live evaluation now.' },
+      dashboard:  { file: '/preview_audio/dashboard.mp3',  text: 'Returning to your Command Dashboard, Boss.' },
+      ready:      { file: '/preview_audio/ready.mp3',      text: 'I am here at your service, Boss. Tell me where you want to go.' }
     };
 
-    function executeElevenLabs(actionKey) {
-      const data = audioMap[actionKey] || audioMap['blueprints'];
-
+    function executeElevenLabs(key) {
+      const data = audioMap[key] || audioMap.ready;
       const bubble = document.getElementById('das-speech-bubble');
-      const speechText = document.getElementById('das-speech-text');
-      speechText.innerText = data.text;
+      document.getElementById('das-speech-text').innerText = data.text;
       bubble.classList.remove('opacity-0');
 
       if (currentAudio) {
         currentAudio.pause();
         currentAudio.currentTime = 0;
       }
-
       const audio = new Audio(data.file);
       currentAudio = audio;
 
-      // Setup Web Audio Analyser
-      try {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!audioContext) audioContext = new AC();
-        if (audioContext.state === 'suspended') audioContext.resume();
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
 
-        audioAnalyser = audioContext.createAnalyser();
-        audioAnalyser.fftSize = 256;
-        dataArray = new Uint8Array(audioAnalyser.frequencyBinCount);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.4;
+      freq = new Uint8Array(analyser.frequencyBinCount);
 
-        const source = audioContext.createMediaElementSource(audio);
-        source.connect(audioAnalyser);
-        audioAnalyser.connect(audioContext.destination);
-      } catch (err) {
-        console.log("Audio node setup:", err);
-      }
+      const src = audioCtx.createMediaElementSource(audio);
+      src.connect(analyser);
+      analyser.connect(audioCtx.destination);
 
-      audio.onplay = () => {
-        isSpeaking = true;
+      audio.onplay = () => { 
+        speaking = true; 
       };
-
-      audio.onended = () => {
-        isSpeaking = false;
-        setTimeout(() => bubble.classList.add('opacity-0'), 2500);
+      audio.onended = () => { 
+        speaking = false; 
+        targetMouthOpen = 0;
+        setTimeout(() => bubble.classList.add('opacity-0'), 2000); 
       };
+      audio.play().catch(err => console.log('Audio autoplay blocked, user interaction required:', err));
 
-      audio.play().catch(e => {
-        console.warn("Direct play gesture note:", e);
-        isSpeaking = true;
-        if ('speechSynthesis' in window) {
-          const utter = new SpeechSynthesisUtterance(data.text);
-          utter.onend = () => { isSpeaking = false; bubble.classList.add('opacity-0'); };
-          window.speechSynthesis.speak(utter);
-        }
-      });
-
-      if (actionKey !== 'ready') {
-        setTimeout(() => {
-          setTab(actionKey);
-        }, 900);
-      }
+      if (key !== 'ready') setTimeout(() => setTab(key), 900);
     }
 
     function handleCommand(cmd) {
       if (!cmd || !cmd.trim()) return;
       document.getElementById('cmd-input').value = '';
-      const lower = cmd.toLowerCase();
-
-      if (lower.includes('blueprint') || lower.includes('project')) {
-        executeElevenLabs('blueprints');
-      } else if (lower.includes('roadmap')) {
-        executeElevenLabs('roadmap');
-      } else if (lower.includes('interview') || lower.includes('viva')) {
-        executeElevenLabs('interview');
-      } else if (lower.includes('dashboard') || lower.includes('home')) {
-        executeElevenLabs('dashboard');
-      } else {
-        executeElevenLabs('ready');
-      }
+      const s = cmd.toLowerCase();
+      if (s.includes('blueprint') || s.includes('project')) executeElevenLabs('blueprints');
+      else if (s.includes('roadmap')) executeElevenLabs('roadmap');
+      else if (s.includes('interview') || s.includes('viva')) executeElevenLabs('interview');
+      else if (s.includes('dashboard') || s.includes('home')) executeElevenLabs('dashboard');
+      else executeElevenLabs('ready');
     }
 
-    window.onload = init3D;
+    // Expose for onclick handlers and debug inspection
+    Object.assign(window, { 
+      setTab, 
+      executeElevenLabs, 
+      handleCommand,
+      _dbg: () => ({
+        jaw: !!lowerJawMesh,
+        chin: !!chinPlateMesh,
+        leftEye: !!leftEyeNode,
+        rightEye: !!rightEyeNode,
+        speaking,
+        mouthLevel: currentMouthOpen
+      })
+    });
   </script>
 </body>
 </html>

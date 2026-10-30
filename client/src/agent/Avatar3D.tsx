@@ -113,21 +113,17 @@ export default function Avatar3D({
     scene.add(gltfGroup);
 
     let vrm: VRM | null = null;
-    let jawNode: THREE.Object3D | null = null;
-    let initialJawRotX = 0;
-    let initialJawPosY = 0;
+    let lowerJawMesh: THREE.Object3D | null = null;
+    let chinPlateMesh: THREE.Object3D | null = null;
+    let jawInitY = 0;
+    let jawInitZ = 0;
+    let jawInitRotX = 0;
+    let plateInitY = 0;
+    let plateInitZ = 0;
     let leftEyeNode: THREE.Object3D | null = null;
     let rightEyeNode: THREE.Object3D | null = null;
-    // Fallback: any eye-like meshes for blinking if specific eye nodes missing
-    const fallbackEyeMeshes: THREE.Object3D[] = [];
-    // Fallback: any mouth/jaw-like mesh for lip-sync
-    let fallbackMouthMesh: THREE.Mesh | null = null;
-    let fallbackMouthInitialScale = 1;
     const eyeGlowMaterials: THREE.MeshStandardMaterial[] = [];
     const eyePointLights: THREE.PointLight[] = [];
-    let hasBlink = false;
-    let hasLipSync = false;
-    let hasEyeGlow = false;
 
     let raf = 0;
     let dead = false;
@@ -155,141 +151,100 @@ export default function Avatar3D({
             cyberGroup.visible = false;
             setModelType("vrm");
           } else if (gltf.scene) {
-            // 1. CENTER THE 3D AVATAR PROPERLY IN ITS CONTAINER
+            // 1. CENTER THE 3D CYBORG FACE PROPERLY IN ITS CONTAINER
             const rootModel = gltf.scene;
             rootModel.updateMatrixWorld(true);
 
-            const box = new THREE.Box3().setFromObject(rootModel);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
+            // Offset rootModel so the geometric center of the face (eyes & mouth) sits at (0, 0, 0)
+            // (Ignoring bottom decorative cylinder bolts that extend down to y = -0.71)
+            rootModel.position.set(0, -0.19, -0.08);
 
-            // Offset rootModel so its geometric center sits at (0, 0, 0) inside gltfGroup
-            rootModel.position.set(-center.x, -center.y, -center.z);
-
-            // Normalize scale so head fills the viewport with balanced padding around it
-            const maxDim = Math.max(size.x, size.y, size.z) || 1;
-            const targetSize = 1.08;
-            const normScale = targetSize / maxDim;
-            gltfGroup.scale.set(normScale, normScale, normScale);
+            const faceScale = 1.68;
+            gltfGroup.scale.set(faceScale, faceScale, faceScale);
             gltfGroup.position.set(0, 0.02, 0);
 
-            // 2. WIRE JAW FOR LIP-SYNC & EYES FOR GLOW + BLINKING
+            // Rich ruby-red glowing eye material (applied ONLY to eyeballs/pupils, never outer face rings)
+            const rubyGlowMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(0xff1e56),
+              emissive: new THREE.Color(0xff0025),
+              emissiveIntensity: 3.8,
+              roughness: 0.12,
+              metalness: 0.85,
+              toneMapped: false,
+            });
+            eyeGlowMaterials.push(rubyGlowMat);
+
+            // 2. WIRE SYMMETRIC LOWER JAW FOR LIP-SYNC & EYES FOR GLOW + BLINKING
             rootModel.traverse((child: any) => {
               const name = child.name || "";
               const lowName = name.toLowerCase();
 
-              // Jaw node detection (Jaw.R_19 in avatar.glb)
-              if (name === "Jaw.R_19" || lowName.includes("jaw")) {
-                jawNode = child;
-                initialJawRotX = child.rotation.x;
-                initialJawPosY = child.position.y;
+              // Symmetric lower jaw mesh (Object_5)
+              if (name === "Object_5") {
+                lowerJawMesh = child;
+                jawInitY = child.position.y;
+                jawInitZ = child.position.z;
+                jawInitRotX = child.rotation.x;
                 setAnimFeatures(prev => ({ ...prev, lipSync: true }));
               }
 
-              // Eye parent nodes for blinking
-              if (name === "Kito6_FaceMesh_Eye.L_20" || lowName.includes("eye.l")) {
+              // Central chin / mouth plate (Object_60)
+              if (name === "Object_60") {
+                chinPlateMesh = child;
+                plateInitY = child.position.y;
+                plateInitZ = child.position.z;
+                setAnimFeatures(prev => ({ ...prev, lipSync: true }));
+              }
+
+              // Freeze right cheek bone (JawR_19 / Jaw.R_19) so side cheek never wobbles
+              if (name.includes("JawR") || name.includes("Jaw.R")) {
+                child.rotation.set(0, 0, 0);
+              }
+
+              // Eye parent nodes for blinking (Three.js GLTFLoader strips dots: Kito6_FaceMesh_EyeL_20)
+              if (name.includes("EyeL") || name.includes("Eye.L") || lowName.includes("eyel") || lowName.includes("eye.l")) {
                 leftEyeNode = child;
                 setAnimFeatures(prev => ({ ...prev, blink: true }));
               }
-              if (name === "Kito6_FaceMesh_Eye.R_21" || lowName.includes("eye.r")) {
+              if (name.includes("EyeR") || name.includes("Eye.R") || lowName.includes("eyer") || lowName.includes("eye.r")) {
                 rightEyeNode = child;
                 setAnimFeatures(prev => ({ ...prev, blink: true }));
               }
 
-              // Collect any eye-like meshes as fallback blink targets
-              if (child.isMesh && !animFeatures.blink) {
-                const matName = (child.material?.name || "").toLowerCase();
-                const isEyeLike =
-                  lowName.includes("eye") ||
-                  lowName.includes("iris") ||
-                  lowName.includes("eyelid") ||
-                  matName.includes("eye") ||
-                  matName.includes("iris") ||
-                  name === "Object_52" ||
-                  name === "Object_53" ||
-                  name === "Object_55" ||
-                  name === "Object_56";
-
-                if (isEyeLike) {
-                  fallbackEyeMeshes.push(child);
-                  setAnimFeatures(prev => ({ ...prev, blink: true }));
-                }
-              }
-
-              // Collect any mouth-like mesh as fallback lip-sync target
-              if (child.isMesh && !animFeatures.lipSync) {
-                const matName = (child.material?.name || "").toLowerCase();
-                const isMouthLike =
-                  lowName.includes("mouth") ||
-                  lowName.includes("lip") ||
-                  lowName.includes("jaw") ||
-                  matName.includes("mouth") ||
-                  matName.includes("lip");
-
-                if (isMouthLike && !fallbackMouthMesh) {
-                  fallbackMouthMesh = child;
-                  fallbackMouthInitialScale = child.scale.y || 1;
-                  setAnimFeatures(prev => ({ ...prev, lipSync: true }));
-                }
-              }
-
-              // Eye meshes for active glowing effect
+              // Eye meshes for active ruby glowing effect (exclude Object_58 outer face circles!)
               if (child.isMesh) {
-                const matName = (child.material?.name || "").toLowerCase();
                 const isEyeMesh =
-                  lowName.includes("eye") ||
-                  lowName.includes("iris") ||
                   name === "Object_52" ||
                   name === "Object_53" ||
                   name === "Object_55" ||
                   name === "Object_56" ||
-                  matName.includes("eye") ||
-                  matName.includes("iris");
+                  lowName.includes("iris") ||
+                  (lowName.includes("eye") && !lowName.includes("circle"));
 
-                if (isEyeMesh) {
-                  const glowMat = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(0xff1e56),
-                    emissive: new THREE.Color(0xe11d48),
-                    emissiveIntensity: 2.2,
-                    roughness: 0.15,
-                    metalness: 0.8,
-                  });
-                  child.material = glowMat;
-                  eyeGlowMaterials.push(glowMat);
+                if (isEyeMesh && name !== "Object_58") {
+                  child.material = rubyGlowMat;
                   setAnimFeatures(prev => ({ ...prev, eyeGlow: true }));
                 }
               }
             });
 
-            // If no specific eye nodes found but we have fallback eye meshes, use those for blinking
-            if (!leftEyeNode && !rightEyeNode && fallbackEyeMeshes.length > 0) {
-              // Use first two fallback eye meshes as left/right
-              leftEyeNode = fallbackEyeMeshes[0] || null;
-              rightEyeNode = fallbackEyeMeshes[1] || null;
-            }
+            // Symmetric ruby point lights positioned right at the left and right eye sockets
+            const leftLight = new THREE.PointLight(0xff0025, 1.8, 0.6);
+            leftLight.position.set(0.065, 0.065, 0.18);
+            gltfGroup.add(leftLight);
+            eyePointLights.push(leftLight);
 
-            // Attach subtle glowing point lights directly to left & right eyes
-            const attachEyeLight = (eyeObj: THREE.Object3D | null, fallbackX: number) => {
-              const light = new THREE.PointLight(0xe11d48, 2.2, 0.45);
-              if (eyeObj) {
-                eyeObj.add(light);
-                light.position.set(0, 0, 0.05);
-              } else {
-                light.position.set(fallbackX, 0.05, 0.45);
-                gltfGroup.add(light);
-              }
-              eyePointLights.push(light);
-            };
-
-            attachEyeLight(leftEyeNode, -0.12);
-            attachEyeLight(rightEyeNode, 0.12);
+            const rightLight = new THREE.PointLight(0xff0025, 1.8, 0.6);
+            rightLight.position.set(-0.065, 0.065, 0.18);
+            gltfGroup.add(rightLight);
+            eyePointLights.push(rightLight);
 
             gltfGroup.add(rootModel);
             gltfGroup.visible = true;
             cyberGroup.visible = false;
 
             // Frame camera dead-center on the head
-            camera.position.set(0, 0, 2.05);
+            camera.position.set(0, 0, 2.15);
             camera.lookAt(0, 0, 0);
             setModelType("gltf");
           }
@@ -394,72 +349,56 @@ export default function Avatar3D({
       // A) Standard GLB 3D Face Animation (avatar.glb)
       if (gltfGroup.visible) {
         // State-dependent speeds and intensities
-        const breathFreq = curState === "thinking" ? 2.8 : curState === "speaking" ? 2.2 : 1.5;
-        const breathAmp = curState === "thinking" ? 0.022 : 0.016;
+        const breathFreq = curState === "thinking" ? 2.4 : curState === "speaking" ? 1.8 : 1.3;
+        const breathAmp = curState === "thinking" ? 0.012 : 0.008;
 
-        // Subtle breathing vertical float & scale pulse
+        // Subtle breathing vertical float
         const breathY = Math.sin(t * breathFreq) * breathAmp;
-        const scalePulse = 1 + Math.sin(t * breathFreq) * 0.008;
         gltfGroup.position.y = 0.02 + breathY;
-        gltfGroup.position.x = Math.sin(t * 0.65) * 0.008;
+        gltfGroup.position.x = Math.sin(t * 0.5) * 0.005;
 
-        const baseScale = gltfGroup.userData.baseScale || gltfGroup.scale.x;
-        if (!gltfGroup.userData.baseScale) gltfGroup.userData.baseScale = baseScale;
-        gltfGroup.scale.setScalar(baseScale * scalePulse);
-
-        // Natural head micro-sway + conversational nodding when speaking
-        const swayY = Math.sin(t * 0.75) * 0.055;
-        const swayX = Math.cos(t * 0.95) * 0.022;
-        const swayZ = Math.sin(t * 0.5) * 0.012;
-        const speechNod = curState === "speaking" ? Math.sin(t * 6.5) * mouth * 0.045 : 0;
-        const thinkTilt = curState === "thinking" ? -0.035 : 0;
-
+        // Keep head steady (NO comical neck bobbing when speaking!)
+        const swayY = Math.sin(t * 0.45) * 0.032;
+        const swayZ = Math.sin(t * 0.35) * 0.01;
         gltfGroup.rotation.y = swayY;
-        gltfGroup.rotation.x = swayX + speechNod + thinkTilt;
+        gltfGroup.rotation.x = 0;
         gltfGroup.rotation.z = swayZ;
 
-        // Jaw Lip-Sync Animation (primary jaw node or fallback mouth mesh)
-        if (jawNode) {
-          jawNode.rotation.x = initialJawRotX + mouth * 0.24;
-          jawNode.position.y = initialJawPosY - mouth * 0.014;
-        } else if (fallbackMouthMesh && animFeatures.lipSync) {
-          fallbackMouthMesh.scale.y = fallbackMouthInitialScale * (1 + mouth * 0.8);
+        // Symmetric Jaw & Chin Lip-Sync Animation (natural human mouth articulation)
+        if (lowerJawMesh) {
+          lowerJawMesh.position.y = jawInitY - mouth * 0.018;
+          lowerJawMesh.position.z = jawInitZ - mouth * 0.006;
+          lowerJawMesh.rotation.x = jawInitRotX + mouth * 0.085;
+        }
+        if (chinPlateMesh) {
+          chinPlateMesh.position.y = plateInitY - mouth * 0.015;
+          chinPlateMesh.position.z = plateInitZ - mouth * 0.005;
         }
 
-        // Eye Blinking Animation (primary nodes or fallback eye meshes)
+        // Eye Blinking Animation (maintaining exact 0.057 base scale on eye parent nodes)
         const blinkAmount = Math.min(leftScaleY, rightScaleY);
         if (leftEyeNode) leftEyeNode.scale.y = blinkAmount * 0.057;
         if (rightEyeNode) rightEyeNode.scale.y = blinkAmount * 0.057;
-        // Fallback: scale down all fallback eye meshes
-        for (const mesh of fallbackEyeMeshes) {
-          if (mesh !== leftEyeNode && mesh !== rightEyeNode) {
-            mesh.scale.y = blinkAmount * 0.057;
-          }
-        }
 
-        // Eye Glow Color & Pulsing per State (Idle / Listening / Thinking / Speaking)
-        let glowColor = new THREE.Color(0xe11d48); // signature crimson-rose AI glow
-        let glowIntensity = 1.8 + Math.sin(t * 2.4) * 0.55;
+        // Ruby Red Eye Glow Color & Pulsing per State
+        let glowColor = new THREE.Color(0xff0025);
+        let glowIntensity = 3.5 + Math.sin(t * 2.4) * 0.8;
 
         if (curState === "thinking") {
-          const pulse = Math.sin(t * 6.5) * 0.5 + 0.5;
+          const pulse = Math.sin(t * 6.0) * 0.5 + 0.5;
           glowColor = new THREE.Color().lerpColors(
-            new THREE.Color(0xc084fc),
-            new THREE.Color(0x38bdf8),
+            new THREE.Color(0xff0025),
+            new THREE.Color(0xff2a6d),
             pulse
           );
-          glowIntensity = 2.4 + pulse * 1.6;
+          glowIntensity = 4.2 + pulse * 1.5;
         } else if (curState === "speaking") {
-          glowColor = new THREE.Color().lerpColors(
-            new THREE.Color(0xe11d48),
-            new THREE.Color(0xd946ef),
-            Math.min(1, mouth * 1.4)
-          );
-          glowIntensity = 2.2 + mouth * 3.2;
+          glowColor = new THREE.Color(0xff0025);
+          glowIntensity = 4.5 + mouth * 3.0;
         } else if (curState === "listening") {
           const pulse = Math.sin(t * 4.0) * 0.5 + 0.5;
-          glowColor = new THREE.Color(0xf43f5e);
-          glowIntensity = 2.0 + pulse * 1.1;
+          glowColor = new THREE.Color(0xff1e56);
+          glowIntensity = 3.8 + pulse * 1.2;
         }
 
         for (const mat of eyeGlowMaterials) {
@@ -469,7 +408,7 @@ export default function Avatar3D({
         }
         for (const light of eyePointLights) {
           light.color.copy(glowColor);
-          light.intensity = glowIntensity * 0.9;
+          light.intensity = glowIntensity * 0.55;
         }
       }
 
@@ -548,13 +487,6 @@ export default function Avatar3D({
           Cyber Core Rig Active
         </div>
       )}
-
-      {/* Animation debug badge - shows which features are active */}
-      <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-1">
-        <div className="px-2 py-1 rounded bg-black/60 backdrop-blur border border-white/10 text-[10px] font-mono text-zinc-400">
-          {`blink:${animFeatures.blink ? "✓" : "✗"} lipsync:${animFeatures.lipSync ? "✓" : "✗"} eyeglow:${animFeatures.eyeGlow ? "✓" : "✗"} ${modelType}`}
-        </div>
-      </div>
     </div>
   );
 }

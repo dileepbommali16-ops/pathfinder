@@ -49,16 +49,20 @@ export class Speaker {
     try {
       await this.resumeContext();
       const t = this.getToken();
-      // Try streaming TTS endpoint first for lower latency
+      // Try streaming TTS endpoint first for lower latency (3.5s timeout)
       try {
+        const streamCtrl = new AbortController();
+        const streamTid = setTimeout(() => streamCtrl.abort(), 3500);
         const r = await fetch(`${API}/api/voice/stream`, {
           method: "POST",
+          signal: streamCtrl.signal,
           headers: {
             "Content-Type": "application/json",
             ...(t ? { Authorization: `Bearer ${t}` } : {}),
           },
           body: JSON.stringify({ text }),
         });
+        clearTimeout(streamTid);
         if (r.ok && r.body) {
           // Collect SSE audio chunks and decode
           const reader = r.body.getReader();
@@ -99,27 +103,63 @@ export class Speaker {
         // Fall through to regular TTS
       }
 
-      // Regular TTS fallback
-      let r = await fetch(`${API}/agent/tts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(t ? { Authorization: `Bearer ${t}` } : {}),
-        },
-        body: JSON.stringify({ text }),
-      });
-      if (!r.ok && (r.status === 404 || r.status === 502)) {
-        r = await fetch(`${API}/api/voice/tts`, {
+      // Regular TTS fallback with fast timeout
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 4500);
+        let r = await fetch(`${API}/agent/tts`, {
           method: "POST",
+          signal: ctrl.signal,
           headers: {
             "Content-Type": "application/json",
             ...(t ? { Authorization: `Bearer ${t}` } : {}),
           },
           body: JSON.stringify({ text }),
         });
+        clearTimeout(tid);
+        if (r.ok) {
+          return await this.ctxRef!.decodeAudioData(await r.arrayBuffer());
+        }
+      } catch {
+        // Fall through to direct ElevenLabs fallback
       }
-      if (!r.ok) return null;
-      return await this.ctxRef!.decodeAudioData(await r.arrayBuffer());
+
+      // Direct ElevenLabs Cloud TTS fallback when Render backend is sleeping (503)
+      const elKey = (import.meta as any).env?.VITE_ELEVENLABS_API_KEY || "";
+      if (elKey) {
+        try {
+          const voiceId =
+            (import.meta as any).env?.VITE_ELEVENLABS_VOICE_ID ||
+            "iP95p4xoKVk53GoZ742B";
+          const elRes = await fetch(
+            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+            {
+              method: "POST",
+              headers: {
+                "xi-api-key": elKey,
+                "Content-Type": "application/json",
+                Accept: "audio/mpeg",
+              },
+              body: JSON.stringify({
+                text: text.slice(0, 500),
+                model_id: "eleven_turbo_v2_5",
+                voice_settings: {
+                  stability: 0.45,
+                  similarity_boost: 0.8,
+                  style: 0.35,
+                  use_speaker_boost: true,
+                },
+              }),
+            }
+          );
+          if (elRes.ok) {
+            return await this.ctxRef!.decodeAudioData(await elRes.arrayBuffer());
+          }
+        } catch {
+          // Fall through to Web Speech synthesis
+        }
+      }
+      return null;
     } catch {
       return null;
     }

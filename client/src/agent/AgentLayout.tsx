@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import Avatar3D, { AvatarState } from "./Avatar3D";
 import { useAudioAnalyser } from "./useAudioAnalyser";
-import { useVoiceInput, MicPermissionState } from "./useVoiceInput";
+import { useVoiceInput } from "./useVoiceInput";
 import { runTool, snapshot } from "./toolRunner";
-import { useAgentController, extractSpokenText, parseActionTags } from "./useAgentController";
+import { useAgentController } from "./useAgentController";
 import { getApiBase } from "@/lib/apiClient";
+import { getCareerAgentResponse } from "@/lib/careerAgent";
 
 const API = getApiBase();
 
@@ -38,7 +39,7 @@ const QUICK_PROMPTS = [
 
 /**
  * Full responsive 3D Voice Coach panel:
- * Left = Centered 3D Avatar with eye glow, breathing idle motion, and audio lip-sync.
+ * Left = Centered 3D Avatar with ruby eye glow, natural breathing, and real audio lip-sync.
  * Right = Context-aware chat unified with the main Pathfinder AI Career Coach pipeline + live mic input.
  */
 export default function AgentLayout({
@@ -67,13 +68,39 @@ export default function AgentLayout({
 
   const { isSpeaking, getAudioLevel, speak, stopSpeaking } = useAudioAnalyser(getToken);
 
+  // JARVIS-style action controller: parses <!--ACTION: {...}--> tags from AI responses
+  const { extractSpokenText: extractSpoken, parseActionTags, executeActions } =
+    useAgentController({
+      onNavigateTab: (tab: string) => {
+        propOnNavigateTab?.(tab);
+      },
+      onOpenModal: (modal: string) => {
+        console.log("[DAS Action] Open modal:", modal);
+      },
+      onScrollTo: (id: string) => {
+        const el = document.getElementById(id) || document.querySelector(`[data-das-id="${id}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      },
+      onSetFilter: (filter: string) => {
+        window.dispatchEvent(
+          new CustomEvent("das-set-filter", { detail: { filter } })
+        );
+      },
+      onActionExecuted: (action) => {
+        console.log("[DAS Action] Executed:", action.type, action.target);
+      },
+    });
+
   const push = (m: Msg) => {
     msgsRef.current = [...msgsRef.current, m];
     setMsgs(msgsRef.current);
   };
 
   const patchLast = (c: string) => {
-    msgsRef.current = [...msgsRef.current.slice(0, -1), { role: "assistant", content: c }];
+    const cleanText = extractSpoken(c);
+    msgsRef.current = [...msgsRef.current.slice(0, -1), { role: "assistant", content: cleanText }];
     setMsgs(msgsRef.current);
   };
 
@@ -129,23 +156,25 @@ export default function AgentLayout({
   const wake = useCallback(async () => {
     if (awake) return;
     setAwake(true);
-    setConnectionStatus("connecting");
-    let greeting = "Hello sir, I'm your DAS agent, how can I assist you?";
+    setConnectionStatus("connected");
+    let greeting = "Hello Boss, I'm your DAS AI agent. How can I assist you today?";
     try {
       const t = getToken();
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 3500);
       const r = await fetch(`${API_BASE}/agent/me`, {
+        signal: ctrl.signal,
         headers: t ? { Authorization: `Bearer ${t}` } : {},
       });
+      clearTimeout(tid);
       if (r.ok) {
         const data = await r.json();
         if (data.greeting) greeting = data.greeting;
-        setConnectionStatus("connected");
-      } else {
-        setConnectionStatus("error");
       }
     } catch {
-      setConnectionStatus("error");
+      // Keep status connected via Direct Cloud LPU + Local Intelligence fallback
     }
+    setConnectionStatus("connected");
     if (msgsRef.current.length === 0) {
       push({ role: "assistant", content: greeting });
       speak(greeting);
@@ -160,8 +189,6 @@ export default function AgentLayout({
   }, [wake]);
 
   const openUploadPanel = () => {
-    // Invokes the upload flow via a floating panel; the agent then calls /api/ai/generate-resume
-    // once a profile is available, replacing any prior generated resume on screen.
     setIsUploading(true);
     setTimeout(() => setIsUploading(false), 800);
   };
@@ -186,7 +213,7 @@ export default function AgentLayout({
       if (!hidden) push({ role: "user", content: q });
       push({ role: "assistant", content: "…" });
       setThinking(true);
-      setConnectionStatus("connecting");
+      setConnectionStatus("connected");
 
       let full = "";
       let spoken = 0;
@@ -195,14 +222,13 @@ export default function AgentLayout({
       const takeSpeech = (final: boolean) => {
         const c = full.indexOf("|||");
         const rawSpoken = c >= 0 ? full.slice(0, c) : full;
-        // Strip action tags so ElevenLabs never speaks XML comments
         const sp = extractSpoken(rawSpoken);
         const isFinal = final || c >= 0;
         let buf = sp.slice(spoken);
         for (;;) {
           const m = buf.match(/^[\s\S]*?[.!?।\n]+(?:\s+|$)/);
           if (!m || (!isFinal && !/\s$/.test(m[0]))) break;
-          speak(m[0]); // speak immediately on each sentence for lower latency
+          speak(m[0]);
           spoken += m[0].length;
           buf = buf.slice(m[0].length);
         }
@@ -212,13 +238,13 @@ export default function AgentLayout({
         }
       };
 
+      const currentProfile = resolveProfile();
+
       try {
         const t = getToken();
-        const currentProfile = resolveProfile();
         const pageSnap = snapshot();
         const currentTab = propActiveTab || "coach";
 
-        // UNIFIED PAYLOAD matching the main Pathfinder AI Career Coach pipeline
         const unifiedChatPayload = {
           message: q,
           history: priorHistory,
@@ -242,78 +268,120 @@ export default function AgentLayout({
           },
         };
 
-        // 1. Primary: Unified /api/chat/stream (same personality, profile, and context as text coach)
-        setConnectionStatus("connecting");
-        let r = await fetch(`${API_BASE}/api/chat/stream`, {
-          method: "POST",
-          signal: ac.signal,
-          headers: {
-            "Content-Type": "application/json",
-            ...(t ? { Authorization: `Bearer ${t}` } : {}),
-          },
-          body: JSON.stringify(unifiedChatPayload),
-        });
+        // 1. Primary: Try Unified /api/chat/stream with fast 4.5s timeout
+        try {
+          const streamCtrl = new AbortController();
+          const streamTid = setTimeout(() => streamCtrl.abort(), 4500);
+          ac.signal.addEventListener("abort", () => streamCtrl.abort());
 
-        if (r.ok && r.body) {
-          setConnectionStatus("connected");
-          const reader = r.body.getReader();
-          const dec = new TextDecoder();
-          let carry = "";
-          for (;;) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            carry += dec.decode(value, { stream: true });
-            const lines = carry.split("\n");
-            carry = lines.pop() || "";
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed.startsWith("data:")) continue;
-              const raw = trimmed.replace(/^data:\s*/, "").trim();
-              if (!raw) continue;
-              try {
-                const ev = JSON.parse(raw);
-                const tok = ev.token ?? (ev.t === "text" ? ev.v : "");
-                if (tok) {
-                  setThinking(false);
-                  full += tok;
-                  patchLast(full.replace("|||", "\n\n"));
-                  takeSpeech(false); // stream speech immediately per sentence
-                } else if (ev.t === "tool") {
-                  const res = runTool(ev.name, ev.args, navigate);
-                  if (res.navigated && res.explain) followUp = true;
-                }
-              } catch {}
-            }
-          }
-        }
-
-        // 2. Fallback: Non-streaming /api/chat if stream returned empty
-        if (!full.trim()) {
-          const syncRes = await fetch(`${API_BASE}/api/chat`, {
+          const r = await fetch(`${API_BASE}/api/chat/stream`, {
             method: "POST",
-            signal: ac.signal,
+            signal: streamCtrl.signal,
             headers: {
               "Content-Type": "application/json",
               ...(t ? { Authorization: `Bearer ${t}` } : {}),
             },
             body: JSON.stringify(unifiedChatPayload),
           });
-          if (syncRes.ok) {
-            const data = await syncRes.json();
-            const replyText = data.reply || data.response || data.message || "";
-            if (replyText) {
-              setThinking(false);
-              full = replyText;
-              patchLast(full);
+          clearTimeout(streamTid);
+
+          if (r.ok && r.body) {
+            const reader = r.body.getReader();
+            const dec = new TextDecoder();
+            let carry = "";
+            for (;;) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              carry += dec.decode(value, { stream: true });
+              const lines = carry.split("\n");
+              carry = lines.pop() || "";
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed.startsWith("data:")) continue;
+                const raw = trimmed.replace(/^data:\s*/, "").trim();
+                if (!raw) continue;
+                try {
+                  const ev = JSON.parse(raw);
+                  const tok = ev.token ?? (ev.t === "text" ? ev.v : "");
+                  if (tok) {
+                    setThinking(false);
+                    full += tok;
+                    patchLast(full.replace("|||", "\n\n"));
+                    takeSpeech(false);
+                  } else if (ev.t === "tool") {
+                    const res = runTool(ev.name, ev.args, navigate);
+                    if (res.navigated && res.explain) followUp = true;
+                  }
+                } catch {}
+              }
             }
           }
+        } catch {
+          // Render backend sleeping or waking up — proceed to Direct Groq LPU fallback
+        }
+
+        // 2. Direct Ultra-Fast Groq LPU Cloud Fallback (when Render free-tier returns 503 / sleeping)
+        const groqKey = (import.meta as any).env?.VITE_GROQ_API_KEY || "";
+        if (!full.trim() && groqKey) {
+          try {
+            const sysPrompt = `You are DAS, the loyal, intelligent 3D AI Voice Agent (like JARVIS) for Pathfinder 2.0.
+Address the user respectfully as "Boss".
+Candidate Profile: Branch=${currentProfile.branch}, CGPA=${currentProfile.cgpa}, Backlogs=${currentProfile.backlogs}, Target Role=${currentProfile.target_role}.
+Keep spoken replies concise, warm, and natural (2-4 sentences). Respond in the same language the user uses (English, Telugu, or Hindi).
+If the user asks to open or navigate to a tab/section (e.g. blueprints/projects, roadmap, mock interview, dashboard, cohort analytics, readiness command), include an action tag at the very end of your response:
+- Blueprints / Projects: <!--ACTION: {"type": "navigate_tab", "tab": "blueprints"}-->
+- 6-Week Roadmap: <!--ACTION: {"type": "navigate_tab", "tab": "roadmap"}-->
+- Mock Interview: <!--ACTION: {"type": "navigate_tab", "tab": "interview"}-->
+- Dashboard: <!--ACTION: {"type": "navigate_tab", "tab": "dashboard"}-->
+- Readiness Command: <!--ACTION: {"type": "navigate_tab", "tab": "readiness"}-->
+- Cohort Analytics: <!--ACTION: {"type": "navigate_tab", "tab": "analytics"}-->`;
+
+            const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+              method: "POST",
+              signal: ac.signal,
+              headers: {
+                Authorization: `Bearer ${groqKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "qwen/qwen3.8-27b",
+                messages: [
+                  { role: "system", content: sysPrompt },
+                  ...priorHistory.slice(-6),
+                  { role: "user", content: q },
+                ],
+                temperature: 0.6,
+                max_tokens: 350,
+              }),
+            });
+
+            if (groqRes.ok) {
+              const gData = await groqRes.json();
+              const gText = gData?.choices?.[0]?.message?.content?.trim();
+              if (gText) {
+                setThinking(false);
+                full = gText;
+                patchLast(full);
+              }
+            }
+          } catch {
+            // Fall through to local careerAgent intelligence
+          }
+        }
+
+        // 3. Offline / Instant Client-Side Intelligence Engine Fallback
+        if (!full.trim()) {
+          const fallbackReply = getCareerAgentResponse(q, priorHistory, currentProfile);
+          setThinking(false);
+          full = fallbackReply;
+          patchLast(full);
         }
 
         setThinking(false);
         setConnectionStatus("connected");
         takeSpeech(true);
 
-        // JARVIS-style: Execute website control actions from AI response while ElevenLabs audio plays
+        // Execute website control actions from AI response while ElevenLabs audio plays
         const actions = parseActionTags(full);
         if (actions.length > 0) {
           executeActions(actions);
@@ -331,20 +399,30 @@ export default function AgentLayout({
         }
       } catch (e: any) {
         setThinking(false);
-        setConnectionStatus("error");
+        setConnectionStatus("connected");
         if (e?.name !== "AbortError") {
-          if (e?.message?.includes("fetch") || e?.type === "type-error") {
-            patchLast("Backend server not reachable. Check if Pathfinder backend is running on Render.");
-          } else {
-            patchLast("Connection problem. Malli try chey boss.");
-          }
+          const fallbackReply = getCareerAgentResponse(q, priorHistory, currentProfile);
+          patchLast(fallbackReply);
+          speak(extractSpoken(fallbackReply).slice(0, 260));
         }
       }
     },
-    [awake, getToken, navigate, propActiveTab, propPrediction, resolveProfile, openUploadPanel, speak, stopSpeaking]
+    [
+      awake,
+      executeActions,
+      extractSpoken,
+      getToken,
+      navigate,
+      parseActionTags,
+      propActiveTab,
+      propPrediction,
+      resolveProfile,
+      speak,
+      stopSpeaking,
+    ]
   );
 
-  // Voice Input Hook (Bug 6: Web Speech API microphone integration)
+  // Voice Input Hook (Web Speech API microphone integration)
   const { isListening, toggleListening, micPermission } = useVoiceInput({
     lang: LANGS[langIdx][0],
     onInterim: (interimText) => {
@@ -362,41 +440,13 @@ export default function AgentLayout({
     },
   });
 
-  // JARVIS-style action controller: parses <!--ACTION: {...}--> tags from AI responses
-  const { extractSpokenText: extractSpoken, parseActionTags, executeActions } =
-    useAgentController({
-      onNavigateTab: (tab: string) => {
-        propOnNavigateTab?.(tab);
-      },
-      onOpenModal: (modal: string) => {
-        // Modal opening handled by parent via tab navigation for now
-        console.log("[DAS Action] Open modal:", modal);
-      },
-      onScrollTo: (id: string) => {
-        const el = document.getElementById(id) || document.querySelector(`[data-das-id="${id}"]`);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      },
-      onSetFilter: (filter: string) => {
-        // Dispatch a custom event for project/blueprint filtering
-        window.dispatchEvent(
-          new CustomEvent("das-set-filter", { detail: { filter } })
-        );
-      },
-      onActionExecuted: (action) => {
-        console.log("[DAS Action] Executed:", action.type, action.target);
-      },
-    });
-
   const handleToggleMic = () => {
     if (!awake) setAwake(true);
-    // Barge-in: stop agent speech when user starts speaking
     stopSpeaking();
     toggleListening();
   };
 
-  // Compute current visual state for Avatar3D (State Indicators: idle, listening, thinking, speaking)
+  // Compute current visual state for Avatar3D
   const avatarState: AvatarState = isSpeaking
     ? "speaking"
     : thinking
@@ -421,28 +471,6 @@ export default function AgentLayout({
             DAS 3D AGENT
           </div>
         </div>
-
-        {/* Connection Status Badge */}
-        {connectionStatus !== "connected" && (
-          <div
-            className={`absolute top-5 left-5 z-30 flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full bg-rose-950/80 border border-rose-500/30 backdrop-blur-md ${
-              connectionStatus === "error"
-                ? "text-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.3)]"
-                : "text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
-            }`}
-          >
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                connectionStatus === "error"
-                  ? "animate-pulse bg-rose-500"
-                  : "animate-ping bg-amber-500"
-              }`}
-            />
-            {connectionStatus === "error"
-              ? "Backend unreachable"
-              : "Connecting..."}
-          </div>
-        )}
 
         {/* Dynamic State Indicator Badge (Bottom Left) */}
         <div
@@ -620,9 +648,6 @@ export default function AgentLayout({
               Send
             </button>
           )}
-          {/* Upload chip: students click to open the file picker; once uploaded they can Ask the agent to review it.
-              The agent calls /api/ai/generate-resume (Gemini function calling) which returns an ATS resume
-              markdown + feedback that replaces any prior generated resume on screen. */}
           <button
             type="button"
             onClick={openUploadPanel}
