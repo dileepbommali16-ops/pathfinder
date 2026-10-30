@@ -6,18 +6,29 @@ import { VRM, VRMLoaderPlugin, VRMUtils } from "@pixiv/three-vrm";
 export type AvatarState = "idle" | "listening" | "thinking" | "speaking";
 
 export interface Avatar3DProps {
+  activeTab?: string;
+  globalContext?: string;
+  textResponse?: string;
+  onMicClick?: (micOn: boolean) => void;
   getLevel?: () => number;
   state?: AvatarState;
   url?: string;
   modelUrl?: string;
+  avatarType?: "vrm" | "gltf" | "cyber"; // optional explicit type
   isOwner?: boolean;
 }
 
 export default function Avatar3D({
+  activeTab,
+  globalContext,
+  textResponse,
   getLevel = () => 0,
   state = "idle",
   url,
   modelUrl = "/models/avatar.glb",
+  avatarType,
+  isOwner,
+  onMicClick,
 }: Avatar3DProps) {
   const targetUrl = url || modelUrl || "/models/avatar.glb";
   const host = useRef<HTMLDivElement>(null);
@@ -25,7 +36,7 @@ export default function Avatar3D({
   levelRef.current = getLevel;
   const stateRef = useRef<AvatarState>(state);
   stateRef.current = state;
-  const [modelType, setModelType] = useState<"vrm" | "gltf" | "cyber">("gltf");
+  const [modelType, setModelType] = useState<"vrm" | "gltf" | "cyber">(avatarType || "gltf");
   const [animFeatures, setAnimFeatures] = useState({ blink: false, lipSync: false, eyeGlow: false });
 
   useEffect(() => {

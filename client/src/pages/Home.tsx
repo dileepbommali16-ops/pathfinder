@@ -1825,12 +1825,13 @@ export default function Home() {
           )}
 
           {/* TAB 6: AI VOICE AGENT & CAREER COACH (Persistent audio across tab switches) */}
-          <div data-das-id="voice-panel" className={activeTab === "coach" ? "block w-full h-[82vh] rounded-2xl overflow-hidden border border-indigo-900/40 shadow-2xl" : "hidden"}>
+          <div data-das-id="voice-panel" className={activeTab === "coach" ? "block w-full h-[82vh] rounded-2xl overflow-hidden border border-indigo-900/40 shadow-2xl" : ""}>
             <AgentLayout
               profile={profile}
               activeTab={activeTab}
               prediction={prediction}
               onNavigateTab={(tab: string) => setActiveTab(tab as TabId)}
+              isAmbient={activeTab !== "coach"}
             />
           </div>
 

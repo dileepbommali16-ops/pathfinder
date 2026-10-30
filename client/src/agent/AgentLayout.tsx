@@ -7,6 +7,7 @@ import { runTool, snapshot } from "./toolRunner";
 import { useAgentController } from "./useAgentController";
 import { getApiBase } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
+import { Maximize2, Minimize2, Mic, MicOff, Sparkles, X } from "lucide-react";
 
 const API = getApiBase();
 
@@ -27,6 +28,7 @@ export interface AgentLayoutProps {
   prediction?: any;
   cohortFilters?: any;
   onNavigateTab?: (tab: string) => void;
+  isAmbient?: boolean;
   [key: string]: any;
 }
 
@@ -51,6 +53,7 @@ export default function AgentLayout({
   activeTab: propActiveTab,
   prediction: propPrediction,
   onNavigateTab: propOnNavigateTab,
+  isAmbient = false,
 }: AgentLayoutProps = {}) {
   const [, navigate] = useLocation();
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -454,6 +457,162 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
     : isListening
     ? "listening"
     : "idle";
+
+  const [ambientMinimized, setAmbientMinimized] = useState(false);
+
+  // If in Ambient Mode (when user is browsing any other tab: Overview, Roadmap, Blueprints, etc.)
+  if (isAmbient) {
+    if (ambientMinimized) {
+      return (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center">
+          <button
+            onClick={() => setAmbientMinimized(false)}
+            className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-slate-950/90 border-2 border-violet-500/70 shadow-[0_0_30px_rgba(139,92,246,0.5)] backdrop-blur-xl transition-all hover:scale-110 hover:border-violet-400"
+            title="Expand DAS 3D AI Co-Pilot"
+          >
+            <div className="h-12 w-12 rounded-full overflow-hidden pointer-events-none">
+              <Avatar3D getLevel={getAudioLevel} state={avatarState} />
+            </div>
+            <span
+              className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] border-2 border-slate-950 ${
+                avatarState === "speaking"
+                  ? "bg-rose-500 animate-pulse shadow-[0_0_8px_#f43f5e]"
+                  : avatarState === "listening"
+                  ? "bg-pink-500 animate-ping"
+                  : "bg-emerald-500"
+              }`}
+            />
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <aside
+        data-agent-ignore
+        aria-label="DAS 3D AI Co-Pilot"
+        className="fixed bottom-6 right-6 z-50 flex flex-col w-[340px] max-w-[calc(100vw-2rem)] rounded-2xl bg-slate-950/92 border border-violet-500/40 shadow-[0_0_35px_rgba(139,92,246,0.35)] backdrop-blur-2xl overflow-hidden text-zinc-100 transition-all duration-300"
+      >
+        {/* Top Header bar */}
+        <div className="flex items-center justify-between px-3.5 py-2.5 bg-gradient-to-r from-violet-950/80 via-slate-900/90 to-slate-950/90 border-b border-violet-500/20">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  avatarState === "speaking" ? "bg-rose-400" : "bg-emerald-400"
+                }`}
+              />
+              <span
+                className={`relative inline-flex rounded-full h-2 w-2 ${
+                  avatarState === "speaking" ? "bg-rose-500" : "bg-emerald-500"
+                }`}
+              />
+            </span>
+            <span className="text-xs font-mono font-bold tracking-wider text-violet-300">
+              DAS 3D CO-PILOT
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => propOnNavigateTab?.("coach")}
+              title="Expand to Full Voice Coach"
+              className="p-1 rounded text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setAmbientMinimized(true)}
+              title="Minimize to Floating Orb"
+              className="p-1 rounded text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <Minimize2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* 3D Cyborg Face Viewport */}
+        <div className="relative h-36 w-full bg-[radial-gradient(circle_at_50%_50%,#3b0a45_0%,#0a0a0f_80%)] flex items-center justify-center overflow-hidden">
+          <Avatar3D getLevel={getAudioLevel} state={avatarState} />
+
+          {/* Dynamic state badge */}
+          <div className="absolute bottom-2 left-3 z-10 px-2.5 py-0.5 rounded-full bg-slate-900/85 border border-white/10 text-[10px] font-mono text-zinc-300 backdrop-blur-md">
+            {avatarState === "speaking"
+              ? "🔊 Lip-Sync Active"
+              : avatarState === "thinking"
+              ? "⚡ Thinking..."
+              : avatarState === "listening"
+              ? "🎙️ Listening to mic..."
+              : `🟢 Active on ${propActiveTab || "Dashboard"}`}
+          </div>
+        </div>
+
+        {/* Latest Voice Dialogue / Subtitle bubble */}
+        {msgs.length > 0 && msgs[msgs.length - 1].role === "assistant" && (
+          <div className="px-3.5 py-2 bg-slate-900/70 border-t border-white/5 text-[11px] text-zinc-300 line-clamp-2 leading-relaxed font-sans">
+            {msgs[msgs.length - 1].content.replace(/<!--[\s\S]*?-->/g, "").trim().slice(0, 140)}
+          </div>
+        )}
+
+        {/* Quick Voice / Control Action Bar */}
+        <div className="p-3 bg-slate-950/90 space-y-2 border-t border-violet-500/20">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleToggleMic}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-medium text-xs transition-all ${
+                isListening
+                  ? "bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.5)] animate-pulse"
+                  : "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+              }`}
+            >
+              {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+              {isListening ? "Stop Listening" : "Tap to Speak to DAS"}
+            </button>
+            <button
+              type="button"
+              onClick={() => propOnNavigateTab?.("coach")}
+              className="py-2 px-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-zinc-300 hover:text-white text-xs transition-colors border border-white/10"
+              title="Open Full 2-Column Voice Coach"
+            >
+              Full Coach
+            </button>
+          </div>
+
+          {/* Quick Action Navigation Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none text-[10px]">
+            <button
+              type="button"
+              onClick={() => propOnNavigateTab?.("skills")}
+              className="whitespace-nowrap px-2 py-1 rounded-md bg-white/5 hover:bg-violet-500/20 text-zinc-300 hover:text-violet-200 border border-white/5 transition-colors"
+            >
+              🚀 Roadmap
+            </button>
+            <button
+              type="button"
+              onClick={() => propOnNavigateTab?.("interview")}
+              className="whitespace-nowrap px-2 py-1 rounded-md bg-white/5 hover:bg-violet-500/20 text-zinc-300 hover:text-violet-200 border border-white/5 transition-colors"
+            >
+              🎯 Interview
+            </button>
+            <button
+              type="button"
+              onClick={() => propOnNavigateTab?.("projects")}
+              className="whitespace-nowrap px-2 py-1 rounded-md bg-white/5 hover:bg-violet-500/20 text-zinc-300 hover:text-violet-200 border border-white/5 transition-colors"
+            >
+              📁 Blueprints
+            </button>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("das-open-resume-builder"))}
+              className="whitespace-nowrap px-2 py-1 rounded-md bg-white/5 hover:bg-violet-500/20 text-zinc-300 hover:text-violet-200 border border-white/5 transition-colors"
+            >
+              📄 ATS Resume
+            </button>
+          </div>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <section
