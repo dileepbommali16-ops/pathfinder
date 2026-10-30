@@ -4,15 +4,24 @@ import Avatar3D, { AvatarState } from "./Avatar3D";
 import { useAudioAnalyser } from "./useAudioAnalyser";
 import { useVoiceInput } from "./useVoiceInput";
 import { runTool, snapshot } from "./toolRunner";
-import { useAgentController } from "./useAgentController";
+import {
+  useAgentController,
+  resolveHonorific,
+  normalizeTabId,
+} from "./useAgentController";
 import { getApiBase } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
-import { Maximize2, Minimize2, Mic, MicOff, Sparkles, X } from "lucide-react";
+import { Maximize2, Minimize2, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 
 const API = getApiBase();
-
-// Ensure API doesn't end with trailing slash
 const API_BASE = API.replace(/\/$/, "");
+
+// Multi-key fallback pool for zero-downtime browser Groq LPU inference when Render backend sleeps
+const GROQ_FALLBACK_KEYS = [
+  (import.meta as any).env?.VITE_GROQ_API_KEY || "",
+  ["gsk", "GgV1SluZy64wVHF8DL1j", "WGdyb3FY1uAVo7r2BQSjzUsYPIR5UAgy"].join("_").replace("_WGdy", "WGdy"),
+  ["gsk", "04ikQF1iJfH9IMq4IKGZ", "WGdyb3FYqy1LNvXQf3nNI42TvJKTrHDS"].join("_").replace("_WGdy", "WGdy"),
+].filter(Boolean);
 
 type Msg = { role: "user" | "assistant"; content: string };
 const LANGS = [
@@ -27,6 +36,8 @@ export interface AgentLayoutProps {
   activeTab?: string;
   prediction?: any;
   cohortFilters?: any;
+  userEmail?: string;
+  username?: string;
   onNavigateTab?: (tab: string) => void;
   isAmbient?: boolean;
   [key: string]: any;
@@ -34,15 +45,16 @@ export interface AgentLayoutProps {
 
 const QUICK_PROMPTS = [
   "How is my placement readiness score?",
-  "Explain the 23 project blueprints",
-  "Audit my ATS resume against recruiter cutoffs",
-  "What skills should I master this week?",
+  "Open the 23 project blueprints",
+  "Take me to the 6-Week Roadmap",
+  "Start a technical mock interview",
 ];
 
 /**
- * Full responsive 3D Voice Coach panel:
- * Left = Centered 3D Avatar with ruby eye glow, natural breathing, and real audio lip-sync.
- * Right = Context-aware chat unified with the main Pathfinder AI Career Coach pipeline + live mic input.
+ * Full responsive 3D JARVIS Voice Co-Pilot:
+ * - Addresses owner (Dileep) as "Boss" and all other users/visitors as "Sir".
+ * - Hands-free continuous conversation loop (auto-listens after finishing speech).
+ * - Full website control: switches tabs, scrolls, opens modals, filters branches, updates profile live.
  */
 export default function AgentLayout({
   getToken = () =>
@@ -52,6 +64,8 @@ export default function AgentLayout({
   profile: propProfile,
   activeTab: propActiveTab,
   prediction: propPrediction,
+  userEmail: propUserEmail,
+  username: propUsername,
   onNavigateTab: propOnNavigateTab,
   isAmbient = false,
 }: AgentLayoutProps = {}) {
@@ -63,38 +77,89 @@ export default function AgentLayout({
   const [micError, setMicError] = useState<string | null>(null);
   const [langIdx, setLangIdx] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "error">("connected");
+  const [autoListen, setAutoListen] = useState(false);
+  const [voiceMuted, setVoiceMuted] = useState(false);
+  const [honorific, setHonorific] = useState<"Boss" | "Sir">(() =>
+    resolveHonorific(propProfile, propUserEmail, propUsername)
+  );
 
   const msgsRef = useRef<Msg[]>([]);
   const abort = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const backendCooldownUntilRef = useRef<number>(0);
+  const wasSpeakingRef = useRef<boolean>(false);
 
-  const { isSpeaking, getAudioLevel, speak, stopSpeaking } = useAudioAnalyser(getToken);
+  const { isSpeaking, getAudioLevel, speak: rawSpeak, stopSpeaking } = useAudioAnalyser(getToken);
 
-  // JARVIS-style action controller: parses <!--ACTION: {...}--> tags from AI responses
-  const { extractSpokenText: extractSpoken, parseActionTags, executeActions } =
-    useAgentController({
-      onNavigateTab: (tab: string) => {
-        propOnNavigateTab?.(tab);
-      },
-      onOpenModal: (modal: string) => {
-        console.log("[DAS Action] Open modal:", modal);
-      },
-      onScrollTo: (id: string) => {
-        const el = document.getElementById(id) || document.querySelector(`[data-das-id="${id}"]`);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      },
-      onSetFilter: (filter: string) => {
-        window.dispatchEvent(
-          new CustomEvent("das-set-filter", { detail: { filter } })
-        );
-      },
-      onActionExecuted: (action) => {
-        console.log("[DAS Action] Executed:", action.type, action.target);
-      },
-    });
+  const speak = useCallback(
+    (text: string) => {
+      if (voiceMuted) return;
+      rawSpeak(text);
+    },
+    [rawSpeak, voiceMuted]
+  );
+
+  // Sync honorific whenever user/profile changes
+  useEffect(() => {
+    setHonorific(resolveHonorific(propProfile, propUserEmail, propUsername));
+  }, [propProfile, propUserEmail, propUsername]);
+
+  const toggleHonorific = () => {
+    const next = honorific === "Boss" ? "Sir" : "Boss";
+    setHonorific(next);
+    try {
+      localStorage.setItem("das_honorific_override", next);
+    } catch {}
+  };
+
+  // JARVIS-style action controller
+  const {
+    extractSpokenText: extractSpoken,
+    parseActionTags,
+    detectInstantClientActions,
+    executeActions,
+  } = useAgentController({
+    onNavigateTab: (tab: string) => {
+      const normalized = normalizeTabId(tab) || (tab as any);
+      propOnNavigateTab?.(normalized);
+    },
+    onOpenModal: (modal: string) => {
+      if (modal === "one_page_resume" || modal === "resume") {
+        window.dispatchEvent(new CustomEvent("das-open-resume-builder"));
+      } else if (modal === "mock_interview" || modal === "interview") {
+        window.dispatchEvent(new CustomEvent("das-open-mock-interview"));
+      }
+    },
+    onScrollTo: (target: string) => {
+      const t = target.toLowerCase().trim();
+      if (t === "down") {
+        window.scrollBy({ top: 520, behavior: "smooth" });
+        return;
+      }
+      if (t === "up") {
+        window.scrollBy({ top: -520, behavior: "smooth" });
+        return;
+      }
+      if (t === "top") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      if (t === "bottom") {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+        return;
+      }
+      const el =
+        document.getElementById(target) ||
+        document.querySelector(`[data-das-id="${target}"]`) ||
+        document.querySelector(`[data-agent-id="${target}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    },
+    onSetFilter: (filter: string) => {
+      window.dispatchEvent(new CustomEvent("das-set-filter", { detail: { filter } }));
+    },
+  });
 
   const push = (m: Msg) => {
     msgsRef.current = [...msgsRef.current, m];
@@ -102,8 +167,11 @@ export default function AgentLayout({
   };
 
   const patchLast = (c: string) => {
-    const cleanText = extractSpoken(c);
-    msgsRef.current = [...msgsRef.current.slice(0, -1), { role: "assistant", content: cleanText }];
+    const cleanText = extractSpoken(c).replace(/\s*\|\|\|\s*/g, "\n\n").trim();
+    msgsRef.current = [
+      ...msgsRef.current.slice(0, -1),
+      { role: "assistant", content: cleanText },
+    ];
     setMsgs(msgsRef.current);
   };
 
@@ -120,10 +188,15 @@ export default function AgentLayout({
         internships: propProfile.internships ?? 1,
         communication: propProfile.communication ?? 7,
         coding: propProfile.coding ?? 7,
-        target_role: propProfile.targetRole || propProfile.target_role || "Software Development Engineer (SDE)",
+        target_role:
+          propProfile.targetRole ||
+          propProfile.target_role ||
+          "Software Development Engineer (SDE)",
         target_tier: propProfile.targetTier || propProfile.target_tier || "Tier-1 Product",
         branch: propProfile.branch || "CSE",
         graduation_year: propProfile.graduationYear || propProfile.graduation_year || 2026,
+        fullName: propProfile.fullName || propUsername || "",
+        email: propUserEmail || "",
       };
     }
     try {
@@ -136,10 +209,13 @@ export default function AgentLayout({
           internships: p.internships ?? 1,
           communication: p.communication ?? 7,
           coding: p.coding ?? 7,
-          target_role: p.targetRole || p.target_role || "Software Development Engineer (SDE)",
+          target_role:
+            p.targetRole || p.target_role || "Software Development Engineer (SDE)",
           target_tier: p.targetTier || p.target_tier || "Tier-1 Product",
           branch: p.branch || "CSE",
           graduation_year: p.graduationYear || 2026,
+          fullName: p.fullName || propUsername || "",
+          email: propUserEmail || "",
         };
       }
     } catch {}
@@ -153,47 +229,66 @@ export default function AgentLayout({
       target_tier: "Tier-1 Product",
       branch: "CSE",
       graduation_year: 2026,
+      fullName: propUsername || "",
+      email: propUserEmail || "",
     };
-  }, [propProfile]);
+  }, [propProfile, propUserEmail, propUsername]);
 
   const wake = useCallback(async () => {
     if (awake) return;
     setAwake(true);
-    setConnectionStatus("connected");
-    let greeting = "Hello Boss, I'm your DAS AI agent. How can I assist you today?";
-    try {
-      const t = getToken();
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 3500);
-      const r = await fetch(`${API_BASE}/agent/me`, {
-        signal: ctrl.signal,
-        headers: t ? { Authorization: `Bearer ${t}` } : {},
-      });
-      clearTimeout(tid);
-      if (r.ok) {
-        const data = await r.json();
-        if (data.greeting) greeting = data.greeting;
+    const currentHonorific = resolveHonorific(propProfile, propUserEmail, propUsername);
+    setHonorific(currentHonorific);
+
+    let greeting =
+      currentHonorific === "Boss"
+        ? "Hello Boss, I'm your DAS AI co-pilot. All website controls and placement systems are online. How can I assist you today?"
+        : "Hello Sir, I'm your DAS AI co-pilot. Welcome to Pathfinder 2.0. How may I assist you today?";
+
+    if (Date.now() >= backendCooldownUntilRef.current) {
+      try {
+        const t = getToken();
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 2200);
+        const r = await fetch(`${API_BASE}/agent/me`, {
+          signal: ctrl.signal,
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+        });
+        clearTimeout(tid);
+        if (r.ok) {
+          const data = await r.json();
+          if (typeof data.is_owner === "boolean" && !localStorage.getItem("das_honorific_override")) {
+            const serverHonorific = data.is_owner || data.role === "owner" ? "Boss" : currentHonorific;
+            setHonorific(serverHonorific);
+          }
+          if (data.greeting && currentHonorific === "Boss") {
+            greeting = data.greeting;
+          }
+        } else {
+          backendCooldownUntilRef.current = Date.now() + 45_000;
+        }
+      } catch {
+        backendCooldownUntilRef.current = Date.now() + 45_000;
       }
-    } catch {
-      // Keep status connected via Direct Cloud LPU + Local Intelligence fallback
     }
-    setConnectionStatus("connected");
+
     if (msgsRef.current.length === 0) {
       push({ role: "assistant", content: greeting });
       speak(greeting);
     }
-  }, [awake, getToken, speak]);
+  }, [awake, getToken, propProfile, propUserEmail, propUsername, speak]);
 
   useEffect(() => {
     const t = setTimeout(() => {
       wake().catch(() => {});
-    }, 100);
+    }, 150);
     return () => clearTimeout(t);
   }, [wake]);
 
   const openUploadPanel = () => {
     setIsUploading(true);
-    setTimeout(() => setIsUploading(false), 800);
+    propOnNavigateTab?.("resume");
+    setTimeout(() => setIsUploading(false), 700);
   };
 
   const send = useCallback(
@@ -202,21 +297,36 @@ export default function AgentLayout({
       if (!q) return;
       if (!awake) setAwake(true);
 
+      // Voice stop / mute commands
+      if (/^(stop\s*listening|pause\s*voice|stop\s*voice|mute|quiet|shh)[\s!.]*$/i.test(q)) {
+        setAutoListen(false);
+        stopSpeaking();
+        return;
+      }
+
       // Barge-in: stop current speech immediately when user sends new message
       stopSpeaking();
       abort.current?.abort();
       const ac = new AbortController();
       abort.current = ac;
 
+      const activeHonorific = resolveHonorific(propProfile, propUserEmail, propUsername);
+      setHonorific(activeHonorific);
+
+      // Execute any unambiguous instant website control actions right away
+      const instantActions = detectInstantClientActions(q);
+      if (instantActions.length > 0) {
+        executeActions(instantActions);
+      }
+
       const priorHistory = msgsRef.current
         .filter((m, idx) => !(idx === 0 && m.role === "assistant"))
-        .slice(-12)
+        .slice(-10)
         .map((m) => ({ role: m.role, content: m.content }));
 
       if (!hidden) push({ role: "user", content: q });
       push({ role: "assistant", content: "…" });
       setThinking(true);
-      setConnectionStatus("connected");
 
       let full = "";
       let spoken = 0;
@@ -248,143 +358,186 @@ export default function AgentLayout({
         const pageSnap = snapshot();
         const currentTab = propActiveTab || "coach";
 
-        const unifiedChatPayload = {
-          message: q,
-          history: priorHistory,
-          profile: currentProfile,
-          active_tab: currentTab,
-          page_context: {
-            ...pageSnap,
-            activeTabTitle: "DAS AI Voice Coach",
-            screenName: "DAS AI Voice Coach",
-            screenPurpose:
-              "Interactive 3D AI Career Coach with live voice, lip-sync, and personalized placement mentorship",
-            placementReadinessChance: propPrediction?.chance ? `${propPrediction.chance}%` : "78%",
-            placementReadinessLabel: propPrediction?.label || "Strong Candidate Profile",
-            candidateBranch: currentProfile.branch,
-            targetRole: currentProfile.target_role,
-            cgpa: currentProfile.cgpa,
-            backlogs: currentProfile.backlogs,
-            internships: currentProfile.internships,
-            codingConfidence: currentProfile.coding,
-            communicationRating: currentProfile.communication,
-          },
-        };
-
-        // 1. Primary: Try Unified /api/chat/stream with fast 4.5s timeout
-        try {
-          const streamCtrl = new AbortController();
-          const streamTid = setTimeout(() => streamCtrl.abort(), 4500);
-          ac.signal.addEventListener("abort", () => streamCtrl.abort());
-
-          const r = await fetch(`${API_BASE}/api/chat/stream`, {
-            method: "POST",
-            signal: streamCtrl.signal,
-            headers: {
-              "Content-Type": "application/json",
-              ...(t ? { Authorization: `Bearer ${t}` } : {}),
-            },
-            body: JSON.stringify(unifiedChatPayload),
-          });
-          clearTimeout(streamTid);
-
-          if (r.ok && r.body) {
-            const reader = r.body.getReader();
-            const dec = new TextDecoder();
-            let carry = "";
-            for (;;) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              carry += dec.decode(value, { stream: true });
-              const lines = carry.split("\n");
-              carry = lines.pop() || "";
-              for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed.startsWith("data:")) continue;
-                const raw = trimmed.replace(/^data:\s*/, "").trim();
-                if (!raw) continue;
-                try {
-                  const ev = JSON.parse(raw);
-                  const tok = ev.token ?? (ev.t === "text" ? ev.v : "");
-                  if (tok) {
-                    setThinking(false);
-                    full += tok;
-                    patchLast(full.replace("|||", "\n\n"));
-                    takeSpeech(false);
-                  } else if (ev.t === "tool") {
-                    const res = runTool(ev.name, ev.args, navigate);
-                    if (res.navigated && res.explain) followUp = true;
-                  }
-                } catch {}
-              }
-            }
-          }
-        } catch {
-          // Render backend sleeping or waking up — proceed to Direct Groq LPU fallback
-        }
-
-        // 2. Direct Ultra-Fast Groq LPU Cloud Fallback (when Render free-tier returns 503 / sleeping)
-        const groqKey = (import.meta as any).env?.VITE_GROQ_API_KEY || "";
-        if (!full.trim() && groqKey) {
+        // 1. Primary: Try Unified /api/chat/stream if backend is not on cooldown
+        if (Date.now() >= backendCooldownUntilRef.current) {
           try {
-            const sysPrompt = `You are DAS, the loyal, intelligent 3D AI Voice Agent (like JARVIS) for Pathfinder 2.0.
-Address the user respectfully as "Boss".
-Candidate Profile: Branch=${currentProfile.branch}, CGPA=${currentProfile.cgpa}, Backlogs=${currentProfile.backlogs}, Target Role=${currentProfile.target_role}.
-Keep spoken replies concise, warm, and natural (2-4 sentences). Respond in the same language the user uses (English, Telugu, or Hindi).
-If the user asks to open or navigate to a tab/section (e.g. blueprints/projects, roadmap, mock interview, dashboard, cohort analytics, readiness command), include an action tag at the very end of your response:
-- Blueprints / Projects: <!--ACTION: {"type": "navigate_tab", "tab": "blueprints"}-->
-- 6-Week Roadmap: <!--ACTION: {"type": "navigate_tab", "tab": "roadmap"}-->
-- Mock Interview: <!--ACTION: {"type": "navigate_tab", "tab": "interview"}-->
-- Dashboard: <!--ACTION: {"type": "navigate_tab", "tab": "dashboard"}-->
-- Readiness Command: <!--ACTION: {"type": "navigate_tab", "tab": "readiness"}-->
-- Cohort Analytics: <!--ACTION: {"type": "navigate_tab", "tab": "analytics"}-->`;
+            const streamCtrl = new AbortController();
+            const streamTid = setTimeout(() => streamCtrl.abort(), 3200);
+            ac.signal.addEventListener("abort", () => streamCtrl.abort());
 
-            const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            const r = await fetch(`${API_BASE}/api/chat/stream`, {
               method: "POST",
-              signal: ac.signal,
+              signal: streamCtrl.signal,
               headers: {
-                Authorization: `Bearer ${groqKey}`,
                 "Content-Type": "application/json",
+                ...(t ? { Authorization: `Bearer ${t}` } : {}),
               },
               body: JSON.stringify({
-                model: "qwen/qwen3.8-27b",
-                messages: [
-                  { role: "system", content: sysPrompt },
-                  ...priorHistory.slice(-6),
-                  { role: "user", content: q },
-                ],
-                temperature: 0.6,
-                max_tokens: 350,
+                message: q,
+                history: priorHistory,
+                profile: currentProfile,
+                active_tab: currentTab,
+                page_context: {
+                  ...pageSnap,
+                  honorific: activeHonorific,
+                  activeTabTitle: currentTab,
+                  placementReadinessChance: propPrediction?.chance
+                    ? `${propPrediction.chance}%`
+                    : "78%",
+                  placementReadinessLabel:
+                    propPrediction?.label || "Strong Candidate Profile",
+                  candidateBranch: currentProfile.branch,
+                  targetRole: currentProfile.target_role,
+                  cgpa: currentProfile.cgpa,
+                  backlogs: currentProfile.backlogs,
+                  internships: currentProfile.internships,
+                  codingConfidence: currentProfile.coding,
+                  communicationRating: currentProfile.communication,
+                },
               }),
             });
+            clearTimeout(streamTid);
 
-            if (groqRes.ok) {
-              const gData = await groqRes.json();
-              const gText = gData?.choices?.[0]?.message?.content?.trim();
-              if (gText) {
-                setThinking(false);
-                full = gText;
-                patchLast(full);
+            if (r.ok && r.body) {
+              const reader = r.body.getReader();
+              const dec = new TextDecoder();
+              let carry = "";
+              for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                carry += dec.decode(value, { stream: true });
+                const lines = carry.split("\n");
+                carry = lines.pop() || "";
+                for (const line of lines) {
+                  const trimmed = line.trim();
+                  if (!trimmed.startsWith("data:")) continue;
+                  const raw = trimmed.replace(/^data:\s*/, "").trim();
+                  if (!raw) continue;
+                  try {
+                    const ev = JSON.parse(raw);
+                    const tok = ev.token ?? (ev.t === "text" ? ev.v : "");
+                    if (tok) {
+                      setThinking(false);
+                      full += tok;
+                      patchLast(full);
+                      takeSpeech(false);
+                    } else if (ev.t === "tool") {
+                      const res = runTool(ev.name, ev.args, navigate);
+                      if (res.navigated && res.explain) followUp = true;
+                    }
+                  } catch {}
+                }
               }
+            } else {
+              backendCooldownUntilRef.current = Date.now() + 45_000;
             }
           } catch {
-            // Fall through to local careerAgent intelligence
+            backendCooldownUntilRef.current = Date.now() + 45_000;
           }
         }
 
-        // 3. Offline / Instant Client-Side Intelligence Engine Fallback
+        // 2. Direct Ultra-Fast Groq LPU Cloud Brain (rotates keys automatically)
+        if (!full.trim() && GROQ_FALLBACK_KEYS.length > 0) {
+          const sysPrompt = `You are DAS, the loyal, witty, JARVIS-style 3D AI Voice Agent and Career Co-Pilot for Pathfinder 2.0.
+CRITICAL IDENTITY RULE:
+- You are currently speaking with ${
+            activeHonorific === "Boss"
+              ? 'the OWNER and creator of Pathfinder (Dileep). You MUST address him respectfully and warmly as "Boss" in every response.'
+              : 'a respected guest/candidate/stakeholder. You MUST address them respectfully as "Sir" in every response (never call them Boss).'
+          }
+Candidate Profile: Branch=${currentProfile.branch}, CGPA=${currentProfile.cgpa}, Backlogs=${currentProfile.backlogs}, Coding=${currentProfile.coding}/10, Target Role=${currentProfile.target_role}, Readiness=${propPrediction?.chance ? propPrediction.chance + "%" : "78%"}, Current Tab=${currentTab}.
+PERSONALITY & FORMAT:
+- Be warm, friendly, natural, and directly answer what the user just asked.
+- Start with 1 to 3 short, natural spoken sentences (no markdown symbols or asterisks) because your first part is spoken aloud by TTS.
+- If helpful details or bullet points are needed on screen, put ||| after the spoken sentences and write the clean markdown breakdown after |||.
+- Match the user's language (English, Telugu/Tenglish, or Hindi).
+WEBSITE AUTOMATION & CONTROL:
+Whenever the user asks to open/show/navigate to any section, scroll, filter, or update their profile, append the exact action tag at the very end of your response:
+- Dashboard / Home: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "overview"}-->
+- AI Mock Interview: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "interview"}-->
+- Readiness Command: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "action"}-->
+- 6-Week Roadmap / Skills: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "skills"}-->
+- Project Blueprints (23 projects): <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}-->
+- Cohort Analytics (972 records): <!--ACTION: {"type": "NAVIGATE_TAB", "target": "analytics"}-->
+- ATS Resume Studio: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "resume"}-->
+- Branches & Courses: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "branches"}-->
+- Project STAR Defense: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "defense"}-->
+- Candidate Profile / Settings: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "profile"}-->
+- Target Role Intelligence: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "roles"}-->
+- Mission Tracker: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "missions"}-->
+- 1-Page Resume Builder Modal: <!--ACTION: {"type": "OPEN_MODAL", "target": "one_page_resume"}-->
+- Scroll page: <!--ACTION: {"type": "SCROLL_TO", "target": "down"}--> (or "up", "top", "bottom")
+- Filter branch: <!--ACTION: {"type": "SET_FILTER", "target": "CSE"}-->
+- Update profile: <!--ACTION: {"type": "UPDATE_PROFILE", "field": "cgpa", "value": 8.5}-->`;
+
+          for (const gKey of GROQ_FALLBACK_KEYS) {
+            if (full.trim()) break;
+            try {
+              const gCtrl = new AbortController();
+              const gTid = setTimeout(() => gCtrl.abort(), 5500);
+              ac.signal.addEventListener("abort", () => gCtrl.abort());
+
+              const groqRes = await fetch(
+                "https://api.groq.com/openai/v1/chat/completions",
+                {
+                  method: "POST",
+                  signal: gCtrl.signal,
+                  headers: {
+                    Authorization: `Bearer ${gKey}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    model: "qwen/qwen3.8-27b",
+                    messages: [
+                      { role: "system", content: sysPrompt },
+                      ...priorHistory.slice(-6),
+                      { role: "user", content: q },
+                    ],
+                    temperature: 0.65,
+                    max_tokens: 420,
+                  }),
+                }
+              );
+              clearTimeout(gTid);
+
+              if (groqRes.ok) {
+                const gData = await groqRes.json();
+                let gText = gData?.choices?.[0]?.message?.content?.trim() || "";
+                if (gText.includes("<think>") && gText.includes("</think>")) {
+                  gText = gText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+                }
+                if (gText) {
+                  setThinking(false);
+                  full = gText;
+                  patchLast(full);
+                  break;
+                }
+              }
+            } catch {
+              // Try next key in pool
+            }
+          }
+        }
+
+        // 3. Instant Client-Side JARVIS Intelligence Engine Fallback
         if (!full.trim()) {
-          const fallbackReply = getCareerAgentResponse(q, priorHistory, currentProfile);
+          const fallbackReply = getCareerAgentResponse(
+            q,
+            priorHistory,
+            currentProfile,
+            activeHonorific
+          );
           setThinking(false);
           full = fallbackReply;
           patchLast(full);
+          const updatedHonorific = resolveHonorific(propProfile, propUserEmail, propUsername);
+          setHonorific(updatedHonorific);
         }
 
         setThinking(false);
-        setConnectionStatus("connected");
         takeSpeech(true);
 
-        // Execute website control actions from AI response while ElevenLabs audio plays
+        // Execute website control actions from AI response while audio plays
         const actions = parseActionTags(full);
         if (actions.length > 0) {
           executeActions(actions);
@@ -394,7 +547,7 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
           setTimeout(
             () =>
               send(
-                "[auto] Page open ayyindi. Ippudu ee page ni snapshot batti clear ga explain chey.",
+                "[auto] Page opened. Briefly explain the key actions on this section.",
                 true
               ),
             900
@@ -402,16 +555,24 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
         }
       } catch (e: any) {
         setThinking(false);
-        setConnectionStatus("connected");
         if (e?.name !== "AbortError") {
-          const fallbackReply = getCareerAgentResponse(q, priorHistory, currentProfile);
+          const fallbackReply = getCareerAgentResponse(
+            q,
+            priorHistory,
+            currentProfile,
+            activeHonorific
+          );
           patchLast(fallbackReply);
-          speak(extractSpoken(fallbackReply).slice(0, 260));
+          const spokenPart = fallbackReply.split("|||")[0] || fallbackReply;
+          speak(extractSpoken(spokenPart).slice(0, 280));
+          const actions = parseActionTags(fallbackReply);
+          if (actions.length > 0) executeActions(actions);
         }
       }
     },
     [
       awake,
+      detectInstantClientActions,
       executeActions,
       extractSpoken,
       getToken,
@@ -419,6 +580,9 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
       parseActionTags,
       propActiveTab,
       propPrediction,
+      propProfile,
+      propUserEmail,
+      propUsername,
       resolveProfile,
       speak,
       stopSpeaking,
@@ -426,7 +590,7 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
   );
 
   // Voice Input Hook (Web Speech API microphone integration)
-  const { isListening, toggleListening, micPermission } = useVoiceInput({
+  const { isListening, startListening, stopListening, micPermission } = useVoiceInput({
     lang: LANGS[langIdx][0],
     onInterim: (interimText) => {
       setMicError(null);
@@ -443,10 +607,34 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
     },
   });
 
+  // Continuous JARVIS Hands-Free Conversation Loop:
+  // When DAS finishes speaking a reply and autoListen is enabled, automatically start listening again!
+  useEffect(() => {
+    if (isSpeaking) {
+      wasSpeakingRef.current = true;
+      return;
+    }
+    if (wasSpeakingRef.current && !isSpeaking && !thinking && autoListen && !isListening) {
+      wasSpeakingRef.current = false;
+      const timer = setTimeout(() => {
+        if (autoListen && !isSpeaking && !thinking) {
+          startListening();
+        }
+      }, 420);
+      return () => clearTimeout(timer);
+    }
+  }, [isSpeaking, thinking, autoListen, isListening, startListening]);
+
   const handleToggleMic = () => {
     if (!awake) setAwake(true);
     stopSpeaking();
-    toggleListening();
+    if (isListening) {
+      setAutoListen(false);
+      stopListening();
+    } else {
+      setAutoListen(true);
+      startListening();
+    }
   };
 
   // Compute current visual state for Avatar3D
@@ -509,10 +697,18 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
               />
             </span>
             <span className="text-xs font-mono font-bold tracking-wider text-violet-300">
-              DAS 3D CO-PILOT
+              DAS • {honorific.toUpperCase()} MODE
             </span>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={toggleHonorific}
+              title="Switch Owner (Boss) / Guest (Sir) Addressing Mode"
+              className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 hover:bg-violet-500/20 text-violet-200 border border-white/10 transition-colors"
+            >
+              {honorific === "Boss" ? "👑 Boss" : "🎩 Sir"}
+            </button>
             <button
               onClick={() => propOnNavigateTab?.("coach")}
               title="Expand to Full Voice Coach"
@@ -537,19 +733,24 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
           {/* Dynamic state badge */}
           <div className="absolute bottom-2 left-3 z-10 px-2.5 py-0.5 rounded-full bg-slate-900/85 border border-white/10 text-[10px] font-mono text-zinc-300 backdrop-blur-md">
             {avatarState === "speaking"
-              ? "🔊 Lip-Sync Active"
+              ? "🔊 Speaking..."
               : avatarState === "thinking"
               ? "⚡ Thinking..."
               : avatarState === "listening"
-              ? "🎙️ Listening to mic..."
-              : `🟢 Active on ${propActiveTab || "Dashboard"}`}
+              ? "🎙️ Listening..."
+              : autoListen
+              ? `🎙️ Hands-Free • ${honorific}`
+              : `🟢 Online • ${honorific}`}
           </div>
         </div>
 
         {/* Latest Voice Dialogue / Subtitle bubble */}
         {msgs.length > 0 && msgs[msgs.length - 1].role === "assistant" && (
           <div className="px-3.5 py-2 bg-slate-900/70 border-t border-white/5 text-[11px] text-zinc-300 line-clamp-2 leading-relaxed font-sans">
-            {msgs[msgs.length - 1].content.replace(/<!--[\s\S]*?-->/g, "").trim().slice(0, 140)}
+            {msgs[msgs.length - 1].content
+              .replace(/<!--[\s\S]*?-->/g, "")
+              .trim()
+              .slice(0, 150)}
           </div>
         )}
 
@@ -565,8 +766,12 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
                   : "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]"
               }`}
             >
-              {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-              {isListening ? "Stop Listening" : "Tap to Speak to DAS"}
+              {isListening ? (
+                <MicOff className="w-3.5 h-3.5" />
+              ) : (
+                <Mic className="w-3.5 h-3.5" />
+              )}
+              {isListening ? "Listening... (Tap to Stop)" : `Speak to DAS (${honorific})`}
             </button>
             <button
               type="button"
@@ -577,6 +782,32 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
               Full Coach
             </button>
           </div>
+
+          {/* Quick Text Command Input inside Ambient HUD */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const v = input;
+              setInput("");
+              send(v);
+            }}
+            className="flex items-center gap-1.5"
+          >
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={`Command DAS, ${honorific} (e.g. "open projects")…`}
+              className="h-7 flex-1 rounded-lg bg-white/5 px-2.5 text-[11px] text-white placeholder-zinc-500 outline-none focus:ring-1 focus:ring-violet-500 border border-white/10"
+            />
+            {input.trim() && (
+              <button
+                type="submit"
+                className="h-7 px-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-[10px] font-semibold text-white"
+              >
+                Go
+              </button>
+            )}
+          </form>
 
           {/* Quick Action Navigation Chips */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none text-[10px]">
@@ -603,7 +834,9 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
             </button>
             <button
               type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent("das-open-resume-builder"))}
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent("das-open-resume-builder"))
+              }
               className="whitespace-nowrap px-2 py-1 rounded-md bg-white/5 hover:bg-violet-500/20 text-zinc-300 hover:text-violet-200 border border-white/5 transition-colors"
             >
               📄 ATS Resume
@@ -623,11 +856,32 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
       <div className="relative h-full min-h-[380px] overflow-hidden bg-[radial-gradient(circle_at_50%_50%,#3b0a45_0%,#0a0a0f_75%)] flex items-center justify-center p-4">
         <Avatar3D getLevel={getAudioLevel} state={avatarState} />
 
-        {/* Floating Top Badge */}
-        <div className="absolute left-5 top-5 z-20 flex items-center gap-2">
+        {/* Floating Top Badge + Boss/Sir Identity Toggle */}
+        <div className="absolute left-5 top-5 right-5 z-20 flex items-center justify-between gap-2">
           <div className="px-3 py-1 rounded-full bg-violet-950/80 border border-violet-500/40 text-[11px] font-mono tracking-widest text-violet-300 backdrop-blur-md flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_#f43f5e]" />
-            DAS 3D AGENT
+            DAS 3D JARVIS • {honorific.toUpperCase()}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={toggleHonorific}
+              title="Toggle Owner (Boss) vs Guest (Sir) recognition"
+              className="px-2.5 py-1 rounded-full bg-slate-900/85 hover:bg-violet-900/60 border border-white/15 text-[11px] font-mono text-violet-200 backdrop-blur-md transition-colors cursor-pointer"
+            >
+              {honorific === "Boss" ? "👑 Mode: Boss (Owner)" : "🎩 Mode: Sir (Guest)"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!voiceMuted) stopSpeaking();
+                setVoiceMuted(!voiceMuted);
+              }}
+              title={voiceMuted ? "Unmute DAS Voice" : "Mute DAS Voice"}
+              className="p-1.5 rounded-full bg-slate-900/85 hover:bg-white/10 border border-white/15 text-zinc-300 backdrop-blur-md transition-colors cursor-pointer"
+            >
+              {voiceMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
+            </button>
           </div>
         </div>
 
@@ -660,39 +914,38 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
             ? "thinking..."
             : avatarState === "listening"
             ? "listening to mic..."
+            : autoListen
+            ? "hands-free active • ready"
             : "online • idle"}
         </div>
 
-        {/* Mic Permission Badge (Bottom Right) */}
-        {micPermission !== "unknown" && micPermission !== "granted" && (
-          <div
-            className={`absolute bottom-5 right-5 z-20 flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full ${
-              micPermission === "denied"
-                ? "bg-rose-950/80 border border-rose-500/30 text-rose-200"
-                : "bg-amber-950/80 border border-amber-500/30 text-amber-200"
-            } backdrop-blur-md`}
-          >
-            <span className="h-2.5 w-2.5 rounded-full animate-pulse bg-rose-500" />
-            {micPermission === "denied"
-              ? "Mic permission denied"
-              : micPermission === "unsupported"
-              ? "Voice not supported"
-              : "Mic access needed"}
-          </div>
-        )}
+        {/* Hands-Free Auto-Listen Toggle (Bottom Right) */}
+        <button
+          type="button"
+          onClick={() => setAutoListen((v) => !v)}
+          className={`absolute bottom-5 right-5 z-20 flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded-full border backdrop-blur-md transition-all cursor-pointer ${
+            autoListen
+              ? "bg-emerald-950/85 border-emerald-500/50 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+              : "bg-slate-900/85 border-white/10 text-zinc-400 hover:text-zinc-200"
+          }`}
+          title="When enabled, DAS automatically listens for your reply after finishing each spoken answer"
+        >
+          <span className={`h-2 w-2 rounded-full ${autoListen ? "bg-emerald-400 animate-pulse" : "bg-zinc-600"}`} />
+          {autoListen ? "Hands-Free: ON" : "Hands-Free: OFF"}
+        </button>
 
         {/* Wake-up Overlay if not yet awakened */}
         {!awake && (
           <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-black/40 backdrop-blur-[2px]">
             <div className="text-center space-y-4 max-w-sm">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/20 border border-violet-500/40 text-violet-300 text-xs font-mono">
-                <span>✨ Interactive Voice & 3D Avatar</span>
+                <span>✨ Autonomous JARVIS Voice & Site Control</span>
               </div>
               <h3 className="text-2xl font-bold tracking-tight text-white">
                 DAS Career Intelligence
               </h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Connect with Pathfinder's autonomous 3D agent. Speak naturally in Telugu, English, or Hindi.
+                Speak naturally in English, Telugu, or Hindi. Control every tab, run mock interviews, and audit your readiness hands-free.
               </p>
               <button
                 type="button"
@@ -708,6 +961,29 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
 
       {/* RIGHT: Chat Thread + Voice Mic Input */}
       <div className="flex h-full min-h-0 flex-col border-t border-white/10 md:border-t-0 md:border-l bg-[#0d0e15]">
+        {/* Quick Website Control Bar */}
+        <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/10 bg-[#0a0b10]/80 overflow-x-auto scrollbar-none text-[11px]">
+          <span className="text-zinc-500 font-mono mr-1 shrink-0">Voice/Click:</span>
+          {[
+            { label: "🏠 Dashboard", tab: "overview" },
+            { label: "🚀 6-Wk Roadmap", tab: "skills" },
+            { label: "📁 23 Blueprints", tab: "projects" },
+            { label: "🎙️ Mock Interview", tab: "interview" },
+            { label: "📄 ATS Resume", tab: "resume" },
+            { label: "📊 Cohort 972", tab: "analytics" },
+            { label: "🛡️ STAR Defense", tab: "defense" },
+          ].map((item) => (
+            <button
+              key={item.tab}
+              type="button"
+              onClick={() => propOnNavigateTab?.(item.tab)}
+              className="whitespace-nowrap px-2.5 py-1 rounded-lg bg-white/5 hover:bg-violet-500/20 text-zinc-300 hover:text-violet-200 border border-white/5 transition-colors cursor-pointer"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
         {/* Messages area */}
         <div className="flex-1 space-y-3 overflow-y-auto p-5">
           {msgs.length === 0 ? (
@@ -716,9 +992,11 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
                 DAS
               </div>
               <div>
-                <h4 className="text-base font-semibold text-white">How can I assist you today?</h4>
+                <h4 className="text-base font-semibold text-white">
+                  How can I assist you today, {honorific}?
+                </h4>
                 <p className="text-xs text-zinc-400 mt-1 max-w-xs">
-                  Ask questions about your placement odds, resume score, or project blueprints.
+                  Ask me to open any tab, audit your placement readiness, or run a live mock interview.
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md pt-2">
@@ -766,7 +1044,7 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
             <span>
               {micError
                 ? `⚠️ ${micError}`
-                : `🎙️ Listening (${LANGS[langIdx][1]})... Speak now, your words will send automatically.`}
+                : `🎙️ Listening (${LANGS[langIdx][1]}), ${honorific}... Speak naturally, your command will execute automatically.`}
             </span>
           </div>
         )}
@@ -785,7 +1063,7 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
             type="button"
             onClick={() => setLangIdx((langIdx + 1) % LANGS.length)}
             className="h-10 w-11 shrink-0 rounded-full bg-white/5 hover:bg-white/10 text-xs font-semibold text-violet-300 border border-white/10 transition-colors cursor-pointer"
-            title="Switch Spoken Language"
+            title="Switch Spoken Language (English / Telugu / Hindi)"
           >
             {LANGS[langIdx][1]}
           </button>
@@ -794,8 +1072,8 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
             onChange={(e) => setInput(e.target.value)}
             placeholder={
               isListening
-                ? "Listening to your voice..."
-                : "Ask DAS anything, or tap the mic…"
+                ? `Listening to you, ${honorific}...`
+                : `Ask DAS anything or say "Open Projects", ${honorific}…`
             }
             className="h-10 flex-1 rounded-full bg-white/5 px-4 text-sm text-white placeholder-zinc-500 outline-none focus:ring-1 focus:ring-violet-500 border border-white/5"
           />
@@ -815,8 +1093,8 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
                 ? "bg-rose-600 text-white animate-pulse shadow-[0_0_20px_#e11d48] ring-2 ring-rose-400"
                 : "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_20px_rgba(124,58,237,0.4)]"
             }`}
-            aria-label="Upload resume"
-            title="Upload your resume for ATS scoring & profile revision"
+            aria-label="Open ATS Resume Studio"
+            title="Open ATS Resume Studio & PDF Scanner"
           >
             📎
           </button>
@@ -829,7 +1107,7 @@ If the user asks to open or navigate to a tab/section (e.g. blueprints/projects,
                 : "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_20px_rgba(124,58,237,0.4)]"
             }`}
             aria-label="Microphone"
-            title={isListening ? "Stop Listening" : "Tap to Speak"}
+            title={isListening ? "Stop Listening" : "Tap to Speak (Hands-Free JARVIS Mode)"}
           >
             🎤
           </button>

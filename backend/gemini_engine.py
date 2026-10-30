@@ -908,6 +908,11 @@ SAVED CANDIDATE PROFILE:
         sys_instruction += f"\n\n{site_ctx}"
     if profile_ctx:
         sys_instruction += f"\n\n{profile_ctx}"
+    honorific = (page_context or {}).get("honorific") if isinstance(page_context, dict) else None
+    if honorific == "Sir":
+        sys_instruction += "\n\nADDRESSING RULE: You are speaking with a respected guest/candidate. Always address them respectfully as 'Sir' (never call them Boss)."
+    else:
+        sys_instruction += "\n\nADDRESSING RULE: You are speaking with the Owner (Dileep). Always address him warmly and respectfully as 'Boss'."
 
     # Build strictly alternating multi-turn history (trimmed to 6 turns & max 2000 chars)
     contents: List[Dict[str, Any]] = []

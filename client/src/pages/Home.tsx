@@ -100,13 +100,32 @@ export default function Home() {
     window.addEventListener("das-navigate-tab", handleDASNavigate);
     window.addEventListener("das-open-resume-builder", handleDASResume);
     window.addEventListener("das-open-mock-interview", handleDASInterview);
+    const handleDASUpdateProfile = (e: any) => {
+      const field = e?.detail?.field;
+      const value = e?.detail?.value;
+      if (!field || value === undefined) return;
+      setProfile((prev) => {
+        const next = { ...prev } as any;
+        if (field === "cgpa") next.cgpa = Number(value);
+        else if (field === "backlogs") next.backlogs = Number(value);
+        else if (field === "coding") next.coding = Number(value);
+        else if (field === "communication") next.communication = Number(value);
+        else if (field === "internships") next.internships = Number(value);
+        else if (field === "branch") next.branch = String(value).toUpperCase();
+        else if (field === "targetRole" || field === "target_role") next.targetRole = String(value);
+        try { localStorage.setItem("pathfinder_profile_draft", JSON.stringify(next)); } catch {}
+        return next;
+      });
+    };
     window.addEventListener("das-set-filter", handleDASSetFilter);
+    window.addEventListener("das-update-profile", handleDASUpdateProfile);
 
     return () => {
       window.removeEventListener("das-navigate-tab", handleDASNavigate);
       window.removeEventListener("das-open-resume-builder", handleDASResume);
       window.removeEventListener("das-open-mock-interview", handleDASInterview);
       window.removeEventListener("das-set-filter", handleDASSetFilter);
+      window.removeEventListener("das-update-profile", handleDASUpdateProfile);
     };
   }, []);
 
@@ -1830,6 +1849,8 @@ export default function Home() {
               profile={profile}
               activeTab={activeTab}
               prediction={prediction}
+              userEmail={email}
+              username={username}
               onNavigateTab={(tab: string) => setActiveTab(tab as TabId)}
               isAmbient={activeTab !== "coach"}
             />

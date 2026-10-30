@@ -1,20 +1,21 @@
 /**
- * DAS AI - Client-Side Fast Intelligence Engine
+ * DAS AI - Client-Side Fast JARVIS Intelligence Engine
  *
- * Provides instantaneous, contextual, and high-fidelity career mentorship
- * when backend network latency, cloud sleep, or offline states are detected.
- * Adheres strictly to the Pathfinder Context Assembly & Anti-Repetition architecture.
+ * Provides instantaneous, natural spoken-first responses + full website control
+ * action tags (<!--ACTION: ...-->), addressing the owner as "Boss" and all other
+ * visitors/candidates as "Sir".
  */
 
-export const getCareerAgentResponse = (message = "", history = [], profile = {}) => {
+export const getCareerAgentResponse = (message = "", history = [], profile = {}, honorific = "Boss") => {
   const text = (message || "").toLowerCase().trim();
   const branch = profile?.branch || "CSE";
   const cgpa = profile?.cgpa ? Number(profile.cgpa).toFixed(1) : "7.8";
   const backlogs = Number(profile?.backlogs || 0);
   const coding = Number(profile?.coding || 7);
-  const targetRole = profile?.target_role || profile?.targetRole || "Software Development Engineer (SDE-1)";
-  const targetTier = profile?.target_tier || profile?.targetTier || "Product MNCs (Tier-1)";
-  const candidateName = profile?.fullName || profile?.username || "Candidate";
+  const targetRole = profile?.target_role || profile?.targetRole || "Software Development Engineer (SDE)";
+  const targetTier = profile?.target_tier || profile?.targetTier || "Tier-1 Product MNCs";
+  const readiness = profile?.readinessChance || "78%";
+  const title = honorific === "Sir" ? "Sir" : "Boss";
 
   // Check last replies for repetition avoidance
   const recentAssistantTexts = (history || [])
@@ -22,176 +23,285 @@ export const getCareerAgentResponse = (message = "", history = [], profile = {})
     .slice(-3)
     .map((m) => (m.content || "").toLowerCase());
 
-  // 1. Casual Greetings & Social Queries ("hi", "hello", "hi baby", "hey", "namaste")
-  const isGreeting = /^(hi|hello|hey|namaste|good\s*(morning|afternoon|evening)|yo|hola|hi\s*baby|sup)[\s!.,?]*$/i.test(text);
-  if (isGreeting) {
-    if (recentAssistantTexts.length > 0 && recentAssistantTexts[recentAssistantTexts.length - 1].includes("how can i help you today")) {
-      return `👋 **Hey there ${candidateName}! Ready when you are!**\n\nWhat would you like to tackle next? We can run a **mock technical interview**, review **23 production projects for ${branch}**, or build your **6-week placement sprint**. Just tap one of the quick commands above or type your question! 🚀`;
-    }
-    return `👋 **Hello ${candidateName}! Welcome back to DAS AI.**\n\nI am connected to your live candidate profile (**${branch}** • **${cgpa} CGPA** • Target: **${targetRole}**).\n\nHere is what we can do right now:\n1. 💡 **Explain Pathfinder simply in 5 lines**\n2. 🎙️ **Start an interactive Mock Interview**\n3. 🗺️ **Generate your 6-Week Placement Roadmap**\n4. 🚀 **Curate high-impact project ideas for ${branch}**\n\nWhat's on your mind today?`;
+  // 0. Identity switching via natural conversation
+  if (/\b(i\s*am\s*dileep|nenu\s*dileep|call\s*me\s*boss|i'm\s*the\s*owner)\b/i.test(text)) {
+    try {
+      if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Boss");
+    } catch {}
+    return `Welcome back, Boss! Identity confirmed as Dileep, creator of Pathfinder. All systems and voice controls are at your command.|||✅ **Owner Identity Verified:** Addressing you as **Boss** across all voice and dashboard modules.`;
+  }
+  if (/\b(call\s*me\s*sir|guest\s*mode|i\s*am\s*a\s*(guest|visitor|recruiter|student))\b/i.test(text)) {
+    try {
+      if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Sir");
+    } catch {}
+    return `Certainly, Sir! I have switched to Guest & Stakeholder mode and will address you as Sir. How may I guide you through Pathfinder today?|||🎩 **Guest Identity Active:** Addressing you as **Sir**.`;
   }
 
-  // 2. Explain Pathfinder Simply in 5 lines
+  // 1. Direct Website Navigation & Control Commands (JARVIS Automation)
+  const cgpaUpdate = text.match(/\b(?:set|change|update|my)\s+cgpa\s+(?:to|is|=)?\s*(\d+(?:\.\d+)?)/i);
+  if (cgpaUpdate) {
+    const newCgpa = parseFloat(cgpaUpdate[1]);
+    return (
+      `Right away, ${title}. I've updated your CGPA to ${newCgpa} and recalculated your live placement readiness score across the dashboard.` +
+      `|||✅ **Live Profile Updated:** CGPA set to **${newCgpa}/10.0**. All ML placement probabilities and company eligibility cutoffs have been refreshed. <!--ACTION: {"type": "UPDATE_PROFILE", "field": "cgpa", "value": ${newCgpa}}-->`
+    );
+  }
+
+  const branchUpdate = text.match(/\b(?:set|change|update|switch)\s+(?:my\s+)?branch\s+(?:to\s+)?(cse|ece|eee|mech|civil|it|aiml|csm|csd)\b/i);
+  if (branchUpdate) {
+    const newBranch = branchUpdate[1].toUpperCase();
+    return (
+      `Done, ${title}. Your engineering branch is now set to ${newBranch}, and I've tailored your roadmaps and project blueprints accordingly.` +
+      `|||✅ **Branch Updated:** Switched to **${newBranch}**. <!--ACTION: {"type": "UPDATE_PROFILE", "field": "branch", "value": "${newBranch}"}-->`
+    );
+  }
+
+  if (/\b(scroll\s*down|go\s*down|kindaki\s*scroll)\b/i.test(text)) {
+    return `Scrolling down for you now, ${title}. <!--ACTION: {"type": "SCROLL_TO", "target": "down"}-->`;
+  }
+  if (/\b(scroll\s*up|go\s*up|paiki\s*scroll)\b/i.test(text)) {
+    return `Scrolling back up, ${title}. <!--ACTION: {"type": "SCROLL_TO", "target": "up"}-->`;
+  }
+  if (/\b(scroll\s*(to\s*)?top|top\s*of\s*page)\b/i.test(text)) {
+    return `Taking you to the top of the page, ${title}. <!--ACTION: {"type": "SCROLL_TO", "target": "top"}-->`;
+  }
+
+  const isNavCommand = /\b(open|go\s*to|take\s*me|navigate|switch\s*to|show\s*me|launch|start|pull\s*up|chupinchu|open\s*chey|vellu)\b/i.test(text);
+  if (isNavCommand) {
+    if (/\b(one[\s-]?page\s*resume|1[\s-]?page\s*resume|resume\s*modal)\b/i.test(text)) {
+      return `Opening your single-page ATS engineering resume builder right now, ${title}. <!--ACTION: {"type": "OPEN_MODAL", "target": "one_page_resume"}-->`;
+    }
+    if (/\b(mock\s*interview|interview|viva)\b/i.test(text)) {
+      return (
+        `Launching the AI Mock Interview studio now, ${title}. Get ready for your first technical question.` +
+        `|||🎙️ **AI Mock Interview Opened:** Practice live technical, DSA, and behavioral rounds tailored to **${targetRole}**. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "interview"}-->`
+      );
+    }
+    if (/\b(6[\s-]?week|roadmap|sprint|study\s*plan|skills)\b/i.test(text)) {
+      return (
+        `Sure ${title}, opening your customized 6-week placement sprint roadmap for ${branch}.` +
+        `|||🗺️ **6-Week Sprint Roadmap:** Structured week-by-week DSA, Core CS, and capstone milestones for **${targetRole}**. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "skills"}-->`
+      );
+    }
+    if (/\b(project\s*defense|star\s*defense|defense)\b/i.test(text)) {
+      return (
+        `Opening the STAR Project Defense simulator now, ${title}. Let's test your architecture trade-offs.` +
+        `|||🛡️ **Project Architecture Defense Simulator:** Practice defending scaling, caching, and database choices. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "defense"}-->`
+      );
+    }
+    if (/\b(projects?|blueprints?|portfolio)\b/i.test(text)) {
+      return (
+        `Pulling up the 23 production project blueprints for ${branch} now, ${title}.` +
+        `|||📁 **Flagship Project Blueprints:** Complete architectures, tech stacks, and STAR defense points. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}-->`
+      );
+    }
+    if (/\b(resume|ats|cv)\b/i.test(text)) {
+      return (
+        `Opening the ATS Resume Studio and scanner now, ${title}. You can upload your PDF or audit your bullet points here.` +
+        `|||📄 **ATS Resume Studio:** Automated keyword gap detection and Google X-Y-Z impact scoring. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "resume"}-->`
+      );
+    }
+    if (/\b(cohort|analytics|benchmarks?|972)\b/i.test(text)) {
+      return (
+        `Opening Cohort Placement Analytics across all 972 verified engineering records, ${title}.` +
+        `|||📊 **Cohort Placement Intelligence:** Explore salary distributions, branch-wise placement rates, and skill correlations. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "analytics"}-->`
+      );
+    }
+    if (/\b(readiness|action\s*center|command)\b/i.test(text)) {
+      return (
+        `Opening your Placement Readiness Command Center now, ${title}.` +
+        `|||⚡ **Readiness Command Center:** High-impact tactical actions to boost your placement probability. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "action"}-->`
+      );
+    }
+    if (/\b(branches|courses|departments)\b/i.test(text)) {
+      return (
+        `Switching to Branch and Degree Intelligence now, ${title}.` +
+        `|||🎓 **Branch & Course Intelligence:** Department-specific career tracks and skill mappings. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "branches"}-->`
+      );
+    }
+    if (/\b(profile|settings|ssot)\b/i.test(text)) {
+      return (
+        `Opening your Candidate Profile and SSOT settings now, ${title}. Any edits here immediately update all predictions.` +
+        `|||⚙️ **Candidate Profile (SSOT):** Update your CGPA, branch, internships, and target role anytime. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "profile"}-->`
+      );
+    }
+    if (/\b(roles?|role\s*intelligence|salaries)\b/i.test(text)) {
+      return (
+        `Opening Target Role Intelligence and salary benchmarks now, ${title}.` +
+        `|||🧭 **Target Role Intelligence:** Compare compensation tiers, required skills, and hiring cutoffs. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "roles"}-->`
+      );
+    }
+    if (/\b(missions?|tracker)\b/i.test(text)) {
+      return (
+        `Opening your Career Mission Tracker now, ${title}.` +
+        `|||🎯 **Career Mission Tracker:** Track daily coding, project, and interview milestones. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "missions"}-->`
+      );
+    }
+    if (/\b(dashboard|overview|home|main)\b/i.test(text)) {
+      return (
+        `Taking you back to the Executive Dashboard, ${title}.` +
+        `|||🏠 **Executive Dashboard:** Your live placement probability, readiness vectors, and company radar. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "overview"}-->`
+      );
+    }
+  }
+
+  // 2. Casual Greetings & Friendly Small Talk
+  const isGreeting = /^(hi|hello|hey|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai|namaskaram)[\s!.,?]*$/i.test(text);
+  if (isGreeting) {
+    if (recentAssistantTexts.some((t) => t.includes("how can i assist") || t.includes("ready when you are"))) {
+      return (
+        `Hey ${title}! I'm right here and listening. Tell me which tab to open, or ask me anything about your ${branch} placement prep, projects, or mock interviews!` +
+        `|||👋 **Always Online, ${title}!**\n- Say **"Open Projects"**, **"Open Roadmap"**, **"Start Mock Interview"**, or **"Open ATS Resume"** to control the website hands-free.\n- Or ask any question about your **${cgpa} CGPA** profile targeting **${targetRole}**.`
+      );
+    }
+    return (
+      `Hello ${title}! I'm DAS, your autonomous 3D voice co-pilot. Your profile is synced at ${cgpa} CGPA in ${branch} targeting ${targetRole}. What should we tackle first?` +
+      `|||👋 **Welcome, ${title}! DAS Co-Pilot is Synced:**\n- **Profile:** ${branch} • **${cgpa} CGPA** • ${backlogs} Backlogs • Target: **${targetRole}**\n- **Voice Commands:** Say *"Open Roadmap"*, *"Open Projects"*, *"Start Mock Interview"*, *"Open Resume"*, or *"Set my CGPA to 8.5"*.\n- **Career Mentorship:** Ask for project ideas, interview questions, or company cutoffs in English, Telugu, or Hindi!`
+    );
+  }
+
+  // 3. Friendly conversational questions ("how are you", "who are you", "thank you", "joke", "love you")
+  if (/\b(how\s*are\s*you|how\s*r\s*u|ela\s*unnav|ela\s*vunnav|kaisa\s*hai)\b/i.test(text)) {
+    return (
+      `I'm running at peak efficiency, ${title}! All neural engines, 3D audio lip-sync, and placement models are 100 percent online. How is your day going?` +
+      `|||⚡ **All Systems Nominal, ${title}!** Ready to run mock interviews, navigate the platform, or plan your next coding sprint.`
+    );
+  }
+
+  if (/\b(who\s*are\s*you|what\s*are\s*you|nuvvu\s*evaru|introduce\s*yourself|what\s*can\s*you\s*do)\b/i.test(text)) {
+    return (
+      `I am DAS, your JARVIS-style 3D AI Voice Agent for Pathfinder 2.0, ${title}. I can control every tab on this website by voice, run technical mock interviews, audit your ATS resume, and guide your placement journey.` +
+      `|||🤖 **DAS 3D Autonomous Voice Co-Pilot:**\n1. **Full Website Control:** Navigate tabs, scroll pages, filter projects, and update your profile live by voice.\n2. **Placement Intelligence:** Grounded in 972 verified student placement records.\n3. **Multilingual Voice:** Speaks and listens in English, Telugu, and Hindi with real-time 3D jaw lip-sync.`
+    );
+  }
+
+  if (/\b(thank\s*you|thanks|thx|dhanyavadalu|super|awesome|great\s*job|nice)\b/i.test(text)) {
+    return `Always a pleasure, ${title}! I'm right here whenever you need the next command or want to practice another question.`;
+  }
+
+  if (/\b(love\s*you|i\s*love\s*u|luv\s*u)\b/i.test(text)) {
+    return `Haha, right back at you, ${title}! Now let's channel that awesome energy into landing a top Tier-1 offer!`;
+  }
+
+  if (/\b(joke|tell\s*me\s*a\s*joke|funny|navvinchu)\b/i.test(text)) {
+    return (
+      `Here's one for you, ${title}: Why do programmers prefer dark mode? Because light attracts bugs! Ready to squash some LeetCode bugs now?` +
+      `|||😄 *"Why do programmers prefer dark mode? Because light attracts bugs!"*`
+    );
+  }
+
+  // 4. Placement Readiness Score / Profile Audit
+  if (/\b(readiness\s*score|my\s*score|placement\s*chance|probability|how\s*is\s*my\s*profile|audit\s*my\s*profile)\b/i.test(text)) {
+    const tierStatus = Number(cgpa) >= 7.5 && backlogs === 0 ? "strong Tier-1 eligibility" : "solid Tier-2 and product scaleup eligibility";
+    return (
+      `Based on your ${cgpa} CGPA in ${branch}, ${backlogs} backlogs, and ${coding} out of 10 coding confidence, you have ${tierStatus}, ${title}. Focusing on Blind 75 DSA patterns and one deployed flagship project will push your readiness above 88 percent.` +
+      `|||📊 **Live Placement Readiness Audit (${title}):**\n- **Academic Standing:** ${cgpa} CGPA (${branch}) • **${backlogs} Active Backlogs**\n- **Coding Confidence:** ${coding}/10 • **Target Role:** ${targetRole}\n- **Top Priority:** Complete 2 medium sliding-window/tree problems daily and quantify your top 2 resume projects using Google's X-Y-Z formula.`
+    );
+  }
+
+  // 5. Explain Pathfinder Simply in 5 lines
   if (
-    text.includes("explain pathfinder simply") ||
+    text.includes("explain pathfinder") ||
     text.includes("in 5 lines") ||
     text.includes("what is pathfinder") ||
-    text.includes("what pathfinder does") ||
     text.includes("how does pathfinder work")
   ) {
-    return `🎯 **Pathfinder in 5 Simple Lines:**\n\n` +
-      `1. **Placement Probability Engine:** Uses a Random Forest ML model trained on 972 verified student recruitment records (88% accuracy) to calculate your live placement probability.\n` +
-      `2. **Benchmark & Cutoff Matching:** Compares your CGPA, backlogs, and coding metrics against real cutoffs for Tier-1 Product MNCs (Amazon, Microsoft) vs Tier-2 companies.\n` +
-      `3. **23 Production Project Blueprints:** Provides complete full-stack architectures, Docker configs, and viva defense talking points for high-impact resume projects.\n` +
-      `4. **Interactive AI Career Mentor:** Real-time conversational coach powered by Gemini Flash that conducts technical mock interviews and multi-lingual voice prep.\n` +
-      `5. **Single-Page ATS Resume Studio:** Automatically structures and audits your resume bullets using Google's X-Y-Z formula to clear automated recruiter screeners.`;
+    return (
+      `Pathfinder 2.0 is an autonomous AI career intelligence platform, ${title}. It combines a machine learning placement predictor trained on 972 student records, 23 production project blueprints, an ATS resume scanner, and me—your hands-free 3D voice co-pilot.` +
+      `|||🎯 **Pathfinder 2.0 in 5 Simple Lines:**\n` +
+      `1. **ML Placement Engine:** Random Forest model trained on 972 verified campus placement records.\n` +
+      `2. **Company Cutoff Radar:** Benchmarks your CGPA, backlogs, and coding score against Tier-1 and Tier-2 cutoffs.\n` +
+      `3. **23 Production Project Blueprints:** Full-stack architectures, Docker setups, and STAR viva defense points.\n` +
+      `4. **DAS 3D Voice Co-Pilot:** Hands-free JARVIS-style agent that controls the site, listens, and conducts mock interviews.\n` +
+      `5. **Single-Page ATS Resume Studio:** Audits and formats your resume using Google's X-Y-Z impact formula.`
+    );
   }
 
-  // 3. Explain to Non-Technical Person / Real-Life Analogy
-  if (
-    text.includes("non-technical") ||
-    text.includes("analogy") ||
-    text.includes("explain to parents") ||
-    text.includes("layman")
-  ) {
-    return `💡 **Explaining Pathfinder with a Real-Life Analogy:**\n\n` +
-      `Imagine you are preparing to run a competitive 42km marathon, but you don't know if your current running speed is enough to win a medal. ` +
-      `Instead of guessing and hoping for the best, you hire an experienced Olympic coach who has coached 1,000 previous runners to gold medals.\n\n` +
-      `That coach:\n` +
-      `1. **Tests your current fitness:** (Analyzes your CGPA, coding ability, and problem-solving speed).\n` +
-      `2. **Gives you an exact score:** (Shows your statistical probability of clearing the trials based on past marathon runners).\n` +
-      `3. **Identifies weak muscles:** (Tells you exactly which skills you need to train—like Arrays, DBMS, or System Design).\n` +
-      `4. **Gives you a week-by-week training calendar:** (Structured 6-week sprint so you are in peak shape on placement day).\n\n` +
-      `**Pathfinder is that personal Olympic coach for engineering students**, transforming campus recruitment stress into a clear, measurable roadmap to an engineering career! 🎓✨`;
+  // 6. Project Ideas / Blueprints
+  if (text.includes("project") || text.includes("blueprint")) {
+    return (
+      `I've pulled up the top 3 flagship project architectures for ${branch} targeting ${targetRole}, ${title}. Notice how each one includes real-time scaling or AI vector search to impress Tier-1 interviewers.` +
+      `|||🚀 **Flagship Project Architectures for ${branch} (${title}):**\n` +
+      `1. **Enterprise Real-Time Collaborative Canvas:** React 19, TypeScript, WebSockets, Redis Pub/Sub, CRDTs (<50ms sync).\n` +
+      `2. **Low-Latency Microservices API Gateway:** FastAPI/Go, Docker, Redis token-bucket rate limiting, Prometheus observability.\n` +
+      `3. **Hybrid Semantic Search Engine:** Python, Vector Embeddings, HNSW similarity + BM25 keyword ranking.\n\n` +
+      `💡 *Say **"Open Projects"** and I will take you directly to the 23 interactive blueprints!* <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}-->`
+    );
   }
 
-  // 4. Project Ideas for Branch
-  if (
-    text.includes("project ideas for my branch") ||
-    text.includes("project ideas") ||
-    text.includes("recommend projects") ||
-    (text.includes("project") && (text.includes("idea") || text.includes("suggest") || text.includes("branch")))
-  ) {
-    return `🚀 **Curated Flagship Project Architectures for ${branch} Engineers:**\n\n` +
-      `### 1. 🌐 Enterprise Real-Time Collaborative Canvas (Tier-1 SDE)\n` +
-      `- **Tech Stack:** React 19, TypeScript, WebSockets, Redis Pub/Sub, CRDTs (Yjs)\n` +
-      `- **Architecture Highlight:** Sub-50ms conflict-free state synchronization with local undo/redo trees.\n` +
-      `- **Resume Impact:** *"Engineered high-concurrency collaborative whiteboard handling 5,000 concurrent state deltas with zero merge conflicts."*\n\n` +
-      `### 2. ⚡ Low-Latency Microservices Gateway with Distributed Tracing\n` +
-      `- **Tech Stack:** Go/FastAPI, Docker, Envoy Proxy, Prometheus, OpenTelemetry\n` +
-      `- **Architecture Highlight:** Token bucket rate limiting with Circuit Breaker pattern handling 10k RPS.\n` +
-      `- **Resume Impact:** *"Built high-throughput API gateway with resilient backpressure and structured request logging."*\n\n` +
-      `### 3. 🧠 Hybrid Semantic Search Engine with Vector Embeddings\n` +
-      `- **Tech Stack:** Python 3.11, Qdrant/Pinecone, Gemini Embeddings, FastAPI, React\n` +
-      `- **Architecture Highlight:** Sub-10ms HNSW vector similarity search combined with BM25 keyword filtering.\n` +
-      `- **Resume Impact:** *"Architected hybrid search pipeline yielding 94% Top-3 relevance over 50,000 document records."*\n\n` +
-      `💡 *Would you like to build any of these step-by-step? Just say "Let's build Project 1 step by step" and I will guide your milestones!*`;
-  }
-
-  // 5. Step-by-Step Project Building Tutor
-  if (text.includes("step by step") || text.includes("build this project") || text.includes("start with step 1")) {
-    return `🛠️ **Step-by-Step Architecture Guide: Production Engineering Project**\n\n` +
-      `Let's build your flagship capstone following the 5-phase engineering milestone order:\n\n` +
-      `### 📌 Step 1: System Architecture & Data Model (Today's Focus)\n` +
-      `1. **Define Core Entities:** Create your ER diagram and TypeScript interface schemas for entities, sessions, and events.\n` +
-      `2. **API Contract:** Design RESTful OpenAPI specifications or WebSocket event schemas before writing any server code.\n` +
-      `3. **Repository Setup:** Initialize GitHub repository with pre-commit linters, TypeScript strict mode, and Dockerfile.\n\n` +
-      `**Your First Action Item:**\n` +
-      `Write out your database models or event payload schema. When you have them ready, reply with them here and I will review your foreign keys and indexing strategy! 🚀`;
-  }
-
-  // 6. Telugu / Tenglish Queries
-  const isTelugu = /(naku|kavali|cheppu|ela|cheyyali|bro|andi|job|placements|preparation|chudu|telugu|em|ehe|avvali|kodithe)/i.test(text);
+  // 7. Telugu / Tenglish Queries
+  const isTelugu = /(naku|kavali|cheppu|ela|cheyyali|placement|udyogam|job|chudu|telugu|em\s*chey|salah|artham)/i.test(text);
   if (isTelugu) {
-    return `హాయ్! కంగారు పడకండి bro/andi! మీ ప్రొఫైల్ (${branch} • ${cgpa} CGPA • ${targetRole}) చూశాను. క్యాంపస్ ప్లేస్‌మెంట్స్ సాధించడానికి 4-స్టెప్ రోడ్‌మ్యాప్ ఇదిగోండి:\n\n` +
-      `1. **Coding & DSA ఫౌండేషన్స్:**\n` +
-      `   - Arrays, Strings, HashMaps, Two Pointers, Sliding Window కాన్సెప్ట్స్ పై డైలీ 2 ప్రాబ్లమ్స్ సాల్వ్ చేయండి.\n` +
-      `   - మీ ప్రస్తుత కోడింగ్ కాన్ఫిడెన్స్ (${coding}/10) నుండి 8+/10 కి చేరడానికి LeetCode Top 75 లిస్ట్ కంప్లీట్ చేయండి.\n\n` +
-      `2. **2 స్ట్రాంగ్ ప్రొడక్షన్ ప్రాజెక్ట్స్:**\n` +
-      `   - రెగ్యులర్ కాలేజీ ప్రాజెక్ట్స్ కాకుండా, లైవ్ డిప్లాయ్‌మెంట్ (Vercel/Render) మరియు AI API/డేటాబేస్ ఇంటిగ్రేషన్ ఉన్న ప్రాజెక్ట్స్ గిట్‌హబ్‌లో పెట్టండి.\n\n` +
-      `3. **కోర్ సబ్జెక్ట్స్ రివిజన్:**\n` +
-      `   - DBMS (SQL queries, Indexing, Transactions)\n` +
-      `   - Operating Systems (Threads, Deadlocks, Memory Management)\n` +
-      `   - Computer Networks (TCP/IP, HTTP/HTTPS, DNS).\n\n` +
-      `4. **సింగిల్ పేజ్ ATS రెజ్యూమ్ & మాక్ ఇంటర్వ్యూస్:**\n` +
-      `   - Google X-Y-Z ఫార్మాట్ లో ప్రాజెక్ట్ ఇంపాక్ట్ రాయండి. ఇక్కడ మాక్ ఇంటర్వ్యూస్ ప్రాక్టీస్ చేయండి.\n\n` +
-      `ఏ రోల్ టార్గెట్ చేస్తున్నారో చెబితే, ఇంకా డీటైల్డ్ ప్లాన్ ఇస్తాను bro! 🚀`;
+    return (
+      `తప్పకుండా ${title}! మీ ${branch} ప్రొఫైల్ మరియు ${cgpa} CGPA ప్రకారం, క్యాంపస్ ప్లేస్‌మెంట్స్ లో టాప్ ఆఫర్ సాధించడానికి ప్రతిరోజూ రెండు డీఎస్ఏ ప్రాబ్లమ్స్ సాల్వ్ చేస్తూ, రెండు లైవ్ ప్రొడక్షన్ ప్రాజెక్ట్స్ బిల్డ్ చేయండి. మీకోసం రోడ్‌మ్యాప్ వివరాలు స్క్రీన్ పై ఉంచాను.` +
+      `|||🚀 **క్యాంపస్ ప్లేస్‌మెంట్స్ సక్సెస్ ప్లాన్ (${title}):**\n` +
+      `1. **DSA & Coding (${coding}/10 → 9/10):** Arrays, HashMaps, Two Pointers, Trees, Graphs పై డైలీ 2 LeetCode ప్రాబ్లమ్స్ ప్రాక్టీస్ చేయండి.\n` +
+      `2. **2 లైవ్ ప్రొడక్షన్ ప్రాజెక్ట్స్:** GitHub కోడ్ + లైవ్ డిప్లాయ్‌మెంట్ లింక్ + Docker ఉన్న ప్రాజెక్ట్స్ రెజ్యూమ్ లో పెట్టండి.\n` +
+      `3. **Core CS Subjects:** DBMS (Indexing, ACID), OS (Deadlocks, Threads), Computer Networks రివిజన్ చేయండి.\n` +
+      `4. **ATS Resume & Mock Interviews:** Google X-Y-Z ఫార్మాట్ లో రెజ్యూమ్ సిద్ధం చేసి, ఇక్కడే మాక్ ఇంటర్వ్యూ ప్రాక్టీస్ చేయండి!`
+    );
   }
 
-  // 7. 6-Week Roadmap Requests
-  if (text.includes("roadmap") || text.includes("6-week") || text.includes("schedule") || text.includes("plan")) {
-    return `### 🗺️ Tailored 6-Week Placement Sprint for ${targetRole} (${branch})\n` +
-      `*Grounding Metrics: ${cgpa} CGPA | Coding Confidence: ${coding}/10 | Target: ${targetTier}*\n\n` +
-      `* **Week 1: Core DSA Sprints (Linear Structures)**\n` +
-      `  * Day 1-3: Arrays, Two-Pointer patterns, Sliding Window optimizations.\n` +
-      `  * Day 4-7: HashMaps, Frequency counters, Strings, and Monotonic Stacks.\n` +
-      `  * *Milestone:* 25 solved problems with optimal $O(n)$ space-time bounds.\n\n` +
-      `* **Week 2: Non-Linear Mastery & Recursion**\n` +
-      `  * Day 8-11: Binary Trees, BST traversals, BFS/DFS level-order traversals.\n` +
-      `  * Day 12-14: Heaps/Priority Queues and Two-Heap pattern for median finding.\n` +
-      `  * *Milestone:* Master tree recursion and edge-case handling.\n\n` +
-      `* **Week 3: Advanced Algorithmic Patterns & Graph Traversal**\n` +
-      `  * Day 15-18: Connected Components, Topological Sort, Dijkstra's shortest path.\n` +
-      `  * Day 19-21: Dynamic Programming 1D/2D (Knapsack, LCS, LIS).\n` +
-      `  * *Milestone:* Solve 5 medium graph questions without looking at hints.\n\n` +
-      `* **Week 4: High-Yield Flagship Portfolio Project**\n` +
-      `  * Architect and deploy an end-to-end full-stack app featuring real-time caching (Redis) or Vector Embeddings (Qdrant/Gemini).\n` +
-      `  * Add unit testing, Dockerfile, and CI/CD workflow badges.\n` +
-      `  * *Milestone:* Public GitHub repo with interactive demo link.\n\n` +
-      `* **Week 5: CS Core Engineering Fundamentals**\n` +
-      `  * DBMS: Normalization, ACID properties, B-Tree indexes, indexing write-penalties.\n` +
-      `  * OS: Process vs Threads, Virtual Memory, Inverted Page Tables, Mutex vs Semaphore.\n` +
-      `  * Networks: TCP 3-way handshake, OSI layers, TLS encryption, WebSocket vs HTTP/2.\n\n` +
-      `* **Week 6: STAR Behavioral Defense & Timed Mock OAs**\n` +
-      `  * Complete 3 timed mock assessments simulating Hackerrank/CodeSignal interfaces.\n` +
-      `  * Structure 4 project stories using STAR (Situation, Task, Action, Result).\n` +
-      `  * *Milestone:* Interview-ready with zero speech hesitations!`;
+  // 8. 6-Week Roadmap Requests
+  if (text.includes("roadmap") || text.includes("6-week") || text.includes("schedule") || text.includes("plan") || text.includes("sprint")) {
+    return (
+      `Here is your customized 6-week placement sprint for ${targetRole}, ${title}. I'm also opening the 6-Week Roadmap tab on your screen so you can track every milestone.` +
+      `|||🗺️ **6-Week Placement Sprint for ${targetRole} (${branch} • ${cgpa} CGPA):**\n` +
+      `- **Week 1:** Linear DSA (Arrays, Two-Pointers, Sliding Window, HashMaps — 25 problems).\n` +
+      `- **Week 2:** Trees, BSTs, Heaps & Priority Queues (BFS/DFS recursion mastery).\n` +
+      `- **Week 3:** Graphs (Dijkstra, Topological Sort) & 1D/2D Dynamic Programming.\n` +
+      `- **Week 4:** Build & deploy Flagship Capstone Project with Docker and CI/CD.\n` +
+      `- **Week 5:** Core CS Sprint (DBMS indexing & ACID, OS concurrency, TCP/IP & HTTP/2).\n` +
+      `- **Week 6:** Timed Mock OAs & STAR behavioral project defense. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "skills"}-->`
+    );
   }
 
-  // 8. Mock Interview Inquiries
+  // 9. Mock Interview Inquiries
   if (text.includes("mock") || text.includes("interview") || text.includes("question") || text.includes("star")) {
-    return `### 🎙️ Technical Interview Simulation for ${targetRole}\n\n` +
-      `Here is your first technical screening question:\n\n` +
-      `**Problem: Maximum Subarray Sum (Kadane's Algorithm)**\n` +
-      `> *"Given an integer array \`nums\`, find the contiguous subarray (containing at least one number) which has the largest sum and return its sum. Must run in $O(n)$ time and $O(1)$ extra space."*\n\n` +
-      `**Recruiter Evaluation Checklist:**\n` +
-      `1. **Clarify Constraints:** Can array elements be all negative? (Yes, in which case the answer is the largest single negative value).\n` +
-      `2. **Brute Force vs Optimal:** Explain why nested loops are $O(n^2)$ and how running sum prefix elimination achieves $O(n)$.\n` +
-      `3. **Core Formula:**\n` +
-      `   \`\`\`python\n` +
-      `   curr_sum = max(num, curr_sum + num)\n` +
-      `   max_sum = max(max_sum, curr_sum)\n` +
-      `   \`\`\`\n\n` +
-      `Whenever you're ready, reply with your approach or type **"next question"** to proceed to System Design!`;
+    return (
+      `Let's run a technical interview question for ${targetRole}, ${title}. Given an integer array, how would you find the contiguous subarray with the maximum sum in O of N time and O of 1 space? Tell me your approach whenever you're ready!` +
+      `|||🎙️ **Live Technical Interview Question (${title}):**\n` +
+      `**Problem:** *Maximum Subarray Sum (Kadane's Algorithm)* — achieve $O(n)$ time and $O(1)$ space.\n` +
+      `- **Key Insight:** Track \`curr_sum = max(num, curr_sum + num)\` and \`max_sum = max(max_sum, curr_sum)\`.\n` +
+      `- Reply with your explanation or say **"Open Mock Interview"** to launch the full interview console!`
+    );
   }
 
-  // 9. Cutoffs, Backlogs & Eligibility
+  // 10. Resume / ATS
+  if (text.includes("resume") || text.includes("ats") || text.includes("cv")) {
+    return (
+      `To clear automated ATS filters for ${targetRole}, ${title}, structure every project bullet using Google's X-Y-Z formula: Accomplished X, as measured by Y, by building Z. I'm opening the ATS Resume Studio so you can scan your PDF right now.` +
+      `|||📄 **ATS Resume Optimization Checklist (${title}):**\n` +
+      `- **Google X-Y-Z Formula:** *"Reduced API latency by 42% (Y) across 10k concurrent requests (X) by implementing Redis caching and connection pooling (Z)."*\n` +
+      `- **Single-Column Layout:** Avoid multi-column tables or graphics that break parsers.\n` +
+      `- **Core Keywords for ${branch}:** TypeScript, Python, Docker, SQL, Redis, CI/CD, System Design. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "resume"}-->`
+    );
+  }
+
+  // 11. Cutoffs, Backlogs & Eligibility
   if (text.includes("cutoff") || text.includes("backlog") || text.includes("eligib") || text.includes("tier-1")) {
-    const backlogAdvice = backlogs > 0
-      ? `⚠️ **Active Backlogs (${backlogs}):** You should prioritize clearing these in the upcoming supply exams. Most Product Tier-1 companies require 0 active backlogs at the time of joining, though some allow up to 1 history backlog if cleared before graduation.`
-      : `✅ **Clean Academic Record:** Having 0 active backlogs qualifies you for over 95% of campus drives without screening restrictions.`;
+    const statusMsg =
+      backlogs > 0
+        ? `You currently have ${backlogs} active backlog, ${title}, so clearing that in the next exam is priority number one to unlock Tier-1 drives.`
+        : Number(cgpa) >= 7.5
+        ? `With a ${cgpa} CGPA and zero backlogs, ${title}, you clear the academic cutoff for over 95 percent of Tier-1 product companies.`
+        : `With a ${cgpa} CGPA and zero backlogs, ${title}, you qualify for all Tier-2 drives and most Tier-1 drives that relax cutoffs for strong coding profiles.`;
 
-    return `### 📊 Campus Recruitment Eligibility & Cutoff Analysis\n` +
-      `*Profile: ${branch} | CGPA: ${cgpa}/10.0*\n\n` +
-      `${backlogAdvice}\n\n` +
-      `* **Tier-1 Product Companies (Microsoft, Amazon, Adobe, Oracle):**\n` +
-      `  * *Cutoff:* Typically **7.5+ CGPA** (some relax to 7.0 for exceptional coding rankings).\n` +
-      `  * *Your Status:* ${Number(cgpa) >= 7.5 ? "✅ Eligible for all Tier-1 drives." : "⚠️ Just below 7.5; compensate with top-tier competitive programming scores and open-source contributions."}\n\n` +
-      `* **Tier-2 MNCs & Product Scaleups (Accenture Advanced, TCS Digital, Hexaware, Cognizant GenC Next):**\n` +
-      `  * *Cutoff:* **6.5+ CGPA** with 0 or 1 active backlog.\n` +
-      `  * *Your Status:* ✅ Fully eligible.\n\n` +
-      `* **Key Action:** Maintain consistent performance in online assessments (OAs) to secure shortlist slots regardless of batch size.`;
+    return (
+      statusMsg +
+      `|||📊 **Campus Cutoff & Eligibility Analysis (${title}):**\n` +
+      `- **Tier-1 Product MNCs (Amazon, Microsoft, Oracle, Adobe):** 7.5+ CGPA, 0 active backlogs.\n` +
+      `- **Tier-2 & High-Growth Product (TCS Digital, Accenture Advanced, Cognizant GenC Next):** 6.5+ CGPA, 0–1 backlog.\n` +
+      `- **Your Profile:** **${cgpa} CGPA** • **${backlogs} Backlogs** (${branch}).`
+    );
   }
 
-  // 10. Default Comprehensive Career Mentorship
-  return `### 🚀 DAS AI Guidance\n` +
-    `*Tailored for ${targetRole} • ${branch} Engineering Stream*\n\n` +
-    `Based on your current profile metrics (${cgpa} CGPA, Coding Confidence: ${coding}/10), here are the top 3 tactical priorities to accelerate your placement readiness:\n\n` +
-    `1. **Systematic Problem Solving:**\n` +
-    `   Focus on high-frequency campus patterns: Sliding Window, Binary Search, Monotonic Stack, and Tree BFS/DFS. Aim for 100+ solved problems across these core categories.\n\n` +
-    `2. **Flagship Project Architecture:**\n` +
-    `   Ensure your resume features at least one production project with a live link, Docker configuration, and demonstrable database scaling or modern AI API integration.\n\n` +
-    `3. **STAR Method Articulation:**\n` +
-    `   Prepare your project defense using **Situation, Task, Action, and Result** to articulate engineering trade-offs clearly to technical hiring managers.\n\n` +
-    `Feel free to ask for a **6-week sprint**, **mock interview questions**, or **branch-specific salary benchmarks**!`;
+  // 12. Default Natural & Friendly Career Co-Pilot Answer
+  return (
+    `I'm on it, ${title}. For your ${branch} profile with a ${cgpa} CGPA targeting ${targetRole}, your highest-leverage moves right now are mastering sliding-window and tree algorithms, deploying one production full-stack project, and practicing your STAR project defense. Just tell me which section you'd like me to open!` +
+    `|||⚡ **DAS Strategic Recommendations for ${title} (${branch} • ${cgpa} CGPA):**\n` +
+    `1. **Algorithmic Speed:** Solve 2 medium problems daily across Arrays, Trees, and Graphs.\n` +
+    `2. **Production Portfolio:** Showcase 1 deployed system with Docker, live URL, and measurable latency/scale metrics.\n` +
+    `3. **Hands-Free Control:** Say **"Open Projects"**, **"Open Roadmap"**, **"Start Mock Interview"**, or **"Open ATS Resume"** anytime!`
+  );
 };

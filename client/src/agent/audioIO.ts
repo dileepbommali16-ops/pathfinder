@@ -1,12 +1,12 @@
 /**
- * audioIO - Speaker with streaming TTS, Barge-in, RMS level calculation,
- * and Web Speech Recognition listening.
+ * audioIO - Speaker with sequential streaming TTS queue, instant Barge-in,
+ * RMS level calculation for 3D jaw lip-sync, and Web Speech Recognition listening.
  * File: client/src/agent/audioIO.ts
  */
 
 import { getApiBase } from "@/lib/apiClient";
 
-const API = getApiBase();
+const API = getApiBase().replace(/\/$/, "");
 
 export class Speaker {
   private ctxRef: AudioContext | null = null;
@@ -17,6 +17,8 @@ export class Speaker {
   private buf = new Uint8Array(512);
   onState?: (speaking: boolean) => void;
   private initialized = false;
+  private playChain: Promise<void> = Promise.resolve();
+  private backendTtsCooldownUntil = 0;
 
   constructor(
     private getToken: () => string | null = () => null,
@@ -41,7 +43,11 @@ export class Speaker {
     const ctx = this.ensureContext();
     if (!ctx) return;
     if (ctx.state === "suspended") {
-      await ctx.resume();
+      try {
+        await ctx.resume();
+      } catch {
+        // Ignore autoplay policy suspension until user gesture
+      }
     }
   }
 
@@ -49,92 +55,46 @@ export class Speaker {
     try {
       await this.resumeContext();
       const t = this.getToken();
-      // Try streaming TTS endpoint first for lower latency (3.5s timeout)
-      try {
-        const streamCtrl = new AbortController();
-        const streamTid = setTimeout(() => streamCtrl.abort(), 3500);
-        const r = await fetch(`${API}/api/voice/stream`, {
-          method: "POST",
-          signal: streamCtrl.signal,
-          headers: {
-            "Content-Type": "application/json",
-            ...(t ? { Authorization: `Bearer ${t}` } : {}),
-          },
-          body: JSON.stringify({ text }),
-        });
-        clearTimeout(streamTid);
-        if (r.ok && r.body) {
-          // Collect SSE audio chunks and decode
-          const reader = r.body.getReader();
-          const decoder = new TextDecoder();
-          let audioChunks: Uint8Array[] = [];
-          let carry = "";
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            carry += decoder.decode(value, { stream: true });
-            const lines = carry.split("\n");
-            carry = lines.pop() || "";
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed.startsWith("data:")) continue;
-              const raw = trimmed.replace(/^data:\s*/, "").trim();
-              if (!raw || raw === "[DONE]") continue;
-              try {
-                const chunk = JSON.parse(raw);
-                if (chunk.data) {
-                  audioChunks.push(Uint8Array.from(atob(chunk.data), (c) => c.charCodeAt(0)));
-                }
-              } catch { }
-            }
+      const now = Date.now();
+
+      // Only attempt backend TTS if it hasn't recently timed out / 503'd
+      if (now >= this.backendTtsCooldownUntil) {
+        try {
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), 2800);
+          const r = await fetch(`${API}/agent/tts`, {
+            method: "POST",
+            signal: ctrl.signal,
+            headers: {
+              "Content-Type": "application/json",
+              ...(t ? { Authorization: `Bearer ${t}` } : {}),
+            },
+            body: JSON.stringify({ text }),
+          });
+          clearTimeout(tid);
+          if (r.ok && this.ctxRef) {
+            return await this.ctxRef.decodeAudioData(await r.arrayBuffer());
           }
-          if (audioChunks.length > 0) {
-            const totalLen = audioChunks.reduce((a, b) => a + b.length, 0);
-            const merged = new Uint8Array(totalLen);
-            let offset = 0;
-            for (const ch of audioChunks) {
-              merged.set(ch, offset);
-              offset += ch.length;
-            }
-            return await this.ctxRef!.decodeAudioData(merged.buffer);
-          }
+          this.backendTtsCooldownUntil = now + 60_000;
+        } catch {
+          this.backendTtsCooldownUntil = now + 60_000;
         }
-      } catch {
-        // Fall through to regular TTS
       }
 
-      // Regular TTS fallback with fast timeout
-      try {
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), 4500);
-        let r = await fetch(`${API}/agent/tts`, {
-          method: "POST",
-          signal: ctrl.signal,
-          headers: {
-            "Content-Type": "application/json",
-            ...(t ? { Authorization: `Bearer ${t}` } : {}),
-          },
-          body: JSON.stringify({ text }),
-        });
-        clearTimeout(tid);
-        if (r.ok) {
-          return await this.ctxRef!.decodeAudioData(await r.arrayBuffer());
-        }
-      } catch {
-        // Fall through to direct ElevenLabs fallback
-      }
-
-      // Direct ElevenLabs Cloud TTS fallback when Render backend is sleeping (503)
+      // Direct ElevenLabs Cloud TTS fallback when Render backend is sleeping
       const elKey = (import.meta as any).env?.VITE_ELEVENLABS_API_KEY || "";
-      if (elKey) {
+      if (elKey && this.ctxRef) {
         try {
           const voiceId =
             (import.meta as any).env?.VITE_ELEVENLABS_VOICE_ID ||
             "iP95p4xoKVk53GoZ742B";
+          const elCtrl = new AbortController();
+          const elTid = setTimeout(() => elCtrl.abort(), 3500);
           const elRes = await fetch(
             `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
             {
               method: "POST",
+              signal: elCtrl.signal,
               headers: {
                 "xi-api-key": elKey,
                 "Content-Type": "application/json",
@@ -152,8 +112,9 @@ export class Speaker {
               }),
             }
           );
+          clearTimeout(elTid);
           if (elRes.ok) {
-            return await this.ctxRef!.decodeAudioData(await elRes.arrayBuffer());
+            return await this.ctxRef.decodeAudioData(await elRes.arrayBuffer());
           }
         } catch {
           // Fall through to Web Speech synthesis
@@ -166,34 +127,51 @@ export class Speaker {
   }
 
   say(raw: string) {
-    const text = raw.replace(/[*_#`>|~]/g, " ").replace(/\s+/g, " ").trim();
+    // Strip action tags, detail blocks after |||, and markdown symbols before speaking
+    const beforeDetails = raw.split("|||")[0] || "";
+    const text = beforeDetails
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replace(/[*_#`>|~]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!text) return;
-    const g = ++this.gen;
+
+    const g = this.gen;
     this.pending++;
     this.onState?.(true);
 
-    // Start playing immediately without chaining to previous for lower latency
-    (async () => {
-      try {
-        const b = await this.fetchAudio(text);
-        if (g === this.gen && b) {
-          await this.play(b);
-        } else if (g === this.gen && typeof window !== "undefined" && "speechSynthesis" in window) {
-          await new Promise<void>((resolve) => {
-            const u = new SpeechSynthesisUtterance(text);
-            u.rate = 1.1;
-            u.onend = () => resolve();
-            u.onerror = () => resolve();
-            window.speechSynthesis.speak(u);
-          });
+    // Fetch audio immediately in parallel, then play sequentially in order
+    const audioPromise = this.fetchAudio(text);
+
+    this.playChain = this.playChain
+      .catch(() => {})
+      .then(async () => {
+        if (g !== this.gen) return;
+        try {
+          const b = await audioPromise;
+          if (g !== this.gen) return;
+          if (b) {
+            await this.play(b);
+          } else if (typeof window !== "undefined" && "speechSynthesis" in window) {
+            await new Promise<void>((resolve) => {
+              try {
+                const u = new SpeechSynthesisUtterance(text);
+                u.rate = 1.06;
+                u.onend = () => resolve();
+                u.onerror = () => resolve();
+                window.speechSynthesis.speak(u);
+              } catch {
+                resolve();
+              }
+            });
+          }
+        } finally {
+          if (g === this.gen && --this.pending <= 0) {
+            this.pending = 0;
+            this.onState?.(false);
+          }
         }
-      } finally {
-        if (--this.pending <= 0) {
-          this.pending = 0;
-          this.onState?.(false);
-        }
-      }
-    })();
+      });
   }
 
   /** Plays raw 24kHz PCM linear audio chunks from Gemini Live */
@@ -201,7 +179,9 @@ export class Speaker {
     const ctx = this.ensureContext();
     if (!ctx) return;
     if (ctx.state === "suspended") {
-      await ctx.resume();
+      try {
+        await ctx.resume();
+      } catch {}
     }
     const binary = window.atob(base64Pcm);
     const bytes = new Uint8Array(binary.length);
@@ -224,27 +204,35 @@ export class Speaker {
   private play(b: AudioBuffer) {
     return new Promise<void>((res) => {
       const ctx = this.ensureContext();
-      if (!ctx) { res(); return; }
+      if (!ctx) {
+        res();
+        return;
+      }
       const s = ctx.createBufferSource();
       s.buffer = b;
       if (this.analyser) s.connect(this.analyser);
       s.onended = () => res();
       this.current = s;
-      s.start();
+      try {
+        s.start();
+      } catch {
+        res();
+      }
     });
   }
 
   stop() {
-    // barge-in: clear ongoing speech instantly
+    // Barge-in: clear ongoing and queued speech instantly
     this.gen++;
+    this.playChain = Promise.resolve();
     try {
       this.current?.stop();
-    } catch { }
+    } catch {}
     try {
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
-    } catch { }
+    } catch {}
     this.pending = 0;
     this.onState?.(false);
   }
@@ -280,7 +268,7 @@ export function startListening(
   lang: string,
   onInterim: (t: string) => void,
   onFinal: (t: string) => void,
-  onEnd: () => void,
+  onEnd: () => void
 ): (() => void) | null {
   const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
   if (!SR) return null;
@@ -302,10 +290,12 @@ export function startListening(
     onEnd();
     if (finalText.trim()) onFinal(finalText.trim());
   };
-  r.onerror = () => { };
+  r.onerror = () => {};
   r.start();
   return () => r.stop();
 }
 
-export const speaker = new Speaker(() => localStorage.getItem("pathfinder_token") || sessionStorage.getItem("pathfinder_token"));
+export const speaker = new Speaker(
+  () => localStorage.getItem("pathfinder_token") || sessionStorage.getItem("pathfinder_token")
+);
 export const audioManager = speaker; // alias for drop-in compatibility
