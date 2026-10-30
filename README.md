@@ -41,10 +41,13 @@ Pathfinder is an enterprise-grade, real-time career intelligence platform engine
 - **Creator Recognition ("Boss" Mode) & Multi-Audience Adaptation**:
   * **For Boss Dileep**: DAS greets with *"Hi boss, I'm your DAS agent, how can I assist you?"*, recognizing his creator via signed JWT verification and owner email match.
   * **For Students, Recruiters & Stakeholders**: DAS introduces itself as *"Hello sir, I'm your DAS agent, how can I assist you?"*, providing complete placement intelligence while enforcing strict privacy protection (no personal owner data leaked).
-- **Interactive 3D VRM Cybernetic Avatar (`Avatar3D.tsx`)**:
-  * Direct Three.js WebGLRenderer + `@pixiv/three-vrm` GLTF loader with `/avatar.vrm`.
-  * Real-time audio volume level mapping to VRM mouth blendshapes (`aa` and `oh`).
-  * Natural randomized procedural eye blinking and subtle idle head drift motion.
+- **Omnipresent 3D Cyborg Co-Pilot (JARVIS Mode · `Avatar3D.tsx` & `AgentLayout.tsx`)**:
+  * **Dual-Mode Omnipresent Architecture**: Functions as a full 2-column Coaching Station on the Voice Coach tab, and transforms into a sleek, floating **Ambient Cyber Hologram HUD** in the bottom-right corner across all other tabs (Overview, 6-Week Roadmap, Mock Interview, Project Blueprints, Cohort Analytics, ATS Resume).
+  * **Photorealistic 3D Cyborg Face (`avatar.glb`)**: GPU-accelerated Three.js WebGL rendering with proportional natural eye geometry and dot-stripped node matching (`Kito6_FaceMesh_EyeL_20` / `EyeR_21`).
+  * **Symmetric Ruby-Red Glowing Eyes**: Custom emissive ruby material with matched dual point lights on inner eye meshes (`Object_52`, `Object_53`, `Object_55`, `Object_56`), keeping the outer ceramic face ring pristine white.
+  * **Real Symmetric Jaw Lip-Sync**: Real-time audio volume-driven + syllable-driven lip-sync applied directly to the lower jaw and chin plate meshes (`Object_5` & `Object_60`) with zero unnatural head shaking.
+  * **Two-Way Voice Navigation & Control**: Dispatches native DOM action events (`das:navigate`, `das:open-resume`, `das:highlight`) enabling students to navigate the entire app purely via spoken voice commands or quick-action HUD chips.
+  * **Resilient Multi-Cloud Fallback**: Instant automatic fallback from sleeping Render instances to direct **Groq LPU Cloud Inference (`qwen/qwen3.8-27b`)** and **ElevenLabs Cloud TTS (`eleven_turbo_v2_5`)**, guaranteeing 100% online availability without downtime.
 - **Autonomous Website Navigation & DOM Interaction**:
   * Complete agentic control: `navigate_to` (with `explain=true` walkthrough), `scroll_to`, `click`, and `fill_field` targeting `data-agent-id` elements.
   * Safety confirmation gate (`data-agent-danger`) for critical and destructive actions.
