@@ -1,25 +1,22 @@
 import { useRef, useState, useCallback, useEffect } from "react";
-import { Speaker } from "./audioIO";
+import { Speaker, speaker as globalSpeaker } from "./audioIO";
 
-export function useAudioAnalyser(getToken: () => string | null) {
-  const speakerRef = useRef<Speaker | null>(null);
-  const getTokenRef = useRef(getToken);
-  getTokenRef.current = getToken;
-
+export function useAudioAnalyser(_getToken?: () => string | null) {
+  const speakerRef = useRef<Speaker>(globalSpeaker);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const syntheticSpeechUntil = useRef<number>(0);
 
-  // Create the Speaker instance ONCE on mount so re-renders never call sp.stop()!
   useEffect(() => {
-    const sp = new Speaker(
-      () => getTokenRef.current?.() ?? null,
-      (speakingState: boolean) => {
-        setIsSpeaking(speakingState);
-      }
-    );
-    speakerRef.current = sp;
+    speakerRef.current = globalSpeaker;
+    const prevHandler = globalSpeaker.onState;
+    globalSpeaker.onState = (speakingState: boolean) => {
+      setIsSpeaking(speakingState);
+      prevHandler?.(speakingState);
+    };
     return () => {
-      sp.stop();
+      if (globalSpeaker.onState !== prevHandler) {
+        globalSpeaker.onState = prevHandler;
+      }
     };
   }, []);
 
@@ -28,7 +25,7 @@ export function useAudioAnalyser(getToken: () => string | null) {
    * Falls back to natural syllabic cadence during speech synthesis so avatar mouth never freezes.
    */
   const getAudioLevel = useCallback((): number => {
-    const rawLevel = speakerRef.current?.level() ?? 0;
+    const rawLevel = globalSpeaker.level();
     if (rawLevel > 0.008) {
       return rawLevel;
     }
@@ -49,12 +46,12 @@ export function useAudioAnalyser(getToken: () => string | null) {
       syntheticSpeechUntil.current,
       performance.now() + durationMs
     );
-    speakerRef.current?.say(text);
+    globalSpeaker.say(text);
   }, []);
 
   const stopSpeaking = useCallback(() => {
     syntheticSpeechUntil.current = 0;
-    speakerRef.current?.stop();
+    globalSpeaker.stop();
     setIsSpeaking(false);
   }, []);
 

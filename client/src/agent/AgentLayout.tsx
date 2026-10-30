@@ -50,6 +50,14 @@ const QUICK_PROMPTS = [
   "Start a technical mock interview",
 ];
 
+const DEFAULT_GET_TOKEN = () =>
+  localStorage.getItem("pathfinder_token") ||
+  localStorage.getItem("token") ||
+  sessionStorage.getItem("pathfinder_token");
+
+let globalGreetedOnce = false;
+let globalMsgsCache: Msg[] = [];
+
 /**
  * Full responsive 3D JARVIS Voice Co-Pilot:
  * - Addresses owner (Dileep) as "Boss" and all other users/visitors as "Sir".
@@ -57,10 +65,7 @@ const QUICK_PROMPTS = [
  * - Full website control: switches tabs, scrolls, opens modals, filters branches, updates profile live.
  */
 export default function AgentLayout({
-  getToken = () =>
-    localStorage.getItem("pathfinder_token") ||
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("pathfinder_token"),
+  getToken = DEFAULT_GET_TOKEN,
   profile: propProfile,
   activeTab: propActiveTab,
   prediction: propPrediction,
@@ -70,9 +75,9 @@ export default function AgentLayout({
   isAmbient = false,
 }: AgentLayoutProps = {}) {
   const [, navigate] = useLocation();
-  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [msgs, setMsgs] = useState<Msg[]>(() => globalMsgsCache);
   const [input, setInput] = useState("");
-  const [awake, setAwake] = useState(false);
+  const [awake, setAwake] = useState<boolean>(() => globalGreetedOnce);
   const [thinking, setThinking] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const [langIdx, setLangIdx] = useState(0);
@@ -83,7 +88,7 @@ export default function AgentLayout({
     resolveHonorific(propProfile, propUserEmail, propUsername)
   );
 
-  const msgsRef = useRef<Msg[]>([]);
+  const msgsRef = useRef<Msg[]>(globalMsgsCache);
   const abort = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const backendCooldownUntilRef = useRef<number>(0);
@@ -163,6 +168,7 @@ export default function AgentLayout({
 
   const push = (m: Msg) => {
     msgsRef.current = [...msgsRef.current, m];
+    globalMsgsCache = msgsRef.current;
     setMsgs(msgsRef.current);
   };
 
@@ -172,6 +178,7 @@ export default function AgentLayout({
       ...msgsRef.current.slice(0, -1),
       { role: "assistant", content: cleanText },
     ];
+    globalMsgsCache = msgsRef.current;
     setMsgs(msgsRef.current);
   };
 
@@ -235,7 +242,11 @@ export default function AgentLayout({
   }, [propProfile, propUserEmail, propUsername]);
 
   const wake = useCallback(async () => {
-    if (awake) return;
+    if (awake || globalGreetedOnce) {
+      setAwake(true);
+      return;
+    }
+    globalGreetedOnce = true;
     setAwake(true);
     const currentHonorific = resolveHonorific(propProfile, propUserEmail, propUsername);
     setHonorific(currentHonorific);
