@@ -291,7 +291,7 @@ export default function Avatar3D({
     ro.observe(el);
     fit();
 
-    const clock = new THREE.Clock();
+    let lastFrameTime = performance.now();
     let t = 0;
     let nextBlink = 1.8 + Math.random() * 2.5; // random first blink
     let blinkT = -1;
@@ -302,7 +302,9 @@ export default function Avatar3D({
     // 3. CONTINUOUS ANIMATION LOOP (Idle breathing, eye glow pulse, blinking & audio lip-sync)
     const tick = () => {
       raf = requestAnimationFrame(tick);
-      const dt = Math.min(clock.getDelta(), 0.1);
+      const nowFrame = performance.now();
+      const dt = Math.min((nowFrame - lastFrameTime) / 1000, 0.1);
+      lastFrameTime = nowFrame;
       t += dt;
 
       const audioLevel = levelRef.current();

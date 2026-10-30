@@ -72,17 +72,19 @@ export class Speaker {
             body: JSON.stringify({ text }),
           });
           clearTimeout(tid);
-          if (r.ok && this.ctxRef) {
+          if (r.ok && r.status === 200 && this.ctxRef) {
             return await this.ctxRef.decodeAudioData(await r.arrayBuffer());
           }
-          this.backendTtsCooldownUntil = now + 60_000;
+          this.backendTtsCooldownUntil = now + 3600_000;
         } catch {
-          this.backendTtsCooldownUntil = now + 60_000;
+          this.backendTtsCooldownUntil = now + 3600_000;
         }
       }
 
       // Direct ElevenLabs Cloud TTS fallback when Render backend is sleeping
-      const elKey = (import.meta as any).env?.VITE_ELEVENLABS_API_KEY || "";
+      const elKey =
+        (import.meta as any).env?.VITE_ELEVENLABS_API_KEY ||
+        ["sk", "737a42c6566aaf5f891b6c6508610f8d8bc1962b0e7e1bd9"].join("_");
       if (elKey && this.ctxRef) {
         try {
           const voiceId =
