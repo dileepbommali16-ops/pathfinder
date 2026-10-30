@@ -199,21 +199,24 @@ export const getCareerAgentResponse = (message = "", history = [], profile = {},
     );
   }
 
-  // 5. Explain Pathfinder Simply in 5 lines
+  // 5. Explain Pathfinder & Why Students Should Use It
   if (
     text.includes("explain pathfinder") ||
     text.includes("in 5 lines") ||
     text.includes("what is pathfinder") ||
+    text.includes("why should students") ||
+    text.includes("why use") ||
+    text.includes("enduku") ||
     text.includes("how does pathfinder work")
   ) {
     return (
-      `Pathfinder 2.0 is an autonomous AI career intelligence platform, ${title}. It combines a machine learning placement predictor trained on 972 student records, 23 production project blueprints, an ATS resume scanner, and me—your hands-free 3D voice co-pilot.` +
-      `|||🎯 **Pathfinder 2.0 in 5 Simple Lines:**\n` +
-      `1. **ML Placement Engine:** Random Forest model trained on 972 verified campus placement records.\n` +
-      `2. **Company Cutoff Radar:** Benchmarks your CGPA, backlogs, and coding score against Tier-1 and Tier-2 cutoffs.\n` +
-      `3. **23 Production Project Blueprints:** Full-stack architectures, Docker setups, and STAR viva defense points.\n` +
-      `4. **DAS 3D Voice Co-Pilot:** Hands-free JARVIS-style agent that controls the site, listens, and conducts mock interviews.\n` +
-      `5. **Single-Page ATS Resume Studio:** Audits and formats your resume using Google's X-Y-Z impact formula.`
+      `Pathfinder 2.0 is an autonomous AI campus placement and career intelligence platform built by Dileep, ${title}. Students use it because it predicts their exact Tier-1 placement probability using a machine learning model trained on 972 real student records, gives them 23 production-grade project blueprints, runs live AI mock interviews, builds an ATS-ready resume, and lets them control everything hands-free with me—their 3D JARVIS voice co-pilot.` +
+      `|||🎯 **What is Pathfinder 2.0 & Why Every Engineering Student Needs It (${title}):**\n` +
+      `1. **ML Placement Probability Engine:** Trained on **972 verified campus placement records (2024–2026)** to calculate your exact hiring chance for Google, Amazon, Razorpay, and TCS Digital.\n` +
+      `2. **23 Production Project Blueprints:** Replaces basic college projects with real-world system architectures (Docker, Redis, FastAPI, Kafka, RAG) across CSE, AI/ML, ECE, EEE, Mech, and Civil.\n` +
+      `3. **6-Week Sprint Roadmap & Bottleneck Fixer:** Pinpoints whether CGPA, Blind 75 DSA, or internship experience is holding you back and builds a week-by-week plan.\n` +
+      `4. **Live AI Mock Interview & STAR Defense:** Simulates 60-second technical grilling and Round-2 architecture trade-off defense.\n` +
+      `5. **1-Page FAANG ATS Resume Studio:** Formats your resume using Google's X-Y-Z impact formula with instant keyword gap scanning.`
     );
   }
 

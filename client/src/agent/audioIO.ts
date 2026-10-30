@@ -36,6 +36,7 @@ export class Speaker {
   private blockedAutoplayBuffer: ArrayBuffer | null = null;
   private blockedAutoplayText: string | null = null;
   private activeSpeaking = false;
+  private ttsCache = new Map<string, ArrayBuffer>();
 
   constructor(
     private getToken: () => string | null = () => null,
@@ -104,6 +105,12 @@ export class Speaker {
   }
 
   private async fetchMp3Bytes(text: string): Promise<ArrayBuffer | null> {
+    const cacheKey = text.trim().slice(0, 650);
+    const cached = this.ttsCache.get(cacheKey);
+    if (cached && cached.byteLength > 200) {
+      return cached.slice(0);
+    }
+
     const t = this.getToken();
     const now = Date.now();
 
@@ -119,12 +126,15 @@ export class Speaker {
             "Content-Type": "application/json",
             ...(t ? { Authorization: `Bearer ${t}` } : {}),
           },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text: cacheKey }),
         });
         clearTimeout(tid);
         if (r.ok && r.status === 200) {
           const ab = await r.arrayBuffer();
-          if (ab.byteLength > 200) return ab;
+          if (ab.byteLength > 200) {
+            this.ttsCache.set(cacheKey, ab.slice(0));
+            return ab;
+          }
         }
         this.backendTtsCooldownUntil = now + 3600_000;
       } catch {
@@ -132,15 +142,15 @@ export class Speaker {
       }
     }
 
-    // 2. Direct ElevenLabs Ultra-Natural JARVIS Voice (Daniel - onwK4e9ZLuTAKqWW03F9)
+    // 2. Direct ElevenLabs Ultra-Natural JARVIS Voice (onwK4e9ZLuTAKqWW03F9)
     const voiceId =
       (import.meta as any).env?.VITE_ELEVENLABS_VOICE_ID || DEFAULT_JARVIS_VOICE_ID;
 
     for (const elKey of ELEVENLABS_KEYS) {
-      for (let attempt = 0; attempt < 2; attempt++) {
+      for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const elCtrl = new AbortController();
-          const elTid = setTimeout(() => elCtrl.abort(), 6500);
+          const elTid = setTimeout(() => elCtrl.abort(), 7500);
           const elRes = await fetch(
             `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?optimize_streaming_latency=2`,
             {
@@ -152,7 +162,7 @@ export class Speaker {
                 Accept: "audio/mpeg",
               },
               body: JSON.stringify({
-                text: text.slice(0, 650),
+                text: cacheKey,
                 model_id: "eleven_turbo_v2_5",
                 voice_settings: {
                   stability: 0.38,
@@ -167,12 +177,14 @@ export class Speaker {
 
           if (elRes.ok) {
             const ab = await elRes.arrayBuffer();
-            if (ab.byteLength > 200) return ab;
+            if (ab.byteLength > 200) {
+              this.ttsCache.set(cacheKey, ab.slice(0));
+              return ab;
+            }
           }
 
-          // If rate-limited (429 concurrent request), wait 650ms and retry once
-          if (elRes.status === 429 && attempt === 0) {
-            await new Promise((r) => setTimeout(r, 650));
+          if (elRes.status === 429 && attempt < 2) {
+            await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
             continue;
           }
           break;

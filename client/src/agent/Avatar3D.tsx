@@ -14,21 +14,16 @@ export interface Avatar3DProps {
   state?: AvatarState;
   url?: string;
   modelUrl?: string;
-  avatarType?: "vrm" | "gltf" | "cyber"; // optional explicit type
+  avatarType?: "vrm" | "gltf" | "cyber";
   isOwner?: boolean;
 }
 
 export default function Avatar3D({
-  activeTab,
-  globalContext,
-  textResponse,
   getLevel = () => 0,
   state = "idle",
   url,
   modelUrl = "/models/avatar.glb",
   avatarType,
-  isOwner,
-  onMicClick,
 }: Avatar3DProps) {
   const targetUrl = url || modelUrl || "/models/avatar.glb";
   const host = useRef<HTMLDivElement>(null);
@@ -37,7 +32,6 @@ export default function Avatar3D({
   const stateRef = useRef<AvatarState>(state);
   stateRef.current = state;
   const [modelType, setModelType] = useState<"vrm" | "gltf" | "cyber">(avatarType || "gltf");
-  const [animFeatures, setAnimFeatures] = useState({ blink: false, lipSync: false, eyeGlow: false });
 
   useEffect(() => {
     const el = host.current;
@@ -51,61 +45,63 @@ export default function Avatar3D({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
+    renderer.toneMappingExposure = 1.15;
     renderer.domElement.style.width = "100%";
     renderer.domElement.style.height = "100%";
     renderer.domElement.style.display = "block";
     el.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 25);
-    camera.position.set(0, 0, 2.15);
+    const camera = new THREE.PerspectiveCamera(27, 1, 0.1, 25);
+    camera.position.set(0, 0, 2.05);
     camera.lookAt(0, 0, 0);
 
-    // Balanced studio lighting for 3D face
-    scene.add(new THREE.AmbientLight(0xffffff, 1.35));
+    // Deep Dark-Blue Cybernetic Studio Lighting (keeps face rich dark blue, never washed-out white)
+    scene.add(new THREE.AmbientLight(0x1e3a8a, 1.4));
 
-    const keyLight = new THREE.DirectionalLight(0xc4b5fd, 2.4);
-    keyLight.position.set(1.5, 1.8, 2.5);
+    const keyLight = new THREE.DirectionalLight(0x3b82f6, 2.5);
+    keyLight.position.set(1.4, 1.6, 2.4);
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0xf472b6, 1.6);
-    fillLight.position.set(-1.8, 1.0, 1.5);
+    const fillLight = new THREE.DirectionalLight(0x1d4ed8, 1.8);
+    fillLight.position.set(-1.6, 0.8, 1.6);
     scene.add(fillLight);
 
-    const rimLight = new THREE.PointLight(0x9333ea, 2.8, 6);
-    rimLight.position.set(0, 0.5, -1.5);
+    const rimLight = new THREE.PointLight(0x2563eb, 3.2, 6);
+    rimLight.position.set(0, 0.6, -1.5);
     scene.add(rimLight);
 
-    // Procedural Cyber Hologram Core (Visible while loading or as fallback)
+    // Procedural Dark-Blue Cyber Hologram Core (Visible while loading or as fallback)
     const cyberGroup = new THREE.Group();
     scene.add(cyberGroup);
 
     const headGeo = new THREE.SphereGeometry(0.42, 32, 24);
     const headMat = new THREE.MeshStandardMaterial({
-      color: 0x1e1b4b,
+      color: 0x0a1e4a,
+      emissive: 0x061230,
+      emissiveIntensity: 0.5,
       metalness: 0.85,
       roughness: 0.25,
       wireframe: true,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.75,
     });
     const headMesh = new THREE.Mesh(headGeo, headMat);
     cyberGroup.add(headMesh);
 
     const coreGeo = new THREE.IcosahedronGeometry(0.32, 2);
     const coreMat = new THREE.MeshStandardMaterial({
-      color: 0x8b5cf6,
-      emissive: 0x6d28d9,
-      emissiveIntensity: 0.9,
-      roughness: 0.3,
-      metalness: 0.8,
+      color: 0x0f2b66,
+      emissive: 0x0a1e4a,
+      emissiveIntensity: 0.85,
+      roughness: 0.28,
+      metalness: 0.82,
     });
     const coreMesh = new THREE.Mesh(coreGeo, coreMat);
     cyberGroup.add(coreMesh);
 
-    const cyberEyeGeo = new THREE.SphereGeometry(0.045, 16, 16);
-    const cyberEyeMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
+    const cyberEyeGeo = new THREE.SphereGeometry(0.048, 16, 16);
+    const cyberEyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const cyberLeftEye = new THREE.Mesh(cyberEyeGeo, cyberEyeMat);
     cyberLeftEye.position.set(-0.14, 0.08, 0.38);
     const cyberRightEye = new THREE.Mesh(cyberEyeGeo, cyberEyeMat);
@@ -113,7 +109,7 @@ export default function Avatar3D({
     cyberGroup.add(cyberLeftEye, cyberRightEye);
 
     const mouthGeo = new THREE.RingGeometry(0.04, 0.065, 24);
-    const mouthMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide });
+    const mouthMat = new THREE.MeshBasicMaterial({ color: 0xdc0000, side: THREE.DoubleSide });
     const mouthMesh = new THREE.Mesh(mouthGeo, mouthMat);
     mouthMesh.position.set(0, -0.16, 0.4);
     cyberGroup.add(mouthMesh);
@@ -124,16 +120,15 @@ export default function Avatar3D({
     scene.add(gltfGroup);
 
     let vrm: VRM | null = null;
-    let lowerJawMesh: THREE.Object3D | null = null;
     let chinPlateMesh: THREE.Object3D | null = null;
-    let jawInitY = 0;
-    let jawInitZ = 0;
-    let jawInitRotX = 0;
     let plateInitY = 0;
-    let plateInitZ = 0;
     let leftEyeNode: THREE.Object3D | null = null;
     let rightEyeNode: THREE.Object3D | null = null;
+    let upperLipMesh: THREE.Mesh | null = null;
+    let lowerLipMesh: THREE.Mesh | null = null;
+    let mouthApertureMesh: THREE.Mesh | null = null;
     const eyeGlowMaterials: THREE.MeshStandardMaterial[] = [];
+    const eyeRingMaterials: THREE.MeshStandardMaterial[] = [];
     const eyePointLights: THREE.PointLight[] = [];
 
     let raf = 0;
@@ -162,69 +157,89 @@ export default function Avatar3D({
             cyberGroup.visible = false;
             setModelType("vrm");
           } else if (gltf.scene) {
-            // 1. CENTER THE 3D CYBORG FACE PROPERLY IN ITS CONTAINER
             const rootModel = gltf.scene;
             rootModel.updateMatrixWorld(true);
 
-            // Offset rootModel so the geometric center of the face (eyes & mouth) sits at (0, 0, 0)
-            // (Ignoring bottom decorative cylinder bolts that extend down to y = -0.71)
+            // Center the 3D face so eyes & mouth sit dead-center
             rootModel.position.set(0, -0.19, -0.08);
 
-            const faceScale = 1.68;
+            const faceScale = 1.72;
             gltfGroup.scale.set(faceScale, faceScale, faceScale);
             gltfGroup.position.set(0, 0.02, 0);
 
-            // Rich ruby-red glowing eye material (applied ONLY to eyeballs/pupils, never outer face rings)
-            const rubyGlowMat = new THREE.MeshStandardMaterial({
-              color: new THREE.Color(0xff1e56),
-              emissive: new THREE.Color(0xff0025),
-              emissiveIntensity: 3.8,
-              roughness: 0.12,
-              metalness: 0.85,
+            // 1. DEEP DARK-BLUE CYBER ARMOR MATERIALS FOR FACE & HEAD
+            const darkBlueFaceMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(0x0b2258),
+              emissive: new THREE.Color(0x051130),
+              emissiveIntensity: 0.55,
+              metalness: 0.72,
+              roughness: 0.26,
+            });
+
+            const cobaltTrimMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(0x163888),
+              emissive: new THREE.Color(0x091b48),
+              emissiveIntensity: 0.45,
+              metalness: 0.84,
+              roughness: 0.2,
+            });
+
+            // 2. INTENSE GLOWING DARK-RED EYES MATERIAL (meravaali bhaga full ga)
+            const darkRedEyeMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(0xdc0000),
+              emissive: new THREE.Color(0xff0000),
+              emissiveIntensity: 5.8,
+              roughness: 0.08,
+              metalness: 0.9,
               toneMapped: false,
             });
-            eyeGlowMaterials.push(rubyGlowMat);
+            eyeGlowMaterials.push(darkRedEyeMat);
 
-            // 2. WIRE SYMMETRIC LOWER JAW FOR LIP-SYNC & EYES FOR GLOW + BLINKING
+            const darkRedRingMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(0x880000),
+              emissive: new THREE.Color(0xdc0000),
+              emissiveIntensity: 3.4,
+              roughness: 0.15,
+              metalness: 0.88,
+              toneMapped: false,
+            });
+            eyeRingMaterials.push(darkRedRingMat);
+
             rootModel.traverse((child: any) => {
               const name = child.name || "";
               const lowName = name.toLowerCase();
 
-              // Symmetric lower jaw mesh (Object_5)
-              if (name === "Object_5") {
-                lowerJawMesh = child;
-                jawInitY = child.position.y;
-                jawInitZ = child.position.z;
-                jawInitRotX = child.rotation.x;
-                setAnimFeatures(prev => ({ ...prev, lipSync: true }));
-              }
-
-              // Central chin / mouth plate (Object_60)
+              // IMPORTANT: Keep Object_5 (the lower neck/collar) 100% locked so the neck NEVER bobs!
+              // Only capture Object_60 (the small front mouth plate) for subtle mouth articulation.
               if (name === "Object_60") {
                 chinPlateMesh = child;
                 plateInitY = child.position.y;
-                plateInitZ = child.position.z;
-                setAnimFeatures(prev => ({ ...prev, lipSync: true }));
               }
 
-              // Freeze right cheek bone (JawR_19 / Jaw.R_19) so side cheek never wobbles
               if (name.includes("JawR") || name.includes("Jaw.R")) {
                 child.rotation.set(0, 0, 0);
               }
 
-              // Eye parent nodes for blinking (Three.js GLTFLoader strips dots: Kito6_FaceMesh_EyeL_20)
-              if (name.includes("EyeL") || name.includes("Eye.L") || lowName.includes("eyel") || lowName.includes("eye.l")) {
+              // Eye parent nodes for natural eye blinking
+              if (
+                name.includes("EyeL") ||
+                name.includes("Eye.L") ||
+                lowName.includes("eyel") ||
+                lowName.includes("eye.l")
+              ) {
                 leftEyeNode = child;
-                setAnimFeatures(prev => ({ ...prev, blink: true }));
               }
-              if (name.includes("EyeR") || name.includes("Eye.R") || lowName.includes("eyer") || lowName.includes("eye.r")) {
+              if (
+                name.includes("EyeR") ||
+                name.includes("Eye.R") ||
+                lowName.includes("eyer") ||
+                lowName.includes("eye.r")
+              ) {
                 rightEyeNode = child;
-                setAnimFeatures(prev => ({ ...prev, blink: true }));
               }
 
-              // Eye meshes for active ruby glowing effect (exclude Object_58 outer face circles!)
               if (child.isMesh) {
-                const isEyeMesh =
+                const isEyeballOrIris =
                   name === "Object_52" ||
                   name === "Object_53" ||
                   name === "Object_55" ||
@@ -232,21 +247,77 @@ export default function Avatar3D({
                   lowName.includes("iris") ||
                   (lowName.includes("eye") && !lowName.includes("circle"));
 
-                if (isEyeMesh && name !== "Object_58") {
-                  child.material = rubyGlowMat;
-                  setAnimFeatures(prev => ({ ...prev, eyeGlow: true }));
+                if (isEyeballOrIris && name !== "Object_58") {
+                  child.material = darkRedEyeMat;
+                } else if (name === "Object_58") {
+                  // Outer eye socket rings glow deep crimson-red around the eyes
+                  child.material = darkRedRingMat;
+                } else if (
+                  name === "Object_4" ||
+                  name === "Object_5" ||
+                  name === "Object_6" ||
+                  name === "Object_7" ||
+                  name === "Object_9" ||
+                  name === "Object_10" ||
+                  name === "Object_11" ||
+                  name === "Object_25" ||
+                  name === "Object_26" ||
+                  name === "Object_60"
+                ) {
+                  // Main face, cranium, cheeks, and neck -> Deep Dark Blue
+                  child.material = darkBlueFaceMat;
+                } else {
+                  // Cybernetic bolts and structural trim -> Cobalt Dark Blue
+                  child.material = cobaltTrimMat;
                 }
               }
             });
 
-            // Symmetric ruby point lights positioned right at the left and right eye sockets
-            const leftLight = new THREE.PointLight(0xff0025, 1.8, 0.6);
-            leftLight.position.set(0.065, 0.065, 0.18);
+            // 3. REALISTIC ARTICULATED MOUTH LIPS (Opens & closes naturally at the mouth while neck stays still!)
+            const mouthGroup = new THREE.Group();
+            // Exact mouth position in gltfGroup space
+            mouthGroup.position.set(0, 0.011, 0.156);
+            gltfGroup.add(mouthGroup);
+
+            const lipMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(0x1e40af),
+              emissive: new THREE.Color(0x1d4ed8),
+              emissiveIntensity: 0.9,
+              metalness: 0.85,
+              roughness: 0.2,
+            });
+
+            const apertureMat = new THREE.MeshBasicMaterial({
+              color: new THREE.Color(0xff0022),
+              transparent: true,
+              opacity: 0.85,
+            });
+
+            const lipGeo = new THREE.CapsuleGeometry(0.0028, 0.046, 8, 16);
+            lipGeo.rotateZ(Math.PI / 2);
+
+            upperLipMesh = new THREE.Mesh(lipGeo, lipMat);
+            upperLipMesh.position.set(0, 0.002, 0);
+            mouthGroup.add(upperLipMesh);
+
+            lowerLipMesh = new THREE.Mesh(lipGeo, lipMat);
+            lowerLipMesh.position.set(0, -0.002, 0);
+            mouthGroup.add(lowerLipMesh);
+
+            const apertureGeo = new THREE.PlaneGeometry(0.044, 0.014);
+            mouthApertureMesh = new THREE.Mesh(apertureGeo, apertureMat);
+            mouthApertureMesh.position.set(0, 0, -0.001);
+            mouthApertureMesh.scale.set(1, 0.05, 1);
+            mouthGroup.add(mouthApertureMesh);
+
+            // 4. HIGH-INTENSITY DARK-RED EYE POINT LIGHTS (Vivid crimson eye shine on dark-blue face)
+            const leftLight = new THREE.PointLight(0xff0000, 4.2, 0.85);
+            leftLight.position.set(0.042, 0.092, 0.16);
             gltfGroup.add(leftLight);
             eyePointLights.push(leftLight);
 
-            const rightLight = new THREE.PointLight(0xff0025, 1.8, 0.6);
-            rightLight.position.set(-0.065, 0.065, 0.18);
+            const rightLight = new THREE.PointLight(0xff0000, 4.2, 0.85);
+            rightLight.position.set(-0.042, 0.092, 0.16);
             gltfGroup.add(rightLight);
             eyePointLights.push(rightLight);
 
@@ -254,8 +325,7 @@ export default function Avatar3D({
             gltfGroup.visible = true;
             cyberGroup.visible = false;
 
-            // Frame camera dead-center on the head
-            camera.position.set(0, 0, 2.15);
+            camera.position.set(0, 0, 2.02);
             camera.lookAt(0, 0, 0);
             setModelType("gltf");
           }
@@ -275,13 +345,12 @@ export default function Avatar3D({
     tryLoadModel(targetUrl);
 
     const fit = () => {
-      const w = el.clientWidth || 320;
+      const w = el.clientWidth || 340;
       const h = el.clientHeight || 420;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
-      // Keep avatar nicely framed across narrow mobile and wide desktop panels
       if (!vrm) {
-        const aspectFactor = camera.aspect < 0.85 ? 2.35 : 2.05;
+        const aspectFactor = camera.aspect < 0.85 ? 2.25 : 1.96;
         camera.position.z = aspectFactor;
       }
       camera.updateProjectionMatrix();
@@ -293,13 +362,11 @@ export default function Avatar3D({
 
     let lastFrameTime = performance.now();
     let t = 0;
-    let nextBlink = 1.8 + Math.random() * 2.5; // random first blink
+    let nextBlink = 1.6 + Math.random() * 2.2;
     let blinkT = -1;
-    let leftBlinkT = -1; // asymmetric blink support
-    let rightBlinkT = -1;
     let mouth = 0;
 
-    // 3. CONTINUOUS ANIMATION LOOP (Idle breathing, eye glow pulse, blinking & audio lip-sync)
+    // 5. CONTINUOUS ANIMATION LOOP (Steady head, zero neck bobbing, realistic lip-sync, bright red eye blink)
     const tick = () => {
       raf = requestAnimationFrame(tick);
       const nowFrame = performance.now();
@@ -310,148 +377,90 @@ export default function Avatar3D({
       const audioLevel = levelRef.current();
       const curState = stateRef.current;
 
-      // Smooth mouth/jaw opening driven by real-time audio volume
-      const activeAudio = curState === "speaking" ? Math.max(audioLevel, 0.04) : audioLevel;
-      const targetMouth = Math.min(1.0, activeAudio * 4.2);
-      mouth += (targetMouth - mouth) * Math.min(1, dt * 22);
+      // Smooth syllable mouth articulation driven by real-time ElevenLabs audio volume
+      const activeAudio = curState === "speaking" ? Math.max(audioLevel, 0.05) : audioLevel;
+      const targetMouth = Math.min(1.0, activeAudio * 4.0);
+      mouth += (targetMouth - mouth) * Math.min(1, dt * 24);
 
-      // Blink timer calculation (random intervals, asymmetric left/right possible)
+      // Natural synchronous eye blink every 2–4 seconds
       nextBlink -= dt;
-      if (nextBlink <= 0 && blinkT < 0 && leftBlinkT < 0 && rightBlinkT < 0) {
-        // 80% chance both eyes blink together, 20% chance single eye wink
-        if (Math.random() < 0.8) {
-          blinkT = 0;
-        } else {
-          leftBlinkT = Math.random() < 0.5 ? 0 : -1;
-          rightBlinkT = leftBlinkT < 0 ? 0 : -1;
-        }
+      if (nextBlink <= 0 && blinkT < 0) {
+        blinkT = 0;
       }
-      const computeBlink = (bt: number): number => {
-        if (bt < 0) return 1;
-        bt += dt;
-        const p = Math.min(bt / 0.16, 1);
-        const s = 1 - Math.sin(p * Math.PI) * 0.92;
-        if (bt >= 0.16) return -1;
-        return s;
-      };
-      let leftScaleY = computeBlink(leftBlinkT >= 0 ? leftBlinkT : blinkT);
-      let rightScaleY = computeBlink(rightBlinkT >= 0 ? rightBlinkT : blinkT);
-      if (leftBlinkT >= 0) leftBlinkT = leftBlinkT < 0 ? -1 : leftBlinkT + (leftBlinkT >= 0 ? dt : 0);
-      if (rightBlinkT >= 0) rightBlinkT = rightBlinkT < 0 ? -1 : rightBlinkT + (rightBlinkT >= 0 ? dt : 0);
-      // reset completed blinks
-      if (leftBlinkT !== -1 && leftScaleY === -1) {
-        leftBlinkT = -1;
-        nextBlink = 2.0 + Math.random() * 3.5;
-        leftScaleY = 1;
-      }
-      if (rightBlinkT !== -1 && rightScaleY === -1) {
-        rightBlinkT = -1;
-        nextBlink = 2.0 + Math.random() * 3.5;
-        rightScaleY = 1;
-      }
-      if (blinkT !== -1) {
+      let eyeOpenRatio = 1;
+      if (blinkT >= 0) {
         blinkT += dt;
-        if (blinkT >= 0.16) {
+        const p = Math.min(blinkT / 0.15, 1);
+        eyeOpenRatio = Math.max(0.06, 1 - Math.sin(p * Math.PI) * 0.95);
+        if (blinkT >= 0.15) {
           blinkT = -1;
-          nextBlink = 2.0 + Math.random() * 3.5;
-          leftScaleY = 1;
-          rightScaleY = 1;
+          nextBlink = 2.0 + Math.random() * 2.8;
+          eyeOpenRatio = 1;
         }
       }
 
-      // A) Standard GLB 3D Face Animation (avatar.glb)
       if (gltfGroup.visible) {
-        // State-dependent speeds and intensities
-        const breathFreq = curState === "thinking" ? 2.4 : curState === "speaking" ? 1.8 : 1.3;
-        const breathAmp = curState === "thinking" ? 0.012 : 0.008;
-
-        // Subtle breathing vertical float
-        const breathY = Math.sin(t * breathFreq) * breathAmp;
-        gltfGroup.position.y = 0.02 + breathY;
-        gltfGroup.position.x = Math.sin(t * 0.5) * 0.005;
-
-        // Keep head steady (NO comical neck bobbing when speaking!)
-        const swayY = Math.sin(t * 0.45) * 0.032;
-        const swayZ = Math.sin(t * 0.35) * 0.01;
-        gltfGroup.rotation.y = swayY;
+        // Keep head & neck steady and composed (NO neck bobbing!)
+        gltfGroup.position.y = 0.02 + Math.sin(t * 1.1) * 0.003;
+        gltfGroup.position.x = 0;
+        gltfGroup.rotation.y = Math.sin(t * 0.4) * 0.022;
         gltfGroup.rotation.x = 0;
-        gltfGroup.rotation.z = swayZ;
+        gltfGroup.rotation.z = 0;
 
-        // Symmetric Jaw & Chin Lip-Sync Animation (natural human mouth articulation)
-        if (lowerJawMesh) {
-          lowerJawMesh.position.y = jawInitY - mouth * 0.018;
-          lowerJawMesh.position.z = jawInitZ - mouth * 0.006;
-          lowerJawMesh.rotation.x = jawInitRotX + mouth * 0.085;
-        }
+        // Subtle mouth plate + realistic upper/lower lip separation (neck Object_5 never moves!)
         if (chinPlateMesh) {
-          chinPlateMesh.position.y = plateInitY - mouth * 0.015;
-          chinPlateMesh.position.z = plateInitZ - mouth * 0.005;
+          chinPlateMesh.position.y = plateInitY - mouth * 0.0045;
+        }
+        if (upperLipMesh && lowerLipMesh && mouthApertureMesh) {
+          const openOffset = mouth * 0.0085;
+          upperLipMesh.position.y = 0.0018 + openOffset * 0.45;
+          lowerLipMesh.position.y = -0.0018 - openOffset * 0.85;
+          mouthApertureMesh.scale.y = Math.max(0.05, mouth * 1.35);
+          (mouthApertureMesh.material as THREE.MeshBasicMaterial).opacity =
+            mouth > 0.04 ? Math.min(0.95, 0.35 + mouth * 0.7) : 0.15;
         }
 
         // Eye Blinking Animation (maintaining exact 0.057 base scale on eye parent nodes)
-        const blinkAmount = Math.min(leftScaleY, rightScaleY);
-        if (leftEyeNode) leftEyeNode.scale.y = blinkAmount * 0.057;
-        if (rightEyeNode) rightEyeNode.scale.y = blinkAmount * 0.057;
+        if (leftEyeNode) leftEyeNode.scale.y = eyeOpenRatio * 0.057;
+        if (rightEyeNode) rightEyeNode.scale.y = eyeOpenRatio * 0.057;
 
-        // Ruby Red Eye Glow Color & Pulsing per State
-        let glowColor = new THREE.Color(0xff0025);
-        let glowIntensity = 3.5 + Math.sin(t * 2.4) * 0.8;
-
-        if (curState === "thinking") {
-          const pulse = Math.sin(t * 6.0) * 0.5 + 0.5;
-          glowColor = new THREE.Color().lerpColors(
-            new THREE.Color(0xff0025),
-            new THREE.Color(0xff2a6d),
-            pulse
-          );
-          glowIntensity = 4.2 + pulse * 1.5;
-        } else if (curState === "speaking") {
-          glowColor = new THREE.Color(0xff0025);
-          glowIntensity = 4.5 + mouth * 3.0;
-        } else if (curState === "listening") {
-          const pulse = Math.sin(t * 4.0) * 0.5 + 0.5;
-          glowColor = new THREE.Color(0xff1e56);
-          glowIntensity = 3.8 + pulse * 1.2;
-        }
+        // Bright Glowing Dark-Red Eyes (meravaali bhaga full ga)
+        const pulse = Math.sin(t * 3.2) * 0.5 + 0.5;
+        const baseGlow =
+          curState === "speaking"
+            ? 6.2 + mouth * 3.5
+            : curState === "listening"
+            ? 5.8 + pulse * 2.2
+            : curState === "thinking"
+            ? 5.5 + Math.sin(t * 7.0) * 2.0
+            : 5.2 + pulse * 1.4;
 
         for (const mat of eyeGlowMaterials) {
-          mat.emissive.copy(glowColor);
-          mat.color.copy(glowColor);
-          mat.emissiveIntensity = glowIntensity;
+          mat.emissiveIntensity = baseGlow;
+        }
+        for (const rMat of eyeRingMaterials) {
+          rMat.emissiveIntensity = baseGlow * 0.65;
         }
         for (const light of eyePointLights) {
-          light.color.copy(glowColor);
-          light.intensity = glowIntensity * 0.55;
+          light.intensity = baseGlow * 0.85;
         }
       }
 
-      // B) VRM Model Animation (if VRM loaded)
       if (vrm) {
         const em = vrm.expressionManager;
         if (em) {
-          const vrmBlink = 1 - Math.min(leftScaleY, rightScaleY);
-          em.setValue("blink", vrmBlink);
+          em.setValue("blink", 1 - eyeOpenRatio);
           em.setValue("aa", mouth * 0.9);
-          em.setValue("oh", mouth > 0.5 ? (mouth - 0.5) * 0.6 : 0);
-        }
-        const head = vrm.humanoid?.getNormalizedBoneNode("head");
-        if (head) {
-          head.rotation.y = Math.sin(t * 0.6) * 0.06;
-          head.rotation.x = Math.sin(t * 0.8) * 0.025;
         }
         vrm.update(dt);
       }
 
-      // C) Cyber Hologram Fallback Animation
       if (cyberGroup.visible) {
-        cyberGroup.position.y = Math.sin(t * 1.5) * 0.04;
-        cyberGroup.rotation.y = Math.sin(t * 0.7) * 0.15;
-        const cyberBlink = Math.min(leftScaleY, rightScaleY);
-        cyberLeftEye.scale.y = cyberBlink;
-        cyberRightEye.scale.y = cyberBlink;
-        const ringScale = 1 + mouth * 1.8;
+        cyberGroup.rotation.y = Math.sin(t * 0.5) * 0.08;
+        cyberLeftEye.scale.y = eyeOpenRatio;
+        cyberRightEye.scale.y = eyeOpenRatio;
+        const ringScale = 1 + mouth * 1.4;
         mouthMesh.scale.set(ringScale, ringScale, 1);
-        coreMat.emissiveIntensity = 0.9 + mouth * 2.2;
       }
 
       renderer.render(scene, camera);
@@ -471,16 +480,14 @@ export default function Avatar3D({
 
   return (
     <div className="relative flex h-full w-full min-h-[360px] items-center justify-center p-4">
-      {/* Ambient backdrop aura */}
+      {/* Deep Dark-Blue & Crimson Eye Glow Backdrop Aura */}
       <div
-        className={`pointer-events-none absolute h-64 w-64 rounded-full blur-3xl transition-all duration-500 ${
+        className={`pointer-events-none absolute h-72 w-72 rounded-full blur-3xl transition-all duration-500 ${
           state === "speaking"
-            ? "bg-rose-600/30 scale-110"
-            : state === "thinking"
-            ? "bg-cyan-500/25 scale-105 animate-pulse"
+            ? "bg-red-600/35 scale-110"
             : state === "listening"
-            ? "bg-pink-600/25 scale-105"
-            : "bg-violet-600/20 scale-100"
+            ? "bg-red-500/30 scale-105"
+            : "bg-blue-700/30 scale-100"
         }`}
       />
       <div
@@ -489,14 +496,12 @@ export default function Avatar3D({
         style={{
           filter:
             state === "speaking"
-              ? "drop-shadow(0 0 18px rgba(225, 29, 72, 0.45))"
-              : state === "thinking"
-              ? "drop-shadow(0 0 16px rgba(56, 189, 248, 0.4))"
-              : "drop-shadow(0 0 12px rgba(168, 85, 247, 0.3))",
+              ? "drop-shadow(0 0 24px rgba(220, 0, 0, 0.55))"
+              : "drop-shadow(0 0 18px rgba(29, 78, 216, 0.45))",
         }}
       />
       {modelType === "cyber" && (
-        <div className="absolute top-4 right-4 z-20 px-2.5 py-1 rounded-full bg-violet-950/70 border border-violet-500/30 text-[10px] font-mono text-violet-300 backdrop-blur-md">
+        <div className="absolute top-4 right-4 z-20 px-2.5 py-1 rounded-full bg-blue-950/80 border border-blue-500/30 text-[10px] font-mono text-blue-300 backdrop-blur-md">
           Cyber Core Rig Active
         </div>
       )}

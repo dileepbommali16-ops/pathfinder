@@ -1470,6 +1470,27 @@ export default function Home() {
 
       {/* Main Container */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
+        {/* PERSISTENT 3D JARVIS AI VOICE CO-PILOT (Hero Centerpiece on Main Dashboard & Coach Tab, Floating HUD on Other Tabs) */}
+        <div
+          data-das-id="voice-panel"
+          className={
+            activeTab === "overview"
+              ? "mb-12 block w-full h-[560px] rounded-3xl overflow-hidden border border-blue-500/30 bg-[#070d1f]/90 shadow-[0_0_55px_rgba(29,78,216,0.28)]"
+              : activeTab === "coach"
+              ? "block w-full h-[82vh] rounded-3xl overflow-hidden border border-blue-500/30 bg-[#070d1f]/90 shadow-[0_0_55px_rgba(29,78,216,0.28)]"
+              : ""
+          }
+        >
+          <AgentLayout
+            profile={profile}
+            activeTab={activeTab}
+            prediction={prediction}
+            userEmail={email}
+            username={username}
+            onNavigateTab={(tab: string) => setActiveTab(tab as TabId)}
+            isAmbient={activeTab !== "overview" && activeTab !== "coach"}
+          />
+        </div>
         <AnimatePresence mode="wait">
           {/* TAB 1: READINESS OVERVIEW & COMMAND CENTER */}
           {activeTab === "overview" && (
@@ -1843,18 +1864,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* TAB 6: AI VOICE AGENT & CAREER COACH (Persistent audio across tab switches) */}
-          <div data-das-id="voice-panel" className={activeTab === "coach" ? "block w-full h-[82vh] rounded-2xl overflow-hidden border border-indigo-900/40 shadow-2xl" : ""}>
-            <AgentLayout
-              profile={profile}
-              activeTab={activeTab}
-              prediction={prediction}
-              userEmail={email}
-              username={username}
-              onNavigateTab={(tab: string) => setActiveTab(tab as TabId)}
-              isAmbient={activeTab !== "coach"}
-            />
-          </div>
+          
 
 
 

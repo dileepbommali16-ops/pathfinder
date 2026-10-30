@@ -44,10 +44,10 @@ export interface AgentLayoutProps {
 }
 
 const QUICK_PROMPTS = [
+  "What is Pathfinder & why should students use it?",
+  "Explain the 23 flagship project blueprints",
   "How is my placement readiness score?",
-  "Open the 23 project blueprints",
-  "Take me to the 6-Week Roadmap",
-  "Start a technical mock interview",
+  "Open the 6-Week Sprint Roadmap",
 ];
 
 const DEFAULT_GET_TOKEN = () =>
@@ -253,8 +253,8 @@ export default function AgentLayout({
 
     let greeting =
       currentHonorific === "Boss"
-        ? "Hello Boss, I'm your DAS AI co-pilot. All website controls and placement systems are online. How can I assist you today?"
-        : "Hello Sir, I'm your DAS AI co-pilot. Welcome to Pathfinder 2.0. How may I assist you today?";
+        ? "Hi Boss, what's up! Welcome back to Pathfinder 2.0. All website controls and placement intelligence systems are online. Tell me what you'd like to explore or control today!"
+        : "Hi Sir, welcome to Pathfinder 2.0! I'm DAS, your autonomous AI voice co-pilot. Ask me about any project, readiness score, or tell me which section to open!";
 
     if (Date.now() >= backendCooldownUntilRef.current) {
       try {
@@ -466,10 +466,13 @@ CRITICAL IDENTITY RULE:
             }
 Candidate Profile: Branch=${currentProfile.branch}, CGPA=${currentProfile.cgpa}, Backlogs=${currentProfile.backlogs}, Coding=${currentProfile.coding}/10, Target Role=${currentProfile.target_role}, Readiness=${propPrediction?.chance ? propPrediction.chance + "%" : "78%"}, Current Tab=${currentTab}.
 PERSONALITY & FORMAT:
-- Speak like JARVIS from Iron Man — warm, natural, witty, human-like, and conversational (use natural contractions like "I've", "you're", "right away, ${activeHonorific}").
+- Speak like JARVIS from Iron Man — warm, friendly, witty, human-like, and conversational (use natural contractions like "I've", "you're", "Hi ${activeHonorific}, what's up!").
 - NEVER sound like a textbook or read out bullet lists aloud.
 - Always write 1 to 2 natural, conversational spoken sentences FIRST (plain text, zero asterisks or markdown), followed immediately by |||, and then put any detailed bullet points after |||.
 - Match the user's language naturally (English, natural conversational Telugu/Tenglish, or Hindi).
+DEEP PATHFINDER 2.0 PLATFORM & PROJECT KNOWLEDGE:
+- What Pathfinder 2.0 Is & Why Students Use It: Pathfinder 2.0 (built by Dileep) is an autonomous AI Campus Placement & Career Intelligence Platform benchmarked on 972 verified student placement records (2024–2026) with a Random Forest ML Readiness Engine. Students use it to know their exact Tier-1 placement probability (Google, Amazon, Razorpay, TCS Digital), fix CGPA/DSA/project gaps, follow a 6-Week Sprint Roadmap, practice 60-second AI Mock Interviews & STAR Project Defense, and generate a 1-Page FAANG ATS Resume.
+- All 23 Flagship Project Blueprints: Covers CSE, AI/ML, Data Science, Cyber Security, Cloud/DevOps, ECE/IoT, EEE, Mechanical, and Civil (e.g., Distributed RAG Pipeline, Real-Time Fraud Detection Engine, Kubernetes Auto-Scaler, Smart Grid Telemetry). Each blueprint includes production architecture (Docker, Redis, FastAPI, Kafka), GitHub repo structure, and Round-2 STAR technical defense Q&A so students build real production systems instead of toy college projects.
 WEBSITE AUTOMATION & CONTROL:
 ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a section/tab, scroll, filter, or update their profile (do NOT emit NAVIGATE_TAB when the user is merely asking for advice/tips/questions), append the exact action tag at the very end of your response:
 - Dashboard / Home: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "overview"}-->
