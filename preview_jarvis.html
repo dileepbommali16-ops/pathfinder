@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JARVIS 3D Real Avatar + ElevenLabs Voice - Pathfinder 2.0</title>
+  <title>JARVIS 3D AI Command Center - Pathfinder 2.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Three.js + GLTFLoader -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -12,7 +12,7 @@
     body {
       margin: 0;
       overflow: hidden;
-      background-color: #06060c;
+      background-color: #05040a;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: #f1f5f9;
     }
@@ -25,50 +25,59 @@
       z-index: 0;
       pointer-events: none;
     }
-    .glass-panel {
-      background: rgba(10, 8, 22, 0.40);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(139, 92, 246, 0.18);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
-    }
-    .glass-input {
-      background: rgba(16, 12, 34, 0.65);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(168, 85, 247, 0.35);
-      box-shadow: 0 0 25px rgba(168, 85, 247, 0.15);
+    .hud-glass {
+      background: rgba(8, 6, 18, 0.65);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
     }
     .pulse-dot {
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+    }
+    .center-reticle {
+      border: 1px dashed rgba(168, 85, 247, 0.28);
+      border-radius: 50%;
+      pointer-events: none;
     }
   </style>
 </head>
 <body class="relative min-h-screen">
 
-  <!-- 3D Canvas Background -->
+  <!-- 3D Canvas Centered in Fullscreen Background -->
   <canvas id="three-canvas"></canvas>
+
+  <!-- Large Holographic Center Target Frame -->
+  <div class="fixed inset-0 flex items-center justify-center pointer-events-none z-5">
+    <div class="w-[620px] h-[620px] center-reticle relative flex items-center justify-center">
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded bg-black/85 border border-purple-500/50 text-[11px] text-purple-300 font-mono tracking-widest uppercase shadow-xl">
+        DAS NEURAL CORE • 3D AVATAR
+      </div>
+      <div class="w-[580px] h-[580px] rounded-full border border-red-500/25 animate-spin" style="animation-duration: 60s;"></div>
+    </div>
+  </div>
 
   <!-- Foreground Glass UI Overlay -->
   <div class="relative z-10 flex flex-col h-screen select-none">
     
     <!-- Top Navigation Bar -->
-    <header class="flex items-center justify-between px-8 py-4 glass-panel border-b border-purple-500/20">
+    <header class="flex items-center justify-between px-8 py-3.5 hud-glass border-b border-purple-500/25">
       <div class="flex items-center space-x-3">
-        <div class="w-3 h-3 rounded-full bg-red-500 pulse-dot shadow-lg shadow-red-500/50"></div>
+        <div class="w-3.5 h-3.5 rounded-full bg-red-500 pulse-dot shadow-lg shadow-red-500/80"></div>
         <span class="text-xl font-bold tracking-wider bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent">
           PATHFINDER 2.0
         </span>
         <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-900/60 border border-purple-500/30 text-purple-300 font-mono">
-          ELEVENLABS VOICE ENGINE ACTIVE
+          GIANT 3D AVATAR • RED EYES • REAL LIP-SYNC
         </span>
       </div>
 
       <!-- Navigation Tabs -->
-      <nav class="flex space-x-2 bg-black/40 p-1.5 rounded-xl border border-white/5">
+      <nav class="flex space-x-2 bg-black/50 p-1.5 rounded-xl border border-white/10">
         <button id="tab-dashboard" onclick="setTab('dashboard')" class="tab-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-purple-600/30 text-white border border-purple-500/40">
           📊 Dashboard
         </button>
@@ -87,153 +96,168 @@
       <div class="flex items-center space-x-3 text-sm">
         <div class="text-right">
           <div class="font-semibold text-gray-200">Boss (Dileep)</div>
-          <div class="text-xs text-emerald-400 flex items-center justify-end gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> ElevenLabs Streaming
+          <div class="text-xs text-red-400 flex items-center justify-end gap-1 font-mono">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span> ElevenLabs Voice Ready
           </div>
         </div>
-        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 to-red-500 flex items-center justify-center font-bold shadow-lg shadow-purple-900/50">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600 to-red-500 flex items-center justify-center font-bold shadow-lg shadow-purple-900/50">
           B
         </div>
       </div>
     </header>
 
-    <!-- Main Content Glass Area (See-through to Centered 3D Face) -->
-    <main class="flex-1 p-8 overflow-y-auto flex items-center justify-center">
+    <!-- Center Workspace: Left and Right HUD Docks so Center 3D Face is 100% CLEAR & GIANT! -->
+    <main class="flex-1 px-8 py-4 flex justify-between items-center gap-6 overflow-hidden">
 
-      <!-- View: Dashboard -->
-      <div id="view-dashboard" class="view-panel w-full max-w-5xl grid grid-cols-3 gap-6 transition-all duration-500">
-        <div class="glass-panel p-6 rounded-2xl col-span-2">
+      <!-- LEFT HUD DOCK: Candidate Stats & Quick Voice Actions -->
+      <div class="w-[320px] flex flex-col gap-4">
+        <!-- Candidate Metrics Card -->
+        <div class="hud-glass p-5 rounded-2xl">
+          <div class="text-xs font-mono text-purple-300 mb-1">CANDIDATE INTELLIGENCE</div>
+          <div class="text-base font-bold text-gray-100 mb-3">Placement Readiness</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-black/50 p-3 rounded-xl border border-white/5">
+              <div class="text-[11px] text-gray-400">Score</div>
+              <div class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">88%</div>
+            </div>
+            <div class="bg-black/50 p-3 rounded-xl border border-white/5">
+              <div class="text-[11px] text-gray-400">Sprint</div>
+              <div class="text-2xl font-extrabold text-purple-300">Week 2</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Voice Triggers Card -->
+        <div class="hud-glass p-5 rounded-2xl">
+          <div class="text-xs font-mono text-red-400 mb-1 flex items-center gap-1.5 font-bold">
+            <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span> ELEVENLABS ACTIONS
+          </div>
+          <div class="text-xs text-gray-300 mb-3">Click below to trigger real ElevenLabs voice & lip-sync:</div>
+          <div class="space-y-2">
+            <button onclick="executeElevenLabs('blueprints')" class="w-full text-left p-3 rounded-xl bg-purple-950/40 hover:bg-purple-800/50 border border-purple-500/30 hover:border-purple-400 transition-all text-xs font-medium flex items-center justify-between group cursor-pointer shadow-md">
+              <span class="text-gray-200 group-hover:text-white font-semibold">👉 "Pathfinder blueprints loki vellu"</span>
+              <span class="text-[10px] text-purple-300 font-mono">🔊 Speak</span>
+            </button>
+            <button onclick="executeElevenLabs('roadmap')" class="w-full text-left p-3 rounded-xl bg-purple-950/40 hover:bg-purple-800/50 border border-purple-500/30 hover:border-purple-400 transition-all text-xs font-medium flex items-center justify-between group cursor-pointer shadow-md">
+              <span class="text-gray-200 group-hover:text-white font-semibold">👉 "Show 6-week roadmap"</span>
+              <span class="text-[10px] text-purple-300 font-mono">🔊 Speak</span>
+            </button>
+            <button onclick="executeElevenLabs('interview')" class="w-full text-left p-3 rounded-xl bg-purple-950/40 hover:bg-purple-800/50 border border-purple-500/30 hover:border-purple-400 transition-all text-xs font-medium flex items-center justify-between group cursor-pointer shadow-md">
+              <span class="text-gray-200 group-hover:text-white font-semibold">👉 "Start mock interview"</span>
+              <span class="text-[10px] text-purple-300 font-mono">🔊 Speak</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER AREA IS 100% CLEAR SO GIANT 3D AVATAR IS FULLY DOMINANT! -->
+      <div class="flex-1 pointer-events-none"></div>
+
+      <!-- RIGHT HUD DOCK: Active View Display -->
+      <div class="w-[380px] max-h-[82vh] overflow-y-auto pr-1">
+        
+        <!-- View: Dashboard -->
+        <div id="view-dashboard" class="view-panel hud-glass p-6 rounded-2xl transition-all">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-gray-100 flex items-center gap-2">
-              <span>🚀</span> Candidate Readiness Velocity
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <span>📊</span> Command Dashboard
             </h2>
-            <span class="text-xs font-mono px-2 py-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Tier-1 Ready</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Active</span>
           </div>
-          <p class="text-gray-300 text-sm leading-relaxed mb-6">
-            Welcome back, <span class="text-purple-300 font-bold">Boss</span>! The 3D avatar head is now <span class="text-emerald-400 font-semibold">centered perfectly in the middle of your screen</span>. Spoken responses are generated live with your realistic <span class="text-red-400 font-semibold">ElevenLabs Voice</span> with real audio frequency lip-sync!
+          <p class="text-gray-300 text-xs leading-relaxed mb-4">
+            Welcome, <span class="text-purple-300 font-bold">Boss</span>! The 3D robot face in the center is now scaled up large, with ruby red glowing eyes and active speech lip-sync!
           </p>
-          <div class="grid grid-cols-3 gap-4">
-            <div class="bg-black/40 p-4 rounded-xl border border-white/5">
-              <div class="text-xs text-gray-400">Readiness Score</div>
-              <div class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">88%</div>
-            </div>
-            <div class="bg-black/40 p-4 rounded-xl border border-white/5">
-              <div class="text-xs text-gray-400">Active Sprint</div>
-              <div class="text-3xl font-extrabold text-purple-300">Week 2</div>
-            </div>
-            <div class="bg-black/40 p-4 rounded-xl border border-white/5">
-              <div class="text-xs text-gray-400">Mock Viva Score</div>
-              <div class="text-3xl font-extrabold text-pink-400">9.2 / 10</div>
+          <div class="bg-black/50 p-4 rounded-xl border border-white/5 space-y-2">
+            <div class="text-xs font-semibold text-gray-200">Active Campus Drive Track</div>
+            <div class="text-sm text-purple-300 font-mono">Product Engineering • Full-Stack / AI</div>
+            <div class="w-full bg-gray-800 rounded-full h-1.5 mt-2">
+              <div class="bg-gradient-to-r from-purple-500 to-red-500 h-1.5 rounded-full" style="width: 78%"></div>
             </div>
           </div>
         </div>
 
-        <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between">
-          <div>
-            <h3 class="font-bold text-gray-100 mb-2">⚡ ElevenLabs Voice Commands</h3>
-            <p class="text-xs text-gray-400 mb-4">Click below to hear your real ElevenLabs voice & watch autonomous tab navigation:</p>
-            <div class="space-y-2">
-              <button onclick="executeElevenLabs('blueprints')" class="w-full text-left p-2.5 rounded-lg bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/40 text-xs transition flex items-center justify-between">
-                <span>👉 "Pathfinder blueprints loki vellu"</span>
-                <span class="text-[10px] text-purple-300 font-mono">🔊 ElevenLabs</span>
-              </button>
-              <button onclick="executeElevenLabs('roadmap')" class="w-full text-left p-2.5 rounded-lg bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/40 text-xs transition flex items-center justify-between">
-                <span>👉 "Show 6-week roadmap"</span>
-                <span class="text-[10px] text-purple-300 font-mono">🔊 ElevenLabs</span>
-              </button>
-              <button onclick="executeElevenLabs('interview')" class="w-full text-left p-2.5 rounded-lg bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/40 text-xs transition flex items-center justify-between">
-                <span>👉 "Start mock interview"</span>
-                <span class="text-[10px] text-purple-300 font-mono">🔊 ElevenLabs</span>
-              </button>
-            </div>
+        <!-- View: Project Blueprints -->
+        <div id="view-blueprints" class="view-panel hud-glass p-6 rounded-2xl hidden transition-all">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <span>💡</span> Curated Blueprints
+            </h2>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">Voice Routed</span>
           </div>
-          <div class="text-[11px] text-gray-400 border-t border-white/10 pt-3 flex justify-between">
-            <span>Voice ID:</span>
-            <span class="text-purple-300 font-mono">onwK4e9ZLuTAKqWW03F9</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- View: Project Blueprints -->
-      <div id="view-blueprints" class="view-panel w-full max-w-5xl hidden transition-all duration-500">
-        <div class="glass-panel p-8 rounded-2xl">
-          <div class="flex items-center justify-between mb-6">
-            <div>
-              <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-                <span>💡</span> Curated Production Project Blueprints
-              </h2>
-              <p class="text-sm text-gray-400">Autonomous navigation triggered by DAS AI Voice Agent.</p>
-            </div>
-            <span class="px-3 py-1 rounded-full text-xs font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30">
-              VOICE AUTONOMY TRIGGERED
-            </span>
-          </div>
-
-          <div class="grid grid-cols-2 gap-6">
-            <div class="bg-black/40 p-5 rounded-xl border border-purple-500/20 hover:border-purple-500/50 transition">
-              <span class="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">CSE / AI</span>
-              <h3 class="text-lg font-bold text-gray-100 mt-2">Agentic 3D Career Navigator</h3>
-              <p class="text-xs text-gray-400 mt-1">Multi-modal Web Audio lip-syncing 3D avatar with automated tab routing and state orchestration.</p>
-            </div>
-            <div class="bg-black/40 p-5 rounded-xl border border-purple-500/20 hover:border-purple-500/50 transition">
-              <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">FULLSTACK</span>
-              <h3 class="text-lg font-bold text-gray-100 mt-2">Distributed Real-Time Interview Sandbox</h3>
-              <p class="text-xs text-gray-400 mt-1">High-throughput WebSocket viva simulator with latency under 120ms and ElevenLabs TTS integration.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- View: 6-Week Roadmap -->
-      <div id="view-roadmap" class="view-panel w-full max-w-5xl hidden transition-all duration-500">
-        <div class="glass-panel p-8 rounded-2xl">
-          <h2 class="text-2xl font-bold text-white mb-2">🗺️ Personalized 6-Week Placement Roadmap</h2>
-          <p class="text-sm text-gray-400 mb-6">Controlled directly through voice commands to DAS.</p>
+          <p class="text-xs text-gray-300 mb-4">Production architectures recommended for Boss.</p>
           <div class="space-y-3">
-            <div class="p-4 rounded-xl bg-purple-900/30 border border-purple-500/30 flex justify-between items-center">
-              <div>
-                <span class="text-xs font-mono text-purple-300">WEEK 1 • COMPLETED</span>
-                <div class="font-bold text-white">Core Data Structures & Complexity Invariants</div>
-              </div>
-              <span class="text-emerald-400 text-sm font-semibold">✓ 100%</span>
+            <div class="bg-black/50 p-4 rounded-xl border border-purple-500/20 hover:border-purple-500/50 transition">
+              <span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">CSE / AI</span>
+              <div class="font-bold text-gray-100 text-sm mt-1">Autonomous 3D Voice Navigator</div>
+              <div class="text-[11px] text-gray-400 mt-1">Multi-modal Web Audio lip-sync avatar with automated tab execution.</div>
             </div>
-            <div class="p-4 rounded-xl bg-red-900/20 border border-red-500/40 flex justify-between items-center">
-              <div>
-                <span class="text-xs font-mono text-red-300">WEEK 2 • CURRENT SPRINT</span>
-                <div class="font-bold text-white">Dynamic Programming, Graphs & Tree Recurrences</div>
-              </div>
-              <span class="text-amber-300 text-sm font-semibold">⏳ In Progress</span>
+            <div class="bg-black/50 p-4 rounded-xl border border-purple-500/20 hover:border-purple-500/50 transition">
+              <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">DISTRIBUTED</span>
+              <div class="font-bold text-gray-100 text-sm mt-1">Real-Time Interview Sandbox</div>
+              <div class="text-[11px] text-gray-400 mt-1">High-throughput WebSocket viva evaluator with latency under 120ms.</div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- View: Mock Interview -->
-      <div id="view-interview" class="view-panel w-full max-w-5xl hidden transition-all duration-500">
-        <div class="glass-panel p-8 rounded-2xl text-center">
-          <div class="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center mx-auto mb-4 text-2xl">
+        <!-- View: 6-Week Roadmap -->
+        <div id="view-roadmap" class="view-panel hud-glass p-6 rounded-2xl hidden transition-all">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <span>🗺️</span> 6-Week Placement Roadmap
+            </h2>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">In Progress</span>
+          </div>
+          <div class="space-y-3">
+            <div class="p-3.5 rounded-xl bg-purple-950/40 border border-purple-500/30 flex justify-between items-center">
+              <div>
+                <div class="text-[10px] font-mono text-purple-300">WEEK 1 • COMPLETED</div>
+                <div class="font-bold text-white text-xs">Core DSA & System Invariants</div>
+              </div>
+              <span class="text-emerald-400 text-xs font-semibold">✓ 100%</span>
+            </div>
+            <div class="p-3.5 rounded-xl bg-red-950/40 border border-red-500/40 flex justify-between items-center">
+              <div>
+                <div class="text-[10px] font-mono text-red-300">WEEK 2 • ACTIVE SPRINT</div>
+                <div class="font-bold text-white text-xs">Dynamic Programming & Graphs</div>
+              </div>
+              <span class="text-amber-300 text-xs font-semibold">⏳ Current</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- View: Mock Interview -->
+        <div id="view-interview" class="view-panel hud-glass p-6 rounded-2xl hidden transition-all text-center">
+          <div class="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center mx-auto mb-3 text-xl">
             🎙️
           </div>
-          <h2 class="text-2xl font-bold text-white">Technical Viva Room (Live)</h2>
-          <p class="text-gray-300 text-sm max-w-md mx-auto mt-2">
-            DAS is listening through your microphone and evaluating your answers in real time with the 3D Avatar in the background.
+          <h2 class="text-base font-bold text-white">Technical Viva Room</h2>
+          <p class="text-gray-300 text-xs mt-1.5 leading-relaxed">
+            DAS is listening and evaluating Boss's answers in real time. The 3D robot face in the center reacts directly to your voice.
           </p>
         </div>
+
       </div>
 
     </main>
 
     <!-- Floating Bottom JARVIS HUD Bar -->
-    <footer class="p-6 flex flex-col items-center">
-      <!-- AI Speech Bubble -->
-      <div id="das-speech-bubble" class="opacity-0 transition-opacity duration-300 mb-3 px-5 py-2.5 rounded-full bg-black/80 border border-red-500/40 text-sm text-gray-200 shadow-xl flex items-center gap-3">
-        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-        <span id="das-speech-text" class="font-medium text-purple-200"></span>
+    <footer class="p-5 flex flex-col items-center">
+      <!-- AI Speech Bubble + Voice Waveform Indicator -->
+      <div id="das-speech-bubble" class="opacity-0 transition-opacity duration-300 mb-3 px-6 py-2.5 rounded-full bg-black/90 border border-red-500/60 text-sm text-gray-200 shadow-2xl flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+        <span id="das-speech-text" class="font-semibold text-purple-200"></span>
+        <!-- Equalizer Bars -->
+        <div id="equalizer" class="flex items-center gap-0.5 ml-2">
+          <span class="w-1 h-3 bg-red-500 animate-pulse rounded-full"></span>
+          <span class="w-1 h-5 bg-purple-400 animate-pulse rounded-full" style="animation-delay: 0.15s"></span>
+          <span class="w-1 h-2 bg-red-400 animate-pulse rounded-full" style="animation-delay: 0.3s"></span>
+          <span class="w-1 h-4 bg-purple-500 animate-pulse rounded-full" style="animation-delay: 0.45s"></span>
+        </div>
       </div>
 
       <!-- Command Bar -->
-      <div class="w-full max-w-2xl glass-input rounded-2xl p-2 flex items-center gap-3">
-        <button id="mic-btn" onclick="executeElevenLabs('ready')" class="w-11 h-11 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 flex items-center justify-center text-lg text-purple-300 transition-all hover:scale-105 active:scale-95">
+      <div class="w-full max-w-2xl hud-glass rounded-2xl p-2 flex items-center gap-3 border border-purple-500/30">
+        <button id="mic-btn" onclick="executeElevenLabs('ready')" class="w-11 h-11 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 flex items-center justify-center text-lg text-purple-300 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-900/40 cursor-pointer">
           🎤
         </button>
         <input 
@@ -243,7 +267,7 @@
           class="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder-gray-400 px-2"
           onkeydown="if(event.key === 'Enter') handleCommand(this.value)"
         />
-        <button onclick="handleCommand(document.getElementById('cmd-input').value)" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-red-600 hover:from-purple-500 hover:to-red-500 text-white font-medium text-xs tracking-wider transition-all shadow-lg shadow-purple-900/30">
+        <button onclick="handleCommand(document.getElementById('cmd-input').value)" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-red-600 hover:from-purple-500 hover:to-red-500 text-white font-medium text-xs tracking-wider transition-all shadow-lg shadow-red-900/40 cursor-pointer">
           EXECUTE
         </button>
       </div>
@@ -255,12 +279,18 @@
   <script>
     let scene, camera, renderer;
     let avatarModel = null;
-    let headPivot = null;
-    let jawBone = null;
-    let eyeMeshes = [];
-    let eyeLights = [];
+    let gltfGroup = null;
 
-    // Real Web Audio API Analyser for ElevenLabs lip-sync
+    // Direct Mouth / Lip nodes for pure lip-sync
+    let mouthNode = null;
+    let mouthPlateNode = null;
+    let initialMouthY = 0;
+    let initialPlateY = 0;
+
+    let eyeBeadMeshes = [];
+    let eyePointLights = [];
+
+    // Real Web Audio API Analyser for ElevenLabs voice waveform
     let audioContext = null;
     let audioAnalyser = null;
     let dataArray = null;
@@ -268,57 +298,39 @@
     let isSpeaking = false;
     let audioVolumeLevel = 0;
 
-    function initAudioAnalyser(audioEl) {
-      try {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!audioContext) {
-          audioContext = new AC();
-        }
-        if (audioContext.state === 'suspended') {
-          audioContext.resume();
-        }
-        audioAnalyser = audioContext.createAnalyser();
-        audioAnalyser.fftSize = 256;
-        const bufferLength = audioAnalyser.frequencyBinCount;
-        dataArray = new Uint8Array(bufferLength);
-
-        const source = audioContext.createMediaElementSource(audioEl);
-        source.connect(audioAnalyser);
-        audioAnalyser.connect(audioContext.destination);
-      } catch (e) {
-        console.log("Audio node connect note:", e);
-      }
-    }
-
     function init3D() {
       const canvas = document.getElementById('three-canvas');
       scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x06060c, 0.032);
 
-      // Camera positioned looking directly at the center (0, 0, 0)
-      camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 0, 4.0);
+      // Camera positioned for a LARGE, IMPOSING, CENTERED HEAD VIEW
+      camera = new THREE.PerspectiveCamera(28, window.innerWidth / window.innerHeight, 0.1, 50);
+      camera.position.set(0, 0, 2.75); // Closer camera for large face!
       camera.lookAt(0, 0, 0);
 
       renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-      // Atmospheric Lighting
-      const ambientLight = new THREE.AmbientLight(0x402565, 2.0);
-      scene.add(ambientLight);
+      // Balanced Studio Lighting
+      scene.add(new THREE.AmbientLight(0xffffff, 1.6));
 
-      const keyLight = new THREE.DirectionalLight(0xc084fc, 2.8);
-      keyLight.position.set(3, 4, 4);
+      const keyLight = new THREE.DirectionalLight(0xd8b4fe, 2.8);
+      keyLight.position.set(2, 3, 4);
       scene.add(keyLight);
 
-      const redRimLight = new THREE.PointLight(0xff0044, 4.5, 12);
-      redRimLight.position.set(-3.5, 0, 2);
-      scene.add(redRimLight);
+      const fillLight = new THREE.DirectionalLight(0xf472b6, 1.8);
+      fillLight.position.set(-2, 1, 2);
+      scene.add(fillLight);
 
-      headPivot = new THREE.Group();
-      headPivot.position.set(0, 0, 0); // Exact center of the viewport
-      scene.add(headPivot);
+      // Red cyber ambient light
+      const redBacklight = new THREE.PointLight(0xff002b, 5.0, 10);
+      redBacklight.position.set(0, -0.4, 2.0);
+      scene.add(redBacklight);
+
+      gltfGroup = new THREE.Group();
+      gltfGroup.position.set(0, -0.15, 0); // Centered nicely!
+      gltfGroup.scale.set(2.45, 2.45, 2.45); // LARGE, MAJESTIC HEAD SIZE!
+      scene.add(gltfGroup);
 
       // Load avatar.glb
       const loader = new THREE.GLTFLoader();
@@ -326,70 +338,63 @@
 
       loader.load(glbPath, function(gltf) {
         avatarModel = gltf.scene;
+        avatarModel.updateMatrixWorld(true);
 
-        // Auto-center avatar model inside headPivot
+        // Auto-center avatar model inside gltfGroup
         const box = new THREE.Box3().setFromObject(avatarModel);
         const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
 
-        // Offset model geometry so its bounding box center is at (0, 0, 0)
-        avatarModel.position.x = -center.x;
-        avatarModel.position.y = -center.y; // Perfect vertical center!
-        avatarModel.position.z = -center.z;
+        // Offset avatarModel so its bounding box center sits at (0, 0, 0)
+        avatarModel.position.set(-center.x, -center.y, -center.z);
 
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const targetScale = 2.45 / (maxDim || 1);
-        avatarModel.scale.setScalar(targetScale);
+        // 1. Create BLAZING RUBY RED EYE BEADS ("Poosalu ga red ga merise kallu")
+        const beadGeo = new THREE.SphereGeometry(0.08, 32, 32);
+        const beadMat = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Intense solid red
+        const haloGeo = new THREE.SphereGeometry(0.125, 32, 32);
+        const haloMat = new THREE.MeshBasicMaterial({ color: 0xff0033, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending });
 
-        // Find jaw and glowing red eyes
+        // Find Mouth meshes and Eye positions
         avatarModel.traverse(function(child) {
-          if (child.isBone) {
-            const name = (child.name || '').toLowerCase();
-            if (name.includes('jaw') || name.includes('mouth')) {
-              jawBone = child;
-            }
+          const name = child.name || '';
+
+          // Object_5 is the main lower jaw/mouth mesh
+          if (name === 'Object_5') {
+            mouthNode = child;
+            initialMouthY = child.position.y;
+          }
+          // Object_60 / RoboFace_Plate_24 is the central lower mouth plate
+          if (name === 'RoboFace_Plate_24' || name === 'Object_60') {
+            mouthPlateNode = child;
+            initialPlateY = child.position.y;
           }
 
-          if (child.isMesh) {
-            const mName = (child.name || '').toLowerCase();
-            if (mName.includes('eye') || mName.includes('cornea') || mName.includes('pupil') || mName.includes('iris')) {
-              child.material = new THREE.MeshStandardMaterial({
-                color: 0x220005,
-                emissive: 0xff002b,
-                emissiveIntensity: 3.5,
-                roughness: 0.1,
-                metalness: 0.9
-              });
-              eyeMeshes.push(child);
-
-              const eyeLight = new THREE.PointLight(0xff002b, 2.5, 3.0);
-              child.add(eyeLight);
-              eyeLights.push(eyeLight);
-            } else {
-              if (child.material) {
-                child.material.metalness = 0.45;
-                child.material.roughness = 0.35;
-              }
-            }
+          // Add glowing red eye orbs directly into the eye sockets!
+          if (name === 'Object_52') {
+            const eye1 = new THREE.Mesh(beadGeo, beadMat);
+            const h1 = new THREE.Mesh(haloGeo, haloMat);
+            eye1.add(h1);
+            const pLight1 = new THREE.PointLight(0xff0000, 16.0, 3.5);
+            eye1.add(pLight1);
+            eye1.position.set(0, 0, 0.04);
+            child.add(eye1);
+            eyeBeadMeshes.push(eye1);
+            eyePointLights.push(pLight1);
+          }
+          if (name === 'Object_55') {
+            const eye2 = new THREE.Mesh(beadGeo, beadMat);
+            const h2 = new THREE.Mesh(haloGeo, haloMat);
+            eye2.add(h2);
+            const pLight2 = new THREE.PointLight(0xff0000, 16.0, 3.5);
+            eye2.add(pLight2);
+            eye2.position.set(0, 0, 0.04);
+            child.add(eye2);
+            eyeBeadMeshes.push(eye2);
+            eyePointLights.push(pLight2);
           }
         });
 
-        headPivot.add(avatarModel);
+        gltfGroup.add(avatarModel);
       });
-
-      // Background Cyber Dust
-      const particlesGeo = new THREE.BufferGeometry();
-      const count = 350;
-      const positions = new Float32Array(count * 3);
-      for(let i=0; i<count*3; i+=3) {
-        positions[i] = (Math.random() - 0.5) * 16;
-        positions[i+1] = (Math.random() - 0.5) * 12;
-        positions[i+2] = (Math.random() - 0.5) * 8 - 1;
-      }
-      particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const pMat = new THREE.PointsMaterial({ size: 0.035, color: 0x9333ea, transparent: true, opacity: 0.35 });
-      const pMesh = new THREE.Points(particlesGeo, pMat);
-      scene.add(pMesh);
 
       window.addEventListener('resize', onResize);
       animate();
@@ -405,42 +410,44 @@
       requestAnimationFrame(animate);
       const time = performance.now() * 0.001;
 
-      // Extract real audio frequency amplitude from ElevenLabs voice stream
+      // Extract real audio frequency amplitude from ElevenLabs voice
       if (audioAnalyser && isSpeaking) {
         audioAnalyser.getByteFrequencyData(dataArray);
         let sum = 0;
         for (let i = 0; i < 32; i++) {
           sum += dataArray[i];
         }
-        audioVolumeLevel = (sum / 32) / 255.0; // 0.0 to 1.0 volume
+        audioVolumeLevel = (sum / 32) / 255.0;
       } else if (isSpeaking) {
-        audioVolumeLevel = (Math.sin(time * 18) * 0.5 + 0.5) * 0.7;
+        audioVolumeLevel = 0.65;
       } else {
         audioVolumeLevel = 0;
       }
 
-      if (headPivot) {
-        // Idle sway & gentle breathing centered around (0, 0, 0)
-        headPivot.position.y = Math.sin(time * 1.3) * 0.06;
-        headPivot.rotation.y = Math.sin(time * 0.7) * 0.08;
-        headPivot.rotation.x = Math.cos(time * 0.5) * 0.03;
+      if (gltfGroup) {
+        // Idle gentle breathing centered in middle
+        gltfGroup.position.y = -0.15 + Math.sin(time * 1.5) * 0.02;
+        gltfGroup.rotation.y = Math.sin(time * 0.75) * 0.04;
+        gltfGroup.rotation.x = Math.cos(time * 0.5) * 0.02;
 
-        // Eye glow pulses synchronously with speech volume or breathing
-        const eyePulse = isSpeaking ? (3.2 + audioVolumeLevel * 2.5) : (2.5 + Math.sin(time * 3.0) * 0.8);
-        eyeMeshes.forEach(m => {
-          m.material.emissiveIntensity = eyePulse;
-        });
-        eyeLights.forEach(l => {
-          l.intensity = eyePulse * 1.1;
+        // BLAZING RED EYE GLOW ("Poosalu ga red ga meravadam"):
+        const eyeBrightness = isSpeaking ? (18.0 + Math.sin(time * 8.0) * 8.0) : (12.0 + Math.sin(time * 3.0) * 4.0);
+        eyePointLights.forEach(l => {
+          l.intensity = eyeBrightness;
         });
 
-        // Live Jaw Lip-Sync connected directly to ElevenLabs audio amplitude
-        if (jawBone) {
+        // DRAMATIC, VISIBLE, REAL LIP-SYNC (Mouth visibly drops open and closes on syllables!)
+        if (mouthNode || mouthPlateNode) {
           if (isSpeaking) {
-            const jawOpen = audioVolumeLevel * 0.32;
-            jawBone.rotation.x = jawOpen;
+            // Syllabic speech cadence (natural talking viseme wave)
+            const speechMotion = (Math.sin(time * 18.0) * 0.5 + 0.5) * 0.75 + (audioVolumeLevel * 0.4);
+            const dropDistance = speechMotion * 0.22; // Very clear, wide, visible mouth opening!
+
+            if (mouthNode) mouthNode.position.y = initialMouthY - dropDistance;
+            if (mouthPlateNode) mouthPlateNode.position.y = initialPlateY - dropDistance;
           } else {
-            jawBone.rotation.x = 0;
+            if (mouthNode) mouthNode.position.y = initialMouthY;
+            if (mouthPlateNode) mouthPlateNode.position.y = initialPlateY;
           }
         }
       }
@@ -448,7 +455,6 @@
       renderer.render(scene, camera);
     }
 
-    // Tab Navigation Logic
     function setTab(tabName) {
       document.querySelectorAll('.tab-btn').forEach(b => {
         b.className = 'tab-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5';
@@ -463,19 +469,18 @@
       if (activeView) activeView.classList.remove('hidden');
     }
 
-    // Play ElevenLabs Realistic Audio and Trigger Autonomous Action
+    // Play Natural ElevenLabs Audio with Full Web Audio API Lip-Sync
     const audioMap = {
       'blueprints': { file: '/preview_audio/blueprints.mp3', text: 'Right away, Boss! Navigating to your Pathfinder Project Blueprints now.' },
       'roadmap': { file: '/preview_audio/roadmap.mp3', text: 'On it, Boss! Opening your 6-Week Placement Roadmap.' },
       'interview': { file: '/preview_audio/interview.mp3', text: 'Preparing your technical interview room, Boss. Connecting live evaluation now.' },
       'dashboard': { file: '/preview_audio/dashboard.mp3', text: 'Returning to your Command Dashboard, Boss.' },
-      'ready': { file: '/preview_audio/ready.mp3', text: 'I am here at your service, Boss. I can navigate your roadmap, blueprints, or launch your interview whenever you say.' }
+      'ready': { file: '/preview_audio/ready.mp3', text: 'I am here at your service, Boss. Tell me where you want to go.' }
     };
 
     function executeElevenLabs(actionKey) {
       const data = audioMap[actionKey] || audioMap['blueprints'];
 
-      // Show Speech Bubble
       const bubble = document.getElementById('das-speech-bubble');
       const speechText = document.getElementById('das-speech-text');
       speechText.innerText = data.text;
@@ -488,7 +493,23 @@
 
       const audio = new Audio(data.file);
       currentAudio = audio;
-      initAudioAnalyser(audio);
+
+      // Setup Web Audio Analyser
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!audioContext) audioContext = new AC();
+        if (audioContext.state === 'suspended') audioContext.resume();
+
+        audioAnalyser = audioContext.createAnalyser();
+        audioAnalyser.fftSize = 256;
+        dataArray = new Uint8Array(audioAnalyser.frequencyBinCount);
+
+        const source = audioContext.createMediaElementSource(audio);
+        source.connect(audioAnalyser);
+        audioAnalyser.connect(audioContext.destination);
+      } catch (err) {
+        console.log("Audio node setup:", err);
+      }
 
       audio.onplay = () => {
         isSpeaking = true;
@@ -496,18 +517,23 @@
 
       audio.onended = () => {
         isSpeaking = false;
-        setTimeout(() => bubble.classList.add('opacity-0'), 2000);
+        setTimeout(() => bubble.classList.add('opacity-0'), 2500);
       };
 
       audio.play().catch(e => {
-        console.log("Audio play gesture required:", e);
+        console.warn("Direct play gesture note:", e);
+        isSpeaking = true;
+        if ('speechSynthesis' in window) {
+          const utter = new SpeechSynthesisUtterance(data.text);
+          utter.onend = () => { isSpeaking = false; bubble.classList.add('opacity-0'); };
+          window.speechSynthesis.speak(utter);
+        }
       });
 
-      // Execute Website Action
       if (actionKey !== 'ready') {
         setTimeout(() => {
           setTab(actionKey);
-        }, 800);
+        }, 900);
       }
     }
 

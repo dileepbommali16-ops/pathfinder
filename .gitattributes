@@ -7,3 +7,7 @@
 *.html linguist-detectable=true
 *.css linguist-detectable=true
 
+# Binary files - no line ending conversion
+*.mp3 binary
+*.html binary
+

@@ -144,3 +144,4 @@ output.wav
 # Native binaries
 *.exe
 **/scripts/bin/
+playwright-mcp ignored
