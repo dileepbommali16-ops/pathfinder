@@ -4,6 +4,7 @@ import Avatar3D, { AvatarState } from "./Avatar3D";
 import { useAudioAnalyser } from "./useAudioAnalyser";
 import { useVoiceInput, MicPermissionState } from "./useVoiceInput";
 import { runTool, snapshot } from "./toolRunner";
+import { useAgentController, extractSpokenText, parseActionTags } from "./useAgentController";
 
 const API =
   ((import.meta as any).env?.VITE_API_URL as string) ||
@@ -26,6 +27,7 @@ export interface AgentLayoutProps {
   activeTab?: string;
   prediction?: any;
   cohortFilters?: any;
+  onNavigateTab?: (tab: string) => void;
   [key: string]: any;
 }
 
@@ -49,6 +51,7 @@ export default function AgentLayout({
   profile: propProfile,
   activeTab: propActiveTab,
   prediction: propPrediction,
+  onNavigateTab: propOnNavigateTab,
 }: AgentLayoutProps = {}) {
   const [, navigate] = useLocation();
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -193,7 +196,9 @@ export default function AgentLayout({
 
       const takeSpeech = (final: boolean) => {
         const c = full.indexOf("|||");
-        const sp = c >= 0 ? full.slice(0, c) : full;
+        const rawSpoken = c >= 0 ? full.slice(0, c) : full;
+        // Strip action tags so ElevenLabs never speaks XML comments
+        const sp = extractSpoken(rawSpoken);
         const isFinal = final || c >= 0;
         let buf = sp.slice(spoken);
         for (;;) {
@@ -310,6 +315,12 @@ export default function AgentLayout({
         setConnectionStatus("connected");
         takeSpeech(true);
 
+        // JARVIS-style: Execute website control actions from AI response while ElevenLabs audio plays
+        const actions = parseActionTags(full);
+        if (actions.length > 0) {
+          executeActions(actions);
+        }
+
         if (followUp && !hidden) {
           setTimeout(
             () =>
@@ -352,6 +363,33 @@ export default function AgentLayout({
       setTimeout(() => setMicError(null), 5000);
     },
   });
+
+  // JARVIS-style action controller: parses <!--ACTION: {...}--> tags from AI responses
+  const { extractSpokenText: extractSpoken, parseActionTags, executeActions } =
+    useAgentController({
+      onNavigateTab: (tab: string) => {
+        propOnNavigateTab?.(tab);
+      },
+      onOpenModal: (modal: string) => {
+        // Modal opening handled by parent via tab navigation for now
+        console.log("[DAS Action] Open modal:", modal);
+      },
+      onScrollTo: (id: string) => {
+        const el = document.getElementById(id) || document.querySelector(`[data-das-id="${id}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      },
+      onSetFilter: (filter: string) => {
+        // Dispatch a custom event for project/blueprint filtering
+        window.dispatchEvent(
+          new CustomEvent("das-set-filter", { detail: { filter } })
+        );
+      },
+      onActionExecuted: (action) => {
+        console.log("[DAS Action] Executed:", action.type, action.target);
+      },
+    });
 
   const handleToggleMic = () => {
     if (!awake) setAwake(true);

@@ -86,14 +86,27 @@ export default function Home() {
       }
     };
 
+    const handleDASSetFilter = (e: any) => {
+      if (e.detail && e.detail.filter) {
+        // Filter projects/blueprints by branch
+        setActiveTab("projects");
+        // Dispatch a custom event for ProjectRecommender to pick up
+        window.dispatchEvent(
+          new CustomEvent("das-filter-projects", { detail: { branch: e.detail.filter } })
+        );
+      }
+    };
+
     window.addEventListener("das-navigate-tab", handleDASNavigate);
     window.addEventListener("das-open-resume-builder", handleDASResume);
     window.addEventListener("das-open-mock-interview", handleDASInterview);
+    window.addEventListener("das-set-filter", handleDASSetFilter);
 
     return () => {
       window.removeEventListener("das-navigate-tab", handleDASNavigate);
       window.removeEventListener("das-open-resume-builder", handleDASResume);
       window.removeEventListener("das-open-mock-interview", handleDASInterview);
+      window.removeEventListener("das-set-filter", handleDASSetFilter);
     };
   }, []);
 
@@ -1813,7 +1826,12 @@ export default function Home() {
 
           {/* TAB 6: AI VOICE AGENT & CAREER COACH (Persistent audio across tab switches) */}
           <div data-das-id="voice-panel" className={activeTab === "coach" ? "block w-full h-[82vh] rounded-2xl overflow-hidden border border-indigo-900/40 shadow-2xl" : "hidden"}>
-            <AgentLayout profile={profile} activeTab={activeTab} prediction={prediction} />
+            <AgentLayout
+              profile={profile}
+              activeTab={activeTab}
+              prediction={prediction}
+              onNavigateTab={(tab: string) => setActiveTab(tab as TabId)}
+            />
           </div>
 
 
