@@ -13,6 +13,7 @@
     "build:server": "esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "build:client": "node scripts/build-client.js",
     "build:vercel": "node scripts/build-client.js",
+    "deploy:vercel": "python scripts/redeploy-vercel.py",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
     "format": "prettier --write .",
