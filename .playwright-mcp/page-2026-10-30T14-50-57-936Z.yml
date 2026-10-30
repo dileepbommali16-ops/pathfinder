@@ -1,0 +1,139 @@
+- generic [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - region "Notifications alt+T"
+    - generic [ref=f3e3]:
+      - banner [ref=f3e4]:
+        - generic [ref=f3e5]:
+          - button "Pathfinder 2.0 AI Campus Placement & Engineering Intelligence" [ref=f3e6] [cursor=pointer]:
+            - generic [ref=f3e14]:
+              - generic [ref=f3e15]:
+                - generic [ref=f3e16]: Pathfinder 2.0
+                - generic [ref=f3e17]: AI
+              - paragraph [ref=f3e18]: Campus Placement & Engineering Intelligence
+          - generic [ref=f3e19]:
+            - button "D Dileep dileepbommali16@gmail.com" [ref=f3e20] [cursor=pointer]:
+              - generic [ref=f3e21]: D
+              - generic [ref=f3e22]:
+                - generic [ref=f3e23]: Dileep
+                - text: dileepbommali16@gmail.com
+            - button "Sign out of Pathfinder" [ref=f3e28] [cursor=pointer]
+        - generic [ref=f3e33]:
+          - button "Dashboard" [ref=f3e34] [cursor=pointer]
+          - button "AI Mock Interview Live" [ref=f3e40] [cursor=pointer]:
+            - generic [ref=f3e44]: AI Mock Interview
+            - generic [ref=f3e45]: Live
+          - button "Readiness Command Instant" [ref=f3e46] [cursor=pointer]:
+            - generic [ref=f3e49]: Readiness Command
+            - generic [ref=f3e50]: Instant
+          - button "6-Week Roadmap Sprint" [ref=f3e51] [cursor=pointer]:
+            - generic [ref=f3e55]: 6-Week Roadmap
+            - generic [ref=f3e56]: Sprint
+          - button "DAS AI Voice Coach Voice" [ref=f3e57] [cursor=pointer]:
+            - generic [ref=f3e61]: DAS AI Voice Coach
+            - generic [ref=f3e62]: Voice
+          - button "Project Blueprints" [ref=f3e64] [cursor=pointer]
+          - button "Cohort Analytics 972" [ref=f3e68] [cursor=pointer]:
+            - generic [ref=f3e72]: Cohort Analytics
+            - generic [ref=f3e73]: "972"
+          - button "ATS Resume Studio" [ref=f3e74] [cursor=pointer]
+          - button "Branches and Courses Dept" [ref=f3e79] [cursor=pointer]:
+            - generic [ref=f3e83]: Branches and Courses
+            - generic [ref=f3e84]: Dept
+          - button "Project Defense" [ref=f3e85] [cursor=pointer]
+          - button "Profile / Settings SSOT" [ref=f3e89] [cursor=pointer]:
+            - generic [ref=f3e93]: Profile / Settings
+            - generic [ref=f3e94]: SSOT
+      - main [ref=f3e95]:
+        - generic [ref=f3e97]:
+          - generic [ref=f3e98]:
+            - generic [ref=f3e102]:
+              - generic [ref=f3e103]: DAS 3D JARVIS • BOSS
+              - generic [ref=f3e105]:
+                - 'button "👑 Mode: Boss (Owner)" [ref=f3e259] [cursor=pointer]'
+                - button "Mute DAS Voice" [ref=f3e107] [cursor=pointer]
+            - generic [ref=f3e112]: online • idle
+            - 'button "Hands-Free: OFF" [ref=f3e114] [cursor=pointer]'
+          - generic [ref=f3e124]:
+            - generic [ref=f3e125]:
+              - generic [ref=f3e126]: "Voice/Click:"
+              - button "🏠 Dashboard" [ref=f3e127] [cursor=pointer]
+              - button "🚀 6-Wk Roadmap" [ref=f3e128] [cursor=pointer]
+              - button "📁 23 Blueprints" [ref=f3e129] [cursor=pointer]
+              - button "🎙️ Mock Interview" [ref=f3e130] [cursor=pointer]
+              - button "📄 ATS Resume" [ref=f3e131] [cursor=pointer]
+              - button "📊 Cohort 972" [ref=f3e132] [cursor=pointer]
+              - button "🛡️ STAR Defense" [ref=f3e133] [cursor=pointer]
+            - generic [ref=f3e134]:
+              - generic [ref=f3e260]: Hello Sir, I'm your DAS AI co-pilot. Welcome to Pathfinder 2.0. How may I assist you today?
+              - generic [ref=f3e262]: How is my placement readiness score?
+              - generic [ref=f3e263]: Boss, your placement readiness score is currently sitting at a very impressive 91.9 percent. You are in the top tier of your cohort, and with zero backlogs and a strong coding foundation, you are well on your way to landing that SDE role. Let's keep this momentum going to push that score even higher. **Current Readiness Breakdown:** * **Overall Score:** 91.9% * **Branch:** CSE * **CGPA:** 7.8 * **Backlogs:** 0 * **Coding Proficiency:** 7/10 * **Target Role:** Software Development Engineer (SDE) **Key Strengths:** * Zero backlogs is a massive plus for recruiters. * High overall readiness indicates you are nearly interview-ready. **Areas for Final Polish:** * Coding is strong (7/10) but can be pushed to 9/10 for top-tier SDE roles. * Focus on system design basics to complement your core coding skills.
+            - generic [ref=f3e145]:
+              - button "EN" [ref=f3e146] [cursor=pointer]
+              - textbox "Ask DAS anything or say \"Open Projects\", Boss…" [active] [ref=f3e261]
+              - button "Open ATS Resume Studio" [ref=f3e148] [cursor=pointer]: 📎
+              - button "Microphone" [ref=f3e149] [cursor=pointer]: 🎤
+        - generic [ref=f3e151]:
+          - generic [ref=f3e152]:
+            - generic [ref=f3e153]:
+              - generic [ref=f3e154]: Pathfinder 2.0
+              - paragraph [ref=f3e160]: Autonomous full-stack AI career intelligence platform benchmarked on 972 verified campus records. Calibrates student profiles, tutors production architectures, and prepares engineering candidates for Tier-1 recruitment filters.
+              - generic [ref=f3e161]: All 7 Engineering Pillars Operational
+            - generic [ref=f3e164]:
+              - heading "Core Intelligence" [level=3] [ref=f3e165]
+              - list [ref=f3e166]:
+                - listitem [ref=f3e167]:
+                  - button "Executive Readiness Dashboard" [ref=f3e168] [cursor=pointer]
+                - listitem [ref=f3e169]:
+                  - button "AI Mock Interview Simulator Live" [ref=f3e170] [cursor=pointer]:
+                    - generic [ref=f3e171]: AI Mock Interview Simulator
+                    - generic [ref=f3e172]: Live
+                - listitem [ref=f3e173]:
+                  - button "DAS AI Voice Coach (EN / TE / HI)" [ref=f3e174] [cursor=pointer]
+                - listitem [ref=f3e175]:
+                  - button "23 Production Project Blueprints" [ref=f3e176] [cursor=pointer]
+                - listitem [ref=f3e177]:
+                  - button "ATS Resume Studio & Scanner" [ref=f3e178] [cursor=pointer]
+                - listitem [ref=f3e179]:
+                  - button "STAR Architecture Defense Console" [ref=f3e180] [cursor=pointer]
+            - generic [ref=f3e181]:
+              - heading "Institutional Intelligence" [level=3] [ref=f3e182]
+              - list [ref=f3e183]:
+                - listitem [ref=f3e184]:
+                  - button "972 Placement Cohort Explorer" [ref=f3e185] [cursor=pointer]
+                - listitem [ref=f3e186]:
+                  - button "Branch Placement Cutoffs & Stats" [ref=f3e187] [cursor=pointer]
+                - listitem [ref=f3e188]:
+                  - button "6-Week Career Sprint Roadmap" [ref=f3e189] [cursor=pointer]
+                - listitem [ref=f3e190]:
+                  - button "Readiness Command Center" [ref=f3e191] [cursor=pointer]
+                - listitem [ref=f3e192]:
+                  - button "Single Source of Truth Profile" [ref=f3e193] [cursor=pointer]
+            - generic [ref=f3e194]:
+              - heading "Placement Desk & Support" [level=3] [ref=f3e195]
+              - paragraph [ref=f3e196]: "Have questions regarding placement data or AI coach benchmarking? Connect directly:"
+              - generic [ref=f3e197]:
+                - link "support@pathfinder-ai.io" [ref=f3e198] [cursor=pointer]:
+                  - /url: mailto:support@pathfinder-ai.io?subject=Pathfinder%20Placement%20Inquiry
+                - link "+91 (800) 012-3456 (Placement Helpline)" [ref=f3e204] [cursor=pointer]:
+                  - /url: tel:+918000123456
+                - generic [ref=f3e209]: National Engineering Campus, Academic Block
+          - generic [ref=f3e215]:
+            - generic [ref=f3e216]:
+              - generic [ref=f3e217]: © 2026 Pathfinder 2.0. All rights reserved.
+              - generic [ref=f3e218]: •
+              - generic [ref=f3e219]: MIT License Open Verification
+              - generic [ref=f3e220]: •
+              - button "Privacy Policy" [ref=f3e221] [cursor=pointer]
+              - generic [ref=f3e222]: •
+              - button "Terms of Service" [ref=f3e223] [cursor=pointer]
+            - generic [ref=f3e224]:
+              - generic [ref=f3e225]: OWASP 19-Point Hardened
+              - button "Top" [ref=f3e230] [cursor=pointer]
+  - complementary "3D Background Mode Controls" [ref=f3e234]:
+    - generic [ref=f3e235]: "Engine:"
+    - button "Smooth 60fps" [ref=f3e241] [cursor=pointer]
+    - button "3D Neural Torus Glow" [ref=f3e245] [cursor=pointer]
+    - button "Hybrid" [ref=f3e252] [cursor=pointer]
+    - button "042 Void" [ref=f3e256] [cursor=pointer]:
+      - generic [ref=f3e257]: "042"
+      - generic [ref=f3e258]: Void

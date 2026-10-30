@@ -1,0 +1,1214 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - region "Notifications alt+T"
+    - generic [ref=f1e3]:
+      - banner [ref=f1e4]:
+        - generic [ref=f1e5]:
+          - button "Pathfinder 2.0 AI Campus Placement & Engineering Intelligence" [ref=f1e6] [cursor=pointer]:
+            - generic [ref=f1e14]:
+              - generic [ref=f1e15]:
+                - generic [ref=f1e16]: Pathfinder 2.0
+                - generic [ref=f1e17]: AI
+              - paragraph [ref=f1e18]: Campus Placement & Engineering Intelligence
+          - generic [ref=f1e19]:
+            - button "D Dileep dileepbommali16@gmail.com" [ref=f1e20] [cursor=pointer]:
+              - generic [ref=f1e21]: D
+              - generic [ref=f1e22]:
+                - generic [ref=f1e23]: Dileep
+                - text: dileepbommali16@gmail.com
+            - button "Sign out of Pathfinder" [ref=f1e28] [cursor=pointer]
+        - generic [ref=f1e33]:
+          - button "Dashboard" [ref=f1e34] [cursor=pointer]
+          - button "AI Mock Interview Live" [ref=f1e41] [cursor=pointer]:
+            - generic [ref=f1e45]: AI Mock Interview
+            - generic [ref=f1e46]: Live
+          - button "Readiness Command Instant" [ref=f1e47] [cursor=pointer]:
+            - generic [ref=f1e50]: Readiness Command
+            - generic [ref=f1e51]: Instant
+          - button "6-Week Roadmap Sprint" [ref=f1e52] [cursor=pointer]:
+            - generic [ref=f1e56]: 6-Week Roadmap
+            - generic [ref=f1e57]: Sprint
+          - button "DAS AI Voice Coach Voice" [ref=f1e58] [cursor=pointer]:
+            - generic [ref=f1e62]: DAS AI Voice Coach
+            - generic [ref=f1e63]: Voice
+          - button "Project Blueprints" [ref=f1e64] [cursor=pointer]
+          - button "Cohort Analytics 972" [ref=f1e68] [cursor=pointer]:
+            - generic [ref=f1e72]: Cohort Analytics
+            - generic [ref=f1e73]: "972"
+          - button "ATS Resume Studio" [ref=f1e74] [cursor=pointer]
+          - button "Branches and Courses Dept" [ref=f1e79] [cursor=pointer]:
+            - generic [ref=f1e83]: Branches and Courses
+            - generic [ref=f1e84]: Dept
+          - button "Project Defense" [ref=f1e85] [cursor=pointer]
+          - button "Profile / Settings SSOT" [ref=f1e89] [cursor=pointer]:
+            - generic [ref=f1e93]: Profile / Settings
+            - generic [ref=f1e94]: SSOT
+      - main [ref=f1e95]:
+        - complementary "DAS 3D AI Co-Pilot" [ref=f1e1273]:
+          - generic [ref=f1e1274]:
+            - generic [ref=f1e1275]: DAS • BOSS MODE
+            - generic [ref=f1e1280]:
+              - button "👑 Boss" [ref=f1e1281] [cursor=pointer]
+              - button "Expand to Full Voice Coach" [ref=f1e1282] [cursor=pointer]
+              - button "Minimize to Floating Orb" [ref=f1e1288] [cursor=pointer]
+          - generic [ref=f1e1294]: 🟢 Online • Boss
+          - generic [ref=f1e1299]: Hello Boss, I'm your DAS AI co-pilot. All website controls and placement systems are online. How can I assist you today?
+          - generic [ref=f1e1300]:
+            - generic [ref=f1e1301]:
+              - button "Speak to DAS (Boss)" [ref=f1e1302] [cursor=pointer]
+              - button "Full Coach" [ref=f1e1306] [cursor=pointer]
+            - textbox "Command DAS, Boss (e.g. \"open projects\")…" [ref=f1e1308]
+            - generic [ref=f1e1309]:
+              - button "🚀 Roadmap" [ref=f1e1310] [cursor=pointer]
+              - button "🎯 Interview" [ref=f1e1311] [cursor=pointer]
+              - button "📁 Blueprints" [ref=f1e1312] [cursor=pointer]
+              - button "📄 ATS Resume" [ref=f1e1313] [cursor=pointer]
+        - generic [ref=f1e1314]:
+          - generic [ref=f1e1316]:
+            - generic [ref=f1e1321]:
+              - generic [ref=f1e1322]:
+                - heading "Flagship Project Blueprints & Portfolio" [level=2] [ref=f1e1323]
+                - generic [ref=f1e1324]: Portfolio Blueprints
+              - paragraph [ref=f1e1325]: Production-grade project architectures mapped to recruiter rubrics and technical defense rounds
+            - generic [ref=f1e1326]: ℹ️ Includes live architecture specs and STAR storytelling defense points
+          - generic [ref=f1e1329]:
+            - generic [ref=f1e1331]:
+              - generic [ref=f1e1332]:
+                - generic [ref=f1e1333]: Flagship Portfolio & System Architectures
+                - generic [ref=f1e1336]: "Target: Software Development Engineer (SDE)"
+              - heading "Engineering Portfolio & System Architecture Blueprints" [level=1] [ref=f1e1337]
+              - paragraph [ref=f1e1338]:
+                - text: Top recruiters and technical evaluators look for production-grade end-to-end engineered systems over simple tutorials. Explore
+                - strong [ref=f1e1339]: 20 Software & GenAI RAG
+                - text: and
+                - strong [ref=f1e1340]: 8 Hardware & IoT
+                - text: architectures spanning full-stack pipelines, robotics, enterprise GraphRAG, and embedded firmware. Click any project to discuss system architecture with the AI Coach!
+            - generic [ref=f1e1341]:
+              - generic [ref=f1e1342]:
+                - button "All Architectures 28" [ref=f1e1343] [cursor=pointer]:
+                  - generic [ref=f1e1346]: All Architectures
+                  - generic [ref=f1e1347]: "28"
+                - button "Software Systems 20" [ref=f1e1348] [cursor=pointer]:
+                  - generic [ref=f1e1351]: Software Systems
+                  - generic [ref=f1e1352]: "20"
+                - button "Hardware & Embedded 8" [ref=f1e1353] [cursor=pointer]:
+                  - generic [ref=f1e1357]: Hardware & Embedded
+                  - generic [ref=f1e1358]: "8"
+              - textbox "Search title, branch, tech, or domain..." [ref=f1e1363]
+            - generic [ref=f1e1364]:
+              - generic [ref=f1e1365]:
+                - generic [ref=f1e1366]:
+                  - generic [ref=f1e1367]:
+                    - generic [ref=f1e1368]:
+                      - generic [ref=f1e1369]: Software Systems
+                      - generic [ref=f1e1372]: Backend Systems & Concurrency
+                    - generic [ref=f1e1373]: Advanced
+                  - generic [ref=f1e1374]: "Branches: CSE / IT / AIML"
+                  - generic [ref=f1e1380]:
+                    - heading "Distributed Asynchronous Job Queue & Rate Limiter" [level=2] [ref=f1e1381]
+                    - paragraph [ref=f1e1382]: A fault-tolerant distributed background task orchestrator with token-bucket rate limiting, worker consumer groups, and exponential backoff retry mechanisms.
+                  - generic [ref=f1e1383]: "Architecture: Client -> FastAPI Gateway -> Token Bucket Redis Middleware -> Redis Task Stream -> Worker Consumer Group (x3) -> Postgres Persistence -> Prometheus Metrics."
+                  - generic [ref=f1e1384]:
+                    - generic [ref=f1e1385]: Python
+                    - generic [ref=f1e1386]: FastAPI
+                    - generic [ref=f1e1387]: Redis Streams
+                    - generic [ref=f1e1388]: Docker
+                    - generic [ref=f1e1389]: PostgreSQL
+                  - generic [ref=f1e1390]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e1391]:
+                      - listitem [ref=f1e1392]:
+                        - generic [ref=f1e1396]: Token bucket rate-limiting middleware restricting client bursts
+                      - listitem [ref=f1e1397]:
+                        - generic [ref=f1e1401]: Redis stream worker pool with consumer groups and dead-letter queue
+                      - listitem [ref=f1e1402]:
+                        - generic [ref=f1e1406]: PostgreSQL state persistence with ACID transaction locks
+                      - listitem [ref=f1e1407]:
+                        - generic [ref=f1e1411]: Prometheus & Grafana telemetry tracking job throughput
+                  - generic [ref=f1e1412]:
+                    - generic [ref=f1e1413]:
+                      - generic [ref=f1e1414]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e1415] [cursor=pointer]
+                    - paragraph [ref=f1e1420]: "\"Engineered a distributed async task queue handling 3,500+ tasks/sec using Redis Streams and FastAPI, reducing job processing latency by 44% with zero message drop.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e1422] [cursor=pointer]
+              - generic [ref=f1e1429]:
+                - generic [ref=f1e1430]:
+                  - generic [ref=f1e1431]:
+                    - generic [ref=f1e1432]:
+                      - generic [ref=f1e1433]: Software Systems
+                      - generic [ref=f1e1436]: Full-Stack Web & WebSockets
+                    - generic [ref=f1e1437]: Advanced
+                  - generic [ref=f1e1438]: "Branches: CSE / IT / AIML"
+                  - generic [ref=f1e1444]:
+                    - heading "Real-Time Collaborative Code & Canvas Studio" [level=2] [ref=f1e1445]
+                    - paragraph [ref=f1e1446]: Low-latency browser IDE supporting synchronized multi-user code editing, syntax highlighting, and live conflict-free replicated data types (CRDT).
+                  - generic [ref=f1e1447]: "Architecture: React Virtual DOM -> Yjs CRDT Provider -> Node.js WebSocket Hub -> Redis Pub/Sub Cluster -> Browser WebAssembly Runner."
+                  - generic [ref=f1e1448]:
+                    - generic [ref=f1e1449]: React 19
+                    - generic [ref=f1e1450]: TypeScript
+                    - generic [ref=f1e1451]: Node.js
+                    - generic [ref=f1e1452]: WebSockets
+                    - generic [ref=f1e1453]: TailwindCSS
+                  - generic [ref=f1e1454]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e1455]:
+                      - listitem [ref=f1e1456]:
+                        - generic [ref=f1e1460]: CRDT-based text reconciliation for simultaneous multi-cursor editing
+                      - listitem [ref=f1e1461]:
+                        - generic [ref=f1e1465]: WebSocket heartbeat connection with auto-reconnect and state catchup
+                      - listitem [ref=f1e1466]:
+                        - generic [ref=f1e1470]: Sandboxed in-browser code execution runtime via WebAssembly
+                      - listitem [ref=f1e1471]:
+                        - generic [ref=f1e1475]: Modern dark glassmorphic design system built on TailwindCSS
+                  - generic [ref=f1e1476]:
+                    - generic [ref=f1e1477]:
+                      - generic [ref=f1e1478]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e1479] [cursor=pointer]
+                    - paragraph [ref=f1e1484]: "\"Built real-time collaborative code editor supporting 50+ concurrent users with sub-30ms typing synchronization latency using WebSockets, React 19, and Yjs CRDTs.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e1486] [cursor=pointer]
+              - generic [ref=f1e1493]:
+                - generic [ref=f1e1494]:
+                  - generic [ref=f1e1495]:
+                    - generic [ref=f1e1496]:
+                      - generic [ref=f1e1497]: Software Systems
+                      - generic [ref=f1e1500]: Generative AI & Agentic Workflows
+                    - generic [ref=f1e1501]: Advanced
+                  - generic [ref=f1e1502]: "Branches: CSE / IT / AIML"
+                  - generic [ref=f1e1508]:
+                    - heading "Multi-Agent Regulatory Document Research Engine (RAG)" [level=2] [ref=f1e1509]
+                    - paragraph [ref=f1e1510]: Autonomous multi-agent research pipeline that ingests complex legal and financial PDFs, constructs hybrid vector indexes, and produces verified factual summaries with exact citation coordinates.
+                  - generic [ref=f1e1511]: "Architecture: PDF Ingestion -> PyMuPDF OCR -> Gemini Embeddings -> Qdrant Vector DB -> Hybrid Ranker -> Gemini 3.5 Verification Agent -> React Citation UI."
+                  - generic [ref=f1e1512]:
+                    - generic [ref=f1e1513]: Python
+                    - generic [ref=f1e1514]: Google GenAI
+                    - generic [ref=f1e1515]: FastAPI
+                    - generic [ref=f1e1516]: Qdrant
+                    - generic [ref=f1e1517]: React
+                  - generic [ref=f1e1518]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e1519]:
+                      - listitem [ref=f1e1520]:
+                        - generic [ref=f1e1524]: Recursive semantic chunking preserving table hierarchies and headers
+                      - listitem [ref=f1e1525]:
+                        - generic [ref=f1e1529]: Hybrid search combining BM25 keyword matching with dense Gemini embeddings
+                      - listitem [ref=f1e1530]:
+                        - generic [ref=f1e1534]: Autonomous reflection agent verifying answer faithfulness against source context
+                      - listitem [ref=f1e1535]:
+                        - generic [ref=f1e1539]: Interactive source bounding box highlighting in embedded PDF reader
+                  - generic [ref=f1e1540]:
+                    - generic [ref=f1e1541]:
+                      - generic [ref=f1e1542]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e1543] [cursor=pointer]
+                    - paragraph [ref=f1e1548]: "\"Architected an enterprise RAG agent achieving 94.6% factual faithfulness on complex 80-page financial audits by implementing hybrid retrieval and autonomous self-reflection verification.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e1550] [cursor=pointer]
+              - generic [ref=f1e1557]:
+                - generic [ref=f1e1558]:
+                  - generic [ref=f1e1559]:
+                    - generic [ref=f1e1560]:
+                      - generic [ref=f1e1561]: Software Systems
+                      - generic [ref=f1e1564]: Data Engineering & Stream Analytics
+                    - generic [ref=f1e1565]: Advanced
+                  - generic [ref=f1e1566]: "Branches: CSE / IT / AIML"
+                  - generic [ref=f1e1572]:
+                    - heading "High-Throughput Financial Market Data Lake & Stream Processing" [level=2] [ref=f1e1573]
+                    - paragraph [ref=f1e1574]: Automated data engineering pipeline capturing tick-by-tick financial market feeds, performing deduplication, aggregating rolling candles, and writing partitioned Parquet lakes.
+                  - generic [ref=f1e1575]: "Architecture: Market WebSocket Stream -> Kafka Broker -> PySpark/DuckDB Stream Processor -> Partitioned Parquet Lakehouse -> Airflow Orchestrator -> Streamlit Dashboard."
+                  - generic [ref=f1e1576]:
+                    - generic [ref=f1e1577]: Python
+                    - generic [ref=f1e1578]: Apache Kafka
+                    - generic [ref=f1e1579]: DuckDB
+                    - generic [ref=f1e1580]: Apache Airflow
+                    - generic [ref=f1e1581]: Docker
+                  - generic [ref=f1e1582]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e1583]:
+                      - listitem [ref=f1e1584]:
+                        - generic [ref=f1e1588]: Idempotent ingestion consumer preventing duplicate transactions
+                      - listitem [ref=f1e1589]:
+                        - generic [ref=f1e1593]: 1-minute, 5-minute, and 1-hour rolling candlestick aggregations
+                      - listitem [ref=f1e1594]:
+                        - generic [ref=f1e1598]: Partitioned Parquet storage queryable via DuckDB in milliseconds
+                      - listitem [ref=f1e1599]:
+                        - generic [ref=f1e1603]: Airflow DAGs managing daily compaction, schema validation, and data quality checks
+                  - generic [ref=f1e1604]:
+                    - generic [ref=f1e1605]:
+                      - generic [ref=f1e1606]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e1607] [cursor=pointer]
+                    - paragraph [ref=f1e1612]: "\"Developed a real-time data lake pipeline processing 1.2M market events/day with DuckDB and Kafka, achieving 18x faster historical query times compared to traditional relational stores.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e1614] [cursor=pointer]
+              - generic [ref=f1e1621]:
+                - generic [ref=f1e1622]:
+                  - generic [ref=f1e1623]:
+                    - generic [ref=f1e1624]:
+                      - generic [ref=f1e1625]: Software Systems
+                      - generic [ref=f1e1628]: Cloud Infrastructure & GitOps
+                    - generic [ref=f1e1629]: Advanced
+                  - generic [ref=f1e1630]: "Branches: CSE / IT / AIML"
+                  - generic [ref=f1e1636]:
+                    - heading "Automated Multi-Environment GitOps & Canary Deployment Engine" [level=2] [ref=f1e1637]
+                    - paragraph [ref=f1e1638]: A declarative GitOps workflow that spins up ephemeral preview environments on pull requests and manages canary rollouts with automated latency rollback triggers.
+                  - generic [ref=f1e1639]: "Architecture: GitHub PR -> GitHub Actions Matrix -> Docker Slim Build -> Terraform Cloud -> k3s Kubernetes Ingress -> Prometheus Health Watchdog."
+                  - generic [ref=f1e1640]:
+                    - generic [ref=f1e1641]: Kubernetes
+                    - generic [ref=f1e1642]: Docker
+                    - generic [ref=f1e1643]: Terraform
+                    - generic [ref=f1e1644]: GitHub Actions
+                    - generic [ref=f1e1645]: Prometheus
+                  - generic [ref=f1e1646]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e1647]:
+                      - listitem [ref=f1e1648]:
+                        - generic [ref=f1e1652]: Multi-stage Docker builds reducing production image footprint by 68%
+                      - listitem [ref=f1e1653]:
+                        - generic [ref=f1e1657]: Automated ephemeral preview environments deployed per pull request
+                      - listitem [ref=f1e1658]:
+                        - generic [ref=f1e1662]: Canary rollout controller rolling back deployments if HTTP 5xx error rate exceeds 1%
+                      - listitem [ref=f1e1663]:
+                        - generic [ref=f1e1667]: Prometheus & Grafana alerting integrated with Discord/Slack webhooks
+                  - generic [ref=f1e1668]:
+                    - generic [ref=f1e1669]:
+                      - generic [ref=f1e1670]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e1671] [cursor=pointer]
+                    - paragraph [ref=f1e1676]: "\"Designed automated GitOps CI/CD pipeline cutting deployment lead time from 45 mins to 3.8 mins while eliminating deployment-induced outages via automated canary rollback policies.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e1678] [cursor=pointer]
+              - generic [ref=f1e1685]:
+                - generic [ref=f1e1686]:
+                  - generic [ref=f1e1687]:
+                    - generic [ref=f1e1688]:
+                      - generic [ref=f1e1689]: Hardware & Embedded
+                      - generic [ref=f1e1693]: Embedded Systems & Edge Computing
+                    - generic [ref=f1e1694]: Advanced
+                  - generic [ref=f1e1695]: "Branches: ECE / EEE / IoT"
+                  - generic [ref=f1e1701]:
+                    - heading "Industrial Edge Sensor Telemetry & Anomaly Node" [level=2] [ref=f1e1702]
+                    - paragraph [ref=f1e1703]: Low-power industrial monitoring device collecting multi-axis vibration and temperature metrics, executing edge threshold filters, and securely transmitting packets to cloud time-series stores.
+                  - generic [ref=f1e1704]: "Architecture: I2C Vibration Sensor -> ESP32 Microcontroller (FreeRTOS) -> On-chip Edge Filter -> TLS/MQTT Client -> Cloud Broker -> Grafana Dashboard."
+                  - generic [ref=f1e1705]:
+                    - generic [ref=f1e1706]: Embedded C
+                    - generic [ref=f1e1707]: FreeRTOS
+                    - generic [ref=f1e1708]: ESP32
+                    - generic [ref=f1e1709]: MQTT / TLS
+                    - generic [ref=f1e1710]: Grafana Cloud
+                  - generic [ref=f1e1711]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e1712]:
+                      - listitem [ref=f1e1713]:
+                        - generic [ref=f1e1717]: Preemptive multi-tasking FreeRTOS architecture with sensor collection and network queues
+                      - listitem [ref=f1e1718]:
+                        - generic [ref=f1e1722]: Power management implementing deep sleep mode with 15µA quiescent draw
+                      - listitem [ref=f1e1723]:
+                        - generic [ref=f1e1727]: Mutual TLS (mTLS) authentication for encrypted MQTT broker communication
+                      - listitem [ref=f1e1728]:
+                        - generic [ref=f1e1732]: Watchdog timer recovery handling intermittent Wi-Fi / sensor dropouts
+                  - generic [ref=f1e1733]:
+                    - generic [ref=f1e1734]:
+                      - generic [ref=f1e1735]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e1736] [cursor=pointer]
+                    - paragraph [ref=f1e1741]: "\"Built edge IoT sensor node running FreeRTOS on ESP32 with 15µA deep sleep consumption, delivering 99.8% telemetry uptime over mTLS to Grafana cloud.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e1743] [cursor=pointer]
+              - generic [ref=f1e1750]:
+                - generic [ref=f1e1751]:
+                  - generic [ref=f1e1752]:
+                    - generic [ref=f1e1753]:
+                      - generic [ref=f1e1754]: Software Systems
+                      - generic [ref=f1e1757]: Blockchain & Cybersecurity
+                    - generic [ref=f1e1758]: Advanced
+                  - generic [ref=f1e1759]:
+                    - generic [ref=f1e1760]: "Org: National Cyber Intelligence & FinTech Consortium"
+                    - generic [ref=f1e1766]: "Branches: CSE / IT / Cybersecurity"
+                  - generic [ref=f1e1771]:
+                    - heading "AI-Powered Monitoring & Analysis of Bitcoin Transaction Traffic" [level=2] [ref=f1e1772]
+                    - paragraph [ref=f1e1773]: Automated cryptocurrency forensics platform that reconstructs Bitcoin UTXO transaction graphs, tracks high-risk peeling chains, and clusters mixing service transactions using graph neural networks.
+                  - generic [ref=f1e1774]: "Architecture: Bitcoin RPC Node -> WebSocket Ingestion -> Neo4j Graph DB -> NetworkX Peeling Chain Tracker -> Graph Convolutional Network (GCN) -> FastAPI REST Engine -> React Cytoscape Visualizer."
+                  - generic [ref=f1e1775]:
+                    - generic [ref=f1e1776]: Python
+                    - generic [ref=f1e1777]: NetworkX
+                    - generic [ref=f1e1778]: Web3.py
+                    - generic [ref=f1e1779]: Neo4j
+                    - generic [ref=f1e1780]: FastAPI
+                    - generic [ref=f1e1781]: Scikit-Learn
+                  - generic [ref=f1e1782]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e1783]:
+                      - listitem [ref=f1e1784]:
+                        - generic [ref=f1e1788]: Real-time mempool WebSocket streamer parsing unconfirmed transaction graphs
+                      - listitem [ref=f1e1789]:
+                        - generic [ref=f1e1793]: Multi-input clustering heuristics to group Bitcoin addresses under common ownership
+                      - listitem [ref=f1e1794]:
+                        - generic [ref=f1e1798]: Peeling-chain trace algorithms detecting automated CoinJoin and Wasabi mixing hops
+                      - listitem [ref=f1e1799]:
+                        - generic [ref=f1e1803]: Interactive Neo4j Bloom / Force-Directed subgraph canvas for law enforcement analysis
+                  - generic [ref=f1e1804]:
+                    - generic [ref=f1e1805]:
+                      - generic [ref=f1e1806]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e1807] [cursor=pointer]
+                    - paragraph [ref=f1e1812]: "\"Engineered an AI Bitcoin forensics platform indexing 150k+ UTXO graph edges in Neo4j, detecting anonymized mixer transactions with 96.2% precision and sub-second trace latency.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e1814] [cursor=pointer]
+              - generic [ref=f1e1821]:
+                - generic [ref=f1e1822]:
+                  - generic [ref=f1e1823]:
+                    - generic [ref=f1e1824]:
+                      - generic [ref=f1e1825]: Software Systems
+                      - generic [ref=f1e1828]: Space Technology & Signal Processing
+                    - generic [ref=f1e1829]: Advanced
+                  - generic [ref=f1e1830]:
+                    - generic [ref=f1e1831]: "Org: Advanced Aerospace RF & Telemetry Labs"
+                    - generic [ref=f1e1837]: "Branches: ECE / CSE / Aerospace"
+                  - generic [ref=f1e1842]:
+                    - heading "Automated Model for Analysis of .IQ & .wav Radio Files with Signal Parameter Extraction" [level=2] [ref=f1e1843]
+                    - paragraph [ref=f1e1844]: Deep learning radio-frequency telemetry analysis pipeline that ingests raw In-Phase/Quadrature (.IQ) and audio waveforms, extracts spectral parameters, and classifies modulation schemes.
+                  - generic [ref=f1e1845]: "Architecture: Raw .IQ/.wav Ingestion -> STFT Spectrogram Generator -> ResNet18 Signal Classifier -> Scipy Peak Parameter Extractor -> FastAPI Telemetry API -> WebGL Waterfall Spectrogram."
+                  - generic [ref=f1e1846]:
+                    - generic [ref=f1e1847]: Python
+                    - generic [ref=f1e1848]: SciPy
+                    - generic [ref=f1e1849]: PyTorch
+                    - generic [ref=f1e1850]: GNU Radio
+                    - generic [ref=f1e1851]: NumPy
+                    - generic [ref=f1e1852]: FastAPI
+                  - generic [ref=f1e1853]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e1854]:
+                      - listitem [ref=f1e1855]:
+                        - generic [ref=f1e1859]: Binary .IQ stream parser calculating Short-Time Fourier Transform (STFT) spectrograms
+                      - listitem [ref=f1e1860]:
+                        - generic [ref=f1e1864]: Automatic Modulation Classification (QPSK, FSK, BPSK, 16-QAM) via 2D ResNet tensors
+                      - listitem [ref=f1e1865]:
+                        - generic [ref=f1e1869]: Signal-to-Noise Ratio (SNR) estimator and Doppler shift frequency drift tracker
+                      - listitem [ref=f1e1870]:
+                        - generic [ref=f1e1874]: Real-time browser-based waterfall FFT spectrum audio visualizer
+                  - generic [ref=f1e1875]:
+                    - generic [ref=f1e1876]:
+                      - generic [ref=f1e1877]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e1878] [cursor=pointer]
+                    - paragraph [ref=f1e1883]: "\"Developed an automated RF signal classification engine parsing raw .IQ binary feeds, achieving 93.8% modulation classification accuracy under severe -6dB SNR channel noise.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e1885] [cursor=pointer]
+              - generic [ref=f1e1892]:
+                - generic [ref=f1e1893]:
+                  - generic [ref=f1e1894]:
+                    - generic [ref=f1e1895]:
+                      - generic [ref=f1e1896]: Software Systems
+                      - generic [ref=f1e1899]: Cybersecurity & Systems
+                    - generic [ref=f1e1900]: Advanced
+                  - generic [ref=f1e1901]:
+                    - generic [ref=f1e1902]: "Org: Enterprise Cloud Defense & Threat Intelligence Labs"
+                    - generic [ref=f1e1908]: "Branches: CSE / IT / Cybersecurity"
+                  - generic [ref=f1e1913]:
+                    - heading "AI-Based Network Attack Forecasting & Threat Detection from Raw Network Traffic Data" [level=2] [ref=f1e1914]
+                    - paragraph [ref=f1e1915]: Predictive cyber-defense framework that consumes live packet telemetry, identifies subtle reconnaissance anomalies, and forecasts impending DDoS and lateral movement attacks minutes ahead.
+                  - generic [ref=f1e1916]: "Architecture: PCAP Network Tap -> Zeek Packet Parser -> Apache Kafka Stream -> PyTorch Temporal GAT Model -> Elasticsearch SIEM -> React Threat Timeline."
+                  - generic [ref=f1e1917]:
+                    - generic [ref=f1e1918]: Python
+                    - generic [ref=f1e1919]: Zeek / Suricata
+                    - generic [ref=f1e1920]: PyTorch LSTM
+                    - generic [ref=f1e1921]: Apache Kafka
+                    - generic [ref=f1e1922]: Elasticsearch
+                  - generic [ref=f1e1923]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e1924]:
+                      - listitem [ref=f1e1925]:
+                        - generic [ref=f1e1929]: High-throughput Zeek log pipeline streaming connection tuples to Kafka topic queues
+                      - listitem [ref=f1e1930]:
+                        - generic [ref=f1e1934]: Temporal Graph Attention Network (GAT) predicting attacker kill-chain progression
+                      - listitem [ref=f1e1935]:
+                        - generic [ref=f1e1939]: Real-time anomaly scoring eliminating 98% of false-positive alert fatigue
+                      - listitem [ref=f1e1940]:
+                        - generic [ref=f1e1944]: Automated iptables / firewall rule synthesis for autonomous pre-emptive mitigation
+                  - generic [ref=f1e1945]:
+                    - generic [ref=f1e1946]:
+                      - generic [ref=f1e1947]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e1948] [cursor=pointer]
+                    - paragraph [ref=f1e1953]: "\"Architected an AI network intrusion forecasting pipeline analyzing 25k packets/sec via Zeek and Kafka, predicting multi-stage server attacks 8.4 minutes before critical asset compromise.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e1955] [cursor=pointer]
+              - generic [ref=f1e1962]:
+                - generic [ref=f1e1963]:
+                  - generic [ref=f1e1964]:
+                    - generic [ref=f1e1965]:
+                      - generic [ref=f1e1966]: Software Systems
+                      - generic [ref=f1e1969]: Robotics & Computer Vision
+                    - generic [ref=f1e1970]: Advanced
+                  - generic [ref=f1e1971]:
+                    - generic [ref=f1e1972]: "Org: Autonomous Aerial Robotics & Spatial Vision Center"
+                    - generic [ref=f1e1978]: "Branches: CSE / ECE / Robotics"
+                  - generic [ref=f1e1983]:
+                    - heading "Single-Pass Drone Video to Accurate 3D Model Generation System" [level=2] [ref=f1e1984]
+                    - paragraph [ref=f1e1985]: Photogrammetry and Neural Radiance Fields (NeRF) pipeline transforming continuous single-pass aerial drone video into millimeter-precise textured 3D geometric meshes.
+                  - generic [ref=f1e1986]: "Architecture: Drone 4K Video -> Optical Flow Keyframer -> COLMAP Pose Estimator -> Instant-NGP / 3D Gaussian Splatter -> Open3D Mesh Cleaner -> Three.js Browser Viewer."
+                  - generic [ref=f1e1987]:
+                    - generic [ref=f1e1988]: Python
+                    - generic [ref=f1e1989]: PyTorch
+                    - generic [ref=f1e1990]: Instant-NGP (NeRF)
+                    - generic [ref=f1e1991]: COLMAP
+                    - generic [ref=f1e1992]: Open3D
+                    - generic [ref=f1e1993]: Three.js
+                  - generic [ref=f1e1994]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e1995]:
+                      - listitem [ref=f1e1996]:
+                        - generic [ref=f1e2000]: Automated optical keyframe sampling with SuperPoint and LightGlue visual odometry
+                      - listitem [ref=f1e2001]:
+                        - generic [ref=f1e2005]: Sparse structure-from-motion (SfM) camera pose estimation powered by COLMAP
+                      - listitem [ref=f1e2006]:
+                        - generic [ref=f1e2010]: Instant-NGP GPU neural radiance reconstruction generating photorealistic dense 3D splats
+                      - listitem [ref=f1e2011]:
+                        - generic [ref=f1e2015]: Exportable GLTF/OBJ mesh builder with interactive Three.js 3D measurement tools
+                  - generic [ref=f1e2016]:
+                    - generic [ref=f1e2017]:
+                      - generic [ref=f1e2018]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2019] [cursor=pointer]
+                    - paragraph [ref=f1e2024]: "\"Engineered an aerial 3D reconstruction system translating single-pass drone videos into dense textured 3D terrain meshes in under 12 minutes using NeRF and Gaussian Splatting.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2026] [cursor=pointer]
+              - generic [ref=f1e2033]:
+                - generic [ref=f1e2034]:
+                  - generic [ref=f1e2035]:
+                    - generic [ref=f1e2036]:
+                      - generic [ref=f1e2037]: Software Systems
+                      - generic [ref=f1e2040]: Disaster Management & Geospatial AI
+                    - generic [ref=f1e2041]: Advanced
+                  - generic [ref=f1e2042]:
+                    - generic [ref=f1e2043]: "Org: Global Environmental Geospatial Intelligence Lab"
+                    - generic [ref=f1e2049]: "Branches: CSE / Data Science / Civil"
+                  - generic [ref=f1e2054]:
+                    - heading "AI-Based Detection & Classification of Industrial Fires Using NASA FIRMS Satellite Data" [level=2] [ref=f1e2055]
+                    - paragraph [ref=f1e2056]: Autonomous satellite surveillance system cross-referencing NASA thermal anomaly data with OpenStreetMap industrial boundaries to detect, classify, and track hazardous industrial fires.
+                  - generic [ref=f1e2057]: "Architecture: NASA FIRMS API -> GeoPandas Spatial Join -> OpenStreetMap Industrial Index -> XGBoost Heat Classifier -> PostGIS Database -> Leaflet Geospatial Incident Map."
+                  - generic [ref=f1e2058]:
+                    - generic [ref=f1e2059]: Python
+                    - generic [ref=f1e2060]: GeoPandas
+                    - generic [ref=f1e2061]: GDAL
+                    - generic [ref=f1e2062]: XGBoost
+                    - generic [ref=f1e2063]: NASA FIRMS API
+                    - generic [ref=f1e2064]: Leaflet.js
+                  - generic [ref=f1e2065]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2066]:
+                      - listitem [ref=f1e2067]:
+                        - generic [ref=f1e2071]: Automated polling of NASA VIIRS (375m) and MODIS (1km) near-real-time thermal datasets
+                      - listitem [ref=f1e2072]:
+                        - generic [ref=f1e2076]: Spatial polygon overlay identifying licensed flare stacks vs uncontrolled factory conflagrations
+                      - listitem [ref=f1e2077]:
+                        - generic [ref=f1e2081]: XGBoost temporal persistence model eliminating solar glint and agricultural burn false alarms
+                      - listitem [ref=f1e2082]:
+                        - generic [ref=f1e2086]: Emergency dispatch alert webhooks dispatching geo-coordinates and plume radius estimates
+                  - generic [ref=f1e2087]:
+                    - generic [ref=f1e2088]:
+                      - generic [ref=f1e2089]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2090] [cursor=pointer]
+                    - paragraph [ref=f1e2095]: "\"Built an industrial disaster surveillance system monitoring 45,000 sq km from NASA FIRMS satellite telemetry, isolating industrial blazes with 97.4% precision in <3 minutes of satellite pass.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2097] [cursor=pointer]
+              - generic [ref=f1e2104]:
+                - generic [ref=f1e2105]:
+                  - generic [ref=f1e2106]:
+                    - generic [ref=f1e2107]:
+                      - generic [ref=f1e2108]: Software Systems
+                      - generic [ref=f1e2111]: Space Technology & Multimodal AI
+                    - generic [ref=f1e2112]: Advanced
+                  - generic [ref=f1e2113]:
+                    - generic [ref=f1e2114]: "Org: Earth Observation & Satellite Intelligence Labs"
+                    - generic [ref=f1e2120]: "Branches: CSE / AIML / ECE"
+                  - generic [ref=f1e2125]:
+                    - 'heading "SatQuery AI: Interactive Vision-Language Assistant for Remote Sensing Satellite Imagery" [level=2] [ref=f1e2126]'
+                    - paragraph [ref=f1e2127]: Multimodal conversational assistant trained on satellite raster tiles (Chandrayaan-2, Bhuvan, Sentinel), allowing users to execute complex spatial intelligence queries using conversational English and Telugu.
+                  - generic [ref=f1e2128]: "Architecture: Satellite GeoTIFF Tile -> Multispectral Normalizer -> PaliGemma Multimodal Model -> Qdrant Spatial Embeddings -> FastAPI Conversational Gateway -> React Leaflet GIS Viewer."
+                  - generic [ref=f1e2129]:
+                    - generic [ref=f1e2130]: Python
+                    - generic [ref=f1e2131]: HuggingFace Transformers
+                    - generic [ref=f1e2132]: PaliGemma
+                    - generic [ref=f1e2133]: Qdrant
+                    - generic [ref=f1e2134]: FastAPI
+                    - generic [ref=f1e2135]: React
+                  - generic [ref=f1e2136]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2137]:
+                      - listitem [ref=f1e2138]:
+                        - generic [ref=f1e2142]: Vision-Language Model fine-tuned on multispectral remote sensing bands (Optical, NIR, SWIR)
+                      - listitem [ref=f1e2143]:
+                        - generic [ref=f1e2147]: Natural language query answering (e.g. 'Identify illegal sand mining clusters along river banks')
+                      - listitem [ref=f1e2148]:
+                        - generic [ref=f1e2152]: Vector retrieval with Qdrant indexing satellite tiles by semantic land-cover features
+                      - listitem [ref=f1e2153]:
+                        - generic [ref=f1e2157]: Interactive bounding box grounding and temporal change detection overlays
+                  - generic [ref=f1e2158]:
+                    - generic [ref=f1e2159]:
+                      - generic [ref=f1e2160]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2161] [cursor=pointer]
+                    - paragraph [ref=f1e2166]: "\"Created a multimodal vision-language assistant for satellite rasters enabling conversational spatial queries with 91.2% segmentation IoU and sub-4s response latency.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2168] [cursor=pointer]
+              - generic [ref=f1e2175]:
+                - generic [ref=f1e2176]:
+                  - generic [ref=f1e2177]:
+                    - generic [ref=f1e2178]:
+                      - generic [ref=f1e2179]: Software Systems
+                      - generic [ref=f1e2182]: Smart Vehicles & Sensor Fusion
+                    - generic [ref=f1e2183]: Advanced
+                  - generic [ref=f1e2184]:
+                    - generic [ref=f1e2185]: "Org: Advanced Avionics & Inertial Navigation Research"
+                    - generic [ref=f1e2191]: "Branches: ECE / EEE / Robotics / CSE"
+                  - generic [ref=f1e2196]:
+                    - heading "AI-ML Based Intelligent Dead Reckoning System for Seamless GNSS-Denied Navigation" [level=2] [ref=f1e2197]
+                    - paragraph [ref=f1e2198]: High-precision subterranean and urban canyon positioning system combining high-frequency 9-axis inertial measurement unit (IMU) data with neural network zero-velocity updates (ZUPT).
+                  - generic [ref=f1e2199]: "Architecture: 9-DOF IMU Sensor Stream (100Hz) -> High-Pass Noise Filter -> PyTorch PINN Bias Estimator -> Extended Kalman Filter Fusion -> ROS2 Odometry Publisher -> 3D Path Visualizer."
+                  - generic [ref=f1e2200]:
+                    - generic [ref=f1e2201]: C++
+                    - generic [ref=f1e2202]: Python
+                    - generic [ref=f1e2203]: Extended Kalman Filter (EKF)
+                    - generic [ref=f1e2204]: PyTorch
+                    - generic [ref=f1e2205]: ROS2
+                    - generic [ref=f1e2206]: NumPy
+                  - generic [ref=f1e2207]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2208]:
+                      - listitem [ref=f1e2209]:
+                        - generic [ref=f1e2213]: Physics-informed recurrent neural network learning dynamic sensor bias corrections
+                      - listitem [ref=f1e2214]:
+                        - generic [ref=f1e2218]: Extended Kalman Filter fusing wheel tick encoders, accelerometer, and gyroscope data
+                      - listitem [ref=f1e2219]:
+                        - generic [ref=f1e2223]: Zero-Velocity Update (ZUPT) trigger suppressing cumulative distance drift to <1.2% over 10km
+                      - listitem [ref=f1e2224]:
+                        - generic [ref=f1e2228]: Lightweight ROS2 node capable of running on embedded ARM Cortex or Jetson architectures
+                  - generic [ref=f1e2229]:
+                    - generic [ref=f1e2230]:
+                      - generic [ref=f1e2231]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2232] [cursor=pointer]
+                    - paragraph [ref=f1e2237]: "\"Engineered an intelligent dead-reckoning navigation system suppressing IMU drift to <1.1% over 5km in GNSS-denied tunnels using PyTorch neural networks and Extended Kalman Filters.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2239] [cursor=pointer]
+              - generic [ref=f1e2246]:
+                - generic [ref=f1e2247]:
+                  - generic [ref=f1e2248]:
+                    - generic [ref=f1e2249]:
+                      - generic [ref=f1e2250]: Software Systems
+                      - generic [ref=f1e2253]: Smart Automation & Industrial AI
+                    - generic [ref=f1e2254]: Advanced
+                  - generic [ref=f1e2255]:
+                    - generic [ref=f1e2256]: "Org: Industrial Sovereign AI Systems Consortium"
+                    - generic [ref=f1e2262]: "Branches: CSE / IT / AIML"
+                  - generic [ref=f1e2267]:
+                    - heading "Sovereign On-Premise Agentic AI Workbench Using Open-Weight Multimodal LLMs" [level=2] [ref=f1e2268]
+                    - paragraph [ref=f1e2269]: Fully air-gapped, sovereign enterprise AI platform for confidential industrial work, executing multimodal reasoning across technical engineering drawings (P&IDs) and maintenance manuals.
+                  - generic [ref=f1e2270]: "Architecture: Air-Gapped Client -> NGINX Reverse Proxy -> LangGraph Orchestrator -> vLLM Llama-3-Vision Engine -> ChromaDB Encrypted Embeddings -> Local Audit Logger."
+                  - generic [ref=f1e2271]:
+                    - generic [ref=f1e2272]: Python
+                    - generic [ref=f1e2273]: vLLM
+                    - generic [ref=f1e2274]: Llama-3-Vision
+                    - generic [ref=f1e2275]: Ollama
+                    - generic [ref=f1e2276]: LangGraph
+                    - generic [ref=f1e2277]: ChromaDB
+                    - generic [ref=f1e2278]: Docker
+                  - generic [ref=f1e2279]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2280]:
+                      - listitem [ref=f1e2281]:
+                        - generic [ref=f1e2285]: 100% offline air-gapped deployment with zero external network connectivity or telemetry leaks
+                      - listitem [ref=f1e2286]:
+                        - generic [ref=f1e2290]: vLLM high-throughput inference engine serving 4-bit quantized open-weight vision models
+                      - listitem [ref=f1e2291]:
+                        - generic [ref=f1e2295]: LangGraph agentic workflow automating incident root-cause analysis from technical logs
+                      - listitem [ref=f1e2296]:
+                        - generic [ref=f1e2300]: Enterprise role-based access control with AES-256 encrypted vector database partitions
+                  - generic [ref=f1e2301]:
+                    - generic [ref=f1e2302]:
+                      - generic [ref=f1e2303]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2304] [cursor=pointer]
+                    - paragraph [ref=f1e2309]: "\"Deployed a sovereign on-premise agentic AI platform running 8B quantized multimodal LLMs on local GPUs with zero cloud leakage, speeding up industrial incident analysis by 60%.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2311] [cursor=pointer]
+              - generic [ref=f1e2318]:
+                - generic [ref=f1e2319]:
+                  - generic [ref=f1e2320]:
+                    - generic [ref=f1e2321]:
+                      - generic [ref=f1e2322]: Software Systems
+                      - generic [ref=f1e2325]: Smart Automation & Robotics
+                    - generic [ref=f1e2326]: Advanced
+                  - generic [ref=f1e2327]:
+                    - generic [ref=f1e2328]: "Org: Connected Fleet Logistics & Robotics Research"
+                    - generic [ref=f1e2334]: "Branches: CSE / ECE / Robotics"
+                  - generic [ref=f1e2339]:
+                    - heading "Edge-AI Distributed Fleet Coordination & Collision Avoidance for Autonomous Mobile Robots" [level=2] [ref=f1e2340]
+                    - paragraph [ref=f1e2341]: Decentralized multi-robot orchestration platform coordinating 30+ warehouse AMRs with peer-to-peer discovery, space-time conflict resolution, and dynamic deadlock prevention.
+                  - generic [ref=f1e2342]: "Architecture: AMR Robot Nodes -> Zenoh P2P Mesh -> Conflict-Based Search Solver -> TEB Local Planner -> Central Fleet Digital Twin -> WebSocket Telemetry."
+                  - generic [ref=f1e2343]:
+                    - generic [ref=f1e2344]: Python
+                    - generic [ref=f1e2345]: C++
+                    - generic [ref=f1e2346]: ROS2 Humble
+                    - generic [ref=f1e2347]: Zenoh / MQTT
+                    - generic [ref=f1e2348]: React
+                    - generic [ref=f1e2349]: Docker
+                  - generic [ref=f1e2350]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2351]:
+                      - listitem [ref=f1e2352]:
+                        - generic [ref=f1e2356]: Decentralized peer-to-peer discovery using the lightweight Zenoh networking protocol
+                      - listitem [ref=f1e2357]:
+                        - generic [ref=f1e2361]: Space-Time Conflict-Based Search (CBS) solving multi-agent path finding (MAPF) in real-time
+                      - listitem [ref=f1e2362]:
+                        - generic [ref=f1e2366]: Dynamic replanning avoiding static obstacles and human pedestrians within 50ms
+                      - listitem [ref=f1e2367]:
+                        - generic [ref=f1e2371]: Web-based 2D/3D digital twin warehouse floor dashboard monitoring battery and fleet status
+                  - generic [ref=f1e2372]:
+                    - generic [ref=f1e2373]:
+                      - generic [ref=f1e2374]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2375] [cursor=pointer]
+                    - paragraph [ref=f1e2380]: "\"Architected a distributed fleet coordination engine for 25+ autonomous mobile robots in ROS2 with sub-10ms collision negotiation and zero operational deadlocks.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2382] [cursor=pointer]
+              - generic [ref=f1e2389]:
+                - generic [ref=f1e2390]:
+                  - generic [ref=f1e2391]:
+                    - generic [ref=f1e2392]:
+                      - generic [ref=f1e2393]: Software Systems
+                      - generic [ref=f1e2396]: Smart Automation & Computer Vision
+                    - generic [ref=f1e2397]: Advanced
+                  - generic [ref=f1e2398]:
+                    - generic [ref=f1e2399]: "Org: Intelligent Urban Mobility & Smart City Consortium"
+                    - generic [ref=f1e2405]: "Branches: CSE / IT / ECE"
+                  - generic [ref=f1e2410]:
+                    - heading "City-Wide AI Engine for Multi-Camera ANPR Trajectory Tracking & Urban Traffic Analytics" [level=2] [ref=f1e2411]
+                    - paragraph [ref=f1e2412]: High-throughput smart city traffic surveillance platform performing multi-camera automatic number plate recognition (ANPR), cross-camera trajectory re-identification, and congestion prediction.
+                  - generic [ref=f1e2413]: "Architecture: RTSP Camera Matrix (30x) -> YOLOv10 Plate Detector -> DeepSORT ReID Tracker -> Redis Stream Buffer -> ClickHouse DB -> React City Traffic Map."
+                  - generic [ref=f1e2414]:
+                    - generic [ref=f1e2415]: Python
+                    - generic [ref=f1e2416]: YOLOv10
+                    - generic [ref=f1e2417]: DeepSORT
+                    - generic [ref=f1e2418]: OpenCV
+                    - generic [ref=f1e2419]: Redis
+                    - generic [ref=f1e2420]: ClickHouse
+                    - generic [ref=f1e2421]: FastAPI
+                  - generic [ref=f1e2422]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2423]:
+                      - listitem [ref=f1e2424]:
+                        - generic [ref=f1e2428]: YOLOv10 object detector executing real-time license plate detection across skewed angles
+                      - listitem [ref=f1e2429]:
+                        - generic [ref=f1e2433]: DeepSORT multi-camera re-identification tracking vehicle paths across city intersections
+                      - listitem [ref=f1e2434]:
+                        - generic [ref=f1e2438]: Redis streaming buffer handling 20+ concurrent RTSP video streams at 30 FPS
+                      - listitem [ref=f1e2439]:
+                        - generic [ref=f1e2443]: ClickHouse columnar database executing spatial trajectory queries in under 15ms
+                  - generic [ref=f1e2444]:
+                    - generic [ref=f1e2445]:
+                      - generic [ref=f1e2446]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2447] [cursor=pointer]
+                    - paragraph [ref=f1e2452]: "\"Built a city-scale traffic intelligence engine processing 16 concurrent 1080p RTSP camera streams at 28 FPS with 98.1% license plate extraction accuracy using YOLOv10 and DeepSORT.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2454] [cursor=pointer]
+              - generic [ref=f1e2461]:
+                - generic [ref=f1e2462]:
+                  - generic [ref=f1e2463]:
+                    - generic [ref=f1e2464]:
+                      - generic [ref=f1e2465]: Hardware & Embedded
+                      - generic [ref=f1e2469]: Robotics & Hardware Automation
+                    - generic [ref=f1e2470]: Advanced
+                  - generic [ref=f1e2471]:
+                    - generic [ref=f1e2472]: "Org: Industrial Robotics & Warehouse Automation Labs"
+                    - generic [ref=f1e2478]: "Branches: Robotics / Mechanical / ECE / EEE"
+                  - generic [ref=f1e2483]:
+                    - heading "Modular Autonomous Mobile Robot (AMR) Platform for Smart Warehouse Automation" [level=2] [ref=f1e2484]
+                    - paragraph [ref=f1e2485]: An industrial modular autonomous mobile robot engineered with differential drive, closed-loop PID stepper motors, 2D LiDAR SLAM navigation, and an automated top payload lifter.
+                  - generic [ref=f1e2486]: "Architecture: RPLiDAR A1 + Wheel Encoders -> STM32 Motor Controller -> UART Bridge -> Raspberry Pi 5 (ROS2 Nav2 Stack) -> Dual Planetary DC Motors -> Wireless Charge Dock."
+                  - generic [ref=f1e2487]:
+                    - generic [ref=f1e2488]: SolidWorks CAD
+                    - generic [ref=f1e2489]: 3D Printing
+                    - generic [ref=f1e2490]: STM32 Nucleo
+                    - generic [ref=f1e2491]: Raspberry Pi 5
+                    - generic [ref=f1e2492]: RPLiDAR A1
+                    - generic [ref=f1e2493]: ROS2 Nav2
+                  - generic [ref=f1e2494]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2495]:
+                      - listitem [ref=f1e2496]:
+                        - generic [ref=f1e2500]: Chassis designed in SolidWorks with laser-cut aluminum baseplate and 50kg load capacity
+                      - listitem [ref=f1e2501]:
+                        - generic [ref=f1e2505]: STM32 microcontroller running real-time closed loop PID velocity control with optical encoders
+                      - listitem [ref=f1e2506]:
+                        - generic [ref=f1e2510]: Raspberry Pi 5 running ROS2 Nav2 stack for autonomous 2D LiDAR SLAM and path planning
+                      - listitem [ref=f1e2511]:
+                        - generic [ref=f1e2515]: Autonomous magnetic docking station with wireless inductive LiFePO4 battery charging
+                  - generic [ref=f1e2516]:
+                    - generic [ref=f1e2517]:
+                      - generic [ref=f1e2518]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2519] [cursor=pointer]
+                    - paragraph [ref=f1e2524]: "\"Fabricated a 50kg-payload autonomous mobile robot chassis from scratch using SolidWorks, STM32 PID controllers, and 2D LiDAR SLAM, achieving sub-2cm localization accuracy in warehouse aisles.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2526] [cursor=pointer]
+              - generic [ref=f1e2533]:
+                - generic [ref=f1e2534]:
+                  - generic [ref=f1e2535]:
+                    - generic [ref=f1e2536]:
+                      - generic [ref=f1e2537]: Hardware & Embedded
+                      - generic [ref=f1e2541]: MedTech & Rehabilitation Robotics
+                    - generic [ref=f1e2542]: Advanced
+                  - generic [ref=f1e2543]:
+                    - generic [ref=f1e2544]: "Org: Biomedical Ergonomics & Rehabilitation Robotics Lab"
+                    - generic [ref=f1e2550]: "Branches: Biomedical / Mechanical / ECE / Mechatronics"
+                  - generic [ref=f1e2555]:
+                    - heading "Wearable Robotic Exoskeleton / Human Augmentation Mobility Assistive System" [level=2] [ref=f1e2556]
+                    - paragraph [ref=f1e2557]: Active motorized lower-limb orthotic exoskeleton detecting user movement intentions via surface electromyography (sEMG) muscle electrodes and providing powered knee torque assistance.
+                  - generic [ref=f1e2558]: "Architecture: Surface EMG Electrodes + Knee IMU -> ESP32 FreeRTOS Controller -> Gated Recurrent Unit (GRU) Gait Classifier -> CAN Bus Motor Driver -> Harmonic BLDC Actuator."
+                  - generic [ref=f1e2559]:
+                    - generic [ref=f1e2560]: Carbon Fiber / AL-6061
+                    - generic [ref=f1e2561]: Harmonic Drive BLDC
+                    - generic [ref=f1e2562]: MyoWare sEMG
+                    - generic [ref=f1e2563]: IMU 6-DOF
+                    - generic [ref=f1e2564]: ESP32
+                    - generic [ref=f1e2565]: FreeRTOS
+                  - generic [ref=f1e2566]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2567]:
+                      - listitem [ref=f1e2568]:
+                        - generic [ref=f1e2572]: Ergonomic carbon fiber thigh/shank braces with quick-release orthopedic ratchets (< 3.8 kg)
+                      - listitem [ref=f1e2573]:
+                        - generic [ref=f1e2577]: MyoWare 2.0 muscle electrodes capturing quadriceps and hamstring microvolt action potentials
+                      - listitem [ref=f1e2578]:
+                        - generic [ref=f1e2582]: ESP32 running FreeRTOS with sub-18ms intent-to-actuation response latency
+                      - listitem [ref=f1e2583]:
+                        - generic [ref=f1e2587]: High-torque brushless DC motor with compact 50:1 harmonic gearhead delivering 35 Nm torque
+                  - generic [ref=f1e2588]:
+                    - generic [ref=f1e2589]:
+                      - generic [ref=f1e2590]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2591] [cursor=pointer]
+                    - paragraph [ref=f1e2596]: "\"Designed an active robotic lower-limb assistive exoskeleton utilizing surface EMG sensors and harmonic BLDC actuators, delivering 30 Nm walking assistance with 16ms intention detection latency.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2598] [cursor=pointer]
+              - generic [ref=f1e2605]:
+                - generic [ref=f1e2606]:
+                  - generic [ref=f1e2607]:
+                    - generic [ref=f1e2608]:
+                      - generic [ref=f1e2609]: Hardware & Embedded
+                      - generic [ref=f1e2613]: Smart Automation & Industrial Safety
+                    - generic [ref=f1e2614]: Advanced
+                  - generic [ref=f1e2615]:
+                    - generic [ref=f1e2616]: "Org: Industrial Occupational Safety & Gas Telemetry"
+                    - generic [ref=f1e2622]: "Branches: Chemical / ECE / Instrumentation"
+                  - generic [ref=f1e2627]:
+                    - heading "Passive Colorimetric H2S Exposure-Dosimeter Wristband with Edge-AI Optical Reading" [level=2] [ref=f1e2628]
+                    - paragraph [ref=f1e2629]: Intrinsically safe wearable toxic gas dosimeter that absorbs airborne Hydrogen Sulfide (H2S) passively and quantitatively measures cumulative worker exposure using onboard optical TinyML.
+                  - generic [ref=f1e2630]: "Architecture: Airborne H2S Gas -> Chemical Paper Matrix (Color Shift) -> ESP32-S3 Optical Chamber -> TinyML Colorimetric Regression Model -> BLE Radio -> Industrial Gateway."
+                  - generic [ref=f1e2631]:
+                    - generic [ref=f1e2632]: Lead Acetate Reagent Strips
+                    - generic [ref=f1e2633]: Silicone IP67
+                    - generic [ref=f1e2634]: ESP32-S3-CAM
+                    - generic [ref=f1e2635]: BLE 5.0
+                    - generic [ref=f1e2636]: TinyML Chromaticity
+                  - generic [ref=f1e2637]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2638]:
+                      - listitem [ref=f1e2639]:
+                        - generic [ref=f1e2643]: "Zero-power passive chemical absorption: chemical strip darkens proportionally to ppm-hours"
+                      - listitem [ref=f1e2644]:
+                        - generic [ref=f1e2648]: Calibrated internal LED chamber with miniature camera capturing strip color coordinates
+                      - listitem [ref=f1e2649]:
+                        - generic [ref=f1e2653]: TinyML polynomial regression calculating exact cumulative dosage in parts-per-million (ppm)
+                      - listitem [ref=f1e2654]:
+                        - generic [ref=f1e2658]: Bluetooth Low Energy (BLE) beacon transmitting automated vibration alerts at 10 ppm threshold
+                  - generic [ref=f1e2659]:
+                    - generic [ref=f1e2660]:
+                      - generic [ref=f1e2661]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2662] [cursor=pointer]
+                    - paragraph [ref=f1e2667]: "\"Engineered an intrinsically safe H2S dosimeter wristband combining colorimetric reactive membranes with an ESP32-S3 optical chromaticity engine, measuring toxic exposure from 1-100 ppm with ±4% accuracy.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2669] [cursor=pointer]
+              - generic [ref=f1e2676]:
+                - generic [ref=f1e2677]:
+                  - generic [ref=f1e2678]:
+                    - generic [ref=f1e2679]:
+                      - generic [ref=f1e2680]: Hardware & Embedded
+                      - generic [ref=f1e2684]: Agriculture & Rural Micro-Enterprise
+                    - generic [ref=f1e2685]: Intermediate
+                  - generic [ref=f1e2686]:
+                    - generic [ref=f1e2687]: "Org: Renewable Energy Precision Machinery Lab"
+                    - generic [ref=f1e2693]: "Branches: Mechanical / EEE / Production / Rural Tech"
+                  - generic [ref=f1e2698]:
+                    - heading "High-Efficiency Solar-Hybrid Multi-Spindle Precision Yarn Production System" [level=2] [ref=f1e2699]
+                    - paragraph [ref=f1e2700]: Solar-electric motorized hybrid multi-spindle yarn spinning machine designed to eliminate physical musculoskeletal strain and triple daily wage income for artisan weavers.
+                  - generic [ref=f1e2701]: "Architecture: 100W Solar PV Module -> MPPT Charge Controller -> 12V LiFePO4 Battery -> Microcontroller PWM Driver -> High-Torque BLDC Motor -> Spindle Pulley Train -> OLED Telemetry."
+                  - generic [ref=f1e2702]:
+                    - generic [ref=f1e2703]: SolidWorks
+                    - generic [ref=f1e2704]: 12V 100W BLDC Motor
+                    - generic [ref=f1e2705]: LiFePO4 12V 20Ah
+                    - generic [ref=f1e2706]: Solar MPPT
+                    - generic [ref=f1e2707]: PWM Speed Controller
+                    - generic [ref=f1e2708]: OLED RPM
+                  - generic [ref=f1e2709]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2710]:
+                      - listitem [ref=f1e2711]:
+                        - generic [ref=f1e2715]: Low-cost rigid steel tubular frame with precision sealed bearings to minimize friction losses
+                      - listitem [ref=f1e2716]:
+                        - generic [ref=f1e2720]: 100W monocrystalline rooftop solar panel with MPPT charging a 12V 20Ah lithium battery
+                      - listitem [ref=f1e2721]:
+                        - generic [ref=f1e2725]: Smooth PWM variable-speed control knob with OLED screen displaying real-time spindle RPM and yarn count
+                      - listitem [ref=f1e2726]:
+                        - generic [ref=f1e2730]: Dual-drive hybrid mechanism allowing manual foot pedal operation during monsoon / grid outages
+                  - generic [ref=f1e2731]:
+                    - generic [ref=f1e2732]:
+                      - generic [ref=f1e2733]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2734] [cursor=pointer]
+                    - paragraph [ref=f1e2739]: "\"Developed a solar-hybrid multi-spindle spinning machine increasing artisan daily yarn productivity by 280% with zero muscular fatigue and a continuous 8-hour solar battery runtime.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2741] [cursor=pointer]
+              - generic [ref=f1e2748]:
+                - generic [ref=f1e2749]:
+                  - generic [ref=f1e2750]:
+                    - generic [ref=f1e2751]:
+                      - generic [ref=f1e2752]: Hardware & Embedded
+                      - generic [ref=f1e2756]: Agriculture & Rural FoodTech
+                    - generic [ref=f1e2757]: Advanced
+                  - generic [ref=f1e2758]:
+                    - generic [ref=f1e2759]: "Org: Clean Energy AgriTech & Cold-Chain Systems"
+                    - generic [ref=f1e2765]: "Branches: Mechanical / EEE / AgriTech / Mechatronics"
+                  - generic [ref=f1e2770]:
+                    - heading "Smart Solar-Powered Drying & Compact Vacuum Packaging Automation System" [level=2] [ref=f1e2771]
+                    - paragraph [ref=f1e2772]: Integrated solar-assisted thermal drying chamber with automated humidity-controlled air dampers and an integrated compact vacuum impulse packaging station for rural home-based artisans.
+                  - generic [ref=f1e2773]: "Architecture: Solar Thermal Collector -> Forced Air Fans -> SHT31 Humidity Feedback -> ESP32 Damper Controller -> Automated Vacuum Chamber -> Thermal Sealing Bar."
+                  - generic [ref=f1e2774]:
+                    - generic [ref=f1e2775]: Solar Thermal Air Collector
+                    - generic [ref=f1e2776]: 12V Exhaust Blowers
+                    - generic [ref=f1e2777]: DHT22 / SHT31 Sensors
+                    - generic [ref=f1e2778]: Arduino / ESP32
+                    - generic [ref=f1e2779]: 12V Vacuum Pump
+                  - generic [ref=f1e2780]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2781]:
+                      - listitem [ref=f1e2782]:
+                        - generic [ref=f1e2786]: Parabolic solar air collector generating 45°C - 60°C dry air flow without electric heating elements
+                      - listitem [ref=f1e2787]:
+                        - generic [ref=f1e2791]: Microcontroller-actuated exhaust servo dampers maintaining optimal 12% moisture equilibrium
+                      - listitem [ref=f1e2792]:
+                        - generic [ref=f1e2796]: Compact automated vacuum pump evacuating oxygen to prevent mold and extend shelf life to 18 months
+                      - listitem [ref=f1e2797]:
+                        - generic [ref=f1e2801]: Impulse heat sealing wire sealing pouches in 2.5 seconds with acoustic completion buzzer
+                  - generic [ref=f1e2802]:
+                    - generic [ref=f1e2803]:
+                      - generic [ref=f1e2804]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2805] [cursor=pointer]
+                    - paragraph [ref=f1e2810]: "\"Designed an off-grid solar thermal drying and automated vacuum packaging machine for rural artisans, reducing product drying time by 82% while maintaining optimal 7% moisture equilibrium.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2812] [cursor=pointer]
+              - generic [ref=f1e2819]:
+                - generic [ref=f1e2820]:
+                  - generic [ref=f1e2821]:
+                    - generic [ref=f1e2822]:
+                      - generic [ref=f1e2823]: Hardware & Embedded
+                      - generic [ref=f1e2827]: Smart Automation & Geotechnical Safety
+                    - generic [ref=f1e2828]: Advanced
+                  - generic [ref=f1e2829]:
+                    - generic [ref=f1e2830]: "Org: Geotechnical Subterranean Hazards & Safety Labs"
+                    - generic [ref=f1e2836]: "Branches: Mining / Civil / ECE / EEE / IoT"
+                  - generic [ref=f1e2841]:
+                    - heading "AI-Enabled Low-Cost Real-Time Mine Subsidence Monitoring & Early Warning System" [level=2] [ref=f1e2842]
+                    - paragraph [ref=f1e2843]: Rugged wireless geotechnical sensor mesh deployed across surface terrain over underground coal mines to measure sub-millimeter ground displacement and issue automated early evacuation alerts.
+                  - generic [ref=f1e2844]: "Architecture: MEMS Tilt + Geophone Sensors -> STM32 Low-Power MCU -> LoRa Transceiver (868MHz) -> Surface Gateway Node -> Cloud Anomaly Model -> Automated Emergency Siren & SMS."
+                  - generic [ref=f1e2845]:
+                    - generic [ref=f1e2846]: Dual-Axis MEMS Tilt Sensor
+                    - generic [ref=f1e2847]: Geophone Seismic Sensor
+                    - generic [ref=f1e2848]: LoRa SX1262 (868MHz)
+                    - generic [ref=f1e2849]: STM32 Low-Power
+                    - generic [ref=f1e2850]: Solar Harvester
+                    - generic [ref=f1e2851]: IP68 Enclosure
+                  - generic [ref=f1e2852]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2853]:
+                      - listitem [ref=f1e2854]:
+                        - generic [ref=f1e2858]: Ultra-sensitive dual-axis MEMS inclinometer detecting angular ground tilts down to 0.001 degrees
+                      - listitem [ref=f1e2859]:
+                        - generic [ref=f1e2863]: Long-Range LoRa SX1262 mesh network transmitting telemetry across 12km without cellular towers
+                      - listitem [ref=f1e2864]:
+                        - generic [ref=f1e2868]: Edge microcontroller running TinyML vibration isolation filtering out heavy surface truck traffic
+                      - listitem [ref=f1e2869]:
+                        - generic [ref=f1e2873]: Solar energy harvester with supercapacitors enabling 5-year maintenance-free autonomous operation
+                  - generic [ref=f1e2874]:
+                    - generic [ref=f1e2875]:
+                      - generic [ref=f1e2876]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2877] [cursor=pointer]
+                    - paragraph [ref=f1e2882]: "\"Built a low-cost LoRa geotechnical sensor mesh for underground coal mine monitoring, detecting surface tilt variations down to 0.005° and providing automated subsidence alerts 36 hours in advance.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2884] [cursor=pointer]
+              - generic [ref=f1e2891]:
+                - generic [ref=f1e2892]:
+                  - generic [ref=f1e2893]:
+                    - generic [ref=f1e2894]:
+                      - generic [ref=f1e2895]: Hardware & Embedded
+                      - generic [ref=f1e2899]: Homeland Security & Defense Robotics
+                    - generic [ref=f1e2900]: Advanced
+                  - generic [ref=f1e2901]:
+                    - generic [ref=f1e2902]: "Org: Defense CBRN Sensing & Autonomous Security Systems"
+                    - generic [ref=f1e2908]: "Branches: ECE / Robotics / Instrumentation / Chemical"
+                  - generic [ref=f1e2913]:
+                    - heading "Mobile Quadruped Robot / Handheld Chemical Sensor Device for Real-Time Threat Detection" [level=2] [ref=f1e2914]
+                    - paragraph [ref=f1e2915]: Autonomous robotic chemical detection sniffer utilizing an electronic nose array of metal-oxide sensors to sample atmospheric air and identify trace vapor signatures of explosives and narcotics.
+                  - generic [ref=f1e2916]: "Architecture: Air Sniffer Micro-Pump -> Multi-Channel Chemical Sensor Chamber -> 16-Bit ADC Digitizer -> Jetson Nano 1D-CNN Fingerprint Classifier -> Audio/Visual Alert -> RPF Control Room Stream."
+                  - generic [ref=f1e2917]:
+                    - generic [ref=f1e2918]: MOS Gas Sensor Array
+                    - generic [ref=f1e2919]: PID Photoionization Sensor
+                    - generic [ref=f1e2920]: Air Sampling Pump
+                    - generic [ref=f1e2921]: Jetson Orin Nano
+                    - generic [ref=f1e2922]: 12-DOF Quadruped
+                    - generic [ref=f1e2923]: FLIR Thermal
+                  - generic [ref=f1e2924]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2925]:
+                      - listitem [ref=f1e2926]:
+                        - generic [ref=f1e2930]: Active micro-diaphragm air intake pump drawing continuous air stream across heated sensor chamber
+                      - listitem [ref=f1e2931]:
+                        - generic [ref=f1e2935]: Multi-channel chemical sensor array sensitive to RDX, TNT, Ammonium Nitrate, and opiate vapors
+                      - listitem [ref=f1e2936]:
+                        - generic [ref=f1e2940]: Jetson Orin Nano running 1D-Convolutional Neural Network classifying chemical fingerprints in < 4 seconds
+                      - listitem [ref=f1e2941]:
+                        - generic [ref=f1e2945]: Autonomous patrol mobility mounted on a 12-DOF robotic quadruped navigating railway platforms
+                  - generic [ref=f1e2946]:
+                    - generic [ref=f1e2947]:
+                      - generic [ref=f1e2948]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e2949] [cursor=pointer]
+                    - paragraph [ref=f1e2954]: "\"Engineered a robotic chemical sniffer platform for railway security detecting trace explosive and narcotic vapors down to 2 ppm within 3.5 seconds using a MOS sensor array and Jetson Orin Nano CNN inference.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e2956] [cursor=pointer]
+              - generic [ref=f1e2963]:
+                - generic [ref=f1e2964]:
+                  - generic [ref=f1e2965]:
+                    - generic [ref=f1e2966]:
+                      - generic [ref=f1e2967]: Software Systems
+                      - generic [ref=f1e2970]: Enterprise GenAI & Graph Systems
+                    - generic [ref=f1e2971]: Advanced
+                  - generic [ref=f1e2972]:
+                    - generic [ref=f1e2973]: "Org: Enterprise Knowledge Intelligence Labs"
+                    - generic [ref=f1e2979]: "Branches: CSE / AIML / Data Science"
+                  - generic [ref=f1e2984]:
+                    - 'heading "Enterprise GraphRAG: Knowledge Graph-Augmented RAG with Community Summarization" [level=2] [ref=f1e2985]'
+                    - paragraph [ref=f1e2986]: Enterprise-scale Knowledge Graph-augmented retrieval system resolving multi-hop reasoning bottlenecks across 50,000+ technical documents using hierarchical Leiden community summarization.
+                  - generic [ref=f1e2987]: "Architecture: 50k Enterprise PDFs -> Chunking & LLM Entity Extraction -> Neo4j Knowledge Graph -> Leiden Community Clustering -> Hybrid Vector + Graph Search -> Gemini 2.0 Synthesis -> React Canvas Visualizer."
+                  - generic [ref=f1e2988]:
+                    - generic [ref=f1e2989]: Python 3.11
+                    - generic [ref=f1e2990]: Neo4j
+                    - generic [ref=f1e2991]: GraphRAG
+                    - generic [ref=f1e2992]: LlamaIndex
+                    - generic [ref=f1e2993]: Qdrant
+                    - generic [ref=f1e2994]: FastAPI
+                    - generic [ref=f1e2995]: Gemini 2.0 Flash
+                  - generic [ref=f1e2996]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e2997]:
+                      - listitem [ref=f1e2998]:
+                        - generic [ref=f1e3002]: Automated entity-relation triple extraction using LLM structured output parsing
+                      - listitem [ref=f1e3003]:
+                        - generic [ref=f1e3007]: Neo4j property graph modeling storing domain entities, relationships, and source provenance
+                      - listitem [ref=f1e3008]:
+                        - generic [ref=f1e3012]: Hierarchical Leiden community clustering producing global summarization indices
+                      - listitem [ref=f1e3013]:
+                        - generic [ref=f1e3017]: Hybrid vector + graph traversal routing queries between localized chunks and global themes
+                  - generic [ref=f1e3018]:
+                    - generic [ref=f1e3019]:
+                      - generic [ref=f1e3020]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e3021] [cursor=pointer]
+                    - paragraph [ref=f1e3026]: "\"Architected an enterprise GraphRAG pipeline in Neo4j indexing 45k technical documents into 120k entity subgraphs, improving complex multi-hop question accuracy by 48% over vanilla vector RAG.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e3028] [cursor=pointer]
+              - generic [ref=f1e3035]:
+                - generic [ref=f1e3036]:
+                  - generic [ref=f1e3037]:
+                    - generic [ref=f1e3038]:
+                      - generic [ref=f1e3039]: Software Systems
+                      - generic [ref=f1e3042]: FinTech & Regulatory Compliance AI
+                    - generic [ref=f1e3043]: Advanced
+                  - generic [ref=f1e3044]:
+                    - generic [ref=f1e3045]: "Org: Financial Technology & Quantitative AI Labs"
+                    - generic [ref=f1e3051]: "Branches: CSE / IT / AIML"
+                  - generic [ref=f1e3056]:
+                    - heading "Agentic Multi-Document Financial & Regulatory RAG with Self-Correction & Reflection" [level=2] [ref=f1e3057]
+                    - paragraph [ref=f1e3058]: Autonomous multi-agent document analysis framework resolving cross-document contradictions across SEC 10-K, 10-Q, and audit filings with automated citation validation and self-reflection loops.
+                  - generic [ref=f1e3059]: "Architecture: Regulatory PDF Corpus -> PDF Table Parser -> Dense & BM25 Hybrid Retrieval -> Cohere Cross-Encoder Reranker -> LangGraph Self-Correction Agent -> Markdown Report with Page Citations."
+                  - generic [ref=f1e3060]:
+                    - generic [ref=f1e3061]: Python 3.11
+                    - generic [ref=f1e3062]: LangGraph
+                    - generic [ref=f1e3063]: ChromaDB
+                    - generic [ref=f1e3064]: BM25 + Dense Hybrid
+                    - generic [ref=f1e3065]: Cohere Rerank
+                    - generic [ref=f1e3066]: FastAPI
+                    - generic [ref=f1e3067]: Docker
+                  - generic [ref=f1e3068]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e3069]:
+                      - listitem [ref=f1e3070]:
+                        - generic [ref=f1e3074]: Reciprocal Rank Fusion (RRF) combining dense semantic embeddings with BM25 sparse keyword retrieval
+                      - listitem [ref=f1e3075]:
+                        - generic [ref=f1e3079]: Cohere Rerank cross-encoder re-ranking top-50 candidates down to top-5 high-signal chunks
+                      - listitem [ref=f1e3080]:
+                        - generic [ref=f1e3084]: LangGraph state machine with automated hallucination grader and query re-writer
+                      - listitem [ref=f1e3085]:
+                        - generic [ref=f1e3089]: Strict citation grounding verifying numerical metrics against original tabular balance sheets
+                  - generic [ref=f1e3090]:
+                    - generic [ref=f1e3091]:
+                      - generic [ref=f1e3092]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e3093] [cursor=pointer]
+                    - paragraph [ref=f1e3098]: "\"Built an Agentic Multi-Document RAG system with LangGraph and Cohere Rerank, implementing automated citation validation and self-reflection to achieve 99.1% factual faithfulness across 500-page financial filings.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e3100] [cursor=pointer]
+              - generic [ref=f1e3107]:
+                - generic [ref=f1e3108]:
+                  - generic [ref=f1e3109]:
+                    - generic [ref=f1e3110]:
+                      - generic [ref=f1e3111]: Software Systems
+                      - generic [ref=f1e3114]: Air-Gapped Systems & Sovereign AI
+                    - generic [ref=f1e3115]: Advanced
+                  - generic [ref=f1e3116]:
+                    - generic [ref=f1e3117]: "Org: National Cyber Security & Sovereign Systems Lab"
+                    - generic [ref=f1e3123]: "Branches: Cybersecurity / CSE / Systems"
+                  - generic [ref=f1e3128]:
+                    - heading "Sovereign Air-Gapped Local RAG Engine with Quantized Open-Source LLMs" [level=2] [ref=f1e3129]
+                    - paragraph [ref=f1e3130]: 100% offline, zero-telemetry sovereign enterprise RAG engine running on local GPU/CPU hardware for defense, healthcare, and banking institutions with strict data residency mandates.
+                  - generic [ref=f1e3131]: "Architecture: Air-Gapped Client -> NGINX Reverse Proxy -> BGE-M3 Embedding Engine -> Qdrant On-Premise Vector DB -> vLLM LLaMA 3.2 4-bit Engine -> Encrypted Audit Log."
+                  - generic [ref=f1e3132]:
+                    - generic [ref=f1e3133]: Python 3.11
+                    - generic [ref=f1e3134]: vLLM / Ollama
+                    - generic [ref=f1e3135]: LLaMA 3.2 (3B/8B)
+                    - generic [ref=f1e3136]: BGE-M3 Embeddings
+                    - generic [ref=f1e3137]: Qdrant Local
+                    - generic [ref=f1e3138]: FastAPI
+                    - generic [ref=f1e3139]: Docker
+                  - generic [ref=f1e3140]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e3141]:
+                      - listitem [ref=f1e3142]:
+                        - generic [ref=f1e3146]: Completely isolated local inference pipeline with zero external API calls or telemetry egress
+                      - listitem [ref=f1e3147]:
+                        - generic [ref=f1e3151]: vLLM high-throughput inference serving 4-bit AWQ quantized LLaMA 3.2 models
+                      - listitem [ref=f1e3152]:
+                        - generic [ref=f1e3156]: BGE-M3 dense multilingual embeddings generating 1024-dim vectors locally
+                      - listitem [ref=f1e3157]:
+                        - generic [ref=f1e3161]: Role-based vector namespace partitioning ensuring strict multi-tenant confidentiality
+                  - generic [ref=f1e3162]:
+                    - generic [ref=f1e3163]:
+                      - generic [ref=f1e3164]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e3165] [cursor=pointer]
+                    - paragraph [ref=f1e3170]: "\"Engineered an air-gapped sovereign RAG pipeline using vLLM and quantized LLaMA 3.2, achieving 42 tokens/sec local throughput with zero external internet egress or data leakage.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e3172] [cursor=pointer]
+              - generic [ref=f1e3179]:
+                - generic [ref=f1e3180]:
+                  - generic [ref=f1e3181]:
+                    - generic [ref=f1e3182]:
+                      - generic [ref=f1e3183]: Software Systems
+                      - generic [ref=f1e3186]: Multimodal Computer Vision & Engineering AI
+                    - generic [ref=f1e3187]: Advanced
+                  - generic [ref=f1e3188]:
+                    - generic [ref=f1e3189]: "Org: Industrial AI & Autonomous Engineering Research"
+                    - generic [ref=f1e3195]: "Branches: CSE / ECE / Robotics"
+                  - generic [ref=f1e3200]:
+                    - heading "Multimodal Vision-RAG for Complex Technical Schematics, Blueprints & Circuit Diagrams" [level=2] [ref=f1e3201]
+                    - paragraph [ref=f1e3202]: Late-interaction vision-language RAG pipeline retrieving and reasoning directly over raw page images of technical blueprints, electrical schematics, and mechanical CAD drawings without OCR degradation.
+                  - generic [ref=f1e3203]: "Architecture: Engineering PDF Blueprints -> High-Res Page Renderer -> ColPali Vision Transformer -> Qdrant Multi-Vector Index -> Late Interaction MaxSim Scorer -> Visual Grounding Bounding Box Canvas."
+                  - generic [ref=f1e3204]:
+                    - generic [ref=f1e3205]: Python 3.11
+                    - generic [ref=f1e3206]: ColPali
+                    - generic [ref=f1e3207]: PaliGemma Vision
+                    - generic [ref=f1e3208]: Qdrant Multi-Vector
+                    - generic [ref=f1e3209]: PyMuPDF
+                    - generic [ref=f1e3210]: FastAPI
+                    - generic [ref=f1e3211]: Three.js
+                  - generic [ref=f1e3212]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e3213]:
+                      - listitem [ref=f1e3214]:
+                        - generic [ref=f1e3218]: ColPali multi-vector late interaction computing token-to-patch similarity matrices
+                      - listitem [ref=f1e3219]:
+                        - generic [ref=f1e3223]: "Elimination of fragile OCR parsing: ingests high-resolution 300 DPI technical PDF raster pages"
+                      - listitem [ref=f1e3224]:
+                        - generic [ref=f1e3228]: Interactive bounding box grounding localizing circuit components and measurement callouts
+                      - listitem [ref=f1e3229]:
+                        - generic [ref=f1e3233]: Sub-150ms multi-vector similarity search over 100,000 schematic pages in Qdrant
+                  - generic [ref=f1e3234]:
+                    - generic [ref=f1e3235]:
+                      - generic [ref=f1e3236]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e3237] [cursor=pointer]
+                    - paragraph [ref=f1e3242]: "\"Designed a multimodal vision RAG engine using ColPali late-interaction patch embeddings, preserving spatial layout in 10,000+ circuit blueprints with an 84% reduction in visual information loss.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e3244] [cursor=pointer]
+              - generic [ref=f1e3251]:
+                - generic [ref=f1e3252]:
+                  - generic [ref=f1e3253]:
+                    - generic [ref=f1e3254]:
+                      - generic [ref=f1e3255]: Software Systems
+                      - generic [ref=f1e3258]: Vernacular NLP & Civic Tech Intelligence
+                    - generic [ref=f1e3259]: Advanced
+                  - generic [ref=f1e3260]:
+                    - generic [ref=f1e3261]: "Org: Public Digital Infrastructure & Language AI Lab"
+                    - generic [ref=f1e3267]: "Branches: CSE / IT / AIML"
+                  - generic [ref=f1e3272]:
+                    - heading "Cross-Lingual Vernacular RAG Pipeline for Public Governance & Healthcare Documents" [level=2] [ref=f1e3273]
+                    - paragraph [ref=f1e3274]: Inclusive civic intelligence system indexing complex English public welfare policies and land records, answering queries via conversational voice in Telugu, Hindi, and English with cross-lingual semantic alignment.
+                  - generic [ref=f1e3275]: "Architecture: English Gazette Documents -> IndicBERT Cross-Lingual Chunker -> FAISS Vector Index -> Spoken Telugu/Hindi Query -> Web Speech API -> Cross-Lingual Retrieval -> Spoken Vernacular Response."
+                  - generic [ref=f1e3276]:
+                    - generic [ref=f1e3277]: Python 3.11
+                    - generic [ref=f1e3278]: AI4Bharat IndicTrans2
+                    - generic [ref=f1e3279]: IndicBERT
+                    - generic [ref=f1e3280]: FAISS
+                    - generic [ref=f1e3281]: FastAPI
+                    - generic [ref=f1e3282]: Web Speech API
+                    - generic [ref=f1e3283]: React
+                  - generic [ref=f1e3284]:
+                    - text: "Key Implementation Features:"
+                    - list [ref=f1e3285]:
+                      - listitem [ref=f1e3286]:
+                        - generic [ref=f1e3290]: Cross-lingual semantic embedding mapping Telugu and Hindi questions directly into English legal text vectors
+                      - listitem [ref=f1e3291]:
+                        - generic [ref=f1e3295]: IndicTrans2 neural machine translation fine-tuned on administrative and medical terminology
+                      - listitem [ref=f1e3296]:
+                        - generic [ref=f1e3300]: Bidirectional speech pipeline supporting Telugu (te-IN) and Hindi (hi-IN) voice input and synthesis
+                      - listitem [ref=f1e3301]:
+                        - generic [ref=f1e3305]: Dynamic policy eligibility checker calculating candidate entitlement based on citizen profile
+                  - generic [ref=f1e3306]:
+                    - generic [ref=f1e3307]:
+                      - generic [ref=f1e3308]: "Google X-Y-Z Resume Bullet:"
+                      - button "Copy" [ref=f1e3309] [cursor=pointer]
+                    - paragraph [ref=f1e3314]: "\"Deployed a cross-lingual Indic RAG platform processing 1,200+ government gazettes, enabling conversational Telugu and Hindi policy queries with 94.6% semantic alignment and real-time audio playback.\""
+                - button "Discuss Architecture with AI Coach" [ref=f1e3316] [cursor=pointer]
+        - button "Ask Coach About This Page" [ref=f1e1150] [cursor=pointer]
+        - generic [ref=f1e1156]:
+          - generic [ref=f1e1157]:
+            - generic [ref=f1e1158]:
+              - generic [ref=f1e1159]: Pathfinder 2.0
+              - paragraph [ref=f1e1165]: Autonomous full-stack AI career intelligence platform benchmarked on 972 verified campus records. Calibrates student profiles, tutors production architectures, and prepares engineering candidates for Tier-1 recruitment filters.
+              - generic [ref=f1e1166]: All 7 Engineering Pillars Operational
+            - generic [ref=f1e1169]:
+              - heading "Core Intelligence" [level=3] [ref=f1e1170]
+              - list [ref=f1e1171]:
+                - listitem [ref=f1e1172]:
+                  - button "Executive Readiness Dashboard" [ref=f1e1173] [cursor=pointer]
+                - listitem [ref=f1e1174]:
+                  - button "AI Mock Interview Simulator Live" [ref=f1e1175] [cursor=pointer]:
+                    - generic [ref=f1e1176]: AI Mock Interview Simulator
+                    - generic [ref=f1e1177]: Live
+                - listitem [ref=f1e1178]:
+                  - button "DAS AI Voice Coach (EN / TE / HI)" [ref=f1e1179] [cursor=pointer]
+                - listitem [ref=f1e1180]:
+                  - button "23 Production Project Blueprints" [ref=f1e1181] [cursor=pointer]
+                - listitem [ref=f1e1182]:
+                  - button "ATS Resume Studio & Scanner" [ref=f1e1183] [cursor=pointer]
+                - listitem [ref=f1e1184]:
+                  - button "STAR Architecture Defense Console" [ref=f1e1185] [cursor=pointer]
+            - generic [ref=f1e1186]:
+              - heading "Institutional Intelligence" [level=3] [ref=f1e1187]
+              - list [ref=f1e1188]:
+                - listitem [ref=f1e1189]:
+                  - button "972 Placement Cohort Explorer" [ref=f1e1190] [cursor=pointer]
+                - listitem [ref=f1e1191]:
+                  - button "Branch Placement Cutoffs & Stats" [ref=f1e1192] [cursor=pointer]
+                - listitem [ref=f1e1193]:
+                  - button "6-Week Career Sprint Roadmap" [ref=f1e1194] [cursor=pointer]
+                - listitem [ref=f1e1195]:
+                  - button "Readiness Command Center" [ref=f1e1196] [cursor=pointer]
+                - listitem [ref=f1e1197]:
+                  - button "Single Source of Truth Profile" [ref=f1e1198] [cursor=pointer]
+            - generic [ref=f1e1199]:
+              - heading "Placement Desk & Support" [level=3] [ref=f1e1200]
+              - paragraph [ref=f1e1201]: "Have questions regarding placement data or AI coach benchmarking? Connect directly:"
+              - generic [ref=f1e1202]:
+                - link "support@pathfinder-ai.io" [ref=f1e1203] [cursor=pointer]:
+                  - /url: mailto:support@pathfinder-ai.io?subject=Pathfinder%20Placement%20Inquiry
+                - link "+91 (800) 012-3456 (Placement Helpline)" [ref=f1e1209] [cursor=pointer]:
+                  - /url: tel:+918000123456
+                - generic [ref=f1e1214]: National Engineering Campus, Academic Block
+          - generic [ref=f1e1220]:
+            - generic [ref=f1e1221]:
+              - generic [ref=f1e1222]: © 2026 Pathfinder 2.0. All rights reserved.
+              - generic [ref=f1e1223]: •
+              - generic [ref=f1e1224]: MIT License Open Verification
+              - generic [ref=f1e1225]: •
+              - button "Privacy Policy" [ref=f1e1226] [cursor=pointer]
+              - generic [ref=f1e1227]: •
+              - button "Terms of Service" [ref=f1e1228] [cursor=pointer]
+            - generic [ref=f1e1229]:
+              - generic [ref=f1e1230]: OWASP 19-Point Hardened
+              - button "Top" [ref=f1e1235] [cursor=pointer]
+  - complementary "3D Background Mode Controls" [ref=f1e1239]:
+    - generic [ref=f1e1240]: "Engine:"
+    - button "Smooth 60fps" [ref=f1e1246] [cursor=pointer]
+    - button "3D Neural Torus Glow" [ref=f1e1250] [cursor=pointer]
+    - button "Hybrid" [ref=f1e1257] [cursor=pointer]
+    - button "042 Void" [ref=f1e1261] [cursor=pointer]:
+      - generic [ref=f1e1262]: "042"
+      - generic [ref=f1e1263]: Void

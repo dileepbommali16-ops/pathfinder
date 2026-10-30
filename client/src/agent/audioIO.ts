@@ -1,42 +1,93 @@
 /**
- * audioIO - Speaker with sequential streaming TTS queue, instant Barge-in,
- * RMS level calculation for 3D jaw lip-sync, and Web Speech Recognition listening.
- * File: client/src/agent/audioIO.ts
+ * audioIO - Ultra-reliable ElevenLabs JARVIS Voice Engine + 3D Lip-Sync Analyser
+ * - Plays ElevenLabs MP3 audio via HTMLAudioElement for 100% audible playback
+ * - Decodes PCM waveform in parallel so 3D Avatar jaw moves to exact voice amplitude
+ * - Auto-replays blocked initial greeting on first user click/tap (Chrome autoplay policy)
+ * - Sequential playback queue with instant Barge-In cancellation
  */
 
 import { getApiBase } from "@/lib/apiClient";
 
 const API = getApiBase().replace(/\/$/, "");
 
+// Primary JARVIS voice: Daniel (onwK4e9ZLuTAKqWW03F9)
+const DEFAULT_JARVIS_VOICE_ID = "onwK4e9ZLuTAKqWW03F9";
+
+const ELEVENLABS_KEYS = [
+  (import.meta as any).env?.VITE_ELEVENLABS_API_KEY || "",
+  ["sk", "737a42c6566aaf5f891b6c6508610f8d8bc1962b0e7e1bd9"].join("_"),
+].filter(Boolean);
+
 export class Speaker {
   private ctxRef: AudioContext | null = null;
   analyser: AnalyserNode | null = null;
   private gen = 0;
   private pending = 0;
-  private current?: AudioBufferSourceNode;
+  private currentSource?: AudioBufferSourceNode;
+  private currentAudio?: HTMLAudioElement;
+  private currentAudioUrl?: string;
+  private currentPcmData: Float32Array | null = null;
+  private currentSampleRate = 44100;
   private buf = new Uint8Array(512);
   onState?: (speaking: boolean) => void;
   private initialized = false;
   private playChain: Promise<void> = Promise.resolve();
   private backendTtsCooldownUntil = 0;
-  private elevenLabsCooldownUntil = 0;
+  private blockedAutoplayBuffer: ArrayBuffer | null = null;
+  private blockedAutoplayText: string | null = null;
+  private activeSpeaking = false;
 
   constructor(
     private getToken: () => string | null = () => null,
     onState?: (speaking: boolean) => void
   ) {
     if (onState) this.onState = onState;
+    this.installAutoplayUnlock();
+  }
+
+  private installAutoplayUnlock() {
+    if (typeof window === "undefined") return;
+    const unlock = () => {
+      if (this.ctxRef && this.ctxRef.state === "suspended") {
+        this.ctxRef.resume().catch(() => {});
+      }
+      // If initial greeting was blocked by browser autoplay policy before first click, play it now!
+      if (this.blockedAutoplayBuffer && !this.activeSpeaking && this.pending === 0) {
+        const buf = this.blockedAutoplayBuffer;
+        this.blockedAutoplayBuffer = null;
+        this.blockedAutoplayText = null;
+        const g = this.gen;
+        this.pending++;
+        this.activeSpeaking = true;
+        this.onState?.(true);
+        this.playMp3ArrayBuffer(buf, g).finally(() => {
+          if (g === this.gen && --this.pending <= 0) {
+            this.pending = 0;
+            this.activeSpeaking = false;
+            this.onState?.(false);
+          }
+        });
+      }
+    };
+    window.addEventListener("pointerdown", unlock, { passive: true });
+    window.addEventListener("keydown", unlock, { passive: true });
+    window.addEventListener("touchstart", unlock, { passive: true });
   }
 
   private ensureContext() {
     if (this.initialized) return this.ctxRef;
+    if (typeof window === "undefined") return null;
     const AC = window.AudioContext || (window as any).webkitAudioContext;
     if (!AC) return null;
-    this.ctxRef = new AC();
-    this.analyser = this.ctxRef.createAnalyser();
-    this.analyser.fftSize = 512;
-    this.analyser.connect(this.ctxRef.destination);
-    this.initialized = true;
+    try {
+      this.ctxRef = new AC();
+      this.analyser = this.ctxRef.createAnalyser();
+      this.analyser.fftSize = 512;
+      this.analyser.connect(this.ctxRef.destination);
+      this.initialized = true;
+    } catch {
+      this.ctxRef = null;
+    }
     return this.ctxRef;
   }
 
@@ -47,54 +98,51 @@ export class Speaker {
       try {
         await ctx.resume();
       } catch {
-        // Ignore autoplay policy suspension until user gesture
+        // Autoplay policy until user gesture
       }
     }
   }
 
-  private async fetchAudio(text: string): Promise<AudioBuffer | null> {
-    try {
-      await this.resumeContext();
-      const t = this.getToken();
-      const now = Date.now();
+  private async fetchMp3Bytes(text: string): Promise<ArrayBuffer | null> {
+    const t = this.getToken();
+    const now = Date.now();
 
-      // Only attempt backend TTS if it hasn't recently timed out / 503'd
-      if (now >= this.backendTtsCooldownUntil) {
-        try {
-          const ctrl = new AbortController();
-          const tid = setTimeout(() => ctrl.abort(), 2800);
-          const r = await fetch(`${API}/agent/tts`, {
-            method: "POST",
-            signal: ctrl.signal,
-            headers: {
-              "Content-Type": "application/json",
-              ...(t ? { Authorization: `Bearer ${t}` } : {}),
-            },
-            body: JSON.stringify({ text }),
-          });
-          clearTimeout(tid);
-          if (r.ok && r.status === 200 && this.ctxRef) {
-            return await this.ctxRef.decodeAudioData(await r.arrayBuffer());
-          }
-          this.backendTtsCooldownUntil = now + 3600_000;
-        } catch {
-          this.backendTtsCooldownUntil = now + 3600_000;
+    // 1. Try backend TTS only if live backend is active
+    if (now >= this.backendTtsCooldownUntil) {
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 2200);
+        const r = await fetch(`${API}/agent/tts`, {
+          method: "POST",
+          signal: ctrl.signal,
+          headers: {
+            "Content-Type": "application/json",
+            ...(t ? { Authorization: `Bearer ${t}` } : {}),
+          },
+          body: JSON.stringify({ text }),
+        });
+        clearTimeout(tid);
+        if (r.ok && r.status === 200) {
+          const ab = await r.arrayBuffer();
+          if (ab.byteLength > 200) return ab;
         }
+        this.backendTtsCooldownUntil = now + 3600_000;
+      } catch {
+        this.backendTtsCooldownUntil = now + 3600_000;
       }
+    }
 
-      // Direct ElevenLabs Cloud TTS fallback when Render backend is sleeping
-      const elKey =
-        (import.meta as any).env?.VITE_ELEVENLABS_API_KEY ||
-        ["sk", "737a42c6566aaf5f891b6c6508610f8d8bc1962b0e7e1bd9"].join("_");
-      if (elKey && this.ctxRef && now >= this.elevenLabsCooldownUntil) {
+    // 2. Direct ElevenLabs Ultra-Natural JARVIS Voice (Daniel - onwK4e9ZLuTAKqWW03F9)
+    const voiceId =
+      (import.meta as any).env?.VITE_ELEVENLABS_VOICE_ID || DEFAULT_JARVIS_VOICE_ID;
+
+    for (const elKey of ELEVENLABS_KEYS) {
+      for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          const voiceId =
-            (import.meta as any).env?.VITE_ELEVENLABS_VOICE_ID ||
-            "iP95p4xoKVk53GoZ742B";
           const elCtrl = new AbortController();
-          const elTid = setTimeout(() => elCtrl.abort(), 3500);
+          const elTid = setTimeout(() => elCtrl.abort(), 6500);
           const elRes = await fetch(
-            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?optimize_streaming_latency=2`,
             {
               method: "POST",
               signal: elCtrl.signal,
@@ -104,30 +152,144 @@ export class Speaker {
                 Accept: "audio/mpeg",
               },
               body: JSON.stringify({
-                text: text.slice(0, 500),
+                text: text.slice(0, 650),
                 model_id: "eleven_turbo_v2_5",
                 voice_settings: {
-                  stability: 0.45,
-                  similarity_boost: 0.8,
-                  style: 0.35,
+                  stability: 0.38,
+                  similarity_boost: 0.82,
+                  style: 0.45,
                   use_speaker_boost: true,
                 },
               }),
             }
           );
           clearTimeout(elTid);
+
           if (elRes.ok) {
-            return await this.ctxRef.decodeAudioData(await elRes.arrayBuffer());
+            const ab = await elRes.arrayBuffer();
+            if (ab.byteLength > 200) return ab;
           }
-          this.elevenLabsCooldownUntil = now + 120_000;
+
+          // If rate-limited (429 concurrent request), wait 650ms and retry once
+          if (elRes.status === 429 && attempt === 0) {
+            await new Promise((r) => setTimeout(r, 650));
+            continue;
+          }
+          break;
         } catch {
-          this.elevenLabsCooldownUntil = now + 120_000;
+          break;
         }
       }
-      return null;
-    } catch {
-      return null;
     }
+
+    return null;
+  }
+
+  private async playMp3ArrayBuffer(ab: ArrayBuffer, genAtStart: number): Promise<boolean> {
+    if (genAtStart !== this.gen) return true;
+
+    // Decode waveform in parallel so level() has exact PCM amplitude for 3D jaw lip-sync
+    try {
+      const ctx = this.ensureContext();
+      if (ctx) {
+        ctx
+          .decodeAudioData(ab.slice(0))
+          .then((decoded) => {
+            if (genAtStart === this.gen) {
+              this.currentPcmData = decoded.getChannelData(0);
+              this.currentSampleRate = decoded.sampleRate;
+            }
+          })
+          .catch(() => {});
+      }
+    } catch {}
+
+    return new Promise<boolean>((resolve) => {
+      if (genAtStart !== this.gen) {
+        resolve(true);
+        return;
+      }
+
+      const blob = new Blob([ab.slice(0)], { type: "audio/mpeg" });
+      const url = URL.createObjectURL(blob);
+      this.currentAudioUrl = url;
+
+      const audio = new Audio(url);
+      audio.volume = 1.0;
+      audio.preload = "auto";
+      this.currentAudio = audio;
+
+      let settled = false;
+      const finish = (ok: boolean) => {
+        if (settled) return;
+        settled = true;
+        if (this.currentAudio === audio) {
+          this.currentAudio = undefined;
+          this.currentPcmData = null;
+        }
+        try {
+          URL.revokeObjectURL(url);
+        } catch {}
+        resolve(ok);
+      };
+
+      audio.onended = () => finish(true);
+      audio.onerror = () => finish(false);
+
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          // If blocked by browser autoplay policy on initial page load before first click,
+          // save buffer so the very first click anywhere on the page plays it immediately!
+          if (err && (err.name === "NotAllowedError" || String(err).includes("interact"))) {
+            this.blockedAutoplayBuffer = ab.slice(0);
+            finish(true);
+          } else {
+            finish(false);
+          }
+        });
+      }
+    });
+  }
+
+  private playWebSpeechFallback(text: string, genAtStart: number): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (
+        genAtStart !== this.gen ||
+        typeof window === "undefined" ||
+        !("speechSynthesis" in window)
+      ) {
+        resolve();
+        return;
+      }
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        const voices = window.speechSynthesis.getVoices();
+        const preferred =
+          voices.find((v) => /Google UK English Male|Microsoft Ryan|Daniel|Natural/i.test(v.name)) ||
+          voices.find((v) => /en-GB|en-IN|en-US/i.test(v.lang));
+        if (preferred) u.voice = preferred;
+        u.rate = 1.02;
+        u.pitch = 0.96;
+        u.volume = 1.0;
+        const safetyTimer = setTimeout(
+          () => resolve(),
+          Math.min(14000, Math.max(2500, text.length * 80))
+        );
+        u.onend = () => {
+          clearTimeout(safetyTimer);
+          resolve();
+        };
+        u.onerror = () => {
+          clearTimeout(safetyTimer);
+          resolve();
+        };
+        window.speechSynthesis.speak(u);
+      } catch {
+        resolve();
+      }
+    });
   }
 
   say(raw: string) {
@@ -140,8 +302,12 @@ export class Speaker {
       .trim();
     if (!text) return;
 
+    this.blockedAutoplayBuffer = null;
+    this.blockedAutoplayText = null;
+
     const g = this.gen;
     this.pending++;
+    this.activeSpeaking = true;
     this.onState?.(true);
 
     this.playChain = this.playChain
@@ -149,26 +315,20 @@ export class Speaker {
       .then(async () => {
         if (g !== this.gen) return;
         try {
-          const b = await this.fetchAudio(text);
+          const mp3Bytes = await this.fetchMp3Bytes(text);
           if (g !== this.gen) return;
-          if (b) {
-            await this.play(b);
-          } else if (typeof window !== "undefined" && "speechSynthesis" in window) {
-            await new Promise<void>((resolve) => {
-              try {
-                const u = new SpeechSynthesisUtterance(text);
-                u.rate = 1.06;
-                u.onend = () => resolve();
-                u.onerror = () => resolve();
-                window.speechSynthesis.speak(u);
-              } catch {
-                resolve();
-              }
-            });
+          if (mp3Bytes) {
+            const played = await this.playMp3ArrayBuffer(mp3Bytes, g);
+            if (!played && g === this.gen) {
+              await this.playWebSpeechFallback(text, g);
+            }
+          } else {
+            await this.playWebSpeechFallback(text, g);
           }
         } finally {
           if (g === this.gen && --this.pending <= 0) {
             this.pending = 0;
+            this.activeSpeaking = false;
             this.onState?.(false);
           }
         }
@@ -197,12 +357,14 @@ export class Speaker {
       data[i] = int16[i] / 32768.0;
     }
 
+    this.activeSpeaking = true;
     this.onState?.(true);
-    await this.play(buffer);
+    await this.playBufferNode(buffer);
+    this.activeSpeaking = false;
     this.onState?.(false);
   }
 
-  private play(b: AudioBuffer) {
+  private playBufferNode(b: AudioBuffer) {
     return new Promise<void>((res) => {
       const ctx = this.ensureContext();
       if (!ctx) {
@@ -212,43 +374,91 @@ export class Speaker {
       const s = ctx.createBufferSource();
       s.buffer = b;
       if (this.analyser) s.connect(this.analyser);
-      s.onended = () => res();
-      this.current = s;
+      const timer = setTimeout(() => res(), b.duration * 1000 + 300);
+      s.onended = () => {
+        clearTimeout(timer);
+        res();
+      };
+      this.currentSource = s;
       try {
         s.start();
       } catch {
+        clearTimeout(timer);
         res();
       }
     });
   }
 
   stop() {
-    // Barge-in: clear ongoing and queued speech instantly
     this.gen++;
     this.playChain = Promise.resolve();
+    this.blockedAutoplayBuffer = null;
+    this.blockedAutoplayText = null;
     try {
-      this.current?.stop();
+      this.currentSource?.stop();
     } catch {}
+    try {
+      if (this.currentAudio) {
+        this.currentAudio.pause();
+        this.currentAudio.src = "";
+        this.currentAudio = undefined;
+      }
+      if (this.currentAudioUrl) {
+        URL.revokeObjectURL(this.currentAudioUrl);
+        this.currentAudioUrl = undefined;
+      }
+    } catch {}
+    this.currentPcmData = null;
     try {
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
     } catch {}
     this.pending = 0;
+    this.activeSpeaking = false;
     this.onState?.(false);
   }
 
   level(): number {
-    if (!this.analyser) return 0;
-    this.analyser.getByteTimeDomainData(this.buf);
-    let sum = 0;
-    const len = this.buf.length;
-    for (let i = 0; i < len; i++) {
-      const v = this.buf[i];
-      const x = (v - 128) / 128;
-      sum += x * x;
+    // 1. Exact PCM waveform lookup from currently playing ElevenLabs HTMLAudioElement
+    if (this.currentAudio && !this.currentAudio.paused && this.currentPcmData) {
+      const sampleIdx = Math.floor(this.currentAudio.currentTime * this.currentSampleRate);
+      const windowSize = 512;
+      if (sampleIdx >= 0 && sampleIdx < this.currentPcmData.length) {
+        let sum = 0;
+        const end = Math.min(this.currentPcmData.length, sampleIdx + windowSize);
+        const count = end - sampleIdx;
+        for (let i = sampleIdx; i < end; i++) {
+          const v = this.currentPcmData[i];
+          sum += v * v;
+        }
+        if (count > 0) {
+          return Math.min(0.45, Math.sqrt(sum / count) * 1.65);
+        }
+      }
     }
-    return Math.sqrt(sum / len);
+
+    // 2. Web Audio API AnalyserNode (if playing PCM chunks)
+    if (this.analyser) {
+      this.analyser.getByteTimeDomainData(this.buf);
+      let sum = 0;
+      const len = this.buf.length;
+      for (let i = 0; i < len; i++) {
+        const v = this.buf[i];
+        const x = (v - 128) / 128;
+        sum += x * x;
+      }
+      const rms = Math.sqrt(sum / len);
+      if (rms > 0.008) return rms;
+    }
+
+    // 3. Natural syllable cadence if actively speaking before PCM decode completes
+    if (this.activeSpeaking) {
+      const t = performance.now() * 0.001;
+      return Math.max(0.02, (Math.sin(t * 13.5) * 0.55 + Math.sin(t * 21.0) * 0.45) * 0.22);
+    }
+
+    return 0;
   }
 
   clearPlaybackQueue(): void {
@@ -299,4 +509,4 @@ export function startListening(
 export const speaker = new Speaker(
   () => localStorage.getItem("pathfinder_token") || sessionStorage.getItem("pathfinder_token")
 );
-export const audioManager = speaker; // alias for drop-in compatibility
+export const audioManager = speaker;

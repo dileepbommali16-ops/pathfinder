@@ -109,7 +109,7 @@ export default function AgentLayout({
     setHonorific(next);
     try {
       localStorage.setItem("das_honorific_override", next);
-    } catch {}
+    } catch { }
   };
 
   // JARVIS-style action controller
@@ -218,7 +218,7 @@ export default function AgentLayout({
           email: propUserEmail || "",
         };
       }
-    } catch {}
+    } catch { }
     return {
       cgpa: 7.8,
       backlogs: 0,
@@ -280,7 +280,7 @@ export default function AgentLayout({
 
   useEffect(() => {
     const t = setTimeout(() => {
-      wake().catch(() => {});
+      wake().catch(() => { });
     }, 150);
     return () => clearTimeout(t);
   }, [wake]);
@@ -334,7 +334,13 @@ export default function AgentLayout({
 
       const takeSpeech = (final: boolean) => {
         const c = full.indexOf("|||");
-        const rawSpoken = c >= 0 ? full.slice(0, c) : full;
+        let rawSpoken = c >= 0 ? full.slice(0, c) : full;
+        if (c < 0) {
+          const mdSplit = rawSpoken.search(/\n\s*(?:\*\*|###|[-*•]\s|\d+\.\s)/);
+          if (mdSplit > 0) {
+            rawSpoken = rawSpoken.slice(0, mdSplit);
+          }
+        }
         const sp = extractSpoken(rawSpoken);
         const isFinal = final || c >= 0;
         let buf = sp.slice(spoken);
@@ -345,7 +351,7 @@ export default function AgentLayout({
           }
           return;
         }
-        for (;;) {
+        for (; ;) {
           const m = buf.match(/^[\s\S]*?[.!?।\n]+(?:\s+|$)/);
           if (!m || !/\s$/.test(m[0])) break;
           speak(m[0]);
@@ -405,7 +411,7 @@ export default function AgentLayout({
               const reader = r.body.getReader();
               const dec = new TextDecoder();
               let carry = "";
-              for (;;) {
+              for (; ;) {
                 const { done, value } = await reader.read();
                 if (done) break;
                 carry += dec.decode(value, { stream: true });
@@ -428,7 +434,7 @@ export default function AgentLayout({
                       const res = runTool(ev.name, ev.args, navigate);
                       if (res.navigated && res.explain) followUp = true;
                     }
-                  } catch {}
+                  } catch { }
                 }
               }
             } else {
@@ -443,17 +449,16 @@ export default function AgentLayout({
         if (!full.trim() && GROQ_FALLBACK_KEYS.length > 0) {
           const sysPrompt = `You are DAS, the loyal, witty, JARVIS-style 3D AI Voice Agent and Career Co-Pilot for Pathfinder 2.0.
 CRITICAL IDENTITY RULE:
-- You are currently speaking with ${
-            activeHonorific === "Boss"
+- You are currently speaking with ${activeHonorific === "Boss"
               ? 'the OWNER and creator of Pathfinder (Dileep). You MUST address him respectfully and warmly as "Boss" in every response.'
               : 'a respected guest/candidate/stakeholder. You MUST address them respectfully as "Sir" in every response (never call them Boss).'
-          }
+            }
 Candidate Profile: Branch=${currentProfile.branch}, CGPA=${currentProfile.cgpa}, Backlogs=${currentProfile.backlogs}, Coding=${currentProfile.coding}/10, Target Role=${currentProfile.target_role}, Readiness=${propPrediction?.chance ? propPrediction.chance + "%" : "78%"}, Current Tab=${currentTab}.
 PERSONALITY & FORMAT:
-- Be warm, friendly, natural, and directly answer what the user just asked.
-- Start with 1 to 3 short, natural spoken sentences (no markdown symbols or asterisks) because your first part is spoken aloud by TTS.
-- If helpful details or bullet points are needed on screen, put ||| after the spoken sentences and write the clean markdown breakdown after |||.
-- Match the user's language (English, Telugu/Tenglish, or Hindi).
+- Speak like JARVIS from Iron Man — warm, natural, witty, human-like, and conversational (use natural contractions like "I've", "you're", "right away, ${activeHonorific}").
+- NEVER sound like a textbook or read out bullet lists aloud.
+- Always write 1 to 2 natural, conversational spoken sentences FIRST (plain text, zero asterisks or markdown), followed immediately by |||, and then put any detailed bullet points after |||.
+- Match the user's language naturally (English, natural conversational Telugu/Tenglish, or Hindi).
 WEBSITE AUTOMATION & CONTROL:
 ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a section/tab, scroll, filter, or update their profile (do NOT emit NAVIGATE_TAB when the user is merely asking for advice/tips/questions), append the exact action tag at the very end of your response:
 - Dashboard / Home: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "overview"}-->
@@ -644,10 +649,10 @@ ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a sect
   const avatarState: AvatarState = isSpeaking
     ? "speaking"
     : thinking
-    ? "thinking"
-    : isListening
-    ? "listening"
-    : "idle";
+      ? "thinking"
+      : isListening
+        ? "listening"
+        : "idle";
 
   const [ambientMinimized, setAmbientMinimized] = useState(false);
 
@@ -665,13 +670,12 @@ ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a sect
               <Avatar3D getLevel={getAudioLevel} state={avatarState} />
             </div>
             <span
-              className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] border-2 border-slate-950 ${
-                avatarState === "speaking"
+              className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] border-2 border-slate-950 ${avatarState === "speaking"
                   ? "bg-rose-500 animate-pulse shadow-[0_0_8px_#f43f5e]"
                   : avatarState === "listening"
-                  ? "bg-pink-500 animate-ping"
-                  : "bg-emerald-500"
-              }`}
+                    ? "bg-pink-500 animate-ping"
+                    : "bg-emerald-500"
+                }`}
             />
           </button>
         </div>
@@ -689,14 +693,12 @@ ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a sect
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span
-                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                  avatarState === "speaking" ? "bg-rose-400" : "bg-emerald-400"
-                }`}
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${avatarState === "speaking" ? "bg-rose-400" : "bg-emerald-400"
+                  }`}
               />
               <span
-                className={`relative inline-flex rounded-full h-2 w-2 ${
-                  avatarState === "speaking" ? "bg-rose-500" : "bg-emerald-500"
-                }`}
+                className={`relative inline-flex rounded-full h-2 w-2 ${avatarState === "speaking" ? "bg-rose-500" : "bg-emerald-500"
+                  }`}
               />
             </span>
             <span className="text-xs font-mono font-bold tracking-wider text-violet-300">
@@ -738,22 +740,36 @@ ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a sect
             {avatarState === "speaking"
               ? "🔊 Speaking..."
               : avatarState === "thinking"
-              ? "⚡ Thinking..."
-              : avatarState === "listening"
-              ? "🎙️ Listening..."
-              : autoListen
-              ? `🎙️ Hands-Free • ${honorific}`
-              : `🟢 Online • ${honorific}`}
+                ? "⚡ Thinking..."
+                : avatarState === "listening"
+                  ? "🎙️ Listening..."
+                  : autoListen
+                    ? `🎙️ Hands-Free • ${honorific}`
+                    : `🟢 Online • ${honorific}`}
           </div>
         </div>
 
         {/* Latest Voice Dialogue / Subtitle bubble */}
         {msgs.length > 0 && msgs[msgs.length - 1].role === "assistant" && (
-          <div className="px-3.5 py-2 bg-slate-900/70 border-t border-white/5 text-[11px] text-zinc-300 line-clamp-2 leading-relaxed font-sans">
-            {msgs[msgs.length - 1].content
-              .replace(/<!--[\s\S]*?-->/g, "")
-              .trim()
-              .slice(0, 150)}
+          <div className="px-3.5 py-2 bg-slate-900/70 border-t border-white/5 text-[11px] text-zinc-300 flex items-start justify-between gap-2 leading-relaxed font-sans">
+            <span className="line-clamp-2 flex-1">
+              {msgs[msgs.length - 1].content
+                .replace(/<!--[\s\S]*?-->/g, "")
+                .trim()
+                .slice(0, 150)}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const raw = msgs[msgs.length - 1].content;
+                const firstPara = raw.split(/\n\s*(?:\*\*|###|[-*•]\s|\d+\.\s)/)[0] || raw;
+                speak(firstPara.slice(0, 320));
+              }}
+              className="shrink-0 px-2 py-0.5 rounded-full bg-violet-500/20 hover:bg-violet-500/40 border border-violet-500/30 text-[10px] text-violet-200 cursor-pointer"
+              title="Play ElevenLabs JARVIS Voice"
+            >
+              🔊
+            </button>
           </div>
         )}
 
@@ -763,11 +779,10 @@ ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a sect
             <button
               type="button"
               onClick={handleToggleMic}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-medium text-xs transition-all ${
-                isListening
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-medium text-xs transition-all ${isListening
                   ? "bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.5)] animate-pulse"
                   : "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]"
-              }`}
+                }`}
             >
               {isListening ? (
                 <MicOff className="w-3.5 h-3.5" />
@@ -890,47 +905,44 @@ ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a sect
 
         {/* Dynamic State Indicator Badge (Bottom Left) */}
         <div
-          className={`absolute bottom-5 left-5 z-20 flex items-center gap-2 text-xs font-mono px-3.5 py-1.5 rounded-full bg-slate-900/85 border backdrop-blur-md transition-all ${
-            avatarState === "speaking"
+          className={`absolute bottom-5 left-5 z-20 flex items-center gap-2 text-xs font-mono px-3.5 py-1.5 rounded-full bg-slate-900/85 border backdrop-blur-md transition-all ${avatarState === "speaking"
               ? "text-rose-300 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.3)]"
               : avatarState === "thinking"
-              ? "text-cyan-300 border-cyan-500/50 shadow-[0_0_15px_rgba(56,189,248,0.3)]"
-              : avatarState === "listening"
-              ? "text-pink-300 border-pink-500/50 shadow-[0_0_15px_rgba(236,72,153,0.3)]"
-              : "text-zinc-300 border-white/10"
-          }`}
+                ? "text-cyan-300 border-cyan-500/50 shadow-[0_0_15px_rgba(56,189,248,0.3)]"
+                : avatarState === "listening"
+                  ? "text-pink-300 border-pink-500/50 shadow-[0_0_15px_rgba(236,72,153,0.3)]"
+                  : "text-zinc-300 border-white/10"
+            }`}
         >
           <span
-            className={`h-2.5 w-2.5 rounded-full ${
-              avatarState === "speaking"
+            className={`h-2.5 w-2.5 rounded-full ${avatarState === "speaking"
                 ? "animate-pulse bg-rose-500 shadow-[0_0_8px_#f43f5e]"
                 : avatarState === "thinking"
-                ? "animate-spin border-2 border-cyan-400 border-t-transparent"
-                : avatarState === "listening"
-                ? "animate-ping bg-pink-400"
-                : "bg-emerald-500"
-            }`}
+                  ? "animate-spin border-2 border-cyan-400 border-t-transparent"
+                  : avatarState === "listening"
+                    ? "animate-ping bg-pink-400"
+                    : "bg-emerald-500"
+              }`}
           />
           {avatarState === "speaking"
             ? "speaking (lip-sync active)"
             : avatarState === "thinking"
-            ? "thinking..."
-            : avatarState === "listening"
-            ? "listening to mic..."
-            : autoListen
-            ? "hands-free active • ready"
-            : "online • idle"}
+              ? "thinking..."
+              : avatarState === "listening"
+                ? "listening to mic..."
+                : autoListen
+                  ? "hands-free active • ready"
+                  : "online • idle"}
         </div>
 
         {/* Hands-Free Auto-Listen Toggle (Bottom Right) */}
         <button
           type="button"
           onClick={() => setAutoListen((v) => !v)}
-          className={`absolute bottom-5 right-5 z-20 flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded-full border backdrop-blur-md transition-all cursor-pointer ${
-            autoListen
+          className={`absolute bottom-5 right-5 z-20 flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded-full border backdrop-blur-md transition-all cursor-pointer ${autoListen
               ? "bg-emerald-950/85 border-emerald-500/50 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
               : "bg-slate-900/85 border-white/10 text-zinc-400 hover:text-zinc-200"
-          }`}
+            }`}
           title="When enabled, DAS automatically listens for your reply after finishing each spoken answer"
         >
           <span className={`h-2 w-2 rounded-full ${autoListen ? "bg-emerald-400 animate-pulse" : "bg-zinc-600"}`} />
@@ -1022,13 +1034,27 @@ ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a sect
             msgs.map((m, i) => (
               <div
                 key={i}
-                className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                  m.role === "user"
+                className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${m.role === "user"
                     ? "ml-auto bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md"
                     : "bg-white/5 text-zinc-200 border border-white/10"
-                }`}
+                  }`}
               >
-                {m.content}
+                <div>{m.content}</div>
+                {m.role === "assistant" && m.content !== "…" && (
+                  <div className="mt-2 flex items-center justify-end border-t border-white/5 pt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const firstPara = m.content.split(/\n\s*(?:\*\*|###|[-*•]\s|\d+\.\s)/)[0] || m.content;
+                        speak(firstPara.slice(0, 320));
+                      }}
+                      className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 hover:bg-violet-500/30 border border-violet-500/30 px-2.5 py-0.5 text-[10px] font-mono text-violet-200 transition-colors cursor-pointer"
+                      title="Replay with ElevenLabs JARVIS Voice"
+                    >
+                      🔊 Speak
+                    </button>
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -1038,11 +1064,10 @@ ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a sect
         {/* Microphone feedback / error banner */}
         {(isListening || micError) && (
           <div
-            className={`px-4 py-2 text-xs font-medium flex items-center justify-between border-t ${
-              micError
+            className={`px-4 py-2 text-xs font-medium flex items-center justify-between border-t ${micError
                 ? "bg-rose-950/80 text-rose-200 border-rose-500/30"
                 : "bg-violet-950/80 text-violet-200 border-violet-500/30"
-            }`}
+              }`}
           >
             <span>
               {micError
@@ -1091,11 +1116,10 @@ ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a sect
           <button
             type="button"
             onClick={openUploadPanel}
-            className={`relative h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-lg cursor-pointer transition-all ${
-              isUploading
+            className={`relative h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-lg cursor-pointer transition-all ${isUploading
                 ? "bg-rose-600 text-white animate-pulse shadow-[0_0_20px_#e11d48] ring-2 ring-rose-400"
                 : "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_20px_rgba(124,58,237,0.4)]"
-            }`}
+              }`}
             aria-label="Open ATS Resume Studio"
             title="Open ATS Resume Studio & PDF Scanner"
           >
@@ -1104,11 +1128,10 @@ ONLY when the user EXPLICITLY commands to open, go to, switch to, or show a sect
           <button
             type="button"
             onClick={handleToggleMic}
-            className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-              isListening
+            className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${isListening
                 ? "animate-pulse bg-rose-600 text-white shadow-[0_0_20px_#e11d48] ring-2 ring-rose-400"
                 : "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_20px_rgba(124,58,237,0.4)]"
-            }`}
+              }`}
             aria-label="Microphone"
             title={isListening ? "Stop Listening" : "Tap to Speak (Hands-Free JARVIS Mode)"}
           >

@@ -1,0 +1,203 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - region "Notifications alt+T"
+    - generic [ref=f2e3]:
+      - banner [ref=f2e4]:
+        - generic [ref=f2e5]:
+          - button "Pathfinder 2.0 AI Campus Placement & Engineering Intelligence" [ref=f2e6] [cursor=pointer]:
+            - generic [ref=f2e14]:
+              - generic [ref=f2e15]:
+                - generic [ref=f2e16]: Pathfinder 2.0
+                - generic [ref=f2e17]: AI
+              - paragraph [ref=f2e18]: Campus Placement & Engineering Intelligence
+          - generic [ref=f2e19]:
+            - button "D Dileep dileepbommali16@gmail.com" [ref=f2e20] [cursor=pointer]:
+              - generic [ref=f2e21]: D
+              - generic [ref=f2e22]:
+                - generic [ref=f2e23]: Dileep
+                - text: dileepbommali16@gmail.com
+            - button "Sign out of Pathfinder" [ref=f2e28] [cursor=pointer]
+        - generic [ref=f2e33]:
+          - button "Dashboard" [ref=f2e34] [cursor=pointer]
+          - button "AI Mock Interview Live" [ref=f2e40] [cursor=pointer]:
+            - generic [ref=f2e44]: AI Mock Interview
+            - generic [ref=f2e45]: Live
+          - button "Readiness Command Instant" [ref=f2e46] [cursor=pointer]:
+            - generic [ref=f2e49]: Readiness Command
+            - generic [ref=f2e50]: Instant
+          - button "6-Week Roadmap Sprint" [ref=f2e51] [cursor=pointer]:
+            - generic [ref=f2e55]: 6-Week Roadmap
+            - generic [ref=f2e56]: Sprint
+          - button "DAS AI Voice Coach Voice" [ref=f2e57] [cursor=pointer]:
+            - generic [ref=f2e61]: DAS AI Voice Coach
+            - generic [ref=f2e62]: Voice
+          - button "Project Blueprints" [ref=f2e64] [cursor=pointer]
+          - button "Cohort Analytics 972" [ref=f2e68] [cursor=pointer]:
+            - generic [ref=f2e72]: Cohort Analytics
+            - generic [ref=f2e73]: "972"
+          - button "ATS Resume Studio" [ref=f2e74] [cursor=pointer]
+          - button "Branches and Courses Dept" [ref=f2e79] [cursor=pointer]:
+            - generic [ref=f2e83]: Branches and Courses
+            - generic [ref=f2e84]: Dept
+          - button "Project Defense" [ref=f2e85] [cursor=pointer]
+          - button "Profile / Settings SSOT" [ref=f2e89] [cursor=pointer]:
+            - generic [ref=f2e93]: Profile / Settings
+            - generic [ref=f2e94]: SSOT
+      - main [ref=f2e95]:
+        - generic [ref=f2e265]:
+          - generic [ref=f2e267]:
+            - generic [ref=f2e273]:
+              - generic [ref=f2e274]:
+                - heading "Live AI Mock Interview Simulator" [level=2] [ref=f2e275]
+                - generic [ref=f2e276]: Live Audio & Grading
+              - paragraph [ref=f2e277]: Rapid 60-second technical and behavioral interview practice with real-time scoring and voice recognition
+            - generic [ref=f2e278]:
+              - generic [ref=f2e279]: ℹ️ Speak or type your answer for instant multi-vector scorecard
+              - button "Ask Coach about this" [ref=f2e280] [cursor=pointer]
+          - generic [ref=f2e285]:
+            - generic [ref=f2e286]:
+              - generic [ref=f2e287]:
+                - generic [ref=f2e288]:
+                  - generic [ref=f2e293]: Live Mock Interview Simulator
+                  - generic [ref=f2e294]: AI Voice & Audio Ready
+                - heading "Rapid 60-Second Interview Drill" [level=3] [ref=f2e295]
+                - paragraph [ref=f2e296]: Practice actual technical and behavioral interview questions asked by top tech firms. Speak your answer or type it to receive an instant multi-dimensional evaluation.
+              - generic [ref=f2e297]:
+                - generic [ref=f2e298]:
+                  - generic [ref=f2e302]: 0:00
+                  - generic [ref=f2e303]: Drill Time
+                - button "Reset" [ref=f2e304] [cursor=pointer]
+            - generic [ref=f2e309]:
+              - button "Razorpay (Technical)" [ref=f2e310] [cursor=pointer]:
+                - generic [ref=f2e311]: Razorpay
+                - generic [ref=f2e312]: (Technical)
+              - button "Google (System)" [ref=f2e313] [cursor=pointer]:
+                - generic [ref=f2e314]: Google
+                - generic [ref=f2e315]: (System)
+              - button "TCS Digital (Technical)" [ref=f2e316] [cursor=pointer]:
+                - generic [ref=f2e317]: TCS Digital
+                - generic [ref=f2e318]: (Technical)
+              - button "Amazon AWS (Behavioral)" [ref=f2e319] [cursor=pointer]:
+                - generic [ref=f2e320]: Amazon AWS
+                - generic [ref=f2e321]: (Behavioral)
+            - generic [ref=f2e322]:
+              - generic [ref=f2e323]:
+                - generic [ref=f2e324]:
+                  - generic [ref=f2e325]:
+                    - generic [ref=f2e326]: Razorpay / Fintech
+                    - generic [ref=f2e327]: Technical & Algorithms
+                    - generic [ref=f2e328]: "Difficulty: Hard"
+                  - generic [ref=f2e329]:
+                    - text: Interviewer Prompt
+                    - heading "\"When processing high-volume payment webhooks, how do you prevent double-charging a user if the provider retries the webhook multiple times?\"" [level=4] [ref=f2e330]
+                  - generic [ref=f2e331]:
+                    - generic [ref=f2e332]: Interviewer Expectation
+                    - paragraph [ref=f2e337]: Focus on idempotency keys, distributed locks, database uniqueness constraints, and transactional consistency.
+                  - generic [ref=f2e338]:
+                    - text: Evaluation Topics
+                    - generic [ref=f2e339]:
+                      - generic [ref=f2e340]: Idempotency Key
+                      - generic [ref=f2e341]: Distributed Locking (Redis/Redlock)
+                      - generic [ref=f2e342]: Database Transactions
+                      - generic [ref=f2e343]: Event Deduplication
+                - generic [ref=f2e344]:
+                  - button "Hear Question" [ref=f2e345] [cursor=pointer]
+                  - button "Fill Benchmark Answer" [ref=f2e351] [cursor=pointer]
+              - generic [ref=f2e356]:
+                - generic [ref=f2e357]:
+                  - generic [ref=f2e358]: Your Response Workspace
+                  - generic [ref=f2e359]:
+                    - generic [ref=f2e360]: 0 words
+                    - button "Speak Answer" [ref=f2e361] [cursor=pointer]
+                - 'textbox "Type your structured answer here, or click ''Speak Answer'' to speak via microphone... (Use the STAR framework: Situation, Task, Action, Result)." [ref=f2e366]'
+                - generic [ref=f2e367]:
+                  - generic [ref=f2e368]:
+                    - text: "Tip: Press"
+                    - strong [ref=f2e369]: Fill Benchmark Answer
+                    - text: for instant demo evaluation.
+                  - button "Evaluate My Answer" [disabled] [ref=f2e370] [cursor=pointer]
+        - complementary "DAS 3D AI Co-Pilot" [ref=f2e374]:
+          - generic [ref=f2e375]:
+            - generic [ref=f2e376]: DAS • SIR MODE
+            - generic [ref=f2e381]:
+              - button "🎩 Sir" [ref=f2e382] [cursor=pointer]
+              - button "Expand to Full Voice Coach" [ref=f2e383] [cursor=pointer]
+              - button "Minimize to Floating Orb" [ref=f2e389] [cursor=pointer]
+          - generic [ref=f2e395]: 🟢 Online • Sir
+          - generic [ref=f2e400]: Boss, first, lean into your zero backlogs and 7.8 CGPA to show consistent academic discipline. Second, since your coding is a 7 out of 10, focus on ex
+          - generic [ref=f2e401]:
+            - generic [ref=f2e402]:
+              - button "Speak to DAS (Sir)" [ref=f2e403] [cursor=pointer]
+              - button "Full Coach" [ref=f2e407] [cursor=pointer]
+            - textbox "Command DAS, Sir (e.g. \"open projects\")…" [ref=f2e409]
+            - generic [ref=f2e410]:
+              - button "🚀 Roadmap" [ref=f2e411] [cursor=pointer]
+              - button "🎯 Interview" [ref=f2e412] [cursor=pointer]
+              - button "📁 Blueprints" [ref=f2e413] [cursor=pointer]
+              - button "📄 ATS Resume" [ref=f2e414] [cursor=pointer]
+        - button "Ask Coach About This Page" [ref=f2e415] [cursor=pointer]
+        - generic [ref=f2e151]:
+          - generic [ref=f2e152]:
+            - generic [ref=f2e153]:
+              - generic [ref=f2e154]: Pathfinder 2.0
+              - paragraph [ref=f2e160]: Autonomous full-stack AI career intelligence platform benchmarked on 972 verified campus records. Calibrates student profiles, tutors production architectures, and prepares engineering candidates for Tier-1 recruitment filters.
+              - generic [ref=f2e161]: All 7 Engineering Pillars Operational
+            - generic [ref=f2e164]:
+              - heading "Core Intelligence" [level=3] [ref=f2e165]
+              - list [ref=f2e166]:
+                - listitem [ref=f2e167]:
+                  - button "Executive Readiness Dashboard" [ref=f2e168] [cursor=pointer]
+                - listitem [ref=f2e169]:
+                  - button "AI Mock Interview Simulator Live" [ref=f2e170] [cursor=pointer]:
+                    - generic [ref=f2e171]: AI Mock Interview Simulator
+                    - generic [ref=f2e172]: Live
+                - listitem [ref=f2e173]:
+                  - button "DAS AI Voice Coach (EN / TE / HI)" [ref=f2e174] [cursor=pointer]
+                - listitem [ref=f2e175]:
+                  - button "23 Production Project Blueprints" [ref=f2e176] [cursor=pointer]
+                - listitem [ref=f2e177]:
+                  - button "ATS Resume Studio & Scanner" [ref=f2e178] [cursor=pointer]
+                - listitem [ref=f2e179]:
+                  - button "STAR Architecture Defense Console" [ref=f2e180] [cursor=pointer]
+            - generic [ref=f2e181]:
+              - heading "Institutional Intelligence" [level=3] [ref=f2e182]
+              - list [ref=f2e183]:
+                - listitem [ref=f2e184]:
+                  - button "972 Placement Cohort Explorer" [ref=f2e185] [cursor=pointer]
+                - listitem [ref=f2e186]:
+                  - button "Branch Placement Cutoffs & Stats" [ref=f2e187] [cursor=pointer]
+                - listitem [ref=f2e188]:
+                  - button "6-Week Career Sprint Roadmap" [ref=f2e189] [cursor=pointer]
+                - listitem [ref=f2e190]:
+                  - button "Readiness Command Center" [ref=f2e191] [cursor=pointer]
+                - listitem [ref=f2e192]:
+                  - button "Single Source of Truth Profile" [ref=f2e193] [cursor=pointer]
+            - generic [ref=f2e194]:
+              - heading "Placement Desk & Support" [level=3] [ref=f2e195]
+              - paragraph [ref=f2e196]: "Have questions regarding placement data or AI coach benchmarking? Connect directly:"
+              - generic [ref=f2e197]:
+                - link "support@pathfinder-ai.io" [ref=f2e198] [cursor=pointer]:
+                  - /url: mailto:support@pathfinder-ai.io?subject=Pathfinder%20Placement%20Inquiry
+                - link "+91 (800) 012-3456 (Placement Helpline)" [ref=f2e204] [cursor=pointer]:
+                  - /url: tel:+918000123456
+                - generic [ref=f2e209]: National Engineering Campus, Academic Block
+          - generic [ref=f2e215]:
+            - generic [ref=f2e216]:
+              - generic [ref=f2e217]: © 2026 Pathfinder 2.0. All rights reserved.
+              - generic [ref=f2e218]: •
+              - generic [ref=f2e219]: MIT License Open Verification
+              - generic [ref=f2e220]: •
+              - button "Privacy Policy" [ref=f2e221] [cursor=pointer]
+              - generic [ref=f2e222]: •
+              - button "Terms of Service" [ref=f2e223] [cursor=pointer]
+            - generic [ref=f2e224]:
+              - generic [ref=f2e225]: OWASP 19-Point Hardened
+              - button "Top" [ref=f2e230] [cursor=pointer]
+  - complementary "3D Background Mode Controls" [ref=f2e234]:
+    - generic [ref=f2e235]: "Engine:"
+    - button "Smooth 60fps" [ref=f2e241] [cursor=pointer]
+    - button "3D Neural Torus Glow" [ref=f2e245] [cursor=pointer]
+    - button "Hybrid" [ref=f2e252] [cursor=pointer]
+    - button "042 Void" [ref=f2e256] [cursor=pointer]:
+      - generic [ref=f2e257]: "042"
+      - generic [ref=f2e258]: Void
