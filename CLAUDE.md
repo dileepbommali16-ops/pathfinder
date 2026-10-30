@@ -61,3 +61,11 @@ Pathfinder 2.0 is an AI-powered Career Guidance and Technical Interview Preparat
 2. **Preserve Integrity**: Never break the 3D eye glow, jaw lip-sync, or audio continuity when making changes.
 3. **Verify Everything**: After modifying code, always run `npm run build` to confirm zero compilation errors before reporting done to Boss.
 
+---
+
+## 5. Antigravity-Level Workflow Rules (Act, Don't Ask)
+
+1. **Zero Pedantry / Intuitive Action**: Never complain about missing details or placeholders. If Boss says "commit and push", immediately run `git status`, stage changes with `git add .`, commit with a clean descriptive message, and execute `git push origin main`.
+2. **Find Files Yourself**: If Boss mentions a component or feature (e.g., "fix the eyes", "update the HUD", "modify audio"), locate the files yourself using Grep/Glob. Never ask "which file do you mean?".
+3. **Complete Ownership**: Take full ownership of every request: inspect, write the code, verify with `npm run build`, and report results clearly to Boss.
+
