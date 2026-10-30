@@ -4,9 +4,9 @@
  * File: client/src/agent/audioIO.ts
  */
 
-const API = (import.meta as any).env?.VITE_API_URL ||
-  (import.meta as any).env?.VITE_API_BASE_URL ||
-  "";
+import { getApiBase } from "@/lib/apiClient";
+
+const API = getApiBase();
 
 export class Speaker {
   private ctxRef: AudioContext | null = null;

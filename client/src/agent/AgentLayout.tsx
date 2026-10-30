@@ -5,11 +5,9 @@ import { useAudioAnalyser } from "./useAudioAnalyser";
 import { useVoiceInput, MicPermissionState } from "./useVoiceInput";
 import { runTool, snapshot } from "./toolRunner";
 import { useAgentController, extractSpokenText, parseActionTags } from "./useAgentController";
+import { getApiBase } from "@/lib/apiClient";
 
-const API =
-  ((import.meta as any).env?.VITE_API_URL as string) ||
-  ((import.meta as any).env?.VITE_API_BASE_URL as string) ||
-  (typeof window !== "undefined" ? window.location.origin : "");
+const API = getApiBase();
 
 // Ensure API doesn't end with trailing slash
 const API_BASE = API.replace(/\/$/, "");
