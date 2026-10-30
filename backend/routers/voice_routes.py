@@ -195,7 +195,7 @@ async def voice_stream(req: dict, request: Request):
                 yield "data: [DONE]\n\n"
             except Exception as e:
                 logger.warning("voice_stream generator error: %s", e)
-                yield f"data: {base64.b64encode(json.dumps({"error": str(e)}).encode()).decode()}\n\n"
+                yield f"data: {base64.b64encode(json.dumps({'error': str(e)}).encode()).decode()}\n\n"
 
         return StreamingResponse(
             event_generator(),
