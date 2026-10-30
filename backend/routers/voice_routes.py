@@ -7,9 +7,12 @@ import os
 import time
 import logging
 import base64
+import json
 from typing import Any, Dict, Optional
 
+import httpx
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
 logger = logging.getLogger("agent.routes.voice")
