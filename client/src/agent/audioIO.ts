@@ -85,7 +85,7 @@ export class Speaker {
                 if (chunk.data) {
                   audioChunks.push(Uint8Array.from(atob(chunk.data), (c) => c.charCodeAt(0)));
                 }
-              } catch {}
+              } catch { }
             }
           }
           if (audioChunks.length > 0) {
@@ -239,12 +239,12 @@ export class Speaker {
     this.gen++;
     try {
       this.current?.stop();
-    } catch {}
+    } catch { }
     try {
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
-    } catch {}
+    } catch { }
     this.pending = 0;
     this.onState?.(false);
   }
@@ -302,7 +302,7 @@ export function startListening(
     onEnd();
     if (finalText.trim()) onFinal(finalText.trim());
   };
-  r.onerror = () => {};
+  r.onerror = () => { };
   r.start();
   return () => r.stop();
 }

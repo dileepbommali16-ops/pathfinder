@@ -47,5 +47,3 @@ export function useGlobalContext() {
   if (!ctx) throw new Error('useGlobalContext must be used within GlobalProvider');
   return ctx;
 }
-
-export type { GlobalState, GlobalAction };
