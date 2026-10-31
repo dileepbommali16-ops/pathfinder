@@ -33,6 +33,10 @@ export default defineConfig({
     dedupe: ["three", "react", "react-dom"],
   },
   envDir: path.resolve(rootDir),
+  envPrefix: ["VITE_", "GROQ_"],
+  define: {
+    "process.env.GROQ_API_KEY": JSON.stringify(process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || ""),
+  },
   root: path.resolve(rootDir, "client"),
   publicDir: path.resolve(rootDir, "client", "public"),
   build: {

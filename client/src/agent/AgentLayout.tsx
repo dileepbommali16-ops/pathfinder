@@ -41,7 +41,7 @@ const API_BASE = API.replace(/\/$/, "");
 
 // Multi-key fallback pool for zero-downtime browser Groq LPU streaming inference
 const GROQ_FALLBACK_KEYS = [
-  (import.meta as any).env?.VITE_GROQ_API_KEY || "",
+  (import.meta as any).env?.VITE_GROQ_API_KEY || (import.meta as any).env?.GROQ_API_KEY || (typeof process !== "undefined" && (process as any).env?.GROQ_API_KEY) || "",
   ["gsk", "GgV1SluZy64wVHF8DL1j", "WGdyb3FY1uAVo7r2BQSjzUsYPIR5UAgy"].join("_").replace("_WGdy", "WGdy"),
   ["gsk", "04ikQF1iJfH9IMq4IKGZ", "WGdyb3FYqy1LNvXQf3nNI42TvJKTrHDS"].join("_").replace("_WGdy", "WGdy"),
 ].filter(Boolean);
@@ -702,8 +702,15 @@ export default function AgentLayout({
     );
   };
 
-  const isDashboard = propActiveTab === "overview";
-  const [showHistory, setShowHistory] = useState(false);
+  const isCoachTab = propActiveTab === "coach";
+  const isDashboard = propActiveTab === "overview" || isCoachTab;
+  const [showHistory, setShowHistory] = useState(isCoachTab);
+
+  useEffect(() => {
+    if (isCoachTab) {
+      setShowHistory(true);
+    }
+  }, [isCoachTab]);
 
   const liveSubtitle = (() => {
     if (isListening || pipelineStage === "listening") {
@@ -775,13 +782,23 @@ export default function AgentLayout({
           >
             {/* Expandable Recent Conversation Drawer */}
             {showHistory && (
-              <div className="max-h-60 overflow-y-auto px-4 py-3 space-y-2.5 border-b border-white/10 bg-slate-950/90 text-xs">
+              <div className={`overflow-y-auto px-4 py-3 space-y-2.5 border-b border-white/10 bg-slate-950/90 text-xs ${isCoachTab ? "max-h-[50vh]" : "max-h-60"}`}>
                 <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 pb-1.5 border-b border-white/5">
                   <span className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     Conversation Session ({msgs.length} messages)
                   </span>
-                  <span className="text-violet-300 font-medium">RAG Top-3 • {lastPromptTokens} tok</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={toggleHonorific}
+                      title="Switch between Owner (Boss) and Guest (Sir) recognition"
+                      className="px-2 py-0.5 rounded-full bg-slate-900 border border-white/15 text-[10px] font-mono text-blue-200 hover:bg-blue-900/40 transition-colors cursor-pointer"
+                    >
+                      {honorific === "Boss" ? "👑 Mode: Boss" : "🎩 Mode: Sir"}
+                    </button>
+                    <span className="text-violet-300 font-medium">RAG Top-3 • {lastPromptTokens} tok</span>
+                  </div>
                 </div>
                 {msgs.slice(-8).map((m, idx) => (
                   <div key={idx} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>

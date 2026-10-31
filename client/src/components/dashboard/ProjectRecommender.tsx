@@ -40,6 +40,61 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
   const [projectsList, setProjectsList] = useState<ProjectBlueprint[]>(DEFAULT_PROJECT_CATALOG);
   const [activeTab, setActiveTab] = useState<CategoryTab>("all");
   const [searchQuery, setSearchQuery] = useState<string>("" );
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+
+  // Autonomous DAS project spotlight listener
+  useEffect(() => {
+    const handleHighlight = (e: any) => {
+      const q = String(e?.detail?.query || e?.detail?.target || e?.detail?.projectId || "").toLowerCase().trim();
+      if (!q) return;
+
+      // Find matching project
+      let matched = projectsList.find((p) => p.id.toLowerCase() === q);
+      if (!matched && (q.includes("chinna") || q.includes("small") || q.includes("beginner") || q.includes("starter") || q.includes("easy") || q.includes("log") || q.includes("anomaly") || q.includes("detector"))) {
+        matched = projectsList.find((p) =>
+          p.title.toLowerCase().includes("anomaly") ||
+          p.overview.toLowerCase().includes("anomaly") ||
+          p.difficulty.toLowerCase().includes("intermediate") ||
+          p.id === "proj-sde-1"
+        ) || projectsList[0];
+      }
+      if (!matched) {
+        matched = projectsList.find((p) =>
+          p.title.toLowerCase().includes(q) ||
+          p.techStack.some((t) => t.toLowerCase().includes(q)) ||
+          p.domain.toLowerCase().includes(q) ||
+          p.overview.toLowerCase().includes(q)
+        );
+      }
+
+      if (matched) {
+        // Ensure category matches so card is rendered
+        const cat = (matched.category || "").toLowerCase();
+        if (cat === "hardware") setActiveTab("hardware");
+        else if (cat === "software") setActiveTab("software");
+        else setActiveTab("all");
+
+        setSearchQuery("");
+        setHighlightedId(matched.id);
+
+        setTimeout(() => {
+          const el = document.getElementById(`project-card-${matched!.id}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 180);
+
+        setTimeout(() => {
+          setHighlightedId((curr) => (curr === matched!.id ? null : curr));
+        }, 8000);
+      }
+    };
+
+    window.addEventListener("das-highlight-project", handleHighlight);
+    return () => {
+      window.removeEventListener("das-highlight-project", handleHighlight);
+    };
+  }, [projectsList]);
 
   useEffect(() => {
     let isMounted = true;
@@ -223,11 +278,19 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
           {filteredProjects.map((proj) => {
             const isCopied = copiedId === proj.id;
             const isHardware = (proj.category || "").toLowerCase() === "hardware";
+            const isHighlighted = highlightedId === proj.id;
 
             return (
               <div
                 key={proj.id}
-                className="flex flex-col justify-between rounded-3xl border border-white/[0.08] bg-[#0a0b10] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-300 hover:border-[#7c3aed]/30 hover:bg-[#11131c]"
+                id={`project-card-${proj.id}`}
+                data-project-id={proj.id}
+                data-difficulty={proj.difficulty}
+                className={`flex flex-col justify-between rounded-3xl border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-500 ${
+                  isHighlighted
+                    ? "border-rose-500 ring-4 ring-rose-500/90 shadow-[0_0_55px_rgba(244,63,94,0.85)] scale-[1.03] bg-gradient-to-br from-rose-950/50 via-[#131626] to-[#0a0b10] z-20"
+                    : "border-white/[0.08] bg-[#0a0b10] hover:border-[#7c3aed]/30 hover:bg-[#11131c]"
+                }`}
               >
                 <div className="space-y-4">
                   {/* Badges / Header */}
@@ -240,6 +303,12 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                       {proj.domain && (
                         <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-[#11131c] px-2 py-0.5 text-[10px] font-medium text-[#7c3aed]">
                           {proj.domain}
+                        </span>
+                      )}
+                      {isHighlighted && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/60 bg-rose-500/20 px-2.5 py-0.5 text-[10px] font-bold text-rose-300 animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.6)]">
+                          <Sparkles className="h-3 w-3 text-rose-400" />
+                          🎯 DAS Recommended Blueprint
                         </span>
                       )}
                     </div>

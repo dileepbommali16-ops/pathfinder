@@ -77,6 +77,19 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     const handleDASNavigate = (e: any) => {
       if (e.detail && e.detail.tab) {
         setActiveTab(e.detail.tab as TabId);
+        setFocusOnDas(false);
+
+        const target = e.detail.scrollTarget || e.detail.targetId;
+        if (target) {
+          setTimeout(() => {
+            const el =
+              document.getElementById(target) ||
+              document.querySelector(`[data-das-id="${target}"]`);
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }, 250);
+        }
       }
     };
     const handleDASResume = () => setShowOnePageResume(true);
@@ -1472,40 +1485,31 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
 
       {/* Main Container */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
-        {/* 3D JARVIS AI VOICE CO-PILOT: Full Studio on Coach Tab, Ambient / Dashboard Background & Chat Bar on Other Tabs */}
-        {activeTab === "coach" ? (
-          <div
-            data-das-id="voice-panel"
-            className="block w-full h-[82vh] rounded-3xl overflow-hidden border border-blue-500/30 bg-[#070d1f]/90 shadow-[0_0_55px_rgba(29,78,216,0.28)]"
-          >
-            <AgentLayout
-              profile={profile}
-              activeTab={activeTab}
-              prediction={prediction}
-              userEmail={email}
-              username={username}
-              onNavigateTab={(tab: string) => setActiveTab(tab as TabId)}
-              isAmbient={false}
-            />
-          </div>
-        ) : (
-          <AgentLayout
-            profile={profile}
-            activeTab={activeTab}
-            prediction={prediction}
-            userEmail={email}
-            username={username}
-            onNavigateTab={(tab: string) => setActiveTab(tab as TabId)}
-            isAmbient={true}
-            focusOnDas={focusOnDas}
-            onToggleFocus={() => setFocusOnDas((prev) => !prev)}
-          />
-        )}
-        {activeTab === "overview" && focusOnDas && (
+        {/* SINGLE PERSISTENT 3D FACE INSTANCE IN BACKGROUND + COMPACT DOCKED CHAT BAR */}
+        <AgentLayout
+          profile={profile}
+          activeTab={activeTab}
+          prediction={prediction}
+          userEmail={email}
+          username={username}
+          onNavigateTab={(tab: string) => {
+            setActiveTab(tab as TabId);
+            setFocusOnDas(false);
+          }}
+          isAmbient={true}
+          focusOnDas={activeTab === "coach" ? true : focusOnDas}
+          onToggleFocus={() => setFocusOnDas((prev) => !prev)}
+        />
+        {((activeTab === "overview" && focusOnDas) || activeTab === "coach") && (
           <div className="fixed top-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 animate-in fade-in duration-300">
             <button
               type="button"
-              onClick={() => setFocusOnDas(false)}
+              onClick={() => {
+                if (activeTab === "coach") {
+                  setActiveTab("overview");
+                }
+                setFocusOnDas(false);
+              }}
               className="px-4 py-2 rounded-full border border-red-500/50 bg-[#070d1f]/90 hover:bg-red-500/20 text-xs font-semibold text-red-200 backdrop-blur-xl shadow-[0_0_25px_rgba(239,68,68,0.35)] transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-red-400" />

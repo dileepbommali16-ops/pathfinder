@@ -20,6 +20,7 @@ export type AgentAction =
   | { type: "OPEN_MODAL"; target: string }
   | { type: "SCROLL_TO"; target: string }
   | { type: "SET_FILTER"; target: string }
+  | { type: "HIGHLIGHT_PROJECT"; target: string }
   | { type: "UPDATE_PROFILE"; target: string };
 
 export type AgentControllerOptions = {
@@ -133,10 +134,13 @@ export function extractSpokenText(text: string): string {
 }
 
 /**
- * Parses all <!--ACTION: {...}--> tags from text (case-insensitive keys & types).
+ * Parses all <!--ACTION: {...}--> tags, shorthand tags, and natural language action statements from text.
  */
 export function parseActionTags(text: string): AgentAction[] {
   const actions: AgentAction[] = [];
+  if (!text) return actions;
+
+  // 1. Standard JSON ACTION tags: <!--ACTION: {"type": "...", ...}-->
   let match: RegExpExecArray | null;
   const rx = new RegExp(ACTION_TAG_REGEX.source, "gi");
   while ((match = rx.exec(text))) {
@@ -168,6 +172,10 @@ export function parseActionTags(text: string): AgentAction[] {
         case "FILTER":
           if (rawTarget) actions.push({ type: "SET_FILTER", target: rawTarget.toUpperCase() });
           break;
+        case "HIGHLIGHT_PROJECT":
+        case "HIGHLIGHT":
+          if (rawTarget) actions.push({ type: "HIGHLIGHT_PROJECT", target: rawTarget });
+          break;
         case "UPDATE_PROFILE":
           if (payload.field && payload.value !== undefined) {
             actions.push({ type: "UPDATE_PROFILE", target: `${payload.field}:${payload.value}` });
@@ -182,26 +190,89 @@ export function parseActionTags(text: string): AgentAction[] {
       // Ignore malformed action tags
     }
   }
+
+  // 2. Shorthand action tags: <!--das:navigate:projects-->, <!--das:highlight:anomaly-->
+  const shorthandRx = /<!--\s*das:(navigate|modal|scroll|filter|highlight):([^>]+)-->/gi;
+  let shortMatch: RegExpExecArray | null;
+  while ((shortMatch = shorthandRx.exec(text))) {
+    const kind = shortMatch[1].toLowerCase();
+    const val = shortMatch[2].trim();
+    if (kind === "navigate") {
+      const tab = normalizeTabId(val);
+      if (tab) actions.push({ type: "NAVIGATE_TAB", target: tab });
+    } else if (kind === "modal") {
+      actions.push({ type: "OPEN_MODAL", target: val });
+    } else if (kind === "scroll") {
+      actions.push({ type: "SCROLL_TO", target: val });
+    } else if (kind === "filter") {
+      actions.push({ type: "SET_FILTER", target: val.toUpperCase() });
+    } else if (kind === "highlight") {
+      actions.push({ type: "HIGHLIGHT_PROJECT", target: val });
+    }
+  }
+
+  // 3. Robust parsing of LLM natural prose actions (e.g. "- **Action**: Navigated to projects tab...")
+  const proseNavMatch = text.match(/(?:-\s*\*\*Action\*\*:?\s*Navigated\s+to\s+([a-zA-Z\s_-]+)\s*tab)/i);
+  if (proseNavMatch) {
+    const tab = normalizeTabId(proseNavMatch[1]);
+    if (tab && !actions.some((a) => a.type === "NAVIGATE_TAB")) {
+      actions.push({ type: "NAVIGATE_TAB", target: tab });
+    }
+  }
+
+  const proseModalMatch = text.match(/(?:-\s*\*\*Action\*\*:?\s*Opened\s+(?:the\s+)?([a-zA-Z\s_-]+)\s*modal)/i);
+  if (proseModalMatch) {
+    const m = proseModalMatch[1].toLowerCase();
+    const modalTarget = m.includes("resume") ? "one_page_resume" : m.includes("interview") ? "mock_interview" : m;
+    if (!actions.some((a) => a.type === "OPEN_MODAL")) {
+      actions.push({ type: "OPEN_MODAL", target: modalTarget });
+    }
+  }
+
+  const proseHighlightMatch = text.match(/(?:-\s*\*\*Action\*\*:?[\s\S]*?(?:highlight|filter|isolated|spotlight)[^"\n]*"([^"\n]+)")/i);
+  if (proseHighlightMatch) {
+    const hTarget = proseHighlightMatch[1].trim();
+    if (!actions.some((a) => a.type === "HIGHLIGHT_PROJECT")) {
+      actions.push({ type: "HIGHLIGHT_PROJECT", target: hTarget });
+    }
+  }
+
   return actions;
 }
 
 /**
  * Detects direct user voice/text commands so website automation works with zero latency
  * even before or without LLM action tags.
+ * Supports full Telugu, Tenglish, and English conversational control.
  */
 export function detectInstantClientActions(query: string): AgentAction[] {
   const q = (query || "").toLowerCase().trim();
   if (!q) return [];
   const actions: AgentAction[] = [];
 
-  // 1. Scroll commands
-  if (/\b(scroll\s*down|go\s*down|move\s*down|kindaki\s*scroll|kinda\s*chudu)\b/i.test(q)) {
+  // 0. Auto-Identity Recognition for Dileep Bommali (The Boss / Owner)
+  if (/\b(dileep|boss|owner|nenu\s*dileep|na\s*name\s*dileep|i\s*am\s*dileep|my\s*name\s*is\s*dileep)\b/i.test(q)) {
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("das_honorific_override", "Boss");
+      }
+    } catch {}
+  } else if (/\b(call\s*me\s*sir|guest\s*mode|i\s*am\s*a\s*(?:guest|visitor|recruiter|student))\b/i.test(q)) {
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("das_honorific_override", "Sir");
+      }
+    } catch {}
+  }
+
+  // 1. Scroll commands (English + Telugu)
+  if (/\b(scroll\s*down|go\s*down|move\s*down|kindaki\s*scroll|kinda\s*chudu|kindiki\s*vellu)\b/i.test(q)) {
     actions.push({ type: "SCROLL_TO", target: "down" });
-  } else if (/\b(scroll\s*up|go\s*up|move\s*up|paiki\s*scroll|paina\s*chudu)\b/i.test(q)) {
+  } else if (/\b(scroll\s*up|go\s*up|move\s*up|paiki\s*scroll|paina\s*chudu|paiki\s*vellu)\b/i.test(q)) {
     actions.push({ type: "SCROLL_TO", target: "up" });
-  } else if (/\b(scroll\s*(to\s*)?top|top\s*of\s*page)\b/i.test(q)) {
+  } else if (/\b(scroll\s*(to\s*)?top|top\s*of\s*page|modatiki\s*vellu)\b/i.test(q)) {
     actions.push({ type: "SCROLL_TO", target: "top" });
-  } else if (/\b(scroll\s*(to\s*)?bottom|bottom\s*of\s*page|footer)\b/i.test(q)) {
+  } else if (/\b(scroll\s*(to\s*)?bottom|bottom\s*of\s*page|footer|chivariki\s*vellu)\b/i.test(q)) {
     actions.push({ type: "SCROLL_TO", target: "bottom" });
   }
 
@@ -231,26 +302,44 @@ export function detectInstantClientActions(query: string): AgentAction[] {
   }
 
   // 4. 1-Page Resume Modal trigger
-  if (/\b(one[\s-]?page\s*resume|1[\s-]?page\s*resume|resume\s*builder\s*modal|download\s*resume\s*template)\b/i.test(q)) {
+  if (/\b(one[\s-]?page\s*resume|1[\s-]?page\s*resume|resume\s*builder\s*modal|download\s*resume\s*template|resume\s*modal)\b/i.test(q)) {
     actions.push({ type: "OPEN_MODAL", target: "one_page_resume" });
     return actions;
   }
 
-  // 5. Tab Navigation commands (English + Telugu/Tenglish)
+  // 5. PROJECTS & BLUEPRINTS (Autonomous Deep Navigation & Highlighting)
+  // Matches "blueprints loki velli oka chinna project ivvu", "projects chupinchu", "small project", etc.
+  if (
+    /\b(blueprints?|projects?|portfolio)\b/i.test(q) ||
+    /\b(project\s*ivvu|chinna\s*project|small\s*project|starter\s*project|easy\s*project|beginner\s*project)\b/i.test(q)
+  ) {
+    actions.push({ type: "NAVIGATE_TAB", target: "projects" });
+
+    // Detect if user wants a beginner / small / specific project highlighted
+    if (/\b(chinna|small|easy|beginner|starter|simple|little|chinnadhi)\b/i.test(q)) {
+      actions.push({ type: "HIGHLIGHT_PROJECT", target: "chinna" });
+    } else {
+      const specificProj = q.match(/\b(anpr|anomaly|detector|rag|kafka|job\s*queue|canvas|vision|iot|radar|stream)\b/i);
+      if (specificProj) {
+        actions.push({ type: "HIGHLIGHT_PROJECT", target: specificProj[1] });
+      }
+    }
+    return actions;
+  }
+
+  // 6. Navigation Commands (Broad Match: Telugu, Tenglish, English)
   const hasNavVerb =
-    /\b(open|go\s*to|take\s*me\s*to|navigate|switch\s*to|show|launch|start|pull\s*up|chupinchu|open\s*chey|vellu|teesukellu)\b/i.test(
+    /\b(open|go\s*(to)?|take\s*me\s*(to)?|navigate|switch\s*(to)?|show|give|launch|start|pull\s*up|chupinchu|open\s*chey|vellu|velli|loki|lo\s*ki|teesukellu|theesukellu|ivvu|chudu)\b/i.test(
       q
     );
 
-  if (hasNavVerb) {
+  if (hasNavVerb || /\b(tab|page|section|slide)\b/i.test(q)) {
     if (/\b(mock\s*interview|interview|viva)\b/i.test(q)) {
       actions.push({ type: "NAVIGATE_TAB", target: "interview" });
     } else if (/\b(6[\s-]?week|roadmap|sprint|study\s*plan|skill\s*gap|skills)\b/i.test(q)) {
       actions.push({ type: "NAVIGATE_TAB", target: "skills" });
-    } else if (/\b(project\s*defense|star\s*defense|defense\s*simulator|viva\s*defense)\b/i.test(q)) {
+    } else if (/\b(project\s*defense|star\s*defense|defense\s*simulator|viva\s*defense|defense)\b/i.test(q)) {
       actions.push({ type: "NAVIGATE_TAB", target: "defense" });
-    } else if (/\b(projects?|blueprints?|portfolio)\b/i.test(q)) {
-      actions.push({ type: "NAVIGATE_TAB", target: "projects" });
     } else if (/\b(resume|ats|cv\s*scanner|resume\s*studio)\b/i.test(q)) {
       actions.push({ type: "NAVIGATE_TAB", target: "resume" });
     } else if (/\b(cohort|analytics|benchmarks?|972|placement\s*stats)\b/i.test(q)) {
@@ -265,7 +354,7 @@ export function detectInstantClientActions(query: string): AgentAction[] {
       actions.push({ type: "NAVIGATE_TAB", target: "roles" });
     } else if (/\b(missions?|mission\s*tracker|daily\s*goals)\b/i.test(q)) {
       actions.push({ type: "NAVIGATE_TAB", target: "missions" });
-    } else if (/\b(voice\s*coach|full\s*coach|das\s*coach)\b/i.test(q)) {
+    } else if (/\b(voice\s*coach|full\s*coach|das\s*coach|coach)\b/i.test(q)) {
       actions.push({ type: "NAVIGATE_TAB", target: "coach" });
     } else if (/\b(dashboard|overview|home|main\s*page)\b/i.test(q)) {
       actions.push({ type: "NAVIGATE_TAB", target: "overview" });
@@ -303,14 +392,14 @@ export function resolveHonorific(profile?: any, userEmail?: string, username?: s
           "dileepbommali16@users.noreply.github.com",
           "dileep@pathfinder.ai",
         ];
-        if (ownerEmails.includes(uEmail) || uName.includes("dileep")) {
+        if (ownerEmails.includes(uEmail) || uName.includes("dileep") || uEmail.includes("dileep")) {
           return "Boss";
         }
 
         // A specific non-owner user is logged in -> address them respectfully as "Sir"
         if (
-          (uEmail && uEmail !== "candidate@pathfinder.ai") ||
-          (uName && uName !== "student" && uName !== "candidate")
+          (uEmail && uEmail !== "candidate@pathfinder.ai" && !uEmail.includes("dileep")) ||
+          (uName && uName !== "student" && uName !== "candidate" && !uName.includes("dileep"))
         ) {
           return "Sir";
         }
@@ -325,7 +414,7 @@ export function resolveHonorific(profile?: any, userEmail?: string, username?: s
   if (pName.includes("dileep") || pEmail.includes("dileep")) {
     return "Boss";
   }
-  if (pName && pName !== "student" && pName !== "candidate" && !pName.includes("alex")) {
+  if (pName && pName !== "student" && pName !== "candidate" && !pName.includes("alex") && !pName.includes("dileep")) {
     return "Sir";
   }
 
@@ -364,9 +453,31 @@ export function useAgentController(options: AgentControllerOptions = {}) {
           break;
         case "SCROLL_TO":
           onScrollTo?.(action.target);
+          if (typeof window !== "undefined") {
+            if (action.target === "down") {
+              window.scrollBy({ top: window.innerHeight * 0.7, behavior: "smooth" });
+            } else if (action.target === "up") {
+              window.scrollBy({ top: -window.innerHeight * 0.7, behavior: "smooth" });
+            } else if (action.target === "top") {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            } else if (action.target === "bottom") {
+              window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+            } else {
+              const el = document.getElementById(action.target) || document.querySelector(`[data-das-id="${action.target}"]`);
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }
           break;
         case "SET_FILTER":
           onSetFilter?.(action.target);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("das-set-filter", { detail: { filter: action.target } }));
+          }
+          break;
+        case "HIGHLIGHT_PROJECT":
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("das-highlight-project", { detail: { query: action.target } }));
+          }
           break;
         case "UPDATE_PROFILE": {
           const [field, val] = action.target.split(":");

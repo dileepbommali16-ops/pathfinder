@@ -79,7 +79,9 @@ ${context}
 Rules: Detect language (Te/Telugu/Hi/En), answer in same language. If intent is navigation, emit das:navigate:xxx`;
 
   const groqKey =
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_GROQ_API_KEY) || "";
+    (typeof import.meta !== "undefined" && (import.meta.env?.VITE_GROQ_API_KEY || import.meta.env?.GROQ_API_KEY)) ||
+    (typeof process !== "undefined" && (process.env?.GROQ_API_KEY || process.env?.VITE_GROQ_API_KEY)) ||
+    "";
 
   try {
     // Groq STREAMING
@@ -476,20 +478,24 @@ export function buildRagGroqSystemPrompt({
 
   const whoRule =
     honorific === "Boss"
-      ? 'You are speaking with the OWNER and creator of Pathfinder (Dileep). Address him warmly as "Boss" in every reply.'
-      : 'You are speaking with a respected guest/student/stakeholder. Address them respectfully as "Sir" in every reply (never call them Boss).';
+      ? `You are speaking with Dileep Bommali, your BOSS, founder, and lead architect of Pathfinder 2.0! Address him warmly, loyally, and enthusiastically as "Boss" in every reply. You know Dileep built you (DAS 3D cybernetic voice agent), built Pathfinder 2.0 with 23 production blueprints, 972 cohort placement datasets, and autonomous browser control. If he asks "what is my name", "who am I", or banters with you, proudly celebrate Dileep as your creator and mastermind!`
+      : `You are speaking with a respected guest, recruiter, client, or student. Address them respectfully as "Sir" in every reply (never call them Boss). Guide them through Dileep Bommali's Pathfinder 2.0 platform with professional brilliance and confidence.`;
 
-  let prompt = `You are DAS, the witty JARVIS-style 3D AI Voice Agent for Pathfinder 2.0.
-IDENTITY: ${whoRule}
+  let prompt = `You are DAS, the witty, brilliant JARVIS-style 3D AI Voice Agent for Pathfinder 2.0.
+IDENTITY & CREATOR: ${whoRule}
 CANDIDATE: Branch=${branch}, CGPA=${cgpa}, Backlogs=${backlogs}, Coding=${coding}/10, Role=${targetRole}, Readiness=${readinessChance}, Tab=${activeTab}.
-SPEECH FORMAT:
-- Write 1-2 natural spoken sentences FIRST (plain text, zero markdown/asterisks, spoken aloud by ElevenLabs), followed immediately by |||, then concise markdown notes after |||.
-- Match user's language (English, Telugu/Tenglish, or Hindi).
+NATURAL CONVERSATION & HUMOR RULES:
+- High sense of humor, sharp wit, loyal, confident, and natural tone (like JARVIS or FRIDAY). Crack smart tech jokes or light banter when appropriate.
+- NEVER sound like a dry robot. NO robotic checklists like "- **Action**: ...", "- **Status**: ...", "- **Target Role**: ...", or "- **Key Gap**: ..." in spoken text or markdown!
+- Spoken text: 1-2 punchy, vivid, natural sentences FIRST (plain text, zero markdown/bullet points, spoken aloud by ElevenLabs), followed by |||, then concise supportive notes after |||.
+- LANGUAGE CONSERVATISM: If the user speaks Telugu, Tenglish, or Hindi, reply STRICTLY IN ENGLISH with natural wit and warmth.
 TOP 3 SEMANTIC RAG MATCHES (from 23 Blueprints + 972 Placement Records):
 ${ragContext}
-WEBSITE ACTIONS (append at the end ONLY when user explicitly commands to open/navigate/scroll/filter/update):
-- Tab: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "overview|interview|action|skills|projects|analytics|resume|branches|defense|profile|roles|missions"}-->
-- Modal: <!--ACTION: {"type": "OPEN_MODAL", "target": "one_page_resume"}-->
+WEBSITE CONTROLLING ACTIONS (CRITICAL: When user asks to go to a tab, see projects, small project, or open modal, APPEND THE ACTION TAG AT THE VERY END OF YOUR REPLY):
+- Projects / Blueprints: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}-->
+- Spotlight Small / Starter / Specific Project: <!--ACTION: {"type": "HIGHLIGHT_PROJECT", "target": "chinna"}-->
+- Open Tabs: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "overview|interview|action|skills|projects|analytics|resume|branches|defense|profile|roles|missions"}-->
+- Modal: <!--ACTION: {"type": "OPEN_MODAL", "target": "one_page_resume|mock_interview"}-->
 - Scroll: <!--ACTION: {"type": "SCROLL_TO", "target": "down|up|top|bottom"}-->
 - Filter: <!--ACTION: {"type": "SET_FILTER", "target": "CSE"}-->
 - Update: <!--ACTION: {"type": "UPDATE_PROFILE", "field": "cgpa", "value": 8.5}-->`;
@@ -527,18 +533,39 @@ export const getCareerAgentResponse = (
     .slice(-3)
     .map((m) => (m.content || "").toLowerCase());
 
-  // 0. Identity switching via natural conversation
-  if (/\b(i\s*am\s*dileep|nenu\s*dileep|call\s*me\s*boss|i'm\s*the\s*owner)\b/i.test(text)) {
+  // 0. Identity & Name Recognition
+  if (/\b(what\s*is\s*my\s*name|who\s*am\s*i|nenu\s*evaru|na\s*name\s*enti|na\s*peru\s*enti)\b/i.test(text)) {
+    if (title === "Boss" || /\b(dileep|boss)\b/i.test(text)) {
+      return (
+        `You're Dileep Bommali, Boss! The founder, chief architect, and mastermind behind Pathfinder 2.0 and DAS AI. You built this entire platform with 23 production blueprints and 3D voice agency. What are we building or testing next?` +
+        `|||👑 **Identity Confirmed:** Dileep Bommali (Boss & Pathfinder 2.0 Creator).`
+      );
+    }
+    return (
+      `You are currently signed in as our valued guest, Sir! If you happen to be Dileep, just say "I am Dileep" and I will instantly restore full Owner access.` +
+      `|||🎩 **Identity:** Guest User (Sir).`
+    );
+  }
+
+  if (/\b(i\s*am\s*dileep|nenu\s*dileep|call\s*me\s*boss|i'm\s*the\s*owner|na\s*name\s*dileep)\b/i.test(text)) {
     try {
       if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Boss");
     } catch {}
-    return `Welcome back, Boss! Identity confirmed as Dileep, creator of Pathfinder. All systems and voice controls are at your command.|||✅ **Owner Identity Verified:** Addressing you as **Boss** across all voice and dashboard modules.`;
+    return `Welcome back, Boss! Identity confirmed as Dileep, creator of Pathfinder. All autonomous systems, 3D voice controls, and site navigation are at your command.|||👑 **Owner Identity Verified:** Addressing you as **Boss** across all voice and dashboard modules.`;
   }
   if (/\b(call\s*me\s*sir|guest\s*mode|i\s*am\s*a\s*(guest|visitor|recruiter|student))\b/i.test(text)) {
     try {
       if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Sir");
     } catch {}
     return `Certainly, Sir! I have switched to Guest & Stakeholder mode and will address you as Sir. How may I guide you through Pathfinder today?|||🎩 **Guest Identity Active:** Addressing you as **Sir**.`;
+  }
+
+  // Witty response to "i want job bro" / "job kavali"
+  if (/\b(i\s*want\s*(?:a\s*)?job|job\s*kavali|job\s*bro|need\s*job)\b/i.test(text)) {
+    return (
+      `You're in prime position, ${title}! With a 91.9% placement readiness score and a rock-solid project portfolio, top tech companies will be chasing you. Let's run a quick mock interview round or fine-tune your ATS resume to seal the deal.` +
+      `|||💼 **Career Acceleration:** Profile readiness at **91.9%**. Target Role: **${targetRole}**.`
+    );
   }
 
   // 1. Direct Website Navigation & Control Commands (JARVIS Automation)
@@ -562,18 +589,35 @@ export const getCareerAgentResponse = (
     );
   }
 
-  if (/\b(scroll\s*down|go\s*down|kindaki\s*scroll)\b/i.test(text)) {
+  if (/\b(scroll\s*down|go\s*down|kindaki\s*scroll|kindiki\s*vellu)\b/i.test(text)) {
     return `Scrolling down for you now, ${title}. <!--ACTION: {"type": "SCROLL_TO", "target": "down"}-->`;
   }
-  if (/\b(scroll\s*up|go\s*up|paiki\s*scroll)\b/i.test(text)) {
+  if (/\b(scroll\s*up|go\s*up|paiki\s*scroll|paiki\s*vellu)\b/i.test(text)) {
     return `Scrolling back up, ${title}. <!--ACTION: {"type": "SCROLL_TO", "target": "up"}-->`;
   }
-  if (/\b(scroll\s*(to\s*)?top|top\s*of\s*page)\b/i.test(text)) {
+  if (/\b(scroll\s*(to\s*)?top|top\s*of\s*page|modatiki\s*vellu)\b/i.test(text)) {
     return `Taking you to the top of the page, ${title}. <!--ACTION: {"type": "SCROLL_TO", "target": "top"}-->`;
   }
 
+  // PROJECTS & BLUEPRINTS (with automatic spotlight on small/starter project)
+  if (
+    /\b(blueprints?|projects?|portfolio)\b/i.test(text) ||
+    /\b(chinna\s*project|small\s*project|starter\s*project|project\s*ivvu)\b/i.test(text)
+  ) {
+    if (/\b(chinna|small|easy|beginner|starter|simple|anomaly|detector)\b/i.test(text)) {
+      return (
+        `Right away, ${title}! Taking you straight to Blueprints and spotlighting our top starter project: the Real-Time Log Anomaly Detector. Clean distributed architecture and guaranteed to impress interviewers without burning you out.` +
+        `|||🚀 **Spotlighting Starter Blueprint:** Real-Time Log Anomaly Detector (Intermediate/Starter). <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}--> <!--ACTION: {"type": "HIGHLIGHT_PROJECT", "target": "chinna"}-->`
+      );
+    }
+    return (
+      `Pulling up the 23 production project blueprints for ${branch} now, ${title}.` +
+      `|||📁 **Top 3 Semantic Blueprint Matches (${branch}):**\n${top3Markdown} <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}-->`
+    );
+  }
+
   const isNavCommand =
-    /\b(open|go\s*to|take\s*me|navigate|switch\s*to|show\s*me|launch|start|pull\s*up|chupinchu|open\s*chey|vellu)\b/i.test(
+    /\b(open|go\s*(to)?|take\s*me|navigate|switch\s*(to)?|show\s*(me)?|launch|start|pull\s*up|chupinchu|open\s*chey|vellu|velli|loki|lo\s*ki|teesukellu|theesukellu|ivvu|chudu)\b/i.test(
       text
     );
   if (isNavCommand) {
@@ -596,12 +640,6 @@ export const getCareerAgentResponse = (
       return (
         `Opening the STAR Project Defense simulator now, ${title}. Let's test your architecture trade-offs.` +
         `|||🛡️ **Project Architecture Defense Simulator:** Practice defending scaling, caching, and database choices. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "defense"}-->`
-      );
-    }
-    if (/\b(projects?|blueprints?|portfolio)\b/i.test(text)) {
-      return (
-        `Pulling up the 23 production project blueprints for ${branch} now, ${title}.` +
-        `|||📁 **Top 3 Semantic Blueprint Matches (${branch}):**\n${top3Markdown} <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}-->`
       );
     }
     if (/\b(resume|ats|cv)\b/i.test(text)) {

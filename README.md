@@ -134,6 +134,13 @@ Pathfinder is an enterprise-grade, real-time career intelligence platform engine
   * **True Mouth-Only Lip-Sync (Zero Neck Bobbing)**: The lower neck and collar (`Object_5`) are 100% locked in place so the neck never bobs up and down during speech; real-time ElevenLabs PCM audio amplitude + syllable cadence drive only the mouth plate (`Object_60`) and articulated 3D upper/lower lips (`(0, 0.011, 0.156)`).
   * **Battery & GPU Locked at 60 FPS**: Render loop automatically pauses when tab is hidden (`document.hidden`), caps `devicePixelRatio` at 2, and respects `prefers-reduced-motion`.
   * **Full Website Voice Automation & Platform Mastery**: Explains everything about Pathfinder 2.0, why engineering students should use it, and how each of the **23 Flagship Project Blueprints** works, while autonomously controlling tabs, scrolling, modals, branch filters, and live profile updates via voice or text.
+- **Autonomous Multi-Modal Site Control & Deep Project Spotlight**:
+  * **Natural Language Navigation (English + Telugu / Tenglish)**: Commands like `"blueprints loki velli oka chinna project ivvu"`, `"mock interview open chey"`, or `"6-week roadmap chupinchu"` trigger instant tab switching without latency.
+  * **Visual Target Spotlight & Smooth Auto-Scroll**: Scrolls the target project card directly into view and activates a high-visibility pulsing crimson ring (`ring-4 ring-rose-500/90 shadow-[0_0_55px_rgba(244,63,94,0.85)] scale-[1.03]`) with a `🎯 DAS Recommended Blueprint` badge.
+  * **Zero Duplicate Panels**: Eliminated the redundant 2-column studio box on the Coach tab. The single 3D Face runs persistently in the background (`z-0`) while the translucent glass conversation stream floats cleanly in front.
+  * **Dynamic Identity Resolution (Boss vs Sir)**:
+    - **Owner Mode ("Boss")**: Dedicated to **Dileep Bommali** (creator and lead architect of Pathfinder 2.0) with loyal, witty JARVIS-style humor.
+    - **Guest Mode ("Sir")**: Automatically active for recruiters, students, and institutional clients. Toggleable instantly via the chat bar header.
 - **Autonomous Website Navigation & DOM Interaction**:
   * Complete agentic control: `navigate_to` (with `explain=true` walkthrough), `scroll_to`, `click`, and `fill_field` targeting `data-agent-id` elements.
   * Safety confirmation gate (`data-agent-danger`) for critical and destructive actions.
