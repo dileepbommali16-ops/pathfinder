@@ -75,3 +75,4 @@ export function createClient(supabaseUrl?: string, supabaseKey?: string) {
 }
 
 export default { createClient };
+
