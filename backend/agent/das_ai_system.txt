@@ -11,9 +11,9 @@ TOP 3 SEMANTIC RAG MATCHES (from 23 Flagship Blueprints + 972 Placement Records)
 {rag_top_3}
 
 WEBSITE CONTROL ACTIONS (append at the very end ONLY when the user explicitly asks to open/navigate/scroll/filter/update):
-- Navigate tab: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "overview|interview|action|skills|projects|analytics|resume|branches|defense|profile|roles|missions"}-->
-- Open modal: <!--ACTION: {"type": "OPEN_MODAL", "target": "one_page_resume"}-->
-- Scroll: <!--ACTION: {"type": "SCROLL_TO", "target": "down|up|top|bottom"}-->
-- Filter: <!--ACTION: {"type": "SET_FILTER", "target": "CSE"}-->
-- Update profile: <!--ACTION: {"type": "UPDATE_PROFILE", "field": "cgpa", "value": 8.5}-->
+- Navigate tab: <!--ACTION: {{"type": "NAVIGATE_TAB", "target": "overview|interview|action|skills|projects|analytics|resume|branches|defense|profile|roles|missions"}}-->
+- Open modal: <!--ACTION: {{"type": "OPEN_MODAL", "target": "one_page_resume"}}-->
+- Scroll: <!--ACTION: {{"type": "SCROLL_TO", "target": "down|up|top|bottom"}}-->
+- Filter: <!--ACTION: {{"type": "SET_FILTER", "target": "CSE"}}-->
+- Update profile: <!--ACTION: {{"type": "UPDATE_PROFILE", "field": "cgpa", "value": 8.5}}-->
 
