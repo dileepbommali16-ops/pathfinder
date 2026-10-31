@@ -48,7 +48,8 @@ import {
   Target,
   Loader2,
   Mic,
-  Building2
+  Building2,
+  LayoutDashboard,
 } from "lucide-react";
 import { getApiBase, API_BASE, fetchWithTimeout, api } from "@/lib/apiClient";
 import { getTabKnowledge } from "@/lib/siteKnowledge";
@@ -68,7 +69,8 @@ export default function Home() {
     }
     return "overview";
   });
-  const { getScreenPayload } = useScreenWatcher(activeTab);
+    const [focusOnDas, setFocusOnDas] = useState(false);
+const { getScreenPayload } = useScreenWatcher(activeTab);
 
   // Central DAS action listeners for tab navigation & modals
   useEffect(() => {
@@ -1301,7 +1303,7 @@ export default function Home() {
       <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0b10] text-[#f8fafc] font-sans overflow-x-hidden">
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
           <div className="absolute inset-0 bg-[#0a0b10]" />
-          <Ambient3DBackground />
+          <Ambient3DBackground activeTab={activeTab} />
         </div>
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
@@ -1470,17 +1472,23 @@ export default function Home() {
 
       {/* Main Container */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
-        {/* PERSISTENT 3D JARVIS AI VOICE CO-PILOT (Hero Centerpiece on Main Dashboard & Coach Tab, Floating HUD on Other Tabs) */}
-        <div
-          data-das-id="voice-panel"
-          className={
-            activeTab === "overview"
-              ? "mb-12 block w-full h-[560px] rounded-3xl overflow-hidden border border-blue-500/30 bg-[#070d1f]/90 shadow-[0_0_55px_rgba(29,78,216,0.28)]"
-              : activeTab === "coach"
-              ? "block w-full h-[82vh] rounded-3xl overflow-hidden border border-blue-500/30 bg-[#070d1f]/90 shadow-[0_0_55px_rgba(29,78,216,0.28)]"
-              : ""
-          }
-        >
+        {/* 3D JARVIS AI VOICE CO-PILOT: Full Studio on Coach Tab, Ambient / Dashboard Background & Chat Bar on Other Tabs */}
+        {activeTab === "coach" ? (
+          <div
+            data-das-id="voice-panel"
+            className="block w-full h-[82vh] rounded-3xl overflow-hidden border border-blue-500/30 bg-[#070d1f]/90 shadow-[0_0_55px_rgba(29,78,216,0.28)]"
+          >
+            <AgentLayout
+              profile={profile}
+              activeTab={activeTab}
+              prediction={prediction}
+              userEmail={email}
+              username={username}
+              onNavigateTab={(tab: string) => setActiveTab(tab as TabId)}
+              isAmbient={false}
+            />
+          </div>
+        ) : (
           <AgentLayout
             profile={profile}
             activeTab={activeTab}
@@ -1488,9 +1496,23 @@ export default function Home() {
             userEmail={email}
             username={username}
             onNavigateTab={(tab: string) => setActiveTab(tab as TabId)}
-            isAmbient={activeTab !== "overview" && activeTab !== "coach"}
+            isAmbient={true}
+            focusOnDas={focusOnDas}
+            onToggleFocus={() => setFocusOnDas((prev) => !prev)}
           />
-        </div>
+        )}
+        {activeTab === "overview" && focusOnDas && (
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 animate-in fade-in duration-300">
+            <button
+              type="button"
+              onClick={() => setFocusOnDas(false)}
+              className="px-4 py-2 rounded-full border border-red-500/50 bg-[#070d1f]/90 hover:bg-red-500/20 text-xs font-semibold text-red-200 backdrop-blur-xl shadow-[0_0_25px_rgba(239,68,68,0.35)] transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5 text-red-400" />
+              <span>Show Dashboard</span>
+            </button>
+          </div>
+        )}
         <AnimatePresence mode="wait">
           {/* TAB 1: READINESS OVERVIEW & COMMAND CENTER */}
           {activeTab === "overview" && (
@@ -1500,8 +1522,32 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
+              className={`transition-all duration-300 ${
+                focusOnDas
+                  ? "pointer-events-none opacity-0 h-0 overflow-hidden"
+                  : "opacity-100 pointer-events-auto space-y-12 sm:space-y-16"
+              }`}
             >
+              {/* Focus on DAS Top Quick Toggle Bar */}
+              <div className="flex items-center justify-between gap-4 pb-2">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                  </span>
+                  <span className="text-xs font-mono text-zinc-400">
+                    DAS Cybernetic Co-Pilot Active in Background
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFocusOnDas((prev) => !prev)}
+                  className="px-3.5 py-1.5 rounded-full border border-red-500/40 bg-[#0c101d]/85 hover:bg-red-500/20 text-xs font-semibold text-red-200 backdrop-blur-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-red-400" />
+                  <span>Focus on DAS</span>
+                </button>
+              </div>
               {/* Optional Profile Completion Banner */}
               {isProfilePartiallyIncomplete && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#161926] bg-[#11131c] p-5 backdrop-blur-md">

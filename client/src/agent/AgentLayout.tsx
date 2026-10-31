@@ -22,7 +22,19 @@ import {
   buildRagGroqSystemPrompt,
   estimatePromptTokens,
 } from "@/lib/careerAgent";
-import { Maximize2, Minimize2, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import {
+  Maximize2,
+  Minimize2,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  ChevronUp,
+  ChevronDown,
+  Square,
+  Sparkles,
+  LayoutDashboard,
+} from "lucide-react";
 
 const API = getApiBase();
 const API_BASE = API.replace(/\/$/, "");
@@ -51,6 +63,8 @@ export interface AgentLayoutProps {
   username?: string;
   onNavigateTab?: (tab: string) => void;
   isAmbient?: boolean;
+  focusOnDas?: boolean;
+  onToggleFocus?: () => void;
   [key: string]: any;
 }
 
@@ -85,6 +99,8 @@ export default function AgentLayout({
   username: propUsername,
   onNavigateTab: propOnNavigateTab,
   isAmbient = false,
+  focusOnDas = false,
+  onToggleFocus,
 }: AgentLayoutProps = {}) {
   const [, navigate] = useLocation();
   const [msgs, setMsgs] = useState<Msg[]>(() => globalMsgsCache);
@@ -686,7 +702,317 @@ export default function AgentLayout({
     );
   };
 
+  const isDashboard = propActiveTab === "overview";
+  const [showHistory, setShowHistory] = useState(false);
+
+  const liveSubtitle = (() => {
+    if (isListening || pipelineStage === "listening") {
+      return input.trim() ? `Hearing: "${input}"` : `Listening to ${honorific}... Speak now`;
+    }
+    if (thinking || pipelineStage === "thinking") {
+      return "Thinking... Groq LPU & Pathfinder Memory processing";
+    }
+    if (isSpeaking || pipelineStage === "speaking") {
+      if (msgs.length > 0) {
+        const last = msgs[msgs.length - 1];
+        if (last.role === "assistant") {
+          return last.content.replace(/<!--[\s\S]*?-->/g, "").trim().slice(0, 180);
+        }
+      }
+      return "DAS is speaking...";
+    }
+    if (msgs.length > 0) {
+      const last = msgs[msgs.length - 1];
+      if (last.role === "assistant") {
+        return last.content.replace(/<!--[\s\S]*?-->/g, "").trim().slice(0, 180);
+      }
+      return `You: ${last.content.slice(0, 160)}`;
+    }
+    return `DAS 3D AI ready • Speak or type below, ${honorific}`;
+  })();
+
   if (isAmbient) {
+    // DASHBOARD OVERVIEW: 3D Face as full-viewport background + compact docked chat bar at bottom center
+    if (isDashboard) {
+      return (
+        <>
+          {/* 1. FIXED FULL-VIEWPORT BACKGROUND LAYER: ONE AVATAR3D INSTANCE */}
+          <div
+            data-das-id="background-avatar-layer"
+            className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden select-none"
+            aria-hidden="true"
+          >
+            {/* Deep Graphite Backdrop with Crimson Ambient Glow */}
+            <div
+              className="absolute inset-0 bg-[#070913]"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 45%, rgba(220, 38, 38, 0.16) 0%, rgba(13, 17, 32, 0.72) 48%, #070913 100%)",
+              }}
+            />
+            <div
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[75vh] w-[75vh] rounded-full blur-[110px] pointer-events-none opacity-40"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(239, 68, 68, 0.28) 0%, rgba(185, 28, 28, 0.08) 50%, transparent 75%)",
+              }}
+            />
+            {/* Centered Large 3D Face (70-80vh on desktop, responsive at 375px) */}
+            <div className="relative h-[65vh] w-[95vw] sm:h-[78vh] sm:w-[78vh] max-h-[860px] max-w-[860px] min-h-[340px] min-w-[320px] flex items-center justify-center">
+              <Avatar3D getLevel={getAudioLevel} state={avatarState} />
+            </div>
+          </div>
+
+          {/* 2. COMPACT CHAT BAR DOCKED AT BOTTOM CENTER */}
+          <aside
+            data-agent-ignore
+            data-das-id="dashboard-chat-bar"
+            aria-label="DAS AI Voice & Text Controller"
+            className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-[720px] rounded-2xl bg-[#090d1a]/95 border border-violet-500/35 shadow-[0_0_40px_rgba(0,0,0,0.85),0_0_22px_rgba(139,92,246,0.22)] backdrop-blur-2xl text-zinc-100 flex flex-col overflow-hidden transition-all duration-300"
+            style={{
+              paddingBottom: "max(6px, env(safe-area-inset-bottom, 6px))",
+            }}
+          >
+            {/* Expandable Recent Conversation Drawer */}
+            {showHistory && (
+              <div className="max-h-60 overflow-y-auto px-4 py-3 space-y-2.5 border-b border-white/10 bg-slate-950/90 text-xs">
+                <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 pb-1.5 border-b border-white/5">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Conversation Session ({msgs.length} messages)
+                  </span>
+                  <span className="text-violet-300 font-medium">RAG Top-3 • {lastPromptTokens} tok</span>
+                </div>
+                {msgs.slice(-8).map((m, idx) => (
+                  <div key={idx} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-[85%] rounded-xl px-3 py-1.5 leading-relaxed text-xs shadow-sm ${
+                        m.role === "user"
+                          ? "bg-violet-600 text-white font-medium"
+                          : "bg-slate-900/90 text-zinc-200 border border-white/10"
+                      }`}
+                    >
+                      <span className="font-semibold text-[10px] block opacity-70 mb-0.5">
+                        {m.role === "user" ? `${honorific} (You)` : "DAS 3D AI"}
+                      </span>
+                      {m.content.replace(/<!--[\s\S]*?-->/g, "").trim()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 1-Line Live Subtitle Strip */}
+            <div className="flex items-center justify-between gap-2 px-3.5 py-1.5 bg-gradient-to-r from-violet-950/70 via-slate-900/80 to-slate-950/90 border-b border-white/5 text-xs">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                {/* Live 3-Color Status Dot */}
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span
+                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                      avatarState === "listening"
+                        ? "bg-rose-400"
+                        : avatarState === "thinking"
+                        ? "bg-cyan-400"
+                        : avatarState === "speaking"
+                        ? "bg-emerald-400"
+                        : "bg-violet-400"
+                    }`}
+                  />
+                  <span
+                    className={`relative inline-flex rounded-full h-2 w-2 ${
+                      avatarState === "listening"
+                        ? "bg-rose-500"
+                        : avatarState === "thinking"
+                        ? "bg-cyan-500"
+                        : avatarState === "speaking"
+                        ? "bg-emerald-500"
+                        : "bg-violet-500"
+                    }`}
+                  />
+                </span>
+
+                {/* Subtitle text */}
+                <span className="truncate text-[11px] text-zinc-300 font-sans tracking-wide">
+                  {liveSubtitle}
+                </span>
+              </div>
+
+              {/* Subtitle Controls */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Focus on DAS / Show Dashboard Toggle */}
+                <button
+                  type="button"
+                  onClick={onToggleFocus}
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium border transition-all flex items-center gap-1 cursor-pointer ${
+                    focusOnDas
+                      ? "bg-rose-500/25 border-rose-400/50 text-rose-200 shadow-[0_0_12px_rgba(244,63,94,0.35)]"
+                      : "bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300"
+                  }`}
+                  title={focusOnDas ? "Show Dashboard Cards" : "Focus on DAS 3D Face"}
+                >
+                  {focusOnDas ? (
+                    <>
+                      <LayoutDashboard className="w-3 h-3" />
+                      <span>Show Cards</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3 text-red-400" />
+                      <span>Focus on DAS</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Expand/Collapse Chat History */}
+                <button
+                  type="button"
+                  onClick={() => setShowHistory((prev) => !prev)}
+                  className="p-1 rounded text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  title={showHistory ? "Collapse History" : "Expand Recent Chat History"}
+                >
+                  {showHistory ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                </button>
+
+                {/* Switch Boss/Sir */}
+                <button
+                  type="button"
+                  onClick={toggleHonorific}
+                  className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 hover:bg-violet-500/20 text-violet-200 border border-white/10 transition-colors cursor-pointer"
+                  title="Switch Owner (Boss) / Guest (Sir) Addressing Mode"
+                >
+                  {honorific === "Boss" ? "👑 Boss" : "🎩 Sir"}
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Input and Action Controls Row */}
+            <div className="flex items-center gap-2 p-2 sm:p-2.5">
+              {/* Language Switcher */}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = (langIdx + 1) % LANGS.length;
+                  setLangIdx(next);
+                }}
+                className="px-2 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 text-xs font-mono font-semibold transition-colors shrink-0 cursor-pointer"
+                title="Switch Input Language (EN / Telugu / Hindi)"
+              >
+                {LANGS[langIdx][1]}
+              </button>
+
+              {/* Text input with Send (for typing when throat hurts) */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!input.trim()) return;
+                  const val = input;
+                  setInput("");
+                  send(val);
+                }}
+                className="flex items-center gap-1.5 flex-1 min-w-0"
+              >
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={
+                    honorific === "Boss"
+                      ? "Command DAS or type your question..."
+                      : "Ask DAS anything or type a command..."
+                  }
+                  className="h-9 flex-1 min-w-0 rounded-xl bg-white/5 px-3 text-xs text-white placeholder-zinc-500 outline-none focus:ring-1 focus:ring-violet-500 border border-white/10"
+                />
+                {input.trim() && (
+                  <button
+                    type="submit"
+                    className="h-9 px-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-semibold text-white transition-colors shrink-0 shadow-[0_0_10px_rgba(139,92,246,0.5)] cursor-pointer"
+                  >
+                    Send
+                  </button>
+                )}
+              </form>
+
+              {/* 3-Color Mic Button */}
+              <button
+                type="button"
+                onClick={handleToggleMic}
+                className={`h-9 px-3 sm:px-3.5 rounded-xl font-medium text-xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  isListening || pipelineStage === "listening"
+                    ? "bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.7)] animate-pulse ring-2 ring-rose-400"
+                    : thinking || pipelineStage === "thinking"
+                    ? "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.7)] animate-pulse ring-2 ring-cyan-400"
+                    : isSpeaking || pipelineStage === "speaking"
+                    ? "bg-emerald-500 hover:bg-emerald-400 text-white shadow-[0_0_20px_rgba(16,185,129,0.7)] animate-pulse ring-2 ring-emerald-300"
+                    : "bg-white/10 hover:bg-white/15 text-zinc-200 border border-white/10 hover:border-violet-500/40"
+                }`}
+                title={
+                  isListening || pipelineStage === "listening"
+                    ? "Listening (Red) • User Speaking"
+                    : thinking || pipelineStage === "thinking"
+                    ? "Thinking (Blue) • Processing Groq LPU"
+                    : isSpeaking || pipelineStage === "speaking"
+                    ? "Speaking (Green) • DAS Mouth Articulating"
+                    : "Speak to DAS"
+                }
+              >
+                {isListening || pipelineStage === "listening" ? (
+                  <>
+                    <MicOff className="w-4 h-4 animate-pulse" />
+                    <span className="hidden sm:inline">Listening</span>
+                  </>
+                ) : thinking || pipelineStage === "thinking" ? (
+                  <>
+                    <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    <span className="hidden sm:inline">Thinking</span>
+                  </>
+                ) : isSpeaking || pipelineStage === "speaking" ? (
+                  <>
+                    <Volume2 className="w-4 h-4 animate-bounce" />
+                    <span className="hidden sm:inline">Speaking</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4" />
+                    <span className="hidden sm:inline">Speak</span>
+                  </>
+                )}
+              </button>
+
+              {/* Mute Toggle */}
+              <button
+                type="button"
+                onClick={() => setVoiceMuted((prev) => !prev)}
+                className={`h-9 w-9 rounded-xl flex items-center justify-center border transition-colors shrink-0 cursor-pointer ${
+                  voiceMuted
+                    ? "bg-amber-500/20 border-amber-500/40 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.25)]"
+                    : "bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10"
+                }`}
+                title={voiceMuted ? "Unmute Voice" : "Mute Voice"}
+              >
+                {voiceMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              </button>
+
+              {/* Stop Button */}
+              {(isSpeaking || pipelineStage === "speaking" || thinking) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopSpeaking();
+                    setThinking(false);
+                    setPipelineStage("idle");
+                  }}
+                  className="h-9 px-2.5 rounded-xl bg-red-600/80 hover:bg-red-500 text-white text-xs font-semibold flex items-center gap-1 shrink-0 shadow-[0_0_10px_rgba(239,68,68,0.5)] cursor-pointer"
+                  title="Stop Speaking Immediately"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current" />
+                  <span className="hidden sm:inline">Stop</span>
+                </button>
+              )}
+            </div>
+          </aside>
+        </>
+      );
+    }
     if (ambientMinimized) {
       return (
         <div className="fixed bottom-6 right-6 z-50 flex items-center">

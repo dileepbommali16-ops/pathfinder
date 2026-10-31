@@ -16,6 +16,7 @@ export interface Avatar3DProps {
   modelUrl?: string;
   avatarType?: "vrm" | "gltf" | "cyber";
   isOwner?: boolean;
+  paused?: boolean;
 }
 
 export default function Avatar3D({
@@ -24,6 +25,7 @@ export default function Avatar3D({
   url,
   modelUrl = "/models/avatar.glb",
   avatarType,
+  paused = false,
 }: Avatar3DProps) {
   const targetUrl = url || modelUrl || "/models/avatar.glb";
   const host = useRef<HTMLDivElement>(null);
@@ -31,6 +33,8 @@ export default function Avatar3D({
   levelRef.current = getLevel;
   const stateRef = useRef<AvatarState>(state);
   stateRef.current = state;
+  const pausedRef = useRef<boolean>(paused);
+  pausedRef.current = paused;
   const [modelType, setModelType] = useState<"vrm" | "gltf" | "cyber">(avatarType || "gltf");
 
   useEffect(() => {
@@ -366,9 +370,14 @@ export default function Avatar3D({
     let blinkT = -1;
     let mouth = 0;
 
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     // 5. CONTINUOUS ANIMATION LOOP (Steady head, zero neck bobbing, realistic lip-sync, bright red eye blink)
     const tick = () => {
       raf = requestAnimationFrame(tick);
+      if (document.hidden || pausedRef.current) return;
       const nowFrame = performance.now();
       const dt = Math.min((nowFrame - lastFrameTime) / 1000, 0.1);
       lastFrameTime = nowFrame;
@@ -401,9 +410,14 @@ export default function Avatar3D({
 
       if (gltfGroup.visible) {
         // Keep head & neck steady and composed (NO neck bobbing!)
-        gltfGroup.position.y = 0.02 + Math.sin(t * 1.1) * 0.003;
+        if (!prefersReducedMotion) {
+          gltfGroup.position.y = 0.02 + Math.sin(t * 1.1) * 0.003;
+          gltfGroup.rotation.y = Math.sin(t * 0.4) * 0.022;
+        } else {
+          gltfGroup.position.y = 0.02;
+          gltfGroup.rotation.y = 0;
+        }
         gltfGroup.position.x = 0;
-        gltfGroup.rotation.y = Math.sin(t * 0.4) * 0.022;
         gltfGroup.rotation.x = 0;
         gltfGroup.rotation.z = 0;
 
