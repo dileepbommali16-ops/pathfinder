@@ -18,6 +18,18 @@
 
 ---
 
+### 📸 Live Dashboard Interface (Desktop 1440px & Mobile 375px)
+
+| Desktop: Glass Cards Mode (1440px) | Desktop: Focus on DAS Mode (1440px) |
+| :---: | :---: |
+| ![Desktop Cards](docs/screenshots/dashboard_1440_cards.png) | ![Desktop Focus Mode](docs/screenshots/dashboard_1440_focus.png) |
+
+| Mobile: Glass Cards Mode (375px) | Mobile: Focus on DAS Mode (375px) |
+| :---: | :---: |
+| ![Mobile Cards](docs/screenshots/dashboard_375_cards.png) | ![Mobile Focus Mode](docs/screenshots/dashboard_375_focus.png) |
+
+---
+
 
 ---
 
@@ -107,12 +119,20 @@ Pathfinder is an enterprise-grade, real-time career intelligence platform engine
 - **Friendly JARVIS Personality — "Boss" (Dileep) vs. "Sir" (Students, Friends & Stakeholders)**:
   * **For Creator & Owner (Dileep Bommali)**: DAS greets warmly like JARVIS: *"Hi Boss, what's up! Welcome back to Pathfinder 2.0. All 3D neural systems, placement analytics, and 23 project blueprints are online. Tell me what you want to explore or automate today, Boss!"*
   * **For Students, Friends, Recruiters & Stakeholders**: DAS greets respectfully as **"Sir"**: *"Hi Sir, welcome to Pathfinder 2.0! I am DAS, your autonomous AI Career Co-Pilot. Ask me about Pathfinder, why students should use this platform, any of the 23 flagship project blueprints, or tell me where to navigate, Sir!"*
-- **Main Dashboard 3D JARVIS Command Center & Clean Cybernetic UI (`Avatar3D.tsx`, `AgentLayout.tsx`, `Ambient3DBackground.tsx`)**:
-  * **Clutter-Free Background**: All distracting 3D background motion shaders and floating engine switchers have been removed in favor of a clean, deep dark-blue cybernetic space backdrop (`Ambient3DBackground.tsx`).
-  * **Main Dashboard Hero Centerpiece**: The 3D AI Human Brain & Voice Co-Pilot (`DAS`) sits prominently at the top of the **Main Dashboard (`overview`)** as a neatly proportioned `560px` 2-column JARVIS Command Center (and `82vh` full console on the `Voice Coach` tab), while smoothly docking into a floating Hologram Co-Pilot HUD on other tabs.
+- **Main Dashboard 3D Face Background & Compact Bottom Chat Bar (`Avatar3D.tsx`, `AgentLayout.tsx`, `Ambient3DBackground.tsx`)**:
+  * **3D Face as Full-Viewport Background (`z-0`)**: Replaced all distracting 3D background shader animations (Predictive Arc, Hybrid Mix, Void Field) with the real 3D Cyber Face agent centered in the background (`z-0`, lowest layer, `pointer-events: none`, ~75vh on desktop, soft crimson rim glow on graphite theme `#070913`). Single WebGL context shared across the entire app.
+  * **Glassmorphic Dashboard in Front (`z-10`)**: Placement KPI cards, readiness vectors, company radar, and action widgets sit in front as frosted glass cards (`backdrop-blur-xl bg-[#0c101d]/75 border border-white/10`).
+  * **1-Click "Focus on DAS" ⇄ "Show Dashboard" Mode**: Dedicated toggle on both the top header and docked chat bar that hides the dashboard cards during voice discussions, allowing an uninterrupted, full-screen view of the cybernetic face with real-time lip-sync and glowing red eyes.
+  * **Compact Bottom-Docked Chat Bar (`z-40`, max-w 720px)**: Replaced the old bulky 2-column studio box on the main Dashboard with a sleek docked controller featuring:
+    - **1-Line Live Subtitle**: Real-time speech transcription & assistant output with an expandable recent dialogue drawer.
+    - **Dual Typing + Voice (Throat Relief Mode)**: Type commands or speak freely; typed messages stream through Groq LPU + Voyage AI + ElevenLabs, with DAS articulating mouth lip sync and voice in real-time unless muted.
+    - **3-Color Mic UX**: 🔴 Red (Listening) ➔ 🔵 Blue (Thinking) ➔ 🟢 Green (Speaking).
+    - **Audio Controls**: Mute toggle (`Volume2`/`VolumeX`), immediate Stop speaking button, and language switcher (`EN`, `తె`, `हि`).
+    - **Session Persistence**: Full dialogue history preserved across tab switches with zero restart or duplicate greetings.
   * **Deep Dark-Blue 3D Cyber Face (`0x0b2258`)**: Custom metallic dark-blue armor (`Object_4`–`Object_11`, `Object_25`, `Object_26`) and cobalt structural trim (`0x163888`) illuminated by royal-blue studio lights.
   * **Intense Glowing Dark-Red Eyes & Natural Blinking**: High-intensity crimson-red emissive eye cores (`Object_52`, `Object_53`, `Object_55`, `Object_56`, `emissiveIntensity: 5.8–9.7`) and glowing crimson eye rings (`Object_58`) with dual crimson `PointLight`s (`intensity: 4.2`) and natural human eyelid blinking (`Kito6_FaceMesh_Eye.L_20` / `R_21`).
   * **True Mouth-Only Lip-Sync (Zero Neck Bobbing)**: The lower neck and collar (`Object_5`) are 100% locked in place so the neck never bobs up and down during speech; real-time ElevenLabs PCM audio amplitude + syllable cadence drive only the mouth plate (`Object_60`) and articulated 3D upper/lower lips (`(0, 0.011, 0.156)`).
+  * **Battery & GPU Locked at 60 FPS**: Render loop automatically pauses when tab is hidden (`document.hidden`), caps `devicePixelRatio` at 2, and respects `prefers-reduced-motion`.
   * **Full Website Voice Automation & Platform Mastery**: Explains everything about Pathfinder 2.0, why engineering students should use it, and how each of the **23 Flagship Project Blueprints** works, while autonomously controlling tabs, scrolling, modals, branch filters, and live profile updates via voice or text.
 - **Autonomous Website Navigation & DOM Interaction**:
   * Complete agentic control: `navigate_to` (with `explain=true` walkthrough), `scroll_to`, `click`, and `fill_field` targeting `data-agent-id` elements.
