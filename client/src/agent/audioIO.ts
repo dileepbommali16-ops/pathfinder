@@ -1,9 +1,10 @@
 /**
- * audioIO - Ultra-reliable ElevenLabs JARVIS Voice Engine + 3D Lip-Sync Analyser
- * - Plays ElevenLabs MP3 audio via HTMLAudioElement for 100% audible playback
- * - Decodes PCM waveform in parallel so 3D Avatar jaw moves to exact voice amplitude
+ * audioIO - Ultra-Low-Latency Streaming ElevenLabs JARVIS Voice Engine + 3D Lip-Sync Analyser
+ * - Streams ElevenLabs MP3 audio (`/v1/text-to-speech/{voice_id}/stream?optimize_streaming_latency=3`)
+ * - Eager parallel pre-fetching: as soon as Groq streams the first chunk, ElevenLabs synthesis
+ *   starts immediately in parallel so sentence-to-sentence playback has zero gap
+ * - Decodes PCM waveform in parallel so 3D Avatar mouth moves to exact voice amplitude
  * - Auto-replays blocked initial greeting on first user click/tap (Chrome autoplay policy)
- * - Sequential playback queue with instant Barge-In cancellation
  */
 
 import { getApiBase } from "@/lib/apiClient";
@@ -52,7 +53,6 @@ export class Speaker {
       if (this.ctxRef && this.ctxRef.state === "suspended") {
         this.ctxRef.resume().catch(() => {});
       }
-      // If initial greeting was blocked by browser autoplay policy before first click, play it now!
       if (this.blockedAutoplayBuffer && !this.activeSpeaking && this.pending === 0) {
         const buf = this.blockedAutoplayBuffer;
         this.blockedAutoplayBuffer = null;
@@ -104,6 +104,10 @@ export class Speaker {
     }
   }
 
+  /**
+   * Streams MP3 bytes from ElevenLabs `/stream?optimize_streaming_latency=3`
+   * immediately when called so audio synthesis overlaps with Groq token streaming.
+   */
   private async fetchMp3Bytes(text: string): Promise<ArrayBuffer | null> {
     const cacheKey = text.trim().slice(0, 650);
     const cached = this.ttsCache.get(cacheKey);
@@ -111,48 +115,17 @@ export class Speaker {
       return cached.slice(0);
     }
 
-    const t = this.getToken();
-    const now = Date.now();
-
-    // 1. Try backend TTS only if live backend is active
-    if (now >= this.backendTtsCooldownUntil) {
-      try {
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), 2200);
-        const r = await fetch(`${API}/agent/tts`, {
-          method: "POST",
-          signal: ctrl.signal,
-          headers: {
-            "Content-Type": "application/json",
-            ...(t ? { Authorization: `Bearer ${t}` } : {}),
-          },
-          body: JSON.stringify({ text: cacheKey }),
-        });
-        clearTimeout(tid);
-        if (r.ok && r.status === 200) {
-          const ab = await r.arrayBuffer();
-          if (ab.byteLength > 200) {
-            this.ttsCache.set(cacheKey, ab.slice(0));
-            return ab;
-          }
-        }
-        this.backendTtsCooldownUntil = now + 3600_000;
-      } catch {
-        this.backendTtsCooldownUntil = now + 3600_000;
-      }
-    }
-
-    // 2. Direct ElevenLabs Ultra-Natural JARVIS Voice (onwK4e9ZLuTAKqWW03F9)
     const voiceId =
       (import.meta as any).env?.VITE_ELEVENLABS_VOICE_ID || DEFAULT_JARVIS_VOICE_ID;
 
+    // 1. Direct ElevenLabs Low-Latency HTTP Chunk Stream (`optimize_streaming_latency=3`)
     for (const elKey of ELEVENLABS_KEYS) {
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const elCtrl = new AbortController();
-          const elTid = setTimeout(() => elCtrl.abort(), 7500);
+          const elTid = setTimeout(() => elCtrl.abort(), 6500);
           const elRes = await fetch(
-            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?optimize_streaming_latency=2`,
+            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=3&output_format=mp3_44100_64`,
             {
               method: "POST",
               signal: elCtrl.signal,
@@ -184,7 +157,7 @@ export class Speaker {
           }
 
           if (elRes.status === 429 && attempt < 2) {
-            await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
+            await new Promise((r) => setTimeout(r, 550 * (attempt + 1)));
             continue;
           }
           break;
@@ -194,13 +167,42 @@ export class Speaker {
       }
     }
 
+    // 2. Fallback to backend `/agent/tts` if direct stream encounters network block
+    const t = this.getToken();
+    const now = Date.now();
+    if (now >= this.backendTtsCooldownUntil) {
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 2200);
+        const r = await fetch(`${API}/agent/tts`, {
+          method: "POST",
+          signal: ctrl.signal,
+          headers: {
+            "Content-Type": "application/json",
+            ...(t ? { Authorization: `Bearer ${t}` } : {}),
+          },
+          body: JSON.stringify({ text: cacheKey }),
+        });
+        clearTimeout(tid);
+        if (r.ok && r.status === 200) {
+          const ab = await r.arrayBuffer();
+          if (ab.byteLength > 200) {
+            this.ttsCache.set(cacheKey, ab.slice(0));
+            return ab;
+          }
+        }
+        this.backendTtsCooldownUntil = now + 3600_000;
+      } catch {
+        this.backendTtsCooldownUntil = now + 3600_000;
+      }
+    }
+
     return null;
   }
 
   private async playMp3ArrayBuffer(ab: ArrayBuffer, genAtStart: number): Promise<boolean> {
     if (genAtStart !== this.gen) return true;
 
-    // Decode waveform in parallel so level() has exact PCM amplitude for 3D jaw lip-sync
     try {
       const ctx = this.ensureContext();
       if (ctx) {
@@ -251,8 +253,6 @@ export class Speaker {
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
-          // If blocked by browser autoplay policy on initial page load before first click,
-          // save buffer so the very first click anywhere on the page plays it immediately!
           if (err && (err.name === "NotAllowedError" || String(err).includes("interact"))) {
             this.blockedAutoplayBuffer = ab.slice(0);
             finish(true);
@@ -304,8 +304,11 @@ export class Speaker {
     });
   }
 
+  /**
+   * Immediately kicks off ElevenLabs streaming synthesis in parallel (before previous
+   * audio chunks finish playing) and queues gapless sequential playback.
+   */
   say(raw: string) {
-    // Strip action tags, detail blocks after |||, and markdown symbols before speaking
     const beforeDetails = raw.split("|||")[0] || "";
     const text = beforeDetails
       .replace(/<!--[\s\S]*?-->/g, " ")
@@ -322,12 +325,16 @@ export class Speaker {
     this.activeSpeaking = true;
     this.onState?.(true);
 
+    // EAGER PARALLEL STREAMING FETCH:
+    // Start ElevenLabs /stream request right now, without waiting for prior chunks to finish playing!
+    const eagerMp3Promise = this.fetchMp3Bytes(text);
+
     this.playChain = this.playChain
       .catch(() => {})
       .then(async () => {
         if (g !== this.gen) return;
         try {
-          const mp3Bytes = await this.fetchMp3Bytes(text);
+          const mp3Bytes = await eagerMp3Promise;
           if (g !== this.gen) return;
           if (mp3Bytes) {
             const played = await this.playMp3ArrayBuffer(mp3Bytes, g);
@@ -345,6 +352,11 @@ export class Speaker {
           }
         }
       });
+  }
+
+  /** Alias for streaming chunk dispatch from toolRunner.ts */
+  streamChunk(chunkText: string) {
+    this.say(chunkText);
   }
 
   /** Plays raw 24kHz PCM linear audio chunks from Gemini Live */
@@ -432,7 +444,6 @@ export class Speaker {
   }
 
   level(): number {
-    // 1. Exact PCM waveform lookup from currently playing ElevenLabs HTMLAudioElement
     if (this.currentAudio && !this.currentAudio.paused && this.currentPcmData) {
       const sampleIdx = Math.floor(this.currentAudio.currentTime * this.currentSampleRate);
       const windowSize = 512;
@@ -450,7 +461,6 @@ export class Speaker {
       }
     }
 
-    // 2. Web Audio API AnalyserNode (if playing PCM chunks)
     if (this.analyser) {
       this.analyser.getByteTimeDomainData(this.buf);
       let sum = 0;
@@ -464,7 +474,6 @@ export class Speaker {
       if (rms > 0.008) return rms;
     }
 
-    // 3. Natural syllable cadence if actively speaking before PCM decode completes
     if (this.activeSpeaking) {
       const t = performance.now() * 0.001;
       return Math.max(0.02, (Math.sin(t * 13.5) * 0.55 + Math.sin(t * 21.0) * 0.45) * 0.22);

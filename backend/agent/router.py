@@ -12,6 +12,7 @@ from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
 from .persona import GUEST_GREETING, OWNER_GREETING, TOOL_NAMES, TOOLS, build_system_prompt
+from backend.supabase_rag import semantic_search_rag, seed_supabase_knowledge_table, estimate_tokens
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 agent_router = router  # alias for backend.api inclusion
@@ -91,6 +92,21 @@ class ChatReq(BaseModel):
     messages: list[dict]
     page: dict = {}
 
+class RagSearchReq(BaseModel):
+    query: str
+    branch: Optional[str] = "CSE"
+    top_k: int = 3
+
+@router.post("/rag/search")
+async def rag_search(req: RagSearchReq):
+    matches = await semantic_search_rag(query=req.query, branch=req.branch, top_k=min(5, max(1, req.top_k)))
+    return {"top_matches": matches, "count": len(matches)}
+
+@router.post("/rag/seed")
+async def rag_seed(user=Depends(current_user)):
+    res = await seed_supabase_knowledge_table()
+    return res
+
 def sse(obj: dict) -> str:
     return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
 
@@ -98,10 +114,18 @@ def sse(obj: dict) -> str:
 async def chat(req: ChatReq, request: Request, user=Depends(current_user)):
     limit(request, "chat", 20)
     spend("chat", 1, int(os.getenv("AGENT_DAILY_CHAT_CAP", "1500")))
-    msgs = [{"role": "system", "content": build_system_prompt(user["role"], req.page)}]
-    for m in req.messages[-16:]:
+
+    last_user_query = ""
+    for m in reversed(req.messages):
+        if m.get("role") == "user" and isinstance(m.get("content"), str):
+            last_user_query = m["content"].strip()
+            break
+
+    sys_prompt = build_system_prompt(user["role"], req.page, query=last_user_query)
+    msgs = [{"role": "system", "content": sys_prompt}]
+    for m in req.messages[-8:]:
         if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str) and m["content"].strip():
-            msgs.append({"role": m["role"], "content": m["content"][:2000]})
+            msgs.append({"role": m["role"], "content": m["content"][:1200]})
 
     groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
     groq_api_key = os.getenv("GROQ_API_KEY", "")
@@ -112,7 +136,7 @@ async def chat(req: ChatReq, request: Request, user=Depends(current_user)):
         "tool_choice": "auto",
         "stream": True,
         "temperature": 0.7,
-        "max_tokens": 900,
+        "max_tokens": 600,
         "reasoning_effort": "low",
     }
     headers = {"Authorization": f"Bearer {groq_api_key}"}
@@ -152,7 +176,7 @@ async def chat(req: ChatReq, request: Request, user=Depends(current_user)):
                 args = {}
             if c["name"] in TOOL_NAMES:
                 yield sse({"t": "tool", "name": c["name"], "args": args})
-        yield sse({"t": "done"})
+        yield sse({"t": "done", "prompt_tokens_est": estimate_tokens(sys_prompt)})
 
     return StreamingResponse(
         gen(),
@@ -170,16 +194,15 @@ async def tts(req: TTSReq, request: Request, user=Depends(current_user)):
     if not text:
         raise HTTPException(400, "empty")
     spend("tts", len(text), int(os.getenv("AGENT_DAILY_TTS_CHARS", "60000")))
-    voice = os.getenv("ELEVENLABS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM")
-    # Telugu kosam: ELEVENLABS_MODEL=eleven_v3 pettu. Fast English kosam eleven_flash_v2_5.
-    model = os.getenv("ELEVENLABS_MODEL", "eleven_v3")
+    voice = os.getenv("ELEVENLABS_VOICE_ID", "onwK4e9ZLuTAKqWW03F9")
+    model = os.getenv("ELEVENLABS_MODEL", "eleven_turbo_v2_5")
     api_key = os.getenv("ELEVENLABS_API_KEY", "")
 
     if api_key and voice:
         try:
             async with httpx.AsyncClient(timeout=40) as c:
                 r = await c.post(
-                    f"https://api.elevenlabs.io/v1/text-to-speech/{voice}?output_format=mp3_44100_64",
+                    f"https://api.elevenlabs.io/v1/text-to-speech/{voice}/stream?optimize_streaming_latency=3&output_format=mp3_44100_64",
                     headers={"xi-api-key": api_key},
                     json={"text": text, "model_id": model},
                 )
