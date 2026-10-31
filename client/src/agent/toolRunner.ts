@@ -9,8 +9,54 @@
  */
 
 import { speaker as globalSpeaker } from "./audioIO";
+import { askDas } from "./careerAgent";
 
 export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking";
+
+/**
+ * Dispatches speakable text buffer directly to ElevenLabs streaming synthesizer
+ */
+export async function elevenLabsStream(text: string): Promise<void> {
+  if (!text || !text.trim()) return;
+  globalSpeaker.streamChunk(text.trim());
+}
+
+/**
+ * Real-time Groq Streaming + ElevenLabs Streaming Pipeline:
+ * Dispatches every 4 words to ElevenLabs without waiting for full Groq response.
+ */
+export async function handleMicResult(
+  text: string,
+  onStageChange?: (stage: VoicePipelineStage) => void
+): Promise<string> {
+  onStageChange?.("thinking");
+  let buffer = "";
+  let fullResponse = "";
+  let spokenCount = 0;
+
+  fullResponse = await askDas(text, async (token: string) => {
+    buffer += token;
+    // Prathi 4 words ki ElevenLabs ki pampu
+    if (buffer.split(" ").length > 4) {
+      if (spokenCount === 0) {
+        onStageChange?.("speaking");
+      }
+      spokenCount++;
+      await elevenLabsStream(buffer);
+      buffer = "";
+    }
+  });
+
+  if (buffer.trim()) {
+    if (spokenCount === 0) {
+      onStageChange?.("speaking");
+    }
+    await elevenLabsStream(buffer);
+    buffer = "";
+  }
+
+  return fullResponse;
+}
 
 export interface ToolCallPayload {
   id: string;

@@ -4,6 +4,12 @@
   "installCommand": "pnpm install --no-frozen-lockfile --reporter=silent || npm install --legacy-peer-deps --include=dev --quiet --no-audit --no-fund",
   "buildCommand": "node scripts/build-client.js",
   "outputDirectory": "dist",
+  "crons": [
+    {
+      "path": "/api/ping",
+      "schedule": "*/5 * * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

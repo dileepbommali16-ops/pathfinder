@@ -87,6 +87,27 @@ function fallbackEmbed1024(text) {
 
 async function embed(text) {
   if (VOYAGE_KEY) {
+    // 1. Try voyage-3 (native 1024 dimensions matching Supabase vector(1024))
+    try {
+      const res = await fetch("https://api.voyageai.com/v1/embeddings", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${VOYAGE_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ input: text, model: "voyage-3" })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.data?.[0]?.embedding) {
+          return data.data[0].embedding;
+        }
+      }
+    } catch {
+      // Fallback to voyage-3-lite
+    }
+
+    // 2. Try voyage-3-lite (512-D padded to 1024-D)
     try {
       const res = await fetch("https://api.voyageai.com/v1/embeddings", {
         method: "POST",
@@ -98,12 +119,11 @@ async function embed(text) {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data?.data?.[0]?.embedding) {
-          return data.data[0].embedding;
+        const vec512 = data?.data?.[0]?.embedding;
+        if (Array.isArray(vec512) && vec512.length > 0) {
+          // Zero-pad to 1024 dimensions so Supabase vector(1024) accepts it
+          return [...vec512, ...new Array(1024 - vec512.length).fill(0)];
         }
-      } else {
-        const errText = await res.text();
-        console.warn(`[VoyageAI Warning] Status ${res.status}: ${errText.slice(0, 120)}. Using 1024-D normalized vector.`);
       }
     } catch (err) {
       console.warn(`[VoyageAI Fetch Error] ${err.message}. Using 1024-D normalized vector.`);

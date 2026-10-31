@@ -28,6 +28,7 @@ interface ChatPanelProps {
   isConnected: boolean;
   role: string;
   isOwner: boolean;
+  stage?: "idle" | "listening" | "thinking" | "speaking";
   onSendMessage: (text: string) => void;
   onToggleMic: () => void;
   onWakeUpAudio: () => void;
@@ -39,6 +40,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   isConnected,
   role,
   isOwner,
+  stage = "idle",
   onSendMessage,
   onToggleMic,
   onWakeUpAudio,
@@ -171,22 +173,44 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       {/* Input / Control Bar */}
       <div className="p-4 border-t border-indigo-900/30 bg-slate-900/50">
         <form onSubmit={handleSend} className="flex items-center gap-3">
-          {/* Big Mic Button */}
+          {/* Big Mic Button - 3-State Animations: Red (Listening), Blue (Thinking), Green (Speaking) */}
           <button
             type="button"
             onClick={onToggleMic}
             data-agent-id="mic-toggle-btn"
-            title={isRecording ? "Stop listening" : "Start speaking"}
+            title={
+              isRecording || stage === "listening"
+                ? "Stop listening (User speaking - Red)"
+                : stage === "thinking"
+                ? "DAS is thinking... (Blue)"
+                : stage === "speaking"
+                ? "DAS is speaking... (Green)"
+                : "Start speaking"
+            }
             className={`relative p-3 rounded-xl flex items-center justify-center transition-all ${
-              isRecording
-                ? "bg-rose-500 text-white shadow-lg shadow-rose-500/40 ring-4 ring-rose-500/20 scale-105"
-                : "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+              isRecording || stage === "listening"
+                ? "bg-rose-500 text-white shadow-lg shadow-rose-500/50 ring-4 ring-rose-500/30 scale-105 animate-pulse"
+                : stage === "thinking"
+                ? "bg-blue-600 text-white shadow-lg shadow-blue-500/50 ring-4 ring-cyan-500/30 scale-105 animate-pulse"
+                : stage === "speaking"
+                ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/50 ring-4 ring-emerald-500/30 scale-105 animate-pulse"
+                : "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-indigo-500/50"
             }`}
           >
-            {isRecording ? (
+            {isRecording || stage === "listening" ? (
               <>
-                <Mic className="w-5 h-5 animate-pulse" />
+                <Mic className="w-5 h-5 animate-pulse text-white" />
                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-400 animate-ping" />
+              </>
+            ) : stage === "thinking" ? (
+              <>
+                <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin inline-block" />
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+              </>
+            ) : stage === "speaking" ? (
+              <>
+                <Volume2 className="w-5 h-5 animate-bounce text-white" />
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
               </>
             ) : (
               <Mic className="w-5 h-5 text-indigo-400" />

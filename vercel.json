@@ -5,6 +5,12 @@
   "buildCommand": "node scripts/build-client.js",
 
   "outputDirectory": "dist",
+  "crons": [
+    {
+      "path": "/api/ping",
+      "schedule": "*/5 * * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

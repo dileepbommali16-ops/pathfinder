@@ -10,14 +10,133 @@
  */
 
 import { DEFAULT_PROJECT_CATALOG } from "@/data/projectCatalog";
+import { createClient } from "@supabase/supabase-js";
 
 export const EMBEDDING_DIM = 384;
 export const MAX_SYSTEM_PROMPT_TOKENS = 2000;
 
-const SUPABASE_URL =
+export const SUPABASE_URL =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL) || "";
-const SUPABASE_ANON_KEY =
+export const SUPABASE_ANON_KEY =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) || "";
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/**
+ * 1. Query ni embed chey with Voyage AI & Top 3 blueprints fetch from Supabase
+ */
+export async function getRelevantContext(query) {
+  try {
+    const voyageKey =
+      (typeof import.meta !== "undefined" && import.meta.env?.VITE_VOYAGE_API_KEY) || "";
+    if (voyageKey) {
+      // 1. Query ni embed chey
+      const embRes = await fetch("https://api.voyageai.com/v1/embeddings", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${voyageKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ input: query, model: "voyage-3-lite" }),
+      });
+      if (embRes.ok) {
+        const resJson = await embRes.json();
+        let embedding = resJson?.data?.[0]?.embedding;
+        if (Array.isArray(embedding)) {
+          if (embedding.length < 1024) {
+            embedding = [...embedding, ...new Array(1024 - embedding.length).fill(0)];
+          }
+          // 2. Supabase lo top 3 techuko
+          const { data: matches, error } = await supabase.rpc("match_blueprints", {
+            query_embedding: embedding,
+            match_count: 3,
+          });
+          if (!error && Array.isArray(matches) && matches.length > 0) {
+            return matches.map((m) => m.content).join("\n");
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[getRelevantContext warning]:", err?.message || err);
+  }
+
+  // Resilient instant local fallback (Top 3 of 23 blueprints + 972 placement records)
+  const fallback = semanticSearchSync(query, {}, 3);
+  return fallback.map((m) => `${m.title}: ${m.content}`).join("\n");
+}
+
+/**
+ * Groq Ultra-Fast LPU Streaming -> Pipes token deltas to onChunk in real time
+ */
+export async function askDas(userQuery, onChunk) {
+  const context = await getRelevantContext(userQuery);
+
+  const systemPrompt = `You are DAS, Pathfinder AI. Boss is Dileep Bommali.
+Knowledge Base (Top 3 relevant only):
+${context}
+
+Rules: Detect language (Te/Telugu/Hi/En), answer in same language. If intent is navigation, emit das:navigate:xxx`;
+
+  const groqKey =
+    (typeof import.meta !== "undefined" && import.meta.env?.VITE_GROQ_API_KEY) || "";
+
+  try {
+    // Groq STREAMING
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${groqKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        stream: true,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userQuery },
+        ],
+      }),
+    });
+
+    if (res.ok && res.body) {
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      let carry = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        carry += decoder.decode(value, { stream: true });
+        const lines = carry.split("\n");
+        carry = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.includes("content") && !line.startsWith("data:")) continue;
+          try {
+            const raw = line.replace(/^data:\s*/, "").trim();
+            if (raw === "[DONE]") continue;
+            const json = JSON.parse(raw);
+            const token = json.choices?.[0]?.delta?.content || "";
+            if (token) {
+              fullText += token;
+              onChunk?.(token); // -> Idhe direct ga ElevenLabs ki veluthundi
+            }
+          } catch {}
+        }
+      }
+      if (fullText.trim()) {
+        return fullText;
+      }
+    }
+  } catch (err) {
+    console.warn("[askDas Stream Error]:", err?.message || err);
+  }
+
+  // Local intelligent fallback
+  const fallback = getCareerAgentResponse(userQuery, [], {}, "Boss");
+  onChunk?.(fallback);
+  return fallback;
+}
 
 /**
  * Tokenizes text into normalized alphanumeric unigrams.

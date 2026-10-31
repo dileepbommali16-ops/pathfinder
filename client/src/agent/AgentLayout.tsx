@@ -804,13 +804,36 @@ export default function AgentLayout({
               type="button"
               onClick={handleToggleMic}
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-medium text-xs transition-all ${
-                isListening
-                  ? "bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.5)] animate-pulse"
+                isListening || pipelineStage === "listening"
+                  ? "bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.7)] animate-pulse ring-2 ring-rose-400"
+                  : thinking || pipelineStage === "thinking"
+                  ? "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.7)] animate-pulse ring-2 ring-cyan-400"
+                  : isSpeaking || pipelineStage === "speaking"
+                  ? "bg-emerald-500 hover:bg-emerald-400 text-white shadow-[0_0_20px_rgba(16,185,129,0.7)] animate-pulse ring-2 ring-emerald-300"
                   : "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]"
               }`}
             >
-              {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-              {isListening ? "Listening... (Tap to Stop)" : `Speak to DAS (${honorific})`}
+              {isListening || pipelineStage === "listening" ? (
+                <>
+                  <MicOff className="w-3.5 h-3.5 animate-pulse" />
+                  <span>Listening... (User Speaking - Red)</span>
+                </>
+              ) : thinking || pipelineStage === "thinking" ? (
+                <>
+                  <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  <span>Thinking... (Blue)</span>
+                </>
+              ) : isSpeaking || pipelineStage === "speaking" ? (
+                <>
+                  <Volume2 className="w-3.5 h-3.5 animate-bounce" />
+                  <span>Speaking... (DAS Mouth - Green)</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-3.5 h-3.5" />
+                  <span>Speak to DAS ({honorific})</span>
+                </>
+              )}
             </button>
             <button
               type="button"
@@ -1106,15 +1129,44 @@ export default function AgentLayout({
           <button
             type="button"
             onClick={handleToggleMic}
-            className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-              isListening
-                ? "animate-pulse bg-rose-600 text-white shadow-[0_0_20px_#e11d48] ring-2 ring-rose-400"
+            className={`relative h-10 w-10 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+              isListening || pipelineStage === "listening"
+                ? "animate-pulse bg-rose-600 text-white shadow-[0_0_25px_#e11d48] ring-4 ring-rose-400/50 scale-110"
+                : thinking || pipelineStage === "thinking"
+                ? "animate-pulse bg-blue-600 text-white shadow-[0_0_25px_#2563eb] ring-4 ring-cyan-400/50 scale-110"
+                : isSpeaking || pipelineStage === "speaking"
+                ? "animate-pulse bg-emerald-500 text-white shadow-[0_0_25px_#10b981] ring-4 ring-emerald-400/50 scale-110"
                 : "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]"
             }`}
             aria-label="Microphone"
-            title={isListening ? "Stop Listening" : "Tap to Speak (Hands-Free JARVIS Mode)"}
+            title={
+              isListening || pipelineStage === "listening"
+                ? "Listening live: User is speaking (Red)"
+                : thinking || pipelineStage === "thinking"
+                ? "Thinking: Groq LPU processing (Blue)"
+                : isSpeaking || pipelineStage === "speaking"
+                ? "Speaking: ElevenLabs streaming voice (Green)"
+                : "Tap to Speak (Hands-Free JARVIS Mode)"
+            }
           >
-            🎤
+            {isListening || pipelineStage === "listening" ? (
+              <>
+                <span className="text-sm">🎙️</span>
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-400 animate-ping" />
+              </>
+            ) : thinking || pipelineStage === "thinking" ? (
+              <>
+                <span className="text-sm">⚡</span>
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+              </>
+            ) : isSpeaking || pipelineStage === "speaking" ? (
+              <>
+                <span className="text-sm">🔊</span>
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+              </>
+            ) : (
+              <span className="text-sm">🎤</span>
+            )}
           </button>
         </form>
       </div>
