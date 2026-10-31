@@ -552,6 +552,34 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               </div>
             )}
 
+            {/* Universal Instant 1-Click Access Bar - anyone can enter anytime without friction */}
+            {!isOn && (
+              <div className="mt-4 flex flex-col sm:flex-row items-center gap-2.5 z-30 select-none">
+                <button
+                  type="button"
+                  onClick={() => setIsOn(true)}
+                  className="px-4 py-2 rounded-full bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/60 text-amber-200 text-xs font-semibold tracking-wide shadow-[0_0_15px_rgba(255,214,0,0.3)] hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>💡 Turn On Lamp</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    React.startTransition(() => {
+                      onLogin({
+                        username: "Guest Explorer",
+                        email: "guest@pathfinder.ai",
+                        bypassOnboarding: true,
+                      });
+                    })
+                  }
+                  className="px-4 py-2 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-emerald-500/40 text-emerald-300 hover:text-emerald-200 text-xs font-semibold tracking-wide shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>🚀 Instant 1-Click Access &rarr;</span>
+                </button>
+              </div>
+            )}
+
             {/* Lamp your Career Tagline (Pure caption below lamp base - Visual only) */}
             <div className="mt-5 text-center select-none pointer-events-none z-20">
               <span
