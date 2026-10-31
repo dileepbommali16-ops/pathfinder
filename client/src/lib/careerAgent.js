@@ -258,6 +258,38 @@ export async function semanticSearchPathfinderRAG(query = "", profile = {}, topK
   const qVec = computeEmbedding384(`${query} ${branch}`);
 
   if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+    // 1. Try Supabase match_blueprints RPC (1024-D Voyage vector table)
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 1200);
+      const res = await fetch(
+        `${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/rpc/match_blueprints`,
+        {
+          method: "POST",
+          signal: ctrl.signal,
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query_embedding: qVec.length === 1024 ? qVec : [...qVec, ...new Array(1024 - qVec.length).fill(0)],
+            match_count: topK,
+          }),
+        }
+      );
+      clearTimeout(tid);
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+          return rows.slice(0, topK);
+        }
+      }
+    } catch {
+      // Continue to match_pathfinder_knowledge or local
+    }
+
+    // 2. Try match_pathfinder_knowledge RPC
     try {
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), 1200);
@@ -518,6 +550,18 @@ export const getCareerAgentResponse = (
     return (
       `Hello ${title}! I'm DAS, your autonomous 3D voice co-pilot. Your profile is synced at ${cgpa} CGPA in ${branch} targeting ${targetRole}. What should we tackle first?` +
       `|||👋 **Welcome, ${title}! DAS Co-Pilot is Synced:**\n- **Profile:** ${branch} • **${cgpa} CGPA** • ${backlogs} Backlogs • Target: **${targetRole}**\n- **Top 3 RAG Context Ready:**\n${top3Markdown}`
+    );
+  }
+
+  // 3a. Specific RAG Projects Query (e.g. "Pathfinder lo RAG projects enti?", "what are the rag projects", "rag blueprints")
+  if (/\b(rag|retrieval\s*augmented)\b/i.test(text)) {
+    return (
+      `Pathfinder 2.0 includes 5 real-world production RAG architectures, ${title}. The top 3 are Enterprise GraphRAG with Knowledge Graphs, Agentic Multi-Document Regulatory RAG with self-correction, and Sovereign Air-Gapped Local RAG with quantized LLMs. I've displayed the full specs on your screen!` +
+      `|||🚀 **Top 3 Production RAG Architectures in Pathfinder (${title}):**\n` +
+      `1. **Enterprise GraphRAG Pipeline (\`pf-rag-graphrag-pipeline\`):** Knowledge Graph-augmented RAG with Leiden community summarization, Neo4j, Qdrant, and hybrid vector search.\n` +
+      `2. **Agentic Multi-Document Regulatory RAG (\`pf-rag-agentic-multidoc\`):** Autonomous self-correction and reflection verifying tabular citations across 80+ page regulatory PDFs.\n` +
+      `3. **Sovereign Local Air-Gapped RAG (\`pf-rag-local-sovereign\`):** Offline inference using quantized GGUF models on Ollama/vLLM with FAISS vector search and 0% cloud data egress.\n\n` +
+      `💡 *Say **"Open Projects"** to inspect their complete Docker, FastAPI, and STAR defense blueprints!* <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}-->`
     );
   }
 
