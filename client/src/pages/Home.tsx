@@ -2069,7 +2069,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         </AnimatePresence>
 
         {/* Global Floating 'Ask Coach' Trigger (Available on all tabs except Coach) */}
-        {activeTab !== "coach" && (
+        {activeTab !== "coach" && activeTab !== "overview" && (
           <button
             type="button"
             onClick={() => {
@@ -2092,7 +2092,9 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         />
 
         {/* Global Footer with Dynamic Year, Tab Links, and Contact Actions */}
-        <Footer onNavigateTab={setActiveTab} />
+        {!(activeTab === "overview" && focusOnDas) && (
+          <Footer onNavigateTab={setActiveTab} />
+        )}
       </main>
     </div>
   );
