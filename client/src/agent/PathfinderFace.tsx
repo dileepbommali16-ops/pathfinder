@@ -96,14 +96,20 @@ export default function PathfinderFace({
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.35;
     } catch (e) {
-      console.warn("WebGL not supported, running on high-res backdrop:", e);
+      console.warn("WebGL notice, fallback active:", e);
       return;
     }
 
     const scene = new THREE.Scene();
     scene.background = null;
 
-    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
+    const getAspect = () => {
+      const w = window.innerWidth || 1440;
+      const h = window.innerHeight || 900;
+      return w / h;
+    };
+
+    const camera = new THREE.PerspectiveCamera(40, getAspect(), 0.1, 50);
     camera.position.set(0, 0, 3.2);
 
     // Pivot group for 3D head rotation and organic breathing
@@ -111,10 +117,10 @@ export default function PathfinderFace({
     scene.add(pivotGroup);
 
     // Studio Lighting for metallic cybernetic surface
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
     keyLight.position.set(2.5, 3.5, 3.0);
     scene.add(keyLight);
 
@@ -126,30 +132,47 @@ export default function PathfinderFace({
     rimLight.position.set(0, 4.0, -2.0);
     scene.add(rimLight);
 
-    // 3D Red Eyes (SphereGeometry)
-    const eyeGeo = new THREE.SphereGeometry(0.065, 32, 32);
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-
-    const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-    leftEye.position.set(-0.460, 0.432, 0.02);
-    pivotGroup.add(leftEye);
-
-    const rightEye = new THREE.Mesh(eyeGeo, eyeMat.clone());
-    rightEye.position.set(0.462, 0.432, 0.02);
-    pivotGroup.add(rightEye);
-
     // Point lights for crimson eye radiance casting real light onto the face
-    const leftEyeLight = new THREE.PointLight(0xff0000, 3.0, 1.8);
-    leftEyeLight.position.set(-0.460, 0.432, 0.12);
+    const leftEyeLight = new THREE.PointLight(0xff0000, 3.5, 2.0);
+    leftEyeLight.position.set(-0.460, 0.432, 0.15);
     pivotGroup.add(leftEyeLight);
 
-    const rightEyeLight = new THREE.PointLight(0xff0000, 3.0, 1.8);
-    rightEyeLight.position.set(0.462, 0.432, 0.12);
+    const rightEyeLight = new THREE.PointLight(0xff0000, 3.5, 2.0);
+    rightEyeLight.position.set(0.462, 0.432, 0.15);
     pivotGroup.add(rightEyeLight);
+
+    // 3D Dark Metallic Eyelids for realistic blink
+    const eyelidGeo = new THREE.SphereGeometry(
+      0.13,
+      24,
+      16,
+      0,
+      Math.PI * 2,
+      0,
+      Math.PI * 0.5
+    );
+    const eyelidMat = new THREE.MeshStandardMaterial({
+      color: 0x0a0a14,
+      metalness: 0.85,
+      roughness: 0.35,
+      side: THREE.DoubleSide,
+    });
+
+    const leftEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
+    leftEyelid.position.set(-0.460, 0.432, 0.05);
+    leftEyelid.rotation.x = Math.PI;
+    leftEyelid.scale.set(1, 0.001, 1);
+    pivotGroup.add(leftEyelid);
+
+    const rightEyelid = new THREE.Mesh(eyelidGeo, eyelidMat.clone());
+    rightEyelid.position.set(0.462, 0.432, 0.05);
+    rightEyelid.rotation.x = Math.PI;
+    rightEyelid.scale.set(1, 0.001, 1);
+    pivotGroup.add(rightEyelid);
 
     // Vocalizer mouth light for speech lip-sync
     const mouthLight = new THREE.PointLight(0xff2222, 0, 1.4);
-    mouthLight.position.set(0.0, -0.512, 0.08);
+    mouthLight.position.set(0.0, -0.512, 0.12);
     pivotGroup.add(mouthLight);
 
     // 3D Metallic Cybernetic Face Mesh (Textured with Boss's exact reference asset)
@@ -160,12 +183,12 @@ export default function PathfinderFace({
         texture.colorSpace = THREE.SRGBColorSpace;
 
         // Curved 3D surface geometry that gives realistic volumetric head curvature
-        const geo = new THREE.PlaneGeometry(2.3, 2.3, 48, 48);
+        const geo = new THREE.PlaneGeometry(2.4, 2.4, 48, 48);
         const pos = geo.attributes.position;
         for (let i = 0; i < pos.count; i++) {
           const x = pos.getX(i);
           const y = pos.getY(i);
-          pos.setZ(i, -Math.pow(x, 2) * 0.22 - Math.pow(y, 2) * 0.08);
+          pos.setZ(i, -Math.pow(x, 2) * 0.20 - Math.pow(y, 2) * 0.07);
         }
         geo.computeVertexNormals();
 
@@ -189,17 +212,15 @@ export default function PathfinderFace({
     // Responsive Canvas Resizer
     const handleResize = () => {
       if (!canvas || !renderer) return;
-      const rect = canvas.getBoundingClientRect();
-      const w = rect.width || 1024;
-      const h = rect.height || 1024;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h, false);
     };
     handleResize();
 
-    const resizeObserver = new ResizeObserver(() => handleResize());
-    if (containerRef.current) resizeObserver.observe(containerRef.current);
+    window.addEventListener("resize", handleResize);
 
     // 60FPS Interactive Render Loop
     let clock = 0;
@@ -207,9 +228,11 @@ export default function PathfinderFace({
       animFrameIdRef.current = requestAnimationFrame(render);
       clock += 0.024;
 
-      // 1. Organic living breathing
-      const breathe = Math.sin(clock * 1.5) * 0.030;
+      // 1. Organic living breathing ("ooguthu")
+      const breathe = Math.sin(clock * 1.5) * 0.032;
       pivotGroup.position.y = breathe;
+      const breatheScale = 1 + Math.sin(clock * 1.5) * 0.015;
+      pivotGroup.scale.set(breatheScale, breatheScale, breatheScale);
 
       // 2. Smooth Mouse Parallax Head Tracking (Real 3D perspective rotation)
       currentMouseRef.current.x +=
@@ -217,12 +240,12 @@ export default function PathfinderFace({
       currentMouseRef.current.y +=
         (targetMouseRef.current.y - currentMouseRef.current.y) * 0.06;
 
-      pivotGroup.rotation.y = currentMouseRef.current.x * 0.32; // Horizontal turn
+      pivotGroup.rotation.y = currentMouseRef.current.x * 0.30; // Horizontal turn
       pivotGroup.rotation.x = -currentMouseRef.current.y * 0.18; // Vertical tilt
       pivotGroup.rotation.z = -currentMouseRef.current.x * 0.04; // Natural head roll
       pivotGroup.position.x = currentMouseRef.current.x * 0.08;
 
-      // 3. Audio & Voice Reactivity
+      // 3. Audio & Voice Reactivity (Lip Sync)
       let lvl = 0;
       if (getLevelRef.current) {
         try {
@@ -239,28 +262,28 @@ export default function PathfinderFace({
 
       // Pulsing Eye Radiance
       const baseIntensity = isUserSpeaking
-        ? 4.0
+        ? 4.2
         : isSpeaking
-        ? 3.0 + lvl * 4.5
-        : 2.4 + Math.sin(clock * 2.2) * 0.6;
+        ? 3.2 + lvl * 4.5
+        : 2.5 + Math.sin(clock * 2.2) * 0.7;
 
       leftEyeLight.intensity = baseIntensity;
       rightEyeLight.intensity = baseIntensity;
 
       // Vocalizer Speech Lip Sync
       if (isSpeaking && lvl > 0.02) {
-        mouthLight.intensity = Math.min(lvl * 7.0, 5.5);
+        mouthLight.intensity = Math.min(lvl * 7.5, 6.0);
       } else {
         mouthLight.intensity = 0;
       }
 
       // 4. Eye Blink Animation
       if (isBlinkingRef.current) {
-        leftEye.scale.y = 0.04;
-        rightEye.scale.y = 0.04;
+        leftEyelid.scale.y = 1.0;
+        rightEyelid.scale.y = 1.0;
       } else {
-        leftEye.scale.y = 1.0;
-        rightEye.scale.y = 1.0;
+        leftEyelid.scale.y = 0.001;
+        rightEyelid.scale.y = 0.001;
       }
 
       renderer.render(scene, camera);
@@ -272,7 +295,7 @@ export default function PathfinderFace({
       if (animFrameIdRef.current) {
         cancelAnimationFrame(animFrameIdRef.current);
       }
-      resizeObserver.disconnect();
+      window.removeEventListener("resize", handleResize);
       renderer?.dispose();
     };
   }, []);
@@ -280,27 +303,26 @@ export default function PathfinderFace({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full flex items-center justify-center select-none pointer-events-none overflow-hidden ${className}`}
+      className={`fixed inset-0 w-screen h-screen flex items-center justify-center select-none pointer-events-none overflow-hidden ${className}`}
       style={{
         background: "transparent",
         ...style,
       }}
       aria-label="DAS Living 3D Cybernetic Face"
     >
-      {/* 1:1 Aspect Ratio Container */}
+      {/* SEAMLESS FULL-BLEED VIGNETTE WRAPPER: ELIMINATES ANY BOX OR RECTANGULAR EDGES */}
       <div
-        className="relative flex items-center justify-center"
+        className="relative w-screen h-screen flex items-center justify-center pointer-events-none"
         style={{
-          height: "100%",
-          width: "auto",
-          aspectRatio: "1 / 1",
-          maxHeight: "100%",
-          maxWidth: "100vw",
+          maskImage:
+            "radial-gradient(ellipse 75% 85% at 50% 50%, black 50%, transparent 95%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 75% 85% at 50% 50%, black 50%, transparent 95%)",
         }}
       >
-        {/* INSTANT ZERO-FLASH POSTER (Visible initially, fades when 3D takes over) */}
+        {/* INSTANT ZERO-FLASH POSTER (Visible immediately, blends softly when 3D is active) */}
         <div
-          className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-500 ${
+          className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-700 ${
             is3DReady ? "opacity-0 pointer-events-none" : "opacity-100"
           }`}
         >
@@ -311,47 +333,12 @@ export default function PathfinderFace({
             draggable={false}
             loading="eager"
           />
-          {/* Glowing Red Eyes for 2D Backdrop */}
-          <div
-            style={{
-              position: "absolute",
-              left: "29.98%",
-              top: "31.20%",
-              width: "8.5%",
-              height: "8.5%",
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle at 38% 36%, #ffffff 0%, #ff7777 22%, #ff0000 65%, #880000 100%)",
-              boxShadow: "0 0 24px #ff0000, 0 0 48px #ff0000, inset 0 0 8px #ffffff",
-              transform: isBlinking
-                ? "translate(-50%, -50%) scaleY(0.04)"
-                : "translate(-50%, -50%) scale(1)",
-              transition: "transform 0.08s ease-in-out",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              left: "70.08%",
-              top: "31.20%",
-              width: "8.5%",
-              height: "8.5%",
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle at 38% 36%, #ffffff 0%, #ff7777 22%, #ff0000 65%, #880000 100%)",
-              boxShadow: "0 0 24px #ff0000, 0 0 48px #ff0000, inset 0 0 8px #ffffff",
-              transform: isBlinking
-                ? "translate(-50%, -50%) scaleY(0.04)"
-                : "translate(-50%, -50%) scale(1)",
-              transition: "transform 0.08s ease-in-out",
-            }}
-          />
         </div>
 
-        {/* 3D WEBGL CANVAS (Active & interactive) */}
+        {/* 3D WEBGL CANVAS (Active & interactive across full viewport) */}
         <canvas
           ref={canvasRef}
-          className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-500 ${
+          className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-700 ${
             is3DReady ? "opacity-100" : "opacity-0"
           }`}
           style={{ width: "100%", height: "100%" }}

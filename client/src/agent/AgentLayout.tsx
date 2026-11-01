@@ -777,7 +777,7 @@ export default function AgentLayout({
       />
 
       {/* Living 3D Face: Desktop scale(1.2), Mobile scale(1.5), centered */}
-      <div className="relative w-screen h-screen flex items-center justify-center scale-[1.5] md:scale-[1.2] transition-transform duration-300">
+      <div className="relative w-screen h-screen flex items-center justify-center  transition-transform duration-300">
         <PathfinderFace
           getLevel={getAudioLevel}
           state={avatarState}
