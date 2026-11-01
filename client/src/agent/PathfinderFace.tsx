@@ -194,12 +194,15 @@ export default function PathfinderFace({
       }}
       aria-label="DAS Living 3D Cybernetic Face"
     >
-      {/* 3D PARALLAX CONTAINER: Tilts subtly with mouse movement */}
+      {/* 3D PARALLAX CONTAINER: Strict 1:1 Aspect Ratio locked to 1024x1024 asset */}
       <div
-        className="relative max-w-full max-h-full aspect-square flex items-center justify-center transition-transform duration-75 ease-out"
+        className="relative flex items-center justify-center transition-transform duration-75 ease-out"
         style={{
-          width: "100%",
           height: "100%",
+          width: "auto",
+          aspectRatio: "1 / 1",
+          maxHeight: "100%",
+          maxWidth: "100vw",
           transform: `perspective(1000px) rotateY(${tilt.x * 6.5}deg) rotateX(${-tilt.y * 6.5}deg) translate3d(${tilt.x * 10}px, ${tilt.y * 10}px, 0)`,
           animation: "dasLivingBreathing 6s ease-in-out infinite",
         }}
