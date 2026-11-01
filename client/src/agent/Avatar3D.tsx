@@ -125,12 +125,12 @@ export default function Avatar3D({
 
     let vrm: VRM | null = null;
     let chinPlateMesh: THREE.Object3D | null = null;
+    let jawNode: THREE.Object3D | null = null;
     let plateInitY = 0;
     let leftEyeNode: THREE.Object3D | null = null;
     let rightEyeNode: THREE.Object3D | null = null;
-    const eyeGlowMaterials: THREE.MeshStandardMaterial[] = [];
-    const eyeRingMaterials: THREE.MeshStandardMaterial[] = [];
-    const eyePointLights: THREE.PointLight[] = [];
+    let eyeMat: THREE.MeshStandardMaterial | null = null;
+    let pupilMat: THREE.MeshBasicMaterial | null = null;
 
     let raf = 0;
     let dead = false;
@@ -168,60 +168,44 @@ export default function Avatar3D({
             gltfGroup.scale.set(faceScale, faceScale, faceScale);
             gltfGroup.position.set(0, 0.02, 0);
 
-            // 1. DEEP DARK-BLUE CYBER ARMOR MATERIALS FOR FACE & HEAD
-            const darkBlueFaceMat = new THREE.MeshStandardMaterial({
-              color: new THREE.Color(0x0b2258),
-              emissive: new THREE.Color(0x051130),
-              emissiveIntensity: 0.55,
-              metalness: 0.72,
-              roughness: 0.26,
+            // 1. UNIFORM DARK METALLIC / PURPLE TINT (ZERO RED ON FACE, NOSE, OR CHEEKS)
+            const faceMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(0x1a1a2e), // Dark metallic with subtle purple tint
+              metalness: 0.7,
+              roughness: 0.4,
+              emissive: new THREE.Color(0x000000), // NO RED HERE
             });
 
-            const cobaltTrimMat = new THREE.MeshStandardMaterial({
-              color: new THREE.Color(0x163888),
-              emissive: new THREE.Color(0x091b48),
-              emissiveIntensity: 0.45,
-              metalness: 0.84,
+            const trimMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(0x121324),
+              metalness: 0.8,
+              roughness: 0.3,
+              emissive: new THREE.Color(0x000000), // NO RED HERE
+            });
+
+            // 2. EYES ONLY RED GLOW (Lava red, full red inside)
+            eyeMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(0xff0000),
+              emissive: new THREE.Color(0xff0a0a),
+              emissiveIntensity: 2.8,
               roughness: 0.2,
             });
-
-            // 2. INTENSE GLOWING DARK-RED EYES MATERIAL (meravaali bhaga full ga)
-            const darkRedEyeMat = new THREE.MeshStandardMaterial({
-              color: new THREE.Color(0xdc0000),
-              emissive: new THREE.Color(0xff0000),
-              emissiveIntensity: 5.8,
-              roughness: 0.08,
-              metalness: 0.9,
-              toneMapped: false,
-            });
-            eyeGlowMaterials.push(darkRedEyeMat);
-
-            const darkRedRingMat = new THREE.MeshStandardMaterial({
-              color: new THREE.Color(0x880000),
-              emissive: new THREE.Color(0xdc0000),
-              emissiveIntensity: 3.4,
-              roughness: 0.15,
-              metalness: 0.88,
-              toneMapped: false,
-            });
-            eyeRingMaterials.push(darkRedRingMat);
 
             rootModel.traverse((child: any) => {
               const name = child.name || "";
               const lowName = name.toLowerCase();
 
-              // IMPORTANT: Keep Object_5 (the lower neck/collar) 100% locked so the neck NEVER bobs!
-              // Only capture Object_60 (the small front mouth plate) for subtle mouth articulation.
+              // Capture chin plate and jaw for realistic mouth opening
               if (name === "Object_60") {
                 chinPlateMesh = child;
                 plateInitY = child.position.y;
               }
 
-              if (name.includes("JawR") || name.includes("Jaw.R")) {
-                child.rotation.set(0, 0, 0);
+              if (name.includes("JawR") || name.includes("Jaw.R") || lowName.includes("jaw")) {
+                jawNode = child;
               }
 
-              // Eye parent nodes for natural eye blinking
+              // Eye parent nodes for natural eye blinking & inner pupil attachment
               if (
                 name.includes("EyeL") ||
                 name.includes("Eye.L") ||
@@ -240,19 +224,17 @@ export default function Avatar3D({
               }
 
               if (child.isMesh) {
-                const isEyeballOrIris =
+                const isEye =
                   name === "Object_52" ||
                   name === "Object_53" ||
                   name === "Object_55" ||
                   name === "Object_56" ||
-                  lowName.includes("iris") ||
-                  (lowName.includes("eye") && !lowName.includes("circle"));
+                  name === "Object_58" ||
+                  lowName.includes("eye") ||
+                  lowName.includes("iris");
 
-                if (isEyeballOrIris && name !== "Object_58") {
-                  child.material = darkRedEyeMat;
-                } else if (name === "Object_58") {
-                  // Outer eye socket rings glow deep crimson-red around the eyes
-                  child.material = darkRedRingMat;
+                if (isEye) {
+                  child.material = eyeMat;
                 } else if (
                   name === "Object_4" ||
                   name === "Object_5" ||
@@ -265,25 +247,31 @@ export default function Avatar3D({
                   name === "Object_26" ||
                   name === "Object_60"
                 ) {
-                  // Main face, cranium, cheeks, and neck -> Deep Dark Blue
-                  child.material = darkBlueFaceMat;
+                  // Face, nose, cheeks, cranium, neck -> Uniform Dark Metallic (ZERO RED)
+                  child.material = faceMat;
                 } else {
-                  // Cybernetic bolts and structural trim -> Cobalt Dark Blue
-                  child.material = cobaltTrimMat;
+                  // Structural trim and bolts -> Dark Trim
+                  child.material = trimMat;
                 }
               }
             });
 
-            // 3. HIGH-INTENSITY DARK-RED EYE POINT LIGHTS (Fiery crimson eye shine on face)
-            const leftLight = new THREE.PointLight(0xff0000, 4.2, 0.85);
-            leftLight.position.set(0.042, 0.092, 0.16);
-            gltfGroup.add(leftLight);
-            eyePointLights.push(leftLight);
+            // 3. ADD INNER EYE GLOW (PUPIL) - FULL SOLID RED INSIDE
+            pupilMat = new THREE.MeshBasicMaterial({
+              color: new THREE.Color(0xff0000),
+            });
+            const pupilGeo = new THREE.SphereGeometry(0.35, 24, 24);
 
-            const rightLight = new THREE.PointLight(0xff0000, 4.2, 0.85);
-            rightLight.position.set(-0.042, 0.092, 0.16);
-            gltfGroup.add(rightLight);
-            eyePointLights.push(rightLight);
+            if (leftEyeNode) {
+              const leftGlow = new THREE.Mesh(pupilGeo, pupilMat);
+              leftGlow.position.set(0, 0, 0.05);
+              leftEyeNode.add(leftGlow);
+            }
+            if (rightEyeNode) {
+              const rightGlow = new THREE.Mesh(pupilGeo, pupilMat);
+              rightGlow.position.set(0, 0, 0.05);
+              rightEyeNode.add(rightGlow);
+            }
 
             gltfGroup.add(rootModel);
             gltfGroup.visible = true;
@@ -353,25 +341,19 @@ export default function Avatar3D({
       const targetMouth = Math.min(1.0, activeAudio * 4.0);
       mouth += (targetMouth - mouth) * Math.min(1, dt * 24);
 
-      // Natural eye blink: blinks less while speaking, blinks naturally when idle/listening
-      const isSpeakingNow = curState === "speaking" || activeAudio > 0.08;
+      // Eye blink: open normally, blinks every 3-5 sec
       nextBlink -= dt;
       if (nextBlink <= 0 && blinkT < 0) {
-        if (isSpeakingNow && Math.random() < 0.45) {
-          nextBlink = 1.0 + Math.random() * 1.5;
-        } else {
-          blinkT = 0;
-        }
+        blinkT = 0;
       }
       let eyeOpenRatio = 1;
       if (blinkT >= 0) {
         blinkT += dt;
-        const p = Math.min(blinkT / 0.15, 1);
-        eyeOpenRatio = Math.max(0.06, 1 - Math.sin(p * Math.PI) * 0.95);
-        if (blinkT >= 0.15) {
+        const p = Math.min(blinkT / 0.16, 1);
+        eyeOpenRatio = Math.max(0.05, 1 - Math.sin(p * Math.PI) * 0.95);
+        if (blinkT >= 0.16) {
           blinkT = -1;
-          // While speaking: longer pause (3.5 - 6.5s); while silent: 2.2 - 4.2s
-          nextBlink = isSpeakingNow ? 3.5 + Math.random() * 3.0 : 2.2 + Math.random() * 2.0;
+          nextBlink = 3.0 + Math.random() * 2.0; // Blink every 3-5 sec
           eyeOpenRatio = 1;
         }
       }
@@ -393,35 +375,26 @@ export default function Avatar3D({
         gltfGroup.position.x = 0;
         gltfGroup.rotation.z = 0;
 
-        // Subtle robotic mouth articulation via native chin plate (NO blue box lips, clean authentic model)
+        // Proper open mouth: lower jaw & chin plate drop naturally to audio volume (zero blue box)
+        if (jawNode) {
+          jawNode.rotation.x = mouth * 0.16; // drops lower jaw to open mouth
+          jawNode.position.y = -mouth * 0.008;
+        }
         if (chinPlateMesh) {
-          chinPlateMesh.position.y = plateInitY - mouth * 0.006;
+          chinPlateMesh.position.y = plateInitY - mouth * 0.01;
         }
 
-        // Eye Blinking Animation (maintaining exact 0.057 base scale on eye parent nodes)
-        if (leftEyeNode) leftEyeNode.scale.y = eyeOpenRatio * 0.057;
-        if (rightEyeNode) rightEyeNode.scale.y = eyeOpenRatio * 0.057;
+        // Eye Blinking Animation: Open always, blinks only
+        if (leftEyeNode) leftEyeNode.scale.y = eyeOpenRatio * 0.0577;
+        if (rightEyeNode) rightEyeNode.scale.y = eyeOpenRatio * 0.0577;
 
-        // Bright Glowing Fiery Dark-Red Eyes with living ember flicker
-        const pulse = Math.sin(t * 3.2) * 0.5 + 0.5;
-        const fireFlicker = Math.sin(t * 11.3) * 0.45 + Math.cos(t * 7.7) * 0.35;
-        const baseGlow =
-          (curState === "speaking"
-            ? 7.2 + mouth * 3.8
-            : curState === "listening"
-            ? 6.4 + pulse * 2.2
-            : curState === "thinking"
-            ? 6.0 + Math.sin(t * 7.0) * 2.2
-            : 5.8 + pulse * 1.5) + fireFlicker;
-
-        for (const mat of eyeGlowMaterials) {
-          mat.emissiveIntensity = Math.max(4.2, baseGlow);
+        // Pulsing fire effect - ONLY FOR EYES (Lava red pupil & emissive intensity)
+        const timeMs = performance.now();
+        if (pupilMat) {
+          pupilMat.color.setHSL(0, 1, 0.5 + Math.sin(timeMs * 0.003) * 0.1);
         }
-        for (const rMat of eyeRingMaterials) {
-          rMat.emissiveIntensity = Math.max(2.8, baseGlow * 0.7);
-        }
-        for (const light of eyePointLights) {
-          light.intensity = Math.max(3.2, baseGlow * 0.9);
+        if (eyeMat) {
+          eyeMat.emissiveIntensity = 2.5 + Math.sin(timeMs * 0.005) * 0.7;
         }
       }
 
