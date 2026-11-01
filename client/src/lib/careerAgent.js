@@ -22,6 +22,30 @@ export const SUPABASE_ANON_KEY =
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+export const DAS_TOOLS = [
+  {
+    name: "navigate",
+    description: "Navigate to any page: blueprints, labs, projects, home, about, roadmap, analytics",
+    parameters: { page: "string" },
+  },
+  {
+    name: "pick_project",
+    description: "Pick small/medium/large project from blueprints, filter by size",
+    parameters: { size: "small|medium|large", category: "string" },
+  },
+  {
+    name: "explain_deep",
+    description:
+      "Explain any project from step 1 to deployment with VS Code, UI/UX, frontend, backend, ML lifecycle, deployment full",
+    parameters: { project_id: "string" },
+  },
+  {
+    name: "control_ui",
+    description: "Control website: dark/light mode, scroll, open modal, play video, highlight element",
+    parameters: { action: "string", target: "string" },
+  },
+];
+
 /**
  * 1. Query ni embed chey with Voyage AI & Top 3 blueprints fetch from Supabase
  */
@@ -621,12 +645,21 @@ export const getCareerAgentResponse = (
     /\b(chinna\s*project|small\s*project|starter\s*project|project\s*ivvu)\b/i.test(text)
   ) {
     if (/\b(chinna|small|easy|beginner|starter|simple|anomaly|detector)\b/i.test(text)) {
+      const speech =
+        title === "Boss"
+          ? "Boss, idi small project enduku ante focused single-service scope tho 16ms real-time latency provide chesthundi. Step 1 setup nunchi step 6 deployment daka full Jarvis engineering lifecycle screen paina open chesa, chudandi!"
+          : "Navigating to Blueprints and spotlighting the Real-Time Log Anomaly Detector. Here is your full 6-step Jarvis engineering lifecycle from VS Code setup to production deployment.";
+
       return (
-        `Right away, ${title}! Navigating straight to Blueprints and spotlighting the Real-Time Log Anomaly Detector. It's the ultimate starter architecture—high signal-to-noise ratio, pure distributed systems depth, and massive interview payoff. Here is your full 5-step engineering breakdown.` +
-        `|||🚀 **Real-Time Log Anomaly Detector — 5-Step Engineering Lifecycle (${title}):**\n\n` +
-        `💡 **Scope Analysis (Why this is a Starter Project):**\n` +
-        `Focused single-service boundary that avoids microservice sprawl. It proves real-time streaming ingestion, sliding-window Z-score statistics, and sub-16ms telemetry rendering without overwhelming setup.\n\n` +
-        `📁 **Step 1: VS Code & Modular Folder Structure:**\n` +
+        `${speech}` +
+        `|||🚀 **Real-Time Log Anomaly Detector — 6-Step Jarvis Lifecycle (${title}):**\n\n` +
+        `💡 **1. Why this is a Small / Starter Project:**\n` +
+        `- **Tech Stack**: React 18, Tailwind CSS, Node/Vercel Edge Functions, Supabase pgvector.\n` +
+        `- **Time & Complexity**: 4–6 days build time. Eliminates complex multi-service orchestration while demonstrating rigorous low-latency streaming and streaming statistics.\n` +
+        `- **Interview Payoff**: Proves understanding of streaming backpressure, moving average/std-dev calculations, and vector clustering.\n\n` +
+        `📁 **Step 1: Setup, VS Code & Architecture Structure:**\n` +
+        `- Recommended Extensions: ESLint, Prettier, Tailwind CSS IntelliSense, Thunder Client.\n` +
+        `- Folder Structure:\n` +
         `\`\`\`text\n` +
         `├── src/\n` +
         `│   ├── components/anomaly/ (MetricsCard.tsx, LiveStreamGraph.tsx, AlertBanner.tsx)\n` +
@@ -636,19 +669,26 @@ export const getCareerAgentResponse = (
         `├── api/logs/ingest.ts (Vercel Edge function)\n` +
         `└── tests/anomaly.spec.ts\n` +
         `\`\`\`\n\n` +
-        `🎨 **Step 2: UI/UX Design System (Figma to Tailwind):**\n` +
-        `- Palette: Dark graphite background (\`#080A11\`), slate borders (\`#1E293B\`), neon ember alerts (\`#EF4444\`).\n` +
-        `- Layout: 3-column responsive layout with 60fps canvas sparkline, live throughput counter, and scrollable incident trace log.\n\n` +
-        `⚡ **Step 3: Frontend Logic & Real-Time Streams:**\n` +
-        `- Custom React hook \`useLogStream\` consuming Server-Sent Events (SSE).\n` +
-        `- In-memory circular buffer (max 150 points) storing incoming timestamps & response latencies.\n` +
-        `- Client-side rolling mean and standard deviation: flags any latency > 3 sigma as an immediate anomaly.\n\n` +
-        `🛠️ **Step 4: Backend, Supabase & Vector Embeddings:**\n` +
-        `- Supabase PostgreSQL table \`anomalies\` with error message text, timestamp, and severity rating.\n` +
-        `- 384-D pgvector embeddings to cluster similar error messages and recommend automated mitigation steps.\n\n` +
-        `🚀 **Step 5: Deployment & Production Verification:**\n` +
-        `- Deployed on Vercel with edge caching and zero cold-start delay.\n` +
-        `- Synthetic stress tests via Artillery injecting 1,000 req/sec to prove 99.9% uptime and zero dropped frames.\n\n` +
+        `🎨 **Step 2: UI/UX System (Figma to Tailwind):**\n` +
+        `- Palette: Dark Obsidian background (\`#080A11\`), Slate borders (\`#1E293B\`), Crimson alerts (\`#EF4444\`), Emerald health (\`#10B981\`).\n` +
+        `- Components: High-throughput 60fps canvas sparkline, real-time RPS counter, and interactive incident timeline with glowing borders.\n\n` +
+        `⚡ **Step 3: Frontend Implementation (React + Hooks):**\n` +
+        `- \`useLogStream.ts\`: Consumes Server-Sent Events (SSE) via \`fetchEventSource\`.\n` +
+        `- \`streamBuffer.ts\`: In-memory circular buffer (max 150 points) storing incoming timestamps & response latencies without triggering React re-render thrashing.\n` +
+        `- \`zscoreEngine.ts\`: Computes rolling Welford algorithm mean & variance; flags samples with Z-score > 3.0.\n\n` +
+        `🛠️ **Step 4: Backend & Supabase API Design:**\n` +
+        `- Endpoint \`POST /api/logs/ingest\` (Edge runtime): validates schema via Zod and streams batch inserts.\n` +
+        `- Database: Supabase PostgreSQL table \`anomalies\` with indexed \`created_at\` and JSONB metadata.\n\n` +
+        `🧠 **Step 5: ML & Vector Intelligence Lifecycle:**\n` +
+        `- Data: Ingests server latency metrics and log strings.\n` +
+        `- Vector Embeddings: 384-dimensional embeddings for anomalous log messages stored in Supabase pgvector.\n` +
+        `- Automated Root-Cause Matching: Compares incoming crash stacktraces with historical resolved issues using cosine similarity.\n\n` +
+        `🚀 **Step 6: Production Deployment & Verification:**\n` +
+        `- Deployment: Vercel Edge with zero cold-start delay.\n` +
+        `- Environment Variables: \`VITE_SUPABASE_URL\`, \`VITE_SUPABASE_ANON_KEY\`.\n` +
+        `- Verification: Load-tested via Artillery with 1,000 req/sec proving 99.9% uptime.\n\n` +
+        `🧰 **Languages & Tools**: TypeScript, React, Tailwind CSS, Vite, Supabase, Vercel, Artillery.\n` +
+        `⚠️ **Common Mistakes**: Storing high-frequency logs in React state directly (causes UI lag); use a mutable ref circular buffer instead.\n\n` +
         `<!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}--> <!--ACTION: {"type": "HIGHLIGHT_PROJECT", "target": "chinna"}-->`
       );
     }

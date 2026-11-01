@@ -7,6 +7,14 @@
  * - Auto-replays blocked initial greeting on first user click/tap (Chrome autoplay policy)
  */
 
+// PERMANENTLY KILL BROWSER SPEECH SYNTHESIS (NO FAKE VOICE)
+if (typeof window !== "undefined" && "speechSynthesis" in window) {
+  try {
+    window.speechSynthesis.cancel();
+    delete (window as any).speechSynthesis;
+  } catch {}
+}
+
 import { getApiBase } from "@/lib/apiClient";
 
 const API = getApiBase().replace(/\/$/, "");
@@ -268,45 +276,7 @@ export class Speaker {
     });
   }
 
-  private playWebSpeechFallback(text: string, genAtStart: number): Promise<void> {
-    return new Promise<void>((resolve) => {
-      if (
-        genAtStart !== this.gen ||
-        typeof window === "undefined" ||
-        !("speechSynthesis" in window)
-      ) {
-        resolve();
-        return;
-      }
-      try {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        const voices = window.speechSynthesis.getVoices();
-        const preferred =
-          voices.find((v) => /Google UK English Male|Microsoft Ryan|Daniel|Natural/i.test(v.name)) ||
-          voices.find((v) => /en-GB|en-IN|en-US/i.test(v.lang));
-        if (preferred) u.voice = preferred;
-        u.rate = 1.02;
-        u.pitch = 0.96;
-        u.volume = 1.0;
-        const safetyTimer = setTimeout(
-          () => resolve(),
-          Math.min(14000, Math.max(2500, text.length * 80))
-        );
-        u.onend = () => {
-          clearTimeout(safetyTimer);
-          resolve();
-        };
-        u.onerror = () => {
-          clearTimeout(safetyTimer);
-          resolve();
-        };
-        window.speechSynthesis.speak(u);
-      } catch {
-        resolve();
-      }
-    });
-  }
+
 
   /**
    * Immediately kicks off ElevenLabs streaming synthesis in parallel (before previous
@@ -341,12 +311,7 @@ export class Speaker {
           const mp3Bytes = await eagerMp3Promise;
           if (g !== this.gen) return;
           if (mp3Bytes) {
-            const played = await this.playMp3ArrayBuffer(mp3Bytes, g);
-            if (!played && g === this.gen) {
-              await this.playWebSpeechFallback(text, g);
-            }
-          } else {
-            await this.playWebSpeechFallback(text, g);
+            await this.playMp3ArrayBuffer(mp3Bytes, g);
           }
         } finally {
           if (g === this.gen && --this.pending <= 0) {

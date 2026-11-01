@@ -30,6 +30,9 @@ export async function handleMicResult(
   onStageChange?: (stage: VoicePipelineStage) => void
 ): Promise<string> {
   onStageChange?.("thinking");
+  if (typeof window !== "undefined") {
+    (window as any).DASFace?.setMood?.("thinking");
+  }
   let buffer = "";
   let fullResponse = "";
   let spokenCount = 0;
@@ -255,6 +258,9 @@ export async function streamGroqToElevenLabs({
   onStageChange,
 }: StreamGroqToElevenLabsParams): Promise<string> {
   onStageChange?.("thinking");
+  if (typeof window !== "undefined") {
+    (window as any).DASFace?.setMood?.("thinking");
+  }
 
   const dispatcher = new ElevenLabsStreamingDispatcher({
     onSpeakChunk,
@@ -433,7 +439,40 @@ export function runTool(
   navigate: (to: string) => void
 ): { navigated?: boolean; explain?: boolean; success?: boolean; data?: any } {
   switch (name) {
+    case "navigate":
     case "navigate_to": {
+      const page = String(args.page || args.route || "").replace(/^\//, "");
+      const tabTarget = page === "blueprints" ? "projects" : page;
+      window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: tabTarget } }));
+      const r = String(args.route || (page ? "/" + page : ""));
+      if (r && r.startsWith("/") && !r.startsWith("//") && !r.includes(":")) {
+        navigate(r);
+      }
+      return { success: true, navigated: true, explain: !!args.explain };
+    }
+    case "pick_project": {
+      const size = String(args.size || "small").toLowerCase();
+      window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: "projects" } }));
+      window.dispatchEvent(new CustomEvent("das-highlight-project", { detail: { query: size } }));
+      return { success: true, data: { size } };
+    }
+    case "explain_deep": {
+      return { success: true, explain: true, data: args };
+    }
+    case "control_ui": {
+      const action = String(args.action || "").toLowerCase();
+      const target = String(args.target || "").toLowerCase();
+      if (action === "scroll" || action === "scroll_to") {
+        if (target === "top") window.scrollTo({ top: 0, behavior: "smooth" });
+        else if (target === "bottom") window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+        else {
+          const el = document.getElementById(target) || document.querySelector(target);
+          el?.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+      return { success: true };
+    }
+    case "_legacy_navigate_to": {
       const r = String(args.route || "");
       if (!r.startsWith("/") || r.startsWith("//") || r.includes(":")) return { success: false };
       navigate(r);

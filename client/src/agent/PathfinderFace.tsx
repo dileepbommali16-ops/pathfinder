@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
@@ -28,6 +28,9 @@ export default function PathfinderFace({
   stateRef.current = state;
   const isListeningRef = useRef(isListening);
   isListeningRef.current = isListening;
+  const moodRef = useRef<string>(
+    typeof window !== "undefined" && localStorage.getItem("das_mode") === "BOSS" ? "boss" : "boss"
+  );
 
   // Mouse tracking targets for subtle parallax head tilt
   const targetMouseRef = useRef({ x: 0, y: 0 });
@@ -86,52 +89,8 @@ export default function PathfinderFace({
     rimLight.position.set(0, 0.6, -1.5);
     scene.add(rimLight);
 
-    // Procedural Dark-Blue Cyber Core (visible while model loads)
-    const cyberGroup = new THREE.Group();
-    scene.add(cyberGroup);
-
-    const headGeo = new THREE.SphereGeometry(0.42, 32, 24);
-    const headMat = new THREE.MeshStandardMaterial({
-      color: 0x0a1e4a,
-      emissive: 0x061230,
-      emissiveIntensity: 0.5,
-      metalness: 0.85,
-      roughness: 0.25,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.75,
-    });
-    const headMesh = new THREE.Mesh(headGeo, headMat);
-    cyberGroup.add(headMesh);
-
-    const coreGeo = new THREE.IcosahedronGeometry(0.32, 2);
-    const coreMat = new THREE.MeshStandardMaterial({
-      color: 0x0f2b66,
-      emissive: 0x0a1e4a,
-      emissiveIntensity: 0.85,
-      roughness: 0.28,
-      metalness: 0.82,
-    });
-    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-    cyberGroup.add(coreMesh);
-
-    const cyberEyeGeo = new THREE.SphereGeometry(0.048, 16, 16);
-    const cyberEyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const cyberLeftEye = new THREE.Mesh(cyberEyeGeo, cyberEyeMat);
-    cyberLeftEye.position.set(-0.14, 0.08, 0.38);
-    const cyberRightEye = new THREE.Mesh(cyberEyeGeo, cyberEyeMat);
-    cyberRightEye.position.set(0.14, 0.08, 0.38);
-    cyberGroup.add(cyberLeftEye, cyberRightEye);
-
-    const mouthGeo = new THREE.RingGeometry(0.04, 0.065, 24);
-    const mouthMat = new THREE.MeshBasicMaterial({ color: 0xdc0000, side: THREE.DoubleSide });
-    const mouthMesh = new THREE.Mesh(mouthGeo, mouthMat);
-    mouthMesh.position.set(0, -0.16, 0.4);
-    cyberGroup.add(mouthMesh);
-
-    // Container group for the 3D GLB model
+    // Container group for the 3D GLB model ONLY - NO round sphere placeholder face!
     const gltfGroup = new THREE.Group();
-    gltfGroup.visible = false;
     scene.add(gltfGroup);
 
     let chinPlateMesh: THREE.Object3D | null = null;
@@ -144,6 +103,13 @@ export default function PathfinderFace({
     const eyeGlowMaterials: THREE.MeshStandardMaterial[] = [];
     const eyeRingMaterials: THREE.MeshStandardMaterial[] = [];
     const eyePointLights: THREE.PointLight[] = [];
+
+    // Expose DASFace mood controller globally for Boss Auto Switch & speech events
+    (window as any).DASFace = {
+      setMood: (mood: string) => {
+        moodRef.current = mood.toLowerCase();
+      },
+    };
 
     const loader = new GLTFLoader();
 
@@ -315,12 +281,10 @@ export default function PathfinderFace({
 
         gltfGroup.add(rootModel);
         gltfGroup.visible = true;
-        cyberGroup.visible = false;
       },
       undefined,
       (err) => {
         console.warn("Avatar GLB loading notice:", err);
-        cyberGroup.visible = true;
       }
     );
 
@@ -391,9 +355,13 @@ export default function PathfinderFace({
 
       if (gltfGroup.visible) {
         // Subtle breathing + mouse parallax head tilt
+        const isThinking = curState === "thinking" || moodRef.current === "thinking";
         gltfGroup.position.y = 0.02 + Math.sin(t * 1.1) * 0.003;
-        gltfGroup.rotation.y = Math.sin(t * 0.4) * 0.022 + currentMouseRef.current.x * 0.08;
-        gltfGroup.rotation.x = -currentMouseRef.current.y * 0.05;
+        gltfGroup.rotation.y =
+          Math.sin(t * 0.4) * 0.022 +
+          currentMouseRef.current.x * 0.08 +
+          (isThinking ? 0.05 : 0);
+        gltfGroup.rotation.x = -currentMouseRef.current.y * 0.05 + (isThinking ? 0.03 : 0);
 
         // Articulated Box Mouth movement synced to audio
         if (chinPlateMesh) {
@@ -412,16 +380,17 @@ export default function PathfinderFace({
         if (leftEyeNode) leftEyeNode.scale.y = eyeOpenRatio * 0.057;
         if (rightEyeNode) rightEyeNode.scale.y = eyeOpenRatio * 0.057;
 
-        // Glowing red eyes pulse
+        // Glowing red eyes pulse (intense fiery glow for Boss)
         const pulse = Math.sin(t * 3.2) * 0.5 + 0.5;
+        const moodMultiplier = moodRef.current === "boss" ? 1.3 : 1.0;
         const baseGlow =
-          curState === "speaking"
-            ? 6.2 + mouth * 3.5
+          (curState === "speaking"
+            ? 6.5 + mouth * 3.5
             : curState === "listening"
-            ? 5.8 + pulse * 2.2
+            ? 6.0 + pulse * 2.2
             : curState === "thinking"
-            ? 5.5 + Math.sin(t * 7.0) * 2.0
-            : 5.2 + pulse * 1.4;
+            ? 5.8 + Math.sin(t * 7.0) * 2.0
+            : 5.4 + pulse * 1.4) * moodMultiplier;
 
         for (const mat of eyeGlowMaterials) {
           mat.emissiveIntensity = baseGlow;
@@ -432,15 +401,6 @@ export default function PathfinderFace({
         for (const light of eyePointLights) {
           light.intensity = baseGlow * 0.85;
         }
-      }
-
-      if (cyberGroup.visible) {
-        cyberGroup.rotation.y = Math.sin(t * 0.5) * 0.08 + currentMouseRef.current.x * 0.08;
-        cyberGroup.rotation.x = -currentMouseRef.current.y * 0.05;
-        cyberLeftEye.scale.y = eyeOpenRatio;
-        cyberRightEye.scale.y = eyeOpenRatio;
-        const ringScale = 1 + mouth * 1.4;
-        mouthMesh.scale.set(ringScale, ringScale, 1);
       }
 
       renderer.render(scene, camera);
