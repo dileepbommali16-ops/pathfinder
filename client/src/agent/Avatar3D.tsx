@@ -11,24 +11,32 @@ export interface Avatar3DProps {
   getLevel?: () => number;
   audioLevel?: number;
   state?: AvatarState;
+  isListening?: boolean;
   url?: string;
   modelUrl?: string;
   avatarType?: "vrm" | "gltf" | "cyber";
   isOwner?: boolean;
   paused?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 export default function Avatar3D({
   getLevel,
   audioLevel = 0,
   state = "idle",
+  isListening = false,
+  className = "w-full h-full",
+  style = {},
 }: Avatar3DProps) {
   return (
     <PathfinderFace
       getLevel={getLevel}
       audioLevel={audioLevel}
       state={state}
-      className="w-full h-full"
+      isListening={isListening || state === "listening"}
+      className={className}
+      style={style}
     />
   );
 }

@@ -6,3 +6,4 @@ export default function PathfinderFaceSimple(props: PathfinderFaceProps) {
 }
 
 export { PathfinderFaceSimple };
+

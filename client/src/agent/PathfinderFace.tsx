@@ -4,6 +4,7 @@ export interface PathfinderFaceProps {
   audioLevel?: number;
   getLevel?: () => number;
   state?: "idle" | "listening" | "thinking" | "speaking" | string;
+  isListening?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -12,60 +13,177 @@ export default function PathfinderFace({
   audioLevel = 0,
   getLevel,
   state = "idle",
+  isListening = false,
   className = "",
   style = {},
 }: PathfinderFaceProps) {
   const [isBlinking, setIsBlinking] = useState(false);
   const [currentLevel, setCurrentLevel] = useState(0);
-  const animFrameRef = useRef<number | null>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
-  // Monitor audio levels for reactive speech pulsation
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const targetMouseRef = useRef({ x: 0, y: 0 });
+  const currentMouseRef = useRef({ x: 0, y: 0 });
+
+  // 1. Mouse movement tracking for 3D parallax head tilt
   useEffect(() => {
-    const pollAudio = () => {
-      if (getLevel) {
-        try {
-          const lvl = getLevel();
-          if (typeof lvl === "number" && !isNaN(lvl)) {
-            setCurrentLevel(Math.min(Math.max(lvl, 0), 1));
-          }
-        } catch {}
-      } else if (audioLevel !== undefined) {
-        setCurrentLevel(Math.min(Math.max(audioLevel, 0), 1));
-      }
-      animFrameRef.current = requestAnimationFrame(pollAudio);
+    const handleMouseMove = (e: MouseEvent) => {
+      // Normalize to -1 to +1 from screen center
+      const x = (e.clientX / window.innerWidth) * 2 - 1;
+      const y = (e.clientY / window.innerHeight) * 2 - 1;
+      targetMouseRef.current = { x, y };
     };
 
-    animFrameRef.current = requestAnimationFrame(pollAudio);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  // 2. Continuous 60fps render loop: Audio analysis, Mouse Tilt lerp, and Canvas particle/HUD rendering
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+
+    // Micro-particles floating from metallic collar
+    const particles = Array.from({ length: 24 }, () => ({
+      x: Math.random() * 1024,
+      y: 700 + Math.random() * 324,
+      vy: -0.4 - Math.random() * 0.7,
+      size: 1 + Math.random() * 2.5,
+      alpha: 0.1 + Math.random() * 0.5,
+    }));
+
+    let radarAngle = 0;
+    let time = 0;
+
+    const renderLoop = () => {
+      time += 0.03;
+
+      // Sample live audio volume
+      let lvl = 0;
+      if (getLevel) {
+        try {
+          const l = getLevel();
+          if (typeof l === "number" && !isNaN(l)) lvl = l;
+        } catch {}
+      } else if (audioLevel !== undefined) {
+        lvl = audioLevel;
+      }
+      setCurrentLevel(Math.min(Math.max(lvl, 0), 1));
+
+      // Smooth lerp mouse parallax tilt
+      currentMouseRef.current.x += (targetMouseRef.current.x - currentMouseRef.current.x) * 0.06;
+      currentMouseRef.current.y += (targetMouseRef.current.y - currentMouseRef.current.y) * 0.06;
+      setTilt({
+        x: currentMouseRef.current.x,
+        y: currentMouseRef.current.y,
+      });
+
+      // Canvas dynamic HUD & telemetry rendering
+      if (ctx && canvas) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        radarAngle += 0.02;
+        const speakingNow = state === "speaking" || lvl > 0.06;
+        const listeningNow = isListening || state === "listening";
+
+        // A. Floating embers/particles around metallic neck
+        particles.forEach((p) => {
+          p.y += p.vy;
+          if (p.y < 500) {
+            p.y = 1000 + Math.random() * 40;
+            p.x = 260 + Math.random() * 500;
+          }
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 60, 60, ${p.alpha * (speakingNow ? 0.9 : 0.4)})`;
+          ctx.fill();
+        });
+
+        // B. Speaking monitor: When user speaks (isListening), render animated radar arcs around eyes
+        if (listeningNow) {
+          const eyeCoords = [
+            { x: 306.6, y: 320.2 },
+            { x: 717.7, y: 320.4 },
+          ];
+          eyeCoords.forEach((eye) => {
+            const pulseRadius = 55 + Math.sin(time * 6) * 12;
+            ctx.beginPath();
+            ctx.arc(eye.x, eye.y, pulseRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 30, 30, ${0.4 + Math.sin(time * 6) * 0.3})`;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 8]);
+            ctx.stroke();
+
+            // Concentric outer ring
+            ctx.beginPath();
+            ctx.arc(eye.x, eye.y, pulseRadius + 18, 0, Math.PI * 2);
+            ctx.strokeStyle = "rgba(255, 50, 50, 0.25)";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 12]);
+            ctx.stroke();
+          });
+          ctx.setLineDash([]);
+        }
+
+        // C. Live vocalizer frequency wave around the mouth area when DAS speaks
+        if (speakingNow && lvl > 0.03) {
+          const mouthX = 504;
+          const mouthY = 732;
+          const barCount = 16;
+          const barSpacing = 6;
+          const startX = mouthX - (barCount * barSpacing) / 2;
+
+          for (let i = 0; i < barCount; i++) {
+            const wave = Math.sin(time * 12 + i * 0.6) * 0.5 + 0.5;
+            const barH = 4 + wave * lvl * 28;
+            const bx = startX + i * barSpacing;
+            ctx.beginPath();
+            ctx.rect(bx, mouthY - barH / 2, 2.5, barH);
+            ctx.fillStyle = `rgba(255, ${Math.floor(40 + wave * 60)}, 40, ${0.6 + wave * 0.35})`;
+            ctx.fill();
+          }
+        }
+      }
+
+      animFrameRef.current = requestAnimationFrame(renderLoop);
+    };
+
+    animFrameRef.current = requestAnimationFrame(renderLoop);
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [getLevel, audioLevel]);
+  }, [getLevel, audioLevel, state, isListening]);
 
-  // Natural cybernetic eye blink cycle (every 3.2 - 5.5 seconds)
+  // 3. Natural eye blink: random blink every 3 to 5 seconds, closed for exactly 150ms
   useEffect(() => {
     let blinkTimer: NodeJS.Timeout;
-    let cancelBlinkTimer: NodeJS.Timeout;
+    let restoreTimer: NodeJS.Timeout;
 
-    const scheduleNextBlink = () => {
-      const delay = 3200 + Math.random() * 2400;
+    const scheduleBlink = () => {
+      const interval = 3000 + Math.random() * 2000; // 3-5 sec
       blinkTimer = setTimeout(() => {
         setIsBlinking(true);
-        cancelBlinkTimer = setTimeout(() => {
+        restoreTimer = setTimeout(() => {
           setIsBlinking(false);
-          scheduleNextBlink();
-        }, 130);
-      }, delay);
+          scheduleBlink();
+        }, 150); // Exact 150ms blink as requested
+      }, interval);
     };
 
-    scheduleNextBlink();
+    scheduleBlink();
     return () => {
       clearTimeout(blinkTimer);
-      clearTimeout(cancelBlinkTimer);
+      clearTimeout(restoreTimer);
     };
   }, []);
 
-  const isSpeaking = state === "speaking" || currentLevel > 0.08;
-  const audioGlowBoost = isSpeaking ? Math.min(currentLevel * 1.4, 0.8) : 0;
+  const isSpeaking = state === "speaking" || currentLevel > 0.05;
+  const isUserSpeaking = isListening || state === "listening";
+
+  // Dynamic speaking boost and jaw displacement
+  const audioBoost = isSpeaking ? Math.min(currentLevel * 1.5, 1) : 0;
+  const jawDropPx = isSpeaking ? Math.min(currentLevel * 12, 10) : 0;
 
   return (
     <div
@@ -74,29 +192,38 @@ export default function PathfinderFace({
         background: "transparent",
         ...style,
       }}
-      aria-label="DAS 3D AI Cybernetic Face"
+      aria-label="DAS Living 3D Cybernetic Face"
     >
-      {/* 1:1 Aspect ratio wrapper matching the 1024x1024 cybernetic face asset */}
+      {/* 3D PARALLAX CONTAINER: Tilts subtly with mouse movement */}
       <div
-        className="relative max-w-full max-h-full aspect-square flex items-center justify-center"
+        className="relative max-w-full max-h-full aspect-square flex items-center justify-center transition-transform duration-75 ease-out"
         style={{
           width: "100%",
           height: "100%",
-          animation: "dasBreathing 6s ease-in-out infinite",
+          transform: `perspective(1000px) rotateY(${tilt.x * 6.5}deg) rotateX(${-tilt.y * 6.5}deg) translate3d(${tilt.x * 10}px, ${tilt.y * 10}px, 0)`,
+          animation: "dasLivingBreathing 6s ease-in-out infinite",
         }}
       >
-        {/* Exact Dark Metallic Cyborg Head Reference Asset */}
+        {/* Living Robot Face Asset (Dark metallic cyborg) */}
         <img
           src="/face.png"
-          alt="Pathfinder AI Face"
-          className="w-full h-full object-contain pointer-events-none select-none drop-shadow-[0_15px_45px_rgba(0,0,0,0.95)]"
+          alt="Pathfinder Living Face"
+          className="w-full h-full object-contain pointer-events-none select-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.95)]"
           draggable={false}
           loading="eager"
         />
 
-        {/* PERFECT ROUND SOLID RED GLOWING LEFT EYE */}
+        {/* 60FPS LIVE ANIMATED CANVAS OVERLAY (Telemetry, Embers, Audio Waveform) */}
+        <canvas
+          ref={canvasRef}
+          width={1024}
+          height={1024}
+          className="absolute inset-0 w-full h-full pointer-events-none"
+        />
+
+        {/* PERFECT ROUND RED SPHERICAL LEFT EYE */}
         <div
-          data-testid="eye-left"
+          data-testid="das-left-eye"
           style={{
             position: "absolute",
             left: "29.94%",
@@ -104,22 +231,28 @@ export default function PathfinderFace({
             width: "8.5%",
             height: "8.5%",
             borderRadius: "50%",
-            background: "radial-gradient(circle at 45% 45%, #ff5555 0%, #ff0000 62%, #c40000 100%)",
-            boxShadow: isSpeaking
-              ? `0 0 24px #ff0000, 0 0 ${50 + audioGlowBoost * 30}px #ff0000, 0 0 ${85 + audioGlowBoost * 45}px #ff2200, inset 0 0 10px #ffe5e5`
-              : "0 0 18px #ff0000, 0 0 38px #ff0000, 0 0 65px #ff1a1a, inset 0 0 8px #ffe5e5",
+            background: "radial-gradient(circle at 38% 36%, #ffffff 0%, #ff7777 22%, #ff0000 65%, #880000 100%)",
+            boxShadow: isUserSpeaking
+              ? "0 0 25px #ff0000, 0 0 55px #ff0000, 0 0 95px #ff2200, inset 0 0 10px #ffffff"
+              : isSpeaking
+              ? `0 0 24px #ff0000, 0 0 ${45 + audioBoost * 35}px #ff0000, 0 0 ${80 + audioBoost * 50}px #ff2200, inset 0 0 10px #ffffff`
+              : "0 0 20px #ff0000, 0 0 42px #ff0000, 0 0 70px #ff1a1a, inset 0 0 8px #ffffff",
             transform: isBlinking
-              ? "translate(-50%, -50%) scaleY(0.06)"
-              : `translate(-50%, -50%) scale(${1 + audioGlowBoost * 0.15})`,
+              ? "translate(-50%, -50%) scaleY(0.04)"
+              : isUserSpeaking
+              ? "translate(-50%, -50%) scale(1.08)"
+              : `translate(-50%, -50%) scale(${1 + audioBoost * 0.12})`,
             transition: "transform 0.08s ease-in-out, box-shadow 0.15s ease",
-            animation: "dasEyePulse 2.4s ease-in-out infinite",
+            animation: isUserSpeaking
+              ? "dasEyePulseRapid 1s ease-in-out infinite"
+              : "dasEyePulseSmooth 2.5s ease-in-out infinite",
             pointerEvents: "none",
           }}
         />
 
-        {/* PERFECT ROUND SOLID RED GLOWING RIGHT EYE */}
+        {/* PERFECT ROUND RED SPHERICAL RIGHT EYE */}
         <div
-          data-testid="eye-right"
+          data-testid="das-right-eye"
           style={{
             position: "absolute",
             left: "70.09%",
@@ -127,34 +260,41 @@ export default function PathfinderFace({
             width: "8.5%",
             height: "8.5%",
             borderRadius: "50%",
-            background: "radial-gradient(circle at 45% 45%, #ff5555 0%, #ff0000 62%, #c40000 100%)",
-            boxShadow: isSpeaking
-              ? `0 0 24px #ff0000, 0 0 ${50 + audioGlowBoost * 30}px #ff0000, 0 0 ${85 + audioGlowBoost * 45}px #ff2200, inset 0 0 10px #ffe5e5`
-              : "0 0 18px #ff0000, 0 0 38px #ff0000, 0 0 65px #ff1a1a, inset 0 0 8px #ffe5e5",
+            background: "radial-gradient(circle at 38% 36%, #ffffff 0%, #ff7777 22%, #ff0000 65%, #880000 100%)",
+            boxShadow: isUserSpeaking
+              ? "0 0 25px #ff0000, 0 0 55px #ff0000, 0 0 95px #ff2200, inset 0 0 10px #ffffff"
+              : isSpeaking
+              ? `0 0 24px #ff0000, 0 0 ${45 + audioBoost * 35}px #ff0000, 0 0 ${80 + audioBoost * 50}px #ff2200, inset 0 0 10px #ffffff`
+              : "0 0 20px #ff0000, 0 0 42px #ff0000, 0 0 70px #ff1a1a, inset 0 0 8px #ffffff",
             transform: isBlinking
-              ? "translate(-50%, -50%) scaleY(0.06)"
-              : `translate(-50%, -50%) scale(${1 + audioGlowBoost * 0.15})`,
+              ? "translate(-50%, -50%) scaleY(0.04)"
+              : isUserSpeaking
+              ? "translate(-50%, -50%) scale(1.08)"
+              : `translate(-50%, -50%) scale(${1 + audioBoost * 0.12})`,
             transition: "transform 0.08s ease-in-out, box-shadow 0.15s ease",
-            animation: "dasEyePulse 2.4s ease-in-out infinite",
+            animation: isUserSpeaking
+              ? "dasEyePulseRapid 1s ease-in-out infinite"
+              : "dasEyePulseSmooth 2.5s ease-in-out infinite",
             pointerEvents: "none",
           }}
         />
 
-        {/* SUBTLE AUDIO-REACTIVE MOUTH GLOW (Active ONLY during speech, syncs to audio level) */}
+        {/* ARTICULATED LIP SYNC & JAW EMISSION (Syncs directly to ElevenLabs voice frequency) */}
         {isSpeaking && (
           <div
-            data-testid="mouth-glow"
+            data-testid="das-mouth-articulator"
             style={{
               position: "absolute",
               left: "49.3%",
               top: "71.5%",
               width: "12%",
-              height: "2.4%",
-              transform: `translate(-50%, -50%) scaleX(${1 + audioGlowBoost * 0.4}) scaleY(${1 + audioGlowBoost * 0.9})`,
-              background: "radial-gradient(ellipse at center, rgba(255, 30, 30, 0.9) 0%, rgba(220, 20, 20, 0.4) 60%, transparent 100%)",
-              filter: "blur(2px)",
-              opacity: Math.min(0.35 + audioGlowBoost * 0.65, 0.95),
-              transition: "transform 0.06s ease, opacity 0.1s ease",
+              height: `${4 + jawDropPx * 1.2}px`,
+              transform: `translate(-50%, -50%) scaleX(${1 + audioBoost * 0.35})`,
+              background: "radial-gradient(ellipse at center, #ff2222 0%, #cc0000 60%, rgba(100,0,0,0) 100%)",
+              boxShadow: `0 0 ${12 + audioBoost * 20}px #ff0000, 0 0 ${25 + audioBoost * 35}px #ff2200`,
+              borderRadius: "4px",
+              opacity: Math.min(0.4 + audioBoost * 0.6, 0.95),
+              transition: "height 0.06s ease, transform 0.06s ease, opacity 0.08s ease",
               pointerEvents: "none",
             }}
           />
@@ -162,20 +302,28 @@ export default function PathfinderFace({
       </div>
 
       <style>{`
-        @keyframes dasBreathing {
+        @keyframes dasLivingBreathing {
           0%, 100% {
-            transform: translateY(0px) scale(1);
+            transform: scale(1);
           }
           50% {
-            transform: translateY(-8px) scale(1.008);
+            transform: scale(1.02);
           }
         }
-        @keyframes dasEyePulse {
+        @keyframes dasEyePulseSmooth {
           0%, 100% {
             filter: brightness(1) drop-shadow(0 0 10px rgba(255,0,0,0.6));
           }
           50% {
-            filter: brightness(1.22) drop-shadow(0 0 22px rgba(255,0,0,0.9));
+            filter: brightness(1.2) drop-shadow(0 0 25px rgba(255,0,0,0.9));
+          }
+        }
+        @keyframes dasEyePulseRapid {
+          0%, 100% {
+            filter: brightness(1.1) drop-shadow(0 0 16px rgba(255,0,0,0.7));
+          }
+          50% {
+            filter: brightness(1.4) drop-shadow(0 0 32px rgba(255,30,30,1));
           }
         }
       `}</style>
