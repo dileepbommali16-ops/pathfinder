@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export interface PathfinderFaceProps {
   audioLevel?: number;
@@ -24,11 +23,11 @@ export default function PathfinderFace({
   const [is3DReady, setIs3DReady] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
 
-  // Mouse parallax target and current lerped values
+  // Mouse tracking targets
   const targetMouseRef = useRef({ x: 0, y: 0 });
   const currentMouseRef = useRef({ x: 0, y: 0 });
 
-  // Store refs for animation loop
+  // Animation and state refs
   const animFrameIdRef = useRef<number | null>(null);
   const isBlinkingRef = useRef(false);
   const stateRef = useRef(state);
@@ -55,7 +54,7 @@ export default function PathfinderFace({
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  // 2. Natural eye blink: blinks every 3-5s for 150ms
+  // 2. Realistic eye blink scheduler: blinks every 3-5s for 150ms
   useEffect(() => {
     let blinkTimer: ReturnType<typeof setTimeout>;
     let restoreTimer: ReturnType<typeof setTimeout>;
@@ -80,7 +79,7 @@ export default function PathfinderFace({
     };
   }, []);
 
-  // 3. Three.js Scene Setup & 3D Model Loading
+  // 3. High-Fidelity 3D Scene with Curved Cybernetic Head Mesh & Dynamic Lights
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -95,63 +94,97 @@ export default function PathfinderFace({
       });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.45;
+      renderer.toneMappingExposure = 1.35;
     } catch (e) {
-      console.warn("WebGL not supported, falling back to HUD visual:", e);
+      console.warn("WebGL not supported, running on high-res backdrop:", e);
       return;
     }
 
     const scene = new THREE.Scene();
     scene.background = null;
 
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 50);
-    camera.position.set(0, 0, 3.3);
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
+    camera.position.set(0, 0, 3.2);
 
-    // Pivot group for head rotation and breathing
+    // Pivot group for 3D head rotation and organic breathing
     const pivotGroup = new THREE.Group();
     scene.add(pivotGroup);
 
-    // Illumination: Balanced 3-point studio lighting for dark metallic cybernetic panels
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.1);
+    // Studio Lighting for metallic cybernetic surface
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
     scene.add(ambientLight);
 
     const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
-    keyLight.position.set(2.5, 3.0, 3.5);
+    keyLight.position.set(2.5, 3.5, 3.0);
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0xdbeafe, 1.4);
+    const fillLight = new THREE.DirectionalLight(0xdbeafe, 1.2);
     fillLight.position.set(-2.5, -0.5, 3.0);
     scene.add(fillLight);
 
-    const rimLight = new THREE.DirectionalLight(0xa855f7, 2.2);
-    rimLight.position.set(0, 4.0, -2.5);
+    const rimLight = new THREE.DirectionalLight(0xa855f7, 2.0);
+    rimLight.position.set(0, 4.0, -2.0);
     scene.add(rimLight);
 
-    // Glowing 3D Red Eyes (SphereGeometry - Perfect Spheres)
-    const eyeGeo = new THREE.SphereGeometry(0.055, 32, 32);
+    // 3D Red Eyes (SphereGeometry)
+    const eyeGeo = new THREE.SphereGeometry(0.065, 32, 32);
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 
     const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-    leftEye.position.set(-0.265, 0.250, 0.620);
+    leftEye.position.set(-0.460, 0.432, 0.02);
     pivotGroup.add(leftEye);
 
     const rightEye = new THREE.Mesh(eyeGeo, eyeMat.clone());
-    rightEye.position.set(0.264, 0.250, 0.620);
+    rightEye.position.set(0.462, 0.432, 0.02);
     pivotGroup.add(rightEye);
 
-    // Point lights for crimson eye radiance onto surrounding cybernetic plates
-    const leftEyeLight = new THREE.PointLight(0xff0000, 2.8, 1.8);
-    leftEyeLight.position.set(-0.265, 0.250, 0.65);
+    // Point lights for crimson eye radiance casting real light onto the face
+    const leftEyeLight = new THREE.PointLight(0xff0000, 3.0, 1.8);
+    leftEyeLight.position.set(-0.460, 0.432, 0.12);
     pivotGroup.add(leftEyeLight);
 
-    const rightEyeLight = new THREE.PointLight(0xff0000, 2.8, 1.8);
-    rightEyeLight.position.set(0.264, 0.250, 0.65);
+    const rightEyeLight = new THREE.PointLight(0xff0000, 3.0, 1.8);
+    rightEyeLight.position.set(0.462, 0.432, 0.12);
     pivotGroup.add(rightEyeLight);
 
     // Vocalizer mouth light for speech lip-sync
-    const mouthLight = new THREE.PointLight(0xff2222, 0, 1.5);
-    mouthLight.position.set(0.0, -0.278, 0.68);
+    const mouthLight = new THREE.PointLight(0xff2222, 0, 1.4);
+    mouthLight.position.set(0.0, -0.512, 0.08);
     pivotGroup.add(mouthLight);
+
+    // 3D Metallic Cybernetic Face Mesh (Textured with Boss's exact reference asset)
+    const texLoader = new THREE.TextureLoader();
+    texLoader.load(
+      "/face.png",
+      (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+
+        // Curved 3D surface geometry that gives realistic volumetric head curvature
+        const geo = new THREE.PlaneGeometry(2.3, 2.3, 48, 48);
+        const pos = geo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const y = pos.getY(i);
+          pos.setZ(i, -Math.pow(x, 2) * 0.22 - Math.pow(y, 2) * 0.08);
+        }
+        geo.computeVertexNormals();
+
+        const mat = new THREE.MeshStandardMaterial({
+          map: texture,
+          roughness: 0.35,
+          metalness: 0.85,
+        });
+
+        const faceMesh = new THREE.Mesh(geo, mat);
+        pivotGroup.add(faceMesh);
+
+        setIs3DReady(true);
+      },
+      undefined,
+      (err) => {
+        console.warn("Face texture load notice:", err);
+      }
+    );
 
     // Responsive Canvas Resizer
     const handleResize = () => {
@@ -168,51 +201,7 @@ export default function PathfinderFace({
     const resizeObserver = new ResizeObserver(() => handleResize());
     if (containerRef.current) resizeObserver.observe(containerRef.current);
 
-    // Load downloaded 3D Model: /head.glb
-    const loader = new GLTFLoader();
-    loader.load(
-      "/head.glb",
-      (gltf) => {
-        const model = gltf.scene;
-
-        // Tune materials for dark metallic tech panels
-        model.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const m = child as THREE.Mesh;
-            if (m.material) {
-              const mat = m.material as THREE.MeshStandardMaterial;
-              mat.roughness = 0.40;
-              mat.metalness = 0.85;
-              mat.emissive = new THREE.Color(0x000000); // Prevent red tint on face
-            }
-          }
-        });
-
-        // 1. Compute unscaled bounding box to find true scale factor
-        const initialBox = new THREE.Box3().setFromObject(model);
-        const size = initialBox.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 2.45 / maxDim;
-
-        // 2. SCALE FIRST so coordinates are in unit space
-        model.scale.setScalar(scale);
-        model.updateMatrixWorld(true);
-
-        // 3. CENTER AFTER SCALING so model.position is exactly in unit space around (0, 0, 0)
-        const scaledBox = new THREE.Box3().setFromObject(model);
-        const center = scaledBox.getCenter(new THREE.Vector3());
-        model.position.sub(center);
-
-        pivotGroup.add(model);
-        setIs3DReady(true);
-      },
-      undefined,
-      (err) => {
-        console.warn("Failed to load /head.glb, seamless HUD fallback active:", err);
-      }
-    );
-
-    // 60FPS Render Loop
+    // 60FPS Interactive Render Loop
     let clock = 0;
     const render = () => {
       animFrameIdRef.current = requestAnimationFrame(render);
@@ -222,15 +211,16 @@ export default function PathfinderFace({
       const breathe = Math.sin(clock * 1.5) * 0.030;
       pivotGroup.position.y = breathe;
 
-      // 2. Smooth Mouse Parallax Head Tracking
+      // 2. Smooth Mouse Parallax Head Tracking (Real 3D perspective rotation)
       currentMouseRef.current.x +=
-        (targetMouseRef.current.x - currentMouseRef.current.x) * 0.055;
+        (targetMouseRef.current.x - currentMouseRef.current.x) * 0.06;
       currentMouseRef.current.y +=
-        (targetMouseRef.current.y - currentMouseRef.current.y) * 0.055;
+        (targetMouseRef.current.y - currentMouseRef.current.y) * 0.06;
 
-      pivotGroup.rotation.y = currentMouseRef.current.x * 0.30;
-      pivotGroup.rotation.x = -currentMouseRef.current.y * 0.18;
-      pivotGroup.rotation.z = -currentMouseRef.current.x * 0.04;
+      pivotGroup.rotation.y = currentMouseRef.current.x * 0.32; // Horizontal turn
+      pivotGroup.rotation.x = -currentMouseRef.current.y * 0.18; // Vertical tilt
+      pivotGroup.rotation.z = -currentMouseRef.current.x * 0.04; // Natural head roll
+      pivotGroup.position.x = currentMouseRef.current.x * 0.08;
 
       // 3. Audio & Voice Reactivity
       let lvl = 0;
@@ -249,17 +239,17 @@ export default function PathfinderFace({
 
       // Pulsing Eye Radiance
       const baseIntensity = isUserSpeaking
-        ? 3.8
+        ? 4.0
         : isSpeaking
-        ? 2.8 + lvl * 4.0
-        : 2.2 + Math.sin(clock * 2.2) * 0.6;
+        ? 3.0 + lvl * 4.5
+        : 2.4 + Math.sin(clock * 2.2) * 0.6;
 
       leftEyeLight.intensity = baseIntensity;
       rightEyeLight.intensity = baseIntensity;
 
       // Vocalizer Speech Lip Sync
       if (isSpeaking && lvl > 0.02) {
-        mouthLight.intensity = Math.min(lvl * 6.0, 5.0);
+        mouthLight.intensity = Math.min(lvl * 7.0, 5.5);
       } else {
         mouthLight.intensity = 0;
       }
@@ -308,9 +298,9 @@ export default function PathfinderFace({
           maxWidth: "100vw",
         }}
       >
-        {/* INSTANT ZERO-FLASH POSTER (Visible initially, fades smoothly when 3D is active) */}
+        {/* INSTANT ZERO-FLASH POSTER (Visible initially, fades when 3D takes over) */}
         <div
-          className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-700 ${
+          className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-500 ${
             is3DReady ? "opacity-0 pointer-events-none" : "opacity-100"
           }`}
         >
@@ -321,12 +311,12 @@ export default function PathfinderFace({
             draggable={false}
             loading="eager"
           />
-          {/* Glowing Red Eyes for 2D Poster mode */}
+          {/* Glowing Red Eyes for 2D Backdrop */}
           <div
             style={{
               position: "absolute",
-              left: "29.94%",
-              top: "31.28%",
+              left: "29.98%",
+              top: "31.20%",
               width: "8.5%",
               height: "8.5%",
               borderRadius: "50%",
@@ -342,8 +332,8 @@ export default function PathfinderFace({
           <div
             style={{
               position: "absolute",
-              left: "70.09%",
-              top: "31.28%",
+              left: "70.08%",
+              top: "31.20%",
               width: "8.5%",
               height: "8.5%",
               borderRadius: "50%",
@@ -358,10 +348,10 @@ export default function PathfinderFace({
           />
         </div>
 
-        {/* 3D WEBGL CANVAS (Crossfades in smoothly once 3D GLB is ready) */}
+        {/* 3D WEBGL CANVAS (Active & interactive) */}
         <canvas
           ref={canvasRef}
-          className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-700 ${
+          className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-500 ${
             is3DReady ? "opacity-100" : "opacity-0"
           }`}
           style={{ width: "100%", height: "100%" }}
