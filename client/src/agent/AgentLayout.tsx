@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import Avatar3D, { AvatarState } from "./Avatar3D";
+import PathfinderFace from "./PathfinderFace";
 import { useAudioAnalyser } from "./useAudioAnalyser";
 import { useVoiceInput } from "./useVoiceInput";
 import {
