@@ -780,7 +780,6 @@ export default function AgentLayout({
       <div className="relative w-screen h-screen flex items-center justify-center scale-[1.5] md:scale-[1.2] transition-transform duration-300">
         <PathfinderFace
           getLevel={getAudioLevel}
-          audioLevel={audioLevel}
           state={avatarState}
           isListening={isListening || pipelineStage === "listening"}
           className="w-full h-full"
