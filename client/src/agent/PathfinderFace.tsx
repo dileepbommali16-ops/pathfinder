@@ -21,7 +21,6 @@ export default function PathfinderFace({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [is3DReady, setIs3DReady] = useState(false);
-  const [isBlinking, setIsBlinking] = useState(false);
 
   // Mouse tracking targets
   const targetMouseRef = useRef({ x: 0, y: 0 });
@@ -60,12 +59,10 @@ export default function PathfinderFace({
     let restoreTimer: ReturnType<typeof setTimeout>;
 
     const scheduleBlink = () => {
-      const delay = 3000 + Math.random() * 2500;
+      const delay = 3200 + Math.random() * 2200;
       blinkTimer = setTimeout(() => {
-        setIsBlinking(true);
         isBlinkingRef.current = true;
         restoreTimer = setTimeout(() => {
-          setIsBlinking(false);
           isBlinkingRef.current = false;
           scheduleBlink();
         }, 150);
@@ -79,7 +76,7 @@ export default function PathfinderFace({
     };
   }, []);
 
-  // 3. High-Fidelity 3D Scene with Curved Cybernetic Head Mesh & Dynamic Lights
+  // 3. High-Fidelity 3D Scene: Seamless Vignette Mesh, Organic Breathing, Mouse Parallax
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -103,13 +100,12 @@ export default function PathfinderFace({
     const scene = new THREE.Scene();
     scene.background = null;
 
-    const getAspect = () => {
-      const w = window.innerWidth || 1440;
-      const h = window.innerHeight || 900;
-      return w / h;
-    };
-
-    const camera = new THREE.PerspectiveCamera(40, getAspect(), 0.1, 50);
+    const camera = new THREE.PerspectiveCamera(
+      40,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      50
+    );
     camera.position.set(0, 0, 3.2);
 
     // Pivot group for 3D head rotation and organic breathing
@@ -117,7 +113,7 @@ export default function PathfinderFace({
     scene.add(pivotGroup);
 
     // Studio Lighting for metallic cybernetic surface
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.1);
     scene.add(ambientLight);
 
     const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -133,15 +129,15 @@ export default function PathfinderFace({
     scene.add(rimLight);
 
     // Point lights for crimson eye radiance casting real light onto the face
-    const leftEyeLight = new THREE.PointLight(0xff0000, 3.5, 2.0);
+    const leftEyeLight = new THREE.PointLight(0xff0000, 3.8, 2.0);
     leftEyeLight.position.set(-0.460, 0.432, 0.15);
     pivotGroup.add(leftEyeLight);
 
-    const rightEyeLight = new THREE.PointLight(0xff0000, 3.5, 2.0);
+    const rightEyeLight = new THREE.PointLight(0xff0000, 3.8, 2.0);
     rightEyeLight.position.set(0.462, 0.432, 0.15);
     pivotGroup.add(rightEyeLight);
 
-    // 3D Dark Metallic Eyelids for realistic blink
+    // 3D Eyelids for realistic blink (ONLY visible during blink)
     const eyelidGeo = new THREE.SphereGeometry(
       0.13,
       24,
@@ -152,28 +148,42 @@ export default function PathfinderFace({
       Math.PI * 0.5
     );
     const eyelidMat = new THREE.MeshStandardMaterial({
-      color: 0x0a0a14,
-      metalness: 0.85,
-      roughness: 0.35,
+      color: 0x05050a,
+      metalness: 0.95,
+      roughness: 0.25,
       side: THREE.DoubleSide,
     });
 
     const leftEyelid = new THREE.Mesh(eyelidGeo, eyelidMat);
-    leftEyelid.position.set(-0.460, 0.432, 0.05);
+    leftEyelid.position.set(-0.460, 0.432, 0.08);
     leftEyelid.rotation.x = Math.PI;
-    leftEyelid.scale.set(1, 0.001, 1);
+    leftEyelid.visible = false;
     pivotGroup.add(leftEyelid);
 
     const rightEyelid = new THREE.Mesh(eyelidGeo, eyelidMat.clone());
-    rightEyelid.position.set(0.462, 0.432, 0.05);
+    rightEyelid.position.set(0.462, 0.432, 0.08);
     rightEyelid.rotation.x = Math.PI;
-    rightEyelid.scale.set(1, 0.001, 1);
+    rightEyelid.visible = false;
     pivotGroup.add(rightEyelid);
 
     // Vocalizer mouth light for speech lip-sync
     const mouthLight = new THREE.PointLight(0xff2222, 0, 1.4);
     mouthLight.position.set(0.0, -0.512, 0.12);
     pivotGroup.add(mouthLight);
+
+    // 100% Seamless Circular Alpha Map to ensure zero box borders anywhere
+    const alphaCanvas = document.createElement("canvas");
+    alphaCanvas.width = 512;
+    alphaCanvas.height = 512;
+    const actx = alphaCanvas.getContext("2d")!;
+    const grad = actx.createRadialGradient(256, 256, 120, 256, 256, 250);
+    grad.addColorStop(0, "rgba(255,255,255,1)");
+    grad.addColorStop(0.65, "rgba(255,255,255,1)");
+    grad.addColorStop(0.92, "rgba(255,255,255,0.4)");
+    grad.addColorStop(1, "rgba(255,255,255,0)");
+    actx.fillStyle = grad;
+    actx.fillRect(0, 0, 512, 512);
+    const alphaTex = new THREE.CanvasTexture(alphaCanvas);
 
     // 3D Metallic Cybernetic Face Mesh (Textured with Boss's exact reference asset)
     const texLoader = new THREE.TextureLoader();
@@ -194,6 +204,8 @@ export default function PathfinderFace({
 
         const mat = new THREE.MeshStandardMaterial({
           map: texture,
+          alphaMap: alphaTex,
+          transparent: true,
           roughness: 0.35,
           metalness: 0.85,
         });
@@ -261,11 +273,13 @@ export default function PathfinderFace({
         isListeningRef.current || stateRef.current === "listening";
 
       // Pulsing Eye Radiance
-      const baseIntensity = isUserSpeaking
-        ? 4.2
+      const baseIntensity = isBlinkingRef.current
+        ? 0.4
+        : isUserSpeaking
+        ? 4.5
         : isSpeaking
-        ? 3.2 + lvl * 4.5
-        : 2.5 + Math.sin(clock * 2.2) * 0.7;
+        ? 3.4 + lvl * 4.5
+        : 2.6 + Math.sin(clock * 2.2) * 0.7;
 
       leftEyeLight.intensity = baseIntensity;
       rightEyeLight.intensity = baseIntensity;
@@ -277,13 +291,13 @@ export default function PathfinderFace({
         mouthLight.intensity = 0;
       }
 
-      // 4. Eye Blink Animation
+      // 4. Eye Blink Animation (Strictly visible only during blink)
       if (isBlinkingRef.current) {
-        leftEyelid.scale.y = 1.0;
-        rightEyelid.scale.y = 1.0;
+        leftEyelid.visible = true;
+        rightEyelid.visible = true;
       } else {
-        leftEyelid.scale.y = 0.001;
-        rightEyelid.scale.y = 0.001;
+        leftEyelid.visible = false;
+        rightEyelid.visible = false;
       }
 
       renderer.render(scene, camera);
@@ -310,40 +324,14 @@ export default function PathfinderFace({
       }}
       aria-label="DAS Living 3D Cybernetic Face"
     >
-      {/* SEAMLESS FULL-BLEED VIGNETTE WRAPPER: ELIMINATES ANY BOX OR RECTANGULAR EDGES */}
-      <div
-        className="relative w-screen h-screen flex items-center justify-center pointer-events-none"
-        style={{
-          maskImage:
-            "radial-gradient(ellipse 75% 85% at 50% 50%, black 50%, transparent 95%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse 75% 85% at 50% 50%, black 50%, transparent 95%)",
-        }}
-      >
-        {/* INSTANT ZERO-FLASH POSTER (Visible immediately, blends softly when 3D is active) */}
-        <div
-          className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-700 ${
-            is3DReady ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
-        >
-          <img
-            src="/face.png"
-            alt="Pathfinder Cybernetic Face"
-            className="w-full h-full object-contain pointer-events-none select-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.95)]"
-            draggable={false}
-            loading="eager"
-          />
-        </div>
-
-        {/* 3D WEBGL CANVAS (Active & interactive across full viewport) */}
-        <canvas
-          ref={canvasRef}
-          className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-700 ${
-            is3DReady ? "opacity-100" : "opacity-0"
-          }`}
-          style={{ width: "100%", height: "100%" }}
-        />
-      </div>
+      {/* 3D WEBGL CANVAS (Edge-to-edge seamless background across full viewport) */}
+      <canvas
+        ref={canvasRef}
+        className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-500 ${
+          is3DReady ? "opacity-100" : "opacity-0"
+        }`}
+        style={{ width: "100%", height: "100%" }}
+      />
     </div>
   );
 }
