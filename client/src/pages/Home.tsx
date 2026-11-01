@@ -31,7 +31,7 @@ import { StudentProfileState, ReadinessAuditData, DEFAULT_STUDENT_PROFILE } from
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
-import { handleAuthLoginDetected } from "@/lib/auth";
+import { handleAuthLoginDetected, initAuthMode, getUserRole } from "@/lib/auth";
 import {
   Sparkles,
   ArrowRight,
@@ -259,6 +259,11 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     return () => window.removeEventListener("pathfinder_logout", handleRemoteLogout);
   }, []);
 
+  // Auto-detect and force Boss mode on app load without waiting for login
+  useEffect(() => {
+    initAuthMode();
+  }, []);
+
   // Pre-warm backend immediately on mount (wakes up sleeping Render instance early)
   // and keep-alive every 9 minutes so visitors browsing the demo never hit cold starts
   useEffect(() => {
@@ -484,7 +489,14 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     bypassOnboarding?: boolean;
   }) => {
     // Auto Boss detection for Dileep Bommali vs Sir mode
-    handleAuthLoginDetected(user.email, user.username);
+    const role = handleAuthLoginDetected(user.email, user.username);
+    localStorage.setItem("userEmail", user.email);
+    localStorage.setItem("userRole", role);
+    if (role === "Boss") {
+      localStorage.setItem("isOwner", "true");
+      localStorage.setItem("das_mode", "BOSS");
+      localStorage.setItem("das_honorific_override", "Boss");
+    }
 
     startTransition(() => {
       setUsername(user.username);

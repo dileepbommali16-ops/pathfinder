@@ -90,7 +90,16 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             </div>
 
             <h1 className="text-2xl font-bold tracking-tight text-[#f8fafc] sm:text-4xl">
-              Welcome back, <span className="bg-gradient-to-r from-[#9f1239] via-[#f8fafc] to-[#be123c] bg-clip-text text-transparent drop-shadow-sm">{username || "Engineer"}</span>
+              Welcome back, <span className="bg-gradient-to-r from-[#9f1239] via-[#f8fafc] to-[#be123c] bg-clip-text text-transparent drop-shadow-sm">{
+                (typeof window !== "undefined" &&
+                 (localStorage.getItem("userRole") === "Boss" ||
+                  localStorage.getItem("isOwner") === "true" ||
+                  localStorage.getItem("das_mode") === "BOSS" ||
+                  (username || "").toLowerCase().includes("dileep") ||
+                  (username || "").toLowerCase().includes("guest")))
+                  ? "Boss"
+                  : (username || "Engineer")
+              }</span>
             </h1>
 
             <p className="max-w-xl text-sm leading-relaxed text-[#94a3b8]">

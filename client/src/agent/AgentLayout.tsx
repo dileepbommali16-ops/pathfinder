@@ -15,6 +15,7 @@ import {
   resolveHonorific,
   normalizeTabId,
 } from "./useAgentController";
+import { initAuthMode } from "@/lib/auth";
 import { getApiBase } from "@/lib/apiClient";
 import {
   getCareerAgentResponse,
@@ -114,9 +115,11 @@ export default function AgentLayout({
   const [isUploading, setIsUploading] = useState(false);
   const [autoListen, setAutoListen] = useState(false);
   const [voiceMuted, setVoiceMuted] = useState(false);
-  const [honorific, setHonorific] = useState<"Boss" | "Sir">(() =>
-    resolveHonorific(propProfile, propUserEmail, propUsername)
-  );
+  const [honorific, setHonorific] = useState<"Boss" | "Sir">(() => {
+    const autoRole = initAuthMode();
+    if (autoRole === "Boss") return "Boss";
+    return resolveHonorific(propProfile, propUserEmail, propUsername);
+  });
 
   const msgsRef = useRef<Msg[]>(globalMsgsCache);
   const abort = useRef<AbortController | null>(null);
@@ -136,6 +139,11 @@ export default function AgentLayout({
 
   // Sync honorific whenever user/profile changes
   useEffect(() => {
+    const autoRole = initAuthMode();
+    if (autoRole === "Boss") {
+      setHonorific("Boss");
+      return;
+    }
     setHonorific(resolveHonorific(propProfile, propUserEmail, propUsername));
   }, [propProfile, propUserEmail, propUsername]);
 
@@ -782,14 +790,23 @@ export default function AgentLayout({
                     Conversation Session ({msgs.length} messages)
                   </span>
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={toggleHonorific}
-                      title="Switch between Owner (Boss) and Guest (Sir) recognition"
-                      className="px-2 py-0.5 rounded-full bg-slate-900 border border-white/15 text-[10px] font-mono text-blue-200 hover:bg-blue-900/40 transition-colors cursor-pointer"
-                    >
-                      {honorific === "Boss" ? "👑 Mode: Boss" : "🎩 Mode: Sir"}
-                    </button>
+                    {honorific === "Boss" ? (
+                      <span
+                        className="px-2 py-0.5 rounded-full bg-red-950/80 border border-red-500/40 text-[10px] font-mono text-red-200 shadow-[0_0_10px_rgba(239,68,68,0.25)] font-semibold"
+                        title="Boss Mode Active (Dileep Bommali • Full Control)"
+                      >
+                        👑 Boss Mode Active
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={toggleHonorific}
+                        title="Switch between Owner (Boss) and Guest (Sir) recognition"
+                        className="px-2 py-0.5 rounded-full bg-slate-900 border border-white/15 text-[10px] font-mono text-blue-200 hover:bg-blue-900/40 transition-colors cursor-pointer"
+                      >
+                        🎩 Mode: Sir
+                      </button>
+                    )}
                     <span className="text-violet-300 font-medium">RAG Top-3 • {lastPromptTokens} tok</span>
                   </div>
                 </div>
@@ -883,15 +900,24 @@ export default function AgentLayout({
                   {showHistory ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
                 </button>
 
-                {/* Switch Boss/Sir */}
-                <button
-                  type="button"
-                  onClick={toggleHonorific}
-                  className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 hover:bg-violet-500/20 text-violet-200 border border-white/10 transition-colors cursor-pointer"
-                  title="Switch Owner (Boss) / Guest (Sir) Addressing Mode"
-                >
-                  {honorific === "Boss" ? "👑 Boss" : "🎩 Sir"}
-                </button>
+                {/* Switch Boss/Sir or Boss Mode Active badge */}
+                {honorific === "Boss" ? (
+                  <span
+                    className="px-2 py-0.5 rounded text-[10px] font-mono bg-red-950/80 text-red-300 border border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.25)] flex items-center gap-1 font-semibold"
+                    title="Boss Mode Active (Dileep Bommali • Full Control)"
+                  >
+                    👑 Boss Mode Active
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={toggleHonorific}
+                    className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 hover:bg-violet-500/20 text-violet-200 border border-white/10 transition-colors cursor-pointer"
+                    title="Switch Owner (Boss) / Guest (Sir) Addressing Mode"
+                  >
+                    🎩 Sir
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1219,14 +1245,20 @@ export default function AgentLayout({
             >
               RAG Top-3 • {lastPromptTokens} tok (&lt;2000)
             </span>
-            <button
-              type="button"
-              onClick={toggleHonorific}
-              title="Toggle Owner (Boss) vs Guest (Sir) recognition"
-              className="px-2.5 py-1 rounded-full bg-slate-900/85 hover:bg-blue-900/60 border border-white/15 text-[11px] font-mono text-blue-200 backdrop-blur-md transition-colors cursor-pointer"
-            >
-              {honorific === "Boss" ? "👑 Mode: Boss (Owner)" : "🎩 Mode: Sir (Guest)"}
-            </button>
+            {honorific === "Boss" ? (
+              <span className="px-2.5 py-1 rounded-full bg-red-950/85 border border-red-500/40 text-[11px] font-mono text-red-200 backdrop-blur-md shadow-[0_0_10px_rgba(239,68,68,0.25)] font-semibold">
+                👑 Boss Mode Active
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={toggleHonorific}
+                title="Toggle Owner (Boss) vs Guest (Sir) recognition"
+                className="px-2.5 py-1 rounded-full bg-slate-900/85 hover:bg-blue-900/60 border border-white/15 text-[11px] font-mono text-blue-200 backdrop-blur-md transition-colors cursor-pointer"
+              >
+                🎩 Mode: Sir (Guest)
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {

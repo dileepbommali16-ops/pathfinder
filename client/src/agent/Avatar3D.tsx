@@ -128,9 +128,6 @@ export default function Avatar3D({
     let plateInitY = 0;
     let leftEyeNode: THREE.Object3D | null = null;
     let rightEyeNode: THREE.Object3D | null = null;
-    let upperLipMesh: THREE.Mesh | null = null;
-    let lowerLipMesh: THREE.Mesh | null = null;
-    let mouthApertureMesh: THREE.Mesh | null = null;
     const eyeGlowMaterials: THREE.MeshStandardMaterial[] = [];
     const eyeRingMaterials: THREE.MeshStandardMaterial[] = [];
     const eyePointLights: THREE.PointLight[] = [];
@@ -277,44 +274,7 @@ export default function Avatar3D({
               }
             });
 
-            // 3. REALISTIC ARTICULATED MOUTH LIPS (Opens & closes naturally at the mouth while neck stays still!)
-            const mouthGroup = new THREE.Group();
-            // Exact mouth position in gltfGroup space
-            mouthGroup.position.set(0, 0.011, 0.156);
-            gltfGroup.add(mouthGroup);
-
-            const lipMat = new THREE.MeshStandardMaterial({
-              color: new THREE.Color(0x1e40af),
-              emissive: new THREE.Color(0x1d4ed8),
-              emissiveIntensity: 0.9,
-              metalness: 0.85,
-              roughness: 0.2,
-            });
-
-            const apertureMat = new THREE.MeshBasicMaterial({
-              color: new THREE.Color(0xff0022),
-              transparent: true,
-              opacity: 0.85,
-            });
-
-            const lipGeo = new THREE.CapsuleGeometry(0.0028, 0.046, 8, 16);
-            lipGeo.rotateZ(Math.PI / 2);
-
-            upperLipMesh = new THREE.Mesh(lipGeo, lipMat);
-            upperLipMesh.position.set(0, 0.002, 0);
-            mouthGroup.add(upperLipMesh);
-
-            lowerLipMesh = new THREE.Mesh(lipGeo, lipMat);
-            lowerLipMesh.position.set(0, -0.002, 0);
-            mouthGroup.add(lowerLipMesh);
-
-            const apertureGeo = new THREE.PlaneGeometry(0.044, 0.014);
-            mouthApertureMesh = new THREE.Mesh(apertureGeo, apertureMat);
-            mouthApertureMesh.position.set(0, 0, -0.001);
-            mouthApertureMesh.scale.set(1, 0.05, 1);
-            mouthGroup.add(mouthApertureMesh);
-
-            // 4. HIGH-INTENSITY DARK-RED EYE POINT LIGHTS (Vivid crimson eye shine on dark-blue face)
+            // 3. HIGH-INTENSITY DARK-RED EYE POINT LIGHTS (Fiery crimson eye shine on face)
             const leftLight = new THREE.PointLight(0xff0000, 4.2, 0.85);
             leftLight.position.set(0.042, 0.092, 0.16);
             gltfGroup.add(leftLight);
@@ -417,54 +377,51 @@ export default function Avatar3D({
       }
 
       if (gltfGroup.visible) {
-        // Keep head & neck steady and composed (NO neck bobbing!)
+        // Natural idle breathing animation (gentle chest/face rise, expansion & subtle micro-sway)
         if (!prefersReducedMotion) {
-          gltfGroup.position.y = 0.02 + Math.sin(t * 1.1) * 0.003;
-          gltfGroup.rotation.y = Math.sin(t * 0.4) * 0.022;
+          const breath = Math.sin(t * 1.6);
+          gltfGroup.position.y = 0.02 + breath * 0.007; // gentle breathing rise & fall
+          gltfGroup.position.z = breath * 0.003; // chest expansion depth
+          gltfGroup.rotation.x = breath * 0.005; // subtle natural breathing tilt
+          gltfGroup.rotation.y = Math.sin(t * 0.45) * 0.02; // slow living presence
         } else {
           gltfGroup.position.y = 0.02;
+          gltfGroup.position.z = 0;
+          gltfGroup.rotation.x = 0;
           gltfGroup.rotation.y = 0;
         }
         gltfGroup.position.x = 0;
-        gltfGroup.rotation.x = 0;
         gltfGroup.rotation.z = 0;
 
-        // Subtle mouth plate + realistic upper/lower lip separation (neck Object_5 never moves!)
+        // Subtle robotic mouth articulation via native chin plate (NO blue box lips, clean authentic model)
         if (chinPlateMesh) {
-          chinPlateMesh.position.y = plateInitY - mouth * 0.0045;
-        }
-        if (upperLipMesh && lowerLipMesh && mouthApertureMesh) {
-          const openOffset = mouth * 0.0085;
-          upperLipMesh.position.y = 0.0018 + openOffset * 0.45;
-          lowerLipMesh.position.y = -0.0018 - openOffset * 0.85;
-          mouthApertureMesh.scale.y = Math.max(0.05, mouth * 1.35);
-          (mouthApertureMesh.material as THREE.MeshBasicMaterial).opacity =
-            mouth > 0.04 ? Math.min(0.95, 0.35 + mouth * 0.7) : 0.15;
+          chinPlateMesh.position.y = plateInitY - mouth * 0.006;
         }
 
         // Eye Blinking Animation (maintaining exact 0.057 base scale on eye parent nodes)
         if (leftEyeNode) leftEyeNode.scale.y = eyeOpenRatio * 0.057;
         if (rightEyeNode) rightEyeNode.scale.y = eyeOpenRatio * 0.057;
 
-        // Bright Glowing Dark-Red Eyes (meravaali bhaga full ga)
+        // Bright Glowing Fiery Dark-Red Eyes with living ember flicker
         const pulse = Math.sin(t * 3.2) * 0.5 + 0.5;
+        const fireFlicker = Math.sin(t * 11.3) * 0.45 + Math.cos(t * 7.7) * 0.35;
         const baseGlow =
-          curState === "speaking"
-            ? 6.2 + mouth * 3.5
+          (curState === "speaking"
+            ? 7.2 + mouth * 3.8
             : curState === "listening"
-            ? 5.8 + pulse * 2.2
+            ? 6.4 + pulse * 2.2
             : curState === "thinking"
-            ? 5.5 + Math.sin(t * 7.0) * 2.0
-            : 5.2 + pulse * 1.4;
+            ? 6.0 + Math.sin(t * 7.0) * 2.2
+            : 5.8 + pulse * 1.5) + fireFlicker;
 
         for (const mat of eyeGlowMaterials) {
-          mat.emissiveIntensity = baseGlow;
+          mat.emissiveIntensity = Math.max(4.2, baseGlow);
         }
         for (const rMat of eyeRingMaterials) {
-          rMat.emissiveIntensity = baseGlow * 0.65;
+          rMat.emissiveIntensity = Math.max(2.8, baseGlow * 0.7);
         }
         for (const light of eyePointLights) {
-          light.intensity = baseGlow * 0.85;
+          light.intensity = Math.max(3.2, baseGlow * 0.9);
         }
       }
 

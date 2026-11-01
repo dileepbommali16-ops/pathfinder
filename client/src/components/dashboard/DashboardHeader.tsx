@@ -172,27 +172,44 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {/* User Identity, Mobile Hamburger & Logout */}
         <div className="flex items-center gap-2.5 sm:gap-3">
-          <button
-            type="button"
-            onClick={() => setActiveTab("profile")}
-            title="View & Edit Candidate Profile"
-            className="hidden sm:flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-[#11131c] px-3.5 py-1.5 shadow-sm backdrop-blur-xl hover:border-[#7c3aed]/40 hover:bg-[#161926] transition-all cursor-pointer text-left"
-          >
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#7c3aed]/20 text-[11px] font-bold text-[#7c3aed] shadow-sm ring-1 ring-[#7c3aed]/40">
-              {username ? username.charAt(0).toUpperCase() : "U"}
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 leading-none">
-                <span className="text-xs font-semibold text-[#f8fafc]">{username || "Student"}</span>
-                {userRole === "admin" ? (
-                  <span className="text-[9px] font-medium text-[#7c3aed] bg-[#7c3aed]/10 border border-[#7c3aed]/30 px-1 rounded">ADMIN</span>
-                ) : (
-                  <ShieldCheck className="h-3 w-3 text-[#94a3b8]" />
-                )}
-              </div>
-              {email && <span className="text-[10px] text-[#94a3b8] leading-none">{email}</span>}
-            </div>
-          </button>
+          {(() => {
+            const isBoss =
+              typeof window !== "undefined" &&
+              (localStorage.getItem("userRole") === "Boss" ||
+                localStorage.getItem("isOwner") === "true" ||
+                localStorage.getItem("das_mode") === "BOSS" ||
+                (username || "").toLowerCase().includes("dileep") ||
+                (email || "").toLowerCase().includes("guest"));
+
+            const displayUser = isBoss ? "Dileep (Boss)" : (username || "Student");
+            const displayEmail = isBoss ? "dileepbommali16@gmail.com" : email;
+
+            return (
+              <button
+                type="button"
+                onClick={() => setActiveTab("profile")}
+                title="View & Edit Candidate Profile"
+                className="hidden sm:flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-[#11131c] px-3.5 py-1.5 shadow-sm backdrop-blur-xl hover:border-red-500/40 hover:bg-[#161926] transition-all cursor-pointer text-left"
+              >
+                <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold shadow-sm ring-1 ${isBoss ? "bg-red-500/20 text-red-400 ring-red-500/40" : "bg-[#7c3aed]/20 text-[#7c3aed] ring-[#7c3aed]/40"}`}>
+                  {isBoss ? "👑" : (username ? username.charAt(0).toUpperCase() : "U")}
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 leading-none">
+                    <span className="text-xs font-semibold text-[#f8fafc]">{displayUser}</span>
+                    {isBoss ? (
+                      <span className="text-[9px] font-bold text-red-300 bg-red-950/80 border border-red-500/40 px-1 rounded shadow-[0_0_8px_rgba(239,68,68,0.3)]">BOSS</span>
+                    ) : userRole === "admin" ? (
+                      <span className="text-[9px] font-medium text-[#7c3aed] bg-[#7c3aed]/10 border border-[#7c3aed]/30 px-1 rounded">ADMIN</span>
+                    ) : (
+                      <ShieldCheck className="h-3 w-3 text-[#94a3b8]" />
+                    )}
+                  </div>
+                  {displayEmail && <span className="text-[10px] text-[#94a3b8] leading-none">{displayEmail}</span>}
+                </div>
+              </button>
+            );
+          })()}
 
           {/* Photo 3 - Item 3: Mobile Hamburger Menu Toggle */}
           <button

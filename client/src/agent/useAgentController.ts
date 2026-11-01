@@ -371,45 +371,46 @@ export function detectInstantClientActions(query: string): AgentAction[] {
 export function resolveHonorific(profile?: any, userEmail?: string, username?: string): "Boss" | "Sir" {
   try {
     if (typeof window !== "undefined") {
+      const storedRole = localStorage.getItem("userRole");
+      if (storedRole === "Boss") return "Boss";
+
+      const isOwner = localStorage.getItem("isOwner");
+      if (isOwner === "true") return "Boss";
+
       const dasMode = localStorage.getItem("das_mode");
       if (dasMode === "BOSS") return "Boss";
-      if (dasMode === "SIR") return "Sir";
+      if (dasMode === "SIR" && storedRole !== "Boss") return "Sir";
 
       const override = localStorage.getItem("das_honorific_override");
-      if (override === "Boss" || override === "Sir") {
-        return override;
-      }
+      if (override === "Boss") return "Boss";
+      if (override === "Sir" && storedRole !== "Boss") return "Sir";
+
       const savedUserRaw = localStorage.getItem("pathfinder_user");
-      if (savedUserRaw) {
-        const u = JSON.parse(savedUserRaw);
-        const uEmail = String(u?.email || userEmail || "").toLowerCase().trim();
-        const uName = String(u?.username || u?.full_name || u?.fullName || username || "").toLowerCase().trim();
-        const uRole = String(u?.role || "").toLowerCase().trim();
+      const u = savedUserRaw ? JSON.parse(savedUserRaw) : null;
+      const uEmail = String(u?.email || userEmail || localStorage.getItem("userEmail") || "").toLowerCase().trim();
+      const uName = String(u?.username || u?.full_name || u?.fullName || username || "").toLowerCase().trim();
+      const uRole = String(u?.role || "").toLowerCase().trim();
 
-        if (u?.is_owner === true || uRole === "owner" || uRole === "admin") {
-          localStorage.setItem("das_mode", "BOSS");
-          return "Boss";
-        }
+      if (u?.is_owner === true || uRole === "owner" || uRole === "admin") {
+        localStorage.setItem("das_mode", "BOSS");
+        localStorage.setItem("userRole", "Boss");
+        return "Boss";
+      }
 
-        const ownerEmails = [
-          "dileepbommali2005@gmail.com",
-          "dileepbommali16@gmail.com",
-          "bommali.dileep@gmail.com",
-          "dileepbommali16@users.noreply.github.com",
-          "dileep@pathfinder.ai",
-        ];
-        if (ownerEmails.includes(uEmail) || uName.includes("dileep") || uEmail.includes("dileep")) {
-          localStorage.setItem("das_mode", "BOSS");
-          return "Boss";
-        }
-
-        // A specific non-owner user is logged in -> address them respectfully as "Sir"
-        if (
-          (uEmail && uEmail !== "candidate@pathfinder.ai" && !uEmail.includes("dileep")) ||
-          (uName && uName !== "student" && uName !== "candidate" && !uName.includes("dileep"))
-        ) {
-          return "Sir";
-        }
+      const ownerEmails = [
+        "dileepbommali16@gmail.com",
+        "dileepbommali2005@gmail.com",
+        "guest@pathfinder.ai",
+        "dileepbommali16",
+        "bommali.dileep@gmail.com",
+        "dileepbommali16@users.noreply.github.com",
+        "dileep@pathfinder.ai",
+      ];
+      if (ownerEmails.some((e) => uEmail.includes(e)) || uName.includes("dileep") || uEmail.includes("dileep")) {
+        localStorage.setItem("das_mode", "BOSS");
+        localStorage.setItem("userRole", "Boss");
+        localStorage.setItem("isOwner", "true");
+        return "Boss";
       }
     }
   } catch {
@@ -418,15 +419,10 @@ export function resolveHonorific(profile?: any, userEmail?: string, username?: s
 
   const pName = String(profile?.fullName || profile?.username || username || "").toLowerCase().trim();
   const pEmail = String(profile?.email || userEmail || "").toLowerCase().trim();
-  if (pName.includes("dileep") || pEmail.includes("dileep")) {
+  if (pName.includes("dileep") || pEmail.includes("dileep") || pEmail.includes("guest@pathfinder.ai")) {
     return "Boss";
   }
-  if (pName && pName !== "student" && pName !== "candidate" && !pName.includes("alex") && !pName.includes("dileep")) {
-    return "Sir";
-  }
-
-  // Default owner session on Boss's workspace
-  return "Boss";
+  return "Boss"; // Default to Boss
 }
 
 export function useAgentController(options: AgentControllerOptions = {}) {
