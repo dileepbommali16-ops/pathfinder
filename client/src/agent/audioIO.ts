@@ -11,11 +11,15 @@ import { getApiBase } from "@/lib/apiClient";
 
 const API = getApiBase().replace(/\/$/, "");
 
-// Primary JARVIS voice: Daniel (onwK4e9ZLuTAKqWW03F9)
-const DEFAULT_JARVIS_VOICE_ID = "onwK4e9ZLuTAKqWW03F9";
+// Primary JARVIS voice ID (Multi-lingual natural voice: default 21m00Tcm4TlvDq8ikWAM)
+const DEFAULT_JARVIS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
 
 const ELEVENLABS_KEYS = [
+  (import.meta as any).env?.VITE_ELEVENLABS_KEY || "",
   (import.meta as any).env?.VITE_ELEVENLABS_API_KEY || "",
+  (import.meta as any).env?.ELEVENLABS_API_KEY || "",
+  (typeof process !== "undefined" && (process as any).env?.VITE_ELEVENLABS_KEY) || "",
+  (typeof process !== "undefined" && (process as any).env?.ELEVENLABS_API_KEY) || "",
   ["sk", "737a42c6566aaf5f891b6c6508610f8d8bc1962b0e7e1bd9"].join("_"),
 ].filter(Boolean);
 
@@ -125,7 +129,7 @@ export class Speaker {
           const elCtrl = new AbortController();
           const elTid = setTimeout(() => elCtrl.abort(), 6500);
           const elRes = await fetch(
-            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=3&output_format=mp3_44100_64`,
+            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=4&output_format=mp3_44100_64`,
             {
               method: "POST",
               signal: elCtrl.signal,
@@ -136,11 +140,11 @@ export class Speaker {
               },
               body: JSON.stringify({
                 text: cacheKey,
-                model_id: "eleven_turbo_v2_5",
+                model_id: "eleven_multilingual_v2",
                 voice_settings: {
-                  stability: 0.38,
-                  similarity_boost: 0.82,
-                  style: 0.45,
+                  stability: 0.3,
+                  similarity_boost: 0.8,
+                  style: 0.6,
                   use_speaker_boost: true,
                 },
               }),

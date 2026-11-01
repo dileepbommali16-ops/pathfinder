@@ -64,12 +64,12 @@ const TAB_ALIASES: Record<string, TabId> = {
   study_plan: "skills",
   skill_gap: "skills",
 
-  coach: "coach",
-  voice: "coach",
-  das: "coach",
-  jarvis: "coach",
-  agent: "coach",
-  copilot: "coach",
+  coach: "overview",
+  voice: "overview",
+  das: "overview",
+  jarvis: "overview",
+  agent: "overview",
+  copilot: "overview",
 
   projects: "projects",
   blueprints: "projects",
@@ -355,7 +355,7 @@ export function detectInstantClientActions(query: string): AgentAction[] {
     } else if (/\b(missions?|mission\s*tracker|daily\s*goals)\b/i.test(q)) {
       actions.push({ type: "NAVIGATE_TAB", target: "missions" });
     } else if (/\b(voice\s*coach|full\s*coach|das\s*coach|coach)\b/i.test(q)) {
-      actions.push({ type: "NAVIGATE_TAB", target: "coach" });
+      actions.push({ type: "NAVIGATE_TAB", target: "overview" });
     } else if (/\b(dashboard|overview|home|main\s*page)\b/i.test(q)) {
       actions.push({ type: "NAVIGATE_TAB", target: "overview" });
     }
@@ -371,6 +371,10 @@ export function detectInstantClientActions(query: string): AgentAction[] {
 export function resolveHonorific(profile?: any, userEmail?: string, username?: string): "Boss" | "Sir" {
   try {
     if (typeof window !== "undefined") {
+      const dasMode = localStorage.getItem("das_mode");
+      if (dasMode === "BOSS") return "Boss";
+      if (dasMode === "SIR") return "Sir";
+
       const override = localStorage.getItem("das_honorific_override");
       if (override === "Boss" || override === "Sir") {
         return override;
@@ -383,16 +387,19 @@ export function resolveHonorific(profile?: any, userEmail?: string, username?: s
         const uRole = String(u?.role || "").toLowerCase().trim();
 
         if (u?.is_owner === true || uRole === "owner" || uRole === "admin") {
+          localStorage.setItem("das_mode", "BOSS");
           return "Boss";
         }
 
         const ownerEmails = [
+          "dileepbommali2005@gmail.com",
           "dileepbommali16@gmail.com",
           "bommali.dileep@gmail.com",
           "dileepbommali16@users.noreply.github.com",
           "dileep@pathfinder.ai",
         ];
         if (ownerEmails.includes(uEmail) || uName.includes("dileep") || uEmail.includes("dileep")) {
+          localStorage.setItem("das_mode", "BOSS");
           return "Boss";
         }
 

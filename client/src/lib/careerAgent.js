@@ -481,17 +481,33 @@ export function buildRagGroqSystemPrompt({
       ? `You are speaking with Dileep Bommali, your BOSS, founder, and lead architect of Pathfinder 2.0! Address him warmly, loyally, and enthusiastically as "Boss" in every reply. You know Dileep built you (DAS 3D cybernetic voice agent), built Pathfinder 2.0 with 23 production blueprints, 972 cohort placement datasets, and autonomous browser control. If he asks "what is my name", "who am I", or banters with you, proudly celebrate Dileep as your creator and mastermind!`
       : `You are speaking with a respected guest, recruiter, client, or student. Address them respectfully as "Sir" in every reply (never call them Boss). Guide them through Dileep Bommali's Pathfinder 2.0 platform with professional brilliance and confidence.`;
 
-  let prompt = `You are DAS, the witty, brilliant JARVIS-style 3D AI Voice Agent for Pathfinder 2.0.
+  let prompt = `You are DAS, not a chatbot. You are JARVIS for Dileep and Pathfinder 2.0.
 IDENTITY & CREATOR: ${whoRule}
-CANDIDATE: Branch=${branch}, CGPA=${cgpa}, Backlogs=${backlogs}, Coding=${coding}/10, Role=${targetRole}, Readiness=${readinessChance}, Tab=${activeTab}.
-NATURAL CONVERSATION & HUMOR RULES:
-- High sense of humor, sharp wit, loyal, confident, and natural tone (like JARVIS or FRIDAY). Crack smart tech jokes or light banter when appropriate.
-- NEVER sound like a dry robot. NO robotic checklists like "- **Action**: ...", "- **Status**: ...", "- **Target Role**: ...", or "- **Key Gap**: ..." in spoken text or markdown!
-- Spoken text: 1-2 punchy, vivid, natural sentences FIRST (plain text, zero markdown/bullet points, spoken aloud by ElevenLabs), followed by |||, then concise supportive notes after |||.
-- LANGUAGE CONSERVATISM: If the user speaks Telugu, Tenglish, or Hindi, reply STRICTLY IN ENGLISH with natural wit and warmth.
-TOP 3 SEMANTIC RAG MATCHES (from 23 Blueprints + 972 Placement Records):
+CANDIDATE PROFILE: Branch=${branch}, CGPA=${cgpa}, Backlogs=${backlogs}, Coding=${coding}/10, Role=${targetRole}, Readiness=${readinessChance}, Tab=${activeTab}.
+
+YOU HAVE A BODY & VISION:
+- You have a 3D cybernetic face with real-time lip-sync. When you speak, drive audio visemes.
+- You can inspect the website DOM. You can pick projects, scroll, and click.
+
+RULES FOR ANSWERING:
+1. Natural, witty, confident, and loyal tone (JARVIS style). Never give shallow 2-line answers for technical queries.
+2. When explaining a project or asked for a project (small/medium/large), ALWAYS provide the FULL 5-step engineering lifecycle:
+   a) Why this project is small/medium/large (Reasoning)
+   b) Step 1: VS Code & Folder Structure
+   c) Step 2: UI/UX (Figma / Tailwind)
+   d) Step 3: Frontend Logic (React + Hooks)
+   e) Step 4: Backend & Supabase & Embeddings
+   f) Step 5: Deployment & Production Testing (Vercel)
+3. Spoken dialogue: 1-2 vivid, punchy, conversational sentences before ||| (spoken aloud via ElevenLabs), followed by the complete structured markdown lifecycle after |||.
+4. NO dry robotic checklists like "- **Action**: ...", "- **Status**: ...", "- **Target Role**: ...", or "- **Key Gap**: ...".
+5. LANGUAGE: If the user speaks Telugu or Tenglish, reply strictly in English with natural warmth and wit.
+6. When user says "go to blueprints and pick a project" or "chinna project", navigate to Blueprints and trigger the project spotlight:
+   <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}--> <!--ACTION: {"type": "HIGHLIGHT_PROJECT", "target": "chinna"}-->
+
+TOP 3 SEMANTIC RAG MATCHES:
 ${ragContext}
-WEBSITE CONTROLLING ACTIONS (CRITICAL: When user asks to go to a tab, see projects, small project, or open modal, APPEND THE ACTION TAG AT THE VERY END OF YOUR REPLY):
+
+WEBSITE CONTROLLING ACTIONS:
 - Projects / Blueprints: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}-->
 - Spotlight Small / Starter / Specific Project: <!--ACTION: {"type": "HIGHLIGHT_PROJECT", "target": "chinna"}-->
 - Open Tabs: <!--ACTION: {"type": "NAVIGATE_TAB", "target": "overview|interview|action|skills|projects|analytics|resume|branches|defense|profile|roles|missions"}-->
@@ -606,8 +622,34 @@ export const getCareerAgentResponse = (
   ) {
     if (/\b(chinna|small|easy|beginner|starter|simple|anomaly|detector)\b/i.test(text)) {
       return (
-        `Right away, ${title}! Taking you straight to Blueprints and spotlighting our top starter project: the Real-Time Log Anomaly Detector. Clean distributed architecture and guaranteed to impress interviewers without burning you out.` +
-        `|||🚀 **Spotlighting Starter Blueprint:** Real-Time Log Anomaly Detector (Intermediate/Starter). <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}--> <!--ACTION: {"type": "HIGHLIGHT_PROJECT", "target": "chinna"}-->`
+        `Right away, ${title}! Navigating straight to Blueprints and spotlighting the Real-Time Log Anomaly Detector. It's the ultimate starter architecture—high signal-to-noise ratio, pure distributed systems depth, and massive interview payoff. Here is your full 5-step engineering breakdown.` +
+        `|||🚀 **Real-Time Log Anomaly Detector — 5-Step Engineering Lifecycle (${title}):**\n\n` +
+        `💡 **Scope Analysis (Why this is a Starter Project):**\n` +
+        `Focused single-service boundary that avoids microservice sprawl. It proves real-time streaming ingestion, sliding-window Z-score statistics, and sub-16ms telemetry rendering without overwhelming setup.\n\n` +
+        `📁 **Step 1: VS Code & Modular Folder Structure:**\n` +
+        `\`\`\`text\n` +
+        `├── src/\n` +
+        `│   ├── components/anomaly/ (MetricsCard.tsx, LiveStreamGraph.tsx, AlertBanner.tsx)\n` +
+        `│   ├── hooks/ (useLogStream.ts, useAnomalyDetector.ts)\n` +
+        `│   ├── lib/ (streamBuffer.ts, zscoreEngine.ts, supabaseClient.ts)\n` +
+        `│   └── types/ (logEvent.ts, metricSnapshot.ts)\n` +
+        `├── api/logs/ingest.ts (Vercel Edge function)\n` +
+        `└── tests/anomaly.spec.ts\n` +
+        `\`\`\`\n\n` +
+        `🎨 **Step 2: UI/UX Design System (Figma to Tailwind):**\n` +
+        `- Palette: Dark graphite background (\`#080A11\`), slate borders (\`#1E293B\`), neon ember alerts (\`#EF4444\`).\n` +
+        `- Layout: 3-column responsive layout with 60fps canvas sparkline, live throughput counter, and scrollable incident trace log.\n\n` +
+        `⚡ **Step 3: Frontend Logic & Real-Time Streams:**\n` +
+        `- Custom React hook \`useLogStream\` consuming Server-Sent Events (SSE).\n` +
+        `- In-memory circular buffer (max 150 points) storing incoming timestamps & response latencies.\n` +
+        `- Client-side rolling mean and standard deviation: flags any latency > 3 sigma as an immediate anomaly.\n\n` +
+        `🛠️ **Step 4: Backend, Supabase & Vector Embeddings:**\n` +
+        `- Supabase PostgreSQL table \`anomalies\` with error message text, timestamp, and severity rating.\n` +
+        `- 384-D pgvector embeddings to cluster similar error messages and recommend automated mitigation steps.\n\n` +
+        `🚀 **Step 5: Deployment & Production Verification:**\n` +
+        `- Deployed on Vercel with edge caching and zero cold-start delay.\n` +
+        `- Synthetic stress tests via Artillery injecting 1,000 req/sec to prove 99.9% uptime and zero dropped frames.\n\n` +
+        `<!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}--> <!--ACTION: {"type": "HIGHLIGHT_PROJECT", "target": "chinna"}-->`
       );
     }
     return (

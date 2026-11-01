@@ -279,12 +279,32 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
             const isCopied = copiedId === proj.id;
             const isHardware = (proj.category || "").toLowerCase() === "hardware";
             const isHighlighted = highlightedId === proj.id;
+            const isSmall =
+              (proj.difficulty || "").toLowerCase() === "intermediate" ||
+              (proj.title || "").toLowerCase().includes("anomaly") ||
+              (proj.title || "").toLowerCase().includes("telemetry") ||
+              proj.id === "proj-sde-1";
+            const isMedium = !isSmall && (proj.techStack?.length || 0) <= 4;
+            const bpSize = isSmall ? "small" : isMedium ? "medium" : "large";
+            const bpData = JSON.stringify({
+              id: proj.id,
+              title: proj.title,
+              size: bpSize,
+              difficulty: proj.difficulty,
+              domain: proj.domain,
+              techStack: proj.techStack,
+              overview: proj.overview,
+              architectureSummary: proj.architectureSummary,
+            });
 
             return (
               <div
                 key={proj.id}
                 id={`project-card-${proj.id}`}
                 data-project-id={proj.id}
+                data-blueprint-size={bpSize}
+                data-size={bpSize}
+                data-blueprint-data={bpData}
                 data-difficulty={proj.difficulty}
                 className={`flex flex-col justify-between rounded-3xl border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-500 ${
                   isHighlighted

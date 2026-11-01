@@ -48,7 +48,6 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string 
   { id: "interview", label: "AI Mock Interview", icon: Mic, badge: "Live" },
   { id: "action", label: "Readiness Command", icon: Zap, badge: "Instant" },
   { id: "skills", label: "6-Week Roadmap", icon: Compass, badge: "Sprint" },
-  { id: "coach", label: "DAS AI Voice Coach", icon: Bot, badge: "Voice" },
   { id: "projects", label: "Project Blueprints", icon: Lightbulb },
   { id: "analytics", label: "Cohort Analytics", icon: TrendingUp, badge: "972" },
   { id: "resume", label: "ATS Resume Studio", icon: FileText },

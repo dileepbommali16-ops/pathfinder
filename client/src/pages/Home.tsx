@@ -31,6 +31,7 @@ import { StudentProfileState, ReadinessAuditData, DEFAULT_STUDENT_PROFILE } from
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
+import { handleAuthLoginDetected } from "@/lib/auth";
 import {
   Sparkles,
   ArrowRight,
@@ -63,7 +64,7 @@ export default function Home() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const t = params.get("tab");
-      if (t && ["overview", "interview", "action", "skills", "coach", "projects", "analytics", "resume", "branches", "defense"].includes(t)) {
+      if (t && ["overview", "interview", "action", "skills", "projects", "analytics", "resume", "branches", "defense"].includes(t)) {
         return t as TabId;
       }
     }
@@ -482,6 +483,9 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     isNewUser?: boolean;
     bypassOnboarding?: boolean;
   }) => {
+    // Auto Boss detection for Dileep Bommali vs Sir mode
+    handleAuthLoginDetected(user.email, user.username);
+
     startTransition(() => {
       setUsername(user.username);
       setEmail(user.email);
@@ -1102,7 +1106,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
 
   const handleAskCoach = (query: string, originTab?: string, cardContext?: string) => {
     const fromTab = originTab || activeTab;
-    setActiveTab("coach");
     setTimeout(() => {
       handleSendMessage(query, undefined, fromTab, cardContext);
     }, 60);
@@ -1375,7 +1378,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             }}
             onStartMockInterview={() => {
               setShowResultScreen(false);
-              setActiveTab("coach");
+              setActiveTab("interview");
               handleSendMessage("Let's do an interactive mock interview for my role. Ask me question 1.");
             }}
             onNavigateTab={(tab: string) => {
@@ -1497,19 +1500,14 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             setFocusOnDas(false);
           }}
           isAmbient={true}
-          focusOnDas={activeTab === "coach" ? true : focusOnDas}
+          focusOnDas={focusOnDas}
           onToggleFocus={() => setFocusOnDas((prev) => !prev)}
         />
-        {((activeTab === "overview" && focusOnDas) || activeTab === "coach") && (
+        {activeTab === "overview" && focusOnDas && (
           <div className="fixed top-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 animate-in fade-in duration-300">
             <button
               type="button"
-              onClick={() => {
-                if (activeTab === "coach") {
-                  setActiveTab("overview");
-                }
-                setFocusOnDas(false);
-              }}
+              onClick={() => setFocusOnDas(false)}
               className="px-4 py-2 rounded-full border border-red-500/50 bg-[#070d1f]/90 hover:bg-red-500/20 text-xs font-semibold text-red-200 backdrop-blur-xl shadow-[0_0_25px_rgba(239,68,68,0.35)] transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-red-400" />

@@ -339,6 +339,69 @@ export async function streamGroqToElevenLabs({
   return "";
 }
 
+// FULL JARVIS CONTROLLER TOOLS (Autonomous Navigation, Smart Blueprint Selection, Deep Lifecycle Explainer)
+export const TOOLS = {
+  navigate: (path: string) => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: path } }));
+    }
+  },
+
+  pick_blueprint: (size: "small" | "medium" | "large" = "small") => {
+    if (typeof window === "undefined") return null;
+
+    // Switch to projects tab first if not already there
+    window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: "projects" } }));
+
+    const cards = Array.from(document.querySelectorAll("[data-blueprint-size], [data-project-id]")) as HTMLElement[];
+    const filtered = cards.filter(
+      (c) => (c.getAttribute("data-blueprint-size") || c.getAttribute("data-size") || "").toLowerCase() === size
+    );
+    const pool = filtered.length > 0 ? filtered : cards;
+
+    // Retrieve previous selections from memory so same project is never repeated
+    let history: string[] = [];
+    try {
+      history = JSON.parse(localStorage.getItem("project_history") || "[]");
+    } catch {}
+    const lastPicked = localStorage.getItem("last_bp");
+
+    let available = pool.filter((c) => c.id !== lastPicked && !history.includes(c.id));
+    if (available.length === 0) {
+      available = pool.filter((c) => c.id !== lastPicked);
+      if (available.length === 0) available = pool;
+    }
+
+    const pick = available[Math.floor(Math.random() * available.length)];
+    if (pick) {
+      localStorage.setItem("last_bp", pick.id);
+      try {
+        const nextHistory = [pick.id, ...history.filter((id) => id !== pick.id)].slice(0, 20);
+        localStorage.setItem("project_history", JSON.stringify(nextHistory));
+      } catch {}
+
+      pick.scrollIntoView({ behavior: "smooth", block: "center" });
+      pick.click();
+
+      // Trigger custom highlight glow
+      window.dispatchEvent(
+        new CustomEvent("das-highlight-project", {
+          detail: { projectId: pick.getAttribute("data-project-id") || pick.id, query: size },
+        })
+      );
+
+      return pick.getAttribute("data-blueprint-data") || pick.id;
+    }
+    return null;
+  },
+
+  explain_deep: (projectData: any) => {
+    return `Explain this project like Jarvis - Step 1 to Deployment: VS Code Setup, UI/UX in Figma, Frontend (React+Tailwind), Backend (Supabase), ML Lifecycle (Data->Embed->Search), Deployment (Vercel). Why this is ${
+      projectData?.size || "small"
+    } project: ${projectData?.reason || "Focused scope with high system design value"}`;
+  },
+};
+
 export function snapshot() {
   const clone = document.body.cloneNode(true) as HTMLElement;
   clone.querySelectorAll("[data-agent-ignore], script, style").forEach((n) => n.remove());

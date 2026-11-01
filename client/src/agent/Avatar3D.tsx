@@ -329,8 +329,8 @@ export default function Avatar3D({
             gltfGroup.visible = true;
             cyberGroup.visible = false;
 
-            camera.position.set(0, 0, 2.02);
-            camera.lookAt(0, 0, 0);
+            camera.position.set(0, 0.04, 1.58);
+            camera.lookAt(0, 0.04, 0);
             setModelType("gltf");
           }
         },
@@ -354,8 +354,10 @@ export default function Avatar3D({
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       if (!vrm) {
-        const aspectFactor = camera.aspect < 0.85 ? 2.25 : 1.96;
+        // Position camera closer so 3D Face is large, prominent, and cinematic
+        const aspectFactor = camera.aspect < 0.85 ? 1.72 : 1.52;
         camera.position.z = aspectFactor;
+        camera.position.y = 0.04;
       }
       camera.updateProjectionMatrix();
     };
@@ -391,10 +393,15 @@ export default function Avatar3D({
       const targetMouth = Math.min(1.0, activeAudio * 4.0);
       mouth += (targetMouth - mouth) * Math.min(1, dt * 24);
 
-      // Natural synchronous eye blink every 2–4 seconds
+      // Natural eye blink: blinks less while speaking, blinks naturally when idle/listening
+      const isSpeakingNow = curState === "speaking" || activeAudio > 0.08;
       nextBlink -= dt;
       if (nextBlink <= 0 && blinkT < 0) {
-        blinkT = 0;
+        if (isSpeakingNow && Math.random() < 0.45) {
+          nextBlink = 1.0 + Math.random() * 1.5;
+        } else {
+          blinkT = 0;
+        }
       }
       let eyeOpenRatio = 1;
       if (blinkT >= 0) {
@@ -403,7 +410,8 @@ export default function Avatar3D({
         eyeOpenRatio = Math.max(0.06, 1 - Math.sin(p * Math.PI) * 0.95);
         if (blinkT >= 0.15) {
           blinkT = -1;
-          nextBlink = 2.0 + Math.random() * 2.8;
+          // While speaking: longer pause (3.5 - 6.5s); while silent: 2.2 - 4.2s
+          nextBlink = isSpeakingNow ? 3.5 + Math.random() * 3.0 : 2.2 + Math.random() * 2.0;
           eyeOpenRatio = 1;
         }
       }

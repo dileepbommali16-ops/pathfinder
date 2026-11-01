@@ -376,7 +376,7 @@ export default function AgentLayout({
       let full = "";
       let followUp = false;
       const currentProfile = resolveProfile();
-      const currentTab = propActiveTab || "coach";
+      const currentTab = propActiveTab || "overview";
       const readinessStr = propPrediction?.chance ? `${propPrediction.chance}%` : "78%";
 
       // First-chunk streaming dispatcher for ElevenLabs TTS
@@ -702,15 +702,8 @@ export default function AgentLayout({
     );
   };
 
-  const isCoachTab = propActiveTab === "coach";
-  const isDashboard = propActiveTab === "overview" || isCoachTab;
-  const [showHistory, setShowHistory] = useState(isCoachTab);
-
-  useEffect(() => {
-    if (isCoachTab) {
-      setShowHistory(true);
-    }
-  }, [isCoachTab]);
+  const isDashboard = propActiveTab === "overview";
+  const [showHistory, setShowHistory] = useState(false);
 
   const liveSubtitle = (() => {
     if (isListening || pipelineStage === "listening") {
@@ -764,8 +757,8 @@ export default function AgentLayout({
                   "radial-gradient(circle, rgba(239, 68, 68, 0.28) 0%, rgba(185, 28, 28, 0.08) 50%, transparent 75%)",
               }}
             />
-            {/* Centered Large 3D Face (70-80vh on desktop, responsive at 375px) */}
-            <div className="relative h-[65vh] w-[95vw] sm:h-[78vh] sm:w-[78vh] max-h-[860px] max-w-[860px] min-h-[340px] min-w-[320px] flex items-center justify-center">
+            {/* Centered Large 3D Face (prominent background centerpiece, large & cinematic) */}
+            <div className="relative h-[82vh] w-[98vw] sm:h-[88vh] sm:w-[88vh] max-h-[1050px] max-w-[1050px] min-h-[400px] min-w-[340px] flex items-center justify-center scale-105 sm:scale-120">
               <Avatar3D getLevel={getAudioLevel} state={avatarState} />
             </div>
           </div>
@@ -782,7 +775,7 @@ export default function AgentLayout({
           >
             {/* Expandable Recent Conversation Drawer */}
             {showHistory && (
-              <div className={`overflow-y-auto px-4 py-3 space-y-2.5 border-b border-white/10 bg-slate-950/90 text-xs ${isCoachTab ? "max-h-[50vh]" : "max-h-60"}`}>
+              <div className="overflow-y-auto px-4 py-3 space-y-2.5 border-b border-white/10 bg-slate-950/90 text-xs max-h-64 sm:max-h-80">
                 <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 pb-1.5 border-b border-white/5">
                   <span className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -1089,13 +1082,7 @@ export default function AgentLayout({
             >
               {honorific === "Boss" ? "👑 Boss" : "🎩 Sir"}
             </button>
-            <button
-              onClick={() => propOnNavigateTab?.("coach")}
-              title="Expand to Full Voice Coach"
-              className="p-1 rounded text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-            >
-              <Maximize2 className="w-3.5 h-3.5" />
-            </button>
+
             <button
               onClick={() => setAmbientMinimized(true)}
               title="Minimize to Floating Orb"
@@ -1178,14 +1165,7 @@ export default function AgentLayout({
                 </>
               )}
             </button>
-            <button
-              type="button"
-              onClick={() => propOnNavigateTab?.("coach")}
-              className="py-2 px-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-zinc-300 hover:text-white text-xs transition-colors border border-white/10"
-              title="Open Full 2-Column Voice Coach"
-            >
-              Full Coach
-            </button>
+
           </div>
 
           <form
