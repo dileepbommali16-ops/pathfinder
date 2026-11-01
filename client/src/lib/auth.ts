@@ -33,3 +33,4 @@ export function handleAuthLoginDetected(email?: string, username?: string): "BOS
 
   return isBoss ? "BOSS" : "SIR";
 }
+
