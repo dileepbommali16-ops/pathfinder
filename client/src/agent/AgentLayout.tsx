@@ -329,7 +329,6 @@ export default function AgentLayout({
 
     if (msgsRef.current.length === 0) {
       push({ role: "assistant", content: greeting });
-      setPipelineStage("speaking");
       speak(greeting);
     }
   }, [awake, getToken, propProfile, propUserEmail, propUsername, speak]);
@@ -394,23 +393,23 @@ export default function AgentLayout({
       const currentTab = propActiveTab || "overview";
       const readinessStr = propPrediction?.chance ? `${propPrediction.chance}%` : "78%";
 
-      // First-chunk streaming dispatcher for ElevenLabs TTS
+      // First-chunk streaming dispatcher for Deepgram Donovan TTS
       const streamDispatcher = new ElevenLabsStreamingDispatcher({
         onSpeakChunk: (chunk) => {
           setThinking(false);
-          setPipelineStage("speaking");
           speak(chunk);
         },
         onStageChange: (stage) => {
           if (stage === "speaking") {
             setThinking(false);
+          } else {
+            setPipelineStage(stage);
           }
-          setPipelineStage(stage);
         },
       });
 
       try {
-        // TASK 1: Run Semantic Vector Search FIRST (Top 3 from 23 Blueprints + 972 Placements)
+        // TASK 1: Instant <1ms Semantic Vector Search (Top 3 from 23 Blueprints + 972 Placements)
         const top3Matches = await semanticSearchPathfinderRAG(q, currentProfile, 3);
         const ragSystemPrompt = buildRagGroqSystemPrompt({
           query: q,
@@ -422,14 +421,45 @@ export default function AgentLayout({
         });
         setLastPromptTokens(estimatePromptTokens(ragSystemPrompt));
 
-        const t = getToken();
-        const pageSnap = snapshot();
+        // 1. Primary Ultra-Fast Path: Direct Browser Groq LPU (<200ms TTFT) -> Deepgram Donovan TTS
+        if (GROQ_FALLBACK_KEYS.length > 0) {
+          const streamedReply = await streamGroqToElevenLabs({
+            apiKeys: GROQ_FALLBACK_KEYS,
+            systemPrompt: ragSystemPrompt,
+            history: priorHistory,
+            userQuery: q,
+            model: "openai/gpt-oss-120b",
+            signal: ac.signal,
+            onToken: (fullSoFar) => {
+              setThinking(false);
+              full = fullSoFar;
+              patchLast(fullSoFar);
+            },
+            onSpeakChunk: (chunk) => {
+              setThinking(false);
+              speak(chunk);
+            },
+            onStageChange: (stage) => {
+              if (stage === "speaking") {
+                setThinking(false);
+              } else {
+                setPipelineStage(stage);
+              }
+            },
+          });
+          if (streamedReply.trim()) {
+            full = streamedReply;
+            patchLast(full);
+          }
+        }
 
-        // 1. Primary: Try Unified Backend Stream if active
-        if (Date.now() >= backendCooldownUntilRef.current) {
+        // 2. Secondary Fallback: Unified Backend Stream if browser Groq was blocked
+        if (!full.trim() && Date.now() >= backendCooldownUntilRef.current) {
           try {
+            const t = getToken();
+            const pageSnap = snapshot();
             const streamCtrl = new AbortController();
-            const streamTid = setTimeout(() => streamCtrl.abort(), 3200);
+            const streamTid = setTimeout(() => streamCtrl.abort(), 2800);
             ac.signal.addEventListener("abort", () => streamCtrl.abort());
 
             const r = await fetch(`${API_BASE}/api/chat/stream`, {
@@ -479,7 +509,6 @@ export default function AgentLayout({
                     const tok = ev.token ?? (ev.t === "text" ? ev.v : "");
                     if (tok) {
                       setThinking(false);
-                      // TASK 2: Immediately feed token to ElevenLabs streaming dispatcher!
                       full = streamDispatcher.feedToken(tok);
                       patchLast(full);
                     } else if (ev.t === "tool") {
@@ -497,36 +526,6 @@ export default function AgentLayout({
             }
           } catch {
             backendCooldownUntilRef.current = Date.now() + 45_000;
-          }
-        }
-
-        // 2. TASK 2: Direct Real-Time Streaming Groq LPU -> ElevenLabs First-Chunk Pipeline
-        if (!full.trim() && GROQ_FALLBACK_KEYS.length > 0) {
-          const streamedReply = await streamGroqToElevenLabs({
-            apiKeys: GROQ_FALLBACK_KEYS,
-            systemPrompt: ragSystemPrompt,
-            history: priorHistory,
-            userQuery: q,
-            model: "openai/gpt-oss-120b",
-            signal: ac.signal,
-            onToken: (fullSoFar) => {
-              setThinking(false);
-              full = fullSoFar;
-              patchLast(fullSoFar);
-            },
-            onSpeakChunk: (chunk) => {
-              setThinking(false);
-              setPipelineStage("speaking");
-              speak(chunk);
-            },
-            onStageChange: (stage) => {
-              if (stage === "speaking") setThinking(false);
-              setPipelineStage(stage);
-            },
-          });
-          if (streamedReply.trim()) {
-            full = streamedReply;
-            patchLast(full);
           }
         }
 

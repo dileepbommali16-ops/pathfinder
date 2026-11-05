@@ -319,15 +319,16 @@ export default function PathfinderFace({
       lastFrameTime = nowFrame;
       t += dt;
 
-      // Real-time audio amplitude analysis for speech lip-sync
+      // Real-time audio amplitude analysis for speech lip-sync (strictly zero when silent)
       const liveAudio = getLevelRef.current ? getLevelRef.current() : (audioLevelRef.current || 0);
       const curState = stateRef.current;
-      const activeAudio = liveAudio;
-      const targetMouth = Math.min(1.0, activeAudio * 4.2);
-      mouth += (targetMouth - mouth) * Math.min(1, dt * 24);
+      const activeAudio = liveAudio > 0.018 ? liveAudio : 0;
+      const targetMouth = activeAudio > 0 ? Math.min(1.0, activeAudio * 4.2) : 0;
+      mouth += (targetMouth - mouth) * Math.min(1, dt * 28);
+      if (mouth < 0.005) mouth = 0;
 
-      // Natural eye blink: blinks less while speaking, blinks naturally when idle/listening
-      const isSpeakingNow = curState === "speaking" || activeAudio > 0.08;
+      // Natural eye blink
+      const isSpeakingNow = activeAudio > 0.02;
       nextBlink -= dt;
       if (nextBlink <= 0 && blinkT < 0) {
         if (isSpeakingNow && Math.random() < 0.45) {
@@ -349,21 +350,12 @@ export default function PathfinderFace({
         }
       }
 
-      // Smooth mouse tracking parallax lerp
-      currentMouseRef.current.x += (targetMouseRef.current.x - currentMouseRef.current.x) * 0.06;
-      currentMouseRef.current.y += (targetMouseRef.current.y - currentMouseRef.current.y) * 0.06;
-
       if (gltfGroup.visible) {
-        // Subtle breathing + mouse parallax head tilt
-        const isThinking = curState === "thinking" || moodRef.current === "thinking";
-        gltfGroup.position.y = 0.02 + Math.sin(t * 1.1) * 0.003;
-        gltfGroup.rotation.y =
-          Math.sin(t * 0.4) * 0.022 +
-          currentMouseRef.current.x * 0.08 +
-          (isThinking ? 0.05 : 0);
-        gltfGroup.rotation.x = -currentMouseRef.current.y * 0.05 + (isThinking ? 0.03 : 0);
+        // Keep 3D head locked steady and centered (no idle swaying or bobbing when silent)
+        gltfGroup.position.set(0, 0.02, 0);
+        gltfGroup.rotation.set(0, 0, 0);
 
-        // Articulated Box Mouth movement synced to audio
+        // Articulated Box Mouth movement synced strictly to real audible speech
         if (chinPlateMesh) {
           chinPlateMesh.position.y = plateInitY - mouth * 0.0045;
         }
@@ -371,9 +363,9 @@ export default function PathfinderFace({
           const openOffset = mouth * 0.0085;
           upperLipMesh.position.y = 0.0018 + openOffset * 0.45;
           lowerLipMesh.position.y = -0.0018 - openOffset * 0.85;
-          mouthApertureMesh.scale.y = Math.max(0.05, mouth * 1.35);
+          mouthApertureMesh.scale.y = mouth > 0.01 ? Math.max(0.05, mouth * 1.35) : 0.05;
           (mouthApertureMesh.material as THREE.MeshBasicMaterial).opacity =
-            mouth > 0.04 ? Math.min(0.95, 0.35 + mouth * 0.7) : 0.15;
+            mouth > 0.02 ? Math.min(0.95, 0.35 + mouth * 0.7) : 0.12;
         }
 
         // Eye blinking scale

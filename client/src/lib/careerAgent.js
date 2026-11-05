@@ -50,42 +50,6 @@ export const DAS_TOOLS = [
  * 1. Query ni embed chey with Voyage AI & Top 3 blueprints fetch from Supabase
  */
 export async function getRelevantContext(query) {
-  try {
-    const voyageKey =
-      (typeof import.meta !== "undefined" && import.meta.env?.VITE_VOYAGE_API_KEY) || "";
-    if (voyageKey) {
-      // 1. Query ni embed chey
-      const embRes = await fetch("https://api.voyageai.com/v1/embeddings", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${voyageKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ input: query, model: "voyage-3-lite" }),
-      });
-      if (embRes.ok) {
-        const resJson = await embRes.json();
-        let embedding = resJson?.data?.[0]?.embedding;
-        if (Array.isArray(embedding)) {
-          if (embedding.length < 1024) {
-            embedding = [...embedding, ...new Array(1024 - embedding.length).fill(0)];
-          }
-          // 2. Supabase lo top 3 techuko
-          const { data: matches, error } = await supabase.rpc("match_blueprints", {
-            query_embedding: embedding,
-            match_count: 3,
-          });
-          if (!error && Array.isArray(matches) && matches.length > 0) {
-            return matches.map((m) => m.content).join("\n");
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.warn("[getRelevantContext warning]:", err?.message || err);
-  }
-
-  // Resilient instant local fallback (Top 3 of 23 blueprints + 972 placement records)
   const fallback = semanticSearchSync(query, {}, 3);
   return fallback.map((m) => `${m.title}: ${m.content}`).join("\n");
 }
@@ -399,76 +363,8 @@ export function semanticSearchSync(query = "", profile = {}, topK = 3) {
  * Returns strictly Top 3 results.
  */
 export async function semanticSearchPathfinderRAG(query = "", profile = {}, topK = 3) {
-  const branch = String(profile?.branch || "CSE").toUpperCase();
-  const qVec = computeEmbedding384(`${query} ${branch}`);
-
-  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-    // 1. Try Supabase match_blueprints RPC (1024-D Voyage vector table)
-    try {
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 1200);
-      const res = await fetch(
-        `${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/rpc/match_blueprints`,
-        {
-          method: "POST",
-          signal: ctrl.signal,
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query_embedding: qVec.length === 1024 ? qVec : [...qVec, ...new Array(1024 - qVec.length).fill(0)],
-            match_count: topK,
-          }),
-        }
-      );
-      clearTimeout(tid);
-      if (res.ok) {
-        const rows = await res.json();
-        if (Array.isArray(rows) && rows.length > 0) {
-          return rows.slice(0, topK);
-        }
-      }
-    } catch {
-      // Continue to match_pathfinder_knowledge or local
-    }
-
-    // 2. Try match_pathfinder_knowledge RPC
-    try {
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 1200);
-      const res = await fetch(
-        `${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/rpc/match_pathfinder_knowledge`,
-        {
-          method: "POST",
-          signal: ctrl.signal,
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query_embedding: qVec,
-            match_threshold: 0.1,
-            match_count: topK,
-            filter_branch: branch,
-            filter_doc_type: null,
-          }),
-        }
-      );
-      clearTimeout(tid);
-      if (res.ok) {
-        const rows = await res.json();
-        if (Array.isArray(rows) && rows.length > 0) {
-          return rows.slice(0, topK);
-        }
-      }
-    } catch {
-      // Instant fallback to local 384-D vector index
-    }
-  }
-
+  // Instant <1ms local 384-D vector search across all 23 blueprints + 972 placement records
+  // (Zero network blocking so Groq LPU streaming starts immediately!)
   return semanticSearchSync(query, profile, topK);
 }
 
@@ -511,14 +407,14 @@ CANDIDATE PROFILE: Branch=${branch}, CGPA=${cgpa}, Backlogs=${backlogs}, Coding=
 
 YOU HAVE A BODY, VISION & SUPERPOWERS:
 - 3D Cybernetic Face: Real-time 60 FPS viseme lip-sync audio reactivity.
-- Sub-Second Reasoning: Powered by ultra-fast Groq LPU (llama-3.1-8b-instant) with <200ms TTFT.
-- Natural Human Voice: ElevenLabs streaming TTS dispatcher with dynamic speech visemes.
+- Sub-Second Reasoning: Powered by ultra-fast Groq LPU (openai/gpt-oss-120b) with <200ms TTFT.
+- Natural Human Voice: Deepgram Donovan (flux-donovan-en) neural TTS with dynamic speech visemes.
 - Autonomous DOM Vision: Inspects webpage DOM, highlights flagship blueprints, scrolls, and navigates.
 - Handcrafted Design & Animations: Adheres to Hallmark & Emil Kowalski spring motion standards.
 - Cross-Session Intelligence: OpenViking and AgentMemory context-aware recall.
 
 RULES FOR ANSWERING:
-1. Natural, witty, confident, and loyal tone (JARVIS style). Never give shallow 2-line answers for technical queries.
+1. Natural, witty, confident, and loyal tone (JARVIS style).
 2. When explaining a project or asked for a project (small/medium/large), ALWAYS provide the FULL 5-step engineering lifecycle:
    a) Why this project is small/medium/large (Reasoning)
    b) Step 1: VS Code & Folder Structure
@@ -526,9 +422,9 @@ RULES FOR ANSWERING:
    d) Step 3: Frontend Logic (React + Hooks)
    e) Step 4: Backend & Supabase & Embeddings
    f) Step 5: Deployment & Production Testing (Vercel)
-3. Spoken dialogue: 1-2 vivid, punchy, conversational sentences before ||| (spoken aloud via ElevenLabs), followed by the complete structured markdown lifecycle after |||.
+3. Spoken dialogue: 1-2 vivid, punchy, conversational English sentences before ||| (spoken aloud via Deepgram flux-donovan-en), followed by concise structured English markdown after |||.
 4. NO dry robotic checklists like "- **Action**: ...", "- **Status**: ...", "- **Target Role**: ...", or "- **Key Gap**: ...".
-5. LANGUAGE: If the user speaks Telugu or Tenglish, reply strictly in English with natural warmth and wit.
+5. LANGUAGE RULE (CRITICAL): Understand English, Telugu, Tenglish, and Hindi 100% natively, but ALWAYS write your ENTIRE response strictly in fluent, natural ENGLISH. NEVER output Telugu script or Roman Telugu/Tenglish words (because your Deepgram flux-donovan-en voice model is an English voice).
 6. When user says "go to blueprints and pick a project" or "chinna project", navigate to Blueprints and trigger the project spotlight:
    <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}--> <!--ACTION: {"type": "HIGHLIGHT_PROJECT", "target": "chinna"}-->
 
@@ -651,7 +547,7 @@ export const getCareerAgentResponse = (
     if (/\b(chinna|small|easy|beginner|starter|simple|anomaly|detector)\b/i.test(text)) {
       const speech =
         title === "Boss"
-          ? "Boss, idi small project enduku ante focused single-service scope tho 16ms real-time latency provide chesthundi. Step 1 setup nunchi step 6 deployment daka full Jarvis engineering lifecycle screen paina open chesa, chudandi!"
+          ? "Boss, I have opened the Real-Time Log Anomaly Detector blueprint for you. It is our top starter architecture with 16ms real-time latency, and the complete 6-step engineering lifecycle is now displayed on your screen."
           : "Navigating to Blueprints and spotlighting the Real-Time Log Anomaly Detector. Here is your full 6-step Jarvis engineering lifecycle from VS Code setup to production deployment.";
 
       return (
@@ -835,15 +731,15 @@ export const getCareerAgentResponse = (
     );
   }
 
-  // 5. Telugu / Tenglish Queries
+  // 5. Telugu / Tenglish Queries -> Understand natively, reply strictly in fluent English for Donovan voice
   const isTelugu =
     /(naku|kavali|cheppu|ela|cheyyali|placement|udyogam|job|chudu|telugu|em\s*chey|salah|artham)/i.test(
       text
     );
   if (isTelugu) {
     return (
-      `తప్పకుండా ${title}! మీ ${branch} ప్రొఫైల్ మరియు ${cgpa} CGPA ప్రకారం, క్యాంపస్ ప్లేస్‌మెంట్స్ లో టాప్ ఆఫర్ సాధించడానికి ప్రతిరోజూ రెండు డీఎస్ఏ ప్రాబ్లమ్స్ సాల్వ్ చేస్తూ, రెండు లైవ్ ప్రొడక్షన్ ప్రాజెక్ట్స్ బిల్డ్ చేయండి.` +
-      `|||🚀 **క్యాంపస్ ప్లేస్‌మెంట్స్ సక్సెస్ ప్లాన్ (${title}):**\n${top3Markdown}`
+      `Absolutely, ${title}! Based on your ${branch} profile and ${cgpa} CGPA, solving two core DSA patterns daily and deploying one production blueprint from our catalog will put you in prime position for top campus offers.` +
+      `|||🚀 **Campus Placement Acceleration Plan (${title}):**\n${top3Markdown}`
     );
   }
 

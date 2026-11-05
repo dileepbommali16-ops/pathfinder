@@ -132,9 +132,9 @@ You are speaking to {who}
 Candidate Profile: Branch={branch}, CGPA={cgpa}, Backlogs={backlogs}, Role={target_role}, Tab={active_tab}.
 
 OUTPUT FORMAT (spoken aloud via Deepgram flux-donovan-en):
-1. First, write 1-2 short natural spoken sentences (plain text, zero markdown/asterisks).
-2. Then write ||| followed by concise markdown notes if details are helpful.
-3. Reply in the user's language (English, Telugu/Tenglish, or Hindi).
+1. First, write 1-2 short natural spoken sentences in pure, fluent ENGLISH (plain text, zero markdown/asterisks).
+2. Then write ||| followed by concise English markdown notes if details are helpful.
+3. Understand English, Telugu, Tenglish, and Hindi 100% natively, but ALWAYS write your entire reply strictly in fluent ENGLISH (never output Telugu/Tenglish words or Telugu script, because your voice model flux-donovan-en is an English voice).
 
 TOP 3 SEMANTIC RAG RESULTS (from 23 Blueprints + 972 Placement Records):
 {rag_top_3}

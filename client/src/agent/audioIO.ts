@@ -247,34 +247,46 @@ export class Speaker {
         resolve(ok);
       };
 
+      audio.onplaying = () => {
+        if (genAtStart === this.gen) {
+          this.activeSpeaking = true;
+          this.onState?.(true);
+        }
+      };
       audio.onended = () => finish(true);
       audio.onerror = () => finish(false);
 
       const playPromise = audio.play();
       if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          if (err && (err.name === "NotAllowedError" || String(err).includes("interact"))) {
-            this.blockedAutoplayBuffer = ab.slice(0);
-            finish(true);
-          } else {
-            finish(false);
-          }
-        });
+        playPromise
+          .then(() => {
+            if (genAtStart === this.gen && !audio.paused) {
+              this.activeSpeaking = true;
+              this.onState?.(true);
+            }
+          })
+          .catch((err) => {
+            if (err && (err.name === "NotAllowedError" || String(err).includes("interact"))) {
+              this.blockedAutoplayBuffer = ab.slice(0);
+              finish(true);
+            } else {
+              finish(false);
+            }
+          });
       }
     });
   }
 
-
-
   /**
-   * Immediately kicks off ElevenLabs streaming synthesis in parallel (before previous
-   * audio chunks finish playing) and queues gapless sequential playback.
+   * Immediately kicks off Deepgram Donovan synthesis in parallel and queues
+   * gapless sequential playback. Speaking state is ONLY activated when audio is audible.
    */
   say(raw: string) {
     const beforeDetails = raw.split("|||")[0] || "";
     const text = beforeDetails
       .replace(/<!--[\s\S]*?-->/g, " ")
       .replace(/[*_#`>|~]/g, " ")
+      .replace(/[^\x20-\x7E]/g, " ")
       .replace(/\s+/g, " ")
       .trim();
     if (!text) return;
@@ -284,11 +296,9 @@ export class Speaker {
 
     const g = this.gen;
     this.pending++;
-    this.activeSpeaking = true;
-    this.onState?.(true);
 
-    // EAGER PARALLEL STREAMING FETCH:
-    // Start ElevenLabs /stream request right now, without waiting for prior chunks to finish playing!
+    // EAGER PARALLEL FETCH:
+    // Start Deepgram v2 speak request right now without setting activeSpeaking prematurely!
     const eagerMp3Promise = this.fetchMp3Bytes(text);
 
     this.playChain = this.playChain
@@ -406,28 +416,25 @@ export class Speaker {
 
   level(): number {
     const audio = this.currentAudio;
-    // Mouth moves only while DAS audio is actually audible.
-    if (audio && !audio.paused && !audio.ended) {
-      if (this.currentPcmData) {
-        const sampleIdx = Math.floor(audio.currentTime * this.currentSampleRate);
-        const windowSize = 512;
-        if (sampleIdx >= 0 && sampleIdx < this.currentPcmData.length) {
-          let sum = 0;
-          const end = Math.min(this.currentPcmData.length, sampleIdx + windowSize);
-          const count = end - sampleIdx;
-          for (let i = sampleIdx; i < end; i++) {
-            const v = this.currentPcmData[i];
-            sum += v * v;
-          }
-          if (count > 0) {
-            return Math.min(0.45, Math.sqrt(sum / count) * 1.65);
-          }
+    // Mouth moves strictly while DAS audio is actively playing and audible (>0s currentTime).
+    if (audio && !audio.paused && !audio.ended && audio.currentTime > 0 && this.currentPcmData) {
+      const sampleIdx = Math.floor(audio.currentTime * this.currentSampleRate);
+      const windowSize = 512;
+      if (sampleIdx >= 0 && sampleIdx < this.currentPcmData.length) {
+        let sum = 0;
+        const end = Math.min(this.currentPcmData.length, sampleIdx + windowSize);
+        const count = end - sampleIdx;
+        for (let i = sampleIdx; i < end; i++) {
+          const v = this.currentPcmData[i];
+          sum += v * v;
         }
-        return 0;
+        if (count > 0) {
+          const rawRms = Math.sqrt(sum / count);
+          if (rawRms < 0.018) return 0;
+          return Math.min(0.45, rawRms * 1.65);
+        }
       }
-      // Waveform still decoding: use a natural syllable cadence for the first few ms.
-      const t = performance.now() * 0.001;
-      return Math.max(0.02, (Math.sin(t * 13.5) * 0.55 + Math.sin(t * 21.0) * 0.45) * 0.22);
+      return 0;
     }
 
     // Raw PCM playback path (Web Audio buffer sources).
@@ -440,7 +447,7 @@ export class Speaker {
         sum += x * x;
       }
       const rms = Math.sqrt(sum / len);
-      if (rms > 0.008) return rms;
+      if (rms > 0.018) return rms;
     }
 
     return 0;

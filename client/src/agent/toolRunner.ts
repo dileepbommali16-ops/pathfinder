@@ -150,31 +150,8 @@ export class ElevenLabsStreamingDispatcher {
     let unconsumed = speakableRegion.slice(this.spokenCursor);
 
     while (unconsumed.length > 0) {
-      // FIRST CHUNK FAST-PATH: Dispatch on first clause/punctuation (>= 16 chars)
-      // or word boundary after 45 chars so ElevenLabs starts speaking immediately!
-      if (this.chunkCount === 0) {
-        const firstClauseMatch = unconsumed.match(/^(.{14,}?[.!?,;:।—]+)\s+/);
-        if (firstClauseMatch) {
-          const chunk = firstClauseMatch[1].trim();
-          this.spokenCursor += firstClauseMatch[0].length;
-          unconsumed = speakableRegion.slice(this.spokenCursor);
-          this.dispatchChunk(chunk);
-          continue;
-        }
-        if (unconsumed.length >= 48) {
-          const lastSpace = unconsumed.lastIndexOf(" ", 48);
-          if (lastSpace >= 20) {
-            const chunk = unconsumed.slice(0, lastSpace).trim();
-            this.spokenCursor += lastSpace + 1;
-            unconsumed = speakableRegion.slice(this.spokenCursor);
-            this.dispatchChunk(chunk);
-            continue;
-          }
-        }
-      }
-
-      // Subsequent chunks: dispatch on sentence boundary
-      const sentenceMatch = unconsumed.match(/^([\s\S]+?[.!?।\n]+)\s+/);
+      // Dispatch on complete sentence boundary (>= 24 chars) for smooth Deepgram Donovan prosody
+      const sentenceMatch = unconsumed.match(/^([\s\S]{24,}?[.!?।\n]+)\s+/);
       if (sentenceMatch) {
         const chunk = sentenceMatch[1].trim();
         this.spokenCursor += sentenceMatch[0].length;
@@ -286,6 +263,7 @@ export async function streamGroqToElevenLabs({
           stream: true,
           temperature: 0.65,
           max_tokens: 420,
+          ...(model.includes("gpt-oss") ? { reasoning_effort: "low" } : {}),
           messages: [
             { role: "system", content: systemPrompt },
             ...history.slice(-6),
