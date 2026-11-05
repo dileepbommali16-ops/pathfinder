@@ -194,9 +194,9 @@ class AgentOrchestrator:
         return {"error": f"Unknown server tool '{clean_name}'"}
 
     def _call_groq_sync(self, messages: List[Dict[str, str]], max_tokens: int = 500) -> Optional[str]:
-        """Calls Groq LPU with openai/gpt-oss-120b for sub-second reasoning."""
+        """Calls Groq LPU with llama-3.1-8b-instant for sub-second ultra-fast reasoning."""
         groq_key = os.getenv("GROQ_API_KEY", "").strip()
-        groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
+        groq_model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant").strip() or "llama-3.1-8b-instant"
         if not groq_key:
             return None
 

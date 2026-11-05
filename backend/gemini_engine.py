@@ -364,7 +364,7 @@ def groq_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -> Opti
     api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key:
         return None
-    model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
+    model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant").strip() or "llama-3.1-8b-instant"
     try:
         msgs = [{"role": "system", "content": sys_instruction}] + messages_list
         with httpx.Client(timeout=15.0) as client:
@@ -1038,7 +1038,7 @@ async def stream_chat_with_mentor(
     groq_key = os.getenv("GROQ_API_KEY", "").strip()
     if groq_key:
         try:
-            groq_model_name = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
+            groq_model_name = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant").strip() or "llama-3.1-8b-instant"
             groq_msgs = [{"role": "system", "content": sys_instruction}] + openrouter_messages
             groq_payload = {
                 "model": groq_model_name,

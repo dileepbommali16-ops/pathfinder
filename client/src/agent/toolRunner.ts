@@ -251,7 +251,7 @@ export async function streamGroqToElevenLabs({
   systemPrompt,
   history,
   userQuery,
-  model = "qwen/qwen3.8-27b",
+  model = "llama-3.1-8b-instant",
   signal,
   onToken,
   onSpeakChunk,
