@@ -30,12 +30,6 @@ services:
         value: openrouter/free
       - key: OPENROUTER_API_KEY
         sync: false
-      - key: ELEVENLABS_VOICE_ID
-        value: onwK4e9ZLuTAKqWW03F9
-      - key: ELEVENLABS_MODEL
-        value: eleven_flash_v2_5
-      - key: ELEVENLABS_API_KEY
-        sync: false
       - key: DEEPGRAM_MODEL
         value: flux-donovan-en
       - key: DEEPGRAM_API_KEY
@@ -88,8 +82,6 @@ services:
         value: openai/gpt-oss-120b
       - key: VITE_GROQ_MODEL
         value: openai/gpt-oss-120b
-      - key: VITE_ELEVENLABS_VOICE_ID
-        value: onwK4e9ZLuTAKqWW03F9
       - key: VITE_DEEPGRAM_MODEL
         value: flux-donovan-en
       - key: VITE_DEEPGRAM_API_KEY
@@ -103,6 +95,4 @@ services:
       - key: VITE_SUPABASE_ANON_KEY
         sync: false
       - key: VITE_VOYAGE_API_KEY
-        sync: false
-      - key: VITE_ELEVENLABS_API_KEY
         sync: false

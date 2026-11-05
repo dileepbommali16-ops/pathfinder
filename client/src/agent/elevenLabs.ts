@@ -1,7 +1,6 @@
 /**
  * elevenLabs.ts - Production Streaming Text-to-Speech Client
- * Routes synthesis through the backend `/agent/tts` endpoint (ElevenLabs voice
- * `onwK4e9ZLuTAKqWW03F9` with automatic neural fallback).
+ * Routes synthesis through the backend `/agent/tts` endpoint (Deepgram v2 `flux-donovan-en`).
  */
 
 import { getApiBase } from "@/lib/apiClient";

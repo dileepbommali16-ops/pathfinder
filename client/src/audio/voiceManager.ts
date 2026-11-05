@@ -1,8 +1,7 @@
 /**
  * voiceManager.ts - Unified DAS Voice Facade
  * - Delegates all speech synthesis and real-time audio amplitude analysis to the
- *   central `speaker` instance in `audioIO.ts` (backed by `/agent/tts` using the
- *   configured ElevenLabs voice `onwK4e9ZLuTAKqWW03F9` with automatic neural fallback).
+ *   central `speaker` instance in `audioIO.ts` (Deepgram v2 `flux-donovan-en`).
  */
 
 import { speaker } from "@/agent/audioIO";

@@ -192,14 +192,8 @@ async def chat(req: ChatReq, request: Request, user=Depends(current_user)):
 class TTSReq(BaseModel):
     text: str
 
-# 1. Deepgram Aura TTS (13.3 Million Characters Free via $200 Signup Credits, ~1s Latency)
-# 2. ElevenLabs Natural Multi-lingual Voice (fallback)
-# 3. Microsoft Neural Voice via edge-tts (infinite free fallback)
-_EL_QUOTA_COOLDOWN_S = int(os.getenv("ELEVENLABS_QUOTA_COOLDOWN_S", "1800"))
-_EL_ERROR_COOLDOWN_S = 60
-_el_state = {"blocked_until": 0.0}
-
-_EL_REALTIME_MODELS = {"eleven_flash_v2_5", "eleven_turbo_v2_5", "eleven_flash_v2", "eleven_turbo_v2", "eleven_multilingual_v2"}
+# 1. Deepgram v2 Flux TTS (`flux-donovan-en` - $200 Signup Credits / 13.3M Chars)
+# 2. Microsoft Neural Voice via edge-tts (infinite free fallback)
 
 
 def _edge_voice_for(text: str) -> str:
@@ -239,41 +233,6 @@ async def _deepgram_tts(text: str) -> Optional[bytes]:
     return None
 
 
-async def _elevenlabs_tts(text: str) -> Optional[bytes]:
-    api_key = (
-        os.getenv("ELEVENLABS_API_KEY", "").strip()
-        or "_".join(["sk", "737a42c6566aaf5f891b6c6508610f8d8bc1962b0e7e1bd9"])
-    )
-    voice = os.getenv("ELEVENLABS_VOICE_ID", "onwK4e9ZLuTAKqWW03F9").strip() or "onwK4e9ZLuTAKqWW03F9"
-    if not api_key or not voice or time.time() < _el_state["blocked_until"]:
-        return None
-    model = os.getenv("ELEVENLABS_MODEL", "").strip()
-    if model not in _EL_REALTIME_MODELS:
-        model = "eleven_flash_v2_5"
-    try:
-        async with httpx.AsyncClient(timeout=15) as c:
-            r = await c.post(
-                f"https://api.elevenlabs.io/v1/text-to-speech/{voice}/stream"
-                "?optimize_streaming_latency=3&output_format=mp3_44100_64",
-                headers={"xi-api-key": api_key, "Accept": "audio/mpeg"},
-                json={
-                    "text": text,
-                    "model_id": model,
-                    "voice_settings": {"stability": 0.4, "similarity_boost": 0.8, "use_speaker_boost": True},
-                },
-            )
-        if r.status_code == 200 and len(r.content) > 200:
-            return r.content
-        body = r.text[:300].lower()
-        quota_hit = r.status_code in (401, 402, 429) and ("quota" in body or "credits" in body)
-        _el_state["blocked_until"] = time.time() + (_EL_QUOTA_COOLDOWN_S if quota_hit else _EL_ERROR_COOLDOWN_S)
-        print(f"[tts] ElevenLabs unavailable (HTTP {r.status_code}); using neural fallback voice", flush=True)
-    except Exception as exc:
-        _el_state["blocked_until"] = time.time() + _EL_ERROR_COOLDOWN_S
-        print(f"[tts] ElevenLabs request failed: {exc!r}; using neural fallback voice", flush=True)
-    return None
-
-
 async def _edge_tts(text: str) -> Optional[bytes]:
     try:
         import edge_tts
@@ -290,13 +249,10 @@ async def _edge_tts(text: str) -> Optional[bytes]:
 
 @router.get("/tts/status")
 def tts_status():
-    remaining = max(0, int(_el_state["blocked_until"] - time.time()))
     return {
         "primary": "deepgram",
         "model": os.getenv("DEEPGRAM_MODEL", "flux-donovan-en").strip() or "flux-donovan-en",
         "deepgram_configured": True,
-        "elevenlabs_configured": bool(os.getenv("ELEVENLABS_API_KEY", "").strip()),
-        "elevenlabs_paused_seconds": remaining,
         "active_provider": "deepgram",
     }
 
@@ -311,9 +267,6 @@ async def tts(req: TTSReq, request: Request, user=Depends(current_user)):
 
     audio = await _deepgram_tts(text)
     provider = "deepgram"
-    if audio is None:
-        audio = await _elevenlabs_tts(text)
-        provider = "elevenlabs"
     if audio is None:
         audio = await _edge_tts(text)
         provider = "edge"

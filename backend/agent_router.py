@@ -102,7 +102,7 @@ def create_agent_router(user_dependency: Optional[Callable] = None) -> APIRouter
         return {
             "key_present": bool(os.getenv("GROQ_API_KEY", "").strip() or os.getenv("GEMINI_API_KEY", "").strip()),
             "groq_model": os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
-            "elevenlabs_voice": os.getenv("ELEVENLABS_VOICE_ID", "onwK4e9ZLuTAKqWW03F9"),
+            "deepgram_voice": os.getenv("DEEPGRAM_MODEL", "flux-donovan-en"),
             "knowledge_status": "online"
         }
 

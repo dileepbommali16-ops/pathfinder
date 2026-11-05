@@ -131,7 +131,7 @@ def build_system_prompt(role: str, page: dict, query: str = "") -> str:
 You are speaking to {who}
 Candidate Profile: Branch={branch}, CGPA={cgpa}, Backlogs={backlogs}, Role={target_role}, Tab={active_tab}.
 
-OUTPUT FORMAT (spoken aloud via ElevenLabs onwK4e9ZLuTAKqWW03F9):
+OUTPUT FORMAT (spoken aloud via Deepgram flux-donovan-en):
 1. First, write 1-2 short natural spoken sentences (plain text, zero markdown/asterisks).
 2. Then write ||| followed by concise markdown notes if details are helpful.
 3. Reply in the user's language (English, Telugu/Tenglish, or Hindi).

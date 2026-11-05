@@ -1,8 +1,7 @@
 /**
- * audioIO - DAS Voice Engine + 3D Lip-Sync Analyser
- * - All speech is synthesized by the backend `/agent/tts` endpoint, which uses the
- *   configured ElevenLabs voice (with an automatic neural-voice fallback when the
- *   ElevenLabs quota is exhausted). No API keys ship in the browser bundle.
+ * audioIO - DAS Voice Engine (Deepgram v2 `flux-donovan-en`) + 3D Lip-Sync Analyser
+ * - Streams MP3 audio directly from Deepgram v2 (`flux-donovan-en&speed=1&expressivity=0`)
+ *   with automatic fallback to backend `/agent/tts`.
  * - Eager parallel pre-fetching: each sentence is synthesized as soon as Groq streams it,
  *   so sentence-to-sentence playback has minimal gap.
  * - Decodes the PCM waveform so the 3D avatar mouth follows the real voice amplitude,
