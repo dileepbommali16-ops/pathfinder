@@ -134,10 +134,13 @@ async def voice_tts(req: dict, request: Request):
     if not text:
         raise HTTPException(400, "Text is required for TTS.")
 
-    from backend.agent.router import _elevenlabs_tts, _edge_tts
+    from backend.agent.router import _deepgram_tts, _elevenlabs_tts, _edge_tts
 
-    audio = await _elevenlabs_tts(text)
-    provider = "elevenlabs"
+    audio = await _deepgram_tts(text)
+    provider = "deepgram"
+    if audio is None:
+        audio = await _elevenlabs_tts(text)
+        provider = "elevenlabs"
     if audio is None:
         audio = await _edge_tts(text)
         provider = "edge"

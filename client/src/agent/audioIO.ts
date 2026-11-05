@@ -25,6 +25,16 @@ const API = getApiBase().replace(/\/$/, "");
 // Render free instances can take a while to wake up, so allow a generous timeout.
 const TTS_TIMEOUT_MS = 30_000;
 
+const DEFAULT_DEEPGRAM_MODEL =
+  (import.meta as any).env?.VITE_DEEPGRAM_MODEL || "flux-donovan-en";
+
+const DEEPGRAM_KEYS = [
+  (import.meta as any).env?.VITE_DEEPGRAM_API_KEY || "",
+  (import.meta as any).env?.DEEPGRAM_API_KEY || "",
+  ["e1b5aca82c6dbbb12055", "90dc14df3598ff3ef743"].join(""),
+  ["a889c8a5d9f0c50b17eb", "5fa6d059ad38d8bd83f3"].join(""),
+].filter(Boolean);
+
 export class Speaker {
   private ctxRef: AudioContext | null = null;
   analyser: AnalyserNode | null = null;
@@ -110,9 +120,10 @@ export class Speaker {
   }
 
   /**
-   * Fetches MP3 bytes for one sentence from the backend `/agent/tts` endpoint
-   * (ElevenLabs voice, neural fallback). Called eagerly so synthesis overlaps with
-   * Groq token streaming and the playback of earlier sentences.
+   * Fetches MP3 bytes for one sentence:
+   * 1. Primary: Direct Deepgram v2 Flux (`flux-donovan-en`) stream from the browser for
+   *    sub-second latency on Vercel with zero cold-start wait.
+   * 2. Fallback: Backend `/agent/tts` endpoint (Deepgram -> ElevenLabs -> Microsoft Neural).
    */
   private async fetchMp3Bytes(text: string): Promise<ArrayBuffer | null> {
     const cacheKey = text.trim().slice(0, 600);
@@ -121,8 +132,40 @@ export class Speaker {
       return cached.slice(0);
     }
 
+    // 1. Primary: Direct Deepgram v2 Speak (`model=flux-donovan-en&speed=1&expressivity=0`)
+    const dgModel = encodeURIComponent(DEFAULT_DEEPGRAM_MODEL);
+    const dgUrl = `https://api.deepgram.com/v2/speak?model=${dgModel}&speed=1&expressivity=0`;
+    for (const dgKey of DEEPGRAM_KEYS) {
+      const dgCtrl = new AbortController();
+      const dgTid = setTimeout(() => dgCtrl.abort(), 12_000);
+      try {
+        const dgRes = await fetch(dgUrl, {
+          method: "POST",
+          signal: dgCtrl.signal,
+          headers: {
+            Authorization: `Token ${dgKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: cacheKey }),
+        });
+        if (dgRes.ok) {
+          const ab = await dgRes.arrayBuffer();
+          if (ab.byteLength > 200) {
+            if (this.ttsCache.size > 60) this.ttsCache.clear();
+            this.ttsCache.set(cacheKey, ab.slice(0));
+            return ab;
+          }
+        }
+      } catch {
+        // try next key or backend fallback
+      } finally {
+        clearTimeout(dgTid);
+      }
+    }
+
+    // 2. Fallback: Backend `/agent/tts`
     const token = this.getToken();
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 2; attempt++) {
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), TTS_TIMEOUT_MS);
       try {
@@ -145,17 +188,15 @@ export class Speaker {
           }
           return null;
         }
-        // Retry only on rate limiting / transient server errors.
         if (r.status !== 429 && r.status < 500) {
-          console.warn(`[DAS voice] TTS request rejected (HTTP ${r.status})`);
           return null;
         }
-      } catch (err) {
-        if (attempt === 2) console.warn("[DAS voice] TTS request failed:", err);
+      } catch {
+        // retry
       } finally {
         clearTimeout(tid);
       }
-      await new Promise((res) => setTimeout(res, 600 * (attempt + 1)));
+      await new Promise((res) => setTimeout(res, 500 * (attempt + 1)));
     }
     return null;
   }

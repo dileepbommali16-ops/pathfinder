@@ -36,6 +36,10 @@ services:
         value: eleven_flash_v2_5
       - key: ELEVENLABS_API_KEY
         sync: false
+      - key: DEEPGRAM_MODEL
+        value: flux-donovan-en
+      - key: DEEPGRAM_API_KEY
+        sync: false
       - key: VOICE_MAX_SESSION_MINUTES
         value: "15"
       - key: JWT_SECRET
@@ -86,6 +90,10 @@ services:
         value: openai/gpt-oss-120b
       - key: VITE_ELEVENLABS_VOICE_ID
         value: onwK4e9ZLuTAKqWW03F9
+      - key: VITE_DEEPGRAM_MODEL
+        value: flux-donovan-en
+      - key: VITE_DEEPGRAM_API_KEY
+        sync: false
       - key: VITE_GROQ_API_KEY
         sync: false
       - key: GROQ_API_KEY
