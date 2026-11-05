@@ -1,13 +1,16 @@
 /**
- * audioIO - Ultra-Low-Latency Streaming ElevenLabs JARVIS Voice Engine + 3D Lip-Sync Analyser
- * - Streams ElevenLabs MP3 audio (`/v1/text-to-speech/{voice_id}/stream?optimize_streaming_latency=3`)
- * - Eager parallel pre-fetching: as soon as Groq streams the first chunk, ElevenLabs synthesis
- *   starts immediately in parallel so sentence-to-sentence playback has zero gap
- * - Decodes PCM waveform in parallel so 3D Avatar mouth moves to exact voice amplitude
- * - Auto-replays blocked initial greeting on first user click/tap (Chrome autoplay policy)
+ * audioIO - DAS Voice Engine + 3D Lip-Sync Analyser
+ * - All speech is synthesized by the backend `/agent/tts` endpoint, which uses the
+ *   configured ElevenLabs voice (with an automatic neural-voice fallback when the
+ *   ElevenLabs quota is exhausted). No API keys ship in the browser bundle.
+ * - Eager parallel pre-fetching: each sentence is synthesized as soon as Groq streams it,
+ *   so sentence-to-sentence playback has minimal gap.
+ * - Decodes the PCM waveform so the 3D avatar mouth follows the real voice amplitude,
+ *   and the mouth only moves while audio is actually playing.
+ * - Auto-replays a blocked greeting on the first user click/tap (browser autoplay policy).
  */
 
-// PERMANENTLY KILL BROWSER SPEECH SYNTHESIS (NO FAKE VOICE)
+// Browser speechSynthesis is disabled so DAS never falls back to a robotic system voice.
 if (typeof window !== "undefined" && "speechSynthesis" in window) {
   try {
     window.speechSynthesis.cancel();
@@ -19,17 +22,8 @@ import { getApiBase } from "@/lib/apiClient";
 
 const API = getApiBase().replace(/\/$/, "");
 
-// Primary JARVIS voice ID (Multi-lingual natural voice: default 21m00Tcm4TlvDq8ikWAM)
-const DEFAULT_JARVIS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
-
-const ELEVENLABS_KEYS = [
-  (import.meta as any).env?.VITE_ELEVENLABS_KEY || "",
-  (import.meta as any).env?.VITE_ELEVENLABS_API_KEY || "",
-  (import.meta as any).env?.ELEVENLABS_API_KEY || "",
-  (typeof process !== "undefined" && (process as any).env?.VITE_ELEVENLABS_KEY) || "",
-  (typeof process !== "undefined" && (process as any).env?.ELEVENLABS_API_KEY) || "",
-  ["sk", "737a42c6566aaf5f891b6c6508610f8d8bc1962b0e7e1bd9"].join("_"),
-].filter(Boolean);
+// Render free instances can take a while to wake up, so allow a generous timeout.
+const TTS_TIMEOUT_MS = 30_000;
 
 export class Speaker {
   private ctxRef: AudioContext | null = null;
@@ -45,7 +39,6 @@ export class Speaker {
   onState?: (speaking: boolean) => void;
   private initialized = false;
   private playChain: Promise<void> = Promise.resolve();
-  private backendTtsCooldownUntil = 0;
   private blockedAutoplayBuffer: ArrayBuffer | null = null;
   private blockedAutoplayText: string | null = null;
   private activeSpeaking = false;
@@ -117,98 +110,53 @@ export class Speaker {
   }
 
   /**
-   * Streams MP3 bytes from ElevenLabs `/stream?optimize_streaming_latency=3`
-   * immediately when called so audio synthesis overlaps with Groq token streaming.
+   * Fetches MP3 bytes for one sentence from the backend `/agent/tts` endpoint
+   * (ElevenLabs voice, neural fallback). Called eagerly so synthesis overlaps with
+   * Groq token streaming and the playback of earlier sentences.
    */
   private async fetchMp3Bytes(text: string): Promise<ArrayBuffer | null> {
-    const cacheKey = text.trim().slice(0, 650);
+    const cacheKey = text.trim().slice(0, 600);
     const cached = this.ttsCache.get(cacheKey);
     if (cached && cached.byteLength > 200) {
       return cached.slice(0);
     }
 
-    const voiceId =
-      (import.meta as any).env?.VITE_ELEVENLABS_VOICE_ID || DEFAULT_JARVIS_VOICE_ID;
-
-    // 1. Direct ElevenLabs Low-Latency HTTP Chunk Stream (`optimize_streaming_latency=3`)
-    for (const elKey of ELEVENLABS_KEYS) {
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const elCtrl = new AbortController();
-          const elTid = setTimeout(() => elCtrl.abort(), 6500);
-          const elRes = await fetch(
-            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=4&output_format=mp3_44100_64`,
-            {
-              method: "POST",
-              signal: elCtrl.signal,
-              headers: {
-                "xi-api-key": elKey,
-                "Content-Type": "application/json",
-                Accept: "audio/mpeg",
-              },
-              body: JSON.stringify({
-                text: cacheKey,
-                model_id: "eleven_multilingual_v2",
-                voice_settings: {
-                  stability: 0.3,
-                  similarity_boost: 0.8,
-                  style: 0.6,
-                  use_speaker_boost: true,
-                },
-              }),
-            }
-          );
-          clearTimeout(elTid);
-
-          if (elRes.ok) {
-            const ab = await elRes.arrayBuffer();
-            if (ab.byteLength > 200) {
-              this.ttsCache.set(cacheKey, ab.slice(0));
-              return ab;
-            }
-          }
-
-          if (elRes.status === 429 && attempt < 2) {
-            await new Promise((r) => setTimeout(r, 550 * (attempt + 1)));
-            continue;
-          }
-          break;
-        } catch {
-          break;
-        }
-      }
-    }
-
-    // 2. Fallback to backend `/agent/tts` if direct stream encounters network block
-    const t = this.getToken();
-    const now = Date.now();
-    if (now >= this.backendTtsCooldownUntil) {
+    const token = this.getToken();
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), TTS_TIMEOUT_MS);
       try {
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), 2200);
         const r = await fetch(`${API}/agent/tts`, {
           method: "POST",
           signal: ctrl.signal,
           headers: {
             "Content-Type": "application/json",
-            ...(t ? { Authorization: `Bearer ${t}` } : {}),
+            Accept: "audio/mpeg",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({ text: cacheKey }),
         });
-        clearTimeout(tid);
-        if (r.ok && r.status === 200) {
+        if (r.ok) {
           const ab = await r.arrayBuffer();
           if (ab.byteLength > 200) {
+            if (this.ttsCache.size > 60) this.ttsCache.clear();
             this.ttsCache.set(cacheKey, ab.slice(0));
             return ab;
           }
+          return null;
         }
-        this.backendTtsCooldownUntil = now + 3600_000;
-      } catch {
-        this.backendTtsCooldownUntil = now + 3600_000;
+        // Retry only on rate limiting / transient server errors.
+        if (r.status !== 429 && r.status < 500) {
+          console.warn(`[DAS voice] TTS request rejected (HTTP ${r.status})`);
+          return null;
+        }
+      } catch (err) {
+        if (attempt === 2) console.warn("[DAS voice] TTS request failed:", err);
+      } finally {
+        clearTimeout(tid);
       }
+      await new Promise((res) => setTimeout(res, 600 * (attempt + 1)));
     }
-
     return null;
   }
 
@@ -367,9 +315,13 @@ export class Speaker {
       const s = ctx.createBufferSource();
       s.buffer = b;
       if (this.analyser) s.connect(this.analyser);
-      const timer = setTimeout(() => res(), b.duration * 1000 + 300);
+      const timer = setTimeout(() => {
+        if (this.currentSource === s) this.currentSource = undefined;
+        res();
+      }, b.duration * 1000 + 300);
       s.onended = () => {
         clearTimeout(timer);
+        if (this.currentSource === s) this.currentSource = undefined;
         res();
       };
       this.currentSource = s;
@@ -413,39 +365,42 @@ export class Speaker {
   }
 
   level(): number {
-    if (this.currentAudio && !this.currentAudio.paused && this.currentPcmData) {
-      const sampleIdx = Math.floor(this.currentAudio.currentTime * this.currentSampleRate);
-      const windowSize = 512;
-      if (sampleIdx >= 0 && sampleIdx < this.currentPcmData.length) {
-        let sum = 0;
-        const end = Math.min(this.currentPcmData.length, sampleIdx + windowSize);
-        const count = end - sampleIdx;
-        for (let i = sampleIdx; i < end; i++) {
-          const v = this.currentPcmData[i];
-          sum += v * v;
+    const audio = this.currentAudio;
+    // Mouth moves only while DAS audio is actually audible.
+    if (audio && !audio.paused && !audio.ended) {
+      if (this.currentPcmData) {
+        const sampleIdx = Math.floor(audio.currentTime * this.currentSampleRate);
+        const windowSize = 512;
+        if (sampleIdx >= 0 && sampleIdx < this.currentPcmData.length) {
+          let sum = 0;
+          const end = Math.min(this.currentPcmData.length, sampleIdx + windowSize);
+          const count = end - sampleIdx;
+          for (let i = sampleIdx; i < end; i++) {
+            const v = this.currentPcmData[i];
+            sum += v * v;
+          }
+          if (count > 0) {
+            return Math.min(0.45, Math.sqrt(sum / count) * 1.65);
+          }
         }
-        if (count > 0) {
-          return Math.min(0.45, Math.sqrt(sum / count) * 1.65);
-        }
+        return 0;
       }
+      // Waveform still decoding: use a natural syllable cadence for the first few ms.
+      const t = performance.now() * 0.001;
+      return Math.max(0.02, (Math.sin(t * 13.5) * 0.55 + Math.sin(t * 21.0) * 0.45) * 0.22);
     }
 
-    if (this.analyser) {
+    // Raw PCM playback path (Web Audio buffer sources).
+    if (this.analyser && this.currentSource) {
       this.analyser.getByteTimeDomainData(this.buf);
       let sum = 0;
       const len = this.buf.length;
       for (let i = 0; i < len; i++) {
-        const v = this.buf[i];
-        const x = (v - 128) / 128;
+        const x = (this.buf[i] - 128) / 128;
         sum += x * x;
       }
       const rms = Math.sqrt(sum / len);
       if (rms > 0.008) return rms;
-    }
-
-    if (this.activeSpeaking) {
-      const t = performance.now() * 0.001;
-      return Math.max(0.02, (Math.sin(t * 13.5) * 0.55 + Math.sin(t * 21.0) * 0.45) * 0.22);
     }
 
     return 0;

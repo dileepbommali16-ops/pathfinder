@@ -21,7 +21,7 @@ services:
       - key: BACKEND_PUBLIC_URL
         value: https://pathfinder-backend-klrp.onrender.com
       - key: FRONTEND_URL
-        value: https://pathfinder-client-fzom.vercel.app,http://localhost:3000,http://localhost:5173
+        value: https://pathfinder-client-fzom.vercel.app
       - key: GROQ_MODEL
         value: openai/gpt-oss-120b
       - key: GROQ_API_KEY
@@ -33,7 +33,7 @@ services:
       - key: ELEVENLABS_VOICE_ID
         value: onwK4e9ZLuTAKqWW03F9
       - key: ELEVENLABS_MODEL
-        value: eleven_v3
+        value: eleven_flash_v2_5
       - key: ELEVENLABS_API_KEY
         sync: false
       - key: VOICE_MAX_SESSION_MINUTES

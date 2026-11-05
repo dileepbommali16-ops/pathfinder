@@ -322,7 +322,7 @@ export default function PathfinderFace({
       // Real-time audio amplitude analysis for speech lip-sync
       const liveAudio = getLevelRef.current ? getLevelRef.current() : (audioLevelRef.current || 0);
       const curState = stateRef.current;
-      const activeAudio = curState === "speaking" ? Math.max(liveAudio, 0.06) : liveAudio;
+      const activeAudio = liveAudio;
       const targetMouth = Math.min(1.0, activeAudio * 4.2);
       mouth += (targetMouth - mouth) * Math.min(1, dt * 24);
 

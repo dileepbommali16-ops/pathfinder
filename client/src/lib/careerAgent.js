@@ -116,7 +116,7 @@ Rules: If user speaks in Telugu/Tenglish, always reply in ENGLISH with JARVIS-le
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: "openai/gpt-oss-120b",
         stream: true,
         messages: [
           { role: "system", content: systemPrompt },

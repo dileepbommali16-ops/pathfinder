@@ -251,7 +251,7 @@ export async function streamGroqToElevenLabs({
   systemPrompt,
   history,
   userQuery,
-  model = "llama-3.1-8b-instant",
+  model = "openai/gpt-oss-120b",
   signal,
   onToken,
   onSpeakChunk,

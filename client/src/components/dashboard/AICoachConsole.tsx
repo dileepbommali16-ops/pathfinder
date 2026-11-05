@@ -781,7 +781,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
   // Speech Queue Processor: Speaks sentences sequentially in correct language
   const processSpeechQueue = async (targetLang: "te-IN" | "hi-IN" | "en-IN", genId: number) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    if (typeof window === "undefined") return;
     if (genId !== generationIdRef.current) return;
     if (isSpeakingSentenceRef.current || speechQueueRef.current.length === 0) return;
 
@@ -862,6 +862,13 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     genId: number
   ) => {
     if (genId !== generationIdRef.current) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window) || !window.speechSynthesis) {
+      isSpeakingSentenceRef.current = false;
+      isSpeakingRef.current = false;
+      setVoiceStatus("idle");
+      setSpeakingIndex(null);
+      return;
+    }
 
     const utterance = new SpeechSynthesisUtterance(text);
     activeUtterancesRef.current.push(utterance);

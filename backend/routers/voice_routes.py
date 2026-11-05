@@ -126,36 +126,28 @@ async def download_resume():
 
 @router.post("/voice/tts")
 async def voice_tts(req: dict, request: Request):
-    """ElevenLabs TTS endpoint for server-side voice synthesis.
+    """ElevenLabs TTS endpoint for server-side voice synthesis with automatic neural fallback.
     Expects: { "text": "...", "voice_id": "..."?, "model": "..."? }
     Returns: audio/mpeg binary blob
     """
-    text = req.get("text", "") if isinstance(req, dict) else ""
+    text = (req.get("text", "") if isinstance(req, dict) else "").strip()[:600]
     if not text:
         raise HTTPException(400, "Text is required for TTS.")
 
-    voice_id = os.getenv("ELEVENLABS_VOICE_ID", "onwK4e9ZLuTAKqWW03F9")
-    model = os.getenv("ELEVENLABS_MODEL", "eleven_turbo_v2_5")
-    api_key = os.getenv("ELEVENLABS_API_KEY") or "_".join(["sk", "737a42c6566aaf5f891b6c6508610f8d8bc1962b0e7e1bd9"])
+    from backend.agent.router import _elevenlabs_tts, _edge_tts
 
-    if not api_key:
-        raise HTTPException(500, "ElevenLabs API key not configured on server.")
-
-    try:
-        async with httpx.AsyncClient(timeout=30) as c:
-            r = await c.post(
-                f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_64",
-                headers={"xi-api-key": api_key},
-                json={"text": text, "model_id": model},
-            )
-        if r.status_code != 200:
-            raise HTTPException(r.status_code, "ElevenLabs TTS failed.")
-        return Response(content=r.content, media_type="audio/mpeg")
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.warning("voice_tts error: %s", exc)
-        raise HTTPException(502, f"TTS service error: {exc}")
+    audio = await _elevenlabs_tts(text)
+    provider = "elevenlabs"
+    if audio is None:
+        audio = await _edge_tts(text)
+        provider = "edge"
+    if not audio:
+        raise HTTPException(502, "TTS synthesis failed.")
+    return Response(
+        content=audio,
+        media_type="audio/mpeg",
+        headers={"X-TTS-Provider": provider, "Cache-Control": "no-store"},
+    )
 
 
 @router.post("/voice/stream")

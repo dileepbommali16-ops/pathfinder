@@ -6,21 +6,17 @@
  * - 401 interception: clean logout and redirect event
  */
 
+export const PROD_BACKEND_URL = "https://pathfinder-backend-klrp.onrender.com";
+
 export const getApiBase = () => {
   if (typeof window !== "undefined") {
     const envUrl = import.meta.env.VITE_API_BASE_URL;
     if (envUrl && envUrl.trim()) return envUrl.replace(/\/+$/, "");
-    if (
-      window.location.hostname.includes("vercel.app") ||
-      (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")
-    ) {
-      if (window.location.hostname.includes("onrender.com")) {
-        return window.location.origin;
-      }
-      return "https://pathfinder-1-xhme.onrender.com";
+    if (window.location.hostname.includes("onrender.com")) {
+      return window.location.origin;
     }
   }
-  return "http://127.0.0.1:8000";
+  return PROD_BACKEND_URL;
 };
 
 export const API_BASE = getApiBase();
@@ -110,7 +106,7 @@ function createJsonResponse(data, status = 200) {
 async function handleAutonomousEdgeRequest(urlStr, options = {}) {
   let pathname = urlStr;
   try {
-    const parsed = new URL(urlStr, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+    const parsed = new URL(urlStr, typeof window !== "undefined" ? window.location.origin : PROD_BACKEND_URL);
     pathname = parsed.pathname;
   } catch {
     // keep raw path
@@ -181,8 +177,9 @@ async function handleAutonomousEdgeRequest(urlStr, options = {}) {
   return createJsonResponse({ detail: "Autonomous edge fallback active" }, 404);
 }
 
-// Install global fetch guard so direct fetch(`${API_BASE}/...`) calls never trigger
-// browser CORS / 503 console errors against suspended Render instances.
+// Install global fetch guard that always calls the live Render backend first,
+// and falls back to the local autonomous edge responder only if the cloud instance
+// is unreachable or cold-starting (502/503/504).
 if (typeof window !== "undefined" && typeof window.fetch === "function" && !window.__pathfinderFetchGuarded) {
   window.__pathfinderFetchGuarded = true;
   const nativeFetch = window.fetch.bind(window);
@@ -190,13 +187,21 @@ if (typeof window !== "undefined" && typeof window.fetch === "function" && !wind
   window.fetch = async (input, init) => {
     const urlStr = typeof input === "string" ? input : input instanceof URL ? input.toString() : input?.url || "";
     const isTargetBackend =
-      urlStr.includes(".onrender.com") ||
-      (API_BASE && urlStr.startsWith(API_BASE) && localStorage.getItem("pathfinder_use_live_backend") !== "1");
+      urlStr.includes(".onrender.com") || (API_BASE && urlStr.startsWith(API_BASE));
 
-    if (isTargetBackend) {
+    if (!isTargetBackend) {
+      return nativeFetch(input, init);
+    }
+
+    try {
+      const resp = await nativeFetch(input, init);
+      if (resp.status === 502 || resp.status === 503 || resp.status === 504) {
+        return handleAutonomousEdgeRequest(urlStr, init);
+      }
+      return resp;
+    } catch {
       return handleAutonomousEdgeRequest(urlStr, init);
     }
-    return nativeFetch(input, init);
   };
 }
 
