@@ -147,7 +147,7 @@ Rules: If user speaks in Telugu/Tenglish, always reply in ENGLISH with JARVIS-le
               fullText += token;
               onChunk?.(token); // -> Idhe direct ga ElevenLabs ki veluthundi
             }
-          } catch {}
+          } catch { }
         }
       }
       if (fullText.trim()) {
@@ -594,13 +594,13 @@ export const getCareerAgentResponse = (
   if (/\b(i\s*am\s*dileep|nenu\s*dileep|call\s*me\s*boss|i'm\s*the\s*owner|na\s*name\s*dileep)\b/i.test(text)) {
     try {
       if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Boss");
-    } catch {}
+    } catch { }
     return `Welcome back, Boss! Identity confirmed as Dileep, creator of Pathfinder. All autonomous systems, 3D voice controls, and site navigation are at your command.|||👑 **Owner Identity Verified:** Addressing you as **Boss** across all voice and dashboard modules.`;
   }
   if (/\b(call\s*me\s*sir|guest\s*mode|i\s*am\s*a\s*(guest|visitor|recruiter|student))\b/i.test(text)) {
     try {
       if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Sir");
-    } catch {}
+    } catch { }
     return `Certainly, Sir! I have switched to Guest & Stakeholder mode and will address you as Sir. How may I guide you through Pathfinder today?|||🎩 **Guest Identity Active:** Addressing you as **Sir**.`;
   }
 
