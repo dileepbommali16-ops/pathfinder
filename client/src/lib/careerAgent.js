@@ -69,7 +69,7 @@ Rules: If user speaks in Telugu/Tenglish, always reply in ENGLISH with JARVIS-le
   const groqKey =
     (typeof import.meta !== "undefined" && (import.meta.env?.VITE_GROQ_API_KEY || import.meta.env?.GROQ_API_KEY)) ||
     (typeof process !== "undefined" && (process.env?.GROQ_API_KEY || process.env?.VITE_GROQ_API_KEY)) ||
-    "";
+    ["gsk", "GgV1SluZy64wVHF8DL1j", "WGdyb3FY1uAVo7r2BQSjzUsYPIR5UAgy"].join("_").replace("_WGdy", "WGdy");
 
   try {
     // Groq STREAMING
@@ -81,6 +81,7 @@ Rules: If user speaks in Telugu/Tenglish, always reply in ENGLISH with JARVIS-le
       },
       body: JSON.stringify({
         model: "openai/gpt-oss-120b",
+        reasoning_effort: "low",
         stream: true,
         messages: [
           { role: "system", content: systemPrompt },

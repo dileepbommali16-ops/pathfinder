@@ -435,16 +435,6 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-                        try {
-                          if (window.speechSynthesis.paused) {
-                            window.speechSynthesis.resume();
-                          }
-                          const dummy = new SpeechSynthesisUtterance("");
-                          dummy.volume = 0;
-                          window.speechSynthesis.speak(dummy);
-                        } catch {}
-                      }
                       try {
                         sessionStorage.setItem("pathfinder_blueprint_voice_trigger", "true");
                       } catch {}

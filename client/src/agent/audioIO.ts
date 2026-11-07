@@ -27,17 +27,123 @@ const TTS_TIMEOUT_MS = 30_000;
 const DEFAULT_DEEPGRAM_MODEL =
   (import.meta as any).env?.VITE_DEEPGRAM_MODEL || "flux-donovan-en";
 
-const DEEPGRAM_KEYS = [
-  (import.meta as any).env?.VITE_DEEPGRAM_API_KEY || "",
-  (import.meta as any).env?.DEEPGRAM_API_KEY || "",
-  // Boss's 4 Deepgram Multi-Account Pool (~$800 Starter Credits / 53M+ Characters / 1,000+ Hours)
-  "4e8856020c52a85d04b6429389b4b231b12026aa",
-  "ea4b137f412c0da0e2bbb2291b53e4c6f07ffa58",
-  "89d2f521676d30d89fe877965825dc1b89405188",
-  "68a04f662b5942a9bfe225749e1ca9aadcb4c3ea",
-  ["e1b5aca82c6dbbb12055", "90dc14df3598ff3ef743"].join(""),
-  ["a889c8a5d9f0c50b17eb", "5fa6d059ad38d8bd83f3"].join(""),
-].filter(Boolean);
+const deadDeepgramKeys = new Set<string>([
+  "e1b5aca82c6dbbb1205590dc14df3598ff3ef743",
+]);
+
+const envMultiKeys: string[] = String(
+  (import.meta as any).env?.VITE_DEEPGRAM_API_KEYS ||
+    (import.meta as any).env?.DEEPGRAM_API_KEYS ||
+    ""
+)
+  .split(",")
+  .map((k) => k.trim())
+  .filter(Boolean);
+
+const DEEPGRAM_KEYS = Array.from(
+  new Set(
+    [
+      // Boss's 4 Deepgram Multi-Account Pool (~$800 Starter Credits / 53M+ Characters / 1,000+ Hours)
+      "4e8856020c52a85d04b6429389b4b231b12026aa",
+      "ea4b137f412c0da0e2bbb2291b53e4c6f07ffa58",
+      "89d2f521676d30d89fe877965825dc1b89405188",
+      "68a04f662b5942a9bfe225749e1ca9aadcb4c3ea",
+      ...envMultiKeys,
+      (import.meta as any).env?.VITE_DEEPGRAM_API_KEY || "",
+      (import.meta as any).env?.DEEPGRAM_API_KEY || "",
+      ["a889c8a5d9f0c50b17eb", "5fa6d059ad38d8bd83f3"].join(""),
+    ].filter((k) => k && !deadDeepgramKeys.has(k))
+  )
+);
+
+const sharedTtsCache = new Map<string, ArrayBuffer>();
+
+/**
+ * Exclusive Deepgram v2 Flux (`flux-donovan-en`) MP3 synthesizer with 4-key rotation pool
+ * and in-memory caching for sub-second browser playback.
+ */
+export async function fetchDeepgramMp3(
+  text: string,
+  token?: string | null
+): Promise<ArrayBuffer | null> {
+  const cacheKey = text.trim().slice(0, 600);
+  if (!cacheKey) return null;
+
+  const cached = sharedTtsCache.get(cacheKey);
+  if (cached && cached.byteLength > 200) {
+    return cached.slice(0);
+  }
+
+  // 1. Primary: Direct Deepgram v2 Speak (`model=flux-donovan-en&speed=1&expressivity=0`)
+  const dgModel = encodeURIComponent(DEFAULT_DEEPGRAM_MODEL);
+  const dgUrl = `https://api.deepgram.com/v2/speak?model=${dgModel}&speed=1&expressivity=0`;
+  for (const dgKey of DEEPGRAM_KEYS) {
+    if (deadDeepgramKeys.has(dgKey)) continue;
+    const dgCtrl = new AbortController();
+    const dgTid = setTimeout(() => dgCtrl.abort(), 8_000);
+    try {
+      const dgRes = await fetch(dgUrl, {
+        method: "POST",
+        signal: dgCtrl.signal,
+        headers: {
+          Authorization: `Token ${dgKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: cacheKey }),
+      });
+      if (dgRes.ok) {
+        const ab = await dgRes.arrayBuffer();
+        if (ab.byteLength > 200) {
+          if (sharedTtsCache.size > 80) sharedTtsCache.clear();
+          sharedTtsCache.set(cacheKey, ab.slice(0));
+          return ab;
+        }
+      } else if (dgRes.status === 401 || dgRes.status === 402 || dgRes.status === 403) {
+        deadDeepgramKeys.add(dgKey);
+      }
+    } catch {
+      // try next key in pool
+    } finally {
+      clearTimeout(dgTid);
+    }
+  }
+
+  // 2. Secondary: Backend `/agent/tts` (also exclusively Deepgram `flux-donovan-en`)
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), TTS_TIMEOUT_MS);
+    try {
+      const r = await fetch(`${API}/agent/tts`, {
+        method: "POST",
+        signal: ctrl.signal,
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "audio/mpeg",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ text: cacheKey }),
+      });
+      if (r.ok) {
+        const ab = await r.arrayBuffer();
+        if (ab.byteLength > 200) {
+          if (sharedTtsCache.size > 80) sharedTtsCache.clear();
+          sharedTtsCache.set(cacheKey, ab.slice(0));
+          return ab;
+        }
+        return null;
+      }
+      if (r.status !== 429 && r.status < 500) {
+        return null;
+      }
+    } catch {
+      // retry
+    } finally {
+      clearTimeout(tid);
+    }
+    await new Promise((res) => setTimeout(res, 400 * (attempt + 1)));
+  }
+  return null;
+}
 
 export class Speaker {
   private ctxRef: AudioContext | null = null;
@@ -124,85 +230,10 @@ export class Speaker {
   }
 
   /**
-   * Fetches MP3 bytes for one sentence:
-   * 1. Primary: Direct Deepgram v2 Flux (`flux-donovan-en`) stream from the browser for
-   *    sub-second latency on Vercel with zero cold-start wait.
-   * 2. Fallback: Backend `/agent/tts` endpoint (Deepgram -> ElevenLabs -> Microsoft Neural).
+   * Fetches MP3 bytes for one sentence exclusively using Deepgram v2 Flux (`flux-donovan-en`).
    */
   private async fetchMp3Bytes(text: string): Promise<ArrayBuffer | null> {
-    const cacheKey = text.trim().slice(0, 600);
-    const cached = this.ttsCache.get(cacheKey);
-    if (cached && cached.byteLength > 200) {
-      return cached.slice(0);
-    }
-
-    // 1. Primary: Direct Deepgram v2 Speak (`model=flux-donovan-en&speed=1&expressivity=0`)
-    const dgModel = encodeURIComponent(DEFAULT_DEEPGRAM_MODEL);
-    const dgUrl = `https://api.deepgram.com/v2/speak?model=${dgModel}&speed=1&expressivity=0`;
-    for (const dgKey of DEEPGRAM_KEYS) {
-      const dgCtrl = new AbortController();
-      const dgTid = setTimeout(() => dgCtrl.abort(), 12_000);
-      try {
-        const dgRes = await fetch(dgUrl, {
-          method: "POST",
-          signal: dgCtrl.signal,
-          headers: {
-            Authorization: `Token ${dgKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ text: cacheKey }),
-        });
-        if (dgRes.ok) {
-          const ab = await dgRes.arrayBuffer();
-          if (ab.byteLength > 200) {
-            if (this.ttsCache.size > 60) this.ttsCache.clear();
-            this.ttsCache.set(cacheKey, ab.slice(0));
-            return ab;
-          }
-        }
-      } catch {
-        // try next key or backend fallback
-      } finally {
-        clearTimeout(dgTid);
-      }
-    }
-
-    // 2. Fallback: Backend `/agent/tts`
-    const token = this.getToken();
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), TTS_TIMEOUT_MS);
-      try {
-        const r = await fetch(`${API}/agent/tts`, {
-          method: "POST",
-          signal: ctrl.signal,
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "audio/mpeg",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ text: cacheKey }),
-        });
-        if (r.ok) {
-          const ab = await r.arrayBuffer();
-          if (ab.byteLength > 200) {
-            if (this.ttsCache.size > 60) this.ttsCache.clear();
-            this.ttsCache.set(cacheKey, ab.slice(0));
-            return ab;
-          }
-          return null;
-        }
-        if (r.status !== 429 && r.status < 500) {
-          return null;
-        }
-      } catch {
-        // retry
-      } finally {
-        clearTimeout(tid);
-      }
-      await new Promise((res) => setTimeout(res, 500 * (attempt + 1)));
-    }
-    return null;
+    return fetchDeepgramMp3(text, this.getToken());
   }
 
   private async playMp3ArrayBuffer(ab: ArrayBuffer, genAtStart: number): Promise<boolean> {

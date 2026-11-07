@@ -295,41 +295,40 @@ export default function AgentLayout({
     const currentHonorific = resolveHonorific(propProfile, propUserEmail, propUsername);
     setHonorific(currentHonorific);
 
-    let greeting =
+    const greeting =
       currentHonorific === "Boss"
         ? "Hi Boss, what's up! Welcome back to Pathfinder 2.0. All website controls and placement intelligence systems are online. Tell me what you'd like to explore or control today!"
         : "Hi Sir, welcome to Pathfinder 2.0! I'm DAS, your autonomous AI voice co-pilot. Ask me about any project, readiness score, or tell me which section to open!";
 
-    if (Date.now() >= backendCooldownUntilRef.current) {
-      try {
-        const t = getToken();
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), 2200);
-        const r = await fetch(`${API_BASE}/agent/me`, {
-          signal: ctrl.signal,
-          headers: t ? { Authorization: `Bearer ${t}` } : {},
-        });
-        clearTimeout(tid);
-        if (r.ok) {
-          const data = await r.json();
-          if (typeof data.is_owner === "boolean" && !localStorage.getItem("das_honorific_override")) {
-            const serverHonorific = data.is_owner || data.role === "owner" ? "Boss" : currentHonorific;
-            setHonorific(serverHonorific);
-          }
-          if (data.greeting && currentHonorific === "Boss") {
-            greeting = data.greeting;
-          }
-        } else {
-          backendCooldownUntilRef.current = Date.now() + 45_000;
-        }
-      } catch {
-        backendCooldownUntilRef.current = Date.now() + 45_000;
-      }
-    }
-
     if (msgsRef.current.length === 0) {
       push({ role: "assistant", content: greeting });
       speak(greeting);
+    }
+
+    if (Date.now() >= backendCooldownUntilRef.current) {
+      const t = getToken();
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 2200);
+      fetch(`${API_BASE}/agent/me`, {
+        signal: ctrl.signal,
+        headers: t ? { Authorization: `Bearer ${t}` } : {},
+      })
+        .then(async (r) => {
+          clearTimeout(tid);
+          if (r.ok) {
+            const data = await r.json();
+            if (typeof data.is_owner === "boolean" && !localStorage.getItem("das_honorific_override")) {
+              const serverHonorific = data.is_owner || data.role === "owner" ? "Boss" : currentHonorific;
+              setHonorific(serverHonorific);
+            }
+          } else {
+            backendCooldownUntilRef.current = Date.now() + 45_000;
+          }
+        })
+        .catch(() => {
+          clearTimeout(tid);
+          backendCooldownUntilRef.current = Date.now() + 45_000;
+        });
     }
   }, [awake, getToken, propProfile, propUserEmail, propUsername, speak]);
 

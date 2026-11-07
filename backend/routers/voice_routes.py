@@ -134,34 +134,28 @@ async def voice_tts(req: dict, request: Request):
     if not text:
         raise HTTPException(400, "Text is required for TTS.")
 
-    from backend.agent.router import _deepgram_tts, _edge_tts
+    from backend.agent.router import _deepgram_tts
 
     audio = await _deepgram_tts(text)
-    provider = "deepgram"
-    if audio is None:
-        audio = await _edge_tts(text)
-        provider = "edge"
     if not audio:
         raise HTTPException(502, "TTS synthesis failed.")
     return Response(
         content=audio,
         media_type="audio/mpeg",
-        headers={"X-TTS-Provider": provider, "Cache-Control": "no-store"},
+        headers={"X-TTS-Provider": "deepgram", "Cache-Control": "no-store"},
     )
 
 
 @router.post("/voice/stream")
 async def voice_stream(req: dict, request: Request):
-    """Sentence-by-sentence streaming TTS endpoint backed by Deepgram v2 `flux-donovan-en`."""
+    """Sentence-by-sentence streaming TTS endpoint backed exclusively by Deepgram v2 `flux-donovan-en`."""
     text = (req.get("text", "") if isinstance(req, dict) else "").strip()[:600]
     if not text:
         raise HTTPException(400, "Text is required for streaming TTS.")
 
-    from backend.agent.router import _deepgram_tts, _edge_tts
+    from backend.agent.router import _deepgram_tts
 
     audio = await _deepgram_tts(text)
-    if audio is None:
-        audio = await _edge_tts(text)
     if not audio:
         raise HTTPException(502, "Streaming TTS service error.")
 

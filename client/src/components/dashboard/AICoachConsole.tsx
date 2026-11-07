@@ -36,6 +36,7 @@ import { Streamdown } from "streamdown";
 import { StudentProfileState } from "@/types/profile";
 import { API_BASE } from "@/lib/apiClient";
 import { Avatar3D } from "@/agent/Avatar3D";
+import { fetchDeepgramMp3, speaker } from "@/agent/audioIO";
 
 export interface Message {
   role: "user" | "assistant";
@@ -374,15 +375,11 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const voiceAbortRef = useRef<AbortController | null>(null);
   const speechQueueRef = useRef<string[]>([]);
   const isSpeakingSentenceRef = useRef<boolean>(false);
-  const teluguVoiceWarnedRef = useRef<boolean>(false);
   const serverAudioRef = useRef<HTMLAudioElement | null>(null);
-  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
   // Incremental generation token for 100% reliable instantaneous cancellation (Barge-in / Stop)
   const generationIdRef = useRef<number>(0);
 
-  // Utterance Reference to prevent Chromium V8 garbage collection mid-speech
-  const activeUtterancesRef = useRef<SpeechSynthesisUtterance[]>([]);
   // Track if query was triggered by voice so assistant response always auto-speaks
   const isVoiceTriggeredRef = useRef<boolean>(false);
 
@@ -393,7 +390,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const lastSentTimeRef = useRef<number>(0);
   const lastAssistantReplyRef = useRef<string>("");
   const voiceStreamHandledRef = useRef<boolean>(false);
-  const [hasTeluguVoice, setHasTeluguVoice] = useState<boolean>(true);
+  const [hasTeluguVoice] = useState<boolean>(true);
   const [dismissTeluguNotice, setDismissTeluguNotice] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -415,20 +412,16 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const [speakerTestMsg, setSpeakerTestMsg] = useState<string | null>(null);
 
   // Real Provider Badge, Overflow Menu, and Full History Sheet States
-  const [activeProvider, setActiveProvider] = useState<string>("Gemini 2.0 Flash");
+  const [activeProvider, setActiveProvider] = useState<string>("Groq LPU + Deepgram Donovan");
   const [isOverflowOpen, setIsOverflowOpen] = useState<boolean>(false);
   const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
 
   // Audio Unlock on First User Interaction
   const unlockAudio = () => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
-    }
+    speaker.initContext().catch(() => {});
   };
 
-  // Fallback Audio Reader & Persistent Auto-Speak (default true: face speaks every answer)
+  // Persistent Auto-Speak (default true: face speaks every answer)
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const [autoSpeak, setAutoSpeak] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -449,43 +442,6 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       } catch {}
     }
   };
-
-  // Listen for voices asynchronously and check Telugu availability
-  useEffect(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const loadVoices = () => {
-      const v = window.speechSynthesis.getVoices();
-      if (v && v.length > 0) {
-        voicesRef.current = v;
-        const te = v.some(
-          (voice) =>
-            voice.lang.toLowerCase().includes("te-in") ||
-            voice.lang.toLowerCase().includes("te_in") ||
-            voice.lang.toLowerCase().startsWith("te-") ||
-            voice.name.toLowerCase().includes("telugu")
-        );
-        setHasTeluguVoice(te);
-      }
-    };
-    loadVoices();
-    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
-    return () => {
-      window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
-    };
-  }, []);
-
-  // Chrome 15s SpeechSynthesis freeze prevention: periodically pause & resume if speaking
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-          window.speechSynthesis.pause();
-          window.speechSynthesis.resume();
-        }
-      }
-    }, 8000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Keep-alive ping to /api/health every 4 minutes to keep Render alive
   useEffect(() => {
@@ -512,115 +468,18 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     };
   }, []);
 
-  // Diagnostic: Tests browser audio hardware and speech synthesis on demand
+  // Diagnostic: Tests browser audio hardware and Deepgram Donovan speech synthesis on demand
   const testSpeakerAudio = async () => {
     if (typeof window === "undefined") return;
     setSpeakerTestState("testing");
-    setSpeakerTestMsg("Testing audio hardware & speakers...");
+    setSpeakerTestMsg("Testing audio hardware & Deepgram Donovan voice...");
 
     try {
-      // 1. Play diagnostic 3-tone chime (C5-E5-G5) via Web Audio API to verify physical sound card & speakers
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        const ctx = new AudioCtx();
-        if (ctx.state === "suspended") {
-          await ctx.resume();
-        }
-        const now = ctx.currentTime;
-
-        // Tone 1: C5 (523.25 Hz)
-        const osc1 = ctx.createOscillator();
-        const gain1 = ctx.createGain();
-        osc1.type = "sine";
-        osc1.frequency.setValueAtTime(523.25, now);
-        gain1.gain.setValueAtTime(0.18, now);
-        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-        osc1.connect(gain1);
-        gain1.connect(ctx.destination);
-        osc1.start(now);
-        osc1.stop(now + 0.3);
-
-        // Tone 2: E5 (659.25 Hz)
-        const osc2 = ctx.createOscillator();
-        const gain2 = ctx.createGain();
-        osc2.type = "sine";
-        osc2.frequency.setValueAtTime(659.25, now + 0.15);
-        gain2.gain.setValueAtTime(0.18, now + 0.15);
-        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-        osc2.connect(gain2);
-        gain2.connect(ctx.destination);
-        osc2.start(now + 0.15);
-        osc2.stop(now + 0.45);
-
-        // Tone 3: G5 (783.99 Hz)
-        const osc3 = ctx.createOscillator();
-        const gain3 = ctx.createGain();
-        osc3.type = "sine";
-        osc3.frequency.setValueAtTime(783.99, now + 0.3);
-        gain3.gain.setValueAtTime(0.22, now + 0.3);
-        gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-        osc3.connect(gain3);
-        gain3.connect(ctx.destination);
-        osc3.start(now + 0.3);
-        osc3.stop(now + 0.8);
-      }
-
-      // 2. Play speech test via SpeechSynthesis
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
-
-        const testPhrase =
-          voiceLang === "te-IN"
-            ? "స్పీకర్ మరియు ఆడియో ఖచ్చితంగా పనిచేస్తున్నాయి. Pathfinder వాయిస్ ఏజెంట్ సిద్ధంగా ఉంది."
-            : voiceLang === "hi-IN"
-            ? "स्पीकर और ऑडियो बिल्कुल सही काम कर रहे हैं। पाथफाइंडर वॉइस एजेंट तैयार है।"
-            : "Speaker test successful. Pathfinder voice agent audio is loud and clear.";
-
-        const utt = new SpeechSynthesisUtterance(testPhrase);
-        activeUtterancesRef.current.push(utt);
-        utt.rate = 1.0;
-        utt.pitch = 1.0;
-
-        const voices = window.speechSynthesis.getVoices();
-        if (voiceLang === "te-IN") {
-          const teVoice = voices.find(
-            (v) => v.lang.toLowerCase().includes("te") || v.name.toLowerCase().includes("telugu")
-          );
-          if (teVoice) utt.voice = teVoice;
-        } else if (voiceLang === "hi-IN") {
-          const hiVoice = voices.find(
-            (v) => v.lang.toLowerCase().includes("hi") || v.name.toLowerCase().includes("hindi")
-          );
-          if (hiVoice) utt.voice = hiVoice;
-        } else {
-          const enVoice = voices.find(
-            (v) => v.lang.toLowerCase().includes("en-in") || v.name.toLowerCase().includes("india")
-          );
-          if (enVoice) utt.voice = enVoice;
-        }
-
-        utt.onend = () => {
-          activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utt);
-          setSpeakerTestState("success");
-          setSpeakerTestMsg("✅ Speaker Working! Sound chime and speech played successfully.");
-          setTimeout(() => setSpeakerTestState("idle"), 5000);
-        };
-        utt.onerror = () => {
-          activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utt);
-          setSpeakerTestState("success");
-          setSpeakerTestMsg("✅ Audio Chime Played! Device speakers are operational.");
-          setTimeout(() => setSpeakerTestState("idle"), 5000);
-        };
-
-        window.speechSynthesis.speak(utt);
-      } else {
-        setSpeakerTestState("success");
-        setSpeakerTestMsg("✅ Audio Chime Played! Device speakers are operational.");
-        setTimeout(() => setSpeakerTestState("idle"), 5000);
-      }
+      await speaker.initContext();
+      speaker.say("Speaker test successful, Boss. Pathfinder Deepgram voice agent is loud and clear.");
+      setSpeakerTestState("success");
+      setSpeakerTestMsg("✅ Speaker Working! Deepgram Donovan voice played successfully.");
+      setTimeout(() => setSpeakerTestState("idle"), 5000);
     } catch (err: any) {
       console.error("[SpeakerTest] Error:", err);
       setSpeakerTestState("error");
@@ -652,66 +511,6 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       .replace(/\[\[TUTOR:[^\]]+\]\]/g, "");
   };
 
-  // Voice selection helper matching language code and regional pronunciations
-  const selectVoiceForLanguage = (targetLang: "te-IN" | "hi-IN" | "en-IN"): SpeechSynthesisVoice | null => {
-    const list = voicesRef.current.length > 0
-      ? voicesRef.current
-      : (typeof window !== "undefined" && "speechSynthesis" in window ? window.speechSynthesis.getVoices() : []);
-    if (!list || list.length === 0) return null;
-
-    if (targetLang === "te-IN") {
-      const te = list.find(
-        (v) =>
-          v.lang.toLowerCase() === "te-in" ||
-          v.lang.toLowerCase() === "te_in" ||
-          v.lang.toLowerCase().startsWith("te-") ||
-          v.name.toLowerCase().includes("telugu")
-      );
-      if (te) return te;
-      const inEn = list.find((v) => v.lang.toLowerCase().includes("en-in") || v.name.toLowerCase().includes("india"));
-      if (inEn) return inEn;
-    } else if (targetLang === "hi-IN") {
-      const hi = list.find(
-        (v) =>
-          v.lang.toLowerCase() === "hi-in" ||
-          v.lang.toLowerCase() === "hi_in" ||
-          v.lang.toLowerCase().startsWith("hi-") ||
-          v.name.toLowerCase().includes("hindi") ||
-          v.name.toLowerCase().includes("kalpana") ||
-          v.name.toLowerCase().includes("hemant")
-      );
-      if (hi) return hi;
-      const inEn = list.find((v) => v.lang.toLowerCase().includes("en-in") || v.name.toLowerCase().includes("india"));
-      if (inEn) return inEn;
-    } else {
-      // Prioritize deep, natural, fluent MALE voices for DAS Senior Tech Lead persona
-      const maleVoice = list.find(
-        (v) =>
-          (v.name.toLowerCase().includes("prabhat") ||
-            v.name.toLowerCase().includes("guy") ||
-            v.name.toLowerCase().includes("david") ||
-            v.name.toLowerCase().includes("christopher") ||
-            v.name.toLowerCase().includes("george") ||
-            v.name.toLowerCase().includes("male") ||
-            v.name.toLowerCase().includes("ryan") ||
-            v.name.toLowerCase().includes("ravi") ||
-            v.name.toLowerCase().includes("hemant")) &&
-          (v.lang.toLowerCase().startsWith("en") || v.lang.toLowerCase().includes("in"))
-      );
-      if (maleVoice) return maleVoice;
-
-      const enIn = list.find(
-        (v) =>
-          v.lang.toLowerCase().includes("en-in") ||
-          v.name.toLowerCase().includes("india")
-      );
-      if (enIn) return enIn;
-      const anyEn = list.find((v) => v.lang.toLowerCase().startsWith("en"));
-      if (anyEn) return anyEn;
-    }
-    return list[0] || null;
-  };
-
   // Safe microphone abort helper
   const stopMicrophone = () => {
     if (silenceTimerRef.current) {
@@ -740,18 +539,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     isVoiceTriggeredRef.current = false;
 
     stopMicrophone();
-
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      try {
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
-        window.speechSynthesis.cancel();
-      } catch (err) {
-        console.warn("[VoiceAgent] cancel error:", err);
-      }
-      activeUtterancesRef.current = [];
-    }
+    speaker.stop();
 
     if (voiceAbortRef.current) {
       try {
@@ -779,7 +567,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     }
   };
 
-  // Speech Queue Processor: Speaks sentences sequentially in correct language
+  // Speech Queue Processor: Speaks sentences sequentially exclusively using Deepgram v2 `flux-donovan-en`
   const processSpeechQueue = async (targetLang: "te-IN" | "hi-IN" | "en-IN", genId: number) => {
     if (typeof window === "undefined") return;
     if (genId !== generationIdRef.current) return;
@@ -792,24 +580,10 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     isSpeakingRef.current = true;
     stopMicrophone();
 
-    const sentenceScript = detectTextLanguage(nextText);
-    const effectiveLang = sentenceScript !== "en-IN" ? sentenceScript : targetLang;
-
-    const matchedVoice = selectVoiceForLanguage(effectiveLang);
-    const isTelugu = effectiveLang === "te-IN";
-    const hasTeluguVoice =
-      matchedVoice &&
-      (matchedVoice.lang.toLowerCase().includes("te") || matchedVoice.name.toLowerCase().includes("telugu"));
-
-    // 1. Try ElevenLabs server-side studio TTS first for ultra-realistic human voice
     try {
-      const resp = await fetch(`${API_BASE}/api/voice/tts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: nextText, language: effectiveLang }),
-      });
-      if (resp.ok && resp.headers.get("content-type")?.includes("audio") && genId === generationIdRef.current) {
-        const blob = await resp.blob();
+      const mp3Bytes = await fetchDeepgramMp3(nextText);
+      if (mp3Bytes && mp3Bytes.byteLength > 200 && genId === generationIdRef.current) {
+        const blob = new Blob([mp3Bytes], { type: "audio/mpeg" });
         const audioUrl = URL.createObjectURL(blob);
         const audio = new Audio(audioUrl);
         serverAudioRef.current = audio;
@@ -817,12 +591,14 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         audio.onplay = () => {
           stopMicrophone();
           isSpeakingRef.current = true;
+          setCurrentSpokenSentence(nextText);
           setVoiceStatus("speaking");
         };
         audio.onended = () => {
           URL.revokeObjectURL(audioUrl);
           serverAudioRef.current = null;
           isSpeakingSentenceRef.current = false;
+          setCurrentSpokenSentence("");
           if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
             processSpeechQueue(targetLang, genId);
           } else {
@@ -842,114 +618,26 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           URL.revokeObjectURL(audioUrl);
           serverAudioRef.current = null;
           isSpeakingSentenceRef.current = false;
-          fallbackSpeakUtterance(nextText, effectiveLang, matchedVoice, targetLang, genId);
+          setCurrentSpokenSentence("");
+          if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
+            processSpeechQueue(targetLang, genId);
+          } else {
+            isSpeakingRef.current = false;
+            setVoiceStatus("idle");
+            setSpeakingIndex(null);
+          }
         };
         await audio.play();
         return;
       }
     } catch {
-      // Network or server error fallback to browser utterance
+      // Deepgram request interrupted or autoplay blocked
     }
 
-    fallbackSpeakUtterance(nextText, effectiveLang, matchedVoice, targetLang, genId);
-  };
-
-  const fallbackSpeakUtterance = (
-    text: string,
-    lang: "te-IN" | "hi-IN" | "en-IN",
-    voice: SpeechSynthesisVoice | null,
-    targetLang: "te-IN" | "hi-IN" | "en-IN",
-    genId: number
-  ) => {
-    if (genId !== generationIdRef.current) return;
-    if (typeof window === "undefined" || !("speechSynthesis" in window) || !window.speechSynthesis) {
-      isSpeakingSentenceRef.current = false;
-      isSpeakingRef.current = false;
-      setVoiceStatus("idle");
-      setSpeakingIndex(null);
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    activeUtterancesRef.current.push(utterance);
-    utterance.lang = lang;
-    if (voice) {
-      utterance.voice = voice;
-    }
-    utterance.rate = 1.0;
-    utterance.pitch = 0.93; // Deep masculine tech lead resonance
-
-    utterance.onstart = () => {
-      if (genId !== generationIdRef.current) {
-        try {
-          window.speechSynthesis.cancel();
-        } catch {}
-        return;
-      }
-      stopMicrophone();
-      isSpeakingRef.current = true;
-      setCurrentSpokenSentence(text);
-      if (!firstAudioLoggedRef.current) {
-        firstAudioLoggedRef.current = true;
-        const ttfa = Math.round(performance.now() - speechStartTimeRef.current);
-        console.log(`[VoiceAgent] Time to first audio: ${ttfa}ms`);
-      }
-      setVoiceStatus("speaking");
-    };
-
-    utterance.onboundary = (event: any) => {
-      if (event && event.name === "word") {
-        const word = text.slice(event.charIndex).split(/\s+/)[0];
-        if (word) {
-          setCurrentSpokenSentence(word);
-        }
-      }
-    };
-
-    utterance.onend = () => {
-      activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
-      isSpeakingSentenceRef.current = false;
-      setCurrentSpokenSentence("");
-      if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
-        processSpeechQueue(targetLang, genId);
-      } else {
-        isSpeakingRef.current = false;
-        setVoiceStatus("idle");
-        setSpeakingIndex(null);
-        if (userTurnedListeningOnRef.current) {
-          setTimeout(() => {
-            if (!isSpeakingRef.current && userTurnedListeningOnRef.current) {
-              toggleListening(true);
-            }
-          }, 600);
-        }
-      }
-    };
-
-    utterance.onerror = () => {
-      activeUtterancesRef.current = activeUtterancesRef.current.filter((u) => u !== utterance);
-      isSpeakingSentenceRef.current = false;
-      setCurrentSpokenSentence("");
-      if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
-        processSpeechQueue(targetLang, genId);
-      } else {
-        isSpeakingRef.current = false;
-        setVoiceStatus("idle");
-        setSpeakingIndex(null);
-        if (userTurnedListeningOnRef.current) {
-          setTimeout(() => {
-            if (!isSpeakingRef.current && userTurnedListeningOnRef.current) {
-              toggleListening(true);
-            }
-          }, 600);
-        }
-      }
-    };
-
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-    }
-    window.speechSynthesis.speak(utterance);
+    isSpeakingSentenceRef.current = false;
+    isSpeakingRef.current = false;
+    setVoiceStatus("idle");
+    setSpeakingIndex(null);
   };
 
   const queueSentenceForTts = (sentence: string, targetLang: "te-IN" | "hi-IN" | "en-IN", genId: number) => {
@@ -961,10 +649,10 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
   // Auto-initiate DAS Voice Agent speech on initial load / trigger
   useEffect(() => {
-    const greetingText = "Hi sir, I'm your Pathfinder AI agent, how can I help you?";
+    const greetingText = "Hi Boss, I'm your Pathfinder AI agent, how can I help you?";
     const timer = setTimeout(() => {
       queueSentenceForTts(greetingText, "en-IN", generationIdRef.current);
-    }, 1000);
+    }, 600);
     return () => clearTimeout(timer);
   }, []);
 
@@ -994,11 +682,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     setVoiceStatus("thinking");
     setVoiceError(null);
 
-    // Warm backend & voices
+    // Warm backend
     fetch(`${API_BASE}/api/health`).catch(() => {});
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.getVoices();
-    }
 
     const queryScript = detectTextLanguage(trimmed);
     const streamLang: "auto" | "en-IN" | "te-IN" | "hi-IN" =
@@ -1196,9 +881,6 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
     try {
       fetch(`${API_BASE}/api/health`).catch(() => {});
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.getVoices();
-      }
 
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
@@ -1301,9 +983,9 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     }
   };
 
-  // Text-to-Speech audio reader for individual messages
+  // Text-to-Speech audio reader for individual messages via Deepgram flux-donovan-en
   const speakText = async (text: string, index?: number) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    if (typeof window === "undefined") return;
 
     if (speakingIndex === (index ?? -1)) {
       handleStopAll();

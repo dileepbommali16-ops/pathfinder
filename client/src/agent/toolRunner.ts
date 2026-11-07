@@ -150,8 +150,10 @@ export class ElevenLabsStreamingDispatcher {
     let unconsumed = speakableRegion.slice(this.spokenCursor);
 
     while (unconsumed.length > 0) {
-      // Dispatch on complete sentence boundary (>= 24 chars) for smooth Deepgram Donovan prosody
-      const sentenceMatch = unconsumed.match(/^([\s\S]{24,}?[.!?।\n]+)\s+/);
+      // Dispatch first sentence at >= 12 chars for ultra-fast TTFA, and >= 24 chars for subsequent sentences
+      const minLen = this.chunkCount === 0 ? 12 : 24;
+      const rx = new RegExp(`^([\\s\\S]{${minLen},}?[.!?।\\n]+)\\s+`);
+      const sentenceMatch = unconsumed.match(rx);
       if (sentenceMatch) {
         const chunk = sentenceMatch[1].trim();
         this.spokenCursor += sentenceMatch[0].length;

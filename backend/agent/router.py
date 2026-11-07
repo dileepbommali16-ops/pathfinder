@@ -192,64 +192,57 @@ async def chat(req: ChatReq, request: Request, user=Depends(current_user)):
 class TTSReq(BaseModel):
     text: str
 
-# 1. Deepgram v2 Flux TTS (`flux-donovan-en` - $200 Signup Credits / 13.3M Chars)
-# 2. Microsoft Neural Voice via edge-tts (infinite free fallback)
+
+# Exclusive Voice Engine: Deepgram v2 Flux TTS (`flux-donovan-en` - Multi-Account Pool)
+_DEAD_DEEPGRAM_KEYS: set[str] = {"e1b5aca82c6dbbb1205590dc14df3598ff3ef743"}
 
 
-def _edge_voice_for(text: str) -> str:
-    if any(0x0C00 <= ord(ch) <= 0x0C7F for ch in text):
-        return "te-IN-MohanNeural"
-    if any(0x0900 <= ord(ch) <= 0x097F for ch in text):
-        return "hi-IN-MadhurNeural"
-    return os.getenv("EDGE_TTS_VOICE", "en-US-AndrewMultilingualNeural")
-
-
-async def _deepgram_tts(text: str) -> Optional[bytes]:
-    keys = [
-        os.getenv("DEEPGRAM_API_KEY", "").strip(),
+def _get_deepgram_keys() -> list[str]:
+    env_multi = [k.strip() for k in os.getenv("DEEPGRAM_API_KEYS", "").split(",") if k.strip()]
+    env_single = os.getenv("DEEPGRAM_API_KEY", "").strip()
+    raw_keys = [
         # Boss's 4 Deepgram Multi-Account Pool (~$800 Starter Credits / 53M+ Characters / 1,000+ Hours)
         "4e8856020c52a85d04b6429389b4b231b12026aa",
         "ea4b137f412c0da0e2bbb2291b53e4c6f07ffa58",
         "89d2f521676d30d89fe877965825dc1b89405188",
         "68a04f662b5942a9bfe225749e1ca9aadcb4c3ea",
-        "".join(["e1b5aca82c6dbbb12055", "90dc14df3598ff3ef743"]),
+        *env_multi,
+        env_single,
         "".join(["a889c8a5d9f0c50b17eb", "5fa6d059ad38d8bd83f3"]),
     ]
-    keys = [k for k in keys if k]
+    seen: set[str] = set()
+    active_keys: list[str] = []
+    for k in raw_keys:
+        if k and k not in seen and k not in _DEAD_DEEPGRAM_KEYS:
+            seen.add(k)
+            active_keys.append(k)
+    return active_keys
+
+
+async def _deepgram_tts(text: str) -> Optional[bytes]:
+    keys = _get_deepgram_keys()
     if not keys:
         return None
     model = os.getenv("DEEPGRAM_MODEL", "flux-donovan-en").strip() or "flux-donovan-en"
     api_ver = "v2" if model.startswith("flux-") else "v1"
     query = f"model={model}&speed=1&expressivity=0" if api_ver == "v2" else f"model={model}"
     url = f"https://api.deepgram.com/{api_ver}/speak?{query}"
-    for api_key in keys:
-        try:
-            async with httpx.AsyncClient(timeout=15) as c:
-                r = await c.post(
+    async with httpx.AsyncClient(timeout=8.0) as client:
+        for api_key in keys:
+            try:
+                r = await client.post(
                     url,
                     headers={"Authorization": f"Token {api_key}", "Content-Type": "application/json"},
                     json={"text": text},
                 )
                 if r.status_code == 200 and len(r.content) > 200:
                     return r.content
-                print(f"[tts] Deepgram returned status {r.status_code}: {r.text[:200]}", flush=True)
-        except Exception as exc:
-            print(f"[tts] Deepgram request error: {exc!r}", flush=True)
+                if r.status_code in (401, 402, 403):
+                    _DEAD_DEEPGRAM_KEYS.add(api_key)
+                print(f"[tts] Deepgram key {api_key[:8]}... returned status {r.status_code}", flush=True)
+            except Exception as exc:
+                print(f"[tts] Deepgram request error: {exc!r}", flush=True)
     return None
-
-
-async def _edge_tts(text: str) -> Optional[bytes]:
-    try:
-        import edge_tts
-        communicate = edge_tts.Communicate(text, _edge_voice_for(text), rate="+6%")
-        audio = bytearray()
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio.extend(chunk["data"])
-        return bytes(audio) if audio else None
-    except Exception as exc:
-        print(f"[tts] edge-tts fallback failed: {exc!r}", flush=True)
-        return None
 
 
 @router.get("/tts/status")
@@ -259,6 +252,7 @@ def tts_status():
         "model": os.getenv("DEEPGRAM_MODEL", "flux-donovan-en").strip() or "flux-donovan-en",
         "deepgram_configured": True,
         "active_provider": "deepgram",
+        "active_keys_count": len(_get_deepgram_keys()),
     }
 
 
@@ -271,16 +265,12 @@ async def tts(req: TTSReq, request: Request, user=Depends(current_user)):
     spend("tts", len(text), int(os.getenv("AGENT_DAILY_TTS_CHARS", "60000")))
 
     audio = await _deepgram_tts(text)
-    provider = "deepgram"
-    if audio is None:
-        audio = await _edge_tts(text)
-        provider = "edge"
     if not audio:
         raise HTTPException(502, "tts failed")
     return Response(
         content=audio,
         media_type="audio/mpeg",
-        headers={"X-TTS-Provider": provider, "Cache-Control": "no-store"},
+        headers={"X-TTS-Provider": "deepgram", "Cache-Control": "no-store"},
     )
 
 

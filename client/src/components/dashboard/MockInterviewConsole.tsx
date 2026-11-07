@@ -22,6 +22,8 @@ import {
   ChevronRight
 } from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
+import { speaker } from "@/agent/audioIO";
+import { onVoiceStateChange } from "@/audio/voiceManager";
 
 interface MockInterviewConsoleProps {
   profile: StudentProfileState;
@@ -126,7 +128,6 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
   const [timerActive, setTimerActive] = useState<boolean>(false);
 
   const speechRecognitionRef = useRef<any>(null);
-  const synthRef = useRef<SpeechSynthesis | null>(null);
 
   const currentQ = QUESTION_BANK[selectedQuestionIndex] || QUESTION_BANK[0];
 
@@ -156,12 +157,13 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     }
   }, [initialCompany]);
 
-  // Audio speech synthesis setup
+  // Subscribe to Deepgram speaker state
   useEffect(() => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      synthRef.current = window.speechSynthesis;
-    }
+    const unsub = onVoiceStateChange((speaking) => {
+      setIsSpeaking(speaking);
+    });
     return () => {
+      unsub();
       stopSpeaking();
       stopRecording();
     };
@@ -176,34 +178,17 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     stopRecording();
   };
 
-  // Text to Speech: Question read out
+  // Text to Speech: Question read out via Deepgram flux-donovan-en
   const handleToggleSpeak = () => {
-    if (!synthRef.current) {
-      alert("Text-to-speech is not supported in this browser.");
-      return;
-    }
-
     if (isSpeaking) {
       stopSpeaking();
       return;
     }
-
-    synthRef.current.cancel(); // clear queue
-    const utter = new SpeechSynthesisUtterance(currentQ.question);
-    utter.rate = 1.0;
-    utter.pitch = 1.0;
-
-    utter.onstart = () => setIsSpeaking(true);
-    utter.onend = () => setIsSpeaking(false);
-    utter.onerror = () => setIsSpeaking(false);
-
-    synthRef.current.speak(utter);
+    speaker.say(currentQ.question);
   };
 
   const stopSpeaking = () => {
-    if (synthRef.current) {
-      synthRef.current.cancel();
-    }
+    speaker.stop();
     setIsSpeaking(false);
   };
 
