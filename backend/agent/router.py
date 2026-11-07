@@ -201,12 +201,17 @@ def _edge_voice_for(text: str) -> str:
         return "te-IN-MohanNeural"
     if any(0x0900 <= ord(ch) <= 0x097F for ch in text):
         return "hi-IN-MadhurNeural"
-    return os.getenv("EDGE_TTS_VOICE", "en-GB-RyanNeural")
+    return os.getenv("EDGE_TTS_VOICE", "en-US-AndrewMultilingualNeural")
 
 
 async def _deepgram_tts(text: str) -> Optional[bytes]:
     keys = [
         os.getenv("DEEPGRAM_API_KEY", "").strip(),
+        # Boss's 4 Deepgram Multi-Account Pool (~$800 Starter Credits / 53M+ Characters / 1,000+ Hours)
+        "4e8856020c52a85d04b6429389b4b231b12026aa",
+        "ea4b137f412c0da0e2bbb2291b53e4c6f07ffa58",
+        "89d2f521676d30d89fe877965825dc1b89405188",
+        "68a04f662b5942a9bfe225749e1ca9aadcb4c3ea",
         "".join(["e1b5aca82c6dbbb12055", "90dc14df3598ff3ef743"]),
         "".join(["a889c8a5d9f0c50b17eb", "5fa6d059ad38d8bd83f3"]),
     ]

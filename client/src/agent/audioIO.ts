@@ -30,6 +30,11 @@ const DEFAULT_DEEPGRAM_MODEL =
 const DEEPGRAM_KEYS = [
   (import.meta as any).env?.VITE_DEEPGRAM_API_KEY || "",
   (import.meta as any).env?.DEEPGRAM_API_KEY || "",
+  // Boss's 4 Deepgram Multi-Account Pool (~$800 Starter Credits / 53M+ Characters / 1,000+ Hours)
+  "4e8856020c52a85d04b6429389b4b231b12026aa",
+  "ea4b137f412c0da0e2bbb2291b53e4c6f07ffa58",
+  "89d2f521676d30d89fe877965825dc1b89405188",
+  "68a04f662b5942a9bfe225749e1ca9aadcb4c3ea",
   ["e1b5aca82c6dbbb12055", "90dc14df3598ff3ef743"].join(""),
   ["a889c8a5d9f0c50b17eb", "5fa6d059ad38d8bd83f3"].join(""),
 ].filter(Boolean);
