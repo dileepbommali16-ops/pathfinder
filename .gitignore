@@ -32,6 +32,8 @@ backend/.env
 # IDE and editor files
 .vscode/*
 !.vscode/settings.json
+.cursor/
+.cursor/*
 .idea/
 *.swp
 *.swo
