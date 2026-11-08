@@ -1,41 +1,58 @@
 # backend/google_sync_api.py
 import os
 import json
-import urllib.request
+import httpx
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from backend.google_automation import google_auto
 
 router = APIRouter(prefix="/api/google", tags=["Google Workspace, Gmail & Placement Automation"])
 
-N8N_WEBHOOK_URL = os.getenv(
-    "N8N_WEBHOOK_URL",
-    "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync"
-)
+N8N_WEBHOOK_URL = os.getenv("N8N_WEBHOOK_URL", "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync").strip()
+
+
+async def trigger_n8n_webhook_async(event_type: str, data: dict) -> bool:
+    urls = [
+        N8N_WEBHOOK_URL,
+        "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync",
+        "https://dileepdas.app.n8n.cloud/webhook-test/pathfinder-google-sync"
+    ]
+    seen = set()
+    for u in urls:
+        if not u or u in seen:
+            continue
+        seen.add(u)
+        try:
+            async with httpx.AsyncClient(timeout=4.0) as client:
+                resp = await client.post(
+                    u,
+                    json={"source": "Pathfinder 2.0 Autonomous Career OS", "event": event_type, "data": data},
+                )
+                if resp.status_code < 400:
+                    return True
+        except Exception:
+            continue
+    return False
 
 
 def trigger_n8n_webhook(event_type: str, data: dict) -> bool:
-    urls_to_try = []
-    env_url = os.getenv("N8N_WEBHOOK_URL", "").strip()
-    if env_url:
-        urls_to_try.append(env_url)
-    prod_url = "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync"
-    test_url = "https://dileepdas.app.n8n.cloud/webhook-test/pathfinder-google-sync"
-    for u in [prod_url, test_url]:
-        if u not in urls_to_try:
-            urls_to_try.append(u)
-
-    payload = json.dumps({"event": event_type, "data": data}).encode("utf-8")
-    for target_url in urls_to_try:
+    urls = [
+        N8N_WEBHOOK_URL,
+        "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync",
+        "https://dileepdas.app.n8n.cloud/webhook-test/pathfinder-google-sync"
+    ]
+    seen = set()
+    for u in urls:
+        if not u or u in seen:
+            continue
+        seen.add(u)
         try:
-            req = urllib.request.Request(
-                target_url,
-                data=payload,
-                headers={"Content-Type": "application/json", "User-Agent": "Pathfinder/2.0"},
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=4) as resp:
-                if resp.status in (200, 201, 204):
+            with httpx.Client(timeout=4.0) as client:
+                resp = client.post(
+                    u,
+                    json={"source": "Pathfinder 2.0 Autonomous Career OS", "event": event_type, "data": data},
+                )
+                if resp.status_code < 400:
                     return True
         except Exception:
             continue

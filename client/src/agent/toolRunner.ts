@@ -1,4 +1,4 @@
-﻿// client/src/agent/toolRunner.ts
+// client/src/agent/toolRunner.ts
 import { Type, FunctionDeclaration } from "@google/genai";
 import { API_BASE } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -6,9 +6,9 @@ import { toast } from "sonner";
 export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking" | "interrupted";
 
 export interface ToolCallPayload {
-  id?: string;
   name: string;
   args: Record<string, any>;
+  id?: string;
 }
 
 // 1. All Google Automation + Gmail + Full Website Control Tools
@@ -345,6 +345,7 @@ export async function executeWebsiteTool(
   return { status: "executed", tool: name, args };
 }
 
+// Synchronous tool runner interface required by AgentLayout.tsx
 export function runTool(
   name: string,
   args: Record<string, any> = {},
@@ -356,15 +357,18 @@ export function runTool(
   }
   return {
     status: "executed",
-    navigated: Boolean(args.to || name === "navigate_dashboard_tab"),
-    explain: Boolean(args.explain || args.feedback)
+    navigated: name === "navigate_dashboard_tab" || name === "navigate",
+    explain: Boolean(args.explain)
   };
 }
 
 export async function executeToolCall(
-  payload: ToolCallPayload,
+  payload: ToolCallPayload | string,
   onNavigate?: (route: string) => void
 ): Promise<Record<string, any>> {
+  if (typeof payload === "string") {
+    return executeWebsiteTool(payload, {});
+  }
   if (onNavigate && payload.args?.to) {
     onNavigate(String(payload.args.to));
   }
