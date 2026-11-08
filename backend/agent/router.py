@@ -169,66 +169,13 @@ class TTSReq(BaseModel):
     text: str
 
 
-# Exclusive Voice Engine: Deepgram v2 Flux TTS (`flux-donovan-en` - Multi-Account Pool)
-_DEAD_DEEPGRAM_KEYS: set[str] = {"e1b5aca82c6dbbb1205590dc14df3598ff3ef743"}
-
-
-def _get_deepgram_keys() -> list[str]:
-    env_multi = [k.strip() for k in os.getenv("DEEPGRAM_API_KEYS", "").split(",") if k.strip()]
-    env_single = os.getenv("DEEPGRAM_API_KEY", "").strip()
-    raw_keys = [
-        # Boss's 4 Deepgram Multi-Account Pool (~$800 Starter Credits / 53M+ Characters / 1,000+ Hours)
-        "4e8856020c52a85d04b6429389b4b231b12026aa",
-        "ea4b137f412c0da0e2bbb2291b53e4c6f07ffa58",
-        "89d2f521676d30d89fe877965825dc1b89405188",
-        "68a04f662b5942a9bfe225749e1ca9aadcb4c3ea",
-        *env_multi,
-        env_single,
-        "".join(["a889c8a5d9f0c50b17eb", "5fa6d059ad38d8bd83f3"]),
-    ]
-    seen: set[str] = set()
-    active_keys: list[str] = []
-    for k in raw_keys:
-        if k and k not in seen and k not in _DEAD_DEEPGRAM_KEYS:
-            seen.add(k)
-            active_keys.append(k)
-    return active_keys
-
-
-async def _deepgram_tts(text: str) -> Optional[bytes]:
-    keys = _get_deepgram_keys()
-    if not keys:
-        return None
-    model = os.getenv("DEEPGRAM_MODEL", "flux-donovan-en").strip() or "flux-donovan-en"
-    api_ver = "v2" if model.startswith("flux-") else "v1"
-    query = f"model={model}&speed=1&expressivity=0" if api_ver == "v2" else f"model={model}"
-    url = f"https://api.deepgram.com/{api_ver}/speak?{query}"
-    async with httpx.AsyncClient(timeout=8.0) as client:
-        for api_key in keys:
-            try:
-                r = await client.post(
-                    url,
-                    headers={"Authorization": f"Token {api_key}", "Content-Type": "application/json"},
-                    json={"text": text},
-                )
-                if r.status_code == 200 and len(r.content) > 200:
-                    return r.content
-                if r.status_code in (401, 402, 403):
-                    _DEAD_DEEPGRAM_KEYS.add(api_key)
-                print(f"[tts] Deepgram key {api_key[:8]}... returned status {r.status_code}", flush=True)
-            except Exception as exc:
-                print(f"[tts] Deepgram request error: {exc!r}", flush=True)
-    return None
-
-
 @router.get("/tts/status")
 def tts_status():
     return {
-        "primary": "deepgram",
-        "model": os.getenv("DEEPGRAM_MODEL", "flux-donovan-en").strip() or "flux-donovan-en",
-        "deepgram_configured": True,
-        "active_provider": "deepgram",
-        "active_keys_count": len(_get_deepgram_keys()),
+        "primary": "gemini-live-native-audio",
+        "model": os.getenv("GEMINI_LIVE_MODEL", "gemini-2.5-flash-native-audio-latest").strip(),
+        "gemini_live_configured": bool(os.getenv("GEMINI_API_KEY", "").strip()),
+        "active_provider": "gemini-live",
     }
 
 
@@ -238,16 +185,11 @@ async def tts(req: TTSReq, request: Request, user=Depends(current_user)):
     text = req.text.strip()[:600]
     if not text:
         raise HTTPException(400, "empty")
-    spend("tts", len(text), int(os.getenv("AGENT_DAILY_TTS_CHARS", "60000")))
-
-    audio = await _deepgram_tts(text)
-    if not audio:
-        raise HTTPException(502, "tts failed")
-    return Response(
-        content=audio,
-        media_type="audio/mpeg",
-        headers={"X-TTS-Provider": "deepgram", "Cache-Control": "no-store"},
-    )
+    return {
+        "status": "handled_by_gemini_live_websocket",
+        "text": text,
+        "provider": "gemini-live-native-audio",
+    }
 
 
 @router.websocket("/ws")

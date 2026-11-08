@@ -126,41 +126,25 @@ async def download_resume():
 
 @router.post("/voice/tts")
 async def voice_tts(req: dict, request: Request):
-    """Deepgram v2 Flux (`flux-donovan-en`) TTS endpoint for server-side voice synthesis.
-    Expects: { "text": "..." }
-    Returns: audio/mpeg binary blob
-    """
+    """Gemini Live Native Audio status endpoint (voice synthesis runs via Gemini Live WebSocket)."""
     text = (req.get("text", "") if isinstance(req, dict) else "").strip()[:600]
     if not text:
-        raise HTTPException(400, "Text is required for TTS.")
-
-    from backend.agent.router import _deepgram_tts
-
-    audio = await _deepgram_tts(text)
-    if not audio:
-        raise HTTPException(502, "TTS synthesis failed.")
-    return Response(
-        content=audio,
-        media_type="audio/mpeg",
-        headers={"X-TTS-Provider": "deepgram", "Cache-Control": "no-store"},
-    )
+        raise HTTPException(400, "Text is required.")
+    return {
+        "status": "handled_by_gemini_live_websocket",
+        "text": text,
+        "provider": "gemini-live-native-audio",
+    }
 
 
 @router.post("/voice/stream")
 async def voice_stream(req: dict, request: Request):
-    """Sentence-by-sentence streaming TTS endpoint backed exclusively by Deepgram v2 `flux-donovan-en`."""
+    """Streaming voice endpoint handled natively by Gemini Live WebSocket."""
     text = (req.get("text", "") if isinstance(req, dict) else "").strip()[:600]
     if not text:
-        raise HTTPException(400, "Text is required for streaming TTS.")
-
-    from backend.agent.router import _deepgram_tts
-
-    audio = await _deepgram_tts(text)
-    if not audio:
-        raise HTTPException(502, "Streaming TTS service error.")
+        raise HTTPException(400, "Text is required.")
 
     async def event_generator():
-        yield f"data: {base64.b64encode(audio).decode()}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(

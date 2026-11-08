@@ -1,6 +1,6 @@
 services:
   # ----------------------------------------------------------------------------
-  # Backend Web Service (FastAPI + AI Agent + ML Engine + Data Service)
+  # Backend Web Service (FastAPI + Gemini Live + ML Engine + Google Workspace)
   # ----------------------------------------------------------------------------
   - type: web
     name: pathfinder-backend
@@ -31,11 +31,7 @@ services:
       - key: GEMINI_MODEL
         value: gemini-flash-latest
       - key: GEMINI_FALLBACK_MODEL
-        value: gemini-3.5-flash
-      - key: DEEPGRAM_MODEL
-        value: flux-donovan-en
-      - key: DEEPGRAM_API_KEY
-        sync: false
+        value: gemini-2.5-flash
       - key: VOICE_MAX_SESSION_MINUTES
         value: "15"
       - key: JWT_SECRET
@@ -47,10 +43,6 @@ services:
       - key: SUPABASE_ANON_KEY
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: VOYAGE_API_KEY
-        sync: false
-      - key: FIRECRAWL_API_KEY
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
@@ -87,6 +79,4 @@ services:
       - key: VITE_SUPABASE_URL
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
-        sync: false
-      - key: VITE_VOYAGE_API_KEY
         sync: false
