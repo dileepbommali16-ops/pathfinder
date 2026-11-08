@@ -1,19 +1,29 @@
 // client/src/agent/toolRunner.ts
 import { Type, FunctionDeclaration } from "@google/genai";
 
+// Voice Pipeline Stages used by AgentLayout
+export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking";
+
+export interface ToolCallPayload {
+  id?: string;
+  name: string;
+  args: Record<string, any>;
+}
+
+// 1. Gemini ki cheppe Website Automation Tools list
 export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[] = [
   {
     functionDeclarations: [
       {
         name: "navigate_dashboard_tab",
-        description: "Switches the active tab on Pathfinder and optionally scrolls to a specific section.",
+        description: "Switches the active module or tab on the Pathfinder website screen.",
         parameters: {
           type: Type.OBJECT,
           properties: {
             tabName: {
               type: Type.STRING,
               description:
-                "Tab ID: 'overview', 'interview', 'action', 'skills', 'projects', 'analytics', 'resume', 'branches', 'defense', 'profile', 'roles', or 'missions'."
+                "Tab ID to open: 'overview', 'projects', 'defense', 'interview', 'resume', 'roadmap', 'skill-gap', 'what-if', or 'cohort'."
             },
             sectionId: {
               type: Type.STRING,
@@ -26,11 +36,14 @@ export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[]
       },
       {
         name: "open_blueprint",
-        description: "Opens one of the 23 capstone project blueprints by number (1 to 23).",
+        description: "Opens one of the 23 flagship capstone project blueprints by its number (1 to 23).",
         parameters: {
           type: Type.OBJECT,
           properties: {
-            blueprintNumber: { type: Type.NUMBER, description: "Blueprint number (1-23)" }
+            blueprintNumber: {
+              type: Type.NUMBER,
+              description: "Blueprint number from 1 to 23"
+            }
           },
           required: ["blueprintNumber"]
         }
@@ -75,26 +88,46 @@ export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[]
       },
       {
         name: "scroll_and_highlight",
-        description: "Smoothly scrolls to and highlights any section or card on the current webpage.",
+        description: "Scrolls the webpage smoothly and highlights a specific section or card on screen.",
         parameters: {
           type: Type.OBJECT,
           properties: {
             targetTextOrId: {
               type: Type.STRING,
-              description: "data-das-id, element ID, or heading text to highlight"
+              description: "Section ID or visible heading text on screen"
             }
           },
           required: ["targetTextOrId"]
         }
       },
       {
-        name: "update_readiness_score",
-        description: "Adjusts the student's live placement readiness percentage after evaluating their viva or interview answer.",
+        name: "click_button_on_screen",
+        description: "Clicks any button on the website automatically based on its label text.",
         parameters: {
           type: Type.OBJECT,
           properties: {
-            scoreDelta: { type: Type.NUMBER, description: "Percentage points to add or subtract (e.g. +3 or -2)" },
-            feedback: { type: Type.STRING, description: "Brief reason for the score change" }
+            buttonText: {
+              type: Type.STRING,
+              description: "Visible text on the button to click"
+            }
+          },
+          required: ["buttonText"]
+        }
+      },
+      {
+        name: "update_readiness_score",
+        description: "Updates the student's live placement readiness score after answering a viva question.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            scoreDelta: {
+              type: Type.NUMBER,
+              description: "Points to add or subtract"
+            },
+            feedback: {
+              type: Type.STRING,
+              description: "Short evaluation note"
+            }
           },
           required: ["scoreDelta", "feedback"]
         }
@@ -103,13 +136,14 @@ export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[]
   }
 ];
 
+// 2. Gemini tool call pampagane Website meedha action chese executor
 export async function executeWebsiteTool(
   name: string,
   args: Record<string, any>
 ): Promise<Record<string, any>> {
-  console.log(`[Pathfinder ToolRunner] Executing: ${name}`, args);
+  console.log(`[Pathfinder Automation] Running tool: ${name}`, args);
 
-  // 1. Existing Home.tsx DAS Events trigger cheyadam
+  // Trigger existing Home.tsx DAS Events
   if (name === "navigate_dashboard_tab") {
     window.dispatchEvent(
       new CustomEvent("das-navigate-tab", {
@@ -132,23 +166,18 @@ export async function executeWebsiteTool(
     );
   }
 
-  // 2. Kotha pathfinder:agent-action event dispatch
   window.dispatchEvent(
     new CustomEvent("pathfinder:agent-action", {
       detail: { toolName: name, args }
     })
   );
 
-  // 3. Scroll & Neon Highlight effect
   if (name === "scroll_and_highlight") {
     const query = String(args.targetTextOrId || "").toLowerCase();
     const directEl =
       document.getElementById(query) ||
       document.querySelector(`[data-das-id="${query}"]`);
-
-    const elements = Array.from(
-      document.querySelectorAll("section, [data-das-id], div[id], h1, h2, h3")
-    );
+    const elements = Array.from(document.querySelectorAll("section, [data-das-id], div[id], h1, h2, h3, button"));
     const match = (directEl ||
       elements.find(
         (el) =>
@@ -159,52 +188,100 @@ export async function executeWebsiteTool(
 
     if (match) {
       match.scrollIntoView({ behavior: "smooth", block: "center" });
-      const prevOutline = match.style.outline;
       match.style.transition = "all 0.3s ease";
-      match.style.outline = "2px solid #ef4444";
-      match.style.boxShadow = "0 0 30px rgba(239, 68, 68, 0.45)";
+      match.style.outline = "3px solid #00f5d4";
+      match.style.boxShadow = "0 0 25px rgba(0, 245, 212, 0.6)";
       setTimeout(() => {
-        match.style.outline = prevOutline;
-        match.style.boxShadow = "none";
+        match.style.outline = "";
+        match.style.boxShadow = "";
       }, 3500);
       return { status: "highlighted", target: args.targetTextOrId };
     }
   }
 
-  return { status: "success", tool: name, args };
+  if (name === "click_button_on_screen") {
+    const targetLabel = String(args.buttonText || "").toLowerCase();
+    const buttons = Array.from(document.querySelectorAll("button, a[role='button']"));
+    const btn = buttons.find((b) => b.textContent?.toLowerCase().includes(targetLabel)) as HTMLElement | undefined;
+
+    if (btn) {
+      btn.scrollIntoView({ behavior: "smooth", block: "center" });
+      btn.click();
+      return { status: "clicked", button: args.buttonText };
+    }
+    return { status: "not_found", button: args.buttonText };
+  }
+
+  return { status: "executed", tool: name, args };
 }
 
-export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking";
-
-export interface ToolCallPayload {
-  id: string;
-  name: string;
-  args: Record<string, any>;
-  requires_confirmation?: boolean;
-}
-
+// Aliases and Exports required by AgentLayout.tsx & agentSocket.ts
 export function runTool(
   name: string,
   args: Record<string, any> = {},
-  _navigate?: (to: string) => void
-): { navigated?: boolean; explain?: boolean; success?: boolean } {
+  navigate?: (to: string) => void
+): { navigated?: boolean; explain?: boolean; status: string } {
   void executeWebsiteTool(name, args);
-  return { success: true, navigated: name.includes("navigate") || name === "open_blueprint" };
+  if (navigate && args.to) {
+    navigate(String(args.to));
+  }
+  return {
+    status: "executed",
+    navigated: name === "navigate_dashboard_tab" || name === "navigate",
+    explain: Boolean(args.explain)
+  };
 }
 
 export async function executeToolCall(
-  tool: ToolCallPayload,
-  _navigate?: (route: string) => void
-): Promise<{ success: boolean; data?: any }> {
-  const data = await executeWebsiteTool(tool.name, tool.args || {});
-  return { success: true, data };
+  payload: ToolCallPayload,
+  onNavigate?: (route: string) => void
+): Promise<Record<string, any>> {
+  if (onNavigate && payload.args?.to) {
+    onNavigate(String(payload.args.to));
+  }
+  return executeWebsiteTool(payload.name, payload.args || {});
 }
 
-export function snapshot() {
+export function snapshot(): Record<string, any> {
   return {
-    route: typeof window !== "undefined" ? window.location.pathname : "/",
-    title: typeof document !== "undefined" ? document.title : "Pathfinder 2.0",
-    text: "",
-    elements: [],
+    url: window.location.href,
+    title: document.title,
+    activeTab: new URLSearchParams(window.location.search).get("tab") || "overview"
+  };
+}
+
+
+// Aliases and Exports required by AgentLayout.tsx & agentSocket.ts
+export function runTool(
+  name: string,
+  args: Record<string, any> = {},
+  navigate?: (to: string) => void
+): { navigated?: boolean; explain?: boolean; status: string } {
+  void executeWebsiteTool(name, args);
+  if (navigate && args.to) {
+    navigate(String(args.to));
+  }
+  return {
+    status: "executed",
+    navigated: name === "navigate_dashboard_tab" || name === "navigate",
+    explain: Boolean(args.explain)
+  };
+}
+
+export async function executeToolCall(
+  payload: ToolCallPayload,
+  onNavigate?: (route: string) => void
+): Promise<Record<string, any>> {
+  if (onNavigate && payload.args?.to) {
+    onNavigate(String(payload.args.to));
+  }
+  return executeWebsiteTool(payload.name, payload.args || {});
+}
+
+export function snapshot(): Record<string, any> {
+  return {
+    url: window.location.href,
+    title: document.title,
+    activeTab: new URLSearchParams(window.location.search).get("tab") || "overview"
   };
 }

@@ -1,12 +1,14 @@
 // client/src/agent/geminiLive.ts
 import { GoogleGenAI, Modality } from "@google/genai";
-import { PATHFINDER_TOOLS, executeWebsiteTool } from "./toolRunner";
+import { PATHFINDER_TOOLS, executeWebsiteTool, VoicePipelineStage } from "./toolRunner";
 
 export interface GeminiLiveCallbacks {
   onAudioChunk?: (base64Pcm24k: string) => void;
   onInterrupted?: () => void;
   onTranscript?: (text: string, role: "user" | "agent") => void;
-  onToken?: (fullText: string) => void;
+  onToken?: (fullText: string, delta?: string) => void;
+  onToolCall?: (name: string, args: Record<string, any>) => any;
+  onStageChange?: (stage: VoicePipelineStage) => void;
   onStatusChange?: (status: "connecting" | "connected" | "disconnected" | "error") => void;
 }
 
@@ -16,7 +18,7 @@ export class PathfinderGeminiLive {
 
   constructor() {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
-    this.ai = new GoogleGenAI({ apiKey });
+    this.ai = new GoogleGenAI({ apiKey, apiVersion: "v1beta" });
   }
 
   async connect(callbacks: GeminiLiveCallbacks) {
@@ -24,28 +26,30 @@ export class PathfinderGeminiLive {
       callbacks.onStatusChange?.("connecting");
 
       this.session = await this.ai.live.connect({
-        model: "gemini-2.0-flash-exp",
+        model:
+          import.meta.env.VITE_GEMINI_LIVE_MODEL ||
+          "gemini-2.5-flash-native-audio-latest",
         config: {
-          responseModalities: [Modality.AUDIO],
+          responseModalities: [Modality.AUDIO], // Fixed: Using Modality enum
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: {
-                voiceName: "Fenrir",
-              },
-            },
+                voiceName: "Fenrir"
+              }
+            }
           },
           systemInstruction: {
             parts: [
               {
                 text: `You are Pathfinder, an elite 3D AI Career Placement Coach created by Boss Dileep Bommali.
 You control the Pathfinder website directly using your tools:
-1. When the user asks to see projects, blueprints, mock interviews, resume studio, skill gaps, roadmap, cohort analytics, or what-if simulator, immediately call 'navigate_dashboard_tab'.
-2. When discussing any of the 23 capstone blueprints, call 'open_blueprint' and 'scroll_and_highlight' so the screen moves automatically while you speak.
-3. During a project viva or mock interview, interrupt rambling answers, ask sharp architecture questions, and call 'update_readiness_score' based on their response.`,
-              },
-            ],
+1. When the user asks to see projects, blueprints, mock interviews, resume studio, skill gaps, roadmap, or analytics, call 'navigate_dashboard_tab'.
+2. When discussing any of the 23 capstone blueprints, call 'open_blueprint' and 'scroll_and_highlight'.
+3. During viva or mock interviews, ask sharp architecture questions and call 'update_readiness_score'.`
+              }
+            ]
           },
-          tools: PATHFINDER_TOOLS,
+          tools: PATHFINDER_TOOLS
         },
         callbacks: {
           onopen: () => {
@@ -69,14 +73,14 @@ You control the Pathfinder website directly using your tools:
             if (message.toolCall?.functionCalls) {
               const functionResponses = [];
               for (const call of message.toolCall.functionCalls) {
-                const result = await executeWebsiteTool(
-                  call.name || "",
-                  (call.args as Record<string, any>) || {}
-                );
+                const toolName = call.name || "";
+                const toolArgs = (call.args as Record<string, any>) || {};
+                callbacks.onToolCall?.(toolName, toolArgs);
+                const result = await executeWebsiteTool(toolName, toolArgs);
                 functionResponses.push({
                   id: call.id,
-                  name: call.name,
-                  response: result,
+                  name: toolName,
+                  response: result
                 });
               }
               await this.session.sendToolResponse({ functionResponses });
@@ -88,8 +92,8 @@ You control the Pathfinder website directly using your tools:
           },
           onclose: () => {
             callbacks.onStatusChange?.("disconnected");
-          },
-        },
+          }
+        }
       });
 
       return this.session;
@@ -100,50 +104,66 @@ You control the Pathfinder website directly using your tools:
     }
   }
 
-  // Home.tsx lo line 456 daggara geminiLive.sendTurn(...) kosam ee method:
+  // Fixed: Added speakText method called by AICoachConsole & audioIO
+  async speakText(text: string): Promise<boolean> {
+    try {
+      const response = await this.ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: `Read aloud and articulate naturally: ${text}`
+      });
+      return Boolean(response.text);
+    } catch (err) {
+      console.error("speakText error:", err);
+      return false;
+    }
+  }
+
+  // Fixed: Expanded sendTurn options to accept all parameters passed by AgentLayout.tsx
   async sendTurn(
     userText: string,
     options?: {
       systemPrompt?: string;
+      speakAudio?: boolean;
       history?: Array<{ role: string; content: string }>;
       signal?: AbortSignal;
       muteAudio?: boolean;
-      speakAudio?: boolean;
-      callbacks?: {
-        onToken?: (fullText: string, delta?: string) => void;
-        onToolCall?: (name: string, args: Record<string, any>) => any;
-        onStageChange?: (stage: "idle" | "listening" | "thinking" | "speaking") => void;
-      };
+      callbacks?: GeminiLiveCallbacks;
+      onToken?: (fullText: string, delta?: string) => void;
+      onToolCall?: (name: string, args: Record<string, any>) => any;
+      onStageChange?: (stage: VoicePipelineStage) => void;
     }
   ): Promise<string> {
     options?.callbacks?.onStageChange?.("thinking");
+    options?.onStageChange?.("thinking");
+
     const response = await this.ai.models.generateContent({
       model: "gemini-2.0-flash",
       contents: userText,
       config: {
         systemInstruction: options?.systemPrompt,
-        tools: PATHFINDER_TOOLS,
-      },
+        tools: PATHFINDER_TOOLS
+      }
     });
 
-    // Okavela chat lo tool call vasthe automatic ga website action run chesthundhi
     const calls = response.functionCalls;
     if (calls && calls.length > 0) {
       for (const call of calls) {
         const toolName = call.name || "";
         const toolArgs = (call.args as Record<string, any>) || {};
-        await executeWebsiteTool(toolName, toolArgs);
+        options?.onToolCall?.(toolName, toolArgs);
         options?.callbacks?.onToolCall?.(toolName, toolArgs);
+        await executeWebsiteTool(toolName, toolArgs);
       }
     }
 
     const replyText = response.text || "Action executed on your dashboard, Boss!";
     options?.callbacks?.onToken?.(replyText, replyText);
-    return replyText;
-  }
+    options?.onToken?.(replyText, replyText);
 
-  async speakText(_text: string): Promise<boolean> {
-    return false;
+    options?.callbacks?.onStageChange?.("speaking");
+    options?.onStageChange?.("speaking");
+
+    return replyText;
   }
 
   sendMicAudio(base64Pcm16k: string) {
@@ -151,8 +171,8 @@ You control the Pathfinder website directly using your tools:
     this.session.sendRealtimeInput({
       media: {
         data: base64Pcm16k,
-        mimeType: "audio/pcm;rate=16000",
-      },
+        mimeType: "audio/pcm;rate=16000"
+      }
     });
   }
 
@@ -164,5 +184,4 @@ You control the Pathfinder website directly using your tools:
   }
 }
 
-// Home.tsx lo `import { geminiLive } from "@/agent/geminiLive"` kosam singleton export:
 export const geminiLive = new PathfinderGeminiLive();
