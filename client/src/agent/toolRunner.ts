@@ -1,4 +1,4 @@
-// client/src/agent/toolRunner.ts
+﻿// client/src/agent/toolRunner.ts
 import { Type, FunctionDeclaration } from "@google/genai";
 
 // Voice Pipeline Stages used by AgentLayout
@@ -214,42 +214,6 @@ export async function executeWebsiteTool(
 
   return { status: "executed", tool: name, args };
 }
-
-// Aliases and Exports required by AgentLayout.tsx & agentSocket.ts
-export function runTool(
-  name: string,
-  args: Record<string, any> = {},
-  navigate?: (to: string) => void
-): { navigated?: boolean; explain?: boolean; status: string } {
-  void executeWebsiteTool(name, args);
-  if (navigate && args.to) {
-    navigate(String(args.to));
-  }
-  return {
-    status: "executed",
-    navigated: name === "navigate_dashboard_tab" || name === "navigate",
-    explain: Boolean(args.explain)
-  };
-}
-
-export async function executeToolCall(
-  payload: ToolCallPayload,
-  onNavigate?: (route: string) => void
-): Promise<Record<string, any>> {
-  if (onNavigate && payload.args?.to) {
-    onNavigate(String(payload.args.to));
-  }
-  return executeWebsiteTool(payload.name, payload.args || {});
-}
-
-export function snapshot(): Record<string, any> {
-  return {
-    url: window.location.href,
-    title: document.title,
-    activeTab: new URLSearchParams(window.location.search).get("tab") || "overview"
-  };
-}
-
 
 // Aliases and Exports required by AgentLayout.tsx & agentSocket.ts
 export function runTool(
