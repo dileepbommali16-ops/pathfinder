@@ -1,0 +1,36 @@
+# CodeRabbit Configuration — Keep PR/Review Scope Under 150 Files
+language: "en-US"
+reviews:
+  profile: "chill"
+  high_level_summary: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "client/src/agent/**"
+    - "client/src/services/**"
+    - "client/src/components/**"
+    - "client/src/pages/**"
+    - "backend/*.py"
+    - "backend/agent/*.py"
+    - "backend/routers/*.py"
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/*.lock"
+    - "!**/pnpm-lock.yaml"
+    - "!**/*.glb"
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.svg"
+    - "!**/*.csv"
+    - "!client/src/shaders/**"
+    - "!client/src/data/**"
+    - "!.agent/**"
+    - "!.agents/**"
+    - "!.claude/**"
+    - "!.codex/**"
+    - "!.impeccable/**"
+    - "!drizzle/**"
+    - "!supabase/**"
+    - "!docs/**"
