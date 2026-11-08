@@ -65,39 +65,87 @@ export default function Home() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const t = params.get("tab");
-      if (t && ["overview", "interview", "action", "skills", "projects", "analytics", "resume", "branches", "defense"].includes(t)) {
+      if (
+        t &&
+        [
+          "overview",
+          "interview",
+          "action",
+          "skills",
+          "projects",
+          "analytics",
+          "resume",
+          "branches",
+          "defense",
+        ].includes(t)
+      ) {
         return t as TabId;
       }
     }
     return "overview";
   });
-    const [focusOnDas, setFocusOnDas] = useState(false);
-const { getScreenPayload } = useScreenWatcher(activeTab);
 
-  // Central DAS action listeners for tab navigation & modals
+  const [focusOnDas, setFocusOnDas] = useState(false);
+  const { getScreenPayload } = useScreenWatcher(activeTab);
+
+  // Central DAS + Gemini Live Agent Automation Listeners
   useEffect(() => {
+    const mapToValidTab = (rawTab: string): { tab: TabId; scrollId?: string } => {
+      const normalized = rawTab.toLowerCase().trim();
+      const tabMap: Record<string, { tab: TabId; scrollId?: string }> = {
+        overview: { tab: "overview" },
+        dashboard: { tab: "overview" },
+        interview: { tab: "interview" },
+        "mock-interview": { tab: "interview" },
+        action: { tab: "action" },
+        skills: { tab: "skills" },
+        roadmap: { tab: "skills", scrollId: "roadmap-visualizer" },
+        projects: { tab: "projects" },
+        blueprints: { tab: "projects" },
+        analytics: { tab: "analytics" },
+        cohort: { tab: "analytics", scrollId: "cohort-explorer" },
+        resume: { tab: "resume" },
+        branches: { tab: "branches" },
+        defense: { tab: "defense" },
+        viva: { tab: "defense" },
+        profile: { tab: "profile" },
+        roles: { tab: "roles" },
+        missions: { tab: "missions" },
+        "skill-gap": { tab: "overview", scrollId: "career-skill-gap" },
+        "what-if": { tab: "overview", scrollId: "career-trajectory-simulator" },
+      };
+      return tabMap[normalized] || { tab: "overview" };
+    };
+
+    const scrollToElement = (target?: string) => {
+      if (!target) return;
+      setTimeout(() => {
+        const el =
+          document.getElementById(target) ||
+          document.querySelector(`[data-das-id="${target}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 250);
+    };
+
     const handleDASNavigate = (e: any) => {
       if (e.detail && e.detail.tab) {
-        setActiveTab(e.detail.tab as TabId);
+        const mapped = mapToValidTab(e.detail.tab);
+        setActiveTab(mapped.tab);
         setFocusOnDas(false);
-
-        const target = e.detail.scrollTarget || e.detail.targetId;
-        if (target) {
-          setTimeout(() => {
-            const el =
-              document.getElementById(target) ||
-              document.querySelector(`[data-das-id="${target}"]`);
-            if (el) {
-              el.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-          }, 250);
-        }
+        scrollToElement(e.detail.scrollTarget || e.detail.targetId || mapped.scrollId);
       }
     };
+
     const handleDASResume = () => setShowOnePageResume(true);
+
     const handleDASInterview = (e: any) => {
       if (e.detail) {
-        handleLaunchMockInterview(e.detail.company || "Razorpay / Fintech", e.detail.role || "Full Stack Engineer");
+        handleLaunchMockInterview(
+          e.detail.company || "Razorpay / Fintech",
+          e.detail.role || "Full Stack Engineer"
+        );
       } else {
         setActiveTab("interview");
       }
@@ -105,18 +153,14 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
 
     const handleDASSetFilter = (e: any) => {
       if (e.detail && e.detail.filter) {
-        // Filter projects/blueprints by branch
         setActiveTab("projects");
-        // Dispatch a custom event for ProjectRecommender to pick up
+        setFocusOnDas(false);
         window.dispatchEvent(
           new CustomEvent("das-filter-projects", { detail: { branch: e.detail.filter } })
         );
       }
     };
 
-    window.addEventListener("das-navigate-tab", handleDASNavigate);
-    window.addEventListener("das-open-resume-builder", handleDASResume);
-    window.addEventListener("das-open-mock-interview", handleDASInterview);
     const handleDASUpdateProfile = (e: any) => {
       const field = e?.detail?.field;
       const value = e?.detail?.value;
@@ -130,12 +174,66 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         else if (field === "internships") next.internships = Number(value);
         else if (field === "branch") next.branch = String(value).toUpperCase();
         else if (field === "targetRole" || field === "target_role") next.targetRole = String(value);
-        try { localStorage.setItem("pathfinder_profile_draft", JSON.stringify(next)); } catch {}
+        try {
+          localStorage.setItem("pathfinder_profile_draft", JSON.stringify(next));
+        } catch { }
         return next;
       });
     };
+
+    // NEW: Handler for toolRunner.ts (pathfinder:agent-action)
+    const handleAgentAction = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { toolName, args } = customEvent.detail || {};
+
+      // 1. Automatic Tab Switching
+      if (toolName === "navigate_dashboard_tab" && args?.tabName) {
+        const mapped = mapToValidTab(String(args.tabName));
+        setActiveTab(mapped.tab);
+        setFocusOnDas(false);
+        scrollToElement(mapped.scrollId);
+        toast.info(`Switched to ${mapped.tab.toUpperCase()} module`);
+      }
+
+      // 2. Automatic Blueprint Open (1 to 23)
+      if (toolName === "open_blueprint" && args?.blueprintNumber) {
+        setActiveTab("projects");
+        setFocusOnDas(false);
+        toast.success(`Opening Capstone Blueprint #${args.blueprintNumber}`);
+        setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent("das-open-blueprint", {
+              detail: { blueprintNumber: Number(args.blueprintNumber) },
+            })
+          );
+        }, 300);
+      }
+
+      // 3. Live Readiness Score Update during Viva / Mock Interview
+      if (toolName === "update_readiness_score" && typeof args?.scoreDelta === "number") {
+        const delta = Number(args.scoreDelta);
+        setPrediction((prev) => {
+          const nextChance = Math.min(99, Math.max(10, Number((prev.chance + delta).toFixed(1))));
+          return {
+            ...prev,
+            chance: nextChance,
+            tone: nextChance >= 75 ? "strong" : nextChance >= 55 ? "steady" : "focus",
+          };
+        });
+        if (delta >= 0) {
+          toast.success(`Readiness Score +${delta}%: ${args.feedback || "Strong answer!"}`);
+        } else {
+          toast.warning(`Readiness Score ${delta}%: ${args.feedback || "Needs deeper architecture clarity."}`);
+        }
+      }
+    };
+
+    window.addEventListener("das-navigate-tab", handleDASNavigate);
+    window.addEventListener("das-open-resume-builder", handleDASResume);
+    window.addEventListener("das-open-mock-interview", handleDASInterview);
     window.addEventListener("das-set-filter", handleDASSetFilter);
     window.addEventListener("das-update-profile", handleDASUpdateProfile);
+    window.addEventListener("pathfinder:agent-action", handleAgentAction);
 
     return () => {
       window.removeEventListener("das-navigate-tab", handleDASNavigate);
@@ -143,10 +241,11 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       window.removeEventListener("das-open-mock-interview", handleDASInterview);
       window.removeEventListener("das-set-filter", handleDASSetFilter);
       window.removeEventListener("das-update-profile", handleDASUpdateProfile);
+      window.removeEventListener("pathfinder:agent-action", handleAgentAction);
     };
   }, []);
 
-  // Photo 3 - Item 5: Dynamic Document Page Titles based on Active Tab
+  // Dynamic Document Page Titles based on Active Tab
   useEffect(() => {
     const titles: Record<TabId, string> = {
       overview: "Executive Dashboard · Pathfinder 2.0",
@@ -172,7 +271,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       if (saved) {
         try {
           return { ...DEFAULT_STUDENT_PROFILE, ...JSON.parse(saved) };
-        } catch {}
+        } catch { }
       }
     }
     return DEFAULT_STUDENT_PROFILE;
@@ -212,7 +311,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         try {
           const parsed = JSON.parse(saved);
           if (parsed.username) return parsed.username;
-        } catch {}
+        } catch { }
       }
     }
     return "Student";
@@ -225,7 +324,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         try {
           const parsed = JSON.parse(saved);
           if (parsed.email) return parsed.email;
-        } catch {}
+        } catch { }
       }
     }
     return "candidate@pathfinder.ai";
@@ -238,7 +337,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         try {
           const parsed = JSON.parse(saved);
           if (parsed.role) return parsed.role;
-        } catch {}
+        } catch { }
       }
     }
     return "student";
@@ -265,12 +364,11 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     initAuthMode();
   }, []);
 
-  // Pre-warm backend immediately on mount (wakes up sleeping Render instance early)
-  // and keep-alive every 9 minutes so visitors browsing the demo never hit cold starts
+  // Pre-warm backend immediately on mount
   useEffect(() => {
-    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
+    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => { });
     const interval = setInterval(() => {
-      fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
+      fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => { });
     }, 9 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
@@ -278,8 +376,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
   // Complete OAuth returns before rendering either the login card or dashboard.
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    // The one-time code is single-use: guard so StrictMode/re-renders never run the exchange twice
     if (oauthHandledRef.current) return;
 
     const searchParams = new URLSearchParams(window.location.search);
@@ -301,7 +397,9 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
           github_timeout: "GitHub took too long to respond. Please try again.",
           state_invalid: "Your sign-in session expired. Please try again.",
         };
-        setOauthError(messages[queryError.toLowerCase()] || "Sign-in was cancelled or failed. Please try again.");
+        setOauthError(
+          messages[queryError.toLowerCase()] || "Sign-in was cancelled or failed. Please try again."
+        );
         return;
       }
 
@@ -310,17 +408,20 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         (async () => {
           try {
             const exchange = () =>
-              fetchWithTimeout(`${API_BASE}/api/auth/oauth/exchange`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ code: oauthCode }),
-              }, 60000);
+              fetchWithTimeout(
+                `${API_BASE}/api/auth/oauth/exchange`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ code: oauthCode }),
+                },
+                60000
+              );
 
             let exchangeResp: Response;
             try {
               exchangeResp = await exchange();
             } catch (networkErr) {
-              // Retry once, on network errors only (not on timeouts or HTTP errors)
               if (networkErr instanceof TypeError) {
                 await new Promise((resolve) => setTimeout(resolve, 1500));
                 exchangeResp = await exchange();
@@ -331,7 +432,9 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
 
             const authData = await exchangeResp.json().catch(() => ({} as any));
             if (!exchangeResp.ok || !authData.success || !authData.user || !authData.token) {
-              throw new Error(authData.message || authData.detail || "OAuth sign-in could not be completed.");
+              throw new Error(
+                authData.message || authData.detail || "OAuth sign-in could not be completed."
+              );
             }
 
             localStorage.setItem("pathfinder_token", authData.token);
@@ -374,7 +477,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     const error = params.get("oauth_error");
     const isNew = params.get("new") === "1";
 
-    // Immediately remove fragment from URL without reload
     window.history.replaceState(null, "", window.location.pathname + window.location.search);
 
     if (error) {
@@ -415,7 +517,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
   }, []);
 
   // 1. Prediction State
-
   const [prediction, setPrediction] = useState<{
     chance: number;
     label: string;
@@ -433,9 +534,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       "Practical Engineering Exposure (1 Internship)",
       "Core Problem Solving Foundation (7/10)",
     ],
-    priorities: [
-      "Target Blind 75 DSA patterns to elevate screening clearance rate",
-    ],
+    priorities: ["Target Blind 75 DSA patterns to elevate screening clearance rate"],
     breakdown: {
       academics: 78.0,
       coding_dsa: 70.0,
@@ -447,7 +546,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
   const [isCalculating, setIsCalculating] = useState(false);
 
   useEffect(() => {
-    // Read session parameters from window or URL query params if present
     const params = new URLSearchParams(window.location.search);
     const userParam = params.get("username") || params.get("user");
     const emailParam = params.get("email");
@@ -457,11 +555,9 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     }
     if (emailParam) setEmail(emailParam);
 
-    // Initial calculations
     fetchPrediction(profile);
     fetchCohortAnalytics({ year: 2026, branch: "All", gender: "All", skill: "All" });
 
-    // Health check & cold-start detector for Render free tier
     const coldTimer = setTimeout(() => setIsServerWakingUp(true), 2500);
     fetch(`${API_BASE}/api/health`)
       .then((res) => {
@@ -472,9 +568,8 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       })
       .catch(() => setIsServerWakingUp(true));
 
-    // Keep-alive ping every 3 minutes
     const keepAlive = setInterval(() => {
-      fetch(`${API_BASE}/api/health`).catch(() => {});
+      fetch(`${API_BASE}/api/health`).catch(() => { });
     }, 180000);
 
     return () => {
@@ -489,7 +584,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     isNewUser?: boolean;
     bypassOnboarding?: boolean;
   }) => {
-    // Auto Boss detection for Dileep Bommali vs Sir mode
     const role = handleAuthLoginDetected(user.email, user.username);
     localStorage.setItem("userEmail", user.email);
     localStorage.setItem("userRole", role);
@@ -514,16 +608,20 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         if (u.auth_provider === "google" || u.auth_provider === "github") {
           isOAuth = true;
         }
-      } catch {}
+      } catch { }
     }
 
     if (!isOAuth) {
       try {
-        const loginResp = await fetchWithTimeout(`${API_BASE}/api/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: user.username, email: user.email }),
-        }, 5000);
+        const loginResp = await fetchWithTimeout(
+          `${API_BASE}/api/auth/login`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: user.username, email: user.email }),
+          },
+          5000
+        );
         if (loginResp.ok) {
           const authData = await loginResp.json();
           if (authData.token) {
@@ -543,12 +641,11 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       }
     }
 
-
     if (user.isNewUser) {
-      // Force onboarding wizard for newly registered candidates
       const freshProfile: StudentProfileState = {
         ...DEFAULT_STUDENT_PROFILE,
-        fullName: user.username !== "Student" && user.username !== "New Student" ? user.username : "",
+        fullName:
+          user.username !== "Student" && user.username !== "New Student" ? user.username : "",
         onboardingCompleted: false,
         wizardStep: 1,
       };
@@ -561,7 +658,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     }
 
     if (user.bypassOnboarding) {
-      // Pre-filled demo user: go straight to dashboard
       const demoProfile: StudentProfileState = {
         ...DEFAULT_STUDENT_PROFILE,
         fullName: user.username,
@@ -576,9 +672,12 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       return;
     }
 
-    // Returning user: check backend persisted profile
     try {
-      const resp = await fetchWithTimeout(`${API_BASE}/api/profile?email=${encodeURIComponent(user.email)}`, {}, 45000);
+      const resp = await fetchWithTimeout(
+        `${API_BASE}/api/profile?email=${encodeURIComponent(user.email)}`,
+        {},
+        45000
+      );
       if (resp.ok) {
         const data = await resp.json();
         if (data && data.branch) {
@@ -618,7 +717,10 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     }
   };
 
-  const handleWizardComplete = (completedProfile: StudentProfileState, audit: ReadinessAuditData) => {
+  const handleWizardComplete = (
+    completedProfile: StudentProfileState,
+    audit: ReadinessAuditData
+  ) => {
     setProfile(completedProfile);
     setAuditResult(audit);
     setShowResultScreen(true);
@@ -673,11 +775,15 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         wizard_step: 5,
       };
 
-      const saveResp = await fetchWithTimeout(`${API_BASE}/api/profile`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }, 6000);
+      const saveResp = await fetchWithTimeout(
+        `${API_BASE}/api/profile`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+        6000
+      );
       if (saveResp.ok) {
         toast.success("Profile saved and synchronized with AI engine!");
       }
@@ -689,7 +795,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     await fetchPrediction(updated);
   };
 
-  // Synchronize target role update across Career Digital Twin, ML Sensitivity, Roadmap & Projects
   const handleUpdateTargetRole = (newRole: string) => {
     const updated = { ...profile, targetRole: newRole };
     setProfile(updated);
@@ -712,16 +817,24 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       };
 
       const [predResp, skillResp] = await Promise.allSettled([
-        fetchWithTimeout(`${API_BASE}/api/predict`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }, 45000),
-        fetchWithTimeout(`${API_BASE}/api/skill-gap`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }, 45000),
+        fetchWithTimeout(
+          `${API_BASE}/api/predict`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          },
+          45000
+        ),
+        fetchWithTimeout(
+          `${API_BASE}/api/skill-gap`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          },
+          45000
+        ),
       ]);
 
       if (predResp.status === "fulfilled" && predResp.value.ok) {
@@ -765,8 +878,8 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       chance >= 75
         ? "Strong Candidate Profile"
         : chance >= 55
-        ? "Solid Foundation"
-        : "Needs Focus & Acceleration";
+          ? "Solid Foundation"
+          : "Needs Focus & Acceleration";
 
     setPrediction({
       chance,
@@ -779,7 +892,9 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       ],
       priorities: [
         p.cgpa < 7.0 ? "Raise CGPA to >= 7.0 for top-tier cutoff" : "Maintain academic consistency",
-        p.coding < 7 ? "Focus on high-frequency Blind 75 DSA patterns" : "Participate in timed mock rounds",
+        p.coding < 7
+          ? "Focus on high-frequency Blind 75 DSA patterns"
+          : "Participate in timed mock rounds",
       ],
       breakdown: {
         academics: Math.round(p.cgpa * 10),
@@ -798,21 +913,25 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
   const fetchRoadmap = async () => {
     setIsRoadmapLoading(true);
     try {
-      const resp = await fetchWithTimeout(`${API_BASE}/api/ai/roadmap`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cgpa: profile.cgpa,
-          backlogs: profile.backlogs,
-          internships: profile.internships,
-          communication: profile.communication,
-          coding: profile.coding,
-          target_role: profile.targetRole,
-          target_tier: profile.targetTier,
-          branch: profile.branch,
-          graduation_year: profile.graduationYear,
-        }),
-      }, 10000);
+      const resp = await fetchWithTimeout(
+        `${API_BASE}/api/ai/roadmap`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cgpa: profile.cgpa,
+            backlogs: profile.backlogs,
+            internships: profile.internships,
+            communication: profile.communication,
+            coding: profile.coding,
+            target_role: profile.targetRole,
+            target_tier: profile.targetTier,
+            branch: profile.branch,
+            graduation_year: profile.graduationYear,
+          }),
+        },
+        10000
+      );
       if (resp.ok) {
         const data = await resp.json();
         setRoadmap(data);
@@ -844,9 +963,8 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     };
     window.addEventListener("pathfinder_server_waking_up", handleWakingUpEvent);
 
-    // Keep-alive ping to /api/health every 4 minutes to prevent Render spin-down
     const pingInterval = setInterval(() => {
-      fetch(`${API_BASE}/api/health`).catch(() => {});
+      fetch(`${API_BASE}/api/health`).catch(() => { });
     }, 4 * 60 * 1000);
 
     return () => {
@@ -887,13 +1005,11 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     const abortCtrl = new AbortController();
     chatAbortRef.current = abortCtrl;
 
-    // Detect Render cold-start: if response takes longer than 8.0s, signal server wake-up
     const coldStartTimer = setTimeout(() => {
       setIsChatWakingUp(true);
     }, 8000);
 
     const currentBase = customHistory || messages;
-    // Filter history: drop leading initial assistant greeting so first history item is user turn
     const cleanHistory = currentBase
       .filter((m, idx) => !(idx === 0 && m.role === "assistant"))
       .slice(-12)
@@ -935,14 +1051,13 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       },
     };
 
-    // 1. Unified Gemini Live WebSocket Streaming (Brain + 24kHz Native Audio + Tool Calling in ONE session)
     const streamBackend = async (): Promise<boolean> => {
       try {
         let voiceReplyEnabled = true;
         try {
           const stored = localStorage.getItem("pathfinder_voice_reply_enabled");
           if (stored !== null) voiceReplyEnabled = stored === "true";
-        } catch {}
+        } catch { }
 
         const ragPrompt = buildRagGeminiSystemPrompt({
           query: trimmed,
@@ -957,7 +1072,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
           systemPrompt: ragPrompt,
           speakAudio: voiceReplyEnabled,
           callbacks: {
-            onToken: (fullText) => {
+            onToken: (fullText: string) => {
               if (abortCtrl.signal.aborted) return;
               clearTimeout(coldStartTimer);
               setIsChatWakingUp(false);
@@ -1020,7 +1135,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
           const { value, done } = await reader.read();
           if (done) break;
           if (abortCtrl.signal.aborted) {
-            reader.cancel().catch(() => {});
+            reader.cancel().catch(() => { });
             return true;
           }
 
@@ -1045,7 +1160,10 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 if (!hasAppendedPlaceholder) {
                   hasAppendedPlaceholder = true;
                   startTransition(() => {
-                    setMessages((prev) => [...prev, { role: "assistant", content: currentContent }]);
+                    setMessages((prev) => [
+                      ...prev,
+                      { role: "assistant", content: currentContent },
+                    ]);
                   });
                 } else {
                   startTransition(() => {
@@ -1063,13 +1181,12 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 }
               }
               if (parsed.done) break;
-            } catch {}
+            } catch { }
           }
         }
 
         const isSubstantialStream = accumulated.trim().length >= 10;
         if (!isSubstantialStream && hasAppendedPlaceholder) {
-          // Stream truncated or aborted before meaningful text; revert placeholder so full fallback can populate
           startTransition(() => {
             setMessages((prev) => {
               if (prev.length > 0 && prev[prev.length - 1].role === "assistant") {
@@ -1086,7 +1203,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       }
     };
 
-    // 2. Fallback blocking call
     const callBackend = async (isRetry = false): Promise<string | null> => {
       try {
         const resp = await fetchWithTimeout(
@@ -1114,7 +1230,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
           }
         }
 
-        // Retry once on transient server errors (500, 502, 503, 504)
         if (!isRetry && resp.status >= 500) {
           await new Promise((resolve) => setTimeout(resolve, 1500));
           return callBackend(true);
@@ -1123,10 +1238,8 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         return null;
       } catch (err: any) {
         if (abortCtrl.signal.aborted) {
-          // Manually cancelled by user via stop button
           return null;
         }
-        // If timeout or network dropped, retry once before failing
         if (!isRetry) {
           await new Promise((resolve) => setTimeout(resolve, 1500));
           return callBackend(true);
@@ -1187,7 +1300,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
 
   const handleRegenerateChat = () => {
     if (isChatSendingRef.current) return;
-    // Find the last user message and re-send it
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === "user") {
         const lastUserText = messages[i].content;
@@ -1326,7 +1438,10 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             score: 78,
             verdict: "Strong technical foundation with measurable project work.",
             strengths: ["Clean chronological structure", "Full-stack web & database projects"],
-            improvements: ["Rewrite project bullets using the Google X-Y-Z formula", "Add live deployment links"],
+            improvements: [
+              "Rewrite project bullets using the Google X-Y-Z formula",
+              "Add live deployment links",
+            ],
             ats_keywords: ["REST APIs", "Data Structures", "PostgreSQL", "Docker"],
             formatting_tips: ["Single-column layout", "Standard ATS taxonomies"],
           }
@@ -1350,13 +1465,10 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     }
   };
 
-  // Logout: cleans state and returns to the Lamp Login screen
   const handleLogout = async () => {
     try {
       await fetchWithTimeout(`${API_BASE}/api/auth/logout`, { method: "POST" }, 2000);
-    } catch {
-      // ignore
-    }
+    } catch { }
     localStorage.removeItem("pathfinder_user");
     localStorage.removeItem("pathfinder_token");
     setIsAuthenticated(false);
@@ -1364,16 +1476,15 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     setUserRole("student");
     try {
       window.parent.postMessage({ type: "PATHFINDER_LOGOUT" }, "*");
-    } catch {
-      // ignore
-    }
+    } catch { }
   };
 
-
-  // Check if any optional profile fields are missing to show completion banner on dashboard
   const isProfilePartiallyIncomplete =
     Boolean(profile.onboardingCompleted) &&
-    (!profile.githubUrl || !profile.leetcodeUrl || !profile.certifications || profile.certifications.length === 0);
+    (!profile.githubUrl ||
+      !profile.leetcodeUrl ||
+      !profile.certifications ||
+      profile.certifications.length === 0);
 
   // 1. LANDING & AUTH SCREEN
   if (oauthSigningIn && !isAuthenticated) {
@@ -1387,7 +1498,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
     return <LampLogin onLogin={handleLogin} initialError={oauthError} />;
   }
 
-  // 2. ONBOARDING WIZARD (STRICT STEP-WISE FLOW FOR NEW USERS)
+  // 2. ONBOARDING WIZARD
   if (!profile.onboardingCompleted) {
     return (
       <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0b10] text-[#f8fafc] font-sans overflow-x-hidden">
@@ -1402,8 +1513,12 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 <Sparkles className="h-5 w-5 text-[#ffffff]" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-[#f8fafc] tracking-tight">Pathfinder Candidate Onboarding</h1>
-                <p className="text-xs text-[#94a3b8]">Step-Wise Profile Setup for AI Career Readiness Assessment</p>
+                <h1 className="text-base font-bold text-[#f8fafc] tracking-tight">
+                  Pathfinder Candidate Onboarding
+                </h1>
+                <p className="text-xs text-[#94a3b8]">
+                  Step-Wise Profile Setup for AI Career Readiness Assessment
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -1453,7 +1568,9 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             onStartMockInterview={() => {
               setShowResultScreen(false);
               setActiveTab("interview");
-              handleSendMessage("Let's do an interactive mock interview for my role. Ask me question 1.");
+              handleSendMessage(
+                "Let's do an interactive mock interview for my role. Ask me question 1."
+              );
             }}
             onNavigateTab={(tab: string) => {
               setShowResultScreen(false);
@@ -1468,7 +1585,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
   // 4. MAIN DASHBOARD & PLATFORM NAVIGATION
   return (
     <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0b10] text-[#f8fafc] selection:bg-[#ffffff]/35 selection:text-[#f8fafc] font-sans overflow-x-hidden">
-      {/* Graceful Cold-Start Wake-Up Notification */}
       {isGlobalServerWakingUp && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[rgba(255,255,255,0.08)] bg-[#11131c]/95 px-4 py-2 text-xs font-medium text-[#f8fafc] shadow-[0_4px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
           <Loader2 className="h-3.5 w-3.5 animate-spin text-[#ffffff]" />
@@ -1476,23 +1592,22 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         </div>
       )}
 
-      {/* ================= PREMIUM AI STARTUP BACKGROUND SYSTEM ================= */}
+      {/* BACKGROUND SYSTEM */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
         <div className="absolute inset-0 bg-gradient-to-b from-[#0a0b10] via-[#0d0f18] to-[#0a0b10]" />
         <Ambient3DBackground />
 
-        {/* Matrix Grid */}
         <div
           className="absolute inset-0 opacity-[0.025]"
           style={{
             backgroundImage: `radial-gradient(circle at 1px 1px, rgba(234,230,224,0.7) 1px, transparent 0)`,
             backgroundSize: "32px 32px",
             maskImage: "radial-gradient(ellipse 75% 65% at 50% 20%, black 30%, transparent 85%)",
-            WebkitMaskImage: "radial-gradient(ellipse 75% 65% at 50% 20%, black 30%, transparent 85%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 75% 65% at 50% 20%, black 30%, transparent 85%)",
           }}
         />
 
-        {/* Ambient Neutral Glows - Hardware Composited for 60fps locked transitions */}
         <div
           className="absolute -top-[160px] left-1/2 -translate-x-1/2 h-[520px] w-[980px] rounded-full blur-[100px] pointer-events-none opacity-70"
           style={{
@@ -1546,8 +1661,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
         userRole={userRole}
       />
 
-
-      {/* Render Cold-Start Alert Banner */}
       {isServerWakingUp && (
         <div className="relative z-40 border-b border-[#161926] bg-[#0a0b10] px-4 py-2 text-center text-xs font-medium text-[#f8fafc] backdrop-blur-md">
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2">
@@ -1555,14 +1668,16 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
             </span>
-            <span>Connecting to cloud backend... (free-tier servers take ~15-20s on first load). All predictions will populate automatically.</span>
+            <span>
+              Connecting to cloud backend... (free-tier servers take ~15-20s on first load). All
+              predictions will populate automatically.
+            </span>
           </div>
         </div>
       )}
 
       {/* Main Container */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
-        {/* SINGLE PERSISTENT 3D FACE INSTANCE IN BACKGROUND + COMPACT DOCKED CHAT BAR */}
         <AgentLayout
           profile={profile}
           activeTab={activeTab}
@@ -1590,7 +1705,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
           </div>
         )}
         <AnimatePresence mode="wait">
-          {/* TAB 1: READINESS OVERVIEW & COMMAND CENTER */}
+          {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
             <motion.div
               key="overview"
@@ -1598,13 +1713,11 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
-              className={`transition-all duration-300 ${
-                focusOnDas
+              className={`transition-all duration-300 ${focusOnDas
                   ? "pointer-events-none opacity-0 h-0 overflow-hidden"
                   : "opacity-100 pointer-events-auto space-y-12 sm:space-y-16"
-              }`}
+                }`}
             >
-              {/* Focus on DAS Top Quick Toggle Bar */}
               <div className="flex items-center justify-between gap-4 pb-2">
                 <div className="flex items-center gap-2">
                   <span className="relative flex h-2 w-2">
@@ -1624,7 +1737,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                   <span>Focus on DAS</span>
                 </button>
               </div>
-              {/* Optional Profile Completion Banner */}
+
               {isProfilePartiallyIncomplete && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#161926] bg-[#11131c] p-5 backdrop-blur-md">
                   <div className="flex items-center gap-3">
@@ -1632,9 +1745,12 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                       <Sparkles className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-[#f8fafc]">Profile Acceleration Available</p>
+                      <p className="text-sm font-semibold text-[#f8fafc]">
+                        Profile Acceleration Available
+                      </p>
                       <p className="text-xs text-[#94a3b8]">
-                        Add your GitHub / LeetCode profiles or certifications in Profile / Settings to elevate your career readiness score by up to +12%.
+                        Add your GitHub / LeetCode profiles or certifications in Profile / Settings
+                        to elevate your career readiness score by up to +12%.
                       </p>
                     </div>
                   </div>
@@ -1649,7 +1765,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 </div>
               )}
 
-              {/* Section 1: Hero KPI Metrics */}
               <section id="career-readiness-assessment" data-das-id="hero-metrics" className="space-y-4">
                 <SectionHeader
                   title="Campus Placement Readiness Overview"
@@ -1675,7 +1790,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 />
               </section>
 
-              {/* Section 1.5: Target Company Placement Radar */}
               <section id="career-company-radar" data-das-id="company-radar" className="space-y-4">
                 <SectionHeader
                   title="Target Company Placement Radar"
@@ -1694,7 +1808,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 />
               </section>
 
-              {/* Section 2: Career Digital Twin */}
               <section id="career-digital-twin" data-das-id="career-twin" className="space-y-4">
                 <SectionHeader
                   title="Candidate Readiness Vectors"
@@ -1713,7 +1826,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 />
               </section>
 
-              {/* Section 3: Priority Next Actions */}
               <section id="career-next-actions" data-das-id="next-actions" className="space-y-4">
                 <SectionHeader
                   title="Priority Next Best Actions"
@@ -1731,7 +1843,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 />
               </section>
 
-              {/* Section 4: AI Action Center */}
               <section id="career-action-center" data-das-id="action-center" className="space-y-4">
                 <SectionHeader
                   title="AI Action Center"
@@ -1755,8 +1866,11 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 />
               </section>
 
-              {/* Section 5: What-If? Trajectory Simulator */}
-              <section id="career-trajectory-simulator" data-das-id="whatif-simulator" className="space-y-4">
+              <section
+                id="career-trajectory-simulator"
+                data-das-id="whatif-simulator"
+                className="space-y-4"
+              >
                 <SectionHeader
                   title="What-If? Career Trajectory Simulator"
                   description="Simulate the immediate placement probability boost of boosting CGPA, clearing backlogs, or shipping an internship"
@@ -1776,7 +1890,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 />
               </section>
 
-              {/* Section 6.5: Live Technical Footprint & Fraud Shield */}
               <section id="career-live-skill-verifier" data-das-id="live-verifier" className="space-y-4">
                 <SectionHeader
                   title="Live Technical Footprint & Fraud Shield"
@@ -1789,7 +1902,9 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 <LiveSkillVerifier
                   currentProfile={profile}
                   onApplyVerifiedSkills={(skills) => {
-                    const updatedSkills = Array.from(new Set([...(profile.technicalSkills || []), ...skills]));
+                    const updatedSkills = Array.from(
+                      new Set([...(profile.technicalSkills || []), ...skills])
+                    );
                     const merged = { ...profile, technicalSkills: updatedSkills };
                     setProfile(merged);
                     handleSaveProfile(merged);
@@ -1798,7 +1913,6 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 />
               </section>
 
-              {/* Section 7: Skill-Gap & Strengths */}
               <section id="career-skill-gap" data-das-id="skill-gap" className="space-y-4">
                 <SectionHeader
                   title="Target Role Skill Gap Analysis"
@@ -1818,7 +1932,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             </motion.div>
           )}
 
-          {/* TAB: LIVE AI MOCK INTERVIEW SIMULATOR */}
+          {/* TAB: INTERVIEW */}
           {activeTab === "interview" && (
             <motion.div
               key="interview"
@@ -1847,7 +1961,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             </motion.div>
           )}
 
-          {/* TAB 2: AI ACTION CENTRE */}
+          {/* TAB 2: ACTION */}
           {activeTab === "action" && (
             <motion.div
               key="action"
@@ -1884,7 +1998,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             </motion.div>
           )}
 
-          {/* TAB 3: SKILLS ROADMAP */}
+          {/* TAB 3: SKILLS */}
           {activeTab === "skills" && (
             <motion.div
               key="skills"
@@ -1903,10 +2017,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 icon={Compass}
                 helperLabel="Milestones auto-adapt as you update skills and role"
               />
-              <CareerMissionTracker
-                profile={profile}
-                onNavigateTab={setActiveTab}
-              />
+              <CareerMissionTracker profile={profile} onNavigateTab={setActiveTab} />
               <RoadmapVisualizer
                 roadmap={roadmap}
                 isLoading={isRoadmapLoading}
@@ -1922,7 +2033,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             </motion.div>
           )}
 
-          {/* TAB 4: BRANCHES & COURSES */}
+          {/* TAB 4: BRANCHES */}
           {activeTab === "branches" && (
             <motion.div
               key="branches"
@@ -1951,7 +2062,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             </motion.div>
           )}
 
-          {/* TAB 5: COHORT ANALYTICS / PLACEMENTS */}
+          {/* TAB 5: ANALYTICS */}
           {activeTab === "analytics" && (
             <motion.div
               key="analytics"
@@ -1986,11 +2097,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             </motion.div>
           )}
 
-          
-
-
-
-          {/* TAB 7: PROFILE / SETTINGS (EDIT DETAILS ANYTIME & SSOT SYNC) */}
+          {/* TAB 7: PROFILE */}
           {activeTab === "profile" && (
             <motion.div
               key="profile"
@@ -2021,7 +2128,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             </motion.div>
           )}
 
-          {/* ADDITIONAL FEATURE TABS: RESUME STUDIO, PROJECTS, DEFENSE */}
+          {/* RESUME STUDIO */}
           {activeTab === "resume" && (
             <motion.div
               key="resume"
@@ -2045,7 +2152,9 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 isLoading={isAnalyzingResume}
                 onDownloadFeedbackPDF={handleDownloadResumePDF}
                 onApplyResumeSkills={(skills) => {
-                  const updatedSkills = Array.from(new Set([...(profile.technicalSkills || []), ...skills]));
+                  const updatedSkills = Array.from(
+                    new Set([...(profile.technicalSkills || []), ...skills])
+                  );
                   const merged = { ...profile, technicalSkills: updatedSkills };
                   setProfile(merged);
                   handleSaveProfile(merged);
@@ -2055,6 +2164,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             </motion.div>
           )}
 
+          {/* PROJECTS */}
           {activeTab === "projects" && (
             <motion.div
               key="projects"
@@ -2080,6 +2190,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             </motion.div>
           )}
 
+          {/* DEFENSE */}
           {activeTab === "defense" && (
             <motion.div
               key="defense"
@@ -2097,13 +2208,11 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
                 icon={ShieldAlert}
                 helperLabel="Simulates Round 2 technical interview architecture questioning"
               />
-              <ProjectDefenseConsole
-                profile={profile}
-                onAskCoach={handleAskCoach}
-              />
+              <ProjectDefenseConsole profile={profile} onAskCoach={handleAskCoach} />
             </motion.div>
           )}
 
+          {/* ROLES */}
           {activeTab === "roles" && (
             <motion.div
               key="roles"
@@ -2122,6 +2231,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
             </motion.div>
           )}
 
+          {/* MISSIONS */}
           {activeTab === "missions" && (
             <motion.div
               key="missions"
@@ -2131,10 +2241,7 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
               transition={{ duration: 0.25 }}
               className="space-y-8"
             >
-              <CareerMissionTracker
-                profile={profile}
-                onNavigateTab={setActiveTab}
-              />
+              <CareerMissionTracker profile={profile} onNavigateTab={setActiveTab} />
               <RoadmapVisualizer
                 roadmap={roadmap}
                 isLoading={isRoadmapLoading}
@@ -2144,13 +2251,15 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
           )}
         </AnimatePresence>
 
-        {/* Global Floating 'Ask Coach' Trigger (Available on all tabs except Coach) */}
+        {/* Global Floating 'Ask Coach' Trigger */}
         {activeTab !== "coach" && activeTab !== "overview" && (
           <button
             type="button"
             onClick={() => {
               const tabTitle = getTabKnowledge(activeTab)?.title || activeTab;
-              handleAskCoach(`Explain the '${tabTitle}' tab and what actions I should take here to improve my placement readiness.`);
+              handleAskCoach(
+                `Explain the '${tabTitle}' tab and what actions I should take here to improve my placement readiness.`
+              );
             }}
             className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full border border-white/20 bg-[#11131c]/95 px-4 py-2.5 text-xs font-semibold text-white shadow-xl shadow-white/10 backdrop-blur-xl transition-all hover:scale-105 hover:border-white/40 hover:text-white hover:shadow-white/20 active:scale-95 cursor-pointer"
             title="Ask AI Coach about this page"
@@ -2167,10 +2276,8 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
           profile={profile}
         />
 
-        {/* Global Footer with Dynamic Year, Tab Links, and Contact Actions */}
-        {!(activeTab === "overview" && focusOnDas) && (
-          <Footer onNavigateTab={setActiveTab} />
-        )}
+        {/* Global Footer */}
+        {!(activeTab === "overview" && focusOnDas) && <Footer onNavigateTab={setActiveTab} />}
       </main>
     </div>
   );

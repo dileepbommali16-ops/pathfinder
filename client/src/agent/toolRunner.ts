@@ -1,13 +1,178 @@
-/**
- * toolRunner.ts - Website DOM Tool Executor for Unified Gemini Live Agent
- *
- * Executes website control tools dispatched by the Gemini Live WebSocket session:
- * - navigate / navigate_to
- * - scroll / scroll_to
- * - click
- * - highlight / pick_project
- * - fill_field / read_page
- */
+// client/src/agent/toolRunner.ts
+import { Type, FunctionDeclaration } from "@google/genai";
+
+export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[] = [
+  {
+    functionDeclarations: [
+      {
+        name: "navigate_dashboard_tab",
+        description: "Switches the active tab on Pathfinder and optionally scrolls to a specific section.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            tabName: {
+              type: Type.STRING,
+              description:
+                "Tab ID: 'overview', 'interview', 'action', 'skills', 'projects', 'analytics', 'resume', 'branches', 'defense', 'profile', 'roles', or 'missions'."
+            },
+            sectionId: {
+              type: Type.STRING,
+              description:
+                "Optional section to scroll to on overview: 'hero-metrics', 'company-radar', 'career-twin', 'next-actions', 'action-center', 'whatif-simulator', 'live-verifier', or 'skill-gap'."
+            }
+          },
+          required: ["tabName"]
+        }
+      },
+      {
+        name: "open_blueprint",
+        description: "Opens one of the 23 capstone project blueprints by number (1 to 23).",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            blueprintNumber: { type: Type.NUMBER, description: "Blueprint number (1-23)" }
+          },
+          required: ["blueprintNumber"]
+        }
+      },
+      {
+        name: "launch_mock_interview",
+        description: "Opens the Live AI Mock Interview simulator for a specific company and role.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            company: { type: Type.STRING, description: "Target company name (e.g., Google, Razorpay, Amazon, TCS)" },
+            role: { type: Type.STRING, description: "Target role title (e.g., Full Stack Engineer, SDE-1)" }
+          },
+          required: ["company", "role"]
+        }
+      },
+      {
+        name: "open_one_page_resume",
+        description: "Opens the instant 1-Page FAANG/ATS PDF Resume Generator modal on screen.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {}
+        }
+      },
+      {
+        name: "update_student_profile",
+        description: "Updates a field in the student's profile (cgpa, backlogs, coding, communication, internships, branch, targetRole) and recalculates placement probability.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            field: {
+              type: Type.STRING,
+              description: "Field name: 'cgpa', 'backlogs', 'coding', 'communication', 'internships', 'branch', or 'targetRole'"
+            },
+            value: {
+              type: Type.STRING,
+              description: "New value for the field (e.g., '8.5', '0', 'CSE', 'Full Stack Engineer')"
+            }
+          },
+          required: ["field", "value"]
+        }
+      },
+      {
+        name: "scroll_and_highlight",
+        description: "Smoothly scrolls to and highlights any section or card on the current webpage.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            targetTextOrId: {
+              type: Type.STRING,
+              description: "data-das-id, element ID, or heading text to highlight"
+            }
+          },
+          required: ["targetTextOrId"]
+        }
+      },
+      {
+        name: "update_readiness_score",
+        description: "Adjusts the student's live placement readiness percentage after evaluating their viva or interview answer.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            scoreDelta: { type: Type.NUMBER, description: "Percentage points to add or subtract (e.g. +3 or -2)" },
+            feedback: { type: Type.STRING, description: "Brief reason for the score change" }
+          },
+          required: ["scoreDelta", "feedback"]
+        }
+      }
+    ]
+  }
+];
+
+export async function executeWebsiteTool(
+  name: string,
+  args: Record<string, any>
+): Promise<Record<string, any>> {
+  console.log(`[Pathfinder ToolRunner] Executing: ${name}`, args);
+
+  // 1. Existing Home.tsx DAS Events trigger cheyadam
+  if (name === "navigate_dashboard_tab") {
+    window.dispatchEvent(
+      new CustomEvent("das-navigate-tab", {
+        detail: { tab: args.tabName, scrollTarget: args.sectionId }
+      })
+    );
+  } else if (name === "open_one_page_resume") {
+    window.dispatchEvent(new CustomEvent("das-open-resume-builder"));
+  } else if (name === "launch_mock_interview") {
+    window.dispatchEvent(
+      new CustomEvent("das-open-mock-interview", {
+        detail: { company: args.company, role: args.role }
+      })
+    );
+  } else if (name === "update_student_profile") {
+    window.dispatchEvent(
+      new CustomEvent("das-update-profile", {
+        detail: { field: args.field, value: args.value }
+      })
+    );
+  }
+
+  // 2. Kotha pathfinder:agent-action event dispatch
+  window.dispatchEvent(
+    new CustomEvent("pathfinder:agent-action", {
+      detail: { toolName: name, args }
+    })
+  );
+
+  // 3. Scroll & Neon Highlight effect
+  if (name === "scroll_and_highlight") {
+    const query = String(args.targetTextOrId || "").toLowerCase();
+    const directEl =
+      document.getElementById(query) ||
+      document.querySelector(`[data-das-id="${query}"]`);
+
+    const elements = Array.from(
+      document.querySelectorAll("section, [data-das-id], div[id], h1, h2, h3")
+    );
+    const match = (directEl ||
+      elements.find(
+        (el) =>
+          el.id?.toLowerCase().includes(query) ||
+          el.getAttribute("data-das-id")?.toLowerCase().includes(query) ||
+          el.textContent?.toLowerCase().includes(query)
+      )) as HTMLElement | undefined;
+
+    if (match) {
+      match.scrollIntoView({ behavior: "smooth", block: "center" });
+      const prevOutline = match.style.outline;
+      match.style.transition = "all 0.3s ease";
+      match.style.outline = "2px solid #ef4444";
+      match.style.boxShadow = "0 0 30px rgba(239, 68, 68, 0.45)";
+      setTimeout(() => {
+        match.style.outline = prevOutline;
+        match.style.boxShadow = "none";
+      }, 3500);
+      return { status: "highlighted", target: args.targetTextOrId };
+    }
+  }
+
+  return { status: "success", tool: name, args };
+}
 
 export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking";
 
@@ -18,249 +183,28 @@ export interface ToolCallPayload {
   requires_confirmation?: boolean;
 }
 
-export interface ToolResult {
-  success: boolean;
-  message?: string;
-  data?: any;
-}
-
-export const TOOLS = {
-  navigate: (path: string) => {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: path } }));
-    }
-  },
-
-  pick_blueprint: (size: "small" | "medium" | "large" = "small") => {
-    if (typeof window === "undefined") return null;
-
-    window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: "projects" } }));
-
-    const cards = Array.from(
-      document.querySelectorAll("[data-blueprint-size], [data-project-id]")
-    ) as HTMLElement[];
-    const filtered = cards.filter(
-      (c) =>
-        (c.getAttribute("data-blueprint-size") || c.getAttribute("data-size") || "").toLowerCase() ===
-        size
-    );
-    const pool = filtered.length > 0 ? filtered : cards;
-
-    let history: string[] = [];
-    try {
-      history = JSON.parse(localStorage.getItem("project_history") || "[]");
-    } catch {}
-    const lastPicked = localStorage.getItem("last_bp");
-
-    let available = pool.filter((c) => c.id !== lastPicked && !history.includes(c.id));
-    if (available.length === 0) {
-      available = pool.filter((c) => c.id !== lastPicked);
-      if (available.length === 0) available = pool;
-    }
-
-    const pick = available[Math.floor(Math.random() * available.length)];
-    if (pick) {
-      localStorage.setItem("last_bp", pick.id);
-      try {
-        const nextHistory = [pick.id, ...history.filter((id) => id !== pick.id)].slice(0, 20);
-        localStorage.setItem("project_history", JSON.stringify(nextHistory));
-      } catch {}
-
-      pick.scrollIntoView({ behavior: "smooth", block: "center" });
-      pick.click();
-
-      window.dispatchEvent(
-        new CustomEvent("das-highlight-project", {
-          detail: { projectId: pick.getAttribute("data-project-id") || pick.id, query: size },
-        })
-      );
-
-      return pick.getAttribute("data-blueprint-data") || pick.id;
-    }
-    return null;
-  },
-
-  explain_deep: (projectData: any) => {
-    return `Explain this project like Jarvis - Step 1 to Deployment: VS Code Setup, UI/UX in Figma, Frontend (React+Tailwind), Backend (Supabase), ML Lifecycle (Data->Embed->Search), Deployment (Vercel). Why this is ${
-      projectData?.size || "small"
-    } project: ${projectData?.reason || "Focused scope with high system design value"}`;
-  },
-};
-
-export function snapshot() {
-  const clone = document.body.cloneNode(true) as HTMLElement;
-  clone.querySelectorAll("[data-agent-ignore], script, style").forEach((n) => n.remove());
-  const text = (clone.textContent || "").replace(/\s+/g, " ").trim().slice(0, 2500);
-  const elements = Array.from(document.querySelectorAll("[data-agent-id]"))
-    .filter((el) => !el.closest("[data-agent-ignore]"))
-    .slice(0, 60)
-    .map((el) => ({
-      id: el.getAttribute("data-agent-id"),
-      kind: el.tagName.toLowerCase(),
-      label: (
-        el.getAttribute("aria-label") ||
-        el.textContent ||
-        (el as HTMLInputElement).placeholder ||
-        ""
-      )
-        .trim()
-        .slice(0, 50),
-    }));
-  return { route: location.pathname, title: document.title, text, elements };
-}
-
-const byId = (id: string) =>
-  document.querySelector(`[data-agent-id="${CSS.escape(id)}"]`) as HTMLElement | null;
-
 export function runTool(
   name: string,
-  args: any,
-  navigate: (to: string) => void
-): { navigated?: boolean; explain?: boolean; success?: boolean; data?: any } {
-  switch (name) {
-    case "navigate":
-    case "navigate_to": {
-      const page = String(args.to || args.page || args.route || "").replace(/^\//, "");
-      const tabTarget = page === "blueprints" ? "projects" : page;
-      window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: tabTarget } }));
-      const r = String(args.to || args.route || (page ? "/" + page : ""));
-      if (r && r.startsWith("/") && !r.startsWith("//") && !r.includes(":")) {
-        navigate(r);
-      }
-      return { success: true, navigated: true, explain: !!args.explain };
-    }
-    case "scroll": {
-      const dir = String(args.dir || args.direction || "down").toLowerCase();
-      if (dir === "top") window.scrollTo({ top: 0, behavior: "smooth" });
-      else if (dir === "bottom") window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-      else if (dir === "up") window.scrollBy({ top: -520, behavior: "smooth" });
-      else window.scrollBy({ top: 520, behavior: "smooth" });
-      return { success: true };
-    }
-    case "highlight":
-    case "pick_project": {
-      const target = String(args.target || args.size || "small").toLowerCase();
-      window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: "projects" } }));
-      window.dispatchEvent(new CustomEvent("das-highlight-project", { detail: { query: target } }));
-      return { success: true, data: { target } };
-    }
-    case "open_blueprint": {
-      const blueprintId = String(args.blueprintId || args.id || "1");
-      window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: "projects" } }));
-      window.dispatchEvent(
-        new CustomEvent("das-highlight-project", { detail: { projectId: blueprintId, query: blueprintId } })
-      );
-      return { success: true, navigated: true, data: { blueprintId } };
-    }
-    case "highlight_section": {
-      const sectionName = String(args.sectionName || args.target || "");
-      const el =
-        document.getElementById(sectionName) ||
-        Array.from(document.querySelectorAll("h1,h2,h3,h4,section")).find((h) =>
-          (h.textContent || "").toLowerCase().includes(sectionName.toLowerCase())
-        );
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-      window.dispatchEvent(new CustomEvent("das-highlight-project", { detail: { query: sectionName } }));
-      return { success: true, data: { sectionName } };
-    }
-    case "update_readiness_score": {
-      const points = Number(args.points || 0);
-      const feedback = String(args.feedback || "");
-      window.dispatchEvent(
-        new CustomEvent("das-update-readiness", { detail: { points, feedback } })
-      );
-      return { success: true, data: { points, feedback } };
-    }
-    case "explain_deep": {
-      return { success: true, explain: true, data: args };
-    }
-    case "control_ui": {
-      const action = String(args.action || "").toLowerCase();
-      const target = String(args.target || "").toLowerCase();
-      if (action === "scroll" || action === "scroll_to") {
-        if (target === "top") window.scrollTo({ top: 0, behavior: "smooth" });
-        else if (target === "bottom") window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-        else {
-          const el = document.getElementById(target) || document.querySelector(target);
-          el?.scrollIntoView({ behavior: "smooth" });
-        }
-      }
-      return { success: true };
-    }
-    case "scroll_to": {
-      const t = String(args.target || args.section || "");
-      let el: Element | null = byId(t) || document.getElementById(t);
-      if (!el) {
-        el =
-          Array.from(document.querySelectorAll("h1,h2,h3,h4,section")).find((h) =>
-            (h.textContent || "").toLowerCase().includes(t.toLowerCase())
-          ) || null;
-      }
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-        return { success: true };
-      }
-      return { success: false };
-    }
-    case "click": {
-      const agentId = String(args.agent_id || "");
-      const textLabel = String(args.text || "").toLowerCase().trim();
-      let el: HTMLElement | null = agentId ? byId(agentId) : null;
-      if (!el && textLabel) {
-        el =
-          (Array.from(document.querySelectorAll("button, a, [role='tab'], [role='button']")).find(
-            (b) => (b.textContent || "").toLowerCase().includes(textLabel)
-          ) as HTMLElement) || null;
-      }
-      if (!el) return { success: false };
-      if (
-        el.hasAttribute("data-agent-danger") &&
-        !window.confirm("Confirm this action requested by DAS?")
-      ) {
-        return { success: false };
-      }
-      el.click();
-      return { success: true };
-    }
-    case "fill_field": {
-      const el = byId(String(args.agent_id || "")) as HTMLInputElement | HTMLTextAreaElement | null;
-      if (!el) return { success: false };
-      const proto =
-        el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-      Object.getOwnPropertyDescriptor(proto, "value")?.set?.call(el, String(args.value ?? ""));
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-      return { success: true };
-    }
-    case "read_page": {
-      const snap = snapshot();
-      return { success: true, data: snap };
-    }
-    case "explain_page": {
-      const r = String(args.route || "");
-      if (r.startsWith("/")) {
-        navigate(r);
-      }
-      return { success: true, navigated: true, explain: true };
-    }
-  }
-  return { success: false };
+  args: Record<string, any> = {},
+  _navigate?: (to: string) => void
+): { navigated?: boolean; explain?: boolean; success?: boolean } {
+  void executeWebsiteTool(name, args);
+  return { success: true, navigated: name.includes("navigate") || name === "open_blueprint" };
 }
 
 export async function executeToolCall(
-  call: ToolCallPayload,
-  onNavigate?: (route: string) => void
-): Promise<ToolResult> {
-  const navigateFn =
-    onNavigate ||
-    ((to: string) => {
-      window.location.pathname = to;
-    });
-  const result = runTool(call.name, call.args, navigateFn);
+  tool: ToolCallPayload,
+  _navigate?: (route: string) => void
+): Promise<{ success: boolean; data?: any }> {
+  const data = await executeWebsiteTool(tool.name, tool.args || {});
+  return { success: true, data };
+}
+
+export function snapshot() {
   return {
-    success: result.success !== false,
-    message: result.success !== false ? `Executed ${call.name}` : `Failed to execute ${call.name}`,
-    data: result.data,
+    route: typeof window !== "undefined" ? window.location.pathname : "/",
+    title: typeof document !== "undefined" ? document.title : "Pathfinder 2.0",
+    text: "",
+    elements: [],
   };
 }
