@@ -5,7 +5,7 @@
  * - Indexes all 23 Flagship Project Blueprints + 972 Campus Placement Cohort Records
  *   into 384-dimensional L2-normalized semantic vectors compatible with Supabase pgvector
  *   (`pathfinder_knowledge_embeddings` / `match_pathfinder_knowledge` RPC).
- * - Performs semantic search FIRST and injects ONLY the Top 3 results into the Groq prompt.
+ * - Performs semantic search FIRST and injects ONLY the Top 3 results into the Gemini Live prompt.
  * - Strictly enforces a compact System Prompt < 2,000 tokens (~420 tokens).
  */
 
@@ -55,7 +55,7 @@ export async function getRelevantContext(query) {
 }
 
 /**
- * Groq Ultra-Fast LPU Streaming -> Pipes token deltas to onChunk in real time
+ * Unified Gemini Live Streaming -> Pipes token deltas and native 24kHz audio in real time
  */
 export async function askDas(userQuery, onChunk) {
   const context = await getRelevantContext(userQuery);
@@ -66,61 +66,21 @@ ${context}
 
 Rules: If user speaks in Telugu/Tenglish, always reply in ENGLISH with JARVIS-level intelligence, warmth, and loyalty. If intent is navigation, emit das:navigate:xxx`;
 
-  const groqKey =
-    (typeof import.meta !== "undefined" && (import.meta.env?.VITE_GROQ_API_KEY || import.meta.env?.GROQ_API_KEY)) ||
-    (typeof process !== "undefined" && (process.env?.GROQ_API_KEY || process.env?.VITE_GROQ_API_KEY)) ||
-    ["gsk", "GgV1SluZy64wVHF8DL1j", "WGdyb3FY1uAVo7r2BQSjzUsYPIR5UAgy"].join("_").replace("_WGdy", "WGdy");
-
   try {
-    // Groq STREAMING
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${groqKey}`,
-        "Content-Type": "application/json",
+    const { geminiLive } = await import("@/agent/geminiLive");
+    const reply = await geminiLive.sendTurn(userQuery, {
+      systemPrompt,
+      callbacks: {
+        onToken: (_full, delta) => {
+          if (delta) onChunk?.(delta);
+        },
       },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-120b",
-        reasoning_effort: "low",
-        stream: true,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userQuery },
-        ],
-      }),
     });
-
-    if (res.ok && res.body) {
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let fullText = "";
-      let carry = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        carry += decoder.decode(value, { stream: true });
-        const lines = carry.split("\n");
-        carry = lines.pop() || "";
-        for (const line of lines) {
-          if (!line.includes("content") && !line.startsWith("data:")) continue;
-          try {
-            const raw = line.replace(/^data:\s*/, "").trim();
-            if (raw === "[DONE]") continue;
-            const json = JSON.parse(raw);
-            const token = json.choices?.[0]?.delta?.content || "";
-            if (token) {
-              fullText += token;
-              onChunk?.(token); // -> Idhe direct ga ElevenLabs ki veluthundi
-            }
-          } catch { }
-        }
-      }
-      if (fullText.trim()) {
-        return fullText;
-      }
+    if (reply && reply.trim()) {
+      return reply;
     }
   } catch (err) {
-    console.warn("[askDas Stream Error]:", err?.message || err);
+    console.warn("[askDas Gemini Live Notice]:", err?.message || err);
   }
 
   // Local intelligent fallback
@@ -365,15 +325,14 @@ export function semanticSearchSync(query = "", profile = {}, topK = 3) {
  */
 export async function semanticSearchPathfinderRAG(query = "", profile = {}, topK = 3) {
   // Instant <1ms local 384-D vector search across all 23 blueprints + 972 placement records
-  // (Zero network blocking so Groq LPU streaming starts immediately!)
   return semanticSearchSync(query, profile, topK);
 }
 
 /**
- * Builds the optimized Groq System Prompt with ONLY the Top 3 semantic RAG matches injected.
+ * Builds the optimized Gemini Live System Prompt with ONLY the Top 3 semantic RAG matches injected.
  * Guaranteed to be strictly < 2,000 tokens (typically ~380-480 tokens).
  */
-export function buildRagGroqSystemPrompt({
+export function buildRagGeminiSystemPrompt({
   query = "",
   profile = {},
   honorific = "Boss",
@@ -408,25 +367,17 @@ CANDIDATE PROFILE: Branch=${branch}, CGPA=${cgpa}, Backlogs=${backlogs}, Coding=
 
 YOU HAVE A BODY, VISION & SUPERPOWERS:
 - 3D Cybernetic Face: Real-time 60 FPS viseme lip-sync audio reactivity.
-- Sub-Second Reasoning: Powered by ultra-fast Groq LPU (openai/gpt-oss-120b) with <200ms TTFT.
-- Natural Human Voice: Deepgram Donovan (flux-donovan-en) neural TTS with dynamic speech visemes.
+- Unified Multimodal Brain & Voice: Powered by Google Gemini Live WebSocket (gemini-2.5-flash-native-audio-latest) with native 24kHz audio output and instant barge-in.
 - Autonomous DOM Vision: Inspects webpage DOM, highlights flagship blueprints, scrolls, and navigates.
 - Handcrafted Design & Animations: Adheres to Hallmark & Emil Kowalski spring motion standards.
 - Cross-Session Intelligence: OpenViking and AgentMemory context-aware recall.
 
 RULES FOR ANSWERING:
 1. Natural, witty, confident, and loyal tone (JARVIS style).
-2. When explaining a project or asked for a project (small/medium/large), ALWAYS provide the FULL 5-step engineering lifecycle:
-   a) Why this project is small/medium/large (Reasoning)
-   b) Step 1: VS Code & Folder Structure
-   c) Step 2: UI/UX (Figma / Tailwind)
-   d) Step 3: Frontend Logic (React + Hooks)
-   e) Step 4: Backend & Supabase & Embeddings
-   f) Step 5: Deployment & Production Testing (Vercel)
-3. Spoken dialogue: 1-2 vivid, punchy, conversational English sentences before ||| (spoken aloud via Deepgram flux-donovan-en), followed by concise structured English markdown after |||.
-4. NO dry robotic checklists like "- **Action**: ...", "- **Status**: ...", "- **Target Role**: ...", or "- **Key Gap**: ...".
-5. LANGUAGE RULE (CRITICAL): Understand English, Telugu, Tenglish, and Hindi 100% natively, but ALWAYS write your ENTIRE response strictly in fluent, natural ENGLISH. NEVER output Telugu script or Roman Telugu/Tenglish words (because your Deepgram flux-donovan-en voice model is an English voice).
-6. When user says "go to blueprints and pick a project" or "chinna project", navigate to Blueprints and trigger the project spotlight:
+2. Keep spoken replies crisp, natural, and conversational (2 to 4 sentences).
+3. NO dry robotic checklists.
+4. LANGUAGE RULE (CRITICAL): Understand English, Telugu, Tenglish, and Hindi 100% natively, and reply in clear, natural English.
+5. When user asks to navigate or spotlight a project, call the navigate / highlight tools or include action tags:
    <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}--> <!--ACTION: {"type": "HIGHLIGHT_PROJECT", "target": "chinna"}-->
 
 TOP 3 SEMANTIC RAG MATCHES:
@@ -447,6 +398,8 @@ WEBSITE CONTROLLING ACTIONS:
   }
   return prompt;
 }
+
+export const buildRagGroqSystemPrompt = buildRagGeminiSystemPrompt;
 
 export const getCareerAgentResponse = (
   message = "",

@@ -47,11 +47,6 @@ except ImportError:
     types = None
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip() or "openrouter/free"
-OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1").strip().rstrip("/")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3").strip() or "llama3"
 
 # Cache validated models list
 _validated_gemini_models: Optional[List[str]] = None
@@ -325,134 +320,6 @@ def get_detailed_project_context(
             f"- Resume Impact: {p.get('resumeBullet')}\n"
         )
     return ""
-
-def grok_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -> Optional[str]:
-    """Chat completion using xAI Grok API."""
-    api_key = (os.getenv("GROK_API_KEY", "") or os.getenv("XAI_API_KEY", "")).strip()
-    if not api_key:
-        return None
-    model = os.getenv("GROK_MODEL", "grok-2-latest").strip() or "grok-2-latest"
-    try:
-        msgs = [{"role": "system", "content": sys_instruction}] + messages_list
-        payload = json.dumps({
-            "model": model,
-            "messages": msgs,
-            "temperature": 0.7,
-            "max_tokens": 2000
-        }).encode("utf-8")
-        req = urllib.request.Request(
-            "https://api.x.ai/v1/chat/completions",
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-                "User-Agent": "Pathfinder/2.0"
-            },
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=12.0) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            choice = data.get("choices", [{}])[0].get("message", {}).get("content")
-            return choice.strip() if choice else None
-    except Exception as exc:
-        logger.warning(f"[Grok Engine] Warning: {exc}")
-        return None
-
-
-def groq_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -> Optional[str]:
-    """High-speed chat completion using Groq LPU API."""
-    api_key = os.getenv("GROQ_API_KEY", "").strip() or "_".join(["gsk", "GgV1SluZy64wVHF8DL1j", "WGdyb3FY1uAVo7r2BQSjzUsYPIR5UAgy"]).replace("_WGdy", "WGdy")
-    if not api_key:
-        return None
-    model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
-    try:
-        msgs = [{"role": "system", "content": sys_instruction}] + messages_list
-        with httpx.Client(timeout=15.0) as client:
-            resp = client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {api_key}", "User-Agent": "Pathfinder/2.0"},
-                json={"model": model, "messages": msgs, "temperature": 0.7, "max_tokens": 1500}
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                choice = data.get("choices", [{}])[0].get("message", {}).get("content")
-                return choice.strip() if choice else None
-            else:
-                logger.warning(f"[Groq Engine] Non-200 status: {resp.status_code} {resp.text[:150]}")
-                return None
-    except Exception as exc:
-        logger.warning(f"[Groq Engine] Warning: {exc}")
-        return None
-
-
-def openrouter_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -> Optional[str]:
-    """Fallback LLM chat using OpenRouter API with full multi-turn history."""
-    api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
-    if not api_key:
-        return None
-    try:
-        msgs = [{"role": "system", "content": sys_instruction}] + messages_list
-        payload = json.dumps({
-            "model": OPENROUTER_MODEL,
-            "messages": msgs,
-            "temperature": 0.8,
-            "max_tokens": 2000
-        }).encode("utf-8")
-
-        req = urllib.request.Request(
-            "https://openrouter.ai/api/v1/chat/completions",
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://pathfinder.career/",
-                "X-OpenRouter-Title": "Pathfinder Career Platform"
-            },
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=12.0) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            choice = data.get("choices", [{}])[0].get("message", {}).get("content")
-            return choice.strip() if choice else None
-    except Exception as exc:
-        logger.warning(f"[OpenRouter Engine] Warning: {exc}")
-        return None
-
-
-def ollama_chat(messages_list: List[Dict[str, str]], sys_instruction: str) -> Optional[str]:
-    """Chat completion using Ollama's local or cloud OpenAI-compatible API."""
-    base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1").strip().rstrip("/")
-    model = os.getenv("OLLAMA_MODEL", "llama3").strip() or "llama3"
-    api_key = os.getenv("OLLAMA_API_KEY", "").strip() or "ollama"
-
-    try:
-        endpoint = f"{base_url}/chat/completions" if not base_url.endswith("/chat/completions") else base_url
-        msgs = [{"role": "system", "content": sys_instruction}] + messages_list
-        payload = json.dumps({
-            "model": model,
-            "messages": msgs,
-            "temperature": 0.8,
-            "max_tokens": 2000
-        }).encode("utf-8")
-
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
-        }
-
-        req = urllib.request.Request(
-            endpoint,
-            data=payload,
-            headers=headers,
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=15.0) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            choice = data.get("choices", [{}])[0].get("message", {}).get("content")
-            return choice.strip() if choice else None
-    except Exception as exc:
-        logger.warning(f"[Ollama Engine] Warning: {exc}")
-        return None
 
 
 def call_gemini_rest(
@@ -998,57 +865,11 @@ async def stream_chat_with_mentor(
     )
 
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    primary_model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip() or "gemini-3.1-flash-lite"
+    primary_model = os.getenv("GEMINI_MODEL", "gemini-flash-latest").strip() or "gemini-flash-latest"
     if "2.0" in primary_model or "1.5" in primary_model:
-        primary_model = "gemini-3.1-flash-lite"
+        primary_model = "gemini-flash-latest"
 
-    # 1. Primary Ultra-Fast Groq LPU Streaming inference (<200ms TTFT)
-    groq_key = os.getenv("GROQ_API_KEY", "").strip() or "_".join(["gsk", "GgV1SluZy64wVHF8DL1j", "WGdyb3FY1uAVo7r2BQSjzUsYPIR5UAgy"]).replace("_WGdy", "WGdy")
-    if groq_key:
-        try:
-            groq_model_name = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
-            if groq_model_name == "llama-3.1-8b-instant":
-                groq_model_name = "openai/gpt-oss-120b"
-            groq_msgs = [{"role": "system", "content": sys_instruction}] + openrouter_messages
-            groq_payload: Dict[str, Any] = {
-                "model": groq_model_name,
-                "messages": groq_msgs,
-                "stream": True,
-                "temperature": 0.65,
-                "max_tokens": 600,
-            }
-            if "gpt-oss" in groq_model_name:
-                groq_payload["reasoning_effort"] = "low"
-            async with httpx.AsyncClient(timeout=15.0) as http_client:
-                async with http_client.stream(
-                    "POST",
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {groq_key}", "User-Agent": "Pathfinder/2.0"},
-                    json=groq_payload
-                ) as resp:
-                    if resp.status_code == 200:
-                        groq_token_streamed = False
-                        async for line in resp.aiter_lines():
-                            line_str = line.strip()
-                            if not line_str.startswith("data:"):
-                                continue
-                            data_str = line_str[5:].strip()
-                            if data_str == "[DONE]":
-                                break
-                            try:
-                                delta = json.loads(data_str)["choices"][0]["delta"]
-                                token = delta.get("content")
-                                if token:
-                                    groq_token_streamed = True
-                                    yield token
-                            except Exception:
-                                continue
-                        if groq_token_streamed:
-                            return
-        except Exception as groq_err:
-            logger.warning(f"[Groq Stream] Stream notice: {groq_err}. Trying Gemini fallback.")
-
-    # 2. Secondary fallback: Live streaming via Gemini SDK
+    # 1. Primary Live streaming via Google Gemini SDK
     if api_key and genai:
         try:
             client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=10.0))
@@ -1237,102 +1058,8 @@ def chat_with_mentor(
                 deprioritize_gemini_model(model)
                 continue
 
-    # 6a. xAI Grok (if GROK_API_KEY / XAI_API_KEY is configured)
-    grok_key = (os.getenv("GROK_API_KEY", "") or os.getenv("XAI_API_KEY", "")).strip()
-    if grok_key:
-        t_gk_start = time.perf_counter()
-        try:
-            gk_reply = grok_chat(openrouter_messages, sys_instruction)
-            gk_duration = round((time.perf_counter() - t_gk_start) * 1000, 2)
-            if gk_reply and gk_reply.strip():
-                grok_model_name = os.getenv("GROK_MODEL", "grok-2-latest")
-                final_reply = evaluate_and_enforce_novelty(gk_reply.strip(), grok_model_name)
-                meta = {
-                    "prep_ms": prep_ms,
-                    "gemini_call_ms": gk_duration,
-                    "novelty_ms": 0.0,
-                    "model_used": f"xAI Grok ({grok_model_name})",
-                    "attempts": attempts_log,
-                    "status": "success"
-                }
-                if return_meta:
-                    return final_reply, meta
-                return final_reply
-        except Exception as gk_exc:
-            logger.warning(f"[Grok Engine] Warning: {gk_exc}")
-
-    # 6b. Groq LPU high-speed inference (if GROQ_API_KEY is configured)
-    groq_key = os.getenv("GROQ_API_KEY", "").strip() or "_".join(["gsk", "GgV1SluZy64wVHF8DL1j", "WGdyb3FY1uAVo7r2BQSjzUsYPIR5UAgy"]).replace("_WGdy", "WGdy")
-    if groq_key:
-        t_gq_start = time.perf_counter()
-        try:
-            gq_reply = groq_chat(openrouter_messages, sys_instruction)
-            gq_duration = round((time.perf_counter() - t_gq_start) * 1000, 2)
-            if gq_reply and gq_reply.strip():
-                groq_model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-                final_reply = evaluate_and_enforce_novelty(gq_reply.strip(), groq_model_name)
-                meta = {
-                    "prep_ms": prep_ms,
-                    "gemini_call_ms": gq_duration,
-                    "novelty_ms": 0.0,
-                    "model_used": f"Groq LPU ({groq_model_name})",
-                    "attempts": attempts_log,
-                    "status": "success"
-                }
-                if return_meta:
-                    return final_reply, meta
-                return final_reply
-        except Exception as gq_exc:
-            logger.warning(f"[Groq Engine] Warning: {gq_exc}")
-
-    # 7. Ollama LLM integration (Local daemon or Ollama Cloud / API Key)
-    ollama_key = os.getenv("OLLAMA_API_KEY", "").strip()
-    ollama_url = os.getenv("OLLAMA_BASE_URL", "").strip()
-    if ollama_key or (ollama_url and "localhost" not in ollama_url) or (not api_key and not OPENROUTER_API_KEY and ollama_url):
-        t_ol_start = time.perf_counter()
-        try:
-            ol_reply = ollama_chat(openrouter_messages, sys_instruction)
-            ol_duration = round((time.perf_counter() - t_ol_start) * 1000, 2)
-            if ol_reply and ol_reply.strip():
-                final_reply = evaluate_and_enforce_novelty(ol_reply.strip(), os.getenv("OLLAMA_MODEL", "llama3"))
-                meta = {
-                    "prep_ms": prep_ms,
-                    "gemini_call_ms": ol_duration,
-                    "novelty_ms": 0.0,
-                    "model_used": f"Ollama ({os.getenv('OLLAMA_MODEL', 'llama3')})",
-                    "attempts": attempts_log,
-                    "status": "success"
-                }
-                if return_meta:
-                    return final_reply, meta
-                return final_reply
-        except Exception as ol_exc:
-            logger.warning(f"[Ollama Engine] Warning: {ol_exc}")
-
-    # 8. OpenRouter fallback if configured
-    if OPENROUTER_API_KEY:
-        t_or_start = time.perf_counter()
-        try:
-            or_reply = openrouter_chat(openrouter_messages, sys_instruction)
-            or_duration = round((time.perf_counter() - t_or_start) * 1000, 2)
-            if or_reply and or_reply.strip():
-                final_reply = evaluate_and_enforce_novelty(or_reply.strip(), OPENROUTER_MODEL)
-                meta = {
-                    "prep_ms": prep_ms,
-                    "gemini_call_ms": or_duration,
-                    "novelty_ms": 0.0,
-                    "model_used": OPENROUTER_MODEL,
-                    "attempts": attempts_log,
-                    "status": "success"
-                }
-                if return_meta:
-                    return final_reply, meta
-                return final_reply
-        except Exception as or_exc:
-            logger.error(f"[OpenRouter Engine] Failed: {or_exc}")
-
-    # 8. All live LLM providers failed - return honest error
-    logger.warning("[Gemini Engine] All LLM providers unavailable. Returning honest error.")
+    # All Gemini models unavailable - return honest error
+    logger.warning("[Gemini Engine] Gemini models unavailable. Returning honest error.")
     honest_error = "I couldn't reach the AI right now. Please tap retry in a moment!"
     meta = {
         "prep_ms": prep_ms,

@@ -7,10 +7,9 @@ import { useVoiceInput } from "./useVoiceInput";
 import {
   runTool,
   snapshot,
-  streamGroqToElevenLabs,
-  ElevenLabsStreamingDispatcher,
   VoicePipelineStage,
 } from "./toolRunner";
+import { geminiLive } from "./geminiLive";
 import {
   useAgentController,
   resolveHonorific,
@@ -21,7 +20,7 @@ import { getApiBase } from "@/lib/apiClient";
 import {
   getCareerAgentResponse,
   semanticSearchPathfinderRAG,
-  buildRagGroqSystemPrompt,
+  buildRagGeminiSystemPrompt,
   estimatePromptTokens,
 } from "@/lib/careerAgent";
 import {
@@ -43,13 +42,6 @@ import {
 
 const API = getApiBase();
 const API_BASE = API.replace(/\/$/, "");
-
-// Multi-key fallback pool for zero-downtime browser Groq LPU streaming inference
-const GROQ_FALLBACK_KEYS = [
-  (import.meta as any).env?.VITE_GROQ_API_KEY || (import.meta as any).env?.GROQ_API_KEY || (typeof process !== "undefined" && (process as any).env?.GROQ_API_KEY) || "",
-  ["gsk", "GgV1SluZy64wVHF8DL1j", "WGdyb3FY1uAVo7r2BQSjzUsYPIR5UAgy"].join("_").replace("_WGdy", "WGdy"),
-  ["gsk", "04ikQF1iJfH9IMq4IKGZ", "WGdyb3FYqy1LNvXQf3nNI42TvJKTrHDS"].join("_").replace("_WGdy", "WGdy"),
-].filter(Boolean);
 
 type Msg = { role: "user" | "assistant"; content: string };
 const LANGS = [
@@ -392,25 +384,10 @@ export default function AgentLayout({
       const currentTab = propActiveTab || "overview";
       const readinessStr = propPrediction?.chance ? `${propPrediction.chance}%` : "78%";
 
-      // First-chunk streaming dispatcher for Deepgram Donovan TTS
-      const streamDispatcher = new ElevenLabsStreamingDispatcher({
-        onSpeakChunk: (chunk) => {
-          setThinking(false);
-          speak(chunk);
-        },
-        onStageChange: (stage) => {
-          if (stage === "speaking") {
-            setThinking(false);
-          } else {
-            setPipelineStage(stage);
-          }
-        },
-      });
-
       try {
         // TASK 1: Instant <1ms Semantic Vector Search (Top 3 from 23 Blueprints + 972 Placements)
         const top3Matches = await semanticSearchPathfinderRAG(q, currentProfile, 3);
-        const ragSystemPrompt = buildRagGroqSystemPrompt({
+        const ragSystemPrompt = buildRagGeminiSystemPrompt({
           query: q,
           profile: currentProfile,
           honorific: activeHonorific,
@@ -420,45 +397,50 @@ export default function AgentLayout({
         });
         setLastPromptTokens(estimatePromptTokens(ragSystemPrompt));
 
-        // 1. Primary Ultra-Fast Path: Direct Browser Groq LPU (<200ms TTFT) -> Deepgram Donovan TTS
-        if (GROQ_FALLBACK_KEYS.length > 0) {
-          const streamedReply = await streamGroqToElevenLabs({
-            apiKeys: GROQ_FALLBACK_KEYS,
+        // 1. Primary Unified Gemini Live WebSocket Session (@google/genai)
+        // Combines Brain (LLM + RAG + Tools) + Native 24kHz Voice Audio in ONE WebSocket session!
+        try {
+          const liveReply = await geminiLive.sendTurn(q, {
             systemPrompt: ragSystemPrompt,
             history: priorHistory,
-            userQuery: q,
-            model: "openai/gpt-oss-120b",
             signal: ac.signal,
-            onToken: (fullSoFar) => {
-              setThinking(false);
-              full = fullSoFar;
-              patchLast(fullSoFar);
-            },
-            onSpeakChunk: (chunk) => {
-              setThinking(false);
-              speak(chunk);
-            },
-            onStageChange: (stage) => {
-              if (stage === "speaking") {
+            muteAudio: voiceMuted,
+            callbacks: {
+              onToken: (fullSoFar) => {
                 setThinking(false);
-              } else {
-                setPipelineStage(stage);
-              }
+                full = fullSoFar;
+                patchLast(fullSoFar);
+              },
+              onToolCall: (name, args) => {
+                const res = runTool(name, args, navigate);
+                if (res.navigated && res.explain) followUp = true;
+                return res;
+              },
+              onStageChange: (stage) => {
+                if (stage === "speaking") {
+                  setThinking(false);
+                  setPipelineStage("speaking");
+                } else {
+                  setPipelineStage(stage);
+                }
+              },
             },
           });
-          if (streamedReply.trim()) {
-            full = streamedReply;
+          if (liveReply && liveReply.trim()) {
+            full = liveReply;
             patchLast(full);
           }
+        } catch (liveErr) {
+          console.warn("[AgentLayout] Gemini Live WebSocket notice, falling back:", liveErr);
         }
 
-        // 2. Secondary Fallback: Unified Backend Stream if browser Groq was blocked
+        // 2. Secondary Fallback: Backend Gemini Stream if direct WebSocket was interrupted
         if (!full.trim() && Date.now() >= backendCooldownUntilRef.current) {
           try {
             const t = getToken();
             const pageSnap = snapshot();
             const streamCtrl = new AbortController();
-            const streamTid = setTimeout(() => streamCtrl.abort(), 2800);
+            const streamTid = setTimeout(() => streamCtrl.abort(), 3500);
             ac.signal.addEventListener("abort", () => streamCtrl.abort());
 
             const r = await fetch(`${API_BASE}/api/chat/stream`, {
@@ -508,7 +490,7 @@ export default function AgentLayout({
                     const tok = ev.token ?? (ev.t === "text" ? ev.v : "");
                     if (tok) {
                       setThinking(false);
-                      full = streamDispatcher.feedToken(tok);
+                      full += tok;
                       patchLast(full);
                     } else if (ev.t === "tool") {
                       const res = runTool(ev.name, ev.args, navigate);
@@ -517,8 +499,8 @@ export default function AgentLayout({
                   } catch {}
                 }
               }
-              if (full.trim()) {
-                streamDispatcher.flush();
+              if (full.trim() && !voiceMuted) {
+                speak(extractSpoken(full.split("|||")[0] || full).slice(0, 280));
               }
             } else {
               backendCooldownUntilRef.current = Date.now() + 45_000;
@@ -539,8 +521,9 @@ export default function AgentLayout({
           setThinking(false);
           full = fallbackReply;
           patchLast(full);
-          streamDispatcher.feedToken(fallbackReply);
-          streamDispatcher.flush();
+          if (!voiceMuted) {
+            speak(extractSpoken(fallbackReply.split("|||")[0] || fallbackReply).slice(0, 280));
+          }
           const updatedHonorific = resolveHonorific(propProfile, propUserEmail, propUsername);
           setHonorific(updatedHonorific);
         }
@@ -723,7 +706,7 @@ export default function AgentLayout({
       return input.trim() ? `Hearing: "${input}"` : `Listening to ${honorific}... Speak now`;
     }
     if (thinking || pipelineStage === "thinking") {
-      return "Thinking... Groq LPU & Pathfinder Memory processing";
+      return "Thinking... Gemini Live Multimodal Brain processing";
     }
     if (isSpeaking || pipelineStage === "speaking") {
       if (msgs.length > 0) {

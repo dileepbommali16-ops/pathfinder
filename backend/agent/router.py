@@ -17,8 +17,6 @@ from backend.supabase_rag import semantic_search_rag, seed_supabase_knowledge_ta
 router = APIRouter(prefix="/agent", tags=["agent"])
 agent_router = router  # alias for backend.api inclusion
 
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-
 # ---------- auth: owner role comes ONLY from the signed JWT / verified session ----------
 def current_user(request: Request) -> dict:
     auth = request.headers.get("authorization", "")
@@ -127,60 +125,38 @@ async def chat(req: ChatReq, request: Request, user=Depends(current_user)):
         if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str) and m["content"].strip():
             msgs.append({"role": m["role"], "content": m["content"][:1200]})
 
-    groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
-    if groq_model == "llama-3.1-8b-instant":
-        groq_model = "openai/gpt-oss-120b"
-    groq_api_key = (
-        os.getenv("GROQ_API_KEY", "").strip()
-        or "_".join(["gsk", "GgV1SluZy64wVHF8DL1j", "WGdyb3FY1uAVo7r2BQSjzUsYPIR5UAgy"]).replace("_WGdy", "WGdy")
-    )
-    payload = {
-        "model": groq_model,
-        "messages": msgs,
-        "tools": TOOLS,
-        "tool_choice": "auto",
-        "stream": True,
-        "temperature": 0.7,
-        "max_tokens": 600,
-        "reasoning_effort": "low",
-    }
-    headers = {"Authorization": f"Bearer {groq_api_key}"}
+    gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    gemini_model = os.getenv("GEMINI_MODEL", "gemini-flash-latest").strip() or "gemini-flash-latest"
 
     async def gen():
-        calls: dict = {}
         try:
-            async with httpx.AsyncClient(timeout=60) as c:
-                async with c.stream("POST", GROQ_URL, json=payload, headers=headers) as r:
-                    if r.status_code != 200:
-                        yield sse({"t": "error", "v": "Brain konchem lag ayyindi boss, malli try chey."})
-                        return
-                    async for line in r.aiter_lines():
-                        if not line.startswith("data:"):
-                            continue
-                        d = line[5:].strip()
-                        if d == "[DONE]":
-                            break
-                        try:
-                            delta = json.loads(d)["choices"][0]["delta"]
-                        except Exception:
-                            continue
-                        if delta.get("content"):
-                            yield sse({"t": "text", "v": delta["content"]})
-                        for tc in delta.get("tool_calls") or []:
-                            slot = calls.setdefault(tc.get("index", 0), {"name": "", "args": ""})
-                            f = tc.get("function") or {}
-                            slot["name"] += f.get("name") or ""
-                            slot["args"] += f.get("arguments") or ""
+            from google import genai
+            from google.genai import types
+
+            client = genai.Client(api_key=gemini_api_key)
+            contents_sdk = []
+            for m in req.messages[-8:]:
+                if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str) and m["content"].strip():
+                    role = "model" if m["role"] == "assistant" else "user"
+                    contents_sdk.append({"role": role, "parts": [{"text": m["content"][:1200]}]})
+            if not contents_sdk:
+                contents_sdk.append({"role": "user", "parts": [{"text": last_user_query or "Hello"}]})
+
+            resp_stream = client.models.generate_content_stream(
+                model=gemini_model,
+                contents=contents_sdk,
+                config=types.GenerateContentConfig(
+                    system_instruction=sys_prompt,
+                    temperature=0.7,
+                    max_output_tokens=600,
+                ),
+            )
+            for chunk in resp_stream:
+                if chunk.text:
+                    yield sse({"t": "text", "v": chunk.text})
         except Exception:
-            yield sse({"t": "error", "v": "Connection tegipoyindi, malli try chey."})
+            yield sse({"t": "error", "v": "Connection interrupted, please retry Boss."})
             return
-        for c in calls.values():
-            try:
-                args = json.loads(c["args"] or "{}")
-            except Exception:
-                args = {}
-            if c["name"] in TOOL_NAMES:
-                yield sse({"t": "tool", "name": c["name"], "args": args})
         yield sse({"t": "done", "prompt_tokens_est": estimate_tokens(sys_prompt)})
 
     return StreamingResponse(

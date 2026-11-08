@@ -37,6 +37,7 @@ import { StudentProfileState } from "@/types/profile";
 import { API_BASE } from "@/lib/apiClient";
 import { Avatar3D } from "@/agent/Avatar3D";
 import { fetchDeepgramMp3, speaker } from "@/agent/audioIO";
+import { geminiLive } from "@/agent/geminiLive";
 
 export interface Message {
   role: "user" | "assistant";
@@ -412,7 +413,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   const [speakerTestMsg, setSpeakerTestMsg] = useState<string | null>(null);
 
   // Real Provider Badge, Overflow Menu, and Full History Sheet States
-  const [activeProvider, setActiveProvider] = useState<string>("Groq LPU + Deepgram Donovan");
+  const [activeProvider, setActiveProvider] = useState<string>("Gemini Live 2.5 Native Audio WebSocket");
   const [isOverflowOpen, setIsOverflowOpen] = useState<boolean>(false);
   const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
 
@@ -468,17 +469,17 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     };
   }, []);
 
-  // Diagnostic: Tests browser audio hardware and Deepgram Donovan speech synthesis on demand
+  // Diagnostic: Tests browser audio hardware and Gemini Live native speech synthesis on demand
   const testSpeakerAudio = async () => {
     if (typeof window === "undefined") return;
     setSpeakerTestState("testing");
-    setSpeakerTestMsg("Testing audio hardware & Deepgram Donovan voice...");
+    setSpeakerTestMsg("Testing audio hardware & Gemini Live 24kHz native voice...");
 
     try {
       await speaker.initContext();
-      speaker.say("Speaker test successful, Boss. Pathfinder Deepgram voice agent is loud and clear.");
+      speaker.say("Speaker test successful, Boss. Pathfinder Gemini Live voice agent is loud and clear.");
       setSpeakerTestState("success");
-      setSpeakerTestMsg("✅ Speaker Working! Deepgram Donovan voice played successfully.");
+      setSpeakerTestMsg("✅ Speaker Working! Gemini Live 24kHz native voice played successfully.");
       setTimeout(() => setSpeakerTestState("idle"), 5000);
     } catch (err: any) {
       console.error("[SpeakerTest] Error:", err);
@@ -567,7 +568,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     }
   };
 
-  // Speech Queue Processor: Speaks sentences sequentially exclusively using Deepgram v2 `flux-donovan-en`
+  // Speech Queue Processor: Speaks sentences sequentially using Unified Gemini Live 24kHz Native Audio
   const processSpeechQueue = async (targetLang: "te-IN" | "hi-IN" | "en-IN", genId: number) => {
     if (typeof window === "undefined") return;
     if (genId !== generationIdRef.current) return;
@@ -579,8 +580,35 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     isSpeakingSentenceRef.current = true;
     isSpeakingRef.current = true;
     stopMicrophone();
+    setCurrentSpokenSentence(nextText);
+    setVoiceStatus("speaking");
 
     try {
+      const spokeViaGemini = await geminiLive.speakText(nextText);
+      if (spokeViaGemini && genId === generationIdRef.current) {
+        // Wait for Web Audio scheduled buffer playback to finish
+        while (speaker.isSpeaking && genId === generationIdRef.current) {
+          await new Promise((r) => setTimeout(r, 80));
+        }
+        isSpeakingSentenceRef.current = false;
+        setCurrentSpokenSentence("");
+        if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
+          processSpeechQueue(targetLang, genId);
+        } else {
+          isSpeakingRef.current = false;
+          setVoiceStatus("idle");
+          setSpeakingIndex(null);
+          if (userTurnedListeningOnRef.current) {
+            setTimeout(() => {
+              if (!isSpeakingRef.current && userTurnedListeningOnRef.current) {
+                toggleListening(true);
+              }
+            }, 600);
+          }
+        }
+        return;
+      }
+
       const mp3Bytes = await fetchDeepgramMp3(nextText);
       if (mp3Bytes && mp3Bytes.byteLength > 200 && genId === generationIdRef.current) {
         const blob = new Blob([mp3Bytes], { type: "audio/mpeg" });
@@ -631,7 +659,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         return;
       }
     } catch {
-      // Deepgram request interrupted or autoplay blocked
+      // Speech interrupted or autoplay blocked
     }
 
     isSpeakingSentenceRef.current = false;
@@ -716,141 +744,17 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       tutor_state: tutorState,
     };
 
-    // Feed user message immediately to the console
+    // Feed user message immediately to the console (Unified Gemini Live handles both text + 24kHz voice)
+    setActiveProvider("Gemini Live 2.5 Native Audio WebSocket");
     startTransition(() => {
       onSendMessage(trimmed);
     });
-
-    try {
-      const resp = await fetch(`${API_BASE}/api/voice/stream`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: abortCtrl.signal,
-      });
-
-      if (!resp.ok) {
-        throw new Error(`Voice streaming responded with status ${resp.status}`);
+    setVoiceStatus("speaking");
+    setTimeout(() => {
+      if (currentGen === generationIdRef.current) {
+        setVoiceStatus("idle");
       }
-
-      if (!resp.body) {
-        throw new Error("No response body available for streaming");
-      }
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let accumulatedSpoken = "";
-      let hitScreenMarker = false;
-      let spokenSentenceCount = 0;
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        if (currentGen !== generationIdRef.current) {
-          reader.cancel().catch(() => {});
-          break;
-        }
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine.startsWith("data:")) continue;
-
-          const jsonStr = trimmedLine.replace(/^data:\s*/, "").trim();
-          if (!jsonStr) continue;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const token = parsed.token || "";
-
-            if (token && !firstTokenLoggedRef.current) {
-              firstTokenLoggedRef.current = true;
-              const ttft = Math.round(performance.now() - speechStartTimeRef.current);
-              console.log(`[VoiceAgent] Time to first token: ${ttft}ms`);
-            }
-
-            // Check provider tag
-            if (token.includes("[[PROVIDER:")) {
-              const match = token.match(/\[\[PROVIDER:([^\]]+)\]\]/);
-              if (match) {
-                setActiveProvider(match[1]);
-              }
-            }
-
-            // Check tutor marker
-            if (token.includes("[[TUTOR:")) {
-              const tutor = parseTutorState(token);
-              if (tutor) {
-                updateTutorState(tutor);
-              }
-            }
-
-            // Check actions & navigation
-            if (token.includes("[[NAVIGATE:")) {
-              const match = token.match(/\[\[NAVIGATE:([a-z0-9_-]+)\]\]/);
-              if (match && onNavigateTab) {
-                onNavigateTab(match[1]);
-              }
-            }
-            if (token.includes("[[ACTION:BUILD_RESUME]]")) {
-              if (onOpenResumeBuilder) {
-                onOpenResumeBuilder();
-              }
-            }
-
-            // Split sentence-by-sentence for TTS before ---SCREEN---
-            // Strict cap of 3 sentences max for spoken voice
-            if (!hitScreenMarker && spokenSentenceCount < 3) {
-              if (token.includes("---SCREEN---")) {
-                hitScreenMarker = true;
-                const beforeMarker = token.split("---SCREEN---")[0];
-                accumulatedSpoken += beforeMarker;
-                if (accumulatedSpoken.trim()) {
-                  spokenSentenceCount += 1;
-                  queueSentenceForTts(accumulatedSpoken.trim(), targetAudioLang, currentGen);
-                  accumulatedSpoken = "";
-                }
-              } else {
-                accumulatedSpoken += token;
-                const sentenceMatch = accumulatedSpoken.match(/^(.*?[.!?])(?:\s+|$)([\s\S]*)$/);
-                if (sentenceMatch) {
-                  const completedSentence = sentenceMatch[1];
-                  accumulatedSpoken = sentenceMatch[2];
-                  spokenSentenceCount += 1;
-                  queueSentenceForTts(completedSentence, targetAudioLang, currentGen);
-                  if (spokenSentenceCount >= 3) {
-                    accumulatedSpoken = "";
-                  }
-                }
-              }
-            } else if (token.includes("---SCREEN---")) {
-              hitScreenMarker = true;
-            }
-
-            if (parsed.done) {
-              break;
-            }
-          } catch {}
-        }
-      }
-
-      if (!hitScreenMarker && accumulatedSpoken.trim() && spokenSentenceCount < 3 && currentGen === generationIdRef.current) {
-        queueSentenceForTts(accumulatedSpoken.trim(), targetAudioLang, currentGen);
-      }
-    } catch (err: any) {
-      if (abortCtrl.signal.aborted) return;
-      console.warn("[VoiceAgent] Voice stream notice:", err.message);
-      setVoiceError(
-        targetAudioLang === "te-IN"
-          ? "వాయిస్ కనెక్ట్ అవుతోంది. AI సమాధానం వచ్చిన వెంటనే చదువుతుంది."
-          : "Voice connection notice. Assistant will speak once the response completes."
-      );
-      setVoiceStatus("idle");
-    }
+    }, 4500);
   };
 
   // Toggle browser microphone speech recognition with ~1.5s silence detection

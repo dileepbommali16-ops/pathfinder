@@ -1,15 +1,11 @@
 /**
- * audioIO - DAS Voice Engine (Deepgram v2 `flux-donovan-en`) + 3D Lip-Sync Analyser
- * - Streams MP3 audio directly from Deepgram v2 (`flux-donovan-en&speed=1&expressivity=0`)
- *   with automatic fallback to backend `/agent/tts`.
- * - Eager parallel pre-fetching: each sentence is synthesized as soon as Groq streams it,
- *   so sentence-to-sentence playback has minimal gap.
- * - Decodes the PCM waveform so the 3D avatar mouth follows the real voice amplitude,
- *   and the mouth only moves while audio is actually playing.
- * - Auto-replays a blocked greeting on the first user click/tap (browser autoplay policy).
+ * audioIO.ts - Unified Gemini Live Audio I/O & 3D Lip-Sync Analyser
+ * - Gapless sample-accurate 24kHz PCM playback for Gemini Live native audio chunks (`playAudioChunk`).
+ * - Real-time 16kHz PCM microphone capture (`startLiveMicStream`) for Gemini Live (`sendRealtimeInput`).
+ * - Web Audio API AnalyserNode (`speaker.level()`) so the 3D Avatar mouth moves in real time with Gemini's voice.
  */
 
-// Browser speechSynthesis is disabled so DAS never falls back to a robotic system voice.
+// Disable browser robotic speechSynthesis fallback completely
 if (typeof window !== "undefined" && "speechSynthesis" in window) {
   try {
     window.speechSynthesis.cancel();
@@ -17,131 +13,13 @@ if (typeof window !== "undefined" && "speechSynthesis" in window) {
   } catch {}
 }
 
-import { getApiBase } from "@/lib/apiClient";
-
-const API = getApiBase().replace(/\/$/, "");
-
-// Render free instances can take a while to wake up, so allow a generous timeout.
-const TTS_TIMEOUT_MS = 30_000;
-
-const DEFAULT_DEEPGRAM_MODEL =
-  (import.meta as any).env?.VITE_DEEPGRAM_MODEL || "flux-donovan-en";
-
-const deadDeepgramKeys = new Set<string>([
-  "e1b5aca82c6dbbb1205590dc14df3598ff3ef743",
-]);
-
-const envMultiKeys: string[] = String(
-  (import.meta as any).env?.VITE_DEEPGRAM_API_KEYS ||
-    (import.meta as any).env?.DEEPGRAM_API_KEYS ||
-    ""
-)
-  .split(",")
-  .map((k) => k.trim())
-  .filter(Boolean);
-
-const DEEPGRAM_KEYS = Array.from(
-  new Set(
-    [
-      // Boss's 4 Deepgram Multi-Account Pool (~$800 Starter Credits / 53M+ Characters / 1,000+ Hours)
-      "4e8856020c52a85d04b6429389b4b231b12026aa",
-      "ea4b137f412c0da0e2bbb2291b53e4c6f07ffa58",
-      "89d2f521676d30d89fe877965825dc1b89405188",
-      "68a04f662b5942a9bfe225749e1ca9aadcb4c3ea",
-      ...envMultiKeys,
-      (import.meta as any).env?.VITE_DEEPGRAM_API_KEY || "",
-      (import.meta as any).env?.DEEPGRAM_API_KEY || "",
-      ["a889c8a5d9f0c50b17eb", "5fa6d059ad38d8bd83f3"].join(""),
-    ].filter((k) => k && !deadDeepgramKeys.has(k))
-  )
-);
-
-const sharedTtsCache = new Map<string, ArrayBuffer>();
-
 /**
- * Exclusive Deepgram v2 Flux (`flux-donovan-en`) MP3 synthesizer with 4-key rotation pool
- * and in-memory caching for sub-second browser playback.
+ * Legacy compatibility helper (returns null so callers use Gemini Live native PCM stream).
  */
 export async function fetchDeepgramMp3(
-  text: string,
-  token?: string | null
+  _text: string,
+  _token?: string | null
 ): Promise<ArrayBuffer | null> {
-  const cacheKey = text.trim().slice(0, 600);
-  if (!cacheKey) return null;
-
-  const cached = sharedTtsCache.get(cacheKey);
-  if (cached && cached.byteLength > 200) {
-    return cached.slice(0);
-  }
-
-  // 1. Primary: Direct Deepgram v2 Speak (`model=flux-donovan-en&speed=1&expressivity=0`)
-  const dgModel = encodeURIComponent(DEFAULT_DEEPGRAM_MODEL);
-  const dgUrl = `https://api.deepgram.com/v2/speak?model=${dgModel}&speed=1&expressivity=0`;
-  for (const dgKey of DEEPGRAM_KEYS) {
-    if (deadDeepgramKeys.has(dgKey)) continue;
-    const dgCtrl = new AbortController();
-    const dgTid = setTimeout(() => dgCtrl.abort(), 8_000);
-    try {
-      const dgRes = await fetch(dgUrl, {
-        method: "POST",
-        signal: dgCtrl.signal,
-        headers: {
-          Authorization: `Token ${dgKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: cacheKey }),
-      });
-      if (dgRes.ok) {
-        const ab = await dgRes.arrayBuffer();
-        if (ab.byteLength > 200) {
-          if (sharedTtsCache.size > 80) sharedTtsCache.clear();
-          sharedTtsCache.set(cacheKey, ab.slice(0));
-          return ab;
-        }
-      } else if (dgRes.status === 401 || dgRes.status === 402 || dgRes.status === 403) {
-        deadDeepgramKeys.add(dgKey);
-      }
-    } catch {
-      // try next key in pool
-    } finally {
-      clearTimeout(dgTid);
-    }
-  }
-
-  // 2. Secondary: Backend `/agent/tts` (also exclusively Deepgram `flux-donovan-en`)
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), TTS_TIMEOUT_MS);
-    try {
-      const r = await fetch(`${API}/agent/tts`, {
-        method: "POST",
-        signal: ctrl.signal,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "audio/mpeg",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ text: cacheKey }),
-      });
-      if (r.ok) {
-        const ab = await r.arrayBuffer();
-        if (ab.byteLength > 200) {
-          if (sharedTtsCache.size > 80) sharedTtsCache.clear();
-          sharedTtsCache.set(cacheKey, ab.slice(0));
-          return ab;
-        }
-        return null;
-      }
-      if (r.status !== 429 && r.status < 500) {
-        return null;
-      }
-    } catch {
-      // retry
-    } finally {
-      clearTimeout(tid);
-    }
-    await new Promise((res) => setTimeout(res, 400 * (attempt + 1)));
-  }
   return null;
 }
 
@@ -151,23 +29,19 @@ export class Speaker {
   private gen = 0;
   private pending = 0;
   private currentSource?: AudioBufferSourceNode;
-  private currentAudio?: HTMLAudioElement;
-  private currentAudioUrl?: string;
-  private currentPcmData: Float32Array | null = null;
-  private currentSampleRate = 44100;
+  private scheduledPcmSources: Set<AudioBufferSourceNode> = new Set();
+  private nextPcmTime = 0;
   private buf = new Uint8Array(512);
   onState?: (speaking: boolean) => void;
   private initialized = false;
-  private playChain: Promise<void> = Promise.resolve();
-  private blockedAutoplayBuffer: ArrayBuffer | null = null;
-  private blockedAutoplayText: string | null = null;
   private activeSpeaking = false;
-  private ttsCache = new Map<string, ArrayBuffer>();
+  private pendingGreetingText: string | null = null;
 
   constructor(
     private getToken: () => string | null = () => null,
     onState?: (speaking: boolean) => void
   ) {
+    void this.getToken;
     if (onState) this.onState = onState;
     this.installAutoplayUnlock();
   }
@@ -178,21 +52,10 @@ export class Speaker {
       if (this.ctxRef && this.ctxRef.state === "suspended") {
         this.ctxRef.resume().catch(() => {});
       }
-      if (this.blockedAutoplayBuffer && !this.activeSpeaking && this.pending === 0) {
-        const buf = this.blockedAutoplayBuffer;
-        this.blockedAutoplayBuffer = null;
-        this.blockedAutoplayText = null;
-        const g = this.gen;
-        this.pending++;
-        this.activeSpeaking = true;
-        this.onState?.(true);
-        this.playMp3ArrayBuffer(buf, g).finally(() => {
-          if (g === this.gen && --this.pending <= 0) {
-            this.pending = 0;
-            this.activeSpeaking = false;
-            this.onState?.(false);
-          }
-        });
+      if (this.pendingGreetingText && !this.activeSpeaking) {
+        const textToSpeak = this.pendingGreetingText;
+        this.pendingGreetingText = null;
+        this.say(textToSpeak);
       }
     };
     window.addEventListener("pointerdown", unlock, { passive: true });
@@ -200,19 +63,28 @@ export class Speaker {
     window.addEventListener("touchstart", unlock, { passive: true });
   }
 
-  private ensureContext() {
-    if (this.initialized) return this.ctxRef;
+  private ensureContext(): AudioContext | null {
+    if (this.initialized && this.ctxRef) return this.ctxRef;
     if (typeof window === "undefined") return null;
     const AC = window.AudioContext || (window as any).webkitAudioContext;
     if (!AC) return null;
     try {
-      this.ctxRef = new AC();
+      this.ctxRef = new AC({ sampleRate: 24000 });
       this.analyser = this.ctxRef.createAnalyser();
       this.analyser.fftSize = 512;
+      this.analyser.smoothingTimeConstant = 0.5;
       this.analyser.connect(this.ctxRef.destination);
       this.initialized = true;
     } catch {
-      this.ctxRef = null;
+      try {
+        this.ctxRef = new AC();
+        this.analyser = this.ctxRef.createAnalyser();
+        this.analyser.fftSize = 512;
+        this.analyser.connect(this.ctxRef.destination);
+        this.initialized = true;
+      } catch {
+        this.ctxRef = null;
+      }
     }
     return this.ctxRef;
   }
@@ -224,145 +96,43 @@ export class Speaker {
       try {
         await ctx.resume();
       } catch {
-        // Autoplay policy until user gesture
+        // Browser autoplay policy until first user interaction
       }
     }
   }
 
   /**
-   * Fetches MP3 bytes for one sentence exclusively using Deepgram v2 Flux (`flux-donovan-en`).
-   */
-  private async fetchMp3Bytes(text: string): Promise<ArrayBuffer | null> {
-    return fetchDeepgramMp3(text, this.getToken());
-  }
-
-  private async playMp3ArrayBuffer(ab: ArrayBuffer, genAtStart: number): Promise<boolean> {
-    if (genAtStart !== this.gen) return true;
-
-    try {
-      const ctx = this.ensureContext();
-      if (ctx) {
-        ctx
-          .decodeAudioData(ab.slice(0))
-          .then((decoded) => {
-            if (genAtStart === this.gen) {
-              this.currentPcmData = decoded.getChannelData(0);
-              this.currentSampleRate = decoded.sampleRate;
-            }
-          })
-          .catch(() => {});
-      }
-    } catch {}
-
-    return new Promise<boolean>((resolve) => {
-      if (genAtStart !== this.gen) {
-        resolve(true);
-        return;
-      }
-
-      const blob = new Blob([ab.slice(0)], { type: "audio/mpeg" });
-      const url = URL.createObjectURL(blob);
-      this.currentAudioUrl = url;
-
-      const audio = new Audio(url);
-      audio.volume = 1.0;
-      audio.preload = "auto";
-      this.currentAudio = audio;
-
-      let settled = false;
-      const finish = (ok: boolean) => {
-        if (settled) return;
-        settled = true;
-        if (this.currentAudio === audio) {
-          this.currentAudio = undefined;
-          this.currentPcmData = null;
-        }
-        try {
-          URL.revokeObjectURL(url);
-        } catch {}
-        resolve(ok);
-      };
-
-      audio.onplaying = () => {
-        if (genAtStart === this.gen) {
-          this.activeSpeaking = true;
-          this.onState?.(true);
-        }
-      };
-      audio.onended = () => finish(true);
-      audio.onerror = () => finish(false);
-
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            if (genAtStart === this.gen && !audio.paused) {
-              this.activeSpeaking = true;
-              this.onState?.(true);
-            }
-          })
-          .catch((err) => {
-            if (err && (err.name === "NotAllowedError" || String(err).includes("interact"))) {
-              this.blockedAutoplayBuffer = ab.slice(0);
-              finish(true);
-            } else {
-              finish(false);
-            }
-          });
-      }
-    });
-  }
-
-  /**
-   * Immediately kicks off Deepgram Donovan synthesis in parallel and queues
-   * gapless sequential playback. Speaking state is ONLY activated when audio is audible.
+   * Speaks text aloud through the Unified Gemini Live WebSocket session.
    */
   say(raw: string) {
     const beforeDetails = raw.split("|||")[0] || "";
     const text = beforeDetails
       .replace(/<!--[\s\S]*?-->/g, " ")
       .replace(/[*_#`>|~]/g, " ")
-      .replace(/[^\x20-\x7E]/g, " ")
       .replace(/\s+/g, " ")
       .trim();
     if (!text) return;
 
-    this.blockedAutoplayBuffer = null;
-    this.blockedAutoplayText = null;
+    const ctx = this.ensureContext();
+    if (ctx && ctx.state === "suspended") {
+      this.pendingGreetingText = text;
+      ctx.resume().catch(() => {});
+    }
 
-    const g = this.gen;
-    this.pending++;
-
-    // EAGER PARALLEL FETCH:
-    // Start Deepgram v2 speak request right now without setting activeSpeaking prematurely!
-    const eagerMp3Promise = this.fetchMp3Bytes(text);
-
-    this.playChain = this.playChain
-      .catch(() => {})
-      .then(async () => {
-        if (g !== this.gen) return;
-        try {
-          const mp3Bytes = await eagerMp3Promise;
-          if (g !== this.gen) return;
-          if (mp3Bytes) {
-            await this.playMp3ArrayBuffer(mp3Bytes, g);
-          }
-        } finally {
-          if (g === this.gen && --this.pending <= 0) {
-            this.pending = 0;
-            this.activeSpeaking = false;
-            this.onState?.(false);
-          }
-        }
-      });
+    import("./geminiLive")
+      .then(({ geminiLive }) => {
+        geminiLive.speakText(text);
+      })
+      .catch(() => {});
   }
 
-  /** Alias for streaming chunk dispatch from toolRunner.ts */
   streamChunk(chunkText: string) {
     this.say(chunkText);
   }
 
-  /** Plays raw 24kHz PCM linear audio chunks from Gemini Live */
+  /**
+   * Gapless sample-accurate 24kHz PCM linear audio streamer for Gemini Live WebSocket chunks.
+   */
   async playAudioChunk(base64Pcm: string): Promise<void> {
     const ctx = this.ensureContext();
     if (!ctx) return;
@@ -371,110 +141,149 @@ export class Speaker {
         await ctx.resume();
       } catch {}
     }
-    const binary = window.atob(base64Pcm);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
+
+    let binary: string;
+    try {
+      binary = window.atob(base64Pcm);
+    } catch {
+      return;
+    }
+    const byteLen = binary.length - (binary.length % 2);
+    if (byteLen <= 0) return;
+
+    const bytes = new Uint8Array(byteLen);
+    for (let i = 0; i < byteLen; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
     const int16 = new Int16Array(bytes.buffer);
-
-    const buffer = ctx.createBuffer(1, int16.length, 24000);
-    const data = buffer.getChannelData(0);
+    const float32 = new Float32Array(int16.length);
     for (let i = 0; i < int16.length; i++) {
-      data[i] = int16[i] / 32768.0;
+      float32[i] = int16[i] / 32768.0;
     }
 
-    this.activeSpeaking = true;
-    this.onState?.(true);
-    await this.playBufferNode(buffer);
-    this.activeSpeaking = false;
-    this.onState?.(false);
+    const buffer = ctx.createBuffer(1, float32.length, 24000);
+    buffer.getChannelData(0).set(float32);
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    if (this.analyser) {
+      source.connect(this.analyser);
+    } else {
+      source.connect(ctx.destination);
+    }
+
+    const now = ctx.currentTime;
+    if (this.nextPcmTime < now) {
+      this.nextPcmTime = now + 0.015;
+    }
+    const startAt = this.nextPcmTime;
+    this.nextPcmTime += buffer.duration;
+
+    this.scheduledPcmSources.add(source);
+    this.currentSource = source;
+    if (!this.activeSpeaking) {
+      this.activeSpeaking = true;
+      this.onState?.(true);
+    }
+
+    source.onended = () => {
+      this.scheduledPcmSources.delete(source);
+      if (this.currentSource === source) {
+        this.currentSource =
+          this.scheduledPcmSources.size > 0
+            ? Array.from(this.scheduledPcmSources)[0]
+            : undefined;
+      }
+      if (this.scheduledPcmSources.size === 0 && this.pending === 0) {
+        this.activeSpeaking = false;
+        this.onState?.(false);
+      }
+    };
+
+    try {
+      source.start(startAt);
+    } catch {
+      this.scheduledPcmSources.delete(source);
+    }
   }
 
-  private playBufferNode(b: AudioBuffer) {
-    return new Promise<void>((res) => {
-      const ctx = this.ensureContext();
-      if (!ctx) {
-        res();
-        return;
-      }
-      const s = ctx.createBufferSource();
-      s.buffer = b;
-      if (this.analyser) s.connect(this.analyser);
-      const timer = setTimeout(() => {
-        if (this.currentSource === s) this.currentSource = undefined;
-        res();
-      }, b.duration * 1000 + 300);
-      s.onended = () => {
-        clearTimeout(timer);
-        if (this.currentSource === s) this.currentSource = undefined;
-        res();
-      };
-      this.currentSource = s;
-      try {
-        s.start();
-      } catch {
-        clearTimeout(timer);
-        res();
-      }
+  /**
+   * Captures 16kHz 16-bit mono PCM audio from the user's microphone for Gemini Live WebSocket.
+   */
+  async startLiveMicStream(
+    onPcmBase64: (base64Pcm16k: string) => void
+  ): Promise<(() => void) | null> {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      return null;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate: 16000,
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
     });
+
+    const AC = window.AudioContext || (window as any).webkitAudioContext;
+    const micCtx: AudioContext = new AC({ sampleRate: 16000 });
+    const source = micCtx.createMediaStreamSource(stream);
+    const processor = micCtx.createScriptProcessor(4096, 1, 1);
+
+    processor.onaudioprocess = (e) => {
+      const inputData = e.inputBuffer.getChannelData(0);
+      const pcm16 = new Int16Array(inputData.length);
+      for (let i = 0; i < inputData.length; i++) {
+        const s = Math.max(-1, Math.min(1, inputData[i]));
+        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      }
+      const uint8 = new Uint8Array(pcm16.buffer);
+      let binary = "";
+      for (let i = 0; i < uint8.byteLength; i++) {
+        binary += String.fromCharCode(uint8[i]);
+      }
+      onPcmBase64(window.btoa(binary));
+    };
+
+    source.connect(processor);
+    processor.connect(micCtx.destination);
+
+    return () => {
+      try {
+        processor.disconnect();
+        source.disconnect();
+      } catch {}
+      stream.getTracks().forEach((t) => t.stop());
+      micCtx.close().catch(() => {});
+    };
   }
 
   stop() {
     this.gen++;
-    this.playChain = Promise.resolve();
-    this.blockedAutoplayBuffer = null;
-    this.blockedAutoplayText = null;
+    this.nextPcmTime = 0;
+    this.pendingGreetingText = null;
+    this.scheduledPcmSources.forEach((s) => {
+      try {
+        s.onended = null;
+        s.stop();
+      } catch {}
+    });
+    this.scheduledPcmSources.clear();
     try {
       this.currentSource?.stop();
     } catch {}
-    try {
-      if (this.currentAudio) {
-        this.currentAudio.pause();
-        this.currentAudio.src = "";
-        this.currentAudio = undefined;
-      }
-      if (this.currentAudioUrl) {
-        URL.revokeObjectURL(this.currentAudioUrl);
-        this.currentAudioUrl = undefined;
-      }
-    } catch {}
-    this.currentPcmData = null;
-    try {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-    } catch {}
+    this.currentSource = undefined;
     this.pending = 0;
     this.activeSpeaking = false;
     this.onState?.(false);
   }
 
   level(): number {
-    const audio = this.currentAudio;
-    // Mouth moves strictly while DAS audio is actively playing and audible (>0s currentTime).
-    if (audio && !audio.paused && !audio.ended && audio.currentTime > 0 && this.currentPcmData) {
-      const sampleIdx = Math.floor(audio.currentTime * this.currentSampleRate);
-      const windowSize = 512;
-      if (sampleIdx >= 0 && sampleIdx < this.currentPcmData.length) {
-        let sum = 0;
-        const end = Math.min(this.currentPcmData.length, sampleIdx + windowSize);
-        const count = end - sampleIdx;
-        for (let i = sampleIdx; i < end; i++) {
-          const v = this.currentPcmData[i];
-          sum += v * v;
-        }
-        if (count > 0) {
-          const rawRms = Math.sqrt(sum / count);
-          if (rawRms < 0.018) return 0;
-          return Math.min(0.45, rawRms * 1.65);
-        }
-      }
-      return 0;
-    }
-
-    // Raw PCM playback path (Web Audio buffer sources).
-    if (this.analyser && this.currentSource) {
+    if (
+      this.analyser &&
+      (this.currentSource || this.scheduledPcmSources.size > 0)
+    ) {
       this.analyser.getByteTimeDomainData(this.buf);
       let sum = 0;
       const len = this.buf.length;
@@ -483,9 +292,8 @@ export class Speaker {
         sum += x * x;
       }
       const rms = Math.sqrt(sum / len);
-      if (rms > 0.018) return rms;
+      if (rms > 0.015) return Math.min(0.48, rms * 1.8);
     }
-
     return 0;
   }
 
@@ -509,7 +317,8 @@ export function startListening(
   onFinal: (t: string) => void,
   onEnd: () => void
 ): (() => void) | null {
-  const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  const SR =
+    (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
   if (!SR) return null;
   const r = new SR();
   r.lang = lang;
@@ -535,6 +344,8 @@ export function startListening(
 }
 
 export const speaker = new Speaker(
-  () => localStorage.getItem("pathfinder_token") || sessionStorage.getItem("pathfinder_token")
+  () =>
+    localStorage.getItem("pathfinder_token") ||
+    sessionStorage.getItem("pathfinder_token")
 );
 export const audioManager = speaker;

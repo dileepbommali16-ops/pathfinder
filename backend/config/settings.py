@@ -50,14 +50,10 @@ class Settings:
         self.github_client_id: Optional[str] = os.getenv("GITHUB_CLIENT_ID")
         self.github_client_secret: Optional[str] = os.getenv("GITHUB_CLIENT_SECRET")
 
-        # AI / LLM Configurations
+        # AI / LLM Configurations (Unified Google Gemini + Gemini Live)
         self.gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
         self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest").strip() or "gemini-flash-latest"
-        self.openrouter_api_key: Optional[str] = os.getenv("OPENROUTER_API_KEY")
-        self.openrouter_model: str = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3-8b-instruct:free")
-        self.ollama_api_key: Optional[str] = os.getenv("OLLAMA_API_KEY")
-        self.ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
-        self.ollama_model: str = os.getenv("OLLAMA_MODEL", "llama3")
+        self.gemini_live_model: str = os.getenv("GEMINI_LIVE_MODEL", "gemini-2.5-flash-native-audio-latest").strip() or "gemini-2.5-flash-native-audio-latest"
         self.ai_daily_budget_per_user: int = int(os.getenv("AI_DAILY_BUDGET", "200"))
 
         # CORS Origins

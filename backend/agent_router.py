@@ -100,9 +100,10 @@ def create_agent_router(user_dependency: Optional[Callable] = None) -> APIRouter
     async def agent_status() -> Dict[str, Any]:
         """Safe diagnostics (no secrets)."""
         return {
-            "key_present": bool(os.getenv("GROQ_API_KEY", "").strip() or os.getenv("GEMINI_API_KEY", "").strip()),
-            "groq_model": os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
-            "deepgram_voice": os.getenv("DEEPGRAM_MODEL", "flux-donovan-en"),
+            "key_present": bool(os.getenv("GEMINI_API_KEY", "").strip()),
+            "gemini_model": os.getenv("GEMINI_MODEL", "gemini-flash-latest"),
+            "gemini_live_model": os.getenv("GEMINI_LIVE_MODEL", "gemini-2.5-flash-native-audio-latest"),
+            "voice_engine": "Gemini Live 24kHz Native Audio WebSocket",
             "knowledge_status": "online"
         }
 

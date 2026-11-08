@@ -105,7 +105,7 @@ async def handle_agent_websocket(websocket: WebSocket):
         from google import genai
         from google.genai import types
 
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(api_key=api_key, http_options={"api_version": "v1beta"})
 
         # Build tools configuration
         function_declarations = []
@@ -119,6 +119,8 @@ async def handle_agent_websocket(websocket: WebSocket):
         audio_mod = getattr(getattr(types, "Modality", None), "AUDIO", None) or getattr(getattr(types, "LiveModality", None), "AUDIO", "AUDIO")
         config = types.LiveConnectConfig(
             response_modalities=[audio_mod],
+            output_audio_transcription=types.AudioTranscriptionConfig(),
+            input_audio_transcription=types.AudioTranscriptionConfig(),
             system_instruction=types.Content(
                 parts=[types.Part.from_text(text=system_instruction)]
             ),

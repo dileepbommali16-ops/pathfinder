@@ -1,65 +1,15 @@
 /**
- * toolRunner.ts - Website DOM Tool Executor + Real-Time Groq -> ElevenLabs Streaming Pipeline
+ * toolRunner.ts - Website DOM Tool Executor for Unified Gemini Live Agent
  *
- * TASK 2 (Streaming Pipeline):
- * - Streams tokens from Groq LPU (`stream: true`) via Server-Sent Events (SSE).
- * - Does NOT wait for the full Groq response: as soon as Groq streams the first speakable
- *   chunk/clause, it is immediately dispatched to ElevenLabs (`/stream?optimize_streaming_latency=3`).
- * - Tracks and emits explicit pipeline state transitions: `listening` -> `thinking` -> `speaking`.
+ * Executes website control tools dispatched by the Gemini Live WebSocket session:
+ * - navigate / navigate_to
+ * - scroll / scroll_to
+ * - click
+ * - highlight / pick_project
+ * - fill_field / read_page
  */
-
-import { speaker as globalSpeaker } from "./audioIO";
-import { askDas } from "./careerAgent";
 
 export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking";
-
-/**
- * Dispatches speakable text buffer directly to ElevenLabs streaming synthesizer
- */
-export async function elevenLabsStream(text: string): Promise<void> {
-  if (!text || !text.trim()) return;
-  globalSpeaker.streamChunk(text.trim());
-}
-
-/**
- * Real-time Groq Streaming + ElevenLabs Streaming Pipeline:
- * Dispatches every 4 words to ElevenLabs without waiting for full Groq response.
- */
-export async function handleMicResult(
-  text: string,
-  onStageChange?: (stage: VoicePipelineStage) => void
-): Promise<string> {
-  onStageChange?.("thinking");
-  if (typeof window !== "undefined") {
-    (window as any).DASFace?.setMood?.("thinking");
-  }
-  let buffer = "";
-  let fullResponse = "";
-  let spokenCount = 0;
-
-  fullResponse = await askDas(text, async (token: string) => {
-    buffer += token;
-    // Prathi 4 words ki ElevenLabs ki pampu
-    if (buffer.split(" ").length > 4) {
-      if (spokenCount === 0) {
-        onStageChange?.("speaking");
-      }
-      spokenCount++;
-      await elevenLabsStream(buffer);
-      buffer = "";
-    }
-  });
-
-  if (buffer.trim()) {
-    if (spokenCount === 0) {
-      onStageChange?.("speaking");
-    }
-    await elevenLabsStream(buffer);
-    buffer = "";
-  }
-
-  return fullResponse;
-}
 
 export interface ToolCallPayload {
   id: string;
@@ -74,258 +24,6 @@ export interface ToolResult {
   data?: any;
 }
 
-export interface ElevenLabsStreamDispatcherOptions {
-  onSpeakChunk?: (chunk: string, chunkIndex: number) => void;
-  onStageChange?: (stage: VoicePipelineStage) => void;
-}
-
-/**
- * Incremental First-Chunk Streaming Dispatcher for ElevenLabs TTS.
- * Sends the very first spoken clause to ElevenLabs as soon as it arrives from Groq SSE,
- * without waiting for the full LLM response to complete.
- */
-export class ElevenLabsStreamingDispatcher {
-  private fullBuffer = "";
-  private spokenCursor = 0;
-  private chunkCount = 0;
-  private inThinkBlock = false;
-  private reachedDetailsDelimiter = false;
-  private onSpeakChunk: (chunk: string, chunkIndex: number) => void;
-  private onStageChange?: (stage: VoicePipelineStage) => void;
-
-  constructor(options: ElevenLabsStreamDispatcherOptions = {}) {
-    this.onSpeakChunk =
-      options.onSpeakChunk ||
-      ((chunk: string) => {
-        globalSpeaker.streamChunk(chunk);
-      });
-    this.onStageChange = options.onStageChange;
-  }
-
-  private cleanSpokenSlice(raw: string): string {
-    return raw
-      .replace(/<think>[\s\S]*?<\/think>/gi, "")
-      .replace(/<!--[\s\S]*?-->/g, "")
-      .replace(/[*_#`~]/g, "")
-      .replace(/\s+/g, " ");
-  }
-
-  /**
-   * Feeds a newly streamed token delta from Groq LPU and immediately dispatches
-   * to ElevenLabs as soon as the first speakable clause/sentence boundary is ready.
-   */
-  feedToken(delta: string): string {
-    if (!delta) return this.fullBuffer;
-    this.fullBuffer += delta;
-
-    // Handle <think>...</think> reasoning tags if present
-    if (this.fullBuffer.includes("<think>") && !this.fullBuffer.includes("</think>")) {
-      this.inThinkBlock = true;
-      return this.fullBuffer;
-    }
-    if (this.inThinkBlock && this.fullBuffer.includes("</think>")) {
-      this.inThinkBlock = false;
-      this.fullBuffer = this.fullBuffer.replace(/<think>[\s\S]*?<\/think>/gi, "").trimStart();
-    }
-
-    if (this.reachedDetailsDelimiter) {
-      return this.fullBuffer;
-    }
-
-    // Only speak content before ||| or markdown bullet lists or <!--ACTION:
-    const delimIdx = this.fullBuffer.indexOf("|||");
-    const actionIdx = this.fullBuffer.indexOf("<!--");
-    const mdListIdx = this.fullBuffer.search(/\n\s*(?:\*\*|###|[-*•]\s|\d+\.\s)/);
-
-    let cutoff = this.fullBuffer.length;
-    if (delimIdx >= 0) cutoff = Math.min(cutoff, delimIdx);
-    if (actionIdx >= 0) cutoff = Math.min(cutoff, actionIdx);
-    if (mdListIdx > 0) cutoff = Math.min(cutoff, mdListIdx);
-
-    if (delimIdx >= 0 || actionIdx >= 0 || mdListIdx > 0) {
-      this.reachedDetailsDelimiter = true;
-    }
-
-    const speakableRegion = this.cleanSpokenSlice(this.fullBuffer.slice(0, cutoff));
-    let unconsumed = speakableRegion.slice(this.spokenCursor);
-
-    while (unconsumed.length > 0) {
-      // Dispatch first sentence at >= 12 chars for ultra-fast TTFA, and >= 24 chars for subsequent sentences
-      const minLen = this.chunkCount === 0 ? 12 : 24;
-      const rx = new RegExp(`^([\\s\\S]{${minLen},}?[.!?।\\n]+)\\s+`);
-      const sentenceMatch = unconsumed.match(rx);
-      if (sentenceMatch) {
-        const chunk = sentenceMatch[1].trim();
-        this.spokenCursor += sentenceMatch[0].length;
-        unconsumed = speakableRegion.slice(this.spokenCursor);
-        this.dispatchChunk(chunk);
-      } else {
-        break;
-      }
-    }
-
-    // If we just hit the ||| delimiter, flush any remaining spoken words before ||| right away
-    if (this.reachedDetailsDelimiter && unconsumed.trim()) {
-      const remainder = unconsumed.trim();
-      this.spokenCursor = speakableRegion.length;
-      this.dispatchChunk(remainder);
-    }
-
-    return this.fullBuffer;
-  }
-
-  /**
-   * Flushes any remaining unspoken text at the end of the Groq stream.
-   */
-  flush() {
-    const delimIdx = this.fullBuffer.indexOf("|||");
-    const actionIdx = this.fullBuffer.indexOf("<!--");
-    const mdListIdx = this.fullBuffer.search(/\n\s*(?:\*\*|###|[-*•]\s|\d+\.\s)/);
-
-    let cutoff = this.fullBuffer.length;
-    if (delimIdx >= 0) cutoff = Math.min(cutoff, delimIdx);
-    if (actionIdx >= 0) cutoff = Math.min(cutoff, actionIdx);
-    if (mdListIdx > 0) cutoff = Math.min(cutoff, mdListIdx);
-
-    const speakableRegion = this.cleanSpokenSlice(this.fullBuffer.slice(0, cutoff));
-    const tail = speakableRegion.slice(this.spokenCursor).trim();
-    if (tail) {
-      this.spokenCursor = speakableRegion.length;
-      this.dispatchChunk(tail);
-    }
-  }
-
-  private dispatchChunk(chunk: string) {
-    if (!chunk) return;
-    const idx = this.chunkCount++;
-    if (idx === 0) {
-      this.onStageChange?.("speaking");
-    }
-    this.onSpeakChunk(chunk, idx);
-  }
-
-  getChunkCount(): number {
-    return this.chunkCount;
-  }
-}
-
-export interface StreamGroqToElevenLabsParams {
-  apiKeys: string[];
-  systemPrompt: string;
-  history: Array<{ role: "user" | "assistant"; content: string }>;
-  userQuery: string;
-  model?: string;
-  signal?: AbortSignal;
-  onToken?: (fullTextSoFar: string, delta: string) => void;
-  onSpeakChunk?: (chunk: string, chunkIndex: number) => void;
-  onStageChange?: (stage: VoicePipelineStage) => void;
-}
-
-/**
- * Streams tokens from Groq LPU (`stream: true`) and pipes the very first chunk
- * directly into ElevenLabs TTS without waiting for the full Groq response.
- */
-export async function streamGroqToElevenLabs({
-  apiKeys,
-  systemPrompt,
-  history,
-  userQuery,
-  model = "openai/gpt-oss-120b",
-  signal,
-  onToken,
-  onSpeakChunk,
-  onStageChange,
-}: StreamGroqToElevenLabsParams): Promise<string> {
-  onStageChange?.("thinking");
-  if (typeof window !== "undefined") {
-    (window as any).DASFace?.setMood?.("thinking");
-  }
-
-  const dispatcher = new ElevenLabsStreamingDispatcher({
-    onSpeakChunk,
-    onStageChange,
-  });
-
-  for (const apiKey of apiKeys) {
-    if (!apiKey) continue;
-    try {
-      const ctrl = new AbortController();
-      const timeoutId = setTimeout(() => ctrl.abort(), 7500);
-      signal?.addEventListener("abort", () => ctrl.abort());
-
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        signal: ctrl.signal,
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          stream: true,
-          temperature: 0.65,
-          max_tokens: 420,
-          ...(model.includes("gpt-oss") ? { reasoning_effort: "low" } : {}),
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...history.slice(-6),
-            { role: "user", content: userQuery },
-          ],
-        }),
-      });
-      clearTimeout(timeoutId);
-
-      if (!res.ok || !res.body) {
-        continue;
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let carry = "";
-      let fullText = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        carry += decoder.decode(value, { stream: true });
-        const lines = carry.split("\n");
-        carry = lines.pop() || "";
-
-        for (const rawLine of lines) {
-          const line = rawLine.trim();
-          if (!line.startsWith("data:")) continue;
-          const payloadStr = line.slice(5).trim();
-          if (!payloadStr || payloadStr === "[DONE]") continue;
-
-          try {
-            const parsed = JSON.parse(payloadStr);
-            const delta = parsed?.choices?.[0]?.delta?.content || "";
-            if (delta) {
-              fullText = dispatcher.feedToken(delta);
-              onToken?.(fullText, delta);
-            }
-          } catch {
-            // Ignore partial SSE JSON frames
-          }
-        }
-      }
-
-      if (fullText.trim()) {
-        dispatcher.flush();
-        return fullText.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-      }
-    } catch (err: any) {
-      if (signal?.aborted || err?.name === "AbortError") {
-        throw err;
-      }
-      // Try next key in fallback pool
-    }
-  }
-
-  return "";
-}
-
-// FULL JARVIS CONTROLLER TOOLS (Autonomous Navigation, Smart Blueprint Selection, Deep Lifecycle Explainer)
 export const TOOLS = {
   navigate: (path: string) => {
     if (typeof window !== "undefined") {
@@ -336,16 +34,18 @@ export const TOOLS = {
   pick_blueprint: (size: "small" | "medium" | "large" = "small") => {
     if (typeof window === "undefined") return null;
 
-    // Switch to projects tab first if not already there
     window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: "projects" } }));
 
-    const cards = Array.from(document.querySelectorAll("[data-blueprint-size], [data-project-id]")) as HTMLElement[];
+    const cards = Array.from(
+      document.querySelectorAll("[data-blueprint-size], [data-project-id]")
+    ) as HTMLElement[];
     const filtered = cards.filter(
-      (c) => (c.getAttribute("data-blueprint-size") || c.getAttribute("data-size") || "").toLowerCase() === size
+      (c) =>
+        (c.getAttribute("data-blueprint-size") || c.getAttribute("data-size") || "").toLowerCase() ===
+        size
     );
     const pool = filtered.length > 0 ? filtered : cards;
 
-    // Retrieve previous selections from memory so same project is never repeated
     let history: string[] = [];
     try {
       history = JSON.parse(localStorage.getItem("project_history") || "[]");
@@ -369,7 +69,6 @@ export const TOOLS = {
       pick.scrollIntoView({ behavior: "smooth", block: "center" });
       pick.click();
 
-      // Trigger custom highlight glow
       window.dispatchEvent(
         new CustomEvent("das-highlight-project", {
           detail: { projectId: pick.getAttribute("data-project-id") || pick.id, query: size },
@@ -421,20 +120,58 @@ export function runTool(
   switch (name) {
     case "navigate":
     case "navigate_to": {
-      const page = String(args.page || args.route || "").replace(/^\//, "");
+      const page = String(args.to || args.page || args.route || "").replace(/^\//, "");
       const tabTarget = page === "blueprints" ? "projects" : page;
       window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: tabTarget } }));
-      const r = String(args.route || (page ? "/" + page : ""));
+      const r = String(args.to || args.route || (page ? "/" + page : ""));
       if (r && r.startsWith("/") && !r.startsWith("//") && !r.includes(":")) {
         navigate(r);
       }
       return { success: true, navigated: true, explain: !!args.explain };
     }
+    case "scroll": {
+      const dir = String(args.dir || args.direction || "down").toLowerCase();
+      if (dir === "top") window.scrollTo({ top: 0, behavior: "smooth" });
+      else if (dir === "bottom") window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      else if (dir === "up") window.scrollBy({ top: -520, behavior: "smooth" });
+      else window.scrollBy({ top: 520, behavior: "smooth" });
+      return { success: true };
+    }
+    case "highlight":
     case "pick_project": {
-      const size = String(args.size || "small").toLowerCase();
+      const target = String(args.target || args.size || "small").toLowerCase();
       window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: "projects" } }));
-      window.dispatchEvent(new CustomEvent("das-highlight-project", { detail: { query: size } }));
-      return { success: true, data: { size } };
+      window.dispatchEvent(new CustomEvent("das-highlight-project", { detail: { query: target } }));
+      return { success: true, data: { target } };
+    }
+    case "open_blueprint": {
+      const blueprintId = String(args.blueprintId || args.id || "1");
+      window.dispatchEvent(new CustomEvent("das-navigate-tab", { detail: { tab: "projects" } }));
+      window.dispatchEvent(
+        new CustomEvent("das-highlight-project", { detail: { projectId: blueprintId, query: blueprintId } })
+      );
+      return { success: true, navigated: true, data: { blueprintId } };
+    }
+    case "highlight_section": {
+      const sectionName = String(args.sectionName || args.target || "");
+      const el =
+        document.getElementById(sectionName) ||
+        Array.from(document.querySelectorAll("h1,h2,h3,h4,section")).find((h) =>
+          (h.textContent || "").toLowerCase().includes(sectionName.toLowerCase())
+        );
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      window.dispatchEvent(new CustomEvent("das-highlight-project", { detail: { query: sectionName } }));
+      return { success: true, data: { sectionName } };
+    }
+    case "update_readiness_score": {
+      const points = Number(args.points || 0);
+      const feedback = String(args.feedback || "");
+      window.dispatchEvent(
+        new CustomEvent("das-update-readiness", { detail: { points, feedback } })
+      );
+      return { success: true, data: { points, feedback } };
     }
     case "explain_deep": {
       return { success: true, explain: true, data: args };
@@ -452,12 +189,6 @@ export function runTool(
       }
       return { success: true };
     }
-    case "_legacy_navigate_to": {
-      const r = String(args.route || "");
-      if (!r.startsWith("/") || r.startsWith("//") || r.includes(":")) return { success: false };
-      navigate(r);
-      return { success: true, navigated: true, explain: !!args.explain };
-    }
     case "scroll_to": {
       const t = String(args.target || args.section || "");
       let el: Element | null = byId(t) || document.getElementById(t);
@@ -474,11 +205,19 @@ export function runTool(
       return { success: false };
     }
     case "click": {
-      const el = byId(String(args.agent_id || ""));
+      const agentId = String(args.agent_id || "");
+      const textLabel = String(args.text || "").toLowerCase().trim();
+      let el: HTMLElement | null = agentId ? byId(agentId) : null;
+      if (!el && textLabel) {
+        el =
+          (Array.from(document.querySelectorAll("button, a, [role='tab'], [role='button']")).find(
+            (b) => (b.textContent || "").toLowerCase().includes(textLabel)
+          ) as HTMLElement) || null;
+      }
       if (!el) return { success: false };
       if (
         el.hasAttribute("data-agent-danger") &&
-        !window.confirm("Agent ee action cheyyamantunnadu. Sure na?")
+        !window.confirm("Confirm this action requested by DAS?")
       ) {
         return { success: false };
       }
@@ -513,9 +252,11 @@ export async function executeToolCall(
   call: ToolCallPayload,
   onNavigate?: (route: string) => void
 ): Promise<ToolResult> {
-  const navigateFn = onNavigate || ((to: string) => {
-    window.location.pathname = to;
-  });
+  const navigateFn =
+    onNavigate ||
+    ((to: string) => {
+      window.location.pathname = to;
+    });
   const result = runTool(call.name, call.args, navigateFn);
   return {
     success: result.success !== false,

@@ -193,46 +193,10 @@ class AgentOrchestrator:
 
         return {"error": f"Unknown server tool '{clean_name}'"}
 
-    def _call_groq_sync(self, messages: List[Dict[str, str]], max_tokens: int = 500) -> Optional[str]:
-        """Calls Groq LPU with openai/gpt-oss-120b for sub-second ultra-fast reasoning."""
-        groq_key = (
-            os.getenv("GROQ_API_KEY", "").strip()
-            or "_".join(["gsk", "GgV1SluZy64wVHF8DL1j", "WGdyb3FY1uAVo7r2BQSjzUsYPIR5UAgy"]).replace("_WGdy", "WGdy")
-        )
-        groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
-        if groq_model == "llama-3.1-8b-instant":
-            groq_model = "openai/gpt-oss-120b"
-        if not groq_key:
-            return None
-
-        import urllib.request
-        payload = {
-            "model": groq_model,
-            "messages": messages,
-            "temperature": 0.4,
-            "max_tokens": max_tokens,
-            "response_format": {"type": "json_object"}
-        }
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            "https://api.groq.com/openai/v1/chat/completions",
-            data=data,
-            headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"}
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=5.0) as resp:
-                body = json.loads(resp.read().decode("utf-8"))
-                choices = body.get("choices", [])
-                if choices:
-                    return choices[0].get("message", {}).get("content", "").strip()
-        except Exception as e:
-            logger.debug(f"[Orchestrator] Groq call error: {e}")
-        return None
-
     def _call_gemini_sync(self, prompt: str, system_instruction: str) -> Optional[str]:
-        """Calls Gemini Flash as secondary fallback."""
+        """Calls Gemini Flash as primary brain engine."""
         gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
-        if not gemini_key or not gemini_key.startswith("AIzaSy") or "." in gemini_key:
+        if not gemini_key:
             return None
 
         try:
@@ -240,7 +204,7 @@ class AgentOrchestrator:
             from google.genai import types
 
             client = genai.Client(api_key=gemini_key)
-            model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+            model_name = os.getenv("GEMINI_MODEL", "gemini-flash-latest").strip() or "gemini-flash-latest"
             config = types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 temperature=0.4,
@@ -257,30 +221,21 @@ class AgentOrchestrator:
         return None
 
     def _call_llm_json(self, messages: List[Dict[str, str]], system_prompt: str) -> Dict[str, Any]:
-        """Tries brain layer in order (Groq -> Gemini -> Fallback)."""
-        # 1. Try Groq LPU
-        raw = self._call_groq_sync(messages)
-        if raw:
-            try:
-                return json.loads(raw)
-            except Exception:
-                match = re.search(r'(\{[\s\S]*\})', raw)
-                if match:
-                    try:
-                        return json.loads(match.group(1))
-                    except Exception:
-                        pass
-
-        # 2. Try Gemini
+        """Tries Gemini brain layer first, then deterministic fallback."""
         user_msg = messages[-1].get("content", "") if messages else "Hello"
         raw_gemini = self._call_gemini_sync(user_msg, system_prompt)
         if raw_gemini:
             try:
                 return json.loads(raw_gemini)
             except Exception:
-                pass
+                match = re.search(r'(\{[\s\S]*\})', raw_gemini)
+                if match:
+                    try:
+                        return json.loads(match.group(1))
+                    except Exception:
+                        pass
 
-        # 3. Deterministic Domain Response
+        # Deterministic Domain Response
         return {
             "type": "final",
             "spoken": "I analyzed your query across your placement milestones and cohort statistics. What area should we explore next?",

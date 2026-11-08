@@ -30,7 +30,8 @@ import { MockInterviewConsole } from "@/components/dashboard/MockInterviewConsol
 import { StudentProfileState, ReadinessAuditData, DEFAULT_STUDENT_PROFILE } from "@/types/profile";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
-import { getCareerAgentResponse } from "@/lib/careerAgent";
+import { getCareerAgentResponse, buildRagGeminiSystemPrompt } from "@/lib/careerAgent";
+import { geminiLive } from "@/agent/geminiLive";
 import { handleAuthLoginDetected, initAuthMode, getUserRole } from "@/lib/auth";
 import {
   Sparkles,
@@ -934,8 +935,69 @@ const { getScreenPayload } = useScreenWatcher(activeTab);
       },
     };
 
-    // 1. Streaming response handler with SSE (High responsiveness, instant TTFT)
+    // 1. Unified Gemini Live WebSocket Streaming (Brain + 24kHz Native Audio + Tool Calling in ONE session)
     const streamBackend = async (): Promise<boolean> => {
+      try {
+        let voiceReplyEnabled = true;
+        try {
+          const stored = localStorage.getItem("pathfinder_voice_reply_enabled");
+          if (stored !== null) voiceReplyEnabled = stored === "true";
+        } catch {}
+
+        const ragPrompt = buildRagGeminiSystemPrompt({
+          query: trimmed,
+          profile: chatPayload.profile,
+          honorific: "Boss",
+          activeTab: effectiveTab,
+          readinessChance: `${prediction.chance}%`,
+        });
+
+        let hasAppendedLivePlaceholder = false;
+        const liveReply = await geminiLive.sendTurn(trimmed, {
+          systemPrompt: ragPrompt,
+          speakAudio: voiceReplyEnabled,
+          callbacks: {
+            onToken: (fullText) => {
+              if (abortCtrl.signal.aborted) return;
+              clearTimeout(coldStartTimer);
+              setIsChatWakingUp(false);
+              if (!hasAppendedLivePlaceholder) {
+                hasAppendedLivePlaceholder = true;
+                startTransition(() => {
+                  setMessages((prev) => [...prev, { role: "assistant", content: fullText }]);
+                });
+              } else {
+                startTransition(() => {
+                  setMessages((prev) => {
+                    const updated = [...prev];
+                    if (updated.length > 0 && updated[updated.length - 1].role === "assistant") {
+                      updated[updated.length - 1] = {
+                        ...updated[updated.length - 1],
+                        content: fullText,
+                      };
+                    }
+                    return updated;
+                  });
+                });
+              }
+            },
+          },
+        });
+
+        if (liveReply && liveReply.trim().length >= 5) {
+          clearTimeout(coldStartTimer);
+          setIsChatWakingUp(false);
+          if (!hasAppendedLivePlaceholder) {
+            startTransition(() => {
+              setMessages((prev) => [...prev, { role: "assistant", content: liveReply.trim() }]);
+            });
+          }
+          return true;
+        }
+      } catch (liveErr) {
+        console.warn("[Home] Gemini Live WebSocket stream notice, trying SSE backup:", liveErr);
+      }
+
       try {
         const resp = await fetch(`${API_BASE}/api/chat/stream`, {
           method: "POST",
