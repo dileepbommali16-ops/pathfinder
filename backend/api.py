@@ -328,3 +328,9 @@ async def update_student_memory(request: Request):
 
 # Backward Compatibility helper for tests expecting _user_profiles dictionary
 _user_profiles: Dict[str, StudentProfile] = {}
+
+
+# backend/api.py lo import chesi router mount cheyandi:
+from backend.google_sync_api import router as google_sync_router
+
+app.include_router(google_sync_router)

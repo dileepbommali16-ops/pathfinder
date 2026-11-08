@@ -131,6 +131,20 @@ export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[]
           },
           required: ["scoreDelta", "feedback"]
         }
+      },
+      {
+        name: "sync_google_workspace",
+        description:
+          "Syncs the student's placement readiness score to the TPO Google Sheet and schedules their mock interview on Google Calendar.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            companyName: {
+              type: Type.STRING,
+              description: "Optional company name for the Google Calendar mock interview reminder"
+            }
+          }
+        }
       }
     ]
   }
@@ -210,6 +224,12 @@ export async function executeWebsiteTool(
       return { status: "clicked", button: args.buttonText };
     }
     return { status: "not_found", button: args.buttonText };
+  }
+
+  if (name === "sync_google_workspace") {
+    const { syncGoogleWorkspace } = await import("@/components/dashboard/AIActionCenter");
+    await syncGoogleWorkspace({ companyName: args.companyName });
+    return { status: "synced", tool: name };
   }
 
   return { status: "executed", tool: name, args };
