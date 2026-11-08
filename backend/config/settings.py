@@ -52,8 +52,7 @@ class Settings:
 
         # AI / LLM Configurations
         self.gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
-        raw_model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-        self.gemini_model: str = "gemini-2.0-flash" if "3.8" in raw_model else raw_model
+        self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest").strip() or "gemini-flash-latest"
         self.openrouter_api_key: Optional[str] = os.getenv("OPENROUTER_API_KEY")
         self.openrouter_model: str = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3-8b-instruct:free")
         self.ollama_api_key: Optional[str] = os.getenv("OLLAMA_API_KEY")

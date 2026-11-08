@@ -87,7 +87,7 @@ async def handle_agent_websocket(websocket: WebSocket):
 
     # 2. Prepare Gemini Live Client
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    live_model = os.getenv("GEMINI_LIVE_MODEL", "").strip() or "gemini-2.0-flash-exp"
+    live_model = os.getenv("GEMINI_LIVE_MODEL", "").strip() or "gemini-2.5-flash-native-audio-latest"
 
     site_knowledge_str = load_site_knowledge()
     system_instruction = build_system_instruction(
@@ -116,8 +116,9 @@ async def handle_agent_websocket(websocket: WebSocket):
                 parameters=tool.get("parameters")
             ))
 
+        audio_mod = getattr(getattr(types, "Modality", None), "AUDIO", None) or getattr(getattr(types, "LiveModality", None), "AUDIO", "AUDIO")
         config = types.LiveConnectConfig(
-            response_modalities=[types.LiveModality.AUDIO],
+            response_modalities=[audio_mod],
             system_instruction=types.Content(
                 parts=[types.Part.from_text(text=system_instruction)]
             ),
@@ -125,7 +126,7 @@ async def handle_agent_websocket(websocket: WebSocket):
             speech_config=types.SpeechConfig(
                 voice_config=types.VoiceConfig(
                     prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                        voice_name="Puck"  # High-energy, crisp natural voice
+                        voice_name=os.getenv("GEMINI_VOICE_NAME", "Puck")  # High-energy, crisp natural voice
                     )
                 )
             )
