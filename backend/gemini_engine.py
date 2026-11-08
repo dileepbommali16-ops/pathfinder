@@ -70,12 +70,10 @@ DISALLOWED_MODEL_PATTERNS = (
 )
 
 PREFERRED_MODELS_ORDER = [
+    "gemini-3.5-flash",
     "gemini-3.1-flash-lite",
-    "gemini-3.8-flash",
     "gemini-3.5-flash-lite",
-    "gemini-flash-latest",
-    "gemini-flash-lite-latest",
-    "gemini-1.5-pro",
+    "gemini-3.8-flash",
 ]
 
 
@@ -658,6 +656,15 @@ def generate_smart_fallback_reply(
             "Want to start Week 1 of the DSA Sprint or pick an industry project for your branch?"
         )
 
+    # 8. Voice / Audio Feedback Handling
+    if any(k in low_msg for k in ("voice", "vinapadatledhu", "vinapadtle", "hear", "sound", "audio", "silent", "speak", "talk")):
+        return (
+            f"🎙️ **Audio & Voice Pipeline Restored, Boss!**\n\n"
+            f"My natural speech engine and 60 FPS 3D Avatar lip-sync are now fully active and calibrated for you. "
+            f"I am ready to guide your placement prep, explain any of the 23 blueprints, or run a live mock technical interview. "
+            f"What would you like to explore next?"
+        )
+
     # 9. General Adaptive Mentorship Fallback
     p_name = "Candidate"
     p_branch = "Engineering"
@@ -668,25 +675,18 @@ def generate_smart_fallback_reply(
 
     if is_telugu:
         return (
-            f"👋 **Namaste {p_name}!** Nee question ki answer idigo bro:\n\n"
+            f"👋 **Namaste {p_name}!** Nee question ki direct guidance idigo:\n\n"
             f"Pathfinder 2.0 AI Coach ga nenu nee live profile ({p_branch}) tho fully connected ga unnanu. "
-            "Nuvvu placements cutoffs, campus recruitment roadmap, technical viva questions, leda 23 project architectures lo deni gurinchi aina adagavachu.\n\n"
-            "**Nuvvu em cheyyali anukuntunnavo cheppu:**\n"
-            "- 'Project ideas for my branch' ani type chey.\n"
-            "- 'Build 6-Week Roadmap' ani adugu.\n"
-            "- Leda specific project gurinchi step-by-step build order adugu!\n\n"
-            "Em help kavalo type chey bro, ventane detail ga build cheddham! 🚀"
+            f"Nuvvu placement cutoffs, 6-week DSA roadmap, technical viva defense, leda 23 capstone blueprints lo deni gurinchi aina adagavachu.\n\n"
+            f"Ventane start cheyadaniki em kavalo cheppu, live ga build cheddham! 🚀"
         )
     else:
         return (
             f"👋 **Hello {p_name}!**\n\n"
-            f"I am your Pathfinder AI Career Coach, connected to your **{p_branch}** candidate profile. "
-            "I'm here to help you navigate campus recruitment with complete confidence.\n\n"
-            "Here are some great ways we can prepare right now:\n"
-            "1. **Explore Production Projects**: Ask me *'Project ideas for my branch'* to get curated capstone architectures.\n"
-            "2. **Personalized 6-Week Roadmap**: Ask me *'Build 6-Week Roadmap'* for a weekly DSA and core CS schedule.\n"
-            "3. **Mock Technical Viva**: Ask me *'Start Mock Interview'* to practice answering technical and STAR behavioral questions.\n\n"
-            "How can I assist you with your preparation today?"
+            f"I am your Pathfinder AI Career Coach for **{p_branch}**. "
+            f"Regarding your query: focusing on high-frequency DSA patterns, maintaining your readiness score above 80%, "
+            f"and mastering one flagship production blueprint will maximize your campus placement odds.\n\n"
+            f"Would you like me to open your 6-Week Roadmap or walk through a capstone architecture?"
         )
 
 

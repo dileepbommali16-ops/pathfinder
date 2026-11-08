@@ -1,6 +1,7 @@
 // client/src/agent/geminiLive.ts
 import { GoogleGenAI, Modality } from "@google/genai";
 import { PATHFINDER_TOOLS, executeWebsiteTool, VoicePipelineStage } from "./toolRunner";
+import { speaker } from "./audioIO";
 
 export interface GeminiLiveCallbacks {
   onAudioChunk?: (base64Pcm24k: string) => void;
@@ -104,21 +105,18 @@ You control the Pathfinder website directly using your tools:
     }
   }
 
-  // Fixed: Added speakText method called by AICoachConsole & audioIO
+  // High-clarity voice articulation
   async speakText(text: string): Promise<boolean> {
     try {
-      const response = await this.ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: `Read aloud and articulate naturally: ${text}`
-      });
-      return Boolean(response.text);
+      speaker.say(text);
+      return true;
     } catch (err) {
       console.error("speakText error:", err);
       return false;
     }
   }
 
-  // Fixed: Expanded sendTurn options to accept all parameters passed by AgentLayout.tsx
+  // Live multi-turn reasoning and instant voice execution
   async sendTurn(
     userText: string,
     options?: {
@@ -136,14 +134,28 @@ You control the Pathfinder website directly using your tools:
     options?.callbacks?.onStageChange?.("thinking");
     options?.onStageChange?.("thinking");
 
-    const response = await this.ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: userText,
-      config: {
-        systemInstruction: options?.systemPrompt,
-        tools: PATHFINDER_TOOLS
+    let response: any = null;
+    const modelsToTry = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite"];
+
+    for (const model of modelsToTry) {
+      try {
+        response = await this.ai.models.generateContent({
+          model,
+          contents: userText,
+          config: {
+            systemInstruction: options?.systemPrompt,
+            tools: PATHFINDER_TOOLS
+          }
+        });
+        if (response?.text) break;
+      } catch (e) {
+        console.warn(`[GeminiLive] Model ${model} notice, trying next:`, e);
       }
-    });
+    }
+
+    if (!response) {
+      throw new Error("Gemini live reasoning failed across all candidates");
+    }
 
     const calls = response.functionCalls;
     if (calls && calls.length > 0) {
@@ -162,6 +174,11 @@ You control the Pathfinder website directly using your tools:
 
     options?.callbacks?.onStageChange?.("speaking");
     options?.onStageChange?.("speaking");
+
+    // Speak reply naturally aloud unless user muted audio
+    if (!options?.muteAudio) {
+      speaker.say(replyText);
+    }
 
     return replyText;
   }

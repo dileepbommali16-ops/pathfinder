@@ -34,3 +34,4 @@ reviews:
     - "!drizzle/**"
     - "!supabase/**"
     - "!docs/**"
+

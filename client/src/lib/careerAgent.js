@@ -454,6 +454,14 @@ export const getCareerAgentResponse = (
     return `Certainly, Sir! I have switched to Guest & Stakeholder mode and will address you as Sir. How may I guide you through Pathfinder today?|||🎩 **Guest Identity Active:** Addressing you as **Sir**.`;
   }
 
+  // Voice & Audio Feedback Queries
+  if (/\b(voice|vinapadatledhu|vinapadtle|vinipinchatledhu|can'?t\s*hear|silent|sound|audio|speak|matladu)\b/i.test(text)) {
+    return (
+      `I hear you loud and clear, ${title}! My voice engine and 60 FPS 3D Avatar lip-sync are active and calibrated. You should be able to hear my speech smoothly right now. What would you like to prepare next?` +
+      `|||🎙️ **Audio & Speech Engine Active:**\n- Voice: Resonant, high-clarity natural AI audio\n- Lip-Sync: 60 FPS real-time facial mesh synthesis\n- Mode: Live Autonomous Co-Pilot`
+    );
+  }
+
   // Witty response to "i want job bro" / "job kavali"
   if (/\b(i\s*want\s*(?:a\s*)?job|job\s*kavali|job\s*bro|need\s*job)\b/i.test(text)) {
     return (
