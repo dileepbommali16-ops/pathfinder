@@ -207,6 +207,10 @@ export class Speaker {
     }
   }
 
+  get isSpeaking(): boolean {
+    return this.activeSpeaking || this.scheduledPcmSources.size > 0;
+  }
+
   /**
    * Captures 16kHz 16-bit mono PCM audio from the user's microphone for Gemini Live WebSocket.
    */

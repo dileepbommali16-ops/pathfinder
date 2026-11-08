@@ -41,8 +41,6 @@ __all__ = [
     "predict_placement",
     "chat_with_mentor",
     "generate_structured_ai",
-    "handle_voice_turn",
-    "generate_spoken_briefing",
     "extract_text_from_pdf",
     "generate_analytics_pdf",
     "generate_resume_pdf",

@@ -385,11 +385,14 @@ class UnifiedGeminiLiveEngine {
       history?: Array<{ role: string; content: string }>;
       signal?: AbortSignal;
       muteAudio?: boolean;
+      speakAudio?: boolean;
       callbacks?: GeminiLiveTurnCallbacks;
     }
   ): Promise<string> {
     if (options?.muteAudio !== undefined) {
       this.audioMuted = options.muteAudio;
+    } else if (options?.speakAudio !== undefined) {
+      this.audioMuted = !options.speakAudio;
     }
 
     // Cancel any previous ongoing speech immediately (barge-in)
@@ -454,16 +457,18 @@ class UnifiedGeminiLiveEngine {
   /**
    * Speaks a given text aloud using the single Gemini Live WebSocket session's native voice.
    */
-  public async speakText(text: string): Promise<void> {
+  public async speakText(text: string): Promise<boolean> {
     const clean = text.trim();
-    if (!clean || this.audioMuted) return;
+    if (!clean || this.audioMuted) return false;
     try {
       await this.sendTurn(
         `Read this exact message aloud naturally with your voice without adding extra commentary: "${clean}"`,
         { muteAudio: false }
       );
+      return true;
     } catch (e) {
       console.warn("[GeminiLive] speakText notice:", e);
+      return false;
     }
   }
 
