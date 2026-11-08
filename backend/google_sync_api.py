@@ -31,28 +31,39 @@ async def trigger_n8n_webhook(event_type: str, data: dict) -> Optional[dict]:
     (if N8N_WEBHOOK_URL is configured) for zero-OAuth multi-app automation
     (Google Sheets + Google Calendar + Gmail + WhatsApp/Telegram).
     """
-    webhook_url = os.getenv(
-        "N8N_WEBHOOK_URL",
-        "https://dileepdas.app.n8n.cloud/webhook-test/pathfinder-google-sync"
-    ).strip()
-    if not webhook_url:
-        return None
-    try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
-            resp = await client.post(
-                webhook_url,
-                json={
-                    "source": "Pathfinder 2.0 Autonomous Career OS",
-                    "event_type": event_type,
-                    **data,
-                },
-            )
-            return {
-                "n8n_triggered": resp.status_code < 400,
-                "status_code": resp.status_code,
-            }
-    except Exception as exc:
-        return {"n8n_triggered": False, "error": str(exc)}
+    webhook_url = os.getenv("N8N_WEBHOOK_URL", "").strip()
+    urls_to_try = []
+    if webhook_url:
+        urls_to_try.append(webhook_url)
+    
+    prod_url = "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync"
+    test_url = "https://dileepdas.app.n8n.cloud/webhook-test/pathfinder-google-sync"
+    for u in [prod_url, test_url]:
+        if u not in urls_to_try:
+            urls_to_try.append(u)
+
+    last_error = None
+    for target_url in urls_to_try:
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                resp = await client.post(
+                    target_url,
+                    json={
+                        "source": "Pathfinder 2.0 Autonomous Career OS",
+                        "event_type": event_type,
+                        **data,
+                    },
+                )
+                if resp.status_code < 400:
+                    return {
+                        "n8n_triggered": True,
+                        "status_code": resp.status_code,
+                        "endpoint": target_url,
+                    }
+        except Exception as exc:
+            last_error = str(exc)
+
+    return {"n8n_triggered": False, "error": last_error}
 
 
 @router.post("/calendar/schedule")
