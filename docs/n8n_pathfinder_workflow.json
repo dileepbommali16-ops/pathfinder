@@ -1,0 +1,86 @@
+{
+  "name": "Pathfinder 2.0 — Google Calendar, TPO Sheet & Email Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pathfinder-google-sync",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Pathfinder Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_TPO_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Student Name": "={{ $json.body.student_name }}",
+            "Branch": "={{ $json.body.branch }}",
+            "Readiness Score": "={{ $json.body.readiness_score }}%",
+            "Target Role": "={{ $json.body.target_role }}",
+            "Status": "={{ $json.body.status || 'Verified by Pathfinder AI' }}"
+          }
+        }
+      },
+      "id": "google-sheets-node",
+      "name": "Append to TPO Placement Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [520, 180]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list"
+        },
+        "start": "={{ $json.body.interview_time || $now.plus({ days: 1 }).toISO() }}",
+        "end": "={{ $now.plus({ days: 1, minutes: 30 }).toISO() }}",
+        "additionalFields": {
+          "summary": "={{ 'Pathfinder AI Mock Viva: ' + ($json.body.company_name || 'Tier-1 Drive') }}",
+          "description": "={{ 'Automated placement readiness session scheduled by Pathfinder 2.0 for ' + ($json.body.student_name || 'Candidate') }}"
+        }
+      },
+      "id": "google-calendar-node",
+      "name": "Schedule Google Calendar Viva",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [520, 420]
+    }
+  ],
+  "connections": {
+    "Pathfinder Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Append to TPO Placement Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Schedule Google Calendar Viva",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
