@@ -1,16 +1,46 @@
 // client/src/agent/geminiLive.ts
 import { GoogleGenAI, Modality } from "@google/genai";
-import { PATHFINDER_TOOLS, executeWebsiteTool, VoicePipelineStage } from "./toolRunner";
-import { speaker } from "./audioIO";
+import { PATHFINDER_TOOLS, executeWebsiteTool } from "./toolRunner";
 
 export interface GeminiLiveCallbacks {
   onAudioChunk?: (base64Pcm24k: string) => void;
   onInterrupted?: () => void;
   onTranscript?: (text: string, role: "user" | "agent") => void;
-  onToken?: (fullText: string, delta?: string) => void;
-  onToolCall?: (name: string, args: Record<string, any>) => any;
-  onStageChange?: (stage: VoicePipelineStage) => void;
+  onToken?: (fullText: string) => void;
+  onToolCall?: (name: string, args: Record<string, any>) => void;
+  onStageChange?: (stage: string) => void;
   onStatusChange?: (status: "connecting" | "connected" | "disconnected" | "error") => void;
+}
+
+function resolveUserHonorific(): { honorific: "Boss" | "Sir"; isBoss: boolean } {
+  if (typeof window === "undefined") return { honorific: "Sir", isBoss: false };
+  try {
+    const mode = localStorage.getItem("das_mode") || "";
+    const role = localStorage.getItem("userRole") || "";
+    const isOwner = localStorage.getItem("isOwner") === "true";
+    const savedUser = localStorage.getItem("pathfinder_user") || "";
+
+    if (
+      isOwner ||
+      mode.toUpperCase() === "BOSS" ||
+      role.toLowerCase() === "boss" ||
+      savedUser.toLowerCase().includes("dileep") ||
+      savedUser.toLowerCase().includes("bommali")
+    ) {
+      return { honorific: "Boss", isBoss: true };
+    }
+  } catch { }
+  return { honorific: "Sir", isBoss: false };
+}
+
+function buildSmartSystemInstruction(): string {
+  const { honorific, isBoss } = resolveUserHonorific();
+  return `You are DAS (Pathfinder 2.0), a super-intelligent, warm, and natural 3D AI Career & Placement Co-Pilot created by Boss Dileep Bommali.
+
+CRITICAL IDENTITY:
+- Speaking to: ${isBoss ? "Your creator, Boss Dileep Bommali" : "A stakeholder or candidate"}. Address them as "${honorific}" naturally.
+- Speak like a brilliant, friendly human mentor. Keep answers punchy, natural, and lag-free.
+- Control the website, schedule Google Calendar/Gmail/Sheets, and explain Google hiring rules instantly via your tools.`;
 }
 
 export class PathfinderGeminiLive {
@@ -19,68 +49,64 @@ export class PathfinderGeminiLive {
 
   constructor() {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
-    this.ai = new GoogleGenAI({ apiKey, apiVersion: "v1beta" });
+    this.ai = new GoogleGenAI({ apiKey });
   }
 
+  // DIRECT WEBSOCKET MULTIMODAL LIVE SESSION (ORION / FRIEND STYLE)
   async connect(callbacks: GeminiLiveCallbacks) {
     try {
       callbacks.onStatusChange?.("connecting");
 
+      // Opens direct duplex WebSocket stream with Google Gemini Live API
       this.session = await this.ai.live.connect({
-        model:
-          import.meta.env.VITE_GEMINI_LIVE_MODEL ||
-          "gemini-2.5-flash-native-audio-latest",
+        model: "gemini-2.0-flash-exp",
         config: {
-          responseModalities: [Modality.AUDIO], // Fixed: Using Modality enum
+          responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: {
-                voiceName: "Fenrir"
+                voiceName: "Fenrir" // Real-time natural voice
               }
             }
           },
           systemInstruction: {
-            parts: [
-              {
-                text: `You are Pathfinder, an elite 3D AI Career Placement Coach created by Boss Dileep Bommali.
-You control the Pathfinder website directly using your tools:
-1. When the user asks to see projects, blueprints, mock interviews, resume studio, skill gaps, roadmap, or analytics, call 'navigate_dashboard_tab'.
-2. When discussing any of the 23 capstone blueprints, call 'open_blueprint' and 'scroll_and_highlight'.
-3. During viva or mock interviews, ask sharp architecture questions and call 'update_readiness_score'.`
-              }
-            ]
+            parts: [{ text: buildSmartSystemInstruction() }]
           },
           tools: PATHFINDER_TOOLS
         },
         callbacks: {
           onopen: () => {
             callbacks.onStatusChange?.("connected");
+            callbacks.onStageChange?.("listening");
           },
           onmessage: async (message: any) => {
+            // 1. Handle user barge-in (interruption)
             if (message.serverContent?.interrupted) {
               callbacks.onInterrupted?.();
             }
 
+            // 2. Stream audio chunks & transcripts directly with zero lag
             const parts = message.serverContent?.modelTurn?.parts || [];
             for (const part of parts) {
               if (part.inlineData?.data) {
                 callbacks.onAudioChunk?.(part.inlineData.data);
+                callbacks.onStageChange?.("speaking");
               }
               if (part.text) {
                 callbacks.onTranscript?.(part.text, "agent");
+                callbacks.onToken?.(part.text);
               }
             }
 
+            // 3. Execute tools instantly (Website navigation, Google Calendar, Sheets, Gmail)
             if (message.toolCall?.functionCalls) {
               const functionResponses = [];
               for (const call of message.toolCall.functionCalls) {
-                const toolName = call.name || "";
-                const toolArgs = (call.args as Record<string, any>) || {};
-                callbacks.onToolCall?.(toolName, toolArgs);
-                const result = await executeWebsiteTool(toolName, toolArgs);
+                callbacks.onToolCall?.(call.name, call.args || {});
+                const result = await executeWebsiteTool(call.name, call.args || {});
                 functionResponses.push({
                   id: call.id,
-                  name: toolName,
+                  name: call.name,
                   response: result
                 });
               }
@@ -88,101 +114,60 @@ You control the Pathfinder website directly using your tools:
             }
           },
           onerror: (err: any) => {
-            console.error("[GeminiLive Error]:", err);
+            console.error("[GeminiLive WebSocket Error]:", err);
             callbacks.onStatusChange?.("error");
           },
           onclose: () => {
             callbacks.onStatusChange?.("disconnected");
+            callbacks.onStageChange?.("idle");
           }
         }
       });
 
       return this.session;
     } catch (error) {
-      console.error("Failed to connect Gemini Live:", error);
+      console.error("Failed to connect Gemini Live WebSocket:", error);
       callbacks.onStatusChange?.("error");
       throw error;
     }
   }
 
-  // High-clarity voice articulation
-  async speakText(text: string): Promise<boolean> {
-    try {
-      speaker.say(text);
-      return true;
-    } catch (err) {
-      console.error("speakText error:", err);
-      return false;
-    }
-  }
-
-  // Live multi-turn reasoning and instant voice execution
+  // Fallback text/chat turn method for standard text inputs
   async sendTurn(
     userText: string,
     options?: {
       systemPrompt?: string;
-      speakAudio?: boolean;
-      history?: Array<{ role: string; content: string }>;
-      signal?: AbortSignal;
-      muteAudio?: boolean;
       callbacks?: GeminiLiveCallbacks;
-      onToken?: (fullText: string, delta?: string) => void;
-      onToolCall?: (name: string, args: Record<string, any>) => any;
-      onStageChange?: (stage: VoicePipelineStage) => void;
+      onToken?: (fullText: string) => void;
+      onToolCall?: (name: string, args: Record<string, any>) => void;
+      onStageChange?: (stage: string) => void;
     }
   ): Promise<string> {
-    options?.callbacks?.onStageChange?.("thinking");
     options?.onStageChange?.("thinking");
-
-    let response: any = null;
-    const modelsToTry = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite"];
-
-    for (const model of modelsToTry) {
-      try {
-        response = await this.ai.models.generateContent({
-          model,
-          contents: userText,
-          config: {
-            systemInstruction: options?.systemPrompt,
-            tools: PATHFINDER_TOOLS
-          }
-        });
-        if (response?.text) break;
-      } catch (e) {
-        console.warn(`[GeminiLive] Model ${model} notice, trying next:`, e);
+    const response = await this.ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: userText,
+      config: {
+        systemInstruction: buildSmartSystemInstruction(options?.systemPrompt),
+        tools: PATHFINDER_TOOLS
       }
-    }
-
-    if (!response) {
-      throw new Error("Gemini live reasoning failed across all candidates");
-    }
+    });
 
     const calls = response.functionCalls;
     if (calls && calls.length > 0) {
       for (const call of calls) {
-        const toolName = call.name || "";
-        const toolArgs = (call.args as Record<string, any>) || {};
-        options?.onToolCall?.(toolName, toolArgs);
-        options?.callbacks?.onToolCall?.(toolName, toolArgs);
-        await executeWebsiteTool(toolName, toolArgs);
+        options?.onToolCall?.(call.name || "", (call.args as Record<string, any>) || {});
+        await executeWebsiteTool(call.name || "", (call.args as Record<string, any>) || {});
       }
     }
 
-    const replyText = response.text || "Action executed on your dashboard, Boss!";
-    options?.callbacks?.onToken?.(replyText, replyText);
-    options?.onToken?.(replyText, replyText);
-
-    options?.callbacks?.onStageChange?.("speaking");
+    const replyText = response.text || "Done Boss! Executed instantly.";
+    options?.onToken?.(replyText);
     options?.onStageChange?.("speaking");
-
-    // Speak reply naturally aloud unless user muted audio
-    if (!options?.muteAudio) {
-      speaker.say(replyText);
-    }
-
     return replyText;
   }
 
+  // Push mic audio bytes directly into WebSocket stream
   sendMicAudio(base64Pcm16k: string) {
     if (!this.session) return;
     this.session.sendRealtimeInput({

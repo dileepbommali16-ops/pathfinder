@@ -181,7 +181,7 @@ export default function Home() {
       });
     };
 
-    // NEW: Handler for toolRunner.ts (pathfinder:agent-action)
+    // Handler for toolRunner.ts (pathfinder:agent-action)
     const handleAgentAction = (event: Event) => {
       const customEvent = event as CustomEvent;
       const { toolName, args } = customEvent.detail || {};
@@ -223,8 +223,31 @@ export default function Home() {
         if (delta >= 0) {
           toast.success(`Readiness Score +${delta}%: ${args.feedback || "Strong answer!"}`);
         } else {
-          toast.warning(`Readiness Score ${delta}%: ${args.feedback || "Needs deeper architecture clarity."}`);
+          toast.warning(
+            `Readiness Score ${delta}%: ${args.feedback || "Needs deeper architecture clarity."}`
+          );
         }
+      }
+
+      // 4. Google Calendar Interview Sync Notification
+      if (toolName === "schedule_google_calendar_interview") {
+        toast.success(
+          `Google Calendar Synced: ${args?.companyName || "Company"} (${args?.roleTitle || "Role"}) booked for ${args?.interviewTime || "upcoming slot"}!`
+        );
+      }
+
+      // 5. Google Sheets TPO Master Tracker Sync Notification
+      if (toolName === "sync_student_to_tpo_google_sheet") {
+        toast.success(
+          `TPO Master Sheet Updated: ${args?.studentName || "Candidate"} (${args?.readinessScore || 78.5}%) logged to Google Sheets!`
+        );
+      }
+
+      // 6. Placement Intelligence Lookup Notification
+      if (toolName === "fetch_placement_intelligence_for_client") {
+        toast.info(
+          `Analyzing 972 verified placement records for: ${args?.companyOrBranch || "Campus Drives"}...`
+        );
       }
     };
 
@@ -1765,7 +1788,11 @@ export default function Home() {
                 </div>
               )}
 
-              <section id="career-readiness-assessment" data-das-id="hero-metrics" className="space-y-4">
+              <section
+                id="career-readiness-assessment"
+                data-das-id="hero-metrics"
+                className="space-y-4"
+              >
                 <SectionHeader
                   title="Campus Placement Readiness Overview"
                   description="Real-time placement probability and primary eligibility benchmark"
@@ -1890,7 +1917,11 @@ export default function Home() {
                 />
               </section>
 
-              <section id="career-live-skill-verifier" data-das-id="live-verifier" className="space-y-4">
+              <section
+                id="career-live-skill-verifier"
+                data-das-id="live-verifier"
+                className="space-y-4"
+              >
                 <SectionHeader
                   title="Live Technical Footprint & Fraud Shield"
                   description="Audit real-time GitHub repositories, programming languages, and cryptographic authenticity badge"
