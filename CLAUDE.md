@@ -11,9 +11,11 @@ Pathfinder 2.0 is an AI-powered Career Guidance and Technical Interview Preparat
 
 ### Tech Stack:
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Radix UI, Lucide React
+- **AI & Native Voice Engine**: Unified Google Gemini Live 2.5 Native Audio WebSocket (`@google/genai` v3.0.0, `geminiLive.ts`, `toolRunner.ts`)
 - **3D Graphics**: Three.js, `@react-three/fiber`, `@react-three/drei`
-- **Audio Engine**: Web Audio API singleton (`audioIO.ts`), AnalyserNode for syllable-driven lip-sync
-- **Backend**: FastAPI, Python 3.11, Google Gemini API (`backend/.env`)
+- **Audio Engine**: Web Audio API singleton (`audioIO.ts` & `audioStreamer.js`), AnalyserNode for syllable-driven 60 FPS lip-sync
+- **Vector RAG**: Supabase PostgreSQL + `pgvector` (`careerAgent.js`, 384-D embeddings)
+- **Backend**: FastAPI, Python 3.11, Scikit-Learn Random Forest (`ml_engine.py`), Google Gemini API, and Google Workspace Calendar & Sheets Automation (`google_sync_api.py`, `google_automation.py`)
 
 ---
 

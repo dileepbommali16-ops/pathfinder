@@ -1,4 +1,4 @@
-﻿// client/src/agent/toolRunner.ts
+// client/src/agent/toolRunner.ts
 import { Type, FunctionDeclaration } from "@google/genai";
 
 // Voice Pipeline Stages used by AgentLayout
