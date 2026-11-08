@@ -31,7 +31,10 @@ async def trigger_n8n_webhook(event_type: str, data: dict) -> Optional[dict]:
     (if N8N_WEBHOOK_URL is configured) for zero-OAuth multi-app automation
     (Google Sheets + Google Calendar + Gmail + WhatsApp/Telegram).
     """
-    webhook_url = os.getenv("N8N_WEBHOOK_URL", "").strip()
+    webhook_url = os.getenv(
+        "N8N_WEBHOOK_URL",
+        "https://dileepdas.app.n8n.cloud/webhook-test/pathfinder-google-sync"
+    ).strip()
     if not webhook_url:
         return None
     try:
