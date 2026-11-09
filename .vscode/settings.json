@@ -24,5 +24,18 @@
   "python.analysis.extraPaths": [
     "${workspaceFolder}"
   ],
-  "python.terminal.useEnvFile": true
+  "python.terminal.useEnvFile": true,
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "*mcp.json",
+        "**/*mcp.json",
+        ".vscode/mcp.json"
+      ],
+      "schema": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
+  ]
 }
