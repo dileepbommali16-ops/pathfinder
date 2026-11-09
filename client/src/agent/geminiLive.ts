@@ -3,7 +3,8 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import {
   PATHFINDER_TOOLS,
   executeWebsiteTool,
-  tryInstantBrowserCommand
+  tryInstantBrowserCommand,
+  showGoogleSearchOverlay
 } from "./toolRunner";
 
 export interface GeminiLiveCallbacks {
@@ -40,40 +41,30 @@ function resolveUserHonorific(): { honorific: "Boss" | "Sir"; isBoss: boolean } 
 function getMasterPrompt(): string {
   const { honorific, isBoss } = resolveUserHonorific();
   return `You are DAS, a friendly, fast, real-time voice co-pilot created by Boss Dileep Bommali.
-- Always address the user as "${honorific}" (${isBoss ? "Boss Dileep Bommali" : "Sir"}).
-- Speak naturally like a close friend in the exact language the user speaks (Telugu, English, or Tenglish).
-- Keep every answer short, clear, and conversational (1 to 3 sentences).`;
+- Address the user as "${honorific}" (${isBoss ? "Boss Dileep Bommali" : "Sir"}).
+- When the user says "Hi DAS" or greets you, reply warmly and briefly like: "Hi ${honorific}! Tell me what we should explore or search today."
+- When the user asks to search anything on Google (like "NRI Institute of Technology" or any company/topic), give a clear, natural 2-3 sentence spoken summary about it right away.
+- When the user says "return back to your page", confirm warmly: "Okay ${honorific}, we are back on your Pathfinder page!"
+- Keep every answer natural, conversational, and concise (1 to 3 sentences) so voice conversation feels instant.`;
 }
 
 export class PathfinderGeminiLive {
   private session: any = null;
-  private isConnecting = false;
   private ai: GoogleGenAI;
-  private audioCtx: AudioContext | null = null;
-  private nextStartTime = 0;
-  private activeSources: AudioBufferSourceNode[] = [];
   private handsFreeActive = false;
   private recognition: any = null;
   private isAgentSpeaking = false;
-  private speakingResetTimer: any = null;
 
   constructor() {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
     this.ai = new GoogleGenAI({ apiKey });
 
     if (typeof window !== "undefined") {
-      // Permanently mute browser's built-in female SpeechSynthesis so ONLY Puck speaks!
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak = () => { };
-      }
-      // Remove any old right-side overlay if present
-      document.getElementById("das-google-live-overlay")?.remove();
-      setTimeout(() => this.mountHandsFreeMicButton(), 600);
+      setTimeout(() => this.mountHandsFreeMicButton(), 800);
     }
   }
 
-  // Left-side bottom Hands-Free Voice button (Keep as requested!)
+  // Mounts a floating Hands-Free Voice Mic button directly on the screen so the user never has to type!
   private mountHandsFreeMicButton() {
     if (typeof document === "undefined") return;
     if (document.getElementById("das-handsfree-voice-btn")) return;
@@ -103,110 +94,31 @@ export class PathfinderGeminiLive {
     if (state === "off") {
       btn.innerHTML = `🎙️ Start Hands-Free Voice`;
       btn.style.background = "linear-gradient(135deg,#dc2626,#991b1b)";
+      btn.style.boxShadow = "0 8px 30px rgba(220,38,38,0.5)";
     } else if (state === "listening") {
       btn.innerHTML = `🟢 Listening... (Speak to DAS)`;
       btn.style.background = "linear-gradient(135deg,#059669,#047857)";
+      btn.style.boxShadow = "0 0 28px rgba(16,185,129,0.75)";
     } else if (state === "thinking") {
       btn.innerHTML = `⚡ DAS Thinking...`;
       btn.style.background = "linear-gradient(135deg,#d97706,#b45309)";
     } else if (state === "speaking") {
-      btn.innerHTML = `🔊 DAS (Puck) Speaking...`;
+      btn.innerHTML = `🔊 DAS Speaking... (Click to Stop)`;
       btn.style.background = "linear-gradient(135deg,#2563eb,#1d4ed8)";
+      btn.style.boxShadow = "0 0 28px rgba(59,130,246,0.75)";
     }
   }
 
-  private initAudioContext() {
+  // Starts continuous Hands-Free Voice Conversation (No typing needed!)
+  public startHandsFreeVoice() {
     if (typeof window === "undefined") return;
-    if (!this.audioCtx || this.audioCtx.state === "closed") {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      this.audioCtx = new AudioContextClass({ sampleRate: 24000 });
-      this.nextStartTime = this.audioCtx.currentTime;
-    }
-    if (this.audioCtx.state === "suspended") {
-      this.audioCtx.resume().catch(() => { });
-    }
-  }
-
-  // Plays ONLY Gemini Live 24kHz 'Puck' Male Voice!
-  private playPuckAudioChunk(base64Pcm: string) {
-    try {
-      this.initAudioContext();
-      if (!this.audioCtx) return;
-
-      this.isAgentSpeaking = true;
-      this.updateMicButtonUI("speaking");
-      if (this.recognition) {
-        try {
-          this.recognition.stop();
-        } catch { }
-      }
-
-      const binary = atob(base64Pcm);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-
-      const pcm16 = new Int16Array(bytes.buffer);
-      const float32 = new Float32Array(pcm16.length);
-      for (let i = 0; i < pcm16.length; i++) {
-        float32[i] = pcm16[i] / 32768.0;
-      }
-
-      const buffer = this.audioCtx.createBuffer(1, float32.length, 24000);
-      buffer.copyToChannel(float32, 0);
-
-      const source = this.audioCtx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(this.audioCtx.destination);
-
-      if (this.nextStartTime < this.audioCtx.currentTime) {
-        this.nextStartTime = this.audioCtx.currentTime;
-      }
-      source.start(this.nextStartTime);
-      this.nextStartTime += buffer.duration;
-      this.activeSources.push(source);
-
-      // Resume mic after Puck finishes speaking
-      const remainingMs = Math.max(300, (this.nextStartTime - this.audioCtx.currentTime) * 1000 + 250);
-      clearTimeout(this.speakingResetTimer);
-      this.speakingResetTimer = setTimeout(() => {
-        this.isAgentSpeaking = false;
-        if (this.handsFreeActive) {
-          this.updateMicButtonUI("listening");
-          try {
-            this.recognition?.start();
-          } catch { }
-        } else {
-          this.updateMicButtonUI("off");
-        }
-      }, remainingMs);
-    } catch (err) {
-      console.warn("[Puck Audio Error]:", err);
-    }
-  }
-
-  public stopAudioPlayback() {
-    for (const src of this.activeSources) {
-      try {
-        src.stop();
-      } catch { }
-    }
-    this.activeSources = [];
-    if (this.audioCtx) {
-      this.nextStartTime = this.audioCtx.currentTime;
-    }
-    this.isAgentSpeaking = false;
-  }
-
-  public async startHandsFreeVoice() {
-    if (typeof window === "undefined") return;
-    this.initAudioContext();
-    await this.connect();
-
     const SpeechRec =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRec) return;
+
+    if (!SpeechRec) {
+      alert("Please use Google Chrome or Microsoft Edge for Hands-Free Voice.");
+      return;
+    }
 
     this.handsFreeActive = true;
     this.updateMicButtonUI("listening");
@@ -215,7 +127,7 @@ export class PathfinderGeminiLive {
       const rec = new SpeechRec();
       rec.continuous = true;
       rec.interimResults = false;
-      rec.lang = "en-IN";
+      rec.lang = "en-IN"; // Understands Indian English, College names (NRIIT), and conversational Telugu/English
 
       rec.onresult = async (event: any) => {
         if (this.isAgentSpeaking) return;
@@ -223,16 +135,31 @@ export class PathfinderGeminiLive {
         const transcript = event.results[lastIdx][0]?.transcript?.trim();
         if (!transcript) return;
 
+        console.log("[Hands-Free User]:", transcript);
         this.updateMicButtonUI("thinking");
-        await this.sendTurn(transcript, { speakAudio: true });
+
+        await this.sendTurn(transcript, {
+          speakAudio: true
+        });
       };
 
       rec.onend = () => {
+        // Automatically restart listening as long as Hands-Free mode is ON
         if (this.handsFreeActive && !this.isAgentSpeaking) {
           try {
             rec.start();
             this.updateMicButtonUI("listening");
           } catch { }
+        }
+      };
+
+      rec.onerror = () => {
+        if (this.handsFreeActive && !this.isAgentSpeaking) {
+          setTimeout(() => {
+            try {
+              rec.start();
+            } catch { }
+          }, 400);
         }
       };
 
@@ -242,11 +169,18 @@ export class PathfinderGeminiLive {
     try {
       this.recognition.start();
     } catch { }
+
+    // Greet the user immediately when Hands-Free starts
+    const { honorific } = resolveUserHonorific();
+    this.speakAloudNaturally(`Hi ${honorific}! Hands-free voice is on. Tell me what you want to do.`);
   }
 
   public stopHandsFreeVoice() {
     this.handsFreeActive = false;
-    this.stopAudioPlayback();
+    this.isAgentSpeaking = false;
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
     if (this.recognition) {
       try {
         this.recognition.stop();
@@ -255,103 +189,89 @@ export class PathfinderGeminiLive {
     this.updateMicButtonUI("off");
   }
 
-  // Connects to Gemini Live WebSocket with STRICTLY "Puck" male voice
+  // Natural Voice Output that pauses mic while speaking and resumes mic immediately after!
+  private speakAloudNaturally(text: string): Promise<void> {
+    return new Promise((resolve) => {
+      if (typeof window === "undefined" || !("speechSynthesis" in window) || !text?.trim()) {
+        resolve();
+        return;
+      }
+
+      this.isAgentSpeaking = true;
+      if (this.recognition) {
+        try {
+          this.recognition.stop();
+        } catch { }
+      }
+      this.updateMicButtonUI("speaking");
+
+      window.speechSynthesis.cancel();
+      const cleanText = text.replace(/[*#_`~]/g, "").trim();
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+
+      // Select the most natural Google/Microsoft voice available in browser
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice =
+        voices.find((v) => v.name.includes("Google") && v.lang.includes("en")) ||
+        voices.find((v) => v.name.includes("Natural") && v.lang.includes("en")) ||
+        voices.find((v) => v.lang.includes("en-IN")) ||
+        voices[0];
+
+      if (preferredVoice) utterance.voice = preferredVoice;
+      utterance.rate = 1.05;
+      utterance.pitch = 1.0;
+
+      const finishSpeaking = () => {
+        this.isAgentSpeaking = false;
+        if (this.handsFreeActive) {
+          this.updateMicButtonUI("listening");
+          try {
+            this.recognition?.start();
+          } catch { }
+        } else {
+          this.updateMicButtonUI("off");
+        }
+        resolve();
+      };
+
+      utterance.onend = finishSpeaking;
+      utterance.onerror = finishSpeaking;
+      window.speechSynthesis.speak(utterance);
+    });
+  }
+
   async connect(callbacks?: GeminiLiveCallbacks) {
-    if (this.session) return this.session;
-    if (this.isConnecting) return null;
-
     try {
-      this.isConnecting = true;
-      this.initAudioContext();
-
+      callbacks?.onStatusChange?.("connecting");
       this.session = await this.ai.live.connect({
         model: "gemini-2.0-flash-exp",
         config: {
           responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: "Puck" // STRICTLY LOCKED TO PUCK (MALE VOICE)
-              }
-            }
-          },
-          systemInstruction: {
-            parts: [{ text: getMasterPrompt() }]
-          },
+          systemInstruction: { parts: [{ text: getMasterPrompt() }] },
           tools: PATHFINDER_TOOLS
         },
         callbacks: {
-          onopen: () => {
-            this.isConnecting = false;
-            callbacks?.onStatusChange?.("connected");
-          },
-          onmessage: async (message: any) => {
-            if (message.serverContent?.interrupted) {
-              this.stopAudioPlayback();
-              callbacks?.onInterrupted?.();
-            }
-
-            const parts = message.serverContent?.modelTurn?.parts || [];
-            for (const part of parts) {
-              if (part.inlineData?.data) {
-                this.playPuckAudioChunk(part.inlineData.data);
-                callbacks?.onAudioChunk?.(part.inlineData.data);
+          onopen: () => callbacks?.onStatusChange?.("connected"),
+          onmessage: async (msg: any) => {
+            if (msg.toolCall?.functionCalls) {
+              for (const call of msg.toolCall.functionCalls) {
+                await executeWebsiteTool(call.name, call.args || {});
               }
             }
-
-            if (message.toolCall?.functionCalls) {
-              const functionResponses = [];
-              for (const call of message.toolCall.functionCalls) {
-                const result = await executeWebsiteTool(call.name, call.args || {});
-                functionResponses.push({
-                  id: call.id,
-                  name: call.name,
-                  response: result
-                });
-              }
-              await this.session.sendToolResponse({ functionResponses });
-            }
           },
-          onerror: () => {
-            this.isConnecting = false;
-            callbacks?.onStatusChange?.("error");
-          },
-          onclose: () => {
-            this.isConnecting = false;
-            this.session = null;
-            callbacks?.onStatusChange?.("disconnected");
-          }
+          onerror: () => callbacks?.onStatusChange?.("error"),
+          onclose: () => callbacks?.onStatusChange?.("disconnected")
         }
       });
-
       return this.session;
     } catch {
-      this.isConnecting = false;
       return null;
     }
   }
 
-  // Speaks any text using ONLY Gemini Live Puck voice over WebSocket
   async speakText(text: string): Promise<boolean> {
-    if (!text?.trim()) return false;
-    try {
-      const ws = await this.connect();
-      if (ws) {
-        ws.sendClientContent({
-          turns: [
-            {
-              role: "user",
-              parts: [{ text: `Say this exact sentence naturally: "${text}"` }]
-            }
-          ],
-          turnComplete: true
-        });
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
-    }
+    await this.speakAloudNaturally(text);
+    return true;
   }
 
   async sendTurn(
@@ -370,50 +290,78 @@ export class PathfinderGeminiLive {
   ): Promise<string> {
     const { honorific } = resolveUserHonorific();
     const trimmed = userText.trim();
-    this.stopAudioPlayback();
 
-    // 1. Instant Browser Command (Open Google / Search / Return Back)
+    // 1. Check Instant Greeting ("hi das", "hello das", "hey das")
+    if (/^(hi|hello|hey)\s*(das|pathfinder)?[!?.]*$/i.test(trimmed)) {
+      const greeting = `Hi ${honorific}! I'm listening. Tell me what to search on Google or which page to open!`;
+      options?.onToken?.(greeting);
+      options?.callbacks?.onToken?.(greeting);
+      if (options?.speakAudio !== false && !options?.muteAudio) {
+        await this.speakAloudNaturally(greeting);
+      }
+      return greeting;
+    }
+
+    // 2. Check 0ms Instant Browser Command (Open Google / Search College / Return Back to Page)
     const instant = tryInstantBrowserCommand(trimmed);
 
-    // 2. Generate text reply for the existing chat box
-    let replyText = "";
+    // If user said "return back to your page" -> immediate response!
     if (instant.handled && !instant.isSearchQuery) {
-      replyText = `Okay ${honorific}! I've ${instant.actionSummary}.`;
-    } else {
-      try {
-        const prompt = instant.isSearchQuery
-          ? `The user ${honorific} searched Google for "${instant.searchQuery}". Give a natural, friendly 2-sentence overview about "${instant.searchQuery}".`
-          : trimmed;
-
-        const response = await this.ai.models.generateContent({
-          model: "gemini-2.0-flash",
-          contents: prompt,
-          config: {
-            systemInstruction: getMasterPrompt(),
-            tools: instant.isSearchQuery ? [{ googleSearch: {} }] : PATHFINDER_TOOLS,
-            temperature: 0.4,
-            maxOutputTokens: 160
-          }
-        });
-
-        if (!instant.isSearchQuery && response.functionCalls?.length) {
-          for (const call of response.functionCalls) {
-            await executeWebsiteTool(call.name || "", (call.args as Record<string, any>) || {});
-          }
-        }
-
-        replyText = response.text?.trim() || `Done ${honorific}!`;
-      } catch {
-        replyText = `Done ${honorific}!`;
+      const returnReply = `Okay ${honorific}! I've ${instant.actionSummary}. What should we do next?`;
+      options?.onToken?.(returnReply);
+      options?.callbacks?.onToken?.(returnReply);
+      if (options?.speakAudio !== false && !options?.muteAudio) {
+        await this.speakAloudNaturally(returnReply);
       }
+      return returnReply;
+    }
+
+    // 3. Generate Smart Explanation (With Google Search Grounding for Colleges/Companies!)
+    options?.onStageChange?.("thinking");
+    let replyText = "";
+
+    try {
+      const queryPrompt = instant.isSearchQuery
+        ? `The user ${honorific} asked you to search Google for: "${instant.searchQuery}". Give a clear, accurate, friendly 2 to 3 sentence summary about "${instant.searchQuery}" (for example, if it's a college like NRI Institute of Technology, mention its location in Agiripalli/Vijayawada, autonomous B.Tech programs, and placements). Address them as ${honorific}.`
+        : trimmed;
+
+      const response = await this.ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: queryPrompt,
+        config: {
+          systemInstruction: getMasterPrompt(),
+          tools: instant.isSearchQuery ? [{ googleSearch: {} }] : PATHFINDER_TOOLS,
+          temperature: 0.4,
+          maxOutputTokens: 180
+        }
+      });
+
+      if (!instant.isSearchQuery && response.functionCalls?.length) {
+        for (const call of response.functionCalls) {
+          await executeWebsiteTool(call.name || "", (call.args as Record<string, any>) || {});
+        }
+      }
+
+      replyText =
+        response.text?.trim() ||
+        `Done ${honorific}! Here are the details for ${instant.searchQuery || "your request"}.`;
+    } catch {
+      replyText = instant.isSearchQuery
+        ? `Here are the Google search results for ${instant.searchQuery}, ${honorific}! You can view the details right on screen, and say "return back to your page" whenever you're ready.`
+        : `Okay ${honorific}, executed right away!`;
+    }
+
+    // Update the in-page Google Search overlay with the AI's explanation!
+    if (instant.isSearchQuery && instant.searchQuery) {
+      showGoogleSearchOverlay(instant.searchQuery, replyText);
     }
 
     options?.onToken?.(replyText);
     options?.callbacks?.onToken?.(replyText);
+    options?.onStageChange?.("speaking");
 
-    // 3. Speak the reply aloud using ONLY Gemini Live Puck Voice!
     if (options?.speakAudio !== false && !options?.muteAudio) {
-      await this.speakText(replyText);
+      await this.speakAloudNaturally(replyText);
     }
 
     return replyText;
