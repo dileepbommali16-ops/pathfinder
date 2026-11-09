@@ -6,8 +6,10 @@ import { toast } from "sonner";
 export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking" | "interrupted";
 
 export interface ToolCallPayload {
+  id?: string;
   name: string;
-  args: Record<string, any>;
+  args?: Record<string, any>;
+  arguments?: Record<string, any>;
 }
 
 // Controllable reference to the opened Google window so "return back to your page" can close it!
@@ -70,16 +72,20 @@ export function closeGoogleAndReturnToPage() {
   activeExternalWindow = null;
 
   // 2. Hide in-page Google overlay
-  const overlay = document.getElementById("das-google-live-overlay");
-  if (overlay) {
-    overlay.style.display = "none";
+  if (typeof document !== "undefined") {
+    const overlay = document.getElementById("das-google-live-overlay");
+    if (overlay) {
+      overlay.style.display = "none";
+    }
   }
 
   // 3. Focus Pathfinder window
   if (typeof window !== "undefined") {
     window.focus();
   }
-  toast.success("Returned back to your Pathfinder dashboard!");
+  try {
+    toast.success("Returned back to your Pathfinder dashboard!");
+  } catch { }
 }
 
 // 0ms Instant Voice/Text Command Interceptor
@@ -119,13 +125,17 @@ export function tryInstantBrowserCommand(rawInput: string): {
     if (query) {
       const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
       // Open controllable popup window on the side so voice mic on Pathfinder stays active!
-      activeExternalWindow = window.open(
-        url,
-        "PathfinderGoogleWindow",
-        "width=960,height=720,left=80,top=80"
-      );
+      if (typeof window !== "undefined") {
+        activeExternalWindow = window.open(
+          url,
+          "PathfinderGoogleWindow",
+          "width=960,height=720,left=80,top=80"
+        );
+      }
       showGoogleSearchOverlay(query);
-      toast.success(`Searching Google for "${query}"...`);
+      try {
+        toast.success(`Searching Google for "${query}"...`);
+      } catch { }
       return {
         handled: true,
         isSearchQuery: true,
@@ -218,38 +228,63 @@ export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[]
   }
 ];
 
-export async function executeWebsiteTool(
+export function runTool(
   name: string,
-  args: Record<string, any>
-): Promise<Record<string, any>> {
+  args: Record<string, any>,
+  navigate?: (path: string) => void
+): { status: string; navigated?: boolean; explain?: string; [key: string]: any } {
   if (name === "return_to_pathfinder_page") {
     closeGoogleAndReturnToPage();
-    return { status: "returned_to_pathfinder" };
+    return { status: "returned_to_pathfinder", navigated: true, explain: "Returned back to Pathfinder dashboard" };
   }
 
   if (name === "open_external_website_or_google_search") {
     const query = String(args.searchQuery || args.siteOrUrl || "").trim();
     const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-    activeExternalWindow = window.open(
-      url,
-      "PathfinderGoogleWindow",
-      "width=960,height=720,left=80,top=80"
-    );
+    if (typeof window !== "undefined") {
+      activeExternalWindow = window.open(
+        url,
+        "PathfinderGoogleWindow",
+        "width=960,height=720,left=80,top=80"
+      );
+    }
     showGoogleSearchOverlay(query);
-    return { status: "searched_google", query };
+    return { status: "searched_google", query, navigated: false };
   }
 
-  window.dispatchEvent(
-    new CustomEvent("pathfinder:agent-action", {
-      detail: { toolName: name, args }
-    })
-  );
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("pathfinder:agent-action", {
+        detail: { toolName: name, args }
+      })
+    );
+  }
 
-  return { status: "executed", tool: name, args };
+  if (navigate && name === "navigate_dashboard_tab" && args?.tabName) {
+    navigate(`/?tab=${encodeURIComponent(args.tabName)}`);
+    return { status: "navigated", navigated: true, explain: `Switched tab to ${args.tabName}` };
+  }
+
+  return { status: "executed", tool: name, args, navigated: false, explain: `Executed ${name}` };
 }
 
-export const runTool = executeWebsiteTool;
-export const executeToolCall = executeWebsiteTool;
+export async function executeWebsiteTool(
+  name: string,
+  args: Record<string, any>,
+  navigate?: any
+): Promise<{ status: string; navigated?: boolean; explain?: string; [key: string]: any }> {
+  return runTool(name, args, navigate);
+}
+
+export async function executeToolCall(
+  toolCall: ToolCallPayload | string,
+  navigate?: any,
+  args?: Record<string, any>
+): Promise<any> {
+  const name = typeof toolCall === "string" ? toolCall : toolCall.name;
+  const toolArgs = typeof toolCall === "string" ? (args || {}) : (toolCall.args || (toolCall as any).arguments || {});
+  return runTool(name, toolArgs, navigate);
+}
 
 export function snapshot(): Record<string, any> {
   return {

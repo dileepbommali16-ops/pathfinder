@@ -43,6 +43,7 @@ def analytics_endpoint(
     )
 
 
+@analytics_router.get("/api/cohort")
 @analytics_router.get("/api/data/cohort")
 def data_cohort_endpoint(
     year: Optional[int] = Query(2026),

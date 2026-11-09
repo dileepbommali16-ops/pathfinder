@@ -147,3 +147,10 @@ output.wav
 *.exe
 **/scripts/bin/
 playwright-mcp ignored
+
+# Test & Model Artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+*.pkl
+model.pkl

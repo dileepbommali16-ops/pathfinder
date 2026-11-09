@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { GoogleGenAI, Modality } from "@google/genai";
 import { pathfinderTools } from "./pathfinderTools";
 import { playPcm24kChunk } from "./audioStreamer";

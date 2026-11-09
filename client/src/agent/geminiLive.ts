@@ -1,10 +1,12 @@
 // client/src/agent/geminiLive.ts
 import { GoogleGenAI, Modality } from "@google/genai";
+import { API_BASE } from "@/lib/apiClient";
 import {
   PATHFINDER_TOOLS,
   executeWebsiteTool,
   tryInstantBrowserCommand,
-  showGoogleSearchOverlay
+  showGoogleSearchOverlay,
+  VoicePipelineStage
 } from "./toolRunner";
 
 export interface GeminiLiveCallbacks {
@@ -13,7 +15,7 @@ export interface GeminiLiveCallbacks {
   onTranscript?: (text: string, role: "user" | "agent") => void;
   onToken?: (fullText: string) => void;
   onToolCall?: (name: string, args: Record<string, any>) => void;
-  onStageChange?: (stage: string) => void;
+  onStageChange?: (stage: VoicePipelineStage) => void;
   onStatusChange?: (status: "connecting" | "connected" | "disconnected" | "error") => void;
 }
 
@@ -240,13 +242,41 @@ export class PathfinderGeminiLive {
     });
   }
 
+  private async resolveSessionKey(): Promise<string> {
+    try {
+      const res = await fetch(`${API_BASE}/api/agent/session-token`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.token || data?.apiKey) {
+          return data.token || data.apiKey;
+        }
+      }
+    } catch { }
+    return import.meta.env.VITE_GEMINI_API_KEY || "";
+  }
+
   async connect(callbacks?: GeminiLiveCallbacks) {
     try {
       callbacks?.onStatusChange?.("connecting");
+      const key = await this.resolveSessionKey();
+      if (key) {
+        this.ai = new GoogleGenAI({ apiKey: key });
+      }
+
+      const liveModel = import.meta.env.VITE_GEMINI_LIVE_MODEL || "gemini-3.8-live";
+      const voiceName = import.meta.env.VITE_GEMINI_VOICE_NAME || "Puck";
+
       this.session = await this.ai.live.connect({
-        model: "gemini-2.0-flash-exp",
+        model: liveModel,
         config: {
           responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName: voiceName
+              }
+            }
+          },
           systemInstruction: { parts: [{ text: getMasterPrompt() }] },
           tools: PATHFINDER_TOOLS
         },
@@ -285,7 +315,7 @@ export class PathfinderGeminiLive {
       callbacks?: GeminiLiveCallbacks;
       onToken?: (fullText: string) => void;
       onToolCall?: (name: string, args: Record<string, any>) => void;
-      onStageChange?: (stage: string) => void;
+      onStageChange?: (stage: VoicePipelineStage) => void;
     }
   ): Promise<string> {
     const { honorific } = resolveUserHonorific();

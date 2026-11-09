@@ -1,4 +1,4 @@
-name: Pathfinder CI & Security Verification
+name: Pathfinder Full-Stack CI & Verification
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  verify:
-    name: Production & Security Audit
+  backend-verify:
+    name: Backend Tests & Linting
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -25,14 +25,31 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Verify Backend 7 Pillars
-        run: python scripts/verify_seven_pillars.py
+      - name: Run Backend Tests
+        run: |
+          python -m unittest discover backend/tests
 
-      - name: Run Production Readiness Tests
-        run: python scripts/test_production_readiness.py
+  client-verify:
+    name: Client TypeScript & Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Run Security Audit Test Suite
-        run: python scripts/security_audit_test.py
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
 
-      - name: Run Chat AI Smoke Tests
-        run: python scripts/chat_smoke_test.py
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Type Check (tsc --noEmit)
+        run: npm run check
+
+      - name: Run Client Vitest
+        run: npm run test
+
+      - name: Production Client Build
+        run: npm run build

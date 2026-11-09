@@ -6,6 +6,9 @@ from sklearn.ensemble import RandomForestClassifier
 from backend.models import StudentProfile, PredictionResult
 from backend.data_service import get_placement_df
 
+import pickle
+
+MODEL_PKL_PATH = Path(__file__).resolve().parent / "model.pkl"
 _cached_model = None
 _cached_features = None
 
@@ -16,6 +19,20 @@ def get_trained_model() -> Tuple[RandomForestClassifier, List[str]]:
         return _cached_model, _cached_features
 
     features = ["cgpa", "backlogs", "internships", "communication_score", "coding_score"]
+
+    # 1. Attempt to load pre-serialized model.pkl for instantaneous startup
+    if MODEL_PKL_PATH.exists():
+        try:
+            with open(MODEL_PKL_PATH, "rb") as f:
+                saved = pickle.load(f)
+                _cached_model = saved.get("model")
+                _cached_features = saved.get("features", features)
+                if _cached_model is not None:
+                    return _cached_model, _cached_features
+        except Exception:
+            pass
+
+    # 2. Train dynamically on verified cohort records if pkl not present
     df = get_placement_df().copy()
     if df.empty:
         raise RuntimeError("No placement records available in data service.")
@@ -31,8 +48,15 @@ def get_trained_model() -> Tuple[RandomForestClassifier, List[str]]:
     model = RandomForestClassifier(n_estimators=120, random_state=42)
     model.fit(training[features], training["placed"])
 
+    # 3. Cache in memory and persist model.pkl
     _cached_model = model
     _cached_features = features
+    try:
+        with open(MODEL_PKL_PATH, "wb") as f:
+            pickle.dump({"model": model, "features": features}, f)
+    except Exception:
+        pass
+
     return _cached_model, _cached_features
 
 

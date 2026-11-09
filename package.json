@@ -7,6 +7,9 @@
     "node": "20.x || 22.x || 24.x"
   },
   "packageManager": "pnpm@9.15.4",
+  "workspaces": [
+    "client"
+  ],
   "scripts": {
     "dev": "tsx watch server/_core/index.ts",
     "build": "node scripts/build-client.js",

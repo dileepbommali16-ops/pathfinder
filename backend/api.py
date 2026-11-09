@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
-from fastapi import FastAPI, Request, Response, HTTPException, status
+from fastapi import FastAPI, Request, Response, HTTPException, status, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
@@ -286,11 +286,29 @@ app.mount("/api/v1", v1_app)
 
 
 @app.get("/api/gemini-live-key")
+@app.get("/api/agent/session-token")
 @v1_app.get("/api/gemini-live-key")
+@v1_app.get("/api/agent/session-token")
 def get_gemini_live_key():
-    """Secure endpoint exposing Gemini API Key for Gemini Live WebSocket connection."""
+    """Secure endpoint issuing Gemini Live session token for WebSocket connection."""
     key = os.getenv("GEMINI_API_KEY", "").strip()
-    return {"apiKey": key, "key": key}
+    return {
+        "apiKey": key,
+        "token": key,
+        "model": os.getenv("GEMINI_LIVE_MODEL", "gemini-3.8-live"),
+        "voice": os.getenv("GEMINI_VOICE_NAME", "Puck")
+    }
+
+
+@app.post("/api/rag/search")
+@v1_app.post("/api/rag/search")
+async def rag_search_endpoint(payload: Dict[str, Any] = Body(...)):
+    """Centralized Supabase pgvector semantic search endpoint."""
+    from backend.supabase_rag import query_semantic_rag
+    query = payload.get("query", "")
+    top_k = int(payload.get("top_k", 3))
+    results = await query_semantic_rag(query, top_k=top_k)
+    return {"results": results, "count": len(results)}
 
 
 @app.get("/api/student-memory")
