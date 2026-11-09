@@ -1,61 +1,90 @@
-# Pathfinder 2.0 · Autonomous AI Placement Flight Controller
+# Pathfinder 2.0 · Autonomous AI Placement Flight Controller & Career Operating System
 
-> **India's premier AI-powered Career Operating System for engineering candidates. Benchmarks student profiles against 972 verified campus recruitment outcomes, predicts placement odds with 88% ML precision, mentors 23 production-grade system architectures, and prepares engineers for Tier-1 recruitment filters with DAS — an autonomous 3D voice co-pilot.**
+> **India's premier AI-powered career operating system for engineering candidates. Built to bridge the critical gap between academic curriculum and high-paying Tier-1 campus recruitment through predictive data science, production architectures, and an autonomous 3D cybernetic voice co-pilot.**
 
 [![Live Platform](https://img.shields.io/badge/🚀_Live_Demo-Vercel_Edge-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://pathfinder-client-fzom.vercel.app/?demo=1)
-[![ML Precision](https://img.shields.io/badge/📈_Model_Accuracy-88%25_Random_Forest-success?style=for-the-badge)](https://pathfinder-client-fzom.vercel.app/?demo=1)
-[![AI Voice Brain](https://img.shields.io/badge/🎙️_Voice_Model-Gemini_3.8_Live_(Puck)-orange?style=for-the-badge)](https://pathfinder-client-fzom.vercel.app/?demo=1)
-[![Production Blueprints](https://img.shields.io/badge/📁_Flagship_Blueprints-23_Architectures-blueviolet?style=for-the-badge)](https://pathfinder-client-fzom.vercel.app/?demo=1)
-[![Cohort Records](https://img.shields.io/badge/📊_Cohort_Records-972_Verified_Placements-informational?style=for-the-badge)](https://pathfinder-client-fzom.vercel.app/?demo=1)
+[![Backend Engine](https://img.shields.io/badge/⚙️_FastAPI_Backend-Render_Cloud-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://pathfinder-backend-klrp.onrender.com)
+[![Voice AI Engine](https://img.shields.io/badge/🎙️_Gemini_3.8_Live-Puck_Voice-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://pathfinder-client-fzom.vercel.app/?demo=1)
+[![ML Accuracy](https://img.shields.io/badge/📈_Model_Accuracy-88%25_Random_Forest-success?style=for-the-badge)](https://pathfinder-client-fzom.vercel.app/?demo=1)
+[![Workflow Automation](https://img.shields.io/badge/⚡_Automation-n8n_Cloud-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)](https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync)
 [![License: MIT](https://img.shields.io/badge/License-MIT-white?style=for-the-badge)](LICENSE)
 
 ---
 
-### 🌟 Live Platform Experience
-👉 **[Launch Pathfinder 2.0 Live Application](https://pathfinder-client-fzom.vercel.app/?demo=1)**  
-*(⚡ Instant 1-Click Access — Explore the live platform immediately with zero setup!)*
+### 🌟 Experience the Live Platform
+👉 **[Launch Pathfinder 2.0 Live Platform](https://pathfinder-client-fzom.vercel.app/?demo=1)**  
+*(⚡ Instant 1-Click Access — Explore the live AI co-pilot, placement predictor, and interactive studios instantly without complex setup!)*
 
 ---
 
 ## 🎯 Why We Built Pathfinder 2.0 (The Problem)
 
-Every placement season, over **80% of engineering candidates struggle to land high-paying Tier-1 offers** due to four systemic roadblocks:
+Every year, millions of engineering students graduate, yet **over 80% struggle to crack high-paying Tier-1 campus recruitment drives**. The real-world hiring bottlenecks are undeniable:
 
-1. **The ATS Filter Black Hole**: Over 75% of resumes are discarded by Applicant Tracking Systems within seconds because of poor formatting, generic buzzwords, and lack of quantifiable achievements.
-2. **The "Toy Project" Barrier**: Tutorial clones (to-do lists, basic calculators, simple e-commerce templates) collapse the moment recruiters ask about production design, distributed caching, database indexing, or failover strategies.
-3. **Architecture Defense & Viva Anxiety**: Memorizing code algorithms is no longer enough. Modern hiring requires candidates to defend system trade-offs using the STAR method under live pressure.
-4. **Blind Applications Without Benchmarks**: Students apply to companies with no objective data regarding their placement probability, branch-specific cutoffs, or peer competitiveness.
+1. **The ATS Black Hole**: More than 75% of student resumes are screened out by algorithmic Applicant Tracking Systems before a human recruiter ever sees them due to unquantified bullets and improper single-column formatting.
+2. **The "Toy Project" Trap**: Most student portfolios feature trivial, copy-pasted tutorial projects (basic calculators, to-do apps, simple e-commerce clones). Candidates fail technical viva rounds when asked about distributed systems, concurrency, caching, and failovers.
+3. **No Realistic Benchmarking**: Students apply blindly to companies without knowing their objective placement odds, branch-specific cutoffs, or peer competitiveness.
+4. **Lack of Viva Defense Practice**: Memorizing algorithms is not enough. Candidates lack a safe, real-time environment to articulate technical architectural trade-offs under pressure.
 
-**Pathfinder 2.0 eliminates this uncertainty by providing a flight-controller dashboard that benchmarks your skills against real placement data and prepares you for real-world interviews.**
-
----
-
-## 💡 What We Built (The Solution)
-
-Pathfinder 2.0 is an end-to-end Career Operating System powered by predictive data science and Google Gemini AI:
-
-- **Predictive Placement Engine**: Predicts placement odds and expected CTC packages with 88% precision using a Random Forest model calibrated on 972 verified campus outcomes.
-- **DAS 3D Voice Co-Pilot**: An interactive cybernetic mentor with real-time 60 FPS jaw lip-sync powered by **Google Gemini 3.8 Live** and the **Puck** neural voice. Supports hands-free voice commands to navigate the platform.
-- **23 Production-Grade Blueprints**: Industry-vetted system architectures (Enterprise RAG engines, distributed queues, real-time collaboration engines, IoT telemetry, computer vision pipelines) that give engineering portfolios genuine depth.
-- **1-Page ATS Resume Studio**: An automated resume builder enforcing the Google X-Y-Z achievement formula to ensure zero drop-off through recruiter screening algorithms.
-- **Technical Defense Simulator**: Interactive viva sparring partner that tests your architectural choices and STAR-format defense before real interviews.
-- **Automated Google Workspace Sync**: Non-blocking cloud automation powered by n8n to sync placement readiness scores directly to TPO Google Sheets and schedule mock viva sessions on Google Calendar.
+**Pathfinder 2.0 was created to eliminate this crisis completely.**
 
 ---
 
-## 🚀 Why You Should Use Pathfinder 2.0 (Key Benefits)
+## 💡 What Is Pathfinder 2.0 & What We Built (What It Does)
 
-| User Group | Core Advantage | Real-World Impact |
+Pathfinder 2.0 is a complete, unified **AI Career Operating System** designed to transform engineering students into interview-ready, high-caliber software engineers. It replaces guesswork with verified data science and autonomous AI guidance:
+
+- **Predictive Placement Flight Controller**: An 88% precision Machine Learning engine calibrated against 972 verified campus recruitment outcomes, calculating instant placement odds, expected CTC brackets, and personalized preparation roadmaps.
+- **DAS 3D Autonomous Cybernetic Co-Pilot**: An autonomous 3D voice mentor rendered in WebGL at 60 FPS, powered by Google's cutting-edge **Gemini 3.8 Live** WebSocket engine with the **Puck** neural voice for fluid, zero-latency speech and hands-free browser control.
+- **Production-Grade Flagship Blueprints**: A curated library of 23 real-world system architectures (Distributed Task Queues, Enterprise Vector RAG, City-Wide Vision Telemetry, Real-Time CRDT Canvases) with architectural blueprints and resume-ready Google X-Y-Z bullet points.
+- **Technical Defense & Mock Interview Console**: Interactive viva defense simulators challenging students with realistic architecture trade-offs tailored to target roles (SDE-1, AI Engineer, Data Scientist, Full-Stack).
+- **1-Page Google X-Y-Z ATS Resume Studio**: Automated diagnostic scanner auditing resumes against Google's proven impact formula with single-click PDF export.
+- **Automated Institutional Sync**: Autonomous non-blocking synchronization with Google Sheets for college placement cell records and Google Calendar for interview scheduling.
+
+---
+
+## 🚀 Why Engineering Students MUST Use Pathfinder 2.0 (Core Value)
+
+| What Students Need | How Pathfinder 2.0 Delivers | Student Outcome |
 | :--- | :--- | :--- |
-| **Engineering Students** | Objective placement benchmarking & hands-free voice co-pilot. | Know your real odds, build production systems, and pass tough viva rounds. |
-| **Placement Cells (TPOs)** | Real-time cohort analytics & automated Google Sheets tracking. | Automated student governance, NAAC 5.2 data compliance, and skill diagnostics. |
-| **Technical Recruiters** | Verified architectural competence and production depth. | Filter candidates by proven system design defense rather than memorized syntax. |
+| **Objective Placement Odds** | Random Forest ML trained on 972 real campus records | Know your realistic chances and cutoffs before applying blindly. |
+| **Industry-Grade Projects** | 23 production architectures replacing generic tutorial clones | Stand out in interviews with real system design depth. |
+| **Hands-Free AI Mentorship** | DAS 3D co-pilot powered by Gemini 3.8 Live & Puck voice | Practice technical viva, get advice, and navigate hands-free. |
+| **ATS-Proof Resume** | Google X-Y-Z formula scanner & single-page builder | Pass automated recruiter screening filters with zero formatting drop-off. |
+| **Campus Drive Preparation** | 6-week customized roadmap based on skill gaps | Targeted preparation focused only on high-impact weaknesses. |
+
+---
+
+## 🛠️ Technology Stack (What We Used)
+
+Pathfinder 2.0 unites modern web engineering, real-time audio WebSockets, machine learning, and cloud orchestration:
+
+### Frontend Client
+- **Framework**: React 18, TypeScript, Vite
+- **Styling & UI**: Tailwind CSS, Lucide Icons, Glassmorphism design system
+- **3D Graphics & Animation**: Three.js, `@react-three/fiber`, WebGL Cybernetic Mesh
+- **Audio Processing**: Web Audio API, AnalyserNode (60 FPS FFT mouth & jaw lip-sync)
+
+### Artificial Intelligence & Voice Brain
+- **Live Voice Engine**: **Google Gemini 3.8 Live (`gemini-3.8-live`)** via `@google/genai` WebSocket
+- **Voice Persona**: **Puck** neural voice with natural speech inflection
+- **Reasoning & Search Grounding**: **Google Gemini 3.5 Flash** with Google Search Grounding
+- **Semantic Retrieval (RAG)**: Supabase PostgreSQL + `pgvector` (384-D vector embeddings)
+
+### Backend & Machine Learning
+- **API Framework**: FastAPI, Python 3.11, Uvicorn ASGI
+- **Predictive ML Model**: Scikit-Learn (Random Forest Classifier trained on 972 verified student records)
+- **Data Serialization**: Pydantic v2
+- **HTTP Client**: HTTPX (Asynchronous, non-blocking requests)
+
+### Cloud Automation & Institutional Sync
+- **Workflow Automation**: **n8n Cloud** (Production Webhook pipeline)
+- **Institutional Ledgers**: Google Sheets API v4 (TPO Placement records)
+- **Schedule Management**: Google Calendar API v3 (Technical viva reminders)
 
 ---
 
 ## 🏗️ Full-Stack System Architecture
-
-The platform operates on a high-speed, modern full-stack architecture uniting **Vercel**, **Google Gemini AI**, **FastAPI on Render**, **Supabase pgvector**, and **n8n Cloud**:
 
 ```mermaid
 flowchart TB
@@ -108,70 +137,41 @@ flowchart TB
 
 ---
 
-## 🛠️ Technologies & Tools Used
+## ☁️ Cloud Deployments & Hosting
 
-- **Frontend Edge**: React 18, TypeScript, Three.js, Tailwind CSS, Lucide Icons, Web Audio API (60 FPS RMS Analyser).
-- **AI Brain & Voice**: Google Gemini 3.8 Live (`gemini-3.8-live`), Puck neural voice, Google GenAI SDK (`@google/genai`), Google Gemini 3.5 Flash (Search Grounding).
-- **Backend & ML**: Python 3.11, FastAPI, Uvicorn, Scikit-Learn (Random Forest Classifier on 972 student records), Pydantic v2.
-- **Database & RAG**: Supabase PostgreSQL, `pgvector` semantic vector store, 384-dimensional embeddings.
-- **Cloud Automation**: n8n Cloud Webhook Workflow, Google Sheets API v4, Google Calendar API v3.
-- **Hosting & Infrastructure**: Vercel (Frontend Client), Render (FastAPI Backend Service), GitHub Actions.
+The entire full stack is live across production cloud platforms:
 
----
-
-## ☁️ Cloud Deployment & Environment Variables
-
-### 1. 🌐 Vercel Dashboard (Frontend Client)
-- **Live URL**: [https://pathfinder-client-fzom.vercel.app](https://pathfinder-client-fzom.vercel.app)
-- Configure these variables under **Vercel Project Settings → Environment Variables**:
-
-| Variable Name | Value / Description | Required |
-| :--- | :--- | :---: |
-| `VITE_API_BASE_URL` | `https://pathfinder-backend-klrp.onrender.com` | **Yes** |
-| `VITE_GEMINI_API_KEY` | Your Google Gemini API Key | **Yes** |
-| `VITE_GEMINI_LIVE_MODEL` | `gemini-3.8-live` | **Yes** |
-| `VITE_GEMINI_MODEL` | `gemini-3.5-flash` | **Yes** |
-| `VITE_GEMINI_VOICE_NAME` | `Puck` | **Yes** |
-| `VITE_SUPABASE_URL` | `https://fenalqckgkqzyhovlyrb.supabase.co` | **Yes** |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase publishable anon key | **Yes** |
+1. **Frontend Client**: Deployed on **Vercel Edge**  
+   👉 [https://pathfinder-client-fzom.vercel.app](https://pathfinder-client-fzom.vercel.app)
+2. **Backend API & ML Engine**: Deployed on **Render Cloud**  
+   👉 [https://pathfinder-backend-klrp.onrender.com](https://pathfinder-backend-klrp.onrender.com)
+3. **Automation Webhook**: Hosted on **n8n Cloud**  
+   👉 `https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync`
+4. **Vector Database**: Hosted on **Supabase Cloud** (PostgreSQL + pgvector)
 
 ---
 
-### 2. ⚙️ Render Dashboard (Backend Web Service)
-- **Live URL**: [https://pathfinder-backend-klrp.onrender.com](https://pathfinder-backend-klrp.onrender.com)
-- Configure these variables under **Render Service Settings → Environment Variables**:
+## 🔒 Security & Privacy Guardrails
 
-| Variable Name | Value / Description | Required |
-| :--- | :--- | :---: |
-| `PORT` | `8000` | **Yes** |
-| `HOST` | `0.0.0.0` | **Yes** |
-| `BACKEND_URL` | `https://pathfinder-backend-klrp.onrender.com` | **Yes** |
-| `FRONTEND_URL` | `https://pathfinder-client-fzom.vercel.app` | **Yes** |
-| `GEMINI_API_KEY` | Your Google Gemini API Key | **Yes** |
-| `GEMINI_MODEL` | `gemini-3.5-flash` | **Yes** |
-| `GEMINI_LIVE_MODEL` | `gemini-3.8-live` | **Yes** |
-| `GEMINI_VOICE_NAME` | `Puck` | **Yes** |
-| `GEMINI_FALLBACK_MODEL` | `gemini-3.1-flash-lite` | **Yes** |
-| `SUPABASE_URL` | `https://fenalqckgkqzyhovlyrb.supabase.co` | **Yes** |
-| `SUPABASE_ANON_KEY` | Your Supabase publishable anon key | **Yes** |
-| `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase service role key | Optional |
-| `N8N_WEBHOOK_URL` | `https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync` | **Yes** |
-| `JWT_SECRET` | 32+ character secure secret string | **Yes** |
-| `OWNER_EMAIL` | `dileepbommali16@gmail.com,dileep@pathfinder.ai,dileep` | **Yes** |
-
----
-
-## 👑 Founder & Lead Architect
-
-Pathfinder 2.0 was conceived, designed, and engineered by:
-
-**Dileep Bommali**  
-*Lead Architect, Founder & Full-Stack AI Engineer*  
-- **Email**: [dileepbommali16@gmail.com](mailto:dileepbommali16@gmail.com)  
-- **Platform**: [Pathfinder 2.0 Live Platform](https://pathfinder-client-fzom.vercel.app/?demo=1)
+- **Client/Server Isolation**: Sensitive credentials (database service role keys, JWT secrets) reside strictly in the server environment; the frontend client only accesses restricted public tokens.
+- **CORS Protection**: FastAPI backend enforces strict origin whitelisting to allow authorized requests only from the live Vercel domain.
+- **Cryptographic Authentication**: Student session states and verification tokens are digitally signed using 256-bit JWT encryption.
+- **Non-Blocking Architecture**: External automations run asynchronously with fault-tolerant fallbacks, ensuring high availability and zero client stalls.
 
 ---
 
 ## 📜 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is open-source and distributed under the **[MIT License](LICENSE)**.
+
+---
+
+## 👑 Developed & Architected By
+
+### **DILEEP BOMMALI**
+**B.Tech 3rd Year, CSE (Data Science)**  
+**Dr. RVR NRI Deemed to be University**, Pothavarappadu, Agiripalli  
+
+- **GitHub**: [@dileepbommali16-ops](https://github.com/dileepbommali16-ops)  
+- **Email**: [dileepbommali16@gmail.com](mailto:dileepbommali16@gmail.com)  
+- **Live Platform**: [Launch Pathfinder 2.0](https://pathfinder-client-fzom.vercel.app/?demo=1)
