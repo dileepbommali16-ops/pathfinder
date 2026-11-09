@@ -36,3 +36,4 @@ export default function Avatar({ avatarMeshRef, mouthOpenIndex = 0 }: AvatarLipS
   useAvatarLipSync(avatarMeshRef || internalRef, mouthOpenIndex);
   return null;
 }
+

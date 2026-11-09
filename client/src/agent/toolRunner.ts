@@ -1,4 +1,4 @@
-﻿// client/src/agent/toolRunner.ts
+// client/src/agent/toolRunner.ts
 import { Type, FunctionDeclaration } from "@google/genai";
 import { API_BASE } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -156,13 +156,17 @@ export function tryInstantBrowserCommand(rawInput: string): {
 
   for (const [key, site] of Object.entries(siteMap)) {
     if (text === `open ${key}` || text === `go to ${key}`) {
-      activeExternalWindow = window.open(
-        site.url,
-        "PathfinderGoogleWindow",
-        "width=960,height=720,left=80,top=80"
-      );
+      if (typeof window !== "undefined") {
+        activeExternalWindow = window.open(
+          site.url,
+          "PathfinderGoogleWindow",
+          "width=960,height=720,left=80,top=80"
+        );
+      }
       showGoogleSearchOverlay(site.name, `Opened ${site.name} live window for you.`);
-      toast.success(`Opened ${site.name}!`);
+      try {
+        toast.success(`Opened ${site.name}!`);
+      } catch { }
       return {
         handled: true,
         actionSummary: `opened ${site.name}`
@@ -287,6 +291,9 @@ export async function executeToolCall(
 }
 
 export function snapshot(): Record<string, any> {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return { url: "", title: "", activeTab: "overview" };
+  }
   return {
     url: window.location.href,
     title: document.title,
