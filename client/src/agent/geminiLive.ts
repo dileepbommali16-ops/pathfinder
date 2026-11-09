@@ -373,34 +373,58 @@ export class PathfinderGeminiLive {
 
       const liveAi = new GoogleGenAI({ apiKey: key });
 
-      this.session = await liveAi.live.connect({
-        model: LIVE_MODEL,
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: VOICE_NAME // Strictly "Puck" (Male Voice)
+      const candidateModels = Array.from(
+        new Set([
+          ENV.VITE_GEMINI_LIVE_MODEL,
+          "gemini-3.8-live",
+          "models/gemini-3.8-live",
+          "gemini-2.0-flash-exp",
+          "gemini-2.0-flash-realtime-exp"
+        ].filter(Boolean) as string[])
+      );
+
+      let lastErr: any = null;
+      for (const m of candidateModels) {
+        try {
+          this.session = await liveAi.live.connect({
+            model: m,
+            config: {
+              responseModalities: [Modality.AUDIO],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: {
+                    voiceName: VOICE_NAME // Strictly "Puck" (Male Voice)
+                  }
+                }
+              },
+              systemInstruction: { parts: [{ text: getMasterPrompt() }] },
+              tools: PATHFINDER_TOOLS
+            },
+            callbacks: {
+              onopen: () => this.cb.onStatusChange?.("connected"),
+              onmessage: (msg: any) => void this.handleLiveMessage(msg),
+              onerror: (e: any) => {
+                console.error("[DAS] Live WebSocket error:", e);
+                this.cb.onStatusChange?.("error");
+              },
+              onclose: () => {
+                this.session = null;
+                this.cb.onStatusChange?.("disconnected");
+                if (this.handsFreeActive) this.stopHandsFreeVoice();
               }
             }
-          },
-          systemInstruction: { parts: [{ text: getMasterPrompt() }] },
-          tools: PATHFINDER_TOOLS
-        },
-        callbacks: {
-          onopen: () => this.cb.onStatusChange?.("connected"),
-          onmessage: (msg: any) => void this.handleLiveMessage(msg),
-          onerror: (e: any) => {
-            console.error("[DAS] Live WebSocket error:", e);
-            this.cb.onStatusChange?.("error");
-          },
-          onclose: () => {
-            this.session = null;
-            this.cb.onStatusChange?.("disconnected");
-            if (this.handsFreeActive) this.stopHandsFreeVoice();
+          });
+          if (this.session) {
+            console.log(`[DAS] Live WebSocket connected with model ${m}`);
+            break;
           }
+        } catch (connErr) {
+          lastErr = connErr;
+          console.warn(`[DAS] Live model ${m} handshake notice:`, connErr);
         }
-      });
+      }
+
+      if (!this.session && lastErr) throw lastErr;
       return this.session;
     } catch (e: any) {
       console.error(`[DAS] Live connect failed:`, e);
@@ -589,31 +613,43 @@ export class PathfinderGeminiLive {
       let generated = false;
 
       if (this.resolvedKey || ENV.VITE_GEMINI_API_KEY) {
-        try {
-          const response: any = await this.textClient().models.generateContent({
-            model: TEXT_MODEL,
-            contents: queryPrompt,
-            config: {
-              systemInstruction: getMasterPrompt(),
-              tools: instant.isSearchQuery ? [{ googleSearch: {} }] : PATHFINDER_TOOLS,
-              temperature: 0.4,
-              maxOutputTokens: 350
-            }
-          });
+        const textCandidates = Array.from(
+          new Set([
+            TEXT_MODEL,
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-3.5-flash"
+          ].filter(Boolean) as string[])
+        );
 
-          if (!instant.isSearchQuery && response.functionCalls?.length) {
-            for (const call of response.functionCalls) {
-              options?.onToolCall?.(call.name || "", call.args || {});
-              await executeWebsiteTool(call.name || "", (call.args as Record<string, any>) || {});
-            }
-          }
+        for (const tm of textCandidates) {
+          try {
+            const response: any = await this.textClient().models.generateContent({
+              model: tm,
+              contents: queryPrompt,
+              config: {
+                systemInstruction: getMasterPrompt(),
+                tools: instant.isSearchQuery ? [{ googleSearch: {} }] : PATHFINDER_TOOLS,
+                temperature: 0.4,
+                maxOutputTokens: 350
+              }
+            });
 
-          if (response.text?.trim()) {
-            replyText = response.text.trim();
-            generated = true;
+            if (!instant.isSearchQuery && response.functionCalls?.length) {
+              for (const call of response.functionCalls) {
+                options?.onToolCall?.(call.name || "", call.args || {});
+                await executeWebsiteTool(call.name || "", (call.args as Record<string, any>) || {});
+              }
+            }
+
+            if (response.text?.trim()) {
+              replyText = response.text.trim();
+              generated = true;
+              break;
+            }
+          } catch (clientErr) {
+            console.warn(`[DAS] Direct Gemini SDK text generation with ${tm} notice:`, clientErr);
           }
-        } catch (clientErr) {
-          console.warn("[DAS] Direct Gemini SDK notice:", clientErr);
         }
       }
 
