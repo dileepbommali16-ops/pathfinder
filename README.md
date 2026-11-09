@@ -172,49 +172,49 @@ Pathfinder 2.0 operates on a **modern unified full-stack architecture** combinin
 
 ```mermaid
 flowchart TB
-    subgraph Client["🌐 Frontend Client · React 18 + Three.js + TypeScript (Vercel Edge)"]
-        Mic["🎙️ 16kHz PCM Mic Input<br/>& Hands-Free Voice Controller"]
-        GeminiLive["⚡ Google Gemini 3.8 Live WebSocket<br/>(geminiLive.ts · gemini-3.8-live)"]
-        AudioEngine["🔊 24kHz Native Audio & FFT Analyser<br/>(Puck Voice · audioIO.ts)"]
-        Avatar3D["🤖 DAS 3D Cybernetic Avatar<br/>(Avatar3D.tsx · 60 FPS Jaw & Viseme Lip-Sync)"]
-        ToolRunner["🛠️ Autonomous Browser Tool Runner<br/>(Instant Return & Google Search Overlay)"]
-        DOM["🖥️ Pathfinder UI & Custom Event Bus<br/>(Home.tsx · pathfinder:agent-action)"]
-        ActionCenter["📅 Action Center & Automation Cards<br/>(AIActionCenter.tsx)"]
+    subgraph Client["Frontend Client (Vercel Edge · React 18 and Three.js)"]
+        Mic["Mic Input and Hands-Free Voice Button"]
+        GeminiLive["Gemini 3.8 Live WebSocket Engine"]
+        AudioEngine["24kHz Native Audio and FFT Analyser"]
+        Avatar3D["DAS 3D Avatar (60 FPS Lip-Sync)"]
+        ToolRunner["Autonomous Browser Tool Runner"]
+        DOM["Pathfinder UI and DOM Event Bus"]
+        ActionCenter["AI Action Center and Viva Scheduler"]
     end
 
-    subgraph CloudAI["🧠 Google Gemini AI Cloud"]
-        GeminiLiveModel["Gemini 3.8 Live (gemini-3.8-live)<br/>Voice: Puck · Native Audio & Async Function Calling"]
-        GeminiReasoning["Gemini 3.5 Flash / 3.1 Flash Lite<br/>(Placement Reasoning & Google Search Grounding)"]
+    subgraph CloudAI["Google Gemini AI Cloud"]
+        GeminiLiveModel["Gemini 3.8 Live (Puck Voice · Low Latency Dialogue)"]
+        GeminiReasoning["Gemini 3.5 Flash (Search Grounding and Reasoning)"]
     end
 
-    subgraph VectorDB["🗄️ Supabase PostgreSQL + pgvector"]
-        RAG["Semantic Vector RAG Engine<br/>384-D Embeddings · match_career_docs RPC"]
+    subgraph VectorDB["Supabase PostgreSQL and pgvector"]
+        RAG["Semantic Vector RAG (23 Blueprints)"]
     end
 
-    subgraph Backend["⚙️ FastAPI Backend · Python 3.11 (Render Cloud)"]
-        FastAPI["FastAPI Gateway (backend/api.py)"]
-        MLEngine["📊 Random Forest ML Engine (ml_engine.py)<br/>88% Precision · 972 Verified Campus Records"]
-        GoogleSync["🔗 Google Sync & Webhook Router<br/>(backend/google_sync_api.py)"]
+    subgraph Backend["FastAPI Backend (Render Cloud · Python 3.11)"]
+        FastAPI["FastAPI Gateway"]
+        MLEngine["Random Forest ML (972 Student Records)"]
+        GoogleSync["Google Sync and Webhook Router"]
     end
 
-    subgraph Automation["⚡ n8n Cloud Automation Pipeline"]
-        N8N["n8n Webhook Workflow (dileepdas.app.n8n.cloud)<br/>/webhook/pathfinder-google-sync"]
-        GSheets["📊 Google Sheets<br/>(TPO Placement Ledger)"]
-        GCal["📆 Google Calendar<br/>(Viva & Interview Reminders)"]
+    subgraph Automation["n8n Cloud Automation Pipeline"]
+        N8N["n8n Webhook (/webhook/pathfinder-google-sync)"]
+        GSheets["Google Sheets (TPO Placement Ledger)"]
+        GCal["Google Calendar (Interview Reminders)"]
     end
 
-    Mic -->|16kHz PCM Audio / Voice Turn| GeminiLive
-    GeminiLive <-->|Bidirectional WebSocket| GeminiLiveModel
-    GeminiLive -->|24kHz Native Audio Stream| AudioEngine
-    AudioEngine -->|Real-Time RMS Amplitude| Avatar3D
-    GeminiLive -->|Tool Call Execution| ToolRunner
-    ToolRunner -->|Dispatches CustomEvent| DOM
-    GeminiLive <-->|Context Grounding & Search| GeminiReasoning
-    DOM <-->|REST /predict & /cohort| FastAPI
+    Mic --> GeminiLive
+    GeminiLive <-->|WebSocket Stream| GeminiLiveModel
+    GeminiLive -->|24kHz Audio| AudioEngine
+    AudioEngine -->|RMS Amplitude| Avatar3D
+    GeminiLive -->|Tool Actions| ToolRunner
+    ToolRunner -->|DOM Events| DOM
+    GeminiLive <-->|Grounding Context| GeminiReasoning
+    DOM <-->|REST Endpoints| FastAPI
     FastAPI --> MLEngine
-    DOM <-->|Context Retrieval| RAG
-    ActionCenter -->|POST /api/google/sheets/log<br/>POST /api/google/calendar/schedule| GoogleSync
-    GoogleSync -->|Async Non-Blocking Trigger| N8N
+    DOM <-->|Semantic Query| RAG
+    ActionCenter -->|Log and Schedule Requests| GoogleSync
+    GoogleSync -->|Async Webhook Dispatch| N8N
     N8N --> GSheets
     N8N --> GCal
 ```
