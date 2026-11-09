@@ -1,7 +1,6 @@
 /**
  * voiceManager.ts - Unified DAS Voice Facade
- * - Delegates all speech synthesis and real-time audio amplitude analysis to the
- *   central `speaker` instance in `audioIO.ts` (Deepgram v2 `flux-donovan-en`).
+ * - Delegates all speech to central Gemini Live Puck Voice engine
  */
 
 import { speaker } from "@/agent/audioIO";
@@ -30,10 +29,10 @@ export function getLiveAudioLevel(): number {
   return speaker.level();
 }
 
-export async function playElevenLabs(text: string): Promise<void> {
+export async function playPuckVoice(text: string): Promise<void> {
   if (!text || !text.trim()) return;
   speaker.say(text.trim());
 }
 
-export const speak = playElevenLabs;
-export { playElevenLabs as speakElevenLabs };
+export const speak = playPuckVoice;
+export { playPuckVoice as playElevenLabs, playPuckVoice as speakElevenLabs };

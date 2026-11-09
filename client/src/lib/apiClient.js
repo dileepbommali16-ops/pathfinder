@@ -173,7 +173,7 @@ async function handleAutonomousEdgeRequest(urlStr, options = {}) {
   }
 
   // For streaming/analytics/tts endpoints, return 404 synthetic response so callers
-  // immediately use their rich local / Groq LPU / ElevenLabs fallbacks with 0 console errors.
+  // immediately use their rich local / Gemini Live Puck fallbacks with 0 console errors.
   return createJsonResponse({ detail: "Autonomous edge fallback active" }, 404);
 }
 

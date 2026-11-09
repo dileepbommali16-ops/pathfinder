@@ -333,13 +333,20 @@ export class PathfinderGeminiLive {
 
   /* ---------------- WebSocket Connection ---------------- */
   private async resolveSessionKey(): Promise<string> {
-    if (ENV.VITE_GEMINI_API_KEY) return ENV.VITE_GEMINI_API_KEY;
+    if (this.resolvedKey) return this.resolvedKey;
+    if (ENV.VITE_GEMINI_API_KEY) {
+      this.resolvedKey = ENV.VITE_GEMINI_API_KEY;
+      return ENV.VITE_GEMINI_API_KEY;
+    }
     try {
       const res = await fetch(`${API_BASE}/api/agent/session-token`);
       if (res.ok) {
         const data = await res.json();
         const t = data?.token || data?.apiKey || data?.access_token;
-        if (t) return t;
+        if (t) {
+          this.resolvedKey = t;
+          return t;
+        }
       }
     } catch { }
     return "";
@@ -539,7 +546,7 @@ export class PathfinderGeminiLive {
       onStageChange?: (stage: VoicePipelineStage) => void;
     }
   ): Promise<string> {
-    const { honorific } = resolveUserHonorific();
+    const { honorific, isBoss } = resolveUserHonorific();
     const trimmed = userText.trim();
     const shouldSpeak = options?.speakAudio !== false && !options?.muteAudio;
     const emit = (t: string) => {
@@ -573,33 +580,74 @@ export class PathfinderGeminiLive {
     options?.onStageChange?.("thinking");
     let replyText = "";
     try {
+      await this.resolveSessionKey();
+
       const queryPrompt = instant.isSearchQuery
         ? `The user ${honorific} asked you to search Google for: "${instant.searchQuery}". Give a clear, friendly 3-sentence summary about "${instant.searchQuery}". Address them as ${honorific}.`
         : trimmed;
 
-      const response: any = await this.textClient().models.generateContent({
-        model: TEXT_MODEL,
-        contents: queryPrompt,
-        config: {
-          systemInstruction: getMasterPrompt(),
-          tools: instant.isSearchQuery ? [{ googleSearch: {} }] : PATHFINDER_TOOLS,
-          temperature: 0.4,
-          maxOutputTokens: 350
-        }
-      });
+      let generated = false;
 
-      if (!instant.isSearchQuery && response.functionCalls?.length) {
-        for (const call of response.functionCalls) {
-          options?.onToolCall?.(call.name || "", call.args || {});
-          await executeWebsiteTool(call.name || "", (call.args as Record<string, any>) || {});
+      if (this.resolvedKey || ENV.VITE_GEMINI_API_KEY) {
+        try {
+          const response: any = await this.textClient().models.generateContent({
+            model: TEXT_MODEL,
+            contents: queryPrompt,
+            config: {
+              systemInstruction: getMasterPrompt(),
+              tools: instant.isSearchQuery ? [{ googleSearch: {} }] : PATHFINDER_TOOLS,
+              temperature: 0.4,
+              maxOutputTokens: 350
+            }
+          });
+
+          if (!instant.isSearchQuery && response.functionCalls?.length) {
+            for (const call of response.functionCalls) {
+              options?.onToolCall?.(call.name || "", call.args || {});
+              await executeWebsiteTool(call.name || "", (call.args as Record<string, any>) || {});
+            }
+          }
+
+          if (response.text?.trim()) {
+            replyText = response.text.trim();
+            generated = true;
+          }
+        } catch (clientErr) {
+          console.warn("[DAS] Direct Gemini SDK notice:", clientErr);
         }
       }
 
-      replyText =
-        response.text?.trim() ||
-        `Done ${honorific}! Here are the results for ${instant.searchQuery || "your request"}.`;
-    } catch {
-      replyText = `Okay ${honorific}, done right away!`;
+      // If client SDK was missing key in bundle or blocked, route to Render backend chat proxy
+      if (!generated) {
+        try {
+          const backendRes = await fetch(`${API_BASE}/api/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: queryPrompt,
+              user_context: { honorific, isBoss }
+            })
+          });
+          if (backendRes.ok) {
+            const data = await backendRes.json();
+            replyText = data?.reply || data?.message || data?.text || "";
+            if (replyText) generated = true;
+          }
+        } catch (backendErr) {
+          console.warn("[DAS] Backend chat proxy notice:", backendErr);
+        }
+      }
+
+      if (!replyText) {
+        replyText = isBoss
+          ? `Boss, I am connected and ready. Tell me which section or tool to open!`
+          : `Sir, I am connected and ready. How can I help you today?`;
+      }
+    } catch (e: any) {
+      console.error("[DAS] sendTurn error:", e);
+      replyText = isBoss
+        ? `Boss, I am online. Tell me which dashboard tab or tool to open!`
+        : `Sir, I am online. Tell me which dashboard tab or tool to open!`;
     }
 
     emit(replyText);

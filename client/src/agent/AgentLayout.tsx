@@ -82,10 +82,8 @@ let globalMsgsCache: Msg[] = [];
 
 /**
  * Full responsive 3D JARVIS Voice Co-Pilot:
- * - TASK 1: Performs semantic vector search (Top 3 matches from 23 blueprints + 972 placements)
- *           and injects ONLY the Top 3 into a compact < 2000 token Groq system prompt.
- * - TASK 2: Streams Groq LPU tokens and dispatches the very first speakable chunk immediately
- *           to ElevenLabs streaming TTS, displaying Listening -> Thinking -> Speaking states in UI.
+ * - Powered by Google Gemini Live WebSocket with Puck voice (24kHz native audio stream)
+ * - Autonomous website tools for instant tab navigation and Google Search overlays
  */
 export default function AgentLayout({
   getToken = DEFAULT_GET_TOKEN,
