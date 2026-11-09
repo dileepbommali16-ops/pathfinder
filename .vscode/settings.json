@@ -40,5 +40,12 @@
   ],
   "yaml.schemas": {
     "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.{yml,yaml}"
-  }
+  },
+  "files.associations": {
+    "**/.github/workflows/*.yml": "yaml",
+    "**/.github/workflows/*.yaml": "yaml"
+  },
+  "errorLens.excludeByMessage": [
+    "Unable to resolve action.*"
+  ]
 }

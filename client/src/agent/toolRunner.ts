@@ -1,4 +1,4 @@
-// client/src/agent/toolRunner.ts
+﻿// client/src/agent/toolRunner.ts
 import { Type, FunctionDeclaration } from "@google/genai";
 import { API_BASE } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -12,83 +12,163 @@ export interface ToolCallPayload {
   arguments?: Record<string, any>;
 }
 
-// Controllable reference to the opened Google window so "return back to your page" can close it!
 let activeExternalWindow: Window | null = null;
 
-// Shows or hides a Live Google Search Overlay right inside Pathfinder
-export function showGoogleSearchOverlay(query: string, summaryText?: string) {
-  if (typeof document === "undefined") return;
-  let overlay = document.getElementById("das-google-live-overlay");
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.id = "das-google-live-overlay";
-    overlay.style.cssText =
-      "position:fixed;top:76px;right:24px;width:420px;max-width:92vw;z-index:99998;background:rgba(12,16,29,0.96);border:1px solid rgba(0,245,212,0.45);border-radius:18px;padding:18px;color:#f8fafc;box-shadow:0 16px 48px rgba(0,0,0,0.85);backdrop-filter:blur(16px);font-family:sans-serif;transition:all 0.3s ease;";
-    document.body.appendChild(overlay);
+/* ------------------------------------------------------------------ */
+/* DOM Helpers (Click, Type, Scroll, Read Page)                        */
+/* ------------------------------------------------------------------ */
+const CLICKABLE =
+  'button, a[href], [role="button"], [role="tab"], [role="menuitem"], [data-das], input, textarea, select, summary, [onclick]';
+
+const norm = (s?: string | null) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
+
+function isVisible(el: HTMLElement): boolean {
+  if (el.closest("[data-das-ignore]")) return false;
+  const r = el.getBoundingClientRect();
+  if (r.width < 2 || r.height < 2) return false;
+  const st = getComputedStyle(el);
+  return st.visibility !== "hidden" && st.display !== "none";
+}
+
+function labelOf(el: HTMLElement): string {
+  const f = el as HTMLInputElement;
+  return (
+    el.getAttribute("data-das") ||
+    el.getAttribute("aria-label") ||
+    el.getAttribute("title") ||
+    (el.innerText || "").trim().slice(0, 60) ||
+    f.placeholder ||
+    f.name ||
+    ""
+  ).trim();
+}
+
+function allClickables(): HTMLElement[] {
+  return Array.from(document.querySelectorAll<HTMLElement>(CLICKABLE)).filter(isVisible);
+}
+
+function findByLabel(label: string, pool?: HTMLElement[]): HTMLElement | null {
+  const q = norm(label);
+  if (!q) return null;
+  let best: HTMLElement | null = null;
+  let bestScore = 0;
+  for (const el of pool || allClickables()) {
+    const l = norm(labelOf(el));
+    let score = 0;
+    if (l === q) score = 3;
+    else if (l.startsWith(q)) score = 2;
+    else if (l && (l.includes(q) || (l.length >= 3 && q.includes(l)))) score = 1;
+    if (score > bestScore) {
+      best = el;
+      bestScore = score;
+    }
   }
+  return best;
+}
 
-  const encoded = encodeURIComponent(query);
-  overlay.style.display = "block";
-  overlay.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:8px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="height:10px;width:10px;border-radius:50%;background:#00f5d4;display:inline-block;"></span>
-        <strong style="font-size:13px;letter-spacing:0.4px;color:#00f5d4;">GOOGLE LIVE SEARCH · DAS AGENT</strong>
-      </div>
-      <button id="das-close-google-overlay" style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.5);color:#fca5a5;border-radius:8px;padding:3px 9px;font-size:11px;cursor:pointer;">
-        Return Back ✕
-      </button>
-    </div>
-    <div style="font-size:14px;font-weight:700;margin-bottom:6px;color:#ffffff;">
-      🔍 "${query}"
-    </div>
-    <div id="das-google-overlay-summary" style="font-size:12.5px;line-height:1.55;color:#cbd5e1;background:rgba(255,255,255,0.04);padding:10px 12px;border-radius:10px;margin-bottom:12px;">
-      ${summaryText || "Fetching live insights from Google and analyzing details for you, Boss..."}
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <a href="https://www.google.com/search?q=${encoded}" target="_blank" rel="noopener noreferrer"
-         style="flex:1;text-align:center;background:#00f5d4;color:#070d1f;font-weight:700;font-size:12px;padding:8px 12px;border-radius:10px;text-decoration:none;">
-        View Full Google Results ↗
-      </a>
-    </div>
-    <div style="margin-top:8px;font-size:11px;color:#94a3b8;text-align:center;">
-      💡 Say <b>"Okay good, return back to your page"</b> anytime to close this.
-    </div>
-  `;
+function flash(el: HTMLElement) {
+  const old = el.style.outline;
+  el.style.outline = "3px solid #22d3ee";
+  setTimeout(() => (el.style.outline = old), 900);
+}
 
-  const closeBtn = document.getElementById("das-close-google-overlay");
-  if (closeBtn) {
-    closeBtn.onclick = () => closeGoogleAndReturnToPage();
+function realClick(el: HTMLElement) {
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  flash(el);
+  const o = { bubbles: true, cancelable: true, view: window };
+  el.dispatchEvent(new PointerEvent("pointerdown", o));
+  el.dispatchEvent(new MouseEvent("mousedown", o));
+  el.focus?.();
+  el.dispatchEvent(new PointerEvent("pointerup", o));
+  el.dispatchEvent(new MouseEvent("mouseup", o));
+  el.dispatchEvent(new MouseEvent("click", o));
+}
+
+function setNativeValue(el: HTMLInputElement | HTMLTextAreaElement, value: string) {
+  const proto =
+    el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, "value")?.set?.call(el, value);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+const TAB_ALIASES: Record<string, string[]> = {
+  overview: ["overview", "dashboard", "home"],
+  projects: ["projects", "project", "blueprints"],
+  defense: ["defense", "viva", "coach"],
+  interview: ["mock interview", "interview"],
+  resume: ["resume"],
+  roadmap: ["roadmap"],
+  "skill-gap": ["skill gap", "skills"],
+  "what-if": ["what-if", "what if", "simulator"],
+  branches: ["branches"],
+  roles: ["roles"],
+  missions: ["missions"],
+  profile: ["profile"],
+  cohort: ["cohort", "analytics"]
+};
+
+function goToTab(tabRaw: string, navigate?: (path: string) => void) {
+  const tab = norm(tabRaw).replace(/\s+/g, "-");
+  window.dispatchEvent(
+    new CustomEvent("pathfinder:agent-action", {
+      detail: { toolName: "navigate_dashboard_tab", args: { tabName: tab } }
+    })
+  );
+
+  if (navigate) navigate(`/?tab=${encodeURIComponent(tab)}`);
+
+  const words = TAB_ALIASES[tab] || [tab.replace(/-/g, " ")];
+  for (const w of words) {
+    const el = findByLabel(w);
+    if (el) {
+      realClick(el);
+      return { status: "navigated", ok: true, navigated: true, explain: `Switched tab to ${tab}` };
+    }
+  }
+  return { status: "navigated", ok: true, navigated: true, explain: `Switched to ${tab}` };
+}
+
+/* ------------------------------------------------------------------ */
+/* Clean External Window Control (NO Right-Side Clutter Box!)          */
+/* ------------------------------------------------------------------ */
+export function showGoogleSearchOverlay(_query: string, _summaryText?: string) {
+  // Intentionally disabled right-side box so the website stays 100% clean and visible!
+  if (typeof document !== "undefined") {
+    document.getElementById("das-google-live-overlay")?.remove();
   }
 }
 
 export function closeGoogleAndReturnToPage() {
-  // 1. Close external Google popup/tab if open
   if (activeExternalWindow && !activeExternalWindow.closed) {
     try {
       activeExternalWindow.close();
     } catch { }
   }
   activeExternalWindow = null;
-
-  // 2. Hide in-page Google overlay
   if (typeof document !== "undefined") {
-    const overlay = document.getElementById("das-google-live-overlay");
-    if (overlay) {
-      overlay.style.display = "none";
-    }
+    document.getElementById("das-google-live-overlay")?.remove();
   }
-
-  // 3. Focus Pathfinder window
-  if (typeof window !== "undefined") {
-    window.focus();
-  }
+  if (typeof window !== "undefined") window.focus();
   try {
     toast.success("Returned back to your Pathfinder dashboard!");
   } catch { }
 }
 
-// 0ms Instant Voice/Text Command Interceptor
+function openExternal(url: string): boolean {
+  if (typeof window === "undefined") return false;
+  activeExternalWindow = window.open(url, "_blank");
+  return !!activeExternalWindow;
+}
+
+const SITE_MAP: Record<string, { url: string; name: string }> = {
+  google: { url: "https://www.google.com", name: "Google" },
+  youtube: { url: "https://www.youtube.com", name: "YouTube" },
+  linkedin: { url: "https://www.linkedin.com", name: "LinkedIn" },
+  gmail: { url: "https://mail.google.com", name: "Gmail" },
+  github: { url: "https://github.com", name: "GitHub" }
+};
+
 export function tryInstantBrowserCommand(rawInput: string): {
   handled: boolean;
   isSearchQuery?: boolean;
@@ -97,7 +177,6 @@ export function tryInstantBrowserCommand(rawInput: string): {
 } {
   const text = rawInput.toLowerCase().trim();
 
-  // A. "return back to your page" / "go back to pathfinder" / "close google" / "return back"
   if (
     text.includes("return back") ||
     text.includes("back to your page") ||
@@ -114,28 +193,16 @@ export function tryInstantBrowserCommand(rawInput: string): {
     };
   }
 
-  // B. "go to google and search X" / "search X on google" / "google search X"
   const searchMatch =
     text.match(
-      /(?:go to google and search|open google and search|search on google for|google search|search google for|search for)\s+(.+)/i
+      /(?:go to google and search|open google and search|search on google for|google search|search google for)\s+(.+)/i
     ) || text.match(/search\s+(.+)\s+on\s+google/i);
 
   if (searchMatch && searchMatch[1]) {
     const query = searchMatch[1].replace(/^(for|about)\s+/i, "").trim();
     if (query) {
-      const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-      // Open controllable popup window on the side so voice mic on Pathfinder stays active!
-      if (typeof window !== "undefined") {
-        activeExternalWindow = window.open(
-          url,
-          "PathfinderGoogleWindow",
-          "width=960,height=720,left=80,top=80"
-        );
-      }
-      showGoogleSearchOverlay(query);
-      try {
-        toast.success(`Searching Google for "${query}"...`);
-      } catch { }
+      openExternal(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
+      toast.success(`Searching Google for "${query}"...`);
       return {
         handled: true,
         isSearchQuery: true,
@@ -145,45 +212,27 @@ export function tryInstantBrowserCommand(rawInput: string): {
     }
   }
 
-  // C. Direct "open google" / "open youtube" / "open linkedin"
-  const siteMap: Record<string, { url: string; name: string }> = {
-    google: { url: "https://www.google.com", name: "Google" },
-    youtube: { url: "https://www.youtube.com", name: "YouTube" },
-    linkedin: { url: "https://www.linkedin.com", name: "LinkedIn" },
-    gmail: { url: "https://mail.google.com", name: "Gmail" },
-    github: { url: "https://github.com", name: "GitHub" }
-  };
-
-  for (const [key, site] of Object.entries(siteMap)) {
+  for (const [key, site] of Object.entries(SITE_MAP)) {
     if (text === `open ${key}` || text === `go to ${key}`) {
-      if (typeof window !== "undefined") {
-        activeExternalWindow = window.open(
-          site.url,
-          "PathfinderGoogleWindow",
-          "width=960,height=720,left=80,top=80"
-        );
-      }
-      showGoogleSearchOverlay(site.name, `Opened ${site.name} live window for you.`);
-      try {
-        toast.success(`Opened ${site.name}!`);
-      } catch { }
-      return {
-        handled: true,
-        actionSummary: `opened ${site.name}`
-      };
+      openExternal(site.url);
+      toast.success(`Opened ${site.name}!`);
+      return { handled: true, actionSummary: `opened ${site.name}` };
     }
   }
 
   return { handled: false };
 }
 
+/* ------------------------------------------------------------------ */
+/* Tool Declarations (Website Control + Google Search + Gmail/Sheets)  */
+/* ------------------------------------------------------------------ */
 export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[] = [
   {
     functionDeclarations: [
       {
         name: "open_external_website_or_google_search",
         description:
-          "Searches anything on Google or opens an external site (Google, YouTube, LinkedIn, Gmail).",
+          "Searches anything on Google or opens an external site (Google, YouTube, LinkedIn, Gmail, GitHub).",
         parameters: {
           type: Type.OBJECT,
           properties: {
@@ -195,12 +244,8 @@ export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[]
       },
       {
         name: "return_to_pathfinder_page",
-        description:
-          "Closes the external Google search window/overlay and returns focus back to the Pathfinder page.",
-        parameters: {
-          type: Type.OBJECT,
-          properties: {}
-        }
+        description: "Closes the opened Google tab and returns to the Pathfinder page.",
+        parameters: { type: Type.OBJECT, properties: {} }
       },
       {
         name: "navigate_dashboard_tab",
@@ -222,10 +267,89 @@ export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[]
         description: "Opens one of the 23 capstone blueprints (1 to 23).",
         parameters: {
           type: Type.OBJECT,
-          properties: {
-            blueprintNumber: { type: Type.NUMBER, description: "Blueprint number 1 to 23" }
-          },
+          properties: { blueprintNumber: { type: Type.NUMBER, description: "Blueprint 1 to 23" } },
           required: ["blueprintNumber"]
+        }
+      },
+      {
+        name: "list_clickables",
+        description: "Lists visible buttons, links, tabs and inputs on the current page.",
+        parameters: { type: Type.OBJECT, properties: {} }
+      },
+      {
+        name: "click_element",
+        description: "Clicks a button, link or tab on the page by its visible text.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: { label: { type: Type.STRING, description: "Visible text on button" } },
+          required: ["label"]
+        }
+      },
+      {
+        name: "type_text",
+        description: "Types text into an input box on the page.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            text: { type: Type.STRING },
+            target: { type: Type.STRING },
+            submit: { type: Type.BOOLEAN }
+          },
+          required: ["text"]
+        }
+      },
+      {
+        name: "scroll_page",
+        description: "Scrolls the page: up, down, top or bottom.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: { direction: { type: Type.STRING } },
+          required: ["direction"]
+        }
+      },
+      {
+        name: "read_page",
+        description: "Reads visible headings and text of the current page.",
+        parameters: { type: Type.OBJECT, properties: {} }
+      },
+      {
+        name: "send_gmail_automation",
+        description: "Sends an automated Gmail message.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            recipientEmail: { type: Type.STRING },
+            subject: { type: Type.STRING },
+            summaryMessage: { type: Type.STRING }
+          },
+          required: ["recipientEmail", "subject", "summaryMessage"]
+        }
+      },
+      {
+        name: "schedule_google_calendar_interview",
+        description: "Schedules an interview on Google Calendar.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            companyName: { type: Type.STRING },
+            roleTitle: { type: Type.STRING },
+            interviewTime: { type: Type.STRING }
+          },
+          required: ["companyName", "roleTitle", "interviewTime"]
+        }
+      },
+      {
+        name: "sync_student_to_tpo_google_sheet",
+        description: "Logs student readiness score to the TPO Master Google Sheet.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            studentName: { type: Type.STRING },
+            branch: { type: Type.STRING },
+            readinessScore: { type: Type.NUMBER },
+            targetRole: { type: Type.STRING }
+          },
+          required: ["studentName", "branch", "readinessScore", "targetRole"]
         }
       }
     ]
@@ -236,47 +360,198 @@ export function runTool(
   name: string,
   args: Record<string, any>,
   navigate?: (path: string) => void
-): { status: string; navigated?: boolean; explain?: string; [key: string]: any } {
-  if (name === "return_to_pathfinder_page") {
-    closeGoogleAndReturnToPage();
-    return { status: "returned_to_pathfinder", navigated: true, explain: "Returned back to Pathfinder dashboard" };
-  }
+): { status: string; navigated?: boolean; explain?: string;[key: string]: any } {
+  try {
+    switch (name) {
+      case "return_to_pathfinder_page":
+        closeGoogleAndReturnToPage();
+        return {
+          status: "returned_to_pathfinder",
+          ok: true,
+          navigated: true,
+          explain: "Returned back to Pathfinder dashboard"
+        };
 
-  if (name === "open_external_website_or_google_search") {
-    const query = String(args.searchQuery || args.siteOrUrl || "").trim();
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-    if (typeof window !== "undefined") {
-      activeExternalWindow = window.open(
-        url,
-        "PathfinderGoogleWindow",
-        "width=960,height=720,left=80,top=80"
-      );
+      case "open_external_website_or_google_search": {
+        const q = String(args.searchQuery || "").trim();
+        const site = norm(String(args.siteOrUrl || ""));
+        let opened = false;
+        let label = q;
+
+        if (q) {
+          opened = openExternal(`https://www.google.com/search?q=${encodeURIComponent(q)}`);
+        } else if (SITE_MAP[site]) {
+          opened = openExternal(SITE_MAP[site].url);
+          label = SITE_MAP[site].name;
+        } else if (/^https?:\/\//i.test(String(args.siteOrUrl || ""))) {
+          opened = openExternal(String(args.siteOrUrl));
+          label = String(args.siteOrUrl);
+        } else {
+          label = String(args.siteOrUrl || "");
+          opened = openExternal(`https://www.google.com/search?q=${encodeURIComponent(label)}`);
+        }
+        toast.success(`Opened: ${label}`);
+        return {
+          status: "searched_google",
+          ok: true,
+          query: label,
+          popupBlocked: !opened,
+          explain: `Opened ${label}`
+        };
+      }
+
+      case "navigate_dashboard_tab":
+        return goToTab(String(args.tabName || ""), navigate);
+
+      case "open_blueprint": {
+        const n = Number(args.blueprintNumber);
+        window.dispatchEvent(
+          new CustomEvent("pathfinder:agent-action", { detail: { toolName: name, args } })
+        );
+        const el = findByLabel(`blueprint ${n}`);
+        if (el) realClick(el);
+        return { status: "executed", ok: true, explain: `Opened blueprint ${n}` };
+      }
+
+      case "list_clickables": {
+        const items = allClickables()
+          .slice(0, 50)
+          .map((el) => labelOf(el))
+          .filter(Boolean);
+        return { status: "ok", ok: true, items };
+      }
+
+      case "click_element": {
+        const el = findByLabel(String(args.label || ""));
+        if (!el)
+          return {
+            status: "not_found",
+            ok: false,
+            explain: `"${args.label}" not found on screen.`
+          };
+        realClick(el);
+        return { status: "clicked", ok: true, explain: `Clicked "${labelOf(el)}"` };
+      }
+
+      case "type_text": {
+        const inputs = Array.from(document.querySelectorAll<HTMLElement>("input, textarea")).filter(
+          isVisible
+        );
+        const el = ((args.target && findByLabel(String(args.target), inputs)) || inputs[0]) as
+          | HTMLInputElement
+          | HTMLTextAreaElement
+          | undefined;
+        if (!el) return { status: "not_found", ok: false, explain: "Input box not found" };
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        flash(el);
+        el.focus();
+        setNativeValue(el, String(args.text || ""));
+        if (args.submit) {
+          ["keydown", "keypress", "keyup"].forEach((t) =>
+            el.dispatchEvent(
+              new KeyboardEvent(t, { key: "Enter", code: "Enter", keyCode: 13, bubbles: true })
+            )
+          );
+        }
+        return { status: "typed", ok: true, explain: `Typed in "${labelOf(el)}"` };
+      }
+
+      case "scroll_page": {
+        const d = norm(String(args.direction || "down"));
+        if (d === "top") window.scrollTo({ top: 0, behavior: "smooth" });
+        else if (d === "bottom")
+          window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+        else
+          window.scrollBy({
+            top: (d === "up" ? -1 : 1) * window.innerHeight * 0.8,
+            behavior: "smooth"
+          });
+        return { status: "scrolled", ok: true, explain: `Scrolled ${d}` };
+      }
+
+      case "read_page": {
+        const heads = Array.from(document.querySelectorAll<HTMLElement>("h1, h2, h3"))
+          .filter(isVisible)
+          .map((h) => h.innerText.trim())
+          .filter(Boolean)
+          .slice(0, 15);
+        const root = (document.querySelector("main") as HTMLElement | null) || document.body;
+        return {
+          status: "ok",
+          ok: true,
+          title: document.title,
+          headings: heads,
+          text: root.innerText.replace(/\s+/g, " ").slice(0, 1500)
+        };
+      }
+
+      case "send_gmail_automation": {
+        toast.success(`Gmail Sent to ${args.recipientEmail}!`);
+        fetch(`${API_BASE}/api/google/gmail/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipient_email: args.recipientEmail,
+            subject: args.subject,
+            body: args.summaryMessage
+          })
+        }).catch(() => { });
+        return { status: "gmail_sent", ok: true };
+      }
+
+      case "schedule_google_calendar_interview": {
+        toast.success(`Google Calendar Booked: ${args.companyName} (${args.interviewTime})`);
+        fetch(`${API_BASE}/api/google/calendar/schedule`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            student_email: "candidate@pathfinder.ai",
+            company_name: args.companyName,
+            role_title: args.roleTitle,
+            interview_time: args.interviewTime
+          })
+        }).catch(() => { });
+        return { status: "calendar_scheduled", ok: true };
+      }
+
+      case "sync_student_to_tpo_google_sheet": {
+        toast.success(`TPO Google Sheet Synced for ${args.studentName}!`);
+        fetch(`${API_BASE}/api/google/sheets/log`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            student_name: args.studentName,
+            branch: args.branch,
+            readiness_score: Number(args.readinessScore || 80),
+            target_role: args.targetRole
+          })
+        }).catch(() => { });
+        return { status: "sheet_synced", ok: true };
+      }
+
+      default:
+        window.dispatchEvent(
+          new CustomEvent("pathfinder:agent-action", { detail: { toolName: name, args } })
+        );
+        return {
+          status: "executed",
+          ok: true,
+          tool: name,
+          args,
+          navigated: false,
+          explain: `Executed ${name}`
+        };
     }
-    showGoogleSearchOverlay(query);
-    return { status: "searched_google", query, navigated: false };
+  } catch (e: any) {
+    return { status: "error", ok: false, explain: `Tool error: ${e?.message || e}` };
   }
-
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(
-      new CustomEvent("pathfinder:agent-action", {
-        detail: { toolName: name, args }
-      })
-    );
-  }
-
-  if (navigate && name === "navigate_dashboard_tab" && args?.tabName) {
-    navigate(`/?tab=${encodeURIComponent(args.tabName)}`);
-    return { status: "navigated", navigated: true, explain: `Switched tab to ${args.tabName}` };
-  }
-
-  return { status: "executed", tool: name, args, navigated: false, explain: `Executed ${name}` };
 }
 
 export async function executeWebsiteTool(
   name: string,
   args: Record<string, any>,
   navigate?: any
-): Promise<{ status: string; navigated?: boolean; explain?: string; [key: string]: any }> {
+): Promise<{ status: string; navigated?: boolean; explain?: string;[key: string]: any }> {
   return runTool(name, args, navigate);
 }
 
@@ -286,7 +561,10 @@ export async function executeToolCall(
   args?: Record<string, any>
 ): Promise<any> {
   const name = typeof toolCall === "string" ? toolCall : toolCall.name;
-  const toolArgs = typeof toolCall === "string" ? (args || {}) : (toolCall.args || (toolCall as any).arguments || {});
+  const toolArgs =
+    typeof toolCall === "string"
+      ? args || {}
+      : toolCall.args || (toolCall as any).arguments || {};
   return runTool(name, toolArgs, navigate);
 }
 

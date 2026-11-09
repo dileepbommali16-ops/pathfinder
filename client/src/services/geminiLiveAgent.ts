@@ -58,8 +58,8 @@ export async function startPathfinderAgent(onAudioChunk, onUiAction) {
               typeof onUiAction === "function"
                 ? await onUiAction(call.name, call.args)
                 : runTool(call.name, call.args || {}, (to) => {
-                    window.location.hash = to;
-                  });
+                  window.location.hash = to;
+                });
 
             await session.sendToolResponse({
               functionResponses: [
