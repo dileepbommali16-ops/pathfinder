@@ -6,10 +6,8 @@ import { toast } from "sonner";
 export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking" | "interrupted";
 
 export interface ToolCallPayload {
-  id?: string;
   name: string;
-  args?: Record<string, any>;
-  arguments?: Record<string, any>;
+  args: Record<string, any>;
 }
 
 let activeExternalWindow: Window | null = null;
@@ -159,14 +157,13 @@ export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[]
   }
 ];
 
-export function runTool(
+export async function executeWebsiteTool(
   name: string,
-  args: Record<string, any>,
-  navigate?: (path: string) => void
-): { status: string; navigated?: boolean; explain?: string; [key: string]: any } {
+  args: Record<string, any>
+): Promise<Record<string, any>> {
   if (name === "return_to_pathfinder_page") {
     closeGoogleAndReturnToPage();
-    return { status: "returned_to_pathfinder", navigated: true, explain: "Returned back to Pathfinder page" };
+    return { status: "returned_to_pathfinder" };
   }
 
   if (name === "open_external_website_or_google_search") {
@@ -174,7 +171,7 @@ export function runTool(
     const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
     activeExternalWindow = window.open(url, "_blank");
     toast.success(`Opened Google Search: ${query}`);
-    return { status: "searched_google", query, navigated: false };
+    return { status: "searched_google", query };
   }
 
   window.dispatchEvent(
@@ -183,31 +180,11 @@ export function runTool(
     })
   );
 
-  if (navigate && name === "navigate_dashboard_tab" && args?.tabName) {
-    navigate(`/?tab=${encodeURIComponent(args.tabName)}`);
-    return { status: "navigated", navigated: true, explain: `Switched tab to ${args.tabName}` };
-  }
-
-  return { status: "executed", tool: name, args, navigated: false, explain: `Executed ${name}` };
+  return { status: "executed", tool: name, args };
 }
 
-export async function executeWebsiteTool(
-  name: string,
-  args: Record<string, any>,
-  navigate?: any
-): Promise<{ status: string; navigated?: boolean; explain?: string; [key: string]: any }> {
-  return runTool(name, args, navigate);
-}
-
-export async function executeToolCall(
-  toolCall: ToolCallPayload | string,
-  navigate?: any,
-  args?: Record<string, any>
-): Promise<any> {
-  const name = typeof toolCall === "string" ? toolCall : toolCall.name;
-  const toolArgs = typeof toolCall === "string" ? (args || {}) : (toolCall.args || toolCall.arguments || {});
-  return runTool(name, toolArgs, navigate);
-}
+export const runTool = executeWebsiteTool;
+export const executeToolCall = executeWebsiteTool;
 
 export function snapshot(): Record<string, any> {
   return {

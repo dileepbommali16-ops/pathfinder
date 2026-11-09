@@ -3,8 +3,7 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import {
   PATHFINDER_TOOLS,
   executeWebsiteTool,
-  tryInstantBrowserCommand,
-  VoicePipelineStage
+  tryInstantBrowserCommand
 } from "./toolRunner";
 
 export interface GeminiLiveCallbacks {
@@ -13,7 +12,7 @@ export interface GeminiLiveCallbacks {
   onTranscript?: (text: string, role: "user" | "agent") => void;
   onToken?: (fullText: string) => void;
   onToolCall?: (name: string, args: Record<string, any>) => void;
-  onStageChange?: (stage: VoicePipelineStage) => void;
+  onStageChange?: (stage: string) => void;
   onStatusChange?: (status: "connecting" | "connected" | "disconnected" | "error") => void;
 }
 
@@ -266,13 +265,13 @@ export class PathfinderGeminiLive {
       this.initAudioContext();
 
       this.session = await this.ai.live.connect({
-        model: import.meta.env.VITE_GEMINI_LIVE_MODEL || "gemini-3.8-live",
+        model: "gemini-2.0-flash-exp",
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: {
-                voiceName: import.meta.env.VITE_GEMINI_VOICE_NAME || "Puck"
+                voiceName: "Puck" // STRICTLY LOCKED TO PUCK (MALE VOICE)
               }
             }
           },
@@ -366,7 +365,7 @@ export class PathfinderGeminiLive {
       callbacks?: GeminiLiveCallbacks;
       onToken?: (fullText: string) => void;
       onToolCall?: (name: string, args: Record<string, any>) => void;
-      onStageChange?: (stage: VoicePipelineStage) => void;
+      onStageChange?: (stage: string) => void;
     }
   ): Promise<string> {
     const { honorific } = resolveUserHonorific();
@@ -386,32 +385,24 @@ export class PathfinderGeminiLive {
           ? `The user ${honorific} searched Google for "${instant.searchQuery}". Give a natural, friendly 2-sentence overview about "${instant.searchQuery}".`
           : trimmed;
 
-        let response: any = null;
-        const configuredModel = import.meta.env.VITE_GEMINI_MODEL || "gemini-3.5-flash";
-        const modelsToTry = [configuredModel, "gemini-3.8-live", "gemini-3.1-flash-lite", "gemini-flash-latest"];
-        for (const m of modelsToTry) {
-          try {
-            response = await this.ai.models.generateContent({
-              model: m,
-              contents: prompt,
-              config: {
-                systemInstruction: getMasterPrompt(),
-                tools: instant.isSearchQuery ? [{ googleSearch: {} }] : PATHFINDER_TOOLS,
-                temperature: 0.4,
-                maxOutputTokens: 160
-              }
-            });
-            if (response?.text) break;
-          } catch { }
-        }
+        const response = await this.ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: prompt,
+          config: {
+            systemInstruction: getMasterPrompt(),
+            tools: instant.isSearchQuery ? [{ googleSearch: {} }] : PATHFINDER_TOOLS,
+            temperature: 0.4,
+            maxOutputTokens: 160
+          }
+        });
 
-        if (!instant.isSearchQuery && response?.functionCalls?.length) {
+        if (!instant.isSearchQuery && response.functionCalls?.length) {
           for (const call of response.functionCalls) {
             await executeWebsiteTool(call.name || "", (call.args as Record<string, any>) || {});
           }
         }
 
-        replyText = response?.text?.trim() || `Done ${honorific}!`;
+        replyText = response.text?.trim() || `Done ${honorific}!`;
       } catch {
         replyText = `Done ${honorific}!`;
       }
