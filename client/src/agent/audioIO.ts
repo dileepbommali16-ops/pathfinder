@@ -94,10 +94,17 @@ export class Speaker {
   }
 
   /**
-   * Speaks text aloud using the best natural neural voice available on the device,
-   * matching Gemini's 'Puck' / 'Charon' confident male AI persona, and driving 3D avatar lip-sync.
+   * System 1: Exclusively Gemini Live Cloud Puck Voice (24kHz native audio).
+   * System 2 (robotic browser speechSynthesis) is permanently disabled.
    */
   say(raw: string) {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak = () => {};
+      } catch {}
+    }
+
     const beforeDetails = raw.split("|||")[0] || "";
     const text = beforeDetails
       .replace(/<!--[\s\S]*?-->/g, " ")
@@ -107,63 +114,23 @@ export class Speaker {
       .trim();
     if (!text) return;
 
-    const ctx = this.ensureContext();
-    if (ctx && ctx.state === "suspended") {
-      this.pendingGreetingText = text;
-      ctx.resume().catch(() => {});
-    }
+    this.activeSpeaking = true;
+    this.onState?.(true);
+    this.startLipSyncSimulation();
 
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      return;
-    }
-
-    try {
-      window.speechSynthesis.cancel();
-    } catch {}
-
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1.02; // Crisp, confident cadence
-    utter.pitch = 0.96; // Resonant, deep male AI tone (Puck/Charon style)
-
-    // Select the highest quality natural human voice available
-    const voices = window.speechSynthesis.getVoices() || [];
-    const naturalVoice =
-      voices.find(
-        (v) =>
-          (v.name.includes("Natural") || v.name.includes("Neural") || v.name.includes("Google") || v.name.includes("Guy") || v.name.includes("David")) &&
-          v.lang.startsWith("en")
-      ) ||
-      voices.find((v) => v.lang.startsWith("en-US")) ||
-      voices.find((v) => v.lang.startsWith("en")) ||
-      voices[0];
-
-    if (naturalVoice) {
-      utter.voice = naturalVoice;
-    }
-
-    utter.onstart = () => {
-      this.activeSpeaking = true;
-      this.onState?.(true);
-      this.startLipSyncSimulation();
-    };
-
-    utter.onend = () => {
-      this.stopLipSyncSimulation();
-      this.activeSpeaking = false;
-      this.onState?.(false);
-    };
-
-    utter.onerror = () => {
-      this.stopLipSyncSimulation();
-      this.activeSpeaking = false;
-      this.onState?.(false);
-    };
-
-    try {
-      window.speechSynthesis.speak(utter);
-    } catch (e) {
-      console.warn("[audioIO] SpeechSynthesis speak warning:", e);
-    }
+    import("./geminiLive")
+      .then(({ geminiLive }) => {
+        geminiLive.speakText(text).finally(() => {
+          this.stopLipSyncSimulation();
+          this.activeSpeaking = false;
+          this.onState?.(false);
+        });
+      })
+      .catch(() => {
+        this.stopLipSyncSimulation();
+        this.activeSpeaking = false;
+        this.onState?.(false);
+      });
   }
 
   private startLipSyncSimulation() {

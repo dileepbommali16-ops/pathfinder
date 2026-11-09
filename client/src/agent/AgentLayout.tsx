@@ -289,12 +289,11 @@ export default function AgentLayout({
 
     const greeting =
       currentHonorific === "Boss"
-        ? "Hi Boss, what's up! Welcome back to Pathfinder 2.0. All website controls and placement intelligence systems are online. Tell me what you'd like to explore or control today!"
-        : "Hi Sir, welcome to Pathfinder 2.0! I'm DAS, your autonomous AI voice co-pilot. Ask me about any project, readiness score, or tell me which section to open!";
+        ? "Hello Boss, welcome to your dashboard! All website controls and placement intelligence systems are online. Tell me what you'd like to explore or control today!"
+        : "Hello Sir, welcome to Pathfinder! I'm DAS, your autonomous AI voice co-pilot. Ask me about any project, readiness score, or tell me which section to open!";
 
     if (msgsRef.current.length === 0) {
       push({ role: "assistant", content: greeting });
-      speak(greeting);
     }
 
     if (Date.now() >= backendCooldownUntilRef.current) {

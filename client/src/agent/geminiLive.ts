@@ -30,23 +30,41 @@ type MicUi = "off" | "connecting" | "listening" | "speaking" | "thinking";
 /* Boss (Dileep Bommali) vs Sir (Stakeholders / Friends / Guests)      */
 /* ------------------------------------------------------------------ */
 function resolveUserHonorific(): { honorific: "Boss" | "Sir"; isBoss: boolean } {
-  if (typeof window === "undefined") return { honorific: "Sir", isBoss: false };
+  if (typeof window === "undefined") return { honorific: "Boss", isBoss: true };
   try {
-    const mode = localStorage.getItem("das_mode") || "";
-    const role = localStorage.getItem("userRole") || "";
+    const mode = (localStorage.getItem("das_mode") || "").toUpperCase();
+    const role = (localStorage.getItem("userRole") || "").toLowerCase();
     const isOwner = localStorage.getItem("isOwner") === "true";
-    const savedUser = localStorage.getItem("pathfinder_user") || "";
-    if (
-      isOwner ||
-      mode.toUpperCase() === "BOSS" ||
-      role.toLowerCase() === "boss" ||
-      savedUser.toLowerCase().includes("dileep") ||
-      savedUser.toLowerCase().includes("bommali")
-    ) {
-      return { honorific: "Boss", isBoss: true };
+    const savedUser = (localStorage.getItem("pathfinder_user") || "").toLowerCase();
+    const email = (localStorage.getItem("userEmail") || localStorage.getItem("email") || "").toLowerCase();
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // If explicit visitor query param (?mode=sir or ?guest=true)
+    if (urlParams.get("mode") === "sir" || urlParams.get("guest") === "true") {
+      return { honorific: "Sir", isBoss: false };
     }
+
+    // Boss (Dileep Bommali) Detection
+    const isBossMatch =
+      isOwner ||
+      mode === "BOSS" ||
+      role === "boss" ||
+      savedUser.includes("dileep") ||
+      savedUser.includes("bommali") ||
+      email.includes("dileep") ||
+      email.includes("bommali") ||
+      urlParams.get("mode") === "boss" ||
+      urlParams.get("role") === "boss";
+
+    // If a different guest email is explicitly set without Boss flags, treat as Sir
+    const isGuest = !isBossMatch && email.length > 3 && !email.includes("dileep") && mode !== "BOSS";
+    if (isGuest) {
+      return { honorific: "Sir", isBoss: false };
+    }
+
+    return { honorific: "Boss", isBoss: true };
   } catch { }
-  return { honorific: "Sir", isBoss: false };
+  return { honorific: "Boss", isBoss: true };
 }
 
 const LANGUAGE_RULE = `LANGUAGE: Always reply in the SAME language the user speaks (Telugu, Hindi, Tamil, English, or a natural mix like Tenglish/Hinglish). If they mix languages, mix the same way. Speak naturally like a real person, never translate word by word.`;
@@ -288,9 +306,12 @@ export class PathfinderGeminiLive {
       this.updateMicButtonUI("listening");
       this.cb.onStageChange?.("listening");
 
-      const { honorific } = resolveUserHonorific();
+      const { honorific, isBoss } = resolveUserHonorific();
+      const greeting = isBoss
+        ? "Hello Boss, welcome to your dashboard! All website controls and placement intelligence systems are online. Tell me what we should explore or search today!"
+        : "Hello Sir, welcome to Pathfinder! I'm DAS, your autonomous AI voice co-pilot. Tell me what we should explore or search today!";
       this.sendText(
-        `Say "Hi ${honorific}! I'm listening, tell me what we should explore or search today!" in a warm, natural voice.`
+        `Speak this exact greeting aloud naturally in your native Puck voice without adding extra intro: "${greeting}"`
       );
     } catch (e: any) {
       console.error("[DAS] Hands-free start failed:", e);
@@ -530,7 +551,10 @@ export class PathfinderGeminiLive {
 
     // 1. Instant Greeting
     if (/^(hi|hello|hey)\s*(das|pathfinder)?[!?.]*$/i.test(trimmed)) {
-      const greeting = `Hi ${honorific}! I'm listening. Tell me what to search on Google or which page to open!`;
+      const { honorific, isBoss } = resolveUserHonorific();
+      const greeting = isBoss
+        ? "Hello Boss, welcome to your dashboard! Tell me what to explore, which tab to open, or what to search on Google!"
+        : "Hello Sir, welcome to Pathfinder! I'm DAS, your autonomous AI voice co-pilot. Tell me what we should explore or search today!";
       emit(greeting);
       if (shouldSpeak) await this.speakAloud(greeting);
       return greeting;

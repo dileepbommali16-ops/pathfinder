@@ -2,10 +2,8 @@
  * authListener.ts - Boss Auto Switch Engine
  * - Runs on every page load
  * - Auto-detects Boss vs Sir with zero manual buttons
- * - Controls DASFace mood and speaks greeting via ElevenLabs
+ * - Configures DAS mode and mood state
  */
-
-import { speak } from "@/audio/voiceManager";
 
 export const BOSS_EMAILS = [
   "dileepbommali16@gmail.com",
@@ -39,27 +37,11 @@ export function initAuthListener() {
       localStorage.setItem("userRole", "Boss");
       localStorage.setItem("isOwner", "true");
       (window as any).DASFace?.setMood?.("boss");
-
-      const greeted = sessionStorage.getItem("das_auto_greeted");
-      if (!greeted) {
-        sessionStorage.setItem("das_auto_greeted", "true");
-        setTimeout(() => {
-          speak("Welcome back Boss, Dileep. Full systems online.");
-        }, 1200);
-      }
     } else {
       localStorage.setItem("das_mode", "SIR");
       localStorage.setItem("userRole", "Sir");
       localStorage.setItem("isOwner", "false");
       (window as any).DASFace?.setMood?.("sir");
-
-      const greeted = sessionStorage.getItem("das_auto_greeted");
-      if (!greeted) {
-        sessionStorage.setItem("das_auto_greeted", "true");
-        setTimeout(() => {
-          speak("Hello Sir, welcome to Pathfinder.");
-        }, 1200);
-      }
     }
   };
 
