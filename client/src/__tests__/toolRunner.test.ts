@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { tryInstantBrowserCommand, runTool } from "@/agent/toolRunner";
+import { tryInstantBrowserCommand, runTool } from "../agent/toolRunner";
 
 describe("toolRunner & instant browser commands", () => {
   it("should recognize return back to page commands", () => {
