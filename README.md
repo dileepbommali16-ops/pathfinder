@@ -161,161 +161,141 @@ flowchart LR
 
 ---
 
-## 🏗️ System Architecture & Unified Gemini Live Engine
+## 🏗️ Full-Stack System Architecture & Gemini 3.8 Live Engine
 
-Pathfinder 2.0 operates on a **Unified Single-API Real-Time Architecture** powered by the **Google GenAI SDK (`@google/genai` v3.0.0)**, combining **AI Brain (LLM + RAG + Function Calling)** and **24kHz Native Audio + 60 FPS 3D Avatar Lip-Sync** over a single bidirectional WebSocket session alongside a **FastAPI Machine Learning & Google Workspace Automation Backend**.
+Pathfinder 2.0 operates on a **modern unified full-stack architecture** combining:
+1. **Frontend Edge Client (React 18 + Three.js + Web Audio API)** deployed on **Vercel**.
+2. **Google Gemini 3.8 Live (`gemini-3.8-live`) Engine** featuring **Puck** neural voice with bidirectional WebSockets, native audio streaming, and 60 FPS 3D Avatar lip-sync.
+3. **Machine Learning & REST Backend (FastAPI + Scikit-Learn)** deployed on **Render**, predicting placement odds against 972 verified student records.
+4. **Cloud Automation Pipeline (n8n Cloud)** syncing student placement logs to Google Sheets and scheduling viva rounds on Google Calendar.
+5. **Semantic RAG Engine (Supabase pgvector)** retrieving 23 production blueprints and cohort knowledge.
 
 ```mermaid
 flowchart TB
-    subgraph Client["🌐 Frontend Client · React 19 + TypeScript + Three.js (Vercel Edge)"]
-        Mic["🎙️ 16kHz PCM Mic Input<br/>& Docked Chat Console"]
-        GeminiLive["⚡ Unified Gemini Live WebSocket<br/>(geminiLive.ts / @google/genai v3.0.0)"]
-        AudioEngine["🔊 24kHz Native Audio & FFT Analyser<br/>(audioIO.ts / audioStreamer.js)"]
+    subgraph Client["🌐 Frontend Client · React 18 + Three.js + TypeScript (Vercel Edge)"]
+        Mic["🎙️ 16kHz PCM Mic Input<br/>& Hands-Free Voice Controller"]
+        GeminiLive["⚡ Google Gemini 3.8 Live WebSocket<br/>(geminiLive.ts · gemini-3.8-live)"]
+        AudioEngine["🔊 24kHz Native Audio & FFT Analyser<br/>(Puck Voice · audioIO.ts)"]
         Avatar3D["🤖 DAS 3D Cybernetic Avatar<br/>(Avatar3D.tsx · 60 FPS Jaw & Viseme Lip-Sync)"]
-        ToolRunner["🛠️ Autonomous Website Tool Runner<br/>(toolRunner.ts · PATHFINDER_TOOLS)"]
+        ToolRunner["🛠️ Autonomous Browser Tool Runner<br/>(Instant Return & Google Search Overlay)"]
         DOM["🖥️ Pathfinder UI & Custom Event Bus<br/>(Home.tsx · pathfinder:agent-action)"]
-        ActionCenter["📅 Google Workspace & TPO Card<br/>(AIActionCenter.tsx)"]
+        ActionCenter["📅 Action Center & Automation Cards<br/>(AIActionCenter.tsx)"]
     end
 
-    subgraph CloudAI["🧠 Google Gemini Live 2.5 Native Audio Cloud"]
-        GeminiModel["Gemini 2.5 Flash Native Audio<br/>(Modality.AUDIO + Function Calling)"]
+    subgraph CloudAI["🧠 Google Gemini AI Cloud"]
+        GeminiLiveModel["Gemini 3.8 Live (gemini-3.8-live)<br/>Voice: Puck · Native Audio & Async Function Calling"]
+        GeminiReasoning["Gemini 3.5 Flash / 3.1 Flash Lite<br/>(Placement Reasoning & Google Search Grounding)"]
     end
 
     subgraph VectorDB["🗄️ Supabase PostgreSQL + pgvector"]
-        RAG["Semantic RAG Engine (careerAgent.js)<br/>384-D Embeddings · match_career_docs RPC"]
+        RAG["Semantic Vector RAG Engine<br/>384-D Embeddings · match_career_docs RPC"]
     end
 
     subgraph Backend["⚙️ FastAPI Backend · Python 3.11 (Render Cloud)"]
         FastAPI["FastAPI Gateway (backend/api.py)"]
         MLEngine["📊 Random Forest ML Engine (ml_engine.py)<br/>88% Precision · 972 Verified Campus Records"]
-        GoogleSync["🔗 Google Workspace & TPO Router<br/>(google_sync_api.py & google_automation.py)"]
+        GoogleSync["🔗 Google Sync & Webhook Router<br/>(backend/google_sync_api.py)"]
     end
 
-    subgraph GoogleCloud["☁️ Google Workspace APIs"]
-        GCal["📆 Google Calendar API v3<br/>(Mock Viva & Drive Reminders)"]
-        GSheets["📊 Google Sheets API v4<br/>(TPO Placement Readiness Ledger)"]
+    subgraph Automation["⚡ n8n Cloud Automation Pipeline"]
+        N8N["n8n Webhook Workflow (dileepdas.app.n8n.cloud)<br/>/webhook/pathfinder-google-sync"]
+        GSheets["📊 Google Sheets<br/>(TPO Placement Ledger)"]
+        GCal["📆 Google Calendar<br/>(Viva & Interview Reminders)"]
     end
 
-    Mic -->|16kHz PCM Audio / Text| GeminiLive
-    GeminiLive <-->|Bidirectional WebSocket| GeminiModel
-    GeminiLive -->|24kHz PCM Audio Stream| AudioEngine
+    Mic -->|16kHz PCM Audio / Voice Turn| GeminiLive
+    GeminiLive <-->|Bidirectional WebSocket| GeminiLiveModel
+    GeminiLive -->|24kHz Native Audio Stream| AudioEngine
     AudioEngine -->|Real-Time RMS Amplitude| Avatar3D
-    GeminiLive -->|Tool Call JSON| ToolRunner
+    GeminiLive -->|Tool Call Execution| ToolRunner
     ToolRunner -->|Dispatches CustomEvent| DOM
-    GeminiLive <-->|Context Grounding| RAG
+    GeminiLive <-->|Context Grounding & Search| GeminiReasoning
     DOM <-->|REST /predict & /cohort| FastAPI
     FastAPI --> MLEngine
+    DOM <-->|Context Retrieval| RAG
     ActionCenter -->|POST /api/google/sheets/log<br/>POST /api/google/calendar/schedule| GoogleSync
-    GoogleSync --> GCal
-    GoogleSync --> GSheets
+    GoogleSync -->|Async Non-Blocking Trigger| N8N
+    N8N --> GSheets
+    N8N --> GCal
 ```
 
 ---
 
 ### 🧩 Core Architectural Subsystems
 
-#### 1. ⚡ Unified Gemini Live 2.5 Native Audio Engine (`client/src/agent/geminiLive.ts` & `client/src/services/geminiLiveAgent.js`)
-- **Single-Connection Architecture**: Replaces multi-provider TTS/STT chains with a single persistent `GoogleGenAI` Live WebSocket session (`gemini-2.5-flash-native-audio-latest` / `gemini-2.0-flash-exp`) configured with `responseModalities: [Modality.AUDIO]`.
-- **Multilingual Fluidity**: Understands and responds natively in **Telugu, Tenglish, Hindi, and English** with natural voice inflection (`Puck` / `Aoede` prebuilt voices) and instant barge-in interruption handling.
-- **Zero-Latency Audio Pipeline**: Captures 16kHz mono PCM microphone chunks from the browser and streams 24kHz native PCM audio chunks back into the Web Audio API queue (`audioIO.ts` & `audioStreamer.js`).
+#### 1. ⚡ Gemini 3.8 Live Engine with Puck Voice (`client/src/agent/geminiLive.ts`)
+- **Direct Live WebSocket**: Connects to `gemini-3.8-live` with `responseModalities: [Modality.AUDIO]` and `prebuiltVoiceConfig: { voiceName: "Puck" }` for ultra-low latency, fluid dialogue.
+- **Hands-Free Ambient Voice**: Floating one-click mic button (`das-handsfree-voice-btn`) enables hands-free spoken interaction without typing.
+- **Instant Browser Control**: Zero-latency navigation commands (e.g., *"return back to your page"*, *"open blueprints"*, *"search NRI Institute of Technology"*), featuring interactive in-page Google Search grounding overlays.
 
-#### 2. 🛠️ Autonomous Website Control & Tool Runner (`client/src/agent/toolRunner.ts` & `client/src/services/pathfinderTools.js`)
-When a student speaks or types a command, Gemini invokes `PATHFINDER_TOOLS` and `executeWebsiteTool()` dispatches a `window.dispatchEvent(new CustomEvent("pathfinder:agent-action"))` event to control the live UI hands-free:
-- `navigate_dashboard_tab`: Switches active modules (`overview`, `projects`, `defense`, `interview`, `resume`, `roadmap`, `skill-gap`, `what-if`, `cohort`).
-- `open_blueprint`: Opens any of the **23 flagship production blueprints** (`1` to `23`) and scrolls smoothly to its architecture specification.
+#### 2. 🛠️ Autonomous Website Control & Tool Runner (`client/src/agent/toolRunner.ts`)
+When a student speaks or triggers an action, Gemini invokes `PATHFINDER_TOOLS` and `executeWebsiteTool()` dispatches custom window events to drive the UI:
+- `navigate_dashboard_tab`: Seamlessly switches active modules (`overview`, `projects`, `defense`, `interview`, `resume`, `roadmap`, `skill-gap`, `what-if`, `cohort`).
+- `open_blueprint`: Spotlights any of the **23 flagship production blueprints** (`1` to `23`) with glowing pulse animation.
 - `launch_mock_interview`: Starts a live technical viva session for a target role (`SDE-1`, `AI Engineer`, `Data Analyst`, `Full-Stack Developer`).
 - `open_one_page_resume`: Opens the 1-Page Google X-Y-Z ATS Resume Studio.
 - `update_student_profile`: Live-updates CGPA, branch, LeetCode count, or target company tier and recalculates ML placement probability.
-- `scroll_and_highlight`: Smoothly scrolls to any section or card on screen and highlights it with a neon cyan glow (`#00f5d4`).
-- `click_button_on_screen`: Locates and clicks any interactive button by its visible label text.
-- `update_readiness_score`: Adjusts the student's live placement readiness score after answering a technical viva question.
-- `sync_google_workspace`: Triggers Google Calendar mock interview scheduling and logs the student's readiness score to the TPO Google Sheet.
+- `scroll_and_highlight`: Smoothly scrolls to any section on screen and highlights it with a neon cyan glow (`#00f5d4`).
+- `sync_google_workspace`: Triggers non-blocking automation via n8n Cloud to log student readiness scores to Google Sheets and schedule mock interviews in Google Calendar.
 
-#### 3. 🤖 3D Cybernetic Avatar & Real-Time Lip-Sync (`client/src/agent/Avatar3D.tsx` & `client/src/services/Avatar.jsx`)
-- **WebGL Cybernetic Mesh (`avatar.glb`)**: Rendered at 60 FPS with Three.js and `@react-three/fiber`, featuring ruby-red glowing eyes (`#ff0033`) and cursor-tracking head rotation.
-- **Syllable-Driven Jaw Lip-Sync**: Real-time FFT / RMS audio amplitude from the Web Audio `AnalyserNode` drives the lower jaw bone (`Object_5`), chin plate (`Object_60`), and `jawOpen` / `mouthOpen` morph targets in lockstep with Gemini's voice stream.
+#### 3. 🤖 3D Cybernetic Avatar & 60 FPS Lip-Sync (`client/src/agent/Avatar3D.tsx`)
+- **WebGL Cybernetic Mesh (`avatar.glb`)**: Rendered at 60 FPS with Three.js, featuring ruby-red glowing eyes (`#ff0033`) and cursor-tracking head rotation.
+- **Syllable-Driven Jaw Lip-Sync**: Real-time FFT / RMS audio amplitude from the Web Audio `AnalyserNode` drives the lower jaw bone (`Object_5`), chin plate (`Object_60`), and `jawOpen` / `mouthOpen` morph targets in lockstep with Puck's voice.
 
-#### 4. 📅 Google Workspace & TPO Automation (`backend/google_sync_api.py`, `backend/google_automation.py`, `AIActionCenter.tsx`)
-- **Google Calendar Automation (`POST /api/google/calendar/schedule`)**: Schedules 30-minute technical viva and placement drive sessions on Google Calendar with automated email and popup reminders.
-- **TPO Google Sheets Ledger (`POST /api/google/sheets/log`)**: Appends verified student readiness rows (`Student Name`, `Branch`, `Readiness Score`, `Target Role`, `Status`) to the institutional TPO Placement Sheet (`Sheet1!A:E`), with automatic instant simulation fallback when OAuth credentials are not attached.
+#### 4. ⚡ n8n Cloud Automation Pipeline (`backend/google_sync_api.py` & `docs/n8n_pathfinder_workflow.json`)
+- **Production Webhook**: Hosted and active at `https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync`.
+- **Google Sheets Ledger**: Automatically appends student placement readiness scores (`Student Name`, `Branch`, `Score`, `Target Role`, `Status`) to institutional TPO ledgers.
+- **Google Calendar Automation**: Instantly schedules technical viva sessions on Google Calendar with automated notifications.
+- **Asynchronous Non-Blocking Execution**: Handled in FastAPI using `httpx.AsyncClient` with instant fallback so user UI is never delayed.
 
-#### 5. 📊 Predictive ML Engine & Semantic Vector RAG (`backend/ml_engine.py` & `client/src/services/careerAgent.js`)
-- **Random Forest Classifier (`ml_engine.py`)**: Trained on **972 verified campus recruitment records** to compute placement probability, tier eligibility, and salary expectations.
-- **Supabase `pgvector` Semantic Search (`careerAgent.js`)**: Generates 384-dimensional embeddings (`Xenova/all-MiniLM-L6-v2`) to retrieve grounded placement cutoffs and blueprint architectures via the `match_career_docs` RPC.
-
----
-
-## 📂 Complete Project Directory Structure
-
-```text
-pathfinder-main/
-├── client/                                 # React 19 + TypeScript + Three.js Frontend (Vercel)
-│   ├── public/
-│   │   └── models/avatar.glb               # 3D Cybernetic Head GLB Asset
-│   └── src/
-│       ├── agent/                          # Core Autonomous 3D Agent & Gemini Live Engine
-│       │   ├── AgentLayout.tsx             # Dual-mode Full Coach Studio & Ambient HUD Co-Pilot
-│       │   ├── Avatar3D.tsx                # Three.js 3D Cyborg Mesh, Eye Glow & Jaw Lip-Sync
-│       │   ├── geminiLive.ts               # Unified @google/genai v3.0.0 Live WebSocket Client
-│       │   ├── toolRunner.ts               # PATHFINDER_TOOLS & Autonomous DOM Action Executor
-│       │   ├── audioIO.ts                  # Web Audio API 24kHz PCM Queue & FFT Analyser
-│       │   └── agentSocket.ts              # Session State & Event Bridge
-│       ├── services/                       # Modular AI, Audio, Avatar & RAG Services
-│       │   ├── geminiLiveAgent.js          # Standalone Gemini Live WebSocket Service
-│       │   ├── pathfinderTools.js          # Website Function Declarations & DOM Executor
-│       │   ├── audioStreamer.js            # 16kHz Mic Capture & 24kHz Audio Playback Streamer
-│       │   ├── Avatar.jsx                  # Viseme/Morph-Target 3D Avatar Component
-│       │   ├── careerAgent.js              # Supabase pgvector Semantic RAG & Gemini Grounding
-│       │   └── supabaseClient.js           # Supabase Client Singleton
-│       ├── components/dashboard/           # Interactive Career Operating System Modules
-│       │   ├── AIActionCenter.tsx          # Executive Action Center + GoogleAutomationCard
-│       │   ├── AICoachConsole.tsx          # Technical Defense Viva Simulator
-│       │   ├── MockInterviewStudio.tsx     # Role-Based AI Mock Interview Studio
-│       │   ├── OnePageResumeView.tsx       # 1-Page Google X-Y-Z ATS Resume Builder
-│       │   ├── SkillGapMatrix.tsx          # Multi-Vector Skill Bottleneck Diagnostic
-│       │   └── WhatIfSimulator.tsx         # Live Placement Probability Simulator
-│       ├── data/
-│       │   ├── flagshipBlueprints.ts       # 23 Production-Grade System Design Blueprints
-│       │   └── placementCsvData.ts         # 972 Verified Campus Placement Cohort Records
-│       └── pages/
-│           └── Home.tsx                    # Master OS Shell & Global Agent Action Listener
-│
-├── backend/                                # FastAPI + ML + Google Workspace Backend (Render)
-│   ├── api.py                              # FastAPI Application Entrypoint & REST Endpoints
-│   ├── ml_engine.py                        # Random Forest Placement & Salary Predictor
-│   ├── gemini_engine.py                    # Backend Gemini 2.5 Flash Reasoning Engine
-│   ├── google_sync_api.py                  # FastAPI Router for Google Calendar & TPO Sheets
-│   ├── google_automation.py                # Google Calendar v3 & Sheets v4 OAuth Service
-│   ├── agent_router.py                     # Backend Autonomous Agent Route Handler
-│   └── agent/
-│       ├── orchestrator.py                 # Gemini 2.5 Flash Tool Orchestrator
-│       ├── live_proxy.py                   # Backend Gemini Live WebSocket Relay
-│       └── tools.py                        # Server-Side Tool Definitions
-│
-├── scripts/
-│   └── seedEmbeddings.js                   # 384-D Vector Embedding Seeder for Supabase pgvector
-├── requirements.txt                        # Python Backend Dependencies (FastAPI, Scikit-Learn, Google API)
-├── package.json                            # Root Workspace & @google/genai v3.0.0 Configuration
-└── render.yaml                             # Render Cloud Deployment Blueprint
-```
+#### 5. 📊 Predictive ML Engine & Semantic Vector RAG (`backend/ml_engine.py` & `backend/supabase_rag.py`)
+- **Random Forest Classifier (`ml_engine.py`)**: Calibrated on **972 verified campus recruitment records** to compute placement probability (88% precision), tier eligibility, and expected CTC packages.
+- **Supabase `pgvector` Semantic Search**: Retrieves grounded placement cutoffs and 23 blueprint architectures via `match_career_docs` RPC.
 
 ---
 
 ## ☁️ Production Cloud Deployment & Environment Variables
 
-### 1. Frontend Deployment (**Vercel Edge**)
+### 1. 🌐 Vercel Dashboard (Frontend Client)
 - **Live URL**: [https://pathfinder-client-fzom.vercel.app](https://pathfinder-client-fzom.vercel.app)
-- **Required Environment Variables**:
-  - `VITE_GEMINI_API_KEY` — Google Gemini API Key powering Unified Gemini Live WebSocket (`@google/genai`)
-  - `VITE_API_BASE_URL` — Render FastAPI Backend URL (`https://pathfinder-backend-klrp.onrender.com`)
-  - `VITE_SUPABASE_URL` — Supabase Project URL for `pgvector` RAG
-  - `VITE_SUPABASE_ANON_KEY` — Supabase Public Anon Key
+- Configure these variables under **Vercel Project Settings → Environment Variables**:
 
-### 2. Backend Deployment (**Render Cloud**)
-- **Live URL**: `https://pathfinder-backend-klrp.onrender.com`
-- **Required Environment Variables**:
-  - `GEMINI_API_KEY` — Google Gemini API Key for server-side reasoning
-  - *(Optional)* ` credentials.json` / `token.json` — Google Cloud OAuth 2.0 credentials for live Google Calendar & Sheets API sync (automatically falls back to instant simulation mode if omitted)
+| Variable Name | Value / Description | Required |
+| :--- | :--- | :---: |
+| `VITE_API_BASE_URL` | `https://pathfinder-backend-klrp.onrender.com` | **Yes** |
+| `VITE_GEMINI_API_KEY` | Your Google Gemini API Key | **Yes** |
+| `VITE_GEMINI_LIVE_MODEL` | `gemini-3.8-live` | **Yes** |
+| `VITE_GEMINI_MODEL` | `gemini-3.5-flash` | **Yes** |
+| `VITE_GEMINI_VOICE_NAME` | `Puck` | **Yes** |
+| `VITE_SUPABASE_URL` | `https://fenalqckgkqzyhovlyrb.supabase.co` | **Yes** |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase publishable anon key | **Yes** |
+
+---
+
+### 2. ⚙️ Render Dashboard (Backend Web Service)
+- **Live URL**: [https://pathfinder-backend-klrp.onrender.com](https://pathfinder-backend-klrp.onrender.com)
+- Configure these variables under **Render Service Settings → Environment Variables**:
+
+| Variable Name | Value / Description | Required |
+| :--- | :--- | :---: |
+| `PORT` | `8000` | **Yes** |
+| `HOST` | `0.0.0.0` | **Yes** |
+| `BACKEND_URL` | `https://pathfinder-backend-klrp.onrender.com` | **Yes** |
+| `FRONTEND_URL` | `https://pathfinder-client-fzom.vercel.app` | **Yes** |
+| `GEMINI_API_KEY` | Your Google Gemini API Key | **Yes** |
+| `GEMINI_MODEL` | `gemini-3.5-flash` | **Yes** |
+| `GEMINI_LIVE_MODEL` | `gemini-3.8-live` | **Yes** |
+| `GEMINI_VOICE_NAME` | `Puck` | **Yes** |
+| `GEMINI_FALLBACK_MODEL` | `gemini-3.1-flash-lite` | **Yes** |
+| `SUPABASE_URL` | `https://fenalqckgkqzyhovlyrb.supabase.co` | **Yes** |
+| `SUPABASE_ANON_KEY` | Your Supabase publishable anon key | **Yes** |
+| `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase service role key | Optional |
+| `N8N_WEBHOOK_URL` | `https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync` | **Yes** |
+| `JWT_SECRET` | 32+ character secure secret string | **Yes** |
+| `OWNER_EMAIL` | `dileepbommali16@gmail.com,dileep@pathfinder.ai,dileep` | **Yes** |
+
+> [!NOTE]
+> All obsolete/dead legacy API keys (Groq, Deepgram, OpenRouter, Voyage AI, Firecrawl) have been completely removed. The system is strictly powered by Google Gemini AI, Supabase pgvector, and n8n Cloud.
 
 ---
 

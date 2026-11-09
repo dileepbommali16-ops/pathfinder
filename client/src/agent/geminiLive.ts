@@ -244,14 +244,17 @@ export class PathfinderGeminiLive {
   async connect(callbacks?: GeminiLiveCallbacks) {
     try {
       callbacks?.onStatusChange?.("connecting");
+      const liveModel = import.meta.env.VITE_GEMINI_LIVE_MODEL || "gemini-3.8-live";
+      const voiceName = import.meta.env.VITE_GEMINI_VOICE_NAME || "Puck";
+
       this.session = await this.ai.live.connect({
-        model: "gemini-2.5-flash-native-audio-latest",
+        model: liveModel,
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: {
-                voiceName: "Puck"
+                voiceName: voiceName
               }
             }
           },
@@ -334,7 +337,8 @@ export class PathfinderGeminiLive {
         : trimmed;
 
       let response: any = null;
-      const modelsToTry = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+      const configuredModel = import.meta.env.VITE_GEMINI_MODEL || "gemini-3.5-flash";
+      const modelsToTry = [configuredModel, "gemini-3.8-live", "gemini-3.1-flash-lite", "gemini-flash-latest"];
       for (const m of modelsToTry) {
         try {
           response = await this.ai.models.generateContent({
