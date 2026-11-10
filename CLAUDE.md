@@ -51,7 +51,7 @@ Pathfinder 2.0 is an AI-powered Career Guidance and Technical Interview Preparat
 ## 3. Essential Commands & Verification
 
 - **Build Client**: `npm run build` (Must always pass with 0 errors).
-- **Dev Server**: `npm run dev` (Runs Vite on `http://localhost:5173`).
+- **Production Client**: Deployed on Vercel (`https://pathfinder-client-fzom.vercel.app`).
 - **Backend Server**: `python -m uvicorn backend.main:app --port 8000`
 - **Git Status**: `git status`
 

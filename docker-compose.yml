@@ -16,12 +16,12 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
       - JWT_SECRET=${JWT_SECRET:-pathfinder_production_secret_minimum_32_chars_2026}
-      - FRONTEND_URL=http://localhost:5173,https://pathfinder-client-fzom.vercel.app
+      - FRONTEND_URL=https://pathfinder-client-fzom.vercel.app
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ["CMD", "curl", "-f", "https://pathfinder-backend-klrp.onrender.com/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -36,7 +36,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_API_BASE_URL=https://pathfinder-backend-klrp.onrender.com
     depends_on:
       - backend
 
