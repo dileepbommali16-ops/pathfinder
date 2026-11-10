@@ -11,6 +11,7 @@
 
 import { DEFAULT_PROJECT_CATALOG } from "@/data/projectCatalog";
 import { createClient } from "@supabase/supabase-js";
+import { geminiLive } from "@/agent/geminiLive";
 
 export const EMBEDDING_DIM = 384;
 export const MAX_SYSTEM_PROMPT_TOKENS = 2000;
@@ -67,7 +68,6 @@ ${context}
 Rules: If user speaks in Telugu/Tenglish, always reply in ENGLISH with JARVIS-level intelligence, warmth, and loyalty. If intent is navigation, emit das:navigate:xxx`;
 
   try {
-    const { geminiLive } = await import("@/agent/geminiLive");
     const reply = await geminiLive.sendTurn(userQuery, {
       systemPrompt,
       callbacks: {

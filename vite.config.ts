@@ -41,11 +41,24 @@ export default defineConfig({
     outDir: path.resolve(rootDir, "dist"),
     emptyOutDir: true,
     sourcemap: false,
-    chunkSizeWarningLimit: 1600,
+    chunkSizeWarningLimit: 3000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          three: ["three", "@react-three/fiber", "@react-three/drei"],
+        manualChunks(id: string) {
+          if (id.includes("node_modules")) {
+            if (id.includes("three") || id.includes("@react-three") || id.includes("@pixiv/three-vrm")) {
+              return "vendor-three";
+            }
+            if (id.includes("recharts") || id.includes("d3-")) {
+              return "vendor-charts";
+            }
+            if (id.includes("lucide-react") || id.includes("framer-motion") || id.includes("gsap") || id.includes("@radix-ui")) {
+              return "vendor-ui";
+            }
+            if (id.includes("react-router-dom") || id.includes("react") || id.includes("react-dom")) {
+              return "vendor-react";
+            }
+          }
         },
       },
     },

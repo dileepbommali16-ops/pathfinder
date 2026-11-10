@@ -1,6 +1,7 @@
 // client/src/agent/geminiLive.ts
 import { GoogleGenAI, Modality } from "@google/genai";
 import { API_BASE } from "@/lib/apiClient";
+import { speaker } from "./audioIO";
 import {
   PATHFINDER_TOOLS,
   executeWebsiteTool,
@@ -524,7 +525,6 @@ export class PathfinderGeminiLive {
     const clean = text.replace(/[*#_`~]/g, "").trim();
     if (!clean) return;
     try {
-      const { speaker } = await import("./audioIO");
       speaker.say(clean);
     } catch { }
     if (this.session) {
