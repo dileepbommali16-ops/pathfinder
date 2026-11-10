@@ -322,30 +322,33 @@ export default function PathfinderFace({
       // Real-time audio amplitude analysis for speech lip-sync (strictly zero when silent)
       const liveAudio = getLevelRef.current ? getLevelRef.current() : (audioLevelRef.current || 0);
       const curState = stateRef.current;
-      const activeAudio = liveAudio > 0.018 ? liveAudio : 0;
-      const targetMouth = activeAudio > 0 ? Math.min(1.0, activeAudio * 4.2) : 0;
-      mouth += (targetMouth - mouth) * Math.min(1, dt * 28);
+      const isSpeakingState = curState === "speaking" || liveAudio > 0.012;
+
+      let targetMouth = 0;
+      if (isSpeakingState) {
+        const audioVal = liveAudio > 0.01 ? Math.min(1.0, liveAudio * 4.8) : 0;
+        // Dynamic human speech cadence envelope
+        const speechCadence = Math.abs(Math.sin(t * 15.0) * Math.cos(t * 7.5)) * 0.75 + 0.18;
+        targetMouth = audioVal > 0 ? audioVal : speechCadence;
+      }
+      mouth += (targetMouth - mouth) * Math.min(1, dt * 26);
       if (mouth < 0.005) mouth = 0;
 
-      // Natural eye blink
-      const isSpeakingNow = activeAudio > 0.02;
+      // Natural eye blink every 2.5 - 4.5 seconds
       nextBlink -= dt;
       if (nextBlink <= 0 && blinkT < 0) {
-        if (isSpeakingNow && Math.random() < 0.45) {
-          nextBlink = 1.0 + Math.random() * 1.5;
-        } else {
-          blinkT = 0;
-        }
+        blinkT = 0;
       }
 
       let eyeOpenRatio = 1;
       if (blinkT >= 0) {
         blinkT += dt;
-        const p = Math.min(blinkT / 0.15, 1);
-        eyeOpenRatio = Math.max(0.06, 1 - Math.sin(p * Math.PI) * 0.95);
-        if (blinkT >= 0.15) {
+        const blinkDuration = 0.18;
+        const p = Math.min(blinkT / blinkDuration, 1);
+        eyeOpenRatio = Math.max(0.01, 1 - Math.sin(p * Math.PI));
+        if (blinkT >= blinkDuration) {
           blinkT = -1;
-          nextBlink = isSpeakingNow ? 3.5 + Math.random() * 3.0 : 2.2 + Math.random() * 2.0;
+          nextBlink = 2.5 + Math.random() * 2.5;
           eyeOpenRatio = 1;
         }
       }
@@ -357,22 +360,22 @@ export default function PathfinderFace({
 
         // Articulated Box Mouth movement synced strictly to real audible speech
         if (chinPlateMesh) {
-          chinPlateMesh.position.y = plateInitY - mouth * 0.0045;
+          chinPlateMesh.position.y = plateInitY - mouth * 0.0065;
         }
         if (upperLipMesh && lowerLipMesh && mouthApertureMesh) {
-          const openOffset = mouth * 0.0085;
-          upperLipMesh.position.y = 0.0018 + openOffset * 0.45;
-          lowerLipMesh.position.y = -0.0018 - openOffset * 0.85;
-          mouthApertureMesh.scale.y = mouth > 0.01 ? Math.max(0.05, mouth * 1.35) : 0.05;
+          const openOffset = mouth * 0.012;
+          upperLipMesh.position.y = 0.002 + openOffset * 0.5;
+          lowerLipMesh.position.y = -0.002 - openOffset * 0.9;
+          mouthApertureMesh.scale.y = mouth > 0.01 ? Math.max(0.1, mouth * 2.2) : 0.05;
           (mouthApertureMesh.material as THREE.MeshBasicMaterial).opacity =
-            mouth > 0.02 ? Math.min(0.95, 0.35 + mouth * 0.7) : 0.12;
+            mouth > 0.01 ? Math.min(0.95, 0.4 + mouth * 0.6) : 0.08;
         }
 
         // Eye blinking scale
         if (leftEyeNode) leftEyeNode.scale.y = eyeOpenRatio * 0.057;
         if (rightEyeNode) rightEyeNode.scale.y = eyeOpenRatio * 0.057;
 
-        // Glowing red eyes pulse (intense fiery glow for Boss)
+        // Glowing red eyes pulse & SHUT OFF ON BLINK
         const pulse = Math.sin(t * 3.2) * 0.5 + 0.5;
         const moodMultiplier = moodRef.current === "boss" ? 1.3 : 1.0;
         const baseGlow =
@@ -384,14 +387,15 @@ export default function PathfinderFace({
             ? 5.8 + Math.sin(t * 7.0) * 2.0
             : 5.4 + pulse * 1.4) * moodMultiplier;
 
+        const blinkVisibility = eyeOpenRatio < 0.2 ? 0.02 : eyeOpenRatio;
         for (const mat of eyeGlowMaterials) {
-          mat.emissiveIntensity = baseGlow;
+          mat.emissiveIntensity = baseGlow * blinkVisibility;
         }
         for (const rMat of eyeRingMaterials) {
-          rMat.emissiveIntensity = baseGlow * 0.65;
+          rMat.emissiveIntensity = baseGlow * 0.65 * blinkVisibility;
         }
         for (const light of eyePointLights) {
-          light.intensity = baseGlow * 0.85;
+          light.intensity = baseGlow * 0.85 * blinkVisibility;
         }
       }
 

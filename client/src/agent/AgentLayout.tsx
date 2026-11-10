@@ -426,6 +426,9 @@ export default function AgentLayout({
           if (liveReply && liveReply.trim()) {
             full = liveReply;
             patchLast(full);
+            if (!voiceMuted) {
+              speak(extractSpoken(full.split("|||")[0] || full).slice(0, 320));
+            }
           }
         } catch (liveErr) {
           console.warn("[AgentLayout] Gemini Live WebSocket notice, falling back:", liveErr);
@@ -610,6 +613,19 @@ export default function AgentLayout({
     } else {
       setPipelineStage("idle");
     }
+
+    const btn = document.getElementById("das-handsfree-voice-btn");
+    if (btn) {
+      if (isListening) {
+        btn.innerHTML = `🟢 Listening... (Click to stop)`;
+        btn.style.background = "linear-gradient(135deg,#059669,#047857)";
+        btn.style.boxShadow = "0 0 28px rgba(16,185,129,0.75)";
+      } else {
+        btn.innerHTML = `🎙️ Start Hands-Free Voice`;
+        btn.style.background = "linear-gradient(135deg,#dc2626,#991b1b)";
+        btn.style.boxShadow = "0 8px 30px rgba(220,38,38,0.5)";
+      }
+    }
   }, [isListening, thinking, isSpeaking]);
 
   // Continuous JARVIS Hands-Free Conversation Loop:
@@ -642,6 +658,12 @@ export default function AgentLayout({
       startListening();
     }
   };
+
+  useEffect(() => {
+    const onToggle = () => handleToggleMic();
+    window.addEventListener("das-toggle-mic", onToggle);
+    return () => window.removeEventListener("das-toggle-mic", onToggle);
+  }, [handleToggleMic]);
 
   // Compute current visual state for Avatar3D
   const avatarState: AvatarState =
@@ -904,6 +926,30 @@ export default function AgentLayout({
           className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white border border-white/10 transition-all shrink-0 cursor-pointer active:scale-95"
         >
           <Pencil className="w-4 h-4 text-red-400" />
+        </button>
+
+        {/* Voice Microphone Toggle Button */}
+        <button
+          type="button"
+          onClick={handleToggleMic}
+          title={isListening ? "Stop listening" : "Click to speak to DAS (Microphone)"}
+          className={`h-10 px-3 flex items-center justify-center rounded-xl border transition-all shrink-0 cursor-pointer active:scale-95 gap-1.5 ${
+            isListening
+              ? "bg-red-600 border-red-400 text-white shadow-[0_0_15px_rgba(239,68,68,0.7)] animate-pulse"
+              : "bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white border-white/10"
+          }`}
+        >
+          {isListening ? (
+            <>
+              <MicOff className="w-4 h-4 text-white" />
+              <span className="text-[11px] font-bold">Listening...</span>
+            </>
+          ) : (
+            <>
+              <Mic className="w-4 h-4 text-red-400" />
+              <span className="text-[11px] font-medium hidden sm:inline">Voice</span>
+            </>
+          )}
         </button>
 
         {/* Primary Typing Input Field: Command Execution */}

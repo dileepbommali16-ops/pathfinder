@@ -70,11 +70,10 @@ DISALLOWED_MODEL_PATTERNS = (
 )
 
 PREFERRED_MODELS_ORDER = [
+    "gemini-3.1-flash-lite",
     "gemini-flash-lite-latest",
     "gemini-3.5-flash-lite",
     "gemini-3.6-flash",
-    "gemini-3.5-flash",
-    "gemini-3.1-flash-lite",
     "gemini-3.8-flash",
 ]
 
@@ -124,8 +123,7 @@ def get_gemini_models() -> List[str]:
     models: List[str] = []
     env_m = os.getenv("GEMINI_MODEL", "").strip()
     if env_m and not any(bad in env_m.lower() for bad in DISALLOWED_MODEL_PATTERNS):
-        if env_m not in ("gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.8-flash"):
-            models.append(env_m)
+        models.append(env_m)
 
     key = os.getenv("GEMINI_API_KEY", "").strip()
     if key:
