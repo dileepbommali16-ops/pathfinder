@@ -1,67 +1,53 @@
-import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path from "node:path";
-import { defineConfig, type Plugin } from "vite";
+import tailwindcss from "@tailwindcss/vite";
+import path from "path";
 
-import { createRequire } from "node:module";
-const require = createRequire(import.meta.url);
-
-// Safely load dev-only plugins without breaking production builds if absent
-let jsxLocPlugin: () => Plugin = () => ({ name: "noop-jsx-loc" });
-try {
-  const mod = require("@builder.io/vite-plugin-jsx-loc");
-  if (mod && mod.jsxLocPlugin) jsxLocPlugin = mod.jsxLocPlugin;
-} catch {
-  /* dev plugin optional */
-}
-
-const plugins = [react(), tailwindcss(), jsxLocPlugin()];
-
-const rootDir = import.meta.dirname ?? process.cwd();
+const rootDir = process.cwd();
 
 export default defineConfig({
-  plugins,
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      "@": path.resolve(rootDir, "client", "src"),
-      "@shared": path.resolve(rootDir, "shared"),
-      "@assets": path.resolve(rootDir, "attached_assets"),
-      "@designcodeio/threeui/style.css": path.resolve(rootDir, "client", "src", "shaders", "threeui.css"),
-      "@designcodeio/threeui": path.resolve(rootDir, "client", "src", "shaders", "index.ts"),
-      "@supabase/supabase-js": path.resolve(rootDir, "client", "src", "lib", "supabaseClient.ts"),
+      "@": path.resolve(rootDir, "./client/src"),
+      "@shared": path.resolve(rootDir, "./shared"),
+      "@assets": path.resolve(rootDir, "./attached_assets"),
+      "@designcodeio/threeui/style.css": path.resolve(rootDir, "./client/src/shaders/threeui.css"),
+      "@designcodeio/threeui": path.resolve(rootDir, "./client/src/shaders/index.ts"),
+      "@supabase/supabase-js": path.resolve(rootDir, "./client/src/lib/supabaseClient.ts"),
     },
     dedupe: ["three", "react", "react-dom"],
   },
-  envDir: path.resolve(rootDir),
-  envPrefix: ["VITE_"],
   root: path.resolve(rootDir, "client"),
-  publicDir: path.resolve(rootDir, "client", "public"),
-  build: {
-    outDir: path.resolve(rootDir, "dist"),
-    emptyOutDir: true,
-    chunkSizeWarningLimit: 5000,
-  },
+  publicDir: path.resolve(rootDir, "client/public"),
   server: {
     host: true,
     allowedHosts: true,
     proxy: {
-      '/agent': {
-        target: 'https://pathfinder-backend-klrp.onrender.com',
+      "/api": {
+        target: "https://pathfinder-backend-klrp.onrender.com",
         changeOrigin: true,
-        ws: true,
+        secure: true,
       },
-      '/ws': {
-        target: 'wss://pathfinder-backend-klrp.onrender.com',
+      "/agent/ws": {
+        target: "wss://pathfinder-backend-klrp.onrender.com",
         ws: true,
-      },
-      '/api': {
-        target: 'https://pathfinder-backend-klrp.onrender.com',
         changeOrigin: true,
+        secure: true,
       },
     },
-    fs: {
-      strict: true,
-      deny: ["**/.*"],
+  },
+  build: {
+    outDir: path.resolve(rootDir, "dist"),
+    emptyOutDir: true,
+    sourcemap: false,
+    chunkSizeWarningLimit: 1600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ["three", "@react-three/fiber", "@react-three/drei"],
+        },
+      },
     },
   },
 });
