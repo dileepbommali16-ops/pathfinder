@@ -22,7 +22,7 @@ const ENV = import.meta.env as Record<string, string | undefined>;
 // FIXED: Valid Gemini Live WebSocket model so Puck voice never fails!
 const LIVE_MODEL = ENV.VITE_GEMINI_LIVE_MODEL || "gemini-2.0-flash-exp";
 const VOICE_NAME = "Puck";
-const TEXT_MODEL = ENV.VITE_GEMINI_TEXT_MODEL || "gemini-2.0-flash";
+const TEXT_MODEL = ENV.VITE_GEMINI_TEXT_MODEL || "gemini-flash-lite-latest";
 
 type MicUi = "off" | "connecting" | "listening" | "speaking" | "thinking";
 
@@ -616,9 +616,11 @@ export class PathfinderGeminiLive {
         const textCandidates = Array.from(
           new Set([
             TEXT_MODEL,
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-            "gemini-3.5-flash"
+            "gemini-flash-lite-latest",
+            "gemini-3.5-flash-lite",
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "gemini-3.8-flash"
           ].filter(Boolean) as string[])
         );
 
