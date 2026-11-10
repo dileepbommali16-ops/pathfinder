@@ -101,6 +101,13 @@ export class Speaker {
   say(raw: string) {
     if (typeof window === "undefined") return;
 
+    // Strict Pure Puck Voice Mode: Cancel and prevent any browser default robotic voices
+    if ("speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+
     const beforeDetails = raw.split("|||")[0] || "";
     const text = beforeDetails
       .replace(/<!--[\s\S]*?-->/g, " ")
@@ -110,65 +117,18 @@ export class Speaker {
       .trim();
     if (!text) return;
 
-    // Stop any previous speech
+    // Stop any existing playback
     this.stop();
 
-    if ("speechSynthesis" in window) {
-      try {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-
-        // Select the most natural male voice available
-        const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(
-          (v) =>
-            (v.name.includes("David") ||
-              v.name.includes("Male") ||
-              v.name.includes("Guy") ||
-              v.name.includes("Google UK English Male") ||
-              v.name.includes("Ravi") ||
-              v.name.includes("Natural")) &&
-            (v.lang.startsWith("en") || v.lang.startsWith("te") || v.lang.startsWith("hi"))
-        ) || voices.find((v) => v.lang.startsWith("en")) || voices[0];
-
-        if (preferredVoice) utterance.voice = preferredVoice;
-        utterance.pitch = 0.94; // Deeper cybernetic authority tone
-        utterance.rate = 1.08;  // Fast, intelligent co-pilot tempo
-
-        utterance.onstart = () => {
-          this.activeSpeaking = true;
-          this.onState?.(true);
-          this.startLipSyncSimulation();
-        };
-
-        utterance.onend = () => {
-          this.stopLipSyncSimulation();
-          this.activeSpeaking = false;
-          this.onState?.(false);
-        };
-
-        utterance.onerror = () => {
-          this.stopLipSyncSimulation();
-          this.activeSpeaking = false;
-          this.onState?.(false);
-        };
-
-        window.speechSynthesis.speak(utterance);
-        return;
-      } catch (ttsErr) {
-        console.warn("[Speaker] Native TTS notice:", ttsErr);
+    // Exclusively route to Gemini Live WebSocket for 24kHz Puck Voice synthesis
+    try {
+      const socket = (window as any).dasSocket;
+      if (socket && typeof socket.sendTextCommand === "function") {
+        socket.sendTextCommand(text);
       }
+    } catch (err) {
+      console.warn("[Speaker] Puck Voice WebSocket dispatch notice:", err);
     }
-
-    // Fallback simulation if browser speech is unavailable
-    this.activeSpeaking = true;
-    this.onState?.(true);
-    this.startLipSyncSimulation();
-    setTimeout(() => {
-      this.stopLipSyncSimulation();
-      this.activeSpeaking = false;
-      this.onState?.(false);
-    }, Math.max(1200, text.length * 55));
   }
 
   private startLipSyncSimulation() {

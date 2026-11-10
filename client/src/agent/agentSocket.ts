@@ -87,5 +87,8 @@ class DasAgentSocket {
 }
 
 export const dasSocket = new DasAgentSocket();
+if (typeof window !== "undefined") {
+  (window as any).dasSocket = dasSocket;
+}
 export { DasAgentSocket };
 export default dasSocket;
