@@ -33,7 +33,7 @@ export function useAudioAnalyser(_getToken?: () => string | null) {
     const updateAudioMetrics = () => {
       const activeAnalyser = audioEngine.analyser || globalSpeaker.analyser;
       if (activeAnalyser) {
-        activeAnalyser.getByteFrequencyData(dataArray);
+        activeAnalyser.getByteFrequencyData(dataArray as any);
 
         // Human voice fundamental & vowel frequencies (bins 2 to 40)
         let sum = 0;

@@ -30,7 +30,7 @@ export function useLipSync(
           let lowSum = 0.5;
           let midSum = 0.3;
           if (analyser) {
-            analyser.getByteFrequencyData(dataArray);
+            analyser.getByteFrequencyData(dataArray as any);
             lowSum = (dataArray[1] + dataArray[2] + dataArray[3]) / (3 * 255);
             midSum = (dataArray[5] + dataArray[6] + dataArray[7]) / (3 * 255);
           }

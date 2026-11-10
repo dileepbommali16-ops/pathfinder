@@ -1,0 +1,18 @@
+export declare const EMBEDDING_DIM: number;
+export declare const MAX_SYSTEM_PROMPT_TOKENS: number;
+export declare const SUPABASE_URL: string;
+export declare const SUPABASE_ANON_KEY: string;
+export declare const supabase: any;
+export declare const DAS_TOOLS: any[];
+export declare function getRelevantContext(query: string): Promise<any>;
+export declare function askDas(userQuery: string, onChunk?: (chunk: string) => void): Promise<string>;
+export declare function tokenizeText(text?: string): string[];
+export declare function computeEmbedding384(text?: string): number[];
+export declare function cosineSimilarity(a: number[], b: number[]): number;
+export declare function estimatePromptTokens(text?: string): number;
+export declare function getIndexedKnowledgeStore(): any[];
+export declare function semanticSearchSync(query?: string, profile?: any, topK?: number): any[];
+export declare function semanticSearchPathfinderRAG(query?: string, profile?: any, topK?: number): Promise<any[]>;
+export declare function buildRagGeminiSystemPrompt(options?: any): string;
+export declare const buildRagGroqSystemPrompt: (options?: any) => string;
+export declare const getCareerAgentResponse: (userMessage: string, history?: any[], profile?: any) => string;

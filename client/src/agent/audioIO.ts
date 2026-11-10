@@ -319,7 +319,7 @@ export class Speaker {
       this.analyser &&
       (this.currentSource || this.scheduledPcmSources.size > 0)
     ) {
-      this.analyser.getByteTimeDomainData(this.buf);
+      this.analyser.getByteTimeDomainData(this.buf as any);
       let sum = 0;
       const len = this.buf.length;
       for (let i = 0; i < len; i++) {
@@ -423,7 +423,7 @@ class AudioEngine {
     if (!this.analyser) {
       return speaker.level();
     }
-    this.analyser.getByteFrequencyData(this.freqData);
+    this.analyser.getByteFrequencyData(this.freqData as any);
     let sum = 0;
     const bins = 48; // Vocal frequency spectrum
     for (let i = 0; i < bins; i++) {
