@@ -16,3 +16,4 @@ export declare function semanticSearchPathfinderRAG(query?: string, profile?: an
 export declare function buildRagGeminiSystemPrompt(options?: any): string;
 export declare const buildRagGroqSystemPrompt: (options?: any) => string;
 export declare const getCareerAgentResponse: (userMessage: string, history?: any[], profile?: any) => string;
+

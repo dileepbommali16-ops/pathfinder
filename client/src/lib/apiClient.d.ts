@@ -9,3 +9,4 @@ export declare const api: {
   put: (path: string, body?: any, options?: RequestInit) => Promise<any>;
   delete: (path: string, options?: RequestInit) => Promise<any>;
 };
+
