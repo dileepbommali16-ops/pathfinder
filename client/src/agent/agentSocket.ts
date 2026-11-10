@@ -1,24 +1,42 @@
 import { audioEngine } from "./audioIO";
 import { executeBrowserTool, ToolCallArgs } from "./toolRunner";
-import { GEMINI_LIVE_CONFIG } from "./geminiLive";
 
-const PROD_WS_URL = GEMINI_LIVE_CONFIG.wsEndpoint;
+const PROD_WS_URL =
+  import.meta.env.VITE_WS_URL ||
+  "wss://pathfinder-backend-klrp.onrender.com/agent/ws";
+
+const PROD_API_URL =
+  import.meta.env.VITE_BACKEND_URL ||
+  "https://pathfinder-backend-klrp.onrender.com";
 
 export type UserHonorificRole = "boss" | "sir";
 
 class DasAgentSocket {
   private ws: WebSocket | null = null;
+  private heartbeatInterval: number | null = null;
+  private reconnectTimeout: number | null = null;
+  private manualClose: boolean = false;
   public isConnected: boolean = false;
-  private autoReconnect: boolean = true;
 
-  public connect(
+  // Wake up Render container before opening WebSocket
+  private async warmUpRenderBackend() {
+    try {
+      await fetch(`${PROD_API_URL}/health`, { method: "GET" });
+    } catch {
+      // Ignore initial cold-start fetch warning
+    }
+  }
+
+  public async connect(
     role: UserHonorificRole = "boss",
     onTranscript?: (text: string) => void,
     onStatusChange?: (connected: boolean) => void,
     navigateFn?: (path: string) => void
   ) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
-    this.autoReconnect = true;
+    this.manualClose = false;
+
+    await this.warmUpRenderBackend();
 
     this.ws = new WebSocket(`${PROD_WS_URL}?role=${role}`);
 
@@ -26,12 +44,11 @@ class DasAgentSocket {
       this.isConnected = true;
       onStatusChange?.(true);
 
-      // Keep Render Cloudflare proxy WebSocket alive every 20 seconds
-      const heartbeat = setInterval(() => {
+      // Clear old timer and start 20-second Ping to prevent Render 60s timeout
+      if (this.heartbeatInterval) window.clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = window.setInterval(() => {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
           this.ws.send(JSON.stringify({ type: "ping" }));
-        } else {
-          clearInterval(heartbeat);
         }
       }, 20000);
     };
@@ -40,10 +57,9 @@ class DasAgentSocket {
       try {
         const data = JSON.parse(event.data);
 
-        // Heartbeat pong acknowledge
         if (data.type === "pong") return;
 
-        // 1. Play 24kHz Gemini Voice & Drive 3D Lip-Sync
+        // 1. Play 24kHz Gemini Puck Voice & Drive 3D Lip-Sync
         if (data.type === "audio" && data.pcm_base64) {
           audioEngine.playPcmChunk(data.pcm_base64, data.sample_rate || 24000);
         }
@@ -62,15 +78,15 @@ class DasAgentSocket {
       }
     };
 
-    this.ws.onclose = (event) => {
+    this.ws.onclose = () => {
       this.isConnected = false;
       onStatusChange?.(false);
-      if (this.autoReconnect && !event.wasClean) {
-        setTimeout(() => {
-          if (!this.isConnected && this.autoReconnect) {
-            console.log("[DasAgentSocket] Resilient Auto-reconnect to DAS Gateway...");
-            this.connect(role, onTranscript, onStatusChange, navigateFn);
-          }
+      if (this.heartbeatInterval) window.clearInterval(this.heartbeatInterval);
+
+      // Auto-reconnect after 2.5 seconds if dropped unexpectedly by Render
+      if (!this.manualClose) {
+        this.reconnectTimeout = window.setTimeout(() => {
+          this.connect(role, onTranscript, onStatusChange, navigateFn);
         }, 2500);
       }
     };
@@ -99,8 +115,10 @@ class DasAgentSocket {
   }
 
   public disconnect() {
-    this.autoReconnect = false;
+    this.manualClose = true;
     audioEngine.stopMicCapture();
+    if (this.heartbeatInterval) window.clearInterval(this.heartbeatInterval);
+    if (this.reconnectTimeout) window.clearTimeout(this.reconnectTimeout);
     if (this.ws) {
       this.ws.close();
       this.ws = null;
