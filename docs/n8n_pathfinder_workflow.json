@@ -1,25 +1,140 @@
 {
-  "name": "Pathfinder 2.0 — Google Calendar, TPO Sheet & Email Automation",
+  "name": "PATHFINDER 2.0 - DAS Google Workspace Sync",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "pathfinder-google-sync",
-        "responseMode": "onReceived",
+        "responseMode": "responseNode",
         "options": {}
       },
-      "id": "webhook-trigger",
-      "name": "Pathfinder Webhook Trigger",
+      "id": "1a2b3c4d-0001-4000-8000-000000000001",
+      "name": "Pathfinder Webhook",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [240, 300]
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "pathfinder-google-sync"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "send_email",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Gmail"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "schedule_calendar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Calendar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "log_sheet",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sheets"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1a2b3c4d-0002-4000-8000-000000000002",
+      "name": "Action Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.data.recipient_email || 'dileep@example.com' }}",
+        "subject": "={{ $json.body.data.subject || 'PATHFINDER 2.0 - DAS AI Placement Report' }}",
+        "message": "={{ $json.body.data.details }}",
+        "options": {}
+      },
+      "id": "1a2b3c4d-0003-4000-8000-000000000003",
+      "name": "Gmail - Send Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [760, 140]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "Primary"
+        },
+        "start": "={{ $now.plus({ days: 1 }).toISO() }}",
+        "end": "={{ $now.plus({ days: 1, hours: 1 }).toISO() }}",
+        "additionalFields": {
+          "summary": "={{ $json.body.data.subject || 'PATHFINDER 2.0 - AI Mock Interview' }}",
+          "description": "={{ $json.body.data.details }}"
+        }
+      },
+      "id": "1a2b3c4d-0004-4000-8000-000000000004",
+      "name": "Google Calendar - Schedule Interview",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.2,
+      "position": [760, 300]
     },
     {
       "parameters": {
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "YOUR_TPO_GOOGLE_SHEET_ID",
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
           "mode": "id"
         },
         "sheetName": {
@@ -28,54 +143,94 @@
           "mode": "name"
         },
         "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Student Name": "={{ $json.body.student_name }}",
-            "Branch": "={{ $json.body.branch }}",
-            "Readiness Score": "={{ $json.body.readiness_score }}%",
-            "Target Role": "={{ $json.body.target_role }}",
-            "Status": "={{ $json.body.status || 'Verified by Pathfinder AI' }}"
-          }
-        }
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
       },
-      "id": "google-sheets-node",
-      "name": "Append to TPO Placement Sheet",
+      "id": "1a2b3c4d-0005-4000-8000-000000000005",
+      "name": "Google Sheets - Log Placement Data",
       "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4,
-      "position": [520, 180]
+      "typeVersion": 4.5,
+      "position": [760, 460]
     },
     {
       "parameters": {
-        "calendar": {
-          "__rl": true,
-          "value": "primary",
-          "mode": "list"
-        },
-        "start": "={{ $json.body.interview_time || $now.plus({ days: 1 }).toISO() }}",
-        "end": "={{ $now.plus({ days: 1, minutes: 30 }).toISO() }}",
-        "additionalFields": {
-          "summary": "={{ 'Pathfinder AI Mock Viva: ' + ($json.body.company_name || 'Tier-1 Drive') }}",
-          "description": "={{ 'Automated placement readiness session scheduled by Pathfinder 2.0 for ' + ($json.body.student_name || 'Candidate') }}"
-        }
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"executed_by\": \"DAS_N8N_AUTOMATION\",\n  \"message\": \"Google Workspace action completed successfully\"\n}",
+        "options": {}
       },
-      "id": "google-calendar-node",
-      "name": "Schedule Google Calendar Viva",
-      "type": "n8n-nodes-base.googleCalendar",
-      "typeVersion": 1,
-      "position": [520, 420]
+      "id": "1a2b3c4d-0006-4000-8000-000000000006",
+      "name": "Respond to DAS Backend",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1040, 300]
     }
   ],
   "connections": {
-    "Pathfinder Webhook Trigger": {
+    "Pathfinder Webhook": {
       "main": [
         [
           {
-            "node": "Append to TPO Placement Sheet",
+            "node": "Action Router",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "Action Router": {
+      "main": [
+        [
           {
-            "node": "Schedule Google Calendar Viva",
+            "node": "Gmail - Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Calendar - Schedule Interview",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets - Log Placement Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Send Report": {
+      "main": [
+        [
+          {
+            "node": "Respond to DAS Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar - Schedule Interview": {
+      "main": [
+        [
+          {
+            "node": "Respond to DAS Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Log Placement Data": {
+      "main": [
+        [
+          {
+            "node": "Respond to DAS Backend",
             "type": "main",
             "index": 0
           }
@@ -84,4 +239,3 @@
     }
   }
 }
-
