@@ -1,5 +1,6 @@
 import React from "react";
 import { Canvas } from "@react-three/fiber";
+import { WireframeFace } from "./WireframeFace";
 import { PathfinderFace } from "./PathfinderFace";
 
 export type AvatarState = "idle" | "listening" | "thinking" | "speaking";
@@ -36,7 +37,7 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
         <ambientLight intensity={0.8} />
         <pointLight position={[5, 5, 5]} intensity={1.5} color="#00f0ff" />
         <pointLight position={[-5, -3, 3]} intensity={1.0} color="#3b82f6" />
-        <PathfinderFace />
+        <WireframeFace />
       </Canvas>
     </div>
   );

@@ -130,4 +130,5 @@ export const PathfinderFace: React.FC = () => {
   );
 };
 
+export { WireframeFace } from "./WireframeFace";
 export default PathfinderFace;

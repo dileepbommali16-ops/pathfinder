@@ -401,6 +401,7 @@ class AudioEngine {
   private nextPlayTime: number = 0;
   private micStream: MediaStream | null = null;
   private processor: ScriptProcessorNode | null = null;
+  private freqData: Uint8Array = new Uint8Array(128);
 
   public initContext() {
     if (!this.audioCtx) {
@@ -408,12 +409,27 @@ class AudioEngine {
       this.audioCtx = new AudioContextClass({ sampleRate: 24000 });
       this.analyser = this.audioCtx.createAnalyser();
       this.analyser.fftSize = 256;
-      this.analyser.smoothingTimeConstant = 0.75;
+      this.analyser.smoothingTimeConstant = 0.65;
       this.analyser.connect(this.audioCtx.destination);
     }
     if (this.audioCtx.state === "suspended") {
       this.audioCtx.resume();
     }
+  }
+
+  // Calculate volume using simple average of frequency data extracted via AnalyserNode
+  public getVolume(): number {
+    if (!this.analyser) {
+      return speaker.level();
+    }
+    this.analyser.getByteFrequencyData(this.freqData);
+    let sum = 0;
+    const bins = 48; // Vocal frequency spectrum
+    for (let i = 0; i < bins; i++) {
+      sum += this.freqData[i];
+    }
+    const avg = sum / bins;
+    return Math.min(1.0, Math.max(0.0, (avg - 6) / 100.0));
   }
 
   // Play incoming 24kHz 16-bit PCM base64 audio from Gemini Live & route through AnalyserNode for Lip-Sync
@@ -498,3 +514,6 @@ class AudioEngine {
 }
 
 export const audioEngine = new AudioEngine();
+export function getLiveAudioVolume(): number {
+  return audioEngine.getVolume();
+}
