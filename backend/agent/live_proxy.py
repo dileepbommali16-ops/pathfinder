@@ -11,7 +11,7 @@ from backend.agent.puck_voice import get_puck_speech_config, encode_pcm_24khz
 router = APIRouter()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_LIVE_MODEL = "gemini-2.0-flash-exp"
+GEMINI_LIVE_MODEL = os.getenv("GEMINI_LIVE_MODEL", "gemini-2.0-flash-exp")
 
 def build_das_system_prompt(user_role: str) -> str:
     honorific_rule = (

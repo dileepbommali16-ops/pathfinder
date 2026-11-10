@@ -53,7 +53,7 @@ class Settings:
         # AI / LLM Configurations (Unified Google Gemini + Gemini Live)
         self.gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
         self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest").strip() or "gemini-flash-latest"
-        self.gemini_live_model: str = os.getenv("GEMINI_LIVE_MODEL", "gemini-2.5-flash-native-audio-latest").strip() or "gemini-2.5-flash-native-audio-latest"
+        self.gemini_live_model: str = os.getenv("GEMINI_LIVE_MODEL", "gemini-2.0-flash-exp").strip() or "gemini-2.0-flash-exp"
         self.ai_daily_budget_per_user: int = int(os.getenv("AI_DAILY_BUDGET", "200"))
 
         # CORS Origins
