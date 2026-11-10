@@ -1,9 +1,8 @@
 import { audioEngine } from "./audioIO";
 import { executeBrowserTool, ToolCallArgs } from "./toolRunner";
+import { GEMINI_LIVE_CONFIG } from "./geminiLive";
 
-const PROD_WS_URL =
-  (import.meta as any).env?.VITE_WS_URL ||
-  "wss://pathfinder-backend-klrp.onrender.com/agent/ws";
+const PROD_WS_URL = GEMINI_LIVE_CONFIG.wsEndpoint;
 
 export type UserHonorificRole = "boss" | "sir";
 

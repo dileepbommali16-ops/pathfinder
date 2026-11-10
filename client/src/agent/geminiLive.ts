@@ -8,6 +8,24 @@ import {
   type VoicePipelineStage
 } from "./toolRunner";
 
+export const GEMINI_LIVE_CONFIG = {
+  wsEndpoint:
+    (import.meta as any).env?.VITE_WS_URL ||
+    "wss://pathfinder-backend-klrp.onrender.com/agent/ws",
+  apiEndpoint:
+    (import.meta as any).env?.VITE_BACKEND_URL ||
+    "https://pathfinder-backend-klrp.onrender.com",
+  voiceName: "Puck",
+  inputSampleRate: 16000,
+  outputSampleRate: 24000,
+  supportedLanguages: ["te-IN", "en-IN", "hi-IN"],
+};
+
+export function formatQuickCommand(commandText: string, role: "boss" | "sir"): string {
+  const prefix = role === "boss" ? "[User: Boss Dileep]" : "[User: Evaluator Sir]";
+  return `${prefix} ${commandText}`;
+}
+
 export interface GeminiLiveCallbacks {
   onAudioChunk?: (base64Pcm24k: string) => void;
   onInterrupted?: () => void;
