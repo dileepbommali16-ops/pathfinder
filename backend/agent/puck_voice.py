@@ -27,3 +27,4 @@ def encode_pcm_24khz(raw_pcm_bytes: bytes) -> dict:
         "sample_rate": PUCK_SAMPLE_RATE,
         "pcm_base64": base64.b64encode(raw_pcm_bytes).decode("utf-8")
     }
+
