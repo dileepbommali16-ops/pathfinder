@@ -1149,3 +1149,31 @@ def generate_structured_ai(prompt: str, schema: Type[BaseModel], pdf_bytes: Opti
 career_agent = chat_with_mentor
 hackathon_career_agent = chat_with_mentor
 
+def generate_dashboard_insight(prompt: str) -> str:
+    """
+    Dashboard text insight generator using the official Google GenAI Client.
+    """
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return "GEMINI_API_KEY is not configured."
+    client = genai.Client(api_key=api_key)
+    try:
+        if hasattr(client, "interactions") and hasattr(client.interactions, "create"):
+            interaction = client.interactions.create(
+                model="gemini-4-carbon",
+                input=prompt
+            )
+            return interaction.output_text
+    except Exception:
+        pass
+
+    try:
+        response = client.models.generate_content(
+            model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+            contents=prompt
+        )
+        return response.text or ""
+    except Exception as exc:
+        return f"Insight generation error: {exc}"
+
+

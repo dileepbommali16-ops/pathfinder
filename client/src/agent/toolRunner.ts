@@ -577,6 +577,48 @@ export function executeBrowserTool(
   }
 }
 
+export interface WebsiteControlArgs {
+  action: "navigate" | "scroll" | "click" | "highlight";
+  route?: string;
+  selector?: string;
+}
+
+export function executeWebsiteControl(
+  args: WebsiteControlArgs,
+  navigateFn?: (route: string) => void
+) {
+  // 1. Navigate to target page if route is provided
+  if (args.route) {
+    if (navigateFn) {
+      navigateFn(args.route);
+    } else {
+      window.history.pushState({}, "", args.route);
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    }
+  }
+
+  // 2. Scroll to or click DOM element on the page
+  if (args.selector) {
+    setTimeout(() => {
+      const el = document.querySelector(args.selector!) as HTMLElement | null;
+      if (!el) return;
+
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // Add temporary glowing cyan ring so user sees DAS controlling the card
+      el.style.transition = "all 0.4s ease";
+      el.style.boxShadow = "0 0 28px rgba(0, 240, 255, 0.75)";
+      setTimeout(() => {
+        el.style.boxShadow = "";
+      }, 2500);
+
+      if (args.action === "click") {
+        el.click();
+      }
+    }, 350);
+  }
+}
+
 export async function executeWebsiteTool(
   name: string,
   args: Record<string, any>,

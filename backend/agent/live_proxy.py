@@ -5,230 +5,270 @@ import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from google import genai
 from google.genai import types
+
+from backend.agent.puck_voice import (
+    LIVE_MODEL,
+    SEND_SAMPLE_RATE,
+    create_gemini_live_config,
+    format_audio_packet,
+)
 from backend.google_automation import trigger_google_workspace_sync
-from backend.agent.puck_voice import get_puck_speech_config, encode_pcm_24khz
 
 router = APIRouter()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_LIVE_MODEL = os.getenv("GEMINI_LIVE_MODEL", "gemini-2.0-flash-exp")
-
-def build_das_system_prompt(user_role: str) -> str:
-    honorific_rule = (
-        "You are currently speaking with your creator and owner, Bommali Dileep. "
-        "You MUST always address him respectfully and loyally as 'Boss' in every response."
-        if user_role.lower() == "boss"
-        else "You are currently speaking with an external evaluator, recruiter, or guest client. "
-             "You MUST always address them politely and professionally as 'Sir' in every response."
+def get_das_system_instruction(role: str) -> str:
+    honorific = (
+        "You are speaking with your creator and architect, Bommali Dileep. "
+        "Always address him warmly and loyally as 'Boss' in every single reply."
+        if role.lower() == "boss"
+        else "You are speaking with an external evaluator, recruiter, or guest client. "
+             "Always address them respectfully as 'Sir' in every single reply."
     )
 
-    return f"""You are DAS, the futuristic 3D AI Voice Co-Pilot and Autonomous Placement Architect powering PATHFINDER 2.0.
-{honorific_rule}
+    return f"""You are DAS, the intelligent 3D Wireframe Voice Co-Pilot living inside the background of the PATHFINDER 2.0 dashboard.
+{honorific}
 
-CORE CAPABILITIES & PERSONALITY:
-1. MULTILINGUAL FLUENCY: Effortlessly speak and switch between Telugu, English, and Hindi depending on the language the user speaks to you. Keep your tone natural, warm, friendly, and highly intelligent.
-2. DEEP REASONING & EXPLANATION: Explain campus placement readiness (trained on 972 placement records), CGPA what-if simulations, 23 flagship project blueprints, ATS X-Y-Z resume optimization, and 6-week sprint roadmaps clearly and concisely.
-3. AUTONOMOUS UI CONTROL: Whenever the user asks to open a page, check a section, scroll, or simulate a scenario on the website, immediately call the `navigate_ui` tool so the browser updates live while you speak.
-4. GOOGLE WORKSPACE AUTOMATION: Whenever the user asks to send an email, schedule a mock interview on Google Calendar, or log placement data to Google Sheets, call the `run_google_automation` tool.
-5. VOICE PACING: Keep spoken responses crisp, natural, and engaging so your 3D wireframe face lip-syncs smoothly in real time."""
+BEHAVIOR & MULTILINGUAL CAPABILITIES:
+1. Speak naturally and fluently in Telugu, English, or Hindi matching the user's language.
+2. You have full real-time control over the PATHFINDER 2.0 website. When asked to open any page (Home Dashboard, 23 Flagship Blueprints, ATS Resume Studio, Mock Interview) or scroll to any section (Placement Radar, Sprint Roadmap, Skill Gap Matrix, What-If Simulator), immediately call the `control_website` function.
+3. When asked to send an email, schedule a calendar interview, or log data to Google Sheets, call `run_google_automation`.
+4. Keep voice answers crisp, friendly, and conversational so your 3D face lip-syncs naturally."""
 
-# Gemini Live Tool Declarations
+# Tools matching AI Studio specs: Function Calling + Google Automation
 DAS_TOOLS = [
     types.Tool(
         function_declarations=[
             types.FunctionDeclaration(
-                name="navigate_ui",
-                description="Autonomously navigate the Pathfinder 2.0 web dashboard, switch routes, scroll, or highlight sections.",
+                name="control_website",
+                description="Control the PATHFINDER 2.0 website: switch pages/routes, scroll to dashboard cards, click buttons, or update simulator values.",
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
+                        "action": types.Schema(
+                            type="STRING",
+                            description="One of: 'navigate', 'scroll', 'click', 'highlight'"
+                        ),
                         "route": types.Schema(
                             type="STRING",
-                            description="Target route path: '/', '/blueprints', '/resume-studio', or '/mock-interview'"
+                            description="Target route: '/', '/blueprints', '/resume-studio', or '/mock-interview'"
                         ),
                         "selector": types.Schema(
                             type="STRING",
-                            description="Optional DOM selector or section ID to scroll into view (e.g., '#placement-radar', '#what-if-simulator', '#skill-gap')"
+                            description="DOM selector ID: '#placement-radar', '#sprint-roadmap', '#skill-gap-matrix', '#what-if-simulator'"
                         ),
-                        "action": types.Schema(
-                            type="STRING",
-                            description="Action type: 'navigate', 'scroll', or 'click'"
-                        )
                     },
-                    required=["route", "action"]
-                )
+                    required=["action"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="navigate_ui",
+                description="Backward compatible UI navigation for PATHFINDER 2.0.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "route": types.Schema(type="STRING"),
+                        "action": types.Schema(type="STRING"),
+                        "selector": types.Schema(type="STRING"),
+                    },
+                    required=["route"],
+                ),
             ),
             types.FunctionDeclaration(
                 name="run_google_automation",
-                description="Trigger Google Workspace automation (Gmail, Calendar, Sheets) via the n8n cloud webhook.",
+                description="Trigger n8n Google Workspace automation for Gmail, Google Calendar, or Google Sheets.",
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
                         "automation_type": types.Schema(
                             type="STRING",
-                            description="Type of automation: 'send_email', 'schedule_calendar', or 'log_sheet'"
+                            description="'send_email', 'schedule_calendar', or 'log_sheet'"
                         ),
-                        "recipient_email": types.Schema(
-                            type="STRING",
-                            description="Email address of student or evaluator"
-                        ),
-                        "subject": types.Schema(
-                            type="STRING",
-                            description="Subject or event title"
-                        ),
-                        "details": types.Schema(
-                            type="STRING",
-                            description="Body content or placement summary details"
-                        )
+                        "recipient_email": types.Schema(type="STRING"),
+                        "subject": types.Schema(type="STRING"),
+                        "details": types.Schema(type="STRING"),
                     },
-                    required=["automation_type", "details"]
-                )
-            )
+                    required=["automation_type", "details"],
+                ),
+            ),
         ]
-    )
+    ),
 ]
 
 @router.websocket("/agent/ws")
-async def das_live_websocket(websocket: WebSocket):
+async def das_multimodal_live_ws(websocket: WebSocket):
     await websocket.accept()
 
-    if not GEMINI_API_KEY:
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
         await websocket.send_json({
             "type": "error",
-            "message": "GEMINI_API_KEY Render environment lo set cheyyaledu Boss!"
+            "message": "GEMINI_API_KEY Render Environment Variables lo set cheyyaledu Boss!"
         })
         await websocket.close()
         return
 
-    # Default role is 'boss', can be updated via query param ?role=boss or ?role=sir
     user_role = websocket.query_params.get("role", "boss")
-    client = genai.Client(api_key=GEMINI_API_KEY, http_options={"api_version": "v1alpha"})
 
-    live_config = types.LiveConnectConfig(
-        response_modalities=["AUDIO"],
-        speech_config=get_puck_speech_config(),
-        system_instruction=types.Content(
-            parts=[types.Part.from_text(text=build_das_system_prompt(user_role))]
-        ),
-        tools=DAS_TOOLS,
-        temperature=0.25
+    # Multimodal Live API requires v1alpha for bidirectional websocket streaming
+    client = genai.Client(
+        http_options={"api_version": "v1alpha"},
+        api_key=api_key,
+    )
+
+    config = create_gemini_live_config(
+        system_prompt=get_das_system_instruction(user_role),
+        tools_list=DAS_TOOLS,
     )
 
     try:
-        async with client.aio.live.connect(model=GEMINI_LIVE_MODEL, config=live_config) as session:
+        async with (
+            client.aio.live.connect(model=LIVE_MODEL, config=config) as session,
+            asyncio.TaskGroup() as tg,
+        ):
             await websocket.send_json({
                 "type": "status",
                 "status": "connected",
-                "role": user_role
+                "model": LIVE_MODEL,
+                "voice": "Puck",
+                "role": user_role,
             })
 
-            async def receive_from_frontend():
+            async def receive_from_browser():
                 try:
                     while True:
-                        raw_msg = await websocket.receive_text()
-                        data = json.loads(raw_msg)
-                        msg_type = data.get("type")
+                        raw = await websocket.receive_text()
+                        msg = json.loads(raw)
+                        msg_type = msg.get("type")
 
-                        # 0. Render Proxy Keep-Alive Ping-Pong
+                        # 1. Keep-alive Ping from Render/Vercel
                         if msg_type == "ping":
                             await websocket.send_json({"type": "pong"})
                             continue
 
-                        # 1. Real-time Microphone PCM 16kHz Audio Stream
+                        # 2. Real-time 16kHz Mic PCM chunks from Browser
                         if msg_type == "audio":
-                            pcm_bytes = base64.b64decode(data["pcm_base64"])
+                            pcm_bytes = base64.b64decode(msg["pcm_base64"])
                             await session.send(
-                                input={"data": pcm_bytes, "mime_type": "audio/pcm;rate=16000"}
+                                input={
+                                    "data": pcm_bytes,
+                                    "mime_type": f"audio/pcm;rate={SEND_SAMPLE_RATE}",
+                                }
                             )
 
-                        # 2. Text Command or Role Switch from HUD
+                        # 3. Optional Camera / Screen Frame from Browser (1 FPS JPEG)
+                        elif msg_type == "frame":
+                            await session.send(
+                                input={
+                                    "data": msg["jpeg_base64"],
+                                    "mime_type": "image/jpeg",
+                                }
+                            )
+
+                        # 4. Text Input from HUD
                         elif msg_type == "text":
-                            user_text = data.get("text", "")
-                            await session.send(input=user_text, end_of_turn=True)
+                            text = msg.get("text", "")
+                            await session.send(input=text or ".", end_of_turn=True)
 
+                        # 5. Boss / Sir Role Switch
                         elif msg_type == "role_switch":
-                            new_role = data.get("role", "boss")
-                            role_notice = (
-                                "SYSTEM UPDATE: You are now speaking with your creator Dileep. Address him as Boss."
+                            new_role = msg.get("role", "boss")
+                            update_msg = (
+                                "SYSTEM: You are now speaking with your creator Bommali Dileep. Address him as Boss."
                                 if new_role == "boss"
-                                else "SYSTEM UPDATE: You are now speaking with an external evaluator/client. Address them as Sir."
+                                else "SYSTEM: You are now speaking with an evaluator/client. Address them as Sir."
                             )
-                            await session.send(input=role_notice, end_of_turn=True)
+                            await session.send(input=update_msg, end_of_turn=True)
 
                 except WebSocketDisconnect:
-                    pass
+                    raise asyncio.CancelledError("Browser disconnected")
 
-            async def stream_from_gemini():
+            async def receive_from_gemini():
                 try:
                     while True:
-                        async for response in session.receive():
-                            server_content = response.server_content
-                            if server_content and server_content.model_turn:
-                                for part in server_content.model_turn.parts:
-                                    # Send 24kHz PCM audio chunk to frontend for playback & 3D Lip-Sync
+                        turn = session.receive()
+                        async for response in turn:
+                            # 1. Direct 24kHz PCM Audio Stream
+                            if hasattr(response, "data") and response.data:
+                                await websocket.send_json(format_audio_packet(response.data))
+                            elif response.server_content and response.server_content.model_turn:
+                                for part in response.server_content.model_turn.parts:
                                     if part.inline_data and part.inline_data.data:
-                                        await websocket.send_json(encode_pcm_24khz(part.inline_data.data))
-
-                                    # Send transcript text if present
+                                        await websocket.send_json(format_audio_packet(part.inline_data.data))
                                     if part.text:
                                         await websocket.send_json({
                                             "type": "transcript",
-                                            "text": part.text
+                                            "text": part.text,
                                         })
 
-                            if server_content and server_content.turn_complete:
-                                await websocket.send_json({"type": "turn_complete"})
+                            # 2. Text / Transcript Stream
+                            if hasattr(response, "text") and response.text:
+                                await websocket.send_json({
+                                    "type": "transcript",
+                                    "text": response.text,
+                                })
 
-                            # Handle Gemini Tool Calls (UI Navigation & Google Automation)
+                            # 3. Check for user interruption to immediately stop 3D Face lip-sync
+                            if (
+                                response.server_content
+                                and getattr(response.server_content, "interrupted", False)
+                            ):
+                                await websocket.send_json({"type": "interrupted"})
+
+                            # 4. Handle Function Calls (Website Control & n8n Automation)
                             if response.tool_call:
                                 function_responses = []
                                 for fc in response.tool_call.function_calls:
                                     args = fc.args or {}
 
-                                    if fc.name == "navigate_ui":
-                                        # Forward UI instruction to Frontend toolRunner.ts
+                                    if fc.name in ("control_website", "navigate_ui"):
                                         await websocket.send_json({
                                             "type": "tool_call",
-                                            "name": "navigate_ui",
-                                            "args": args
+                                            "name": "control_website",
+                                            "args": args,
                                         })
                                         function_responses.append(
                                             types.FunctionResponse(
                                                 name=fc.name,
                                                 id=fc.id,
-                                                response={"result": f"Navigated browser to {args.get('route')}"}
+                                                response={"status": "executed_on_client", "args": args},
                                             )
                                         )
 
                                     elif fc.name == "run_google_automation":
-                                        # Trigger n8n Webhook
-                                        webhook_res = await trigger_google_workspace_sync(
+                                        n8n_res = await trigger_google_workspace_sync(
                                             action=args.get("automation_type", "sync"),
-                                            payload=args
+                                            payload=args,
                                         )
                                         await websocket.send_json({
                                             "type": "automation_status",
-                                            "data": webhook_res
+                                            "data": n8n_res,
                                         })
                                         function_responses.append(
                                             types.FunctionResponse(
                                                 name=fc.name,
                                                 id=fc.id,
-                                                response=webhook_res
+                                                response=n8n_res,
                                             )
                                         )
 
                                 if function_responses:
-                                    await session.send(
-                                        input=types.LiveClientToolResponse(
-                                            function_responses=function_responses
+                                    if hasattr(types, "LiveClientToolResponse"):
+                                        await session.send(
+                                            input=types.LiveClientToolResponse(
+                                                function_responses=function_responses
+                                            )
                                         )
-                                    )
-                except Exception as e:
-                    await websocket.send_json({"type": "error", "message": str(e)})
 
-            await asyncio.gather(receive_from_frontend(), stream_from_gemini())
+                        # Notify frontend when turn finishes
+                        await websocket.send_json({"type": "turn_complete"})
+                except Exception as stream_err:
+                    print(f"[Gemini Stream Notice] {stream_err}")
 
+            tg.create_task(receive_from_browser())
+            tg.create_task(receive_from_gemini())
+
+    except asyncio.CancelledError:
+        pass
     except Exception as e:
-        await websocket.send_json({"type": "error", "message": f"Gemini Live Error: {str(e)}"})
+        await websocket.send_json({"type": "error", "message": str(e)})
         await websocket.close()

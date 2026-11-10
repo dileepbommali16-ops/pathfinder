@@ -399,6 +399,7 @@ class AudioEngine {
   public audioCtx: AudioContext | null = null;
   public analyser: AnalyserNode | null = null;
   private nextPlayTime: number = 0;
+  private activeSources: AudioBufferSourceNode[] = [];
   private micStream: MediaStream | null = null;
   private processor: ScriptProcessorNode | null = null;
   private freqData: Uint8Array = new Uint8Array(128);
@@ -459,10 +460,31 @@ class AudioEngine {
 
     const currentTime = this.audioCtx.currentTime;
     if (this.nextPlayTime < currentTime) {
-      this.nextPlayTime = currentTime + 0.02;
+      this.nextPlayTime = currentTime + 0.015;
     }
     source.start(this.nextPlayTime);
     this.nextPlayTime += audioBuffer.duration;
+    this.activeSources.push(source);
+
+    source.onended = () => {
+      this.activeSources = this.activeSources.filter((s) => s !== source);
+    };
+  }
+
+  // Clear audio queue immediately when user interrupts DAS
+  public clearAudioQueue() {
+    this.activeSources.forEach((src) => {
+      try {
+        src.stop();
+        src.disconnect();
+      } catch {
+        // Ignore already stopped sources
+      }
+    });
+    this.activeSources = [];
+    if (this.audioCtx) {
+      this.nextPlayTime = this.audioCtx.currentTime;
+    }
   }
 
   // Start capturing 16kHz PCM audio from user's microphone
@@ -479,7 +501,7 @@ class AudioEngine {
 
     const micCtx = new AudioContext({ sampleRate: 16000 });
     const source = micCtx.createMediaStreamSource(this.micStream);
-    this.processor = micCtx.createScriptProcessor(4096, 1, 1);
+    this.processor = micCtx.createScriptProcessor(1024, 1, 1);
 
     this.processor.onaudioprocess = (event) => {
       const inputData = event.inputBuffer.getChannelData(0);
@@ -514,6 +536,7 @@ class AudioEngine {
 }
 
 export const audioEngine = new AudioEngine();
+export { AudioEngine as BrowserAudioLoop };
 export function getLiveAudioVolume(): number {
   return audioEngine.getVolume();
 }

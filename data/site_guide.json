@@ -2,6 +2,22 @@
   "platform": "Pathfinder 2.0",
   "tagline": "AI Placement Architecture & Career Co-Pilot",
   "version": "2.0.0",
+  "routes": {
+    "dashboard": "/",
+    "home": "/",
+    "blueprints": "/blueprints",
+    "projects": "/blueprints",
+    "resume": "/resume-studio",
+    "ats": "/resume-studio",
+    "interview": "/mock-interview",
+    "mock": "/mock-interview"
+  },
+  "sections": {
+    "radar": "#placement-radar",
+    "roadmap": "#sprint-roadmap",
+    "skillgap": "#skill-gap-matrix",
+    "simulator": "#what-if-simulator"
+  },
   "features": [
     {
       "id": "overview",

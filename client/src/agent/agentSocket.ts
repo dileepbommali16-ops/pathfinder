@@ -1,5 +1,5 @@
 import { audioEngine } from "./audioIO";
-import { executeBrowserTool, ToolCallArgs } from "./toolRunner";
+import { executeWebsiteControl, WebsiteControlArgs, executeBrowserTool, ToolCallArgs } from "./toolRunner";
 
 const PROD_WS_URL =
   import.meta.env.VITE_WS_URL ||
@@ -18,26 +18,30 @@ class DasAgentSocket {
   private manualClose: boolean = false;
   public isConnected: boolean = false;
 
-  // Wake up Render container before opening WebSocket
-  private async warmUpRenderBackend() {
+  // Non-blocking parallel wakeup for Render container
+  private warmUpRenderBackend() {
     try {
-      await fetch(`${PROD_API_URL}/health`, { method: "GET" });
+      fetch(`${PROD_API_URL}/health`, { method: "GET" }).catch(() => {});
     } catch {
-      // Ignore initial cold-start fetch warning
+      // Ignore background warmup notices
     }
   }
 
-  public async connect(
+  public connect(
     role: UserHonorificRole = "boss",
     onTranscript?: (text: string) => void,
     onStatusChange?: (connected: boolean) => void,
     navigateFn?: (path: string) => void
   ) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
+    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
     this.manualClose = false;
 
-    await this.warmUpRenderBackend();
+    // Fire background warmup without blocking the WebSocket handshake
+    this.warmUpRenderBackend();
 
+    // Immediately open WebSocket for fast connection
     this.ws = new WebSocket(`${PROD_WS_URL}?role=${role}`);
 
     this.ws.onopen = () => {
@@ -64,14 +68,19 @@ class DasAgentSocket {
           audioEngine.playPcmChunk(data.pcm_base64, data.sample_rate || 24000);
         }
 
-        // 2. Display Live Transcript
+        // 2. Clear audio playback immediately if Boss interrupts DAS
+        if (data.type === "interrupted") {
+          audioEngine.clearAudioQueue();
+        }
+
+        // 3. Display Live Transcript
         if (data.type === "transcript" && data.text) {
           onTranscript?.(data.text);
         }
 
-        // 3. Autonomous Browser Tool Execution
-        if (data.type === "tool_call" && data.name === "navigate_ui") {
-          executeBrowserTool(data.args as ToolCallArgs, navigateFn);
+        // 4. Autonomous Website Control (Routes, Scroll, Click, Highlight)
+        if (data.type === "tool_call" && (data.name === "control_website" || data.name === "navigate_ui")) {
+          executeWebsiteControl(data.args as WebsiteControlArgs, navigateFn);
         }
       } catch (err) {
         console.warn("[DasAgentSocket] Failed to parse message:", err);
@@ -117,6 +126,7 @@ class DasAgentSocket {
   public disconnect() {
     this.manualClose = true;
     audioEngine.stopMicCapture();
+    audioEngine.clearAudioQueue();
     if (this.heartbeatInterval) window.clearInterval(this.heartbeatInterval);
     if (this.reconnectTimeout) window.clearTimeout(this.reconnectTimeout);
     if (this.ws) {

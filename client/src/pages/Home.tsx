@@ -1631,8 +1631,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
       )}
 
       {/* BACKGROUND SYSTEM */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0b10] via-[#0d0f18] to-[#0a0b10]" />
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0b10]/80 via-[#0d0f18]/70 to-[#0a0b10]/85" />
         <Ambient3DBackground />
 
         <div
@@ -1716,20 +1716,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
 
       {/* Main Container */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
-        <AgentLayout
-          profile={profile}
-          activeTab={activeTab}
-          prediction={prediction}
-          userEmail={email}
-          username={username}
-          onNavigateTab={(tab: string) => {
-            setActiveTab(tab as TabId);
-            setFocusOnDas(false);
-          }}
-          isAmbient={true}
-          focusOnDas={focusOnDas}
-          onToggleFocus={() => setFocusOnDas((prev) => !prev)}
-        />
         {activeTab === "overview" && focusOnDas && (
           <div className="fixed top-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 animate-in fade-in duration-300">
             <button
@@ -1842,12 +1828,14 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   helperLabel="Evaluates eligibility for Google, Razorpay, Amazon, and TCS Digital"
                   onAskCoach={handleAskCoach}
                 />
-                <CompanyPlacementRadar
-                  profile={profile}
-                  predictionChance={prediction.chance}
-                  onLaunchMockInterview={handleLaunchMockInterview}
-                  onAskCoach={handleAskCoach}
-                />
+                <div id="placement-radar">
+                  <CompanyPlacementRadar
+                    profile={profile}
+                    predictionChance={prediction.chance}
+                    onLaunchMockInterview={handleLaunchMockInterview}
+                    onAskCoach={handleAskCoach}
+                  />
+                </div>
               </section>
 
               <section id="career-digital-twin" data-das-id="career-twin" className="space-y-4">
@@ -1921,15 +1909,17 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   icon={TrendingUp}
                   helperLabel="Interactive sliders instantly re-simulate placement probability"
                 />
-                <WhatIfSimulator
-                  currentProfile={profile}
-                  currentScore={prediction.chance}
-                  onApplySimulatedProfile={(updated) => {
-                    const merged = { ...profile, ...updated };
-                    setProfile(merged);
-                    fetchPrediction(merged);
-                  }}
-                />
+                <div id="what-if-simulator">
+                  <WhatIfSimulator
+                    currentProfile={profile}
+                    currentScore={prediction.chance}
+                    onApplySimulatedProfile={(updated) => {
+                      const merged = { ...profile, ...updated };
+                      setProfile(merged);
+                      fetchPrediction(merged);
+                    }}
+                  />
+                </div>
               </section>
 
               <section
@@ -1967,13 +1957,15 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   accent="amber"
                   icon={Sparkles}
                 />
-                <SkillGapSection
-                  strengths={prediction.strengths}
-                  priorities={prediction.priorities}
-                  breakdown={prediction.breakdown}
-                  onAskCoach={handleAskCoach}
-                  apiBase={API_BASE}
-                />
+                <div id="skill-gap-matrix">
+                  <SkillGapSection
+                    strengths={prediction.strengths}
+                    priorities={prediction.priorities}
+                    breakdown={prediction.breakdown}
+                    onAskCoach={handleAskCoach}
+                    apiBase={API_BASE}
+                  />
+                </div>
               </section>
             </motion.div>
           )}
@@ -2064,11 +2056,13 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 helperLabel="Milestones auto-adapt as you update skills and role"
               />
               <CareerMissionTracker profile={profile} onNavigateTab={setActiveTab} />
-              <RoadmapVisualizer
-                roadmap={roadmap}
-                isLoading={isRoadmapLoading}
-                onRegenerate={fetchRoadmap}
-              />
+              <div id="sprint-roadmap">
+                <RoadmapVisualizer
+                  roadmap={roadmap}
+                  isLoading={isRoadmapLoading}
+                  onRegenerate={fetchRoadmap}
+                />
+              </div>
               <SkillIntelligence
                 apiBase={API_BASE}
                 selectedYear={profile.graduationYear || 2026}
