@@ -231,6 +231,7 @@ async def semantic_search_rag(
     supabase_url = os.getenv("SUPABASE_URL") or os.getenv("VITE_SUPABASE_URL") or ""
     supabase_key = (
         os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        or os.getenv("SUPABASE_KEY")
         or os.getenv("SUPABASE_ANON_KEY")
         or os.getenv("VITE_SUPABASE_ANON_KEY")
         or ""
@@ -349,6 +350,7 @@ async def seed_supabase_knowledge_table() -> Dict[str, Any]:
     supabase_url = os.getenv("SUPABASE_URL") or os.getenv("VITE_SUPABASE_URL") or ""
     supabase_key = (
         os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        or os.getenv("SUPABASE_KEY")
         or os.getenv("SUPABASE_ANON_KEY")
         or os.getenv("VITE_SUPABASE_ANON_KEY")
         or ""
