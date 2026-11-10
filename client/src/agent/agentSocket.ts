@@ -23,11 +23,23 @@ class DasAgentSocket {
     this.ws.onopen = () => {
       this.isConnected = true;
       onStatusChange?.(true);
+
+      // Keep Render WebSocket alive every 25 seconds
+      const heartbeat = setInterval(() => {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({ type: "ping" }));
+        } else {
+          clearInterval(heartbeat);
+        }
+      }, 25000);
     };
 
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+
+        // Heartbeat pong acknowledge
+        if (data.type === "pong") return;
 
         // 1. Play 24kHz Gemini Voice & Drive 3D Lip-Sync
         if (data.type === "audio" && data.pcm_base64) {

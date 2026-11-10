@@ -141,6 +141,9 @@ async def das_live_websocket(websocket: WebSocket):
                             user_text = data.get("text", "")
                             await session.send(input=user_text, end_of_turn=True)
 
+                        elif msg_type == "ping":
+                            await websocket.send_json({"type": "pong"})
+
                         elif msg_type == "role_switch":
                             new_role = data.get("role", "boss")
                             role_notice = (
