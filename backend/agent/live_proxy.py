@@ -6,6 +6,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from google import genai
 from google.genai import types
 from backend.google_automation import trigger_google_workspace_sync
+from backend.agent.puck_voice import get_puck_speech_config, encode_pcm_24khz
 
 router = APIRouter()
 
@@ -105,11 +106,7 @@ async def das_live_websocket(websocket: WebSocket):
 
     live_config = types.LiveConnectConfig(
         response_modalities=["AUDIO"],
-        speech_config=types.SpeechConfig(
-            voice_config=types.VoiceConfig(
-                prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Puck")
-            )
-        ),
+        speech_config=get_puck_speech_config(),
         system_instruction=types.Content(
             parts=[types.Part.from_text(text=build_das_system_prompt(user_role))]
         ),
@@ -165,12 +162,7 @@ async def das_live_websocket(websocket: WebSocket):
                                 for part in server_content.model_turn.parts:
                                     # Send 24kHz PCM audio chunk to frontend for playback & 3D Lip-Sync
                                     if part.inline_data and part.inline_data.data:
-                                        audio_b64 = base64.b64encode(part.inline_data.data).decode("utf-8")
-                                        await websocket.send_json({
-                                            "type": "audio",
-                                            "pcm_base64": audio_b64,
-                                            "sample_rate": 24000
-                                        })
+                                        await websocket.send_json(encode_pcm_24khz(part.inline_data.data))
 
                                     # Send transcript text if present
                                     if part.text:
