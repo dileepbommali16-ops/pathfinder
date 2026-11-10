@@ -9,6 +9,7 @@ export type UserHonorificRole = "boss" | "sir";
 class DasAgentSocket {
   private ws: WebSocket | null = null;
   public isConnected: boolean = false;
+  private autoReconnect: boolean = true;
 
   public connect(
     role: UserHonorificRole = "boss",
@@ -17,6 +18,7 @@ class DasAgentSocket {
     navigateFn?: (path: string) => void
   ) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
+    this.autoReconnect = true;
 
     this.ws = new WebSocket(`${PROD_WS_URL}?role=${role}`);
 
@@ -60,9 +62,17 @@ class DasAgentSocket {
       }
     };
 
-    this.ws.onclose = () => {
+    this.ws.onclose = (event) => {
       this.isConnected = false;
       onStatusChange?.(false);
+      if (this.autoReconnect && !event.wasClean) {
+        setTimeout(() => {
+          if (!this.isConnected && this.autoReconnect) {
+            console.log("[DasAgentSocket] Resilient Auto-reconnect to DAS Gateway...");
+            this.connect(role, onTranscript, onStatusChange, navigateFn);
+          }
+        }, 2500);
+      }
     };
 
     this.ws.onerror = (err) => {
@@ -89,6 +99,7 @@ class DasAgentSocket {
   }
 
   public disconnect() {
+    this.autoReconnect = false;
     audioEngine.stopMicCapture();
     if (this.ws) {
       this.ws.close();
