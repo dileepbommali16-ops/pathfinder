@@ -43,7 +43,7 @@ export class Speaker {
     if (typeof window === "undefined") return;
     const unlock = () => {
       if (this.ctxRef && this.ctxRef.state === "suspended") {
-        this.ctxRef.resume().catch(() => {});
+        this.ctxRef.resume().catch(() => { });
       }
       if (this.pendingGreetingText && !this.activeSpeaking) {
         const textToSpeak = this.pendingGreetingText;
@@ -89,7 +89,7 @@ export class Speaker {
     if (ctx.state === "suspended") {
       try {
         await ctx.resume();
-      } catch {}
+      } catch { }
     }
   }
 
@@ -206,7 +206,7 @@ export class Speaker {
     if (ctx.state === "suspended") {
       try {
         await ctx.resume();
-      } catch {}
+      } catch { }
     }
 
     let binary: string;
@@ -328,9 +328,9 @@ export class Speaker {
       try {
         processor.disconnect();
         source.disconnect();
-      } catch {}
+      } catch { }
       stream.getTracks().forEach((t) => t.stop());
-      micCtx.close().catch(() => {});
+      micCtx.close().catch(() => { });
     };
   }
 
@@ -342,12 +342,12 @@ export class Speaker {
       try {
         s.onended = null;
         s.stop();
-      } catch {}
+      } catch { }
     });
     this.scheduledPcmSources.clear();
     try {
       this.currentSource?.stop();
-    } catch {}
+    } catch { }
     this.currentSource = undefined;
     this.pending = 0;
     this.activeSpeaking = false;
@@ -422,7 +422,7 @@ export function startListening(
     onEnd();
     if (finalText.trim()) onFinal(finalText.trim());
   };
-  r.onerror = () => {};
+  r.onerror = () => { };
   r.start();
   return () => r.stop();
 }
@@ -433,3 +433,108 @@ export const speaker = new Speaker(
     sessionStorage.getItem("pathfinder_token")
 );
 export const audioManager = speaker;
+
+
+class AudioEngine {
+  public audioCtx: AudioContext | null = null;
+  public analyser: AnalyserNode | null = null;
+  private nextPlayTime: number = 0;
+  private micStream: MediaStream | null = null;
+  private processor: ScriptProcessorNode | null = null;
+
+  public initContext() {
+    if (!this.audioCtx) {
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      this.audioCtx = new AudioContextClass({ sampleRate: 24000 });
+      this.analyser = this.audioCtx.createAnalyser();
+      this.analyser.fftSize = 256;
+      this.analyser.smoothingTimeConstant = 0.75;
+      this.analyser.connect(this.audioCtx.destination);
+    }
+    if (this.audioCtx.state === "suspended") {
+      this.audioCtx.resume();
+    }
+  }
+
+  // Play incoming 24kHz 16-bit PCM base64 audio from Gemini Live & route through AnalyserNode for Lip-Sync
+  public playPcmChunk(base64Pcm: string, sampleRate = 24000) {
+    this.initContext();
+    if (!this.audioCtx || !this.analyser) return;
+
+    const binaryStr = window.atob(base64Pcm);
+    const len = binaryStr.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryStr.charCodeAt(i);
+    }
+
+    const int16Data = new Int16Array(bytes.buffer);
+    const float32Data = new Float32Array(int16Data.length);
+    for (let i = 0; i < int16Data.length; i++) {
+      float32Data[i] = int16Data[i] / 32768.0;
+    }
+
+    const audioBuffer = this.audioCtx.createBuffer(1, float32Data.length, sampleRate);
+    audioBuffer.getChannelData(0).set(float32Data);
+
+    const source = this.audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(this.analyser);
+
+    const currentTime = this.audioCtx.currentTime;
+    if (this.nextPlayTime < currentTime) {
+      this.nextPlayTime = currentTime + 0.02;
+    }
+    source.start(this.nextPlayTime);
+    this.nextPlayTime += audioBuffer.duration;
+  }
+
+  // Start capturing 16kHz PCM audio from user's microphone
+  public async startMicCapture(onPcmChunk: (base64Pcm: string) => void) {
+    this.initContext();
+    this.micStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate: 16000,
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+      },
+    });
+
+    const micCtx = new AudioContext({ sampleRate: 16000 });
+    const source = micCtx.createMediaStreamSource(this.micStream);
+    this.processor = micCtx.createScriptProcessor(4096, 1, 1);
+
+    this.processor.onaudioprocess = (event) => {
+      const inputData = event.inputBuffer.getChannelData(0);
+      const pcm16 = new Int16Array(inputData.length);
+      for (let i = 0; i < inputData.length; i++) {
+        const s = Math.max(-1, Math.min(1, inputData[i]));
+        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      }
+
+      const uint8 = new Uint8Array(pcm16.buffer);
+      let binary = "";
+      for (let i = 0; i < uint8.byteLength; i++) {
+        binary += String.fromCharCode(uint8[i]);
+      }
+      onPcmChunk(window.btoa(binary));
+    };
+
+    source.connect(this.processor);
+    this.processor.connect(micCtx.destination);
+  }
+
+  public stopMicCapture() {
+    if (this.processor) {
+      this.processor.disconnect();
+      this.processor = null;
+    }
+    if (this.micStream) {
+      this.micStream.getTracks().forEach((track) => track.stop());
+      this.micStream = null;
+    }
+  }
+}
+
+export const audioEngine = new AudioEngine();

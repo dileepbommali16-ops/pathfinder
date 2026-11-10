@@ -547,6 +547,36 @@ export function runTool(
   }
 }
 
+export interface ToolCallArgs {
+  route?: string;
+  selector?: string;
+  action?: "navigate" | "scroll" | "click";
+}
+
+export function executeBrowserTool(
+  args: ToolCallArgs,
+  navigateFn?: (path: string) => void
+) {
+  if (args.route && navigateFn) {
+    navigateFn(args.route);
+  } else if (args.route) {
+    window.history.pushState({}, "", args.route);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
+  if (args.selector) {
+    setTimeout(() => {
+      const el = document.querySelector(args.selector!);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (args.action === "click" && el instanceof HTMLElement) {
+          el.click();
+        }
+      }
+    }, 350);
+  }
+}
+
 export async function executeWebsiteTool(
   name: string,
   args: Record<string, any>,

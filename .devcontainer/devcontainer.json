@@ -36,3 +36,40 @@
     3000
   ]
 }
+
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from backend.agent.live_proxy import router as agent_ws_router
+
+app = FastAPI(title="PATHFINDER 2.0 Cloud Backend")
+
+FRONTEND_URL = os.getenv("FRONTEND_URL",
+"https://pathfinder-client-fzom.vercel.app")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        FRONTEND_URL,
+  "https://pathfinder-client-fzom.vercel.app"
+],
+    allow_credentials=True,
+    allow_methods=[
+  "*"
+],
+    allow_headers=[
+  "*"
+],
+)
+
+# Connect Live Agent WebSocket (/agent/ws)
+app.include_router(agent_ws_router)
+
+@app.get("/health")
+async def health_check():
+    return {
+  "status": "online",
+  "agent": "DAS 3D Live Co-Pilot",
+  "frontend": FRONTEND_URL,
+  "websocket": "wss://pathfinder-backend-klrp.onrender.com/agent/ws"
+}

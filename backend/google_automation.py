@@ -98,3 +98,39 @@ class PathfinderGoogleAutomation:
 
 
 google_auto = PathfinderGoogleAutomation()
+
+
+import os
+import httpx
+
+N8N_WEBHOOK_URL = os.getenv(
+    "N8N_WEBHOOK_URL",
+    "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync"
+)
+
+async def trigger_google_workspace_sync(action: str, payload: dict) -> dict:
+    """
+    Triggers n8n workflow for Gmail, Google Calendar, or Google Sheets automation.
+    """
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        try:
+            response = await client.post(
+                N8N_WEBHOOK_URL,
+                json={
+                    "action": action,
+                    "source": "PATHFINDER_DAS_AGENT",
+                    "data": payload
+                }
+            )
+            response.raise_for_status()
+            return {
+                "status": "success",
+                "action": action,
+                "webhook_response": response.json() if response.text else "Triggered successfully"
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "action": action,
+                "message": str(e)
+            }
