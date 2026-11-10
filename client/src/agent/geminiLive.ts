@@ -20,7 +20,7 @@ export interface GeminiLiveCallbacks {
 
 const ENV = import.meta.env as Record<string, string | undefined>;
 // FIXED: Valid Gemini Live WebSocket model so Puck voice never fails!
-const LIVE_MODEL = ENV.VITE_GEMINI_LIVE_MODEL || "gemini-2.0-flash-exp";
+const LIVE_MODEL = ENV.VITE_GEMINI_LIVE_MODEL || "gemini-3.8-live";
 const VOICE_NAME = "Puck";
 const TEXT_MODEL = ENV.VITE_GEMINI_TEXT_MODEL || "gemini-flash-lite-latest";
 

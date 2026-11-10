@@ -11,6 +11,9 @@ export const PROD_BACKEND_URL = "https://pathfinder-backend-klrp.onrender.com";
 export const getApiBase = () => {
   if (typeof window !== "undefined") {
     const envUrl = import.meta.env.VITE_API_BASE_URL;
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      return envUrl && envUrl.trim() ? envUrl.replace(/\/+$/, "") : "http://localhost:8000";
+    }
     if (envUrl && envUrl.trim()) return envUrl.replace(/\/+$/, "");
     if (window.location.hostname.includes("onrender.com")) {
       return window.location.origin;
