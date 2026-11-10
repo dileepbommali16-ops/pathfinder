@@ -1,82 +1,22 @@
 services:
-  # ----------------------------------------------------------------------------
-  # Backend Web Service (FastAPI + Gemini Live + ML Engine + Google Workspace)
-  # ----------------------------------------------------------------------------
   - type: web
-    name: pathfinder-backend
+    name: pathfinder-backend-klrp
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    region: singapore
+    plan: free
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: uvicorn backend.api:app --host 0.0.0.0 --port $PORT --ws websockets --ws-ping-interval 20 --ws-ping-timeout 20 --timeout-keep-alive 120
-    healthCheckPath: /api/health
-    autoDeploy: true
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
-      - key: HOST
-        value: 0.0.0.0
-      - key: PORT
-        value: "8000"
-      - key: BACKEND_URL
-        value: https://pathfinder-backend-klrp.onrender.com
-      - key: BACKEND_PUBLIC_URL
-        value: https://pathfinder-backend-klrp.onrender.com
-      - key: FRONTEND_URL
-        value: https://pathfinder-client-fzom.vercel.app
+        value: 3.11.9
       - key: GEMINI_API_KEY
         sync: false
-      - key: GEMINI_LIVE_MODEL
-        value: gemini-2.5-flash-native-audio-latest
-      - key: GEMINI_VOICE_NAME
-        value: Puck
-      - key: GEMINI_MODEL
-        value: gemini-3.1-flash-lite
-      - key: GEMINI_FALLBACK_MODEL
-        value: gemini-flash-lite-latest
-      - key: VOICE_MAX_SESSION_MINUTES
-        value: "15"
-      - key: JWT_SECRET
-        sync: false
-      - key: OWNER_EMAIL
-        sync: false
+      - key: FRONTEND_URL
+        value: https://pathfinder-client-fzom.vercel.app
+      - key: N8N_WEBHOOK_URL
+        value: https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync
       - key: SUPABASE_URL
         sync: false
-      - key: SUPABASE_ANON_KEY
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
-      - key: GITHUB_CLIENT_ID
-        sync: false
-      - key: GITHUB_CLIENT_SECRET
-        sync: false
-
-  # ----------------------------------------------------------------------------
-  # Optional: Frontend Static Site (Vite / React 19 Client on Render)
-  # ----------------------------------------------------------------------------
-  - type: static
-    name: pathfinder-frontend
-    autoDeploy: true
-    buildCommand: npm install --legacy-peer-deps && npm run build:client
-    staticPublishPath: dist/public
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: NODE_VERSION
-        value: 20.19.0
-      - key: VITE_API_BASE_URL
-        value: https://pathfinder-backend-klrp.onrender.com
-      - key: VITE_API_URL
-        value: https://pathfinder-backend-klrp.onrender.com
-      - key: VITE_GEMINI_API_KEY
-        sync: false
-      - key: VITE_GEMINI_LIVE_MODEL
-        value: gemini-2.5-flash-native-audio-latest
-      - key: VITE_SUPABASE_URL
-        sync: false
-      - key: VITE_SUPABASE_ANON_KEY
+      - key: SUPABASE_KEY
         sync: false

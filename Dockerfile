@@ -22,3 +22,4 @@ EXPOSE 10000
 
 # Start FastAPI with Uvicorn + WebSocket Keep-Alive flags for Gemini Live API
 CMD sh -c "uvicorn backend.api:app --host 0.0.0.0 --port ${PORT:-10000} --ws websockets --ws-ping-interval 20 --ws-ping-timeout 20 --timeout-keep-alive 120"
+
