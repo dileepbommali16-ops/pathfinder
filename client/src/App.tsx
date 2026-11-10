@@ -1,38 +1,35 @@
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AgentLayout } from "./agent/AgentLayout";
+import Home from "./pages/Home";
+import BlueprintDetail from "./pages/BlueprintDetail";
+import AtsResumeStudio from "./pages/AtsResumeStudio";
+import MockInterview from "./pages/MockInterview";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard";
-import AgentLayout from "./agent/AgentLayout";
 
-function Router() {
-  return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/agent"} component={AgentLayout} />
-      <Route path={"/das-agent"} component={AgentLayout} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
-
-function App() {
+export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <BrowserRouter>
+            <AgentLayout>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/dashboard" element={<Home />} />
+                <Route path="/blueprints" element={<BlueprintDetail />} />
+                <Route path="/resume-studio" element={<AtsResumeStudio />} />
+                <Route path="/mock-interview" element={<MockInterview />} />
+                <Route path="*" element={<Home />} />
+              </Routes>
+            </AgentLayout>
+          </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
 }
-
-export default App;

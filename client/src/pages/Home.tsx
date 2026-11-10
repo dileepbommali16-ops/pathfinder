@@ -60,9 +60,18 @@ import { toast } from "sonner";
 import DepthText from "@/components/dashboard/DepthText";
 import AgentLayout from "@/agent/AgentLayout";
 
-export default function Home() {
+export interface HomeProps {
+  initialTab?: TabId;
+}
+
+export default function Home({ initialTab }: HomeProps = {}) {
   const [activeTab, setActiveTab] = useState<TabId>(() => {
+    if (initialTab) return initialTab;
     if (typeof window !== "undefined") {
+      const pathname = window.location.pathname.toLowerCase();
+      if (pathname.includes("blueprint")) return "projects";
+      if (pathname.includes("resume")) return "resume";
+      if (pathname.includes("interview")) return "interview";
       const params = new URLSearchParams(window.location.search);
       const t = params.get("tab");
       if (
@@ -87,6 +96,12 @@ export default function Home() {
 
   const [focusOnDas, setFocusOnDas] = useState(false);
   const { getScreenPayload } = useScreenWatcher(activeTab);
+
+  useEffect(() => {
+    if (initialTab && initialTab !== activeTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Central DAS + Gemini Live Agent Automation Listeners
   useEffect(() => {

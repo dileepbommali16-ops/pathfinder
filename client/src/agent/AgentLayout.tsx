@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { Avatar3D } from "./Avatar3D";
 import { dasSocket, UserHonorificRole } from "./agentSocket";
 import { audioEngine } from "./audioIO";
@@ -14,7 +14,7 @@ export const AgentLayout: React.FC<AgentLayoutProps> = ({
   children,
   onNavigateTab,
 }) => {
-  const [, setLocation] = useLocation();
+  const routerNavigate = useNavigate();
   const [connected, setConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
   const [role, setRole] = useState<UserHonorificRole>("boss");
@@ -28,7 +28,7 @@ export const AgentLayout: React.FC<AgentLayoutProps> = ({
       onNavigateTab(path.replace(/^\//, ""));
     }
     try {
-      setLocation(path);
+      routerNavigate(path);
     } catch {
       window.history.pushState({}, "", path);
       window.dispatchEvent(new PopStateEvent("popstate"));
@@ -71,13 +71,17 @@ export const AgentLayout: React.FC<AgentLayoutProps> = ({
     setInputText("");
   };
 
+  if (!children) {
+    return null;
+  }
+
   return (
     <div className="relative min-h-screen bg-slate-950 text-white overflow-x-hidden">
       {/* Large Background 3D DAS Wireframe Face with Lip-Sync & Eye Blinking */}
       <Avatar3D />
 
       {/* Foreground Dashboard Views */}
-      {children && <main className="relative z-10 pb-28">{children}</main>}
+      <main className="relative z-10 pb-28">{children}</main>
 
       {/* Bottom JARVIS / DAS Command HUD */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-4xl bg-slate-900/85 backdrop-blur-xl border border-cyan-500/40 rounded-2xl p-3 shadow-2xl flex flex-col gap-2">
