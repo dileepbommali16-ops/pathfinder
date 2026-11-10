@@ -26,14 +26,14 @@ class DasAgentSocket {
       this.isConnected = true;
       onStatusChange?.(true);
 
-      // Keep Render WebSocket alive every 25 seconds
+      // Keep Render Cloudflare proxy WebSocket alive every 20 seconds
       const heartbeat = setInterval(() => {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
           this.ws.send(JSON.stringify({ type: "ping" }));
         } else {
           clearInterval(heartbeat);
         }
-      }, 25000);
+      }, 20000);
     };
 
     this.ws.onmessage = (event) => {

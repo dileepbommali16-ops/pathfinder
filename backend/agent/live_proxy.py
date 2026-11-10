@@ -129,6 +129,11 @@ async def das_live_websocket(websocket: WebSocket):
                         data = json.loads(raw_msg)
                         msg_type = data.get("type")
 
+                        # 0. Render Proxy Keep-Alive Ping-Pong
+                        if msg_type == "ping":
+                            await websocket.send_json({"type": "pong"})
+                            continue
+
                         # 1. Real-time Microphone PCM 16kHz Audio Stream
                         if msg_type == "audio":
                             pcm_bytes = base64.b64decode(data["pcm_base64"])
@@ -140,9 +145,6 @@ async def das_live_websocket(websocket: WebSocket):
                         elif msg_type == "text":
                             user_text = data.get("text", "")
                             await session.send(input=user_text, end_of_turn=True)
-
-                        elif msg_type == "ping":
-                            await websocket.send_json({"type": "pong"})
 
                         elif msg_type == "role_switch":
                             new_role = data.get("role", "boss")
