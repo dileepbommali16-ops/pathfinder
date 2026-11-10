@@ -149,7 +149,7 @@ export default function AgentLayout({
     setHonorific(next);
     try {
       localStorage.setItem("das_honorific_override", next);
-    } catch {}
+    } catch { }
   };
 
   // JARVIS-style action controller
@@ -259,7 +259,7 @@ export default function AgentLayout({
           email: propUserEmail || "",
         };
       }
-    } catch {}
+    } catch { }
     return {
       cgpa: 7.8,
       backlogs: 0,
@@ -285,11 +285,7 @@ export default function AgentLayout({
     const currentHonorific = resolveHonorific(propProfile, propUserEmail, propUsername);
     setHonorific(currentHonorific);
 
-    const greeting =
-      currentHonorific === "Boss"
-        ? "Hello Boss, welcome to your dashboard! All website controls and placement intelligence systems are online. Tell me what you'd like to explore or control today!"
-        : "Hello Sir, welcome to Pathfinder! I'm DAS, your autonomous AI voice co-pilot. Ask me about any project, readiness score, or tell me which section to open!";
-
+    const greeting = "";
     if (msgsRef.current.length === 0) {
       push({ role: "assistant", content: greeting });
     }
@@ -323,7 +319,7 @@ export default function AgentLayout({
 
   useEffect(() => {
     const t = setTimeout(() => {
-      wake().catch(() => {});
+      wake().catch(() => { });
     }, 150);
     return () => clearTimeout(t);
   }, [wake]);
@@ -474,7 +470,7 @@ export default function AgentLayout({
               const reader = r.body.getReader();
               const dec = new TextDecoder();
               let carry = "";
-              for (;;) {
+              for (; ;) {
                 const { done, value } = await reader.read();
                 if (done) break;
                 carry += dec.decode(value, { stream: true });
@@ -496,7 +492,7 @@ export default function AgentLayout({
                       const res = runTool(ev.name, ev.args, navigate);
                       if (res.navigated && res.explain) followUp = true;
                     }
-                  } catch {}
+                  } catch { }
                 }
               }
               if (full.trim() && !voiceMuted) {
@@ -670,10 +666,10 @@ export default function AgentLayout({
     pipelineStage === "speaking" || isSpeaking
       ? "speaking"
       : pipelineStage === "thinking" || thinking
-      ? "thinking"
-      : pipelineStage === "listening" || isListening
-      ? "listening"
-      : "idle";
+        ? "thinking"
+        : pipelineStage === "listening" || isListening
+          ? "listening"
+          : "idle";
 
   const [ambientMinimized, setAmbientMinimized] = useState(false);
 
@@ -687,24 +683,22 @@ export default function AgentLayout({
     return (
       <div
         data-testid="voice-pipeline-states"
-        className={`flex items-center ${
-          compact ? "gap-1 text-[10px]" : "gap-1.5 text-[11px]"
-        } font-mono`}
+        className={`flex items-center ${compact ? "gap-1 text-[10px]" : "gap-1.5 text-[11px]"
+          } font-mono`}
       >
         {steps.map((s, idx) => {
           const active = avatarState === s.id;
           return (
             <div key={s.id} className="flex items-center gap-1">
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border transition-all ${
-                  active
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border transition-all ${active
                     ? s.id === "listening"
                       ? "bg-pink-500/25 border-pink-400 text-pink-200 shadow-[0_0_12px_rgba(236,72,153,0.45)] animate-pulse font-semibold"
                       : s.id === "thinking"
-                      ? "bg-cyan-500/25 border-cyan-400 text-cyan-200 shadow-[0_0_12px_rgba(56,189,248,0.45)] animate-pulse font-semibold"
-                      : "bg-rose-500/25 border-rose-400 text-rose-200 shadow-[0_0_12px_rgba(244,63,94,0.45)] animate-pulse font-semibold"
+                        ? "bg-cyan-500/25 border-cyan-400 text-cyan-200 shadow-[0_0_12px_rgba(56,189,248,0.45)] animate-pulse font-semibold"
+                        : "bg-rose-500/25 border-rose-400 text-rose-200 shadow-[0_0_12px_rgba(244,63,94,0.45)] animate-pulse font-semibold"
                     : "bg-white/5 border-white/10 text-zinc-500"
-                }`}
+                  }`}
               >
                 <span>{s.icon}</span>
                 <span>{s.label}</span>
@@ -830,11 +824,10 @@ export default function AgentLayout({
             <button
               type="button"
               onClick={onToggleFocus}
-              className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium border transition-all flex items-center gap-1 cursor-pointer ${
-                focusOnDas
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium border transition-all flex items-center gap-1 cursor-pointer ${focusOnDas
                   ? "bg-red-500/25 border-red-400/50 text-red-200 shadow-[0_0_10px_rgba(239,68,68,0.3)]"
                   : "bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300"
-              }`}
+                }`}
               title={focusOnDas ? "Show Dashboard Cards" : "Focus on Fullscreen DAS Face"}
             >
               {focusOnDas ? (
@@ -875,11 +868,10 @@ export default function AgentLayout({
             msgs.slice(-8).map((m, idx) => (
               <div key={idx} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[85%] rounded-xl px-3 py-1.5 leading-relaxed text-xs shadow-sm ${
-                    m.role === "user"
+                  className={`max-w-[85%] rounded-xl px-3 py-1.5 leading-relaxed text-xs shadow-sm ${m.role === "user"
                       ? "bg-red-600/90 text-white font-medium shadow-[0_0_10px_rgba(239,68,68,0.3)]"
                       : "bg-zinc-900/95 text-zinc-200 border border-white/10"
-                  }`}
+                    }`}
                 >
                   <span className="font-semibold text-[10px] block opacity-70 mb-0.5">
                     {m.role === "user" ? "Boss (Command)" : "DAS"}
@@ -933,11 +925,10 @@ export default function AgentLayout({
           type="button"
           onClick={handleToggleMic}
           title={isListening ? "Stop listening" : "Click to speak to DAS (Microphone)"}
-          className={`h-10 px-3 flex items-center justify-center rounded-xl border transition-all shrink-0 cursor-pointer active:scale-95 gap-1.5 ${
-            isListening
+          className={`h-10 px-3 flex items-center justify-center rounded-xl border transition-all shrink-0 cursor-pointer active:scale-95 gap-1.5 ${isListening
               ? "bg-red-600 border-red-400 text-white shadow-[0_0_15px_rgba(239,68,68,0.7)] animate-pulse"
               : "bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white border-white/10"
-          }`}
+            }`}
         >
           {isListening ? (
             <>

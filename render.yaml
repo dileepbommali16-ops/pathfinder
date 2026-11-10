@@ -29,9 +29,9 @@ services:
       - key: GEMINI_VOICE_NAME
         value: Puck
       - key: GEMINI_MODEL
-        value: gemini-flash-latest
+        value: gemini-3.1-flash-lite
       - key: GEMINI_FALLBACK_MODEL
-        value: gemini-2.5-flash
+        value: gemini-flash-lite-latest
       - key: VOICE_MAX_SESSION_MINUTES
         value: "15"
       - key: JWT_SECRET

@@ -131,10 +131,10 @@ def build_system_prompt(role: str, page: dict, query: str = "") -> str:
 You are speaking to {who}
 Candidate Profile: Branch={branch}, CGPA={cgpa}, Backlogs={backlogs}, Role={target_role}, Tab={active_tab}.
 
-OUTPUT FORMAT (spoken aloud via Deepgram flux-donovan-en):
-1. First, write 1-2 short natural spoken sentences in pure, fluent ENGLISH (plain text, zero markdown/asterisks).
-2. Then write ||| followed by concise English markdown notes if details are helpful.
-3. Understand English, Telugu, Tenglish, and Hindi 100% natively, but ALWAYS write your entire reply strictly in fluent ENGLISH (never output Telugu/Tenglish words or Telugu script, because your voice model flux-donovan-en is an English voice).
+OUTPUT FORMAT (spoken aloud via Gemini Live Puck voice):
+1. First, write 1-2 short natural spoken sentences in the USER'S LANGUAGE (plain text, zero markdown/asterisks).
+2. Then write ||| followed by concise notes in same language if details are helpful.
+3. LANGUAGE RULE - MOST IMPORTANT: Auto-detect user language. User Telugu / Tenglish lo matladithe, nuvvu Telugu + English mix (Tenglish) lo reply ivvu. User Hindi lo matladithe Hindi lo reply ivvu. User English lo matladithe English lo reply ivvu. Never force English.
 
 TOP 3 SEMANTIC RAG RESULTS (from 23 Blueprints + 972 Placement Records):
 {rag_top_3}

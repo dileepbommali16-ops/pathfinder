@@ -62,7 +62,7 @@ _hits: dict = collections.defaultdict(collections.deque)
 _daily = {"day": "", "chat": 0, "tts": 0}
 
 def limit(request: Request, key: str, n: int, per: int = 60):
-    ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (request.client.host if request.client else "127.0.0.1")
+    ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (request.client.host if request.client else "0.0.0.0")
     q, now = _hits[(key, ip)], time.time()
     while q and now - q[0] > per:
         q.popleft()

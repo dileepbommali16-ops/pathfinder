@@ -163,38 +163,30 @@ def revoke_signed_session_token(token: Optional[str]) -> None:
 # ORIGIN / URL RESOLUTION
 # -----------------------------------------------------------------------------
 
-_LOCAL_HOSTS = ("localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]")
+_LOCAL_HOSTS = ()
 _DEFAULT_DEPLOYED_FRONTEND = "https://pathfinder-client-fzom.vercel.app"
 
 
 def _clean_origin_url(raw_url: Optional[str]) -> str:
-    """Sanitizes origin URLs, correcting accidental malformed protocols like 'hhttps://' without corrupting valid 'https://'."""
+    """Sanitizes origin URLs, ensuring HTTPS Vercel production origin."""
     if not raw_url:
-        return ""
+        return _DEFAULT_DEPLOYED_FRONTEND
     url = str(raw_url).strip().rstrip("/")
-    # Fix accidental multi-h or missing-h like 'hhttps://', 'hhhttps://', or bare 'ttps://'
     url = re.sub(r'^[hH]+[tT]+[pP][sS]?://', 'https://', url)
     url = re.sub(r'^[tT]+[pP][sS]?://', 'https://', url)
-    # Ensure scheme delimiter is properly formatted
     url = re.sub(r'^https?:/*(?=[^/])', 'https://', url)
-    if url.startswith("http://") and not any(h in url for h in _LOCAL_HOSTS):
+    if url.startswith("http://"):
         url = "https://" + url[len("http://"):]
-    if any(h in url for h in _LOCAL_HOSTS):
-        url = url.replace("https://localhost", "http://localhost").replace("https://127.0.0.1", "http://127.0.0.1")
     return url.rstrip("/")
 
 
 def _is_local_url(url: str) -> bool:
-    try:
-        host = urllib.parse.urlparse(url).hostname or ""
-    except Exception:
-        return False
-    return host in _LOCAL_HOSTS
+    return False
 
 
 def get_allowed_frontend_origins() -> List[str]:
     """Retrieves list of allowlisted frontend origins from the comma-separated FRONTEND_URL env var."""
-    raw = os.getenv("FRONTEND_URL", f"http://localhost:3000,http://localhost:5173,{_DEFAULT_DEPLOYED_FRONTEND}").strip()
+    raw = os.getenv("FRONTEND_URL", _DEFAULT_DEPLOYED_FRONTEND).strip()
     origins: List[str] = []
     for o in raw.split(","):
         cleaned = _clean_origin_url(o)
@@ -202,11 +194,11 @@ def get_allowed_frontend_origins() -> List[str]:
             origins.append(cleaned)
     if _DEFAULT_DEPLOYED_FRONTEND not in origins:
         origins.append(_DEFAULT_DEPLOYED_FRONTEND)
-    return origins if origins else ["http://localhost:3000"]
+    return origins if origins else [_DEFAULT_DEPLOYED_FRONTEND]
 
 
 def _is_allowed_origin(url: Optional[str]) -> bool:
-    """Checks whether an origin URL is allowed: localhost, FRONTEND_URL entries, or valid Vercel/Render HTTPS domains."""
+    """Checks whether an origin URL is allowed: FRONTEND_URL entries, or valid Vercel/Render HTTPS domains."""
     if not url:
         return False
     try:
@@ -241,20 +233,15 @@ def _is_allowed_origin(url: Optional[str]) -> bool:
 
 
 def get_default_frontend_base() -> str:
-    """Default redirect target: the first non-localhost origin if any, so production never lands on localhost."""
-    allowed = get_allowed_frontend_origins()
-    for origin in allowed:
-        clean = _clean_origin_url(origin)
-        if clean and not _is_local_url(clean):
-            return clean
-    return _clean_origin_url(allowed[0]) if allowed else _DEFAULT_DEPLOYED_FRONTEND
+    """Default redirect target: Vercel frontend production URL."""
+    return _DEFAULT_DEPLOYED_FRONTEND
 
 
 def resolve_frontend_redirect_base(candidate_origin: Optional[str] = None) -> str:
     """
     Returns an allowlisted frontend origin.
     Allows origins that match FRONTEND_URL or trusted deployment domains (*.vercel.app, *.onrender.com).
-    Falls back to the default (first non-localhost if available) entry if not matched or empty.
+    Falls back to the default Vercel frontend entry if not matched or empty.
     """
     if candidate_origin:
         clean = _clean_origin_url(candidate_origin.strip().rstrip("/"))

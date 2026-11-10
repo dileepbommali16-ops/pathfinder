@@ -291,25 +291,65 @@ async def stream_gemini_to_client(websocket: WebSocket, session: Any):
 
 
 async def run_fallback_loop(websocket: WebSocket, greeting: str, is_owner: bool):
-    """Graceful fallback loop if Live API is unavailable or unconfigured."""
+    """
+    Intelligent Web Bridge:
+    When Google Live WebSocket is unavailable, this runs the full Gemini AI engine
+    (gemini-3.1-flash-lite) through the local Python backend with RAG and tools.
+    """
+    from backend.gemini_engine import chat_with_mentor
+
     await websocket.send_json({
         "type": "text",
         "text": greeting
     })
 
+    history = []
+
     try:
         while True:
             msg = await websocket.receive_text()
             data = json.loads(msg)
-            user_text = data.get("text", "")
-            
-            if user_text:
-                reply = (
-                    f"Hi boss! I received: '{user_text}'. All 23 blueprints, ATS resume studio, and ML predictions are fully operational."
-                    if is_owner else
-                    f"Hello sir! I received: '{user_text}'. Let me know which section or placement blueprint you would like to explore."
-                )
-                await websocket.send_json({"type": "text", "text": reply})
+            user_text = data.get("text", "") or data.get("message", "")
+            if not user_text:
+                continue
 
-    except WebSocketDisconnect:
+            # Detect instant navigation tools
+            low = user_text.lower()
+            tool_call = None
+            if any(k in low for k in ["interview", "mock interview", "viva"]):
+                tool_call = {"type": "tool_call", "id": f"nav_{int(asyncio.get_event_loop().time()*1000)}", "name": "navigate_to", "args": {"route": "interview"}}
+            elif any(k in low for k in ["blueprint", "project"]):
+                tool_call = {"type": "tool_call", "id": f"nav_{int(asyncio.get_event_loop().time()*1000)}", "name": "navigate_to", "args": {"route": "projects"}}
+            elif any(k in low for k in ["resume", "cv", "ats"]):
+                tool_call = {"type": "tool_call", "id": f"nav_{int(asyncio.get_event_loop().time()*1000)}", "name": "navigate_to", "args": {"route": "resume"}}
+            elif any(k in low for k in ["roadmap", "sprint", "week"]):
+                tool_call = {"type": "tool_call", "id": f"nav_{int(asyncio.get_event_loop().time()*1000)}", "name": "navigate_to", "args": {"route": "skills"}}
+            elif any(k in low for k in ["analytics", "cohort"]):
+                tool_call = {"type": "tool_call", "id": f"nav_{int(asyncio.get_event_loop().time()*1000)}", "name": "navigate_to", "args": {"route": "analytics"}}
+            elif any(k in low for k in ["overview", "dashboard", "home"]):
+                tool_call = {"type": "tool_call", "id": f"nav_{int(asyncio.get_event_loop().time()*1000)}", "name": "navigate_to", "args": {"route": "overview"}}
+            elif "scroll down" in low:
+                tool_call = {"type": "tool_call", "id": f"scr_{int(asyncio.get_event_loop().time()*1000)}", "name": "scroll_to", "args": {"section": "down"}}
+            elif "scroll up" in low:
+                tool_call = {"type": "tool_call", "id": f"scr_{int(asyncio.get_event_loop().time()*1000)}", "name": "scroll_to", "args": {"section": "up"}}
+
+            if tool_call:
+                await websocket.send_json(tool_call)
+
+            # Generate real Gemini AI reply
+            reply_text = chat_with_mentor(
+                message=user_text,
+                history=history,
+                page_context={"is_owner": is_owner, "honorific": "Boss" if is_owner else "Sir"}
+            )
+            history.append({"role": "user", "content": user_text})
+            history.append({"role": "assistant", "content": reply_text})
+            if len(history) > 12:
+                history = history[-12:]
+
+            await websocket.send_json({"type": "text", "text": reply_text})
+
+    except (WebSocketDisconnect, asyncio.CancelledError):
         pass
+    except Exception as e:
+        logger.warning(f"[LiveProxy] Bridge loop notice: {e}")

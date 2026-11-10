@@ -130,11 +130,6 @@ export class PathfinderGeminiLive {
 
   constructor() {
     if (typeof window !== "undefined") {
-      // Block browser's female/robotic speechSynthesis permanently so ONLY Puck speaks
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak = () => { };
-      }
       // Remove any old right-side overlay if it exists
       document.getElementById("das-google-live-overlay")?.remove();
       setTimeout(() => this.mountHandsFreeMicButton(), 600);
@@ -154,8 +149,7 @@ export class PathfinderGeminiLive {
     btn.style.cssText =
       "position:fixed;bottom:24px;left:24px;z-index:99999;display:flex;align-items:center;gap:8px;padding:12px 20px;border-radius:999px;font-size:13px;font-weight:700;color:#ffffff;background:linear-gradient(135deg,#dc2626,#991b1b);border:1px solid rgba(255,255,255,0.25);box-shadow:0 8px 30px rgba(220,38,38,0.5);cursor:pointer;transition:all 0.25s ease;font-family:sans-serif;";
     btn.onclick = () => {
-      if (this.handsFreeActive) this.stopHandsFreeVoice();
-      else void this.startHandsFreeVoice();
+      window.dispatchEvent(new CustomEvent("das-toggle-mic"));
     };
     document.body.appendChild(btn);
   }
@@ -292,43 +286,13 @@ export class PathfinderGeminiLive {
 
   /* ---------------- Hands-Free Voice Control ---------------- */
   public async startHandsFreeVoice() {
-    if (typeof window === "undefined" || this.handsFreeActive) return;
-    this.handsFreeActive = true;
-    this.updateMicButtonUI("connecting");
-    this.ensureOut();
-
-    try {
-      if (!this.session) {
-        const s = await this.connect(this.cb);
-        if (!s) throw new Error("Could not connect to Gemini Live WebSocket. Check VITE_GEMINI_API_KEY.");
-      }
-      await this.startMic();
-      this.updateMicButtonUI("listening");
-      this.cb.onStageChange?.("listening");
-
-      const { honorific, isBoss } = resolveUserHonorific();
-      const greeting = isBoss
-        ? "Hello Boss, welcome to your dashboard! All website controls and placement intelligence systems are online. Tell me what we should explore or search today!"
-        : "Hello Sir, welcome to Pathfinder! I'm DAS, your autonomous AI voice co-pilot. Tell me what we should explore or search today!";
-      this.sendText(
-        `Speak this exact greeting aloud naturally in your native Puck voice without adding extra intro: "${greeting}"`
-      );
-    } catch (e: any) {
-      console.error("[DAS] Hands-free start failed:", e);
-      this.handsFreeActive = false;
-      this.stopMic();
-      this.updateMicButtonUI("off");
-    }
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("das-toggle-mic"));
   }
 
   public stopHandsFreeVoice() {
-    this.handsFreeActive = false;
-    this.isAgentSpeaking = false;
-    this.stopMic();
-    this.stopPlayback();
-    this.cb.onInterrupted?.();
-    this.updateMicButtonUI("off");
-    this.cb.onStageChange?.("idle");
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("das-toggle-mic"));
   }
 
   /* ---------------- WebSocket Connection ---------------- */
@@ -537,16 +501,20 @@ export class PathfinderGeminiLive {
     }
   }
 
-  /* ---------------- Speak ONLY via Gemini Live Puck Voice ---------------- */
+  /* ---------------- Speak via Gemini Live or Resilient Audio ---------------- */
   private async speakAloud(text: string): Promise<void> {
     const clean = text.replace(/[*#_`~]/g, "").trim();
     if (!clean) return;
-    this.ensureOut();
-    if (!this.session) await this.connect(this.cb);
+    try {
+      const { speaker } = await import("./audioIO");
+      speaker.say(clean);
+    } catch { }
     if (this.session) {
-      this.sendText(
-        `Speak this exact message aloud naturally in the same language without adding anything else: "${clean}"`
-      );
+      try {
+        this.sendText(
+          `Speak this exact message aloud naturally: "${clean}"`
+        );
+      } catch { }
     }
   }
 
@@ -580,16 +548,6 @@ export class PathfinderGeminiLive {
 
     this.stopPlayback();
 
-    // 1. Instant Greeting
-    if (/^(hi|hello|hey)\s*(das|pathfinder)?[!?.]*$/i.test(trimmed)) {
-      const { honorific, isBoss } = resolveUserHonorific();
-      const greeting = isBoss
-        ? "Hello Boss, welcome to your dashboard! Tell me what to explore, which tab to open, or what to search on Google!"
-        : "Hello Sir, welcome to Pathfinder! I'm DAS, your autonomous AI voice co-pilot. Tell me what we should explore or search today!";
-      emit(greeting);
-      if (shouldSpeak) await this.speakAloud(greeting);
-      return greeting;
-    }
 
     // 2. 0ms Instant Browser Command (Open Google / Search / Return Back to Page)
     const instant = tryInstantBrowserCommand(trimmed);
@@ -615,12 +573,10 @@ export class PathfinderGeminiLive {
       if (this.resolvedKey || ENV.VITE_GEMINI_API_KEY) {
         const textCandidates = Array.from(
           new Set([
-            TEXT_MODEL,
+            "gemini-3.1-flash-lite",
             "gemini-flash-lite-latest",
             "gemini-3.5-flash-lite",
-            "gemini-3.6-flash",
-            "gemini-3.5-flash",
-            "gemini-3.8-flash"
+            TEXT_MODEL
           ].filter(Boolean) as string[])
         );
 

@@ -36,13 +36,10 @@ export class AgentSocketClient {
     this.isExplicitlyClosed = false;
     this.callbacks.onStatusChange("connecting");
 
-    // Construct WebSocket URL
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.host;
-    let wsUrl = `${protocol}//${host}/agent/ws`;
-
-    // Support dev environment proxy or explicit backend url
+    // Production Render Backend WebSocket URL
+    const PROD_WS_URL = "wss://pathfinder-backend-klrp.onrender.com/agent/ws";
     const apiUrl = (import.meta as any).env?.VITE_API_URL || (import.meta as any).env?.VITE_API_BASE_URL;
+    let wsUrl = PROD_WS_URL;
     if (apiUrl && apiUrl.startsWith("http")) {
       const cleanApi = apiUrl.replace(/^http/, "ws").replace(/\/$/, "");
       wsUrl = `${cleanApi}/agent/ws`;

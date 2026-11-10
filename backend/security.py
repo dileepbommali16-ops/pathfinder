@@ -91,7 +91,7 @@ def get_client_ip(request: Request) -> str:
         elif parts:
             return parts[0]
 
-    return request.client.host if request.client else "127.0.0.1"
+    return request.client.host if request.client else "0.0.0.0"
 
 
 # ==========================================

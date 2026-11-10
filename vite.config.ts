@@ -49,16 +49,16 @@ export default defineConfig({
     ],
     proxy: {
       '/agent': {
-        target: 'http://127.0.0.1:8000',
+        target: 'https://pathfinder-backend-klrp.onrender.com',
         changeOrigin: true,
         ws: true,
       },
       '/ws': {
-        target: 'ws://127.0.0.1:8000',
+        target: 'wss://pathfinder-backend-klrp.onrender.com',
         ws: true,
       },
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        target: 'https://pathfinder-backend-klrp.onrender.com',
         changeOrigin: true,
       },
     },
