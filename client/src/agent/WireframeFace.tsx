@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from "react";
+import React, { useRef, useMemo, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { audioEngine } from "./audioIO";
@@ -10,9 +10,12 @@ export interface WireframeFaceProps {
 
 /**
  * WireframeFace.tsx
- * 3D Holographic Wireframe Face (DAS) with real-time lip-sync morph targets.
- * Decodes 24kHz incoming audio chunks via Web Audio AnalyserNode frequency data,
- * extracts volume through a simple average, and drives mouth morph target influences at 60 FPS.
+ * 3D Holographic Wireframe Face (DAS) with real-time lip-sync morph targets
+ * and procedural eye-blinking timer.
+ * 
+ * - setInterval triggers randomized eye blink state transitions every few seconds.
+ * - Primary useFrame animation loop combines Volume state & Blink state.
+ * - Continuously updates Three.js morphTargetInfluences on every frame at 60 FPS.
  */
 export const WireframeFace: React.FC<WireframeFaceProps> = ({
   scale = [1.6, 1.6, 1.6],
@@ -26,12 +29,31 @@ export const WireframeFace: React.FC<WireframeFaceProps> = ({
   const upperLipRef = useRef<THREE.Mesh>(null);
   const auraRingRef = useRef<THREE.Mesh>(null);
 
-  // Eye Blinking State
-  const nextBlinkTime = useRef<number>(2.5);
-  const blinkProgress = useRef<number>(0);
-  const isBlinking = useRef<boolean>(false);
+  // Blink State & Dynamic Interpolation Refs
+  const [blinkState, setBlinkState] = useState<boolean>(false);
+  const blinkRef = useRef<boolean>(false);
+  const currentBlinkRef = useRef<number>(0);
 
-  // Procedural Mouth Geometry with Morph Target 0 (Mouth Open)
+  // 1. setInterval timer triggering randomized eye blinks every few seconds
+  useEffect(() => {
+    const blinkInterval = setInterval(() => {
+      // Randomized check ensures organic, non-robotic blinking cadence (every 2.5 - 4.5s)
+      if (Math.random() > 0.32 && !blinkRef.current) {
+        blinkRef.current = true;
+        setBlinkState(true);
+
+        // Blink duration lasts ~160ms for natural rapid eyelid motion
+        setTimeout(() => {
+          blinkRef.current = false;
+          setBlinkState(false);
+        }, 160);
+      }
+    }, 1500);
+
+    return () => clearInterval(blinkInterval);
+  }, []);
+
+  // 2. Procedural Mouth Geometry with Morph Target 0 (Mouth Open)
   const mouthGeometry = useMemo(() => {
     const geom = new THREE.BoxGeometry(0.52, 0.12, 0.14, 4, 4, 4);
     const pos = geom.attributes.position;
@@ -43,7 +65,6 @@ export const WireframeFace: React.FC<WireframeFaceProps> = ({
       const y = pos.getY(i);
       const z = pos.getZ(i);
 
-      // Morph target pulled down on bottom vertices and widened slightly
       if (y < 0) {
         morphPositions.push(x * 1.15, y - 0.42, z);
       } else {
@@ -57,16 +78,47 @@ export const WireframeFace: React.FC<WireframeFaceProps> = ({
     return geom;
   }, []);
 
+  // 3. Procedural Eye Geometry with Morph Target 0 (Eyelid Closed)
+  const eyeGeometry = useMemo(() => {
+    const geom = new THREE.CapsuleGeometry(0.11, 0.16, 8, 16);
+    const pos = geom.attributes.position;
+    const morphPositions: number[] = [];
+
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const z = pos.getZ(i);
+      // Flatten capsule along Y axis for closed eyelid morph state
+      morphPositions.push(x * 1.18, y * 0.08, z);
+    }
+
+    geom.morphAttributes.position = [
+      new THREE.Float32BufferAttribute(morphPositions, 3),
+    ];
+    return geom;
+  }, []);
+
+  // 4. Primary Animation & Render Loop
   useFrame((state, delta) => {
     const t = state.clock.getElapsedTime();
 
-    // 1. Extract frequency-averaged audio volume from AnalyserNode
+    // Volume State: extracted from AnalyserNode frequency average
     const volume = audioEngine.getVolume();
 
-    // 2. Adjust Mouth Morph Target Intensity with Volume
+    // Blink State: smoothly interpolated blink weight (0 = open, 1 = closed)
+    const targetBlinkWeight = blinkRef.current ? 1.0 : 0.0;
+    currentBlinkRef.current = THREE.MathUtils.lerp(
+      currentBlinkRef.current,
+      targetBlinkWeight,
+      delta * 20
+    );
+    const blinkFactor = currentBlinkRef.current;
+
+    // --- COMBINE BLINK & VOLUME STATES INTO THREE.JS MORPHTARGETINFLUENCES ---
+
+    // A. Mouth Mesh morphTargetInfluences (Driven by Volume State)
     if (mouthMeshRef.current && mouthMeshRef.current.morphTargetInfluences) {
       const currentMorph = mouthMeshRef.current.morphTargetInfluences[0] || 0;
-      // Smooth linear interpolation for natural, fluid lip-sync
       mouthMeshRef.current.morphTargetInfluences[0] = THREE.MathUtils.lerp(
         currentMorph,
         volume,
@@ -74,14 +126,37 @@ export const WireframeFace: React.FC<WireframeFaceProps> = ({
       );
     }
 
-    // 3. Real-Time Lower Jaw & Upper Lip Movement
+    // B. Eye Meshes morphTargetInfluences (Driven by Blink State)
+    if (leftEyeRef.current && leftEyeRef.current.morphTargetInfluences) {
+      leftEyeRef.current.morphTargetInfluences[0] = THREE.MathUtils.lerp(
+        leftEyeRef.current.morphTargetInfluences[0] || 0,
+        blinkFactor,
+        0.55
+      );
+    }
+    if (rightEyeRef.current && rightEyeRef.current.morphTargetInfluences) {
+      rightEyeRef.current.morphTargetInfluences[0] = THREE.MathUtils.lerp(
+        rightEyeRef.current.morphTargetInfluences[0] || 0,
+        blinkFactor,
+        0.55
+      );
+    }
+
+    // Visual eye scale adjustment for maximum visual clarity across all viewports
+    if (leftEyeRef.current && rightEyeRef.current) {
+      const eyeScaleY = Math.max(0.06, 1.0 - blinkFactor * 0.94);
+      leftEyeRef.current.scale.y = eyeScaleY;
+      rightEyeRef.current.scale.y = eyeScaleY;
+    }
+
+    // C. Physical Jaw & Lip Coordinate Response
     if (lowerJawRef.current && upperLipRef.current) {
       lowerJawRef.current.position.y = -0.68 - volume * 0.32;
       lowerJawRef.current.scale.y = 1 + volume * 0.65;
       upperLipRef.current.position.y = -0.52 + volume * 0.06;
     }
 
-    // 4. Subtle Autonomous Head Floating & Speech Nodding
+    // D. Subtle Floating & Speech Nodding
     if (headGroupRef.current) {
       headGroupRef.current.rotation.y = Math.sin(t * 0.5) * 0.12;
       headGroupRef.current.rotation.x =
@@ -90,33 +165,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = ({
         position[1] + Math.sin(t * 1.2) * 0.08;
     }
 
-    // 5. Procedural Eye Blinking (Every 2.5 to 5.0 seconds)
-    if (t > nextBlinkTime.current && !isBlinking.current) {
-      isBlinking.current = true;
-      blinkProgress.current = 0;
-    }
-
-    if (isBlinking.current) {
-      blinkProgress.current += delta * 14;
-      const blinkCurve = Math.sin(blinkProgress.current * Math.PI);
-      const eyeScaleY = Math.max(0.05, 1 - blinkCurve);
-
-      if (leftEyeRef.current && rightEyeRef.current) {
-        leftEyeRef.current.scale.y = eyeScaleY;
-        rightEyeRef.current.scale.y = eyeScaleY;
-      }
-
-      if (blinkProgress.current >= 1) {
-        isBlinking.current = false;
-        if (leftEyeRef.current && rightEyeRef.current) {
-          leftEyeRef.current.scale.y = 1;
-          rightEyeRef.current.scale.y = 1;
-        }
-        nextBlinkTime.current = t + 2.2 + Math.random() * 2.5;
-      }
-    }
-
-    // 6. Holographic Resonance Ring Pulse
+    // E. Holographic Resonance Ring Pulse
     if (auraRingRef.current) {
       auraRingRef.current.rotation.z = t * 0.3;
       const ringScale = 1 + volume * 0.25;
@@ -145,15 +194,21 @@ export const WireframeFace: React.FC<WireframeFaceProps> = ({
         <meshBasicMaterial color="#041b2d" wireframe transparent opacity={0.35} />
       </mesh>
 
-      {/* Left Eye (Procedural Blinking) */}
-      <mesh ref={leftEyeRef} position={[-0.42, 0.25, 1.18]}>
-        <capsuleGeometry args={[0.11, 0.16, 8, 16]} />
+      {/* Left Eye with Morph Targets */}
+      <mesh
+        ref={leftEyeRef}
+        geometry={eyeGeometry}
+        position={[-0.42, 0.25, 1.18]}
+      >
         <meshBasicMaterial color="#00ffff" />
       </mesh>
 
-      {/* Right Eye (Procedural Blinking) */}
-      <mesh ref={rightEyeRef} position={[0.42, 0.25, 1.18]}>
-        <capsuleGeometry args={[0.11, 0.16, 8, 16]} />
+      {/* Right Eye with Morph Targets */}
+      <mesh
+        ref={rightEyeRef}
+        geometry={eyeGeometry}
+        position={[0.42, 0.25, 1.18]}
+      >
         <meshBasicMaterial color="#00ffff" />
       </mesh>
 
