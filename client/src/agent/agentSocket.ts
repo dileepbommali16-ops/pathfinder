@@ -59,7 +59,7 @@ class DasAgentSocket {
 
       const setupPayload = {
         setup: {
-          model: "models/gemini-2.0-flash-exp",
+          model: "models/gemini-3.8-live",
           generationConfig: {
             responseModalities: ["AUDIO"],
             speechConfig: {

@@ -1,0 +1,740 @@
+- generic [ref=e2]:
+  - region "Notifications alt+T"
+  - generic [ref=e3]:
+    - main [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - generic [ref=e10]:
+            - button "Pathfinder 2.0 AI Campus Placement & Engineering Intelligence" [ref=e11] [cursor=pointer]:
+              - generic [ref=e19]:
+                - generic [ref=e20]:
+                  - generic [ref=e21]: Pathfinder 2.0
+                  - generic [ref=e22]: AI
+                - paragraph [ref=e23]: Campus Placement & Engineering Intelligence
+            - generic [ref=e24]:
+              - button "👑 Dileep (Boss) BOSS dileepbommali16@gmail.com" [ref=e25] [cursor=pointer]:
+                - generic [ref=e26]: 👑
+                - generic [ref=e27]:
+                  - generic [ref=e28]:
+                    - generic [ref=e29]: Dileep (Boss)
+                    - generic [ref=e30]: BOSS
+                  - text: dileepbommali16@gmail.com
+              - button "Sign out of Pathfinder" [ref=e31] [cursor=pointer]
+          - generic [ref=e36]:
+            - button "Dashboard" [ref=e37] [cursor=pointer]
+            - button "AI Mock Interview Live" [ref=e44] [cursor=pointer]:
+              - generic [ref=e48]: AI Mock Interview
+              - generic [ref=e49]: Live
+            - button "Readiness Command Instant" [ref=e50] [cursor=pointer]:
+              - generic [ref=e53]: Readiness Command
+              - generic [ref=e54]: Instant
+            - button "6-Week Roadmap Sprint" [ref=e55] [cursor=pointer]:
+              - generic [ref=e59]: 6-Week Roadmap
+              - generic [ref=e60]: Sprint
+            - button "Project Blueprints" [ref=e61] [cursor=pointer]
+            - button "Cohort Analytics 972" [ref=e65] [cursor=pointer]:
+              - generic [ref=e69]: Cohort Analytics
+              - generic [ref=e70]: "972"
+            - button "ATS Resume Studio" [ref=e71] [cursor=pointer]
+            - button "Branches and Courses Dept" [ref=e76] [cursor=pointer]:
+              - generic [ref=e80]: Branches and Courses
+              - generic [ref=e81]: Dept
+            - button "Project Defense" [ref=e82] [cursor=pointer]
+            - button "Profile / Settings SSOT" [ref=e86] [cursor=pointer]:
+              - generic [ref=e90]: Profile / Settings
+              - generic [ref=e91]: SSOT
+        - main [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]:
+              - generic [ref=e95]: DAS Cybernetic Co-Pilot Active in Background
+              - button "Focus on DAS" [ref=e100] [cursor=pointer]
+            - generic [ref=e104]:
+              - generic [ref=e106]:
+                - generic [ref=e113]:
+                  - generic [ref=e114]:
+                    - heading "Campus Placement Readiness Overview" [level=2] [ref=e115]
+                    - generic [ref=e116]: Class of 2026
+                  - paragraph [ref=e117]: Real-time placement probability and primary eligibility benchmark
+                - generic [ref=e118]:
+                  - generic [ref=e119]: ℹ️ Calculated via Random Forest model trained on 972 student records
+                  - button "Ask Coach about this" [ref=e120] [cursor=pointer]
+              - generic [ref=e125]:
+                - generic [ref=e127]:
+                  - generic [ref=e128]:
+                    - generic [ref=e129]:
+                      - generic [ref=e130]: Strong Candidate Profile
+                      - generic [ref=e134]: Random Forest ML Engine
+                    - heading "Welcome back, Boss" [level=1] [ref=e135]
+                    - paragraph [ref=e136]: Your placement intelligence command center combines real campus recruitment cohort benchmarks (972 records), scikit-learn probability modeling, and Gemini placement coaching.
+                    - generic [ref=e137]:
+                      - button "View 30-Day Mission & Plan" [ref=e138] [cursor=pointer]
+                      - button "Ask AI Placement Coach" [ref=e143] [cursor=pointer]
+                      - button "ATS Resume Sync" [ref=e147] [cursor=pointer]
+                  - generic [ref=e153]:
+                    - generic [ref=e154]: Pathfinder Career Readiness Assessment
+                    - generic [ref=e155]: ML Placement Probability Model
+                    - generic [ref=e160]:
+                      - generic [ref=e161]: 79%
+                      - generic [ref=e162]: Probability
+                    - generic [ref=e164]:
+                      - generic [ref=e165]: Model Confidence
+                      - generic [ref=e166]: 120 Estimators
+                    - button "Ask Coach about this score" [ref=e169] [cursor=pointer]
+                - generic [ref=e173]:
+                  - generic [ref=e174]:
+                    - generic [ref=e175]: Cumulative CGPA
+                    - generic [ref=e180]:
+                      - generic [ref=e181]: "7.8"
+                      - generic [ref=e182]: / 10.0
+                    - generic [ref=e183]: ✓ Satisfies Tier-1 criteria
+                  - generic [ref=e184]:
+                    - generic [ref=e185]: Active Backlogs
+                    - generic [ref=e191]:
+                      - generic [ref=e192]: "0"
+                      - generic [ref=e193]: Active
+                    - generic [ref=e194]: ✓ 100% Eligible for drives
+                  - generic [ref=e195]:
+                    - generic [ref=e196]: Internships Completed
+                    - generic [ref=e202]:
+                      - generic [ref=e203]: "1"
+                      - generic [ref=e204]: completed
+                    - generic [ref=e205]: ✓ Practical work validated
+                  - generic [ref=e206]:
+                    - generic [ref=e207]: DSA & Problem Solving
+                    - generic [ref=e214]:
+                      - generic [ref=e215]: "7"
+                      - generic [ref=e216]: / 10
+                    - generic [ref=e217]: ✓ High-frequency patterns
+            - generic [ref=e218]:
+              - generic [ref=e220]:
+                - generic [ref=e227]:
+                  - generic [ref=e228]:
+                    - heading "Target Company Placement Radar" [level=2] [ref=e229]
+                    - generic [ref=e230]: Placement Radar
+                  - paragraph [ref=e231]: Real-time hiring compatibility score mapped against historical campus drive cutoffs and technical rubrics
+                - generic [ref=e232]:
+                  - generic [ref=e233]: ℹ️ Evaluates eligibility for Google, Razorpay, Amazon, and TCS Digital
+                  - button "Ask Coach about this" [ref=e234] [cursor=pointer]
+              - generic [ref=e240]:
+                - generic [ref=e241]:
+                  - generic [ref=e242]:
+                    - generic [ref=e243]:
+                      - generic [ref=e249]: Industry Placement Benchmark
+                      - generic [ref=e250]: Live Hiring Matrix
+                    - heading "Target Company Placement Radar" [level=3] [ref=e251]
+                    - paragraph [ref=e252]: Real-time hiring compatibility score mapped against historical drive cutoffs, interview rounds, and skill rubrics for Tier-1 engineering recruits.
+                  - generic [ref=e253]:
+                    - button "All" [ref=e254] [cursor=pointer]
+                    - button "Tier-1 MAANG" [ref=e255] [cursor=pointer]
+                    - button "Fintech Unicorn" [ref=e256] [cursor=pointer]
+                    - button "Premier Campus Drive" [ref=e257] [cursor=pointer]
+                - generic [ref=e258]:
+                  - generic [ref=e259]:
+                    - generic [ref=e260]:
+                      - generic [ref=e261]: Target Recruiter
+                      - generic [ref=e262]: Match Probability
+                    - generic [ref=e263]:
+                      - generic [ref=e264] [cursor=pointer]:
+                        - generic [ref=e265]:
+                          - generic [ref=e266]: GOOG
+                          - generic [ref=e267]:
+                            - generic [ref=e268]: Google / Alphabet
+                            - generic [ref=e270]:
+                              - generic [ref=e271]: ₹32 - ₹55 LPA
+                              - generic [ref=e272]: •
+                              - generic [ref=e273]: Min 8 CGPA
+                        - generic [ref=e275]:
+                          - generic [ref=e276]: 70%
+                          - generic [ref=e277]: Readiness
+                      - generic [ref=e280] [cursor=pointer]:
+                        - generic [ref=e281]:
+                          - generic [ref=e282]: RZPY
+                          - generic [ref=e283]:
+                            - generic [ref=e284]: Razorpay / Fintech
+                            - generic [ref=e286]:
+                              - generic [ref=e287]: ₹22 - ₹36 LPA
+                              - generic [ref=e288]: •
+                              - generic [ref=e289]: Min 7.5 CGPA
+                        - generic [ref=e291]:
+                          - generic [ref=e292]: 90%
+                          - generic [ref=e293]: Readiness
+                      - generic [ref=e296] [cursor=pointer]:
+                        - generic [ref=e297]:
+                          - generic [ref=e298]: AMZN
+                          - generic [ref=e299]:
+                            - generic [ref=e300]: Amazon AWS
+                            - generic [ref=e302]:
+                              - generic [ref=e303]: ₹28 - ₹48 LPA
+                              - generic [ref=e304]: •
+                              - generic [ref=e305]: Min 7.5 CGPA
+                        - generic [ref=e307]:
+                          - generic [ref=e308]: 90%
+                          - generic [ref=e309]: Readiness
+                      - generic [ref=e312] [cursor=pointer]:
+                        - generic [ref=e313]:
+                          - generic [ref=e314]: TCS-D
+                          - generic [ref=e315]:
+                            - generic [ref=e316]: TCS Digital / Prime
+                            - generic [ref=e318]:
+                              - generic [ref=e319]: ₹9 - ₹14 LPA
+                              - generic [ref=e320]: •
+                              - generic [ref=e321]: Min 7 CGPA
+                        - generic [ref=e323]:
+                          - generic [ref=e324]: 93%
+                          - generic [ref=e325]: Readiness
+                      - generic [ref=e328] [cursor=pointer]:
+                        - generic [ref=e329]:
+                          - generic [ref=e330]: SWIG
+                          - generic [ref=e331]:
+                            - generic [ref=e332]: Swiggy / Consumer Tech
+                            - generic [ref=e334]:
+                              - generic [ref=e335]: ₹18 - ₹30 LPA
+                              - generic [ref=e336]: •
+                              - generic [ref=e337]: Min 7 CGPA
+                        - generic [ref=e339]:
+                          - generic [ref=e340]: 93%
+                          - generic [ref=e341]: Readiness
+                      - generic [ref=e344] [cursor=pointer]:
+                        - generic [ref=e345]:
+                          - generic [ref=e346]: CRM
+                          - generic [ref=e347]:
+                            - generic [ref=e348]: Salesforce / Enterprise
+                            - generic [ref=e350]:
+                              - generic [ref=e351]: ₹24 - ₹42 LPA
+                              - generic [ref=e352]: •
+                              - generic [ref=e353]: Min 7.5 CGPA
+                        - generic [ref=e355]:
+                          - generic [ref=e356]: 90%
+                          - generic [ref=e357]: Readiness
+                  - generic [ref=e360]:
+                    - generic [ref=e361]:
+                      - generic [ref=e362]:
+                        - generic [ref=e363]:
+                          - generic [ref=e364]:
+                            - generic [ref=e365]: Fintech Unicorn
+                            - generic [ref=e366]:
+                              - text: "Drive Status:"
+                              - strong [ref=e367]: Active Campus Drives
+                          - heading "Razorpay / Fintech" [level=4] [ref=e368]
+                        - generic [ref=e369]: High Match · Ready for Drives
+                      - generic [ref=e374]:
+                        - generic [ref=e375]:
+                          - text: Match Probability
+                          - generic [ref=e376]:
+                            - generic [ref=e377]: 90%
+                            - generic [ref=e378]: Score
+                        - generic [ref=e381]:
+                          - text: Package Compensation
+                          - generic [ref=e382]: ₹22 - ₹36 LPA
+                          - generic [ref=e383]: Fixed Base + Stock Grants
+                        - generic [ref=e384]:
+                          - text: Academic Cutoff
+                          - generic [ref=e385]:
+                            - generic [ref=e386]: ≥ 7.5 CGPA
+                            - generic [ref=e387]: "(You: 7.8)"
+                          - generic [ref=e388]: 0 Backlogs Cleared
+                      - generic [ref=e389]:
+                        - generic [ref=e390]:
+                          - text: Core Evaluation Topics & Skills
+                          - generic [ref=e391]:
+                            - generic [ref=e392]: React / TypeScript
+                            - generic [ref=e393]: Microservices (Go / Node / Python)
+                            - generic [ref=e394]: Idempotency & Payments
+                            - generic [ref=e395]: SQL & Redis
+                        - generic [ref=e396]:
+                          - text: Standard Interview Pipeline
+                          - generic [ref=e397]:
+                            - generic [ref=e398]:
+                              - generic [ref=e399]: Round 1
+                              - paragraph [ref=e400]: Machine Coding Round (2.5 hrs)
+                            - generic [ref=e401]:
+                              - generic [ref=e402]: Round 2
+                              - paragraph [ref=e403]: System Architecture Round
+                            - generic [ref=e404]:
+                              - generic [ref=e405]: Round 3
+                              - paragraph [ref=e406]: Bar Raiser Culture Fit
+                        - generic [ref=e407]:
+                          - text: Resume Differentiating Projects (High Shortlist Rate)
+                          - generic [ref=e408]:
+                            - generic [ref=e409]: Event-Driven Payment Gateway
+                            - generic [ref=e413]: Idempotent Financial Ledger
+                    - generic [ref=e417]:
+                      - generic [ref=e418]: Simulate Razorpay / Fintech's real technical questions directly with AI mentor.
+                      - generic [ref=e419]:
+                        - button "Ask Coach Strategy" [ref=e420] [cursor=pointer]
+                        - button "Start Mock Interview" [ref=e421] [cursor=pointer]
+            - generic [ref=e427]:
+              - generic [ref=e429]:
+                - generic [ref=e434]:
+                  - generic [ref=e435]:
+                    - heading "Candidate Readiness Vectors" [level=2] [ref=e436]
+                    - generic [ref=e437]: Readiness Vectors
+                  - paragraph [ref=e438]: Transparent multi-dimensional evaluation of your academic standing, practical coding, and communication confidence
+                - generic [ref=e439]:
+                  - generic [ref=e440]: ℹ️ 5 vectors calibrated against Tier-1 campus drive cutoffs
+                  - button "Ask Coach about this" [ref=e441] [cursor=pointer]
+              - generic [ref=e447]:
+                - generic [ref=e448]:
+                  - generic [ref=e454]:
+                    - generic [ref=e455]:
+                      - heading "Student Career Digital Twin" [level=2] [ref=e456]
+                      - generic [ref=e457]: Live Model
+                    - paragraph [ref=e458]: Unified state model aggregating verified candidate attributes, ML inference, and transparent readiness vectors.
+                  - generic [ref=e459]:
+                    - generic [ref=e460]: User Verified
+                    - generic [ref=e462]: ML Inferred
+                    - generic [ref=e464]: AI Prescribed
+                - generic [ref=e466]:
+                  - generic [ref=e467]:
+                    - text: Target Role
+                    - paragraph [ref=e468]: Software...
+                    - text: User Verified
+                  - generic [ref=e469]:
+                    - text: Academic Standing
+                    - paragraph [ref=e470]: 7.8 CGPA
+                    - text: 0 Backlogs
+                  - generic [ref=e471]:
+                    - text: ML Placement Readiness
+                    - paragraph [ref=e472]: 78.5%
+                    - text: RandomForest Model
+                  - generic [ref=e473]:
+                    - text: Problem Solving
+                    - paragraph [ref=e474]: 7 / 10
+                    - text: DSA Confidence
+                  - generic [ref=e475]:
+                    - text: Profile Completeness
+                    - generic [ref=e476]:
+                      - generic [ref=e477]: 100%
+                      - generic [ref=e478]: Active Twin
+                - generic [ref=e481]:
+                  - generic [ref=e482]:
+                    - generic [ref=e483]:
+                      - heading "Multi-Dimensional Career Readiness Vectors" [level=3] [ref=e484]
+                      - paragraph [ref=e485]: Transparent breakdown of what comprises your placement probability. Every dimension is independently actionable.
+                    - generic [ref=e486]: 6 Core Dimensions
+                  - generic [ref=e487]:
+                    - generic [ref=e488]:
+                      - button "Technical & DSA Problem Solving 25% Weight 7/10 Confidence in Data Structures & Core Algorithms 70% SYSTEM DERIVED" [ref=e489] [cursor=pointer]:
+                        - generic [ref=e496]:
+                          - generic [ref=e497]:
+                            - generic [ref=e498]: Technical & DSA Problem Solving
+                            - generic [ref=e499]: 25% Weight
+                          - text: 7/10 Confidence in Data Structures & Core Algorithms
+                        - generic [ref=e501]:
+                          - generic [ref=e502]: 70%
+                          - generic [ref=e503]: SYSTEM DERIVED
+                      - generic [ref=e507]:
+                        - generic [ref=e508]:
+                          - generic [ref=e509]: What Is Missing
+                          - paragraph [ref=e510]: High-frequency Blind 75 patterns (Sliding Window, Trees, Binary Search)
+                        - generic [ref=e511]:
+                          - generic [ref=e512]: Why It Matters
+                          - paragraph [ref=e513]: 85% of company screening tests use automated HackerRank/LeetCode coding rounds.
+                        - generic [ref=e514]:
+                          - generic [ref=e515]:
+                            - generic [ref=e516]: Recommended Action
+                            - paragraph [ref=e517]: Practice 2 Blind 75 pattern problems today in the Mock Interview section
+                          - button "Execute Now →" [ref=e518] [cursor=pointer]
+                    - button "Flagship Project Evidence 20% Weight 1 Practical Engineering Experience / Internships 45% USER DATA" [ref=e520] [cursor=pointer]:
+                      - generic [ref=e526]:
+                        - generic [ref=e527]:
+                          - generic [ref=e528]: Flagship Project Evidence
+                          - generic [ref=e529]: 20% Weight
+                        - text: 1 Practical Engineering Experience / Internships
+                      - generic [ref=e531]:
+                        - generic [ref=e532]: 45%
+                        - generic [ref=e533]: USER DATA
+                    - button "Academics & Drive Eligibility 20% Weight CGPA 7.8/10.0 · 0 Active Backlog(s) 78% USER DATA" [ref=e537] [cursor=pointer]:
+                      - generic [ref=e543]:
+                        - generic [ref=e544]:
+                          - generic [ref=e545]: Academics & Drive Eligibility
+                          - generic [ref=e546]: 20% Weight
+                        - text: CGPA 7.8/10.0 · 0 Active Backlog(s)
+                      - generic [ref=e548]:
+                        - generic [ref=e549]: 78%
+                        - generic [ref=e550]: USER DATA
+                    - 'button "Target Role Alignment 15% Weight Targeting: Software Development Engineer (SDE) 85% AI RECOMMENDATION" [ref=e554] [cursor=pointer]':
+                      - generic [ref=e561]:
+                        - generic [ref=e562]:
+                          - generic [ref=e563]: Target Role Alignment
+                          - generic [ref=e564]: 15% Weight
+                        - text: "Targeting: Software Development Engineer (SDE)"
+                      - generic [ref=e566]:
+                        - generic [ref=e567]: 85%
+                        - generic [ref=e568]: AI RECOMMENDATION
+                    - button "Interview Articulation (STAR) 10% Weight 7/10 Communication & Storytelling readiness 70% SYSTEM DERIVED" [ref=e572] [cursor=pointer]:
+                      - generic [ref=e578]:
+                        - generic [ref=e579]:
+                          - generic [ref=e580]: Interview Articulation (STAR)
+                          - generic [ref=e581]: 10% Weight
+                        - text: 7/10 Communication & Storytelling readiness
+                      - generic [ref=e583]:
+                        - generic [ref=e584]: 70%
+                        - generic [ref=e585]: SYSTEM DERIVED
+                    - button "ATS Resume Strength 10% Weight Standard engineering resume format with technical skills 78% AI RECOMMENDATION" [ref=e589] [cursor=pointer]:
+                      - generic [ref=e595]:
+                        - generic [ref=e596]:
+                          - generic [ref=e597]: ATS Resume Strength
+                          - generic [ref=e598]: 10% Weight
+                        - text: Standard engineering resume format with technical skills
+                      - generic [ref=e600]:
+                        - generic [ref=e601]: 78%
+                        - generic [ref=e602]: AI RECOMMENDATION
+                - paragraph [ref=e609]:
+                  - strong [ref=e610]: "ML Model Transparency Notice:"
+                  - text: The placement probability estimate is derived from a supervised
+                  - code [ref=e611]: RandomForestClassifier
+                  - text: trained on 650 historical student placement records (2024–2026). It represents a statistical estimation based on historical hiring criteria, not a guaranteed placement outcome. Real campus placement outcomes depend on company-specific drive criteria, written test performance, and live interview rounds.
+            - generic [ref=e612]:
+              - generic [ref=e614]:
+                - generic [ref=e619]:
+                  - generic [ref=e620]:
+                    - heading "Priority Next Best Actions" [level=2] [ref=e621]
+                    - generic [ref=e622]: Actionable
+                  - paragraph [ref=e623]: Targeted high-leverage steps recommended specifically for your active bottlenecks
+                - generic [ref=e624]:
+                  - generic [ref=e625]: ℹ️ Auto-prioritizes Blind 75 DSA, projects, or cutoff clearance
+                  - button "Ask Coach about this" [ref=e626] [cursor=pointer]
+              - generic [ref=e631]:
+                - generic [ref=e638]:
+                  - heading "Personalized Next Actions What to do next" [level=2] [ref=e639]:
+                    - generic [ref=e640]: Personalized Next Actions
+                    - generic [ref=e641]: What to do next
+                  - paragraph [ref=e642]: Immediate high-yield steps calculated to elevate your placement probability
+                - generic [ref=e643]:
+                  - generic [ref=e644]:
+                    - generic [ref=e645]:
+                      - button [ref=e646] [cursor=pointer]
+                      - generic [ref=e649]:
+                        - generic [ref=e650]:
+                          - generic [ref=e651]: High Priority
+                          - heading "Master High-Frequency Blind 75 Patterns" [level=3] [ref=e652]
+                        - paragraph [ref=e653]: Your coding rating is 7/10. Practice Two Pointers, Sliding Window, and Tree BFS/DFS to clear online screening tests.
+                    - button "Ask Coach for Practice Problem" [ref=e655] [cursor=pointer]
+                  - generic [ref=e659]:
+                    - generic [ref=e660]:
+                      - button [ref=e661] [cursor=pointer]
+                      - generic [ref=e664]:
+                        - generic [ref=e665]:
+                          - generic [ref=e666]: Screening
+                          - heading "Audit Resume for SDE Keyword Densities" [level=3] [ref=e667]
+                        - paragraph [ref=e668]: Run your resume through the ATS studio to verify action verbs and Google X-Y-Z bullet formatting.
+                    - button "Open ATS Studio" [ref=e670] [cursor=pointer]
+                  - generic [ref=e674]:
+                    - generic [ref=e675]:
+                      - button [ref=e676] [cursor=pointer]
+                      - generic [ref=e679]:
+                        - generic [ref=e680]:
+                          - generic [ref=e681]: Interview Prep
+                          - heading "Conduct 1 Mock Technical Round" [level=3] [ref=e682]
+                        - paragraph [ref=e683]: Test your live explanation of data structures and STAR behavioral answers with the AI Career Agent.
+                    - button "Start Mock Interview" [ref=e685] [cursor=pointer]
+            - generic [ref=e689]:
+              - generic [ref=e691]:
+                - generic [ref=e696]:
+                  - generic [ref=e697]:
+                    - heading "AI Action Center" [level=2] [ref=e698]
+                    - generic [ref=e699]: Command Hub
+                  - paragraph [ref=e700]: One-click automated intelligence tools integrated with your candidate profile
+                - generic [ref=e701]:
+                  - generic [ref=e702]: ℹ️ Click any tool to launch diagnostic audit
+                  - button "Ask Coach about this" [ref=e703] [cursor=pointer]
+              - generic [ref=e708]:
+                - generic [ref=e714]:
+                  - heading "AI Action Center Command Hub" [level=2] [ref=e715]:
+                    - generic [ref=e716]: AI Action Center
+                    - generic [ref=e717]: Command Hub
+                  - paragraph [ref=e718]: One-click career intelligence tools integrated with your active candidate profile
+                - generic [ref=e719]:
+                  - button "Instant ML Analyze Career Readiness [Random Forest ML] Run Random Forest ML sensitivity on current CGPA, internships & coding scores. Launch Tool" [ref=e720] [cursor=pointer]:
+                    - generic [ref=e721]:
+                      - generic [ref=e722]: Instant ML
+                      - heading "Analyze Career Readiness [Random Forest ML]" [level=3] [ref=e729]:
+                        - generic [ref=e730]: Analyze Career Readiness
+                        - generic [ref=e731]: "[Random Forest ML]"
+                      - paragraph [ref=e732]: Run Random Forest ML sensitivity on current CGPA, internships & coding scores.
+                    - generic [ref=e733]: Launch Tool
+                  - button "6-Week Plan Build 6-Week Roadmap [Milestone Sprint] Customized 6-week milestone schedule based on missing skill gaps for Software Development Engineer (SDE). Open 6-Week Roadmap" [ref=e737] [cursor=pointer]:
+                    - generic [ref=e738]:
+                      - generic [ref=e739]: 6-Week Plan
+                      - heading "Build 6-Week Roadmap [Milestone Sprint]" [level=3] [ref=e745]:
+                        - generic [ref=e746]: Build 6-Week Roadmap
+                        - generic [ref=e747]: "[Milestone Sprint]"
+                      - paragraph [ref=e748]: Customized 6-week milestone schedule based on missing skill gaps for Software Development Engineer (SDE).
+                    - generic [ref=e749]: Open 6-Week Roadmap
+                  - button "Live Simulation Start AI Mock Interview [Live Simulation] Interactive technical & STAR behavioral questions with instant AI scoring. Begin Interview" [ref=e753] [cursor=pointer]:
+                    - generic [ref=e754]:
+                      - generic [ref=e755]: Live Simulation
+                      - heading "Start AI Mock Interview [Live Simulation]" [level=3] [ref=e761]:
+                        - generic [ref=e762]: Start AI Mock Interview
+                        - generic [ref=e763]: "[Live Simulation]"
+                      - paragraph [ref=e764]: Interactive technical & STAR behavioral questions with instant AI scoring.
+                    - generic [ref=e765]: Begin Interview
+                  - button "Portfolio Suggest Flagship Projects [Portfolio] Production-grade project blueprints mapped directly to your missing skill gaps. View Blueprints" [ref=e769] [cursor=pointer]:
+                    - generic [ref=e770]:
+                      - generic [ref=e771]: Portfolio
+                      - heading "Suggest Flagship Projects [Portfolio]" [level=3] [ref=e776]:
+                        - generic [ref=e777]: Suggest Flagship Projects
+                        - generic [ref=e778]: "[Portfolio]"
+                      - paragraph [ref=e779]: Production-grade project blueprints mapped directly to your missing skill gaps.
+                    - generic [ref=e780]: View Blueprints
+                  - button "Campus Data Cohort Placement Trends [Campus Data] Compare your branch and graduation year against 650+ verified campus offers. Explore Cohort" [ref=e784] [cursor=pointer]:
+                    - generic [ref=e785]:
+                      - generic [ref=e786]: Campus Data
+                      - heading "Cohort Placement Trends [Campus Data]" [level=3] [ref=e792]:
+                        - generic [ref=e793]: Cohort Placement Trends
+                        - generic [ref=e794]: "[Campus Data]"
+                      - paragraph [ref=e795]: Compare your branch and graduation year against 650+ verified campus offers.
+                    - generic [ref=e796]: Explore Cohort
+                  - button "ATS Scanner Audit Resume with ATS [ATS Scanner] Detect missing keywords, parse PDF bullet points and align with recruiter standards. Scan Resume" [ref=e800] [cursor=pointer]:
+                    - generic [ref=e801]:
+                      - generic [ref=e802]: ATS Scanner
+                      - heading "Audit Resume with ATS [ATS Scanner]" [level=3] [ref=e808]:
+                        - generic [ref=e809]: Audit Resume with ATS
+                        - generic [ref=e810]: "[ATS Scanner]"
+                      - paragraph [ref=e811]: Detect missing keywords, parse PDF bullet points and align with recruiter standards.
+                    - generic [ref=e812]: Scan Resume
+                - generic [ref=e817]:
+                  - generic [ref=e818]:
+                    - heading "Google Workspace & TPO Automation" [level=3] [ref=e819]
+                    - generic [ref=e821]: Active
+                  - paragraph [ref=e822]: Automatically locks mock interviews into Google Calendar and logs your verified readiness score into the TPO Master Placement Sheet.
+                  - button "Sync with Google Calendar & TPO Sheet" [ref=e823] [cursor=pointer]
+            - generic [ref=e824]:
+              - generic [ref=e826]:
+                - generic [ref=e832]:
+                  - generic [ref=e833]:
+                    - heading "What-If? Career Trajectory Simulator" [level=2] [ref=e834]
+                    - generic [ref=e835]: Interactive Sandbox
+                  - paragraph [ref=e836]: Simulate the immediate placement probability boost of boosting CGPA, clearing backlogs, or shipping an internship
+                - generic [ref=e837]: ℹ️ Interactive sliders instantly re-simulate placement probability
+              - generic [ref=e842]:
+                - generic [ref=e843]:
+                  - generic [ref=e848]:
+                    - generic [ref=e849]:
+                      - heading "What-If? Career Trajectory Simulator" [level=3] [ref=e850]
+                      - generic [ref=e851]: Real-Time Sandbox
+                    - paragraph [ref=e852]: Drag sliders in real time to simulate how raising CGPA, solving LeetCode problems, and shipping projects elevate your CTC package and placement odds.
+                  - generic [ref=e853]:
+                    - generic [ref=e854]:
+                      - button "Dynamic Sliders" [ref=e855] [cursor=pointer]
+                      - button "Milestones" [ref=e858] [cursor=pointer]
+                    - button "Reset" [ref=e863] [cursor=pointer]
+                - generic [ref=e868]:
+                  - generic [ref=e869]:
+                    - generic [ref=e870]: Current Baseline
+                    - generic [ref=e871]:
+                      - generic [ref=e872]: 78.5%
+                      - generic [ref=e873]: Profile Chance
+                    - paragraph [ref=e874]: Based on verified records
+                  - generic [ref=e875]:
+                    - generic [ref=e876]: Simulated Target Chance
+                    - generic [ref=e877]:
+                      - generic [ref=e878]: 79%
+                      - generic [ref=e879]: (+0%)
+                    - paragraph [ref=e880]: Projected clearance probability
+                  - generic [ref=e881]:
+                    - generic [ref=e882]: Projected CTC Package
+                    - generic [ref=e883]:
+                      - generic [ref=e884]: ₹14.6
+                      - generic [ref=e885]: LPA
+                    - generic [ref=e886]: High-Growth Product
+                  - generic [ref=e888]:
+                    - generic [ref=e889]: Eligible Recruiters
+                    - paragraph [ref=e890]: Walmart, Cisco, Oracle, Zoho, Swiggy
+                    - paragraph [ref=e891]: Matches hiring rubrics for this tier
+                - generic [ref=e892]:
+                  - generic [ref=e896]:
+                    - strong [ref=e897]: "Highest ROI Action:"
+                    - text: Focus on Secure 1 Verified Internship for an estimated
+                    - strong [ref=e898]: +12.5% Chance, +₹3.1 LPA
+                    - text: .
+                  - button "Lock as Preparation Target" [ref=e899] [cursor=pointer]
+                - generic [ref=e903]:
+                  - generic [ref=e904]:
+                    - generic [ref=e905]:
+                      - generic [ref=e906]: Target Academic CGPA
+                      - generic [ref=e911]: 7.8 / 10.0
+                    - slider [ref=e912] [cursor=pointer]: "7.8"
+                    - generic [ref=e913]:
+                      - generic [ref=e914]: 5.0 (Pass)
+                      - generic [ref=e915]: 7.5 (Tier-1 Cutoff)
+                      - generic [ref=e916]: 9.0+ (Dean's List)
+                  - generic [ref=e917]:
+                    - generic [ref=e918]:
+                      - generic [ref=e919]: Coding & DSA Proficiency
+                      - generic [ref=e925]: 7 / 100
+                    - slider [ref=e926] [cursor=pointer]: "20"
+                    - generic [ref=e927]:
+                      - generic [ref=e928]: Beginner (Arrays/Strings)
+                      - generic [ref=e929]: Medium (Blind 75)
+                      - generic [ref=e930]: Hard (DP / Graphs)
+                  - generic [ref=e931]:
+                    - generic [ref=e932]:
+                      - generic [ref=e933]: Deployed Full-Stack / AI Projects
+                      - generic [ref=e940]: 3 Deployed
+                    - slider [ref=e941] [cursor=pointer]: "3"
+                    - generic [ref=e942]:
+                      - generic [ref=e943]: 0 Projects
+                      - generic [ref=e944]: 2 Capstones (Recommended)
+                      - generic [ref=e945]: 6+ Production Blueprints
+                  - generic [ref=e946]:
+                    - generic [ref=e947]:
+                      - generic [ref=e948]: Verified Industry Internships
+                      - generic [ref=e953]: 1 Completed
+                    - slider [ref=e954] [cursor=pointer]: "1"
+                    - generic [ref=e955]:
+                      - generic [ref=e956]: 0 Internships
+                      - generic [ref=e957]: 1 Completed
+                      - generic [ref=e958]: 4 Internships
+                  - generic [ref=e959]:
+                    - generic [ref=e960]:
+                      - generic [ref=e961]: Active Academic Backlogs
+                      - generic [ref=e965]: 0 (Zero Backlogs - Fully Eligible)
+                    - slider [ref=e966] [cursor=pointer]: "0"
+                    - generic [ref=e967]:
+                      - generic [ref=e968]: 0 (Clean record for Tier-1 drives)
+                      - generic [ref=e969]: 1 backlog
+                      - generic [ref=e970]: 4+ backlogs (Restricted eligibility)
+                - paragraph [ref=e974]:
+                  - strong [ref=e975]: "Simulation Note:"
+                  - text: Simulated scores and salary tiers are mathematical projections calibrated against 972 historical campus placement records across 9 engineering disciplines. They reveal tactical high-leverage preparation priorities.
+            - generic [ref=e976]:
+              - generic [ref=e978]:
+                - generic [ref=e984]:
+                  - generic [ref=e985]:
+                    - heading "Live Technical Footprint & Fraud Shield" [level=2] [ref=e986]
+                    - generic [ref=e987]: Anti-Padding
+                  - paragraph [ref=e988]: Audit real-time GitHub repositories, programming languages, and cryptographic authenticity badge
+                - generic [ref=e989]: ℹ️ Validates original code authorship and syncs verified technologies
+              - generic [ref=e993]:
+                - generic [ref=e1000]:
+                  - generic [ref=e1001]:
+                    - heading "Live Technical Footprint & Fraud Shield" [level=3] [ref=e1002]
+                    - generic [ref=e1003]: Anti-Resume Padding
+                  - paragraph [ref=e1004]: Verify authentic GitHub commit cadence, repository originality, and language breakdown to earn the Cryptographic Verified Engineer badge.
+                - generic [ref=e1005]:
+                  - textbox "Enter GitHub username (e.g. torvalds or your username)..." [ref=e1007]: candidate-demo
+                  - button "Verify GitHub Footprint" [ref=e1008] [cursor=pointer]
+            - generic [ref=e1012]:
+              - generic [ref=e1019]:
+                - generic [ref=e1020]:
+                  - heading "Target Role Skill Gap Analysis" [level=2] [ref=e1021]
+                  - generic [ref=e1022]: Skill Gap Matrix
+                - paragraph [ref=e1023]: Direct alignment of your competencies against hiring cutoffs for your chosen domain
+              - generic [ref=e1026]:
+                - generic [ref=e1027]:
+                  - generic [ref=e1028]:
+                    - heading "Skill Strength & Gap Analysis" [level=3] [ref=e1034]
+                    - generic [ref=e1035]: 5 Dimensions
+                  - paragraph [ref=e1036]: Evaluated relative to tier-1 campus recruitment expectations and benchmarks
+                  - generic [ref=e1037]:
+                    - generic [ref=e1039]:
+                      - generic [ref=e1040]: Academics & CGPA Cutoff
+                      - generic [ref=e1041]: 78%
+                    - generic [ref=e1045]:
+                      - generic [ref=e1046]: DSA & Problem Solving
+                      - generic [ref=e1047]: 70%
+                    - generic [ref=e1051]:
+                      - generic [ref=e1052]: Technical Communication & STAR
+                      - generic [ref=e1053]: 70%
+                    - generic [ref=e1057]:
+                      - generic [ref=e1058]: Practical Internships & Projects
+                      - generic [ref=e1059]: 35%
+                    - generic [ref=e1063]:
+                      - generic [ref=e1064]: Drive Eligibility & Clearance
+                      - generic [ref=e1065]: 100%
+                  - generic [ref=e1068]:
+                    - text: "High-Yield Recommended Skills:"
+                    - generic [ref=e1069]:
+                      - button "Dynamic Programming" [ref=e1070] [cursor=pointer]
+                      - button "System Design Fundamentals" [ref=e1074] [cursor=pointer]
+                      - button "SQL & Query Optimization" [ref=e1078] [cursor=pointer]
+                      - button "Docker & Containerization" [ref=e1082] [cursor=pointer]
+                      - button "REST API Architecture" [ref=e1086] [cursor=pointer]
+                      - button "Core Java / OOP Concurrency" [ref=e1090] [cursor=pointer]
+                - generic [ref=e1094]:
+                  - generic [ref=e1095]:
+                    - heading "Identified Competitive Strengths" [level=3] [ref=e1100]
+                    - generic [ref=e1101]:
+                      - generic [ref=e1102]: High Academic Distinction (CGPA 7.8/10)
+                      - generic [ref=e1106]: Clean Academic Record (0 Active Backlogs)
+                      - generic [ref=e1110]: Practical Engineering Exposure (1 Internship)
+                      - generic [ref=e1114]: Core Problem Solving Foundation (7/10)
+                  - generic [ref=e1118]:
+                    - heading "Priority Placement Actions" [level=3] [ref=e1122]
+                    - generic [ref=e1123]: Target Blind 75 DSA patterns to elevate screening clearance rate
+          - generic [ref=e1129]:
+            - generic [ref=e1130]:
+              - generic [ref=e1131]:
+                - generic [ref=e1132]: Pathfinder 2.0
+                - paragraph [ref=e1138]: Autonomous full-stack AI career intelligence platform benchmarked on 972 verified campus records. Calibrates student profiles, tutors production architectures, and prepares engineering candidates for Tier-1 recruitment filters.
+                - generic [ref=e1139]: All 7 Engineering Pillars Operational
+              - generic [ref=e1142]:
+                - heading "Core Intelligence" [level=3] [ref=e1143]
+                - list [ref=e1144]:
+                  - listitem [ref=e1145]:
+                    - button "Executive Readiness Dashboard" [ref=e1146] [cursor=pointer]
+                  - listitem [ref=e1147]:
+                    - button "AI Mock Interview Simulator Live" [ref=e1148] [cursor=pointer]:
+                      - generic [ref=e1149]: AI Mock Interview Simulator
+                      - generic [ref=e1150]: Live
+                  - listitem [ref=e1151]:
+                    - button "DAS AI Voice Coach (EN / TE / HI)" [ref=e1152] [cursor=pointer]
+                  - listitem [ref=e1153]:
+                    - button "23 Production Project Blueprints" [ref=e1154] [cursor=pointer]
+                  - listitem [ref=e1155]:
+                    - button "ATS Resume Studio & Scanner" [ref=e1156] [cursor=pointer]
+                  - listitem [ref=e1157]:
+                    - button "STAR Architecture Defense Console" [ref=e1158] [cursor=pointer]
+              - generic [ref=e1159]:
+                - heading "Institutional Intelligence" [level=3] [ref=e1160]
+                - list [ref=e1161]:
+                  - listitem [ref=e1162]:
+                    - button "972 Placement Cohort Explorer" [ref=e1163] [cursor=pointer]
+                  - listitem [ref=e1164]:
+                    - button "Branch Placement Cutoffs & Stats" [ref=e1165] [cursor=pointer]
+                  - listitem [ref=e1166]:
+                    - button "6-Week Career Sprint Roadmap" [ref=e1167] [cursor=pointer]
+                  - listitem [ref=e1168]:
+                    - button "Readiness Command Center" [ref=e1169] [cursor=pointer]
+                  - listitem [ref=e1170]:
+                    - button "Single Source of Truth Profile" [ref=e1171] [cursor=pointer]
+              - generic [ref=e1172]:
+                - heading "Placement Desk & Support" [level=3] [ref=e1173]
+                - paragraph [ref=e1174]: "Have questions regarding placement data or AI coach benchmarking? Connect directly:"
+                - generic [ref=e1175]:
+                  - link "support@pathfinder-ai.io" [ref=e1176] [cursor=pointer]:
+                    - /url: mailto:support@pathfinder-ai.io?subject=Pathfinder%20Placement%20Inquiry
+                  - link "+91 (800) 012-3456 (Placement Helpline)" [ref=e1182] [cursor=pointer]:
+                    - /url: tel:+918000123456
+                  - generic [ref=e1187]: National Engineering Campus, Academic Block
+            - generic [ref=e1193]:
+              - generic [ref=e1194]:
+                - generic [ref=e1195]: © 2026 Pathfinder 2.0. All rights reserved.
+                - generic [ref=e1196]: •
+                - generic [ref=e1197]: MIT License Open Verification
+                - generic [ref=e1198]: •
+                - button "Privacy Policy" [ref=e1199] [cursor=pointer]
+                - generic [ref=e1200]: •
+                - button "Terms of Service" [ref=e1201] [cursor=pointer]
+              - generic [ref=e1202]:
+                - generic [ref=e1203]: OWASP 19-Point Hardened
+                - button "Top" [ref=e1208] [cursor=pointer]
+    - button "🎙️ Start Hands-Free Voice" [ref=e1212] [cursor=pointer]:
+      - generic [ref=e1213]: 🎙️
+      - generic [ref=e1214]: Start Hands-Free Voice
+    - generic [ref=e1215]:
+      - generic [ref=e1216]:
+        - generic [ref=e1217]:
+          - generic [ref=e1219]: DAS 3D CO-PILOT
+          - generic [ref=e1220]: CONNECTING...
+        - generic [ref=e1221]:
+          - button "✨ Boss Mode" [ref=e1222] [cursor=pointer]
+          - button "Sir Mode" [ref=e1223] [cursor=pointer]
+      - generic [ref=e1224]: "🔊 DAS: DAS 3D Co-Pilot ready. Click 'Start Hands-Free Voice' or 'Speak' below."
+      - generic [ref=e1225]:
+        - button "🎙️ Speak" [ref=e1226] [cursor=pointer]
+        - button "📷 Cam" [ref=e1227] [cursor=pointer]
+        - textbox "Type anything to DAS (Telugu, English, or Hindi)..." [ref=e1228]
+        - button "Send 🚀" [ref=e1229] [cursor=pointer]
