@@ -313,12 +313,15 @@ async def test_live_debug():
         key = os.getenv("GEMINI_API_KEY", "").strip()
         if not key:
             return {"ok": False, "error": "No GEMINI_API_KEY set on server"}
+        key_preview = f"{key[:8]}...{key[-6:]}" if len(key) > 14 else "short"
         client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
         cfg = create_gemini_live_config(get_das_system_instruction("boss"), DAS_TOOLS)
         async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
-            return {"ok": True, "connected": True, "model": LIVE_MODEL, "voice": "Puck"}
+            return {"ok": True, "connected": True, "model": LIVE_MODEL, "voice": "Puck", "key_preview": key_preview}
     except Exception as e:
-        return {"ok": False, "error": str(e), "type": type(e).__name__, "trace": traceback.format_exc()}
+        key = os.getenv("GEMINI_API_KEY", "").strip()
+        key_preview = f"{key[:8]}...{key[-6:]}" if len(key) > 14 else "short"
+        return {"ok": False, "error": str(e), "type": type(e).__name__, "key_preview": key_preview, "trace": traceback.format_exc()}
 
 
 @app.post("/api/rag/search")
