@@ -123,10 +123,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
     )
 
     try:
-        async with (
-            client.aio.live.connect(model=LIVE_MODEL, config=config) as session,
-            asyncio.TaskGroup() as tg,
-        ):
+        async with client.aio.live.connect(model=LIVE_MODEL, config=config) as session:
             await websocket.send_json({
                 "type": "status",
                 "status": "connected",
@@ -199,8 +196,10 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 turn_complete=True,
                             )
 
-                except WebSocketDisconnect:
-                    raise asyncio.CancelledError("Browser disconnected")
+                except (WebSocketDisconnect, asyncio.CancelledError):
+                    pass
+                except Exception as b_err:
+                    print(f"[Browser Receive Notice] {b_err}")
 
             async def receive_from_gemini():
                 try:
@@ -212,7 +211,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         ):
                             await websocket.send_json({"type": "interrupted"})
 
-                        # Transcription events (input audio transcription & interim transcription)
+                        # Transcription events
                         if response.server_content:
                             sc = response.server_content
                             input_tx = getattr(sc, "input_transcription", None)
@@ -238,7 +237,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     "text": output_tx.text,
                                 })
 
-                            # Audio and Model Turn
+                            # Audio and Model Turn - ONLY single audio stream to eliminate double-voice echo
                             if sc.model_turn and sc.model_turn.parts:
                                 for part in sc.model_turn.parts:
                                     if part.inline_data and part.inline_data.data:
@@ -253,10 +252,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                             if getattr(sc, "turn_complete", False):
                                 await websocket.send_json({"type": "turn_complete"})
-
-                        # Direct audio attribute (fallback)
-                        if hasattr(response, "data") and response.data:
-                            await websocket.send_json(format_audio_packet(response.data))
 
                         # Handle Function Calling
                         if response.tool_call:
@@ -300,6 +295,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     function_responses=function_responses
                                 )
 
+                except (WebSocketDisconnect, asyncio.CancelledError):
+                    pass
                 except Exception as stream_err:
                     print(f"[Gemini Stream Notice] {stream_err}")
                     try:
@@ -310,10 +307,13 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     except Exception:
                         pass
 
-            tg.create_task(receive_from_browser())
-            tg.create_task(receive_from_gemini())
+            b_task = asyncio.create_task(receive_from_browser())
+            g_task = asyncio.create_task(receive_from_gemini())
+            done, pending = await asyncio.wait([b_task, g_task], return_when=asyncio.FIRST_COMPLETED)
+            for p in pending:
+                p.cancel()
 
-    except asyncio.CancelledError:
+    except (WebSocketDisconnect, asyncio.CancelledError):
         pass
     except Exception as e:
         print(f"[DAS Live Proxy Exception] {type(e).__name__}: {e}")
