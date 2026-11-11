@@ -53,49 +53,14 @@ export const WireframeFace: React.FC<WireframeFaceProps> = ({
     return () => clearInterval(blinkInterval);
   }, []);
 
-  // 2. Procedural Mouth Geometry with Morph Target 0 (Mouth Open)
+  // 2. Procedural Mouth Geometry
   const mouthGeometry = useMemo(() => {
-    const geom = new THREE.BoxGeometry(0.52, 0.12, 0.14, 4, 4, 4);
-    const pos = geom.attributes.position;
-    const morphPositions: number[] = [];
-
-    // Construct morph target 0: lower vertices stretch downward for open mouth
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i);
-      const y = pos.getY(i);
-      const z = pos.getZ(i);
-
-      if (y < 0) {
-        morphPositions.push(x * 1.15, y - 0.42, z);
-      } else {
-        morphPositions.push(x, y + 0.08, z);
-      }
-    }
-
-    geom.morphAttributes.position = [
-      new THREE.Float32BufferAttribute(morphPositions, 3),
-    ];
-    return geom;
+    return new THREE.BoxGeometry(0.52, 0.12, 0.14);
   }, []);
 
-  // 3. Procedural Eye Geometry with Morph Target 0 (Eyelid Closed)
+  // 3. Procedural Eye Geometry
   const eyeGeometry = useMemo(() => {
-    const geom = new THREE.CapsuleGeometry(0.11, 0.16, 8, 16);
-    const pos = geom.attributes.position;
-    const morphPositions: number[] = [];
-
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i);
-      const y = pos.getY(i);
-      const z = pos.getZ(i);
-      // Flatten capsule along Y axis for closed eyelid morph state
-      morphPositions.push(x * 1.18, y * 0.08, z);
-    }
-
-    geom.morphAttributes.position = [
-      new THREE.Float32BufferAttribute(morphPositions, 3),
-    ];
-    return geom;
+    return new THREE.CapsuleGeometry(0.11, 0.16, 8, 16);
   }, []);
 
   // 4. Primary Animation & Render Loop
@@ -114,32 +79,20 @@ export const WireframeFace: React.FC<WireframeFaceProps> = ({
     );
     const blinkFactor = currentBlinkRef.current;
 
-    // --- COMBINE BLINK & VOLUME STATES INTO THREE.JS MORPHTARGETINFLUENCES ---
+    // --- COMBINE BLINK & VOLUME STATES INTO THREE.JS COORDINATES & SCALES ---
 
-    // A. Mouth Mesh morphTargetInfluences (Driven by Volume State)
-    if (mouthMeshRef.current && mouthMeshRef.current.morphTargetInfluences) {
-      const currentMorph = mouthMeshRef.current.morphTargetInfluences[0] || 0;
-      mouthMeshRef.current.morphTargetInfluences[0] = THREE.MathUtils.lerp(
-        currentMorph,
-        volume,
-        0.45
-      );
+    // A. Dynamic Lip-Sync Mouth Mesh Response
+    if (mouthMeshRef.current) {
+      mouthMeshRef.current.scale.y = 1 + volume * 2.2;
+      mouthMeshRef.current.scale.x = Math.max(0.7, 1 - volume * 0.18);
+      mouthMeshRef.current.position.y = -0.6 - volume * 0.15;
     }
 
-    // B. Eye Meshes morphTargetInfluences (Driven by Blink State)
-    if (leftEyeRef.current && leftEyeRef.current.morphTargetInfluences) {
-      leftEyeRef.current.morphTargetInfluences[0] = THREE.MathUtils.lerp(
-        leftEyeRef.current.morphTargetInfluences[0] || 0,
-        blinkFactor,
-        0.55
-      );
-    }
-    if (rightEyeRef.current && rightEyeRef.current.morphTargetInfluences) {
-      rightEyeRef.current.morphTargetInfluences[0] = THREE.MathUtils.lerp(
-        rightEyeRef.current.morphTargetInfluences[0] || 0,
-        blinkFactor,
-        0.55
-      );
+    // B. Eye Meshes Blink Response (Eyelid blink scale)
+    if (leftEyeRef.current && rightEyeRef.current) {
+      const eyeScaleY = Math.max(0.06, 1.0 - blinkFactor * 0.94);
+      leftEyeRef.current.scale.y = eyeScaleY;
+      rightEyeRef.current.scale.y = eyeScaleY;
     }
 
     // Visual eye scale adjustment for maximum visual clarity across all viewports

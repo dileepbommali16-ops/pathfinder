@@ -1728,7 +1728,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             </button>
           </div>
         )}
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
             <motion.div

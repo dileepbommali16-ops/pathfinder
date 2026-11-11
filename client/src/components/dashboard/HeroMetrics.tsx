@@ -65,7 +65,14 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
       icon: AlertTriangle,
       tag: "Focus Required",
     },
-  }[tone];
+  }[tone] || {
+    border: "border-[#9f1239]/40",
+    bg: "from-[#9f1239]/15 via-[#11131c] to-[#0a0b10]",
+    badge: "border-[#9f1239]/40 bg-[#9f1239]/15 text-[#f8fafc]",
+    progress: "from-[#881337] to-[#9f1239]",
+    icon: CheckCircle2,
+    tag: "Tier-1 Ready",
+  };
 
   const ToneIcon = toneConfig.icon;
 
