@@ -1,4 +1,5 @@
 # Dependencies & Environments
+temp_fitness_repo/
 **/node_modules
 .pnpm-store/
 .venv/
