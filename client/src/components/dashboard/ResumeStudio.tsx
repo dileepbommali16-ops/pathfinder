@@ -132,7 +132,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                   {selectedFile ? selectedFile.name : "Click to browse or drop PDF resume"}
                 </span>
                 <span className="mt-1 text-[11px] text-[#94a3b8]">
-                  PDF format · Maximum size 10MB
+                  PDF format · Maximum size 50MB
                 </span>
 
                 {/* Primary Crimson Upload Button */}

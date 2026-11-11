@@ -3,38 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Avatar3D } from "./Avatar3D";
 import { dasSocket, UserHonorificRole } from "./agentSocket";
 import { audioEngine } from "./audioIO";
-import { Mic, MicOff, Send, Sparkles, Volume2 } from "lucide-react";
 
-export interface AgentLayoutProps {
-  children?: React.ReactNode;
-  onNavigateTab?: (tab: string) => void;
-  [key: string]: any;
-}
-
-export const AgentLayout: React.FC<AgentLayoutProps> = ({
-  children,
-  onNavigateTab,
-}) => {
-  const routerNavigate = useNavigate();
+export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const navigate = useNavigate();
   const [connected, setConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
   const [role, setRole] = useState<UserHonorificRole>("boss");
   const [inputText, setInputText] = useState("");
   const [transcript, setTranscript] = useState(
-    "DAS 3D Co-Pilot ready. Click 'Speak to DAS' or type your instruction below."
+    "DAS 3D Co-Pilot ready. Click 'Start Hands-Free Voice' or 'Speak' below."
   );
-
-  const navigate = (path: string) => {
-    if (onNavigateTab) {
-      onNavigateTab(path.replace(/^\//, ""));
-    }
-    try {
-      routerNavigate(path);
-    } catch {
-      window.history.pushState({}, "", path);
-      window.dispatchEvent(new PopStateEvent("popstate"));
-    }
-  };
 
   useEffect(() => {
     dasSocket.connect(
@@ -48,19 +26,28 @@ export const AgentLayout: React.FC<AgentLayoutProps> = ({
 
   const toggleMic = async () => {
     audioEngine.initContext();
-    if (!connected) {
-      dasSocket.connect(role, setTranscript, setConnected, navigate);
+
+    if (!dasSocket.isConnected) {
+      dasSocket.connect(
+        role,
+        (text) => setTranscript(text),
+        (status) => setConnected(status),
+        (path) => navigate(path)
+      );
     }
+
     if (!micActive) {
       try {
         await audioEngine.startMicCapture((b64) => dasSocket.sendAudioChunk(b64));
         setMicActive(true);
-      } catch (micErr) {
-        console.warn("[Mic Permission Notice]:", micErr);
+        setTranscript("Listening... Speak now Boss!");
+      } catch {
+        setTranscript("Mic Permission Denied! Browser address bar lo Mic allow cheyyandi.");
       }
     } else {
       audioEngine.stopMicCapture();
       setMicActive(false);
+      setTranscript("Mic paused.");
     }
   };
 
@@ -73,123 +60,98 @@ export const AgentLayout: React.FC<AgentLayoutProps> = ({
     e.preventDefault();
     if (!inputText.trim()) return;
     audioEngine.initContext();
-    if (!connected) {
-      dasSocket.connect(role, setTranscript, setConnected, navigate);
-    }
-    dasSocket.sendTextCommand(inputText.trim());
-    setTranscript(`You: ${inputText.trim()}`);
+    setTranscript(`You: ${inputText}`);
+    dasSocket.sendTextCommand(inputText);
     setInputText("");
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-white overflow-x-hidden">
-      {/* 3D DAS Holographic Face Canvas (Always active in background) */}
+    /* bg-transparent pettam kabatti venakala unna Robot Face & Dashboard clear ga kanipistayi! */
+    <div className="relative min-h-screen bg-transparent text-white overflow-x-hidden">
+      {/* Background 3D Robot Face */}
       <Avatar3D />
 
-      {/* Main Content Area */}
-      <main className="relative z-10 pb-36">{children}</main>
+      {/* Main Dashboard Content */}
+      <main className="relative z-10 pb-32 bg-transparent">{children}</main>
 
-      {/* Bottom Floating Command HUD (Full Voice + Full Typing Support) */}
-      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-[96%] max-w-4xl bg-slate-950/85 backdrop-blur-2xl border border-cyan-500/40 rounded-2xl p-3.5 shadow-[0_0_35px_rgba(0,240,255,0.2)] flex flex-col gap-2.5">
-        {/* HUD Top Bar: Status & Role Mode */}
-        <div className="flex items-center justify-between text-xs px-1">
+      {/* Working Left-Side Red 'Start Hands-Free Voice' Button (From your 1st Screenshot) */}
+      <button
+        type="button"
+        onClick={toggleMic}
+        className={`fixed bottom-6 left-6 z-50 px-6 py-3.5 rounded-full font-bold text-sm shadow-2xl transition cursor-pointer flex items-center gap-2 ${micActive
+            ? "bg-emerald-600 text-white shadow-emerald-500/50 animate-pulse"
+            : "bg-red-600 hover:bg-red-500 text-white shadow-red-600/50"
+          }`}
+      >
+        <span>🎙️</span>
+        <span>{micActive ? "Hands-Free Active (Listening...)" : "Start Hands-Free Voice"}</span>
+      </button>
+
+      {/* Bottom Center DAS 3D CO-PILOT HUD */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-3xl bg-slate-950/85 backdrop-blur-xl border border-cyan-500/40 rounded-2xl p-3 shadow-2xl flex flex-col gap-2">
+        <div className="flex items-center justify-between text-xs text-cyan-300 px-2">
           <div className="flex items-center gap-2">
             <span
-              className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${
-                connected
-                  ? "bg-emerald-400 shadow-[0_0_10px_#10b981] animate-pulse"
-                  : "bg-amber-400 shadow-[0_0_8px_#f59e0b]"
-              }`}
+              className={`h-2.5 w-2.5 rounded-full ${connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+                }`}
             />
-            <button
-              type="button"
-              onClick={() => {
-                if (!connected) dasSocket.connect(role, setTranscript, setConnected, navigate);
-              }}
-              className="font-bold tracking-wider text-cyan-300 hover:text-cyan-100 flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>DAS 3D CO-PILOT</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/40 font-mono">
-                {connected ? "ONLINE" : "CONNECTING..."}
-              </span>
-            </button>
+            <span className="font-bold tracking-wider">
+              DAS 3D CO-PILOT
+            </span>
+            <span className="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-[10px]">
+              {connected ? "ONLINE (PUCK)" : "CONNECTING..."}
+            </span>
           </div>
 
-          {/* Role Switcher: Boss (Dileep) vs Sir (Client/Evaluator) */}
-          <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-700/60 shadow-inner">
+          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-full border border-cyan-500/30">
             <button
               type="button"
               onClick={() => handleRoleToggle("boss")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
-                role === "boss"
-                  ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30"
-                  : "text-slate-400 hover:text-white"
-              }`}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition ${role === "boss" ? "bg-cyan-400 text-slate-950" : "text-slate-300"
+                }`}
             >
-              <Sparkles className="w-3 h-3" />
-              <span>Boss Mode</span>
+              ✨ Boss Mode
             </button>
             <button
               type="button"
               onClick={() => handleRoleToggle("sir")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
-                role === "sir"
-                  ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30"
-                  : "text-slate-400 hover:text-white"
-              }`}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition ${role === "sir" ? "bg-cyan-400 text-slate-950" : "text-slate-300"
+                }`}
             >
-              <span>Sir Mode</span>
+              Sir Mode
             </button>
           </div>
         </div>
 
-        {/* Live Subtitle / Spoken Transcript Bar */}
-        <div className="text-xs sm:text-sm text-cyan-100/90 px-2 py-1 bg-slate-900/50 rounded-lg border border-cyan-500/15 flex items-center gap-2 truncate">
-          <Volume2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-          <span className="truncate">{transcript}</span>
+        <div className="text-sm text-cyan-100 bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-2 truncate">
+          🔊 {transcript}
         </div>
 
-        {/* Dual Input: Voice Microphone + Direct Text Box */}
         <form onSubmit={handleSendText} className="flex items-center gap-2">
-          {/* Voice Mic Toggle */}
           <button
             type="button"
             onClick={toggleMic}
-            className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 flex items-center gap-2 shrink-0 cursor-pointer ${
-              micActive
-                ? "bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/50 animate-pulse"
-                : "bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 hover:from-cyan-400 hover:to-blue-500 font-bold"
-            }`}
+            className={`px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${micActive
+                ? "bg-rose-600 text-white animate-pulse"
+                : "bg-sky-500 hover:bg-sky-400 text-slate-950"
+              }`}
           >
-            {micActive ? (
-              <>
-                <MicOff className="w-4 h-4 text-white" />
-                <span>Listening...</span>
-              </>
-            ) : (
-              <>
-                <Mic className="w-4 h-4 text-slate-950" />
-                <span>Speak</span>
-              </>
-            )}
+            {micActive ? "🔇 Listening..." : "🎙️ Speak"}
           </button>
 
-          {/* Typing Input Field (For when Boss prefers typing) */}
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type anything to DAS (Telugu, English, or Hindi)... e.g. 'Open resume studio', 'Show placement readiness'"
-            className="flex-1 bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder:text-slate-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 transition"
+            placeholder="Type anything to DAS (Telugu, English, or Hindi)..."
+            className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400"
           />
 
-          {/* Send Action */}
           <button
             type="submit"
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 shrink-0 shadow-md shadow-blue-600/30 cursor-pointer active:scale-95"
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-bold transition cursor-pointer"
           >
-            <span>Send</span>
-            <Send className="w-3.5 h-3.5" />
+            Send 🚀
           </button>
         </form>
       </div>

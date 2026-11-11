@@ -125,7 +125,7 @@ def sanitize_user_input(text: Optional[str], max_length: int = 4000) -> str:
 # 5. SECURE FILE UPLOAD VALIDATION
 # ==========================================
 
-MAX_RESUME_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_RESUME_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 PDF_MAGIC_BYTES = b"%PDF-"
 ZIP_MAGIC_BYTES = b"PK\x03\x04"
 

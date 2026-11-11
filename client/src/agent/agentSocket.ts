@@ -1,31 +1,15 @@
 import { audioEngine } from "./audioIO";
-import { executeWebsiteControl, WebsiteControlArgs, executeBrowserTool, ToolCallArgs } from "./toolRunner";
-
-const PROD_WS_URL =
-  import.meta.env.VITE_WS_URL ||
-  "wss://pathfinder-backend-klrp.onrender.com/agent/ws";
-
-const PROD_API_URL =
-  import.meta.env.VITE_BACKEND_URL ||
-  "https://pathfinder-backend-klrp.onrender.com";
+import { executeWebsiteControl, WebsiteControlArgs } from "./toolRunner";
 
 export type UserHonorificRole = "boss" | "sir";
 
+// Direct Google AI Studio Multimodal Live WebSocket URL (v1beta)
+const GOOGLE_LIVE_WS_BASE =
+  "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
+
 class DasAgentSocket {
   private ws: WebSocket | null = null;
-  private heartbeatInterval: number | null = null;
-  private reconnectTimeout: number | null = null;
-  private manualClose: boolean = false;
-  public isConnected: boolean = false;
-
-  // Non-blocking parallel wakeup for Render container
-  private warmUpRenderBackend() {
-    try {
-      fetch(`${PROD_API_URL}/health`, { method: "GET" }).catch(() => {});
-    } catch {
-      // Ignore background warmup notices
-    }
-  }
+  public isConnected = false;
 
   public connect(
     role: UserHonorificRole = "boss",
@@ -33,112 +17,200 @@ class DasAgentSocket {
     onStatusChange?: (connected: boolean) => void,
     navigateFn?: (path: string) => void
   ) {
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      onTranscript?.("ERROR: Vercel Environment Variables lo VITE_GEMINI_API_KEY set cheyyaledu Boss!");
+      onStatusChange?.(false);
       return;
     }
-    this.manualClose = false;
 
-    // Fire background warmup without blocking the WebSocket handshake
-    this.warmUpRenderBackend();
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
 
-    // Immediately open WebSocket for fast connection
-    this.ws = new WebSocket(`${PROD_WS_URL}?role=${role}`);
+    const wsUrl = `${GOOGLE_LIVE_WS_BASE}?key=${apiKey}`;
+    this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
-      this.isConnected = true;
-      onStatusChange?.(true);
+      const honorificInstruction =
+        role === "boss"
+          ? "You are DAS, the 3D AI Voice Co-Pilot of PATHFINDER 2.0 created by Bommali Dileep. Always address him as 'Boss' in every response. Speak fluently in Telugu, English, or Hindi."
+          : "You are DAS, the 3D AI Voice Co-Pilot of PATHFINDER 2.0. Always address the user politely as 'Sir'. Speak fluently in Telugu, English, or Hindi.";
 
-      // Clear old timer and start 20-second Ping to prevent Render 60s timeout
-      if (this.heartbeatInterval) window.clearInterval(this.heartbeatInterval);
-      this.heartbeatInterval = window.setInterval(() => {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(JSON.stringify({ type: "ping" }));
-        }
-      }, 20000);
+      // Step 1 of Google AI Studio Live WebSocket: Send Setup Config with Puck Voice
+      const setupMessage = {
+        setup: {
+          model: "models/gemini-2.0-flash-exp",
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: {
+                  voiceName: "Puck",
+                },
+              },
+            },
+          },
+          systemInstruction: {
+            parts: [{ text: honorificInstruction }],
+          },
+          tools: [
+            {
+              functionDeclarations: [
+                {
+                  name: "control_website",
+                  description: "Navigate PATHFINDER 2.0 pages ('/', '/blueprints', '/resume-studio', '/mock-interview') or scroll to sections.",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      action: { type: "STRING" },
+                      route: { type: "STRING" },
+                      selector: { type: "STRING" },
+                    },
+                    required: ["action"],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      this.ws?.send(JSON.stringify(setupMessage));
     };
 
-    this.ws.onmessage = (event) => {
+    this.ws.onmessage = async (event) => {
       try {
-        const data = JSON.parse(event.data);
+        // Google AI Studio WebSocket sends messages as Blob in the browser!
+        const rawText =
+          event.data instanceof Blob ? await event.data.text() : event.data;
+        const data = JSON.parse(rawText);
 
-        if (data.type === "pong") return;
-
-        // 1. Play 24kHz Gemini Puck Voice & Drive 3D Lip-Sync
-        if (data.type === "audio" && data.pcm_base64) {
-          audioEngine.playPcmChunk(data.pcm_base64, data.sample_rate || 24000);
+        // 1. Setup Complete -> Now truly ONLINE!
+        if (data.setupComplete) {
+          this.isConnected = true;
+          onStatusChange?.(true);
+          onTranscript?.("DAS Connected with Puck Voice! Speak or type below, Boss.");
+          return;
         }
 
-        // 2. Clear audio playback immediately if Boss interrupts DAS
-        if (data.type === "interrupted") {
+        // 2. Receive 24kHz Puck Voice Audio & Drive Robot Face Lip-Sync
+        const parts = data.serverContent?.modelTurn?.parts;
+        if (parts && Array.isArray(parts)) {
+          for (const part of parts) {
+            if (part.inlineData?.data) {
+              audioEngine.playPcmChunk(part.inlineData.data, 24000);
+            }
+            if (part.text) {
+              onTranscript?.(part.text);
+            }
+          }
+        }
+
+        // 3. Stop audio immediately if user interrupts
+        if (data.serverContent?.interrupted) {
           audioEngine.clearAudioQueue();
         }
 
-        // 3. Display Live Transcript
-        if (data.type === "transcript" && data.text) {
-          onTranscript?.(data.text);
-        }
-
-        // 4. Autonomous Website Control (Routes, Scroll, Click, Highlight)
-        if (data.type === "tool_call" && (data.name === "control_website" || data.name === "navigate_ui")) {
-          executeWebsiteControl(data.args as WebsiteControlArgs, navigateFn);
+        // 4. Website Navigation Tool Call
+        const fnCalls = data.toolCall?.functionCalls;
+        if (fnCalls && Array.isArray(fnCalls)) {
+          for (const fc of fnCalls) {
+            if (fc.name === "control_website") {
+              executeWebsiteControl(fc.args as WebsiteControlArgs, navigateFn);
+              this.ws?.send(
+                JSON.stringify({
+                  toolResponse: {
+                    functionResponses: [
+                      {
+                        id: fc.id,
+                        name: fc.name,
+                        response: { result: "ok" },
+                      },
+                    ],
+                  },
+                })
+              );
+            }
+          }
         }
       } catch (err) {
-        console.warn("[DasAgentSocket] Failed to parse message:", err);
+        console.error("DAS WS Parse Error:", err);
       }
     };
 
-    this.ws.onclose = () => {
+    this.ws.onerror = () => {
+      onTranscript?.("WebSocket Error: Check VITE_GEMINI_API_KEY & vercel.json CSP.");
       this.isConnected = false;
       onStatusChange?.(false);
-      if (this.heartbeatInterval) window.clearInterval(this.heartbeatInterval);
+    };
 
-      // Auto-reconnect after 2.5 seconds if dropped unexpectedly by Render
-      if (!this.manualClose) {
-        this.reconnectTimeout = window.setTimeout(() => {
-          this.connect(role, onTranscript, onStatusChange, navigateFn);
-        }, 2500);
+    this.ws.onclose = (e) => {
+      this.isConnected = false;
+      onStatusChange?.(false);
+      if (e.reason) {
+        onTranscript?.(`Disconnected: ${e.reason}`);
       }
     };
-
-    this.ws.onerror = (err) => {
-      console.warn("[DasAgentSocket] Connection notice:", err);
-    };
   }
 
+  // Send 16kHz Mic PCM Audio directly to Google AI Studio
   public sendAudioChunk(base64Pcm: string) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ type: "audio", pcm_base64: base64Pcm }));
+    if (this.ws && this.ws.readyState === WebSocket.OPEN && this.isConnected) {
+      this.ws.send(
+        JSON.stringify({
+          realtimeInput: {
+            mediaChunks: [
+              {
+                mimeType: "audio/pcm;rate=16000",
+                data: base64Pcm,
+              },
+            ],
+          },
+        })
+      );
     }
   }
 
+  // Send Text Message (e.g. "hello") directly to Google AI Studio
   public sendTextCommand(text: string) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ type: "text", text }));
+    if (!text.trim()) return;
+    audioEngine.initContext();
+
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      return;
     }
+
+    this.ws.send(
+      JSON.stringify({
+        clientContent: {
+          turns: [
+            {
+              role: "user",
+              parts: [{ text }],
+            },
+          ],
+          turnComplete: true,
+        },
+      })
+    );
   }
 
   public switchRole(role: UserHonorificRole) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ type: "role_switch", role }));
-    }
+    const notice =
+      role === "boss"
+        ? "From now on, address me as Boss."
+        : "From now on, address me as Sir.";
+    this.sendTextCommand(notice);
   }
 
   public disconnect() {
-    this.manualClose = true;
     audioEngine.stopMicCapture();
     audioEngine.clearAudioQueue();
-    if (this.heartbeatInterval) window.clearInterval(this.heartbeatInterval);
-    if (this.reconnectTimeout) window.clearTimeout(this.reconnectTimeout);
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
+    this.isConnected = false;
   }
 }
 
 export const dasSocket = new DasAgentSocket();
-if (typeof window !== "undefined") {
-  (window as any).dasSocket = dasSocket;
-}
-export { DasAgentSocket };
-export default dasSocket;

@@ -1539,9 +1539,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
   // 2. ONBOARDING WIZARD
   if (!profile.onboardingCompleted) {
     return (
-      <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0b10] text-[#f8fafc] font-sans overflow-x-hidden">
+      <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 bg-[#0a0b10]" />
+          <div className="absolute inset-0 bg-transparent" />
           <Ambient3DBackground activeTab={activeTab} />
         </div>
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -1586,9 +1586,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
   // 3. IMMEDIATE RESULT SCREEN POST-SUBMIT
   if (showResultScreen && auditResult) {
     return (
-      <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0b10] text-[#f8fafc] font-sans overflow-x-hidden">
+      <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 bg-[#0a0b10]" />
+          <div className="absolute inset-0 bg-transparent" />
           <Ambient3DBackground />
         </div>
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -1622,7 +1622,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
 
   // 4. MAIN DASHBOARD & PLATFORM NAVIGATION
   return (
-    <div className="pathfinder-dashboard relative min-h-screen bg-[#0a0b10] text-[#f8fafc] selection:bg-[#ffffff]/35 selection:text-[#f8fafc] font-sans overflow-x-hidden">
+    <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] selection:bg-[#ffffff]/35 selection:text-[#f8fafc] font-sans overflow-x-hidden">
       {isGlobalServerWakingUp && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[rgba(255,255,255,0.08)] bg-[#11131c]/95 px-4 py-2 text-xs font-medium text-[#f8fafc] shadow-[0_4px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
           <Loader2 className="h-3.5 w-3.5 animate-spin text-[#ffffff]" />
@@ -1632,7 +1632,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
 
       {/* BACKGROUND SYSTEM */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0b10]/80 via-[#0d0f18]/70 to-[#0a0b10]/85" />
+        <div className="absolute inset-0 bg-transparent" />
         <Ambient3DBackground />
 
         <div
