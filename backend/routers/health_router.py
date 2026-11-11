@@ -138,7 +138,8 @@ def gemini_ping():
     import urllib.error
     import json
 
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    from backend.config.key_resolver import get_active_gemini_key
+    api_key = get_active_gemini_key()
     if not api_key:
         return {"status": "no_key", "message": "GEMINI_API_KEY is not set"}
 

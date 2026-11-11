@@ -1,5 +1,5 @@
 """
-Pathfinder 2.0 - Core Backend Application
+Pathfinder 2.0 - Core Backend Application (v2.0.1 Gemini Live key reload)
 Implements modern enterprise FastAPI architecture across all 7 engineering pillars:
 1. Backend Fundamentals (Lifespan, Typed Config, Structured Logging, Uniform Error Envelopes)
 2. APIs & Communication (Modular Routers, Versioning v1, SSE Streaming, CORS)
@@ -309,8 +309,9 @@ async def test_live_debug():
     try:
         from backend.agent.puck_voice import LIVE_MODEL, create_gemini_live_config
         from backend.agent.live_proxy import DAS_TOOLS, get_das_system_instruction
+        from backend.config.key_resolver import get_active_gemini_key
         from google import genai
-        key = os.getenv("GEMINI_API_KEY", "").strip()
+        key = get_active_gemini_key()
         if not key:
             return {"ok": False, "error": "No GEMINI_API_KEY set on server"}
         key_preview = f"{key[:8]}...{key[-6:]}" if len(key) > 14 else "short"
@@ -319,7 +320,8 @@ async def test_live_debug():
         async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
             return {"ok": True, "connected": True, "model": LIVE_MODEL, "voice": "Puck", "key_preview": key_preview}
     except Exception as e:
-        key = os.getenv("GEMINI_API_KEY", "").strip()
+        from backend.config.key_resolver import get_active_gemini_key
+        key = get_active_gemini_key()
         key_preview = f"{key[:8]}...{key[-6:]}" if len(key) > 14 else "short"
         return {"ok": False, "error": str(e), "type": type(e).__name__, "key_preview": key_preview, "trace": traceback.format_exc()}
 

@@ -94,11 +94,13 @@ DAS_TOOLS = [
     ),
 ]
 
+from backend.config.key_resolver import get_active_gemini_key
+
 @router.websocket("/agent/ws")
 async def das_multimodal_live_ws(websocket: WebSocket):
     await websocket.accept()
 
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    api_key = get_active_gemini_key()
     if not api_key:
         await websocket.send_json({
             "type": "error",

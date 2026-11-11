@@ -51,7 +51,8 @@ class Settings:
         self.github_client_secret: Optional[str] = os.getenv("GITHUB_CLIENT_SECRET")
 
         # AI / LLM Configurations (Unified Google Gemini + Gemini Live)
-        self.gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
+        from backend.config.key_resolver import get_active_gemini_key
+        self.gemini_api_key: Optional[str] = get_active_gemini_key()
         self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest").strip() or "gemini-flash-latest"
         self.gemini_live_model: str = os.getenv("GEMINI_LIVE_MODEL", "gemini-2.0-flash-exp").strip() or "gemini-2.0-flash-exp"
         self.ai_daily_budget_per_user: int = int(os.getenv("AI_DAILY_BUDGET", "200"))

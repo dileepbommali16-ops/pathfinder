@@ -46,7 +46,8 @@ except ImportError:
     genai = None
     types = None
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+from backend.config.key_resolver import get_active_gemini_key
+GEMINI_API_KEY = get_active_gemini_key()
 
 # Cache validated models list
 _validated_gemini_models: Optional[List[str]] = None
