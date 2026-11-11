@@ -1589,7 +1589,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
           <div className="absolute inset-0 bg-transparent" />
-          <Ambient3DBackground />
+          <Ambient3DBackground activeTab={activeTab} />
         </div>
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
           <OnboardingResultScreen
@@ -1633,7 +1633,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       {/* BACKGROUND SYSTEM */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
         <div className="absolute inset-0 bg-transparent" />
-        <Ambient3DBackground />
+        <Ambient3DBackground activeTab={activeTab} />
 
         <div
           className="absolute inset-0 opacity-[0.025]"
