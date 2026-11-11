@@ -301,6 +301,26 @@ def get_gemini_live_key():
     }
 
 
+@app.get("/api/test-live")
+@v1_app.get("/api/test-live")
+async def test_live_debug():
+    """Diagnostic endpoint to test Gemini Live API connectivity and catch errors."""
+    import traceback
+    try:
+        from backend.agent.puck_voice import LIVE_MODEL, create_gemini_live_config
+        from backend.agent.live_proxy import DAS_TOOLS, get_das_system_instruction
+        from google import genai
+        key = os.getenv("GEMINI_API_KEY", "").strip()
+        if not key:
+            return {"ok": False, "error": "No GEMINI_API_KEY set on server"}
+        client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
+        cfg = create_gemini_live_config(get_das_system_instruction("boss"), DAS_TOOLS)
+        async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
+            return {"ok": True, "connected": True, "model": LIVE_MODEL, "voice": "Puck"}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "type": type(e).__name__, "trace": traceback.format_exc()}
+
+
 @app.post("/api/rag/search")
 @v1_app.post("/api/rag/search")
 async def rag_search_endpoint(payload: Dict[str, Any] = Body(...)):

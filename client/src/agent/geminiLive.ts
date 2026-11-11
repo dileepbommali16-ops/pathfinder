@@ -343,23 +343,17 @@ export class PathfinderGeminiLive {
 
     dasSocket.connect(
       role,
-      (text) => {
+      (text: string) => {
         this.cb.onTranscript?.(text, "agent");
         this.cb.onToken?.(text);
       },
-      (connected) => {
+      (connected: boolean) => {
         this.cb.onStatusChange?.(connected ? "connected" : "disconnected");
       },
-      (path) => {
+      (path: string) => {
         if (typeof window !== "undefined") {
           window.location.href = path;
         }
-      },
-      (userText) => {
-        this.cb.onTranscript?.(userText, "user");
-      },
-      () => {
-        this.cb.onInterrupted?.();
       }
     );
     return dasSocket;

@@ -98,13 +98,13 @@ DAS_TOOLS = [
 async def das_multimodal_live_ws(websocket: WebSocket):
     await websocket.accept()
 
-    api_key = os.environ.get("GEMINI_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key:
         await websocket.send_json({
             "type": "error",
             "message": "GEMINI_API_KEY is not configured in backend environment variables."
         })
-        await websocket.close()
+        await websocket.close(code=1008, reason="Missing GEMINI_API_KEY")
         return
 
     user_role = websocket.query_params.get("role", "boss")
@@ -310,8 +310,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
     except asyncio.CancelledError:
         pass
     except Exception as e:
+        print(f"[DAS Live Proxy Exception] {type(e).__name__}: {e}")
         try:
             await websocket.send_json({"type": "error", "message": str(e)})
-            await websocket.close()
+            await websocket.close(code=1011, reason=str(e)[:100])
         except Exception:
             pass

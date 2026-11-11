@@ -19,10 +19,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     dasSocket.connect(
       role,
-      (text) => setTranscript(text),
-      (status) => setConnected(status),
-      (path) => navigate(path),
-      (userText) => setUserTranscript(userText),
+      (text: string) => setTranscript(text),
+      (status: boolean) => setConnected(status),
+      (path: string) => navigate(path),
+      (userText: string) => setUserTranscript(userText),
       () => {
         setTranscript("[Interrupted]");
       }
@@ -39,10 +39,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!dasSocket.isConnected) {
       dasSocket.connect(
         role,
-        (text) => setTranscript(text),
-        (status) => setConnected(status),
-        (path) => navigate(path),
-        (userText) => setUserTranscript(userText),
+        (text: string) => setTranscript(text),
+        (status: boolean) => setConnected(status),
+        (path: string) => navigate(path),
+        (userText: string) => setUserTranscript(userText),
         () => {
           setTranscript("[Interrupted]");
         }
@@ -90,13 +90,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!inputText.trim()) return;
     audioEngine.initContext();
     setUserTranscript(inputText);
-    setTranscript(`Thinking...`);
+    setTranscript("Thinking...");
     dasSocket.sendTextCommand(inputText);
     setInputText("");
   };
 
   return (
-    /* bg-transparent pettam kabatti venakala unna Robot Face & Dashboard clear ga kanipistayi! */
     <div className="relative min-h-screen bg-transparent text-white overflow-x-hidden">
       {/* Background 3D Robot Face */}
       <Avatar3D />
@@ -104,14 +103,15 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {/* Main Dashboard Content */}
       <main className="relative z-10 pb-32 bg-transparent">{children}</main>
 
-      {/* Working Left-Side Red 'Start Hands-Free Voice' Button (From your 1st Screenshot) */}
+      {/* Working Left-Side Red 'Start Hands-Free Voice' Button */}
       <button
         type="button"
         onClick={toggleMic}
-        className={`fixed bottom-6 left-6 z-50 px-6 py-3.5 rounded-full font-bold text-sm shadow-2xl transition cursor-pointer flex items-center gap-2 ${micActive
+        className={`fixed bottom-6 left-6 z-50 px-6 py-3.5 rounded-full font-bold text-sm shadow-2xl transition cursor-pointer flex items-center gap-2 ${
+          micActive
             ? "bg-emerald-600 text-white shadow-emerald-500/50 animate-pulse"
             : "bg-red-600 hover:bg-red-500 text-white shadow-red-600/50"
-          }`}
+        }`}
       >
         <span>🎙️</span>
         <span>{micActive ? "Hands-Free Active (Listening...)" : "Start Hands-Free Voice"}</span>
@@ -122,12 +122,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         <div className="flex items-center justify-between text-xs text-cyan-300 px-2">
           <div className="flex items-center gap-2">
             <span
-              className={`h-2.5 w-2.5 rounded-full ${connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
-                }`}
+              className={`h-2.5 w-2.5 rounded-full ${
+                connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+              }`}
             />
-            <span className="font-bold tracking-wider">
-              DAS 3D CO-PILOT
-            </span>
+            <span className="font-bold tracking-wider">DAS 3D CO-PILOT</span>
             <span className="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-[10px]">
               {connected ? "ONLINE (PUCK)" : "CONNECTING..."}
             </span>
@@ -137,16 +136,18 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <button
               type="button"
               onClick={() => handleRoleToggle("boss")}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition ${role === "boss" ? "bg-cyan-400 text-slate-950" : "text-slate-300"
-                }`}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                role === "boss" ? "bg-cyan-400 text-slate-950" : "text-slate-300"
+              }`}
             >
               ✨ Boss Mode
             </button>
             <button
               type="button"
               onClick={() => handleRoleToggle("sir")}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition ${role === "sir" ? "bg-cyan-400 text-slate-950" : "text-slate-300"
-                }`}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                role === "sir" ? "bg-cyan-400 text-slate-950" : "text-slate-300"
+              }`}
             >
               Sir Mode
             </button>
@@ -167,10 +168,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <button
             type="button"
             onClick={toggleMic}
-            className={`px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${micActive
+            className={`px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${
+              micActive
                 ? "bg-rose-600 text-white animate-pulse"
                 : "bg-sky-500 hover:bg-sky-400 text-slate-950"
-              }`}
+            }`}
           >
             {micActive ? "🔇 Listening..." : "🎙️ Speak"}
           </button>

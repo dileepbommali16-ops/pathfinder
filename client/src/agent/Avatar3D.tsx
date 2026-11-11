@@ -1,5 +1,6 @@
 import React from "react";
-import PathfinderFace from "./PathfinderFace";
+import { Canvas } from "@react-three/fiber";
+import { WireframeFace } from "./WireframeFace";
 
 export type AvatarState = "idle" | "listening" | "thinking" | "speaking";
 
@@ -21,26 +22,23 @@ export interface Avatar3DProps {
   style?: React.CSSProperties;
 }
 
-export default function Avatar3D({
-  getLevel,
-  audioLevel = 0,
-  state = "idle",
-  isListening = false,
-  className = "w-full h-full",
+export const Avatar3D: React.FC<Avatar3DProps> = ({
+  className = "",
   style = {},
-}: Avatar3DProps) {
+}) => {
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden select-none">
-      <PathfinderFace
-        getLevel={getLevel}
-        audioLevel={audioLevel}
-        state={state}
-        isListening={isListening || state === "listening"}
-        className={className}
-        style={style}
-      />
+    <div
+      className={`fixed inset-0 pointer-events-none z-0 flex items-center justify-center opacity-90 select-none ${className}`}
+      style={style}
+    >
+      <Canvas camera={{ position: [0, 0, 4.5], fov: 45 }}>
+        <ambientLight intensity={1.2} />
+        <pointLight position={[5, 5, 5]} intensity={2.4} color="#00f0ff" />
+        <pointLight position={[-5, -3, 3]} intensity={1.8} color="#38bdf8" />
+        <WireframeFace />
+      </Canvas>
     </div>
   );
-}
+};
 
-export { Avatar3D };
+export default Avatar3D;
