@@ -17,3 +17,4 @@ def get_active_gemini_key() -> str:
         except Exception:
             return ""
     return key
+
