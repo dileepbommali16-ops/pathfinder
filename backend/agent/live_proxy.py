@@ -213,23 +213,27 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         # Transcription events (input audio transcription & interim transcription)
                         if response.server_content:
                             sc = response.server_content
-                            if sc.input_transcription and sc.input_transcription.text:
+                            input_tx = getattr(sc, "input_transcription", None)
+                            if input_tx and getattr(input_tx, "text", None):
                                 await websocket.send_json({
                                     "type": "user_transcript",
-                                    "text": sc.input_transcription.text,
-                                    "finished": getattr(sc.input_transcription, "finished", False),
+                                    "text": input_tx.text,
+                                    "finished": getattr(input_tx, "finished", False),
                                 })
-                            elif sc.interim_input_transcription and sc.interim_input_transcription.text:
-                                await websocket.send_json({
-                                    "type": "user_transcript",
-                                    "text": sc.interim_input_transcription.text,
-                                    "interim": True,
-                                })
+                            else:
+                                interim_tx = getattr(sc, "interim_input_transcription", None)
+                                if interim_tx and getattr(interim_tx, "text", None):
+                                    await websocket.send_json({
+                                        "type": "user_transcript",
+                                        "text": interim_tx.text,
+                                        "interim": True,
+                                    })
 
-                            if sc.output_transcription and sc.output_transcription.text:
+                            output_tx = getattr(sc, "output_transcription", None)
+                            if output_tx and getattr(output_tx, "text", None):
                                 await websocket.send_json({
                                     "type": "transcript",
-                                    "text": sc.output_transcription.text,
+                                    "text": output_tx.text,
                                 })
 
                             # Audio and Model Turn

@@ -38,9 +38,11 @@ def create_gemini_live_config(system_prompt: str, tools_list: list) -> types.Liv
         ),
         "tools": tools_list,
         "temperature": 0.25,
-        "input_audio_transcription": types.AudioTranscriptionConfig(),
-        "output_audio_transcription": types.AudioTranscriptionConfig(),
     }
+
+    if hasattr(types, "AudioTranscriptionConfig"):
+        kwargs["input_audio_transcription"] = types.AudioTranscriptionConfig()
+        kwargs["output_audio_transcription"] = types.AudioTranscriptionConfig()
 
     return types.LiveConnectConfig(**kwargs)
 
