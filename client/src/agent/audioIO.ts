@@ -504,6 +504,10 @@ class AudioEngine {
     this.processor = micCtx.createScriptProcessor(1024, 1, 1);
 
     this.processor.onaudioprocess = (event) => {
+      // Echo cancellation guard: If DAS is currently speaking through the speakers,
+      // pause sending mic packets so Gemini Live does not interrupt itself!
+      if (this.activeSources.length > 0) return;
+
       const inputData = event.inputBuffer.getChannelData(0);
       const pcm16 = new Int16Array(inputData.length);
       for (let i = 0; i < inputData.length; i++) {
@@ -519,8 +523,12 @@ class AudioEngine {
       onPcmChunk(window.btoa(binary));
     };
 
+    // Muted gain node to keep processor active without echoing mic to speakers
+    const silentGain = micCtx.createGain();
+    silentGain.gain.value = 0;
     source.connect(this.processor);
-    this.processor.connect(micCtx.destination);
+    this.processor.connect(silentGain);
+    silentGain.connect(micCtx.destination);
   }
 
   public stopMicCapture() {

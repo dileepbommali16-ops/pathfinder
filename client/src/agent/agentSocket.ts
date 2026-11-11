@@ -15,6 +15,7 @@ class DasAgentSocket {
   private isDirectGoogle = false;
   private preConnectAudioQueue: string[] = [];
   private pendingTexts: string[] = [];
+  private currentAgentTranscript = "";
   public isConnected = false;
   public currentRole: UserHonorificRole = "boss";
 
@@ -109,7 +110,12 @@ class DasAgentSocket {
         }
 
         if (data.type === "transcript" && data.text) {
-          onTranscript?.(data.text);
+          this.currentAgentTranscript += data.text;
+          onTranscript?.(this.currentAgentTranscript);
+          return;
+        }
+
+        if (data.type === "turn_complete") {
           return;
         }
 
@@ -119,6 +125,7 @@ class DasAgentSocket {
         }
 
         if (data.type === "interrupted") {
+          this.currentAgentTranscript = "";
           audioEngine.clearAudioQueue();
           onInterrupted?.();
           return;
@@ -237,6 +244,7 @@ class DasAgentSocket {
 
   public sendTextCommand(text: string) {
     if (!text.trim()) return;
+    this.currentAgentTranscript = "";
     audioEngine.initContext();
 
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) {
