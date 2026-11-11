@@ -102,16 +102,16 @@ async def das_multimodal_live_ws(websocket: WebSocket):
     if not api_key:
         await websocket.send_json({
             "type": "error",
-            "message": "GEMINI_API_KEY Render Environment Variables lo set cheyyaledu Boss!"
+            "message": "GEMINI_API_KEY is not configured in backend environment variables."
         })
         await websocket.close()
         return
 
     user_role = websocket.query_params.get("role", "boss")
 
-    # Multimodal Live API requires v1alpha for bidirectional websocket streaming
+    # Multimodal Live API using verified v1beta
     client = genai.Client(
-        http_options={"api_version": "v1alpha"},
+        http_options={"api_version": "v1beta"},
         api_key=api_key,
     )
 
@@ -140,7 +140,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         msg = json.loads(raw)
                         msg_type = msg.get("type")
 
-                        # 1. Keep-alive Ping from Render/Vercel
+                        # 1. Keep-alive Ping
                         if msg_type == "ping":
                             await websocket.send_json({"type": "pong"})
                             continue
@@ -148,28 +148,38 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         # 2. Real-time 16kHz Mic PCM chunks from Browser
                         if msg_type == "audio":
                             pcm_bytes = base64.b64decode(msg["pcm_base64"])
-                            await session.send(
-                                input={
-                                    "data": pcm_bytes,
-                                    "mime_type": f"audio/pcm;rate={SEND_SAMPLE_RATE}",
-                                }
+                            await session.send_realtime_input(
+                                audio=types.Blob(
+                                    data=pcm_bytes,
+                                    mime_type=f"audio/pcm;rate={SEND_SAMPLE_RATE}",
+                                )
                             )
 
                         # 3. Optional Camera / Screen Frame from Browser (1 FPS JPEG)
                         elif msg_type == "frame":
-                            await session.send(
-                                input={
-                                    "data": msg["jpeg_base64"],
-                                    "mime_type": "image/jpeg",
-                                }
+                            jpeg_bytes = base64.b64decode(msg["jpeg_base64"])
+                            await session.send_realtime_input(
+                                media=types.Blob(
+                                    data=jpeg_bytes,
+                                    mime_type="image/jpeg",
+                                )
                             )
 
                         # 4. Text Input from HUD
                         elif msg_type == "text":
                             text = msg.get("text", "")
-                            await session.send(input=text or ".", end_of_turn=True)
+                            if text:
+                                await session.send_client_content(
+                                    turns=[
+                                        types.Content(
+                                            parts=[types.Part.from_text(text=text)],
+                                            role="user",
+                                        )
+                                    ],
+                                    turn_complete=True,
+                                )
 
-                        # 5. Boss / Sir Role Switch
+                        # 5. Role Switch
                         elif msg_type == "role_switch":
                             new_role = msg.get("role", "boss")
                             update_msg = (
@@ -177,92 +187,122 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 if new_role == "boss"
                                 else "SYSTEM: You are now speaking with an evaluator/client. Address them as Sir."
                             )
-                            await session.send(input=update_msg, end_of_turn=True)
+                            await session.send_client_content(
+                                turns=[
+                                    types.Content(
+                                        parts=[types.Part.from_text(text=update_msg)],
+                                        role="user",
+                                    )
+                                ],
+                                turn_complete=True,
+                            )
 
                 except WebSocketDisconnect:
                     raise asyncio.CancelledError("Browser disconnected")
 
             async def receive_from_gemini():
                 try:
-                    while True:
-                        turn = session.receive()
-                        async for response in turn:
-                            # 1. Direct 24kHz PCM Audio Stream
-                            if hasattr(response, "data") and response.data:
-                                await websocket.send_json(format_audio_packet(response.data))
-                            elif response.server_content and response.server_content.model_turn:
-                                for part in response.server_content.model_turn.parts:
+                    async for response in session.receive():
+                        # Check for interruption
+                        if (
+                            response.server_content
+                            and getattr(response.server_content, "interrupted", False)
+                        ):
+                            await websocket.send_json({"type": "interrupted"})
+
+                        # Transcription events (input audio transcription & interim transcription)
+                        if response.server_content:
+                            sc = response.server_content
+                            if sc.input_transcription and sc.input_transcription.text:
+                                await websocket.send_json({
+                                    "type": "user_transcript",
+                                    "text": sc.input_transcription.text,
+                                    "finished": getattr(sc.input_transcription, "finished", False),
+                                })
+                            elif sc.interim_input_transcription and sc.interim_input_transcription.text:
+                                await websocket.send_json({
+                                    "type": "user_transcript",
+                                    "text": sc.interim_input_transcription.text,
+                                    "interim": True,
+                                })
+
+                            if sc.output_transcription and sc.output_transcription.text:
+                                await websocket.send_json({
+                                    "type": "transcript",
+                                    "text": sc.output_transcription.text,
+                                })
+
+                            # Audio and Model Turn
+                            if sc.model_turn and sc.model_turn.parts:
+                                for part in sc.model_turn.parts:
                                     if part.inline_data and part.inline_data.data:
-                                        await websocket.send_json(format_audio_packet(part.inline_data.data))
+                                        await websocket.send_json(
+                                            format_audio_packet(part.inline_data.data)
+                                        )
                                     if part.text:
                                         await websocket.send_json({
                                             "type": "transcript",
                                             "text": part.text,
                                         })
 
-                            # 2. Text / Transcript Stream
-                            if hasattr(response, "text") and response.text:
-                                await websocket.send_json({
-                                    "type": "transcript",
-                                    "text": response.text,
-                                })
+                            if getattr(sc, "turn_complete", False):
+                                await websocket.send_json({"type": "turn_complete"})
 
-                            # 3. Check for user interruption to immediately stop 3D Face lip-sync
-                            if (
-                                response.server_content
-                                and getattr(response.server_content, "interrupted", False)
-                            ):
-                                await websocket.send_json({"type": "interrupted"})
+                        # Direct audio attribute (fallback)
+                        if hasattr(response, "data") and response.data:
+                            await websocket.send_json(format_audio_packet(response.data))
 
-                            # 4. Handle Function Calls (Website Control & n8n Automation)
-                            if response.tool_call:
-                                function_responses = []
-                                for fc in response.tool_call.function_calls:
-                                    args = fc.args or {}
+                        # Handle Function Calling
+                        if response.tool_call:
+                            function_responses = []
+                            for fc in response.tool_call.function_calls:
+                                args = fc.args or {}
 
-                                    if fc.name in ("control_website", "navigate_ui"):
-                                        await websocket.send_json({
-                                            "type": "tool_call",
-                                            "name": "control_website",
-                                            "args": args,
-                                        })
-                                        function_responses.append(
-                                            types.FunctionResponse(
-                                                name=fc.name,
-                                                id=fc.id,
-                                                response={"status": "executed_on_client", "args": args},
-                                            )
+                                if fc.name in ("control_website", "navigate_ui"):
+                                    await websocket.send_json({
+                                        "type": "tool_call",
+                                        "name": "control_website",
+                                        "args": args,
+                                    })
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=fc.name,
+                                            id=fc.id,
+                                            response={"status": "executed_on_client", "args": args},
                                         )
+                                    )
 
-                                    elif fc.name == "run_google_automation":
-                                        n8n_res = await trigger_google_workspace_sync(
-                                            action=args.get("automation_type", "sync"),
-                                            payload=args,
+                                elif fc.name == "run_google_automation":
+                                    n8n_res = await trigger_google_workspace_sync(
+                                        action=args.get("automation_type", "sync"),
+                                        payload=args,
+                                    )
+                                    await websocket.send_json({
+                                        "type": "automation_status",
+                                        "data": n8n_res,
+                                    })
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=fc.name,
+                                            id=fc.id,
+                                            response=n8n_res,
                                         )
-                                        await websocket.send_json({
-                                            "type": "automation_status",
-                                            "data": n8n_res,
-                                        })
-                                        function_responses.append(
-                                            types.FunctionResponse(
-                                                name=fc.name,
-                                                id=fc.id,
-                                                response=n8n_res,
-                                            )
-                                        )
+                                    )
 
-                                if function_responses:
-                                    if hasattr(types, "LiveClientToolResponse"):
-                                        await session.send(
-                                            input=types.LiveClientToolResponse(
-                                                function_responses=function_responses
-                                            )
-                                        )
+                            if function_responses:
+                                await session.send_tool_response(
+                                    function_responses=function_responses
+                                )
 
-                        # Notify frontend when turn finishes
-                        await websocket.send_json({"type": "turn_complete"})
                 except Exception as stream_err:
                     print(f"[Gemini Stream Notice] {stream_err}")
+                    try:
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": f"Gemini Live error: {str(stream_err)}"
+                        })
+                    except Exception:
+                        pass
 
             tg.create_task(receive_from_browser())
             tg.create_task(receive_from_gemini())
@@ -270,5 +310,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
     except asyncio.CancelledError:
         pass
     except Exception as e:
-        await websocket.send_json({"type": "error", "message": str(e)})
-        await websocket.close()
+        try:
+            await websocket.send_json({"type": "error", "message": str(e)})
+            await websocket.close()
+        except Exception:
+            pass

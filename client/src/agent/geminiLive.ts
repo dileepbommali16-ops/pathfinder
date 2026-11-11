@@ -2,6 +2,7 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { API_BASE } from "@/lib/apiClient";
 import { speaker } from "./audioIO";
+import { dasSocket } from "./agentSocket";
 import {
   PATHFINDER_TOOLS,
   executeWebsiteTool,
@@ -314,7 +315,7 @@ export class PathfinderGeminiLive {
     window.dispatchEvent(new CustomEvent("das-toggle-mic"));
   }
 
-  /* ---------------- WebSocket Connection ---------------- */
+  /* ---------------- Server-Side Persistent WebSocket Connection ---------------- */
   private async resolveSessionKey(): Promise<string> {
     if (this.resolvedKey) return this.resolvedKey;
     if (ENV.VITE_GEMINI_API_KEY) {
@@ -322,29 +323,46 @@ export class PathfinderGeminiLive {
       return ENV.VITE_GEMINI_API_KEY;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/agent/session-token`);
+      const res = await fetch(`${API_BASE}/api/gemini-live-key`);
       if (res.ok) {
         const data = await res.json();
-        const t = data?.token || data?.apiKey || data?.access_token;
-        if (t) {
-          this.resolvedKey = t;
-          return t;
+        if (data?.status === "ready") {
+          this.resolvedKey = "backend_managed";
+          return "backend_managed";
         }
       }
     } catch { }
-    return "";
+    return "backend_managed";
   }
 
   async connect(callbacks?: GeminiLiveCallbacks) {
     if (callbacks) this.cb = callbacks;
-    if (this.session) return this.session;
-    if (this.connecting) return this.connecting;
-    this.connecting = this.doConnect();
-    try {
-      return await this.connecting;
-    } finally {
-      this.connecting = null;
-    }
+    const { isBoss } = resolveUserHonorific();
+    const role = isBoss ? "boss" : "sir";
+    this.cb.onStatusChange?.("connecting");
+
+    dasSocket.connect(
+      role,
+      (text) => {
+        this.cb.onTranscript?.(text, "agent");
+        this.cb.onToken?.(text);
+      },
+      (connected) => {
+        this.cb.onStatusChange?.(connected ? "connected" : "disconnected");
+      },
+      (path) => {
+        if (typeof window !== "undefined") {
+          window.location.href = path;
+        }
+      },
+      (userText) => {
+        this.cb.onTranscript?.(userText, "user");
+      },
+      () => {
+        this.cb.onInterrupted?.();
+      }
+    );
+    return dasSocket;
   }
 
   private async doConnect() {
@@ -503,13 +521,21 @@ export class PathfinderGeminiLive {
     return executeWebsiteTool(name, args);
   }
 
-  private textClient(): GoogleGenAI {
-    return new GoogleGenAI({ apiKey: ENV.VITE_GEMINI_API_KEY || this.resolvedKey || "" });
+  private textClient(): GoogleGenAI | null {
+    const key = ENV.VITE_GEMINI_API_KEY;
+    if (!key) return null;
+    try {
+      return new GoogleGenAI({ apiKey: key });
+    } catch {
+      return null;
+    }
   }
 
   private async searchSummary(query: string): Promise<string> {
     try {
-      const r: any = await this.textClient().models.generateContent({
+      const client = this.textClient();
+      if (!client) return "";
+      const r: any = await client.models.generateContent({
         model: TEXT_MODEL,
         contents: `Give a clear, accurate, friendly summary (3 to 4 sentences) about: ${query}`,
         config: { tools: [{ googleSearch: {} }], temperature: 0.3, maxOutputTokens: 300 }
@@ -588,7 +614,8 @@ export class PathfinderGeminiLive {
 
       let generated = false;
 
-      if (this.resolvedKey || ENV.VITE_GEMINI_API_KEY) {
+      const client = this.textClient();
+      if (client) {
         const textCandidates = Array.from(
           new Set([
             "gemini-3.1-flash-lite",
@@ -600,7 +627,7 @@ export class PathfinderGeminiLive {
 
         for (const tm of textCandidates) {
           try {
-            const response: any = await this.textClient().models.generateContent({
+            const response: any = await client.models.generateContent({
               model: tm,
               contents: queryPrompt,
               config: {

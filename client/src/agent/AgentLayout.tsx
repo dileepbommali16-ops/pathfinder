@@ -2,26 +2,35 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar3D } from "./Avatar3D";
 import { dasSocket, UserHonorificRole } from "./agentSocket";
-import { audioEngine } from "./audioIO";
+import { audioEngine, cameraEngine } from "./audioIO";
 
 export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const [connected, setConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
   const [role, setRole] = useState<UserHonorificRole>("boss");
   const [inputText, setInputText] = useState("");
   const [transcript, setTranscript] = useState(
     "DAS 3D Co-Pilot ready. Click 'Start Hands-Free Voice' or 'Speak' below."
   );
+  const [userTranscript, setUserTranscript] = useState("");
 
   useEffect(() => {
     dasSocket.connect(
       role,
       (text) => setTranscript(text),
       (status) => setConnected(status),
-      (path) => navigate(path)
+      (path) => navigate(path),
+      (userText) => setUserTranscript(userText),
+      () => {
+        setTranscript("[Interrupted]");
+      }
     );
-    return () => dasSocket.disconnect();
+    return () => {
+      dasSocket.disconnect();
+      cameraEngine.stopCameraCapture();
+    };
   }, []);
 
   const toggleMic = async () => {
@@ -32,7 +41,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         role,
         (text) => setTranscript(text),
         (status) => setConnected(status),
-        (path) => navigate(path)
+        (path) => navigate(path),
+        (userText) => setUserTranscript(userText),
+        () => {
+          setTranscript("[Interrupted]");
+        }
       );
     }
 
@@ -51,6 +64,22 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const toggleCamera = async () => {
+    if (!cameraActive) {
+      const started = await cameraEngine.startCameraCapture((b64Jpeg) => {
+        dasSocket.sendVideoFrame(b64Jpeg);
+      }, 1);
+      if (started) {
+        setCameraActive(true);
+      } else {
+        setTranscript("Camera access was denied or is unavailable.");
+      }
+    } else {
+      cameraEngine.stopCameraCapture();
+      setCameraActive(false);
+    }
+  };
+
   const handleRoleToggle = (newRole: UserHonorificRole) => {
     setRole(newRole);
     dasSocket.switchRole(newRole);
@@ -60,7 +89,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     e.preventDefault();
     if (!inputText.trim()) return;
     audioEngine.initContext();
-    setTranscript(`You: ${inputText}`);
+    setUserTranscript(inputText);
+    setTranscript(`Thinking...`);
     dasSocket.sendTextCommand(inputText);
     setInputText("");
   };
@@ -123,8 +153,14 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           </div>
         </div>
 
+        {userTranscript && (
+          <div className="text-xs text-emerald-300 bg-slate-900/90 border border-emerald-500/30 rounded-xl px-3 py-1.5 truncate">
+            🎤 You: {userTranscript}
+          </div>
+        )}
+
         <div className="text-sm text-cyan-100 bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-2 truncate">
-          🔊 {transcript}
+          🔊 DAS: {transcript}
         </div>
 
         <form onSubmit={handleSendText} className="flex items-center gap-2">
@@ -137,6 +173,19 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               }`}
           >
             {micActive ? "🔇 Listening..." : "🎙️ Speak"}
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleCamera}
+            className={`px-3 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 ${
+              cameraActive
+                ? "bg-violet-600 text-white animate-pulse"
+                : "bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+            }`}
+            title="Toggle Camera (Optional Video Streaming to DAS at 1 FPS)"
+          >
+            {cameraActive ? "📹 Cam On" : "📷 Cam"}
           </button>
 
           <input

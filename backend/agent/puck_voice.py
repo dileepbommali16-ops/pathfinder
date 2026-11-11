@@ -7,9 +7,9 @@ RECEIVE_SAMPLE_RATE = 24000
 PUCK_SAMPLE_RATE = RECEIVE_SAMPLE_RATE
 CHUNK_SIZE = 1024
 
-# Production-grade Gemini Multimodal Live model locked to official Bidi endpoint
-RAW_MODEL = os.getenv("GEMINI_LIVE_MODEL", "gemini-2.0-flash-exp").strip()
-LIVE_MODEL = "gemini-2.0-flash-exp" if ("3.8" in RAW_MODEL or "custom" in RAW_MODEL) else RAW_MODEL.replace("models/", "")
+# Production-grade Gemini Multimodal Live model locked to supported Gemini Live endpoint
+RAW_MODEL = os.getenv("GEMINI_LIVE_MODEL", "gemini-3.8-live").strip()
+LIVE_MODEL = RAW_MODEL.replace("models/", "")
 
 def get_puck_speech_config() -> types.SpeechConfig:
     """
@@ -28,6 +28,7 @@ def create_gemini_live_config(system_prompt: str, tools_list: list) -> types.Liv
     LiveConnectConfig from Google AI Studio settings:
     - Voice: Puck (24kHz)
     - Tools: Function Calling + Google Search Grounding
+    - Real-time input & output speech transcription enabled
     """
     kwargs = {
         "response_modalities": ["AUDIO"],
@@ -37,6 +38,8 @@ def create_gemini_live_config(system_prompt: str, tools_list: list) -> types.Liv
         ),
         "tools": tools_list,
         "temperature": 0.25,
+        "input_audio_transcription": types.AudioTranscriptionConfig(),
+        "output_audio_transcription": types.AudioTranscriptionConfig(),
     }
 
     return types.LiveConnectConfig(**kwargs)

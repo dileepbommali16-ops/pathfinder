@@ -49,17 +49,23 @@ async function startServer() {
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()");
     next();
   });
 
   // Health check for Render / cloud deployment
   app.get("/health", (_req, res) => res.status(200).json({ status: "healthy" }));
 
-  // Safe endpoint exposing Gemini API Key for Gemini Live WebSocket connection
+  // Safe endpoint exposing Gemini Live configuration status without leaking credentials
   app.get("/api/gemini-live-key", (_req, res) => {
-    const key = process.env.GEMINI_API_KEY || "";
-    res.status(200).json({ apiKey: key, key });
+    const hasKey = Boolean(process.env.GEMINI_API_KEY);
+    res.status(200).json({
+      status: hasKey ? "ready" : "missing_api_key",
+      service: "pathfinder-agent-ws",
+      ws_endpoint: "/agent/ws",
+      model: process.env.GEMINI_LIVE_MODEL || "gemini-3.8-live",
+      voice: process.env.GEMINI_VOICE_NAME || "Puck",
+    });
   });
 
   // Configure body parser with safe size limit

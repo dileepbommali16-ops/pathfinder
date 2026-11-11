@@ -535,6 +535,73 @@ class AudioEngine {
   }
 }
 
+export class CameraEngine {
+  private videoStream: MediaStream | null = null;
+  private intervalId: any = null;
+  private videoEl: HTMLVideoElement | null = null;
+  private canvasEl: HTMLCanvasElement | null = null;
+
+  public async startCameraCapture(
+    onFrame: (base64Jpeg: string) => void,
+    fps = 1
+  ): Promise<boolean> {
+    try {
+      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+        return false;
+      }
+      this.videoStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+      });
+      this.videoEl = document.createElement("video");
+      this.videoEl.muted = true;
+      this.videoEl.srcObject = this.videoStream;
+      await this.videoEl.play();
+
+      this.canvasEl = document.createElement("canvas");
+      this.canvasEl.width = 640;
+      this.canvasEl.height = 480;
+      const ctx = this.canvasEl.getContext("2d");
+
+      this.intervalId = setInterval(() => {
+        if (!this.videoEl || !ctx || !this.canvasEl) return;
+        ctx.drawImage(this.videoEl, 0, 0, this.canvasEl.width, this.canvasEl.height);
+        const dataUrl = this.canvasEl.toDataURL("image/jpeg", 0.6);
+        const commaIdx = dataUrl.indexOf(",");
+        if (commaIdx !== -1) {
+          const base64 = dataUrl.substring(commaIdx + 1);
+          onFrame(base64);
+        }
+      }, 1000 / fps);
+      return true;
+    } catch (e) {
+      console.warn("Camera access denied or failed:", e);
+      this.stopCameraCapture();
+      return false;
+    }
+  }
+
+  public stopCameraCapture() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+    if (this.videoStream) {
+      this.videoStream.getTracks().forEach((t) => t.stop());
+      this.videoStream = null;
+    }
+    if (this.videoEl) {
+      this.videoEl.srcObject = null;
+      this.videoEl = null;
+    }
+    this.canvasEl = null;
+  }
+
+  public get isStreaming(): boolean {
+    return this.videoStream !== null;
+  }
+}
+
+export const cameraEngine = new CameraEngine();
 export const audioEngine = new AudioEngine();
 export { AudioEngine as BrowserAudioLoop };
 export function getLiveAudioVolume(): number {

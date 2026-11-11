@@ -290,11 +290,12 @@ app.mount("/api/v1", v1_app)
 @v1_app.get("/api/gemini-live-key")
 @v1_app.get("/api/agent/session-token")
 def get_gemini_live_key():
-    """Secure endpoint issuing Gemini Live session token for WebSocket connection."""
-    key = os.getenv("GEMINI_API_KEY", "").strip()
+    """Secure endpoint providing Gemini Live session metadata. Never exposes raw credentials."""
+    has_key = bool(os.getenv("GEMINI_API_KEY", "").strip())
     return {
-        "apiKey": key,
-        "token": key,
+        "status": "ready" if has_key else "missing_api_key",
+        "service": "pathfinder-agent-ws",
+        "ws_endpoint": "/agent/ws",
         "model": os.getenv("GEMINI_LIVE_MODEL", "gemini-3.8-live"),
         "voice": os.getenv("GEMINI_VOICE_NAME", "Puck")
     }
