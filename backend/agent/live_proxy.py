@@ -317,222 +317,222 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             "role": user_role,
         })
 
-            latest_frame_bytes: bytes | None = None
+        latest_frame_bytes: bytes | None = None
 
-            async def receive_from_browser():
-                nonlocal latest_frame_bytes
-                try:
-                    while True:
-                        raw = await websocket.receive_text()
-                        msg = json.loads(raw)
-                        msg_type = msg.get("type")
+        async def receive_from_browser():
+            nonlocal latest_frame_bytes
+            try:
+                while True:
+                    raw = await websocket.receive_text()
+                    msg = json.loads(raw)
+                    msg_type = msg.get("type")
 
-                        # 1. Keep-alive Ping
-                        if msg_type == "ping":
-                            await websocket.send_json({"type": "pong"})
-                            continue
+                    # 1. Keep-alive Ping
+                    if msg_type == "ping":
+                        await websocket.send_json({"type": "pong"})
+                        continue
 
-                        # 2. Real-time 16kHz Mic PCM chunks from Browser
-                        if msg_type == "audio":
-                            pcm_bytes = base64.b64decode(msg["pcm_base64"])
-                            await session.send_realtime_input(
-                                audio=types.Blob(
-                                    data=pcm_bytes,
-                                    mime_type=f"audio/pcm;rate={SEND_SAMPLE_RATE}",
-                                )
+                    # 2. Real-time 16kHz Mic PCM chunks from Browser
+                    if msg_type == "audio":
+                        pcm_bytes = base64.b64decode(msg["pcm_base64"])
+                        await session.send_realtime_input(
+                            audio=types.Blob(
+                                data=pcm_bytes,
+                                mime_type=f"audio/pcm;rate={SEND_SAMPLE_RATE}",
                             )
+                        )
 
-                        # 3. Optional Camera / Screen Frame from Browser (2 FPS JPEG)
-                        elif msg_type == "frame":
-                            frame_str = msg.get("jpeg_base64")
-                            if frame_str:
-                                try:
-                                    latest_frame_bytes = base64.b64decode(frame_str)
-                                    await session.send_realtime_input(
-                                        media=types.Blob(
-                                            data=latest_frame_bytes,
-                                            mime_type="image/jpeg",
-                                        )
+                    # 3. Optional Camera / Screen Frame from Browser (2 FPS JPEG)
+                    elif msg_type == "frame":
+                        frame_str = msg.get("jpeg_base64")
+                        if frame_str:
+                            try:
+                                latest_frame_bytes = base64.b64decode(frame_str)
+                                await session.send_realtime_input(
+                                    media=types.Blob(
+                                        data=latest_frame_bytes,
+                                        mime_type="image/jpeg",
                                     )
-                                except Exception as f_err:
-                                    print(f"[Frame Process Notice] {f_err}")
-
-                        # 4. Text Input from HUD (Injects latest camera frame if camera is on!)
-                        elif msg_type == "text":
-                            text = msg.get("text", "")
-                            if text:
-                                parts = []
-                                # If camera is actively streaming, pass the live visual frame directly with the question
-                                if latest_frame_bytes:
-                                    parts.append(
-                                        types.Part.from_bytes(
-                                            data=latest_frame_bytes,
-                                            mime_type="image/jpeg",
-                                        )
-                                    )
-                                parts.append(types.Part.from_text(text=text))
-                                await session.send_client_content(
-                                    turns=[
-                                        types.Content(
-                                            parts=parts,
-                                            role="user",
-                                        )
-                                    ],
-                                    turn_complete=True,
                                 )
+                            except Exception as f_err:
+                                print(f"[Frame Process Notice] {f_err}")
 
-                        # 5. Role Switch
-                        elif msg_type == "role_switch":
-                            new_role = msg.get("role", "boss").lower().strip()
-                            if new_role == "boss":
-                                update_msg = "SYSTEM: You are speaking with your creator and owner Bommali Dileep. Address him as Boss and say 'Hi Boss! What's up?'"
-                            elif new_role in ("madam", "mam", "ma'am"):
-                                update_msg = "SYSTEM: You are speaking with a lady guest/evaluator. Address her respectfully as Madam and say 'Hello Madam, what can I help you with today?'"
-                            else:
-                                update_msg = "SYSTEM: You are speaking with a gentleman guest/evaluator. Address him respectfully as Sir and say 'Hello Sir, what can I help you with today?'"
-
+                    # 4. Text Input from HUD (Injects latest camera frame if camera is on!)
+                    elif msg_type == "text":
+                        text = msg.get("text", "")
+                        if text:
+                            parts = []
+                            # If camera is actively streaming, pass the live visual frame directly with the question
+                            if latest_frame_bytes:
+                                parts.append(
+                                    types.Part.from_bytes(
+                                        data=latest_frame_bytes,
+                                        mime_type="image/jpeg",
+                                    )
+                                )
+                            parts.append(types.Part.from_text(text=text))
                             await session.send_client_content(
                                 turns=[
                                     types.Content(
-                                        parts=[types.Part.from_text(text=update_msg)],
+                                        parts=parts,
                                         role="user",
                                     )
                                 ],
                                 turn_complete=True,
                             )
 
-                except (WebSocketDisconnect, asyncio.CancelledError):
-                    pass
-                except Exception as b_err:
-                    print(f"[Browser Receive Notice] {b_err}")
+                    # 5. Role Switch
+                    elif msg_type == "role_switch":
+                        new_role = msg.get("role", "boss").lower().strip()
+                        if new_role == "boss":
+                            update_msg = "SYSTEM: You are speaking with your creator and owner Bommali Dileep. Address him as Boss and say 'Hi Boss! What's up?'"
+                        elif new_role in ("madam", "mam", "ma'am"):
+                            update_msg = "SYSTEM: You are speaking with a lady guest/evaluator. Address her respectfully as Madam and say 'Hello Madam, what can I help you with today?'"
+                        else:
+                            update_msg = "SYSTEM: You are speaking with a gentleman guest/evaluator. Address him respectfully as Sir and say 'Hello Sir, what can I help you with today?'"
 
-            async def receive_from_gemini():
-                try:
-                    while True:
-                        if websocket.client_state == WebSocketState.DISCONNECTED:
-                            break
-                        if getattr(session, "_ws", None) and getattr(session._ws, "closed", False):
-                            break
+                        await session.send_client_content(
+                            turns=[
+                                types.Content(
+                                    parts=[types.Part.from_text(text=update_msg)],
+                                    role="user",
+                                )
+                            ],
+                            turn_complete=True,
+                        )
 
-                        async for response in session.receive():
-                            # Check for interruption
-                            if (
-                                response.server_content
-                                and getattr(response.server_content, "interrupted", False)
-                            ):
-                                await websocket.send_json({"type": "interrupted"})
+            except (WebSocketDisconnect, asyncio.CancelledError):
+                pass
+            except Exception as b_err:
+                print(f"[Browser Receive Notice] {b_err}")
 
-                            # Transcription events
-                            if response.server_content:
-                                sc = response.server_content
-                                input_tx = getattr(sc, "input_transcription", None)
-                                if input_tx and getattr(input_tx, "text", None):
+        async def receive_from_gemini():
+            try:
+                while True:
+                    if websocket.client_state == WebSocketState.DISCONNECTED:
+                        break
+                    if getattr(session, "_ws", None) and getattr(session._ws, "closed", False):
+                        break
+
+                    async for response in session.receive():
+                        # Check for interruption
+                        if (
+                            response.server_content
+                            and getattr(response.server_content, "interrupted", False)
+                        ):
+                            await websocket.send_json({"type": "interrupted"})
+
+                        # Transcription events
+                        if response.server_content:
+                            sc = response.server_content
+                            input_tx = getattr(sc, "input_transcription", None)
+                            if input_tx and getattr(input_tx, "text", None):
+                                await websocket.send_json({
+                                    "type": "user_transcript",
+                                    "text": input_tx.text,
+                                    "finished": getattr(input_tx, "finished", False),
+                                })
+                            else:
+                                interim_tx = getattr(sc, "interim_input_transcription", None)
+                                if interim_tx and getattr(interim_tx, "text", None):
                                     await websocket.send_json({
                                         "type": "user_transcript",
-                                        "text": input_tx.text,
-                                        "finished": getattr(input_tx, "finished", False),
+                                        "text": interim_tx.text,
+                                        "interim": True,
                                     })
-                                else:
-                                    interim_tx = getattr(sc, "interim_input_transcription", None)
-                                    if interim_tx and getattr(interim_tx, "text", None):
+
+                            output_tx = getattr(sc, "output_transcription", None)
+                            if output_tx and getattr(output_tx, "text", None):
+                                await websocket.send_json({
+                                    "type": "transcript",
+                                    "text": output_tx.text,
+                                })
+
+                            # Audio and Model Turn - ONLY single audio stream to eliminate double-voice echo
+                            if sc.model_turn and sc.model_turn.parts:
+                                for part in sc.model_turn.parts:
+                                    if part.inline_data and part.inline_data.data:
+                                        await websocket.send_json(
+                                            format_audio_packet(part.inline_data.data)
+                                        )
+                                    if part.text:
                                         await websocket.send_json({
-                                            "type": "user_transcript",
-                                            "text": interim_tx.text,
-                                            "interim": True,
+                                            "type": "transcript",
+                                            "text": part.text,
                                         })
 
-                                output_tx = getattr(sc, "output_transcription", None)
-                                if output_tx and getattr(output_tx, "text", None):
+                            if getattr(sc, "turn_complete", False):
+                                await websocket.send_json({"type": "turn_complete"})
+
+                        # Handle Function Calling
+                        if response.tool_call:
+                            function_responses = []
+                            for fc in response.tool_call.function_calls:
+                                args = fc.args or {}
+
+                                if fc.name in (
+                                    "control_website",
+                                    "navigate_ui",
+                                    "open_external_website",
+                                    "open_linkedin_profile",
+                                    "write_and_compile_code",
+                                ):
                                     await websocket.send_json({
-                                        "type": "transcript",
-                                        "text": output_tx.text,
+                                        "type": "tool_call",
+                                        "name": fc.name,
+                                        "args": args,
                                     })
-
-                                # Audio and Model Turn - ONLY single audio stream to eliminate double-voice echo
-                                if sc.model_turn and sc.model_turn.parts:
-                                    for part in sc.model_turn.parts:
-                                        if part.inline_data and part.inline_data.data:
-                                            await websocket.send_json(
-                                                format_audio_packet(part.inline_data.data)
-                                            )
-                                        if part.text:
-                                            await websocket.send_json({
-                                                "type": "transcript",
-                                                "text": part.text,
-                                            })
-
-                                if getattr(sc, "turn_complete", False):
-                                    await websocket.send_json({"type": "turn_complete"})
-
-                            # Handle Function Calling
-                            if response.tool_call:
-                                function_responses = []
-                                for fc in response.tool_call.function_calls:
-                                    args = fc.args or {}
-
-                                    if fc.name in (
-                                        "control_website",
-                                        "navigate_ui",
-                                        "open_external_website",
-                                        "open_linkedin_profile",
-                                        "write_and_compile_code",
-                                    ):
-                                        await websocket.send_json({
-                                            "type": "tool_call",
-                                            "name": fc.name,
-                                            "args": args,
-                                        })
-                                        function_responses.append(
-                                            types.FunctionResponse(
-                                                name=fc.name,
-                                                id=fc.id,
-                                                response={
-                                                    "status": "executed_on_client",
-                                                    "action": fc.name,
-                                                    "result": f"Successfully performed {fc.name} on the user screen.",
-                                                },
-                                            )
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=fc.name,
+                                            id=fc.id,
+                                            response={
+                                                "status": "executed_on_client",
+                                                "action": fc.name,
+                                                "result": f"Successfully performed {fc.name} on the user screen.",
+                                            },
                                         )
-
-                                    elif fc.name == "run_google_automation":
-                                        n8n_res = await trigger_google_workspace_sync(
-                                            action=args.get("automation_type", "sync"),
-                                            payload=args,
-                                        )
-                                        await websocket.send_json({
-                                            "type": "automation_status",
-                                            "data": n8n_res,
-                                        })
-                                        function_responses.append(
-                                            types.FunctionResponse(
-                                                name=fc.name,
-                                                id=fc.id,
-                                                response=n8n_res,
-                                            )
-                                        )
-
-                                if function_responses:
-                                    await session.send_tool_response(
-                                        function_responses=function_responses
                                     )
 
-                except (WebSocketDisconnect, asyncio.CancelledError):
-                    pass
-                except Exception as stream_err:
-                    print(f"[Gemini Stream Notice] {stream_err}")
-                    try:
-                        await websocket.send_json({
-                            "type": "error",
-                            "message": f"Gemini Live error: {str(stream_err)}"
-                        })
-                    except Exception:
-                        pass
+                                elif fc.name == "run_google_automation":
+                                    n8n_res = await trigger_google_workspace_sync(
+                                        action=args.get("automation_type", "sync"),
+                                        payload=args,
+                                    )
+                                    await websocket.send_json({
+                                        "type": "automation_status",
+                                        "data": n8n_res,
+                                    })
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=fc.name,
+                                            id=fc.id,
+                                            response=n8n_res,
+                                        )
+                                    )
 
-            b_task = asyncio.create_task(receive_from_browser())
-            g_task = asyncio.create_task(receive_from_gemini())
-            done, pending = await asyncio.wait([b_task, g_task], return_when=asyncio.FIRST_COMPLETED)
-            for p in pending:
-                p.cancel()
+                            if function_responses:
+                                await session.send_tool_response(
+                                    function_responses=function_responses
+                                )
+
+            except (WebSocketDisconnect, asyncio.CancelledError):
+                pass
+            except Exception as stream_err:
+                print(f"[Gemini Stream Notice] {stream_err}")
+                try:
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": f"Gemini Live error: {str(stream_err)}"
+                    })
+                except Exception:
+                    pass
+
+        b_task = asyncio.create_task(receive_from_browser())
+        g_task = asyncio.create_task(receive_from_gemini())
+        done, pending = await asyncio.wait([b_task, g_task], return_when=asyncio.FIRST_COMPLETED)
+        for p in pending:
+            p.cancel()
 
     except (WebSocketDisconnect, asyncio.CancelledError):
         pass
