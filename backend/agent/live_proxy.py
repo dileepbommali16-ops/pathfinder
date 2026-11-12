@@ -82,7 +82,14 @@ CORE AUTONOMOUS CAPABILITIES:
 3. MASTER PROGRAMMING & COMPILER (C, C++, Python, Java, JS, TS, SQL): When asked to write any program or algorithm (small or large), call `write_and_compile_code` with clean, compilable code and explain the logic step-by-step.
 4. LINKEDIN PROFILE INTELLIGENCE: When asked about anyone's profile, call `open_linkedin_profile` and summarize their background.
 5. GMAIL & WORKSPACE AUTOMATION: When asked to send an email or schedule a calendar, call `run_google_automation`.
-6. Keep voice replies energetic, warm, and conversational without robotic filler."""
+7. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
+   When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'close compiler', immediately reply warmly and loyally: "Okay Boss, returning to your dashboard." and call the `return_to_dashboard` tool to dismiss any open compiler drawers.
+
+8. LIVE COMPILER & CODE MASTERY (C, C++, PYTHON, JAVA, JS, TS, SQL):
+   - When asked to write or explain code, produce 100% syntactically correct, production-grade code.
+   - Always provide an in-depth pedagogical explanation: explain why the code is written this way, what each header or library does, how the loop or recursion works step-by-step, data structure choices, and time/space complexity.
+   - If an error is detected or code is corrected, verify the code and explain what was fixed so Boss learns the exact solution.
+9. Keep voice replies energetic, warm, and conversational without robotic filler."""
 
 # Tools matching AI Studio specs: Function Calling + Google Automation
 DAS_TOOLS = [
@@ -211,6 +218,19 @@ DAS_TOOLS = [
                         "details": types.Schema(type="STRING"),
                     },
                     required=["automation_type", "details"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="return_to_dashboard",
+                description="Close the active compiler studio or any opened drawer and return the user back to their main Pathfinder dashboard. Use when Boss says 'return to dashboard', 'close compiler', 'dashboard ki vellu', or similar.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "message": types.Schema(
+                            type="STRING",
+                            description="Optional confirmation message like 'Okay Boss, returning to your dashboard.'"
+                        )
+                    },
                 ),
             ),
         ]

@@ -376,5 +376,17 @@ _user_profiles: Dict[str, StudentProfile] = {}
 
 # backend/api.py lo import chesi router mount cheyandi:
 from backend.google_sync_api import router as google_sync_router
+from backend.compiler_engine import execute_code_live
 
 app.include_router(google_sync_router)
+
+
+@app.post("/api/compile")
+@v1_app.post("/api/compile")
+async def compile_code_endpoint(payload: Dict[str, Any] = Body(...)):
+    """Universal code execution endpoint for C, C++, Python, JS, TS, SQL, Rust, Go."""
+    language = payload.get("language", "python")
+    code = payload.get("code", "")
+    stdin = payload.get("stdin", "")
+    res = await execute_code_live(language=language, code=code, stdin=stdin)
+    return res

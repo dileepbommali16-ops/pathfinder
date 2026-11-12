@@ -43,16 +43,10 @@ export function handleAuthLoginDetected(email?: string, username?: string): "Bos
       localStorage.setItem("isOwner", "true");
       localStorage.setItem("das_mode", "BOSS");
       localStorage.setItem("das_honorific_override", "Boss");
-      try {
-        speaker.streamChunk("Hi Boss! What's up? All systems online.");
-      } catch {}
     } else {
       localStorage.setItem("isOwner", "false");
       localStorage.setItem("das_mode", "SIR");
       localStorage.setItem("das_honorific_override", "Sir");
-      try {
-        speaker.streamChunk("Welcome Sir. Pathfinder systems ready.");
-      } catch {}
     }
   }
 

@@ -18,7 +18,7 @@ export interface WireframeFaceProps {
  * - Continuously updates Three.js morphTargetInfluences on every frame at 60 FPS.
  */
 export const WireframeFace: React.FC<WireframeFaceProps> = ({
-  scale = [1.6, 1.6, 1.6],
+  scale = [1.25, 1.25, 1.25],
   position = [0, 0, 0],
 }) => {
   const headGroupRef = useRef<THREE.Group>(null);

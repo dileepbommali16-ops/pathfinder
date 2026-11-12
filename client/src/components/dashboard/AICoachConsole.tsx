@@ -675,15 +675,6 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     processSpeechQueue(targetLang, genId);
   };
 
-  // Auto-initiate DAS Voice Agent speech on initial load / trigger
-  useEffect(() => {
-    const greetingText = "Hi Boss, I'm your Pathfinder AI agent, how can I help you?";
-    const timer = setTimeout(() => {
-      queueSentenceForTts(greetingText, "en-IN", generationIdRef.current);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
-
   // Streaming Voice Query Handler: POST /api/voice/stream with Sentence-by-Sentence TTS
   const handleVoiceQuery = async (queryText: string) => {
     const trimmed = queryText.trim();

@@ -285,6 +285,20 @@ CORE AUTONOMOUS CAPABILITIES:
                     required: ["automation_type", "details"],
                   },
                 },
+                {
+                  name: "return_to_dashboard",
+                  description:
+                    "Close the active compiler studio or any opened drawer and return the user back to their main Pathfinder dashboard. Use when Boss says 'return to dashboard', 'close compiler', 'dashboard ki vellu', or similar.",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      message: {
+                        type: "STRING",
+                        description: "Confirmation message like 'Okay Boss, returning to your dashboard.'",
+                      },
+                    },
+                  },
+                },
               ],
             },
           ],
@@ -369,6 +383,9 @@ CORE AUTONOMOUS CAPABILITIES:
             data.name === "trigger_google_workspace"
           ) {
             await triggerGoogleAutomation(args);
+          } else if (data.name === "return_to_dashboard") {
+            this.savedOnCodeReady?.(null as any);
+            this.savedOnTranscript?.(args.message || "Okay Boss, returning to your dashboard.");
           }
           return;
         }
@@ -423,6 +440,10 @@ CORE AUTONOMOUS CAPABILITIES:
               fc.name === "run_google_automation"
             ) {
               resultMsg = await triggerGoogleAutomation(args);
+            } else if (fc.name === "return_to_dashboard") {
+              this.savedOnCodeReady?.(null as any);
+              resultMsg = "Returned to dashboard successfully.";
+              this.savedOnTranscript?.(args.message || "Okay Boss, returning to your dashboard.");
             }
 
             functionResponses.push({
@@ -549,6 +570,18 @@ CORE AUTONOMOUS CAPABILITIES:
     this.currentAgentTranscript = "";
     audioEngine.initContext();
     audioEngine.clearAudioQueue();
+
+    const q = text.toLowerCase().trim();
+    if (
+      q.includes("return to your dashboard") ||
+      q.includes("return to dashboard") ||
+      q.includes("dashboard ki vellu") ||
+      q.includes("close compiler") ||
+      q.includes("close code")
+    ) {
+      this.savedOnCodeReady?.(null as any);
+      this.savedOnTranscript?.("Okay Boss, returning to your dashboard.");
+    }
 
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) {
       this.pendingTexts.push(text);

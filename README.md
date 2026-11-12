@@ -89,7 +89,7 @@ Pathfinder 2.0 is a complete, unified **AI Career Operating System** designed to
 
 ```mermaid
 flowchart TB
-    subgraph Client["Frontend Client (Vercel Edge · React & Three.js)"]
+    subgraph Client["Frontend Client (React 19 & Three.js WebGL)"]
         Mic["Microphone Input (16kHz PCM Mono)"]
         Avatar3D["DAS 3D Wireframe Face (60 FPS Lip-Sync & Blinking)"]
         AgentLayout["AgentLayout & Bottom HUD Bar"]
@@ -97,16 +97,17 @@ flowchart TB
         AudioEngine["Web Audio FFT Analyser & PCM Player"]
     end
 
-    subgraph Backend["FastAPI Backend (Render Cloud · Python 3.11)"]
+    subgraph Backend["FastAPI Backend (Python 3.11 ASGI)"]
         WSGateway["Live WebSocket Gateway (/agent/ws)"]
         PuckVoice["Puck Voice Configuration & 24kHz PCM Encoder"]
         MLEngine["Random Forest ML Predictor (88% Accuracy)"]
         HealthRouter["System Health & Diagnostics (/health)"]
+        CompilerAPI["In-App Multi-Language Compiler Engine (/api/compile)"]
         GoogleAuto["Google Workspace Automation Dispatcher"]
     end
 
     subgraph GoogleAI["Google Gemini AI Cloud"]
-        GeminiLive["Gemini 2.0 Flash Multimodal Live API (Puck Voice)"]
+        GeminiLive["Gemini Multimodal Live API (Puck Neural Voice)"]
     end
 
     subgraph Automation["n8n Cloud Orchestration"]
@@ -117,14 +118,15 @@ flowchart TB
     end
 
     Mic --> AgentLayout
-    AgentLayout <-->|wss:// /agent/ws (25s Heartbeat)| WSGateway
-    WSGateway <-->|Bidirectional Audio & Tools| GeminiLive
-    GeminiLive -->|24kHz PCM Chunks| PuckVoice
-    PuckVoice -->|Audio Payloads| AudioEngine
-    AudioEngine -->|Frequency Energy| Avatar3D
-    WSGateway -->|UI Navigation Tools| ToolRunner
-    WSGateway -->|Automation Tools| GoogleAuto
-    GoogleAuto -->|HTTPS POST Webhook| N8N
+    AgentLayout <-->|"WebSocket Stream (25s Heartbeat)"| WSGateway
+    WSGateway <-->|"Bidirectional PCM Audio & Tools"| GeminiLive
+    GeminiLive -->|"24kHz PCM Chunks"| PuckVoice
+    PuckVoice -->|"Audio Payloads"| AudioEngine
+    AudioEngine -->|"Frequency Energy FFT"| Avatar3D
+    WSGateway -->|"UI Navigation Tools"| ToolRunner
+    WSGateway -->|"Code Compilation"| CompilerAPI
+    WSGateway -->|"Automation Tools"| GoogleAuto
+    GoogleAuto -->|"HTTPS POST Webhook"| N8N
     N8N --> Gmail
     N8N --> GCal
     N8N --> GSheets
@@ -132,55 +134,66 @@ flowchart TB
 
 ---
 
-## ☁️ Cloud Deployments & Hosting
+## 📂 Repository Structure & Module Architecture
 
-1. **Frontend Client**: Deployed on **Vercel Edge**  
-   👉 [https://pathfinder-client-fzom.vercel.app](https://pathfinder-client-fzom.vercel.app)
-2. **Backend API & ML Engine**: Deployed on **Render Cloud**  
-   👉 [https://pathfinder-backend-klrp.onrender.com](https://pathfinder-backend-klrp.onrender.com)
-3. **Live WebSocket Endpoint**:  
-   👉 `wss://pathfinder-backend-klrp.onrender.com/agent/ws`
-4. **Automation Webhook**: Hosted on **n8n Cloud**  
-   👉 `https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync`
-5. **Vector Database**: Hosted on **Supabase Cloud** (PostgreSQL + pgvector)
+```text
+pathfinder/
+├── client/                               # Frontend Client (React 19 + TypeScript + Vite)
+│   ├── src/
+│   │   ├── agent/                        # Autonomous DAS 3D AI Assistant
+│   │   │   ├── AgentLayout.tsx           # Floating HUD, Role Controls & Compiler Studio
+│   │   │   ├── Avatar3D.tsx              # Three.js 60 FPS WebGL Holographic Face
+│   │   │   ├── WireframeFace.tsx         # Procedural Blinking & Real-time Lip-Sync
+│   │   │   ├── agentSocket.ts            # Persistent Gemini Live Multimodal WebSocket
+│   │   │   ├── audioIO.ts                # 24kHz Web Audio Engine & Camera Capture
+│   │   │   └── toolRunner.ts             # DOM Navigation & Multi-Language Compiler
+│   │   ├── components/                   # UI Glassmorphism & Interactive Consoles
+│   │   ├── pages/                        # Placement Radar, Blueprints, ATS Studio
+│   │   └── lib/                          # API Client & Secure Session Management
+│   └── package.json
+│
+├── backend/                              # FastAPI Backend (Python 3.11 + Uvicorn)
+│   ├── agent/                            # Gemini Multimodal Live Gateway
+│   │   ├── live_proxy.py                 # Persistent WebSocket Proxy & Tools Router
+│   │   ├── persona.py                    # Deep Context, Role Memory & Prompt Engineering
+│   │   └── puck_voice.py                 # Neural Puck 24kHz Audio Config
+│   ├── routers/                          # Modular API Routers (Auth, ML, Voice, Webhook)
+│   ├── ml_engine.py                      # 88% Precision Random Forest Placement Model
+│   ├── gemini_engine.py                  # Generative AI Coaching & Architecture Analysis
+│   └── api.py                            # Lifespan, CORS, Rate Limiting & Health Probes
+│
+├── data/                                 # 972 Verified Campus Placement Records & Blueprints
+└── requirements.txt                      # Production Python Dependencies
+```
 
 ---
 
-## ⚙️ Environment Variables Setup
+## 🔒 Configuration & Environment Overview
 
-### 1. Vercel Dashboard (Frontend)
-Set the following environment variables in your **Vercel Project Settings &rarr; Environment Variables**:
+All secrets, API credentials, and environment settings are managed securely via standard `.env` files and enterprise secret management in deployment dashboards.
 
-| Variable | Value | Description |
-| :--- | :--- | :--- |
-| `VITE_API_BASE_URL` | `https://pathfinder-backend-klrp.onrender.com` | Backend REST API endpoint |
-| `VITE_BACKEND_URL` | `https://pathfinder-backend-klrp.onrender.com` | Backend base URL |
-| `VITE_WS_URL` | `wss://pathfinder-backend-klrp.onrender.com/agent/ws` | Gemini Live WebSocket URL |
-| `VITE_GEMINI_API_KEY` | *(Your Gemini API Key)* | Google AI Studio API Key |
-| `VITE_GEMINI_LIVE_MODEL` | `gemini-2.0-flash-exp` | Multimodal Live Model |
-| `VITE_GEMINI_VOICE_NAME` | `Puck` | Neural Voice Identifier |
-| `VITE_SUPABASE_URL` | `https://<project-id>.supabase.co` | Supabase Project URL |
-| `VITE_SUPABASE_ANON_KEY` | *(Your Supabase Anon Key)* | Public client key |
+### Required Environment Configuration
 
-### 2. Render Dashboard (Backend)
-Set the following environment variables in your **Render Web Service &rarr; Environment**:
+Create a `.env` file in the root and `backend/` directories based on `.env.example`:
 
-| Variable | Value | Description |
-| :--- | :--- | :--- |
-| `PORT` | `10000` | Dynamic Port assigned by Render |
-| `HOST` | `0.0.0.0` | Host binding interface |
-| `PYTHON_VERSION` | `3.11.9` | Python runtime version |
-| `ENVIRONMENT` | `production` | Deployment mode |
-| `BACKEND_URL` | `https://pathfinder-backend-klrp.onrender.com` | Backend canonical URL |
-| `FRONTEND_URL` | `https://pathfinder-client-fzom.vercel.app` | Allowed CORS frontend origin |
-| `GEMINI_API_KEY` | *(Your Gemini API Key)* | Google AI Studio Master Key |
-| `GEMINI_LIVE_MODEL` | `gemini-2.0-flash-exp` | Official Multimodal Live API model |
-| `GEMINI_VOICE_NAME` | `Puck` | High-fidelity voice profile |
-| `GEMINI_MODEL` | `gemini-2.0-flash` | Text & reasoning model |
-| `N8N_WEBHOOK_URL` | `https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync` | Automation Webhook |
-| `SUPABASE_URL` | `https://<project-id>.supabase.co` | Supabase Project URL |
-| `SUPABASE_KEY` | *(Your Supabase Service Key)* | Database service role key |
-| `JWT_SECRET` | *(32+ char secret string)* | Session token cryptographic secret |
+```bash
+# Backend Configuration
+PORT=8000
+HOST=0.0.0.0
+ENVIRONMENT=production
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_LIVE_MODEL=gemini-2.0-flash-exp
+GEMINI_VOICE_NAME=Puck
+SUPABASE_URL=your_supabase_url_here
+SUPABASE_KEY=your_supabase_service_key_here
+JWT_SECRET=your_secure_jwt_secret_here
+
+# Frontend Configuration (client/.env)
+VITE_API_BASE_URL=https://your-backend-api-url.com
+VITE_WS_URL=wss://your-backend-api-url.com/agent/ws
+VITE_GEMINI_LIVE_MODEL=gemini-2.0-flash-exp
+VITE_GEMINI_VOICE_NAME=Puck
+```
 
 ---
 

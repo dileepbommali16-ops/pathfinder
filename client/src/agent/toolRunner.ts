@@ -738,6 +738,7 @@ export async function handleCodeGenerationAndCompiler(
   try {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       await navigator.clipboard.writeText(args.source_code);
+      toast.success("Code ready in DAS Studio & copied to clipboard!");
     }
   } catch {
     // Ignore clipboard warning if window not focused
@@ -751,7 +752,7 @@ export async function handleCodeGenerationAndCompiler(
     compilerUrl,
   });
 
-  if (args.open_external_tab !== false) {
+  if (args.open_external_tab === true) {
     window.open(compilerUrl, "_blank", "noopener,noreferrer");
   }
 
