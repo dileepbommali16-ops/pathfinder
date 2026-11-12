@@ -110,9 +110,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
       const tabMap: Record<string, { tab: TabId; scrollId?: string }> = {
         overview: { tab: "overview" },
         dashboard: { tab: "overview" },
-        interview: { tab: "interview" },
-        "mock-interview": { tab: "interview" },
-        action: { tab: "action" },
+        interview: { tab: "overview" },
+        "mock-interview": { tab: "overview" },
+        action: { tab: "overview" },
         skills: { tab: "skills" },
         roadmap: { tab: "skills", scrollId: "roadmap-visualizer" },
         projects: { tab: "projects" },

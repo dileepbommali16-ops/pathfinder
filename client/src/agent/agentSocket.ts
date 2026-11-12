@@ -178,9 +178,18 @@ CORE AUTONOMOUS CAPABILITIES:
    When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'close compiler', immediately reply warmly and loyally: "Okay Boss, returning to your dashboard." and dismiss any open compiler drawers.
 9. Keep voice replies energetic, warm, and conversational without robotic filler.`;
 
+      const configuredModel =
+        import.meta.env.VITE_GEMINI_LIVE_MODEL?.trim() || "";
+      const validModel =
+        configuredModel && !configuredModel.includes("3.8")
+          ? configuredModel.startsWith("models/")
+            ? configuredModel
+            : `models/${configuredModel}`
+          : "models/gemini-2.0-flash-exp";
+
       const setupPayload = {
         setup: {
-          model: "models/gemini-3.8-live",
+          model: validModel,
           generationConfig: {
             responseModalities: ["AUDIO"],
             speechConfig: {

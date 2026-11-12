@@ -8,7 +8,9 @@ PUCK_SAMPLE_RATE = RECEIVE_SAMPLE_RATE
 CHUNK_SIZE = 1024
 
 # Production-grade Gemini Multimodal Live model locked to supported Gemini Live endpoint
-RAW_MODEL = os.getenv("GEMINI_LIVE_MODEL", "gemini-3.8-live").strip()
+RAW_MODEL = os.getenv("GEMINI_LIVE_MODEL", "gemini-2.0-flash-exp").strip()
+if "3.8" in RAW_MODEL or not RAW_MODEL:
+    RAW_MODEL = "gemini-2.0-flash-exp"
 LIVE_MODEL = RAW_MODEL.replace("models/", "")
 
 def get_puck_speech_config() -> types.SpeechConfig:

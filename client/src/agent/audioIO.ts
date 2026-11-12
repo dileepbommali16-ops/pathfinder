@@ -251,28 +251,32 @@ export class Speaker {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       return null;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        sampleRate: 16000,
-        channelCount: 1,
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    });
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+    } catch {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
 
     const AC = window.AudioContext || (window as any).webkitAudioContext;
-    const micCtx: AudioContext = new AC({ sampleRate: 16000 });
+    const micCtx: AudioContext = new AC();
+    if (micCtx.state === "suspended") {
+      micCtx.resume().catch(() => {});
+    }
+    const inputSampleRate = micCtx.sampleRate;
     const source = micCtx.createMediaStreamSource(stream);
-    const processor = micCtx.createScriptProcessor(4096, 1, 1);
+    const processor = micCtx.createScriptProcessor(2048, 1, 1);
 
     processor.onaudioprocess = (e) => {
       const inputData = e.inputBuffer.getChannelData(0);
-      const pcm16 = new Int16Array(inputData.length);
-      for (let i = 0; i < inputData.length; i++) {
-        const s = Math.max(-1, Math.min(1, inputData[i]));
-        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-      }
+      const pcm16 = downsampleTo16k(inputData, inputSampleRate);
+      if (pcm16.length === 0) return;
       const uint8 = new Uint8Array(pcm16.buffer);
       let binary = "";
       for (let i = 0; i < uint8.byteLength; i++) {
@@ -289,7 +293,7 @@ export class Speaker {
         processor.disconnect();
         source.disconnect();
       } catch { }
-      stream.getTracks().forEach((t) => t.stop());
+      stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
       micCtx.close().catch(() => { });
     };
   }
@@ -395,18 +399,49 @@ export const speaker = new Speaker(
 export const audioManager = speaker;
 
 
+function downsampleTo16k(input: Float32Array, inputSampleRate: number): Int16Array {
+  if (inputSampleRate === 16000) {
+    const output = new Int16Array(input.length);
+    for (let i = 0; i < input.length; i++) {
+      const s = Math.max(-1, Math.min(1, input[i]));
+      output[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+    }
+    return output;
+  }
+
+  const sampleRatio = inputSampleRate / 16000;
+  const newLength = Math.round(input.length / sampleRatio);
+  const output = new Int16Array(newLength);
+
+  for (let i = 0; i < newLength; i++) {
+    const srcIndex = i * sampleRatio;
+    const indexFloor = Math.floor(srcIndex);
+    const indexCeil = Math.min(input.length - 1, Math.ceil(srcIndex));
+    const fraction = srcIndex - indexFloor;
+    const interpolated =
+      input[indexFloor] * (1 - fraction) + input[indexCeil] * fraction;
+    const s = Math.max(-1, Math.min(1, interpolated));
+    output[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+  return output;
+}
+
 class AudioEngine {
   public audioCtx: AudioContext | null = null;
   public analyser: AnalyserNode | null = null;
   private nextPlayTime: number = 0;
   private activeSources: AudioBufferSourceNode[] = [];
   private micStream: MediaStream | null = null;
+  public micCtx: AudioContext | null = null;
   private processor: ScriptProcessorNode | null = null;
   private freqData: Uint8Array = new Uint8Array(128);
+  public micVolume: number = 0;
 
   public initContext() {
     if (!this.audioCtx) {
-      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       try {
         this.audioCtx = new AudioContextClass();
       } catch {
@@ -418,7 +453,7 @@ class AudioEngine {
       this.analyser.connect(this.audioCtx.destination);
     }
     if (this.audioCtx.state === "suspended") {
-      this.audioCtx.resume();
+      this.audioCtx.resume().catch(() => {});
     }
   }
 
@@ -507,33 +542,64 @@ class AudioEngine {
     }
   }
 
-  // Start capturing 16kHz PCM audio from user's microphone
+  // Start capturing 16kHz PCM audio from user's microphone across all hardware (Bluetooth headphones, earbuds, earphones, built-in)
   public async startMicCapture(onPcmChunk: (base64Pcm: string) => void) {
     this.initContext();
-    this.micStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        sampleRate: 16000,
-        channelCount: 1,
-        echoCancellation: true,
-        noiseSuppression: true,
-      },
-    });
+    this.stopMicCapture();
 
-    const micCtx = new AudioContext({ sampleRate: 16000 });
-    const source = micCtx.createMediaStreamSource(this.micStream);
-    this.processor = micCtx.createScriptProcessor(1024, 1, 1);
+    // Universal device capture constraints without rigid sampleRate that crashes Bluetooth drivers
+    try {
+      this.micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+    } catch {
+      this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+
+    // Use native device sample rate (44.1kHz / 48kHz / 16kHz) to avoid NotSupportedError
+    this.micCtx = new AudioContextClass();
+    if (this.micCtx.state === "suspended") {
+      await this.micCtx.resume();
+    }
+
+    const inputSampleRate = this.micCtx.sampleRate;
+    const source = this.micCtx.createMediaStreamSource(this.micStream);
+
+    // Buffer size 2048 prevents underruns on Windows audio pipelines
+    const bufferSize = 2048;
+    this.processor = this.micCtx.createScriptProcessor(bufferSize, 1, 1);
 
     this.processor.onaudioprocess = (event) => {
-      // Echo Cancellation: Do NOT send mic packets back to Gemini while DAS is speaking!
-      // This prevents DAS's own voice from triggering false interruptions.
-      if (this.isSpeaking()) return;
-
       const inputData = event.inputBuffer.getChannelData(0);
-      const pcm16 = new Int16Array(inputData.length);
+
+      // Compute mic volume RMS
+      let sum = 0;
       for (let i = 0; i < inputData.length; i++) {
-        const s = Math.max(-1, Math.min(1, inputData[i]));
-        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+        sum += inputData[i] * inputData[i];
       }
+      const rms = Math.sqrt(sum / inputData.length);
+      this.micVolume = Math.min(1.0, rms * 4.0);
+
+      // User Barge-In: If user speaks while DAS is outputting audio, interrupt immediately
+      if (this.isSpeaking()) {
+        if (rms > 0.035) {
+          this.clearAudioQueue();
+        } else {
+          return; // Suppress echo leakage
+        }
+      }
+
+      // Downsample input to pristine 16000 Hz 16-bit PCM for Gemini Live
+      const pcm16 = downsampleTo16k(inputData, inputSampleRate);
+      if (pcm16.length === 0) return;
 
       const uint8 = new Uint8Array(pcm16.buffer);
       let binary = "";
@@ -543,23 +609,34 @@ class AudioEngine {
       onPcmChunk(window.btoa(binary));
     };
 
-    // Muted gain node to keep processor active without echoing mic to speakers
-    const silentGain = micCtx.createGain();
+    // Muted gain node keeps processor pump active without feedback
+    const silentGain = this.micCtx.createGain();
     silentGain.gain.value = 0;
     source.connect(this.processor);
     this.processor.connect(silentGain);
-    silentGain.connect(micCtx.destination);
+    silentGain.connect(this.micCtx.destination);
   }
 
   public stopMicCapture() {
     if (this.processor) {
-      this.processor.disconnect();
+      try {
+        this.processor.disconnect();
+      } catch {}
       this.processor = null;
     }
     if (this.micStream) {
-      this.micStream.getTracks().forEach((track) => track.stop());
+      try {
+        this.micStream.getTracks().forEach((track) => track.stop());
+      } catch {}
       this.micStream = null;
     }
+    if (this.micCtx) {
+      try {
+        this.micCtx.close();
+      } catch {}
+      this.micCtx = null;
+    }
+    this.micVolume = 0;
   }
 }
 

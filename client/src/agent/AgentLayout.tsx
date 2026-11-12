@@ -843,38 +843,31 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
             </span>
           </div>
 
-          <div
-            className="flex items-center gap-1 p-1 rounded-full border"
-            style={{ backgroundColor: "#0F172A", borderColor: "#334155" }}
+          {/* Single Unified Role Pill */}
+          <button
+            type="button"
+            onClick={() => {
+              const nextRole: UserHonorificRole =
+                role === "boss" ? "sir" : role === "sir" ? "madam" : "boss";
+              handleRoleToggle(nextRole);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold transition cursor-pointer border shadow-sm hover:brightness-110 active:scale-95"
+            style={{
+              backgroundColor: "#0F172A",
+              borderColor: role === "boss" ? "#38bdf8" : "#334155",
+              color: role === "boss" ? "#38bdf8" : "#94a3b8",
+            }}
+            title="Click to switch identity mode: Boss Mode / Sir Mode / Madam Mode"
           >
-            <button
-              type="button"
-              onClick={() => handleRoleToggle("boss")}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
-                role === "boss" ? "bg-[#334155] text-white shadow" : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              ✨ Boss Mode
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleToggle("sir")}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
-                role === "sir" ? "bg-[#334155] text-white shadow" : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Sir Mode
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleToggle("madam")}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
-                role === "madam" ? "bg-[#334155] text-white shadow" : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Madam Mode
-            </button>
-          </div>
+            <span>
+              {role === "boss"
+                ? "✨ Boss Mode"
+                : role === "sir"
+                ? "🎩 Sir Mode"
+                : "🌸 Madam Mode"}
+            </span>
+            <span className="text-[10px] text-slate-500">⇄</span>
+          </button>
         </div>
 
         {/* User Voice / Input Transcript */}
@@ -965,13 +958,24 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           <button
             type="button"
             onClick={toggleMic}
-            className={`px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer flex items-center gap-1.5 border ${
+            className={`px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer flex items-center gap-2 border ${
               micActive
-                ? "bg-rose-950/80 text-rose-300 border-rose-500/50 animate-pulse"
+                ? "bg-rose-950/80 text-rose-300 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.35)]"
                 : "bg-[#334155] hover:bg-[#475569] text-white border-[#334155]"
             }`}
+            title={micActive ? "Click to Mute Microphone" : "Click to Speak (Supports all Headphones, Earphones & Buds)"}
           >
-            {micActive ? "🔇 Mute" : "🎙️ Speak"}
+            {micActive ? (
+              <>
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <span>Listening...</span>
+              </>
+            ) : (
+              <span>🎙️ Speak</span>
+            )}
           </button>
 
           {/* Camera Button */}
