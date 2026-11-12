@@ -277,15 +277,45 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         tools_list=DAS_TOOLS,
     )
 
+    candidate_models = [
+        LIVE_MODEL,
+        "gemini-2.5-flash-native-audio-latest",
+        "gemini-3.8-live",
+    ]
+    seen = set()
+    models_to_try = [m for m in candidate_models if m and not (m in seen or seen.add(m))]
+
+    session_cm = None
+    session = None
+    connected_model = None
+
+    for model_name in models_to_try:
+        try:
+            cm = client.aio.live.connect(model=model_name, config=config)
+            session = await cm.__aenter__()
+            session_cm = cm
+            connected_model = model_name
+            break
+        except Exception as conn_err:
+            print(f"[DAS Live Proxy] Model '{model_name}' connect failed: {conn_err}. Trying fallback...")
+            continue
+
+    if not session_cm or not session or not connected_model:
+        await websocket.send_json({
+            "type": "error",
+            "message": "Unable to initialize Gemini Live session on any supported model.",
+        })
+        await websocket.close(code=1011, reason="Live model connection failed")
+        return
+
     try:
-        async with client.aio.live.connect(model=LIVE_MODEL, config=config) as session:
-            await websocket.send_json({
-                "type": "status",
-                "status": "connected",
-                "model": LIVE_MODEL,
-                "voice": "Puck",
-                "role": user_role,
-            })
+        await websocket.send_json({
+            "type": "status",
+            "status": "connected",
+            "model": connected_model,
+            "voice": "Puck",
+            "role": user_role,
+        })
 
             latest_frame_bytes: bytes | None = None
 
@@ -513,3 +543,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             await websocket.close(code=1011, reason=str(e)[:100])
         except Exception:
             pass
+    finally:
+        if session_cm:
+            try:
+                await session_cm.__aexit__(None, None, None)
+            except Exception:
+                pass

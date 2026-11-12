@@ -181,11 +181,11 @@ CORE AUTONOMOUS CAPABILITIES:
       const configuredModel =
         import.meta.env.VITE_GEMINI_LIVE_MODEL?.trim() || "";
       const validModel =
-        configuredModel && !configuredModel.includes("3.8")
+        configuredModel && !configuredModel.includes("2.0-flash-exp")
           ? configuredModel.startsWith("models/")
             ? configuredModel
             : `models/${configuredModel}`
-          : "models/gemini-2.0-flash-exp";
+          : "models/gemini-2.5-flash-native-audio-latest";
 
       const setupPayload = {
         setup: {
@@ -536,6 +536,22 @@ CORE AUTONOMOUS CAPABILITIES:
       }
       if (e.reason) {
         this.savedOnTranscript?.(`Connection: ${e.reason}`);
+      }
+
+      // If direct Google AI Studio rejected or returned 1008, immediately failover to Render backend
+      if (this.isDirectGoogle && (e.code === 1008 || e.code === 1007 || e.code === 1002 || e.code === 1006)) {
+        this.isDirectGoogle = false;
+        this.ws = null;
+        this.connect(
+          this.savedRole,
+          this.savedOnTranscript,
+          this.savedOnStatusChange,
+          this.savedNavigateFn,
+          this.savedOnUserTranscript,
+          this.savedOnInterrupted,
+          this.savedOnCodeReady
+        );
+        return;
       }
 
       // Auto-reconnect so 2nd, 3rd, 50th question auto-reconnects seamlessly
