@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useEffect, useState } from "react";
+import React, { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { audioEngine } from "./audioIO";
@@ -18,8 +18,8 @@ export interface WireframeFaceProps {
  * - Continuously updates Three.js morphTargetInfluences on every frame at 60 FPS.
  */
 export const WireframeFace: React.FC<WireframeFaceProps> = ({
-  scale = [1.0, 1.0, 1.0],
-  position = [0, 0.45, 0],
+  scale = [0.9, 0.9, 0.9],
+  position = [0, 0.52, 0],
 }) => {
   const headGroupRef = useRef<THREE.Group>(null);
   const leftEyeRef = useRef<THREE.Mesh>(null);
@@ -29,23 +29,17 @@ export const WireframeFace: React.FC<WireframeFaceProps> = ({
   const upperLipRef = useRef<THREE.Mesh>(null);
   const auraRingRef = useRef<THREE.Mesh>(null);
 
-  // Blink State & Dynamic Interpolation Refs
-  const [blinkState, setBlinkState] = useState<boolean>(false);
+  // Pure Ref-based Blink State (Zero React component re-renders for buttery 60 FPS Three.js animation)
   const blinkRef = useRef<boolean>(false);
   const currentBlinkRef = useRef<number>(0);
 
-  // 1. setInterval timer triggering randomized eye blinks every few seconds
+  // 1. Organic procedural blinking timer
   useEffect(() => {
     const blinkInterval = setInterval(() => {
-      // Randomized check ensures organic, non-robotic blinking cadence (every 2.5 - 4.5s)
       if (Math.random() > 0.32 && !blinkRef.current) {
         blinkRef.current = true;
-        setBlinkState(true);
-
-        // Blink duration lasts ~160ms for natural rapid eyelid motion
         setTimeout(() => {
           blinkRef.current = false;
-          setBlinkState(false);
         }, 160);
       }
     }, 1500);
@@ -147,22 +141,22 @@ export const WireframeFace: React.FC<WireframeFaceProps> = ({
         <meshBasicMaterial color="#041b2d" wireframe transparent opacity={0.35} />
       </mesh>
 
-      {/* Left Eye with Morph Targets */}
+      {/* Left Eye with Morph Targets - Crimson Red #DC2626 */}
       <mesh
         ref={leftEyeRef}
         geometry={eyeGeometry}
         position={[-0.42, 0.25, 1.18]}
       >
-        <meshBasicMaterial color="#00ffff" />
+        <meshBasicMaterial color="#DC2626" />
       </mesh>
 
-      {/* Right Eye with Morph Targets */}
+      {/* Right Eye with Morph Targets - Crimson Red #DC2626 */}
       <mesh
         ref={rightEyeRef}
         geometry={eyeGeometry}
         position={[0.42, 0.25, 1.18]}
       >
-        <meshBasicMaterial color="#00ffff" />
+        <meshBasicMaterial color="#DC2626" />
       </mesh>
 
       {/* Dynamic Lip-Sync Mouth Mesh with Morph Targets */}

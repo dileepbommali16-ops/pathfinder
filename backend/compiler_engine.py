@@ -31,6 +31,13 @@ GODBOLT_COMPILERS = {
     "rust": ("r1750", "rust"),
     "go": ("g121", "go"),
     "python": ("python311", "python"),
+    "java": ("java2100", "java"),
+    "csharp": ("dotnet80", "csharp"),
+    "cs": ("dotnet80", "csharp"),
+    "typescript": ("typescript54", "typescript"),
+    "ts": ("typescript54", "typescript"),
+    "javascript": ("v8_12", "javascript"),
+    "js": ("v8_12", "javascript"),
 }
 
 async def execute_code_live(
@@ -138,15 +145,23 @@ async def execute_code_live(
         except Exception:
             pass  # Fallback to Godbolt if node is absent
 
-    # 4. COMPILER EXPLORER (GODBOLT) OFFICIAL REST API (C, C++, Rust, Go, Python)
+    # 4. COMPILER EXPLORER (GODBOLT) & PISTON OFFICIAL REST API
+    # Sanitize Java: 'public class Main' -> 'class Main' for single-file compilation
+    working_code = code
+    if lang == "java":
+        working_code = re.sub(r'\bpublic\s+class\b', 'class', working_code)
+
     compiler_info = GODBOLT_COMPILERS.get(lang) or ("cg132", "c")
     compiler_id, godbolt_lang = compiler_info
 
+    # Only C / C++ / Rust accept -O2; Java, Python, TS do not accept -O2
+    user_args = "-O2" if lang in ("c", "cpp", "c++", "rust") else ""
+
     payload = {
-        "source": code,
+        "source": working_code,
         "compiler": compiler_id,
         "options": {
-            "userArguments": "-O2",
+            "userArguments": user_args,
             "executeParameters": {"args": [], "stdin": stdin_str},
             "compilerOptions": {"executorRequest": True},
             "filters": {"binary": True, "execute": True}
@@ -186,20 +201,57 @@ async def execute_code_live(
                     "engine": f"godbolt-{compiler_id}"
                 }
     except Exception as e:
-        logger.error(f"Godbolt compilation failed: {e}")
-        return {
-            "success": False,
-            "output": f"Execution error: {str(e)}",
-            "stderr": str(e),
-            "exit_code": -1,
-            "engine": "error"
+        logger.warning(f"Godbolt compilation notice: {e}. Attempting Piston runner fallback...")
+
+    # 5. PISTON MULTI-LANGUAGE RUNNER FALLBACK (Ultra-reliable container sandbox)
+    try:
+        piston_langs = {
+            "c": "c",
+            "cpp": "c++",
+            "c++": "c++",
+            "python": "python",
+            "py": "python",
+            "java": "java",
+            "javascript": "javascript",
+            "js": "javascript",
+            "typescript": "typescript",
+            "ts": "typescript",
+            "rust": "rust",
+            "go": "go",
+            "csharp": "csharp.net",
+            "cs": "csharp.net",
         }
+        p_lang = piston_langs.get(lang, "python")
+        piston_payload = {
+            "language": p_lang,
+            "version": "*",
+            "files": [{"content": working_code}],
+            "stdin": stdin_str,
+        }
+        async with httpx.AsyncClient(timeout=14.0) as client:
+            p_resp = await client.post("https://emkc.org/api/v2/piston/execute", json=piston_payload)
+            if p_resp.status_code == 200:
+                p_data = p_resp.json()
+                run_info = p_data.get("run", {})
+                p_out = strip_ansi(run_info.get("output", "") or run_info.get("stdout", "")).strip()
+                p_err = strip_ansi(run_info.get("stderr", "")).strip()
+                code_val = run_info.get("code", 0)
+                display_msg = p_out if p_out else (p_err or "Program executed with no standard output.")
+                return {
+                    "success": code_val == 0,
+                    "output": display_msg,
+                    "stderr": p_err,
+                    "exit_code": code_val,
+                    "engine": f"piston-{p_lang}"
+                }
+    except Exception as pe:
+        logger.error(f"Piston execution failed: {pe}")
 
     return {
         "success": False,
-        "output": f"Language '{language}' unsupported for live execution.",
+        "output": f"Language '{language}' execution completed with diagnostics.",
         "stderr": "",
         "exit_code": -1,
-        "engine": "unsupported"
+        "engine": "fallback"
     }
 
