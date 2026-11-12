@@ -650,3 +650,157 @@ export function snapshot(): Record<string, any> {
     activeTab: new URLSearchParams(window.location.search).get("tab") || "overview"
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Autonomous Browser, Multi-Language Compiler & LinkedIn Intelligence */
+/* ------------------------------------------------------------------ */
+
+export interface CodeTaskPayload {
+  language: string;
+  title: string;
+  code: string;
+  explanation: string;
+  compilerUrl: string;
+}
+
+const COMPILER_URLS: Record<string, string> = {
+  c: "https://www.programiz.com/c-programming/online-compiler/",
+  cpp: "https://www.programiz.com/cpp-programming/online-compiler/",
+  "c++": "https://www.programiz.com/cpp-programming/online-compiler/",
+  python: "https://www.programiz.com/python-programming/online-compiler/",
+  java: "https://www.programiz.com/java-programming/online-compiler/",
+  javascript: "https://www.programiz.com/javascript/online-compiler/",
+  js: "https://www.programiz.com/javascript/online-compiler/",
+  typescript: "https://onecompiler.com/typescript",
+  ts: "https://onecompiler.com/typescript",
+  sql: "https://www.programiz.com/sql/online-compiler/",
+};
+
+const N8N_WEBHOOK_URL =
+  "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync";
+
+// 1. Universal External Website / Google Search Opener
+export function openExternalWebsiteOrSearch(args: {
+  url?: string;
+  search_query?: string;
+  site_name?: string;
+}): string {
+  let targetUrl = args.url || "";
+
+  if (!targetUrl && args.search_query) {
+    targetUrl = `https://www.google.com/search?q=${encodeURIComponent(
+      args.search_query
+    )}`;
+  } else if (targetUrl && !targetUrl.startsWith("http")) {
+    targetUrl = `https://${targetUrl}`;
+  }
+
+  if (targetUrl) {
+    window.open(targetUrl, "_blank", "noopener,noreferrer");
+    return `Opened ${args.site_name || targetUrl} in a new browser tab.`;
+  }
+  return "No URL provided.";
+}
+
+// 2. LinkedIn Profile Opener & Search
+export function openLinkedInProfile(args: {
+  person_name: string;
+  company_or_role?: string;
+  direct_url?: string;
+}): string {
+  const query = `${args.person_name} ${args.company_or_role || ""}`.trim();
+  const targetUrl =
+    args.direct_url && args.direct_url.startsWith("http")
+      ? args.direct_url
+      : `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(
+          query
+        )}`;
+
+  window.open(targetUrl, "_blank", "noopener,noreferrer");
+  return `Opened LinkedIn profile for ${args.person_name}.`;
+}
+
+// 3. Multi-Language Code Writer & Online Compiler Launcher (C, C++, Python, Java, JS, TS, SQL)
+export async function handleCodeGenerationAndCompiler(
+  args: {
+    language: string;
+    program_title: string;
+    source_code: string;
+    logic_explanation?: string;
+    open_external_tab?: boolean;
+  },
+  onCodeReady?: (payload: CodeTaskPayload) => void
+): Promise<string> {
+  const langKey = (args.language || "c").toLowerCase().trim();
+  const compilerUrl =
+    COMPILER_URLS[langKey] || `https://onecompiler.com/${langKey}`;
+
+  try {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(args.source_code);
+    }
+  } catch {
+    // Ignore clipboard warning if window not focused
+  }
+
+  onCodeReady?.({
+    language: langKey,
+    title: args.program_title || `${langKey.toUpperCase()} Program`,
+    code: args.source_code,
+    explanation: args.logic_explanation || "",
+    compilerUrl,
+  });
+
+  if (args.open_external_tab !== false) {
+    window.open(compilerUrl, "_blank", "noopener,noreferrer");
+  }
+
+  return `Generated ${args.language} code for "${args.program_title}" and displayed in the DAS Live Compiler Studio.`;
+}
+
+// 4. Gmail / Google Calendar / Google Sheets Automation via n8n + Direct Fallback
+export async function triggerGoogleAutomation(args: {
+  automation_type: "send_email" | "schedule_calendar" | "log_sheet" | string;
+  recipient_email?: string;
+  subject?: string;
+  details?: string;
+}): Promise<string> {
+  try {
+    const res = await fetch(N8N_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: args.automation_type,
+        source: "PATHFINDER_DAS_AGENT",
+        data: args,
+      }),
+    });
+
+    if (res.ok) {
+      return `Successfully triggered ${args.automation_type} via n8n Google Workspace webhook.`;
+    }
+  } catch {
+    // Fallback if n8n is offline: open Gmail compose window directly
+    if (args.automation_type === "send_email") {
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+        args.recipient_email || ""
+      )}&su=${encodeURIComponent(
+        args.subject || "Message from DAS AI Co-Pilot"
+      )}&body=${encodeURIComponent(args.details || "")}`;
+      window.open(gmailUrl, "_blank", "noopener,noreferrer");
+      return `Opened Gmail compose window with recipient, subject, and body pre-filled.`;
+    }
+  }
+
+  if (args.automation_type === "send_email") {
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      args.recipient_email || ""
+    )}&su=${encodeURIComponent(
+      args.subject || "Message from DAS AI Co-Pilot"
+    )}&body=${encodeURIComponent(args.details || "")}`;
+    window.open(gmailUrl, "_blank", "noopener,noreferrer");
+    return `Opened Gmail compose window with recipient, subject, and body pre-filled.`;
+  }
+
+  return `Executed ${args.automation_type} request.`;
+}

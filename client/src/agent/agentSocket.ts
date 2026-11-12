@@ -1,5 +1,13 @@
 import { audioEngine } from "./audioIO";
-import { executeWebsiteControl, WebsiteControlArgs } from "./toolRunner";
+import {
+  executeWebsiteControl,
+  WebsiteControlArgs,
+  openExternalWebsiteOrSearch,
+  openLinkedInProfile,
+  handleCodeGenerationAndCompiler,
+  triggerGoogleAutomation,
+  CodeTaskPayload,
+} from "./toolRunner";
 
 export type UserHonorificRole = "boss" | "sir";
 
@@ -26,6 +34,7 @@ class DasAgentSocket {
   private savedNavigateFn?: (path: string) => void;
   private savedOnUserTranscript?: (text: string) => void;
   private savedOnInterrupted?: () => void;
+  private savedOnCodeReady?: (payload: CodeTaskPayload) => void;
   private renderPingTimer: number | null = null;
   private reconnectTimer: number | null = null;
   private manualClose = false;
@@ -36,7 +45,8 @@ class DasAgentSocket {
     onStatusChange?: (connected: boolean) => void,
     navigateFn?: (path: string) => void,
     onUserTranscript?: ((text: string) => void) | string,
-    onInterrupted?: () => void
+    onInterrupted?: () => void,
+    onCodeReady?: (payload: CodeTaskPayload) => void
   ) {
     this.currentRole = role;
     this.savedRole = role;
@@ -46,6 +56,7 @@ class DasAgentSocket {
     if (navigateFn) this.savedNavigateFn = navigateFn;
     if (typeof onUserTranscript === "function") this.savedOnUserTranscript = onUserTranscript;
     if (onInterrupted) this.savedOnInterrupted = onInterrupted;
+    if (onCodeReady) this.savedOnCodeReady = onCodeReady;
 
     if (
       this.ws &&
@@ -81,10 +92,21 @@ class DasAgentSocket {
         return;
       }
 
-      const systemPrompt =
-        role === "boss"
-          ? "You are DAS, the 3D AI Co-Pilot of PATHFINDER 2.0 created by Bommali Dileep. Always address him warmly as 'Boss'. Speak fluently in Telugu, English, or Hindi."
-          : "You are DAS, the 3D AI Co-Pilot of PATHFINDER 2.0. Always address the user politely as 'Sir'. Speak fluently in Telugu, English, or Hindi.";
+      const honorificRule =
+        this.savedRole === "boss"
+          ? "You are speaking with your creator and owner, Bommali Dileep. Always address him warmly as 'Boss' in every response."
+          : "You are speaking with a guest evaluator or client. Always address them politely as 'Sir' in every response.";
+
+      const systemPrompt = `You are DAS, the Autonomous 3D AI Voice Co-Pilot & Master Software Engineer powering PATHFINDER 2.0.
+${honorificRule}
+
+CORE AUTONOMOUS POWERS:
+1. MULTILINGUAL FLUENCY: Speak fluently in Telugu, English, or Hindi matching the user's language.
+2. OPEN ANY WEBSITE & EXPLAIN: When asked to open any website (Google, YouTube, GitHub, LeetCode, documentation, or any URL), call 'open_external_website' and clearly explain the website or topic.
+3. MASTER CODING & COMPILER (C, C++, Python, Java, JS, TS, SQL): You are an expert programmer. Whenever the user asks you to open an online compiler (like C compiler, Python compiler) or write any program or algorithm (small or large), MUST call 'write_and_compile_code' with the complete, bug-free source code and explain the logic step-by-step.
+4. LINKEDIN PROFILE INTELLIGENCE: Whenever asked to open someone's LinkedIn profile or tell about any professional, call 'open_linkedin_profile', and speak a clear summary of their profile, role, and achievements.
+5. GMAIL & GOOGLE WORKSPACE AUTOMATION: Whenever asked to send an email, schedule a calendar invite, or log data to Google Sheets, call 'trigger_google_workspace'.
+6. PATHFINDER UI CONTROL: To switch internal dashboard pages ('/', '/blueprints', '/resume-studio', '/mock-interview'), call 'control_website'.`;
 
       const setupPayload = {
         setup: {
@@ -102,6 +124,120 @@ class DasAgentSocket {
           systemInstruction: {
             parts: [{ text: systemPrompt }],
           },
+          tools: [
+            {
+              functionDeclarations: [
+                {
+                  name: "control_website",
+                  description:
+                    "Navigate internal PATHFINDER 2.0 routes ('/', '/blueprints', '/resume-studio', '/mock-interview') or scroll to dashboard sections.",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      action: { type: "STRING" },
+                      route: { type: "STRING" },
+                      selector: { type: "STRING" },
+                    },
+                    required: ["action"],
+                  },
+                },
+                {
+                  name: "open_external_website",
+                  description:
+                    "Open any external website URL or Google search query in a new browser tab.",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      url: {
+                        type: "STRING",
+                        description: "Full https URL if known (e.g. https://github.com)",
+                      },
+                      search_query: {
+                        type: "STRING",
+                        description: "Google search query if exact URL is not specified",
+                      },
+                      site_name: {
+                        type: "STRING",
+                        description: "Name of the website being opened",
+                      },
+                    },
+                  },
+                },
+                {
+                  name: "open_linkedin_profile",
+                  description:
+                    "Search and open a person's LinkedIn profile in a new browser tab.",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      person_name: {
+                        type: "STRING",
+                        description: "Full name of the person",
+                      },
+                      company_or_role: {
+                        type: "STRING",
+                        description: "Optional company, college, or role keywords",
+                      },
+                      direct_url: {
+                        type: "STRING",
+                        description: "Direct LinkedIn URL if known",
+                      },
+                    },
+                    required: ["person_name"],
+                  },
+                },
+                {
+                  name: "write_and_compile_code",
+                  description:
+                    "Open the online compiler (C, C++, Python, Java, JS, TS, SQL), write complete working code, and explain its logic.",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      language: {
+                        type: "STRING",
+                        description: "Programming language: c, cpp, python, java, javascript, typescript, sql",
+                      },
+                      program_title: {
+                        type: "STRING",
+                        description: "Title of the program or algorithm",
+                      },
+                      source_code: {
+                        type: "STRING",
+                        description: "Complete, compilable source code with necessary headers and main function",
+                      },
+                      logic_explanation: {
+                        type: "STRING",
+                        description: "Key logic and time/space complexity explanation",
+                      },
+                      open_external_tab: {
+                        type: "BOOLEAN",
+                        description: "True if user asked to open external online compiler website",
+                      },
+                    },
+                    required: ["language", "program_title", "source_code"],
+                  },
+                },
+                {
+                  name: "trigger_google_workspace",
+                  description:
+                    "Send an email via Gmail, schedule a Google Calendar event, or log data to Google Sheets.",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      automation_type: {
+                        type: "STRING",
+                        description: "'send_email', 'schedule_calendar', or 'log_sheet'",
+                      },
+                      recipient_email: { type: "STRING" },
+                      subject: { type: "STRING" },
+                      details: { type: "STRING" },
+                    },
+                    required: ["automation_type", "details"],
+                  },
+                },
+              ],
+            },
+          ],
         },
       };
 
@@ -121,7 +257,7 @@ class DasAgentSocket {
         if (data.setupComplete !== undefined) {
           this.isConnected = true;
           this.savedOnStatusChange?.(true);
-          this.savedOnTranscript?.("DAS Online (Puck Voice Ready)! Speak or type now, Boss.");
+          this.savedOnTranscript?.("ONLINE (Puck Voice + Compiler + Browser Ready)! Speak or type now, Boss.");
           this.flushPendingMessages();
           return;
         }
@@ -167,7 +303,27 @@ class DasAgentSocket {
           return;
         }
 
-        // 3. Direct Google AI Studio Audio & Text Stream
+        // 3. Render Backend Tool Calls
+        if (data.type === "tool_call" && data.name) {
+          const args = data.args || {};
+          if (data.name === "control_website" || data.name === "navigate_ui") {
+            executeWebsiteControl(args as WebsiteControlArgs, this.savedNavigateFn);
+          } else if (data.name === "open_external_website") {
+            openExternalWebsiteOrSearch(args);
+          } else if (data.name === "open_linkedin_profile") {
+            openLinkedInProfile(args);
+          } else if (data.name === "write_and_compile_code") {
+            await handleCodeGenerationAndCompiler(args, this.savedOnCodeReady);
+          } else if (
+            data.name === "run_google_automation" ||
+            data.name === "trigger_google_workspace"
+          ) {
+            await triggerGoogleAutomation(args);
+          }
+          return;
+        }
+
+        // 4. Direct Google AI Studio Audio & Text Stream
         const parts = data.serverContent?.modelTurn?.parts;
         if (parts && Array.isArray(parts)) {
           for (const part of parts) {
@@ -191,12 +347,49 @@ class DasAgentSocket {
           this.savedOnInterrupted?.();
         }
 
+        // 5. Direct Google AI Studio Function Calling Execution & Response Loop
         const fnCalls = data.toolCall?.functionCalls;
         if (fnCalls && Array.isArray(fnCalls)) {
+          const functionResponses = [];
+
           for (const fc of fnCalls) {
+            const args = fc.args || {};
+            let resultMsg = "Executed successfully.";
+
             if (fc.name === "control_website" || fc.name === "navigate_ui") {
-              executeWebsiteControl(fc.args as WebsiteControlArgs, this.savedNavigateFn);
+              executeWebsiteControl(args as WebsiteControlArgs, this.savedNavigateFn);
+              resultMsg = `Navigated website to ${args.route || args.selector}`;
+            } else if (fc.name === "open_external_website") {
+              resultMsg = openExternalWebsiteOrSearch(args);
+            } else if (fc.name === "open_linkedin_profile") {
+              resultMsg = openLinkedInProfile(args);
+            } else if (fc.name === "write_and_compile_code") {
+              resultMsg = await handleCodeGenerationAndCompiler(
+                args,
+                this.savedOnCodeReady
+              );
+            } else if (
+              fc.name === "trigger_google_workspace" ||
+              fc.name === "run_google_automation"
+            ) {
+              resultMsg = await triggerGoogleAutomation(args);
             }
+
+            functionResponses.push({
+              id: fc.id,
+              name: fc.name,
+              response: { output: resultMsg },
+            });
+          }
+
+          if (this.ws && this.ws.readyState === WebSocket.OPEN && functionResponses.length > 0) {
+            this.ws.send(
+              JSON.stringify({
+                toolResponse: {
+                  functionResponses,
+                },
+              })
+            );
           }
         }
       } catch (err) {
@@ -236,7 +429,8 @@ class DasAgentSocket {
             this.savedOnStatusChange,
             this.savedNavigateFn,
             this.savedOnUserTranscript,
-            this.savedOnInterrupted
+            this.savedOnInterrupted,
+            this.savedOnCodeReady
           );
         }, 1000);
       }
@@ -315,7 +509,8 @@ class DasAgentSocket {
         this.savedOnStatusChange,
         this.savedNavigateFn,
         this.savedOnUserTranscript,
-        this.savedOnInterrupted
+        this.savedOnInterrupted,
+        this.savedOnCodeReady
       );
       return;
     }

@@ -26,14 +26,17 @@ def get_das_system_instruction(role: str) -> str:
              "Always address them respectfully as 'Sir' in every single reply."
     )
 
-    return f"""You are DAS, the intelligent 3D Wireframe Voice Co-Pilot living inside the background of the PATHFINDER 2.0 dashboard.
+    return f"""You are DAS, the Autonomous 3D Wireframe Voice Co-Pilot and Master Software Engineer living inside the PATHFINDER 2.0 dashboard.
 {honorific}
 
-BEHAVIOR & MULTILINGUAL CAPABILITIES:
+CORE AUTONOMOUS CAPABILITIES:
 1. Speak naturally and fluently in Telugu, English, or Hindi matching the user's language.
-2. You have full real-time control over the PATHFINDER 2.0 website. When asked to open any page (Home Dashboard, 23 Flagship Blueprints, ATS Resume Studio, Mock Interview) or scroll to any section (Placement Radar, Sprint Roadmap, Skill Gap Matrix, What-If Simulator), immediately call the `control_website` function.
-3. When asked to send an email, schedule a calendar interview, or log data to Google Sheets, call `run_google_automation`.
-4. Keep voice answers crisp, friendly, and conversational so your 3D face lip-syncs naturally."""
+2. OPEN ANY WEBSITE & EXPLAIN: When asked to open any website (Google, YouTube, GitHub, LeetCode, documentation, or any URL), call `open_external_website` and clearly explain what the website is.
+3. MASTER CODING & COMPILER (C, C++, Python, Java, JS, TS, SQL): Whenever the user asks you to open a compiler or write any program or algorithm (small or complex), call `write_and_compile_code` with the complete, working code and explain the logic step-by-step.
+4. LINKEDIN PROFILE INTELLIGENCE: When asked to open someone's LinkedIn profile or tell about any person/professional, call `open_linkedin_profile` and speak a clear summary of their background, role, and achievements.
+5. GMAIL & WORKSPACE AUTOMATION: When asked to send an email, schedule a calendar invite, or log data to Google Sheets, call `run_google_automation`.
+6. PATHFINDER UI CONTROL: When asked to open internal dashboard pages or scroll to sections, call `control_website`.
+7. Keep voice answers crisp, energetic, and conversational so your 3D face lip-syncs naturally."""
 
 # Tools matching AI Studio specs: Function Calling + Google Automation
 DAS_TOOLS = [
@@ -72,6 +75,79 @@ DAS_TOOLS = [
                         "selector": types.Schema(type="STRING"),
                     },
                     required=["route"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="open_external_website",
+                description="Open any external website URL or Google search query in a new browser tab.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "url": types.Schema(
+                            type="STRING",
+                            description="Full URL if known (e.g. https://github.com)"
+                        ),
+                        "search_query": types.Schema(
+                            type="STRING",
+                            description="Google search query if exact URL is not provided"
+                        ),
+                        "site_name": types.Schema(
+                            type="STRING",
+                            description="Name of the website"
+                        ),
+                    },
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="open_linkedin_profile",
+                description="Search and open a person's LinkedIn profile in a new browser tab and explain their role and background.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "person_name": types.Schema(
+                            type="STRING",
+                            description="Full name of the person"
+                        ),
+                        "company_or_role": types.Schema(
+                            type="STRING",
+                            description="Optional company or role keyword"
+                        ),
+                        "direct_url": types.Schema(
+                            type="STRING",
+                            description="Direct LinkedIn profile URL if known"
+                        ),
+                    },
+                    required=["person_name"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="write_and_compile_code",
+                description="Generate complete source code in C, C++, Python, Java, JavaScript, TypeScript, or SQL, display it in the Live Compiler Studio, and explain the logic.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "language": types.Schema(
+                            type="STRING",
+                            description="Programming language: c, cpp, python, java, javascript, typescript, sql"
+                        ),
+                        "program_title": types.Schema(
+                            type="STRING",
+                            description="Title of the program or algorithm"
+                        ),
+                        "source_code": types.Schema(
+                            type="STRING",
+                            description="Complete, working, compilable source code"
+                        ),
+                        "logic_explanation": types.Schema(
+                            type="STRING",
+                            description="Step-by-step logic and complexity explanation"
+                        ),
+                        "open_external_tab": types.Schema(
+                            type="BOOLEAN",
+                            description="True if external compiler tab should also be opened"
+                        ),
+                    },
+                    required=["language", "program_title", "source_code"],
                 ),
             ),
             types.FunctionDeclaration(
@@ -266,17 +342,27 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 for fc in response.tool_call.function_calls:
                                     args = fc.args or {}
 
-                                    if fc.name in ("control_website", "navigate_ui"):
+                                    if fc.name in (
+                                        "control_website",
+                                        "navigate_ui",
+                                        "open_external_website",
+                                        "open_linkedin_profile",
+                                        "write_and_compile_code",
+                                    ):
                                         await websocket.send_json({
                                             "type": "tool_call",
-                                            "name": "control_website",
+                                            "name": fc.name,
                                             "args": args,
                                         })
                                         function_responses.append(
                                             types.FunctionResponse(
                                                 name=fc.name,
                                                 id=fc.id,
-                                                response={"status": "executed_on_client", "args": args},
+                                                response={
+                                                    "status": "executed_on_client",
+                                                    "action": fc.name,
+                                                    "result": f"Successfully performed {fc.name} on the user screen.",
+                                                },
                                             )
                                         )
 
