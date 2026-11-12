@@ -207,12 +207,10 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
       return;
     }
 
-    React.startTransition(() => {
-      onLogin({
-        username: finalUser,
-        email: finalEmail,
-        isNewUser: authMode === "signup"
-      });
+    onLogin({
+      username: finalUser,
+      email: finalEmail,
+      isNewUser: authMode === "signup"
     });
   };
 

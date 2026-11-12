@@ -407,7 +407,11 @@ class AudioEngine {
   public initContext() {
     if (!this.audioCtx) {
       const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.audioCtx = new AudioContextClass({ sampleRate: 24000 });
+      try {
+        this.audioCtx = new AudioContextClass();
+      } catch {
+        this.audioCtx = new AudioContextClass({ sampleRate: 24000 });
+      }
       this.analyser = this.audioCtx.createAnalyser();
       this.analyser.fftSize = 256;
       this.analyser.smoothingTimeConstant = 0.65;
@@ -438,14 +442,23 @@ class AudioEngine {
     this.initContext();
     if (!this.audioCtx || !this.analyser) return;
 
-    const binaryStr = window.atob(base64Pcm);
+    let binaryStr: string;
+    try {
+      binaryStr = window.atob(base64Pcm);
+    } catch {
+      return;
+    }
+
     const len = binaryStr.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
+    const safeLen = len - (len % 2);
+    if (safeLen <= 0) return;
+
+    const bytes = new Uint8Array(safeLen);
+    for (let i = 0; i < safeLen; i++) {
       bytes[i] = binaryStr.charCodeAt(i);
     }
 
-    const int16Data = new Int16Array(bytes.buffer);
+    const int16Data = new Int16Array(bytes.buffer, 0, safeLen / 2);
     const float32Data = new Float32Array(int16Data.length);
     for (let i = 0; i < int16Data.length; i++) {
       float32Data[i] = int16Data[i] / 32768.0;
@@ -460,7 +473,8 @@ class AudioEngine {
 
     const currentTime = this.audioCtx.currentTime;
     if (this.nextPlayTime < currentTime) {
-      this.nextPlayTime = currentTime + 0.015;
+      // 55ms lookahead buffer at speech start prevents packet underrun
+      this.nextPlayTime = currentTime + 0.055;
     }
     source.start(this.nextPlayTime);
     this.nextPlayTime += audioBuffer.duration;

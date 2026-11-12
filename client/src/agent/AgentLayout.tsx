@@ -247,8 +247,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // 1. LOGIN PAGE: When not authenticated, render ONLY the login view (no 3D robot, no HUD, no buttons)
-  if (!isAuthenticated) {
+  // 1. Never render HUD, Avatar, or commands if not strictly authenticated
+  const hasUser = typeof window !== "undefined" && Boolean(localStorage.getItem("pathfinder_user"));
+  if (!isAuthenticated && !hasUser) {
     return <main className="relative min-h-screen bg-transparent">{children}</main>;
   }
 

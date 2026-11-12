@@ -622,7 +622,14 @@ export default function Home({ initialTab }: HomeProps = {}) {
     isNewUser?: boolean;
     bypassOnboarding?: boolean;
   }) => {
+    // 1. Immediately persist user session synchronously to eliminate any login delay or double-clicking
     const role = handleAuthLoginDetected(user.email, user.username);
+    const userObj = {
+      username: user.username,
+      email: user.email,
+      role: role,
+    };
+    localStorage.setItem("pathfinder_user", JSON.stringify(userObj));
     localStorage.setItem("userEmail", user.email);
     localStorage.setItem("userRole", role);
     if (role === "Boss") {
@@ -631,23 +638,23 @@ export default function Home({ initialTab }: HomeProps = {}) {
       localStorage.setItem("das_honorific_override", "Boss");
     }
 
-    startTransition(() => {
-      setUsername(user.username);
-      setEmail(user.email);
-      setIsAuthenticated(true);
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("pathfinder:auth-change", { detail: { authenticated: true } })
-        );
-      }
-    });
+    // 2. Transition immediately into the main dashboard on the very first frame
+    setUsername(user.username);
+    setEmail(user.email);
+    setUserRole(role);
+    setIsAuthenticated(true);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("pathfinder:auth-change", { detail: { authenticated: true } })
+      );
+    }
 
+    // 3. Background server token sync (non-blocking)
     const storedToken = localStorage.getItem("pathfinder_token");
-    const storedUser = localStorage.getItem("pathfinder_user");
     let isOAuth = false;
-    if (storedToken && storedUser) {
+    if (storedToken) {
       try {
-        const u = JSON.parse(storedUser);
+        const u = JSON.parse(localStorage.getItem("pathfinder_user") || "{}");
         if (u.auth_provider === "google" || u.auth_provider === "github") {
           isOAuth = true;
         }
@@ -655,33 +662,28 @@ export default function Home({ initialTab }: HomeProps = {}) {
     }
 
     if (!isOAuth) {
-      try {
-        const loginResp = await fetchWithTimeout(
-          `${API_BASE}/api/auth/login`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: user.username, email: user.email }),
-          },
-          5000
-        );
-        if (loginResp.ok) {
-          const authData = await loginResp.json();
-          if (authData.token) {
-            localStorage.setItem("pathfinder_token", authData.token);
-            if (authData.user) {
-              localStorage.setItem("pathfinder_user", JSON.stringify(authData.user));
-              startTransition(() => {
+      fetchWithTimeout(
+        `${API_BASE}/api/auth/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: user.username, email: user.email }),
+        },
+        5000
+      )
+        .then(async (loginResp) => {
+          if (loginResp.ok) {
+            const authData = await loginResp.json();
+            if (authData.token) {
+              localStorage.setItem("pathfinder_token", authData.token);
+              if (authData.user) {
+                localStorage.setItem("pathfinder_user", JSON.stringify(authData.user));
                 setUserRole(authData.user.role || "student");
-              });
+              }
             }
           }
-        } else {
-          localStorage.setItem("pathfinder_user", JSON.stringify(user));
-        }
-      } catch {
-        localStorage.setItem("pathfinder_user", JSON.stringify(user));
-      }
+        })
+        .catch(() => {});
     }
 
     if (user.isNewUser) {
@@ -1549,90 +1551,95 @@ export default function Home({ initialTab }: HomeProps = {}) {
   // 2. ONBOARDING WIZARD
   if (!profile.onboardingCompleted) {
     return (
-      <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
-        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 bg-transparent" />
-          <Ambient3DBackground activeTab={activeTab} />
-        </div>
-        <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
-          <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#11131c] border border-[#ffffff]/30 text-[#ffffff] shadow-md">
-                <Sparkles className="h-5 w-5 text-[#ffffff]" />
-              </div>
-              <div>
-                <h1 className="text-base font-bold text-[#f8fafc] tracking-tight">
-                  Pathfinder Candidate Onboarding
-                </h1>
-                <p className="text-xs text-[#94a3b8]">
-                  Step-Wise Profile Setup for AI Career Readiness Assessment
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-block rounded-full border border-white/[0.08] bg-[#11131c] px-3 py-1 text-xs font-medium text-[#f8fafc] shadow-sm">
-                Logged in as {username}
-              </span>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] transition-colors cursor-pointer"
-              >
-                Sign Out
-              </button>
-            </div>
+      <AgentLayout>
+        <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
+          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute inset-0 bg-transparent" />
+            <Ambient3DBackground activeTab={activeTab} />
           </div>
+          <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
+            <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#11131c] border border-[#ffffff]/30 text-[#ffffff] shadow-md">
+                  <Sparkles className="h-5 w-5 text-[#ffffff]" />
+                </div>
+                <div>
+                  <h1 className="text-base font-bold text-[#f8fafc] tracking-tight">
+                    Pathfinder Candidate Onboarding
+                  </h1>
+                  <p className="text-xs text-[#94a3b8]">
+                    Step-Wise Profile Setup for AI Career Readiness Assessment
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:inline-block rounded-full border border-white/[0.08] bg-[#11131c] px-3 py-1 text-xs font-medium text-[#f8fafc] shadow-sm">
+                  Logged in as {username}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] transition-colors cursor-pointer"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
 
-          <OnboardingWizard
-            initialProfile={profile}
-            onComplete={handleWizardComplete}
-            apiBase={API_BASE}
-          />
+            <OnboardingWizard
+              initialProfile={profile}
+              onComplete={handleWizardComplete}
+              apiBase={API_BASE}
+            />
+          </div>
         </div>
-      </div>
+      </AgentLayout>
     );
   }
 
   // 3. IMMEDIATE RESULT SCREEN POST-SUBMIT
   if (showResultScreen && auditResult) {
     return (
-      <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
-        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 bg-transparent" />
-          <Ambient3DBackground activeTab={activeTab} />
+      <AgentLayout>
+        <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
+          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute inset-0 bg-transparent" />
+            <Ambient3DBackground activeTab={activeTab} />
+          </div>
+          <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
+            <OnboardingResultScreen
+              profile={profile}
+              auditResult={auditResult}
+              onGoToDashboard={() => {
+                setShowResultScreen(false);
+                setActiveTab("overview");
+              }}
+              onEditProfile={() => {
+                setShowResultScreen(false);
+                setActiveTab("profile");
+              }}
+              onStartMockInterview={() => {
+                setShowResultScreen(false);
+                setActiveTab("interview");
+                handleSendMessage(
+                  "Let's do an interactive mock interview for my role. Ask me question 1."
+                );
+              }}
+              onNavigateTab={(tab: string) => {
+                setShowResultScreen(false);
+                setActiveTab(tab as TabId);
+              }}
+            />
+          </div>
         </div>
-        <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
-          <OnboardingResultScreen
-            profile={profile}
-            auditResult={auditResult}
-            onGoToDashboard={() => {
-              setShowResultScreen(false);
-              setActiveTab("overview");
-            }}
-            onEditProfile={() => {
-              setShowResultScreen(false);
-              setActiveTab("profile");
-            }}
-            onStartMockInterview={() => {
-              setShowResultScreen(false);
-              setActiveTab("interview");
-              handleSendMessage(
-                "Let's do an interactive mock interview for my role. Ask me question 1."
-              );
-            }}
-            onNavigateTab={(tab: string) => {
-              setShowResultScreen(false);
-              setActiveTab(tab as TabId);
-            }}
-          />
-        </div>
-      </div>
+      </AgentLayout>
     );
   }
 
   // 4. MAIN DASHBOARD & PLATFORM NAVIGATION
   return (
-    <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] selection:bg-[#ffffff]/35 selection:text-[#f8fafc] font-sans overflow-x-hidden">
+    <AgentLayout>
+      <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] selection:bg-[#ffffff]/35 selection:text-[#f8fafc] font-sans overflow-x-hidden">
       {isGlobalServerWakingUp && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[rgba(255,255,255,0.08)] bg-[#11131c]/95 px-4 py-2 text-xs font-medium text-[#f8fafc] shadow-[0_4px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
           <Loader2 className="h-3.5 w-3.5 animate-spin text-[#ffffff]" />
@@ -2330,5 +2337,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
         {!(activeTab === "overview" && focusOnDas) && <Footer onNavigateTab={setActiveTab} />}
       </main>
     </div>
+    </AgentLayout>
   );
 }

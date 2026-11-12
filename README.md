@@ -168,35 +168,6 @@ pathfinder/
 
 ---
 
-## 🔒 Configuration & Environment Overview
-
-All secrets, API credentials, and environment settings are managed securely via standard `.env` files and enterprise secret management in deployment dashboards.
-
-### Required Environment Configuration
-
-Create a `.env` file in the root and `backend/` directories based on `.env.example`:
-
-```bash
-# Backend Configuration
-PORT=8000
-HOST=0.0.0.0
-ENVIRONMENT=production
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_LIVE_MODEL=gemini-2.0-flash-exp
-GEMINI_VOICE_NAME=Puck
-SUPABASE_URL=your_supabase_url_here
-SUPABASE_KEY=your_supabase_service_key_here
-JWT_SECRET=your_secure_jwt_secret_here
-
-# Frontend Configuration (client/.env)
-VITE_API_BASE_URL=https://your-backend-api-url.com
-VITE_WS_URL=wss://your-backend-api-url.com/agent/ws
-VITE_GEMINI_LIVE_MODEL=gemini-2.0-flash-exp
-VITE_GEMINI_VOICE_NAME=Puck
-```
-
----
-
 ## 📊 Machine Learning Model: 88% Accuracy Validation
 
 The placement readiness predictor is powered by a **Random Forest Classifier** trained and validated against **972 verified campus recruitment outcomes** across CSE, AIML, ECE, EEE, Mechanical, Civil, and IT departments.

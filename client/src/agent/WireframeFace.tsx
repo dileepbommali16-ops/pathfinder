@@ -18,8 +18,8 @@ export interface WireframeFaceProps {
  * - Continuously updates Three.js morphTargetInfluences on every frame at 60 FPS.
  */
 export const WireframeFace: React.FC<WireframeFaceProps> = ({
-  scale = [1.25, 1.25, 1.25],
-  position = [0, 0, 0],
+  scale = [1.0, 1.0, 1.0],
+  position = [0, 0.45, 0],
 }) => {
   const headGroupRef = useRef<THREE.Group>(null);
   const leftEyeRef = useRef<THREE.Mesh>(null);
@@ -172,25 +172,25 @@ export const WireframeFace: React.FC<WireframeFaceProps> = ({
         position={[0, -0.6, 1.2]}
       >
         <meshStandardMaterial
-          color="#00f0ff"
-          emissive="#0088ff"
-          emissiveIntensity={0.6}
+          color="#00ffff"
+          emissive="#00f0ff"
+          emissiveIntensity={1.2}
           wireframe
           transparent
-          opacity={0.85}
+          opacity={0.95}
         />
       </mesh>
 
       {/* Upper Lip Accent */}
-      <mesh ref={upperLipRef} position={[0, -0.52, 1.22]}>
-        <boxGeometry args={[0.52, 0.05, 0.1]} />
-        <meshBasicMaterial color="#00f0ff" />
+      <mesh ref={upperLipRef} position={[0, -0.52, 1.24]}>
+        <boxGeometry args={[0.54, 0.08, 0.12]} />
+        <meshStandardMaterial color="#00f0ff" emissive="#00ffff" emissiveIntensity={1.4} />
       </mesh>
 
       {/* Lower Jaw Accent */}
-      <mesh ref={lowerJawRef} position={[0, -0.68, 1.2]}>
-        <boxGeometry args={[0.46, 0.07, 0.12]} />
-        <meshBasicMaterial color="#38bdf8" />
+      <mesh ref={lowerJawRef} position={[0, -0.68, 1.22]}>
+        <boxGeometry args={[0.48, 0.09, 0.14]} />
+        <meshStandardMaterial color="#38bdf8" emissive="#0088ff" emissiveIntensity={1.2} />
       </mesh>
 
       {/* Background Holographic HUD Ring */}
