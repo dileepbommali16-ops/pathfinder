@@ -6,6 +6,16 @@ import { audioEngine, cameraEngine } from "./audioIO";
 
 export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
+
+  // Authentication State: Check if user is logged into the main dashboard
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("logout") === "1") return false;
+    if (params.get("username") || params.get("user") || params.get("demo") === "1") return true;
+    return Boolean(localStorage.getItem("pathfinder_user"));
+  });
+
   const [connected, setConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -16,7 +26,30 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   );
   const [userTranscript, setUserTranscript] = useState("");
 
+  // Listen for login / logout state changes across Pathfinder
   useEffect(() => {
+    const handleAuthChange = (e: any) => {
+      setIsAuthenticated(Boolean(e.detail?.authenticated));
+    };
+    const handleStorage = () => {
+      setIsAuthenticated(Boolean(localStorage.getItem("pathfinder_user")));
+    };
+    window.addEventListener("pathfinder:auth-change", handleAuthChange);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("pathfinder:auth-change", handleAuthChange);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  // Connect to Gemini Live multimodal agent ONLY when authenticated inside the dashboard
+  useEffect(() => {
+    if (!isAuthenticated) {
+      dasSocket.disconnect();
+      cameraEngine.stopCameraCapture();
+      return;
+    }
+
     dasSocket.connect(
       role,
       (text: string) => setTranscript(text),
@@ -27,11 +60,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         setTranscript("[Interrupted]");
       }
     );
+
     return () => {
       dasSocket.disconnect();
       cameraEngine.stopCameraCapture();
     };
-  }, []);
+  }, [isAuthenticated, role]);
 
   const toggleMic = async () => {
     audioEngine.initContext();
@@ -95,6 +129,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     setInputText("");
   };
 
+  // 1. LOGIN PAGE: When not authenticated, render ONLY the login view (no 3D robot, no HUD, no buttons)
+  if (!isAuthenticated) {
+    return <main className="relative min-h-screen bg-transparent">{children}</main>;
+  }
+
+  // 2. MAIN DASHBOARD: Once logged in, reveal 3D wireframe robot face, green hands-free button & DAS HUD
   return (
     <div className="relative min-h-screen bg-transparent text-white overflow-x-hidden">
       {/* Background 3D Robot Face */}
@@ -103,18 +143,19 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {/* Main Dashboard Content */}
       <main className="relative z-10 pb-32 bg-transparent">{children}</main>
 
-      {/* Working Left-Side Red 'Start Hands-Free Voice' Button */}
+      {/* Single Left-Side Emerald Hands-Free Voice Button */}
       <button
         type="button"
         onClick={toggleMic}
         className={`fixed bottom-6 left-6 z-50 px-6 py-3.5 rounded-full font-bold text-sm shadow-2xl transition cursor-pointer flex items-center gap-2 ${
           micActive
-            ? "bg-emerald-600 text-white shadow-emerald-500/50 animate-pulse"
-            : "bg-red-600 hover:bg-red-500 text-white shadow-red-600/50"
+            ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/50 animate-pulse border border-emerald-400/40"
+            : "bg-emerald-700/90 hover:bg-emerald-600 text-white shadow-emerald-950/60 border border-emerald-500/40 backdrop-blur-md"
         }`}
+        title="Toggle Hands-Free Voice"
       >
         <span>🎙️</span>
-        <span>{micActive ? "Hands-Free Active (Listening...)" : "Start Hands-Free Voice"}</span>
+        <span>{micActive ? "Hands-Free Active" : "Start Hands-Free Voice"}</span>
       </button>
 
       {/* Bottom Center DAS 3D CO-PILOT HUD */}
@@ -168,13 +209,13 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <button
             type="button"
             onClick={toggleMic}
-            className={`px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${
+            className={`px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer flex items-center gap-1.5 ${
               micActive
-                ? "bg-rose-600 text-white animate-pulse"
+                ? "bg-slate-800 text-rose-400 border border-rose-500/50"
                 : "bg-sky-500 hover:bg-sky-400 text-slate-950"
             }`}
           >
-            {micActive ? "🔇 Listening..." : "🎙️ Speak"}
+            {micActive ? "🔇 Mute" : "🎙️ Speak"}
           </button>
 
           <button

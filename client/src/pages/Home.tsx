@@ -635,6 +635,11 @@ export default function Home({ initialTab }: HomeProps = {}) {
       setUsername(user.username);
       setEmail(user.email);
       setIsAuthenticated(true);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("pathfinder:auth-change", { detail: { authenticated: true } })
+        );
+      }
     });
 
     const storedToken = localStorage.getItem("pathfinder_token");
@@ -1512,6 +1517,11 @@ export default function Home({ initialTab }: HomeProps = {}) {
     setIsAuthenticated(false);
     setShowResultScreen(false);
     setUserRole("student");
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("pathfinder:auth-change", { detail: { authenticated: false } })
+      );
+    }
     try {
       window.parent.postMessage({ type: "PATHFINDER_LOGOUT" }, "*");
     } catch { }

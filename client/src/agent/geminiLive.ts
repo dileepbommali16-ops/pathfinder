@@ -150,52 +150,19 @@ export class PathfinderGeminiLive {
 
   constructor() {
     if (typeof window !== "undefined") {
-      // Remove any old right-side overlay if it exists
+      // Clean up any legacy overlay or rogue buttons
       document.getElementById("das-google-live-overlay")?.remove();
-      setTimeout(() => this.mountHandsFreeMicButton(), 600);
+      document.getElementById("das-handsfree-voice-btn")?.remove();
     }
   }
 
-  /* ---------------- Left-Side Floating Mic Button ---------------- */
+  /* ---------------- Left-Side Floating Mic Button (Replaced by AgentLayout) ---------------- */
   private mountHandsFreeMicButton() {
-    if (typeof document === "undefined") return;
-    if (document.getElementById("das-handsfree-voice-btn")) return;
-
-    const btn = document.createElement("button");
-    btn.id = "das-handsfree-voice-btn";
-    btn.type = "button";
-    btn.setAttribute("data-das-ignore", "true");
-    btn.innerHTML = `🎙️ Start Hands-Free Voice`;
-    btn.style.cssText =
-      "position:fixed;bottom:24px;left:24px;z-index:99999;display:flex;align-items:center;gap:8px;padding:12px 20px;border-radius:999px;font-size:13px;font-weight:700;color:#ffffff;background:linear-gradient(135deg,#dc2626,#991b1b);border:1px solid rgba(255,255,255,0.25);box-shadow:0 8px 30px rgba(220,38,38,0.5);cursor:pointer;transition:all 0.25s ease;font-family:sans-serif;";
-    btn.onclick = () => {
-      window.dispatchEvent(new CustomEvent("das-toggle-mic"));
-    };
-    document.body.appendChild(btn);
+    // Replaced by clean reactive UI in AgentLayout
   }
 
-  private updateMicButtonUI(state: MicUi) {
-    const btn = document.getElementById("das-handsfree-voice-btn");
-    if (!btn) return;
-    if (state === "off") {
-      btn.innerHTML = `🎙️ Start Hands-Free Voice`;
-      btn.style.background = "linear-gradient(135deg,#dc2626,#991b1b)";
-      btn.style.boxShadow = "0 8px 30px rgba(220,38,38,0.5)";
-    } else if (state === "connecting") {
-      btn.innerHTML = `⏳ Connecting DAS (Puck)...`;
-      btn.style.background = "linear-gradient(135deg,#7c3aed,#5b21b6)";
-    } else if (state === "listening") {
-      btn.innerHTML = `🟢 Listening... (Speak to DAS)`;
-      btn.style.background = "linear-gradient(135deg,#059669,#047857)";
-      btn.style.boxShadow = "0 0 28px rgba(16,185,129,0.75)";
-    } else if (state === "thinking") {
-      btn.innerHTML = `⚡ DAS Thinking...`;
-      btn.style.background = "linear-gradient(135deg,#d97706,#b45309)";
-    } else if (state === "speaking") {
-      btn.innerHTML = `🔊 DAS (Puck) Speaking...`;
-      btn.style.background = "linear-gradient(135deg,#2563eb,#1d4ed8)";
-      btn.style.boxShadow = "0 0 28px rgba(59,130,246,0.75)";
-    }
+  private updateMicButtonUI(_state: MicUi) {
+    // Replaced by clean reactive UI in AgentLayout
   }
 
   /* ---------------- Speaker (24kHz Gemini Live Puck Audio) ---------------- */
