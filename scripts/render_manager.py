@@ -106,3 +106,4 @@ if __name__ == "__main__":
         trigger_deploy(tgt)
     else:
         print(f"Unknown command: {cmd}. Usage: python scripts/render_manager.py [status|deploy]")
+
