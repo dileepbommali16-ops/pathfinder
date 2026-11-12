@@ -44,7 +44,7 @@ const rawLive = ENV.VITE_GEMINI_LIVE_MODEL?.trim() || "";
 const LIVE_MODEL =
   rawLive && !rawLive.includes("2.0-flash-exp")
     ? rawLive
-    : "gemini-2.5-flash-native-audio-latest";
+    : "gemini-3.8-live";
 const VOICE_NAME = "Puck";
 const TEXT_MODEL = ENV.VITE_GEMINI_TEXT_MODEL || "gemini-flash-lite-latest";
 

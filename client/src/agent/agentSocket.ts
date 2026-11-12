@@ -185,7 +185,7 @@ CORE AUTONOMOUS CAPABILITIES:
           ? configuredModel.startsWith("models/")
             ? configuredModel
             : `models/${configuredModel}`
-          : "models/gemini-2.5-flash-native-audio-latest";
+          : "models/gemini-3.8-live";
 
       const setupPayload = {
         setup: {

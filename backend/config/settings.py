@@ -54,9 +54,9 @@ class Settings:
         from backend.config.key_resolver import get_active_gemini_key
         self.gemini_api_key: Optional[str] = get_active_gemini_key()
         self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest").strip() or "gemini-flash-latest"
-        self.gemini_live_model: str = os.getenv("GEMINI_LIVE_MODEL", "gemini-2.5-flash-native-audio-latest").strip() or "gemini-2.5-flash-native-audio-latest"
+        self.gemini_live_model: str = os.getenv("GEMINI_LIVE_MODEL", "gemini-3.8-live").strip() or "gemini-3.8-live"
         if "2.0-flash-exp" in self.gemini_live_model:
-            self.gemini_live_model = "gemini-2.5-flash-native-audio-latest"
+            self.gemini_live_model = "gemini-3.8-live"
         self.ai_daily_budget_per_user: int = int(os.getenv("AI_DAILY_BUDGET", "200"))
 
         # CORS Origins

@@ -8,7 +8,7 @@ PUCK_SAMPLE_RATE = RECEIVE_SAMPLE_RATE
 CHUNK_SIZE = 1024
 
 # Production-grade Gemini Multimodal Live model locked to supported Gemini Live endpoint
-DEFAULT_LIVE_MODEL = "gemini-2.5-flash-native-audio-latest"
+DEFAULT_LIVE_MODEL = "gemini-3.8-live"
 RAW_MODEL = os.getenv("GEMINI_LIVE_MODEL", DEFAULT_LIVE_MODEL).strip()
 if not RAW_MODEL or "2.0-flash-exp" in RAW_MODEL:
     RAW_MODEL = DEFAULT_LIVE_MODEL
