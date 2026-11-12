@@ -8,6 +8,9 @@ export interface WireframeFaceProps {
   position?: [number, number, number];
 }
 
+const DEFAULT_SCALE: [number, number, number] = [0.95, 0.95, 0.95];
+const DEFAULT_POSITION: [number, number, number] = [0, 0.52, 0];
+
 /**
  * WireframeFace.tsx - Clean, Single-Mesh 3D Holographic Avatar (DAS)
  * - Single clean wireframe cranium (no double-mesh artifacts)
@@ -15,10 +18,10 @@ export interface WireframeFaceProps {
  * - Crisp dual-lip speech sync without overlapping duplicate boxes
  * - Pure ref-based animation loop for butter-smooth 60 FPS performance
  */
-export const WireframeFace: React.FC<WireframeFaceProps> = React.memo(({
-  scale = [0.95, 0.95, 0.95],
-  position = [0, 0.52, 0],
-}) => {
+export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: WireframeFaceProps) => {
+  const scale: [number, number, number] = props.scale ?? DEFAULT_SCALE;
+  const position: [number, number, number] = props.position ?? DEFAULT_POSITION;
+
   const headGroupRef = useRef<THREE.Group>(null);
   const leftEyeRef = useRef<THREE.Mesh>(null);
   const rightEyeRef = useRef<THREE.Mesh>(null);
