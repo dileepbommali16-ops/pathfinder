@@ -23,7 +23,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [role, setRole] = useState<UserHonorificRole>("boss");
   const [inputText, setInputText] = useState("");
   const [transcript, setTranscript] = useState(
-    "DAS Autonomous Co-Pilot ready. Ask to open any site, LinkedIn profile, or write C/C++/Python/JS code!"
+    "Hi Boss! What's up?"
   );
   const [userTranscript, setUserTranscript] = useState("");
 
@@ -136,6 +136,13 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleRoleToggle = (newRole: UserHonorificRole) => {
     setRole(newRole);
     dasSocket.switchRole(newRole);
+    if (newRole === "boss") {
+      setTranscript("Hi Boss! What's up?");
+    } else if (newRole === "madam") {
+      setTranscript("Hello Madam, what can I help you with today?");
+    } else {
+      setTranscript("Hello Sir, what can I help you with today?");
+    }
   };
 
   const handleSendText = (e: React.FormEvent) => {
@@ -306,9 +313,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
               }`}
             />
-            <span className="font-bold tracking-wider">DAS 3D CO-PILOT</span>
+            <span className="font-bold tracking-wider">DAS AI</span>
             <span className="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-[10px]">
-              {connected ? "ONLINE (AUTONOMOUS)" : "CONNECTING..."}
+              {connected ? "ONLINE" : "CONNECTING..."}
             </span>
           </div>
 
@@ -330,6 +337,15 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               }`}
             >
               Sir Mode
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleToggle("madam")}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                role === "madam" ? "bg-cyan-400 text-slate-950" : "text-slate-300"
+              }`}
+            >
+              Madam Mode
             </button>
           </div>
         </div>
@@ -376,7 +392,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Ask DAS: 'Open C compiler and write QuickSort', 'Open Sundar Pichai LinkedIn', 'Send email'..."
+            placeholder="Ask DAS: 'Who is your boss?', 'Write QuickSort in C', 'Tell about my college'..."
             className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400"
           />
 
