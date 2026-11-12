@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { WireframeFace } from "./WireframeFace";
 
@@ -22,17 +22,38 @@ export interface Avatar3DProps {
   style?: React.CSSProperties;
 }
 
-export const Avatar3D: React.FC<Avatar3DProps> = ({
+// Global Singleton Guard: Prevents duplicate Three.js Canvases from mounting
+let activeAvatarCount = 0;
+
+export const Avatar3D: React.FC<Avatar3DProps> = React.memo(({
   className = "",
   style = {},
 }) => {
+  const [isPrimary, setIsPrimary] = useState(false);
+
+  useEffect(() => {
+    if (activeAvatarCount === 0) {
+      activeAvatarCount = 1;
+      setIsPrimary(true);
+      return () => {
+        activeAvatarCount = 0;
+      };
+    }
+    return undefined;
+  }, []);
+
+  // If another instance is already mounted, suppress duplicate render
+  if (!isPrimary) return null;
+
   return (
     <div
+      id="das-singleton-avatar"
       className={`fixed inset-0 pointer-events-none z-[1] flex items-center justify-center opacity-90 select-none ${className}`}
       style={style}
     >
       <Canvas
         camera={{ position: [0, 0, 4.5], fov: 45 }}
+        dpr={[1, 1.5]}
         gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
         style={{ width: "100%", height: "100%", pointerEvents: "none" }}
       >
@@ -45,6 +66,6 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
       </Canvas>
     </div>
   );
-};
+});
 
 export default Avatar3D;

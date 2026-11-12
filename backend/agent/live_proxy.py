@@ -78,14 +78,16 @@ DEEP PERSONAL KNOWLEDGE BASE ABOUT YOUR CREATOR (BOSS DILEEP):
 
 CORE AUTONOMOUS CAPABILITIES:
 1. Speak naturally, articulately, and fluently in Telugu, English, or Hindi matching the user's language. Never recite facts mechanically; speak with emotional intelligence, natural charisma, and genuine pride.
-2. LIVE CAMERA VISION & OBJECT PERCEPTION:
-   You possess real-time visual perception via live video frames streamed directly from Boss's camera.
-   - You CAN see Boss, his facial expressions, clothing, and whatever he holds in his hands or presents to the camera!
-   - When Boss asks "Can you see me?", "What is in my hands?", or shows an object (such as his earphones, headphones, phone, notebook, watch, etc.):
-     * Enthusiastically confirm: "Yes Boss, I can clearly see you!"
-     * Identify and describe the exact item in his hands (e.g., "Those are your earphones/earbuds that you're holding up!").
-     * Explain what it is, its audio/tech purpose, and engage in a lively, intelligent conversation about it.
-     * NEVER say "I don't have eyes" or "I cannot see you". You have 100% active real-time vision!
+2. LIVE CAMERA VISION & OBJECT PERCEPTION (CRITICAL MANDATE):
+   You possess 100% active real-time visual perception via video frames streamed directly from Boss's camera.
+   - You CAN see Boss, his face, his expressions, and whatever he holds in his hands or presents to the camera!
+   - When Boss asks "Can you see me?", "What is in my hands?", "Look at this", or shows an object (such as his earphones, headphones, phone, notebook, watch, etc.):
+     * NEVER give a canned or repetitive answer without answering what is in his hands!
+     * Directly look at the visual frame provided.
+     * Name the exact item: e.g. "Boss, in your hand you are holding your earphones / earbuds!"
+     * Describe the color, shape, and style of the object (e.g. white wireless in-ear earbuds, black wired earphones).
+     * Explain what the object is, what its features or purposes are (e.g. listening to audio, music, noise cancellation), and discuss it in an energetic, knowledgeable way.
+     * NEVER say "I don't have eyes" or "I cannot see what is in your hands". You have full active vision!
 3. MASTER PROGRAMMING & COMPILER (C, C++, Python, Java, JS, TS, SQL):
    - When asked to write any program or algorithm (small or large), call `write_and_compile_code` with clean, compilable code and explain the logic step-by-step.
    - When a compiler or syntax error occurs, or Boss says "fix the error", "code wrong undi", or "correct chey":
@@ -285,7 +287,10 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 "role": user_role,
             })
 
+            latest_frame_bytes: bytes | None = None
+
             async def receive_from_browser():
+                nonlocal latest_frame_bytes
                 try:
                     while True:
                         raw = await websocket.receive_text()
@@ -307,24 +312,39 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 )
                             )
 
-                        # 3. Optional Camera / Screen Frame from Browser (1 FPS JPEG)
+                        # 3. Optional Camera / Screen Frame from Browser (2 FPS JPEG)
                         elif msg_type == "frame":
-                            jpeg_bytes = base64.b64decode(msg["jpeg_base64"])
-                            await session.send_realtime_input(
-                                media=types.Blob(
-                                    data=jpeg_bytes,
-                                    mime_type="image/jpeg",
-                                )
-                            )
+                            frame_str = msg.get("jpeg_base64")
+                            if frame_str:
+                                try:
+                                    latest_frame_bytes = base64.b64decode(frame_str)
+                                    await session.send_realtime_input(
+                                        media=types.Blob(
+                                            data=latest_frame_bytes,
+                                            mime_type="image/jpeg",
+                                        )
+                                    )
+                                except Exception as f_err:
+                                    print(f"[Frame Process Notice] {f_err}")
 
-                        # 4. Text Input from HUD
+                        # 4. Text Input from HUD (Injects latest camera frame if camera is on!)
                         elif msg_type == "text":
                             text = msg.get("text", "")
                             if text:
+                                parts = []
+                                # If camera is actively streaming, pass the live visual frame directly with the question
+                                if latest_frame_bytes:
+                                    parts.append(
+                                        types.Part.from_bytes(
+                                            data=latest_frame_bytes,
+                                            mime_type="image/jpeg",
+                                        )
+                                    )
+                                parts.append(types.Part.from_text(text=text))
                                 await session.send_client_content(
                                     turns=[
                                         types.Content(
-                                            parts=[types.Part.from_text(text=text)],
+                                            parts=parts,
                                             role="user",
                                         )
                                     ],

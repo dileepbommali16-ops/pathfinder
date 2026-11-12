@@ -1226,10 +1226,16 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden min-h-0 relative">
         {/* Center Stage: ONLY the human face (55-65% height), Status Word, Live Captions, and "View Full Answer" Chip */}
         <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-0 overflow-y-auto bg-radial from-[#151726]/40 via-transparent to-transparent">
-          {/* 3D VRM Avatar Center Stage */}
+          {/* Center Stage Holographic Indicator */}
           <div className="flex items-center justify-center w-full my-auto py-2">
-            <div className="w-full max-w-[360px] h-[400px] rounded-2xl overflow-hidden shadow-2xl border border-indigo-500/30">
-              <Avatar3D modelUrl="/avatar.vrm" />
+            <div className="w-full max-w-[360px] h-[320px] rounded-2xl flex flex-col items-center justify-center p-6 text-center shadow-2xl border border-cyan-500/30 bg-[#0B1120]/60 backdrop-blur-md">
+              <div className="h-24 w-24 rounded-full border-2 border-cyan-400/40 flex items-center justify-center bg-cyan-950/30 animate-pulse">
+                <span className="text-3xl">🎙️</span>
+              </div>
+              <h4 className="mt-4 text-sm font-bold text-cyan-300">DAS 3D AI Co-Pilot Stage</h4>
+              <p className="mt-1 text-xs text-slate-400">
+                Active 60 FPS Holographic Avatar rendered in your background canvas
+              </p>
             </div>
           </div>
 

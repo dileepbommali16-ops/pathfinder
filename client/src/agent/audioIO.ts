@@ -473,8 +473,8 @@ class AudioEngine {
 
     const currentTime = this.audioCtx.currentTime;
     if (this.nextPlayTime < currentTime) {
-      // 55ms lookahead buffer at speech start prevents packet underrun
-      this.nextPlayTime = currentTime + 0.055;
+      // 180ms Hardware Lookahead Jitter Buffer: Prevents network packet underrun and voice stuttering
+      this.nextPlayTime = currentTime + 0.18;
     }
     source.start(this.nextPlayTime);
     this.nextPlayTime += audioBuffer.duration;
@@ -483,6 +483,12 @@ class AudioEngine {
     source.onended = () => {
       this.activeSources = this.activeSources.filter((s) => s !== source);
     };
+  }
+
+  // Returns true when DAS is actively playing audio chunks through speaker
+  public isSpeaking(): boolean {
+    if (!this.audioCtx) return false;
+    return this.activeSources.length > 0 && this.nextPlayTime > this.audioCtx.currentTime;
   }
 
   // Clear audio queue immediately when user interrupts DAS
@@ -518,9 +524,9 @@ class AudioEngine {
     this.processor = micCtx.createScriptProcessor(1024, 1, 1);
 
     this.processor.onaudioprocess = (event) => {
-      // Echo cancellation guard: If DAS is currently speaking through the speakers,
-      // pause sending mic packets so Gemini Live does not interrupt itself!
-      if (this.activeSources.length > 0) return;
+      // Echo Cancellation: Do NOT send mic packets back to Gemini while DAS is speaking!
+      // This prevents DAS's own voice from triggering false interruptions.
+      if (this.isSpeaking()) return;
 
       const inputData = event.inputBuffer.getChannelData(0);
       const pcm16 = new Int16Array(inputData.length);
@@ -560,12 +566,13 @@ class AudioEngine {
 export class CameraEngine {
   private videoStream: MediaStream | null = null;
   private intervalId: any = null;
-  private videoEl: HTMLVideoElement | null = null;
+  public videoEl: HTMLVideoElement | null = null;
   private canvasEl: HTMLCanvasElement | null = null;
+  private lastFrameBase64: string | null = null;
 
   public async startCameraCapture(
     onFrame: (base64Jpeg: string) => void,
-    fps = 1
+    fps = 2
   ): Promise<boolean> {
     try {
       if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
@@ -574,23 +581,40 @@ export class CameraEngine {
       this.videoStream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
       });
+
       this.videoEl = document.createElement("video");
       this.videoEl.muted = true;
+      this.videoEl.autoplay = true;
+      this.videoEl.playsInline = true;
+      this.videoEl.setAttribute("playsinline", "true");
+      this.videoEl.setAttribute("webkit-playsinline", "true");
+      // Keep hidden in DOM so Chromium never throttles or pauses background frame decoding
+      this.videoEl.style.position = "fixed";
+      this.videoEl.style.bottom = "-9999px";
+      this.videoEl.style.left = "-9999px";
+      this.videoEl.style.width = "1px";
+      this.videoEl.style.height = "1px";
+      this.videoEl.style.opacity = "0";
+      this.videoEl.style.pointerEvents = "none";
+      document.body.appendChild(this.videoEl);
+
       this.videoEl.srcObject = this.videoStream;
       await this.videoEl.play();
 
       this.canvasEl = document.createElement("canvas");
       this.canvasEl.width = 640;
       this.canvasEl.height = 480;
-      const ctx = this.canvasEl.getContext("2d");
+      const ctx = this.canvasEl.getContext("2d", { willReadFrequently: true });
 
       this.intervalId = setInterval(() => {
         if (!this.videoEl || !ctx || !this.canvasEl) return;
+        if (this.videoEl.readyState < 2) return; // Wait for HAVE_CURRENT_DATA
         ctx.drawImage(this.videoEl, 0, 0, this.canvasEl.width, this.canvasEl.height);
-        const dataUrl = this.canvasEl.toDataURL("image/jpeg", 0.6);
+        const dataUrl = this.canvasEl.toDataURL("image/jpeg", 0.7);
         const commaIdx = dataUrl.indexOf(",");
         if (commaIdx !== -1) {
           const base64 = dataUrl.substring(commaIdx + 1);
+          this.lastFrameBase64 = base64;
           onFrame(base64);
         }
       }, 1000 / fps);
@@ -600,6 +624,22 @@ export class CameraEngine {
       this.stopCameraCapture();
       return false;
     }
+  }
+
+  public getLatestFrameBase64(): string | null {
+    if (!this.videoEl || !this.canvasEl) return this.lastFrameBase64;
+    try {
+      const ctx = this.canvasEl.getContext("2d");
+      if (ctx && this.videoEl.readyState >= 2) {
+        ctx.drawImage(this.videoEl, 0, 0, this.canvasEl.width, this.canvasEl.height);
+        const dataUrl = this.canvasEl.toDataURL("image/jpeg", 0.75);
+        const commaIdx = dataUrl.indexOf(",");
+        if (commaIdx !== -1) {
+          this.lastFrameBase64 = dataUrl.substring(commaIdx + 1);
+        }
+      }
+    } catch {}
+    return this.lastFrameBase64;
   }
 
   public stopCameraCapture() {
@@ -613,9 +653,13 @@ export class CameraEngine {
     }
     if (this.videoEl) {
       this.videoEl.srcObject = null;
+      if (this.videoEl.parentNode) {
+        this.videoEl.parentNode.removeChild(this.videoEl);
+      }
       this.videoEl = null;
     }
     this.canvasEl = null;
+    this.lastFrameBase64 = null;
   }
 
   public get isStreaming(): boolean {

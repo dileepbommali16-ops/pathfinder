@@ -1,4 +1,4 @@
-import { audioEngine } from "./audioIO";
+import { audioEngine, cameraEngine } from "./audioIO";
 import {
   executeWebsiteControl,
   WebsiteControlArgs,
@@ -24,6 +24,7 @@ class DasAgentSocket {
   private preConnectAudioQueue: string[] = [];
   private pendingTexts: string[] = [];
   private currentAgentTranscript = "";
+  private isSpeakingTurn = false;
   public isConnected = false;
   public currentRole: UserHonorificRole = "boss";
 
@@ -152,14 +153,16 @@ DEEP PERSONAL KNOWLEDGE BASE ABOUT YOUR CREATOR (BOSS DILEEP):
 
 CORE AUTONOMOUS CAPABILITIES:
 1. Speak naturally, articulately, and fluently in Telugu, English, or Hindi matching the user's language. Never recite facts mechanically; speak with emotional intelligence, natural charisma, and genuine pride.
-2. LIVE CAMERA VISION & OBJECT PERCEPTION:
-   You possess real-time visual perception via live video frames streamed directly from Boss's camera.
-   - You CAN see Boss, his facial expressions, clothing, and whatever he holds in his hands or presents to the camera!
-   - When Boss asks "Can you see me?", "What is in my hands?", or shows an object (such as his earphones, headphones, phone, notebook, watch, etc.):
-     * Enthusiastically confirm: "Yes Boss, I can clearly see you!"
-     * Identify and describe the exact item in his hands (e.g., "Those are your earphones/earbuds that you're holding up!").
-     * Explain what it is, its audio/tech purpose, and engage in a lively, intelligent conversation about it.
-     * NEVER say "I don't have eyes" or "I cannot see you". You have 100% active real-time vision!
+2. LIVE CAMERA VISION & OBJECT PERCEPTION (CRITICAL MANDATE):
+   You possess 100% active real-time visual perception via video frames streamed directly from Boss's camera.
+   - You CAN see Boss, his face, his expressions, and whatever he holds in his hands or presents to the camera!
+   - When Boss asks "Can you see me?", "What is in my hands?", "Look at this", or shows an object (such as his earphones, headphones, phone, notebook, watch, etc.):
+     * NEVER give a canned or repetitive answer without answering what is in his hands!
+     * Directly look at the visual frame provided.
+     * Name the exact item: e.g. "Boss, in your hand you are holding your earphones / earbuds!"
+     * Describe the color, shape, and style of the object (e.g. white wireless in-ear earbuds, black wired earphones).
+     * Explain what the object is, what its features or purposes are (e.g. listening to audio, music, noise cancellation), and discuss it in an energetic, knowledgeable way.
+     * NEVER say "I don't have eyes" or "I cannot see what is in your hands". You have full active vision!
 3. MASTER PROGRAMMING & COMPILER (C, C++, Python, Java, JS, TS, SQL):
    - When asked to write any program or algorithm (small or large), call 'write_and_compile_code' with clean, compilable code and explain the logic step-by-step.
    - When a compiler or syntax error occurs, or Boss says "fix the error", "code wrong undi", or "correct chey":
@@ -354,6 +357,12 @@ CORE AUTONOMOUS CAPABILITIES:
 
         if (data.type === "audio" && data.pcm_base64) {
           audioEngine.playPcmChunk(data.pcm_base64, data.sample_rate || 24000);
+          if (!this.isSpeakingTurn) {
+            this.isSpeakingTurn = true;
+            if (!this.currentAgentTranscript) {
+              this.savedOnTranscript?.("🔊 DAS Speaking (Puck Voice)...");
+            }
+          }
           return;
         }
 
@@ -364,6 +373,10 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "turn_complete") {
+          this.isSpeakingTurn = false;
+          if (!this.currentAgentTranscript) {
+            this.savedOnTranscript?.("DAS Ready. Speak or type your next command, Boss!");
+          }
           return;
         }
 
@@ -413,6 +426,12 @@ CORE AUTONOMOUS CAPABILITIES:
           for (const part of parts) {
             if (part.inlineData?.data) {
               audioEngine.playPcmChunk(part.inlineData.data, 24000);
+              if (!this.isSpeakingTurn) {
+                this.isSpeakingTurn = true;
+                if (!this.currentAgentTranscript) {
+                  this.savedOnTranscript?.("🔊 DAS Speaking (Puck Voice)...");
+                }
+              }
             }
             if (part.text) {
               this.currentAgentTranscript += part.text;
@@ -422,6 +441,10 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.serverContent?.turnComplete) {
+          this.isSpeakingTurn = false;
+          if (!this.currentAgentTranscript) {
+            this.savedOnTranscript?.("DAS Ready. Speak or type your next command, Boss!");
+          }
           return;
         }
 
@@ -585,8 +608,15 @@ CORE AUTONOMOUS CAPABILITIES:
   public sendTextCommand(text: string) {
     if (!text.trim()) return;
     this.currentAgentTranscript = "";
+    this.isSpeakingTurn = false;
     audioEngine.initContext();
     audioEngine.clearAudioQueue();
+
+    // If camera is streaming, grab fresh live frame and send it immediately with the command
+    const freshFrame = cameraEngine.getLatestFrameBase64();
+    if (freshFrame) {
+      this.sendVideoFrame(freshFrame);
+    }
 
     const q = text.toLowerCase().trim();
     if (

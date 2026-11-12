@@ -166,12 +166,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const started = await cameraEngine.startCameraCapture((b64Jpeg) => {
         dasSocket.sendVideoFrame(b64Jpeg);
-      }, 1);
+      }, 2);
 
       if (started) {
         setCameraActive(true);
-        toast.success("Camera on! DAS can now see you and whatever you show in real time.");
-        dasSocket.sendTextCommand("SYSTEM: Boss turned on the camera and you can now see Boss and whatever he is holding in his hands in real time. Enthusiastically describe what you see when asked!");
+        toast.success("Camera on! Show your hands or any object to DAS and ask: 'What is in my hands?'");
       } else {
         setTranscript("Camera access was denied or is unavailable.");
       }
@@ -937,6 +936,29 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           </div>
         )}
 
+        {/* Live Camera Active Status Badge */}
+        {cameraActive && (
+          <div
+            className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
+            style={{ backgroundColor: "#0B1120", borderColor: "#7c3aed" }}
+          >
+            <div className="flex items-center gap-2 truncate">
+              <span className="h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
+              <span className="font-bold text-violet-300">● LIVE CAMERA ACTIVE</span>
+              <span className="text-[10px] text-slate-400 truncate">
+                (Streaming frames to DAS — hold your earphones, gadgets, or objects in view)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleCamera}
+              className="text-[11px] text-rose-400 hover:text-rose-300 font-bold ml-2 cursor-pointer shrink-0"
+            >
+              Stop Cam
+            </button>
+          </div>
+        )}
+
         {/* Command & Control Bar */}
         <form onSubmit={handleSendText} className="flex items-center gap-2">
           {/* Hands-free Voice Speak / Mute Button */}
@@ -998,10 +1020,34 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
             style={{ backgroundColor: "#0F172A", borderColor: "#334155" }}
           />
 
+          {/* Dedicated Edit Option Beside Send */}
+          <button
+            type="button"
+            onClick={() => {
+              if (userTranscript) {
+                const cleaned = userTranscript.replace(/^🎤 You:\s*/i, "").trim();
+                setInputText(cleaned);
+                toast.info("Previous command loaded for editing!");
+              }
+              const inputEl = document.getElementById("das-command-input") as HTMLInputElement;
+              inputEl?.focus();
+              inputEl?.select();
+            }}
+            className="px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow flex items-center gap-1 hover:bg-[#334155]"
+            style={{
+              backgroundColor: "#1E293B",
+              borderColor: "#334155",
+              color: "#38bdf8",
+            }}
+            title="Edit / Recall Previous Query"
+          >
+            ✏️ Edit
+          </button>
+
           {/* Send Button (Clean Slate Styling, NO Rocket Emoji) */}
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition cursor-pointer border shadow"
+            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition cursor-pointer border shadow hover:bg-[#475569]"
             style={{
               backgroundColor: "#334155",
               borderColor: "#475569"
