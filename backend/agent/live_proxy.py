@@ -3,6 +3,7 @@ import json
 import base64
 import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocketState
 from google import genai
 from google.genai import types
 
@@ -203,97 +204,103 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
             async def receive_from_gemini():
                 try:
-                    async for response in session.receive():
-                        # Check for interruption
-                        if (
-                            response.server_content
-                            and getattr(response.server_content, "interrupted", False)
-                        ):
-                            await websocket.send_json({"type": "interrupted"})
+                    while True:
+                        if websocket.client_state == WebSocketState.DISCONNECTED:
+                            break
+                        if getattr(session, "_ws", None) and getattr(session._ws, "closed", False):
+                            break
 
-                        # Transcription events
-                        if response.server_content:
-                            sc = response.server_content
-                            input_tx = getattr(sc, "input_transcription", None)
-                            if input_tx and getattr(input_tx, "text", None):
-                                await websocket.send_json({
-                                    "type": "user_transcript",
-                                    "text": input_tx.text,
-                                    "finished": getattr(input_tx, "finished", False),
-                                })
-                            else:
-                                interim_tx = getattr(sc, "interim_input_transcription", None)
-                                if interim_tx and getattr(interim_tx, "text", None):
+                        async for response in session.receive():
+                            # Check for interruption
+                            if (
+                                response.server_content
+                                and getattr(response.server_content, "interrupted", False)
+                            ):
+                                await websocket.send_json({"type": "interrupted"})
+
+                            # Transcription events
+                            if response.server_content:
+                                sc = response.server_content
+                                input_tx = getattr(sc, "input_transcription", None)
+                                if input_tx and getattr(input_tx, "text", None):
                                     await websocket.send_json({
                                         "type": "user_transcript",
-                                        "text": interim_tx.text,
-                                        "interim": True,
+                                        "text": input_tx.text,
+                                        "finished": getattr(input_tx, "finished", False),
                                     })
-
-                            output_tx = getattr(sc, "output_transcription", None)
-                            if output_tx and getattr(output_tx, "text", None):
-                                await websocket.send_json({
-                                    "type": "transcript",
-                                    "text": output_tx.text,
-                                })
-
-                            # Audio and Model Turn - ONLY single audio stream to eliminate double-voice echo
-                            if sc.model_turn and sc.model_turn.parts:
-                                for part in sc.model_turn.parts:
-                                    if part.inline_data and part.inline_data.data:
-                                        await websocket.send_json(
-                                            format_audio_packet(part.inline_data.data)
-                                        )
-                                    if part.text:
+                                else:
+                                    interim_tx = getattr(sc, "interim_input_transcription", None)
+                                    if interim_tx and getattr(interim_tx, "text", None):
                                         await websocket.send_json({
-                                            "type": "transcript",
-                                            "text": part.text,
+                                            "type": "user_transcript",
+                                            "text": interim_tx.text,
+                                            "interim": True,
                                         })
 
-                            if getattr(sc, "turn_complete", False):
-                                await websocket.send_json({"type": "turn_complete"})
-
-                        # Handle Function Calling
-                        if response.tool_call:
-                            function_responses = []
-                            for fc in response.tool_call.function_calls:
-                                args = fc.args or {}
-
-                                if fc.name in ("control_website", "navigate_ui"):
+                                output_tx = getattr(sc, "output_transcription", None)
+                                if output_tx and getattr(output_tx, "text", None):
                                     await websocket.send_json({
-                                        "type": "tool_call",
-                                        "name": "control_website",
-                                        "args": args,
+                                        "type": "transcript",
+                                        "text": output_tx.text,
                                     })
-                                    function_responses.append(
-                                        types.FunctionResponse(
-                                            name=fc.name,
-                                            id=fc.id,
-                                            response={"status": "executed_on_client", "args": args},
-                                        )
-                                    )
 
-                                elif fc.name == "run_google_automation":
-                                    n8n_res = await trigger_google_workspace_sync(
-                                        action=args.get("automation_type", "sync"),
-                                        payload=args,
-                                    )
-                                    await websocket.send_json({
-                                        "type": "automation_status",
-                                        "data": n8n_res,
-                                    })
-                                    function_responses.append(
-                                        types.FunctionResponse(
-                                            name=fc.name,
-                                            id=fc.id,
-                                            response=n8n_res,
-                                        )
-                                    )
+                                # Audio and Model Turn - ONLY single audio stream to eliminate double-voice echo
+                                if sc.model_turn and sc.model_turn.parts:
+                                    for part in sc.model_turn.parts:
+                                        if part.inline_data and part.inline_data.data:
+                                            await websocket.send_json(
+                                                format_audio_packet(part.inline_data.data)
+                                            )
+                                        if part.text:
+                                            await websocket.send_json({
+                                                "type": "transcript",
+                                                "text": part.text,
+                                            })
 
-                            if function_responses:
-                                await session.send_tool_response(
-                                    function_responses=function_responses
-                                )
+                                if getattr(sc, "turn_complete", False):
+                                    await websocket.send_json({"type": "turn_complete"})
+
+                            # Handle Function Calling
+                            if response.tool_call:
+                                function_responses = []
+                                for fc in response.tool_call.function_calls:
+                                    args = fc.args or {}
+
+                                    if fc.name in ("control_website", "navigate_ui"):
+                                        await websocket.send_json({
+                                            "type": "tool_call",
+                                            "name": "control_website",
+                                            "args": args,
+                                        })
+                                        function_responses.append(
+                                            types.FunctionResponse(
+                                                name=fc.name,
+                                                id=fc.id,
+                                                response={"status": "executed_on_client", "args": args},
+                                            )
+                                        )
+
+                                    elif fc.name == "run_google_automation":
+                                        n8n_res = await trigger_google_workspace_sync(
+                                            action=args.get("automation_type", "sync"),
+                                            payload=args,
+                                        )
+                                        await websocket.send_json({
+                                            "type": "automation_status",
+                                            "data": n8n_res,
+                                        })
+                                        function_responses.append(
+                                            types.FunctionResponse(
+                                                name=fc.name,
+                                                id=fc.id,
+                                                response=n8n_res,
+                                            )
+                                        )
+
+                                if function_responses:
+                                    await session.send_tool_response(
+                                        function_responses=function_responses
+                                    )
 
                 except (WebSocketDisconnect, asyncio.CancelledError):
                     pass

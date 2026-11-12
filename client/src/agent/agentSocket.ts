@@ -19,6 +19,17 @@ class DasAgentSocket {
   public isConnected = false;
   public currentRole: UserHonorificRole = "boss";
 
+  // Persistent callback storage for auto-reconnection and multi-turn stability
+  private savedRole: UserHonorificRole = "boss";
+  private savedOnTranscript?: (text: string) => void;
+  private savedOnStatusChange?: (connected: boolean) => void;
+  private savedNavigateFn?: (path: string) => void;
+  private savedOnUserTranscript?: (text: string) => void;
+  private savedOnInterrupted?: () => void;
+  private renderPingTimer: number | null = null;
+  private reconnectTimer: number | null = null;
+  private manualClose = false;
+
   public connect(
     role: UserHonorificRole = "boss",
     onTranscript?: (text: string) => void,
@@ -28,13 +39,22 @@ class DasAgentSocket {
     onInterrupted?: () => void
   ) {
     this.currentRole = role;
+    this.savedRole = role;
+    this.manualClose = false;
+    if (onTranscript) this.savedOnTranscript = onTranscript;
+    if (onStatusChange) this.savedOnStatusChange = onStatusChange;
+    if (navigateFn) this.savedNavigateFn = navigateFn;
+    if (typeof onUserTranscript === "function") this.savedOnUserTranscript = onUserTranscript;
+    if (onInterrupted) this.savedOnInterrupted = onInterrupted;
 
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)
+    ) {
       return;
     }
 
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const userTranscriptCb = typeof onUserTranscript === "function" ? onUserTranscript : undefined;
 
     if (apiKey) {
       this.isDirectGoogle = true;
@@ -47,9 +67,17 @@ class DasAgentSocket {
     this.ws.onopen = () => {
       if (!this.isDirectGoogle) {
         this.isConnected = true;
-        onStatusChange?.(true);
-        onTranscript?.("DAS Online (Connected via Render Cloud)!");
+        this.savedOnStatusChange?.(true);
+        this.savedOnTranscript?.("DAS Online (Connected via Render Cloud)!");
         this.flushPendingMessages();
+
+        // 20s keep-alive ping for Render backend (never send ping to Google AI Studio!)
+        if (this.renderPingTimer) window.clearInterval(this.renderPingTimer);
+        this.renderPingTimer = window.setInterval(() => {
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({ type: "ping" }));
+          }
+        }, 20000);
         return;
       }
 
@@ -86,11 +114,14 @@ class DasAgentSocket {
           event.data instanceof Blob ? await event.data.text() : event.data;
         const data = JSON.parse(rawText);
 
+        // Ignore keep-alive heartbeat pong
+        if (data.type === "pong") return;
+
         // 1. Direct Google AI Studio Setup Complete
         if (data.setupComplete !== undefined) {
           this.isConnected = true;
-          onStatusChange?.(true);
-          onTranscript?.("DAS Online (Puck Voice Ready)! Speak or type now, Boss.");
+          this.savedOnStatusChange?.(true);
+          this.savedOnTranscript?.("DAS Online (Puck Voice Ready)! Speak or type now, Boss.");
           this.flushPendingMessages();
           return;
         }
@@ -98,8 +129,8 @@ class DasAgentSocket {
         // 2. Render Backend Status / Audio / Transcript
         if (data.type === "status" && data.status === "connected") {
           this.isConnected = true;
-          onStatusChange?.(true);
-          onTranscript?.(`DAS Online (${data.voice || "Puck"} Voice Ready)!`);
+          this.savedOnStatusChange?.(true);
+          this.savedOnTranscript?.(`DAS Online (${data.voice || "Puck"} Voice Ready)!`);
           this.flushPendingMessages();
           return;
         }
@@ -111,7 +142,7 @@ class DasAgentSocket {
 
         if (data.type === "transcript" && data.text) {
           this.currentAgentTranscript += data.text;
-          onTranscript?.(this.currentAgentTranscript);
+          this.savedOnTranscript?.(this.currentAgentTranscript);
           return;
         }
 
@@ -120,19 +151,19 @@ class DasAgentSocket {
         }
 
         if (data.type === "user_transcript" && data.text) {
-          userTranscriptCb?.(data.text);
+          this.savedOnUserTranscript?.(data.text);
           return;
         }
 
         if (data.type === "interrupted") {
           this.currentAgentTranscript = "";
           audioEngine.clearAudioQueue();
-          onInterrupted?.();
+          this.savedOnInterrupted?.();
           return;
         }
 
         if (data.type === "error" && data.message) {
-          onTranscript?.(`Server Error: ${data.message}`);
+          this.savedOnTranscript?.(`Server Error: ${data.message}`);
           return;
         }
 
@@ -144,21 +175,27 @@ class DasAgentSocket {
               audioEngine.playPcmChunk(part.inlineData.data, 24000);
             }
             if (part.text) {
-              onTranscript?.(part.text);
+              this.currentAgentTranscript += part.text;
+              this.savedOnTranscript?.(this.currentAgentTranscript);
             }
           }
         }
 
+        if (data.serverContent?.turnComplete) {
+          return;
+        }
+
         if (data.serverContent?.interrupted) {
+          this.currentAgentTranscript = "";
           audioEngine.clearAudioQueue();
-          onInterrupted?.();
+          this.savedOnInterrupted?.();
         }
 
         const fnCalls = data.toolCall?.functionCalls;
         if (fnCalls && Array.isArray(fnCalls)) {
           for (const fc of fnCalls) {
             if (fc.name === "control_website" || fc.name === "navigate_ui") {
-              executeWebsiteControl(fc.args as WebsiteControlArgs, navigateFn);
+              executeWebsiteControl(fc.args as WebsiteControlArgs, this.savedNavigateFn);
             }
           }
         }
@@ -168,19 +205,40 @@ class DasAgentSocket {
     };
 
     this.ws.onerror = () => {
-      onStatusChange?.(false);
-      onTranscript?.(
+      this.isConnected = false;
+      this.savedOnStatusChange?.(false);
+      this.savedOnTranscript?.(
         apiKey
           ? "WebSocket connecting to Google AI Studio..."
-          : "Connecting to Render backend... (Free-tier servers take ~15s to wake up on first connection)"
+          : "Connecting to Render backend..."
       );
     };
 
     this.ws.onclose = (e) => {
       this.isConnected = false;
-      onStatusChange?.(false);
+      this.savedOnStatusChange?.(false);
+      if (this.renderPingTimer) {
+        window.clearInterval(this.renderPingTimer);
+        this.renderPingTimer = null;
+      }
       if (e.reason) {
-        onTranscript?.(`Connection: ${e.reason}`);
+        this.savedOnTranscript?.(`Connection: ${e.reason}`);
+      }
+
+      // Auto-reconnect so 2nd, 3rd, 50th question auto-reconnects seamlessly
+      if (!this.manualClose) {
+        if (this.reconnectTimer) window.clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = window.setTimeout(() => {
+          this.ws = null;
+          this.connect(
+            this.savedRole,
+            this.savedOnTranscript,
+            this.savedOnStatusChange,
+            this.savedNavigateFn,
+            this.savedOnUserTranscript,
+            this.savedOnInterrupted
+          );
+        }, 1000);
       }
     };
   }
@@ -192,7 +250,7 @@ class DasAgentSocket {
     }
     while (this.pendingTexts.length > 0) {
       const nextText = this.pendingTexts.shift();
-      if (nextText) this.sendTextCommand(nextText);
+      if (nextText) this.sendImmediateText(nextText);
     }
   }
 
@@ -246,11 +304,27 @@ class DasAgentSocket {
     if (!text.trim()) return;
     this.currentAgentTranscript = "";
     audioEngine.initContext();
+    audioEngine.clearAudioQueue();
 
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) {
       this.pendingTexts.push(text);
+      this.ws = null;
+      this.connect(
+        this.savedRole,
+        this.savedOnTranscript,
+        this.savedOnStatusChange,
+        this.savedNavigateFn,
+        this.savedOnUserTranscript,
+        this.savedOnInterrupted
+      );
       return;
     }
+
+    this.sendImmediateText(text);
+  }
+
+  private sendImmediateText(text: string) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
     if (this.isDirectGoogle) {
       this.ws.send(
@@ -268,9 +342,10 @@ class DasAgentSocket {
 
   public switchRole(role: UserHonorificRole) {
     this.currentRole = role;
+    this.savedRole = role;
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       if (this.isDirectGoogle) {
-        this.sendTextCommand(
+        this.sendImmediateText(
           role === "boss"
             ? "Address me as Boss from now on."
             : "Address me as Sir from now on."
@@ -282,6 +357,15 @@ class DasAgentSocket {
   }
 
   public disconnect() {
+    this.manualClose = true;
+    if (this.reconnectTimer) {
+      window.clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.renderPingTimer) {
+      window.clearInterval(this.renderPingTimer);
+      this.renderPingTimer = null;
+    }
     audioEngine.stopMicCapture();
     audioEngine.clearAudioQueue();
     this.preConnectAudioQueue = [];
