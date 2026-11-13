@@ -25,6 +25,7 @@ class DasAgentSocket {
   private pendingTexts: string[] = [];
   private currentAgentTranscript = "";
   private isSpeakingTurn = false;
+  private awaitingNextTurn = false;
   public isConnected = false;
   public currentRole: UserHonorificRole = "boss";
 
@@ -356,17 +357,31 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         // 2. Render Backend Status / Audio / Transcript
-        if (data.type === "status" && data.status === "connected") {
-          this.isConnected = true;
-          this.savedOnStatusChange?.(true);
-          this.savedOnTranscript?.(`DAS Online (${data.voice || "Puck"} Voice Ready)!`);
-          this.flushPendingMessages();
-          return;
+        if (data.type === "status") {
+          if (data.status === "reconnecting") {
+            this.savedOnTranscript?.(data.message || "Refreshing live session...");
+            return;
+          }
+          if (data.status === "connected") {
+            this.isConnected = true;
+            this.savedOnStatusChange?.(true);
+            this.savedOnTranscript?.(`DAS Online (${data.voice || "Puck"} Voice Ready)!`);
+            this.flushPendingMessages();
+            if (cameraEngine.isStreaming) {
+              const latest = cameraEngine.getLatestFrameBase64();
+              if (latest) this.sendVideoFrame(latest);
+            }
+            return;
+          }
         }
 
         if (data.type === "audio" && data.pcm_base64) {
           audioEngine.playPcmChunk(data.pcm_base64, data.sample_rate || 24000);
           if (!this.isSpeakingTurn) {
+            if (this.awaitingNextTurn) {
+              this.currentAgentTranscript = "";
+              this.awaitingNextTurn = false;
+            }
             this.isSpeakingTurn = true;
             if (!this.currentAgentTranscript) {
               this.savedOnTranscript?.("🔊 DAS Speaking (Puck Voice)...");
@@ -376,6 +391,10 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "transcript" && data.text) {
+          if (this.awaitingNextTurn) {
+            this.currentAgentTranscript = "";
+            this.awaitingNextTurn = false;
+          }
           this.currentAgentTranscript += data.text;
           this.savedOnTranscript?.(this.currentAgentTranscript);
           return;
@@ -383,6 +402,7 @@ CORE AUTONOMOUS CAPABILITIES:
 
         if (data.type === "turn_complete") {
           this.isSpeakingTurn = false;
+          this.awaitingNextTurn = true;
           if (!this.currentAgentTranscript) {
             this.savedOnTranscript?.("DAS Ready. Speak or type your next command, Boss!");
           }
@@ -390,14 +410,22 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "user_transcript" && data.text) {
+          if (!this.isSpeakingTurn) {
+            this.awaitingNextTurn = true;
+          }
           this.savedOnUserTranscript?.(data.text);
           return;
         }
 
         if (data.type === "interrupted") {
-          this.currentAgentTranscript = "";
+          this.isSpeakingTurn = false;
+          this.awaitingNextTurn = true;
           audioEngine.clearAudioQueue();
-          this.savedOnInterrupted?.();
+          if (this.currentAgentTranscript) {
+            this.savedOnTranscript?.(this.currentAgentTranscript);
+          } else {
+            this.savedOnInterrupted?.();
+          }
           return;
         }
 
@@ -436,6 +464,10 @@ CORE AUTONOMOUS CAPABILITIES:
             if (part.inlineData?.data) {
               audioEngine.playPcmChunk(part.inlineData.data, 24000);
               if (!this.isSpeakingTurn) {
+                if (this.awaitingNextTurn) {
+                  this.currentAgentTranscript = "";
+                  this.awaitingNextTurn = false;
+                }
                 this.isSpeakingTurn = true;
                 if (!this.currentAgentTranscript) {
                   this.savedOnTranscript?.("🔊 DAS Speaking (Puck Voice)...");
@@ -443,6 +475,10 @@ CORE AUTONOMOUS CAPABILITIES:
               }
             }
             if (part.text) {
+              if (this.awaitingNextTurn) {
+                this.currentAgentTranscript = "";
+                this.awaitingNextTurn = false;
+              }
               this.currentAgentTranscript += part.text;
               this.savedOnTranscript?.(this.currentAgentTranscript);
             }
@@ -451,6 +487,7 @@ CORE AUTONOMOUS CAPABILITIES:
 
         if (data.serverContent?.turnComplete) {
           this.isSpeakingTurn = false;
+          this.awaitingNextTurn = true;
           if (!this.currentAgentTranscript) {
             this.savedOnTranscript?.("DAS Ready. Speak or type your next command, Boss!");
           }
@@ -458,9 +495,14 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.serverContent?.interrupted) {
-          this.currentAgentTranscript = "";
+          this.isSpeakingTurn = false;
+          this.awaitingNextTurn = true;
           audioEngine.clearAudioQueue();
-          this.savedOnInterrupted?.();
+          if (this.currentAgentTranscript) {
+            this.savedOnTranscript?.(this.currentAgentTranscript);
+          } else {
+            this.savedOnInterrupted?.();
+          }
         }
 
         // 5. Direct Google AI Studio Function Calling Execution & Response Loop
@@ -610,18 +652,26 @@ CORE AUTONOMOUS CAPABILITIES:
     }
   }
 
+  public sendAudioStreamEnd() {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
+    if (this.isDirectGoogle) {
+      this.ws.send(JSON.stringify({ realtimeInput: { audioStreamEnd: true } }));
+    } else {
+      this.ws.send(JSON.stringify({ type: "audio_stream_end" }));
+    }
+  }
+
   public sendVideoFrame(base64Jpeg: string) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
+    if (this.ws.bufferedAmount > 256 * 1024) return; // Avoid queueing stale video frames on congested links
     if (this.isDirectGoogle) {
       this.ws.send(
         JSON.stringify({
           realtimeInput: {
-            mediaChunks: [
-              {
-                mimeType: "image/jpeg",
-                data: base64Jpeg,
-              },
-            ],
+            video: {
+              mimeType: "image/jpeg",
+              data: base64Jpeg,
+            },
           },
         })
       );

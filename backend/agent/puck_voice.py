@@ -28,9 +28,11 @@ def get_puck_speech_config() -> types.SpeechConfig:
 
 def create_gemini_live_config(system_prompt: str, tools_list: list) -> types.LiveConnectConfig:
     """
-    LiveConnectConfig from Google AI Studio settings:
+    LiveConnectConfig calibrated for ultra-responsive Multimodal Live streaming:
     - Voice: Puck (24kHz)
-    - Tools: Function Calling + Google Search Grounding
+    - High-resolution video frame perception & full A/V turn coverage
+    - Sliding-window context compression to avoid abrupt session drops
+    - Tuned automatic VAD for reliable capture across headsets, buds, and laptop mics
     - Real-time input & output speech transcription enabled
     """
     kwargs = {
@@ -46,6 +48,34 @@ def create_gemini_live_config(system_prompt: str, tools_list: list) -> types.Liv
     if hasattr(types, "AudioTranscriptionConfig"):
         kwargs["input_audio_transcription"] = types.AudioTranscriptionConfig()
         kwargs["output_audio_transcription"] = types.AudioTranscriptionConfig()
+
+    if hasattr(types, "MediaResolution"):
+        kwargs["media_resolution"] = types.MediaResolution.MEDIA_RESOLUTION_HIGH
+
+    if hasattr(types, "ContextWindowCompressionConfig") and hasattr(types, "SlidingWindow"):
+        kwargs["context_window_compression"] = types.ContextWindowCompressionConfig(
+            sliding_window=types.SlidingWindow()
+        )
+
+    if hasattr(types, "RealtimeInputConfig"):
+        rt_kwargs = {}
+        if hasattr(types, "TurnCoverage"):
+            rt_kwargs["turn_coverage"] = (
+                types.TurnCoverage.TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO
+            )
+        if (
+            hasattr(types, "AutomaticActivityDetection")
+            and hasattr(types, "StartSensitivity")
+            and hasattr(types, "EndSensitivity")
+        ):
+            rt_kwargs["automatic_activity_detection"] = types.AutomaticActivityDetection(
+                start_of_speech_sensitivity=types.StartSensitivity.START_SENSITIVITY_HIGH,
+                end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_HIGH,
+                prefix_padding_ms=100,
+                silence_duration_ms=450,
+            )
+        if rt_kwargs:
+            kwargs["realtime_input_config"] = types.RealtimeInputConfig(**rt_kwargs)
 
     return types.LiveConnectConfig(**kwargs)
 

@@ -79,15 +79,14 @@ DEEP PERSONAL KNOWLEDGE BASE ABOUT YOUR CREATOR (BOSS DILEEP):
 CORE AUTONOMOUS CAPABILITIES:
 1. Speak naturally, articulately, and fluently in Telugu, English, or Hindi matching the user's language. Never recite facts mechanically; speak with emotional intelligence, natural charisma, and genuine pride.
 2. LIVE CAMERA VISION & OBJECT PERCEPTION (CRITICAL MANDATE):
-   You possess 100% active real-time visual perception via video frames streamed directly from Boss's camera.
-   - You CAN see Boss, his face, his expressions, and whatever he holds in his hands or presents to the camera!
-   - When Boss asks "Can you see me?", "What is in my hands?", "Look at this", or shows an object (such as his earphones, headphones, phone, notebook, watch, etc.):
-     * NEVER give a canned or repetitive answer without answering what is in his hands!
-     * Directly look at the visual frame provided.
-     * Name the exact item: e.g. "Boss, in your hand you are holding your earphones / earbuds!"
-     * Describe the color, shape, and style of the object (e.g. white wireless in-ear earbuds, black wired earphones).
-     * Explain what the object is, what its features or purposes are (e.g. listening to audio, music, noise cancellation), and discuss it in an energetic, knowledgeable way.
-     * NEVER say "I don't have eyes" or "I cannot see what is in your hands". You have full active vision!
+   You possess 100% active real-time high-definition visual perception via live video frames streamed continuously from Boss's camera.
+   - Look carefully across the ENTIRE video frame in real time:
+     * Boss himself: his face, expressions, hair, full upper/full body posture, AND his complete clothes/outfit (shirt/t-shirt/hoodie/jacket/pants color, pattern, accessories like glasses, watch, chain) whenever he asks "Can you see me?", "How do I look?", "What am I wearing?", or shows himself!
+     * Multiple objects simultaneously (3 or more objects at once): Whenever Boss holds up objects in one or both hands—fruits, vegetables, toys, water bottles, earphones, wireless buds, headphones, phones, notebooks, pens, remotes, cups, or gadgets—scan carefully across left hand, right hand, foreground, and table/background. Count and name EVERY distinct item you see quickly and clearly (color, material/shape, and which hand or position)!
+   - Speed & accuracy:
+     * Answer immediately and concisely with what you actually observe in the latest frame.
+     * NEVER say "I don't have eyes", "nothing in your hands", or "I cannot see" when objects or a person are visible. Only ask Boss to adjust lighting or angle if the frame is genuinely pitch black or completely out of frame.
+   - Explain any held item's color, type, purpose, or details energetically and warmly.
 3. MASTER PROGRAMMING & COMPILER (C, C++, Python, Java, JS, TS, SQL):
    - When asked to write any program or algorithm (small or large), call `write_and_compile_code` with clean, compilable code and explain the logic step-by-step.
    - When a compiler or syntax error occurs, or Boss says "fix the error", "code wrong undi", or "correct chey":
@@ -353,22 +352,31 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                     # 2. Real-time 16kHz Mic PCM chunks from Browser
                     if msg_type == "audio":
-                        pcm_bytes = base64.b64decode(msg["pcm_base64"])
-                        await session.send_realtime_input(
-                            audio=types.Blob(
-                                data=pcm_bytes,
-                                mime_type=f"audio/pcm;rate={SEND_SAMPLE_RATE}",
-                            )
-                        )
+                        pcm_b64 = msg.get("pcm_base64")
+                        if pcm_b64:
+                            pcm_bytes = base64.b64decode(pcm_b64)
+                            if pcm_bytes:
+                                await session.send_realtime_input(
+                                    audio=types.Blob(
+                                        data=pcm_bytes,
+                                        mime_type=f"audio/pcm;rate={SEND_SAMPLE_RATE}",
+                                    )
+                                )
 
-                    # 3. Optional Camera / Screen Frame from Browser (2 FPS JPEG)
+                    elif msg_type == "audio_stream_end":
+                        try:
+                            await session.send_realtime_input(audio_stream_end=True)
+                        except Exception:
+                            pass
+
+                    # 3. Live Camera Video Frame from Browser (3 FPS HD JPEG via `video=` channel)
                     elif msg_type == "frame":
                         frame_str = msg.get("jpeg_base64")
                         if frame_str:
                             try:
                                 latest_frame_bytes = base64.b64decode(frame_str)
                                 await session.send_realtime_input(
-                                    media=types.Blob(
+                                    video=types.Blob(
                                         data=latest_frame_bytes,
                                         mime_type="image/jpeg",
                                     )
@@ -538,12 +546,20 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             except (WebSocketDisconnect, asyncio.CancelledError):
                 pass
             except Exception as stream_err:
-                print(f"[Gemini Stream Notice] {stream_err}")
+                err_str = str(stream_err)
+                print(f"[Gemini Stream Notice] {err_str}")
                 try:
-                    await websocket.send_json({
-                        "type": "error",
-                        "message": f"Gemini Live error: {str(stream_err)}"
-                    })
+                    if "inactivity" in err_str.lower() or "1008" in err_str:
+                        await websocket.send_json({
+                            "type": "status",
+                            "status": "reconnecting",
+                            "message": "Refreshing live session...",
+                        })
+                    else:
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": f"Gemini Live error: {err_str}",
+                        })
                 except Exception:
                     pass
 

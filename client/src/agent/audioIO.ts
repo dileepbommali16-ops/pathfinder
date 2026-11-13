@@ -399,8 +399,33 @@ export const speaker = new Speaker(
 export const audioManager = speaker;
 
 
-function downsampleTo16k(input: Float32Array, inputSampleRate: number): Int16Array {
-  if (inputSampleRate === 16000) {
+export interface MediaDeviceOption {
+  deviceId: string;
+  label: string;
+  kind: MediaDeviceKind;
+}
+
+export interface MicSignalStatus {
+  rms: number;
+  volume: number;
+  silentMs: number;
+  rawFallbackUsed: boolean;
+  deviceLabel: string;
+}
+
+export interface MicCaptureOptions {
+  deviceId?: string;
+  rawMode?: boolean;
+  onSignalStatus?: (status: MicSignalStatus) => void;
+  onAutoFallback?: () => void;
+}
+
+function downsampleTo16k(
+  input: Float32Array,
+  inputSampleRate: number,
+  adaptiveGain = 1.0
+): Int16Array {
+  if (inputSampleRate === 16000 && Math.abs(adaptiveGain - 1.0) < 0.01) {
     const output = new Int16Array(input.length);
     for (let i = 0; i < input.length; i++) {
       const s = Math.max(-1, Math.min(1, input[i]));
@@ -410,21 +435,67 @@ function downsampleTo16k(input: Float32Array, inputSampleRate: number): Int16Arr
   }
 
   const sampleRatio = inputSampleRate / 16000;
-  const newLength = Math.round(input.length / sampleRatio);
+  const newLength = Math.max(1, Math.round(input.length / sampleRatio));
   const output = new Int16Array(newLength);
 
   for (let i = 0; i < newLength; i++) {
-    const srcIndex = i * sampleRatio;
-    const indexFloor = Math.floor(srcIndex);
-    const indexCeil = Math.min(input.length - 1, Math.ceil(srcIndex));
-    const fraction = srcIndex - indexFloor;
-    const interpolated =
-      input[indexFloor] * (1 - fraction) + input[indexCeil] * fraction;
-    const s = Math.max(-1, Math.min(1, interpolated));
+    let val = 0;
+    if (sampleRatio >= 1.25) {
+      // Anti-aliased box average over source window preserves vocal consonants cleanly
+      const start = Math.floor(i * sampleRatio);
+      const end = Math.min(input.length, Math.max(start + 1, Math.floor((i + 1) * sampleRatio)));
+      let acc = 0;
+      for (let j = start; j < end; j++) {
+        acc += input[j];
+      }
+      val = acc / (end - start);
+    } else {
+      const srcIndex = i * sampleRatio;
+      const indexFloor = Math.min(input.length - 1, Math.floor(srcIndex));
+      const indexCeil = Math.min(input.length - 1, Math.ceil(srcIndex));
+      const fraction = srcIndex - indexFloor;
+      val = input[indexFloor] * (1 - fraction) + input[indexCeil] * fraction;
+    }
+
+    if (adaptiveGain > 1.01) {
+      val = Math.tanh(val * adaptiveGain);
+    }
+    const s = Math.max(-1, Math.min(1, val));
     output[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
   }
   return output;
 }
+
+const MIC_WORKLET_CODE = `
+class DasMicProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this._buffer = new Float32Array(1024);
+    this._offset = 0;
+  }
+  process(inputs) {
+    const input = inputs[0];
+    if (!input || input.length === 0) return true;
+    const ch0 = input[0];
+    if (!ch0) return true;
+    const numChannels = input.length;
+    for (let i = 0; i < ch0.length; i++) {
+      let sum = 0;
+      for (let ch = 0; ch < numChannels; ch++) {
+        sum += (input[ch] && input[ch][i]) || 0;
+      }
+      this._buffer[this._offset++] = sum / numChannels;
+      if (this._offset >= this._buffer.length) {
+        const copy = new Float32Array(this._buffer);
+        this.port.postMessage(copy.buffer, [copy.buffer]);
+        this._offset = 0;
+      }
+    }
+    return true;
+  }
+}
+registerProcessor("das-mic-processor", DasMicProcessor);
+`;
 
 class AudioEngine {
   public audioCtx: AudioContext | null = null;
@@ -434,27 +505,88 @@ class AudioEngine {
   private micStream: MediaStream | null = null;
   public micCtx: AudioContext | null = null;
   private processor: ScriptProcessorNode | null = null;
+  private workletNode: AudioWorkletNode | null = null;
+  private workletBlobUrl: string | null = null;
+  private micSource: MediaStreamAudioSourceNode | null = null;
+  private keepaliveTimer: number | null = null;
   private freqData: Uint8Array = new Uint8Array(128);
   public micVolume: number = 0;
+  public activeMicLabel: string = "";
+  public selectedSpeakerId: string = "";
+  private softGain: number = 1.0;
+  private bargeInStreak: number = 0;
+  private zeroSignalMs: number = 0;
+  private rawFallbackAttempted: boolean = false;
+  private captureToken: number = 0;
 
   public initContext() {
+    if (this.audioCtx && this.audioCtx.state === "closed") {
+      this.audioCtx = null;
+      this.analyser = null;
+      this.activeSources = [];
+      this.nextPlayTime = 0;
+    }
     if (!this.audioCtx) {
       const AudioContextClass =
         window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       try {
-        this.audioCtx = new AudioContextClass();
+        this.audioCtx = new AudioContextClass({ latencyHint: "interactive" });
       } catch {
-        this.audioCtx = new AudioContextClass({ sampleRate: 24000 });
+        try {
+          this.audioCtx = new AudioContextClass();
+        } catch {
+          this.audioCtx = new AudioContextClass({ sampleRate: 24000 });
+        }
       }
       this.analyser = this.audioCtx.createAnalyser();
       this.analyser.fftSize = 256;
       this.analyser.smoothingTimeConstant = 0.65;
       this.analyser.connect(this.audioCtx.destination);
+      if (this.selectedSpeakerId && typeof (this.audioCtx as any).setSinkId === "function") {
+        (this.audioCtx as any).setSinkId(this.selectedSpeakerId).catch(() => {});
+      }
     }
     if (this.audioCtx.state === "suspended") {
       this.audioCtx.resume().catch(() => {});
     }
+  }
+
+  public async setOutputDevice(deviceId: string) {
+    this.selectedSpeakerId = deviceId || "";
+    this.initContext();
+    if (this.audioCtx && typeof (this.audioCtx as any).setSinkId === "function") {
+      try {
+        await (this.audioCtx as any).setSinkId(deviceId || "");
+      } catch (err) {
+        console.warn("setSinkId failed:", err);
+      }
+    }
+  }
+
+  public async listAudioDevices(): Promise<{
+    inputs: MediaDeviceOption[];
+    outputs: MediaDeviceOption[];
+  }> {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) {
+      return { inputs: [], outputs: [] };
+    }
+    const all = await navigator.mediaDevices.enumerateDevices();
+    const inputs = all
+      .filter((d) => d.kind === "audioinput")
+      .map((d, idx) => ({
+        deviceId: d.deviceId,
+        label: d.label || `Microphone ${idx + 1}`,
+        kind: d.kind,
+      }));
+    const outputs = all
+      .filter((d) => d.kind === "audiooutput")
+      .map((d, idx) => ({
+        deviceId: d.deviceId,
+        label: d.label || `Speaker / Headphones ${idx + 1}`,
+        kind: d.kind,
+      }));
+    return { inputs, outputs };
   }
 
   // Calculate volume using simple average of frequency data extracted via AnalyserNode
@@ -476,6 +608,9 @@ class AudioEngine {
   public playPcmChunk(base64Pcm: string, sampleRate = 24000) {
     this.initContext();
     if (!this.audioCtx || !this.analyser) return;
+    if (this.audioCtx.state === "suspended") {
+      this.audioCtx.resume().catch(() => {});
+    }
 
     let binaryStr: string;
     try {
@@ -507,9 +642,9 @@ class AudioEngine {
     source.connect(this.analyser);
 
     const currentTime = this.audioCtx.currentTime;
-    if (this.nextPlayTime < currentTime) {
-      // 180ms Hardware Lookahead Jitter Buffer: Prevents network packet underrun and voice stuttering
-      this.nextPlayTime = currentTime + 0.18;
+    if (this.nextPlayTime < currentTime || this.nextPlayTime > currentTime + 12) {
+      // 140ms Lookahead Jitter Buffer: Smooth playback while responsive to turn changes
+      this.nextPlayTime = currentTime + 0.14;
     }
     source.start(this.nextPlayTime);
     this.nextPlayTime += audioBuffer.duration;
@@ -526,7 +661,7 @@ class AudioEngine {
     return this.activeSources.length > 0 && this.nextPlayTime > this.audioCtx.currentTime;
   }
 
-  // Clear audio queue immediately when user interrupts DAS
+  // Clear audio queue immediately when user genuinely interrupts DAS
   public clearAudioQueue() {
     this.activeSources.forEach((src) => {
       try {
@@ -542,87 +677,261 @@ class AudioEngine {
     }
   }
 
-  // Start capturing 16kHz PCM audio from user's microphone across all hardware (Bluetooth headphones, earbuds, earphones, built-in)
-  public async startMicCapture(onPcmChunk: (base64Pcm: string) => void) {
-    this.initContext();
-    this.stopMicCapture();
+  private processCapturedFloatFrame(
+    monoInput: Float32Array,
+    inputSampleRate: number,
+    onPcmChunk: (base64Pcm: string) => void,
+    options?: MicCaptureOptions,
+    token?: number
+  ) {
+    if (token !== undefined && token !== this.captureToken) return;
 
-    // Universal device capture constraints without rigid sampleRate that crashes Bluetooth drivers
+    let sum = 0;
+    for (let i = 0; i < monoInput.length; i++) {
+      sum += monoInput[i] * monoInput[i];
+    }
+    const rms = Math.sqrt(sum / Math.max(1, monoInput.length));
+    const frameMs = (monoInput.length / Math.max(8000, inputSampleRate)) * 1000;
+
+    // Smart adaptive gain for soft inline earphone / laptop / headset mics
+    if (rms >= 0.0025 && rms < 0.09) {
+      const targetGain = Math.min(4.2, 0.1 / rms);
+      this.softGain = this.softGain * 0.75 + targetGain * 0.25;
+    } else if (rms >= 0.09) {
+      this.softGain = this.softGain * 0.7 + 1.0 * 0.3;
+    } else {
+      this.softGain = this.softGain * 0.92 + 1.0 * 0.08;
+    }
+
+    const boostedRms = Math.min(1.0, rms * this.softGain * 4.5);
+    this.micVolume = Math.max(boostedRms, this.micVolume * 0.65);
+
+    if (rms < 0.00012) {
+      this.zeroSignalMs += frameMs;
+    } else {
+      this.zeroSignalMs = 0;
+    }
+
+    options?.onSignalStatus?.({
+      rms,
+      volume: this.micVolume,
+      silentMs: this.zeroSignalMs,
+      rawFallbackUsed: this.rawFallbackAttempted,
+      deviceLabel: this.activeMicLabel,
+    });
+
+    // Windows / Chrome APM dead-mic rescue: if Chrome DSP zeroes out Bluetooth/TRRS mic, auto-retry raw mode once
+    if (
+      this.zeroSignalMs > 2800 &&
+      !options?.rawMode &&
+      !this.rawFallbackAttempted
+    ) {
+      this.rawFallbackAttempted = true;
+      options?.onAutoFallback?.();
+      this.startMicCapture(onPcmChunk, { ...options, rawMode: true }).catch(() => {});
+      return;
+    }
+
+    // Echo & Self-Interruption Shield:
+    // Require sustained strong user voice (>= 0.065 for 4 frames ~160ms) to interrupt active DAS playback.
+    // While DAS is speaking, suppress weak speaker leakage so Gemini does not cancel its own reply.
+    if (this.isSpeaking()) {
+      if (rms > 0.065) {
+        this.bargeInStreak += 1;
+        if (this.bargeInStreak >= 4) {
+          this.clearAudioQueue();
+          this.bargeInStreak = 0;
+        } else {
+          return;
+        }
+      } else {
+        this.bargeInStreak = 0;
+        return;
+      }
+    } else {
+      this.bargeInStreak = 0;
+    }
+
+    const pcm16 = downsampleTo16k(monoInput, inputSampleRate, this.softGain);
+    if (pcm16.length === 0) return;
+
+    const uint8 = new Uint8Array(pcm16.buffer);
+    let binary = "";
+    for (let i = 0; i < uint8.byteLength; i++) {
+      binary += String.fromCharCode(uint8[i]);
+    }
+    onPcmChunk(window.btoa(binary));
+  }
+
+  // Start capturing 16kHz PCM audio across all hardware (Bluetooth buds, headphones, earphones, built-in mic)
+  public async startMicCapture(
+    onPcmChunk: (base64Pcm: string) => void,
+    options?: MicCaptureOptions
+  ) {
+    this.stopMicCapture();
+    const token = ++this.captureToken;
+    this.zeroSignalMs = 0;
+    this.softGain = 1.0;
+    this.bargeInStreak = 0;
+    if (options?.rawMode) {
+      this.rawFallbackAttempted = true;
+    } else {
+      this.rawFallbackAttempted = false;
+    }
+
+    const raw = Boolean(options?.rawMode);
+    const devConstraint = options?.deviceId
+      ? { deviceId: { ideal: options.deviceId } }
+      : {};
+
     try {
       this.micStream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
+          ...devConstraint,
+          echoCancellation: !raw,
+          noiseSuppression: !raw,
+          autoGainControl: !raw,
+          channelCount: { ideal: 1 },
         },
       });
     } catch {
-      this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      try {
+        this.micStream = await navigator.mediaDevices.getUserMedia({
+          audio: options?.deviceId ? { deviceId: { ideal: options.deviceId } } : true,
+        });
+      } catch {
+        this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
+    }
+
+    // Re-init playback context AFTER Bluetooth HFP/microphone acquisition so output routing stays active
+    this.initContext();
+    if (this.audioCtx?.state === "suspended") {
+      await this.audioCtx.resume().catch(() => {});
+    }
+
+    const tracks = this.micStream.getAudioTracks();
+    this.activeMicLabel = tracks[0]?.label || "Default Microphone";
+    if (tracks[0]) {
+      tracks[0].onended = () => {
+        if (this.captureToken === token && this.micStream) {
+          this.startMicCapture(onPcmChunk, {
+            ...options,
+            deviceId: undefined,
+          }).catch(() => {});
+        }
+      };
     }
 
     const AudioContextClass =
       window.AudioContext ||
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
 
-    // Use native device sample rate (44.1kHz / 48kHz / 16kHz) to avoid NotSupportedError
-    this.micCtx = new AudioContextClass();
+    this.micCtx = new AudioContextClass({ latencyHint: "interactive" });
     if (this.micCtx.state === "suspended") {
       await this.micCtx.resume();
     }
 
     const inputSampleRate = this.micCtx.sampleRate;
     const source = this.micCtx.createMediaStreamSource(this.micStream);
+    this.micSource = source;
 
-    // Buffer size 2048 prevents underruns on Windows audio pipelines
-    const bufferSize = 2048;
-    this.processor = this.micCtx.createScriptProcessor(bufferSize, 1, 1);
-
-    this.processor.onaudioprocess = (event) => {
-      const inputData = event.inputBuffer.getChannelData(0);
-
-      // Compute mic volume RMS
-      let sum = 0;
-      for (let i = 0; i < inputData.length; i++) {
-        sum += inputData[i] * inputData[i];
+    // Watchdog keeps both mic and speaker contexts awake across Windows BT/headset transitions
+    this.keepaliveTimer = window.setInterval(() => {
+      if (this.micCtx && this.micCtx.state === "suspended") {
+        this.micCtx.resume().catch(() => {});
       }
-      const rms = Math.sqrt(sum / inputData.length);
-      this.micVolume = Math.min(1.0, rms * 4.0);
+      if (this.audioCtx && this.audioCtx.state === "suspended") {
+        this.audioCtx.resume().catch(() => {});
+      }
+    }, 1200);
 
-      // User Barge-In: If user speaks while DAS is outputting audio, interrupt immediately
-      if (this.isSpeaking()) {
-        if (rms > 0.035) {
-          this.clearAudioQueue();
-        } else {
-          return; // Suppress echo leakage
+    // Primary path: AudioWorkletNode (modern, zero deprecation/culling across Chromium)
+    let workletReady = false;
+    if (this.micCtx.audioWorklet && typeof Blob !== "undefined") {
+      try {
+        const blob = new Blob([MIC_WORKLET_CODE], { type: "application/javascript" });
+        this.workletBlobUrl = URL.createObjectURL(blob);
+        await this.micCtx.audioWorklet.addModule(this.workletBlobUrl);
+        if (this.captureToken !== token || !this.micCtx) return;
+
+        this.workletNode = new AudioWorkletNode(this.micCtx, "das-mic-processor", {
+          numberOfInputs: 1,
+          numberOfOutputs: 1,
+          channelCount: 2,
+          channelCountMode: "explicit",
+        });
+        this.workletNode.port.onmessage = (evt) => {
+          const mono = new Float32Array(evt.data);
+          this.processCapturedFloatFrame(mono, inputSampleRate, onPcmChunk, options, token);
+        };
+        const ultraLowGain = this.micCtx.createGain();
+        ultraLowGain.gain.value = 0.00001;
+        source.connect(this.workletNode);
+        this.workletNode.connect(ultraLowGain);
+        ultraLowGain.connect(this.micCtx.destination);
+        workletReady = true;
+      } catch (err) {
+        console.warn("AudioWorklet fallback to ScriptProcessor:", err);
+      }
+    }
+
+    if (!workletReady) {
+      const bufferSize = 2048;
+      this.processor = this.micCtx.createScriptProcessor(bufferSize, 2, 1);
+      this.processor.onaudioprocess = (event) => {
+        const buf = event.inputBuffer;
+        const ch0 = buf.getChannelData(0);
+        const mono = new Float32Array(ch0.length);
+        const channels = Math.max(1, buf.numberOfChannels);
+        for (let i = 0; i < ch0.length; i++) {
+          let sum = 0;
+          for (let ch = 0; ch < channels; ch++) {
+            sum += buf.getChannelData(ch)[i] || 0;
+          }
+          mono[i] = sum / channels;
         }
-      }
-
-      // Downsample input to pristine 16000 Hz 16-bit PCM for Gemini Live
-      const pcm16 = downsampleTo16k(inputData, inputSampleRate);
-      if (pcm16.length === 0) return;
-
-      const uint8 = new Uint8Array(pcm16.buffer);
-      let binary = "";
-      for (let i = 0; i < uint8.byteLength; i++) {
-        binary += String.fromCharCode(uint8[i]);
-      }
-      onPcmChunk(window.btoa(binary));
-    };
-
-    // Muted gain node keeps processor pump active without feedback
-    const silentGain = this.micCtx.createGain();
-    silentGain.gain.value = 0;
-    source.connect(this.processor);
-    this.processor.connect(silentGain);
-    silentGain.connect(this.micCtx.destination);
+        this.processCapturedFloatFrame(mono, inputSampleRate, onPcmChunk, options, token);
+      };
+      const ultraLowGain = this.micCtx.createGain();
+      ultraLowGain.gain.value = 0.00001;
+      source.connect(this.processor);
+      this.processor.connect(ultraLowGain);
+      ultraLowGain.connect(this.micCtx.destination);
+    }
   }
 
   public stopMicCapture() {
+    this.captureToken++;
+    if (this.keepaliveTimer !== null) {
+      clearInterval(this.keepaliveTimer);
+      this.keepaliveTimer = null;
+    }
+    if (this.workletNode) {
+      try {
+        this.workletNode.port.onmessage = null;
+        this.workletNode.disconnect();
+      } catch {}
+      this.workletNode = null;
+    }
+    if (this.workletBlobUrl) {
+      try {
+        URL.revokeObjectURL(this.workletBlobUrl);
+      } catch {}
+      this.workletBlobUrl = null;
+    }
     if (this.processor) {
       try {
+        this.processor.onaudioprocess = null;
         this.processor.disconnect();
       } catch {}
       this.processor = null;
+    }
+    if (this.micSource) {
+      try {
+        this.micSource.disconnect();
+      } catch {}
+      this.micSource = null;
     }
     if (this.micStream) {
       try {
@@ -637,6 +946,7 @@ class AudioEngine {
       this.micCtx = null;
     }
     this.micVolume = 0;
+    this.activeMicLabel = "";
   }
 }
 
@@ -644,57 +954,141 @@ export class CameraEngine {
   private videoStream: MediaStream | null = null;
   private intervalId: any = null;
   public videoEl: HTMLVideoElement | null = null;
+  private ownedVideoEl: boolean = false;
   private canvasEl: HTMLCanvasElement | null = null;
   private lastFrameBase64: string | null = null;
+  public activeResolution: string = "";
+
+  public async listVideoDevices(): Promise<MediaDeviceOption[]> {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) {
+      return [];
+    }
+    const all = await navigator.mediaDevices.enumerateDevices();
+    return all
+      .filter((d) => d.kind === "videoinput")
+      .map((d, idx) => ({
+        deviceId: d.deviceId,
+        label: d.label || `Camera ${idx + 1}`,
+        kind: d.kind,
+      }));
+  }
+
+  public attachPreviewElement(previewEl: HTMLVideoElement | null) {
+    if (!previewEl || !this.videoStream) return;
+    if (previewEl.srcObject !== this.videoStream) {
+      previewEl.muted = true;
+      previewEl.autoplay = true;
+      previewEl.playsInline = true;
+      previewEl.srcObject = this.videoStream;
+      previewEl.play().catch(() => {});
+    }
+    if (this.ownedVideoEl && this.videoEl && this.videoEl !== previewEl) {
+      if (this.videoEl.parentNode) this.videoEl.parentNode.removeChild(this.videoEl);
+      this.ownedVideoEl = false;
+    }
+    this.videoEl = previewEl;
+  }
+
+  private captureCanvasFrame(quality: number): string | null {
+    if (!this.videoEl || !this.canvasEl) return this.lastFrameBase64;
+    if (this.videoEl.readyState < 2) return this.lastFrameBase64;
+    const vw = this.videoEl.videoWidth || 1280;
+    const vh = this.videoEl.videoHeight || 720;
+    const maxW = 896;
+    const scale = vw > maxW ? maxW / vw : 1;
+    const cw = Math.max(320, Math.round(vw * scale));
+    const ch = Math.max(240, Math.round(vh * scale));
+    if (this.canvasEl.width !== cw || this.canvasEl.height !== ch) {
+      this.canvasEl.width = cw;
+      this.canvasEl.height = ch;
+    }
+    this.activeResolution = `${vw}x${vh}`;
+    const ctx = this.canvasEl.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return this.lastFrameBase64;
+    ctx.drawImage(this.videoEl, 0, 0, cw, ch);
+    const dataUrl = this.canvasEl.toDataURL("image/jpeg", quality);
+    const commaIdx = dataUrl.indexOf(",");
+    if (commaIdx !== -1) {
+      const b64 = dataUrl.substring(commaIdx + 1);
+      this.lastFrameBase64 = b64;
+      return b64;
+    }
+    return this.lastFrameBase64;
+  }
 
   public async startCameraCapture(
     onFrame: (base64Jpeg: string) => void,
-    fps = 2
+    fps = 3,
+    options?: { previewEl?: HTMLVideoElement | null; deviceId?: string }
   ): Promise<boolean> {
     try {
+      this.stopCameraCapture();
       if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
         return false;
       }
-      this.videoStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
-      });
 
-      this.videoEl = document.createElement("video");
+      const videoConstraints: MediaTrackConstraints = {
+        width: { ideal: 1280, min: 640 },
+        height: { ideal: 720, min: 360 },
+        frameRate: { ideal: 15, max: 30 },
+        ...(options?.deviceId
+          ? { deviceId: { ideal: options.deviceId } }
+          : { facingMode: "user" }),
+      };
+
+      try {
+        this.videoStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
+      } catch {
+        this.videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+
+      if (options?.previewEl) {
+        this.videoEl = options.previewEl;
+        this.ownedVideoEl = false;
+      } else {
+        this.videoEl = document.createElement("video");
+        this.ownedVideoEl = true;
+        // Keep inside viewport on a tiny visible compositor layer so Chromium never suspends frame decode
+        this.videoEl.style.position = "fixed";
+        this.videoEl.style.bottom = "4px";
+        this.videoEl.style.right = "4px";
+        this.videoEl.style.width = "160px";
+        this.videoEl.style.height = "90px";
+        this.videoEl.style.opacity = "0.01";
+        this.videoEl.style.pointerEvents = "none";
+        this.videoEl.style.zIndex = "0";
+        document.body.appendChild(this.videoEl);
+      }
+
       this.videoEl.muted = true;
       this.videoEl.autoplay = true;
       this.videoEl.playsInline = true;
       this.videoEl.setAttribute("playsinline", "true");
       this.videoEl.setAttribute("webkit-playsinline", "true");
-      // Keep hidden in DOM so Chromium never throttles or pauses background frame decoding
-      this.videoEl.style.position = "fixed";
-      this.videoEl.style.bottom = "-9999px";
-      this.videoEl.style.left = "-9999px";
-      this.videoEl.style.width = "1px";
-      this.videoEl.style.height = "1px";
-      this.videoEl.style.opacity = "0";
-      this.videoEl.style.pointerEvents = "none";
-      document.body.appendChild(this.videoEl);
-
       this.videoEl.srcObject = this.videoStream;
-      await this.videoEl.play();
+
+      await new Promise<void>((resolve) => {
+        if (!this.videoEl) return resolve();
+        if (this.videoEl.readyState >= 1) return resolve();
+        const timer = window.setTimeout(resolve, 1500);
+        this.videoEl.onloadedmetadata = () => {
+          clearTimeout(timer);
+          resolve();
+        };
+      });
+      await this.videoEl.play().catch(() => {});
 
       this.canvasEl = document.createElement("canvas");
-      this.canvasEl.width = 640;
-      this.canvasEl.height = 480;
-      const ctx = this.canvasEl.getContext("2d", { willReadFrequently: true });
+      this.canvasEl.width = 896;
+      this.canvasEl.height = 504;
 
-      this.intervalId = setInterval(() => {
-        if (!this.videoEl || !ctx || !this.canvasEl) return;
-        if (this.videoEl.readyState < 2) return; // Wait for HAVE_CURRENT_DATA
-        ctx.drawImage(this.videoEl, 0, 0, this.canvasEl.width, this.canvasEl.height);
-        const dataUrl = this.canvasEl.toDataURL("image/jpeg", 0.7);
-        const commaIdx = dataUrl.indexOf(",");
-        if (commaIdx !== -1) {
-          const base64 = dataUrl.substring(commaIdx + 1);
-          this.lastFrameBase64 = base64;
-          onFrame(base64);
-        }
-      }, 1000 / fps);
+      // Capture an immediate initial frame once video has real pixel data
+      const pushFrame = () => {
+        const b64 = this.captureCanvasFrame(0.82);
+        if (b64) onFrame(b64);
+      };
+      window.setTimeout(pushFrame, 120);
+      this.intervalId = setInterval(pushFrame, Math.round(1000 / Math.max(1, fps)));
       return true;
     } catch (e) {
       console.warn("Camera access denied or failed:", e);
@@ -704,19 +1098,11 @@ export class CameraEngine {
   }
 
   public getLatestFrameBase64(): string | null {
-    if (!this.videoEl || !this.canvasEl) return this.lastFrameBase64;
     try {
-      const ctx = this.canvasEl.getContext("2d");
-      if (ctx && this.videoEl.readyState >= 2) {
-        ctx.drawImage(this.videoEl, 0, 0, this.canvasEl.width, this.canvasEl.height);
-        const dataUrl = this.canvasEl.toDataURL("image/jpeg", 0.75);
-        const commaIdx = dataUrl.indexOf(",");
-        if (commaIdx !== -1) {
-          this.lastFrameBase64 = dataUrl.substring(commaIdx + 1);
-        }
-      }
-    } catch {}
-    return this.lastFrameBase64;
+      return this.captureCanvasFrame(0.88);
+    } catch {
+      return this.lastFrameBase64;
+    }
   }
 
   public stopCameraCapture() {
@@ -730,13 +1116,15 @@ export class CameraEngine {
     }
     if (this.videoEl) {
       this.videoEl.srcObject = null;
-      if (this.videoEl.parentNode) {
+      if (this.ownedVideoEl && this.videoEl.parentNode) {
         this.videoEl.parentNode.removeChild(this.videoEl);
       }
       this.videoEl = null;
+      this.ownedVideoEl = false;
     }
     this.canvasEl = null;
     this.lastFrameBase64 = null;
+    this.activeResolution = "";
   }
 
   public get isStreaming(): boolean {
