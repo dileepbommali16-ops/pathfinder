@@ -249,14 +249,18 @@ DAS_TOOLS = [
     ),
 ]
 
-from backend.config.key_resolver import get_active_gemini_key
+import logging
+from backend.config.key_resolver import get_gemini_key_candidates
+
+live_logger = logging.getLogger("pathfinder.live_proxy")
+
 
 @router.websocket("/agent/ws")
 async def das_multimodal_live_ws(websocket: WebSocket):
     await websocket.accept()
 
-    api_key = get_active_gemini_key()
-    if not api_key:
+    api_keys = get_gemini_key_candidates()
+    if not api_keys:
         await websocket.send_json({
             "type": "error",
             "message": "GEMINI_API_KEY is not configured in backend environment variables."
@@ -265,12 +269,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         return
 
     user_role = websocket.query_params.get("role", "boss")
-
-    # Multimodal Live API using verified v1beta
-    client = genai.Client(
-        http_options={"api_version": "v1beta"},
-        api_key=api_key,
-    )
 
     config = create_gemini_live_config(
         system_prompt=get_das_system_instruction(user_role),
@@ -288,25 +286,46 @@ async def das_multimodal_live_ws(websocket: WebSocket):
     session_cm = None
     session = None
     connected_model = None
+    last_error = ""
 
-    for model_name in models_to_try:
-        try:
-            cm = client.aio.live.connect(model=model_name, config=config)
-            session = await cm.__aenter__()
-            session_cm = cm
-            connected_model = model_name
+    # Try every key x model combination; skip remaining models for a key the API rejects.
+    for key_index, api_key in enumerate(api_keys):
+        client = genai.Client(
+            http_options={"api_version": "v1beta"},
+            api_key=api_key,
+        )
+        for model_name in models_to_try:
+            try:
+                cm = client.aio.live.connect(model=model_name, config=config)
+                session = await cm.__aenter__()
+                session_cm = cm
+                connected_model = model_name
+                break
+            except Exception as conn_err:
+                last_error = f"{type(conn_err).__name__}: {conn_err}"
+                live_logger.warning(
+                    f"[DAS Live Proxy] key#{key_index} model '{model_name}' connect failed: {last_error}"
+                )
+                if "API key not valid" in str(conn_err):
+                    break  # this key is rejected; move on to the next key
+                continue
+        if session_cm:
+            if key_index > 0:
+                live_logger.warning(
+                    "[DAS Live Proxy] Primary GEMINI_API_KEY rejected; connected using fallback key."
+                )
             break
-        except Exception as conn_err:
-            print(f"[DAS Live Proxy] Model '{model_name}' connect failed: {conn_err}. Trying fallback...")
-            continue
 
     if not session_cm or not session or not connected_model:
+        live_logger.error(f"[DAS Live Proxy] All Gemini Live connection attempts failed. Last error: {last_error}")
         await websocket.send_json({
             "type": "error",
-            "message": "Unable to initialize Gemini Live session on any supported model.",
+            "message": f"Unable to initialize Gemini Live session on any supported model. ({last_error[:160]})",
         })
         await websocket.close(code=1011, reason="Live model connection failed")
         return
+
+    live_logger.info(f"[DAS Live Proxy] Connected to Gemini Live model '{connected_model}' (role={user_role}).")
 
     try:
         await websocket.send_json({
