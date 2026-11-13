@@ -343,11 +343,24 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
         latest_frame_bytes: bytes | None = None
         send_lock = asyncio.Lock()
+        audio_turn_open = False
 
         def is_valid_jpeg(raw_bytes: bytes | None) -> bool:
             return bool(raw_bytes and len(raw_bytes) > 128 and raw_bytes[:2] == b"\xff\xd8")
 
+        def is_gemini_ws_closed() -> bool:
+            ws_obj = getattr(session, "_ws", None)
+            if ws_obj is None:
+                return False
+            if getattr(ws_obj, "closed", False) or getattr(ws_obj, "close_code", None) is not None:
+                return True
+            state = getattr(ws_obj, "state", None)
+            if state is not None and getattr(state, "name", "") in ("CLOSED", "CLOSING"):
+                return True
+            return False
+
         async def send_vision_prompt(prompt_text: str):
+            nonlocal audio_turn_open
             parts = []
             if is_valid_jpeg(latest_frame_bytes):
                 parts.append(
@@ -358,13 +371,20 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 )
             parts.append(types.Part.from_text(text=prompt_text))
             async with send_lock:
+                # Finalize any open audio stream before injecting text/vision content
+                if audio_turn_open:
+                    audio_turn_open = False
+                    try:
+                        await session.send_realtime_input(audio_stream_end=True)
+                    except Exception:
+                        pass
                 await session.send_client_content(
                     turns=[types.Content(parts=parts, role="user")],
                     turn_complete=True,
                 )
 
         async def receive_from_browser():
-            nonlocal latest_frame_bytes
+            nonlocal latest_frame_bytes, audio_turn_open
             try:
                 while True:
                     raw = await websocket.receive_text()
@@ -385,6 +405,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 if len(pcm_bytes) % 2 == 1:
                                     pcm_bytes = pcm_bytes[:-1]
                                 if pcm_bytes:
+                                    audio_turn_open = True
                                     async with send_lock:
                                         await session.send_realtime_input(
                                             audio=types.Blob(
@@ -396,6 +417,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 live_logger.warning(f"[Audio Chunk Notice] {a_err}")
 
                     elif msg_type == "audio_stream_end":
+                        audio_turn_open = False
                         try:
                             async with send_lock:
                                 await session.send_realtime_input(audio_stream_end=True)
@@ -410,13 +432,15 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 candidate = base64.b64decode(frame_str)
                                 if is_valid_jpeg(candidate):
                                     latest_frame_bytes = candidate
-                                    async with send_lock:
-                                        await session.send_realtime_input(
-                                            video=types.Blob(
-                                                data=candidate,
-                                                mime_type="image/jpeg",
+                                    # Drop stale background video send if audio/text currently owns lock
+                                    if not send_lock.locked():
+                                        async with send_lock:
+                                            await session.send_realtime_input(
+                                                video=types.Blob(
+                                                    data=candidate,
+                                                    mime_type="image/jpeg",
+                                                )
                                             )
-                                        )
                             except Exception as f_err:
                                 live_logger.warning(f"[Frame Process Notice] {f_err}")
 
@@ -486,19 +510,31 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 live_logger.warning(f"[Browser Receive Notice] {b_err}")
 
         async def receive_from_gemini():
+            nonlocal audio_turn_open
             try:
                 while True:
                     if websocket.client_state == WebSocketState.DISCONNECTED:
                         break
-                    if getattr(session, "_ws", None) and getattr(session._ws, "closed", False):
+                    if is_gemini_ws_closed():
                         break
 
+                    yielded_any = False
                     async for response in session.receive():
+                        yielded_any = True
+                        if getattr(response, "go_away", None):
+                            await websocket.send_json({
+                                "type": "status",
+                                "status": "reconnecting",
+                                "message": "Refreshing live session...",
+                            })
+                            return
+
                         # Check for interruption
                         if (
                             response.server_content
                             and getattr(response.server_content, "interrupted", False)
                         ):
+                            audio_turn_open = False
                             await websocket.send_json({"type": "interrupted"})
 
                         # Transcription events
@@ -541,7 +577,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                         })
 
                             if getattr(sc, "turn_complete", False):
+                                audio_turn_open = False
                                 await websocket.send_json({"type": "turn_complete"})
+
+                    if not yielded_any and is_gemini_ws_closed():
+                        break
 
                         # Handle Function Calling
                         if response.tool_call:

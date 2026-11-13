@@ -419,6 +419,8 @@ export interface MicCaptureOptions {
   onSignalStatus?: (status: MicSignalStatus) => void;
   onAutoFallback?: () => void;
   onAutoDeviceSwitch?: (device: MediaDeviceOption) => void;
+  shouldSuppressEcho?: () => boolean;
+  onSpeechIdle?: () => void;
 }
 
 function downsampleTo16k(
@@ -477,7 +479,7 @@ const MIC_WORKLET_CODE = `
 class DasMicProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
-    this._buffer = new Float32Array(1024);
+    this._buffer = new Float32Array(2048);
     this._offset = 0;
   }
   process(inputs) {
@@ -504,10 +506,112 @@ class DasMicProcessor extends AudioWorkletProcessor {
 registerProcessor("das-mic-processor", DasMicProcessor);
 `;
 
+const PCM_PLAYER_WORKLET_CODE = `
+class DasPcmPlayer extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.cap = 24000 * 24;
+    this.ring = new Float32Array(this.cap);
+    this.readPos = 0;
+    this.writePos = 0;
+    this.avail = 0;
+    this.srcRate = 24000;
+    this.phase = 0;
+    this.buffering = true;
+    this.drain = false;
+    this.gainEnv = 0;
+    this.lastOut = 0;
+    this.port.onmessage = (e) => {
+      const m = e.data;
+      if (!m) return;
+      if (m.type === "clear") {
+        this.readPos = 0;
+        this.writePos = 0;
+        this.avail = 0;
+        this.phase = 0;
+        this.buffering = true;
+        this.drain = false;
+        this.gainEnv = 0;
+        this.lastOut = 0;
+      } else if (m.type === "drain") {
+        this.drain = true;
+      } else if (m.type === "push" && m.pcm) {
+        const samples = new Float32Array(m.pcm);
+        if (m.rate) this.srcRate = m.rate;
+        this.drain = false;
+        for (let i = 0; i < samples.length; i++) {
+          if (this.avail < this.cap - 1) {
+            this.ring[this.writePos] = samples[i];
+            this.writePos = (this.writePos + 1) % this.cap;
+            this.avail++;
+          }
+        }
+      }
+    };
+  }
+  process(inputs, outputs) {
+    const out = outputs[0] && outputs[0][0];
+    if (!out) return true;
+    const prebuffer = Math.round(this.srcRate * 0.14);
+    if (this.buffering) {
+      if (this.avail >= prebuffer || (this.drain && this.avail > 0)) {
+        this.buffering = false;
+      } else {
+        out.fill(0);
+        return true;
+      }
+    }
+    const step = this.srcRate / sampleRate;
+    for (let i = 0; i < out.length; i++) {
+      if (this.avail >= 2) {
+        const idx0 = (this.readPos + Math.floor(this.phase)) % this.cap;
+        const idx1 = (idx0 + 1) % this.cap;
+        const frac = this.phase - Math.floor(this.phase);
+        const s = this.ring[idx0] + frac * (this.ring[idx1] - this.ring[idx0]);
+        this.gainEnv = Math.min(1, this.gainEnv + 0.02);
+        this.lastOut = s * this.gainEnv;
+        out[i] = this.lastOut;
+        this.phase += step;
+        const adv = Math.floor(this.phase);
+        if (adv > 0) {
+          const take = Math.min(adv, this.avail - 1);
+          this.readPos = (this.readPos + take) % this.cap;
+          this.avail -= take;
+          this.phase -= take;
+        }
+      } else if (this.avail === 1) {
+        const s = this.ring[this.readPos];
+        this.readPos = (this.readPos + 1) % this.cap;
+        this.avail = 0;
+        this.phase = 0;
+        this.gainEnv = Math.min(1, this.gainEnv + 0.02);
+        this.lastOut = s * this.gainEnv;
+        out[i] = this.lastOut;
+      } else {
+        this.gainEnv = Math.max(0, this.gainEnv - 0.03);
+        this.lastOut *= 0.85;
+        out[i] = this.lastOut;
+        if (this.gainEnv <= 0.001) {
+          this.buffering = true;
+          this.drain = false;
+        }
+      }
+    }
+    return true;
+  }
+}
+registerProcessor("das-pcm-player", DasPcmPlayer);
+`;
+
 class AudioEngine {
   public audioCtx: AudioContext | null = null;
   public analyser: AnalyserNode | null = null;
   private masterGain: GainNode | null = null;
+  private playerNode: AudioWorkletNode | null = null;
+  private playerBlobUrl: string | null = null;
+  private playerInitPromise: Promise<void> | null = null;
+  private playerReady: boolean = false;
+  private playingUntilPerfMs: number = 0;
   private nextPlayTime: number = 0;
   private activeSources: AudioBufferSourceNode[] = [];
   private micStream: MediaStream | null = null;
@@ -524,8 +628,11 @@ class AudioEngine {
   private softGain: number = 1.0;
   private dcPrevX: number = 0;
   private dcPrevY: number = 0;
-  private noiseFloor: number = 0.0028;
+  private noiseFloor: number = 0.0032;
   private gateHoldMs: number = 0;
+  private inUtterance: boolean = false;
+  private tailSilenceSentMs: number = 0;
+  private preRollChunks: string[] = [];
   private lastUiStatusAt: number = 0;
   private bargeInStreak: number = 0;
   private zeroSignalMs: number = 0;
@@ -533,13 +640,43 @@ class AudioEngine {
   private deviceFallbackAttempted: boolean = false;
   private captureToken: number = 0;
 
+  private ensurePlayerWorklet() {
+    if (!this.audioCtx || !this.analyser || this.playerReady || this.playerInitPromise) return;
+    if (!this.audioCtx.audioWorklet || typeof Blob === "undefined") return;
+
+    const ctx = this.audioCtx;
+    const analyser = this.analyser;
+    this.playerInitPromise = (async () => {
+      try {
+        const blob = new Blob([PCM_PLAYER_WORKLET_CODE], { type: "application/javascript" });
+        this.playerBlobUrl = URL.createObjectURL(blob);
+        await ctx.audioWorklet.addModule(this.playerBlobUrl);
+        if (this.audioCtx !== ctx || this.analyser !== analyser) return;
+        const node = new AudioWorkletNode(ctx, "das-pcm-player", {
+          numberOfInputs: 0,
+          numberOfOutputs: 1,
+          outputChannelCount: [1],
+        });
+        node.connect(analyser);
+        this.playerNode = node;
+        this.playerReady = true;
+      } catch (err) {
+        console.warn("AudioWorklet PCM player fallback active:", err);
+      }
+    })();
+  }
+
   public initContext() {
     if (this.audioCtx && this.audioCtx.state === "closed") {
       this.audioCtx = null;
       this.analyser = null;
       this.masterGain = null;
+      this.playerNode = null;
+      this.playerInitPromise = null;
+      this.playerReady = false;
       this.activeSources = [];
       this.nextPlayTime = 0;
+      this.playingUntilPerfMs = 0;
     }
     if (!this.audioCtx) {
       const AudioContextClass =
@@ -564,6 +701,7 @@ class AudioEngine {
       if (this.selectedSpeakerId && typeof (this.audioCtx as any).setSinkId === "function") {
         (this.audioCtx as any).setSinkId(this.selectedSpeakerId).catch(() => {});
       }
+      this.ensurePlayerWorklet();
     }
     if (this.audioCtx.state === "suspended") {
       this.audioCtx.resume().catch(() => {});
@@ -637,7 +775,7 @@ class AudioEngine {
     return Math.min(1.0, Math.max(0.0, (avg - 6) / 100.0));
   }
 
-  // Play incoming 24kHz 16-bit PCM base64 audio from Gemini Live & route through AnalyserNode for Lip-Sync
+  // Play incoming 24kHz 16-bit PCM base64 audio via continuous AudioWorklet ring buffer (zero gap/stutter!)
   public playPcmChunk(base64Pcm: string, sampleRate = 24000) {
     this.initContext();
     if (!this.audioCtx || !this.analyser) return;
@@ -667,6 +805,20 @@ class AudioEngine {
       float32Data[i] = int16Data[i] / 32768.0;
     }
 
+    const durMs = (float32Data.length / Math.max(8000, sampleRate)) * 1000;
+    const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const baseMs = Math.max(nowPerf + 140, this.playingUntilPerfMs);
+    this.playingUntilPerfMs = Math.min(nowPerf + 24000, baseMs + durMs);
+
+    if (this.playerReady && this.playerNode) {
+      this.playerNode.port.postMessage(
+        { type: "push", pcm: float32Data.buffer, rate: sampleRate },
+        [float32Data.buffer]
+      );
+      return;
+    }
+
+    // Brief fallback while AudioWorklet module finishes initial registration
     const audioBuffer = this.audioCtx.createBuffer(1, float32Data.length, sampleRate);
     audioBuffer.getChannelData(0).set(float32Data);
 
@@ -675,9 +827,8 @@ class AudioEngine {
     source.connect(this.analyser);
 
     const currentTime = this.audioCtx.currentTime;
-    if (this.nextPlayTime < currentTime || this.nextPlayTime > currentTime + 2.5) {
-      // Tight 80ms Lookahead Jitter Buffer: instant voice start without queue buildup
-      this.nextPlayTime = currentTime + 0.08;
+    if (this.nextPlayTime < currentTime || this.nextPlayTime > currentTime + 3.0) {
+      this.nextPlayTime = currentTime + 0.025;
     }
     source.start(this.nextPlayTime);
     this.nextPlayTime += audioBuffer.duration;
@@ -688,8 +839,18 @@ class AudioEngine {
     };
   }
 
-  // Returns true when DAS is actively playing audio chunks through speaker
+  public flushAudioPlayer() {
+    if (this.playerReady && this.playerNode) {
+      this.playerNode.port.postMessage({ type: "drain" });
+    }
+  }
+
+  // Returns true while DAS is actively playing or draining audio (prevents mid-sentence speaker echo cuts)
   public isSpeaking(): boolean {
+    const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (nowPerf < this.playingUntilPerfMs + 280) {
+      return true;
+    }
     if (!this.audioCtx) return false;
     if (this.audioCtx.currentTime > this.nextPlayTime + 0.15) {
       this.activeSources = [];
@@ -698,8 +859,13 @@ class AudioEngine {
     return this.activeSources.length > 0 && this.nextPlayTime > this.audioCtx.currentTime;
   }
 
-  // Clear audio queue immediately when user genuinely interrupts DAS
+  // Clear audio queue immediately when user genuinely interrupts DAS or starts a new turn
   public clearAudioQueue() {
+    if (this.playerNode) {
+      try {
+        this.playerNode.port.postMessage({ type: "clear" });
+      } catch {}
+    }
     this.activeSources.forEach((src) => {
       try {
         src.stop();
@@ -709,6 +875,7 @@ class AudioEngine {
       }
     });
     this.activeSources = [];
+    this.playingUntilPerfMs = 0;
     if (this.audioCtx) {
       this.nextPlayTime = this.audioCtx.currentTime;
     }
@@ -790,23 +957,27 @@ class AudioEngine {
       this.zeroSignalMs = 0;
     }
 
-    // Track quiet ambient floor & open speech gate only on genuine voice energy
-    if (rms > 0.0001 && rms < this.noiseFloor * 1.8) {
-      this.noiseFloor = Math.min(0.012, Math.max(0.0012, this.noiseFloor * 0.96 + rms * 0.04));
+    // Bi-directional adaptive ambient noise floor (prevents laptop fan / AC hum locking the gate open)
+    if (rms > 0.0001) {
+      if (rms < this.noiseFloor) {
+        this.noiseFloor = Math.max(0.001, this.noiseFloor * 0.88 + rms * 0.12);
+      } else if (rms < 0.032 && this.gateHoldMs <= 0) {
+        this.noiseFloor = Math.min(0.022, this.noiseFloor * 0.992 + rms * 0.008);
+      }
     }
-    const speechThreshold = Math.max(0.006, this.noiseFloor * 2.4);
+    const speechThreshold = Math.max(0.008, this.noiseFloor * 2.5);
     if (rms >= speechThreshold) {
-      this.gateHoldMs = 520;
+      this.gateHoldMs = 500;
     } else if (this.gateHoldMs > 0) {
       this.gateHoldMs = Math.max(0, this.gateHoldMs - frameMs);
     }
     const gateOpen = this.gateHoldMs > 0;
 
     // Mild adaptive speech boost ONLY when gate is open (never boost background noise!)
-    if (gateOpen && rms >= speechThreshold && rms < 0.085) {
-      const targetGain = Math.min(2.6, 0.085 / Math.max(rms, 0.006));
+    if (gateOpen && rms >= speechThreshold && rms < 0.09) {
+      const targetGain = Math.min(2.4, 0.09 / Math.max(rms, 0.008));
       this.softGain = this.softGain * 0.72 + targetGain * 0.28;
-    } else if (rms >= 0.085) {
+    } else if (rms >= 0.09) {
       this.softGain = this.softGain * 0.7 + 1.0 * 0.3;
     } else {
       this.softGain = this.softGain * 0.9 + 1.0 * 0.1;
@@ -818,7 +989,7 @@ class AudioEngine {
     this.micVolume = Math.max(meterLevel, this.micVolume * 0.65);
 
     const now = typeof performance !== "undefined" ? performance.now() : Date.now();
-    if (options?.onSignalStatus && now - this.lastUiStatusAt >= 105) {
+    if (options?.onSignalStatus && now - this.lastUiStatusAt >= 120) {
       this.lastUiStatusAt = now;
       options.onSignalStatus({
         rms,
@@ -836,18 +1007,22 @@ class AudioEngine {
       return;
     }
 
-    // Echo & Self-Interruption Shield while DAS is speaking
-    if (this.isSpeaking()) {
-      if (rms > 0.075) {
+    // Ironclad Echo & Self-Interruption Shield while DAS is speaking or draining
+    const echoActive = this.isSpeaking() || (options?.shouldSuppressEcho?.() ?? false);
+    if (echoActive) {
+      if (rms > 0.11) {
         this.bargeInStreak += 1;
         if (this.bargeInStreak >= 5) {
           this.clearAudioQueue();
           this.bargeInStreak = 0;
         } else {
+          this.gateHoldMs = 0;
           return;
         }
       } else {
         this.bargeInStreak = 0;
+        this.gateHoldMs = 0;
+        this.preRollChunks = [];
         return;
       }
     } else {
@@ -862,7 +1037,35 @@ class AudioEngine {
     for (let i = 0; i < uint8.byteLength; i++) {
       binary += String.fromCharCode(uint8[i]);
     }
-    onPcmChunk(window.btoa(binary));
+    const b64 = window.btoa(binary);
+
+    if (gateOpen) {
+      // Flush short pre-roll ring when speech begins so initial consonants are crystal clear
+      if (!this.inUtterance) {
+        this.inUtterance = true;
+        this.tailSilenceSentMs = 0;
+        for (const pre of this.preRollChunks) {
+          onPcmChunk(pre);
+        }
+        this.preRollChunks = [];
+      }
+      this.tailSilenceSentMs = 0;
+      onPcmChunk(b64);
+    } else if (this.inUtterance) {
+      // Stream 720ms of clean digital zeroes so Gemini VAD ends turn reliably, then stop flooding idle traffic
+      this.tailSilenceSentMs += frameMs;
+      onPcmChunk(b64);
+      if (this.tailSilenceSentMs >= 720) {
+        this.inUtterance = false;
+        this.tailSilenceSentMs = 0;
+        options?.onSpeechIdle?.();
+      }
+    } else {
+      this.preRollChunks.push(b64);
+      if (this.preRollChunks.length > 2) {
+        this.preRollChunks.shift();
+      }
+    }
   }
 
   // Start capturing 16kHz PCM audio across all hardware (Bluetooth buds, headphones, earphones, built-in mic)
@@ -876,8 +1079,11 @@ class AudioEngine {
     this.softGain = 1.0;
     this.dcPrevX = 0;
     this.dcPrevY = 0;
-    this.noiseFloor = 0.0028;
+    this.noiseFloor = 0.0032;
     this.gateHoldMs = 0;
+    this.inUtterance = false;
+    this.tailSilenceSentMs = 0;
+    this.preRollChunks = [];
     this.lastUiStatusAt = 0;
     this.bargeInStreak = 0;
     this.rawFallbackAttempted = Boolean(options?.rawMode);
@@ -1141,13 +1347,12 @@ export class CameraEngine {
     this.lastAnnounceAt = Date.now();
   }
 
-  private captureCanvasFrame(quality: number): string | null {
+  private captureCanvasFrame(quality: number, maxWidth = 640): string | null {
     if (!this.videoEl || !this.canvasEl) return this.lastFrameBase64;
     if (this.videoEl.readyState < 2) return this.lastFrameBase64;
     const vw = this.videoEl.videoWidth || 1280;
     const vh = this.videoEl.videoHeight || 720;
-    const maxW = 720;
-    const scale = vw > maxW ? maxW / vw : 1;
+    const scale = vw > maxWidth ? maxWidth / vw : 1;
     const cw = Math.max(320, Math.round(vw * scale));
     const ch = Math.max(240, Math.round(vh * scale));
     if (this.canvasEl.width !== cw || this.canvasEl.height !== ch) {
@@ -1170,7 +1375,7 @@ export class CameraEngine {
 
   public async startCameraCapture(
     onFrame: (base64Jpeg: string) => void,
-    fps = 1.8,
+    fps = 1.0,
     options?: {
       previewEl?: HTMLVideoElement | null;
       deviceId?: string;
@@ -1245,7 +1450,7 @@ export class CameraEngine {
       this.lastAnnounceAt = Date.now();
 
       const pushFrame = () => {
-        const b64 = this.captureCanvasFrame(0.74);
+        const b64 = this.captureCanvasFrame(0.70, 640);
         if (!b64) return;
         onFrame(b64);
 
@@ -1273,13 +1478,13 @@ export class CameraEngine {
           return;
         }
 
-        if (sceneDelta >= 0.062 && frameDiff <= 0.042) {
+        if (sceneDelta >= 0.062 && frameDiff <= 0.045) {
           this.settleCount += 1;
           if (this.settleCount >= 2) {
             this.baselineLuma = luma.grid;
             this.settleCount = 0;
             this.lastAnnounceAt = now;
-            const hdB64 = this.captureCanvasFrame(0.80) || b64;
+            const hdB64 = this.captureCanvasFrame(0.82, 720) || b64;
             options?.onSceneChanged?.(hdB64);
           }
         } else {
@@ -1299,7 +1504,7 @@ export class CameraEngine {
 
   public getLatestFrameBase64(): string | null {
     try {
-      return this.captureCanvasFrame(0.84);
+      return this.captureCanvasFrame(0.82, 720);
     } catch {
       return this.lastFrameBase64;
     }

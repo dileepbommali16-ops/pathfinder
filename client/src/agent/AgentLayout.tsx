@@ -157,6 +157,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     await audioEngine.startMicCapture((b64) => dasSocket.sendAudioChunk(b64), {
       deviceId: deviceId || undefined,
       rawMode,
+      shouldSuppressEcho: () => dasSocket.isAgentSpeaking,
+      onSpeechIdle: () => dasSocket.sendAudioStreamEnd(),
       onAutoDeviceSwitch: (newDev) => {
         setSelectedMicId(newDev.deviceId);
         activeMicLabelRef.current = newDev.label;
@@ -249,7 +251,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       (b64Jpeg) => {
         dasSocket.sendVideoFrame(b64Jpeg);
       },
-      1.8,
+      1.0,
       {
         deviceId: deviceId || undefined,
         previewEl: cameraPreviewRef.current,

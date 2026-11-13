@@ -44,6 +44,10 @@ class DasAgentSocket {
   private renderPingTimer: number | null = null;
   private reconnectTimer: number | null = null;
   private manualClose = false;
+  private lastPongAt = 0;
+  private turnWatchdogTimer: number | null = null;
+  private lastUnansweredText: string | null = null;
+  private watchdogRetriedForText = false;
 
   public connect(
     role: UserHonorificRole = "boss",
@@ -88,13 +92,21 @@ class DasAgentSocket {
         this.savedOnTranscript?.("DAS Online (Connected via Render Cloud)!");
         this.flushPendingMessages();
 
-        // 20s keep-alive ping for Render backend (never send ping to Google AI Studio!)
+        // 10s keep-alive ping + 25s silent half-open socket detector for Render backend
+        this.lastPongAt = Date.now();
         if (this.renderPingTimer) window.clearInterval(this.renderPingTimer);
         this.renderPingTimer = window.setInterval(() => {
-          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({ type: "ping" }));
+          if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+          if (Date.now() - this.lastPongAt > 25000) {
+            this.forceReconnectNow();
+            return;
           }
-        }, 20000);
+          try {
+            this.ws.send(JSON.stringify({ type: "ping" }));
+          } catch {
+            this.forceReconnectNow();
+          }
+        }, 10000);
         return;
       }
 
@@ -343,6 +355,7 @@ CORE AUTONOMOUS CAPABILITIES:
     };
 
     this.ws.onmessage = async (event) => {
+      this.lastPongAt = Date.now();
       try {
         const rawText =
           event.data instanceof Blob ? await event.data.text() : event.data;
@@ -380,6 +393,7 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "audio" && data.pcm_base64) {
+          this.clearTurnWatchdog();
           audioEngine.playPcmChunk(data.pcm_base64, data.sample_rate || 24000);
           if (!this.isSpeakingTurn) {
             if (this.awaitingNextTurn) {
@@ -395,6 +409,7 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "transcript" && data.text) {
+          this.clearTurnWatchdog();
           if (this.awaitingNextTurn) {
             this.currentAgentTranscript = "";
             this.awaitingNextTurn = false;
@@ -405,8 +420,10 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "turn_complete") {
+          this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
+          audioEngine.flushAudioPlayer();
           if (!this.currentAgentTranscript) {
             this.savedOnTranscript?.("DAS Ready. Speak or type your next command, Boss!");
           }
@@ -422,6 +439,7 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "interrupted") {
+          this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
           audioEngine.clearAudioQueue();
@@ -434,12 +452,16 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "error" && data.message) {
+          this.clearTurnWatchdog();
+          this.isSpeakingTurn = false;
+          this.awaitingNextTurn = true;
           this.savedOnTranscript?.(`Server Error: ${data.message}`);
           return;
         }
 
         // 3. Render Backend Tool Calls
         if (data.type === "tool_call" && data.name) {
+          this.clearTurnWatchdog();
           const args = data.args || {};
           if (data.name === "control_website" || data.name === "navigate_ui") {
             executeWebsiteControl(args as WebsiteControlArgs, this.savedNavigateFn);
@@ -466,6 +488,7 @@ CORE AUTONOMOUS CAPABILITIES:
         if (parts && Array.isArray(parts)) {
           for (const part of parts) {
             if (part.inlineData?.data) {
+              this.clearTurnWatchdog();
               audioEngine.playPcmChunk(part.inlineData.data, 24000);
               if (!this.isSpeakingTurn) {
                 if (this.awaitingNextTurn) {
@@ -479,6 +502,7 @@ CORE AUTONOMOUS CAPABILITIES:
               }
             }
             if (part.text) {
+              this.clearTurnWatchdog();
               if (this.awaitingNextTurn) {
                 this.currentAgentTranscript = "";
                 this.awaitingNextTurn = false;
@@ -490,8 +514,10 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.serverContent?.turnComplete) {
+          this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
+          audioEngine.flushAudioPlayer();
           if (!this.currentAgentTranscript) {
             this.savedOnTranscript?.("DAS Ready. Speak or type your next command, Boss!");
           }
@@ -499,6 +525,7 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.serverContent?.interrupted) {
+          this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
           audioEngine.clearAudioQueue();
@@ -626,17 +653,88 @@ CORE AUTONOMOUS CAPABILITIES:
     }
     while (this.pendingTexts.length > 0) {
       const nextText = this.pendingTexts.shift();
-      if (nextText) this.sendImmediateText(nextText);
+      if (nextText) {
+        this.armTurnWatchdog(nextText);
+        this.sendImmediateText(nextText);
+      }
     }
+  }
+
+  private clearTurnWatchdog() {
+    if (this.turnWatchdogTimer) {
+      window.clearTimeout(this.turnWatchdogTimer);
+      this.turnWatchdogTimer = null;
+    }
+    this.lastUnansweredText = null;
+    this.watchdogRetriedForText = false;
+  }
+
+  private armTurnWatchdog(text: string) {
+    if (this.turnWatchdogTimer) {
+      window.clearTimeout(this.turnWatchdogTimer);
+    }
+    this.lastUnansweredText = text;
+    this.turnWatchdogTimer = window.setTimeout(() => {
+      this.turnWatchdogTimer = null;
+      if (this.lastUnansweredText !== text) return;
+
+      if (!this.watchdogRetriedForText) {
+        this.watchdogRetriedForText = true;
+        this.pendingTexts.push(text);
+        this.savedOnTranscript?.("Refreshing live connection and retrying, Boss...");
+        this.forceReconnectNow();
+      } else {
+        this.lastUnansweredText = null;
+        this.watchdogRetriedForText = false;
+        this.savedOnTranscript?.("Live session timed out, Boss. Please try sending your message again.");
+      }
+    }, 11000);
+  }
+
+  private forceReconnectNow() {
+    if (this.manualClose) return;
+    this.isConnected = false;
+    this.savedOnStatusChange?.(false);
+    if (this.renderPingTimer) {
+      window.clearInterval(this.renderPingTimer);
+      this.renderPingTimer = null;
+    }
+    const oldWs = this.ws;
+    this.ws = null;
+    if (oldWs) {
+      try {
+        oldWs.onopen = null;
+        oldWs.onmessage = null;
+        oldWs.onerror = null;
+        oldWs.onclose = null;
+        oldWs.close();
+      } catch {}
+    }
+    if (this.reconnectTimer) {
+      window.clearTimeout(this.reconnectTimer);
+    }
+    this.reconnectTimer = window.setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connect(
+        this.savedRole,
+        this.savedOnTranscript,
+        this.savedOnStatusChange,
+        this.savedNavigateFn,
+        this.savedOnUserTranscript,
+        this.savedOnInterrupted,
+        this.savedOnCodeReady
+      );
+    }, 250);
   }
 
   public sendAudioChunk(base64Pcm: string) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) {
-      if (this.preConnectAudioQueue.length < 100) {
+      if (this.preConnectAudioQueue.length < 40) {
         this.preConnectAudioQueue.push(base64Pcm);
       }
       return;
     }
+    if (this.ws.bufferedAmount > 96 * 1024) return;
 
     if (this.isDirectGoogle) {
       this.ws.send(
@@ -667,7 +765,7 @@ CORE AUTONOMOUS CAPABILITIES:
 
   public sendVideoFrame(base64Jpeg: string) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
-    if (this.ws.bufferedAmount > 256 * 1024) return; // Avoid queueing stale video frames on congested links
+    if (this.ws.bufferedAmount > 64 * 1024) return; // Avoid queueing stale video frames ahead of voice or text
     if (this.isDirectGoogle) {
       this.ws.send(
         JSON.stringify({
@@ -748,6 +846,8 @@ CORE AUTONOMOUS CAPABILITIES:
 
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) {
       this.pendingTexts.push(text);
+      this.watchdogRetriedForText = false;
+      this.armTurnWatchdog(text);
       this.ws = null;
       this.connect(
         this.savedRole,
@@ -761,23 +861,30 @@ CORE AUTONOMOUS CAPABILITIES:
       return;
     }
 
+    this.watchdogRetriedForText = false;
+    this.armTurnWatchdog(text);
     this.sendImmediateText(text);
   }
 
   private sendImmediateText(text: string) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
-    if (this.isDirectGoogle) {
-      this.ws.send(
-        JSON.stringify({
-          clientContent: {
-            turns: [{ role: "user", parts: [{ text }] }],
-            turnComplete: true,
-          },
-        })
-      );
-    } else {
-      this.ws.send(JSON.stringify({ type: "text", text }));
+    try {
+      if (this.isDirectGoogle) {
+        this.ws.send(
+          JSON.stringify({
+            clientContent: {
+              turns: [{ role: "user", parts: [{ text }] }],
+              turnComplete: true,
+            },
+          })
+        );
+      } else {
+        this.ws.send(JSON.stringify({ type: "text", text }));
+      }
+    } catch {
+      this.pendingTexts.push(text);
+      this.forceReconnectNow();
     }
   }
 
@@ -801,6 +908,7 @@ CORE AUTONOMOUS CAPABILITIES:
 
   public disconnect() {
     this.manualClose = true;
+    this.clearTurnWatchdog();
     if (this.reconnectTimer) {
       window.clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
