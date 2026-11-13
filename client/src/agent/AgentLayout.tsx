@@ -26,7 +26,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [inputText, setInputText] = useState("");
   const [transcript, setTranscript] = useState("Hi Boss! What's up?");
   const [userTranscript, setUserTranscript] = useState("");
-  const [micVolume, setMicVolume] = useState(0);
   const [micSilentWarning, setMicSilentWarning] = useState(false);
   const [activeMicLabel, setActiveMicLabel] = useState("");
   const [micDevices, setMicDevices] = useState<MediaDeviceOption[]>([]);
@@ -38,7 +37,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [rawMicMode, setRawMicMode] = useState(false);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [mirrorCamera, setMirrorCamera] = useState(true);
+  const [minimizedCamPreview, setMinimizedCamPreview] = useState(false);
   const cameraPreviewRef = useRef<HTMLVideoElement>(null);
+  const micBarRef = useRef<HTMLDivElement>(null);
+  const micSilentRef = useRef(false);
+  const activeMicLabelRef = useRef("");
   const runCodeLiveRef = useRef<(code: string, lang: string) => void>(() => {});
 
   // Live Multi-Language Code & Compiler Studio State
@@ -130,10 +133,13 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Connect to Gemini Live multimodal agent ONLY when authenticated inside the dashboard
+  // Keep `role` OUT of dependencies so toggling Boss/Sir/Madam never disconnects WS or stops camera!
   useEffect(() => {
     if (!isAuthenticated) {
       dasSocket.disconnect();
       cameraEngine.stopCameraCapture();
+      setCameraActive(false);
+      setMicActive(false);
       return;
     }
 
@@ -143,25 +149,40 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       dasSocket.disconnect();
       cameraEngine.stopCameraCapture();
     };
-  }, [isAuthenticated, role]);
+  }, [isAuthenticated]);
 
   const beginMicStream = async (deviceId: string, rawMode: boolean) => {
+    micSilentRef.current = false;
     setMicSilentWarning(false);
     await audioEngine.startMicCapture((b64) => dasSocket.sendAudioChunk(b64), {
       deviceId: deviceId || undefined,
       rawMode,
-      onAutoFallback: () => {
-        setRawMicMode(true);
-        toast.info("Switched microphone to direct hardware passthrough for clear pickup.");
+      onAutoDeviceSwitch: (newDev) => {
+        setSelectedMicId(newDev.deviceId);
+        activeMicLabelRef.current = newDev.label;
+        setActiveMicLabel(newDev.label);
+        toast.info(`Switched to active microphone: ${newDev.label}`);
       },
       onSignalStatus: (st) => {
-        setMicVolume(st.volume);
-        if (st.deviceLabel) setActiveMicLabel(st.deviceLabel);
-        setMicSilentWarning(st.silentMs >= 3000);
+        // Direct DOM meter update -> ZERO React re-renders per audio buffer (fixes typing lag & audio stutter!)
+        if (micBarRef.current) {
+          micBarRef.current.style.width = `${Math.max(4, Math.round(st.volume * 100))}%`;
+        }
+        if (st.deviceLabel && st.deviceLabel !== activeMicLabelRef.current) {
+          activeMicLabelRef.current = st.deviceLabel;
+          setActiveMicLabel(st.deviceLabel);
+        }
+        const isSilent = st.silentMs >= 3000;
+        if (isSilent !== micSilentRef.current) {
+          micSilentRef.current = isSilent;
+          setMicSilentWarning(isSilent);
+        }
       },
     });
     await refreshMediaDevices();
-    setActiveMicLabel(audioEngine.activeMicLabel || "Default Microphone");
+    const lbl = audioEngine.activeMicLabel || "Default Microphone";
+    activeMicLabelRef.current = lbl;
+    setActiveMicLabel(lbl);
     setMicActive(true);
     if (cameraEngine.isStreaming) {
       const snap = cameraEngine.getLatestFrameBase64();
@@ -169,8 +190,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const toggleMic = async () => {
-    audioEngine.initContext();
+  const toggleMic = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.currentTarget?.blur();
+    audioEngine.unlockAudio();
     ensureSocketConnected();
 
     if (!micActive) {
@@ -184,8 +206,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     } else {
       audioEngine.stopMicCapture();
       dasSocket.sendAudioStreamEnd();
+      micSilentRef.current = false;
+      if (micBarRef.current) micBarRef.current.style.width = "4%";
       setMicActive(false);
-      setMicVolume(0);
       setMicSilentWarning(false);
       setTranscript("Mic paused.");
     }
@@ -209,7 +232,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     toast.success("Updated voice output device!");
   };
 
-  const handleRawModeToggle = async () => {
+  const handleRawModeToggle = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.currentTarget?.blur();
     const nextRaw = !rawMicMode;
     setRawMicMode(nextRaw);
     if (micActive) {
@@ -220,25 +244,39 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const toggleCamera = async () => {
+  const startCameraFeed = async (deviceId?: string) => {
+    return cameraEngine.startCameraCapture(
+      (b64Jpeg) => {
+        dasSocket.sendVideoFrame(b64Jpeg);
+      },
+      1.8,
+      {
+        deviceId: deviceId || undefined,
+        previewEl: cameraPreviewRef.current,
+        onFirstFrame: () => {
+          dasSocket.sendVisionGreet();
+        },
+        onSceneChanged: (hdB64) => {
+          dasSocket.sendAutoVisionCheck(hdB64);
+        },
+        shouldPauseMonitor: () => dasSocket.isAgentSpeaking || audioEngine.isSpeaking(),
+      }
+    );
+  };
+
+  const toggleCamera = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.currentTarget?.blur();
+    audioEngine.unlockAudio();
+
     if (!cameraActive) {
       ensureSocketConnected();
+      setMinimizedCamPreview(false);
 
-      const started = await cameraEngine.startCameraCapture(
-        (b64Jpeg) => {
-          dasSocket.sendVideoFrame(b64Jpeg);
-        },
-        3,
-        {
-          deviceId: selectedCameraId || undefined,
-          previewEl: cameraPreviewRef.current,
-        }
-      );
-
+      const started = await startCameraFeed(selectedCameraId);
       if (started) {
         setCameraActive(true);
         await refreshMediaDevices();
-        toast.success("HD Camera active! Show yourself, outfit, or 3+ objects to DAS!");
+        toast.success("24/7 HD Vision active! Show yourself, outfit, or 3+ objects to DAS!");
       } else {
         setTranscript("Camera access was denied or is unavailable.");
         toast.error("Please allow Camera permission in browser settings.");
@@ -253,21 +291,13 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleCameraDeviceChange = async (newDeviceId: string) => {
     setSelectedCameraId(newDeviceId);
     if (cameraActive) {
-      const started = await cameraEngine.startCameraCapture(
-        (b64Jpeg) => {
-          dasSocket.sendVideoFrame(b64Jpeg);
-        },
-        3,
-        {
-          deviceId: newDeviceId || undefined,
-          previewEl: cameraPreviewRef.current,
-        }
-      );
+      const started = await startCameraFeed(newDeviceId);
       if (started) toast.success("Switched camera feed!");
     }
   };
 
   const handleRoleToggle = (newRole: UserHonorificRole) => {
+    audioEngine.unlockAudio();
     setRole(newRole);
     dasSocket.switchRole(newRole);
     if (newRole === "boss") {
@@ -283,7 +313,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     e.preventDefault();
     if (!inputText.trim() && !attachedFile) return;
 
-    audioEngine.initContext();
+    audioEngine.unlockAudio();
     const commandText = inputText.trim() || (attachedFile ? `Look at this attached ${attachedType || "file"}: ${attachedFile.name}` : "");
     setUserTranscript(commandText);
     setTranscript("Thinking & Executing...");
@@ -904,38 +934,60 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
         </div>
       )}
 
-      {/* Live HD Camera Preview Card docked cleanly above bottom HUD */}
+      {/* Live HD Camera Preview Card — docked on bottom-left clear of right-edge icons & bottom HUD */}
       {cameraActive && (
         <div
-          className="fixed bottom-44 right-4 sm:right-8 z-40 w-56 sm:w-64 rounded-2xl overflow-hidden border shadow-2xl"
+          className={`fixed bottom-44 left-4 sm:left-6 z-40 rounded-2xl overflow-hidden border shadow-2xl transition-all ${
+            minimizedCamPreview ? "w-40" : "w-44 sm:w-52"
+          }`}
           style={{
             backgroundColor: "rgba(11, 17, 32, 0.96)",
             borderColor: "#7c3aed",
             boxShadow: "0 16px 40px rgba(0, 0, 0, 0.75)",
           }}
         >
-          <div className="relative w-full aspect-video bg-black">
+          <div className={`relative w-full bg-black ${minimizedCamPreview ? "h-8" : "aspect-video"}`}>
             <video
               ref={cameraPreviewRef}
               muted
               autoPlay
               playsInline
-              className={`w-full h-full object-cover ${mirrorCamera ? "-scale-x-100" : ""}`}
+              className={`w-full h-full object-cover ${mirrorCamera ? "-scale-x-100" : ""} ${
+                minimizedCamPreview ? "opacity-25" : ""
+              }`}
             />
             <div className="absolute top-1.5 left-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/70 text-[10px] font-bold text-violet-300 border border-violet-500/40">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>LIVE VISION</span>
+              <span>24/7 VISION</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setMirrorCamera((v) => !v)}
-              className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
-              title="Mirror / Flip Preview"
-            >
-              ⇄
-            </button>
+            <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+              {!minimizedCamPreview && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    setMirrorCamera((v) => !v);
+                  }}
+                  className="px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
+                  title="Mirror / Flip Preview"
+                >
+                  ⇄
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.currentTarget.blur();
+                  setMinimizedCamPreview((v) => !v);
+                }}
+                className="px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
+                title={minimizedCamPreview ? "Expand Camera Preview" : "Minimize Camera Preview"}
+              >
+                {minimizedCamPreview ? "▢" : "–"}
+              </button>
+            </div>
           </div>
-          {videoDevices.length > 1 && (
+          {!minimizedCamPreview && videoDevices.length > 1 && (
             <div className="px-2 py-1.5 border-t border-slate-800 bg-[#0B1120]">
               <select
                 value={selectedCameraId}
@@ -955,7 +1007,7 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
         </div>
       )}
 
-      {/* Bottom Center DAS HUD (Styled with #0F172A & #334155) */}
+      {/* Bottom Center DAS HUD (Exact Original Layout & Placement Preserved) */}
       <div
         className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-3xl rounded-2xl p-3 shadow-2xl flex flex-col gap-2 border"
         style={{
@@ -984,7 +1036,8 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => {
+              onClick={(e) => {
+                e.currentTarget.blur();
                 refreshMediaDevices();
                 setShowAudioSettings((v) => !v);
               }}
@@ -1001,7 +1054,8 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
             {/* Single Unified Role Pill */}
             <button
               type="button"
-              onClick={() => {
+              onClick={(e) => {
+                e.currentTarget.blur();
                 const nextRole: UserHonorificRole =
                   role === "boss" ? "sir" : role === "sir" ? "madam" : "boss";
                 handleRoleToggle(nextRole);
@@ -1044,11 +1098,11 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           🔊 DAS: {transcript}
         </div>
 
-        {/* Audio / Microphone / Speaker Selector Drawer */}
-        {(showAudioSettings || micSilentWarning) && (
+        {/* Audio / Microphone / Speaker Selector Drawer (opens ONLY when Boss clicks Audio / Cam Setup) */}
+        {showAudioSettings && (
           <div
             className="grid grid-cols-1 sm:grid-cols-3 gap-2 px-3 py-2 rounded-xl text-xs border"
-            style={{ backgroundColor: "#0B1120", borderColor: micSilentWarning ? "#f59e0b" : "#334155" }}
+            style={{ backgroundColor: "#0B1120", borderColor: "#334155" }}
           >
             <div>
               <label className="block text-[10px] text-slate-400 mb-1">
@@ -1142,7 +1196,7 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           </div>
         )}
 
-        {/* Live Microphone Signal & Warning Bar */}
+        {/* Live Microphone Signal & Warning Bar (Meter updates via DOM ref -> 0 React re-renders) */}
         {micActive && (
           <div
             className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
@@ -1157,13 +1211,14 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
               </span>
               <div className="w-24 h-2 rounded-full bg-slate-800 overflow-hidden shrink-0">
                 <div
-                  className="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-75"
-                  style={{ width: `${Math.max(4, Math.round(micVolume * 100))}%` }}
+                  ref={micBarRef}
+                  className="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-[width] duration-75"
+                  style={{ width: "4%" }}
                 />
               </div>
               <span className="text-[10px] text-slate-400 truncate">
                 {micSilentWarning
-                  ? "Unmute headset or switch mic in 🎧 Audio Setup"
+                  ? "Jack/headset quiet — check mute or pick mic in 🎧 Setup"
                   : activeMicLabel || "Capturing 16kHz PCM"}
               </span>
             </div>
@@ -1185,9 +1240,9 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           >
             <div className="flex items-center gap-2 truncate">
               <span className="h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
-              <span className="font-bold text-violet-300">● LIVE HD CAMERA</span>
+              <span className="font-bold text-violet-300">● 24/7 LIVE CAMERA</span>
               <span className="text-[10px] text-slate-400 truncate">
-                (Full body, clothes & multi-object vision active — show 3+ items anytime)
+                (Auto-monitoring face, outfit & multi-objects continuously)
               </span>
             </div>
             <button
@@ -1232,7 +1287,7 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
             onClick={toggleCamera}
             className={`px-3 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border ${
               cameraActive
-                ? "bg-violet-600 text-white animate-pulse border-violet-400"
+                ? "bg-violet-600 text-white border-violet-400 shadow-[0_0_12px_rgba(124,58,237,0.45)]"
                 : "bg-[#0F172A] hover:bg-[#334155] text-slate-300 border-[#334155]"
             }`}
             title="Toggle Camera (Live Video Streaming to DAS)"

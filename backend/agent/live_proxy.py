@@ -78,11 +78,17 @@ DEEP PERSONAL KNOWLEDGE BASE ABOUT YOUR CREATOR (BOSS DILEEP):
 
 CORE AUTONOMOUS CAPABILITIES:
 1. Speak naturally, articulately, and fluently in Telugu, English, or Hindi matching the user's language. Never recite facts mechanically; speak with emotional intelligence, natural charisma, and genuine pride.
-2. LIVE CAMERA VISION & OBJECT PERCEPTION (CRITICAL MANDATE):
-   You possess 100% active real-time high-definition visual perception via live video frames streamed continuously from Boss's camera.
-   - Look carefully across the ENTIRE video frame in real time:
-     * Boss himself: his face, expressions, hair, full upper/full body posture, AND his complete clothes/outfit (shirt/t-shirt/hoodie/jacket/pants color, pattern, accessories like glasses, watch, chain) whenever he asks "Can you see me?", "How do I look?", "What am I wearing?", or shows himself!
-     * Multiple objects simultaneously (3 or more objects at once): Whenever Boss holds up objects in one or both hands—fruits, vegetables, toys, water bottles, earphones, wireless buds, headphones, phones, notebooks, pens, remotes, cups, or gadgets—scan carefully across left hand, right hand, foreground, and table/background. Count and name EVERY distinct item you see quickly and clearly (color, material/shape, and which hand or position)!
+2. LIVE CAMERA VISION, BOSS RECOGNITION, LOOKSMAXXING & 24/7 OBJECT PERCEPTION (CRITICAL MANDATE):
+   You possess 100% active real-time high-definition visual perception via continuous 24/7 video frames streamed from Boss's camera.
+   - CREATOR RECOGNITION & GREETING:
+     * When the camera first spots Boss Dileep (or whenever Boss mode + camera are active), recognize him loyally and greet him enthusiastically: "Boss, I see you, Dileep!" Remember his personal details (age 20, B.Tech CSE Data Science, golden/tamarind complexion, fashion model swagger, guitarist, mild perfectionist/OCD vibe, loving family & mentors) and bring them up naturally when relevant.
+     * When conversing with visitors (Sir or Madam mode), warmly acknowledge seeing them on camera, describe what they are doing, and answer proudly if they ask about your Boss Dileep.
+   - FACE VALUE & LOOKSMAXXING COACH (0–100% RATING):
+     * Whenever Boss (or Sir/Madam) asks "Am I handsome?", "Rate me out of 100%", "Looksmaxxing cheyyala vadha?", or asks for face/appearance feedback, analyze the live video frame closely (facial structure, symmetry, complexion glow, hairstyle, beard/grooming neatness, posture, outfit colors, and lighting).
+     * Give a clear percentage rating out of 100% (e.g., 92/100 or specific honest score) plus crisp, encouraging, actionable looksmaxxing tips (lighting angle, hair volume, clean grooming/beard lines, posture, and wardrobe contrast).
+   - FULL-BODY, OUTFIT & MULTI-OBJECT 24/7 MONITORING:
+     * Inspect the ENTIRE video frame continuously: face, hair, full body posture, clothes (shirt/t-shirt/hoodie/jacket/pants colors and accessories), AND every distinct object held in left hand, right hand, foreground, or table.
+     * Supports 3+ simultaneous items (TV remote, earphones, wireless buds, headphones, apples, bananas, vegetables, water bottles, toys, notebooks, pens, phones): count and name EVERY item quickly and clearly as soon as Boss holds or swaps them!
    - Speed & accuracy:
      * Answer immediately and concisely with what you actually observe in the latest frame.
      * NEVER say "I don't have eyes", "nothing in your hands", or "I cannot see" when objects or a person are visible. Only ask Boss to adjust lighting or angle if the frame is genuinely pitch black or completely out of frame.
@@ -336,6 +342,26 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         })
 
         latest_frame_bytes: bytes | None = None
+        send_lock = asyncio.Lock()
+
+        def is_valid_jpeg(raw_bytes: bytes | None) -> bool:
+            return bool(raw_bytes and len(raw_bytes) > 128 and raw_bytes[:2] == b"\xff\xd8")
+
+        async def send_vision_prompt(prompt_text: str):
+            parts = []
+            if is_valid_jpeg(latest_frame_bytes):
+                parts.append(
+                    types.Part.from_bytes(
+                        data=latest_frame_bytes,
+                        mime_type="image/jpeg",
+                    )
+                )
+            parts.append(types.Part.from_text(text=prompt_text))
+            async with send_lock:
+                await session.send_client_content(
+                    turns=[types.Content(parts=parts, role="user")],
+                    turn_complete=True,
+                )
 
         async def receive_from_browser():
             nonlocal latest_frame_bytes
@@ -354,59 +380,84 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     if msg_type == "audio":
                         pcm_b64 = msg.get("pcm_base64")
                         if pcm_b64:
-                            pcm_bytes = base64.b64decode(pcm_b64)
-                            if pcm_bytes:
-                                await session.send_realtime_input(
-                                    audio=types.Blob(
-                                        data=pcm_bytes,
-                                        mime_type=f"audio/pcm;rate={SEND_SAMPLE_RATE}",
-                                    )
-                                )
+                            try:
+                                pcm_bytes = base64.b64decode(pcm_b64)
+                                if len(pcm_bytes) % 2 == 1:
+                                    pcm_bytes = pcm_bytes[:-1]
+                                if pcm_bytes:
+                                    async with send_lock:
+                                        await session.send_realtime_input(
+                                            audio=types.Blob(
+                                                data=pcm_bytes,
+                                                mime_type=f"audio/pcm;rate={SEND_SAMPLE_RATE}",
+                                            )
+                                        )
+                            except Exception as a_err:
+                                live_logger.warning(f"[Audio Chunk Notice] {a_err}")
 
                     elif msg_type == "audio_stream_end":
                         try:
-                            await session.send_realtime_input(audio_stream_end=True)
+                            async with send_lock:
+                                await session.send_realtime_input(audio_stream_end=True)
                         except Exception:
                             pass
 
-                    # 3. Live Camera Video Frame from Browser (3 FPS HD JPEG via `video=` channel)
+                    # 3. Live Camera Video Frame from Browser (JPEG via `video=` channel)
                     elif msg_type == "frame":
                         frame_str = msg.get("jpeg_base64")
                         if frame_str:
                             try:
-                                latest_frame_bytes = base64.b64decode(frame_str)
-                                await session.send_realtime_input(
-                                    video=types.Blob(
-                                        data=latest_frame_bytes,
-                                        mime_type="image/jpeg",
-                                    )
-                                )
+                                candidate = base64.b64decode(frame_str)
+                                if is_valid_jpeg(candidate):
+                                    latest_frame_bytes = candidate
+                                    async with send_lock:
+                                        await session.send_realtime_input(
+                                            video=types.Blob(
+                                                data=candidate,
+                                                mime_type="image/jpeg",
+                                            )
+                                        )
                             except Exception as f_err:
-                                print(f"[Frame Process Notice] {f_err}")
+                                live_logger.warning(f"[Frame Process Notice] {f_err}")
+
+                    # 3b. Proactive Initial Camera Greeting (e.g. "Boss, I see you, Dileep!")
+                    elif msg_type == "vision_greet":
+                        role_now = (msg.get("role") or user_role or "boss").lower().strip()
+                        if is_valid_jpeg(latest_frame_bytes):
+                            if role_now == "boss":
+                                greet_prompt = (
+                                    "SYSTEM VISION GREET: Camera just turned ON! Look closely at the attached live camera frame. "
+                                    "If you see your creator Bommali Dileep, greet him immediately and warmly like 'Boss, I see you, Dileep!' "
+                                    "and concisely describe what he is wearing, holding, or doing right now in 1-2 natural sentences."
+                                )
+                            elif role_now in ("madam", "mam", "ma'am"):
+                                greet_prompt = (
+                                    "SYSTEM VISION GREET: Camera just turned ON! Look closely at the attached live frame. "
+                                    "Greet her respectfully as Madam ('Hello Madam, I can see you clearly!') and briefly note how she looks or what she is holding/doing."
+                                )
+                            else:
+                                greet_prompt = (
+                                    "SYSTEM VISION GREET: Camera just turned ON! Look closely at the attached live frame. "
+                                    "Greet him respectfully as Sir ('Hello Sir, I can see you clearly!') and briefly note how he looks or what he is holding/doing."
+                                )
+                            await send_vision_prompt(greet_prompt)
+
+                    # 3c. 24/7 Proactive Scene/Object Change Announcement
+                    elif msg_type == "vision_auto_check":
+                        if is_valid_jpeg(latest_frame_bytes):
+                            auto_prompt = (
+                                "SYSTEM 24/7 AUTO-VISION MONITOR: The scene or object in front of the camera just changed and settled. "
+                                "Inspect the attached live frame carefully across both hands and foreground: name every distinct object visible "
+                                "(such as TV remote, earphones, wireless buds, headphones, fruits, apples, bananas, vegetables, water bottle, toys, or 3+ items together) "
+                                "or briefly say what the person is doing right now in 1-2 crisp, direct sentences."
+                            )
+                            await send_vision_prompt(auto_prompt)
 
                     # 4. Text Input from HUD (Injects latest camera frame if camera is on!)
                     elif msg_type == "text":
-                        text = msg.get("text", "")
+                        text = (msg.get("text") or "").strip()
                         if text:
-                            parts = []
-                            # If camera is actively streaming, pass the live visual frame directly with the question
-                            if latest_frame_bytes:
-                                parts.append(
-                                    types.Part.from_bytes(
-                                        data=latest_frame_bytes,
-                                        mime_type="image/jpeg",
-                                    )
-                                )
-                            parts.append(types.Part.from_text(text=text))
-                            await session.send_client_content(
-                                turns=[
-                                    types.Content(
-                                        parts=parts,
-                                        role="user",
-                                    )
-                                ],
-                                turn_complete=True,
-                            )
+                            await send_vision_prompt(text)
 
                     # 5. Role Switch
                     elif msg_type == "role_switch":
@@ -418,20 +469,21 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         else:
                             update_msg = "SYSTEM: You are speaking with a gentleman guest/evaluator. Address him respectfully as Sir and say 'Hello Sir, what can I help you with today?'"
 
-                        await session.send_client_content(
-                            turns=[
-                                types.Content(
-                                    parts=[types.Part.from_text(text=update_msg)],
-                                    role="user",
-                                )
-                            ],
-                            turn_complete=True,
-                        )
+                        async with send_lock:
+                            await session.send_client_content(
+                                turns=[
+                                    types.Content(
+                                        parts=[types.Part.from_text(text=update_msg)],
+                                        role="user",
+                                    )
+                                ],
+                                turn_complete=True,
+                            )
 
             except (WebSocketDisconnect, asyncio.CancelledError):
                 pass
             except Exception as b_err:
-                print(f"[Browser Receive Notice] {b_err}")
+                live_logger.warning(f"[Browser Receive Notice] {b_err}")
 
         async def receive_from_gemini():
             try:
@@ -539,15 +591,16 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     )
 
                             if function_responses:
-                                await session.send_tool_response(
-                                    function_responses=function_responses
-                                )
+                                async with send_lock:
+                                    await session.send_tool_response(
+                                        function_responses=function_responses
+                                    )
 
             except (WebSocketDisconnect, asyncio.CancelledError):
                 pass
             except Exception as stream_err:
                 err_str = str(stream_err)
-                print(f"[Gemini Stream Notice] {err_str}")
+                live_logger.warning(f"[Gemini Stream Notice] {err_str}")
                 try:
                     if "inactivity" in err_str.lower() or "1008" in err_str:
                         await websocket.send_json({
@@ -572,7 +625,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
     except (WebSocketDisconnect, asyncio.CancelledError):
         pass
     except Exception as e:
-        print(f"[DAS Live Proxy Exception] {type(e).__name__}: {e}")
+        live_logger.error(f"[DAS Live Proxy Exception] {type(e).__name__}: {e}")
         try:
             await websocket.send_json({"type": "error", "message": str(e)})
             await websocket.close(code=1011, reason=str(e)[:100])

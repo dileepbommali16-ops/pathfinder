@@ -29,6 +29,10 @@ class DasAgentSocket {
   public isConnected = false;
   public currentRole: UserHonorificRole = "boss";
 
+  public get isAgentSpeaking(): boolean {
+    return this.isSpeakingTurn;
+  }
+
   // Persistent callback storage for auto-reconnection and multi-turn stability
   private savedRole: UserHonorificRole = "boss";
   private savedOnTranscript?: (text: string) => void;
@@ -680,17 +684,54 @@ CORE AUTONOMOUS CAPABILITIES:
     }
   }
 
+  public sendVisionGreet() {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
+    if (this.isSpeakingTurn) return;
+    audioEngine.unlockAudio();
+    const freshFrame = cameraEngine.getLatestFrameBase64();
+    if (freshFrame) {
+      this.sendVideoFrame(freshFrame);
+    }
+    if (this.isDirectGoogle) {
+      this.sendImmediateText(
+        "Camera just turned on! Look at the live camera frame: greet me warmly by my name if you recognize Boss Dileep, and briefly tell me what you see."
+      );
+    } else {
+      this.ws.send(JSON.stringify({ type: "vision_greet", role: this.savedRole }));
+    }
+  }
+
+  public sendAutoVisionCheck(frameBase64?: string) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
+    if (this.isSpeakingTurn || audioEngine.isSpeaking()) return;
+    audioEngine.unlockAudio();
+    if (frameBase64) {
+      this.sendVideoFrame(frameBase64);
+    }
+    if (this.isDirectGoogle) {
+      this.sendImmediateText(
+        "Look closely at the updated camera frame and tell me in 1-2 short sentences what new object(s) I am showing or what I am doing now."
+      );
+    } else {
+      this.ws.send(JSON.stringify({ type: "vision_auto_check" }));
+    }
+  }
+
   public sendTextCommand(text: string) {
     if (!text.trim()) return;
     this.currentAgentTranscript = "";
     this.isSpeakingTurn = false;
-    audioEngine.initContext();
+    this.awaitingNextTurn = false;
+    audioEngine.unlockAudio();
     audioEngine.clearAudioQueue();
 
     // If camera is streaming, grab fresh live frame and send it immediately with the command
-    const freshFrame = cameraEngine.getLatestFrameBase64();
-    if (freshFrame) {
-      this.sendVideoFrame(freshFrame);
+    if (cameraEngine.isStreaming) {
+      const freshFrame = cameraEngine.getLatestFrameBase64();
+      if (freshFrame) {
+        this.sendVideoFrame(freshFrame);
+      }
+      cameraEngine.resetMonitorBaseline();
     }
 
     const q = text.toLowerCase().trim();
