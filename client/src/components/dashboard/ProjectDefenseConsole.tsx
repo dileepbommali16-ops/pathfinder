@@ -17,6 +17,7 @@ import {
   Check
 } from "lucide-react";
 import { StudentProfileState } from "./ProfileEvaluator";
+import { evaluateProjectDefenseAnswer } from "@/lib/interviewEvaluator";
 
 interface ProjectDefenseConsoleProps {
   profile: StudentProfileState;
@@ -28,6 +29,8 @@ interface DefenseQuestion {
   category: "Architecture" | "Database & Scale" | "Security & Auth" | "Edge Cases & Failure";
   prompt: string;
   context: string;
+  keyConcepts: string[];
+  referenceAnswer: string;
 }
 
 const DEFENSE_QUESTIONS: DefenseQuestion[] = [
@@ -35,25 +38,37 @@ const DEFENSE_QUESTIONS: DefenseQuestion[] = [
     id: "def-1",
     category: "Architecture",
     prompt: "Why did you choose a microservices/decoupled REST architecture instead of a monolith for this project, and what network overhead does that introduce?",
-    context: "Evaluates architectural trade-offs, network latency, and service boundary decisions."
+    context: "Evaluates architectural trade-offs, network latency, and service boundary decisions.",
+    keyConcepts: ["service boundary", "independent scaling", "network latency", "serialization", "circuit breaker", "deployment isolation"],
+    referenceAnswer:
+      'In STAR format: "We decoupled high-throughput AI inference and analytics workers from the core web/session API so each could scale independently without blocking request threads. That introduces HTTP/JSON serialization hops (~8-15ms internal network overhead) and partial failure risks, which we mitigated with connection pooling, bounded timeouts, and circuit breakers around downstream dependencies."'
   },
   {
     id: "def-2",
     category: "Database & Scale",
     prompt: "What happens if your application experiences a 10x spike in concurrent requests? Where will the database bottleneck occur first, and how would you resolve it?",
-    context: "Tests connection pooling, read-replicas, caching with Redis, and indexing strategies."
+    context: "Tests connection pooling, read-replicas, caching with Redis, and indexing strategies.",
+    keyConcepts: ["connection pool", "read replica", "redis cache", "database index", "lock contention", "rate limiting"],
+    referenceAnswer:
+      'In STAR format: "The first bottleneck is database connection exhaustion and slow full-table read queries competing with write locks. To absorb a 10x spike, we place PgBouncer/connection pooling in front of Postgres, cache hot read endpoints in Redis with short TTL + invalidation, route analytics/read queries to read replicas, and verify composite B-tree indexes eliminate sequential scans under EXPLAIN ANALYZE."'
   },
   {
     id: "def-3",
     category: "Security & Auth",
     prompt: "How did you prevent SQL injection, prompt injection, and Cross-Site Scripting (XSS) in your user input pipelines?",
-    context: "Probes security hygiene, parameterized queries, input sanitization, and token security."
+    context: "Probes security hygiene, parameterized queries, input sanitization, and token security.",
+    keyConcepts: ["parameterized queries", "prepared statements", "input validation", "output encoding", "csp", "prompt isolation"],
+    referenceAnswer:
+      'In STAR format: "For SQL injection we strictly use parameterized queries/ORM bindings and schema validation via Pydantic—never string concatenation. For XSS we rely on React JSX contextual escaping, strict Content-Security-Policy headers, and HttpOnly SameSite cookies for tokens. For LLM prompt injection, untrusted user text is isolated inside structured user messages with length limits, stripped control markers, and output validation rather than trusting model prose to trigger privileged actions."'
   },
   {
     id: "def-4",
     category: "Edge Cases & Failure",
     prompt: "If an external API dependency or background task fails halfway through a transaction, how does your system guarantee consistency without leaving dirty state?",
-    context: "Tests idempotency, database transactions (ACID), dead-letter queues, and rollback strategies."
+    context: "Tests idempotency, database transactions (ACID), dead-letter queues, and rollback strategies.",
+    keyConcepts: ["acid transaction", "idempotency key", "outbox pattern", "dead letter queue", "exponential backoff", "rollback"],
+    referenceAnswer:
+      'In STAR format: "We keep external network calls outside open database locks and persist state transitions atomically using ACID transactions plus an idempotency key and transactional outbox table. If the background worker or third-party API fails mid-flight, the database rolls back cleanly, idempotent retries with exponential backoff re-drive the event without duplicate side effects, and exhausted messages land in a Dead-Letter Queue (DLQ) for alerted replay."'
   }
 ];
 
@@ -65,39 +80,42 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
   const [candidateAnswer, setCandidateAnswer] = useState("");
   const [evaluation, setEvaluation] = useState<{
     score: number;
+    verdict: string;
     strengths: string[];
     gaps: string[];
     modelAnswer: string;
+    evaluationSource: string;
+    isNonAnswer: boolean;
   } | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const handleEvaluateAnswer = () => {
-    if (!candidateAnswer.trim()) return;
+  const handleEvaluateAnswer = async () => {
+    if (!candidateAnswer.trim() || isEvaluating) return;
     setIsEvaluating(true);
-
-    setTimeout(() => {
-      // Deterministic technical critique
-      const answerLen = candidateAnswer.length;
-      const hasKeywords = /trade-off|latency|cache|redis|index|scale|sanitize|acid|rollback/i.test(candidateAnswer);
-
-      const score = Math.min(95, Math.max(65, Math.round(55 + (answerLen > 80 ? 25 : 15) + (hasKeywords ? 15 : 0))));
-
-      setEvaluation({
-        score,
-        strengths: [
-          "Identified the core engineering challenge clearly",
-          answerLen > 60 ? "Provided detailed technical context rather than high-level generalities" : "Addressed the primary question directly"
-        ],
-        gaps: [
-          "Could quantify exact metrics (e.g. latency target in ms, database connection pool limits)",
-          "Mention failure modes: What happens if the fallback system also fails?"
-        ],
-        modelAnswer: `In an enterprise defense round, a model response follows the STAR format:
-"We selected this decoupled architecture to isolate high-throughput ML inference from user session management. To mitigate network latency, we introduced an in-memory Redis cache with an LRU eviction policy, achieving a sub-15ms p99 response time. Under a 10x traffic surge, connection pooling and read replicas absorb read queries, while token-bucket rate limiters prevent worker starvation."`
+    try {
+      const result = await evaluateProjectDefenseAnswer({
+        questionId: activeQuestion.id,
+        category: activeQuestion.category,
+        question: activeQuestion.prompt,
+        context: activeQuestion.context,
+        keyConcepts: activeQuestion.keyConcepts,
+        referenceAnswer: activeQuestion.referenceAnswer,
+        candidateAnswer,
+        profile,
       });
+      setEvaluation({
+        score: result.score,
+        verdict: result.verdict,
+        strengths: result.strengths,
+        gaps: result.gaps,
+        modelAnswer: result.modelAnswer,
+        evaluationSource: result.evaluationSource,
+        isNonAnswer: result.isNonAnswer,
+      });
+    } finally {
       setIsEvaluating(false);
-    }, 600);
+    }
   };
 
   const handleCopyModelAnswer = () => {
@@ -231,15 +249,28 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
 
         {/* Right Column: AI Defense Evaluation */}
         <div className="rounded-3xl border border-white/10 bg-[#060608] p-6 backdrop-blur-2xl">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-4">
             <div className="flex items-center gap-2 text-[#f8fafc]">
               <Sparkles className="h-5 w-5" />
               <h3 className="text-xs font-bold uppercase tracking-wider">Interviewer Evaluation & Feedback</h3>
             </div>
             {evaluation && (
-              <span className="rounded-lg border border-white/15 bg-[#000000] px-2.5 py-0.5 text-xs font-black text-[#f8fafc]">
-                Score: {evaluation.score}/100
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md border border-white/10 bg-[#000000] px-2 py-0.5 text-[10px] font-medium text-[#94a3b8]">
+                  {evaluation.evaluationSource}
+                </span>
+                <span
+                  className={`rounded-lg border px-2.5 py-0.5 text-xs font-black ${
+                    evaluation.score >= 70
+                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                      : evaluation.score >= 40
+                      ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                      : "border-rose-500/40 bg-rose-500/10 text-rose-300"
+                  }`}
+                >
+                  Score: {evaluation.score}/100
+                </span>
+              </div>
             )}
           </div>
 
@@ -248,7 +279,7 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
               <Bot className="h-10 w-10 text-[#94a3b8]/60 mb-3" />
               <h4 className="text-sm font-bold text-[#f8fafc]">No Answer Evaluated Yet</h4>
               <p className="mt-1 max-w-xs text-xs text-[#94a3b8]">
-                Type your technical answer on the left and click "Evaluate My Defense" to get scored on technical clarity and STAR structure.
+                Type your technical answer on the left and click "Evaluate My Defense" to get graded by live AI without inflated scores.
               </p>
             </div>
           ) : (
@@ -257,20 +288,35 @@ export const ProjectDefenseConsole: React.FC<ProjectDefenseConsoleProps> = ({
               animate={{ opacity: 1, y: 0 }}
               className="mt-4 space-y-4"
             >
+              {evaluation.verdict && (
+                <div className="rounded-2xl border border-white/10 bg-[#000000] px-4 py-3 text-xs text-[#f8fafc]">
+                  <span className="font-bold text-[#94a3b8] uppercase tracking-wider text-[10px] block mb-1">
+                    Interviewer Verdict
+                  </span>
+                  {evaluation.verdict}
+                </div>
+              )}
+
               {/* Strengths */}
               <div className="rounded-2xl border border-white/10 bg-[#000000] p-4">
                 <div className="flex items-center gap-2 text-[#f8fafc] text-xs font-bold uppercase tracking-wider">
                   <CheckCircle2 className="h-4 w-4" />
                   <span>Strong Points</span>
                 </div>
-                <ul className="mt-2 space-y-1.5 text-xs text-[#f8fafc]">
-                  {evaluation.strengths.map((str, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="text-[#f8fafc] font-bold">•</span>
-                      <span>{str}</span>
-                    </li>
-                  ))}
-                </ul>
+                {evaluation.strengths.length > 0 ? (
+                  <ul className="mt-2 space-y-1.5 text-xs text-[#f8fafc]">
+                    {evaluation.strengths.map((str, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-[#f8fafc] font-bold">•</span>
+                        <span>{str}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-xs text-[#94a3b8]">
+                    No verified technical points demonstrated in this response yet.
+                  </p>
+                )}
               </div>
 
               {/* Gaps */}

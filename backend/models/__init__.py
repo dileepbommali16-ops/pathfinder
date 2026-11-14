@@ -21,6 +21,10 @@ from backend.models.schemas import (
     OAuthUrlsResponse,
     SkillGapItem,
     SkillGapAnalysis,
+    DefenseEvaluationRequest,
+    DefenseEvaluationResult,
+    InterviewEvaluationRequest,
+    InterviewEvaluationResult,
 )
 
 __all__ = [
@@ -41,4 +45,8 @@ __all__ = [
     "OAuthUrlsResponse",
     "SkillGapItem",
     "SkillGapAnalysis",
+    "DefenseEvaluationRequest",
+    "DefenseEvaluationResult",
+    "InterviewEvaluationRequest",
+    "InterviewEvaluationResult",
 ]

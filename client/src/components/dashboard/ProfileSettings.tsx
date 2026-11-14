@@ -87,14 +87,20 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
+      const cleanGithub = (formData.githubUrl ?? formData.codingProfiles?.github ?? "").trim();
+      const cleanLeetcode = (formData.leetcodeUrl ?? formData.codingProfiles?.leetcode ?? "").trim();
+      const cleanLinkedin = (formData.codingProfiles?.linkedin ?? "").trim();
       const updated: StudentProfileState = {
         ...formData,
+        githubUrl: cleanGithub,
+        leetcodeUrl: cleanLeetcode,
         technicalSkills: parsedSkills,
         skills: parsedSkills,
         codingProfiles: {
           ...(formData.codingProfiles || {}),
-          github: formData.githubUrl || formData.codingProfiles?.github || "",
-          leetcode: formData.leetcodeUrl || formData.codingProfiles?.leetcode || "",
+          github: cleanGithub,
+          leetcode: cleanLeetcode,
+          linkedin: cleanLinkedin,
         },
         percentage: Math.round(formData.cgpa * mult * 10) / 10,
         backlogs: formData.activeBacklogs,
@@ -404,28 +410,62 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#94a3b8]">GitHub Profile URL</label>
-              <input
-                type="url"
-                id="settings-github-url"
-                value={formData.githubUrl || formData.codingProfiles?.github || ""}
-                onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
-                placeholder="https://github.com/your-username"
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
-              />
-            </div>
+            <div className="sm:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#94a3b8]">GitHub Profile URL</label>
+                <input
+                  type="url"
+                  id="settings-github-url"
+                  value={formData.githubUrl ?? formData.codingProfiles?.github ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      githubUrl: val,
+                      codingProfiles: { ...(formData.codingProfiles || {}), github: val },
+                    });
+                  }}
+                  placeholder="https://github.com/your-username"
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                />
+              </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#94a3b8]">LeetCode Profile URL</label>
-              <input
-                type="url"
-                id="settings-leetcode-url"
-                value={formData.leetcodeUrl || formData.codingProfiles?.leetcode || ""}
-                onChange={(e) => setFormData({ ...formData, leetcodeUrl: e.target.value })}
-                placeholder="https://leetcode.com/your-username"
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
-              />
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#94a3b8]">LeetCode Profile URL</label>
+                <input
+                  type="url"
+                  id="settings-leetcode-url"
+                  value={formData.leetcodeUrl ?? formData.codingProfiles?.leetcode ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      leetcodeUrl: val,
+                      codingProfiles: { ...(formData.codingProfiles || {}), leetcode: val },
+                    });
+                  }}
+                  placeholder="https://leetcode.com/your-username"
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#94a3b8]">LinkedIn Profile URL</label>
+                <input
+                  type="url"
+                  id="settings-linkedin-url"
+                  value={formData.codingProfiles?.linkedin ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      codingProfiles: { ...(formData.codingProfiles || {}), linkedin: val },
+                    });
+                  }}
+                  placeholder="https://linkedin.com/in/your-username"
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                />
+              </div>
             </div>
           </div>
         </div>

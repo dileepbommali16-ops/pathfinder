@@ -763,6 +763,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
         email: user.email,
         fullName:
           user.username !== "Student" && user.username !== "New Student" ? user.username : "",
+        githubUrl: "",
+        leetcodeUrl: "",
+        codingProfiles: { github: "", leetcode: "", linkedin: "" },
         onboardingCompleted: false,
         wizardStep: 1,
       };
@@ -826,6 +829,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
         ...DEFAULT_STUDENT_PROFILE,
         fullName: user.username,
         email: user.email,
+        githubUrl: "",
+        leetcodeUrl: "",
+        codingProfiles: { github: "", leetcode: "", linkedin: "" },
         onboardingCompleted: true,
       };
       startTransition(() => {
@@ -845,6 +851,12 @@ export default function Home({ initialTab }: HomeProps = {}) {
       if (resp.ok) {
         const data = await resp.json();
         if (data && data.branch) {
+          const restoredCodingProfiles = {
+            ...(data.coding_profiles || {}),
+            github: data.github_url ?? data.coding_profiles?.github ?? "",
+            leetcode: data.leetcode_url ?? data.coding_profiles?.leetcode ?? "",
+            linkedin: data.linkedin_url ?? data.coding_profiles?.linkedin ?? "",
+          };
           const mapped: StudentProfileState = {
             ...DEFAULT_STUDENT_PROFILE,
             ...data,
@@ -867,6 +879,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
             tenthPercentage: data.tenth_percentage ?? 90,
             twelfthPercentage: data.twelfth_percentage ?? 88,
             percentage: data.percentage ?? 74.1,
+            githubUrl: restoredCodingProfiles.github,
+            leetcodeUrl: restoredCodingProfiles.leetcode,
+            codingProfiles: restoredCodingProfiles,
           };
           setProfile(mapped);
           localStorage.setItem("pathfinder_profile_draft", JSON.stringify(mapped));
@@ -939,8 +954,15 @@ export default function Home({ initialTab }: HomeProps = {}) {
         projects_count: profileToSave.projectsCount,
         internships: profileToSave.internships,
         certifications: profileToSave.certifications,
-        github_url: profileToSave.githubUrl,
-        leetcode_url: profileToSave.leetcodeUrl,
+        github_url: profileToSave.githubUrl ?? profileToSave.codingProfiles?.github ?? "",
+        leetcode_url: profileToSave.leetcodeUrl ?? profileToSave.codingProfiles?.leetcode ?? "",
+        linkedin_url: profileToSave.codingProfiles?.linkedin ?? "",
+        coding_profiles: {
+          ...(profileToSave.codingProfiles || {}),
+          github: profileToSave.githubUrl ?? profileToSave.codingProfiles?.github ?? "",
+          leetcode: profileToSave.leetcodeUrl ?? profileToSave.codingProfiles?.leetcode ?? "",
+          linkedin: profileToSave.codingProfiles?.linkedin ?? "",
+        },
         target_role: profileToSave.targetRole,
         target_tier: profileToSave.targetTier,
         target_domain: profileToSave.targetDomain,

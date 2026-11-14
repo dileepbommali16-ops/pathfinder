@@ -1146,6 +1146,103 @@ def generate_structured_ai(prompt: str, schema: Type[BaseModel], pdf_bytes: Opti
     return local_structured_fallback(schema)
 
 
+def _extract_json_object(raw_text: str) -> Optional[Dict[str, Any]]:
+    """Extracts and parses the first JSON object from an LLM response string."""
+    cleaned = (raw_text or "").strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+    try:
+        parsed = json.loads(cleaned)
+        return parsed if isinstance(parsed, dict) else None
+    except Exception:
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
+        if start != -1 and end > start:
+            try:
+                parsed = json.loads(cleaned[start : end + 1])
+                return parsed if isinstance(parsed, dict) else None
+            except Exception:
+                return None
+    return None
+
+
+def generate_strict_json_evaluation(
+    prompt: str,
+    schema: Type[BaseModel],
+    system_instruction: str,
+) -> tuple[Optional[BaseModel], Optional[str], Optional[str]]:
+    """
+    Calls live Gemini models to produce a strictly validated Pydantic object.
+    Never returns synthetic or canned fallback responses on failure.
+    Returns: (validated_model, model_name, error_reason)
+    """
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return None, None, "GEMINI_API_KEY not configured"
+
+    models_to_try = list(get_gemini_models())[:2]
+    last_error = "No Gemini models available"
+
+    client = get_gemini_client()
+    if client and genai and types:
+        for model in models_to_try:
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        response_mime_type="application/json",
+                        response_schema=schema,
+                        temperature=0.15,
+                        max_output_tokens=700,
+                        thinking_config=types.ThinkingConfig(thinking_budget=0)
+                        if hasattr(types, "ThinkingConfig")
+                        else None,
+                    ),
+                )
+                parsed = getattr(response, "parsed", None)
+                if parsed is not None:
+                    return schema.model_validate(parsed), model, None
+                raw_dict = _extract_json_object(getattr(response, "text", "") or "")
+                if raw_dict is not None:
+                    return schema.model_validate(raw_dict), model, None
+                last_error = f"{model}: empty structured output"
+            except Exception as exc:
+                last_error = f"{model}: {exc}"
+                logger.warning(f"[Strict Evaluation] SDK '{model}' failed: {exc}")
+
+    # Secondary attempt via lightweight REST endpoint with explicit JSON schema instruction
+    schema_json = json.dumps(schema.model_json_schema(), indent=2)
+    rest_prompt = (
+        f"{prompt}\n\n"
+        "Respond with ONLY a single valid JSON object matching this JSON Schema (no markdown fences):\n"
+        f"{schema_json}"
+    )
+    for model in models_to_try:
+        try:
+            text = call_gemini_rest(
+                model=model,
+                contents=[{"role": "user", "parts": [{"text": rest_prompt}]}],
+                sys_instruction=system_instruction,
+                api_key=api_key,
+                temperature=0.15,
+                max_output_tokens=700,
+                include_thinking=False,
+                timeout_sec=8.0,
+            )
+            raw_dict = _extract_json_object(text or "")
+            if raw_dict is not None:
+                return schema.model_validate(raw_dict), model, None
+            last_error = f"{model}: unparseable JSON"
+        except Exception as exc:
+            last_error = f"{model}: {exc}"
+            logger.warning(f"[Strict Evaluation] REST '{model}' failed: {exc}")
+
+    return None, None, last_error
+
+
 # Career mentor agent entrypoint
 career_agent = chat_with_mentor
 hackathon_career_agent = chat_with_mentor

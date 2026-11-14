@@ -4,22 +4,35 @@ Provides interactive AI career coaching, study roadmaps, resume evaluations,
 and Server-Sent Events (SSE) streaming with circuit breaker protection.
 """
 
+import re
 import json
 import asyncio
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 from fastapi import APIRouter, Request, HTTPException, Depends, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 
 logger = logging.getLogger("pathfinder.ai")
 
-from backend.models import ChatRequest, Roadmap, CohortInsight, ResumeFeedback, UserSession
+from backend.models import (
+    ChatRequest,
+    Roadmap,
+    CohortInsight,
+    ResumeFeedback,
+    UserSession,
+    StudentProfile,
+    DefenseEvaluationRequest,
+    DefenseEvaluationResult,
+    InterviewEvaluationRequest,
+    InterviewEvaluationResult,
+)
 from backend.security import rate_limiter, ai_budget_manager, get_client_ip, sanitize_user_input, validate_pdf_upload
 from backend.reliability import gemini_circuit_breaker
 from backend.gemini_engine import (
     chat_with_mentor,
     stream_chat_with_mentor,
     generate_structured_ai,
+    generate_strict_json_evaluation,
     generate_smart_fallback_reply
 )
 from backend.pdf_engine import extract_text_from_pdf, extract_resume_text
@@ -282,3 +295,401 @@ async def resume_endpoint(
     except Exception as exc:
         logger.error(f"[Resume Evaluation] Error: {exc}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unable to complete resume review. Please verify file formatting and try again.")
+
+
+_NON_ANSWER_PATTERNS = [
+    r"\bi\s*don['’]?t\s*know\b",
+    r"\bdon['’]?t\s*know\b",
+    r"\bi\s*do\s*not\s*know\b",
+    r"\bno\s*idea\b",
+    r"\bidk\b",
+    r"\bskip\b",
+    r"\bnext\s*question\b",
+    r"\bpass\b",
+    r"\bnothing\b",
+    r"\bnot\s*sure\b",
+    r"\bcan['’]?t\s*answer\b",
+    r"\bwhat\s*is\s*the\s*answer\b",
+    r"\btell\s*me\s*the\s*answer\b",
+]
+
+
+def _assess_answer_substance(answer: str) -> Tuple[bool, Optional[str]]:
+    """
+    Returns (is_non_answer, reason) so abstentions, skips, and empty inputs
+    are graded honestly at 0 rather than receiving inflated rubric scores.
+    """
+    cleaned = re.sub(r"\s+", " ", (answer or "").strip())
+    low = cleaned.lower()
+    if not cleaned:
+        return True, "No answer was submitted."
+
+    for pattern in _NON_ANSWER_PATTERNS:
+        if re.search(pattern, low):
+            words = re.findall(r"[a-zA-Z0-9]+", low)
+            # Short or explicit abstention ("i dont know next question", "skip", etc.)
+            if len(words) <= 14:
+                return True, f'Candidate explicitly passed or stated they do not know ("{cleaned[:80]}").'
+
+    tokens = re.findall(r"[a-zA-Z0-9]{2,}", low)
+    unique_tokens = set(tokens)
+    if len(tokens) < 4 or len(unique_tokens) < 3:
+        return True, "Response is too brief or lacks technical explanation to evaluate."
+
+    # Detect keyboard smash / low-entropy repetition (e.g. "asdf asdf asdf asdf")
+    if len(tokens) >= 4 and len(unique_tokens) <= 2 and len(cleaned) > 12:
+        return True, "Response appears repetitive or non-substantive."
+
+    return False, None
+
+
+def _build_candidate_context(profile: Optional[StudentProfile]) -> str:
+    """Formats minimal candidate context for LLM grounding."""
+    if not profile:
+        return "Candidate Profile: General engineering placement candidate."
+    skills_list = (profile.skills or [])[:10]
+    return (
+        f"Candidate Context: Name={profile.full_name or 'Candidate'}, Branch={profile.branch or 'CSE'}, "
+        f"Target Role={profile.target_role or 'Software Engineer'}, Target Tier={profile.target_tier or 'Product'}, "
+        f"Projects={profile.projects_count or 0}, Skills={', '.join(skills_list) or 'Not specified'}."
+    )
+
+
+def _clamp_score(value: Any) -> int:
+    try:
+        return max(0, min(100, int(round(float(value)))))
+    except Exception:
+        return 0
+
+
+def _tokenize_concepts(concepts: List[str], extra_text: str = "") -> List[str]:
+    """Builds deduplicated technical concepts from request hints + prompt text."""
+    seen = set()
+    ordered: List[str] = []
+    for item in concepts:
+        clean = (item or "").strip()
+        if clean and clean.lower() not in seen:
+            seen.add(clean.lower())
+            ordered.append(clean)
+    if not ordered and extra_text:
+        for tok in re.findall(r"[A-Za-z][A-Za-z0-9+/.-]{3,}", extra_text):
+            low = tok.lower()
+            if low not in {
+                "what", "when", "where", "which", "would", "could", "should", "this", "that",
+                "your", "with", "from", "into", "about", "there", "their", "they", "have",
+                "does", "will", "first", "project", "system", "application", "question", "happens"
+            } and low not in seen:
+                seen.add(low)
+                ordered.append(tok)
+    return ordered[:8]
+
+
+def _match_keywords(answer: str, expected_keywords: List[str]) -> Tuple[List[str], List[str]]:
+    """Checks substring and stemmed token overlap between answer and expected keywords."""
+    low_answer = (answer or "").lower()
+    answer_words = set(re.findall(r"[a-z0-9]+", low_answer))
+    matched: List[str] = []
+    missing: List[str] = []
+
+    for kw in expected_keywords:
+        clean_kw = (kw or "").strip()
+        if not clean_kw:
+            continue
+        low_kw = clean_kw.lower()
+        kw_tokens = [t for t in re.findall(r"[a-z0-9]+", low_kw) if len(t) >= 3]
+        direct_match = low_kw in low_answer
+        token_match = bool(kw_tokens) and all(
+            any(aw.startswith(kt[: min(5, len(kt))]) or kt in aw for aw in answer_words)
+            for kt in kw_tokens
+        )
+        if direct_match or token_match:
+            matched.append(clean_kw)
+        else:
+            missing.append(clean_kw)
+    return matched, missing
+
+
+def _score_defense_offline(req: DefenseEvaluationRequest) -> DefenseEvaluationResult:
+    """Honest, zero-inflation local rubric used only when live Gemini is unreachable."""
+    clean_answer = (req.candidate_answer or "").strip()
+    concepts = _tokenize_concepts(req.key_concepts, f"{req.question} {req.context or ''}")
+    matched, missing = _match_keywords(clean_answer, concepts)
+    word_count = len(re.findall(r"[a-zA-Z0-9]+", clean_answer))
+
+    concept_ratio = len(matched) / max(1, len(concepts))
+    has_reasoning = bool(
+        re.search(r"\b(because|therefore|trade-?off|latency|overhead|avoid|prevent|guarantee|scale|ms|throughput|bottleneck)\b", clean_answer.lower())
+    )
+    has_metrics = bool(re.search(r"\b(\d+\s*(?:ms|s|x|%|req|rps|qps|mb|gb))\b", clean_answer.lower()))
+
+    raw_score = (concept_ratio * 58.0) + min(22.0, word_count * 0.4) + (12.0 if has_reasoning else 0.0) + (8.0 if has_metrics else 0.0)
+    if len(matched) == 0 and word_count < 18:
+        raw_score = min(raw_score, 18.0)
+    score = _clamp_score(raw_score)
+
+    strengths: List[str] = []
+    if matched:
+        strengths.append(f"Addressed relevant technical concepts: {', '.join(matched[:4])}.")
+    if has_reasoning and word_count >= 15:
+        strengths.append("Included cause-and-effect reasoning or architectural trade-off logic.")
+    if has_metrics:
+        strengths.append("Supported points with quantitative metrics or concrete scale thresholds.")
+
+    gaps: List[str] = []
+    if missing:
+        gaps.append(f"Missed critical concepts expected for {req.category}: {', '.join(missing[:4])}.")
+    if not has_reasoning:
+        gaps.append("Explain WHY you chose this approach and what architectural or performance trade-off it introduces.")
+    if not has_metrics:
+        gaps.append("Quantify impact or failure limits (latency budget, throughput, connection limits, or rollback criteria).")
+
+    verdict = (
+        "Strong technical defense covering key architecture and failure trade-offs."
+        if score >= 75
+        else "Partial defense with foundational ideas, but missing depth on critical mechanisms or failure handling."
+        if score >= 45
+        else "Weak or incomplete technical defense. Core engineering concepts from the prompt were not explained."
+    )
+
+    ref_answer = (req.reference_answer or "").strip() or (
+        f"Address {req.question} using concrete mechanisms ({', '.join(concepts[:4]) or req.category}), "
+        "quantifiable latency/reliability impact, and explicit failure-mode handling."
+    )
+    return DefenseEvaluationResult(
+        score=score,
+        verdict=verdict,
+        strengths=strengths,
+        gaps=gaps,
+        model_answer=ref_answer,
+        evaluation_source="Strict Offline Rubric (Live AI unavailable)",
+        is_non_answer=False,
+    )
+
+
+def _score_interview_offline(req: InterviewEvaluationRequest) -> InterviewEvaluationResult:
+    """Honest, zero-inflation local rubric for Mock Interview when live Gemini is unreachable."""
+    clean_answer = (req.candidate_answer or "").strip()
+    keywords = req.ideal_keywords or req.key_concepts or _tokenize_concepts([], req.question)
+    matched, missing = _match_keywords(clean_answer, keywords)
+    words = re.findall(r"[a-zA-Z0-9]+", clean_answer)
+    word_count = len(words)
+
+    kw_ratio = len(matched) / max(1, len(keywords))
+    depth_ratio = min(1.0, word_count / 55.0)
+    has_structure = bool(re.search(r"\b(first|then|finally|because|however|trade-?off|ensure|prevent)\b", clean_answer.lower()))
+
+    tech_score = _clamp_score(kw_ratio * 75.0 + depth_ratio * 15.0 + (10.0 if has_structure else 0.0))
+    if len(matched) == 0:
+        tech_score = min(tech_score, 22)
+    comm_score = _clamp_score(depth_ratio * 55.0 + (25.0 if has_structure else 8.0) + kw_ratio * 20.0)
+    prob_score = _clamp_score(kw_ratio * 65.0 + depth_ratio * 20.0 + (15.0 if has_structure else 0.0))
+    overall = _clamp_score((tech_score * 0.45) + (comm_score * 0.25) + (prob_score * 0.30))
+
+    if overall >= 80:
+        verdict = "Strong senior-level answer covering key technical primitives and clear execution steps."
+    elif overall >= 50:
+        verdict = "Partial technical coverage — address the missing core primitives and edge cases listed below."
+    else:
+        verdict = "Insufficient technical depth for hiring bar. Most expected concepts for this prompt were missing."
+
+    critique = (
+        f"Your answer matched {len(matched)}/{max(1, len(keywords))} core concepts "
+        f"across {word_count} words. "
+        + (f"Focus next on: {', '.join(missing[:4])}. " if missing else "")
+        + (f"Benchmark guidance: {req.benchmark_answer[:320]}" if req.benchmark_answer else (req.context_hint or ""))
+    ).strip()
+
+    return InterviewEvaluationResult(
+        overall_score=overall,
+        technical_precision=tech_score,
+        communication_score=comm_score,
+        problem_solving_score=prob_score,
+        matched_keywords=matched,
+        missing_keywords=missing,
+        coach_verdict=verdict,
+        model_critique=critique,
+        evaluation_source="Strict Offline Rubric (Live AI unavailable)",
+        is_non_answer=False,
+    )
+
+
+@ai_router.post("/api/ai/evaluate-defense", response_model=DefenseEvaluationResult)
+def evaluate_defense_endpoint(request_body: DefenseEvaluationRequest, request: Request):
+    """
+    Genuine strict technical interviewer evaluation for Project Defense.
+    Detects abstentions ('I don't know', 'skip') at 0/100 and otherwise grades via live Gemini AI.
+    """
+    client_ip = get_client_ip(request)
+    allowed, _ = rate_limiter.check(f"defense:{client_ip}", max_requests=30, window_seconds=60)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Evaluation rate limit reached. Please wait 60 seconds.")
+
+    clean_answer = sanitize_user_input(request_body.candidate_answer, max_length=6000)
+    is_non_answer, non_answer_reason = _assess_answer_substance(clean_answer)
+    concepts = _tokenize_concepts(request_body.key_concepts, f"{request_body.question} {request_body.context or ''}")
+
+    if is_non_answer:
+        ref_answer = (request_body.reference_answer or "").strip() or (
+            f"For {request_body.category}, explain concrete mechanisms for: {', '.join(concepts[:4]) or request_body.question}."
+        )
+        return DefenseEvaluationResult(
+            score=0,
+            verdict=non_answer_reason or "No valid technical answer was provided.",
+            strengths=[],
+            gaps=[
+                non_answer_reason or "You did not attempt a technical explanation.",
+                f"Required topics for this question: {', '.join(concepts[:5]) or request_body.context or request_body.category}.",
+                "Read the Model Interviewer Response below, understand the architecture trade-offs, and try explaining it in your own words."
+            ],
+            model_answer=ref_answer,
+            evaluation_source="Honest Screening",
+            is_non_answer=True,
+        )
+
+    candidate_ctx = _build_candidate_context(request_body.profile)
+    sys_instruction = (
+        "You are a strict, honest Principal Software Engineer conducting a real project architecture defense interview. "
+        "NEVER flatter or invent strengths that are absent in the candidate's answer. "
+        "Grade strictly 0-100: 0-15 for wrong/irrelevant/no-substance, 16-40 for vague buzzwords lacking mechanism, "
+        "41-65 for partial answer missing trade-offs/failure modes, 66-84 for solid answer missing quantification, "
+        "85-100 only for complete production-grade reasoning with metrics and failure handling. "
+        "Reference specifics from what the candidate actually wrote."
+    )
+    prompt = (
+        f"{candidate_ctx}\n"
+        f"Question Category: {request_body.category}\n"
+        f"Interviewer Question: {request_body.question}\n"
+        f"Evaluation Context: {request_body.context or 'Technical depth, trade-offs, failure modes, and scale metrics.'}\n"
+        f"Expected Concepts: {', '.join(concepts) or 'Core architectural trade-offs'}\n\n"
+        f"Candidate's Actual Answer:\n\"\"\"\n{clean_answer}\n\"\"\"\n\n"
+        "Return strict JSON matching DefenseEvaluationResult:\n"
+        "- score: integer 0..100 based strictly on the candidate's answer\n"
+        "- verdict: 1-2 honest sentences evaluating the candidate's actual answer\n"
+        "- strengths: list ONLY genuine technical points the candidate actually demonstrated (use [] if none!)\n"
+        "- gaps: 2-4 specific technical omissions, inaccuracies, or unquantified claims in their answer\n"
+        "- model_answer: a crisp, concrete 3-5 sentence STAR/architecture benchmark answer specifically for THIS question\n"
+        "- evaluation_source: set to 'gemini-ai'\n"
+        "- is_non_answer: false unless the text avoids answering the question"
+    )
+
+    ai_budget_manager.consume(client_ip)
+    ai_result, model_name, err_reason = generate_strict_json_evaluation(
+        prompt=prompt,
+        schema=DefenseEvaluationResult,
+        system_instruction=sys_instruction,
+    )
+    if ai_result is not None:
+        # Guardrail: even if an LLM softens a non-substantive response, ensure is_non_answer stays consistent
+        score = _clamp_score(ai_result.score)
+        if ai_result.is_non_answer:
+            score = min(score, 10)
+        return DefenseEvaluationResult(
+            score=score,
+            verdict=ai_result.verdict.strip(),
+            strengths=[s.strip() for s in (ai_result.strengths or []) if s and s.strip()][:5],
+            gaps=[g.strip() for g in (ai_result.gaps or []) if g and g.strip()][:5],
+            model_answer=ai_result.model_answer.strip() or (request_body.reference_answer or ""),
+            evaluation_source=f"Gemini AI ({model_name})",
+            is_non_answer=bool(ai_result.is_non_answer),
+        )
+
+    logger.warning(f"[Defense Eval] Gemini unavailable ({err_reason}); using strict offline rubric.")
+    return _score_defense_offline(request_body)
+
+
+@ai_router.post("/api/ai/evaluate-interview", response_model=InterviewEvaluationResult)
+def evaluate_interview_endpoint(request_body: InterviewEvaluationRequest, request: Request):
+    """
+    Genuine strict Mock Interview evaluation endpoint.
+    Scores Technical Precision, Communication, and Problem Solving honestly using live Gemini AI.
+    """
+    client_ip = get_client_ip(request)
+    allowed, _ = rate_limiter.check(f"interview:{client_ip}", max_requests=30, window_seconds=60)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Interview evaluation rate limit reached. Please wait 60 seconds.")
+
+    clean_answer = sanitize_user_input(request_body.candidate_answer, max_length=6000)
+    expected_keywords = list(request_body.ideal_keywords or request_body.key_concepts or [])
+    is_non_answer, non_answer_reason = _assess_answer_substance(clean_answer)
+
+    if is_non_answer:
+        return InterviewEvaluationResult(
+            overall_score=0,
+            technical_precision=0,
+            communication_score=0,
+            problem_solving_score=0,
+            matched_keywords=[],
+            missing_keywords=expected_keywords,
+            coach_verdict=non_answer_reason or "No answer provided for this interview prompt.",
+            model_critique=(
+                "You passed or gave an incomplete non-answer. Review the target concepts above "
+                + (f"and compare against a senior-level approach: {request_body.benchmark_answer}" if request_body.benchmark_answer else "before retrying.")
+            ),
+            evaluation_source="Honest Screening",
+            is_non_answer=True,
+        )
+
+    candidate_ctx = _build_candidate_context(request_body.profile)
+    sys_instruction = (
+        "You are a strict Senior Staff Technical Interviewer grading a live interview response. "
+        "NEVER inflate scores or praise blank/wrong/buzzword-only answers. "
+        "Score honestly 0-100 across overall_score, technical_precision, communication_score, and problem_solving_score. "
+        "If the candidate only states generic fluff or misses the core mechanism, score under 35. "
+        "Quote or address specific points from the candidate's response in coach_verdict and model_critique."
+    )
+    prompt = (
+        f"{candidate_ctx}\n"
+        f"Company/Track: {request_body.company or 'Top Tech'} | Role: {request_body.role or 'SWE'} | "
+        f"Round: {request_body.round_type or 'Technical'} | Difficulty: {request_body.difficulty or 'Medium'}\n"
+        f"Question: {request_body.question}\n"
+        f"Interviewer Expectation: {request_body.context_hint or 'Clear mechanism, edge cases, and trade-offs.'}\n"
+        f"Expected Core Keywords: {', '.join(expected_keywords) or 'Relevant system/algorithm concepts'}\n"
+        f"Response Duration: {request_body.duration_seconds or 0}s\n\n"
+        f"Candidate's Actual Answer:\n\"\"\"\n{clean_answer}\n\"\"\"\n\n"
+        "Return strict JSON matching InterviewEvaluationResult:\n"
+        "- overall_score, technical_precision, communication_score, problem_solving_score: integers 0..100\n"
+        "- matched_keywords: ONLY items from Expected Core Keywords (or equivalent demonstrated concepts) truly explained by the candidate\n"
+        "- missing_keywords: items from Expected Core Keywords that the candidate missed or only name-dropped without explaining\n"
+        "- coach_verdict: 1-2 direct honest sentences summarizing interview readiness on this question\n"
+        "- model_critique: concrete feedback referencing what the candidate wrote, what was wrong/missing, and how to elevate it\n"
+        "- evaluation_source: 'gemini-ai'\n"
+        "- is_non_answer: false unless off-topic or abstaining"
+    )
+
+    ai_budget_manager.consume(client_ip)
+    ai_result, model_name, err_reason = generate_strict_json_evaluation(
+        prompt=prompt,
+        schema=InterviewEvaluationResult,
+        system_instruction=sys_instruction,
+    )
+    if ai_result is not None:
+        matched_det, missing_det = _match_keywords(clean_answer, expected_keywords)
+        # Reconcile so missing keywords are honest and non-empty if concepts were omitted
+        matched = [m.strip() for m in (ai_result.matched_keywords or matched_det) if m and m.strip()]
+        missing = [m.strip() for m in (ai_result.missing_keywords or missing_det) if m and m.strip()]
+        if ai_result.is_non_answer:
+            overall = min(_clamp_score(ai_result.overall_score), 10)
+            tech = min(_clamp_score(ai_result.technical_precision), 10)
+            comm = min(_clamp_score(ai_result.communication_score), 15)
+            prob = min(_clamp_score(ai_result.problem_solving_score), 10)
+        else:
+            overall = _clamp_score(ai_result.overall_score)
+            tech = _clamp_score(ai_result.technical_precision)
+            comm = _clamp_score(ai_result.communication_score)
+            prob = _clamp_score(ai_result.problem_solving_score)
+
+        return InterviewEvaluationResult(
+            overall_score=overall,
+            technical_precision=tech,
+            communication_score=comm,
+            problem_solving_score=prob,
+            matched_keywords=matched,
+            missing_keywords=missing,
+            coach_verdict=ai_result.coach_verdict.strip(),
+            model_critique=ai_result.model_critique.strip(),
+            evaluation_source=f"Gemini AI ({model_name})",
+            is_non_answer=bool(ai_result.is_non_answer),
+        )
+
+    logger.warning(f"[Interview Eval] Gemini unavailable ({err_reason}); using strict offline rubric.")
+    return _score_interview_offline(request_body)

@@ -211,3 +211,62 @@ class SkillGapAnalysis(BaseModel):
     category_breakdown: Dict[str, float]
     target_role_fit: float
 
+
+class DefenseEvaluationRequest(BaseModel):
+    """Request payload for real-time project defense evaluation."""
+
+    question_id: Optional[str] = Field("", max_length=64)
+    category: str = Field(..., min_length=1, max_length=100)
+    question: str = Field(..., min_length=5, max_length=2000)
+    context: Optional[str] = Field("", max_length=1000)
+    key_concepts: List[str] = Field(default_factory=list)
+    reference_answer: Optional[str] = Field("", max_length=4000)
+    candidate_answer: str = Field(..., min_length=1, max_length=8000)
+    profile: Optional[StudentProfile] = None
+
+
+class DefenseEvaluationResult(BaseModel):
+    """Structured technical defense scorecard returned by LLM or strict rubric."""
+
+    score: int = Field(..., ge=0, le=100)
+    verdict: str
+    strengths: List[str] = Field(default_factory=list)
+    gaps: List[str] = Field(default_factory=list)
+    model_answer: str
+    evaluation_source: str = "gemini-ai"
+    is_non_answer: bool = False
+
+
+class InterviewEvaluationRequest(BaseModel):
+    """Request payload for strict mock interview answer evaluation."""
+
+    question_id: Optional[str] = Field("", max_length=64)
+    company: Optional[str] = Field("", max_length=120)
+    role: Optional[str] = Field("", max_length=120)
+    round_type: Optional[str] = Field("", max_length=120)
+    difficulty: Optional[str] = Field("", max_length=64)
+    question: str = Field(..., min_length=5, max_length=2000)
+    context_hint: Optional[str] = Field("", max_length=1000)
+    key_concepts: List[str] = Field(default_factory=list)
+    ideal_keywords: List[str] = Field(default_factory=list)
+    benchmark_answer: Optional[str] = Field("", max_length=4000)
+    candidate_answer: str = Field(..., min_length=1, max_length=8000)
+    duration_seconds: Optional[int] = Field(0, ge=0, le=7200)
+    profile: Optional[StudentProfile] = None
+
+
+class InterviewEvaluationResult(BaseModel):
+    """Structured multi-dimensional mock interview scorecard."""
+
+    overall_score: int = Field(..., ge=0, le=100)
+    technical_precision: int = Field(..., ge=0, le=100)
+    communication_score: int = Field(..., ge=0, le=100)
+    problem_solving_score: int = Field(..., ge=0, le=100)
+    matched_keywords: List[str] = Field(default_factory=list)
+    missing_keywords: List[str] = Field(default_factory=list)
+    coach_verdict: str
+    model_critique: str
+    evaluation_source: str = "gemini-ai"
+    is_non_answer: bool = False
+
+

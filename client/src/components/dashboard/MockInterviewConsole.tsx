@@ -24,6 +24,7 @@ import {
 import { StudentProfileState } from "@/types/profile";
 import { speaker } from "@/agent/audioIO";
 import { onVoiceStateChange } from "@/audio/voiceManager";
+import { evaluateMockInterviewAnswer } from "@/lib/interviewEvaluator";
 
 interface MockInterviewConsoleProps {
   profile: StudentProfileState;
@@ -122,6 +123,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     missingKeywords: string[];
     coachVerdict: string;
     modelCritique: string;
+    evaluationSource: string;
   } | null>(null);
 
   const [timerSeconds, setTimerSeconds] = useState<number>(0);
@@ -261,61 +263,44 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
   };
 
   // Real-time AI evaluation engine
-  const handleEvaluateAnswer = () => {
-    if (!userAnswer.trim()) return;
+  const handleEvaluateAnswer = async () => {
+    if (!userAnswer.trim() || isEvaluating) return;
     setIsEvaluating(true);
     stopSpeaking();
     stopRecording();
     setTimerActive(false);
 
-    setTimeout(() => {
-      const lowerAnswer = userAnswer.toLowerCase();
-      const matched: string[] = [];
-      const missing: string[] = [];
-
-      currentQ.idealKeywords.forEach((kw) => {
-        if (lowerAnswer.includes(kw.toLowerCase())) {
-          matched.push(kw);
-        } else {
-          missing.push(kw);
-        }
+    try {
+      const result = await evaluateMockInterviewAnswer({
+        questionId: currentQ.id,
+        company: currentQ.company,
+        role: currentQ.role,
+        roundType: currentQ.roundType,
+        difficulty: currentQ.difficulty,
+        question: currentQ.question,
+        contextHint: currentQ.contextHint,
+        keyConcepts: currentQ.keyConcepts,
+        idealKeywords: currentQ.idealKeywords,
+        benchmarkAnswer: currentQ.benchmarkAnswer,
+        candidateAnswer: userAnswer,
+        durationSeconds: timerSeconds,
+        profile,
       });
-
-      const keywordRatio = matched.length / (currentQ.idealKeywords.length || 1);
-      const lengthScore = Math.min(1, userAnswer.trim().split(/\s+/).length / 45);
-
-      const baseScore = Math.round(55 + keywordRatio * 35 + lengthScore * 10);
-      const overall = Math.max(45, Math.min(97, baseScore));
-
-      const technicalPrecision = Math.max(50, Math.min(98, Math.round(overall * 1.02)));
-      const communicationScore = Math.max(55, Math.min(95, Math.round(overall * 0.98)));
-      const problemSolvingScore = Math.max(50, Math.min(96, Math.round(overall * 1.0)));
-
-      let coachVerdict = "";
-      if (overall >= 85) {
-        coachVerdict =
-          "Outstanding candidate response. You articulated core system trade-offs with high architectural maturity and clean technical vocabulary.";
-      } else if (overall >= 70) {
-        coachVerdict =
-          "Strong foundation. You addressed the primary mechanic, but incorporating the missing keywords below will elevate your answer to top 5% hiring standards.";
-      } else {
-        coachVerdict =
-          "Good initial attempt. Deepen your explanation of edge cases, failovers, and specific database/system primitives to clear Tier-1 cutoffs.";
-      }
 
       setEvaluationResult({
-        overallScore: overall,
-        technicalPrecision,
-        communicationScore,
-        problemSolvingScore,
-        matchedKeywords: matched,
-        missingKeywords: missing,
-        coachVerdict,
-        modelCritique: currentQ.contextHint
+        overallScore: result.overallScore,
+        technicalPrecision: result.technicalPrecision,
+        communicationScore: result.communicationScore,
+        problemSolvingScore: result.problemSolvingScore,
+        matchedKeywords: result.matchedKeywords,
+        missingKeywords: result.missingKeywords,
+        coachVerdict: result.coachVerdict,
+        modelCritique: result.modelCritique,
+        evaluationSource: result.evaluationSource,
       });
-
+    } finally {
       setIsEvaluating(false);
-    }, 1200);
+    }
   };
 
   return (
@@ -525,16 +510,16 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 type="button"
                 disabled={!userAnswer.trim() || isEvaluating}
                 onClick={handleEvaluateAnswer}
-                className="flex items-center gap-2 rounded-xl border border-[#ffffff] bg-gradient-to-r from-[#ffffff] via-[#f1f5f9] to-[#e2e8f0] hover:from-[#f1f5f9] hover:to-[#cbd5e1] disabled:opacity-40 px-5 py-2.5 text-xs font-bold text-[#f8fafc] shadow-[0_4px_20px_rgba(255,255,255,0.35)] transition-all active:scale-95 cursor-pointer"
+                className="flex items-center gap-2 rounded-xl border border-[#ffffff] bg-gradient-to-r from-[#ffffff] via-[#f1f5f9] to-[#e2e8f0] hover:from-[#f1f5f9] hover:to-[#cbd5e1] disabled:opacity-40 px-5 py-2.5 text-xs font-bold text-[#0a0b10] shadow-[0_4px_20px_rgba(255,255,255,0.25)] transition-all active:scale-95 cursor-pointer"
               >
                 {isEvaluating ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin text-[#f8fafc]" />
+                    <Loader2 className="h-4 w-4 animate-spin text-[#0a0b10]" />
                     <span>Grading with AI Engine...</span>
                   </>
                 ) : (
                   <>
-                    <Zap className="h-4 w-4 text-[#f8fafc]" />
+                    <Zap className="h-4 w-4 text-[#0a0b10]" />
                     <span>Evaluate My Answer</span>
                   </>
                 )}
@@ -554,18 +539,34 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 {/* Score Summary Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[rgba(255,255,255,0.08)]">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#ffffff]/50 bg-[#0a0b10] shadow-[0_0_20px_rgba(255,255,255,0.25)]">
-                      <span className="text-xl font-bold font-mono text-[#ffffff]">
+                    <div
+                      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border bg-[#0a0b10] shadow-[0_0_20px_rgba(255,255,255,0.15)] ${
+                        evaluationResult.overallScore >= 70
+                          ? "border-emerald-400/60"
+                          : evaluationResult.overallScore >= 40
+                          ? "border-amber-400/60"
+                          : "border-rose-400/60"
+                      }`}
+                    >
+                      <span
+                        className={`text-xl font-bold font-mono ${
+                          evaluationResult.overallScore >= 70
+                            ? "text-emerald-300"
+                            : evaluationResult.overallScore >= 40
+                            ? "text-amber-300"
+                            : "text-rose-300"
+                        }`}
+                      >
                         {evaluationResult.overallScore}%
                       </span>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-bold text-[#f8fafc] font-['Space_Grotesk']">
                           AI Interview Scorecard
                         </span>
                         <span className="rounded-md border border-[#ffffff]/30 bg-[#ffffff]/10 px-2 py-0.5 text-[10px] font-semibold text-[#ffffff] shadow-sm">
-                          Verified Grade
+                          {evaluationResult.evaluationSource}
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-[#94a3b8]">
@@ -665,6 +666,18 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                     </div>
                   </div>
                 </div>
+
+                {/* Detailed Critique */}
+                {evaluationResult.modelCritique && (
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3.5 text-xs">
+                    <span className="font-semibold text-[#f8fafc] block mb-1">
+                      Interviewer Technical Critique & Guidance
+                    </span>
+                    <p className="text-[#94a3b8] leading-relaxed">
+                      {evaluationResult.modelCritique}
+                    </p>
+                  </div>
+                )}
 
                 {/* Next Question CTA */}
                 <div className="pt-2 flex items-center justify-end gap-3">
