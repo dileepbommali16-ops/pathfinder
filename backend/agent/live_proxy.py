@@ -380,9 +380,18 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         turn_id = 0
         gemini_turn_active = False
         audio_end_mono = 0.0
+        pending_response_until_mono = 0.0
         output_tx_in_turn = False
         last_frame_sent_mono = 0.0
         latest_page_context: dict = {}
+
+        def is_turn_busy() -> bool:
+            now_m = time.monotonic()
+            return (
+                gemini_turn_active
+                or now_m < pending_response_until_mono
+                or now_m < audio_end_mono + 0.8
+            )
 
         def format_page_context_note() -> str:
             if not latest_page_context:
@@ -416,7 +425,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             return False
 
         async def send_vision_prompt(prompt_text: str, include_screen_ctx: bool = True):
-            nonlocal audio_turn_open
+            nonlocal audio_turn_open, pending_response_until_mono
             final_text = prompt_text
             if include_screen_ctx:
                 ctx_note = format_page_context_note()
@@ -439,6 +448,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         await session.send_realtime_input(audio_stream_end=True)
                     except Exception:
                         pass
+                pending_response_until_mono = time.monotonic() + 5.5
                 await session.send_client_content(
                     turns=[types.Content(parts=parts, role="user")],
                     turn_complete=True,
@@ -494,7 +504,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 if is_valid_jpeg(candidate):
                                     latest_frame_bytes = candidate
                                     now_mono = time.monotonic()
-                                    min_gap = 2.2 if gemini_turn_active else 1.15
+                                    min_gap = 2.4 if is_turn_busy() else 1.15
                                     # Throttle background video during active Gemini speech to prevent mid-sentence pauses
                                     if (now_mono - last_frame_sent_mono >= min_gap) and not send_lock.locked():
                                         last_frame_sent_mono = now_mono
@@ -516,7 +526,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                     # 3a-ter. Friendly Audio / Earphone Low-Volume / Muted Accessory Coaching
                     elif msg_type == "friendly_audio_hint":
-                        if not gemini_turn_active and time.monotonic() >= audio_end_mono + 0.45:
+                        if not is_turn_busy():
                             issue = (msg.get("issue") or "low_volume").strip()
                             dev_name = (msg.get("device") or "connected audio device").strip()
                             hint_prompt = (
@@ -530,9 +540,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     # 3b. Proactive Initial Camera Greeting (never interrupts an active greeting mid-sentence)
                     elif msg_type == "vision_greet":
                         role_now = (msg.get("role") or user_role or "boss").lower().strip()
-                        # Wait briefly up to 3.2s if initial speech is currently finishing
+                        # Wait briefly up to 3.5s if a response is pending or currently playing
                         waited = 0.0
-                        while (gemini_turn_active or time.monotonic() < audio_end_mono + 0.35) and waited < 3.2:
+                        while is_turn_busy() and waited < 3.5:
                             await asyncio.sleep(0.25)
                             waited += 0.25
                         if is_valid_jpeg(latest_frame_bytes):
@@ -554,9 +564,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 )
                             await send_vision_prompt(greet_prompt)
 
-                    # 3c. 24/7 Proactive Scene/Object Change Announcement (NEVER interrupts active voice playback!)
+                    # 3c. 24/7 Proactive Scene/Object Change Announcement (NEVER interrupts active/pending voice playback!)
                     elif msg_type == "vision_auto_check":
-                        if gemini_turn_active or time.monotonic() < audio_end_mono + 0.5:
+                        if is_turn_busy() or audio_turn_open:
                             continue
                         if is_valid_jpeg(latest_frame_bytes):
                             auto_prompt = (
@@ -600,7 +610,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 live_logger.warning(f"[Browser Receive Notice] {b_err}")
 
         async def receive_from_gemini():
-            nonlocal audio_turn_open, turn_id, gemini_turn_active, audio_end_mono, output_tx_in_turn
+            nonlocal audio_turn_open, turn_id, gemini_turn_active, audio_end_mono, pending_response_until_mono, output_tx_in_turn
             try:
                 while True:
                     if websocket.client_state == WebSocketState.DISCONNECTED:
@@ -631,6 +641,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             audio_turn_open = False
                             gemini_turn_active = False
                             audio_end_mono = 0.0
+                            pending_response_until_mono = 0.0
                             output_tx_in_turn = False
                             await websocket.send_json({"type": "interrupted", "turn_id": turn_id})
 
@@ -658,6 +669,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 if not gemini_turn_active:
                                     turn_id += 1
                                     gemini_turn_active = True
+                                    pending_response_until_mono = 0.0
                                     output_tx_in_turn = False
                                 output_tx_in_turn = True
                                 await websocket.send_json({
@@ -673,6 +685,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                         if not gemini_turn_active:
                                             turn_id += 1
                                             gemini_turn_active = True
+                                            pending_response_until_mono = 0.0
                                             output_tx_in_turn = False
                                         raw_pcm = part.inline_data.data
                                         pcm_dur = len(raw_pcm) / 48000.0
@@ -684,6 +697,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                         if not gemini_turn_active:
                                             turn_id += 1
                                             gemini_turn_active = True
+                                            pending_response_until_mono = 0.0
                                         await websocket.send_json({
                                             "type": "transcript",
                                             "text": part.text,
@@ -693,6 +707,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             if getattr(sc, "turn_complete", False):
                                 audio_turn_open = False
                                 gemini_turn_active = False
+                                pending_response_until_mono = 0.0
                                 output_tx_in_turn = False
                                 await websocket.send_json({"type": "turn_complete", "turn_id": turn_id})
 
