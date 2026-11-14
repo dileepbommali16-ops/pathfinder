@@ -5,9 +5,11 @@ learns of generate_resume during streaming turns.
 """
 import os
 import time
+import asyncio
 import logging
 import base64
 import json
+from collections import OrderedDict
 from typing import Any, Dict, Optional
 
 import httpx
@@ -20,6 +22,8 @@ logger = logging.getLogger("agent.routes.voice")
 router = APIRouter(prefix="/api", tags=["voice"])
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10MB cap (plaintext resumes / text are small)
+_TTS_CACHE_MAX = 40
+_TTS_PCM_CACHE: "OrderedDict[str, Dict[str, Any]]" = OrderedDict()
 
 UPLOAD_FILES: Dict[str, Dict[str, Any]] = {}
 RESUME_STATUS: Dict[str, Dict[str, Any]] = {}
@@ -124,14 +128,88 @@ async def download_resume():
     return RESUME_STATUS.get("last", {}).get("download_url") or ""
 
 
+def _synthesize_puck_tts_sync(text: str, voice_name: str = "Puck") -> Optional[Dict[str, Any]]:
+    """Synthesize clean verbatim 24kHz PCM speech using Gemini native TTS."""
+    from google import genai
+    from google.genai import types
+    from backend.config.key_resolver import get_gemini_key_candidates
+
+    keys = get_gemini_key_candidates()
+    if not keys:
+        return None
+
+    for key in keys:
+        try:
+            client = genai.Client(api_key=key)
+            resp = client.models.generate_content(
+                model="gemini-2.5-flash-preview-tts",
+                contents=text,
+                config=types.GenerateContentConfig(
+                    response_modalities=["AUDIO"],
+                    speech_config=types.SpeechConfig(
+                        voice_config=types.VoiceConfig(
+                            prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice_name)
+                        )
+                    ),
+                ),
+            )
+            candidates = getattr(resp, "candidates", None) or []
+            if not candidates:
+                continue
+            parts = getattr(candidates[0].content, "parts", None) or []
+            for part in parts:
+                inline = getattr(part, "inline_data", None)
+                raw_data = getattr(inline, "data", None) if inline else None
+                if raw_data:
+                    if isinstance(raw_data, (bytes, bytearray)):
+                        b64 = base64.b64encode(bytes(raw_data)).decode("utf-8")
+                    else:
+                        b64 = str(raw_data)
+                    return {
+                        "pcm_base64": b64,
+                        "sample_rate": 24000,
+                        "voice": voice_name,
+                    }
+        except Exception as exc:
+            logger.warning("[Voice TTS] Key attempt failed: %s", exc)
+            continue
+    return None
+
+
 @router.post("/voice/tts")
 async def voice_tts(req: dict, request: Request):
-    """Gemini Live Native Audio status endpoint (voice synthesis runs via Gemini Live WebSocket)."""
-    text = (req.get("text", "") if isinstance(req, dict) else "").strip()[:600]
+    """Synthesize exact verbatim 24kHz Puck PCM audio (never answers questions)."""
+    text = (req.get("text", "") if isinstance(req, dict) else "").strip()[:900]
+    voice_name = (req.get("voice", "Puck") if isinstance(req, dict) else "Puck").strip() or "Puck"
     if not text:
         raise HTTPException(400, "Text is required.")
+
+    cache_key = f"{voice_name}:{text}"
+    if cache_key in _TTS_PCM_CACHE:
+        _TTS_PCM_CACHE.move_to_end(cache_key)
+        cached = _TTS_PCM_CACHE[cache_key]
+        return {
+            "status": "ok",
+            "cached": True,
+            "provider": "gemini-2.5-flash-preview-tts",
+            **cached,
+        }
+
+    synthesized = await asyncio.to_thread(_synthesize_puck_tts_sync, text, voice_name)
+    if synthesized:
+        _TTS_PCM_CACHE[cache_key] = synthesized
+        _TTS_PCM_CACHE.move_to_end(cache_key)
+        if len(_TTS_PCM_CACHE) > _TTS_CACHE_MAX:
+            _TTS_PCM_CACHE.popitem(last=False)
+        return {
+            "status": "ok",
+            "cached": False,
+            "provider": "gemini-2.5-flash-preview-tts",
+            **synthesized,
+        }
+
     return {
-        "status": "handled_by_gemini_live_websocket",
+        "status": "fallback_live",
         "text": text,
         "provider": "gemini-live-native-audio",
     }

@@ -36,7 +36,8 @@ def get_das_system_instruction(role: str) -> str:
         "3. FRIENDLY AUDIO / EARPHONE / VOLUME COACHING: "
         "If `[FRIENDLY AUDIO NOTICE]` arrives (or you notice weak/inaudible speech on earphones, Bluetooth buds, or headphones at low volume ~20% while watching on camera), "
         "tell the user warmly like a trusted friend that their voice isn't reaching you clearly, and suggest turning up their volume or checking their earphone/buds connection and mic.\n"
-        "4. KEEP REPLIES COMPLETE & CONCISE: Deliver complete finished sentences smoothly without trailing off or rambling."
+        "4. KEEP REPLIES COMPLETE & CONCISE: Deliver complete finished sentences smoothly without trailing off or rambling.\n"
+        "5. INTERVIEWER READ-ALOUD ONLY: If any turn starts with `[READ ALOUD VERBATIM ONLY]`, read ONLY the quoted sentence aloud naturally like a technical interviewer asking the candidate. NEVER answer the question, give hints, or add extra words."
     )
     role_lower = (role or "boss").lower().strip()
     if role_lower == "boss":
@@ -390,7 +391,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             return (
                 gemini_turn_active
                 or now_m < pending_response_until_mono
-                or now_m < audio_end_mono + 0.8
+                or now_m < audio_end_mono + 0.35
             )
 
         def format_page_context_note() -> str:
@@ -400,8 +401,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             title = latest_page_context.get("tabTitle") or tab
             chance = latest_page_context.get("readinessChance")
             role_target = latest_page_context.get("targetRole") or ""
+            card_ctx = latest_page_context.get("cardContext") or ""
             focus = latest_page_context.get("focusOnDas")
             parts_ctx = [f"Slide={tab} ({title})"]
+            if card_ctx:
+                parts_ctx.append(f"Card={card_ctx}")
             if chance is not None:
                 parts_ctx.append(f"Readiness={chance}%")
             if role_target:
@@ -448,7 +452,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         await session.send_realtime_input(audio_stream_end=True)
                     except Exception:
                         pass
-                pending_response_until_mono = time.monotonic() + 5.5
+                pending_response_until_mono = time.monotonic() + 3.0
                 await session.send_client_content(
                     turns=[types.Content(parts=parts, role="user")],
                     turn_complete=True,
@@ -582,6 +586,29 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         text = (msg.get("text") or "").strip()
                         if text:
                             await send_vision_prompt(text)
+
+                    # 4b. Verbatim Interviewer Read-Aloud (strictly never answers or explains)
+                    elif msg_type == "speak_verbatim":
+                        v_text = (msg.get("text") or "").strip()
+                        if v_text:
+                            read_prompt = (
+                                "[READ ALOUD VERBATIM ONLY]\n"
+                                "Read the exact sentence below aloud naturally as the technical interviewer asking the candidate. "
+                                "Do NOT answer the question, explain concepts, give hints, or add intro/outro commentary:\n"
+                                f"\"{v_text}\""
+                            )
+                            async with send_lock:
+                                if audio_turn_open:
+                                    audio_turn_open = False
+                                    try:
+                                        await session.send_realtime_input(audio_stream_end=True)
+                                    except Exception:
+                                        pass
+                                pending_response_until_mono = time.monotonic() + 3.0
+                                await session.send_client_content(
+                                    turns=[types.Content(parts=[types.Part.from_text(text=read_prompt)], role="user")],
+                                    turn_complete=True,
+                                )
 
                     # 5. Role Switch
                     elif msg_type == "role_switch":

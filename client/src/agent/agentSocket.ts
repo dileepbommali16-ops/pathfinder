@@ -29,12 +29,40 @@ class DasAgentSocket {
   public isConnected = false;
   public currentRole: UserHonorificRole = "boss";
 
+  public get isSocketConnected(): boolean {
+    return this.isConnected && this.ws?.readyState === WebSocket.OPEN;
+  }
+
   public get isAgentSpeaking(): boolean {
-    return this.isSpeakingTurn;
+    if (!this.isSpeakingTurn) return false;
+    if (this.lastAudioChunkAt > 0 && Date.now() - this.lastAudioChunkAt > 2600 && !audioEngine.isSpeaking()) {
+      this.isSpeakingTurn = false;
+      return false;
+    }
+    return true;
   }
 
   public get isAwaitingResponse(): boolean {
-    return Boolean(this.lastUnansweredText) && !this.isSpeakingTurn;
+    return (
+      Boolean(this.lastUnansweredText) &&
+      !this.isSpeakingTurn &&
+      Date.now() - this.lastUnansweredSetAt < 2200
+    );
+  }
+
+  public onAgentResponse(cb: () => void): () => void {
+    this.responseObservers.add(cb);
+    return () => {
+      this.responseObservers.delete(cb);
+    };
+  }
+
+  private notifyAgentResponse() {
+    this.responseObservers.forEach((cb) => {
+      try {
+        cb();
+      } catch {}
+    });
   }
 
   // Persistent callback storage for auto-reconnection and multi-turn stability
@@ -51,6 +79,9 @@ class DasAgentSocket {
   private lastPongAt = 0;
   private turnWatchdogTimer: number | null = null;
   private lastUnansweredText: string | null = null;
+  private lastUnansweredSetAt = 0;
+  private lastAudioChunkAt = 0;
+  private responseObservers: Set<() => void> = new Set();
   private watchdogRetriedForText = false;
   private lastTextSentAt = 0;
   private healthListenersAttached = false;
@@ -445,8 +476,8 @@ CORE AUTONOMOUS CAPABILITIES:
         // 2. Render Backend Status / Audio / Transcript
         if (data.type === "status") {
           if (data.status === "reconnecting") {
-            if (this.lastUnansweredText && !this.pendingTexts.includes(this.lastUnansweredText)) {
-              this.pendingTexts.push(this.lastUnansweredText);
+            if (this.lastUnansweredText) {
+              this.pendingTexts = [this.lastUnansweredText];
             }
             this.savedOnTranscript?.(data.message || "Refreshing live session...");
             this.forceReconnectNow();
@@ -485,7 +516,9 @@ CORE AUTONOMOUS CAPABILITIES:
           if (tId !== null) {
             this.activeAudioTurnId = tId;
           }
+          this.lastAudioChunkAt = Date.now();
           this.clearTurnWatchdog();
+          this.notifyAgentResponse();
           audioEngine.playPcmChunk(data.pcm_base64, data.sample_rate || 24000);
           if (!this.isSpeakingTurn) {
             if (this.awaitingNextTurn) {
@@ -506,6 +539,7 @@ CORE AUTONOMOUS CAPABILITIES:
             return;
           }
           this.clearTurnWatchdog();
+          this.notifyAgentResponse();
           if (this.awaitingNextTurn) {
             this.currentAgentTranscript = "";
             this.awaitingNextTurn = false;
@@ -782,6 +816,7 @@ CORE AUTONOMOUS CAPABILITIES:
       this.turnWatchdogTimer = null;
     }
     this.lastUnansweredText = null;
+    this.lastUnansweredSetAt = 0;
     this.watchdogRetriedForText = false;
   }
 
@@ -790,21 +825,23 @@ CORE AUTONOMOUS CAPABILITIES:
       window.clearTimeout(this.turnWatchdogTimer);
     }
     this.lastUnansweredText = text;
+    this.lastUnansweredSetAt = Date.now();
     this.turnWatchdogTimer = window.setTimeout(() => {
       this.turnWatchdogTimer = null;
       if (this.lastUnansweredText !== text) return;
 
       if (!this.watchdogRetriedForText) {
         this.watchdogRetriedForText = true;
-        this.pendingTexts.push(text);
+        this.pendingTexts = [text];
         this.savedOnTranscript?.("Refreshing live connection and retrying, Boss...");
         this.forceReconnectNow();
       } else {
         this.lastUnansweredText = null;
+        this.lastUnansweredSetAt = 0;
         this.watchdogRetriedForText = false;
         this.savedOnTranscript?.("Live session timed out, Boss. Please try sending your message again.");
       }
-    }, 8500);
+    }, 5500);
   }
 
   private forceReconnectNow() {
@@ -953,6 +990,36 @@ CORE AUTONOMOUS CAPABILITIES:
     }
   }
 
+  public askCoach(query: string, pageContext?: Record<string, any>) {
+    if (!query.trim()) return;
+    if (pageContext) {
+      this.sendPageContext(pageContext);
+    }
+    this.sendTextCommand(query);
+  }
+
+  public speakVerbatim(text: string, mode = "coach_read") {
+    const cleaned = text.trim();
+    if (!cleaned) return;
+    this.currentAgentTranscript = "";
+    this.isSpeakingTurn = false;
+    this.awaitingNextTurn = false;
+    audioEngine.unlockAudio();
+    audioEngine.clearAudioQueue();
+
+    if (!this.isSocketConnected || !this.ws) {
+      return;
+    }
+
+    try {
+      if (this.isDirectGoogle) {
+        this.sendImmediateText(`[READ ALOUD VERBATIM ONLY]: ${cleaned}`);
+      } else {
+        this.ws.send(JSON.stringify({ type: "speak_verbatim", text: cleaned, mode }));
+      }
+    } catch {}
+  }
+
   public sendTextCommand(text: string) {
     if (!text.trim()) return;
     this.currentAgentTranscript = "";
@@ -983,7 +1050,7 @@ CORE AUTONOMOUS CAPABILITIES:
     }
 
     if (!this.ws || this.ws.readyState === WebSocket.CLOSED || this.ws.readyState === WebSocket.CLOSING) {
-      this.pendingTexts.push(text);
+      this.pendingTexts = [text];
       this.watchdogRetriedForText = false;
       this.armTurnWatchdog(text);
       this.closeExistingSocketOnly();
@@ -1000,12 +1067,13 @@ CORE AUTONOMOUS CAPABILITIES:
     }
 
     if (!this.isConnected || this.ws.readyState !== WebSocket.OPEN) {
-      this.pendingTexts.push(text);
+      this.pendingTexts = [text];
       this.watchdogRetriedForText = false;
       this.armTurnWatchdog(text);
       return;
     }
 
+    this.pendingTexts = [];
     this.watchdogRetriedForText = false;
     this.armTurnWatchdog(text);
     this.sendImmediateText(text);
@@ -1065,6 +1133,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.isConnected = false;
     this.isSpeakingTurn = false;
     this.awaitingNextTurn = false;
+    this.lastAudioChunkAt = 0;
     this.savedOnStatusChange?.(false);
   }
 }

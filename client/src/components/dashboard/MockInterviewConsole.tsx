@@ -25,8 +25,9 @@ import {
   ShieldAlert
 } from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
-import { speaker } from "@/agent/audioIO";
+import { audioEngine, speaker } from "@/agent/audioIO";
 import { onVoiceStateChange } from "@/audio/voiceManager";
+import { API_BASE } from "@/lib/apiClient";
 import { evaluateMockInterviewAnswer } from "@/lib/interviewEvaluator";
 
 interface MockInterviewConsoleProps {
@@ -187,8 +188,11 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
   const [userAnswer, setUserAnswer] = useState<string>("");
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [isLoadingVoice, setIsLoadingVoice] = useState<boolean>(false);
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
   const [copiedBenchmark, setCopiedBenchmark] = useState<boolean>(false);
+  const speakGenRef = useRef<number>(0);
+  const ttsCacheRef = useRef<Map<string, { pcm: string; rate: number }>>(new Map());
   const [evaluationResult, setEvaluationResult] = useState<{
     overallScore: number;
     technicalPrecision: number;
@@ -243,13 +247,18 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     }
   }, [initialCompany, initialMode]);
 
-  // Subscribe to Deepgram speaker state
+  // Subscribe to WebAudio engine & fallback speaker state
   useEffect(() => {
-    const unsub = onVoiceStateChange((speaking) => {
-      setIsSpeaking(speaking);
+    const syncSpeaking = () => {
+      setIsSpeaking(audioEngine.isSpeaking());
+    };
+    const unsubEngine = audioEngine.onSpeakingStateChange(syncSpeaking);
+    const unsubVoice = onVoiceStateChange((legacySpeaking) => {
+      setIsSpeaking(legacySpeaking || audioEngine.isSpeaking());
     });
     return () => {
-      unsub();
+      unsubEngine();
+      unsubVoice();
       stopSpeaking();
       stopRecording();
     };
@@ -264,17 +273,78 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     stopRecording();
   };
 
-  // Text to Speech: Question read out via Deepgram flux-donovan-en
-  const handleToggleSpeak = () => {
-    if (isSpeaking) {
+  // Text to Speech: Read exact interview question aloud verbatim via Gemini Puck TTS (never answer the question)
+  const handleToggleSpeak = async () => {
+    if (isSpeaking || isLoadingVoice) {
       stopSpeaking();
       return;
     }
-    speaker.say(currentQ.question);
+
+    const questionText = currentQ.question.trim();
+    if (!questionText) return;
+
+    audioEngine.unlockAudio();
+    const gen = ++speakGenRef.current;
+
+    window.dispatchEvent(
+      new CustomEvent("das-interviewer-prompt", {
+        detail: { question: questionText, track: currentQ.track, company: currentQ.company },
+      })
+    );
+
+    const cached = ttsCacheRef.current.get(questionText);
+    if (cached) {
+      setIsSpeaking(true);
+      const ok = await audioEngine.playWholePcmBase64(cached.pcm, cached.rate, () => {
+        if (speakGenRef.current === gen) setIsSpeaking(false);
+      });
+      if (!ok && speakGenRef.current === gen) {
+        speaker.say(questionText);
+      }
+      return;
+    }
+
+    setIsLoadingVoice(true);
+    try {
+      const resp = await fetch(`${API_BASE}/api/voice/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: questionText, voice: "Puck" }),
+      });
+      if (speakGenRef.current !== gen) return;
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data?.status === "ok" && data?.pcm_base64) {
+          const rate = Number(data.sample_rate) || 24000;
+          ttsCacheRef.current.set(questionText, { pcm: data.pcm_base64, rate });
+          setIsLoadingVoice(false);
+          setIsSpeaking(true);
+          const played = await audioEngine.playWholePcmBase64(data.pcm_base64, rate, () => {
+            if (speakGenRef.current === gen) setIsSpeaking(false);
+          });
+          if (played) return;
+        }
+      }
+    } catch {
+      // Fall through cleanly to verbatim Speaker fallback if offline
+    }
+
+    if (speakGenRef.current !== gen) return;
+    setIsLoadingVoice(false);
+    speaker.say(questionText);
   };
 
   const stopSpeaking = () => {
+    speakGenRef.current += 1;
+    setIsLoadingVoice(false);
+    audioEngine.stopWholePcmPlayback();
+    audioEngine.clearAudioQueue();
     speaker.stop();
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
     setIsSpeaking(false);
   };
 
@@ -566,11 +636,21 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
                 isSpeaking
                   ? "border border-[#9f1239] bg-[#9f1239] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.4)]"
+                  : isLoadingVoice
+                  ? "border border-[#7c3aed]/50 bg-[#161926] text-[#f8fafc]"
                   : "border border-[rgba(255,255,255,0.08)] bg-[#11131c] text-[#94a3b8] hover:bg-[#161926] hover:text-[#f8fafc]"
               }`}
             >
-              {isSpeaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              <span>{isSpeaking ? "Stop Voice" : "Hear Question"}</span>
+              {isLoadingVoice ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isSpeaking ? (
+                <VolumeX className="h-4 w-4" />
+              ) : (
+                <Volume2 className="h-4 w-4" />
+              )}
+              <span>
+                {isLoadingVoice ? "Loading Voice..." : isSpeaking ? "Stop Voice" : "Hear Question"}
+              </span>
             </button>
 
             <button

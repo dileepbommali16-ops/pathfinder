@@ -31,6 +31,7 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
 import { getCareerAgentResponse, buildRagGeminiSystemPrompt } from "@/lib/careerAgent";
 import { geminiLive } from "@/agent/geminiLive";
+import { audioEngine } from "@/agent/audioIO";
 import { handleAuthLoginDetected, initAuthMode, getUserRole } from "@/lib/auth";
 import {
   Sparkles,
@@ -1505,10 +1506,39 @@ export default function Home({ initialTab }: HomeProps = {}) {
   };
 
   const handleAskCoach = (query: string, originTab?: string, cardContext?: string) => {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+    // Unlock WebAudio synchronously inside user click so Coach reply plays immediately on 1st click
+    audioEngine.unlockAudio();
     const fromTab = originTab || activeTab;
-    setTimeout(() => {
-      handleSendMessage(query, undefined, fromTab, cardContext);
-    }, 60);
+    const tabKnowledge = getTabKnowledge(fromTab);
+    window.dispatchEvent(
+      new CustomEvent("das-ask-coach", {
+        detail: {
+          query: trimmedQuery,
+          originTab: fromTab,
+          cardContext: cardContext || "",
+          pageContext: {
+            activeTab: fromTab,
+            activeTabTitle: tabKnowledge?.title || fromTab,
+            screenName: tabKnowledge?.title || fromTab,
+            screenPurpose: tabKnowledge?.purpose || "",
+            cardContext: cardContext || "",
+            placementReadinessChance: `${prediction.chance}%`,
+            placementReadinessLabel: prediction.label,
+            candidateBranch: profile.branch,
+            targetRole: profile.targetRole,
+            cgpa: profile.cgpa,
+            backlogs: profile.backlogs,
+            internships: profile.internships,
+            codingConfidence: profile.coding,
+            communicationRating: profile.communication,
+            cohortYear: cohortFilters.year,
+            cohortBranch: cohortFilters.branch,
+          },
+        },
+      })
+    );
   };
 
   const handleRegenerateChat = () => {
@@ -2046,6 +2076,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   badge="Step 3 · Skill Gaps"
                   accent="amber"
                   icon={Sparkles}
+                  onAskCoach={handleAskCoach}
                 />
                 <div id="skill-gap-matrix">
                   <SkillGapSection
@@ -2090,6 +2121,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   accent="cyan"
                   icon={ShieldCheck}
                   helperLabel="Validates original code authorship and syncs verified technologies"
+                  onAskCoach={handleAskCoach}
                 />
                 <LiveSkillVerifier
                   currentProfile={profile}
@@ -2117,6 +2149,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   accent="rose"
                   icon={TrendingUp}
                   helperLabel="Interactive sliders instantly re-simulate placement probability"
+                  onAskCoach={handleAskCoach}
                 />
                 <div id="what-if-simulator">
                   <WhatIfSimulator
@@ -2221,6 +2254,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 accent="purple"
                 icon={Compass}
                 helperLabel="Milestones auto-adapt as you update skills and role"
+                onAskCoach={handleAskCoach}
               />
               <CareerMissionTracker profile={profile} onNavigateTab={setActiveTab} />
               <div id="sprint-roadmap">
@@ -2258,6 +2292,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 accent="blue"
                 icon={GraduationCap}
                 helperLabel="Verified campus records for 2024-2026 batches"
+                onAskCoach={handleAskCoach}
               />
               <BranchIntelligence
                 apiBase={API_BASE}
@@ -2287,6 +2322,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 accent="blue"
                 icon={TrendingUp}
                 helperLabel="Filter by branch, year, package, and package tier"
+                onAskCoach={handleAskCoach}
               />
               <CohortExplorer
                 analytics={cohortAnalytics}
@@ -2322,6 +2358,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 accent="cyan"
                 icon={User}
                 helperLabel="Saving here recalculates all placement probabilities and opens 2. Dashboard"
+                onAskCoach={handleAskCoach}
               />
               <ProfileSettings
                 profile={profile}
@@ -2357,6 +2394,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 accent="rose"
                 icon={FileText}
                 helperLabel="Single-column ATS compliance and keyword gap detection"
+                onAskCoach={handleAskCoach}
               />
               <ResumeStudio
                 feedback={resumeFeedback}
@@ -2394,6 +2432,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 accent="amber"
                 icon={Lightbulb}
                 helperLabel="Includes live architecture specs and STAR storytelling defense points"
+                onAskCoach={handleAskCoach}
               />
               <ProjectRecommender
                 targetRole={profile.targetRole}

@@ -5,6 +5,7 @@ import { dasSocket, UserHonorificRole } from "./agentSocket";
 import { audioEngine, cameraEngine, MediaDeviceOption } from "./audioIO";
 import { CodeTaskPayload } from "./toolRunner";
 import { API_BASE } from "@/lib/apiClient";
+import { getCareerAgentResponse } from "@/lib/careerAgent";
 import { toast } from "sonner";
 
 export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -39,6 +40,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const selectedMicIdRef = useRef("");
   const activeMicLabelRef = useRef("");
   const runCodeLiveRef = useRef<(code: string, lang: string) => void>(() => {});
+  const ensureSocketConnectedRef = useRef<() => void>(() => {});
+  const askCoachNonceRef = useRef(0);
+  const askCoachUnbindRef = useRef<(() => void) | null>(null);
 
   // Live Multi-Language Code & Compiler Studio State
   const [codeTask, setCodeTask] = useState<CodeTaskPayload | null>(null);
@@ -158,6 +162,118 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     );
   };
+  ensureSocketConnectedRef.current = ensureSocketConnected;
+
+  // Wire single-click "Ask Coach about this" cards and Mock Interview verbatim prompts directly into the live DAS HUD
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const onAskCoach = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail || {};
+      const query = typeof detail.query === "string" ? detail.query.trim() : "";
+      if (!query) return;
+
+      askCoachUnbindRef.current?.();
+      askCoachUnbindRef.current = null;
+      const nonce = ++askCoachNonceRef.current;
+
+      audioEngine.unlockAudio();
+      audioEngine.clearAudioQueue();
+      setUserTranscript(query);
+      setTranscript("Thinking & analyzing with DAS Coach...");
+
+      const curCtx =
+        (typeof window !== "undefined" && (window as any).__DAS_PAGE_CONTEXT__) || {};
+      const mergedCtx = {
+        ...curCtx,
+        ...(detail.pageContext && typeof detail.pageContext === "object" ? detail.pageContext : {}),
+        ...(detail.originTab ? { activeTab: detail.originTab } : {}),
+        ...(detail.cardContext ? { cardContext: detail.cardContext } : {}),
+      };
+
+      ensureSocketConnectedRef.current();
+
+      let settled = false;
+      let timerId: number | null = null;
+      const cleanup = () => {
+        settled = true;
+        if (timerId !== null) window.clearTimeout(timerId);
+        unsubSocket();
+        if (askCoachUnbindRef.current === cleanup) {
+          askCoachUnbindRef.current = null;
+        }
+      };
+      const unsubSocket = dasSocket.onAgentResponse(() => {
+        cleanup();
+      });
+      askCoachUnbindRef.current = cleanup;
+
+      dasSocket.askCoach(query, mergedCtx);
+
+      timerId = window.setTimeout(async () => {
+        if (settled || askCoachNonceRef.current !== nonce) return;
+        let replyText = "";
+        let parsedProfile: any = {};
+        try {
+          const profileJson =
+            typeof window !== "undefined" ? localStorage.getItem("pathfinder_profile") : null;
+          parsedProfile = profileJson ? JSON.parse(profileJson) : {};
+          const resp = await fetch(`${API_BASE}/api/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: query,
+              history: [],
+              profile: {
+                cgpa: parsedProfile.cgpa ?? 7.8,
+                backlogs: parsedProfile.backlogs ?? 0,
+                internships: parsedProfile.internships ?? 1,
+                communication: parsedProfile.communication ?? 4,
+                coding: parsedProfile.coding ?? 4,
+                target_role: parsedProfile.targetRole ?? "Software Engineer",
+                target_tier: parsedProfile.targetTier ?? "Product",
+                branch: parsedProfile.branch ?? "CSE",
+              },
+              active_tab: mergedCtx.activeTab || "overview",
+              page_context: mergedCtx,
+            }),
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data?.reply && typeof data.reply === "string") {
+              replyText = data.reply.trim();
+            }
+          }
+        } catch {}
+
+        if (!replyText) {
+          replyText = getCareerAgentResponse(query, [], parsedProfile);
+        }
+        if (!settled && askCoachNonceRef.current === nonce && replyText) {
+          cleanup();
+          setTranscript(replyText);
+        }
+      }, 6000);
+    };
+
+    const onInterviewerPrompt = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail || {};
+      const question = typeof detail.question === "string" ? detail.question.trim() : "";
+      if (!question) return;
+      const trackLabel = detail.track === "defense" ? "Project Defense Prompt" : "Interviewer Question";
+      setUserTranscript(`🎤 ${trackLabel}`);
+      setTranscript(question);
+    };
+
+    window.addEventListener("das-ask-coach", onAskCoach);
+    window.addEventListener("das-interviewer-prompt", onInterviewerPrompt);
+    return () => {
+      window.removeEventListener("das-ask-coach", onAskCoach);
+      window.removeEventListener("das-interviewer-prompt", onInterviewerPrompt);
+      askCoachUnbindRef.current?.();
+      askCoachUnbindRef.current = null;
+    };
+  }, [isAuthenticated]);
 
   // Connect to Gemini Live multimodal agent ONLY when authenticated inside the dashboard
   // Keep `role` OUT of dependencies so toggling Boss/Sir/Madam never disconnects WS or stops camera!
@@ -186,7 +302,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     await audioEngine.startMicCapture((b64) => dasSocket.sendAudioChunk(b64), {
       deviceId: deviceId || undefined,
       rawMode: false,
-      shouldSuppressEcho: () => dasSocket.isAgentSpeaking || dasSocket.isAwaitingResponse,
+      shouldSuppressEcho: () => audioEngine.isSpeaking() || dasSocket.isAgentSpeaking,
       onSpeechIdle: () => dasSocket.sendAudioStreamEnd(),
       onAutoDeviceSwitch: (newDev) => {
         selectedMicIdRef.current = newDev.deviceId;
@@ -332,6 +448,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleSendText = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() && !attachedFile) return;
+
+    askCoachNonceRef.current += 1;
+    askCoachUnbindRef.current?.();
+    askCoachUnbindRef.current = null;
 
     audioEngine.notifyTypingActivity(1200);
     audioEngine.unlockAudio();
