@@ -12,7 +12,7 @@ interface Ambient3DBackgroundProps {
 export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ className = "" }) => {
   return (
     <div
-      className={`pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#000000] ${className}`}
+      className={`pointer-events-none fixed inset-0 z-0 overflow-hidden bg-transparent ${className}`}
       aria-hidden="true"
     />
   );

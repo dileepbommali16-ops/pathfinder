@@ -1841,8 +1841,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
         </div>
       )}
 
-      {/* BACKGROUND SYSTEM - Pure Black (#000000) so 3D #5BC0DE glowing agent shines cleanly */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#000000]" aria-hidden="true">
+      {/* BACKGROUND SYSTEM - Transparent wrapper inside <main z-10> so body #000000 + Avatar3D at z-[1] show cleanly */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-transparent" aria-hidden="true">
         <Ambient3DBackground activeTab={activeTab} />
       </div>
 

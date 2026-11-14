@@ -315,7 +315,7 @@
 .pathfinder-dashboard main > div [class*="bg-[#0F172A]"],
 .pathfinder-dashboard main > div [class*="bg-[#0f172a]"],
 .pathfinder-dashboard main > div [class*="bg-[#060608]"] {
-  background-color: rgba(0, 0, 0, 0.42) !important;
+  background-color: rgba(0, 0, 0, 0.36) !important;
   backdrop-filter: blur(2px) !important;
   -webkit-backdrop-filter: blur(2px) !important;
 }
@@ -335,7 +335,7 @@
 [data-slide-theme="pure-black"] [class*="bg-[#0F172A]"],
 [data-slide-theme="pure-black"] [class*="bg-[#0f172a]"],
 [data-slide-theme="pure-black"] [class*="bg-[#060608]"] {
-  background-color: rgba(0, 0, 0, 0.42) !important;
+  background-color: rgba(0, 0, 0, 0.36) !important;
   background-image: none !important;
   backdrop-filter: blur(2px) !important;
   -webkit-backdrop-filter: blur(2px) !important;
@@ -372,7 +372,7 @@
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#1c2030]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#0a0b10]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#060608]"] {
-  background-color: rgba(0, 0, 0, 0.42) !important;
+  background-color: rgba(0, 0, 0, 0.36) !important;
   backdrop-filter: blur(2px) !important;
   -webkit-backdrop-filter: blur(2px) !important;
 }
