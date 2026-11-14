@@ -229,20 +229,19 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     return () => clearInterval(interval);
   }, [timerActive]);
 
-  // Handle Initial Company Pre-selection
+  // Handle Initial Company Pre-selection when in company track
   useEffect(() => {
-    if (initialCompany) {
-      const companyQuestions = QUESTION_BANK.filter((q) => q.track === "company");
-      const foundIdx = companyQuestions.findIndex((q) =>
-        q.company.toLowerCase().includes(initialCompany.toLowerCase())
-      );
-      if (foundIdx !== -1) {
-        setSelectedTrack("company");
-        setSelectedQuestionIndex(foundIdx);
-        resetState();
-      }
+    if (initialMode !== "company" || !initialCompany) return;
+    const companyQuestions = QUESTION_BANK.filter((q) => q.track === "company");
+    const foundIdx = companyQuestions.findIndex((q) =>
+      q.company.toLowerCase().includes(initialCompany.toLowerCase())
+    );
+    if (foundIdx !== -1) {
+      setSelectedTrack("company");
+      setSelectedQuestionIndex(foundIdx);
+      resetState();
     }
-  }, [initialCompany]);
+  }, [initialCompany, initialMode]);
 
   // Subscribe to Deepgram speaker state
   useEffect(() => {
