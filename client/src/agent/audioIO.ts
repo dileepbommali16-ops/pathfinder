@@ -519,6 +519,7 @@ class DasPcmPlayer extends AudioWorkletProcessor {
     this.phase = 0;
     this.buffering = true;
     this.turnStarted = false;
+    this.wasActive = false;
     this.drain = false;
     this.gainEnv = 0;
     this.lastSample = 0;
@@ -533,6 +534,10 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         this.phase = 0;
         this.buffering = true;
         this.turnStarted = false;
+        if (this.wasActive) {
+          this.wasActive = false;
+          this.port.postMessage({ type: "playing", active: false });
+        }
         this.drain = false;
         this.gainEnv = 0;
         this.lastSample = 0;
@@ -543,6 +548,10 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         const samples = new Float32Array(m.pcm);
         if (m.rate) this.srcRate = m.rate;
         this.drain = false;
+        if (!this.wasActive && samples.length > 0) {
+          this.wasActive = true;
+          this.port.postMessage({ type: "playing", active: true });
+        }
         for (let i = 0; i < samples.length; i++) {
           if (this.avail < this.cap - 1) {
             this.ring[this.writePos] = samples[i];
@@ -562,6 +571,14 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         this.buffering = false;
         this.turnStarted = true;
       } else {
+        if (this.drain && this.avail === 0) {
+          this.drain = false;
+          this.turnStarted = false;
+          if (this.wasActive) {
+            this.wasActive = false;
+            this.port.postMessage({ type: "playing", active: false });
+          }
+        }
         out.fill(0);
         return true;
       }
@@ -605,6 +622,10 @@ class DasPcmPlayer extends AudioWorkletProcessor {
           if (this.drain) {
             this.drain = false;
             this.turnStarted = false;
+            if (this.wasActive) {
+              this.wasActive = false;
+              this.port.postMessage({ type: "playing", active: false });
+            }
           }
         }
       }
@@ -647,6 +668,7 @@ class AudioEngine {
   private preRollChunks: string[] = [];
   private lastUiStatusAt: number = 0;
   private activeTurnMode: "worklet" | "fallback" | null = null;
+  private workletPlaying: boolean = false;
   private speechOnsetFrames: number = 0;
   private typingSuppressUntilMs: number = 0;
   private zeroSignalMs: number = 0;
@@ -681,6 +703,16 @@ class AudioEngine {
           numberOfOutputs: 1,
           outputChannelCount: [1],
         });
+        node.port.onmessage = (evt) => {
+          if (evt.data?.type === "playing") {
+            const active = Boolean(evt.data.active);
+            this.workletPlaying = active;
+            if (!active) {
+              const nowP = typeof performance !== "undefined" ? performance.now() : Date.now();
+              this.playingUntilPerfMs = nowP + 180;
+            }
+          }
+        };
         node.connect(analyser);
         this.playerNode = node;
         this.playerReady = true;
@@ -882,6 +914,9 @@ class AudioEngine {
 
   // Returns true while DAS is actively playing or draining audio (prevents mid-sentence speaker echo cuts)
   public isSpeaking(): boolean {
+    if (this.workletPlaying) {
+      return true;
+    }
     const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
     if (nowPerf < this.playingUntilPerfMs + 420) {
       return true;
@@ -897,6 +932,7 @@ class AudioEngine {
   // Clear audio queue immediately when user genuinely interrupts DAS or starts a new turn
   public clearAudioQueue() {
     this.activeTurnMode = null;
+    this.workletPlaying = false;
     if (this.playerNode) {
       try {
         this.playerNode.port.postMessage({ type: "clear" });

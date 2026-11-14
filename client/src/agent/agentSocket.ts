@@ -52,6 +52,7 @@ class DasAgentSocket {
   private turnWatchdogTimer: number | null = null;
   private lastUnansweredText: string | null = null;
   private watchdogRetriedForText = false;
+  private lastTextSentAt = 0;
   private healthListenersAttached = false;
 
   private ensureHealthListeners() {
@@ -460,10 +461,13 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "turn_complete") {
+          audioEngine.flushAudioPlayer();
+          if (!this.currentAgentTranscript && !this.isSpeakingTurn && Date.now() - this.lastTextSentAt < 700) {
+            return;
+          }
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
-          audioEngine.flushAudioPlayer();
           if (!this.currentAgentTranscript) {
             this.savedOnTranscript?.("DAS Ready. Speak or type your next command, Boss!");
           }
@@ -479,6 +483,10 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "interrupted") {
+          if (!this.currentAgentTranscript && !this.isSpeakingTurn && Date.now() - this.lastTextSentAt < 700) {
+            audioEngine.clearAudioQueue();
+            return;
+          }
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
@@ -916,6 +924,7 @@ CORE AUTONOMOUS CAPABILITIES:
   private sendImmediateText(text: string) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
+    this.lastTextSentAt = Date.now();
     try {
       if (this.isDirectGoogle) {
         this.ws.send(
