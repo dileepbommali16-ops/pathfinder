@@ -1789,7 +1789,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       {/* Main Container */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
         {focusOnDas ? (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 animate-in fade-in duration-300">
+          <div className="flex items-center justify-center pb-4 animate-in fade-in duration-300">
             <button
               type="button"
               onClick={() => setFocusOnDas(false)}
@@ -1812,7 +1812,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
             </div>
             <button
               type="button"
-              onClick={() => setFocusOnDas(true)}
+              onClick={() => {
+                setFocusOnDas(true);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               className="px-3.5 py-1.5 rounded-full border border-cyan-500/40 bg-[#0c101d]/75 hover:bg-cyan-500/20 text-xs font-semibold text-cyan-200 backdrop-blur-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
             >
               <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
