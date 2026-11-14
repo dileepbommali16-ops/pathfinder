@@ -1,0 +1,14 @@
+- generic [ref=e2]:
+  - region "Notifications alt+T"
+  - main [ref=e3]:
+    - generic [ref=e6]:
+      - generic: Pull lamp string to illuminate & reveal details
+      - generic [ref=e7]:
+        - button "Pull or click this string to toggle the lamp (ON / OFF)" [ref=e11] [cursor=pointer]
+        - generic "Click or pull the lamp string to reveal candidate details" [ref=e13] [cursor=pointer]:
+          - generic [ref=e14]: 👈
+          - generic [ref=e15]: Pull Cord
+        - generic:
+          - generic:
+            - generic: 💡
+            - generic: Lamp your Career
