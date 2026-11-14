@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { audioEngine } from "./audioIO";
+import { SolarFaceEffects, SculptedHumanLips } from "./FaceEffects";
 
 export interface WireframeFaceProps {
   scale?: [number, number, number];
@@ -35,12 +36,14 @@ const LAVA_EYE_FRAG = `
     float pulse = 0.5 + 0.5 * sin(uTime * 5.8 - dist * 4.5);
     float coreHot = smoothstep(0.95, 0.05, dist);
 
-    vec3 crimsonLava = vec3(0.843, 0.137, 0.141); // #D72324
-    vec3 rubyMagma   = vec3(0.890, 0.090, 0.282); // #E31748
+    vec3 crimsonLava = vec3(0.949, 0.204, 0.337); // #F23456
+    vec3 rubyMagma   = vec3(0.659, 0.004, 0.224); // #A80139
 
-    vec3 col = mix(crimsonLava, rubyMagma, vein);
-    float shimmer = 1.08 + 0.42 * coreHot + 0.24 * pulse + uVoice * 0.35;
-    gl_FragColor = vec4(col * shimmer, 0.98);
+    float radialCore = exp(-length(vLocalPos.xy) * 2.2);
+    float flareRay = pow(max(0.0, sin(atan(vLocalPos.y, vLocalPos.x) * 10.0 - uTime * 3.8)), 4.0) * (1.0 - radialCore * 0.4);
+    vec3 col = mix(rubyMagma, crimsonLava, clamp(vein * 0.72 + radialCore * 0.55 + flareRay * 0.35, 0.0, 1.0));
+    float shimmer = 1.38 + 0.68 * coreHot + 0.32 * pulse + 0.48 * radialCore + 0.42 * flareRay + uVoice * 0.42;
+    gl_FragColor = vec4(col * shimmer, 1.0);
   }
 `;
 
@@ -57,8 +60,6 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
   const headGroupRef = useRef<THREE.Group>(null);
   const leftEyeGroupRef = useRef<THREE.Group>(null);
   const rightEyeGroupRef = useRef<THREE.Group>(null);
-  const upperLipRef = useRef<THREE.Mesh>(null);
-  const lowerLipRef = useRef<THREE.Mesh>(null);
   const outerRingRef = useRef<THREE.Mesh>(null);
   const innerRingRef = useRef<THREE.Mesh>(null);
 
@@ -100,12 +101,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
     }
 
     // Crisp, expressive audio-driven lip sync
-    if (upperLipRef.current && lowerLipRef.current) {
-      upperLipRef.current.position.y = -0.3 + v * 0.036;
-      lowerLipRef.current.position.y = -0.348 - v * 0.115;
-      upperLipRef.current.scale.set(1 + v * 0.1, 1, 1);
-      lowerLipRef.current.scale.set(1 + v * 0.18, 1 + v * 0.12, 1);
-    }
+    // Lips articulate cleanly inside SculptedHumanLips via smoothVol
 
     // Natural human periodic blinking on both lava eyes
     nextBlink.current -= delta;
@@ -143,24 +139,25 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
 
   return (
     <group ref={headGroupRef} scale={scale} position={position}>
-      {/* Primary cyan wireframe cranium (#4FCDE8) + deep cobalt inner lattice (#0E117A) */}
+      {/* Radiant molten solar-cyan face plasma, contours & twinkling sparkles (#5BC0DE) */}
+      <SolarFaceEffects voiceRef={smoothVol} />
       <mesh scale={[0.84, 1.05, 0.88]}>
         <icosahedronGeometry args={[1.14, 2]} />
-        <meshBasicMaterial color="#4FCDE8" wireframe transparent opacity={0.54} toneMapped={false} />
+        <meshBasicMaterial color="#5BC0DE" wireframe transparent opacity={0.82} toneMapped={false} />
       </mesh>
       <mesh scale={[0.82, 1.03, 0.86]}>
         <icosahedronGeometry args={[1.12, 1]} />
-        <meshBasicMaterial color="#0E117A" wireframe transparent opacity={0.62} toneMapped={false} />
+        <meshBasicMaterial color="#2489A8" wireframe transparent opacity={0.56} toneMapped={false} />
       </mesh>
 
       {/* Crisp brow contours (#0E117A + #4FCDE8) */}
       <mesh position={[-0.31, 0.305, 0.91]} rotation={[0, -0.22, 0.07]}>
         <boxGeometry args={[0.21, 0.017, 0.02]} />
-        <meshBasicMaterial color="#4FCDE8" transparent opacity={0.92} toneMapped={false} />
+        <meshBasicMaterial color="#5BC0DE" transparent opacity={0.96} toneMapped={false} />
       </mesh>
       <mesh position={[0.31, 0.305, 0.91]} rotation={[0, 0.22, -0.07]}>
         <boxGeometry args={[0.21, 0.017, 0.02]} />
-        <meshBasicMaterial color="#4FCDE8" transparent opacity={0.92} toneMapped={false} />
+        <meshBasicMaterial color="#5BC0DE" transparent opacity={0.96} toneMapped={false} />
       </mesh>
 
       {/* ONLY EYES: Blazing molten lava orbs & glowing rims (#D72324 + #E31748) with smooth blink */}
@@ -171,7 +168,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
         <mesh scale={[1.44, 0.84, 1]}>
           <ringGeometry args={[0.050, 0.068, 32]} />
           <meshBasicMaterial
-            color="#E31748"
+            color="#F23456"
             side={THREE.DoubleSide}
             transparent
             opacity={0.96}
@@ -182,10 +179,10 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
         <mesh scale={[1.82, 1.08, 1]} position={[0, 0, -0.005]}>
           <circleGeometry args={[0.068, 28]} />
           <meshBasicMaterial
-            color="#D72324"
+            color="#A80139"
             side={THREE.DoubleSide}
             transparent
-            opacity={0.44}
+            opacity={0.68}
             blending={THREE.AdditiveBlending}
             depthWrite={false}
             toneMapped={false}
@@ -200,7 +197,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
         <mesh scale={[1.44, 0.84, 1]}>
           <ringGeometry args={[0.050, 0.068, 32]} />
           <meshBasicMaterial
-            color="#E31748"
+            color="#F23456"
             side={THREE.DoubleSide}
             transparent
             opacity={0.96}
@@ -211,10 +208,10 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
         <mesh scale={[1.82, 1.08, 1]} position={[0, 0, -0.005]}>
           <circleGeometry args={[0.068, 28]} />
           <meshBasicMaterial
-            color="#D72324"
+            color="#A80139"
             side={THREE.DoubleSide}
             transparent
-            opacity={0.44}
+            opacity={0.68}
             blending={THREE.AdditiveBlending}
             depthWrite={false}
             toneMapped={false}
@@ -225,31 +222,24 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
       {/* Subtle sculpted nasal bridge + tip (#0E117A + #4FCDE8) */}
       <mesh position={[0, 0.0, 1.0]} rotation={[0.22, 0, 0]}>
         <cylinderGeometry args={[0.012, 0.024, 0.24, 8]} />
-        <meshBasicMaterial color="#4FCDE8" wireframe transparent opacity={0.78} toneMapped={false} />
+        <meshBasicMaterial color="#5BC0DE" wireframe transparent opacity={0.86} toneMapped={false} />
       </mesh>
       <mesh position={[0, -0.11, 1.04]}>
         <sphereGeometry args={[0.028, 10, 8]} />
-        <meshBasicMaterial color="#0E117A" wireframe transparent opacity={0.85} toneMapped={false} />
+        <meshBasicMaterial color="#8CE2F5" wireframe transparent opacity={0.92} toneMapped={false} />
       </mesh>
 
-      {/* Crisp small human lips synced to speech (#4FCDE8 + #0E117A) */}
-      <mesh ref={upperLipRef} position={[0, -0.3, 0.99]} rotation={[0, 0, Math.PI / 2]}>
-        <capsuleGeometry args={[0.015, 0.145, 6, 12]} />
-        <meshBasicMaterial color="#4FCDE8" transparent opacity={0.96} toneMapped={false} />
-      </mesh>
-      <mesh ref={lowerLipRef} position={[0, -0.348, 0.98]} rotation={[0, 0, Math.PI / 2]}>
-        <capsuleGeometry args={[0.016, 0.135, 6, 12]} />
-        <meshBasicMaterial color="#0E117A" transparent opacity={0.96} toneMapped={false} />
-      </mesh>
+      {/* Small anatomically sculpted human lips synced to real-time voice (#5BC0DE) */}
+      <SculptedHumanLips voiceRef={smoothVol} />
 
       {/* Dual orbital rings in #4FCDE8 and #0E117A */}
       <mesh ref={outerRingRef} position={[0, 0, -0.3]}>
         <ringGeometry args={[1.44, 1.46, 72]} />
-        <meshBasicMaterial color="#4FCDE8" side={THREE.DoubleSide} transparent opacity={0.44} toneMapped={false} />
+        <meshBasicMaterial color="#5BC0DE" side={THREE.DoubleSide} transparent opacity={0.72} toneMapped={false} />
       </mesh>
       <mesh ref={innerRingRef} position={[0, 0, -0.32]}>
         <ringGeometry args={[1.34, 1.36, 64]} />
-        <meshBasicMaterial color="#0E117A" side={THREE.DoubleSide} transparent opacity={0.55} toneMapped={false} />
+        <meshBasicMaterial color="#2D99BA" side={THREE.DoubleSide} transparent opacity={0.68} toneMapped={false} />
       </mesh>
     </group>
   );

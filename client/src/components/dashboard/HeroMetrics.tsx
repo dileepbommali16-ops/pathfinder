@@ -79,9 +79,9 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
   return (
     <div className="space-y-6">
       {/* Hero Banner with Integrated Probability Dial — Strictly #000000 & #060608 with light #34222E accents */}
-      <div className={`relative overflow-hidden rounded-3xl border ${toneConfig.border} bg-gradient-to-br ${toneConfig.bg} p-6 shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-2xl sm:p-8`}>
+      <div className={`relative overflow-hidden rounded-3xl border border-white/[0.12] bg-[#000000]/42 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-[2px] sm:p-8`}>
         {/* Subtle #34222E accent glow */}
-        <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-[#34222E]/35 blur-3xl" />
+        {/* Keep hero card clean pure black glass so 3D agent shines through without blur haze */}
 
         <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
           {/* Left: Personalized Welcome & Positioning */}

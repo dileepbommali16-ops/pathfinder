@@ -11,12 +11,12 @@ import {
   RotateCcw,
   Sparkles,
   RefreshCw,
-  Building,
   Check,
   AlertCircle,
   ArrowRight
 } from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
+import { CollegeSelector } from "@/components/common/CollegeSelector";
 
 interface ProfileSettingsProps {
   profile: StudentProfileState;
@@ -181,12 +181,11 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
 
             <div className="space-y-1">
               <label className="text-xs font-semibold text-[#94a3b8]">College / Institute</label>
-              <input
-                type="text"
+              <CollegeSelector
                 id="settings-college"
+                variant="settings"
                 value={formData.college}
-                onChange={(e) => setFormData({ ...formData, college: e.target.value })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                onChange={(college) => setFormData({ ...formData, college })}
               />
             </div>
 

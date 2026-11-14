@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   Sparkles,
   AlertCircle,
-  Building,
   Briefcase,
   Search,
   Plus,
@@ -23,6 +22,7 @@ import {
   Check
 } from "lucide-react";
 import { StudentProfileState, ReadinessAuditData } from "@/types/profile";
+import { CollegeSelector } from "@/components/common/CollegeSelector";
 
 interface OnboardingWizardProps {
   initialProfile: StudentProfileState;
@@ -584,17 +584,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
                     College / Institute Name <span className="text-red-400">*</span>
                   </label>
-                  <div className="relative">
-                    <Building className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                    <input
-                      type="text"
-                      id="input-college"
-                      placeholder="e.g. Hyderabad Institute of Technology and Management"
-                      value={profile.college}
-                      onChange={(e) => setProfile({ ...profile, college: e.target.value })}
-                      className="w-full rounded-2xl border border-white/10 bg-black/40 py-3 pl-10 pr-4 text-sm text-white placeholder-zinc-500 outline-none transition-all focus:border-white/40 focus:ring-2 focus:ring-white/15"
-                    />
-                  </div>
+                  <CollegeSelector
+                    id="input-college"
+                    variant="onboarding"
+                    value={profile.college}
+                    onChange={(college) => setProfile({ ...profile, college })}
+                    placeholder="Search college or university (e.g. Dr. RVR NRI University, HITAM, VRSEC...)"
+                  />
                   {stepValidation.errors.college && (
                     <p className="text-xs text-red-400 flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />

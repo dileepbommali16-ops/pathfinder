@@ -91,7 +91,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       if (t === "missions") return "skills";
       if (t === "action") return "overview";
     }
-    return "overview";
+    return "profile";
   });
 
   const [focusOnDas, setFocusOnDas] = useState(false);
@@ -803,7 +803,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
         setProfile(demoProfile);
         setIsDemoProfile(true);
         setShowResultScreen(false);
-        setActiveTab("overview");
+        setActiveTab("profile");
       });
       fetchPrediction(demoProfile);
       return;
@@ -830,7 +830,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           };
           setProfile(hydrated);
           setIsDemoProfile(false);
-          setActiveTab("overview");
+          setActiveTab("profile");
           fetchPrediction(hydrated);
         }
       }
@@ -903,7 +903,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             setShowResultScreen(false);
           } else {
             setIsDemoProfile(false);
-            setActiveTab("overview");
+            setActiveTab("profile");
             fetchPrediction(mapped);
           }
           return;
@@ -1841,63 +1841,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
         </div>
       )}
 
-      {/* BACKGROUND SYSTEM */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
-        <div className="absolute inset-0 bg-transparent" />
+      {/* BACKGROUND SYSTEM - Pure Black (#000000) so 3D #5BC0DE glowing agent shines cleanly */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#000000]" aria-hidden="true">
         <Ambient3DBackground activeTab={activeTab} />
-
-        <div
-          className="absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(234,230,224,0.7) 1px, transparent 0)`,
-            backgroundSize: "32px 32px",
-            maskImage: "radial-gradient(ellipse 75% 65% at 50% 20%, black 30%, transparent 85%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 75% 65% at 50% 20%, black 30%, transparent 85%)",
-          }}
-        />
-
-        <div
-          className="absolute -top-[160px] left-1/2 -translate-x-1/2 h-[520px] w-[980px] rounded-full blur-[100px] pointer-events-none opacity-70"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(124, 58, 237, 0.08) 0%, rgba(241, 245, 249, 0.02) 45%, transparent 72%)",
-            willChange: "transform",
-            transform: "translate3d(0, 0, 0)",
-            contain: "strict",
-          }}
-        />
-        <div
-          className="absolute top-[220px] -left-[180px] h-[660px] w-[660px] rounded-full blur-[120px] pointer-events-none opacity-50"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(159, 18, 57, 0.06) 0%, rgba(159, 18, 57, 0.015) 50%, transparent 70%)",
-            willChange: "transform",
-            transform: "translate3d(0, 0, 0)",
-            contain: "strict",
-          }}
-        />
-        <div
-          className="absolute top-[480px] -right-[160px] h-[600px] w-[600px] rounded-full blur-[110px] pointer-events-none opacity-40"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(56, 189, 248, 0.05) 0%, rgba(124, 58, 237, 0.02) 50%, transparent 70%)",
-            willChange: "transform",
-            transform: "translate3d(0, 0, 0)",
-            contain: "strict",
-          }}
-        />
-        <div
-          className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[400px] w-[1200px] rounded-full blur-[120px] opacity-25 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.03) 0%, transparent 75%)",
-            willChange: "transform",
-            transform: "translate3d(0, 0, 0)",
-            contain: "strict",
-          }}
-        />
-        <div className="absolute top-[320px] left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.08)] to-transparent" />
       </div>
 
       {/* Top Header */}

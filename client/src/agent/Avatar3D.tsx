@@ -52,14 +52,15 @@ export const Avatar3D: React.FC<Avatar3DProps> = React.memo(({
       style={style}
     >
       <Canvas
-        camera={{ position: [0, 0, 4.5], fov: 45 }}
-        dpr={[1, 1.5]}
+        camera={{ position: [0, 0.04, 4.15], fov: 42 }}
+        dpr={[1, 2]}
         gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
         style={{ width: "100%", height: "100%", pointerEvents: "none" }}
       >
-        <ambientLight intensity={1.4} />
-        <pointLight position={[5, 5, 5]} intensity={2.6} color="#00f0ff" />
-        <pointLight position={[-5, -3, 3]} intensity={2.0} color="#38bdf8" />
+        <ambientLight intensity={1.8} />
+        <pointLight position={[4, 4, 5]} intensity={3.2} color="#5BC0DE" />
+        <pointLight position={[-4, -2, 4]} intensity={2.4} color="#5BC0DE" />
+        <pointLight position={[0, 1.5, 4]} intensity={1.6} color="#ffffff" />
         <React.Suspense fallback={null}>
           <WireframeFace />
         </React.Suspense>

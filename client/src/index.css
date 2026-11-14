@@ -304,7 +304,9 @@
 .pathfinder-dashboard header [class*="bg-[#11131c]"],
 .pathfinder-dashboard header [class*="bg-[#161926]"],
 .pathfinder-dashboard header [class*="bg-[#0a0b10]"] {
-  background-color: #060608 !important;
+  background-color: rgba(0, 0, 0, 0.72) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .pathfinder-dashboard section [class*="bg-[#11131c]"],
@@ -313,12 +315,19 @@
 .pathfinder-dashboard main > div [class*="bg-[#0F172A]"],
 .pathfinder-dashboard main > div [class*="bg-[#0f172a]"],
 .pathfinder-dashboard main > div [class*="bg-[#060608]"] {
-  background-color: rgba(6, 6, 8, 0.86) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background-color: rgba(0, 0, 0, 0.42) !important;
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
 }
 
-/* Photo 3, 4, 5: Pure Black & Charcoal (#000000 & #060608) for Project Defense, ATS Resume Studio, and Project Blueprints */
+.pathfinder-dashboard main .backdrop-blur-2xl:not(.fixed),
+.pathfinder-dashboard main .backdrop-blur-xl:not(.fixed),
+.pathfinder-dashboard main .backdrop-blur-lg:not(.fixed) {
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+}
+
+/* Pure Black (#000000) translucent glass across Project Defense, ATS Resume Studio, and Project Blueprints */
 [data-slide-theme="pure-black"] [class*="bg-[#11131c]"],
 [data-slide-theme="pure-black"] [class*="bg-[#161926]"],
 [data-slide-theme="pure-black"] [class*="bg-[#1c2030]"],
@@ -326,12 +335,14 @@
 [data-slide-theme="pure-black"] [class*="bg-[#0F172A]"],
 [data-slide-theme="pure-black"] [class*="bg-[#0f172a]"],
 [data-slide-theme="pure-black"] [class*="bg-[#060608]"] {
-  background-color: rgba(6, 6, 8, 0.90) !important;
+  background-color: rgba(0, 0, 0, 0.42) !important;
   background-image: none !important;
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
 }
 
 [data-slide-theme="pure-black"] [class*="bg-[#000000]"] {
-  background-color: #000000 !important;
+  background-color: rgba(0, 0, 0, 0.56) !important;
   background-image: none !important;
 }
 
@@ -339,7 +350,7 @@
 [data-slide-theme="pure-black"] [class*="bg-[#6d28d9]"],
 [data-slide-theme="pure-black"] [class*="bg-[#9f1239]"],
 [data-slide-theme="pure-black"] [class*="bg-[#881337]"] {
-  background-color: #060608 !important;
+  background-color: rgba(0, 0, 0, 0.64) !important;
   background-image: none !important;
 }
 
@@ -352,24 +363,27 @@
 [data-slide-theme="pure-black"] [class*="text-[#7c3aed]"],
 [data-slide-theme="pure-black"] [class*="text-[#a78bfa]"],
 [data-slide-theme="pure-black"] [class*="text-[#9f1239]"] {
-  color: #e4e4e7 !important;
+  color: #f8fafc !important;
 }
 
-/* Photo 7: Pure Black & Obsidian (#000000 & #060608) with subtle #34222E plum accents for Dashboard Overview */
+/* Pure Black (#000000) translucent surfaces for Dashboard Overview while preserving white elements & graphs */
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#11131c]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#161926]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#1c2030]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#0a0b10]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#060608]"] {
-  background-color: rgba(6, 6, 8, 0.88) !important;
+  background-color: rgba(0, 0, 0, 0.42) !important;
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
 }
 
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#7c3aed]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#6d28d9]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#8b5cf6]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#9f1239]"],
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#881337]"] {
-  background-color: #34222E !important;
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#881337]"],
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#34222E]"] {
+  background-color: rgba(0, 0, 0, 0.65) !important;
   background-image: none !important;
 }
 
@@ -377,27 +391,28 @@
 [data-slide-theme="dashboard-black-plum"] [class*="from-[#6d28d9]"],
 [data-slide-theme="dashboard-black-plum"] [class*="from-[#9f1239]"],
 [data-slide-theme="dashboard-black-plum"] [class*="from-[#881337]"] {
-  --tw-gradient-from: #34222E !important;
+  --tw-gradient-from: rgba(0, 0, 0, 0.5) !important;
 }
 
 [data-slide-theme="dashboard-black-plum"] [class*="via-[#7c3aed]"],
 [data-slide-theme="dashboard-black-plum"] [class*="to-[#8b5cf6]"],
 [data-slide-theme="dashboard-black-plum"] [class*="to-[#7c3aed]"],
 [data-slide-theme="dashboard-black-plum"] [class*="to-[#9f1239]"] {
-  --tw-gradient-to: #34222E !important;
+  --tw-gradient-to: rgba(0, 0, 0, 0.5) !important;
 }
 
 [data-slide-theme="dashboard-black-plum"] [class*="border-[#7c3aed]"],
 [data-slide-theme="dashboard-black-plum"] [class*="border-[#161926]"],
 [data-slide-theme="dashboard-black-plum"] [class*="border-[#9f1239]"],
-[data-slide-theme="dashboard-black-plum"] [class*="border-[#881337]"] {
-  border-color: #34222E !important;
+[data-slide-theme="dashboard-black-plum"] [class*="border-[#881337]"],
+[data-slide-theme="dashboard-black-plum"] [class*="border-[#34222E]"] {
+  border-color: rgba(255, 255, 255, 0.14) !important;
 }
 
 [data-slide-theme="dashboard-black-plum"] [class*="text-[#7c3aed]"],
 [data-slide-theme="dashboard-black-plum"] [class*="text-[#9f1239]"],
 [data-slide-theme="dashboard-black-plum"] [class*="text-[#e11d48]"] {
-  color: #e4d8df !important;
+  color: #f8fafc !important;
 }
 
 .glass-depth-card:hover {
