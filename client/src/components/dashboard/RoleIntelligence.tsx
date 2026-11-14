@@ -450,7 +450,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
                 if (onAskCoach) {
                   onAskCoach(prompt);
                 } else {
-                  onNavigateTab("coach");
+                  onNavigateTab("interview");
                 }
               }}
               className="mt-5 w-full rounded-xl border border-[#7c3aed]/30 bg-[#7c3aed]/10 py-2.5 text-center text-xs font-bold text-[#7c3aed] hover:bg-[#7c3aed]/20 transition-all"

@@ -115,15 +115,20 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
-                onClick={() => onNavigateTab("missions")}
+                onClick={() => onNavigateTab("skills")}
                 className="inline-flex items-center gap-2 rounded-xl border border-[#34222E] bg-[#34222E] hover:bg-[#060608] px-4 py-2.5 text-xs font-bold text-[#f8fafc] shadow-md transition-all active:scale-95 cursor-pointer"
               >
-                <span>View 30-Day Mission & Plan</span>
+                <span>View 6-Week Roadmap & Plan</span>
                 <ArrowUpRight className="h-4 w-4" />
               </button>
 
               <button
-                onClick={() => onNavigateTab("coach")}
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: true } }));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  setTimeout(() => document.getElementById("das-command-input")?.focus(), 180);
+                }}
                 className="inline-flex items-center gap-2 rounded-xl border border-[#34222E] bg-[#060608] px-4 py-2.5 text-xs font-semibold text-[#f8fafc] backdrop-blur-md transition-all hover:bg-[#34222E] active:scale-95 cursor-pointer"
               >
                 <Sparkles className="h-3.5 w-3.5 text-[#f8fafc]" />

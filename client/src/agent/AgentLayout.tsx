@@ -51,9 +51,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [attachedPreview, setAttachedPreview] = useState<string | null>(null);
   const [attachedType, setAttachedType] = useState<"image" | "video" | "resume" | null>(null);
-  const [showResumeIntelligence, setShowResumeIntelligence] = useState(false);
-  const [activeResumeTab, setActiveResumeTab] = useState<"review" | "templates" | "roadmap">("review");
-  const [copiedTemplate, setCopiedTemplate] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Listen for login / logout state changes across Pathfinder
@@ -392,8 +389,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       // Resume / PDF / DOCX
       setAttachedType("resume");
       setAttachedPreview(null);
-      toast.success(`Resume attached: ${file.name}! Opening ATS Intelligence Studio...`);
-      setShowResumeIntelligence(true);
+      toast.success(`Resume attached: ${file.name}! Opening ATS Resume Studio...`);
+      window.dispatchEvent(new CustomEvent("das-navigate", { detail: { tab: "resume" } }));
     }
   };
 
@@ -538,122 +535,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   runCodeLiveRef.current = runCodeLive;
 
-  const copyTemplateToClipboard = (text: string, title: string) => {
-    try {
-      navigator.clipboard.writeText(text);
-      setCopiedTemplate(title);
-      toast.success(`${title} copied to clipboard!`);
-      setTimeout(() => setCopiedTemplate(null), 2500);
-    } catch {}
-  };
-
   // 1. Never render HUD, Avatar, or commands if not strictly authenticated
   const hasUser = typeof window !== "undefined" && Boolean(localStorage.getItem("pathfinder_user"));
   if (!isAuthenticated && !hasUser) {
     return <main className="relative min-h-screen bg-transparent">{children}</main>;
   }
-
-  // 3 Elite ATS Resume Templates
-  const RESUME_TEMPLATES = {
-    sde: {
-      title: "FAANG / Tier-1 SDE-1 Resume (Google X-Y-Z Format)",
-      description: "Optimized for Google, Amazon, Microsoft, and high-growth engineering teams.",
-      code: `# DILEEP BOMMALI
-**Full-Stack AI Software Engineer & CSE (Data Science) 3rd Year**
-Vijayawada, AP | Hyderabad, TS | +91-XXXXX-XXXXX | dileep.bommali@email.com
-LinkedIn: linkedin.com/in/dileep-bommali | GitHub: github.com/dileepbommali16-ops | Portfolio: pathfinder.ai
-
----
-
-### TECHNICAL SKILLS
-- **Languages:** Java, Python, C, C++, TypeScript, JavaScript, SQL
-- **Frameworks & Libs:** React 19, FastAPI, Node.js, Express, Three.js, Tailwind CSS, PyTorch
-- **Developer Tools & Cloud:** Docker, Git, Linux, WebSockets, Supabase, PostgreSQL, REST APIs
-- **Core Engineering:** Data Structures & Algorithms, Object-Oriented Design, Operating Systems, Computer Networks
-
----
-
-### EDUCATION
-**Dr. RVR & Dr. NRI Deemed to be University**, Agiripalli, AP
-*B.Tech in Computer Science & Engineering (Data Science)* | **CGPA: 8.5 / 10.0** (Expected: 2026)
-- **Key Coursework:** Advanced Data Structures, Machine Learning, Deep Learning, Database Management Systems, OS
-
----
-
-### FLAGSHIP PRODUCTION PROJECTS
-**Pathfinder 2.0 — Autonomous Multimodal AI Copilot Platform**
-*React 19, FastAPI, Gemini Live WebSockets, Three.js, Docker* | [Live Demo](https://pathfinder.ai)
-- Architected bidirectional 24kHz low-latency voice and vision copilot reducing interaction delay by 45% using Gemini Live WebSockets.
-- Designed 60 FPS procedural 3D holographic wireframe avatar with audio-driven real-time lip synchronization.
-- Engineered universal multi-language sandbox executing C, C++, Java, and Python server-side with zero CORS exposure.
-
-**Universal Live Distributed Code Engine**
-*Python, Node.js, Godbolt API, Piston Container Runner*
-- Built multi-tier compiler infrastructure with automated syntax error healing and pedagogical logic explanations.
-- Handled 100+ concurrent live compilation requests with fallback container sandboxes under 1.2s round-trip time.
-
-**STAR Defense Technical Placement Simulator**
-*FastAPI, Gemini Flash, Supabase Vector RAG*
-- Engineered candidate behavioral and technical interview assessment scoring responses across 5 distinct axes.
-- Improved student placement mock interview clearance rate by 34% across 23 standardized capstone blueprints.
-
----
-
-### CERTIFICATIONS & HONORS
-- AWS Certified Cloud Practitioner / Solutions Architect (In Progress)
-- Google Cloud Professional Data Analytics Specialization
-- University Hackathon Finalist & Top Performer in Competitive Programming (500+ Problems on LeetCode/CodeChef)
-`
-    },
-    ai: {
-      title: "Data Science & AI / ML Specialist Resume",
-      description: "Calibrated for ML Engineer, Data Scientist, and Generative AI roles.",
-      code: `# DILEEP BOMMALI
-**Data Science & Machine Learning Engineer**
-Vijayawada, India | dileep.bommali@email.com | github.com/dileepbommali16-ops
-
----
-
-### EXPERTISE & DOMAINS
-- **Core ML:** Supervised/Unsupervised Learning, Deep Neural Networks, Transformer Architectures, NLP, Computer Vision
-- **Data & MLOps:** Pandas, NumPy, Scikit-Learn, PyTorch, Hugging Face, MLflow, Docker, FastAPI
-- **Databases & Vector Search:** PostgreSQL, pgvector, Supabase, Pinecone, Redis
-
----
-
-### FEATURED AI & DATA PROJECTS
-**Real-Time Computer Vision & Edge Intelligence Pipeline**
-- Developed real-time object classification engine processing camera video feeds at 30 FPS using lightweight MobileNet.
-- Deployed on-device inference reducing cloud bandwidth usage by 70% with sub-50ms latency.
-
-**Domain-Specific Vector RAG for Academic Knowledge Retrieval**
-- Implemented retrieval-augmented generation engine indexing 5,000+ academic papers with hybrid BM25 + cosine similarity.
-- Reduced hallucination rate to under 4% and improved factual accuracy by 38% compared to vanilla LLM baselines.
-`
-    },
-    fullstack: {
-      title: "Modern Full-Stack Systems Engineer Resume",
-      description: "Designed for high-growth tech startups, SaaS companies, and product engineering teams.",
-      code: `# DILEEP BOMMALI
-**Full-Stack Systems Engineer**
-Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
-
----
-
-### TECHNICAL TOOLKIT
-- **Frontend:** React, Next.js, TypeScript, Tailwind CSS, State Management (Zustand/Redux), Three.js
-- **Backend & APIs:** Python FastAPI, Node.js, WebSockets, RESTful API Design, GraphQL
-- **Databases & Infrastructure:** PostgreSQL, SQLite, Docker, CI/CD GitHub Actions, Vercel, Render
-
----
-
-### HIGH-IMPACT PROJECTS
-**High-Throughput Collaborative Web Application**
-- Built reactive single-page application with micro-second state synchronization over WebSockets.
-- Structured end-to-end type safety across client and server with zero runtime type violations.
-`
-    }
-  };
 
   return (
     <div className="relative min-h-screen bg-transparent text-white overflow-x-hidden">
@@ -754,207 +640,6 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
 
           <div className="bg-black/90 border border-[#334155] rounded-xl p-3 font-mono text-xs text-cyan-200 max-h-36 overflow-y-auto whitespace-pre-wrap">
             {compileOutput}
-          </div>
-        </div>
-      )}
-
-      {/* DAS Resume Intelligence & Placement Roadmap Studio Modal */}
-      {showResumeIntelligence && (
-        <div
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowResumeIntelligence(false);
-          }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto"
-        >
-          <div className="relative w-full max-w-4xl bg-[#0F172A] border border-[#334155] rounded-3xl p-6 shadow-2xl flex flex-col gap-4 text-slate-100 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#334155] pb-3">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">📄</span>
-                <div>
-                  <h3 className="font-bold text-lg text-white">DAS ATS Resume Intelligence & Templates</h3>
-                  <p className="text-xs text-slate-400">
-                    Calibrated against Google X-Y-Z screening formula & Top Tier-1 placement rubrics
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => navigate("/resume-studio")}
-                  className="px-3 py-1.5 bg-[#334155] hover:bg-[#475569] text-white rounded-xl text-xs font-bold transition"
-                >
-                  Open Full Resume Studio ↗
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowResumeIntelligence(false)}
-                  className="px-3 py-1.5 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition"
-                >
-                  ✕ Close
-                </button>
-              </div>
-            </div>
-
-            {/* Navigation Tabs */}
-            <div className="flex items-center gap-2 bg-[#0B1120] p-1.5 rounded-2xl border border-[#334155]">
-              <button
-                type="button"
-                onClick={() => setActiveResumeTab("review")}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
-                  activeResumeTab === "review" ? "bg-[#334155] text-white shadow" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                📊 ATS Deep Review & Score (94%)
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveResumeTab("templates")}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
-                  activeResumeTab === "templates" ? "bg-[#334155] text-white shadow" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                📑 3 FAANG Resume Templates
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveResumeTab("roadmap")}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
-                  activeResumeTab === "roadmap" ? "bg-[#334155] text-white shadow" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                🚀 High-Yield Skills & Projects
-              </button>
-            </div>
-
-            {/* Tab 1: ATS Review & Diagnostics */}
-            {activeResumeTab === "review" && (
-              <div className="flex flex-col gap-4 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="bg-[#1E293B] border border-[#334155] rounded-2xl p-4 flex flex-col items-center justify-center text-center">
-                    <span className="text-3xl font-black text-emerald-400">94 / 100</span>
-                    <span className="text-[11px] text-slate-400 font-bold uppercase mt-1">ATS Match Score</span>
-                    <span className="text-[10px] text-emerald-300 mt-0.5">Tier-1 Shortlist Ready</span>
-                  </div>
-                  <div className="bg-[#1E293B] border border-[#334155] rounded-2xl p-4 flex flex-col justify-center">
-                    <span className="text-emerald-400 font-bold mb-1">✓ Google X-Y-Z Formats:</span>
-                    <span className="text-slate-300 text-[11px]">All project bullet points quantify latency, throughput, and impact percentages.</span>
-                  </div>
-                  <div className="bg-[#1E293B] border border-[#334155] rounded-2xl p-4 flex flex-col justify-center">
-                    <span className="text-cyan-400 font-bold mb-1">✓ ATS Parseability:</span>
-                    <span className="text-slate-300 text-[11px]">Clean single-column structure with zero table traps or unparseable graphics.</span>
-                  </div>
-                </div>
-
-                <div className="bg-[#0B1120] border border-[#334155] rounded-2xl p-4 flex flex-col gap-2">
-                  <h4 className="font-bold text-sm text-cyan-300">🔑 Key Detected Keywords (Matched 18/20):</h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      "Java", "Python", "Data Structures", "Algorithms", "React", "FastAPI", "Docker",
-                      "WebSockets", "Three.js", "PostgreSQL", "System Design", "Microservices",
-                      "Object-Oriented Programming", "Git", "REST APIs", "Linux"
-                    ].map((kw, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 rounded-md text-[10px]">
-                        ✓ {kw}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-[#1E293B] border border-[#334155] rounded-2xl p-4 flex flex-col gap-2">
-                  <h4 className="font-bold text-sm text-amber-300">💡 3 Direct Improvements to Guarantee 100% Placement:</h4>
-                  <ul className="list-disc pl-5 space-y-1 text-slate-300 text-[11px]">
-                    <li><strong>Add Verified GitHub & Live Deployed Links:</strong> Recruiters prioritize candidates who showcase live working demos like your Pathfinder 2.0 app.</li>
-                    <li><strong>Highlight Unit Testing & CI/CD:</strong> Add exposure to PyTest, Jest, and GitHub Actions automated pipelines.</li>
-                    <li><strong>Include Cloud Experience:</strong> Mention AWS EC2 / S3 or Google Cloud Run deployments for enterprise appeal.</li>
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 2: 3 FAANG Resume Templates */}
-            {activeResumeTab === "templates" && (
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2">
-                  {(["sde", "ai", "fullstack"] as const).map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setCopiedTemplate(null)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border ${
-                        key === "sde" ? "bg-[#334155] border-cyan-400 text-white" : "bg-[#1E293B] border-[#334155] text-slate-300"
-                      }`}
-                    >
-                      {RESUME_TEMPLATES[key].title.split("(")[0]}
-                    </button>
-                  ))}
-                </div>
-
-                {Object.entries(RESUME_TEMPLATES).map(([key, tpl]) => (
-                  <div key={key} className="bg-[#0B1120] border border-[#334155] rounded-2xl p-4 flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-bold text-sm text-cyan-300">{tpl.title}</h4>
-                        <p className="text-xs text-slate-400">{tpl.description}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => copyTemplateToClipboard(tpl.code, tpl.title)}
-                        className="px-3.5 py-1.5 bg-[#334155] hover:bg-[#475569] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow"
-                      >
-                        {copiedTemplate === tpl.title ? "✓ Copied!" : "📋 Copy Markdown"}
-                      </button>
-                    </div>
-
-                    <pre className="bg-black/60 border border-[#334155] rounded-xl p-3 font-mono text-[11px] text-slate-200 max-h-56 overflow-y-auto whitespace-pre-wrap select-all">
-                      {tpl.code}
-                    </pre>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Tab 3: High-Yield Placement Roadmap */}
-            {activeResumeTab === "roadmap" && (
-              <div className="flex flex-col gap-4 text-xs text-slate-200">
-                <div className="bg-[#1E293B] border border-[#334155] rounded-2xl p-4 flex flex-col gap-2">
-                  <h4 className="font-bold text-sm text-emerald-400">🏆 Top 3 Capstone Projects for Campus Placements:</h4>
-                  <div className="space-y-2 mt-1">
-                    <div className="border-l-2 border-cyan-400 pl-3">
-                      <strong className="text-white block">1. Pathfinder 2.0 (Multimodal Autonomous Agent)</strong>
-                      <span className="text-slate-300 text-[11px]">Proves real-time WebSockets, 3D graphics (Three.js), speech processing, and distributed LLM proxy integration.</span>
-                    </div>
-                    <div className="border-l-2 border-emerald-400 pl-3">
-                      <strong className="text-white block">2. Distributed Universal Code Runner Engine</strong>
-                      <span className="text-slate-300 text-[11px]">Demonstrates isolated subprocesses, container sandbox execution, and fault-tolerant multi-tier fallbacks.</span>
-                    </div>
-                    <div className="border-l-2 border-purple-400 pl-3">
-                      <strong className="text-white block">3. High-Throughput Event-Driven Microservice with Kafka</strong>
-                      <span className="text-slate-300 text-[11px]">Shows enterprise readiness, queue buffering, database partitioning, and horizontal scaling.</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="bg-[#0B1120] border border-[#334155] rounded-2xl p-4 flex flex-col gap-2">
-                    <h4 className="font-bold text-sm text-cyan-300">🎖️ Recommended Certifications:</h4>
-                    <ul className="list-disc pl-4 space-y-1 text-slate-300 text-[11px]">
-                      <li><strong>AWS Certified Solutions Architect — Associate</strong> (Highest industry demand)</li>
-                      <li><strong>Google Cloud Professional Data Engineer</strong> (Targeted for Data Science)</li>
-                      <li><strong>DeepLearning.AI Machine Learning Specialization</strong> (Foundational authority)</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-[#0B1120] border border-[#334155] rounded-2xl p-4 flex flex-col gap-2">
-                    <h4 className="font-bold text-sm text-purple-300">⚡ Core Technical Placement Subjects:</h4>
-                    <ul className="list-disc pl-4 space-y-1 text-slate-300 text-[11px]">
-                      <li><strong>Data Structures & Algorithms:</strong> Blind 75 / Striver SDE Sheet (Trees, DP, Graphs)</li>
-                      <li><strong>System Design:</strong> Load balancing, caching, database indexing, CAP theorem</li>
-                      <li><strong>Core CS:</strong> OS (Processes, Threads, Mutex), CN (TCP/UDP, HTTP/3), DBMS (ACID, Normalization)</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -1124,10 +809,10 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
               {attachedType === "resume" && (
                 <button
                   type="button"
-                  onClick={() => setShowResumeIntelligence(true)}
+                  onClick={() => window.dispatchEvent(new CustomEvent("das-navigate", { detail: { tab: "resume" } }))}
                   className="px-2 py-0.5 bg-[#000000] hover:bg-[#2b2024] text-white rounded text-[10px] font-bold border border-[#2b2024]"
                 >
-                  View ATS Review
+                  Open ATS Studio
                 </button>
               )}
               <button
@@ -1258,17 +943,6 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
             title="Upload Photo, Video, or Resume for Instant Review"
           >
             📎
-          </button>
-
-          {/* Resume Intelligence Modal Button */}
-          <button
-            type="button"
-            onClick={() => setShowResumeIntelligence(true)}
-            className="px-2.5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110"
-            style={{ backgroundColor: "#000000", borderColor: "#2b2024" }}
-            title="Open ATS Resume Intelligence & 3 FAANG Templates"
-          >
-            📄
           </button>
 
           {/* Input Text Box */}

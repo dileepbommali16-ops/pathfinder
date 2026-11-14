@@ -601,7 +601,7 @@ export const getCareerAgentResponse = (
     if (/\b(readiness|action\s*center|command)\b/i.test(text)) {
       return (
         `Opening your Placement Readiness Command Center now, ${title}.` +
-        `|||⚡ **Readiness Command Center:** High-impact tactical actions to boost your placement probability. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "action"}-->`
+        `|||⚡ **Readiness Command Center:** High-impact tactical actions to boost your placement probability. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "overview"}-->`
       );
     }
     if (/\b(branches|courses|departments)\b/i.test(text)) {
@@ -624,8 +624,8 @@ export const getCareerAgentResponse = (
     }
     if (/\b(missions?|tracker)\b/i.test(text)) {
       return (
-        `Opening your Career Mission Tracker now, ${title}.` +
-        `|||🎯 **Career Mission Tracker:** Track daily coding, project, and interview milestones. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "missions"}-->`
+        `Opening your 6-Week Roadmap & Career Mission Tracker now, ${title}.` +
+        `|||🎯 **Career Mission Tracker:** Track daily coding, project, and interview milestones. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "skills"}-->`
       );
     }
     if (/\b(dashboard|overview|home|main)\b/i.test(text)) {

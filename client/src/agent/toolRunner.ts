@@ -93,8 +93,8 @@ function setNativeValue(el: HTMLInputElement | HTMLTextAreaElement, value: strin
 }
 
 const TAB_ALIASES: Record<string, string[]> = {
-  overview: ["overview", "dashboard", "home", "readiness", "summary"],
-  skills: ["skills", "6-week roadmap", "roadmap", "sprint", "skill gap"],
+  overview: ["overview", "dashboard", "home", "readiness", "summary", "action center", "command hub", "next actions"],
+  skills: ["skills", "6-week roadmap", "roadmap", "sprint", "skill gap", "missions", "30-day mission", "mission tracker"],
   projects: ["projects", "project", "blueprints", "project blueprints", "capstone"],
   analytics: ["analytics", "cohort analytics", "cohort", "statistics", "benchmarks"],
   resume: ["resume", "ats resume studio", "resume studio", "ats", "cv"],
@@ -620,9 +620,9 @@ export function executeWebsiteControl(
       defense: "defense",
       profile: "profile",
       interview: "interview",
-      action: "action",
+      action: "overview",
       roles: "roles",
-      missions: "missions",
+      missions: "skills",
     };
     const mappedTab = knownRouteToTab[routeNorm];
     if (mappedTab) {

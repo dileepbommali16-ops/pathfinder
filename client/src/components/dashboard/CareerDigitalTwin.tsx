@@ -77,8 +77,8 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
       currentState: `${profile.coding}/10 Confidence in Data Structures & Core Algorithms`,
       missing: profile.coding < 8 ? "High-frequency Blind 75 patterns (Sliding Window, Trees, Binary Search)" : "Advanced Graph & DP edge cases",
       whyItMatters: "85% of company screening tests use automated HackerRank/LeetCode coding rounds.",
-      nextAction: "Practice 2 Blind 75 pattern problems today in the Mock Interview section",
-      actionTab: "coach"
+      nextAction: "Review Blind 75 patterns and core skill gaps in your 6-Week Roadmap",
+      actionTab: "skills"
     },
     {
       id: "projects",
@@ -130,7 +130,7 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
       missing: profile.communication < 8 ? "Structured STAR framing (Situation, Task, Action, Result) for behavioral rounds" : "System design trade-off articulation",
       whyItMatters: "Final hiring decisions rely heavily on communication clarity and team fit.",
       nextAction: "Start an interactive Mock Interview round",
-      actionTab: "coach"
+      actionTab: "interview"
     },
     {
       id: "resume",

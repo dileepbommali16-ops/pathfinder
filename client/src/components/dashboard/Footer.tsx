@@ -88,7 +88,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
               <li>
                 <button
                   type="button"
-                  onClick={() => { onNavigateTab("coach"); scrollToTop(); }}
+                  onClick={() => {
+                    onNavigateTab("overview");
+                    window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: true } }));
+                    scrollToTop();
+                    setTimeout(() => document.getElementById("das-command-input")?.focus(), 180);
+                  }}
                   className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
                 >
                   DAS AI Voice Coach (EN / TE / HI)
@@ -160,7 +165,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
               <li>
                 <button
                   type="button"
-                  onClick={() => { onNavigateTab("action"); scrollToTop(); }}
+                  onClick={() => {
+                    onNavigateTab("overview");
+                    setTimeout(() => {
+                      document.getElementById("career-action-center")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 180);
+                  }}
                   className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
                 >
                   Readiness Command Center

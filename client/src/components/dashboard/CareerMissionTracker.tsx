@@ -48,7 +48,7 @@ const DEFAULT_WEEKS: MissionWeek[] = [
         effort: "4 hours",
         skill: "DSA (Arrays/Strings)",
         completed: true,
-        actionTab: "coach"
+        actionTab: "interview"
       },
       {
         id: "w1-t2",
@@ -57,7 +57,7 @@ const DEFAULT_WEEKS: MissionWeek[] = [
         effort: "3 hours",
         skill: "Algorithms",
         completed: false,
-        actionTab: "coach"
+        actionTab: "interview"
       },
       {
         id: "w1-t3",
@@ -150,7 +150,7 @@ const DEFAULT_WEEKS: MissionWeek[] = [
         effort: "3 hours",
         skill: "Mock Interviews",
         completed: false,
-        actionTab: "coach"
+        actionTab: "interview"
       },
       {
         id: "w4-t2",
@@ -168,7 +168,7 @@ const DEFAULT_WEEKS: MissionWeek[] = [
         effort: "2 hours",
         skill: "STAR Storytelling",
         completed: false,
-        actionTab: "coach"
+        actionTab: "interview"
       }
     ]
   }

@@ -22,14 +22,11 @@ import {
 export type TabId =
   | "overview"
   | "interview"
-  | "action"
   | "skills"
   | "branches"
   | "analytics"
-  | "coach"
   | "profile"
   | "roles"
-  | "missions"
   | "projects"
   | "defense"
   | "resume";
@@ -84,17 +81,6 @@ const MONO_THEME = {
   indicator: "from-transparent via-white to-transparent"
 };
 
-// AI Voice Agent Custom Theme: Eclipse (#343148), Beige (#D4B996), Soybean (#D7C49E)
-const VOICE_AGENT_THEME = {
-  activeBg: "bg-[#343148] text-[#D7C49E]",
-  text: "text-[#D7C49E] font-semibold",
-  icon: "text-[#D4B996]",
-  border: "border-[#D4B996]/80",
-  glow: "shadow-[0_0_20px_rgba(212,185,150,0.35)]",
-  badge: "bg-[#343148] text-[#D4B996] border-[#D7C49E]/50",
-  indicator: "from-transparent via-[#D4B996] to-transparent"
-};
-
 const DASHBOARD_BLACK_PLUM_THEME = {
   activeBg: "bg-[#060608]",
   text: "text-[#f8fafc]",
@@ -118,9 +104,7 @@ const PURE_BLACK_THEME = {
 const TAB_THEMES: Record<TabId, typeof WINE_THEME> = {
   overview: DASHBOARD_BLACK_PLUM_THEME,
   interview: VIOLET_THEME,
-  action: WINE_THEME,
   skills: WINE_THEME,
-  coach: VOICE_AGENT_THEME,
   projects: PURE_BLACK_THEME,
   analytics: WINE_THEME,
   resume: PURE_BLACK_THEME,
@@ -128,7 +112,6 @@ const TAB_THEMES: Record<TabId, typeof WINE_THEME> = {
   defense: PURE_BLACK_THEME,
   profile: MONO_THEME,
   roles: VIOLET_THEME,
-  missions: WINE_THEME
 };
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({

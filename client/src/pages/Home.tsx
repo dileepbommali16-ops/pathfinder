@@ -39,7 +39,6 @@ import {
   CheckCircle2,
   Zap,
   Compass,
-  Bot,
   Lightbulb,
   TrendingUp,
   FileText,
@@ -78,17 +77,20 @@ export default function Home({ initialTab }: HomeProps = {}) {
         [
           "overview",
           "interview",
-          "action",
           "skills",
           "projects",
           "analytics",
           "resume",
           "branches",
           "defense",
+          "profile",
+          "roles",
         ].includes(t)
       ) {
         return t as TabId;
       }
+      if (t === "missions") return "skills";
+      if (t === "action") return "overview";
     }
     return "overview";
   });
@@ -113,11 +115,11 @@ export default function Home({ initialTab }: HomeProps = {}) {
         interview: { tab: "interview" },
         "mock-interview": { tab: "interview" },
         mock_interview: { tab: "interview" },
-        action: { tab: "action" },
-        "action-center": { tab: "action" },
-        action_center: { tab: "action" },
-        "ai-action": { tab: "action" },
-        missions: { tab: "missions" },
+        action: { tab: "overview", scrollId: "career-action-center" },
+        "action-center": { tab: "overview", scrollId: "career-action-center" },
+        action_center: { tab: "overview", scrollId: "career-action-center" },
+        "ai-action": { tab: "overview", scrollId: "career-action-center" },
+        missions: { tab: "skills" },
         roles: { tab: "roles" },
         "role-intelligence": { tab: "roles" },
         "company-radar": { tab: "overview", scrollId: "career-company-radar" },
@@ -295,9 +297,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
     const titles: Record<TabId, string> = {
       overview: "Executive Dashboard · Pathfinder 2.0",
       interview: "AI Mock Interview & Viva · Pathfinder 2.0",
-      action: "Readiness Command Center · Pathfinder 2.0",
       skills: "6-Week Sprint Roadmap · Pathfinder 2.0",
-      coach: "DAS AI Voice Coach · Pathfinder 2.0",
       projects: "Flagship Portfolio Blueprints · Pathfinder 2.0",
       analytics: "Cohort Placement Intelligence · Pathfinder 2.0",
       resume: "ATS Resume Studio & Scanner · Pathfinder 2.0",
@@ -305,7 +305,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
       defense: "STAR Architecture Defense Simulator · Pathfinder 2.0",
       profile: "Candidate Profile & SSOT · Pathfinder 2.0",
       roles: "Target Role Intelligence · Pathfinder 2.0",
-      missions: "Placement Mission Tracker · Pathfinder 2.0",
     };
     document.title = titles[activeTab] || "Pathfinder 2.0 · Autonomous AI Career Intelligence";
   }, [activeTab]);
@@ -2069,43 +2068,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
             </motion.div>
           )}
 
-          {/* TAB 2: ACTION */}
-          {activeTab === "action" && (
-            <motion.div
-              key="action"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
-            >
-              <SectionHeader
-                title="Readiness Command Center"
-                description="One-click automated intelligence workflows integrated with your active profile"
-                badge="Command Hub"
-                accent="emerald"
-                icon={Zap}
-                helperLabel="Launch diagnostics, audit reports, or mock interview rounds"
-              />
-              <AIActionCenter
-                onNavigateTab={setActiveTab}
-                onTriggerCalculate={() => fetchPrediction(profile)}
-                onStartMockInterview={() => {
-                  setActiveTab("interview");
-                }}
-                targetRole={profile.targetRole}
-                profile={profile}
-                prediction={prediction}
-                apiBase={API_BASE}
-              />
-              <NextActionsWidget
-                profile={profile}
-                onNavigateTab={setActiveTab}
-                onAskCoach={handleAskCoach}
-              />
-            </motion.div>
-          )}
-
           {/* TAB 3: SKILLS */}
           {activeTab === "skills" && (
             <motion.div
@@ -2344,44 +2306,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
             </motion.div>
           )}
 
-          {/* MISSIONS */}
-          {activeTab === "missions" && (
-            <motion.div
-              key="missions"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-8"
-            >
-              <CareerMissionTracker profile={profile} onNavigateTab={setActiveTab} />
-              <RoadmapVisualizer
-                roadmap={roadmap}
-                isLoading={isRoadmapLoading}
-                onRegenerate={fetchRoadmap}
-              />
-            </motion.div>
-          )}
         </AnimatePresence>
         </div>
-
-        {/* Global Floating 'Ask Coach' Trigger */}
-        {!focusOnDas && activeTab !== "coach" && activeTab !== "overview" && (
-          <button
-            type="button"
-            onClick={() => {
-              const tabTitle = getTabKnowledge(activeTab)?.title || activeTab;
-              handleAskCoach(
-                `Explain the '${tabTitle}' tab and what actions I should take here to improve my placement readiness.`
-              );
-            }}
-            className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full border border-white/20 bg-[#060608]/95 px-4 py-2.5 text-xs font-semibold text-white shadow-xl shadow-black/60 backdrop-blur-xl transition-all hover:scale-105 hover:border-white/40 hover:text-white active:scale-95 cursor-pointer"
-            title="Ask AI Coach about this page"
-          >
-            <Bot className="h-4 w-4 text-white" />
-            <span>Ask Coach About This Page</span>
-          </button>
-        )}
 
         {/* 1-Page ATS Engineering Resume Modal */}
         <OnePageResumeModal
