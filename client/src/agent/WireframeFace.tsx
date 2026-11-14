@@ -1,190 +1,232 @@
-import React, { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { audioEngine } from "./audioIO";
-import { AnatomicalHumanHeadDNA, AnatomicalMouthSync } from "./FaceEffects";
+import {
+  createHologramScanMaterial,
+  createMoltenRedEyeMaterial,
+  HologramShouldersBust,
+  HologramUniforms,
+} from "./FaceEffects";
 
 export interface WireframeFaceProps {
   scale?: [number, number, number];
   position?: [number, number, number];
 }
 
-const DEFAULT_SCALE: [number, number, number] = [0.86, 0.86, 0.86];
-const DEFAULT_POSITION: [number, number, number] = [0, -0.06, 0];
-
-interface MoltenEyeProps {
-  groupRef: React.RefObject<THREE.Group | null>;
-  position: [number, number, number];
-  rotation: [number, number, number];
-  lavaMaterial: THREE.ShaderMaterial;
-}
-
-const MoltenEye: React.FC<MoltenEyeProps> = ({ groupRef, position, rotation, lavaMaterial }) => (
-  <group ref={groupRef} position={position} rotation={rotation}>
-    <mesh scale={[1.30, 0.72, 0.5]} material={lavaMaterial}>
-      <sphereGeometry args={[0.055, 20, 16]} />
-    </mesh>
-    <mesh scale={[1.40, 0.82, 1]}>
-      <ringGeometry args={[0.047, 0.065, 32]} />
-      <meshBasicMaterial
-        color="#F23456"
-        side={THREE.DoubleSide}
-        transparent
-        opacity={0.96}
-        blending={THREE.AdditiveBlending}
-        toneMapped={false}
-      />
-    </mesh>
-    <mesh scale={[1.78, 1.05, 1]} position={[0, 0, -0.005]}>
-      <circleGeometry args={[0.065, 28]} />
-      <meshBasicMaterial
-        color="#A80139"
-        side={THREE.DoubleSide}
-        transparent
-        opacity={0.68}
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
-        toneMapped={false}
-      />
-    </mesh>
-  </group>
-);
-
-const LAVA_EYE_VERT = `
-  varying vec3 vLocalPos;
-  void main() {
-    vLocalPos = position;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-// Flowing molten lava shimmer mixing #D72324 and #E31748 strictly inside both eyes
-const LAVA_EYE_FRAG = `
-  precision mediump float;
-  varying vec3 vLocalPos;
-  uniform float uTime;
-  uniform float uVoice;
-
-  void main() {
-    vec2 p = vLocalPos.xy / 0.056;
-    float dist = clamp(length(p), 0.0, 1.2);
-    float swirl = sin(p.x * 8.0 + uTime * 3.8 + cos(p.y * 7.0 - uTime * 3.1))
-                + cos(p.y * 8.5 - uTime * 3.4 + sin(p.x * 6.0 + uTime * 2.6));
-    float vein = 0.5 + 0.5 * sin(swirl * 1.6 + uTime * 2.8);
-    float pulse = 0.5 + 0.5 * sin(uTime * 5.8 - dist * 4.5);
-    float coreHot = smoothstep(0.95, 0.05, dist);
-
-    vec3 crimsonLava = vec3(0.949, 0.204, 0.337); // #F23456
-    vec3 rubyMagma   = vec3(0.659, 0.004, 0.224); // #A80139
-
-    float radialCore = exp(-length(vLocalPos.xy) * 2.2);
-    float flareRay = pow(max(0.0, sin(atan(vLocalPos.y, vLocalPos.x) * 10.0 - uTime * 3.8)), 4.0) * (1.0 - radialCore * 0.4);
-    vec3 col = mix(rubyMagma, crimsonLava, clamp(vein * 0.72 + radialCore * 0.55 + flareRay * 0.35, 0.0, 1.0));
-    float shimmer = 1.38 + 0.68 * coreHot + 0.32 * pulse + 0.48 * radialCore + 0.42 * flareRay + uVoice * 0.42;
-    gl_FragColor = vec4(col * shimmer, 1.0);
-  }
-`;
+const DEFAULT_SCALE: [number, number, number] = [0.98, 0.98, 0.98];
+const DEFAULT_POSITION: [number, number, number] = [0, 0.08, 0];
 
 /**
- * WireframeFace.tsx - Crisp Human-Proportioned 3D Holographic Avatar (DAS)
- * - Larger clean presence framed clearly behind every dashboard slide (no blur)
- * - Eyes ONLY shimmer as flowing molten lava (#D72324 + #E31748) with natural blinking
- * - Remaining head mesh, brows, nose, lips & orbital rings styled in #0E117A & #4FCDE8
+ * WireframeFace.tsx - Holographic 3D Male Head & Shoulders Bust (DAS)
+ * - Loads self-hosted facecap.glb with Meshopt + KTX2 decoders
+ * - Shades sculpted male head, ears, lips & matching shoulders bust with crisp cyan horizontal scanlines
+ * - Renders eyeLeft & eyeRight in blazing molten crimson-ruby red (#F23456 + #A80139)
+ * - Drives natural eyelid blinking (eyeBlink_L/R) and Puck-voice lip-sync (jawOpen, mouthFunnel, etc.) via audioEngine.getVolume()
  */
 export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: WireframeFaceProps) => {
   const scale: [number, number, number] = props.scale ?? DEFAULT_SCALE;
   const position: [number, number, number] = props.position ?? DEFAULT_POSITION;
 
-  const headGroupRef = useRef<THREE.Group>(null);
-  const leftEyeGroupRef = useRef<THREE.Group>(null);
-  const rightEyeGroupRef = useRef<THREE.Group>(null);
+  const { gl } = useThree();
+  const rootGroupRef = useRef<THREE.Group>(null);
+  const headPivotRef = useRef<THREE.Group>(null);
+  const shouldersRef = useRef<THREE.Group>(null);
+  const headMorphMeshRef = useRef<THREE.Mesh | null>(null);
+  const [loadedModel, setLoadedModel] = useState<THREE.Group | null>(null);
 
-  const nextBlink = useRef<number>(1.8);
+  const sharedUniforms = useRef<HologramUniforms>({
+    uTime: { value: 0 },
+    uVoice: { value: 0 },
+  });
+
+  const smoothVol = useRef<number>(0);
+  const nextBlink = useRef<number>(2.0);
   const isBlinking = useRef<boolean>(false);
   const blinkProg = useRef<number>(0);
-  const smoothVol = useRef<number>(0);
 
-  const lavaMaterial = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        uniforms: {
-          uTime: { value: 0 },
-          uVoice: { value: 0 },
-        },
-        vertexShader: LAVA_EYE_VERT,
-        fragmentShader: LAVA_EYE_FRAG,
-        transparent: true,
-        toneMapped: false,
-      }),
-    []
-  );
+  const materials = useMemo(() => {
+    const headMat = createHologramScanMaterial(sharedUniforms.current);
+    const teethMat = createHologramScanMaterial(sharedUniforms.current, { isTeeth: true });
+    const redEyeMat = createMoltenRedEyeMaterial(sharedUniforms.current);
+    return { headMat, teethMat, redEyeMat };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const ktx2Loader = new KTX2Loader();
+    ktx2Loader.setTranscoderPath("/basis/");
+    ktx2Loader.detectSupport(gl);
+
+    const loader = new GLTFLoader();
+    loader.setMeshoptDecoder(MeshoptDecoder);
+    loader.setKTX2Loader(ktx2Loader);
+
+    loader.load(
+      "/models/facecap.glb",
+      (gltf) => {
+        if (cancelled) return;
+        const scene = gltf.scene;
+
+        // Measure loaded head bounds cleanly and normalize height to 1.24 world units
+        scene.updateMatrixWorld(true);
+        const rawBox = new THREE.Box3().setFromObject(scene);
+        const rawSize = rawBox.getSize(new THREE.Vector3());
+        const targetHeight = 1.24;
+        const normScale = rawSize.y > 0.001 ? targetHeight / rawSize.y : 1;
+        scene.scale.multiplyScalar(normScale);
+
+        scene.updateMatrixWorld(true);
+        const normBox = new THREE.Box3().setFromObject(scene);
+        const normCenter = normBox.getCenter(new THREE.Vector3());
+
+        // Position centered horizontally and cleanly seated atop neck/shoulders bust (chin/jaw bottom ~ -0.44)
+        scene.position.x -= normCenter.x;
+        scene.position.z -= normCenter.z;
+        scene.position.y += 0.16 - normCenter.y;
+
+        scene.traverse((obj) => {
+          if ((obj as THREE.Mesh).isMesh) {
+            const mesh = obj as THREE.Mesh;
+            const nodeName = (mesh.name || "").toLowerCase();
+            const parentName = (mesh.parent?.name || "").toLowerCase();
+            const fullName = `${parentName}:${nodeName}`;
+
+            // Strip any source map textures so clean scanline / molten eye shaders render purely
+            if (fullName.includes("eye")) {
+              mesh.material = materials.redEyeMat;
+            } else if (fullName.includes("teeth")) {
+              mesh.material = materials.teethMat;
+            } else {
+              mesh.material = materials.headMat;
+              if (mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
+                headMorphMeshRef.current = mesh;
+              }
+            }
+            mesh.frustumCulled = false;
+          }
+        });
+
+        setLoadedModel(scene);
+      },
+      undefined,
+      (err) => {
+        console.error("[WireframeFace] Failed to load /models/facecap.glb:", err);
+      }
+    );
+
+    return () => {
+      cancelled = true;
+      ktx2Loader.dispose();
+    };
+  }, [gl, materials]);
+
+  useEffect(() => {
+    return () => {
+      materials.headMat.dispose();
+      materials.teethMat.dispose();
+      materials.redEyeMat.dispose();
+    };
+  }, [materials]);
 
   useFrame((state, delta) => {
     const t = state.clock.getElapsedTime();
     const rawVol = audioEngine.getVolume();
-    const lerpRate = rawVol > smoothVol.current ? 0.42 : 0.24;
+    const lerpRate = rawVol > smoothVol.current ? 0.46 : 0.25;
     smoothVol.current += (rawVol - smoothVol.current) * lerpRate;
     const v = Math.min(1, Math.max(0, smoothVol.current));
 
-    lavaMaterial.uniforms.uTime.value = t;
-    lavaMaterial.uniforms.uVoice.value = v;
+    sharedUniforms.current.uTime.value = t;
+    sharedUniforms.current.uVoice.value = v;
 
-    if (headGroupRef.current) {
-      headGroupRef.current.rotation.y = Math.sin(t * 0.45) * 0.14;
-      headGroupRef.current.rotation.x = Math.sin(t * 0.32) * 0.055 + v * 0.04;
-      headGroupRef.current.rotation.z = Math.cos(t * 0.28) * 0.025;
-      headGroupRef.current.position.y = position[1] + Math.sin(t * 1.1) * 0.045;
+    // 1. Natural 3D Hologram Float + Subtle Head/Shoulders Motion
+    const floatY = Math.sin(t * 1.05) * 0.036;
+    if (rootGroupRef.current) {
+      rootGroupRef.current.position.y = position[1] + floatY;
+    }
+    if (headPivotRef.current) {
+      headPivotRef.current.rotation.y = Math.sin(t * 0.42) * 0.14;
+      headPivotRef.current.rotation.x = Math.sin(t * 0.30) * 0.045 + v * 0.045;
+      headPivotRef.current.rotation.z = Math.cos(t * 0.26) * 0.022;
+    }
+    if (shouldersRef.current) {
+      // Shoulders counter-follow at ~35% of head rotation for authentic anatomical neck pivot
+      shouldersRef.current.rotation.y = Math.sin(t * 0.42) * 0.05;
+      shouldersRef.current.rotation.z = Math.cos(t * 0.26) * 0.008;
     }
 
-    // Crisp, expressive audio-driven lip sync
-    // Lips articulate cleanly inside SculptedHumanLips via smoothVol
-
-    // Natural human periodic blinking on both lava eyes
+    // 2. Eyelid Blinking Timing
     nextBlink.current -= delta;
     if (nextBlink.current <= 0 && !isBlinking.current) {
       isBlinking.current = true;
       blinkProg.current = 0;
     }
 
+    let blinkVal = 0;
     if (isBlinking.current) {
-      blinkProg.current += delta * 7.2;
-      const eyeScaleY = Math.max(0.06, 1.0 - Math.sin(Math.min(1, blinkProg.current) * Math.PI));
-      if (leftEyeGroupRef.current && rightEyeGroupRef.current) {
-        leftEyeGroupRef.current.scale.y = eyeScaleY;
-        rightEyeGroupRef.current.scale.y = eyeScaleY;
-      }
+      blinkProg.current += delta * 6.8;
+      blinkVal = Math.sin(Math.min(1, blinkProg.current) * Math.PI);
       if (blinkProg.current >= 1) {
         isBlinking.current = false;
-        nextBlink.current = 2.4 + Math.random() * 2.8;
-        if (leftEyeGroupRef.current && rightEyeGroupRef.current) {
-          leftEyeGroupRef.current.scale.y = 1;
-          rightEyeGroupRef.current.scale.y = 1;
-        }
+        blinkVal = 0;
+        nextBlink.current = 2.5 + Math.random() * 2.8;
       }
+    }
+
+    // 3. Real-Time ARKit Morph Targets (Puck Voice Lip-Sync + Natural Blinking + Micro-Expressions)
+    const mesh = headMorphMeshRef.current;
+    if (mesh && mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
+      const dict = mesh.morphTargetDictionary;
+      const inf = mesh.morphTargetInfluences;
+
+      const setMorph = (name: string, target: number, smoothing = 0.45) => {
+        const idx = dict[name];
+        if (idx !== undefined) {
+          inf[idx] += (target - inf[idx]) * smoothing;
+        }
+      };
+
+      // Lip-sync driven live by audioEngine.getVolume()
+      const jawTarget = Math.min(0.82, v * 0.74);
+      const syllableWave = 0.5 + 0.5 * Math.sin(t * 11.5);
+      const funnelTarget = v > 0.04 ? v * 0.32 * syllableWave : 0;
+      const puckerTarget = v > 0.04 ? v * 0.16 * (1 - syllableWave) : 0;
+
+      setMorph("jawOpen", jawTarget, 0.55);
+      setMorph("mouthFunnel", funnelTarget, 0.45);
+      setMorph("mouthPucker", puckerTarget, 0.45);
+      setMorph("mouthLowerDown_L", v * 0.28, 0.5);
+      setMorph("mouthLowerDown_R", v * 0.28, 0.5);
+      setMorph("mouthUpperUp_L", v * 0.14, 0.5);
+      setMorph("mouthUpperUp_R", v * 0.14, 0.5);
+      setMorph("mouthSmile_L", 0.09 + v * 0.08, 0.2);
+      setMorph("mouthSmile_R", 0.09 + v * 0.08, 0.2);
+      setMorph("browInnerUp", 0.05 + v * 0.18 + Math.sin(t * 0.9) * 0.03, 0.25);
+      setMorph("browOuterUp_L", v * 0.14, 0.25);
+      setMorph("browOuterUp_R", v * 0.14, 0.25);
+
+      // Authentic bilateral eye blinks closing lids cleanly over molten red eyes
+      setMorph("eyeBlink_L", blinkVal, 0.85);
+      setMorph("eyeBlink_R", blinkVal, 0.85);
     }
   });
 
   return (
-    <group ref={headGroupRef} scale={scale} position={position}>
-      {/* Sculpted 3D Anatomical Human Head + Internal Human DNA Double-Helix in luminous #5BC0DE blue */}
-      <AnatomicalHumanHeadDNA voiceRef={smoothVol} />
+    <group ref={rootGroupRef} scale={scale} position={position}>
+      {/* Realistic 3D Male Head (head + teeth in cyan scanline, eyeLeft & eyeRight in blazing red lava) */}
+      <group ref={headPivotRef}>{loadedModel && <primitive object={loadedModel} />}</group>
 
-      {/* ONLY EYES: Blazing molten lava orbs & glowing rims (#F23456 + #A80139) seated inside sculpted sockets */}
-      <MoltenEye
-        groupRef={leftEyeGroupRef}
-        position={[-0.228, 0.16, 0.688]}
-        rotation={[0, -0.22, 0]}
-        lavaMaterial={lavaMaterial}
-      />
-      <MoltenEye
-        groupRef={rightEyeGroupRef}
-        position={[0.228, 0.16, 0.688]}
-        rotation={[0, 0.22, 0]}
-        lavaMaterial={lavaMaterial}
-      />
+      {/* Subtle crimson optical glow cast gently into the eye sockets */}
+      <pointLight position={[0, 0.18, 0.65]} intensity={0.9} distance={1.6} color="#F23456" />
 
-      {/* Anatomically contoured 3D human lips synced to real-time voice (#5BC0DE) */}
-      <AnatomicalMouthSync voiceRef={smoothVol} />
+      {/* Seamless Cyan Horizontal-Scanline Neck & Clavicle/Shoulders Bust */}
+      <group ref={shouldersRef}>
+        <HologramShouldersBust sharedUniforms={sharedUniforms.current} />
+      </group>
     </group>
   );
 });
