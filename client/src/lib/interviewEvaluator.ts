@@ -327,7 +327,7 @@ export async function evaluateProjectDefenseAnswer(input: DefenseEvalInput): Pro
           profile: serializeProfileForEval(input.profile),
         }),
       },
-      18000
+      25000
     );
 
     if (resp.ok) {
@@ -443,7 +443,7 @@ export async function evaluateMockInterviewAnswer(input: InterviewEvalInput): Pr
           profile: serializeProfileForEval(input.profile),
         }),
       },
-      18000
+      25000
     );
 
     if (resp.ok) {

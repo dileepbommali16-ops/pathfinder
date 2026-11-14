@@ -663,10 +663,19 @@ def evaluate_interview_endpoint(request_body: InterviewEvaluationRequest, reques
         system_instruction=sys_instruction,
     )
     if ai_result is not None:
-        matched_det, missing_det = _match_keywords(clean_answer, expected_keywords)
-        # Reconcile so missing keywords are honest and non-empty if concepts were omitted
+        matched_det, _ = _match_keywords(clean_answer, expected_keywords)
         matched = [m.strip() for m in (ai_result.matched_keywords or matched_det) if m and m.strip()]
-        missing = [m.strip() for m in (ai_result.missing_keywords or missing_det) if m and m.strip()]
+        matched_set = {m.lower() for m in matched}
+        raw_missing = (
+            ai_result.missing_keywords
+            if ai_result.missing_keywords
+            else [k for k in expected_keywords if k.strip().lower() not in matched_set]
+        )
+        missing = [
+            m.strip()
+            for m in raw_missing
+            if m and m.strip() and m.strip().lower() not in matched_set
+        ]
         if ai_result.is_non_answer:
             overall = min(_clamp_score(ai_result.overall_score), 10)
             tech = min(_clamp_score(ai_result.technical_precision), 10)
