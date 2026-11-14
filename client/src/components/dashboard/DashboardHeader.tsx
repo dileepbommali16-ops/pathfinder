@@ -11,7 +11,6 @@ import {
   User,
   GraduationCap,
   Lightbulb,
-  ShieldAlert,
   Zap,
   Mic,
   Menu,
@@ -27,7 +26,6 @@ export type TabId =
   | "profile"
   | "roles"
   | "projects"
-  | "defense"
   | "resume";
 
 interface DashboardHeaderProps {
@@ -45,8 +43,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string 
   { id: "skills", label: "6-Week Roadmap", icon: Compass, badge: "Sprint" },
   { id: "projects", label: "Project Blueprints", icon: Lightbulb },
   { id: "resume", label: "ATS Resume Studio", icon: FileText },
-  { id: "defense", label: "Project Defense", icon: ShieldAlert },
-  { id: "interview", label: "Mock Interview", icon: Mic, badge: "Live" },
+  { id: "interview", label: "Interview & Defense", icon: Mic, badge: "Live" },
   { id: "analytics", label: "Cohort Analytics", icon: TrendingUp, badge: "972" },
   { id: "branches", label: "Branches and Courses", icon: GraduationCap, badge: "Dept" },
 ];
@@ -109,7 +106,6 @@ const TAB_THEMES: Record<TabId, typeof WINE_THEME> = {
   analytics: WINE_THEME,
   resume: PURE_BLACK_THEME,
   branches: VIOLET_THEME,
-  defense: PURE_BLACK_THEME,
   profile: MONO_THEME,
   roles: VIOLET_THEME,
 };

@@ -66,7 +66,7 @@ const DEFAULT_WEEKS: MissionWeek[] = [
         effort: "2.5 hours",
         skill: "Database Systems",
         completed: false,
-        actionTab: "defense"
+        actionTab: "interview"
       }
     ]
   },
@@ -159,7 +159,7 @@ const DEFAULT_WEEKS: MissionWeek[] = [
         effort: "2.5 hours",
         skill: "System Defense",
         completed: false,
-        actionTab: "defense"
+        actionTab: "interview"
       },
       {
         id: "w4-t3",

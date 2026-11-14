@@ -81,7 +81,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                   onClick={() => { onNavigateTab("interview"); scrollToTop(); }}
                   className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left flex items-center gap-1.5"
                 >
-                  <span>AI Mock Interview Simulator</span>
+                  <span>Interview &amp; Project Defense Simulator</span>
                   <span className="text-[9px] bg-[#34222E]/60 text-[#f8fafc] border border-[#34222E] px-1 rounded">Live</span>
                 </button>
               </li>
@@ -115,15 +115,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                   className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
                 >
                   ATS Resume Studio & Scanner
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => { onNavigateTab("defense"); scrollToTop(); }}
-                  className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
-                >
-                  STAR Architecture Defense Console
                 </button>
               </li>
             </ul>

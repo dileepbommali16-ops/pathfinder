@@ -19,7 +19,10 @@ import {
   Clock,
   BookOpen,
   Briefcase,
-  ChevronRight
+  ChevronRight,
+  Copy,
+  Check,
+  ShieldAlert
 } from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
 import { speaker } from "@/agent/audioIO";
@@ -30,15 +33,24 @@ interface MockInterviewConsoleProps {
   profile: StudentProfileState;
   initialCompany?: string;
   initialRole?: string;
+  initialMode?: "company" | "defense";
   onNavigateTab?: (tab: string) => void;
   onAskCoach?: (query: string) => void;
 }
 
 interface QuestionItem {
   id: string;
+  track: "company" | "defense";
   company: string;
   role: string;
-  roundType: "Technical & Algorithms" | "System Architecture" | "Behavioral (STAR)";
+  roundType:
+    | "Technical & Algorithms"
+    | "System Architecture"
+    | "Behavioral (STAR)"
+    | "Project Architecture"
+    | "Database & Scale"
+    | "Security & Auth"
+    | "Failure & Recovery";
   difficulty: "Medium" | "Hard" | "Core Essential";
   question: string;
   contextHint: string;
@@ -50,6 +62,7 @@ interface QuestionItem {
 const QUESTION_BANK: QuestionItem[] = [
   {
     id: "rzp-1",
+    track: "company",
     company: "Razorpay / Fintech",
     role: "Full Stack Engineer",
     roundType: "Technical & Algorithms",
@@ -63,6 +76,7 @@ const QUESTION_BANK: QuestionItem[] = [
   },
   {
     id: "goog-1",
+    track: "company",
     company: "Google / Alphabet",
     role: "Software Development Engineer",
     roundType: "System Architecture",
@@ -76,6 +90,7 @@ const QUESTION_BANK: QuestionItem[] = [
   },
   {
     id: "tcs-1",
+    track: "company",
     company: "TCS Digital / Campus Drive",
     role: "Campus Prime Developer",
     roundType: "Technical & Algorithms",
@@ -89,6 +104,7 @@ const QUESTION_BANK: QuestionItem[] = [
   },
   {
     id: "amzn-1",
+    track: "company",
     company: "Amazon AWS",
     role: "Software Development Engineer",
     roundType: "Behavioral (STAR)",
@@ -99,6 +115,62 @@ const QUESTION_BANK: QuestionItem[] = [
     idealKeywords: ["situation", "task", "action", "result", "root cause", "metrics", "ownership"],
     benchmarkAnswer:
       "Situation: While launching our university portal, our real-time notification engine crashed during peak registration under 2,000 concurrent students. Task: As lead developer, I had 48 hours to eliminate the bottleneck without server upgrades. Action: I used profiling tools to trace memory leaks, discovering that unbounded WebSocket listener instances were exhausting Node.js heap memory. I refactored the connection pool to use Redis Pub/Sub with backpressure throttles and added connection pooling. Result: Server memory dropped by 64%, CPU usage stabilized under 35%, and all 2,000 students completed registration with zero downtime."
+  },
+  {
+    id: "def-1",
+    track: "defense",
+    company: "Project Viva · Architecture",
+    role: "Project Owner",
+    roundType: "Project Architecture",
+    difficulty: "Hard",
+    question: "Why did you choose a microservices/decoupled REST architecture instead of a monolith for this project, and what network overhead does that introduce?",
+    contextHint: "Evaluates service boundary decisions, serialization overhead (~ms), deployment isolation, and resilience via circuit breakers.",
+    keyConcepts: ["Service Boundary", "Independent Scaling", "Network Latency", "Circuit Breaker"],
+    idealKeywords: ["service boundary", "independent scaling", "network latency", "serialization", "circuit breaker"],
+    benchmarkAnswer:
+      "In STAR format: We decoupled high-throughput AI inference workers from the core web/session API so heavy model CPU load never blocks login or dashboard requests. This adds ~8-15ms HTTP/JSON serialization hops and partial failure modes across network boundaries, which we mitigated using persistent connection pooling, bounded request timeouts, and circuit breakers around downstream AI dependencies."
+  },
+  {
+    id: "def-2",
+    track: "defense",
+    company: "Project Viva · Scale",
+    role: "Project Owner",
+    roundType: "Database & Scale",
+    difficulty: "Hard",
+    question: "What happens if your application experiences a 10x spike in concurrent requests? Where will the database bottleneck occur first, and how would you resolve it?",
+    contextHint: "Tests connection pooling, read replicas, Redis caching with TTL, and composite database indexing.",
+    keyConcepts: ["Connection Pooling", "Read Replicas", "Redis Cache", "B-Tree Indexing"],
+    idealKeywords: ["connection pool", "read replica", "redis cache", "database index", "rate limiting"],
+    benchmarkAnswer:
+      "Under a 10x traffic surge, the primary database connection pool saturates first while full-table reads contend with write locks. To resolve this, we place PgBouncer connection pooling in front of Postgres, cache hot read endpoints in Redis with short TTL invalidation, route heavy analytical queries to read replicas, and add composite B-tree indexes verified via EXPLAIN ANALYZE alongside API rate limiting."
+  },
+  {
+    id: "def-3",
+    track: "defense",
+    company: "Project Viva · Security",
+    role: "Project Owner",
+    roundType: "Security & Auth",
+    difficulty: "Core Essential",
+    question: "How did you prevent SQL injection, prompt injection, and Cross-Site Scripting (XSS) in your user input pipelines?",
+    contextHint: "Probes parameterized queries, Pydantic schema validation, XSS output escaping, CSP headers, and LLM prompt boundaries.",
+    keyConcepts: ["Parameterized Queries", "Schema Validation", "CSP & Output Escaping", "Prompt Isolation"],
+    idealKeywords: ["parameterized queries", "prepared statements", "input validation", "xss", "prompt isolation"],
+    benchmarkAnswer:
+      "For SQL injection we strictly enforce parameterized queries and Pydantic schema validation rather than string interpolation. For XSS we rely on React contextual escaping, Content-Security-Policy headers, and HttpOnly SameSite cookies. For LLM prompt injection, untrusted user input is length-bounded, sanitized of control markers, and strictly separated from privileged backend tools."
+  },
+  {
+    id: "def-4",
+    track: "defense",
+    company: "Project Viva · Reliability",
+    role: "Project Owner",
+    roundType: "Failure & Recovery",
+    difficulty: "Hard",
+    question: "If an external API dependency or background task fails halfway through a transaction, how does your system guarantee consistency without leaving dirty state?",
+    contextHint: "Tests ACID database rollbacks, idempotency keys, transactional outbox pattern, retries, and dead-letter queues.",
+    keyConcepts: ["ACID Transaction", "Idempotency Key", "Dead-Letter Queue", "Exponential Backoff"],
+    idealKeywords: ["acid transaction", "idempotency key", "outbox pattern", "dead letter queue", "rollback"],
+    benchmarkAnswer:
+      "We keep external API calls outside open database locks and persist state transitions atomically using ACID transactions plus an idempotency key and transactional outbox record. If a downstream job fails mid-flight, the database transaction rolls back cleanly, exponential backoff retries replay safely without duplicate side effects, and exhausted jobs move into a Dead-Letter Queue (DLQ) for inspection."
   }
 ];
 
@@ -106,14 +178,17 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
   profile,
   initialCompany,
   initialRole,
+  initialMode = "company",
   onNavigateTab,
   onAskCoach
 }) => {
+  const [selectedTrack, setSelectedTrack] = useState<"company" | "defense">(initialMode);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number>(0);
   const [userAnswer, setUserAnswer] = useState<string>("");
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
+  const [copiedBenchmark, setCopiedBenchmark] = useState<boolean>(false);
   const [evaluationResult, setEvaluationResult] = useState<{
     overallScore: number;
     technicalPrecision: number;
@@ -131,7 +206,15 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
 
   const speechRecognitionRef = useRef<any>(null);
 
-  const currentQ = QUESTION_BANK[selectedQuestionIndex] || QUESTION_BANK[0];
+  const visibleQuestions = QUESTION_BANK.filter((q) => q.track === selectedTrack);
+  const currentQ = visibleQuestions[selectedQuestionIndex] || visibleQuestions[0] || QUESTION_BANK[0];
+
+  useEffect(() => {
+    setSelectedTrack(initialMode);
+    setSelectedQuestionIndex(0);
+    setUserAnswer("");
+    setEvaluationResult(null);
+  }, [initialMode]);
 
   // Set up timer
   useEffect(() => {
@@ -149,10 +232,12 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
   // Handle Initial Company Pre-selection
   useEffect(() => {
     if (initialCompany) {
-      const foundIdx = QUESTION_BANK.findIndex((q) =>
+      const companyQuestions = QUESTION_BANK.filter((q) => q.track === "company");
+      const foundIdx = companyQuestions.findIndex((q) =>
         q.company.toLowerCase().includes(initialCompany.toLowerCase())
       );
       if (foundIdx !== -1) {
+        setSelectedTrack("company");
         setSelectedQuestionIndex(foundIdx);
         resetState();
       }
@@ -314,20 +399,22 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
         <div>
           <div className="flex items-center gap-2.5">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#ffffff]/40 bg-[#ffffff]/15 text-[#ffffff] shadow-[0_0_12px_rgba(255,255,255,0.25)]">
-              <Mic className="h-4 w-4" />
+              {selectedTrack === "defense" ? <ShieldAlert className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </span>
             <span className="text-xs font-semibold uppercase tracking-wider text-[#94a3b8]">
-              Live Mock Interview Simulator
+              Unified Interview &amp; Defense Simulator
             </span>
             <span className="rounded-full border border-[#ffffff]/30 bg-[#ffffff]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#ffffff] shadow-sm">
-              AI Voice & Audio Ready
+              AI Voice &amp; Live Grading
             </span>
           </div>
           <h3 className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-[#f8fafc] font-['Space_Grotesk']">
-            Rapid 60-Second Interview Drill
+            {selectedTrack === "defense"
+              ? "Project Architecture & Viva Defense"
+              : "Company Hiring Rounds & Technical Drill"}
           </h3>
           <p className="mt-1 text-xs sm:text-sm text-[#94a3b8] max-w-2xl leading-relaxed">
-            Practice actual technical and behavioral interview questions asked by top tech firms. Speak your answer or type it to receive an instant multi-dimensional evaluation.
+            Practice company-level technical rounds or defend your project architecture trade-offs. Speak or type your answer for genuine, uninflated AI evaluation.
           </p>
         </div>
 
@@ -352,9 +439,46 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
         </div>
       </div>
 
+      {/* Mode Switcher: Company Hiring Rounds vs Project Defense & Viva */}
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedTrack("company");
+            setSelectedQuestionIndex(0);
+            resetState();
+          }}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+            selectedTrack === "company"
+              ? "border border-[#ffffff] bg-[#ffffff] text-[#0a0b10] shadow-sm"
+              : "border border-white/10 bg-[#0a0b10] text-[#94a3b8] hover:text-[#f8fafc]"
+          }`}
+        >
+          <Briefcase className="h-3.5 w-3.5" />
+          <span>Company Rounds (4)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedTrack("defense");
+            setSelectedQuestionIndex(0);
+            resetState();
+          }}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+            selectedTrack === "defense"
+              ? "border border-[#ffffff] bg-[#ffffff] text-[#0a0b10] shadow-sm"
+              : "border border-white/10 bg-[#0a0b10] text-[#94a3b8] hover:text-[#f8fafc]"
+          }`}
+        >
+          <ShieldAlert className="h-3.5 w-3.5" />
+          <span>Project Defense &amp; Viva (4)</span>
+        </button>
+      </div>
+
       {/* Question Selector Carousel Tabs */}
-      <div className="mt-5 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {QUESTION_BANK.map((q, idx) => (
+      <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        {visibleQuestions.map((q, idx) => (
           <button
             key={q.id}
             type="button"
@@ -368,9 +492,11 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 : "border border-[rgba(255,255,255,0.08)] bg-[#161926]/50 text-[#94a3b8] hover:border-[#ffffff]/50 hover:text-[#f8fafc]"
             }`}
           >
-            <span className="font-semibold">{q.company.split("/")[0]}</span>
+            <span className="font-semibold">
+              {selectedTrack === "defense" ? q.roundType : q.company.split("/")[0]}
+            </span>
             <span className={`text-[10px] ${selectedQuestionIndex === idx ? "text-[#f8fafc] font-bold" : "text-[#94a3b8]"}`}>
-              ({q.roundType.split(" ")[0]})
+              ({q.difficulty})
             </span>
           </button>
         ))}
@@ -679,12 +805,36 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                   </div>
                 )}
 
+                {/* Reference Benchmark Response (Copyable) */}
+                <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] p-3.5 text-xs">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-white/[0.06]">
+                    <span className="font-semibold text-[#f8fafc]">
+                      Model Interviewer STAR Response
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(currentQ.benchmarkAnswer);
+                        setCopiedBenchmark(true);
+                        setTimeout(() => setCopiedBenchmark(false), 2000);
+                      }}
+                      className="flex items-center gap-1 text-[11px] text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer"
+                    >
+                      {copiedBenchmark ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      <span>{copiedBenchmark ? "Copied" : "Copy"}</span>
+                    </button>
+                  </div>
+                  <p className="mt-2 text-[#94a3b8] font-mono text-[11px] leading-relaxed">
+                    {currentQ.benchmarkAnswer}
+                  </p>
+                </div>
+
                 {/* Next Question CTA */}
                 <div className="pt-2 flex items-center justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => {
-                      const nextIdx = (selectedQuestionIndex + 1) % QUESTION_BANK.length;
+                      const nextIdx = (selectedQuestionIndex + 1) % visibleQuestions.length;
                       setSelectedQuestionIndex(nextIdx);
                       resetState();
                     }}

@@ -16,7 +16,6 @@ import { ProjectRecommender } from "@/components/dashboard/ProjectRecommender";
 import { CareerDigitalTwin } from "@/components/dashboard/CareerDigitalTwin";
 import { WhatIfSimulator } from "@/components/dashboard/WhatIfSimulator";
 import { RoleIntelligence } from "@/components/dashboard/RoleIntelligence";
-import { ProjectDefenseConsole } from "@/components/dashboard/ProjectDefenseConsole";
 import { CareerMissionTracker } from "@/components/dashboard/CareerMissionTracker";
 import { BranchIntelligence } from "@/components/dashboard/BranchIntelligence";
 import { SkillIntelligence } from "@/components/dashboard/SkillIntelligence";
@@ -43,7 +42,6 @@ import {
   TrendingUp,
   FileText,
   GraduationCap,
-  ShieldAlert,
   ShieldCheck,
   User,
   Target,
@@ -82,13 +80,13 @@ export default function Home({ initialTab }: HomeProps = {}) {
           "analytics",
           "resume",
           "branches",
-          "defense",
           "profile",
           "roles",
         ].includes(t)
       ) {
         return t as TabId;
       }
+      if (t === "defense" || t === "viva") return "interview";
       if (t === "missions") return "skills";
       if (t === "action") return "overview";
     }
@@ -133,8 +131,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
         cohort: { tab: "analytics", scrollId: "cohort-explorer" },
         resume: { tab: "resume" },
         branches: { tab: "branches" },
-        defense: { tab: "defense" },
-        viva: { tab: "defense" },
+        defense: { tab: "interview" },
+        viva: { tab: "interview" },
+        "project-defense": { tab: "interview" },
         profile: { tab: "profile" },
         "skill-gap": { tab: "overview", scrollId: "career-skill-gap" },
       };
@@ -155,6 +154,12 @@ export default function Home({ initialTab }: HomeProps = {}) {
 
     const handleDASNavigate = (e: any) => {
       if (e.detail && e.detail.tab) {
+        const rawNormalized = String(e.detail.tab).toLowerCase().trim();
+        if (rawNormalized === "defense" || rawNormalized === "viva" || rawNormalized === "project-defense") {
+          setInterviewMode("defense");
+        } else if (rawNormalized === "interview" || rawNormalized === "mock-interview" || rawNormalized === "mock_interview") {
+          setInterviewMode("company");
+        }
         const mapped = mapToValidTab(e.detail.tab);
         setActiveTab(mapped.tab);
         setFocusOnDas(false);
@@ -296,13 +301,12 @@ export default function Home({ initialTab }: HomeProps = {}) {
   useEffect(() => {
     const titles: Record<TabId, string> = {
       overview: "Executive Dashboard · Pathfinder 2.0",
-      interview: "AI Mock Interview & Viva · Pathfinder 2.0",
+      interview: "Interview & Project Defense Simulator · Pathfinder 2.0",
       skills: "6-Week Sprint Roadmap · Pathfinder 2.0",
       projects: "Flagship Portfolio Blueprints · Pathfinder 2.0",
       analytics: "Cohort Placement Intelligence · Pathfinder 2.0",
       resume: "ATS Resume Studio & Scanner · Pathfinder 2.0",
       branches: "Branch & Degree Analytics · Pathfinder 2.0",
-      defense: "STAR Architecture Defense Simulator · Pathfinder 2.0",
       profile: "Candidate Profile & SSOT · Pathfinder 2.0",
       roles: "Target Role Intelligence · Pathfinder 2.0",
     };
@@ -352,8 +356,16 @@ export default function Home({ initialTab }: HomeProps = {}) {
   const [showOnePageResume, setShowOnePageResume] = useState<boolean>(false);
   const [interviewCompany, setInterviewCompany] = useState<string>("Razorpay / Fintech");
   const [interviewRole, setInterviewRole] = useState<string>("Full Stack Engineer");
+  const [interviewMode, setInterviewMode] = useState<"company" | "defense">(() => {
+    if (typeof window !== "undefined") {
+      const t = new URLSearchParams(window.location.search).get("tab")?.toLowerCase();
+      if (t === "defense" || t === "viva") return "defense";
+    }
+    return "company";
+  });
 
   const handleLaunchMockInterview = (companyName: string, roleTitle: string) => {
+    setInterviewMode("company");
     setInterviewCompany(companyName);
     setInterviewRole(roleTitle);
     setActiveTab("interview");
@@ -2172,18 +2184,19 @@ export default function Home({ initialTab }: HomeProps = {}) {
               className="space-y-12 sm:space-y-16"
             >
               <SectionHeader
-                title="Live AI Mock Interview Simulator"
-                description="Rapid 60-second technical and behavioral interview practice with real-time scoring and voice recognition"
+                title="Interview & Project Defense Simulator"
+                description="Practice timed company hiring rounds or defend your project architecture trade-offs with live AI grading and voice"
                 badge="Live Audio & Grading"
                 accent="accent"
                 icon={Mic}
-                helperLabel="Speak or type your answer for instant multi-vector scorecard"
+                helperLabel="Switch between Company Rounds and Project Defense (Viva) tracks"
                 onAskCoach={handleAskCoach}
               />
               <MockInterviewConsole
                 profile={profile}
                 initialCompany={interviewCompany}
                 initialRole={interviewRole}
+                initialMode={interviewMode}
                 onNavigateTab={(tab) => setActiveTab(tab as TabId)}
                 onAskCoach={handleAskCoach}
               />
@@ -2387,29 +2400,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 onAskCoach={handleAskCoach}
                 apiBase={API_BASE}
               />
-            </motion.div>
-          )}
-
-          {/* DEFENSE */}
-          {activeTab === "defense" && (
-            <motion.div
-              key="defense"
-              data-slide-theme="pure-black"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
-            >
-              <SectionHeader
-                title="Project Architecture Defense Simulator"
-                description="Interactive technical grilling simulator for system design, edge cases, and architectural trade-offs"
-                badge="STAR Defense"
-                accent="amber"
-                icon={ShieldAlert}
-                helperLabel="Simulates Round 2 technical interview architecture questioning"
-              />
-              <ProjectDefenseConsole profile={profile} onAskCoach={handleAskCoach} />
             </motion.div>
           )}
 

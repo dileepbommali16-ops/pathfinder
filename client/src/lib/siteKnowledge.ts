@@ -31,17 +31,17 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
   },
   interview: {
     id: "interview",
-    title: "AI Mock Interview Simulator",
-    purpose: "Interactive rapid-fire technical and behavioral interview practice with real-time speech recognition, text-to-speech audio, and AI scoring.",
+    title: "Interview & Project Defense Simulator",
+    purpose: "Unified technical interview & project defense (viva) simulator with live Gemini AI grading, voice read-aloud, microphone speech-to-text, and drill timer.",
     widgets: [
-      "Company & Role Selection: Google, Razorpay, Amazon AWS, TCS Digital, and Fintech unicorns.",
-      "Audio Controls: Listen to questions aloud via Text-to-Speech and speak answers using the live microphone.",
-      "1-Click Benchmark Answer: Instant sample response insertion for live demonstrations.",
-      "Multi-Vector AI Scorecard: Technical Depth, Communication & Clarity, Problem Solving, and Keyword Gap Analysis."
+      "Track Switcher: Switch seamlessly between Company Hiring Rounds (Razorpay, Google, TCS, Amazon) and Project Defense & Viva (Architecture, Database & Scale, Security, Failure Modes).",
+      "Audio & Timer Controls: Listen to questions aloud via Text-to-Speech, speak answers via microphone, and track response speed.",
+      "Copyable STAR Benchmark Answers: Practice with senior-grade benchmark examples after evaluation.",
+      "Multi-Vector AI Scorecard: Overall %, Technical Depth, Communication & Clarity, Problem Solving, Keyword Coverage, and Critical Feedback."
     ],
-    dataSource: "Real-world engineering interview questions curated from Tier-1 tech campus and off-campus hiring drives.",
-    howToUse: "Select a question, speak or type your answer using the STAR format, and click 'Evaluate My Answer' to get instant feedback.",
-    limitations: "Focuses on high-frequency hiring questions; practice should be paired with deep conceptual study."
+    dataSource: "Real-world engineering interview and architecture defense questions graded live by Gemini AI.",
+    howToUse: "Choose Company Rounds or Project Defense & Viva, select a prompt, type or speak your answer, and click 'Evaluate My Answer' for honest AI scoring.",
+    limitations: "Focuses on high-frequency hiring & architecture defense questions; combine with deep project walkthroughs."
   },
   action: {
     id: "action",

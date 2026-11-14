@@ -582,8 +582,8 @@ export const getCareerAgentResponse = (
     }
     if (/\b(project\s*defense|star\s*defense|defense)\b/i.test(text)) {
       return (
-        `Opening the STAR Project Defense simulator now, ${title}. Let's test your architecture trade-offs.` +
-        `|||🛡️ **Project Architecture Defense Simulator:** Practice defending scaling, caching, and database choices. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "defense"}-->`
+        `Opening the Project Defense & Interview simulator now, ${title}. Let's test your architecture trade-offs.` +
+        `|||🛡️ **Project Defense & Viva Mode:** Practice defending scaling, caching, and database choices. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "defense"}-->`
       );
     }
     if (/\b(resume|ats|cv)\b/i.test(text)) {
