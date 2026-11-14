@@ -529,10 +529,10 @@ class DasPcmPlayer extends AudioWorkletProcessor {
     this.phase = 0;
     this.buffering = true;
     this.turnStarted = false;
+    this.waitFrames = 0;
     this.wasActive = false;
     this.drain = false;
     this.gainEnv = 0;
-    this.lastSample = 0;
     this.lastOut = 0;
     this.port.onmessage = (e) => {
       const m = e.data;
@@ -544,9 +544,9 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         this.phase = 0;
         this.buffering = true;
         this.turnStarted = false;
+        this.waitFrames = 0;
         this.drain = false;
         this.gainEnv = 0;
-        this.lastSample = 0;
         this.lastOut = 0;
         if (this.wasActive) {
           this.wasActive = false;
@@ -575,18 +575,26 @@ class DasPcmPlayer extends AudioWorkletProcessor {
   process(inputs, outputs) {
     const out = outputs[0] && outputs[0][0];
     if (!out) return true;
-    // 260ms initial jitter prefill absorbs ~275ms live burst intervals so "Hi Boss!" plays unbroken
-    const prebuffer = Math.round(this.srcRate * (this.turnStarted ? 0.12 : 0.26));
+    const prebuffer = Math.round(this.srcRate * (this.turnStarted ? 0.18 : 0.90));
+    const waitCapFrames = Math.max(1, Math.round(0.90 * (sampleRate / out.length)));
     if (this.buffering) {
-      if (this.avail >= prebuffer || (this.drain && this.avail > 0)) {
+      if (!this.turnStarted && this.avail > 0) {
+        this.waitFrames++;
+      }
+      if (
+        this.avail >= prebuffer ||
+        (this.drain && this.avail > 0) ||
+        (!this.turnStarted && this.waitFrames >= waitCapFrames && this.avail >= Math.round(this.srcRate * 0.16))
+      ) {
         this.buffering = false;
         this.turnStarted = true;
+        this.waitFrames = 0;
       } else {
         if (this.drain && this.avail === 0) {
           this.drain = false;
           this.turnStarted = false;
+          this.waitFrames = 0;
           this.gainEnv = 0;
-          this.lastSample = 0;
           this.lastOut = 0;
           if (this.wasActive) {
             this.wasActive = false;
@@ -604,8 +612,7 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         const idx1 = (idx0 + 1) % this.cap;
         const frac = this.phase - Math.floor(this.phase);
         const s = this.ring[idx0] + frac * (this.ring[idx1] - this.ring[idx0]);
-        this.lastSample = s;
-        this.gainEnv = Math.min(1, this.gainEnv + 0.025);
+        this.gainEnv = Math.min(1, this.gainEnv + 0.016);
         this.lastOut = s * this.gainEnv;
         out[i] = this.lastOut;
         this.phase += step;
@@ -621,22 +628,20 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         this.readPos = (this.readPos + 1) % this.cap;
         this.avail = 0;
         this.phase = 0;
-        this.lastSample = s;
-        this.gainEnv = Math.min(1, this.gainEnv + 0.025);
+        this.gainEnv = Math.min(1, this.gainEnv + 0.016);
         this.lastOut = s * this.gainEnv;
         out[i] = this.lastOut;
       } else {
-        this.gainEnv = Math.max(0, this.gainEnv - 0.04);
-        this.lastOut = this.lastSample * this.gainEnv;
+        this.lastOut *= 0.90;
         out[i] = this.lastOut;
-        if (this.gainEnv <= 0.001) {
+        if (Math.abs(this.lastOut) < 0.0005) {
           this.lastOut = 0;
-          this.lastSample = 0;
           this.buffering = true;
           this.gainEnv = 0;
           if (this.drain) {
             this.drain = false;
             this.turnStarted = false;
+            this.waitFrames = 0;
             if (this.wasActive) {
               this.wasActive = false;
               this.port.postMessage({ type: "playing", active: false });
@@ -719,9 +724,13 @@ class AudioEngine {
     const analyser = this.analyser;
     this.playerInitPromise = (async () => {
       try {
-        const blob = new Blob([PCM_PLAYER_WORKLET_CODE], { type: "application/javascript" });
-        this.playerBlobUrl = URL.createObjectURL(blob);
-        await ctx.audioWorklet.addModule(this.playerBlobUrl);
+        try {
+          await ctx.audioWorklet.addModule("/worklets/das-pcm-player.js");
+        } catch {
+          const blob = new Blob([PCM_PLAYER_WORKLET_CODE], { type: "application/javascript" });
+          this.playerBlobUrl = URL.createObjectURL(blob);
+          await ctx.audioWorklet.addModule(this.playerBlobUrl);
+        }
         if (this.audioCtx !== ctx || this.analyser !== analyser) return;
         const node = new AudioWorkletNode(ctx, "das-pcm-player", {
           numberOfInputs: 0,
@@ -1370,9 +1379,13 @@ class AudioEngine {
     let workletReady = false;
     if (this.micCtx.audioWorklet && typeof Blob !== "undefined") {
       try {
-        const blob = new Blob([MIC_WORKLET_CODE], { type: "application/javascript" });
-        this.workletBlobUrl = URL.createObjectURL(blob);
-        await this.micCtx.audioWorklet.addModule(this.workletBlobUrl);
+        try {
+          await this.micCtx.audioWorklet.addModule("/worklets/das-mic-processor.js");
+        } catch {
+          const blob = new Blob([MIC_WORKLET_CODE], { type: "application/javascript" });
+          this.workletBlobUrl = URL.createObjectURL(blob);
+          await this.micCtx.audioWorklet.addModule(this.workletBlobUrl);
+        }
         if (this.captureToken !== token || !this.micCtx) return;
 
         this.workletNode = new AudioWorkletNode(this.micCtx, "das-mic-processor", {

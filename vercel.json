@@ -1,17 +1,26 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!worklets/|assets/|favicon\\.svg|og-image\\.png).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
     {
+      "source": "/worklets/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self' https://*.googleapis.com wss://*.googleapis.com https://pathfinder-backend-klrp.onrender.com wss://pathfinder-backend-klrp.onrender.com https://dileepdas.app.n8n.cloud; connect-src 'self' https://generativelanguage.googleapis.com wss://generativelanguage.googleapis.com https://pathfinder-backend-klrp.onrender.com wss://pathfinder-backend-klrp.onrender.com https://dileepdas.app.n8n.cloud; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: mediastream:;"
+          "value": "default-src 'self' https://*.googleapis.com wss://*.googleapis.com https://pathfinder-backend-klrp.onrender.com wss://pathfinder-backend-klrp.onrender.com https://dileepdas.app.n8n.cloud; connect-src 'self' https://generativelanguage.googleapis.com wss://generativelanguage.googleapis.com https://pathfinder-backend-klrp.onrender.com wss://pathfinder-backend-klrp.onrender.com https://dileepdas.app.n8n.cloud; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; worker-src 'self' blob:; child-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: mediastream:;"
         }
       ]
     }
