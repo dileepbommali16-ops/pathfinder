@@ -33,6 +33,10 @@ class DasAgentSocket {
     return this.isSpeakingTurn;
   }
 
+  public get isAwaitingResponse(): boolean {
+    return Boolean(this.lastUnansweredText) && !this.isSpeakingTurn;
+  }
+
   // Persistent callback storage for auto-reconnection and multi-turn stability
   private savedRole: UserHonorificRole = "boss";
   private savedOnTranscript?: (text: string) => void;
@@ -48,6 +52,40 @@ class DasAgentSocket {
   private turnWatchdogTimer: number | null = null;
   private lastUnansweredText: string | null = null;
   private watchdogRetriedForText = false;
+  private healthListenersAttached = false;
+
+  private ensureHealthListeners() {
+    if (this.healthListenersAttached || typeof window === "undefined") return;
+    this.healthListenersAttached = true;
+
+    const verifyConnectionAlive = () => {
+      if (this.manualClose || !this.savedOnTranscript) return;
+      if (!this.ws || this.ws.readyState === WebSocket.CLOSED || this.ws.readyState === WebSocket.CLOSING) {
+        this.forceReconnectNow();
+        return;
+      }
+      if (this.ws.readyState === WebSocket.OPEN && !this.isDirectGoogle && Date.now() - this.lastPongAt > 12000) {
+        const probeAt = this.lastPongAt;
+        try {
+          this.ws.send(JSON.stringify({ type: "ping" }));
+          window.setTimeout(() => {
+            if (!this.manualClose && this.lastPongAt === probeAt && this.ws?.readyState === WebSocket.OPEN) {
+              this.forceReconnectNow();
+            }
+          }, 2500);
+        } catch {
+          this.forceReconnectNow();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        verifyConnectionAlive();
+      }
+    });
+    window.addEventListener("online", verifyConnectionAlive);
+  }
 
   public connect(
     role: UserHonorificRole = "boss",
@@ -61,6 +99,7 @@ class DasAgentSocket {
     this.currentRole = role;
     this.savedRole = role;
     this.manualClose = false;
+    this.ensureHealthListeners();
     if (onTranscript) this.savedOnTranscript = onTranscript;
     if (onStatusChange) this.savedOnStatusChange = onStatusChange;
     if (navigateFn) this.savedNavigateFn = navigateFn;
@@ -86,18 +125,15 @@ class DasAgentSocket {
     }
 
     this.ws.onopen = () => {
+      this.lastPongAt = Date.now();
       if (!this.isDirectGoogle) {
-        this.isConnected = true;
-        this.savedOnStatusChange?.(true);
-        this.savedOnTranscript?.("DAS Online (Connected via Render Cloud)!");
-        this.flushPendingMessages();
+        this.savedOnTranscript?.("Connecting to DAS Core (Puck Voice)...");
 
-        // 10s keep-alive ping + 25s silent half-open socket detector for Render backend
-        this.lastPongAt = Date.now();
+        // 8s keep-alive ping + 16s silent half-open socket detector for Render backend
         if (this.renderPingTimer) window.clearInterval(this.renderPingTimer);
         this.renderPingTimer = window.setInterval(() => {
           if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-          if (Date.now() - this.lastPongAt > 25000) {
+          if (Date.now() - this.lastPongAt > 16000) {
             this.forceReconnectNow();
             return;
           }
@@ -106,7 +142,7 @@ class DasAgentSocket {
           } catch {
             this.forceReconnectNow();
           }
-        }, 10000);
+        }, 8000);
         return;
       }
 
@@ -376,7 +412,11 @@ CORE AUTONOMOUS CAPABILITIES:
         // 2. Render Backend Status / Audio / Transcript
         if (data.type === "status") {
           if (data.status === "reconnecting") {
+            if (this.lastUnansweredText && !this.pendingTexts.includes(this.lastUnansweredText)) {
+              this.pendingTexts.push(this.lastUnansweredText);
+            }
             this.savedOnTranscript?.(data.message || "Refreshing live session...");
+            this.forceReconnectNow();
             return;
           }
           if (data.status === "connected") {
@@ -688,7 +728,7 @@ CORE AUTONOMOUS CAPABILITIES:
         this.watchdogRetriedForText = false;
         this.savedOnTranscript?.("Live session timed out, Boss. Please try sending your message again.");
       }
-    }, 11000);
+    }, 8500);
   }
 
   private forceReconnectNow() {
@@ -844,7 +884,7 @@ CORE AUTONOMOUS CAPABILITIES:
       this.savedOnTranscript?.("Okay Boss, returning to your dashboard.");
     }
 
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) {
+    if (!this.ws || this.ws.readyState === WebSocket.CLOSED || this.ws.readyState === WebSocket.CLOSING) {
       this.pendingTexts.push(text);
       this.watchdogRetriedForText = false;
       this.armTurnWatchdog(text);
@@ -858,6 +898,13 @@ CORE AUTONOMOUS CAPABILITIES:
         this.savedOnInterrupted,
         this.savedOnCodeReady
       );
+      return;
+    }
+
+    if (!this.isConnected || this.ws.readyState !== WebSocket.OPEN) {
+      this.pendingTexts.push(text);
+      this.watchdogRetriedForText = false;
+      this.armTurnWatchdog(text);
       return;
     }
 

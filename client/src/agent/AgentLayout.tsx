@@ -157,7 +157,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     await audioEngine.startMicCapture((b64) => dasSocket.sendAudioChunk(b64), {
       deviceId: deviceId || undefined,
       rawMode,
-      shouldSuppressEcho: () => dasSocket.isAgentSpeaking,
+      shouldSuppressEcho: () => dasSocket.isAgentSpeaking || dasSocket.isAwaitingResponse,
       onSpeechIdle: () => dasSocket.sendAudioStreamEnd(),
       onAutoDeviceSwitch: (newDev) => {
         setSelectedMicId(newDev.deviceId);
@@ -261,7 +261,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         onSceneChanged: (hdB64) => {
           dasSocket.sendAutoVisionCheck(hdB64);
         },
-        shouldPauseMonitor: () => dasSocket.isAgentSpeaking || audioEngine.isSpeaking(),
+        shouldPauseMonitor: () =>
+          dasSocket.isAgentSpeaking || dasSocket.isAwaitingResponse || audioEngine.isSpeaking(),
       }
     );
   };
@@ -315,6 +316,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     e.preventDefault();
     if (!inputText.trim() && !attachedFile) return;
 
+    audioEngine.notifyTypingActivity(1200);
     audioEngine.unlockAudio();
     const commandText = inputText.trim() || (attachedFile ? `Look at this attached ${attachedType || "file"}: ${attachedFile.name}` : "");
     setUserTranscript(commandText);
@@ -1323,7 +1325,10 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
             name="dasCommand"
             type="text"
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={(e) => {
+              audioEngine.notifyTypingActivity(850);
+              setInputText(e.target.value);
+            }}
             placeholder="Ask DAS: 'Who is your boss?', 'Write QuickSort in C', 'Look at my hands'..."
             className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#38bdf8] border"
             style={{ backgroundColor: "#0F172A", borderColor: "#334155" }}

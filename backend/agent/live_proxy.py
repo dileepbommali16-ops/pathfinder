@@ -527,6 +527,10 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 "status": "reconnecting",
                                 "message": "Refreshing live session...",
                             })
+                            try:
+                                await websocket.close(code=1012, reason="Refreshing live session")
+                            except Exception:
+                                pass
                             return
 
                         # Check for interruption
@@ -580,10 +584,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 audio_turn_open = False
                                 await websocket.send_json({"type": "turn_complete"})
 
-                    if not yielded_any and is_gemini_ws_closed():
-                        break
-
-                        # Handle Function Calling
+                        # Handle Function Calling inside active session.receive() stream
                         if response.tool_call:
                             function_responses = []
                             for fc in response.tool_call.function_calls:
@@ -595,6 +596,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     "open_external_website",
                                     "open_linkedin_profile",
                                     "write_and_compile_code",
+                                    "return_to_dashboard",
                                 ):
                                     await websocket.send_json({
                                         "type": "tool_call",
@@ -636,18 +638,32 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                         function_responses=function_responses
                                     )
 
+                    if not yielded_any and is_gemini_ws_closed():
+                        if websocket.client_state != WebSocketState.DISCONNECTED:
+                            try:
+                                await websocket.send_json({
+                                    "type": "status",
+                                    "status": "reconnecting",
+                                    "message": "Refreshing live session...",
+                                })
+                                await websocket.close(code=1012, reason="Gemini session closed")
+                            except Exception:
+                                pass
+                        break
+
             except (WebSocketDisconnect, asyncio.CancelledError):
                 pass
             except Exception as stream_err:
                 err_str = str(stream_err)
                 live_logger.warning(f"[Gemini Stream Notice] {err_str}")
                 try:
-                    if "inactivity" in err_str.lower() or "1008" in err_str:
+                    if "inactivity" in err_str.lower() or "1008" in err_str or "closed" in err_str.lower():
                         await websocket.send_json({
                             "type": "status",
                             "status": "reconnecting",
                             "message": "Refreshing live session...",
                         })
+                        await websocket.close(code=1012, reason="Refreshing live session")
                     else:
                         await websocket.send_json({
                             "type": "error",
