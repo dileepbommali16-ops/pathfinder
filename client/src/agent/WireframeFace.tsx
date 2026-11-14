@@ -9,8 +9,46 @@ export interface WireframeFaceProps {
   position?: [number, number, number];
 }
 
-const DEFAULT_SCALE: [number, number, number] = [0.94, 0.98, 0.94];
-const DEFAULT_POSITION: [number, number, number] = [0, 0.14, 0];
+const DEFAULT_SCALE: [number, number, number] = [0.86, 0.86, 0.86];
+const DEFAULT_POSITION: [number, number, number] = [0, -0.06, 0];
+
+interface MoltenEyeProps {
+  groupRef: React.RefObject<THREE.Group | null>;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  lavaMaterial: THREE.ShaderMaterial;
+}
+
+const MoltenEye: React.FC<MoltenEyeProps> = ({ groupRef, position, rotation, lavaMaterial }) => (
+  <group ref={groupRef} position={position} rotation={rotation}>
+    <mesh scale={[1.30, 0.72, 0.5]} material={lavaMaterial}>
+      <sphereGeometry args={[0.055, 20, 16]} />
+    </mesh>
+    <mesh scale={[1.40, 0.82, 1]}>
+      <ringGeometry args={[0.047, 0.065, 32]} />
+      <meshBasicMaterial
+        color="#F23456"
+        side={THREE.DoubleSide}
+        transparent
+        opacity={0.96}
+        blending={THREE.AdditiveBlending}
+        toneMapped={false}
+      />
+    </mesh>
+    <mesh scale={[1.78, 1.05, 1]} position={[0, 0, -0.005]}>
+      <circleGeometry args={[0.065, 28]} />
+      <meshBasicMaterial
+        color="#A80139"
+        side={THREE.DoubleSide}
+        transparent
+        opacity={0.68}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+        toneMapped={false}
+      />
+    </mesh>
+  </group>
+);
 
 const LAVA_EYE_VERT = `
   varying vec3 vLocalPos;
@@ -132,63 +170,18 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
       <AnatomicalHumanHeadDNA voiceRef={smoothVol} />
 
       {/* ONLY EYES: Blazing molten lava orbs & glowing rims (#F23456 + #A80139) seated inside sculpted sockets */}
-      <group ref={leftEyeGroupRef} position={[-0.252, 0.165, 0.755]} rotation={[0, -0.22, 0]}>
-        <mesh scale={[1.34, 0.74, 0.5]} material={lavaMaterial}>
-          <sphereGeometry args={[0.056, 20, 16]} />
-        </mesh>
-        <mesh scale={[1.44, 0.84, 1]}>
-          <ringGeometry args={[0.048, 0.066, 32]} />
-          <meshBasicMaterial
-            color="#F23456"
-            side={THREE.DoubleSide}
-            transparent
-            opacity={0.96}
-            blending={THREE.AdditiveBlending}
-            toneMapped={false}
-          />
-        </mesh>
-        <mesh scale={[1.82, 1.08, 1]} position={[0, 0, -0.005]}>
-          <circleGeometry args={[0.066, 28]} />
-          <meshBasicMaterial
-            color="#A80139"
-            side={THREE.DoubleSide}
-            transparent
-            opacity={0.68}
-            blending={THREE.AdditiveBlending}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-      </group>
-
-      <group ref={rightEyeGroupRef} position={[0.252, 0.165, 0.755]} rotation={[0, 0.22, 0]}>
-        <mesh scale={[1.34, 0.74, 0.5]} material={lavaMaterial}>
-          <sphereGeometry args={[0.056, 20, 16]} />
-        </mesh>
-        <mesh scale={[1.44, 0.84, 1]}>
-          <ringGeometry args={[0.048, 0.066, 32]} />
-          <meshBasicMaterial
-            color="#F23456"
-            side={THREE.DoubleSide}
-            transparent
-            opacity={0.96}
-            blending={THREE.AdditiveBlending}
-            toneMapped={false}
-          />
-        </mesh>
-        <mesh scale={[1.82, 1.08, 1]} position={[0, 0, -0.005]}>
-          <circleGeometry args={[0.066, 28]} />
-          <meshBasicMaterial
-            color="#A80139"
-            side={THREE.DoubleSide}
-            transparent
-            opacity={0.68}
-            blending={THREE.AdditiveBlending}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-      </group>
+      <MoltenEye
+        groupRef={leftEyeGroupRef}
+        position={[-0.228, 0.16, 0.688]}
+        rotation={[0, -0.22, 0]}
+        lavaMaterial={lavaMaterial}
+      />
+      <MoltenEye
+        groupRef={rightEyeGroupRef}
+        position={[0.228, 0.16, 0.688]}
+        rotation={[0, 0.22, 0]}
+        lavaMaterial={lavaMaterial}
+      />
 
       {/* Anatomically contoured 3D human lips synced to real-time voice (#5BC0DE) */}
       <AnatomicalMouthSync voiceRef={smoothVol} />

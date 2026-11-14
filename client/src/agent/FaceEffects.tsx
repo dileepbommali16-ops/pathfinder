@@ -13,15 +13,15 @@ const DNA_HEAD_VERT = /* glsl */ `
     vPos = position;
     vec3 displaced = position;
 
-    // Anatomical mandible / lower-lip articulation when speaking
-    float frontMask = smoothstep(0.12, 0.72, position.z);
-    float jawMask = smoothstep(-0.19, -0.27, position.y) * (1.0 - smoothstep(-0.58, -0.86, position.y));
-    displaced.y -= uVoice * 0.088 * jawMask * frontMask;
-    displaced.z -= uVoice * 0.014 * jawMask * frontMask;
+    // Anatomical mandible & lower-lip articulation when speaking (y in [-0.21 .. -0.68])
+    float frontMask = smoothstep(0.08, 0.62, position.z);
+    float jawMask = smoothstep(-0.20, -0.28, position.y) * (1.0 - smoothstep(-0.56, -0.82, position.y));
+    displaced.y -= uVoice * 0.078 * jawMask * frontMask;
+    displaced.z -= uVoice * 0.012 * jawMask * frontMask;
 
-    // Subtle organic neural-DNA pulse along vertex normals
+    // Subtle living neural-DNA wave pulse along normals
     float angle = atan(position.x, max(0.001, position.z));
-    float dnaPulse = sin(position.y * 6.5 - angle * 2.0 - uTime * 2.2) * 0.0035;
+    float dnaPulse = sin(position.y * 6.5 - angle * 2.0 - uTime * 2.1) * 0.0028;
     displaced += normal * dnaPulse;
 
     vec4 worldPos = modelMatrix * vec4(displaced, 1.0);
@@ -31,40 +31,44 @@ const DNA_HEAD_VERT = /* glsl */ `
   }
 `;
 
-// Radiant #5BC0DE Human-DNA electric blue wireframe with spiraling helical energy bands (NO white stars/decorations)
+// Luminous electric #5BC0DE Human-DNA anatomical wireframe (front-emphasized so anatomy & internal DNA stay crisp)
 const DNA_WIRE_FRAG = /* glsl */ `
   uniform float uTime;
   uniform float uVoice;
   uniform float uBaseOpacity;
+  uniform float uFeatureBoost;
   varying vec3 vPos;
   varying vec3 vNormalDir;
   varying vec3 vViewDir;
 
   void main() {
     float az = atan(vPos.x, vPos.z);
-    // Counter-rotating double-helix DNA energy waves tracing the human head topology
     float helixA = pow(0.5 + 0.5 * sin(vPos.y * 7.2 + az * 2.0 - uTime * 2.4), 3.0);
     float helixB = pow(0.5 + 0.5 * sin(vPos.y * 7.2 - az * 2.0 - uTime * 1.9 + 3.14159), 3.0);
     float dnaWave = clamp(helixA + helixB, 0.0, 1.0);
 
-    // Front facial feature emphasis so brow, eye sockets, nose, lips & jaw pop cleanly in bright #5BC0DE blue
-    float frontFocus = smoothstep(-0.35, 0.85, vPos.z);
+    // Keep rear cranium delicate while front face & lateral jaw/cranium silhouette shine clearly in bright blue
+    float frontFocus = smoothstep(-0.58, 0.62, vPos.z);
     float fresnel = pow(1.0 - abs(dot(normalize(vNormalDir), normalize(vViewDir))), 1.35);
 
-    vec3 deepElectricBlue = vec3(0.118, 0.545, 0.750);
+    vec3 deepElectricBlue = vec3(0.110, 0.520, 0.740);
     vec3 brightCyanBlue   = vec3(0.357, 0.753, 0.871); // #5BC0DE
-    vec3 radiantHelixBlue = vec3(0.510, 0.905, 1.000); // Luminous #82E7FF DNA crest
+    vec3 radiantHelixBlue = vec3(0.565, 0.925, 1.000); // Bright #90ECFF DNA crest
 
-    vec3 col = mix(deepElectricBlue, brightCyanBlue, 0.42 + 0.58 * frontFocus);
-    col = mix(col, radiantHelixBlue, clamp(dnaWave * 0.62 + fresnel * 0.38 + uVoice * 0.35, 0.0, 1.0));
-    col *= (1.38 + frontFocus * 0.36 + dnaWave * 0.48 + uVoice * 0.42);
+    vec3 col = mix(deepElectricBlue, brightCyanBlue, 0.36 + 0.64 * frontFocus);
+    col = mix(col, radiantHelixBlue, clamp(dnaWave * 0.56 + fresnel * 0.34 + uFeatureBoost * 0.42 + uVoice * 0.32, 0.0, 1.0));
+    col *= (1.28 + frontFocus * 0.48 + dnaWave * 0.45 + uFeatureBoost * 0.38 + uVoice * 0.40);
 
-    float alpha = clamp(uBaseOpacity + frontFocus * 0.24 + dnaWave * 0.22 + fresnel * 0.16, 0.36, 1.0);
+    float alpha = clamp(
+      uBaseOpacity * (0.28 + 0.72 * frontFocus) + dnaWave * 0.20 + fresnel * 0.16 + uFeatureBoost * 0.28,
+      0.16,
+      1.0
+    );
     gl_FragColor = vec4(col, alpha);
   }
 `;
 
-// Translucent bright blue anatomical skin/hologram surface beneath the wireframe
+// Translucent bright blue anatomical skin/hologram shell beneath the wireframe
 const DNA_SHELL_FRAG = /* glsl */ `
   uniform float uTime;
   uniform float uVoice;
@@ -75,17 +79,17 @@ const DNA_SHELL_FRAG = /* glsl */ `
   void main() {
     vec3 N = normalize(vNormalDir);
     vec3 V = normalize(vViewDir);
-    float fresnel = pow(1.0 - abs(dot(N, V)), 1.65);
-    float frontLight = clamp(dot(N, normalize(vec3(0.0, 0.2, 1.0))) * 0.5 + 0.5, 0.0, 1.0);
+    float fresnel = pow(1.0 - abs(dot(N, V)), 1.75);
+    float frontLight = clamp(dot(N, normalize(vec3(0.0, 0.25, 1.0))) * 0.5 + 0.5, 0.0, 1.0);
     float az = atan(vPos.x, vPos.z);
     float dnaGlow = 0.5 + 0.5 * sin(vPos.y * 6.5 + az * 2.0 - uTime * 2.1);
 
-    vec3 shellBlue = vec3(0.165, 0.625, 0.820);
+    vec3 shellBlue  = vec3(0.145, 0.590, 0.790);
     vec3 brightBlue = vec3(0.357, 0.753, 0.871); // #5BC0DE
-    vec3 col = mix(shellBlue, brightBlue, frontLight * 0.55 + fresnel * 0.65);
-    col *= (0.95 + dnaGlow * 0.32 + uVoice * 0.28);
+    vec3 col = mix(shellBlue, brightBlue, frontLight * 0.45 + fresnel * 0.75);
+    col *= (0.85 + dnaGlow * 0.30 + uVoice * 0.26);
 
-    float alpha = clamp(0.11 + fresnel * 0.29 + frontLight * 0.06 + uVoice * 0.08, 0.08, 0.48);
+    float alpha = clamp(0.06 + fresnel * 0.28 + frontLight * 0.04 + uVoice * 0.07, 0.05, 0.40);
     gl_FragColor = vec4(col, alpha);
   }
 `;
@@ -102,136 +106,127 @@ function gaussian1(x: number, mu: number, s: number): number {
 }
 
 /**
- * Parametrically evaluates an anatomically proportioned 3D human head & upper neck surface.
- * u in [-PI, PI] (u = 0 is dead-center +Z face), v in [0, 1] (0 = top of crown, 1 = lower neck collar).
+ * Parametrically evaluates an anatomically proportioned 3D human head & tapered neck surface.
+ * u in [-PI, PI] (u = 0 is dead-center +Z face), v in [0, 1] (0 = crown apex, 1 = collar base).
+ * Produces a rounded cranial dome -> cheekbones -> tapered human V-jawline & chin -> submental neck.
  */
 function evalHumanHeadVertex(u: number, v: number): THREE.Vector3 {
   const absU = Math.abs(u);
   const sinU = Math.sin(u);
   const cosU = Math.cos(u);
 
-  // 1. Vertical anatomical axis from top of cranium (+1.16) to neck base (-1.12)
-  // Concentrate slightly more rings across the facial plane (v = 0.28..0.76)
-  const y = 1.16 - 2.28 * v;
-
-  // 2. Smooth lateral width rx(v) & depth rz(v) silhouette of a human skull -> mandible -> neck
+  let y = 0.0;
   let rx = 0.0;
   let rz = 0.0;
   let zCenter = 0.0;
 
-  if (v < 0.16) {
-    // Cranial vault dome
-    const t = Math.max(0.008, v / 0.16);
-    const dome = Math.sqrt(Math.sin(t * Math.PI * 0.5));
-    rx = 0.74 * dome;
-    rz = 0.90 * dome;
+  if (v < 0.34) {
+    // Spherical-ellipsoid cranial vault (y = +1.06 rounded apex smoothly curving to brow at y = +0.32)
+    const theta = Math.max(0.015, (v / 0.34) * Math.PI * 0.5);
+    y = 0.32 + 0.74 * Math.cos(theta);
+    const domeWidth = Math.sin(theta);
+    rx = 0.70 * domeWidth;
+    rz = 0.85 * domeWidth;
     zCenter = -0.05;
-  } else if (v < 0.42) {
-    // Forehead to temples & brow plane
-    const t = (v - 0.16) / 0.26;
-    rx = 0.74 + 0.03 * Math.sin(t * Math.PI);
-    rz = 0.90 - 0.02 * t;
-    zCenter = -0.05 + 0.04 * t;
-  } else if (v < 0.58) {
-    // Mid-face: cheekbones (zygoma) & occipital curve
-    const t = (v - 0.42) / 0.16;
-    rx = 0.74 - 0.06 * t;
-    rz = 0.88 - 0.04 * t;
-    zCenter = -0.01 + 0.02 * t;
-  } else if (v < 0.77) {
-    // Lower face: cheeks tapering neatly into defined jawline & chin
-    const t = (v - 0.58) / 0.19;
-    rx = 0.68 * (1 - 0.38 * t * t);
-    rz = 0.84 * (1 - 0.30 * Math.pow(t, 1.35));
-    zCenter = 0.01 - 0.11 * Math.pow(t, 1.8);
+  } else if (v < 0.78) {
+    // Mid-face -> cheekbones -> tapering human V-oval jawline -> chin (y = +0.32 down to -0.58)
+    const t = (v - 0.34) / 0.44;
+    y = 0.32 - 0.90 * t;
+    // Slight temple narrowing then zygoma curve, cleanly tapering to sculpted human chin
+    const templeCheek = 0.03 * Math.sin(Math.min(1, t * 2.5) * Math.PI);
+    rx = 0.70 * (1 - 0.60 * Math.pow(t, 1.48)) + templeCheek;
+    rz = 0.85 * (1 - 0.54 * Math.pow(t, 1.42));
+    zCenter = -0.05 + 0.04 * Math.sin(t * Math.PI * 0.75) - 0.06 * Math.pow(t, 2.2);
   } else {
-    // Submental under-chin transition & human neck cylinder
-    const t = (v - 0.77) / 0.23;
-    const neckPinch = 1 - 0.18 * Math.sin(Math.min(1, t * 2.1) * Math.PI * 0.5);
-    rx = 0.43 * neckPinch + 0.05 * Math.pow(t, 2.0);
-    rz = 0.54 * neckPinch + 0.03 * Math.pow(t, 2.0);
-    zCenter = -0.10 - 0.14 * Math.min(1, t * 1.4);
+    // Submental under-chin shadow notch flowing cleanly into tapered human neck (y = -0.58 down to -1.04)
+    const t = (v - 0.78) / 0.22;
+    y = -0.58 - 0.46 * t;
+    rx = 0.30 + 0.075 * Math.pow(t, 0.9);
+    rz = 0.39 - 0.03 * Math.sin(t * Math.PI) + 0.05 * t;
+    zCenter = -0.14 - 0.08 * Math.min(1, t * 1.6);
   }
 
   let x = rx * sinU;
   let z = rz * cosU + zCenter;
 
-  // Elongate human cranium toward the back (-Z) above neck level
+  // Elongate posterior occiput slightly for realistic human skull depth
   if (cosU < 0 && v < 0.76) {
-    const occiputWeight = Math.sin(Math.min(1, v / 0.76) * Math.PI * 0.82);
-    z += cosU * 0.11 * occiputWeight;
+    const occiputWeight = Math.sin(Math.min(1, v / 0.76) * Math.PI * 0.85);
+    z += cosU * 0.10 * occiputWeight;
   }
 
   // Facial anatomical sculpting across anterior face (cosU > 0)
-  if (cosU > 0.02 && v > 0.15 && v < 0.84) {
-    // Cheekbones (zygomatic arch highlight around y = +0.01, absU = 0.68)
-    const cheek = gaussian2(absU, 0.68, 0.28, y, 0.02, 0.14);
-    z += cheek * 0.055;
+  if (cosU > 0.02 && v > 0.20 && v < 0.83) {
+    // Sculpted zygomatic cheekbones (around y = +0.01, absU = 0.64)
+    const cheek = gaussian2(absU, 0.64, 0.26, y, 0.01, 0.13);
+    z += cheek * 0.062;
     x += Math.sign(u) * cheek * 0.032;
 
-    // Gentle hollow beneath cheekbones (buccal contour around y = -0.18, absU = 0.56)
-    const cheekHollow = gaussian2(absU, 0.56, 0.24, y, -0.19, 0.12);
-    z -= cheekHollow * 0.045;
+    // Gentle buccal hollow beneath cheekbones (carves jawline definition)
+    const cheekHollow = gaussian2(absU, 0.56, 0.22, y, -0.19, 0.12);
+    z -= cheekHollow * 0.052;
 
-    // Supraorbital brow ridge above each eye
-    const browRidge = gaussian2(absU, 0.31, 0.20, y, 0.305, 0.065);
-    z += browRidge * 0.058;
+    // Supraorbital brow ridges cleanly above each orbital eye socket
+    const browRidge = gaussian2(absU, 0.31, 0.19, y, 0.295, 0.060);
+    z += browRidge * 0.062;
 
-    // Recessed anatomical eye sockets (orbits) framing left & right molten eyes
-    const eyeSocket = gaussian2(absU, 0.32, 0.155, y, 0.165, 0.088);
-    z -= eyeSocket * 0.135;
+    // Deeply recessed anatomical eye sockets framing the glowing lava eyes
+    const eyeSocket = gaussian2(absU, 0.34, 0.155, y, 0.16, 0.086);
+    z -= eyeSocket * 0.145;
 
-    // Sculpted human nose bridge (y = +0.23 down to -0.08 along u = 0)
+    // Prominent, crisp sculpted human nose bridge (y = +0.25 down to -0.075)
     const noseBridgeSpan =
-      y <= 0.26 && y >= -0.095
-        ? Math.sin(Math.min(1, Math.max(0, (0.26 - y) / 0.355)) * Math.PI * 0.88)
+      y <= 0.25 && y >= -0.085
+        ? Math.sin(Math.min(1, Math.max(0, (0.25 - y) / 0.335)) * Math.PI * 0.84)
         : 0;
-    const noseCenter = gaussian1(u, 0, 0.088);
-    z += noseBridgeSpan * noseCenter * 0.165;
+    const noseCenter = gaussian1(u, 0, 0.082);
+    z += noseBridgeSpan * noseCenter * 0.205;
 
-    // Sculpted nasal tip & subtle under-nose septum curve
-    const noseTip = gaussian2(u, 0, 0.095, y, -0.055, 0.052);
-    z += noseTip * 0.082;
+    // Sculpted rounded human nasal tip
+    const noseTip = gaussian2(u, 0, 0.088, y, -0.045, 0.048);
+    z += noseTip * 0.105;
 
-    // Alar wings / human nostrils integrated softly left & right of nasal tip
-    const nostrils = gaussian2(absU, 0.125, 0.055, y, -0.075, 0.042);
-    z += nostrils * 0.055;
-    x += Math.sign(u) * nostrils * 0.014;
+    // Alar wings / human nostrils smoothly integrated left & right of nasal tip
+    const nostrils = gaussian2(absU, 0.135, 0.052, y, -0.065, 0.038);
+    z += nostrils * 0.075;
+    x += Math.sign(u) * nostrils * 0.018;
 
-    // Subtle philtrum indention below nose
-    const philtrum = gaussian2(u, 0, 0.045, y, -0.155, 0.035);
-    z -= philtrum * 0.018;
+    // Philtrum & natural lip topography (upper lip Cupid's bow + lower lip fullness)
+    const philtrum = gaussian2(u, 0, 0.042, y, -0.145, 0.032);
+    z -= philtrum * 0.022;
 
-    // Sculpted human upper lip (with Cupid's bow modulation) & lower lip cushion
-    const cupidsBowY = -0.208 - 0.012 * Math.cos(Math.min(1, absU / 0.18) * Math.PI);
-    const upperLip = gaussian2(absU, 0, 0.18, y, cupidsBowY, 0.024);
-    const lipPart = gaussian2(absU, 0, 0.17, y, -0.242, 0.014);
-    const lowerLip = gaussian2(absU, 0, 0.16, y, -0.278, 0.028);
-    z += upperLip * 0.056 - lipPart * 0.028 + lowerLip * 0.052;
+    const cupidsBowY = -0.195 - 0.011 * Math.cos(Math.min(1, absU / 0.17) * Math.PI);
+    const upperLip = gaussian2(absU, 0, 0.175, y, cupidsBowY, 0.022);
+    const lipPart = gaussian2(absU, 0, 0.165, y, -0.230, 0.013);
+    const lowerLip = gaussian2(absU, 0, 0.155, y, -0.264, 0.026);
+    z += upperLip * 0.058 - lipPart * 0.030 + lowerLip * 0.054;
 
-    // Chin (mentum) eminence & defined mandible corner angle
-    const chin = gaussian2(u, 0, 0.22, y, -0.515, 0.11);
-    z += chin * 0.075;
+    // Pointed human chin (mentum) & defined jaw corner
+    const chin = gaussian2(u, 0, 0.20, y, -0.50, 0.10);
+    z += chin * 0.085;
 
-    const jawAngle = gaussian2(absU, 0.86, 0.25, y, -0.40, 0.12);
-    x += Math.sign(u) * jawAngle * 0.036;
+    const jawAngle = gaussian2(absU, 0.86, 0.22, y, -0.37, 0.10);
+    x += Math.sign(u) * jawAngle * 0.028;
   }
 
-  // Subtle side ear silhouettes for realistic 3/4 turn
-  const earBump = gaussian2(absU, 1.54, 0.14, y, 0.08, 0.14);
-  x += Math.sign(u) * earBump * 0.055;
+  // Subtle ear helix contour on sides for realistic 3/4 turns
+  const earBump = gaussian2(absU, 1.54, 0.14, y, 0.07, 0.13);
+  x += Math.sign(u) * earBump * 0.048;
 
   return new THREE.Vector3(x, y, z);
 }
 
-/** Builds clean structured quad wireframe + smooth holographic surface + real 3D Human DNA core. */
+/**
+ * Renders a bright #5BC0DE Anatomical 3D Human Head + Internal 3D Human DNA Double-Helix.
+ * Zero white stars, zero twinkles, zero outer rings/decorations.
+ */
 export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject<number> }> = ({
   voiceRef,
 }) => {
   const dnaCoreRef = useRef<THREE.Group>(null);
 
-  const { surfaceGeometry, wireframeGeometry } = useMemo(() => {
-    const vSteps = 44;
+  const { surfaceGeometry, wireframeGeometry, featureGeometry } = useMemo(() => {
+    const vSteps = 46;
     const uSteps = 64;
     const grid: THREE.Vector3[][] = [];
 
@@ -245,7 +240,6 @@ export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject
       grid.push(row);
     }
 
-    // Smooth surface BufferGeometry for subtle translucent interior plasma depth
     const surfPositions: number[] = [];
     const surfIndices: number[] = [];
     for (let vi = 0; vi <= vSteps; vi++) {
@@ -269,7 +263,6 @@ export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject
     surfGeo.setIndex(surfIndices);
     surfGeo.computeVertexNormals();
 
-    // Clean structured anatomical LineSegments: meridians + horizontal contour rings (zero messy icosahedron diagonals)
     const surfNormals = surfGeo.getAttribute("normal");
     const wireVerts: number[] = [];
     const wireNorms: number[] = [];
@@ -289,7 +282,7 @@ export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject
       );
     };
 
-    // Every horizontal anatomical contour ring (44 rings) + every meridian (32 cleanly spaced vertical contours)
+    // Clean horizontal anatomical rings + meridians
     for (let vi = 1; vi <= vSteps; vi++) {
       for (let ui = 0; ui < uSteps; ui++) {
         pushSeg(vi, ui, vi, ui + 1);
@@ -300,41 +293,101 @@ export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject
         pushSeg(vi, ui, vi + 1, ui);
       }
     }
-    // Add extra fine vertical detail right across center face (nose/mouth/eye zone) so sculpted nose & lips read sharply
-    for (let vi = 10; vi < 35; vi++) {
-      for (let ui = 25; ui <= 39; ui += 2) {
-        pushSeg(vi, ui, vi + 1, ui);
-      }
-    }
 
     const wireGeo = new THREE.BufferGeometry();
     wireGeo.setAttribute("position", new THREE.Float32BufferAttribute(wireVerts, 3));
     wireGeo.setAttribute("normal", new THREE.Float32BufferAttribute(wireNorms, 3));
 
-    return { surfaceGeometry: surfGeo, wireframeGeometry: wireGeo };
+    // Crisp anatomical feature highlight paths sampled directly from the sculpted face surface (nose, brows, cheekbones, jaw)
+    const featVerts: number[] = [];
+    const featNorms: number[] = [];
+    const pushSurfaceCurve = (samples: Array<[number, number]>, zLift = 0.004) => {
+      for (let i = 0; i < samples.length - 1; i++) {
+        const [u1, v1] = samples[i];
+        const [u2, v2] = samples[i + 1];
+        const p1 = evalHumanHeadVertex(u1, v1);
+        const p2 = evalHumanHeadVertex(u2, v2);
+        featVerts.push(p1.x, p1.y, p1.z + zLift, p2.x, p2.y, p2.z + zLift);
+        featNorms.push(0, 0, 1, 0, 0, 1);
+      }
+    };
+
+    // 1. Center sculpted nose ridge + left & right lateral nasal walls & nostril alar rims
+    const noseBridgePts: Array<[number, number]> = [];
+    const noseLeftWall: Array<[number, number]> = [];
+    const noseRightWall: Array<[number, number]> = [];
+    for (let i = 0; i <= 10; i++) {
+      const vv = 0.35 + (i / 10) * 0.165;
+      noseBridgePts.push([0, vv]);
+      const spread = 0.055 + 0.08 * Math.pow(i / 10, 1.5);
+      noseLeftWall.push([-spread, vv]);
+      noseRightWall.push([spread, vv]);
+    }
+    pushSurfaceCurve(noseBridgePts, 0.008);
+    pushSurfaceCurve(noseLeftWall, 0.005);
+    pushSurfaceCurve(noseRightWall, 0.005);
+
+    // Sculpted alar nostril wing contour across nasal base
+    const nostrilBasePts: Array<[number, number]> = [];
+    for (let i = 0; i <= 12; i++) {
+      const uu = -0.175 + (i / 12) * 0.35;
+      const arcV = 0.515 - 0.012 * Math.cos((uu / 0.175) * Math.PI * 0.5);
+      nostrilBasePts.push([uu, arcV]);
+    }
+    pushSurfaceCurve(nostrilBasePts, 0.007);
+
+    // 2. Supraorbital brow ridges & sculpted lower orbital rims
+    for (const side of [-1, 1]) {
+      const browPts: Array<[number, number]> = [];
+      const orbitLowerPts: Array<[number, number]> = [];
+      for (let i = 0; i <= 10; i++) {
+        const t = i / 10;
+        const uu = side * (0.12 + t * 0.42);
+        const browV = 0.355 - 0.016 * Math.sin(t * Math.PI);
+        const orbitV = 0.438 + 0.016 * Math.sin(t * Math.PI);
+        browPts.push([uu, browV]);
+        orbitLowerPts.push([uu, orbitV]);
+      }
+      pushSurfaceCurve(browPts, 0.007);
+      pushSurfaceCurve(orbitLowerPts, 0.005);
+    }
+
+    // 3. Sculpted V-jawline & chin contour trace
+    const jawTracePts: Array<[number, number]> = [];
+    for (let i = 0; i <= 20; i++) {
+      const t = i / 20;
+      const uu = -1.18 + t * 2.36;
+      const vv = 0.77 - 0.06 * Math.pow(Math.abs(uu) / 1.18, 1.4);
+      jawTracePts.push([uu, vv]);
+    }
+    pushSurfaceCurve(jawTracePts, 0.006);
+
+    const featGeo = new THREE.BufferGeometry();
+    featGeo.setAttribute("position", new THREE.Float32BufferAttribute(featVerts, 3));
+    featGeo.setAttribute("normal", new THREE.Float32BufferAttribute(featNorms, 3));
+
+    return { surfaceGeometry: surfGeo, wireframeGeometry: wireGeo, featureGeometry: featGeo };
   }, []);
 
-  // Internal 3D Human DNA Double-Helix Spine rising cleanly through neck + brain core (#5BC0DE)
+  // Internal 3D Human DNA Double-Helix Spine inside brain + neck core
   const { strandAGeo, strandBGeo, rungsGeo } = useMemo(() => {
     const ptsA: THREE.Vector3[] = [];
     const ptsB: THREE.Vector3[] = [];
     const rungVerts: number[] = [];
 
     const totalSteps = 84;
-    const turns = 2.65;
-    const radius = 0.255;
-    const yStart = -1.06;
-    const yEnd = 0.88;
+    const turns = 2.6;
+    const radius = 0.21;
+    const yStart = -0.96;
+    const yEnd = 0.78;
 
     for (let i = 0; i <= totalSteps; i++) {
       const t = i / totalSteps;
       const y = yStart + (yEnd - yStart) * t;
-      // Taper gently into brain crown and down through neck center
-      const rScale = t < 0.22 ? 0.68 + 0.32 * (t / 0.22) : t > 0.85 ? 1.0 - 0.32 * ((t - 0.85) / 0.15) : 1.0;
+      const rScale = t < 0.22 ? 0.66 + 0.34 * (t / 0.22) : t > 0.82 ? 1.0 - 0.38 * ((t - 0.82) / 0.18) : 1.0;
       const r = radius * rScale;
       const theta = t * Math.PI * 2 * turns;
-      // Slight backward Z bias to center cleanly inside cranium/neck volume
-      const zBias = -0.05;
+      const zBias = -0.06;
 
       const ax = Math.cos(theta) * r;
       const az = Math.sin(theta) * r + zBias;
@@ -344,15 +397,15 @@ export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject
       ptsA.push(new THREE.Vector3(ax, y, az));
       ptsB.push(new THREE.Vector3(bx, y, bz));
 
-      if (i % 3 === 0 && i > 1 && i < totalSteps - 1) {
+      if (i % 3 === 0 && i > 2 && i < totalSteps - 2) {
         rungVerts.push(ax, y, az, bx, y, bz);
       }
     }
 
     const curveA = new THREE.CatmullRomCurve3(ptsA);
     const curveB = new THREE.CatmullRomCurve3(ptsB);
-    const sAGeo = new THREE.TubeGeometry(curveA, 96, 0.015, 8, false);
-    const sBGeo = new THREE.TubeGeometry(curveB, 96, 0.015, 8, false);
+    const sAGeo = new THREE.TubeGeometry(curveA, 96, 0.0125, 8, false);
+    const sBGeo = new THREE.TubeGeometry(curveB, 96, 0.0125, 8, false);
     const rGeo = new THREE.BufferGeometry();
     rGeo.setAttribute("position", new THREE.Float32BufferAttribute(rungVerts, 3));
 
@@ -365,7 +418,27 @@ export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject
         uniforms: {
           uTime: { value: 0 },
           uVoice: { value: 0 },
-          uBaseOpacity: { value: 0.64 },
+          uBaseOpacity: { value: 0.66 },
+          uFeatureBoost: { value: 0.0 },
+        },
+        vertexShader: DNA_HEAD_VERT,
+        fragmentShader: DNA_WIRE_FRAG,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false,
+      }),
+    []
+  );
+
+  const featureMaterial = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uVoice: { value: 0 },
+          uBaseOpacity: { value: 0.94 },
+          uFeatureBoost: { value: 1.0 },
         },
         vertexShader: DNA_HEAD_VERT,
         fragmentShader: DNA_WIRE_FRAG,
@@ -404,6 +477,8 @@ export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject
 
     wireMaterial.uniforms.uTime.value = t;
     wireMaterial.uniforms.uVoice.value = v;
+    featureMaterial.uniforms.uTime.value = t;
+    featureMaterial.uniforms.uVoice.value = v;
     shellMaterial.uniforms.uTime.value = t;
     shellMaterial.uniforms.uVoice.value = v;
 
@@ -411,29 +486,32 @@ export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject
       dnaCoreRef.current.rotation.y = t * 0.72;
     }
     if (dnaStrandMatRef.current) {
-      dnaStrandMatRef.current.opacity = 0.78 + v * 0.22;
+      dnaStrandMatRef.current.opacity = 0.82 + v * 0.18;
     }
     if (dnaRungMatRef.current) {
-      dnaRungMatRef.current.opacity = 0.66 + 0.2 * Math.sin(t * 2.4) + v * 0.2;
+      dnaRungMatRef.current.opacity = 0.68 + 0.2 * Math.sin(t * 2.4) + v * 0.2;
     }
   });
 
   return (
     <group>
-      {/* Translucent luminous #5BC0DE anatomical skull/face volume */}
+      {/* Translucent luminous #5BC0DE anatomical skull/face surface */}
       <mesh geometry={surfaceGeometry} material={shellMaterial} />
 
-      {/* Bright pure electric #5BC0DE anatomical human wireframe scan with traveling DNA wave bands */}
+      {/* Bright electric #5BC0DE anatomical human wireframe scan with DNA waves */}
       <lineSegments geometry={wireframeGeometry} material={wireMaterial} />
 
-      {/* Central 3D Human DNA Double-Helix twisting vertically inside the skull & neck core */}
+      {/* Highlighted anatomical facial contour lines (nose bridge, nostrils, brow, orbits, jawline) */}
+      <lineSegments geometry={featureGeometry} material={featureMaterial} />
+
+      {/* Central 3D Human DNA Double-Helix rotating vertically inside the skull & neck core */}
       <group ref={dnaCoreRef}>
         <mesh geometry={strandAGeo}>
           <meshBasicMaterial
             ref={dnaStrandMatRef}
-            color="#7AE4FF"
+            color="#85EBFF"
             transparent
-            opacity={0.86}
+            opacity={0.9}
             blending={THREE.AdditiveBlending}
             depthWrite={false}
             toneMapped={false}
@@ -443,7 +521,7 @@ export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject
           <meshBasicMaterial
             color="#5BC0DE"
             transparent
-            opacity={0.82}
+            opacity={0.86}
             blending={THREE.AdditiveBlending}
             depthWrite={false}
             toneMapped={false}
@@ -452,9 +530,9 @@ export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject
         <lineSegments geometry={rungsGeo}>
           <lineBasicMaterial
             ref={dnaRungMatRef}
-            color="#8EEBFF"
+            color="#96F0FF"
             transparent
-            opacity={0.72}
+            opacity={0.74}
             blending={THREE.AdditiveBlending}
             toneMapped={false}
           />
@@ -465,7 +543,8 @@ export const AnatomicalHumanHeadDNA: React.FC<{ voiceRef: React.MutableRefObject
 };
 
 /**
- * Anatomically contoured 3D Human Lips + Mouth Interior aligned directly onto the sculpted facial curvature.
+ * Anatomically contoured 3D Human Lips sampled directly from the sculpted facial surface
+ * so upper Cupid's bow and lower lip curve match the 3D head mesh with zero asymmetry.
  */
 export const AnatomicalMouthSync: React.FC<{ voiceRef: React.MutableRefObject<number> }> = ({
   voiceRef,
@@ -474,46 +553,65 @@ export const AnatomicalMouthSync: React.FC<{ voiceRef: React.MutableRefObject<nu
   const upperLipRef = useRef<THREE.Group>(null);
   const cavityMatRef = useRef<THREE.MeshBasicMaterial>(null);
 
-  const { upperLipGeo, lowerLipGeo, cavityGeo } = useMemo(() => {
-    // Upper lip arch with subtle anatomical Cupid's bow contoured along skull curvature (z ~ 0.87 -> 0.80)
+  const { upperLipGeo, lowerLipGeo, cavityGeo, mouthCenter } = useMemo(() => {
+    const centerPt = evalHumanHeadVertex(0, 0.592);
     const upperPts: THREE.Vector3[] = [];
     const lowerPts: THREE.Vector3[] = [];
     const steps = 20;
-    for (let i = 0; i <= steps; i++) {
-      const f = i / steps; // 0..1 left to right
-      const s = (f - 0.5) * 2; // -1..1
-      const x = s * 0.145;
-      const arch = 1 - s * s;
-      // Gentle M-curve Cupid's bow on upper lip
-      const bow = 0.011 * Math.cos(Math.min(1, Math.abs(s) * 2.1) * Math.PI) * arch;
-      const yUpper = 0.014 * arch + bow;
-      const zCurve = 0.036 * arch;
-      upperPts.push(new THREE.Vector3(x, yUpper, zCurve));
 
-      const yLower = -0.026 * Math.pow(arch, 0.78);
-      lowerPts.push(new THREE.Vector3(x, yLower, zCurve * 0.96));
+    for (let i = 0; i <= steps; i++) {
+      const f = i / steps;
+      const s = (f - 0.5) * 2; // -1..1
+      const uu = s * 0.24;
+      const arch = 1 - s * s;
+
+      // Sample exact skull-face surface along the lip contours and compute relative to mouthCenter
+      const vUp = 0.586 - 0.008 * Math.cos(Math.min(1, Math.abs(s) * 2.1) * Math.PI) * arch;
+      const pUp = evalHumanHeadVertex(uu, vUp);
+      upperPts.push(
+        new THREE.Vector3(
+          pUp.x - centerPt.x,
+          pUp.y - centerPt.y + 0.011 * arch,
+          pUp.z - centerPt.z + 0.008
+        )
+      );
+
+      const vLow = 0.598 + 0.015 * arch;
+      const pLow = evalHumanHeadVertex(uu, vLow);
+      lowerPts.push(
+        new THREE.Vector3(
+          pLow.x - centerPt.x,
+          pLow.y - centerPt.y - 0.011 * arch,
+          pLow.z - centerPt.z + 0.008
+        )
+      );
     }
 
     const uCurve = new THREE.CatmullRomCurve3(upperPts);
     const lCurve = new THREE.CatmullRomCurve3(lowerPts);
-    const uGeo = new THREE.TubeGeometry(uCurve, 28, 0.0105, 8, false);
-    const lGeo = new THREE.TubeGeometry(lCurve, 28, 0.012, 8, false);
-    const cavGeo = new THREE.CircleGeometry(0.11, 24);
+    const uGeo = new THREE.TubeGeometry(uCurve, 28, 0.0072, 8, false);
+    const lGeo = new THREE.TubeGeometry(lCurve, 28, 0.0082, 8, false);
+    const cavGeo = new THREE.CircleGeometry(0.115, 24);
 
-    return { upperLipGeo: uGeo, lowerLipGeo: lGeo, cavityGeo: cavGeo };
+    return {
+      upperLipGeo: uGeo,
+      lowerLipGeo: lGeo,
+      cavityGeo: cavGeo,
+      mouthCenter: [centerPt.x, centerPt.y, centerPt.z] as [number, number, number],
+    };
   }, []);
 
   useFrame(() => {
     const v = voiceRef.current;
-    const openDrop = v * 0.082;
-    const widthScale = 1 + v * 0.05;
+    const openDrop = v * 0.072;
+    const widthScale = 1 + v * 0.04;
 
     if (upperLipRef.current) {
-      upperLipRef.current.position.y = 0.008 + v * 0.012;
+      upperLipRef.current.position.y = v * 0.008;
       upperLipRef.current.scale.set(widthScale, 1, 1);
     }
     if (lowerLipRef.current) {
-      lowerLipRef.current.position.y = -0.006 - openDrop;
+      lowerLipRef.current.position.y = -openDrop;
       lowerLipRef.current.scale.set(widthScale, 1 + v * 0.08, 1);
     }
     if (cavityMatRef.current) {
@@ -522,26 +620,23 @@ export const AnatomicalMouthSync: React.FC<{ voiceRef: React.MutableRefObject<nu
   });
 
   return (
-    // Flush onto the sculpted mouth curve (v ~ 0.615 -> y = -0.242, z = +0.848)
-    <group position={[0, -0.242, 0.848]}>
-      {/* Dark interior shadow during speech */}
-      <mesh geometry={cavityGeo} scale={[1.05, 0.42, 1]} position={[0, -0.015, 0.005]}>
+    <group position={mouthCenter}>
+      <mesh geometry={cavityGeo} scale={[1.05, 0.42, 1]} position={[0, -0.016, -0.004]}>
         <meshBasicMaterial
           ref={cavityMatRef}
-          color="#041926"
+          color="#02111A"
           transparent
           opacity={0}
           depthWrite={false}
         />
       </mesh>
 
-      {/* Anatomically contoured upper & lower human lips in bright luminous #5BC0DE blue */}
       <group ref={upperLipRef}>
         <mesh geometry={upperLipGeo}>
           <meshBasicMaterial
-            color="#88EAFF"
+            color="#8CEBFF"
             transparent
-            opacity={0.96}
+            opacity={0.95}
             blending={THREE.AdditiveBlending}
             toneMapped={false}
           />
@@ -552,7 +647,7 @@ export const AnatomicalMouthSync: React.FC<{ voiceRef: React.MutableRefObject<nu
           <meshBasicMaterial
             color="#5BC0DE"
             transparent
-            opacity={0.94}
+            opacity={0.92}
             blending={THREE.AdditiveBlending}
             toneMapped={false}
           />
