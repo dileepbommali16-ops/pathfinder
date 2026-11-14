@@ -1866,7 +1866,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 <SectionHeader
                   title="Campus Placement Readiness Overview"
                   description="Real-time placement probability and primary eligibility benchmark"
-                  badge="Class of 2026"
+                  badge="Step 1 · Class of 2026"
                   accent="cyan"
                   icon={Target}
                   helperLabel="Calculated via Random Forest model trained on 972 student records"
@@ -1887,11 +1887,48 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 />
               </section>
 
+              <section id="career-digital-twin" data-das-id="career-twin" className="space-y-4">
+                <SectionHeader
+                  title="Candidate Readiness Vectors"
+                  description="Transparent multi-dimensional evaluation of your academic standing, practical coding, and communication confidence"
+                  badge="Step 2 · Breakdown"
+                  accent="purple"
+                  icon={Zap}
+                  helperLabel="5 vectors calibrated against Tier-1 campus drive cutoffs"
+                  onAskCoach={handleAskCoach}
+                />
+                <CareerDigitalTwin
+                  profile={profile}
+                  predictionChance={prediction.chance}
+                  predictionTone={prediction.tone}
+                  onNavigateTab={setActiveTab}
+                />
+              </section>
+
+              <section id="career-skill-gap" data-das-id="skill-gap" className="space-y-4">
+                <SectionHeader
+                  title="Target Role Skill Gap Analysis"
+                  description="Direct alignment of your competencies against hiring cutoffs for your chosen domain"
+                  badge="Step 3 · Skill Gaps"
+                  accent="amber"
+                  icon={Sparkles}
+                />
+                <div id="skill-gap-matrix">
+                  <SkillGapSection
+                    strengths={prediction.strengths}
+                    priorities={prediction.priorities}
+                    breakdown={prediction.breakdown}
+                    onAskCoach={handleAskCoach}
+                    apiBase={API_BASE}
+                  />
+                </div>
+              </section>
+
               <section id="career-company-radar" data-das-id="company-radar" className="space-y-4">
                 <SectionHeader
                   title="Target Company Placement Radar"
                   description="Real-time hiring compatibility score mapped against historical campus drive cutoffs and technical rubrics"
-                  badge="Placement Radar"
+                  badge="Step 4 · Companies"
                   accent="accent"
                   icon={Building2}
                   helperLabel="Evaluates eligibility for Google, Razorpay, Amazon, and TCS Digital"
@@ -1907,90 +1944,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 </div>
               </section>
 
-              <section id="career-digital-twin" data-das-id="career-twin" className="space-y-4">
-                <SectionHeader
-                  title="Candidate Readiness Vectors"
-                  description="Transparent multi-dimensional evaluation of your academic standing, practical coding, and communication confidence"
-                  badge="Readiness Vectors"
-                  accent="purple"
-                  icon={Zap}
-                  helperLabel="5 vectors calibrated against Tier-1 campus drive cutoffs"
-                  onAskCoach={handleAskCoach}
-                />
-                <CareerDigitalTwin
-                  profile={profile}
-                  predictionChance={prediction.chance}
-                  predictionTone={prediction.tone}
-                  onNavigateTab={setActiveTab}
-                />
-              </section>
-
-              <section id="career-next-actions" data-das-id="next-actions" className="space-y-4">
-                <SectionHeader
-                  title="Priority Next Best Actions"
-                  description="Targeted high-leverage steps recommended specifically for your active bottlenecks"
-                  badge="Actionable"
-                  accent="amber"
-                  icon={ArrowRight}
-                  helperLabel="Auto-prioritizes Blind 75 DSA, projects, or cutoff clearance"
-                  onAskCoach={handleAskCoach}
-                />
-                <NextActionsWidget
-                  profile={profile}
-                  onNavigateTab={setActiveTab}
-                  onAskCoach={handleAskCoach}
-                />
-              </section>
-
-              <section id="career-action-center" data-das-id="action-center" className="space-y-4">
-                <SectionHeader
-                  title="AI Action Center"
-                  description="One-click automated intelligence tools integrated with your candidate profile"
-                  badge="Command Hub"
-                  accent="blue"
-                  icon={Zap}
-                  helperLabel="Click any tool to launch diagnostic audit"
-                  onAskCoach={handleAskCoach}
-                />
-                <AIActionCenter
-                  onNavigateTab={setActiveTab}
-                  onTriggerCalculate={() => fetchPrediction(profile)}
-                  onStartMockInterview={() => {
-                    setActiveTab("interview");
-                  }}
-                  targetRole={profile.targetRole}
-                  profile={profile}
-                  prediction={prediction}
-                  apiBase={API_BASE}
-                />
-              </section>
-
-              <section
-                id="career-trajectory-simulator"
-                data-das-id="whatif-simulator"
-                className="space-y-4"
-              >
-                <SectionHeader
-                  title="What-If? Career Trajectory Simulator"
-                  description="Simulate the immediate placement probability boost of boosting CGPA, clearing backlogs, or shipping an internship"
-                  badge="Interactive Sandbox"
-                  accent="rose"
-                  icon={TrendingUp}
-                  helperLabel="Interactive sliders instantly re-simulate placement probability"
-                />
-                <div id="what-if-simulator">
-                  <WhatIfSimulator
-                    currentProfile={profile}
-                    currentScore={prediction.chance}
-                    onApplySimulatedProfile={(updated) => {
-                      const merged = { ...profile, ...updated };
-                      setProfile(merged);
-                      fetchPrediction(merged);
-                    }}
-                  />
-                </div>
-              </section>
-
               <section
                 id="career-live-skill-verifier"
                 data-das-id="live-verifier"
@@ -1999,7 +1952,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 <SectionHeader
                   title="Live Technical Footprint & Fraud Shield"
                   description="Audit real-time GitHub repositories, programming languages, and cryptographic authenticity badge"
-                  badge="Anti-Padding"
+                  badge="Step 5 · GitHub Check"
                   accent="cyan"
                   icon={ShieldCheck}
                   helperLabel="Validates original code authorship and syncs verified technologies"
@@ -2018,23 +1971,70 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 />
               </section>
 
-              <section id="career-skill-gap" data-das-id="skill-gap" className="space-y-4">
+              <section
+                id="career-trajectory-simulator"
+                data-das-id="whatif-simulator"
+                className="space-y-4"
+              >
                 <SectionHeader
-                  title="Target Role Skill Gap Analysis"
-                  description="Direct alignment of your competencies against hiring cutoffs for your chosen domain"
-                  badge="Skill Gap Matrix"
-                  accent="amber"
-                  icon={Sparkles}
+                  title="What-If? Career Trajectory Simulator"
+                  description="Simulate the immediate placement probability boost of boosting CGPA, clearing backlogs, or shipping an internship"
+                  badge="Step 6 · Simulator"
+                  accent="rose"
+                  icon={TrendingUp}
+                  helperLabel="Interactive sliders instantly re-simulate placement probability"
                 />
-                <div id="skill-gap-matrix">
-                  <SkillGapSection
-                    strengths={prediction.strengths}
-                    priorities={prediction.priorities}
-                    breakdown={prediction.breakdown}
-                    onAskCoach={handleAskCoach}
-                    apiBase={API_BASE}
+                <div id="what-if-simulator">
+                  <WhatIfSimulator
+                    currentProfile={profile}
+                    currentScore={prediction.chance}
+                    onApplySimulatedProfile={(updated) => {
+                      const merged = { ...profile, ...updated };
+                      setProfile(merged);
+                      fetchPrediction(merged);
+                    }}
                   />
                 </div>
+              </section>
+
+              <section id="career-next-actions" data-das-id="next-actions" className="space-y-4">
+                <SectionHeader
+                  title="Priority Next Best Actions"
+                  description="Targeted high-leverage steps recommended specifically for your active bottlenecks"
+                  badge="Step 7 · Next Tasks"
+                  accent="amber"
+                  icon={ArrowRight}
+                  helperLabel="Auto-prioritizes Blind 75 DSA, projects, or cutoff clearance"
+                  onAskCoach={handleAskCoach}
+                />
+                <NextActionsWidget
+                  profile={profile}
+                  onNavigateTab={setActiveTab}
+                  onAskCoach={handleAskCoach}
+                />
+              </section>
+
+              <section id="career-action-center" data-das-id="action-center" className="space-y-4">
+                <SectionHeader
+                  title="AI Action Center"
+                  description="One-click automated intelligence tools integrated with your candidate profile"
+                  badge="Step 8 · Quick Tools"
+                  accent="blue"
+                  icon={Zap}
+                  helperLabel="Click any tool to launch diagnostic audit"
+                  onAskCoach={handleAskCoach}
+                />
+                <AIActionCenter
+                  onNavigateTab={setActiveTab}
+                  onTriggerCalculate={() => fetchPrediction(profile)}
+                  onStartMockInterview={() => {
+                    setActiveTab("interview");
+                  }}
+                  targetRole={profile.targetRole}
+                  profile={profile}
+                  prediction={prediction}
+                  apiBase={API_BASE}
+                />
               </section>
             </motion.div>
           )}

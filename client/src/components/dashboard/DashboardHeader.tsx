@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Target,
   Compass,
-  Bot,
   TrendingUp,
   FileText,
   LogOut,
@@ -42,13 +41,14 @@ interface DashboardHeaderProps {
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string }[] = [
   { id: "overview", label: "Dashboard", icon: Target },
-  { id: "skills", label: "6-Week Roadmap", icon: Compass, badge: "Sprint" },
-  { id: "projects", label: "Project Blueprints", icon: Lightbulb },
-  { id: "analytics", label: "Cohort Analytics", icon: TrendingUp, badge: "972" },
-  { id: "resume", label: "ATS Resume Studio", icon: FileText },
-  { id: "branches", label: "Branches and Courses", icon: GraduationCap, badge: "Dept" },
-  { id: "defense", label: "Project Defense", icon: ShieldAlert },
   { id: "profile", label: "Profile / Settings", icon: User, badge: "SSOT" },
+  { id: "skills", label: "6-Week Roadmap", icon: Compass, badge: "Sprint" },
+  { id: "resume", label: "ATS Resume Studio", icon: FileText },
+  { id: "projects", label: "Project Blueprints", icon: Lightbulb },
+  { id: "defense", label: "Project Defense", icon: ShieldAlert },
+  { id: "interview", label: "Mock Interview", icon: Mic, badge: "Live" },
+  { id: "analytics", label: "Cohort Analytics", icon: TrendingUp, badge: "972" },
+  { id: "branches", label: "Branches and Courses", icon: GraduationCap, badge: "Dept" },
 ];
 
 const WINE_THEME = {
@@ -238,8 +238,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
       {/* Navigation Tabs Bar (Desktop and Horizontal Scroll) */}
       <div className="border-t border-[rgba(255,255,255,0.08)] bg-[#000000]/95 px-4 sm:px-6">
-        <div className="mx-auto flex max-w-7xl flex-nowrap items-center gap-2 overflow-x-auto py-2.5 scrollbar-none">
-          {TABS.map((tab) => {
+        <div className="mx-auto flex max-w-7xl flex-nowrap items-center gap-1.5 overflow-x-auto py-2.5 scrollbar-none">
+          {TABS.map((tab, idx) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             const theme = TAB_THEMES[tab.id] || WINE_THEME;
@@ -248,14 +248,18 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 key={tab.id}
                 id={`tab-${tab.id}`}
                 data-agent-id={`tab-${tab.id}`}
+                aria-label={tab.label}
                 onClick={() => handleSelectTab(tab.id)}
-                className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
                   isActive
                     ? `${theme.activeBg} ${theme.text} border ${theme.border} ${theme.glow}`
                     : "text-[#94a3b8] hover:bg-white/[0.04] hover:text-[#f8fafc] border border-transparent"
                 }`}
               >
-                <Icon className={`h-4 w-4 ${isActive ? theme.icon : "text-[#94a3b8]"}`} />
+                <span className={`text-[10px] font-bold tabular-nums ${isActive ? "text-white/90" : "text-white/40"}`}>
+                  {idx + 1}.
+                </span>
+                <Icon className={`h-3.5 w-3.5 ${isActive ? theme.icon : "text-[#94a3b8]"}`} />
                 <span>{tab.label}</span>
                 {tab.badge && (
                   <span className={`rounded border px-1.5 py-0.5 text-[9px] font-medium ${isActive ? theme.badge : "bg-[#11131c] text-[#94a3b8] border-[rgba(255,255,255,0.08)]"}`}>
@@ -286,13 +290,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             className="md:hidden border-t border-white/10 bg-[#0c0e17] px-4 py-4 shadow-2xl overflow-hidden"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {TABS.map((tab) => {
+              {TABS.map((tab, idx) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
                 const theme = TAB_THEMES[tab.id] || WINE_THEME;
                 return (
                   <button
                     key={`mobile-${tab.id}`}
+                    aria-label={tab.label}
                     onClick={() => handleSelectTab(tab.id)}
                     className={`flex items-center justify-between rounded-xl p-3 text-left transition-all ${
                       isActive
@@ -304,7 +309,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? "bg-white/10 text-white" : "bg-white/5 text-[#94a3b8]"}`}>
                         <Icon className="h-4 w-4" />
                       </div>
-                      <span className="text-xs font-semibold">{tab.label}</span>
+                      <span className="text-xs font-semibold">
+                        <span className="mr-1.5 opacity-60">{idx + 1}.</span>
+                        {tab.label}
+                      </span>
                     </div>
                     {tab.badge && (
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${isActive ? theme.badge : "bg-white/5 text-gray-400 border-white/10"}`}>

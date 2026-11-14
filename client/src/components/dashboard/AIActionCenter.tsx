@@ -592,7 +592,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
     }
   };
 
-  // Card definitions with distinct, theme-consistent accents
+  // Card definitions ordered to match the sequential student workflow
   const actions = [
     {
       id: "calculate",
@@ -600,7 +600,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       subtitle: "[Random Forest ML]",
       description: "Run Random Forest ML sensitivity on current CGPA, internships & coding scores.",
       icon: Target,
-      tag: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "Report Ready ✓" : "Instant ML",
+      tag: loadingActionId === "calculate" ? "Analyzing..." : readinessData ? "Report Ready ✓" : "Step 1 · ML Audit",
       iconColor: "text-[#ffffff]",
       btnClass: loadingActionId === "calculate"
         ? "border-[#ffffff]/40 animate-pulse bg-[#ffffff]/10 ring-2 ring-[#ffffff]/50"
@@ -613,7 +613,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       subtitle: "[Milestone Sprint]",
       description: `Customized 6-week milestone schedule based on missing skill gaps for ${activeProfile.targetRole || "SDE"}.`,
       icon: Compass,
-      tag: loadingActionId === "roadmap" ? "Synthesizing..." : "6-Week Plan",
+      tag: loadingActionId === "roadmap" ? "Synthesizing..." : "Step 2 · 6-Week Plan",
       iconColor: "text-[#ffffff]",
       btnClass: loadingActionId === "roadmap"
         ? "border-[#ffffff]/40 animate-pulse bg-[#ffffff]/10"
@@ -621,17 +621,17 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       actionText: loadingActionId === "roadmap" ? "Building Schedule..." : "Open 6-Week Roadmap",
     },
     {
-      id: "interview",
-      title: "Start AI Mock Interview",
-      subtitle: "[Live Simulation]",
-      description: "Interactive technical & STAR behavioral questions with instant AI scoring.",
-      icon: Mic,
-      tag: loadingActionId === "interview" ? "Preparing..." : "Live Simulation",
+      id: "resume",
+      title: "Audit Resume with ATS",
+      subtitle: "[ATS Scanner]",
+      description: "Detect missing keywords, parse PDF bullet points and align with recruiter standards.",
+      icon: FileText,
+      tag: loadingActionId === "resume" ? "Scanning..." : "Step 3 · ATS Scanner",
       iconColor: "text-[#ffffff]",
-      btnClass: loadingActionId === "interview"
+      btnClass: loadingActionId === "resume"
         ? "border-[#ffffff]/40 animate-pulse bg-[#ffffff]/10"
         : "border-white/[0.08] hover:border-[#ffffff]/40 hover:bg-[#ffffff]/10",
-      actionText: loadingActionId === "interview" ? "Loading Interviewer..." : "Begin Interview",
+      actionText: loadingActionId === "resume" ? "Parsing Vectors..." : "Scan Resume",
     },
     {
       id: "projects",
@@ -639,7 +639,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       subtitle: "[Portfolio]",
       description: "Production-grade project blueprints mapped directly to your missing skill gaps.",
       icon: Lightbulb,
-      tag: loadingActionId === "projects" ? "Generating..." : "Portfolio",
+      tag: loadingActionId === "projects" ? "Generating..." : "Step 4 · Portfolio",
       iconColor: "text-[#ffffff]",
       btnClass: loadingActionId === "projects"
         ? "border-[#ffffff]/40 animate-pulse bg-[#ffffff]/10"
@@ -647,30 +647,30 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       actionText: loadingActionId === "projects" ? "Synthesizing..." : "View Blueprints",
     },
     {
+      id: "interview",
+      title: "Start AI Mock Interview",
+      subtitle: "[Live Simulation]",
+      description: "Interactive technical & STAR behavioral questions with instant AI scoring.",
+      icon: Mic,
+      tag: loadingActionId === "interview" ? "Preparing..." : "Step 5 · Live Sim",
+      iconColor: "text-[#ffffff]",
+      btnClass: loadingActionId === "interview"
+        ? "border-[#ffffff]/40 animate-pulse bg-[#ffffff]/10"
+        : "border-white/[0.08] hover:border-[#ffffff]/40 hover:bg-[#ffffff]/10",
+      actionText: loadingActionId === "interview" ? "Loading Interviewer..." : "Begin Interview",
+    },
+    {
       id: "analytics",
       title: "Cohort Placement Trends",
       subtitle: "[Campus Data]",
       description: "Compare your branch and graduation year against 650+ verified campus offers.",
       icon: TrendingUp,
-      tag: loadingActionId === "analytics" ? "Querying..." : "Campus Data",
+      tag: loadingActionId === "analytics" ? "Querying..." : "Step 6 · Campus Data",
       iconColor: "text-[#ffffff]",
       btnClass: loadingActionId === "analytics"
         ? "border-[#ffffff]/40 animate-pulse bg-[#ffffff]/10"
         : "border-white/[0.08] hover:border-[#ffffff]/40 hover:bg-[#ffffff]/10",
       actionText: loadingActionId === "analytics" ? "Loading Data..." : "Explore Cohort",
-    },
-    {
-      id: "resume",
-      title: "Audit Resume with ATS",
-      subtitle: "[ATS Scanner]",
-      description: "Detect missing keywords, parse PDF bullet points and align with recruiter standards.",
-      icon: FileText,
-      tag: loadingActionId === "resume" ? "Scanning..." : "ATS Scanner",
-      iconColor: "text-[#ffffff]",
-      btnClass: loadingActionId === "resume"
-        ? "border-[#ffffff]/40 animate-pulse bg-[#ffffff]/10"
-        : "border-white/[0.08] hover:border-[#ffffff]/40 hover:bg-[#ffffff]/10",
-      actionText: loadingActionId === "resume" ? "Parsing Vectors..." : "Scan Resume",
     },
   ];
 
@@ -1023,7 +1023,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("skills");
                   }}
-                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-[#ffffff] hover:bg-[#ffffff] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-[#ffffff]/25 transition-all cursor-pointer"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-zinc-200 px-4 py-2 text-xs font-bold text-zinc-950 shadow-lg shadow-white/25 transition-all cursor-pointer"
                 >
                   <Compass className="h-3.5 w-3.5" />
                   <span>Open 6-Week Roadmap</span>
@@ -1079,7 +1079,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("skills");
                   }}
-                  className="rounded-xl bg-[#ffffff] hover:bg-[#ffffff] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
+                  className="rounded-xl bg-white hover:bg-zinc-200 px-4 py-2 text-xs font-bold text-zinc-950 cursor-pointer transition-all"
                 >
                   Explore Full Roadmap Tab
                 </button>
@@ -1154,7 +1154,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("resume");
                   }}
-                  className="rounded-xl bg-[#ffffff] hover:bg-[#ffffff] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
+                  className="rounded-xl bg-white hover:bg-zinc-200 px-4 py-2 text-xs font-bold text-zinc-950 cursor-pointer transition-all"
                 >
                   Open ATS Resume Studio
                 </button>
@@ -1216,7 +1216,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("projects");
                   }}
-                  className="rounded-xl bg-[#ffffff] hover:bg-[#ffffff] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
+                  className="rounded-xl bg-white hover:bg-zinc-200 px-4 py-2 text-xs font-bold text-zinc-950 cursor-pointer transition-all"
                 >
                   View All Project Blueprints
                 </button>
@@ -1283,7 +1283,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("analytics");
                   }}
-                  className="rounded-xl bg-[#ffffff] hover:bg-[#ffffff] px-4 py-2 text-xs font-bold text-white cursor-pointer transition-all"
+                  className="rounded-xl bg-white hover:bg-zinc-200 px-4 py-2 text-xs font-bold text-zinc-950 cursor-pointer transition-all"
                 >
                   Explore Full Cohort Analytics
                 </button>
@@ -1335,7 +1335,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onNavigateTab("profile");
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#ffffff] hover:bg-[#ffffff] px-4 py-2 text-xs font-bold text-white cursor-pointer shadow-lg shadow-[#ffffff]/20 transition-all"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white hover:bg-zinc-200 px-4 py-2 text-xs font-bold text-zinc-950 cursor-pointer shadow-lg shadow-white/20 transition-all"
                 >
                   <span>Go to Profile Page</span>
                   <ExternalLink className="h-3.5 w-3.5" />
