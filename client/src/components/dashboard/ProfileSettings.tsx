@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   User,
@@ -13,7 +13,8 @@ import {
   RefreshCw,
   Building,
   Check,
-  AlertCircle
+  AlertCircle,
+  ArrowRight
 } from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
 
@@ -21,6 +22,7 @@ interface ProfileSettingsProps {
   profile: StudentProfileState;
   onSaveProfile: (updated: StudentProfileState) => Promise<void>;
   onResetToDefaults: () => void;
+  onGoToDashboard?: () => void;
   apiBase: string;
 }
 
@@ -60,11 +62,20 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   profile,
   onSaveProfile,
   onResetToDefaults,
+  onGoToDashboard,
   apiBase
 }) => {
   const [formData, setFormData] = useState<StudentProfileState>({ ...profile });
+  const [skillsText, setSkillsText] = useState<string>(
+    (profile.technicalSkills || profile.skills || []).join(", ")
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setFormData({ ...profile });
+    setSkillsText((profile.technicalSkills || profile.skills || []).join(", "));
+  }, [profile]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,14 +83,30 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     setSuccessMsg(null);
     try {
       const mult = formData.cgpaFormulaMultiplier || 9.5;
+      const parsedSkills = skillsText
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       const updated: StudentProfileState = {
         ...formData,
+        technicalSkills: parsedSkills,
+        skills: parsedSkills,
+        codingProfiles: {
+          ...(formData.codingProfiles || {}),
+          github: formData.githubUrl || formData.codingProfiles?.github || "",
+          leetcode: formData.leetcodeUrl || formData.codingProfiles?.leetcode || "",
+        },
         percentage: Math.round(formData.cgpa * mult * 10) / 10,
-        backlogs: formData.activeBacklogs
+        backlogs: formData.activeBacklogs,
+        onboardingCompleted: true,
       };
       await onSaveProfile(updated);
-      setSuccessMsg("Profile saved! Platform calculations and AI context updated.");
-      setTimeout(() => setSuccessMsg(null), 4000);
+      setSuccessMsg("Profile saved! Recalculating your Dashboard recommendations...");
+      if (onGoToDashboard) {
+        setTimeout(() => onGoToDashboard(), 350);
+      } else {
+        setTimeout(() => setSuccessMsg(null), 4000);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -93,11 +120,11 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#ffffff]/30 bg-[#ffffff]/10 px-3 py-1 text-xs font-semibold text-[#ffffff]">
               <User className="h-3.5 w-3.5" />
-              <span>Single Source of Truth</span>
+              <span>Step 1 · Single Source of Truth</span>
             </div>
-            <h1 className="mt-2 text-2xl font-black text-[#f8fafc]">Profile & Candidate Settings</h1>
+            <h1 className="mt-2 text-2xl font-black text-[#f8fafc]">Profile &amp; Candidate Settings</h1>
             <p className="mt-1 text-xs text-[#94a3b8]">
-              Update your academic marks, backlogs, skills, or target role. All dashboard widgets and AI assistants will recalculate immediately.
+              Step 1: Enter your real academic marks, backlogs, skills, and target role. Click Save below to recalculate and open 2. Dashboard.
             </p>
           </div>
 
@@ -362,6 +389,44 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 className="w-full accent-[#ffffff]"
               />
             </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs font-semibold text-[#94a3b8]">
+                Technical Skills (comma-separated)
+              </label>
+              <input
+                type="text"
+                id="settings-technical-skills"
+                value={skillsText}
+                onChange={(e) => setSkillsText(e.target.value)}
+                placeholder="e.g. Python, JavaScript, React, SQL, Data Structures"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-[#94a3b8]">GitHub Profile URL</label>
+              <input
+                type="url"
+                id="settings-github-url"
+                value={formData.githubUrl || formData.codingProfiles?.github || ""}
+                onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
+                placeholder="https://github.com/your-username"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-[#94a3b8]">LeetCode Profile URL</label>
+              <input
+                type="url"
+                id="settings-leetcode-url"
+                value={formData.leetcodeUrl || formData.codingProfiles?.leetcode || ""}
+                onChange={(e) => setFormData({ ...formData, leetcodeUrl: e.target.value })}
+                placeholder="https://leetcode.com/your-username"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+              />
+            </div>
           </div>
         </div>
 
@@ -404,22 +469,33 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         </div>
 
         {/* Save CTA Button */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.08]">
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-white/[0.08]">
+          {onGoToDashboard && (
+            <button
+              type="button"
+              onClick={onGoToDashboard}
+              className="flex items-center gap-1.5 rounded-2xl border border-white/[0.08] bg-[#0a0b10] px-4 py-3 text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/5 transition-all cursor-pointer"
+            >
+              <span>Skip to 2. Dashboard</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          )}
           <button
             type="submit"
             id="btn-save-settings"
             disabled={isSaving}
-            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#9f1239] to-[#7c3aed] hover:from-[#881337] hover:to-[#6d28d9] px-6 py-3 text-xs font-bold text-white shadow-xl shadow-[#ffffff]/20 transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#9f1239] to-[#7c3aed] hover:from-[#881337] hover:to-[#6d28d9] px-6 py-3 text-xs font-bold text-white shadow-xl shadow-[#ffffff]/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {isSaving ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>Saving & Recalculating...</span>
+                <span>Saving &amp; Recalculating...</span>
               </>
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                <span>Save Profile Changes</span>
+                <span>{onGoToDashboard ? "Save Profile & Open 2. Dashboard" : "Save Profile Changes"}</span>
+                {onGoToDashboard && <ArrowRight className="h-4 w-4" />}
               </>
             )}
           </button>

@@ -40,11 +40,11 @@ interface DashboardHeaderProps {
 }
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string }[] = [
+  { id: "profile", label: "Profile / Settings", icon: User, badge: "Input" },
   { id: "overview", label: "Dashboard", icon: Target },
-  { id: "profile", label: "Profile / Settings", icon: User, badge: "SSOT" },
   { id: "skills", label: "6-Week Roadmap", icon: Compass, badge: "Sprint" },
-  { id: "resume", label: "ATS Resume Studio", icon: FileText },
   { id: "projects", label: "Project Blueprints", icon: Lightbulb },
+  { id: "resume", label: "ATS Resume Studio", icon: FileText },
   { id: "defense", label: "Project Defense", icon: ShieldAlert },
   { id: "interview", label: "Mock Interview", icon: Mic, badge: "Live" },
   { id: "analytics", label: "Cohort Analytics", icon: TrendingUp, badge: "972" },

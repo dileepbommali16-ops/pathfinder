@@ -621,30 +621,30 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       actionText: loadingActionId === "roadmap" ? "Building Schedule..." : "Open 6-Week Roadmap",
     },
     {
-      id: "resume",
-      title: "Audit Resume with ATS",
-      subtitle: "[ATS Scanner]",
-      description: "Detect missing keywords, parse PDF bullet points and align with recruiter standards.",
-      icon: FileText,
-      tag: loadingActionId === "resume" ? "Scanning..." : "Step 3 · ATS Scanner",
-      iconColor: "text-[#ffffff]",
-      btnClass: loadingActionId === "resume"
-        ? "border-[#ffffff]/40 animate-pulse bg-[#ffffff]/10"
-        : "border-white/[0.08] hover:border-[#ffffff]/40 hover:bg-[#ffffff]/10",
-      actionText: loadingActionId === "resume" ? "Parsing Vectors..." : "Scan Resume",
-    },
-    {
       id: "projects",
       title: "Suggest Flagship Projects",
       subtitle: "[Portfolio]",
       description: "Production-grade project blueprints mapped directly to your missing skill gaps.",
       icon: Lightbulb,
-      tag: loadingActionId === "projects" ? "Generating..." : "Step 4 · Portfolio",
+      tag: loadingActionId === "projects" ? "Generating..." : "Step 3 · Portfolio",
       iconColor: "text-[#ffffff]",
       btnClass: loadingActionId === "projects"
         ? "border-[#ffffff]/40 animate-pulse bg-[#ffffff]/10"
         : "border-white/[0.08] hover:border-[#ffffff]/40 hover:bg-[#ffffff]/10",
       actionText: loadingActionId === "projects" ? "Synthesizing..." : "View Blueprints",
+    },
+    {
+      id: "resume",
+      title: "Audit Resume with ATS",
+      subtitle: "[ATS Scanner]",
+      description: "Detect missing keywords, parse PDF bullet points and align with recruiter standards.",
+      icon: FileText,
+      tag: loadingActionId === "resume" ? "Scanning..." : "Step 4 · ATS Scanner",
+      iconColor: "text-[#ffffff]",
+      btnClass: loadingActionId === "resume"
+        ? "border-[#ffffff]/40 animate-pulse bg-[#ffffff]/10"
+        : "border-white/[0.08] hover:border-[#ffffff]/40 hover:bg-[#ffffff]/10",
+      actionText: loadingActionId === "resume" ? "Parsing Vectors..." : "Scan Resume",
     },
     {
       id: "interview",

@@ -335,6 +335,18 @@ export default function Home({ initialTab }: HomeProps = {}) {
     return DEFAULT_STUDENT_PROFILE;
   });
 
+  const [isDemoProfile, setIsDemoProfile] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const saved = localStorage.getItem("pathfinder_profile_draft");
+      if (!saved) return true;
+      const parsed = JSON.parse(saved);
+      return (parsed?.email || "").toLowerCase() === "guest@pathfinder.ai";
+    } catch {
+      return true;
+    }
+  });
+
   const [auditResult, setAuditResult] = useState<ReadinessAuditData | null>(null);
   const [showResultScreen, setShowResultScreen] = useState<boolean>(false);
   const [showOnePageResume, setShowOnePageResume] = useState<boolean>(false);
@@ -748,6 +760,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
     if (user.isNewUser) {
       const freshProfile: StudentProfileState = {
         ...DEFAULT_STUDENT_PROFILE,
+        email: user.email,
         fullName:
           user.username !== "Student" && user.username !== "New Student" ? user.username : "",
         onboardingCompleted: false,
@@ -755,6 +768,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       };
       startTransition(() => {
         setProfile(freshProfile);
+        setIsDemoProfile(false);
         setShowResultScreen(false);
       });
       localStorage.removeItem("pathfinder_onboarding_draft");
@@ -764,16 +778,62 @@ export default function Home({ initialTab }: HomeProps = {}) {
     if (user.bypassOnboarding) {
       const demoProfile: StudentProfileState = {
         ...DEFAULT_STUDENT_PROFILE,
+        email: user.email,
         fullName: user.username,
         onboardingCompleted: true,
         wizardStep: 5,
       };
       startTransition(() => {
         setProfile(demoProfile);
+        setIsDemoProfile(true);
         setShowResultScreen(false);
+        setActiveTab("overview");
       });
       fetchPrediction(demoProfile);
       return;
+    }
+
+    // Check if this returning email already has a saved profile draft locally
+    let hasLocalMatch = false;
+    try {
+      const savedDraftRaw = localStorage.getItem("pathfinder_profile_draft");
+      if (savedDraftRaw) {
+        const parsedDraft = JSON.parse(savedDraftRaw);
+        if (
+          parsedDraft?.branch &&
+          parsedDraft?.email &&
+          parsedDraft.email.toLowerCase() === user.email.toLowerCase()
+        ) {
+          hasLocalMatch = true;
+          const hydrated: StudentProfileState = {
+            ...DEFAULT_STUDENT_PROFILE,
+            ...parsedDraft,
+            fullName: parsedDraft.fullName || user.username,
+            email: user.email,
+            onboardingCompleted: true,
+          };
+          setProfile(hydrated);
+          setIsDemoProfile(false);
+          setActiveTab("overview");
+          fetchPrediction(hydrated);
+        }
+      }
+    } catch { }
+
+    if (!hasLocalMatch) {
+      // First-time Sign In without saved profile: open 1. Profile / Settings first
+      const initialUserProfile: StudentProfileState = {
+        ...DEFAULT_STUDENT_PROFILE,
+        fullName: user.username,
+        email: user.email,
+        onboardingCompleted: true,
+      };
+      startTransition(() => {
+        setProfile(initialUserProfile);
+        setIsDemoProfile(true);
+        setShowResultScreen(false);
+        setActiveTab("profile");
+      });
     }
 
     try {
@@ -788,6 +848,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           const mapped: StudentProfileState = {
             ...DEFAULT_STUDENT_PROFILE,
             ...data,
+            email: user.email,
             onboardingCompleted: data.onboarding_completed ?? false,
             wizardStep: data.wizard_step ?? 1,
             cgpa: data.cgpa ?? 7.8,
@@ -808,16 +869,26 @@ export default function Home({ initialTab }: HomeProps = {}) {
             percentage: data.percentage ?? 74.1,
           };
           setProfile(mapped);
+          localStorage.setItem("pathfinder_profile_draft", JSON.stringify(mapped));
           if (!mapped.onboardingCompleted) {
+            setIsDemoProfile(false);
             setShowResultScreen(false);
           } else {
+            setIsDemoProfile(false);
+            setActiveTab("overview");
             fetchPrediction(mapped);
           }
           return;
         }
       }
+      if (!hasLocalMatch) {
+        toast.info("Step 1: Confirm your academic details below and click Save to build your Dashboard.");
+      }
     } catch (err) {
       console.warn("Could not retrieve backend profile on login:", err);
+      if (!hasLocalMatch) {
+        toast.info("Step 1: Confirm your academic details below and click Save to build your Dashboard.");
+      }
     }
   };
 
@@ -825,7 +896,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
     completedProfile: StudentProfileState,
     audit: ReadinessAuditData
   ) => {
-    setProfile(completedProfile);
+    const withEmail = { ...completedProfile, email: completedProfile.email || email };
+    setProfile(withEmail);
+    setIsDemoProfile(false);
     setAuditResult(audit);
     setShowResultScreen(true);
     setPrediction({
@@ -836,45 +909,47 @@ export default function Home({ initialTab }: HomeProps = {}) {
       priorities: audit.priorities || audit.gaps || [],
       breakdown: audit.breakdown || {},
     });
-    localStorage.setItem("pathfinder_profile_draft", JSON.stringify(completedProfile));
+    localStorage.setItem("pathfinder_profile_draft", JSON.stringify(withEmail));
   };
 
   const handleSaveProfile = async (updated: StudentProfileState) => {
-    setProfile(updated);
-    localStorage.setItem("pathfinder_profile_draft", JSON.stringify(updated));
+    const profileToSave = { ...updated, email: updated.email || email };
+    setProfile(profileToSave);
+    setIsDemoProfile(false);
+    localStorage.setItem("pathfinder_profile_draft", JSON.stringify(profileToSave));
 
     try {
       const payload = {
-        email: email,
-        full_name: updated.fullName,
-        college: updated.college,
-        branch: updated.branch,
-        course: updated.course,
-        year_semester: updated.yearSemester,
-        tenth_percentage: updated.tenthPercentage,
-        twelfth_percentage: updated.twelfthPercentage,
-        cgpa: updated.cgpa,
-        percentage: updated.percentage,
-        semester_cgpas: updated.semesterCgpas,
-        backlogs: updated.backlogs,
-        history_of_backlogs: updated.historyOfBacklogs,
-        skills: updated.skills,
-        tools: updated.tools,
-        languages: updated.languages,
-        projects_count: updated.projectsCount,
-        internships: updated.internships,
-        certifications: updated.certifications,
-        github_url: updated.githubUrl,
-        leetcode_url: updated.leetcodeUrl,
-        target_role: updated.targetRole,
-        target_tier: updated.targetTier,
-        target_domain: updated.targetDomain,
-        preferred_location: updated.preferredLocation,
-        expected_package: updated.expectedPackage,
-        preferred_company_type: updated.preferredCompanyType,
-        communication: updated.communication,
-        coding: updated.coding,
-        graduation_year: updated.graduationYear,
+        email: profileToSave.email,
+        full_name: profileToSave.fullName,
+        college: profileToSave.college,
+        branch: profileToSave.branch,
+        course: profileToSave.course,
+        year_semester: profileToSave.yearSemester,
+        tenth_percentage: profileToSave.tenthPercentage,
+        twelfth_percentage: profileToSave.twelfthPercentage,
+        cgpa: profileToSave.cgpa,
+        percentage: profileToSave.percentage,
+        semester_cgpas: profileToSave.semesterCgpas,
+        backlogs: profileToSave.backlogs,
+        history_of_backlogs: profileToSave.historyOfBacklogs,
+        skills: profileToSave.technicalSkills || profileToSave.skills,
+        tools: profileToSave.tools,
+        languages: profileToSave.languages,
+        projects_count: profileToSave.projectsCount,
+        internships: profileToSave.internships,
+        certifications: profileToSave.certifications,
+        github_url: profileToSave.githubUrl,
+        leetcode_url: profileToSave.leetcodeUrl,
+        target_role: profileToSave.targetRole,
+        target_tier: profileToSave.targetTier,
+        target_domain: profileToSave.targetDomain,
+        preferred_location: profileToSave.preferredLocation,
+        expected_package: profileToSave.expectedPackage,
+        preferred_company_type: profileToSave.preferredCompanyType,
+        communication: profileToSave.communication,
+        coding: profileToSave.coding,
+        graduation_year: profileToSave.graduationYear,
         onboarding_completed: true,
         wizard_step: 5,
       };
@@ -893,10 +968,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
       }
     } catch (err) {
       console.warn("Backend save profile error:", err);
-      toast.info("Profile draft saved locally.");
+      toast.info("Profile saved locally and Dashboard recalculated.");
     }
 
-    await fetchPrediction(updated);
+    await fetchPrediction(profileToSave);
   };
 
   const handleUpdateTargetRole = (newRole: string) => {
@@ -1577,6 +1652,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
     localStorage.removeItem("pathfinder_token");
     setIsAuthenticated(false);
     setShowResultScreen(false);
+    setIsDemoProfile(true);
     setUserRole("student");
     if (typeof window !== "undefined") {
       window.dispatchEvent(
@@ -1831,7 +1907,31 @@ export default function Home({ initialTab }: HomeProps = {}) {
               className="space-y-12 sm:space-y-16"
             >
 
-              {isProfilePartiallyIncomplete && (
+              {isDemoProfile ? (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-400/30 bg-[#060608] p-5 backdrop-blur-md shadow-[0_0_24px_rgba(255,214,0,0.08)]">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-400/15 text-amber-300">
+                      <User className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[#f8fafc]">
+                        Viewing Sample Profile ({profile.branch}, {profile.cgpa} CGPA)
+                      </p>
+                      <p className="text-xs text-[#94a3b8]">
+                        Enter and save your real details in 1. Profile / Settings to personalize all scores and recommendations below.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("profile")}
+                    className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-white hover:bg-zinc-200 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition-colors shadow-sm cursor-pointer"
+                  >
+                    <span>Edit 1. Profile / Settings</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : isProfilePartiallyIncomplete && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#34222E] bg-[#060608] p-5 backdrop-blur-md shadow-[0_0_24px_rgba(52,34,46,0.22)]">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
@@ -1842,7 +1942,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                         Profile Acceleration Available
                       </p>
                       <p className="text-xs text-[#94a3b8]">
-                        Add your GitHub / LeetCode profiles or certifications in Profile / Settings
+                        Add your GitHub / LeetCode profiles or certifications in 1. Profile / Settings
                         to elevate your career readiness score by up to +12%.
                       </p>
                     </div>
@@ -1850,7 +1950,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   <button
                     type="button"
                     onClick={() => setActiveTab("profile")}
-                    className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-white hover:bg-zinc-200 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition-colors shadow-sm"
+                    className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-white hover:bg-zinc-200 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition-colors shadow-sm cursor-pointer"
                   >
                     <span>Complete Profile</span>
                     <ArrowRight className="h-3 w-3" />
@@ -2182,11 +2282,11 @@ export default function Home({ initialTab }: HomeProps = {}) {
             >
               <SectionHeader
                 title="Candidate Profile & System Settings"
-                description="Single Source of Truth (SSOT) academic and coding parameters synced across all AI predictions"
-                badge="SSOT Sync"
+                description="Step 1: Enter your academic marks, coding ratings, and target role (Single Source of Truth synced across all recommendations)"
+                badge="Step 1 · Input"
                 accent="cyan"
                 icon={User}
-                helperLabel="Profile edits immediately recalculate all placement probabilities"
+                helperLabel="Saving here recalculates all placement probabilities and opens 2. Dashboard"
               />
               <ProfileSettings
                 profile={profile}
@@ -2194,6 +2294,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 onResetToDefaults={() => {
                   setProfile(DEFAULT_STUDENT_PROFILE);
                   handleSaveProfile(DEFAULT_STUDENT_PROFILE);
+                }}
+                onGoToDashboard={() => {
+                  setActiveTab("overview");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
                 apiBase={API_BASE}
               />
