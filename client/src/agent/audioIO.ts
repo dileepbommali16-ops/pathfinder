@@ -67,7 +67,7 @@ export class Speaker {
       this.ctxRef = new AC({ sampleRate: 24000 });
       this.analyser = this.ctxRef.createAnalyser();
       this.analyser.fftSize = 512;
-      this.analyser.smoothingTimeConstant = 0.4;
+      this.analyser.smoothingTimeConstant = 0.24;
       this.analyser.connect(this.ctxRef.destination);
       this.initialized = true;
     } catch {
@@ -75,7 +75,7 @@ export class Speaker {
         this.ctxRef = new AC();
         this.analyser = this.ctxRef.createAnalyser();
         this.analyser.fftSize = 512;
-        this.analyser.smoothingTimeConstant = 0.4;
+        this.analyser.smoothingTimeConstant = 0.24;
         this.analyser.connect(this.ctxRef.destination);
         this.initialized = true;
       } catch {
@@ -714,6 +714,7 @@ class AudioEngine {
   private micSource: MediaStreamAudioSourceNode | null = null;
   private keepaliveTimer: number | null = null;
   private freqData: Uint8Array = new Uint8Array(128);
+  private timeData: Uint8Array = new Uint8Array(256);
   public micVolume: number = 0;
   public activeMicLabel: string = "";
   public selectedSpeakerId: string = "";
@@ -887,7 +888,7 @@ class AudioEngine {
       }
       this.analyser = this.audioCtx.createAnalyser();
       this.analyser.fftSize = 256;
-      this.analyser.smoothingTimeConstant = 0.65;
+      this.analyser.smoothingTimeConstant = 0.20;
       this.masterGain = this.audioCtx.createGain();
       this.masterGain.gain.value = 1.0;
       this.analyser.connect(this.masterGain);
@@ -991,19 +992,85 @@ class AudioEngine {
     return { inputs, outputs };
   }
 
-  // Calculate volume using simple average of frequency data extracted via AnalyserNode
+  // Calculate volume using instantaneous RMS + vocal spectrum via AnalyserNode
   public getVolume(): number {
-    if (!this.analyser) {
-      return speaker.level();
+    return this.getSpeechFormants().volume;
+  }
+
+  /**
+   * Returns instantaneous syllable amplitude + vocal formant bands (F1 low, F2 mid, sibilant high)
+   * with fast time-domain RMS tracking so 3D lip-sync snaps crisply across consonants & vowels
+   * instead of averaging into a sluggish wide-open jaw hold.
+   */
+  public getSpeechFormants(): {
+    volume: number;
+    low: number;
+    mid: number;
+    high: number;
+    isSpeaking: boolean;
+  } {
+    if (!this.analyser || !this.audioCtx) {
+      const spk = speaker.level();
+      if (spk <= 0.01) {
+        return { volume: 0, low: 0, mid: 0, high: 0, isSpeaking: false };
+      }
+      return {
+        volume: Math.min(1, spk * 1.4),
+        low: spk,
+        mid: spk * 0.75,
+        high: spk * 0.35,
+        isSpeaking: true,
+      };
     }
+
+    const fftSize = this.analyser.fftSize;
+    if (this.timeData.length !== fftSize) {
+      this.timeData = new Uint8Array(fftSize);
+    }
+    if (this.freqData.length !== this.analyser.frequencyBinCount) {
+      this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
+    }
+
+    this.analyser.getByteTimeDomainData(this.timeData as any);
+    let sumSq = 0;
+    for (let i = 0; i < this.timeData.length; i++) {
+      const sample = (this.timeData[i] - 128) / 128;
+      sumSq += sample * sample;
+    }
+    const rms = Math.sqrt(sumSq / this.timeData.length);
+    const speakingNow = this.isSpeaking() || rms > 0.012;
+    if (!speakingNow || rms < 0.008) {
+      const spk = speaker.level();
+      if (spk > 0.01) {
+        return {
+          volume: Math.min(1, spk * 1.4),
+          low: spk,
+          mid: spk * 0.75,
+          high: spk * 0.35,
+          isSpeaking: true,
+        };
+      }
+      return { volume: 0, low: 0, mid: 0, high: 0, isSpeaking: false };
+    }
+
     this.analyser.getByteFrequencyData(this.freqData as any);
-    let sum = 0;
-    const bins = 48; // Vocal frequency spectrum
-    for (let i = 0; i < bins; i++) {
-      sum += this.freqData[i];
-    }
-    const avg = sum / bins;
-    return Math.min(1.0, Math.max(0.0, (avg - 6) / 100.0));
+    const binHz = (this.audioCtx.sampleRate || 48000) / Math.max(64, fftSize);
+    const bandEnergy = (minHz: number, maxHz: number): number => {
+      const start = Math.max(1, Math.floor(minHz / binHz));
+      const end = Math.min(this.freqData.length - 1, Math.max(start, Math.ceil(maxHz / binHz)));
+      let total = 0;
+      for (let i = start; i <= end; i++) {
+        total += this.freqData[i];
+      }
+      return total / ((end - start + 1) * 255);
+    };
+
+    const low = bandEnergy(160, 850);
+    const mid = bandEnergy(850, 2400);
+    const high = bandEnergy(2400, 6200);
+    const volume = Math.min(1.0, Math.max(0.0, (rms - 0.008) * 3.8));
+
+    return { volume, low, mid, high, isSpeaking: true };
   }
 
   private decodeBase64Pcm16(base64Pcm: string): Float32Array | null {

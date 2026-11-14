@@ -68,26 +68,27 @@ export function createHologramScanMaterial(
         float rimSculpt = pow(1.0 - ndv, 2.6);
 
         // Ultra-fine horizontal holographic light slicing (~140-170 crisp slices across the bust) + delicate vertical micro-matrix
-        float rawBand = 0.5 + 0.5 * sin(vHoloWorldPos.y * 545.0 - uTime * 2.2);
+        float rawBand = 0.5 + 0.5 * sin(vHoloWorldPos.y * 500.0 - uTime * 2.2);
         float scanLine = smoothstep(0.16, 0.84, rawBand);
-        float microGrid = 0.88 + 0.12 * sin(vHoloWorldPos.x * 520.0 + vHoloWorldPos.z * 180.0);
+        float microGrid = 0.88 + 0.12 * sin(vHoloWorldPos.x * 480.0 + vHoloWorldPos.z * 165.0);
         float sweepPulse = pow(0.5 + 0.5 * sin(vHoloWorldPos.y * 4.8 + uTime * 1.9), 6.0);
 
         // True linear RGB palette calibrated for Three.js r186 SRGB output (#006D8F -> #5BC0DE -> #00F0FF)
-        vec3 troughCyan = vec3(0.002, 0.055, 0.095);
+        vec3 troughCyan = vec3(0.001, 0.036, 0.068);
         vec3 deepCyan   = vec3(0.004, 0.210, 0.375);
         vec3 midCyan    = vec3(0.055, 0.540, 0.760);
         vec3 crestCyan  = vec3(0.085, 0.840, 1.000);
 
-        float shapeWeight = clamp(keySculpt * 0.62 + fillSculpt * 0.22 + fresnel * 0.55 + rimSculpt * 0.25, 0.0, 1.0);
-        float boost = clamp(0.92 + shapeWeight * 0.60 + sweepPulse * 0.22 + uVoice * 0.16, 0.75, 1.65);
+        float sculptedKey = pow(keySculpt, 1.25);
+        float shapeWeight = clamp(sculptedKey * 0.68 + fillSculpt * 0.20 + fresnel * 0.42 + rimSculpt * 0.18, 0.0, 1.0);
+        float boost = clamp(0.90 + shapeWeight * 0.62 + sweepPulse * 0.22 + uVoice * 0.14, 0.72, 1.65);
 
-        vec3 cyanBody = mix(deepCyan, midCyan, clamp(keySculpt * 0.72 + fillSculpt * 0.28, 0.0, 1.0));
-        cyanBody = mix(cyanBody, crestCyan, clamp(fresnel * 0.72 + sweepPulse * 0.30, 0.0, 1.0));
+        vec3 cyanBody = mix(deepCyan, midCyan, clamp(sculptedKey * 0.76 + fillSculpt * 0.24, 0.0, 1.0));
+        cyanBody = mix(cyanBody, crestCyan, clamp(fresnel * 0.60 + sweepPulse * 0.28, 0.0, 1.0));
 
-        vec3 col = mix(troughCyan * (0.65 + 0.45 * keySculpt), cyanBody * boost, scanLine * microGrid);
-        col += crestCyan * fresnel * 0.24;
-        ${isTeeth ? "col *= 0.40;" : ""}
+        vec3 col = mix(troughCyan * (0.55 + 0.45 * sculptedKey), cyanBody * boost, scanLine * microGrid);
+        col += crestCyan * fresnel * 0.12;
+        ${isTeeth ? "col *= 0.28;" : ""}
 
         ${
           isShoulders

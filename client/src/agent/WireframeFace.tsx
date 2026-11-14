@@ -16,8 +16,8 @@ export interface WireframeFaceProps {
   position?: [number, number, number];
 }
 
-const DEFAULT_SCALE: [number, number, number] = [0.98, 0.98, 0.98];
-const DEFAULT_POSITION: [number, number, number] = [0, 0.14, 0];
+const DEFAULT_SCALE: [number, number, number] = [1.22, 1.22, 1.22];
+const DEFAULT_POSITION: [number, number, number] = [0, 0.08, 0];
 
 /**
  * Computes true neutral rest-pose world bounds from mesh vertex buffers (ignoring morph target inflation)
@@ -48,7 +48,7 @@ function computeRestPoseBox(root: THREE.Object3D): THREE.Box3 {
  * - Loads KTX2-free self-hosted facecap.glb via MeshoptDecoder (zero blob CSP fetches)
  * - Renders sculpted male head, ears, sculpted lips & matching bust with fine cyan horizontal scanlines
  * - Renders eyeLeft & eyeRight in blazing molten crimson-ruby red (#F23456 + #A80139)
- * - Drives natural eyelid blinking (eyeBlink_L/R) and Puck-voice lip-sync (jawOpen, mouthFunnel, etc.) via audioEngine.getVolume()
+ * - Drives natural eyelid blinking (eyeBlink_L/R) and formant-based coarticulated conversational lip-sync
  */
 export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: WireframeFaceProps) => {
   const scale: [number, number, number] = props.scale ?? DEFAULT_SCALE;
@@ -65,7 +65,9 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
     uVoice: { value: 0 },
   });
 
-  const smoothVol = useRef<number>(0);
+  const fastEnv = useRef<number>(0);
+  const slowEnv = useRef<number>(0);
+  const syllableGate = useRef<number>(0);
   const nextBlink = useRef<number>(2.0);
   const isBlinking = useRef<boolean>(false);
   const blinkProg = useRef<number>(0);
@@ -144,24 +146,40 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
     };
   }, [materials]);
 
-  useFrame((state, delta) => {
+  useFrame((state, rawDelta) => {
+    const delta = Math.min(0.05, rawDelta);
     const t = state.clock.getElapsedTime();
-    const rawVol = audioEngine.getVolume();
-    const lerpRate = rawVol > smoothVol.current ? 0.48 : 0.26;
-    smoothVol.current += (rawVol - smoothVol.current) * lerpRate;
-    const v = Math.min(1, Math.max(0, smoothVol.current));
+
+    const { volume, low, mid, high, isSpeaking } = audioEngine.getSpeechFormants();
+    const fastLerp = 1 - Math.exp(-(volume > fastEnv.current ? 32 : 22) * delta);
+    const slowLerp = 1 - Math.exp(-3.4 * delta);
+    fastEnv.current += (volume - fastEnv.current) * fastLerp;
+    slowEnv.current += (volume - slowEnv.current) * slowLerp;
+
+    const v = THREE.MathUtils.clamp(fastEnv.current, 0, 1);
+    const relativeBurst = THREE.MathUtils.clamp(
+      (fastEnv.current - slowEnv.current * 0.66) / (slowEnv.current * 0.58 + 0.055),
+      0,
+      1.25
+    );
+
+    // Subtle natural speech cadence contrast only while actively speaking so sustained vowels still articulate
+    const cadenceWave = isSpeaking && v > 0.04 ? 0.62 + 0.38 * Math.sin(t * 21.0 + Math.sin(t * 8.5) * 1.4) : 1.0;
+    const targetGate = isSpeaking && v > 0.03 ? THREE.MathUtils.clamp(relativeBurst * cadenceWave, 0, 1.15) : 0;
+    syllableGate.current += (targetGate - syllableGate.current) * (1 - Math.exp(-26 * delta));
+    const gate = syllableGate.current;
 
     sharedUniforms.current.uTime.value = t;
     sharedUniforms.current.uVoice.value = v;
 
     // 1. Subtle 3D Hologram Float + Head/Shoulders Counter-Rotation
-    const floatY = Math.sin(t * 1.05) * 0.032;
+    const floatY = Math.sin(t * 1.05) * 0.028;
     if (rootGroupRef.current) {
       rootGroupRef.current.position.y = position[1] + floatY;
     }
     if (headPivotRef.current) {
       headPivotRef.current.rotation.y = Math.sin(t * 0.42) * 0.13;
-      headPivotRef.current.rotation.x = Math.sin(t * 0.30) * 0.04 + v * 0.045;
+      headPivotRef.current.rotation.x = Math.sin(t * 0.30) * 0.038 + v * 0.032;
       headPivotRef.current.rotation.z = Math.cos(t * 0.26) * 0.02;
     }
     if (shouldersRef.current) {
@@ -187,40 +205,68 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
       }
     }
 
-    // 3. Real-Time ARKit Morph Targets (Puck Voice Lip-Sync + Natural Blinking + Micro-Expressions)
+    // 3. Coarticulated Conversational Lip-Sync (prevents wide-open jaw yawns; cycles AA / EE / OO / MM visemes)
     const mesh = headMorphMeshRef.current;
     if (mesh && mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
       const dict = mesh.morphTargetDictionary;
       const inf = mesh.morphTargetInfluences;
 
-      const setMorph = (name: string, target: number, smoothing = 0.45) => {
+      const setMorph = (name: string, target: number, speed = 24) => {
         const idx = dict[name];
         if (idx !== undefined) {
-          inf[idx] += (target - inf[idx]) * smoothing;
+          const factor = 1 - Math.exp(-speed * delta);
+          inf[idx] += (target - inf[idx]) * factor;
         }
       };
 
-      const jawTarget = Math.min(0.84, v * 0.76);
-      const syllableWave = 0.5 + 0.5 * Math.sin(t * 11.5);
-      const funnelTarget = v > 0.04 ? v * 0.34 * syllableWave : 0;
-      const puckerTarget = v > 0.04 ? v * 0.17 * (1 - syllableWave) : 0;
+      const active = isSpeaking && v > 0.03;
+      const bandSum = low + mid + high + 0.001;
+      const wLow = low / bandSum;
+      const wMid = mid / bandSum;
+      const wHigh = high / bandSum;
 
-      setMorph("jawOpen", jawTarget, 0.56);
-      setMorph("mouthFunnel", funnelTarget, 0.46);
-      setMorph("mouthPucker", puckerTarget, 0.46);
-      setMorph("mouthLowerDown_L", v * 0.28, 0.5);
-      setMorph("mouthLowerDown_R", v * 0.28, 0.5);
-      setMorph("mouthUpperUp_L", v * 0.14, 0.5);
-      setMorph("mouthUpperUp_R", v * 0.14, 0.5);
-      setMorph("mouthSmile_L", 0.08 + v * 0.07, 0.2);
-      setMorph("mouthSmile_R", 0.08 + v * 0.07, 0.2);
-      setMorph("browInnerUp", 0.05 + v * 0.16 + Math.sin(t * 0.9) * 0.025, 0.25);
-      setMorph("browOuterUp_L", v * 0.13, 0.25);
-      setMorph("browOuterUp_R", v * 0.13, 0.25);
+      // Vowel posture weights driven by live acoustic formants
+      const roundVowel = active ? THREE.MathUtils.clamp((wLow - wMid * 0.78) * 2.4, 0, 1) : 0;
+      const spreadVowel = active ? THREE.MathUtils.clamp((wMid - wLow * 0.45) * 2.3 + wHigh * 0.45, 0, 1) : 0;
+      const bilabialSnap = active && gate < 0.22 ? THREE.MathUtils.clamp((0.22 - gate) / 0.22, 0, 1) : 0;
+
+      // Conversational jaw range: subtle (~0.14-0.34) with hard cap at 0.39 — zero feeding-rice yawning
+      const jawTarget = active
+        ? Math.min(0.39, (0.12 + 0.24 * gate) * (0.45 + 0.55 * v) * (1.0 - 0.36 * roundVowel) * (1.0 - 0.38 * wHigh))
+        : 0;
+
+      // Lip closure on consonant dips (M/B/P) + natural upper/lower lip parting on vowels
+      const closeTarget = active ? bilabialSnap * 0.42 : 0;
+      const pressTarget = active ? bilabialSnap * 0.30 : 0;
+      const puckerTarget = active ? roundVowel * (0.28 + 0.32 * gate) : 0;
+      const funnelTarget = active ? (roundVowel * 0.26 + wHigh * 0.16) * (0.4 + 0.6 * gate) : 0;
+      const stretchTarget = active ? spreadVowel * (0.24 + 0.26 * v) : 0;
+      const upperUpTarget = active ? (spreadVowel * 0.16 + wHigh * 0.20 + gate * 0.10) * Math.min(1, v * 1.1) : 0;
+      const lowerDownTarget = active ? (gate * 0.16 + wLow * 0.10) * Math.min(1, v * 1.1) : 0;
+
+      setMorph("jawOpen", jawTarget, 28);
+      setMorph("mouthClose", closeTarget, 32);
+      setMorph("mouthPress_L", pressTarget, 30);
+      setMorph("mouthPress_R", pressTarget, 30);
+      setMorph("mouthPucker", puckerTarget, 24);
+      setMorph("mouthFunnel", funnelTarget, 24);
+      setMorph("mouthStretch_L", stretchTarget, 24);
+      setMorph("mouthStretch_R", stretchTarget, 24);
+      setMorph("mouthLowerDown_L", lowerDownTarget, 26);
+      setMorph("mouthLowerDown_R", lowerDownTarget, 26);
+      setMorph("mouthUpperUp_L", upperUpTarget, 26);
+      setMorph("mouthUpperUp_R", upperUpTarget, 26);
+      setMorph("mouthSmile_L", 0.06 + (active ? spreadVowel * 0.08 : 0), 10);
+      setMorph("mouthSmile_R", 0.06 + (active ? spreadVowel * 0.08 : 0), 10);
+
+      // Subtle brow engagement during expressive speech
+      setMorph("browInnerUp", 0.04 + (active ? gate * 0.14 : 0) + Math.sin(t * 0.9) * 0.02, 8);
+      setMorph("browOuterUp_L", active ? v * 0.10 : 0, 8);
+      setMorph("browOuterUp_R", active ? v * 0.10 : 0, 8);
 
       // Bilateral blinks closing sculpted eyelids cleanly over molten crimson eyes
-      setMorph("eyeBlink_L", blinkVal, 0.85);
-      setMorph("eyeBlink_R", blinkVal, 0.85);
+      setMorph("eyeBlink_L", blinkVal, 38);
+      setMorph("eyeBlink_R", blinkVal, 38);
     }
   });
 
