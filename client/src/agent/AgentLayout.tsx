@@ -279,6 +279,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   // Keep `role` OUT of dependencies so toggling Boss/Sir/Madam never disconnects WS or stops camera!
   useEffect(() => {
     if (!isAuthenticated) {
+      dasSocket.setCameraActive(false);
       dasSocket.disconnect();
       cameraEngine.stopCameraCapture();
       setCameraActive(false);
@@ -289,6 +290,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     ensureSocketConnected();
 
     return () => {
+      dasSocket.setCameraActive(false);
       dasSocket.disconnect();
       cameraEngine.stopCameraCapture();
     };
@@ -387,6 +389,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         deviceId: deviceId || undefined,
         previewEl: cameraPreviewRef.current,
         onFirstFrame: () => {
+          dasSocket.setCameraActive(true);
           dasSocket.sendVisionGreet();
         },
         onSceneChanged: (hdB64) => {
@@ -406,17 +409,21 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!cameraActive) {
       ensureSocketConnected();
       setMinimizedCamPreview(false);
+      dasSocket.setCameraActive(true);
 
       const started = await startCameraFeed(selectedCameraId);
       if (started) {
+        dasSocket.setCameraActive(true);
         setCameraActive(true);
         await refreshMediaDevices();
         toast.success("24/7 HD Vision active! Show yourself, outfit, or 3+ objects to DAS!");
       } else {
+        dasSocket.setCameraActive(false);
         setTranscript("Camera access was denied or is unavailable.");
         toast.error("Please allow Camera permission in browser settings.");
       }
     } else {
+      dasSocket.setCameraActive(false);
       cameraEngine.stopCameraCapture();
       setCameraActive(false);
       toast.info("Camera paused.");

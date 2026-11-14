@@ -91,6 +91,7 @@ class DasAgentSocket {
   private lastVisionGreetAt = 0;
   private lastTurnCompletedAt = 0;
   private latestPageContext: Record<string, any> | null = null;
+  private cameraActiveState = false;
 
   private closeExistingSocketOnly() {
     if (this.renderPingTimer) {
@@ -269,16 +270,15 @@ DEEP PERSONAL KNOWLEDGE BASE ABOUT YOUR CREATOR (BOSS DILEEP):
 
 CORE AUTONOMOUS CAPABILITIES:
 1. Speak naturally, articulately, and fluently in Telugu, English, or Hindi matching the user's language. Never recite facts mechanically; speak with emotional intelligence, natural charisma, and genuine pride.
-2. LIVE CAMERA VISION & OBJECT PERCEPTION (CRITICAL MANDATE):
-   You possess 100% active real-time visual perception via video frames streamed directly from Boss's camera.
-   - You CAN see Boss, his face, his expressions, and whatever he holds in his hands or presents to the camera!
-   - When Boss asks "Can you see me?", "What is in my hands?", "Look at this", or shows an object (such as his earphones, headphones, phone, notebook, watch, etc.):
-     * NEVER give a canned or repetitive answer without answering what is in his hands!
-     * Directly look at the visual frame provided.
-     * Name the exact item: e.g. "Boss, in your hand you are holding your earphones / earbuds!"
-     * Describe the color, shape, and style of the object (e.g. white wireless in-ear earbuds, black wired earphones).
-     * Explain what the object is, what its features or purposes are (e.g. listening to audio, music, noise cancellation), and discuss it in an energetic, knowledgeable way.
-     * NEVER say "I don't have eyes" or "I cannot see what is in your hands". You have full active vision!
+2. LIVE CAMERA VISION & HONESTY RULE (CRITICAL MANDATE):
+   You ONLY have live visual perception when Boss explicitly turns the camera ON (Cam ON) and video frames are actively arriving.
+   - WHEN CAMERA IS OFF (no live frame / [CAMERA: OFF]):
+     * You CANNOT see Boss, his room, what he is wearing, or his posture.
+     * STRICTLY NEVER lie or pretend you can see him (NEVER say "I see you clearly", "You're sitting right there", or "I see you looking at the camera").
+     * Answer his voice/text requests helpfully, and only if he explicitly asks "Can you see me?", honestly say: "My camera eye is turned off right now, Boss — tap Cam if you want me to see you!"
+   - WHEN CAMERA IS ON (live frames arriving):
+     * You CAN see Boss, his face, his expressions, outfit, and whatever objects he holds in front of the camera!
+     * Name exact held objects, colors, features, and answer appearance/looksmaxxing or scene questions directly from the real video frame.
 3. MASTER PROGRAMMING & COMPILER (C, C++, Python, Java, JS, TS, SQL):
    - When asked to write any program or algorithm (small or large), call 'write_and_compile_code' with clean, compilable code and explain the logic step-by-step.
    - When a compiler or syntax error occurs, or Boss says "fix the error", "code wrong undi", or "correct chey":
@@ -496,7 +496,12 @@ CORE AUTONOMOUS CAPABILITIES:
               this.sendPageContext(ctxNow);
             }
             this.flushPendingMessages();
-            if (cameraEngine.isStreaming) {
+            const camNow = Boolean(cameraEngine.isStreaming);
+            this.cameraActiveState = camNow;
+            try {
+              this.ws?.send(JSON.stringify({ type: "camera_state", active: camNow }));
+            } catch {}
+            if (camNow) {
               const latest = cameraEngine.getLatestFrameBase64();
               if (latest) this.sendVideoFrame(latest);
             }
@@ -927,14 +932,14 @@ CORE AUTONOMOUS CAPABILITIES:
   }
 
   public sendVisionGreet() {
+    if (!cameraEngine.isStreaming || !this.cameraActiveState) return;
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
     if (this.isSpeakingTurn || audioEngine.isSpeaking()) return;
     this.lastVisionGreetAt = Date.now();
     audioEngine.unlockAudio();
     const freshFrame = cameraEngine.getLatestFrameBase64();
-    if (freshFrame) {
-      this.sendVideoFrame(freshFrame);
-    }
+    if (!freshFrame) return;
+    this.sendVideoFrame(freshFrame);
     if (this.isDirectGoogle) {
       this.sendImmediateText(
         "Camera just turned on! Look at the live camera frame: greet me warmly by my name if you recognize Boss Dileep, and briefly tell me what you see."
@@ -945,6 +950,7 @@ CORE AUTONOMOUS CAPABILITIES:
   }
 
   public sendAutoVisionCheck(frameBase64?: string) {
+    if (!cameraEngine.isStreaming || !this.cameraActiveState) return;
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
     const now = Date.now();
     if (
@@ -1120,10 +1126,20 @@ CORE AUTONOMOUS CAPABILITIES:
     }
   }
 
+  public setCameraActive(active: boolean) {
+    this.cameraActiveState = active;
+    if (this.ws && this.ws.readyState === WebSocket.OPEN && !this.isDirectGoogle) {
+      try {
+        this.ws.send(JSON.stringify({ type: "camera_state", active }));
+      } catch {}
+    }
+  }
+
   public disconnect() {
     this.manualClose = true;
     this.connSeq++;
     this.activeAudioTurnId = null;
+    this.cameraActiveState = false;
     this.clearTurnWatchdog();
     this.closeExistingSocketOnly();
     audioEngine.stopMicCapture();

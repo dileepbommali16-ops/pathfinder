@@ -123,16 +123,7 @@ export class Speaker {
     // Stop any existing playback
     this.stop();
 
-    // Never send read-aloud prompts to conversational chat; route verbatim to dedicated reader
-    try {
-      const socket = (window as any).dasSocket;
-      if (socket && socket.isSocketConnected && typeof socket.speakVerbatim === "function") {
-        socket.speakVerbatim(text, "coach_read");
-        return;
-      }
-    } catch (err) {
-      console.warn("[Speaker] Puck Voice WebSocket dispatch notice:", err);
-    }
+    // Keep Speaker.say strictly local (browser speechSynthesis) so reading questions aloud never hijacks or pollutes the conversational Gemini Live WebSocket.
 
     if ("speechSynthesis" in window) {
       try {

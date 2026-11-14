@@ -99,21 +99,20 @@ DEEP PERSONAL KNOWLEDGE BASE ABOUT YOUR CREATOR (BOSS DILEEP):
 
 CORE AUTONOMOUS CAPABILITIES:
 1. Speak naturally, articulately, and fluently in Telugu, English, or Hindi matching the user's language. Never recite facts mechanically; speak with emotional intelligence, natural charisma, and genuine pride.
-2. LIVE CAMERA VISION, BOSS RECOGNITION, LOOKSMAXXING & 24/7 OBJECT PERCEPTION (CRITICAL MANDATE):
-   You possess 100% active real-time high-definition visual perception via continuous 24/7 video frames streamed from Boss's camera.
-   - CREATOR RECOGNITION & GREETING:
-     * When the camera first spots Boss Dileep (or whenever Boss mode + camera are active), recognize him loyally and greet him enthusiastically: "Boss, I see you, Dileep!" Remember his personal details (age 20, B.Tech CSE Data Science, golden/tamarind complexion, fashion model swagger, guitarist, mild perfectionist/OCD vibe, loving family & mentors) and bring them up naturally when relevant.
-     * When conversing with visitors (Sir or Madam mode), warmly acknowledge seeing them on camera, describe what they are doing, and answer proudly if they ask about your Boss Dileep.
-   - FACE VALUE & LOOKSMAXXING COACH (0–100% RATING):
-     * Whenever Boss (or Sir/Madam) asks "Am I handsome?", "Rate me out of 100%", "Looksmaxxing cheyyala vadha?", or asks for face/appearance feedback, analyze the live video frame closely (facial structure, symmetry, complexion glow, hairstyle, beard/grooming neatness, posture, outfit colors, and lighting).
-     * Give a clear percentage rating out of 100% (e.g., 92/100 or specific honest score) plus crisp, encouraging, actionable looksmaxxing tips (lighting angle, hair volume, clean grooming/beard lines, posture, and wardrobe contrast).
-   - FULL-BODY, OUTFIT & MULTI-OBJECT 24/7 MONITORING:
-     * Inspect the ENTIRE video frame continuously: face, hair, full body posture, clothes (shirt/t-shirt/hoodie/jacket/pants colors and accessories), AND every distinct object held in left hand, right hand, foreground, or table.
-     * Supports 3+ simultaneous items (TV remote, earphones, wireless buds, headphones, apples, bananas, vegetables, water bottles, toys, notebooks, pens, phones): count and name EVERY item quickly and clearly as soon as Boss holds or swaps them!
-   - Speed & accuracy:
-     * Answer immediately and concisely with what you actually observe in the latest frame.
-     * NEVER say "I don't have eyes", "nothing in your hands", or "I cannot see" when objects or a person are visible. Only ask Boss to adjust lighting or angle if the frame is genuinely pitch black or completely out of frame.
-   - Explain any held item's color, type, purpose, or details energetically and warmly.
+2. CAMERA VISION, BOSS RECOGNITION, LOOKSMAXXING & HONESTY MANDATE:
+   You ONLY have live visual perception when Boss explicitly turns the camera ON (`[CAMERA: ON]` AND a live JPEG frame is attached).
+   - WHEN CAMERA IS OFF (`[CAMERA: OFF]` or no live video frame attached):
+     * You DO NOT see Boss, his face, his clothes, his room, or anything in front of him!
+     * STRICTLY NEVER hallucinate, pretend, or guess visual observations. NEVER say "I see you", "I see you clearly", "You're sitting right there", or "You're looking at the camera".
+     * Focus 100% on Boss's audio/text prompt or placement/interview/coding question. Only if Boss explicitly asks "Can you see me?" while the camera is OFF, honestly reply: "My camera eye is turned off right now, Boss — tap Cam if you'd like me to see you!"
+   - WHEN CAMERA IS ON (`[CAMERA: ON]` with live frames attached):
+     * CREATOR RECOGNITION & GREETING:
+       - When the camera first spots Boss Dileep while camera is ON, recognize him loyally and greet him warmly: "Boss, I see you, Dileep!" Remember his personal details (age 20, B.Tech CSE Data Science, golden/tamarind complexion, fashion model swagger, guitarist, mild perfectionist/OCD vibe, loving family & mentors) when relevant.
+       - With visitors (Sir or Madam mode) when camera is ON, warmly acknowledge seeing them on camera and answer proudly if they ask about Boss Dileep.
+     * FACE VALUE & LOOKSMAXXING COACH (0–100% RATING):
+       - Whenever asked "Am I handsome?", "Rate me out of 100%", or "Looksmaxxing cheyyala vadha?" while camera is ON, analyze the live video frame closely and give a clear rating out of 100% plus crisp actionable looksmaxxing tips.
+     * FULL-BODY, OUTFIT & MULTI-OBJECT 24/7 MONITORING:
+       - Inspect only what is ACTUALLY visible in the attached live frame (face, posture, outfit, and held objects across hands/foreground) and answer concisely. Only ask to adjust lighting or angle if the attached frame is genuinely pitch black or out of frame.
 3. MASTER PROGRAMMING & COMPILER (C, C++, Python, Java, JS, TS, SQL):
    - When asked to write any program or algorithm (small or large), call `write_and_compile_code` with clean, compilable code and explain the logic step-by-step.
    - When a compiler or syntax error occurs, or Boss says "fix the error", "code wrong undi", or "correct chey":
@@ -375,6 +374,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             "role": user_role,
         })
 
+        camera_active = False
         latest_frame_bytes: bytes | None = None
         send_lock = asyncio.Lock()
         audio_turn_open = False
@@ -430,13 +430,19 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
         async def send_vision_prompt(prompt_text: str, include_screen_ctx: bool = True):
             nonlocal audio_turn_open, pending_response_until_mono
-            final_text = prompt_text
+            has_live_cam = bool(camera_active and is_valid_jpeg(latest_frame_bytes))
+            cam_marker = (
+                "[CAMERA: ON — LIVE VIDEO ATTACHED]"
+                if has_live_cam
+                else "[CAMERA: OFF — NO LIVE VIDEO ATTACHED; STRICTLY NEVER CLAIM TO SEE BOSS OR ANY PERSON SITTING THERE]"
+            )
+            final_text = f"{cam_marker}\n{prompt_text}"
             if include_screen_ctx:
                 ctx_note = format_page_context_note()
                 if ctx_note:
-                    final_text = f"{ctx_note}\n{prompt_text}"
+                    final_text = f"{cam_marker}\n{ctx_note}\n{prompt_text}"
             parts = []
-            if is_valid_jpeg(latest_frame_bytes):
+            if has_live_cam and latest_frame_bytes is not None:
                 parts.append(
                     types.Part.from_bytes(
                         data=latest_frame_bytes,
@@ -499,8 +505,17 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         except Exception:
                             pass
 
-                    # 3. Live Camera Video Frame from Browser (JPEG via `video=` channel)
+                    # 2b. Explicit Camera State Sync from Browser (clears stale frames immediately on Cam OFF)
+                    elif msg_type == "camera_state":
+                        camera_active = bool(msg.get("active"))
+                        if not camera_active:
+                            latest_frame_bytes = None
+                            last_frame_sent_mono = 0.0
+
+                    # 3. Live Camera Video Frame from Browser (JPEG via `video=` channel, only accepted when camera_active)
                     elif msg_type == "frame":
+                        if not camera_active:
+                            continue
                         frame_str = msg.get("jpeg_base64")
                         if frame_str:
                             try:
@@ -536,20 +551,22 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             hint_prompt = (
                                 f"[FRIENDLY AUDIO NOTICE: issue={issue}, device={dev_name}] "
                                 "Boss or the visitor may have just plugged in earphones, wireless buds, or headphones at very low volume (~20%) or a loose/muted mic, "
-                                "so their voice isn't coming through clearly right now. Looking at them warmly like a trusted friend on camera, "
+                                "so their voice isn't coming through clearly right now. Speaking warmly like a trusted friend, "
                                 "kindly let them know their voice is too faint or muted to hear properly, and suggest increasing the volume or checking their earphone/buds condition and connection in 1-2 natural sentences."
                             )
                             await send_vision_prompt(hint_prompt, include_screen_ctx=False)
 
                     # 3b. Proactive Initial Camera Greeting (never interrupts an active greeting mid-sentence)
                     elif msg_type == "vision_greet":
+                        if not camera_active:
+                            continue
                         role_now = (msg.get("role") or user_role or "boss").lower().strip()
                         # Wait briefly up to 3.5s if a response is pending or currently playing
                         waited = 0.0
                         while is_turn_busy() and waited < 3.5:
                             await asyncio.sleep(0.25)
                             waited += 0.25
-                        if is_valid_jpeg(latest_frame_bytes):
+                        if camera_active and is_valid_jpeg(latest_frame_bytes):
                             if role_now == "boss":
                                 greet_prompt = (
                                     "SYSTEM VISION GREET: Camera just turned ON! Look closely at the attached live camera frame. "
@@ -570,9 +587,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                     # 3c. 24/7 Proactive Scene/Object Change Announcement (NEVER interrupts active/pending voice playback!)
                     elif msg_type == "vision_auto_check":
-                        if is_turn_busy() or audio_turn_open:
+                        if not camera_active or is_turn_busy() or audio_turn_open:
                             continue
-                        if is_valid_jpeg(latest_frame_bytes):
+                        if camera_active and is_valid_jpeg(latest_frame_bytes):
                             auto_prompt = (
                                 "SYSTEM 24/7 AUTO-VISION MONITOR: The scene or object in front of the camera just changed and settled. "
                                 "Inspect the attached live frame carefully across both hands and foreground: name every distinct object visible "
@@ -592,9 +609,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         v_text = (msg.get("text") or "").strip()
                         if v_text:
                             read_prompt = (
-                                "[READ ALOUD VERBATIM ONLY]\n"
+                                "[CAMERA: OFF — READ ALOUD VERBATIM ONLY; DO NOT GREET OR CLAIM TO SEE BOSS]\n"
                                 "Read the exact sentence below aloud naturally as the technical interviewer asking the candidate. "
-                                "Do NOT answer the question, explain concepts, give hints, or add intro/outro commentary:\n"
+                                "Do NOT answer the question, explain concepts, give hints, mention any camera, or add intro/outro commentary:\n"
                                 f"\"{v_text}\""
                             )
                             async with send_lock:

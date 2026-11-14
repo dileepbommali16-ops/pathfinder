@@ -2,15 +2,15 @@ import React, { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { audioEngine } from "./audioIO";
-import { SolarFaceEffects, SculptedHumanLips } from "./FaceEffects";
+import { AnatomicalHumanHeadDNA, AnatomicalMouthSync } from "./FaceEffects";
 
 export interface WireframeFaceProps {
   scale?: [number, number, number];
   position?: [number, number, number];
 }
 
-const DEFAULT_SCALE: [number, number, number] = [0.88, 0.94, 0.88];
-const DEFAULT_POSITION: [number, number, number] = [0, 0.16, 0];
+const DEFAULT_SCALE: [number, number, number] = [0.94, 0.98, 0.94];
+const DEFAULT_POSITION: [number, number, number] = [0, 0.14, 0];
 
 const LAVA_EYE_VERT = `
   varying vec3 vLocalPos;
@@ -60,8 +60,6 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
   const headGroupRef = useRef<THREE.Group>(null);
   const leftEyeGroupRef = useRef<THREE.Group>(null);
   const rightEyeGroupRef = useRef<THREE.Group>(null);
-  const outerRingRef = useRef<THREE.Mesh>(null);
-  const innerRingRef = useRef<THREE.Mesh>(null);
 
   const nextBlink = useRef<number>(1.8);
   const isBlinking = useRef<boolean>(false);
@@ -126,47 +124,20 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
         }
       }
     }
-
-    if (outerRingRef.current) {
-      outerRingRef.current.rotation.z = t * 0.14;
-      const ringScale = 1 + v * 0.07;
-      outerRingRef.current.scale.set(ringScale, ringScale, 1);
-    }
-    if (innerRingRef.current) {
-      innerRingRef.current.rotation.z = -t * 0.19;
-    }
   });
 
   return (
     <group ref={headGroupRef} scale={scale} position={position}>
-      {/* Radiant molten solar-cyan face plasma, contours & twinkling sparkles (#5BC0DE) */}
-      <SolarFaceEffects voiceRef={smoothVol} />
-      <mesh scale={[0.84, 1.05, 0.88]}>
-        <icosahedronGeometry args={[1.14, 2]} />
-        <meshBasicMaterial color="#5BC0DE" wireframe transparent opacity={0.82} toneMapped={false} />
-      </mesh>
-      <mesh scale={[0.82, 1.03, 0.86]}>
-        <icosahedronGeometry args={[1.12, 1]} />
-        <meshBasicMaterial color="#2489A8" wireframe transparent opacity={0.56} toneMapped={false} />
-      </mesh>
+      {/* Sculpted 3D Anatomical Human Head + Internal Human DNA Double-Helix in luminous #5BC0DE blue */}
+      <AnatomicalHumanHeadDNA voiceRef={smoothVol} />
 
-      {/* Crisp brow contours (#0E117A + #4FCDE8) */}
-      <mesh position={[-0.31, 0.305, 0.91]} rotation={[0, -0.22, 0.07]}>
-        <boxGeometry args={[0.21, 0.017, 0.02]} />
-        <meshBasicMaterial color="#5BC0DE" transparent opacity={0.96} toneMapped={false} />
-      </mesh>
-      <mesh position={[0.31, 0.305, 0.91]} rotation={[0, 0.22, -0.07]}>
-        <boxGeometry args={[0.21, 0.017, 0.02]} />
-        <meshBasicMaterial color="#5BC0DE" transparent opacity={0.96} toneMapped={false} />
-      </mesh>
-
-      {/* ONLY EYES: Blazing molten lava orbs & glowing rims (#D72324 + #E31748) with smooth blink */}
-      <group ref={leftEyeGroupRef} position={[-0.3, 0.17, 0.93]}>
+      {/* ONLY EYES: Blazing molten lava orbs & glowing rims (#F23456 + #A80139) seated inside sculpted sockets */}
+      <group ref={leftEyeGroupRef} position={[-0.252, 0.165, 0.755]} rotation={[0, -0.22, 0]}>
         <mesh scale={[1.34, 0.74, 0.5]} material={lavaMaterial}>
-          <sphereGeometry args={[0.058, 20, 16]} />
+          <sphereGeometry args={[0.056, 20, 16]} />
         </mesh>
         <mesh scale={[1.44, 0.84, 1]}>
-          <ringGeometry args={[0.050, 0.068, 32]} />
+          <ringGeometry args={[0.048, 0.066, 32]} />
           <meshBasicMaterial
             color="#F23456"
             side={THREE.DoubleSide}
@@ -177,7 +148,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
           />
         </mesh>
         <mesh scale={[1.82, 1.08, 1]} position={[0, 0, -0.005]}>
-          <circleGeometry args={[0.068, 28]} />
+          <circleGeometry args={[0.066, 28]} />
           <meshBasicMaterial
             color="#A80139"
             side={THREE.DoubleSide}
@@ -190,12 +161,12 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
         </mesh>
       </group>
 
-      <group ref={rightEyeGroupRef} position={[0.3, 0.17, 0.93]}>
+      <group ref={rightEyeGroupRef} position={[0.252, 0.165, 0.755]} rotation={[0, 0.22, 0]}>
         <mesh scale={[1.34, 0.74, 0.5]} material={lavaMaterial}>
-          <sphereGeometry args={[0.058, 20, 16]} />
+          <sphereGeometry args={[0.056, 20, 16]} />
         </mesh>
         <mesh scale={[1.44, 0.84, 1]}>
-          <ringGeometry args={[0.050, 0.068, 32]} />
+          <ringGeometry args={[0.048, 0.066, 32]} />
           <meshBasicMaterial
             color="#F23456"
             side={THREE.DoubleSide}
@@ -206,7 +177,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
           />
         </mesh>
         <mesh scale={[1.82, 1.08, 1]} position={[0, 0, -0.005]}>
-          <circleGeometry args={[0.068, 28]} />
+          <circleGeometry args={[0.066, 28]} />
           <meshBasicMaterial
             color="#A80139"
             side={THREE.DoubleSide}
@@ -219,28 +190,8 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
         </mesh>
       </group>
 
-      {/* Subtle sculpted nasal bridge + tip (#0E117A + #4FCDE8) */}
-      <mesh position={[0, 0.0, 1.0]} rotation={[0.22, 0, 0]}>
-        <cylinderGeometry args={[0.012, 0.024, 0.24, 8]} />
-        <meshBasicMaterial color="#5BC0DE" wireframe transparent opacity={0.86} toneMapped={false} />
-      </mesh>
-      <mesh position={[0, -0.11, 1.04]}>
-        <sphereGeometry args={[0.028, 10, 8]} />
-        <meshBasicMaterial color="#8CE2F5" wireframe transparent opacity={0.92} toneMapped={false} />
-      </mesh>
-
-      {/* Small anatomically sculpted human lips synced to real-time voice (#5BC0DE) */}
-      <SculptedHumanLips voiceRef={smoothVol} />
-
-      {/* Dual orbital rings in #4FCDE8 and #0E117A */}
-      <mesh ref={outerRingRef} position={[0, 0, -0.3]}>
-        <ringGeometry args={[1.44, 1.46, 72]} />
-        <meshBasicMaterial color="#5BC0DE" side={THREE.DoubleSide} transparent opacity={0.72} toneMapped={false} />
-      </mesh>
-      <mesh ref={innerRingRef} position={[0, 0, -0.32]}>
-        <ringGeometry args={[1.34, 1.36, 64]} />
-        <meshBasicMaterial color="#2D99BA" side={THREE.DoubleSide} transparent opacity={0.68} toneMapped={false} />
-      </mesh>
+      {/* Anatomically contoured 3D human lips synced to real-time voice (#5BC0DE) */}
+      <AnatomicalMouthSync voiceRef={smoothVol} />
     </group>
   );
 });

@@ -264,6 +264,38 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     };
   }, []);
 
+  // Silently pre-warm Render /api/voice/tts for the visible question so Hear Question plays immediately
+  useEffect(() => {
+    const qText = currentQ?.question?.trim();
+    if (!qText || ttsCacheRef.current.has(qText)) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const resp = await fetch(`${API_BASE}/api/voice/tts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({ text: qText, voice: "Puck" }),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data?.status === "ok" && data.pcm_base64) {
+            ttsCacheRef.current.set(qText, {
+              pcm: data.pcm_base64,
+              rate: Number(data.sample_rate) || 24000,
+            });
+          }
+        }
+      } catch {
+        // Silent background warmup; on-click handler handles playback/fallback
+      }
+    }, 350);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [currentQ?.question]);
+
   const resetState = () => {
     setUserAnswer("");
     setEvaluationResult(null);
@@ -286,11 +318,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     audioEngine.unlockAudio();
     const gen = ++speakGenRef.current;
 
-    window.dispatchEvent(
-      new CustomEvent("das-interviewer-prompt", {
-        detail: { question: questionText, track: currentQ.track, company: currentQ.company },
-      })
-    );
+    // Keep Hear Question strictly isolated from the live conversational DAS WebSocket (no fake HUD prompt).
 
     const cached = ttsCacheRef.current.get(questionText);
     if (cached) {
