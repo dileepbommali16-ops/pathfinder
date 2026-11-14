@@ -544,14 +544,14 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         this.phase = 0;
         this.buffering = true;
         this.turnStarted = false;
-        if (this.wasActive) {
-          this.wasActive = false;
-          this.port.postMessage({ type: "playing", active: false });
-        }
         this.drain = false;
         this.gainEnv = 0;
         this.lastSample = 0;
         this.lastOut = 0;
+        if (this.wasActive) {
+          this.wasActive = false;
+          this.port.postMessage({ type: "playing", active: false });
+        }
       } else if (m.type === "drain") {
         this.drain = true;
       } else if (m.type === "push" && m.pcm) {
@@ -575,7 +575,8 @@ class DasPcmPlayer extends AudioWorkletProcessor {
   process(inputs, outputs) {
     const out = outputs[0] && outputs[0][0];
     if (!out) return true;
-    const prebuffer = Math.round(this.srcRate * (this.turnStarted ? 0.025 : 0.16));
+    // 260ms initial jitter prefill absorbs ~275ms live burst intervals so "Hi Boss!" plays unbroken
+    const prebuffer = Math.round(this.srcRate * (this.turnStarted ? 0.12 : 0.26));
     if (this.buffering) {
       if (this.avail >= prebuffer || (this.drain && this.avail > 0)) {
         this.buffering = false;
@@ -585,11 +586,8 @@ class DasPcmPlayer extends AudioWorkletProcessor {
           this.drain = false;
           this.turnStarted = false;
           this.gainEnv = 0;
-          if (this.wasActive) {
-            this.wasActive = false;
-            this.port.postMessage({ type: "playing", active: false });
-          }
-        }
+          this.lastSample = 0;
+          this.lastOut = 0;
           if (this.wasActive) {
             this.wasActive = false;
             this.port.postMessage({ type: "playing", active: false });
@@ -607,7 +605,7 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         const frac = this.phase - Math.floor(this.phase);
         const s = this.ring[idx0] + frac * (this.ring[idx1] - this.ring[idx0]);
         this.lastSample = s;
-        this.gainEnv = Math.min(1, this.gainEnv + 0.035);
+        this.gainEnv = Math.min(1, this.gainEnv + 0.025);
         this.lastOut = s * this.gainEnv;
         out[i] = this.lastOut;
         this.phase += step;
@@ -624,11 +622,11 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         this.avail = 0;
         this.phase = 0;
         this.lastSample = s;
-        this.gainEnv = Math.min(1, this.gainEnv + 0.035);
+        this.gainEnv = Math.min(1, this.gainEnv + 0.025);
         this.lastOut = s * this.gainEnv;
         out[i] = this.lastOut;
       } else {
-        this.gainEnv = Math.max(0, this.gainEnv - 0.06);
+        this.gainEnv = Math.max(0, this.gainEnv - 0.04);
         this.lastOut = this.lastSample * this.gainEnv;
         out[i] = this.lastOut;
         if (this.gainEnv <= 0.001) {
@@ -639,8 +637,6 @@ class DasPcmPlayer extends AudioWorkletProcessor {
           if (this.drain) {
             this.drain = false;
             this.turnStarted = false;
-            this.port.postMessage({ type: "playing", active: false });
-          }
             if (this.wasActive) {
               this.wasActive = false;
               this.port.postMessage({ type: "playing", active: false });
@@ -698,6 +694,9 @@ class AudioEngine {
   private rawFallbackAttempted: boolean = false;
   private deviceFallbackAttempted: boolean = false;
   private captureToken: number = 0;
+  private playerFailed: boolean = false;
+  private pendingWorkletChunks: Array<{ pcm: Float32Array; rate: number }> = [];
+  private pendingDrain: boolean = false;
 
   public notifyTypingActivity(durationMs = 850) {
     const now = typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -710,8 +709,11 @@ class AudioEngine {
   }
 
   private ensurePlayerWorklet() {
-    if (!this.audioCtx || !this.analyser || this.playerReady || this.playerInitPromise) return;
-    if (!this.audioCtx.audioWorklet || typeof Blob === "undefined") return;
+    if (!this.audioCtx || !this.analyser || this.playerReady || this.playerInitPromise || this.playerFailed) return;
+    if (!this.audioCtx.audioWorklet || typeof Blob === "undefined") {
+      this.playerFailed = true;
+      return;
+    }
 
     const ctx = this.audioCtx;
     const analyser = this.analyser;
@@ -739,8 +741,28 @@ class AudioEngine {
         node.connect(analyser);
         this.playerNode = node;
         this.playerReady = true;
+        this.activeTurnMode = "worklet";
+        // Flush any initial burst chunks that arrived while addModule() compiled
+        while (this.pendingWorkletChunks.length > 0) {
+          const item = this.pendingWorkletChunks.shift();
+          if (!item) continue;
+          node.port.postMessage(
+            { type: "push", pcm: item.pcm.buffer, rate: item.rate },
+            [item.pcm.buffer]
+          );
+        }
+        if (this.pendingDrain) {
+          this.pendingDrain = false;
+          node.port.postMessage({ type: "drain" });
+        }
       } catch (err) {
+        this.playerFailed = true;
         console.warn("AudioWorklet PCM player fallback active:", err);
+        const queued = this.pendingWorkletChunks.splice(0);
+        for (const item of queued) {
+          this.scheduleFallbackFloatPcm(item.pcm, item.rate);
+        }
+        this.pendingDrain = false;
       }
     })();
   }
@@ -753,6 +775,9 @@ class AudioEngine {
       this.playerNode = null;
       this.playerInitPromise = null;
       this.playerReady = false;
+      this.playerFailed = false;
+      this.pendingWorkletChunks = [];
+      this.pendingDrain = false;
       this.activeSources = [];
       this.activeTurnMode = null;
       this.nextPlayTime = 0;
@@ -929,11 +954,11 @@ class AudioEngine {
 
     const durMs = (float32Data.length / Math.max(8000, sampleRate)) * 1000;
     const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
-    if (!this.isSpeaking() && this.activeSources.length === 0) {
+    if (!this.isSpeaking() && this.activeSources.length === 0 && this.pendingWorkletChunks.length === 0) {
       this.activeTurnMode = null;
     }
     if (!this.activeTurnMode) {
-      this.activeTurnMode = this.playerReady && this.playerNode ? "worklet" : "fallback";
+      this.activeTurnMode = !this.playerFailed && this.audioCtx?.audioWorklet ? "worklet" : "fallback";
       if (this.activeTurnMode === "worklet" && this.activeSources.length > 0) {
         this.activeSources.forEach((src) => {
           try {
@@ -945,10 +970,10 @@ class AudioEngine {
       }
     }
 
-    const baseMs = Math.max(nowPerf + 160, this.playingUntilPerfMs);
+    const baseMs = Math.max(nowPerf + 280, this.playingUntilPerfMs);
     this.playingUntilPerfMs = Math.min(nowPerf + 60000, baseMs + durMs);
 
-    if (this.activeTurnMode === "worklet" && this.playerReady && this.playerNode) {
+    if (this.playerReady && this.playerNode) {
       this.playerNode.port.postMessage(
         { type: "push", pcm: float32Data.buffer, rate: sampleRate },
         [float32Data.buffer]
@@ -956,7 +981,16 @@ class AudioEngine {
       return;
     }
 
-    // Brief fallback while AudioWorklet module finishes initial registration (locked per turn to avoid overlap)
+    if (!this.playerFailed && this.playerInitPromise) {
+      this.pendingWorkletChunks.push({ pcm: float32Data, rate: sampleRate });
+      return;
+    }
+
+    this.scheduleFallbackFloatPcm(float32Data, sampleRate);
+  }
+
+  private scheduleFallbackFloatPcm(float32Data: Float32Array, sampleRate = 24000) {
+    if (!this.audioCtx || !this.analyser || float32Data.length === 0) return;
     const audioBuffer = this.audioCtx.createBuffer(1, float32Data.length, sampleRate);
     audioBuffer.getChannelData(0).set(float32Data);
 
@@ -966,7 +1000,8 @@ class AudioEngine {
 
     const currentTime = this.audioCtx.currentTime;
     if (this.nextPlayTime < currentTime - 0.01 || this.nextPlayTime > currentTime + 60.0) {
-      this.nextPlayTime = currentTime + 0.04;
+      // 260ms jitter lead absorbs ~275ms live bursts smoothly even in non-worklet environments
+      this.nextPlayTime = currentTime + 0.26;
     }
     source.start(this.nextPlayTime);
     this.nextPlayTime += audioBuffer.duration;
@@ -983,12 +1018,14 @@ class AudioEngine {
   public flushAudioPlayer() {
     if (this.playerReady && this.playerNode) {
       this.playerNode.port.postMessage({ type: "drain" });
+    } else if (!this.playerFailed && this.playerInitPromise) {
+      this.pendingDrain = true;
     }
   }
 
   // Returns true while DAS is actively playing or draining audio (prevents mid-sentence speaker echo cuts)
   public isSpeaking(): boolean {
-    if (this.workletPlaying) {
+    if (this.workletPlaying || this.pendingWorkletChunks.length > 0) {
       return true;
     }
     const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -1007,6 +1044,8 @@ class AudioEngine {
   public clearAudioQueue() {
     this.activeTurnMode = null;
     this.workletPlaying = false;
+    this.pendingWorkletChunks = [];
+    this.pendingDrain = false;
     if (this.playerNode) {
       try {
         this.playerNode.port.postMessage({ type: "clear" });

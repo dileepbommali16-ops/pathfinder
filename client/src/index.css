@@ -212,10 +212,14 @@
   html, body {
     overflow-x: hidden;
     max-width: 100vw;
-    background-color: var(--background);
+    --background: #000000;
+    --card: #060608;
+    --bg-base: #000000;
+    --bg-card: #060608;
+    background-color: #000000;
     color: var(--foreground);
     font-family: "Outfit", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #0a0b10;
+    background: #000000;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: "Space Grotesk", sans-serif;
@@ -287,24 +291,113 @@
 
 /* Performant Layered 3D Depth & Elevation Tokens (60fps, WCAG AA contrast) */
 .glass-depth-card {
-  background: rgba(13, 17, 29, 0.7);
+  background: rgba(6, 6, 8, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease;
   will-change: transform;
 }
 
-/* Soft translucent card surface on every dashboard slide so the 3D DAS face stays gently visible behind UI */
+/* Soft translucent obsidian card surface on dashboard slides & header pills so zero navy #11131c remains */
+.pathfinder-dashboard header [class*="bg-[#11131c]"],
+.pathfinder-dashboard header [class*="bg-[#161926]"],
+.pathfinder-dashboard header [class*="bg-[#0a0b10]"] {
+  background-color: #060608 !important;
+}
+
 .pathfinder-dashboard section [class*="bg-[#11131c]"],
 .pathfinder-dashboard main > div [class*="bg-[#11131c]"],
 .pathfinder-dashboard main > div [class*="bg-[#0a0b10]"],
 .pathfinder-dashboard main > div [class*="bg-[#0F172A]"],
-.pathfinder-dashboard main > div [class*="bg-[#0f172a]"] {
-  background-color: rgba(13, 17, 29, 0.7) !important;
+.pathfinder-dashboard main > div [class*="bg-[#0f172a]"],
+.pathfinder-dashboard main > div [class*="bg-[#060608]"] {
+  background-color: rgba(6, 6, 8, 0.86) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+}
+
+/* Photo 3, 4, 5: Pure Black & Charcoal (#000000 & #060608) for Project Defense, ATS Resume Studio, and Project Blueprints */
+[data-slide-theme="pure-black"] [class*="bg-[#11131c]"],
+[data-slide-theme="pure-black"] [class*="bg-[#161926]"],
+[data-slide-theme="pure-black"] [class*="bg-[#1c2030]"],
+[data-slide-theme="pure-black"] [class*="bg-[#0a0b10]"],
+[data-slide-theme="pure-black"] [class*="bg-[#0F172A]"],
+[data-slide-theme="pure-black"] [class*="bg-[#0f172a]"],
+[data-slide-theme="pure-black"] [class*="bg-[#060608]"] {
+  background-color: rgba(6, 6, 8, 0.90) !important;
+  background-image: none !important;
+}
+
+[data-slide-theme="pure-black"] [class*="bg-[#000000]"] {
+  background-color: #000000 !important;
+  background-image: none !important;
+}
+
+[data-slide-theme="pure-black"] [class*="bg-[#7c3aed]"],
+[data-slide-theme="pure-black"] [class*="bg-[#6d28d9]"],
+[data-slide-theme="pure-black"] [class*="bg-[#9f1239]"],
+[data-slide-theme="pure-black"] [class*="bg-[#881337]"] {
+  background-color: #060608 !important;
+  background-image: none !important;
+}
+
+[data-slide-theme="pure-black"] [class*="border-[#7c3aed]"],
+[data-slide-theme="pure-black"] [class*="border-[#161926]"],
+[data-slide-theme="pure-black"] [class*="border-[#9f1239]"] {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+[data-slide-theme="pure-black"] [class*="text-[#7c3aed]"],
+[data-slide-theme="pure-black"] [class*="text-[#a78bfa]"],
+[data-slide-theme="pure-black"] [class*="text-[#9f1239]"] {
+  color: #e4e4e7 !important;
+}
+
+/* Photo 7: Pure Black & Obsidian (#000000 & #060608) with subtle #34222E plum accents for Dashboard Overview */
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#11131c]"],
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#161926]"],
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#1c2030]"],
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#0a0b10]"],
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#060608]"] {
+  background-color: rgba(6, 6, 8, 0.88) !important;
+}
+
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#7c3aed]"],
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#6d28d9]"],
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#8b5cf6]"],
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#9f1239]"],
+[data-slide-theme="dashboard-black-plum"] [class*="bg-[#881337]"] {
+  background-color: #34222E !important;
+  background-image: none !important;
+}
+
+[data-slide-theme="dashboard-black-plum"] [class*="from-[#7c3aed]"],
+[data-slide-theme="dashboard-black-plum"] [class*="from-[#6d28d9]"],
+[data-slide-theme="dashboard-black-plum"] [class*="from-[#9f1239]"],
+[data-slide-theme="dashboard-black-plum"] [class*="from-[#881337]"] {
+  --tw-gradient-from: #34222E !important;
+}
+
+[data-slide-theme="dashboard-black-plum"] [class*="via-[#7c3aed]"],
+[data-slide-theme="dashboard-black-plum"] [class*="to-[#8b5cf6]"],
+[data-slide-theme="dashboard-black-plum"] [class*="to-[#7c3aed]"],
+[data-slide-theme="dashboard-black-plum"] [class*="to-[#9f1239]"] {
+  --tw-gradient-to: #34222E !important;
+}
+
+[data-slide-theme="dashboard-black-plum"] [class*="border-[#7c3aed]"],
+[data-slide-theme="dashboard-black-plum"] [class*="border-[#161926]"],
+[data-slide-theme="dashboard-black-plum"] [class*="border-[#9f1239]"],
+[data-slide-theme="dashboard-black-plum"] [class*="border-[#881337]"] {
+  border-color: #34222E !important;
+}
+
+[data-slide-theme="dashboard-black-plum"] [class*="text-[#7c3aed]"],
+[data-slide-theme="dashboard-black-plum"] [class*="text-[#9f1239]"],
+[data-slide-theme="dashboard-black-plum"] [class*="text-[#e11d48]"] {
+  color: #e4d8df !important;
 }
 
 .glass-depth-card:hover {

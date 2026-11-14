@@ -1800,16 +1800,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-4 pb-6">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
-              </span>
-              <span className="text-xs font-mono text-zinc-300/90">
-                DAS 3D Co-Pilot Watching Live Across Every Slide
-              </span>
-            </div>
+          <div className="flex items-center justify-end pb-6">
             <button
               type="button"
               onClick={() => {
@@ -1833,6 +1824,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           {activeTab === "overview" && (
             <motion.div
               key="overview"
+              data-slide-theme="dashboard-black-plum"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -1841,7 +1833,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             >
 
               {isProfilePartiallyIncomplete && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#161926] bg-[#11131c] p-5 backdrop-blur-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#34222E] bg-[#060608] p-5 backdrop-blur-md shadow-[0_0_24px_rgba(52,34,46,0.22)]">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
                       <Sparkles className="h-5 w-5" />
@@ -2250,6 +2242,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           {activeTab === "resume" && (
             <motion.div
               key="resume"
+              data-slide-theme="pure-black"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -2286,6 +2279,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           {activeTab === "projects" && (
             <motion.div
               key="projects"
+              data-slide-theme="pure-black"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -2312,6 +2306,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           {activeTab === "defense" && (
             <motion.div
               key="defense"
+              data-slide-theme="pure-black"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -2380,7 +2375,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 `Explain the '${tabTitle}' tab and what actions I should take here to improve my placement readiness.`
               );
             }}
-            className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full border border-white/20 bg-[#11131c]/95 px-4 py-2.5 text-xs font-semibold text-white shadow-xl shadow-white/10 backdrop-blur-xl transition-all hover:scale-105 hover:border-white/40 hover:text-white hover:shadow-white/20 active:scale-95 cursor-pointer"
+            className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full border border-white/20 bg-[#060608]/95 px-4 py-2.5 text-xs font-semibold text-white shadow-xl shadow-black/60 backdrop-blur-xl transition-all hover:scale-105 hover:border-white/40 hover:text-white active:scale-95 cursor-pointer"
             title="Ask AI Coach about this page"
           >
             <Bot className="h-4 w-4 text-white" />

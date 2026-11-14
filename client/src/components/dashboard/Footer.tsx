@@ -35,20 +35,20 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
   };
 
   return (
-    <footer className="mt-20 border-t border-white/[0.08] bg-[#0a0b10] text-[#94a3b8] transition-colors relative z-10">
+    <footer className="mt-20 border-t border-white/[0.08] bg-[#000000] text-[#94a3b8] transition-colors relative z-10">
       {/* Top Ambient Horizon Gradient */}
-      <div className="pointer-events-none absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#9f1239]/40 to-transparent" />
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#34222E] to-transparent" />
 
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Column 1: Brand & Positioning */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-[#11131c] to-[#1c2030] ring-1 ring-[#7c3aed]/40">
-                <GraduationCap className="h-5 w-5 text-[#7c3aed]" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#060608] ring-1 ring-[#34222E]">
+                <GraduationCap className="h-5 w-5 text-[#74F9FE]" />
               </div>
-              <span className="text-lg font-bold tracking-tight text-[#f8fafc] font-['Space_Grotesk']">
-                Pathfinder <span className="text-[#9f1239]">2.0</span>
+              <span className="text-lg font-bold tracking-tight text-[#ACE5F6] font-['Space_Grotesk']">
+                Pathfinder <span className="text-[#74F9FE]">2.0</span>
               </span>
             </div>
             <p className="text-xs leading-relaxed text-[#94a3b8]">
@@ -82,7 +82,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                   className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left flex items-center gap-1.5"
                 >
                   <span>AI Mock Interview Simulator</span>
-                  <span className="text-[9px] bg-[#7c3aed]/20 text-[#7c3aed] border border-[#7c3aed]/30 px-1 rounded">Live</span>
+                  <span className="text-[9px] bg-[#34222E]/60 text-[#f8fafc] border border-[#34222E] px-1 rounded">Live</span>
                 </button>
               </li>
               <li>
@@ -193,7 +193,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                 className="flex items-center gap-2.5 text-[#94a3b8] hover:text-[#f8fafc] transition-colors group cursor-pointer"
                 title="Send an email to Pathfinder Support"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#9f1239]/15 text-[#9f1239] group-hover:bg-[#9f1239]/30 transition-colors">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#34222E]/50 text-[#e4d8df] group-hover:bg-[#34222E]/80 transition-colors">
                   <Mail className="h-3.5 w-3.5" />
                 </div>
                 <span>support@pathfinder-ai.io</span>
@@ -205,7 +205,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                 className="flex items-center gap-2.5 text-[#94a3b8] hover:text-[#f8fafc] transition-colors group cursor-pointer"
                 title="Call Placement Office Helpline"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#7c3aed]/15 text-[#7c3aed] group-hover:bg-[#7c3aed]/30 transition-colors">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#34222E]/50 text-[#e4d8df] group-hover:bg-[#34222E]/80 transition-colors">
                   <Phone className="h-3.5 w-3.5" />
                 </div>
                 <span>+91 (800) 012-3456 (Placement Helpline)</span>
@@ -255,7 +255,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
             <button
               type="button"
               onClick={scrollToTop}
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#11131c] px-2.5 py-1 text-xs text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/5 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#060608] px-2.5 py-1 text-xs text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/5 transition-colors cursor-pointer"
               title="Back to top"
             >
               <ArrowUp className="h-3.5 w-3.5" />

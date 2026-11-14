@@ -13,10 +13,10 @@ interface SectionHeaderProps {
 }
 
 const MONOCHROME_HEADER_STYLE = {
-  badge: "border-[#ffffff]/30 bg-[#ffffff]/10 text-[#ffffff] shadow-sm",
-  icon: "bg-[#11131c] text-[#ffffff] border-[rgba(255,255,255,0.08)]",
+  badge: "border-white/15 bg-[#060608] text-[#f8fafc] shadow-sm",
+  icon: "bg-[#060608] text-[#f8fafc] border-white/15",
   titleTint: "text-[#f8fafc]",
-  line: "from-[#ffffff]/30 via-[rgba(255,255,255,0.08)] to-transparent",
+  line: "from-white/15 via-[#060608] to-transparent",
 };
 
 const ACCENT_STYLES = {
@@ -66,7 +66,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
         {(action || helperLabel || onAskCoach) && (
           <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
             {helperLabel && (
-              <span className="text-[11px] font-medium text-[#94a3b8] bg-[#11131c] border border-[rgba(255,255,255,0.08)] px-2.5 py-1 rounded-lg">
+              <span className="text-[11px] font-medium text-[#94a3b8] bg-[#060608] border border-white/15 px-2.5 py-1 rounded-lg">
                 ℹ️ {helperLabel}
               </span>
             )}
@@ -74,7 +74,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
               <button
                 type="button"
                 onClick={() => onAskCoach(`Can you explain the '${title}' section? What is this showing and what should I do here?`)}
-                className="flex items-center gap-1.5 rounded-lg border border-[#ffffff]/30 bg-[#ffffff]/10 px-2.5 py-1 text-[11px] font-semibold text-[#f8fafc] hover:bg-[#ffffff]/20 hover:border-[#ffffff] transition-all active:scale-95 shadow-sm cursor-pointer"
+                className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-[#060608] px-2.5 py-1 text-[11px] font-semibold text-[#f8fafc] hover:bg-[#000000] hover:border-white/30 transition-all active:scale-95 shadow-sm cursor-pointer"
               >
                 <Sparkles className="h-3 w-3 text-[#ffffff]" />
                 <span>Ask Coach about this</span>

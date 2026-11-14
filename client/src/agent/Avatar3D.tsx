@@ -48,7 +48,7 @@ export const Avatar3D: React.FC<Avatar3DProps> = React.memo(({
   return (
     <div
       id="das-singleton-avatar"
-      className={`fixed inset-0 pointer-events-none z-[1] flex items-center justify-center opacity-90 select-none ${className}`}
+      className={`fixed inset-0 pointer-events-none z-[1] flex items-center justify-center opacity-100 select-none ${className}`}
       style={style}
     >
       <Canvas

@@ -95,17 +95,37 @@ const VOICE_AGENT_THEME = {
   indicator: "from-transparent via-[#D4B996] to-transparent"
 };
 
+const DASHBOARD_BLACK_PLUM_THEME = {
+  activeBg: "bg-[#060608]",
+  text: "text-[#f8fafc]",
+  icon: "text-[#f8fafc]",
+  border: "border-[#34222E]",
+  glow: "shadow-[0_0_16px_rgba(52,34,46,0.6)]",
+  badge: "bg-[#34222E] text-[#f8fafc] border-[#34222E]",
+  indicator: "from-[#000000] via-[#34222E] to-[#000000]"
+};
+
+const PURE_BLACK_THEME = {
+  activeBg: "bg-[#060608]",
+  text: "text-[#f8fafc]",
+  icon: "text-[#f8fafc]",
+  border: "border-white/15",
+  glow: "shadow-[0_0_16px_rgba(0,0,0,0.9)]",
+  badge: "bg-[#000000] text-[#f8fafc] border-white/15",
+  indicator: "from-[#000000] via-[#060608] to-[#000000]"
+};
+
 const TAB_THEMES: Record<TabId, typeof WINE_THEME> = {
-  overview: WINE_THEME,
+  overview: DASHBOARD_BLACK_PLUM_THEME,
   interview: VIOLET_THEME,
   action: WINE_THEME,
   skills: WINE_THEME,
   coach: VOICE_AGENT_THEME,
-  projects: VIOLET_THEME,
+  projects: PURE_BLACK_THEME,
   analytics: WINE_THEME,
-  resume: MONO_THEME,
+  resume: PURE_BLACK_THEME,
   branches: VIOLET_THEME,
-  defense: VIOLET_THEME,
+  defense: PURE_BLACK_THEME,
   profile: MONO_THEME,
   roles: VIOLET_THEME,
   missions: WINE_THEME
@@ -127,12 +147,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#0a0b10]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.85)]">
+    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#000000]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.9)]">
       {/* Subtle Dual Horizon Accent */}
-      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#7c3aed]/30 to-transparent" />
+      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#74F9FE]/30 to-transparent" />
 
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        {/* Photo 3 - Item 17: Clickable Logo */}
+        {/* Clickable Website Brand Logo — Styled strictly in #ACE5F6 & #74F9FE */}
         <button
           type="button"
           onClick={() => {
@@ -142,29 +162,29 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           className="flex items-center gap-3 text-left cursor-pointer group focus:outline-none"
           title="Return to Dashboard Overview"
         >
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#11131c] via-[#161926] to-[#1c2030] shadow-md ring-1 ring-[#7c3aed]/40 transition-transform group-hover:scale-105">
-            <GraduationCap className="h-5 w-5 text-[#7c3aed] transition-colors group-hover:text-white" />
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#060608] shadow-md ring-1 ring-[#74F9FE]/45 transition-transform group-hover:scale-105">
+            <GraduationCap className="h-5 w-5 text-[#74F9FE] transition-colors group-hover:text-[#ACE5F6]" />
             <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#9f1239] opacity-75"></span>
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#9f1239] shadow-[0_0_8px_rgba(159,18,57,0.9)]"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#74F9FE] opacity-75"></span>
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#ACE5F6] shadow-[0_0_8px_#74F9FE]"></span>
             </span>
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold tracking-tight text-[#f8fafc] drop-shadow-sm font-['Space_Grotesk'] group-hover:text-white">
-                Pathfinder <span className="text-[#9f1239]">2.0</span>
+              <span id="brand-site-title" className="text-lg font-bold tracking-tight text-[#ACE5F6] drop-shadow-sm font-['Space_Grotesk'] group-hover:text-[#74F9FE]">
+                Pathfinder <span className="text-[#74F9FE]">2.0</span>
               </span>
-              <span className="rounded-md border border-[#7c3aed]/40 bg-[#7c3aed]/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#7c3aed] uppercase shadow-sm">
+              <span className="rounded-md border border-[#74F9FE]/50 bg-[#060608] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#74F9FE] uppercase shadow-sm">
                 AI
               </span>
               {userRole === "admin" && (
-                <span className="rounded-md border border-white/10 bg-[#11131c] px-2 py-0.5 text-[10px] font-medium text-[#f8fafc] uppercase tracking-wider">
+                <span className="rounded-md border border-[#ACE5F6]/30 bg-[#060608] px-2 py-0.5 text-[10px] font-medium text-[#ACE5F6] uppercase tracking-wider">
                   Admin Portal
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#94a3b8]">Campus Placement & Engineering Intelligence</p>
+            <p className="text-xs text-[#ACE5F6]/85">Campus Placement & Engineering Intelligence</p>
           </div>
         </button>
 
@@ -234,7 +254,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       </div>
 
       {/* Navigation Tabs Bar (Desktop and Horizontal Scroll) */}
-      <div className="border-t border-[rgba(255,255,255,0.08)] bg-[#0a0b10]/90 px-4 sm:px-6">
+      <div className="border-t border-[rgba(255,255,255,0.08)] bg-[#000000]/95 px-4 sm:px-6">
         <div className="mx-auto flex max-w-7xl flex-nowrap items-center gap-2 overflow-x-auto py-2.5 scrollbar-none">
           {TABS.map((tab) => {
             const Icon = tab.icon;

@@ -611,6 +611,20 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
         async def receive_from_gemini():
             nonlocal audio_turn_open, turn_id, gemini_turn_active, audio_end_mono, pending_response_until_mono, output_tx_in_turn
+            pcm_coalesce_buf = bytearray()
+            pcm_coalesce_turn_id = 0
+
+            async def flush_coalesced_pcm():
+                if not pcm_coalesce_buf:
+                    return
+                # Ensure even byte count (16-bit PCM samples)
+                even_len = len(pcm_coalesce_buf) - (len(pcm_coalesce_buf) % 2)
+                if even_len > 0:
+                    pkt = format_audio_packet(bytes(pcm_coalesce_buf[:even_len]))
+                    pkt["turn_id"] = pcm_coalesce_turn_id
+                    await websocket.send_json(pkt)
+                del pcm_coalesce_buf[:even_len]
+
             try:
                 while True:
                     if websocket.client_state == WebSocketState.DISCONNECTED:
@@ -638,6 +652,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             response.server_content
                             and getattr(response.server_content, "interrupted", False)
                         ):
+                            pcm_coalesce_buf.clear()
                             audio_turn_open = False
                             gemini_turn_active = False
                             audio_end_mono = 0.0
@@ -690,9 +705,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                         raw_pcm = part.inline_data.data
                                         pcm_dur = len(raw_pcm) / 48000.0
                                         audio_end_mono = max(time.monotonic(), audio_end_mono) + pcm_dur
-                                        pkt = format_audio_packet(raw_pcm)
-                                        pkt["turn_id"] = turn_id
-                                        await websocket.send_json(pkt)
+                                        pcm_coalesce_turn_id = turn_id
+                                        pcm_coalesce_buf.extend(raw_pcm)
+                                        # Coalesce tiny sub-40ms fragments (e.g. 2-byte click chunks) into crisp frames
+                                        if len(pcm_coalesce_buf) >= 2400:
+                                            await flush_coalesced_pcm()
                                     if part.text and not output_tx_in_turn and not getattr(part, "thought", False):
                                         if not gemini_turn_active:
                                             turn_id += 1
@@ -705,6 +722,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                         })
 
                             if getattr(sc, "turn_complete", False):
+                                await flush_coalesced_pcm()
                                 audio_turn_open = False
                                 gemini_turn_active = False
                                 pending_response_until_mono = 0.0

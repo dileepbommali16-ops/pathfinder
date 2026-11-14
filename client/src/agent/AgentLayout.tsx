@@ -966,12 +966,12 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
             minimizedCamPreview ? "w-40" : "w-44 sm:w-52"
           }`}
           style={{
-            backgroundColor: "rgba(11, 17, 32, 0.96)",
-            borderColor: "#7c3aed",
-            boxShadow: "0 16px 40px rgba(0, 0, 0, 0.75)",
+            backgroundColor: "#000000",
+            borderColor: "#2b2024",
+            boxShadow: "0 16px 40px rgba(0, 0, 0, 0.85)",
           }}
         >
-          <div className={`relative w-full bg-black ${minimizedCamPreview ? "h-8" : "aspect-video"}`}>
+          <div className={`relative w-full bg-[#000000] ${minimizedCamPreview ? "h-8" : "aspect-video"}`}>
             <video
               ref={cameraPreviewRef}
               muted
@@ -981,8 +981,11 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
                 minimizedCamPreview ? "opacity-25" : ""
               }`}
             />
-            <div className="absolute top-1.5 left-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/70 text-[10px] font-bold text-violet-300 border border-violet-500/40">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div
+              className="absolute top-1.5 left-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-[#f4eef0] border"
+              style={{ backgroundColor: "#000000", borderColor: "#2b2024" }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[#d8c4cb] animate-pulse" />
               <span>24/7 VISION</span>
             </div>
             <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
@@ -1032,13 +1035,14 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
         </div>
       )}
 
-      {/* Bottom Center DAS HUD (Exact Original Layout & Placement Preserved) */}
+      {/* Bottom Center DAS HUD — Styled strictly in #2b2024 and #000000 */}
       <div
+        id="das-bottom-hud"
         className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-3xl rounded-2xl p-3 shadow-2xl flex flex-col gap-2 border"
         style={{
-          backgroundColor: "rgba(15, 23, 42, 0.96)",
-          borderColor: "#334155",
-          boxShadow: "0 20px 50px rgba(0, 0, 0, 0.7)"
+          backgroundColor: "#000000",
+          borderColor: "#2b2024",
+          boxShadow: "0 20px 50px rgba(0, 0, 0, 0.92)"
         }}
       >
         {/* Top Status & Role Select Bar */}
@@ -1049,10 +1053,10 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
                 connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
               }`}
             />
-            <span className="font-bold tracking-wider text-slate-200">DAS AI</span>
+            <span className="font-bold tracking-wider text-white">DAS AI</span>
             <span
-              className="px-2 py-0.5 rounded text-[10px] font-semibold border"
-              style={{ backgroundColor: "#0F172A", borderColor: "#334155", color: "#38bdf8" }}
+              className="px-2 py-0.5 rounded text-[10px] font-semibold border text-white"
+              style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
             >
               {connected ? "ONLINE" : "CONNECTING..."}
             </span>
@@ -1068,11 +1072,10 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
                   role === "boss" ? "sir" : role === "sir" ? "madam" : "boss";
                 handleRoleToggle(nextRole);
               }}
-              className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold transition cursor-pointer border shadow-sm hover:brightness-110 active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold transition cursor-pointer border shadow-sm hover:brightness-110 active:scale-95 text-white"
               style={{
-                backgroundColor: "#0F172A",
-                borderColor: role === "boss" ? "#38bdf8" : "#334155",
-                color: role === "boss" ? "#38bdf8" : "#94a3b8",
+                backgroundColor: "#2b2024",
+                borderColor: "#2b2024",
               }}
               title="Click to switch identity mode: Boss Mode / Sir Mode / Madam Mode"
             >
@@ -1083,7 +1086,7 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
                   ? "🎩 Sir Mode"
                   : "🌸 Madam Mode"}
               </span>
-              <span className="text-[10px] text-slate-500">⇄</span>
+              <span className="text-[10px] text-zinc-400">⇄</span>
             </button>
           </div>
         </div>
@@ -1092,7 +1095,7 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
         {userTranscript && (
           <div
             className="text-xs text-emerald-400 rounded-xl px-3 py-1.5 max-h-16 overflow-y-auto whitespace-pre-wrap leading-relaxed border"
-            style={{ backgroundColor: "#0F172A", borderColor: "#334155" }}
+            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           >
             🎤 You: {userTranscript}
           </div>
@@ -1100,8 +1103,8 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
 
         {/* Agent Spoken Response Transcript */}
         <div
-          className="text-sm text-slate-200 rounded-xl px-3 py-2 max-h-24 overflow-y-auto whitespace-pre-wrap leading-relaxed border"
-          style={{ backgroundColor: "#0F172A", borderColor: "#334155" }}
+          className="text-sm text-zinc-100 rounded-xl px-3 py-2 max-h-24 overflow-y-auto whitespace-pre-wrap leading-relaxed border"
+          style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
         >
           🔊 DAS: {transcript}
         </div>
@@ -1110,19 +1113,19 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
         {attachedFile && (
           <div
             className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
-            style={{ backgroundColor: "#0B1120", borderColor: "#334155" }}
+            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           >
             <div className="flex items-center gap-2 truncate">
               <span>{attachedType === "image" ? "🖼️" : attachedType === "video" ? "🎬" : "📄"}</span>
-              <span className="font-semibold text-cyan-300 truncate max-w-xs">{attachedFile.name}</span>
-              <span className="text-[10px] text-slate-400">({(attachedFile.size / 1024).toFixed(0)} KB)</span>
+              <span className="font-semibold text-white truncate max-w-xs">{attachedFile.name}</span>
+              <span className="text-[10px] text-zinc-400">({(attachedFile.size / 1024).toFixed(0)} KB)</span>
             </div>
             <div className="flex items-center gap-2">
               {attachedType === "resume" && (
                 <button
                   type="button"
                   onClick={() => setShowResumeIntelligence(true)}
-                  className="px-2 py-0.5 bg-[#334155] hover:bg-[#475569] text-white rounded text-[10px] font-bold"
+                  className="px-2 py-0.5 bg-[#000000] hover:bg-[#2b2024] text-white rounded text-[10px] font-bold border border-[#2b2024]"
                 >
                   View ATS Review
                 </button>
@@ -1130,7 +1133,7 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[11px] text-slate-400 hover:text-white"
+                className="text-[11px] text-zinc-300 hover:text-white"
                 title="Change File"
               >
                 ✏️ Change
@@ -1147,27 +1150,27 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           </div>
         )}
 
-        {/* Live Microphone Signal & Warning Bar (Meter updates via DOM ref -> 0 React re-renders) */}
+        {/* Live Microphone Signal & Warning Bar */}
         {micActive && (
           <div
             className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
             style={{
-              backgroundColor: "#0B1120",
-              borderColor: micSilentWarning ? "#f59e0b" : "#10b981",
+              backgroundColor: "#2b2024",
+              borderColor: micSilentWarning ? "#f59e0b" : "#2b2024",
             }}
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="font-bold text-emerald-400 shrink-0">
                 {micSilentWarning ? "⚠️ NO MIC SIGNAL" : "🎙️ MIC LIVE"}
               </span>
-              <div className="w-24 h-2 rounded-full bg-slate-800 overflow-hidden shrink-0">
+              <div className="w-24 h-2 rounded-full bg-[#000000] overflow-hidden shrink-0">
                 <div
                   ref={micBarRef}
-                  className="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-[width] duration-75"
+                  className="h-full bg-emerald-400 transition-[width] duration-75"
                   style={{ width: "4%" }}
                 />
               </div>
-              <span className="text-[10px] text-slate-400 truncate">
+              <span className="text-[10px] text-zinc-300 truncate">
                 {micSilentWarning
                   ? micHealthHint || "Voice faint or muted — raise volume or check earphones/buds (auto-tuning...)"
                   : activeMicLabel || "Capturing 16kHz PCM"}
@@ -1187,12 +1190,12 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
         {cameraActive && (
           <div
             className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
-            style={{ backgroundColor: "#0B1120", borderColor: "#7c3aed" }}
+            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           >
             <div className="flex items-center gap-2 truncate">
-              <span className="h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
-              <span className="font-bold text-violet-300">● 24/7 LIVE CAMERA</span>
-              <span className="text-[10px] text-slate-400 truncate">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-bold text-white">● 24/7 LIVE CAMERA</span>
+              <span className="text-[10px] text-zinc-300 truncate">
                 (Auto-monitoring face, outfit & multi-objects continuously)
               </span>
             </div>
@@ -1212,11 +1215,11 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           <button
             type="button"
             onClick={toggleMic}
-            className={`px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer flex items-center gap-2 border ${
-              micActive
-                ? "bg-rose-950/80 text-rose-300 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.35)]"
-                : "bg-[#334155] hover:bg-[#475569] text-white border-[#334155]"
-            }`}
+            className={`px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer flex items-center gap-2 border text-white hover:brightness-110`}
+            style={{
+              backgroundColor: micActive ? "#000000" : "#2b2024",
+              borderColor: "#2b2024",
+            }}
             title={micActive ? "Click to Mute Microphone" : "Click to Speak (Supports all Headphones, Earphones & Buds)"}
           >
             {micActive ? (
@@ -1236,11 +1239,11 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           <button
             type="button"
             onClick={toggleCamera}
-            className={`px-3 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border ${
-              cameraActive
-                ? "bg-violet-600 text-white border-violet-400 shadow-[0_0_12px_rgba(124,58,237,0.45)]"
-                : "bg-[#0F172A] hover:bg-[#334155] text-slate-300 border-[#334155]"
-            }`}
+            className="px-3 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110"
+            style={{
+              backgroundColor: cameraActive ? "#2b2024" : "#000000",
+              borderColor: "#2b2024",
+            }}
             title="Toggle Camera (Live Video Streaming to DAS)"
           >
             {cameraActive ? "📹 Cam On" : "📷 Cam"}
@@ -1250,7 +1253,8 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border bg-[#0F172A] hover:bg-[#334155] text-slate-300 border-[#334155]"
+            className="px-3 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110"
+            style={{ backgroundColor: "#000000", borderColor: "#2b2024" }}
             title="Upload Photo, Video, or Resume for Instant Review"
           >
             📎
@@ -1260,7 +1264,8 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           <button
             type="button"
             onClick={() => setShowResumeIntelligence(true)}
-            className="px-2.5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border bg-[#0F172A] hover:bg-[#334155] text-cyan-300 border-[#334155]"
+            className="px-2.5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110"
+            style={{ backgroundColor: "#000000", borderColor: "#2b2024" }}
             title="Open ATS Resume Intelligence & 3 FAANG Templates"
           >
             📄
@@ -1277,8 +1282,8 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
               setInputText(e.target.value);
             }}
             placeholder="Ask DAS: 'Who is your boss?', 'Write QuickSort in C', 'Look at my hands'..."
-            className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#38bdf8] border"
-            style={{ backgroundColor: "#0F172A", borderColor: "#334155" }}
+            className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-400 focus:outline-none border"
+            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           />
 
           {/* Dedicated Edit Option Beside Send */}
@@ -1294,24 +1299,23 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
               inputEl?.focus();
               inputEl?.select();
             }}
-            className="px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow flex items-center gap-1 hover:bg-[#334155]"
+            className="px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow flex items-center gap-1 hover:brightness-110 text-white"
             style={{
-              backgroundColor: "#1E293B",
-              borderColor: "#334155",
-              color: "#38bdf8",
+              backgroundColor: "#000000",
+              borderColor: "#2b2024",
             }}
             title="Edit / Recall Previous Query"
           >
             ✏️ Edit
           </button>
 
-          {/* Send Button (Clean Slate Styling, NO Rocket Emoji) */}
+          {/* Send Button */}
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition cursor-pointer border shadow hover:bg-[#475569]"
+            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition cursor-pointer border shadow hover:brightness-110"
             style={{
-              backgroundColor: "#334155",
-              borderColor: "#475569"
+              backgroundColor: "#2b2024",
+              borderColor: "#2b2024",
             }}
           >
             Send
