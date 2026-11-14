@@ -7,9 +7,9 @@ export interface HologramUniforms {
 }
 
 /**
- * Attaches world-space position & anatomical bottom-edge fade attributes cleanly onto
- * MeshPhongMaterial while preserving Three.js r186 morph targets (#include <morphtarget_vertex>)
- * so facecap.glb's 52 ARKit expressions (jawOpen, eyeBlink_L/R, mouthFunnel) animate 3D geometry.
+ * High-resolution cyan horizontal-scanline hologram shader matched to the Sketchfab reference bust
+ * while preserving Three.js r186 morph targets (#include <morphtarget_vertex>) for 3D lip-sync and blinks.
+ * Uses true linear-space RGB values so SRGB output matches #5BC0DE / #00F0FF without pastel washout.
  */
 export function createHologramScanMaterial(
   sharedUniforms: HologramUniforms,
@@ -19,18 +19,13 @@ export function createHologramScanMaterial(
   const isShoulders = Boolean(options?.isShoulders);
 
   const mat = new THREE.MeshPhongMaterial({
-    color: new THREE.Color("#00E8FF"),
-    emissive: new THREE.Color("#004A66"),
+    color: new THREE.Color("#5BC0DE"),
+    emissive: new THREE.Color("#005577"),
     transparent: true,
-    depthWrite: !isShoulders,
+    depthWrite: true,
     side: THREE.FrontSide,
     toneMapped: false,
   });
-
-  if (isShoulders) {
-    // Allow subtle blend inside neck junction while still rendering clean front silhouette
-    mat.depthWrite = true;
-  }
 
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = sharedUniforms.uTime;
@@ -65,32 +60,39 @@ export function createHologramScanMaterial(
         vec3 holoN = normalize(normal);
         vec3 holoV = normalize(vViewPosition);
         float ndv = clamp(abs(dot(holoN, holoV)), 0.0, 1.0);
-        float fresnel = pow(1.0 - ndv, 1.75);
+        float fresnel = pow(1.0 - ndv, 1.7);
 
-        // Soft sculpted frontal + subtle top-rim light so nose, brows, cheekbones, lips & collarbones read crisply
-        float keySculpt = clamp(dot(holoN, normalize(vec3(0.06, 0.34, 0.94))), 0.0, 1.0);
-        float rimSculpt = clamp(1.0 - dot(holoN, normalize(vec3(0.0, 0.15, 0.99))), 0.0, 1.0);
+        // Soft 3D sculptural shading so brows, nose bridge, nostrils, philtrum, sculpted lips, cheekbones & clavicles read sharply
+        float keySculpt = clamp(dot(holoN, normalize(vec3(0.05, 0.36, 0.93))), 0.0, 1.0);
+        float fillSculpt = clamp(dot(holoN, normalize(vec3(-0.35, -0.10, 0.85))), 0.0, 1.0);
+        float rimSculpt = pow(1.0 - ndv, 2.6);
 
-        // Tight horizontal cyan hologram scanlines + delicate micro-dot grid matching the reference bust
-        float rawBand = 0.5 + 0.5 * sin(vHoloWorldPos.y * 315.0 - uTime * 2.1);
-        float scanLine = smoothstep(0.20, 0.86, rawBand);
-        float microGrid = 0.86 + 0.14 * sin(vHoloWorldPos.x * 410.0 + vHoloWorldPos.z * 160.0);
-        float sweepPulse = pow(0.5 + 0.5 * sin(vHoloWorldPos.y * 4.6 + uTime * 2.0), 5.0);
+        // Ultra-fine horizontal holographic light slicing (~140-170 crisp slices across the bust) + delicate vertical micro-matrix
+        float rawBand = 0.5 + 0.5 * sin(vHoloWorldPos.y * 545.0 - uTime * 2.2);
+        float scanLine = smoothstep(0.16, 0.84, rawBand);
+        float microGrid = 0.88 + 0.12 * sin(vHoloWorldPos.x * 520.0 + vHoloWorldPos.z * 180.0);
+        float sweepPulse = pow(0.5 + 0.5 * sin(vHoloWorldPos.y * 4.8 + uTime * 1.9), 6.0);
 
-        vec3 troughCyan = vec3(0.002, 0.038, 0.058); // Dark trough blends seamlessly over #000000
-        vec3 midCyan    = vec3(0.035, 0.660, 0.840); // Deep luminous hologram cyan
-        vec3 brightCyan = vec3(0.290, 0.935, 1.000); // Electric cyan #4AEFFF / #5BC0DE crest
+        // True linear RGB palette calibrated for Three.js r186 SRGB output (#006D8F -> #5BC0DE -> #00F0FF)
+        vec3 troughCyan = vec3(0.002, 0.055, 0.095);
+        vec3 deepCyan   = vec3(0.004, 0.210, 0.375);
+        vec3 midCyan    = vec3(0.055, 0.540, 0.760);
+        vec3 crestCyan  = vec3(0.085, 0.840, 1.000);
 
-        float surfaceLum = clamp(keySculpt * 0.68 + fresnel * 0.72 + rimSculpt * 0.18 + sweepPulse * 0.22 + uVoice * 0.18, 0.08, 1.35);
-        vec3 cyanBase = mix(midCyan, brightCyan, clamp(keySculpt * 0.45 + fresnel * 0.55 + sweepPulse * 0.28, 0.0, 1.0));
-        vec3 col = mix(troughCyan, cyanBase * (0.95 + surfaceLum * 0.48), scanLine * microGrid);
-        col += brightCyan * fresnel * 0.36;
-        ${isTeeth ? "col *= 0.55;" : ""}
+        float shapeWeight = clamp(keySculpt * 0.62 + fillSculpt * 0.22 + fresnel * 0.55 + rimSculpt * 0.25, 0.0, 1.0);
+        float boost = clamp(0.92 + shapeWeight * 0.60 + sweepPulse * 0.22 + uVoice * 0.16, 0.75, 1.65);
+
+        vec3 cyanBody = mix(deepCyan, midCyan, clamp(keySculpt * 0.72 + fillSculpt * 0.28, 0.0, 1.0));
+        cyanBody = mix(cyanBody, crestCyan, clamp(fresnel * 0.72 + sweepPulse * 0.30, 0.0, 1.0));
+
+        vec3 col = mix(troughCyan * (0.65 + 0.45 * keySculpt), cyanBody * boost, scanLine * microGrid);
+        col += crestCyan * fresnel * 0.24;
+        ${isTeeth ? "col *= 0.40;" : ""}
 
         ${
           isShoulders
-            ? "float bustEdge = smoothstep(0.0, 0.92, vBustFade);\ncol *= bustEdge;\ndiffuseColor.a = clamp(0.95 * bustEdge, 0.0, 1.0);"
-            : "diffuseColor.a = clamp(0.84 + scanLine * 0.14 + fresnel * 0.02, 0.82, 0.98);"
+            ? "float bustEdge = smoothstep(0.0, 0.90, vBustFade);\ncol *= bustEdge;\ndiffuseColor.a = clamp(0.96 * bustEdge, 0.0, 1.0);"
+            : "diffuseColor.a = clamp(0.86 + scanLine * 0.12 + fresnel * 0.02, 0.84, 0.98);"
         }
         outgoingLight = col;
         #include <opaque_fragment>`
@@ -102,7 +104,8 @@ export function createHologramScanMaterial(
 
 /**
  * Molten glowing crimson-ruby eyes (#F23456 + #A80139) applied strictly to facecap.glb's eyeLeft & eyeRight.
- * Centered via view-space normal dot so glowing iris/magma core always faces straight out cleanly inside blinking eyelids.
+ * Uses calibrated linear-space crimson RGB (low green/blue channels) so the eyes blaze rich ruby-red
+ * without washing out to pink/white, and naturally close behind blinking 3D eyelids.
  */
 export function createMoltenRedEyeMaterial(sharedUniforms: HologramUniforms): THREE.MeshPhongMaterial {
   const mat = new THREE.MeshPhongMaterial({
@@ -143,20 +146,23 @@ export function createMoltenRedEyeMaterial(sharedUniforms: HologramUniforms): TH
         vec3 eyeN = normalize(normal);
         vec3 eyeV = normalize(vViewPosition);
         float centerDot = clamp(dot(eyeN, eyeV), 0.0, 1.0);
-        float irisCore = pow(centerDot, 2.2);
-        float outerGlow = smoothstep(0.15, 0.95, centerDot);
+        float irisCore = pow(centerDot, 3.0);
+        float outerIris = smoothstep(0.12, 0.94, centerDot);
 
-        float swirl = sin(vEyeWorldPos.x * 95.0 + uTime * 3.8 + cos(vEyeWorldPos.y * 105.0 - uTime * 3.1))
-                    + cos(vEyeWorldPos.y * 90.0 - uTime * 3.2 + sin(vEyeWorldPos.x * 85.0 + uTime * 2.5));
-        float vein = 0.5 + 0.5 * sin(swirl * 1.4 + uTime * 2.4);
+        float swirl = sin(vEyeWorldPos.x * 110.0 + uTime * 4.2 + cos(vEyeWorldPos.y * 120.0 - uTime * 3.4))
+                    + cos(vEyeWorldPos.y * 105.0 - uTime * 3.6 + sin(vEyeWorldPos.x * 95.0 + uTime * 2.8));
+        float vein = 0.5 + 0.5 * sin(swirl * 1.5 + uTime * 2.6);
 
-        vec3 crimsonLava = vec3(0.949, 0.204, 0.337); // #F23456
-        vec3 rubyMagma   = vec3(0.659, 0.004, 0.224); // #A80139
-        vec3 flareCore   = vec3(1.000, 0.420, 0.520);
+        // True linear RGB equivalents of #A80139 and #F23456 -> blazing ruby/crimson red with zero pastel blowout
+        vec3 deepRuby    = vec3(0.220, 0.000, 0.020);
+        vec3 rubyMagma   = vec3(0.400, 0.000, 0.041); // #A80139 linear
+        vec3 crimsonLava = vec3(0.892, 0.034, 0.093); // #F23456 linear
+        vec3 hotCrimson  = vec3(1.280, 0.045, 0.115); // Pure blazing neon crimson core
 
-        vec3 eyeCol = mix(rubyMagma, crimsonLava, clamp(vein * 0.55 + outerGlow * 0.65, 0.0, 1.0));
-        eyeCol = mix(eyeCol, flareCore, irisCore * 0.72);
-        eyeCol *= (1.42 + irisCore * 0.85 + vein * 0.28 + uVoice * 0.42);
+        vec3 eyeCol = mix(deepRuby, rubyMagma, clamp(outerIris * 0.75 + vein * 0.35, 0.0, 1.0));
+        eyeCol = mix(eyeCol, crimsonLava, clamp(outerIris * (0.45 + 0.55 * vein), 0.0, 1.0));
+        eyeCol = mix(eyeCol, hotCrimson, irisCore * (0.70 + uVoice * 0.25));
+        eyeCol *= (1.05 + irisCore * 0.35 + uVoice * 0.22);
 
         outgoingLight = eyeCol;
         diffuseColor.a = 1.0;
@@ -170,61 +176,73 @@ export function createMoltenRedEyeMaterial(sharedUniforms: HologramUniforms): TH
 const DEFAULT_BUST_POS: [number, number, number] = [0, 0, 0];
 
 /**
- * Anatomically sculpted holographic neck + collarbone + upper-shoulders bust matched seamlessly beneath facecap.glb
- * so the silhouette & horizontal cyan scanlines replicate the full holographic male bust over pure #000000.
+ * Anatomically fitted holographic neck, sternocleidomastoid muscles, collarbones, trapezius & curved shoulders bust.
+ * Upper rim tucks flush inside facecap.glb's jaw/submental throat (-0.24), mastoid/ears (-0.11), and occiput (+0.02)
+ * so there is zero air gap under the chin from any viewing/rotation angle.
  */
 export const HologramShouldersBust: React.FC<{
   sharedUniforms: HologramUniforms;
   position?: [number, number, number];
 }> = React.memo(({ sharedUniforms, position = DEFAULT_BUST_POS }) => {
   const { geometry, material } = useMemo(() => {
-    const vSteps = 34;
-    const uSteps = 56;
+    const vSteps = 44;
+    const uSteps = 64;
     const positions: number[] = [];
     const fades: number[] = [];
     const indices: number[] = [];
 
     for (let vi = 0; vi <= vSteps; vi++) {
-      const v = vi / vSteps; // 0 = inside neck top junction, 1 = bottom shoulder cut
+      const v = vi / vSteps; // 0 = tucked inside jaw/occiput, 1 = soft faded lower chest/deltoid cut
 
-      // Neck rises slightly deeper in back than front, sloping out cleanly into trapezius + deltoid shoulders
-      const yBase = -0.34 - v * 0.49;
+      // Neck-to-shoulder flare: steady muscular neck (0..0.38), curved trapezius & convex deltoid shoulders (0.38..1.0)
+      const smoothFlare = Math.pow(Math.sin(v * Math.PI * 0.5), 1.85);
+      const midNeck = THREE.MathUtils.smoothstep(v, 0.0, 0.35);
 
-      // Neck radius (~0.245) flares along S-curve into shoulders (~0.84 width, ~0.34 chest depth)
-      const flare = Math.pow(v, 1.65);
-      const neckSmooth = Math.sin(Math.min(1, v * 1.35) * Math.PI * 0.5);
-      const rx = 0.245 + 0.62 * flare;
-      const rz = 0.275 + 0.075 * flare - 0.03 * Math.sin(v * Math.PI);
-      const zCenter = -0.10 - 0.03 * neckSmooth;
+      // Radius grows from compact neck (0.245) to curved male shoulders (~0.98 wide)
+      const rx = 0.242 + 0.735 * smoothFlare + 0.015 * Math.sin(v * Math.PI);
+      const rz = 0.248 + 0.095 * smoothFlare - 0.025 * Math.sin(v * Math.PI * 0.8);
+      const zCenter = -0.075 - 0.035 * midNeck;
 
-      // Graceful curved bottom edge fade (matches Sketchfab bust cutout fade at chest/deltoid base)
-      const bottomAlpha = 1.0 - THREE.MathUtils.smoothstep(v, 0.72, 1.0);
+      // Soft bottom bust fade cleanly above UI overlay
+      const bottomAlpha = 1.0 - THREE.MathUtils.smoothstep(v, 0.64, 1.0);
 
       for (let ui = 0; ui <= uSteps; ui++) {
         const u = -Math.PI + (ui / uSteps) * Math.PI * 2;
         const sinU = Math.sin(u);
         const cosU = Math.cos(u);
 
-        let x = rx * sinU;
-        let z = rz * cosU + zCenter;
-        let y = yBase;
-
-        // Lateral shoulder slope drops subtly outward toward deltoids
         const lateral = Math.abs(sinU);
-        y -= 0.08 * Math.pow(lateral, 2.0) * flare;
+        const backWeight = 0.5 - 0.5 * cosU; // 0 at front throat, 1 at occiput nape
 
-        // Subtle anatomical clavicle & sternal notch contours in front
+        // Unified C1-continuous height curve: front throat tucks behind chin (-0.23), back nape behind occiput (+0.01),
+        // smoothly converging into level collarbone (-0.53) and fading lower deltoids (-0.95) with zero seams.
+        const topAnchorY = -0.23 + 0.24 * backWeight;
+        const targetSlopeY = -0.23 - v * 0.72;
+        const neckBlend = THREE.MathUtils.smoothstep(v, 0.0, 0.42);
+        let y = THREE.MathUtils.lerp(topAnchorY - v * 0.32, targetSlopeY, neckBlend);
+
+        const x = rx * sinU;
+        let z = rz * cosU + zCenter;
+
+        // Convex shoulder slope rounding down outward toward deltoids
+        y -= 0.10 * Math.pow(lateral, 1.85) * smoothFlare;
+
+        // Subtle anatomical sternocleidomastoid tendons, collarbones, & sternal notch in front
         if (cosU > 0) {
-          const clavicleBand = Math.exp(-Math.pow((v - 0.62) / 0.14, 2));
-          z += clavicleBand * 0.032 * Math.sin(lateral * Math.PI * 0.85);
-          const sternalPit = Math.exp(-Math.pow((v - 0.56) / 0.12, 2)) * Math.exp(-Math.pow(u / 0.28, 2));
-          z -= sternalPit * 0.035;
-          // Slightly curved V-contour at lower chest cutout
-          y -= 0.05 * Math.pow(Math.max(0, cosU), 1.5) * Math.pow(v, 1.5);
+          const neckBand = (1.0 - THREE.MathUtils.smoothstep(v, 0.35, 0.62)) * Math.exp(-Math.pow((lateral - 0.38) / 0.24, 2));
+          z += neckBand * 0.016;
+
+          const clavicleBand = Math.exp(-Math.pow((v - 0.56) / 0.13, 2));
+          z += clavicleBand * 0.032 * Math.sin(lateral * Math.PI * 0.88);
+
+          const sternalPit = Math.exp(-Math.pow((v - 0.50) / 0.11, 2)) * Math.exp(-Math.pow(u / 0.26, 2));
+          z -= sternalPit * 0.034;
+
+          y -= 0.045 * Math.pow(Math.max(0, cosU), 1.4) * Math.pow(v, 1.4);
         }
 
-        // Taper back edge softly upward
-        const sideFade = 1.0 - 0.35 * Math.pow(Math.max(0, -cosU), 2.0) * flare;
+        // Gentle back-of-shoulder vignette fade so front collar/shoulders dominate
+        const sideFade = 1.0 - 0.32 * Math.pow(Math.max(0, -cosU), 2.0) * smoothFlare;
 
         positions.push(x, y, z);
         fades.push(bottomAlpha * sideFade);
