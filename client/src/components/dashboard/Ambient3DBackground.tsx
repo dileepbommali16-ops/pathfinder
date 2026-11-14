@@ -6,27 +6,18 @@ interface Ambient3DBackgroundProps {
 }
 
 /**
- * Clean Deep Dark Graphite Theme Fallback
- * On Dashboard ("overview" tab), the 3D Face Agent layer is the live background.
- * Other pages cleanly fall back to this quiet theme background (var(--bg-0) / #070913).
+ * Subtle Translucent 3D Backdrop Filter
+ * Never covers the singleton 3D Face Agent (#das-singleton-avatar at z-[1]),
+ * keeping DAS visible calmly behind EVERY dashboard slide and modal.
  */
-export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ className = "", activeTab }) => {
-  if (activeTab === "overview") {
-    return null;
-  }
-
+export const Ambient3DBackground: React.FC<Ambient3DBackgroundProps> = ({ className = "" }) => {
   return (
     <div
-      className={`pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#070913] ${className}`}
+      className={`pointer-events-none fixed inset-0 z-0 overflow-hidden bg-transparent ${className}`}
       aria-hidden="true"
     >
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 18%, rgba(15, 23, 42, 0.42) 0%, rgba(8, 12, 24, 0.85) 55%, #070913 100%)",
-        }}
-      />
+      <div className="absolute -top-28 left-1/2 h-[380px] w-[580px] -translate-x-1/2 rounded-full bg-cyan-500/[0.045] blur-[110px]" />
+      <div className="absolute bottom-0 right-1/4 h-[260px] w-[420px] rounded-full bg-indigo-500/[0.04] blur-[110px]" />
     </div>
   );
 };

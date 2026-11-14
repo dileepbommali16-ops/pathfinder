@@ -93,19 +93,22 @@ function setNativeValue(el: HTMLInputElement | HTMLTextAreaElement, value: strin
 }
 
 const TAB_ALIASES: Record<string, string[]> = {
-  overview: ["overview", "dashboard", "home"],
-  projects: ["projects", "project", "blueprints"],
-  defense: ["defense", "viva", "coach"],
-  interview: ["mock interview", "interview"],
-  resume: ["resume"],
-  roadmap: ["roadmap"],
+  overview: ["overview", "dashboard", "home", "readiness", "summary"],
+  skills: ["skills", "6-week roadmap", "roadmap", "sprint", "skill gap"],
+  projects: ["projects", "project", "blueprints", "project blueprints", "capstone"],
+  analytics: ["analytics", "cohort analytics", "cohort", "statistics", "benchmarks"],
+  resume: ["resume", "ats resume studio", "resume studio", "ats", "cv"],
+  branches: ["branches", "branches and courses", "department", "courses"],
+  defense: ["defense", "project defense", "viva", "coach"],
+  profile: ["profile", "settings", "candidate profile"],
+  interview: ["mock interview", "interview", "viva interview", "live interview"],
+  action: ["action", "action center", "ai action center", "command hub", "next actions"],
+  roles: ["roles", "target role", "company radar", "companies"],
+  missions: ["missions", "30-day mission", "mission tracker"],
+  roadmap: ["roadmap", "6-week roadmap", "sprint"],
   "skill-gap": ["skill gap", "skills"],
   "what-if": ["what-if", "what if", "simulator"],
-  branches: ["branches"],
-  roles: ["roles"],
-  missions: ["missions"],
-  profile: ["profile"],
-  cohort: ["cohort", "analytics"]
+  cohort: ["cohort", "analytics"],
 };
 
 function goToTab(tabRaw: string, navigate?: (path: string) => void) {
@@ -587,33 +590,81 @@ export function executeWebsiteControl(
   args: WebsiteControlArgs,
   navigateFn?: (route: string) => void
 ) {
-  // 1. Navigate to target page if route is provided
-  if (args.route) {
-    if (navigateFn) {
-      navigateFn(args.route);
+  const act = (args.action || "").toLowerCase().trim();
+  const rawRoute = (args.route || "").trim();
+  const routeNorm = rawRoute.toLowerCase().replace(/^\/+/, "");
+
+  // 0. Focus on DAS / Show Dashboard automation
+  if (act === "focus_das" || routeNorm === "focus_on_das" || routeNorm === "focus-on-das") {
+    window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: true } }));
+    return;
+  }
+  if (act === "show_dashboard" || routeNorm === "show_dashboard" || routeNorm === "show-dashboard") {
+    window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: false } }));
+    return;
+  }
+
+  // 1. Navigate to target slide / tab / route cleanly
+  if (rawRoute) {
+    const knownRouteToTab: Record<string, string> = {
+      dashboard: "overview",
+      overview: "overview",
+      blueprints: "projects",
+      "resume-studio": "resume",
+      "mock-interview": "interview",
+      skills: "skills",
+      projects: "projects",
+      analytics: "analytics",
+      resume: "resume",
+      branches: "branches",
+      defense: "defense",
+      profile: "profile",
+      interview: "interview",
+      action: "action",
+      roles: "roles",
+      missions: "missions",
+    };
+    const mappedTab = knownRouteToTab[routeNorm];
+    if (mappedTab) {
+      window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: false } }));
+      goToTab(mappedTab, navigateFn);
+    } else if (rawRoute.startsWith("/")) {
+      if (navigateFn) {
+        navigateFn(rawRoute);
+      } else {
+        window.history.pushState({}, "", rawRoute);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }
     } else {
-      window.history.pushState({}, "", args.route);
-      window.dispatchEvent(new PopStateEvent("popstate"));
+      window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: false } }));
+      goToTab(rawRoute, navigateFn);
     }
   }
 
-  // 2. Scroll to or click DOM element on the page
+  // 2. Scroll to or click DOM element on the page (supports CSS selector OR visible label)
   if (args.selector) {
     setTimeout(() => {
-      const el = document.querySelector(args.selector!) as HTMLElement | null;
+      let el: HTMLElement | null = null;
+      try {
+        el = document.querySelector(args.selector!) as HTMLElement | null;
+      } catch {
+        el = null;
+      }
+      if (!el) {
+        el = findByLabel(args.selector!);
+      }
       if (!el) return;
 
       el.scrollIntoView({ behavior: "smooth", block: "center" });
 
-      // Add temporary glowing cyan ring so user sees DAS controlling the card
       el.style.transition = "all 0.4s ease";
       el.style.boxShadow = "0 0 28px rgba(0, 240, 255, 0.75)";
       setTimeout(() => {
         el.style.boxShadow = "";
       }, 2500);
 
-      if (args.action === "click") {
-        el.click();
+      if (act === "click") {
+        realClick(el);
       }
     }, 350);
   }

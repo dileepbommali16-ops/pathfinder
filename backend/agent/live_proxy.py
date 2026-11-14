@@ -1,4 +1,5 @@
 import os
+import time
 import json
 import base64
 import asyncio
@@ -18,6 +19,25 @@ from backend.google_automation import trigger_google_workspace_sync
 router = APIRouter()
 
 def get_das_system_instruction(role: str) -> str:
+    extra_platform_rules = (
+        "\n\nPATHFINDER 2.0 FULL PLATFORM & FRIENDLY CO-PILOT RULES:\n"
+        "1. COMPLETE SLIDE KNOWLEDGE & AUTOMATION: You control ALL Pathfinder 2.0 slides cleanly via `control_website` / `navigate_ui` / `explain_current_screen`: "
+        "`overview` (Placement Readiness Score %, ML Benchmark, Company Radar, What-If Trajectory Simulator, Fraud Shield, Skill Gap), "
+        "`skills` (6-Week Sprint Roadmap & Skill Gap targets), `projects` (23 Flagship Portfolio Capstone Blueprints with architectures), "
+        "`analytics` (Cohort Placement Statistics across 972 records), `resume` (ATS Resume Studio & One-Page PDF export), "
+        "`branches` (Department & Core CS subject tracks), `defense` (Project Viva & STAR Defense Coach), "
+        "`profile` (CGPA, branch, backlogs, internships, GitHub/LeetCode settings), `interview` (Live 60s AI Mock Interview Simulator), "
+        "`action` (Readiness Command Center & Priority Next Best Actions), `roles` (Target Role Intelligence), `missions` (30-Day Placement Missions), "
+        "plus `focus_on_das` / `show_dashboard` (Focus mode toggle) and Compiler Studio (`write_and_compile_code`).\n"
+        "2. NATURAL CONVERSATIONAL EXPLANATIONS (NEVER VERBATIM ROBOTIC READING): "
+        "Visitors can be Boss (Bommali Dileep), his friends, classmates, girls, recruiters, or stakeholders at ANY time 24/7. "
+        "Whenever anyone asks 'what is this slide?', 'why do we use this?', or has doubts, inspect `[Live UI]` / call `explain_current_screen` if needed, "
+        "and explain what it does, why it helps them get placed, and what action to take next in warm, natural everyday speech — NEVER read UI card headings or bullet text word-for-word!\n"
+        "3. FRIENDLY AUDIO / EARPHONE / VOLUME COACHING: "
+        "If `[FRIENDLY AUDIO NOTICE]` arrives (or you notice weak/inaudible speech on earphones, Bluetooth buds, or headphones at low volume ~20% while watching on camera), "
+        "tell the user warmly like a trusted friend that their voice isn't reaching you clearly, and suggest turning up their volume or checking their earphone/buds connection and mic.\n"
+        "4. KEEP REPLIES COMPLETE & CONCISE: Deliver complete finished sentences smoothly without trailing off or rambling."
+    )
     role_lower = (role or "boss").lower().strip()
     if role_lower == "boss":
         identity_role = """You are speaking directly with your creator, master architect, and owner, Bommali Dileep.
@@ -106,7 +126,7 @@ CORE AUTONOMOUS CAPABILITIES:
 7. GMAIL & WORKSPACE AUTOMATION: When asked to send an email or schedule a calendar, call `run_google_automation`.
 8. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
    When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'close compiler', immediately reply warmly and loyally: "Okay Boss, returning to your dashboard." and call the `return_to_dashboard` tool to dismiss any open compiler drawers.
-9. Keep voice replies energetic, warm, and conversational without robotic filler."""
+9. Keep voice replies energetic, warm, and conversational without robotic filler.""" + extra_platform_rules
 
 # Tools matching AI Studio specs: Function Calling + Google Automation
 DAS_TOOLS = [
@@ -114,21 +134,21 @@ DAS_TOOLS = [
         function_declarations=[
             types.FunctionDeclaration(
                 name="control_website",
-                description="Control the PATHFINDER 2.0 website: switch pages/routes, scroll to dashboard cards, click buttons, or update simulator values.",
+                description="Control the PATHFINDER 2.0 website: switch pages/slides (overview, skills, projects, analytics, resume, branches, defense, profile, interview, action, roles, missions), toggle Focus on DAS mode, scroll to dashboard cards, click buttons, or update simulator values.",
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
                         "action": types.Schema(
                             type="STRING",
-                            description="One of: 'navigate', 'scroll', 'click', 'highlight'"
+                            description="One of: 'navigate', 'scroll', 'click', 'highlight', 'focus_das', 'show_dashboard'"
                         ),
                         "route": types.Schema(
                             type="STRING",
-                            description="Target route: '/', '/blueprints', '/resume-studio', or '/mock-interview'"
+                            description="Target slide/tab or route: 'overview', 'skills', 'projects', 'analytics', 'resume', 'branches', 'defense', 'profile', 'interview', 'action', 'roles', 'missions', 'focus_on_das', 'show_dashboard', '/blueprints', '/resume-studio', '/mock-interview'"
                         ),
                         "selector": types.Schema(
                             type="STRING",
-                            description="DOM selector ID: '#placement-radar', '#sprint-roadmap', '#skill-gap-matrix', '#what-if-simulator'"
+                            description="Optional DOM selector or button label to scroll/click: '#placement-radar', '#sprint-roadmap', '#skill-gap-matrix', '#what-if-simulator', 'Focus on DAS', 'Show Dashboard'"
                         ),
                     },
                     required=["action"],
@@ -250,6 +270,19 @@ DAS_TOOLS = [
                     },
                 ),
             ),
+            types.FunctionDeclaration(
+                name="explain_current_screen",
+                description="Read live context of whichever Pathfinder 2.0 dashboard slide, chart, or panel the user is currently viewing so you can explain it naturally like a human co-pilot.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "topic": types.Schema(
+                            type="STRING",
+                            description="Optional specific card, slide, or question the visitor is asking about"
+                        )
+                    },
+                ),
+            ),
         ]
     ),
 ]
@@ -344,6 +377,29 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         latest_frame_bytes: bytes | None = None
         send_lock = asyncio.Lock()
         audio_turn_open = False
+        turn_id = 0
+        gemini_turn_active = False
+        audio_end_mono = 0.0
+        output_tx_in_turn = False
+        last_frame_sent_mono = 0.0
+        latest_page_context: dict = {}
+
+        def format_page_context_note() -> str:
+            if not latest_page_context:
+                return ""
+            tab = latest_page_context.get("activeTab") or "overview"
+            title = latest_page_context.get("tabTitle") or tab
+            chance = latest_page_context.get("readinessChance")
+            role_target = latest_page_context.get("targetRole") or ""
+            focus = latest_page_context.get("focusOnDas")
+            parts_ctx = [f"Slide={tab} ({title})"]
+            if chance is not None:
+                parts_ctx.append(f"Readiness={chance}%")
+            if role_target:
+                parts_ctx.append(f"TargetRole={role_target}")
+            if focus:
+                parts_ctx.append("FocusOnDAS=ON")
+            return "[Live Screen Context: " + ", ".join(parts_ctx) + "]"
 
         def is_valid_jpeg(raw_bytes: bytes | None) -> bool:
             return bool(raw_bytes and len(raw_bytes) > 128 and raw_bytes[:2] == b"\xff\xd8")
@@ -359,8 +415,13 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 return True
             return False
 
-        async def send_vision_prompt(prompt_text: str):
+        async def send_vision_prompt(prompt_text: str, include_screen_ctx: bool = True):
             nonlocal audio_turn_open
+            final_text = prompt_text
+            if include_screen_ctx:
+                ctx_note = format_page_context_note()
+                if ctx_note:
+                    final_text = f"{ctx_note}\n{prompt_text}"
             parts = []
             if is_valid_jpeg(latest_frame_bytes):
                 parts.append(
@@ -369,7 +430,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         mime_type="image/jpeg",
                     )
                 )
-            parts.append(types.Part.from_text(text=prompt_text))
+            parts.append(types.Part.from_text(text=final_text))
             async with send_lock:
                 # Finalize any open audio stream before injecting text/vision content
                 if audio_turn_open:
@@ -384,7 +445,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 )
 
         async def receive_from_browser():
-            nonlocal latest_frame_bytes, audio_turn_open
+            nonlocal latest_frame_bytes, audio_turn_open, last_frame_sent_mono, latest_page_context
             try:
                 while True:
                     raw = await websocket.receive_text()
@@ -432,8 +493,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 candidate = base64.b64decode(frame_str)
                                 if is_valid_jpeg(candidate):
                                     latest_frame_bytes = candidate
-                                    # Drop stale background video send if audio/text currently owns lock
-                                    if not send_lock.locked():
+                                    now_mono = time.monotonic()
+                                    min_gap = 2.2 if gemini_turn_active else 1.15
+                                    # Throttle background video during active Gemini speech to prevent mid-sentence pauses
+                                    if (now_mono - last_frame_sent_mono >= min_gap) and not send_lock.locked():
+                                        last_frame_sent_mono = now_mono
                                         async with send_lock:
                                             await session.send_realtime_input(
                                                 video=types.Blob(
@@ -444,9 +508,33 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             except Exception as f_err:
                                 live_logger.warning(f"[Frame Process Notice] {f_err}")
 
-                    # 3b. Proactive Initial Camera Greeting (e.g. "Boss, I see you, Dileep!")
+                    # 3a-bis. Silent Live UI / Slide Context Sync (Zero interruption to audio)
+                    elif msg_type == "page_context":
+                        ctx_data = msg.get("context")
+                        if isinstance(ctx_data, dict):
+                            latest_page_context = ctx_data
+
+                    # 3a-ter. Friendly Audio / Earphone Low-Volume / Muted Accessory Coaching
+                    elif msg_type == "friendly_audio_hint":
+                        if not gemini_turn_active and time.monotonic() >= audio_end_mono + 0.45:
+                            issue = (msg.get("issue") or "low_volume").strip()
+                            dev_name = (msg.get("device") or "connected audio device").strip()
+                            hint_prompt = (
+                                f"[FRIENDLY AUDIO NOTICE: issue={issue}, device={dev_name}] "
+                                "Boss or the visitor may have just plugged in earphones, wireless buds, or headphones at very low volume (~20%) or a loose/muted mic, "
+                                "so their voice isn't coming through clearly right now. Looking at them warmly like a trusted friend on camera, "
+                                "kindly let them know their voice is too faint or muted to hear properly, and suggest increasing the volume or checking their earphone/buds condition and connection in 1-2 natural sentences."
+                            )
+                            await send_vision_prompt(hint_prompt, include_screen_ctx=False)
+
+                    # 3b. Proactive Initial Camera Greeting (never interrupts an active greeting mid-sentence)
                     elif msg_type == "vision_greet":
                         role_now = (msg.get("role") or user_role or "boss").lower().strip()
+                        # Wait briefly up to 3.2s if initial speech is currently finishing
+                        waited = 0.0
+                        while (gemini_turn_active or time.monotonic() < audio_end_mono + 0.35) and waited < 3.2:
+                            await asyncio.sleep(0.25)
+                            waited += 0.25
                         if is_valid_jpeg(latest_frame_bytes):
                             if role_now == "boss":
                                 greet_prompt = (
@@ -466,8 +554,10 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 )
                             await send_vision_prompt(greet_prompt)
 
-                    # 3c. 24/7 Proactive Scene/Object Change Announcement
+                    # 3c. 24/7 Proactive Scene/Object Change Announcement (NEVER interrupts active voice playback!)
                     elif msg_type == "vision_auto_check":
+                        if gemini_turn_active or time.monotonic() < audio_end_mono + 0.5:
+                            continue
                         if is_valid_jpeg(latest_frame_bytes):
                             auto_prompt = (
                                 "SYSTEM 24/7 AUTO-VISION MONITOR: The scene or object in front of the camera just changed and settled. "
@@ -510,7 +600,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 live_logger.warning(f"[Browser Receive Notice] {b_err}")
 
         async def receive_from_gemini():
-            nonlocal audio_turn_open
+            nonlocal audio_turn_open, turn_id, gemini_turn_active, audio_end_mono, output_tx_in_turn
             try:
                 while True:
                     if websocket.client_state == WebSocketState.DISCONNECTED:
@@ -539,7 +629,10 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             and getattr(response.server_content, "interrupted", False)
                         ):
                             audio_turn_open = False
-                            await websocket.send_json({"type": "interrupted"})
+                            gemini_turn_active = False
+                            audio_end_mono = 0.0
+                            output_tx_in_turn = False
+                            await websocket.send_json({"type": "interrupted", "turn_id": turn_id})
 
                         # Transcription events
                         if response.server_content:
@@ -562,33 +655,72 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                             output_tx = getattr(sc, "output_transcription", None)
                             if output_tx and getattr(output_tx, "text", None):
+                                if not gemini_turn_active:
+                                    turn_id += 1
+                                    gemini_turn_active = True
+                                    output_tx_in_turn = False
+                                output_tx_in_turn = True
                                 await websocket.send_json({
                                     "type": "transcript",
                                     "text": output_tx.text,
+                                    "turn_id": turn_id,
                                 })
 
-                            # Audio and Model Turn - ONLY single audio stream to eliminate double-voice echo
+                            # Audio and Model Turn - ONLY single audio stream with turn_id to eliminate overlap
                             if sc.model_turn and sc.model_turn.parts:
                                 for part in sc.model_turn.parts:
                                     if part.inline_data and part.inline_data.data:
-                                        await websocket.send_json(
-                                            format_audio_packet(part.inline_data.data)
-                                        )
-                                    if part.text:
+                                        if not gemini_turn_active:
+                                            turn_id += 1
+                                            gemini_turn_active = True
+                                            output_tx_in_turn = False
+                                        raw_pcm = part.inline_data.data
+                                        pcm_dur = len(raw_pcm) / 48000.0
+                                        audio_end_mono = max(time.monotonic(), audio_end_mono) + pcm_dur
+                                        pkt = format_audio_packet(raw_pcm)
+                                        pkt["turn_id"] = turn_id
+                                        await websocket.send_json(pkt)
+                                    if part.text and not output_tx_in_turn and not getattr(part, "thought", False):
+                                        if not gemini_turn_active:
+                                            turn_id += 1
+                                            gemini_turn_active = True
                                         await websocket.send_json({
                                             "type": "transcript",
                                             "text": part.text,
+                                            "turn_id": turn_id,
                                         })
 
                             if getattr(sc, "turn_complete", False):
                                 audio_turn_open = False
-                                await websocket.send_json({"type": "turn_complete"})
+                                gemini_turn_active = False
+                                output_tx_in_turn = False
+                                await websocket.send_json({"type": "turn_complete", "turn_id": turn_id})
 
                         # Handle Function Calling inside active session.receive() stream
                         if response.tool_call:
                             function_responses = []
                             for fc in response.tool_call.function_calls:
                                 args = fc.args or {}
+
+                                if fc.name == "explain_current_screen":
+                                    topic = (args.get("topic") or "").strip()
+                                    ctx_snapshot = latest_page_context or {"activeTab": "overview", "tabTitle": "Executive Dashboard"}
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=fc.name,
+                                            id=fc.id,
+                                            response={
+                                                "status": "screen_inspected",
+                                                "topic": topic,
+                                                "active_screen": ctx_snapshot,
+                                                "instruction": (
+                                                    "Explain what this active slide/feature does, why it matters for placement, and what the visitor should do next "
+                                                    "in friendly everyday language WITHOUT reading bullet points verbatim."
+                                                ),
+                                            },
+                                        )
+                                    )
+                                    continue
 
                                 if fc.name in (
                                     "control_website",

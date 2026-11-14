@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useEffect } from "react";
+import React, { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { audioEngine } from "./audioIO";
@@ -8,15 +8,14 @@ export interface WireframeFaceProps {
   position?: [number, number, number];
 }
 
-const DEFAULT_SCALE: [number, number, number] = [0.95, 0.95, 0.95];
-const DEFAULT_POSITION: [number, number, number] = [0, 0.52, 0];
+const DEFAULT_SCALE: [number, number, number] = [0.68, 0.74, 0.7];
+const DEFAULT_POSITION: [number, number, number] = [0, 0.22, 0];
 
 /**
- * WireframeFace.tsx - Clean, Single-Mesh 3D Holographic Avatar (DAS)
- * - Single clean wireframe cranium (no double-mesh artifacts)
- * - Crimson Red (#DC2626) dual eyes with procedural blinking
- * - Crisp dual-lip speech sync without overlapping duplicate boxes
- * - Pure ref-based animation loop for butter-smooth 60 FPS performance
+ * WireframeFace.tsx - Sleek, Human-Proportioned 3D Holographic Avatar (DAS)
+ * - Compact scale framed cleanly behind every dashboard slide
+ * - Smooth 3D idle & speech motion, delicate eyes with natural blink,
+ *   subtle sculpted nose, and small rounded lips synced tightly to voice amplitude
  */
 export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: WireframeFaceProps) => {
   const scale: [number, number, number] = props.scale ?? DEFAULT_SCALE;
@@ -29,114 +28,117 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
   const lowerLipRef = useRef<THREE.Mesh>(null);
   const auraRingRef = useRef<THREE.Mesh>(null);
 
-  // Pure Ref-based Blink State (0 React re-renders)
   const nextBlink = useRef<number>(2.0);
-  const blinkProg = useRef<number>(0);
   const isBlinking = useRef<boolean>(false);
-
-  // Eye Geometry
-  const eyeGeometry = useMemo(() => {
-    return new THREE.CapsuleGeometry(0.11, 0.16, 8, 16);
-  }, []);
+  const blinkProg = useRef<number>(0);
+  const smoothVol = useRef<number>(0);
 
   useFrame((state, delta) => {
     const t = state.clock.getElapsedTime();
-    const volume = audioEngine.getVolume();
+    const rawVol = audioEngine.getVolume();
+    // Smooth voice envelope so mouth motion looks fluid, never twitchy
+    const lerpRate = rawVol > smoothVol.current ? 0.38 : 0.22;
+    smoothVol.current += (rawVol - smoothVol.current) * lerpRate;
+    const v = Math.min(1, Math.max(0, smoothVol.current));
 
-    // 1. Subtle Floating & Speech Nodding
     if (headGroupRef.current) {
-      headGroupRef.current.rotation.y = Math.sin(t * 0.45) * 0.1;
-      headGroupRef.current.rotation.x = Math.sin(t * 0.7) * 0.04 + volume * 0.08;
-      headGroupRef.current.position.y = position[1] + Math.sin(t * 1.2) * 0.06;
+      headGroupRef.current.rotation.y = Math.sin(t * 0.42) * 0.14;
+      headGroupRef.current.rotation.x = Math.sin(t * 0.31) * 0.055 + v * 0.04;
+      headGroupRef.current.rotation.z = Math.cos(t * 0.27) * 0.025;
+      headGroupRef.current.position.y = position[1] + Math.sin(t * 1.05) * 0.045;
     }
 
-    // 2. Crisp Dual-Lip Speech Sync (No overlapping duplicate boxes)
+    // Small, expressive human lip synchronization
     if (upperLipRef.current && lowerLipRef.current) {
-      upperLipRef.current.position.y = -0.48 + volume * 0.08;
-      lowerLipRef.current.position.y = -0.64 - volume * 0.28;
-      lowerLipRef.current.scale.y = 1 + volume * 0.55;
+      upperLipRef.current.position.y = -0.3 + v * 0.032;
+      lowerLipRef.current.position.y = -0.345 - v * 0.105;
+      lowerLipRef.current.scale.set(1 + v * 0.16, 1 + v * 0.12, 1);
+      upperLipRef.current.scale.set(1 + v * 0.1, 1, 1);
     }
 
-    // 3. Procedural Blink Logic
-    if (t > nextBlink.current && !isBlinking.current) {
+    // Natural human periodic blinking
+    nextBlink.current -= delta;
+    if (nextBlink.current <= 0 && !isBlinking.current) {
       isBlinking.current = true;
       blinkProg.current = 0;
     }
 
     if (isBlinking.current) {
-      blinkProg.current += delta * 12;
-      const eyeScaleY = Math.max(0.06, 1.0 - Math.sin(blinkProg.current * Math.PI));
+      blinkProg.current += delta * 7.0;
+      const eyeScaleY = Math.max(0.08, (1.0 - Math.sin(blinkProg.current * Math.PI)) * 0.72);
       if (leftEyeRef.current && rightEyeRef.current) {
         leftEyeRef.current.scale.y = eyeScaleY;
         rightEyeRef.current.scale.y = eyeScaleY;
       }
-      if (blinkProg.current >= 1.0) {
+      if (blinkProg.current >= 1) {
         isBlinking.current = false;
+        nextBlink.current = 2.6 + Math.random() * 3.2;
         if (leftEyeRef.current && rightEyeRef.current) {
-          leftEyeRef.current.scale.y = 1.0;
-          rightEyeRef.current.scale.y = 1.0;
+          leftEyeRef.current.scale.y = 0.72;
+          rightEyeRef.current.scale.y = 0.72;
         }
-        nextBlink.current = t + 2.5 + Math.random() * 2.5;
       }
     }
 
-    // 4. Holographic Aura Ring Pulse
     if (auraRingRef.current) {
-      auraRingRef.current.rotation.z = t * 0.25;
-      const ringScale = 1 + volume * 0.15;
+      auraRingRef.current.rotation.z = t * 0.12;
+      const ringScale = 1 + v * 0.08;
       auraRingRef.current.scale.set(ringScale, ringScale, 1);
     }
   });
 
   return (
     <group ref={headGroupRef} scale={scale} position={position}>
-      {/* SINGLE Clean 3D Wireframe Cranium (Eliminates double head artifacts) */}
-      <mesh>
-        <icosahedronGeometry args={[1.35, 2]} />
-        <meshStandardMaterial
-          color="#00f0ff"
-          emissive="#0088ff"
-          emissiveIntensity={0.4}
-          wireframe
-          transparent
-          opacity={0.42}
-        />
+      {/* Refined human-proportioned holographic wireframe cranium */}
+      <mesh scale={[0.84, 1.05, 0.88]}>
+        <icosahedronGeometry args={[1.12, 2]} />
+        <meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.26} />
       </mesh>
 
-      {/* Left Eye - Crimson Red (#DC2626) */}
-      <mesh
-        ref={leftEyeRef}
-        geometry={eyeGeometry}
-        position={[-0.42, 0.25, 1.18]}
-      >
-        <meshBasicMaterial color="#DC2626" />
+      {/* Delicate brow contours */}
+      <mesh position={[-0.31, 0.3, 0.89]} rotation={[0, -0.22, 0.07]}>
+        <boxGeometry args={[0.2, 0.015, 0.02]} />
+        <meshBasicMaterial color="#7dd3fc" transparent opacity={0.45} />
+      </mesh>
+      <mesh position={[0.31, 0.3, 0.89]} rotation={[0, 0.22, -0.07]}>
+        <boxGeometry args={[0.2, 0.015, 0.02]} />
+        <meshBasicMaterial color="#7dd3fc" transparent opacity={0.45} />
       </mesh>
 
-      {/* Right Eye - Crimson Red (#DC2626) */}
-      <mesh
-        ref={rightEyeRef}
-        geometry={eyeGeometry}
-        position={[0.42, 0.25, 1.18]}
-      >
-        <meshBasicMaterial color="#DC2626" />
+      {/* Small gentle glowing human eyes */}
+      <mesh ref={leftEyeRef} position={[-0.3, 0.17, 0.91]} scale={[1.25, 0.72, 0.5]}>
+        <sphereGeometry args={[0.048, 14, 10]} />
+        <meshBasicMaterial color="#67e8f9" transparent opacity={0.85} />
+      </mesh>
+      <mesh ref={rightEyeRef} position={[0.3, 0.17, 0.91]} scale={[1.25, 0.72, 0.5]}>
+        <sphereGeometry args={[0.048, 14, 10]} />
+        <meshBasicMaterial color="#67e8f9" transparent opacity={0.85} />
       </mesh>
 
-      {/* Upper Lip Accent */}
-      <mesh ref={upperLipRef} position={[0, -0.48, 1.2]}>
-        <boxGeometry args={[0.5, 0.06, 0.08]} />
-        <meshStandardMaterial color="#38bdf8" emissive="#00ffff" emissiveIntensity={1.2} />
+      {/* Small subtle nasal bridge + tip */}
+      <mesh position={[0, 0.0, 0.98]} rotation={[0.22, 0, 0]}>
+        <cylinderGeometry args={[0.012, 0.024, 0.24, 8]} />
+        <meshBasicMaterial color="#7dd3fc" wireframe transparent opacity={0.48} />
+      </mesh>
+      <mesh position={[0, -0.11, 1.02]}>
+        <sphereGeometry args={[0.028, 10, 8]} />
+        <meshBasicMaterial color="#bae6fd" wireframe transparent opacity={0.45} />
       </mesh>
 
-      {/* Lower Lip Accent */}
-      <mesh ref={lowerLipRef} position={[0, -0.64, 1.2]}>
-        <boxGeometry args={[0.46, 0.07, 0.08]} />
-        <meshStandardMaterial color="#00f0ff" emissive="#0088ff" emissiveIntensity={1.4} />
+      {/* Small rounded lips synced smoothly to voice playback */}
+      <mesh ref={upperLipRef} position={[0, -0.3, 0.97]} rotation={[0, 0, Math.PI / 2]}>
+        <capsuleGeometry args={[0.014, 0.14, 6, 12]} />
+        <meshBasicMaterial color="#a5f3fc" transparent opacity={0.82} />
+      </mesh>
+      <mesh ref={lowerLipRef} position={[0, -0.345, 0.96]} rotation={[0, 0, Math.PI / 2]}>
+        <capsuleGeometry args={[0.015, 0.13, 6, 12]} />
+        <meshBasicMaterial color="#38bdf8" transparent opacity={0.85} />
       </mesh>
 
-      {/* Single Background Holographic HUD Ring */}
+      {/* Subtle ambient outer halo ring */}
       <mesh ref={auraRingRef} position={[0, 0, -0.3]}>
-        <ringGeometry args={[1.75, 1.78, 64]} />
-        <meshBasicMaterial color="#00f0ff" transparent opacity={0.35} side={THREE.DoubleSide} />
+        <ringGeometry args={[1.42, 1.44, 72]} />
+        <meshBasicMaterial color="#38bdf8" side={THREE.DoubleSide} transparent opacity={0.18} />
       </mesh>
     </group>
   );

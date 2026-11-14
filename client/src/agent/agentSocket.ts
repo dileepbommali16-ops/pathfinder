@@ -54,6 +54,34 @@ class DasAgentSocket {
   private watchdogRetriedForText = false;
   private lastTextSentAt = 0;
   private healthListenersAttached = false;
+  private connSeq = 0;
+  private activeAudioTurnId: number | null = null;
+  private interruptedTurnIds: Set<number> = new Set();
+  private lastVisionGreetAt = 0;
+  private lastTurnCompletedAt = 0;
+  private latestPageContext: Record<string, any> | null = null;
+
+  private closeExistingSocketOnly() {
+    if (this.renderPingTimer) {
+      window.clearInterval(this.renderPingTimer);
+      this.renderPingTimer = null;
+    }
+    if (this.reconnectTimer) {
+      window.clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.ws) {
+      const stale = this.ws;
+      this.ws = null;
+      try {
+        stale.onopen = null;
+        stale.onmessage = null;
+        stale.onerror = null;
+        stale.onclose = null;
+        stale.close();
+      } catch {}
+    }
+  }
 
   private ensureHealthListeners() {
     if (this.healthListenersAttached || typeof window === "undefined") return;
@@ -115,6 +143,8 @@ class DasAgentSocket {
       return;
     }
 
+    this.closeExistingSocketOnly();
+    const mySeq = ++this.connSeq;
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
     if (apiKey) {
@@ -126,6 +156,7 @@ class DasAgentSocket {
     }
 
     this.ws.onopen = () => {
+      if (mySeq !== this.connSeq) return;
       this.lastPongAt = Date.now();
       if (!this.isDirectGoogle) {
         this.savedOnTranscript?.("Connecting to DAS Core (Puck Voice)...");
@@ -392,6 +423,7 @@ CORE AUTONOMOUS CAPABILITIES:
     };
 
     this.ws.onmessage = async (event) => {
+      if (mySeq !== this.connSeq) return;
       this.lastPongAt = Date.now();
       try {
         const rawText =
@@ -422,8 +454,16 @@ CORE AUTONOMOUS CAPABILITIES:
           }
           if (data.status === "connected") {
             this.isConnected = true;
+            this.activeAudioTurnId = null;
+            this.interruptedTurnIds.clear();
             this.savedOnStatusChange?.(true);
             this.savedOnTranscript?.(`DAS Online (${data.voice || "Puck"} Voice Ready)!`);
+            const ctxNow =
+              this.latestPageContext ||
+              (typeof window !== "undefined" ? (window as any).__DAS_PAGE_CONTEXT__ : null);
+            if (ctxNow) {
+              this.sendPageContext(ctxNow);
+            }
             this.flushPendingMessages();
             if (cameraEngine.isStreaming) {
               const latest = cameraEngine.getLatestFrameBase64();
@@ -434,6 +474,17 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "audio" && data.pcm_base64) {
+          const tId = typeof data.turn_id === "number" ? data.turn_id : null;
+          if (tId !== null && this.interruptedTurnIds.has(tId)) {
+            return;
+          }
+          if (tId !== null && this.activeAudioTurnId !== null && tId !== this.activeAudioTurnId) {
+            audioEngine.clearAudioQueue();
+            this.currentAgentTranscript = "";
+          }
+          if (tId !== null) {
+            this.activeAudioTurnId = tId;
+          }
           this.clearTurnWatchdog();
           audioEngine.playPcmChunk(data.pcm_base64, data.sample_rate || 24000);
           if (!this.isSpeakingTurn) {
@@ -450,6 +501,10 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "transcript" && data.text) {
+          const tId = typeof data.turn_id === "number" ? data.turn_id : null;
+          if (tId !== null && this.interruptedTurnIds.has(tId)) {
+            return;
+          }
           this.clearTurnWatchdog();
           if (this.awaitingNextTurn) {
             this.currentAgentTranscript = "";
@@ -462,6 +517,8 @@ CORE AUTONOMOUS CAPABILITIES:
 
         if (data.type === "turn_complete") {
           audioEngine.flushAudioPlayer();
+          this.lastTurnCompletedAt = Date.now();
+          this.activeAudioTurnId = null;
           if (!this.currentAgentTranscript && !this.isSpeakingTurn && Date.now() - this.lastTextSentAt < 700) {
             return;
           }
@@ -483,6 +540,15 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "interrupted") {
+          const tId = typeof data.turn_id === "number" ? data.turn_id : null;
+          if (tId !== null) {
+            this.interruptedTurnIds.add(tId);
+            if (this.interruptedTurnIds.size > 40) {
+              const first = this.interruptedTurnIds.values().next().value;
+              if (first !== undefined) this.interruptedTurnIds.delete(first);
+            }
+          }
+          this.activeAudioTurnId = null;
           if (!this.currentAgentTranscript && !this.isSpeakingTurn && Date.now() - this.lastTextSentAt < 700) {
             audioEngine.clearAudioQueue();
             return;
@@ -639,6 +705,7 @@ CORE AUTONOMOUS CAPABILITIES:
     };
 
     this.ws.onerror = () => {
+      if (mySeq !== this.connSeq) return;
       this.isConnected = false;
       this.savedOnStatusChange?.(false);
       this.savedOnTranscript?.(
@@ -649,6 +716,7 @@ CORE AUTONOMOUS CAPABILITIES:
     };
 
     this.ws.onclose = (e) => {
+      if (mySeq !== this.connSeq) return;
       this.isConnected = false;
       this.savedOnStatusChange?.(false);
       if (this.renderPingTimer) {
@@ -741,23 +809,14 @@ CORE AUTONOMOUS CAPABILITIES:
 
   private forceReconnectNow() {
     if (this.manualClose) return;
+    this.connSeq++;
     this.isConnected = false;
     this.savedOnStatusChange?.(false);
     if (this.renderPingTimer) {
       window.clearInterval(this.renderPingTimer);
       this.renderPingTimer = null;
     }
-    const oldWs = this.ws;
-    this.ws = null;
-    if (oldWs) {
-      try {
-        oldWs.onopen = null;
-        oldWs.onmessage = null;
-        oldWs.onerror = null;
-        oldWs.onclose = null;
-        oldWs.close();
-      } catch {}
-    }
+    this.closeExistingSocketOnly();
     if (this.reconnectTimer) {
       window.clearTimeout(this.reconnectTimer);
     }
@@ -832,7 +891,8 @@ CORE AUTONOMOUS CAPABILITIES:
 
   public sendVisionGreet() {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
-    if (this.isSpeakingTurn) return;
+    if (this.isSpeakingTurn || audioEngine.isSpeaking()) return;
+    this.lastVisionGreetAt = Date.now();
     audioEngine.unlockAudio();
     const freshFrame = cameraEngine.getLatestFrameBase64();
     if (freshFrame) {
@@ -849,7 +909,15 @@ CORE AUTONOMOUS CAPABILITIES:
 
   public sendAutoVisionCheck(frameBase64?: string) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
-    if (this.isSpeakingTurn || audioEngine.isSpeaking()) return;
+    const now = Date.now();
+    if (
+      this.isSpeakingTurn ||
+      audioEngine.isSpeaking() ||
+      now - this.lastVisionGreetAt < 6500 ||
+      now - this.lastTurnCompletedAt < 1800
+    ) {
+      return;
+    }
     audioEngine.unlockAudio();
     if (frameBase64) {
       this.sendVideoFrame(frameBase64);
@@ -860,6 +928,28 @@ CORE AUTONOMOUS CAPABILITIES:
       );
     } else {
       this.ws.send(JSON.stringify({ type: "vision_auto_check" }));
+    }
+  }
+
+  public sendPageContext(context: Record<string, any>) {
+    this.latestPageContext = context;
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected || this.isDirectGoogle) return;
+    try {
+      this.ws.send(JSON.stringify({ type: "page_context", context }));
+    } catch {}
+  }
+
+  public sendFriendlyAudioHint(issue: string, device: string) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
+    if (this.isSpeakingTurn || audioEngine.isSpeaking()) return;
+    if (this.isDirectGoogle) {
+      this.sendImmediateText(
+        `Friendly audio notice (${issue} on ${device}): tell Boss kindly like a friend that his voice sounds very quiet or muffled and suggest raising volume or checking his earphones/buds.`
+      );
+    } else {
+      try {
+        this.ws.send(JSON.stringify({ type: "friendly_audio_hint", issue, device }));
+      } catch {}
     }
   }
 
@@ -896,7 +986,7 @@ CORE AUTONOMOUS CAPABILITIES:
       this.pendingTexts.push(text);
       this.watchdogRetriedForText = false;
       this.armTurnWatchdog(text);
-      this.ws = null;
+      this.closeExistingSocketOnly();
       this.connect(
         this.savedRole,
         this.savedOnTranscript,
@@ -964,25 +1054,22 @@ CORE AUTONOMOUS CAPABILITIES:
 
   public disconnect() {
     this.manualClose = true;
+    this.connSeq++;
+    this.activeAudioTurnId = null;
     this.clearTurnWatchdog();
-    if (this.reconnectTimer) {
-      window.clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    if (this.renderPingTimer) {
-      window.clearInterval(this.renderPingTimer);
-      this.renderPingTimer = null;
-    }
+    this.closeExistingSocketOnly();
     audioEngine.stopMicCapture();
     audioEngine.clearAudioQueue();
     this.preConnectAudioQueue = [];
     this.pendingTexts = [];
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
     this.isConnected = false;
+    this.isSpeakingTurn = false;
+    this.awaitingNextTurn = false;
+    this.savedOnStatusChange?.(false);
   }
 }
 
 export const dasSocket = new DasAgentSocket();
+if (typeof window !== "undefined") {
+  (window as any).dasSocket = dasSocket;
+}

@@ -58,7 +58,6 @@ import { getTabKnowledge } from "@/lib/siteKnowledge";
 import { Footer } from "@/components/dashboard/Footer";
 import { toast } from "sonner";
 import DepthText from "@/components/dashboard/DepthText";
-import AgentLayout from "@/agent/AgentLayout";
 
 export interface HomeProps {
   initialTab?: TabId;
@@ -110,9 +109,20 @@ export default function Home({ initialTab }: HomeProps = {}) {
       const tabMap: Record<string, { tab: TabId; scrollId?: string }> = {
         overview: { tab: "overview" },
         dashboard: { tab: "overview" },
-        interview: { tab: "overview" },
-        "mock-interview": { tab: "overview" },
-        action: { tab: "overview" },
+        home: { tab: "overview" },
+        interview: { tab: "interview" },
+        "mock-interview": { tab: "interview" },
+        mock_interview: { tab: "interview" },
+        action: { tab: "action" },
+        "action-center": { tab: "action" },
+        action_center: { tab: "action" },
+        "ai-action": { tab: "action" },
+        missions: { tab: "missions" },
+        roles: { tab: "roles" },
+        "role-intelligence": { tab: "roles" },
+        "company-radar": { tab: "overview", scrollId: "career-company-radar" },
+        "what-if": { tab: "overview", scrollId: "what-if-simulator" },
+        whatif: { tab: "overview", scrollId: "what-if-simulator" },
         skills: { tab: "skills" },
         roadmap: { tab: "skills", scrollId: "roadmap-visualizer" },
         projects: { tab: "projects" },
@@ -124,10 +134,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
         defense: { tab: "defense" },
         viva: { tab: "defense" },
         profile: { tab: "profile" },
-        roles: { tab: "roles" },
-        missions: { tab: "missions" },
         "skill-gap": { tab: "overview", scrollId: "career-skill-gap" },
-        "what-if": { tab: "overview", scrollId: "career-trajectory-simulator" },
       };
       return tabMap[normalized] || { tab: "overview" };
     };
@@ -302,6 +309,20 @@ export default function Home({ initialTab }: HomeProps = {}) {
     };
     document.title = titles[activeTab] || "Pathfinder 2.0 · Autonomous AI Career Intelligence";
   }, [activeTab]);
+
+  // Listen to voice/automation Focus-on-DAS toggles & broadcast live slide context to 24/7 DAS Co-Pilot
+  useEffect(() => {
+    const onToggleFocus = (ev: Event) => {
+      const detail = (ev as CustomEvent)?.detail;
+      if (typeof detail?.focus === "boolean") {
+        setFocusOnDas(detail.focus);
+      } else {
+        setFocusOnDas((prev) => !prev);
+      }
+    };
+    window.addEventListener("das-toggle-focus", onToggleFocus);
+    return () => window.removeEventListener("das-toggle-focus", onToggleFocus);
+  }, []);
 
   const [profile, setProfile] = useState<StudentProfileState>(() => {
     if (typeof window !== "undefined") {
@@ -582,6 +603,45 @@ export default function Home({ initialTab }: HomeProps = {}) {
     },
   });
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Continuously broadcast active slide & user profile context to the persistent 24/7 DAS Co-Pilot
+  useEffect(() => {
+    const knowledge = getTabKnowledge(activeTab);
+    const liveContext = {
+      activeTab,
+      tabTitle: knowledge?.title || activeTab,
+      purpose: knowledge?.purpose || "",
+      howToExplain: knowledge?.howToUse || "",
+      widgetsShown: knowledge?.widgets || [],
+      focusOnDas,
+      isAuthenticated,
+      readinessChance: prediction.chance,
+      tone: prediction.tone,
+      branch: profile.branch,
+      cgpa: profile.cgpa,
+      backlogs: profile.backlogs,
+      internships: profile.internships,
+      projectsCount: profile.projectsCount,
+      targetRole: profile.targetRole,
+      skillsSample: (profile.technicalSkills || []).slice(0, 8),
+      timestamp: Date.now(),
+    };
+    (window as any).__DAS_PAGE_CONTEXT__ = liveContext;
+    window.dispatchEvent(new CustomEvent("das:page-context", { detail: liveContext }));
+  }, [
+    activeTab,
+    focusOnDas,
+    isAuthenticated,
+    prediction.chance,
+    prediction.tone,
+    profile.branch,
+    profile.cgpa,
+    profile.backlogs,
+    profile.internships,
+    profile.projectsCount,
+    profile.targetRole,
+    profile.technicalSkills,
+  ]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1539,7 +1599,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
   // 1. LANDING & AUTH SCREEN
   if (oauthSigningIn && !isAuthenticated) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-[#0a0b10] font-['Outfit',sans-serif] text-[#f8fafc]">
+      <div className="flex min-h-screen w-full items-center justify-center bg-transparent font-['Outfit',sans-serif] text-[#f8fafc]">
         <p className="animate-pulse text-sm font-medium tracking-wide">Signing you in...</p>
       </div>
     );
@@ -1551,13 +1611,12 @@ export default function Home({ initialTab }: HomeProps = {}) {
   // 2. ONBOARDING WIZARD
   if (!profile.onboardingCompleted) {
     return (
-      <AgentLayout>
-        <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
-          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute inset-0 bg-transparent" />
-            <Ambient3DBackground activeTab={activeTab} />
-          </div>
-          <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
+        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute inset-0 bg-transparent" />
+          <Ambient3DBackground activeTab={activeTab} />
+        </div>
+        <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
             <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#11131c] border border-[#ffffff]/30 text-[#ffffff] shadow-md">
@@ -1591,22 +1650,20 @@ export default function Home({ initialTab }: HomeProps = {}) {
               onComplete={handleWizardComplete}
               apiBase={API_BASE}
             />
-          </div>
         </div>
-      </AgentLayout>
+      </div>
     );
   }
 
   // 3. IMMEDIATE RESULT SCREEN POST-SUBMIT
   if (showResultScreen && auditResult) {
     return (
-      <AgentLayout>
-        <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
-          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute inset-0 bg-transparent" />
-            <Ambient3DBackground activeTab={activeTab} />
-          </div>
-          <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
+        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute inset-0 bg-transparent" />
+          <Ambient3DBackground activeTab={activeTab} />
+        </div>
+        <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
             <OnboardingResultScreen
               profile={profile}
               auditResult={auditResult}
@@ -1632,14 +1689,12 @@ export default function Home({ initialTab }: HomeProps = {}) {
             />
           </div>
         </div>
-      </AgentLayout>
     );
   }
 
   // 4. MAIN DASHBOARD & PLATFORM NAVIGATION
   return (
-    <AgentLayout>
-      <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] selection:bg-[#ffffff]/35 selection:text-[#f8fafc] font-sans overflow-x-hidden">
+    <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] selection:bg-[#ffffff]/35 selection:text-[#f8fafc] font-sans overflow-x-hidden">
       {isGlobalServerWakingUp && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[rgba(255,255,255,0.08)] bg-[#11131c]/95 px-4 py-2 text-xs font-medium text-[#f8fafc] shadow-[0_4px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
           <Loader2 className="h-3.5 w-3.5 animate-spin text-[#ffffff]" />
@@ -1733,18 +1788,43 @@ export default function Home({ initialTab }: HomeProps = {}) {
 
       {/* Main Container */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
-        {activeTab === "overview" && focusOnDas && (
+        {focusOnDas ? (
           <div className="fixed top-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 animate-in fade-in duration-300">
             <button
               type="button"
               onClick={() => setFocusOnDas(false)}
-              className="px-4 py-2 rounded-full border border-red-500/50 bg-[#070d1f]/90 hover:bg-red-500/20 text-xs font-semibold text-red-200 backdrop-blur-xl shadow-[0_0_25px_rgba(239,68,68,0.35)] transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
+              className="px-4 py-2 rounded-full border border-cyan-400/50 bg-[#070d1f]/90 hover:bg-cyan-500/20 text-xs font-semibold text-cyan-200 backdrop-blur-xl shadow-[0_0_25px_rgba(34,211,238,0.3)] transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
             >
-              <LayoutDashboard className="w-3.5 h-3.5 text-red-400" />
+              <LayoutDashboard className="w-3.5 h-3.5 text-cyan-300" />
               <span>Show Dashboard</span>
             </button>
           </div>
+        ) : (
+          <div className="flex items-center justify-between gap-4 pb-6">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
+              </span>
+              <span className="text-xs font-mono text-zinc-300/90">
+                DAS 3D Co-Pilot Watching Live Across Every Slide
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFocusOnDas(true)}
+              className="px-3.5 py-1.5 rounded-full border border-cyan-500/40 bg-[#0c101d]/75 hover:bg-cyan-500/20 text-xs font-semibold text-cyan-200 backdrop-blur-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
+              <span>Focus on DAS</span>
+            </button>
+          </div>
         )}
+        <div
+          className={`transition-all duration-300 ${
+            focusOnDas ? "pointer-events-none opacity-0 h-0 overflow-hidden" : "opacity-100 pointer-events-auto"
+          }`}
+        >
         <AnimatePresence mode="wait" initial={false}>
           {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
@@ -1754,30 +1834,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
-              className={`transition-all duration-300 ${focusOnDas
-                  ? "pointer-events-none opacity-0 h-0 overflow-hidden"
-                  : "opacity-100 pointer-events-auto space-y-12 sm:space-y-16"
-                }`}
+              className="space-y-12 sm:space-y-16"
             >
-              <div className="flex items-center justify-between gap-4 pb-2">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-                  </span>
-                  <span className="text-xs font-mono text-zinc-400">
-                    DAS Cybernetic Co-Pilot Active in Background
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFocusOnDas((prev) => !prev)}
-                  className="px-3.5 py-1.5 rounded-full border border-red-500/40 bg-[#0c101d]/85 hover:bg-red-500/20 text-xs font-semibold text-red-200 backdrop-blur-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-red-400" />
-                  <span>Focus on DAS</span>
-                </button>
-              </div>
 
               {isProfilePartiallyIncomplete && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#161926] bg-[#11131c] p-5 backdrop-blur-md">
@@ -2307,9 +2365,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
 
         {/* Global Floating 'Ask Coach' Trigger */}
-        {activeTab !== "coach" && activeTab !== "overview" && (
+        {!focusOnDas && activeTab !== "coach" && activeTab !== "overview" && (
           <button
             type="button"
             onClick={() => {
@@ -2334,9 +2393,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
         />
 
         {/* Global Footer */}
-        {!(activeTab === "overview" && focusOnDas) && <Footer onNavigateTab={setActiveTab} />}
+        {!focusOnDas && <Footer onNavigateTab={setActiveTab} />}
       </main>
     </div>
-    </AgentLayout>
   );
 }

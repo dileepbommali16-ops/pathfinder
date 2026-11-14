@@ -27,20 +27,16 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [transcript, setTranscript] = useState("Hi Boss! What's up?");
   const [userTranscript, setUserTranscript] = useState("");
   const [micSilentWarning, setMicSilentWarning] = useState(false);
+  const [micHealthHint, setMicHealthHint] = useState("");
   const [activeMicLabel, setActiveMicLabel] = useState("");
-  const [micDevices, setMicDevices] = useState<MediaDeviceOption[]>([]);
-  const [speakerDevices, setSpeakerDevices] = useState<MediaDeviceOption[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceOption[]>([]);
-  const [selectedMicId, setSelectedMicId] = useState("");
-  const [selectedSpeakerId, setSelectedSpeakerId] = useState("");
   const [selectedCameraId, setSelectedCameraId] = useState("");
-  const [rawMicMode, setRawMicMode] = useState(false);
-  const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [mirrorCamera, setMirrorCamera] = useState(true);
   const [minimizedCamPreview, setMinimizedCamPreview] = useState(false);
   const cameraPreviewRef = useRef<HTMLVideoElement>(null);
   const micBarRef = useRef<HTMLDivElement>(null);
   const micSilentRef = useRef(false);
+  const selectedMicIdRef = useRef("");
   const activeMicLabelRef = useRef("");
   const runCodeLiveRef = useRef<(code: string, lang: string) => void>(() => {});
 
@@ -78,13 +74,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshMediaDevices = async () => {
     try {
-      const [{ inputs, outputs }, cams] = await Promise.all([
-        audioEngine.listAudioDevices(),
-        cameraEngine.listVideoDevices(),
-      ]);
-      setMicDevices(inputs);
-      setSpeakerDevices(outputs);
+      const cams = await cameraEngine.listVideoDevices();
       setVideoDevices(cams);
+      await audioEngine.autoSyncOutputDevice();
     } catch {}
   };
 
@@ -93,12 +85,50 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.addEventListener) return;
     const onDeviceChange = () => {
       refreshMediaDevices();
+      audioEngine.autoSyncOutputDevice();
     };
     navigator.mediaDevices.addEventListener("devicechange", onDeviceChange);
     return () => {
       navigator.mediaDevices.removeEventListener("devicechange", onDeviceChange);
     };
   }, []);
+
+  // Forward live slide & visitor context so DAS knows what screen is active 24/7
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let lastClickSyncAt = 0;
+
+    const initialCtx = (window as any).__DAS_PAGE_CONTEXT__;
+    if (initialCtx && typeof initialCtx === "object") {
+      dasSocket.sendPageContext(initialCtx);
+    }
+
+    const onPageContext = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && typeof detail === "object") {
+        dasSocket.sendPageContext(detail);
+      }
+    };
+
+    const onGlobalClick = (e: MouseEvent) => {
+      const now = Date.now();
+      if (now - lastClickSyncAt < 800) return;
+      const target = (e.target as HTMLElement | null)?.closest("button, a, [role='tab']");
+      if (!target) return;
+      const label = (target.getAttribute("aria-label") || target.textContent || "").trim().replace(/\s+/g, " ").slice(0, 60);
+      if (!label) return;
+      lastClickSyncAt = now;
+      const cur = (window as any).__DAS_PAGE_CONTEXT__ || {};
+      dasSocket.sendPageContext({ ...cur, lastClicked: label });
+    };
+
+    window.addEventListener("das:page-context", onPageContext);
+    window.addEventListener("click", onGlobalClick, true);
+    return () => {
+      window.removeEventListener("das:page-context", onPageContext);
+      window.removeEventListener("click", onGlobalClick, true);
+    };
+  }, [isAuthenticated, connected]);
 
   useEffect(() => {
     if (cameraActive && cameraPreviewRef.current) {
@@ -151,19 +181,32 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [isAuthenticated]);
 
-  const beginMicStream = async (deviceId: string, rawMode: boolean) => {
+  const beginMicStream = async (deviceId?: string) => {
     micSilentRef.current = false;
     setMicSilentWarning(false);
+    setMicHealthHint("");
+    await audioEngine.autoSyncOutputDevice();
     await audioEngine.startMicCapture((b64) => dasSocket.sendAudioChunk(b64), {
       deviceId: deviceId || undefined,
-      rawMode,
+      rawMode: false,
       shouldSuppressEcho: () => dasSocket.isAgentSpeaking || dasSocket.isAwaitingResponse,
       onSpeechIdle: () => dasSocket.sendAudioStreamEnd(),
       onAutoDeviceSwitch: (newDev) => {
-        setSelectedMicId(newDev.deviceId);
+        selectedMicIdRef.current = newDev.deviceId;
         activeMicLabelRef.current = newDev.label;
         setActiveMicLabel(newDev.label);
-        toast.info(`Switched to active microphone: ${newDev.label}`);
+        setMicHealthHint("");
+        toast.info(`Switched automatically to microphone: ${newDev.label}`);
+      },
+      onVoiceHealthAlert: (alert) => {
+        const friendlyMsg =
+          alert.issue === "low_volume"
+            ? "Voice very faint — raise volume or bring mic closer"
+            : "Earphone/bud mic unclear — check connection & volume";
+        setMicHealthHint(friendlyMsg);
+        setMicSilentWarning(true);
+        dasSocket.sendFriendlyAudioHint(alert.issue, alert.deviceLabel);
+        toast.info(friendlyMsg);
       },
       onSignalStatus: (st) => {
         // Direct DOM meter update -> ZERO React re-renders per audio buffer (fixes typing lag & audio stutter!)
@@ -173,6 +216,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         if (st.deviceLabel && st.deviceLabel !== activeMicLabelRef.current) {
           activeMicLabelRef.current = st.deviceLabel;
           setActiveMicLabel(st.deviceLabel);
+        }
+        if (st.volume >= 0.015) {
+          setMicHealthHint((prev) => (prev ? "" : prev));
         }
         const isSilent = st.silentMs >= 3000;
         if (isSilent !== micSilentRef.current) {
@@ -195,11 +241,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const toggleMic = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     e?.currentTarget?.blur();
     audioEngine.unlockAudio();
+    audioEngine.autoSyncOutputDevice();
     ensureSocketConnected();
 
     if (!micActive) {
       try {
-        await beginMicStream(selectedMicId, rawMicMode);
+        await beginMicStream(selectedMicIdRef.current);
         setTranscript("Listening... Speak cleanly through headphones, earphones, buds, or laptop mic!");
       } catch {
         setTranscript("Mic Permission Denied! Browser address bar lo Mic allow cheyyandi.");
@@ -212,37 +259,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       if (micBarRef.current) micBarRef.current.style.width = "4%";
       setMicActive(false);
       setMicSilentWarning(false);
+      setMicHealthHint("");
       setTranscript("Mic paused.");
-    }
-  };
-
-  const handleMicDeviceChange = async (newDeviceId: string) => {
-    setSelectedMicId(newDeviceId);
-    if (micActive) {
-      try {
-        await beginMicStream(newDeviceId, rawMicMode);
-        toast.success("Switched active microphone!");
-      } catch {
-        toast.error("Unable to switch to selected microphone.");
-      }
-    }
-  };
-
-  const handleSpeakerDeviceChange = async (newDeviceId: string) => {
-    setSelectedSpeakerId(newDeviceId);
-    await audioEngine.setOutputDevice(newDeviceId);
-    toast.success("Updated voice output device!");
-  };
-
-  const handleRawModeToggle = async (e?: React.MouseEvent<HTMLButtonElement>) => {
-    e?.currentTarget?.blur();
-    const nextRaw = !rawMicMode;
-    setRawMicMode(nextRaw);
-    if (micActive) {
-      try {
-        await beginMicStream(selectedMicId, nextRaw);
-        toast.info(nextRaw ? "Direct Hardware Mic Mode ON" : "Noise-Cancel Mic Mode ON");
-      } catch {}
     }
   };
 
@@ -270,6 +288,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const toggleCamera = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     e?.currentTarget?.blur();
     audioEngine.unlockAudio();
+    audioEngine.autoSyncOutputDevice();
 
     if (!cameraActive) {
       ensureSocketConnected();
@@ -301,6 +320,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleRoleToggle = (newRole: UserHonorificRole) => {
     audioEngine.unlockAudio();
+    audioEngine.autoSyncOutputDevice();
     setRole(newRole);
     dasSocket.switchRole(newRole);
     if (newRole === "boss") {
@@ -318,6 +338,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
     audioEngine.notifyTypingActivity(1200);
     audioEngine.unlockAudio();
+    audioEngine.autoSyncOutputDevice();
     const commandText = inputText.trim() || (attachedFile ? `Look at this attached ${attachedType || "file"}: ${attachedFile.name}` : "");
     setUserTranscript(commandText);
     setTranscript("Thinking & Executing...");
@@ -1038,23 +1059,6 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.currentTarget.blur();
-                refreshMediaDevices();
-                setShowAudioSettings((v) => !v);
-              }}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer border ${
-                showAudioSettings
-                  ? "bg-[#1E293B] border-[#38bdf8] text-[#38bdf8]"
-                  : "bg-[#0F172A] border-[#334155] text-slate-300 hover:text-white"
-              }`}
-              title="Select Microphone, Headphones, Earphones, Buds, or Speaker"
-            >
-              🎧 Audio / Cam Setup
-            </button>
-
             {/* Single Unified Role Pill */}
             <button
               type="button"
@@ -1101,63 +1105,6 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
         >
           🔊 DAS: {transcript}
         </div>
-
-        {/* Audio / Microphone / Speaker Selector Drawer (opens ONLY when Boss clicks Audio / Cam Setup) */}
-        {showAudioSettings && (
-          <div
-            className="grid grid-cols-1 sm:grid-cols-3 gap-2 px-3 py-2 rounded-xl text-xs border"
-            style={{ backgroundColor: "#0B1120", borderColor: "#334155" }}
-          >
-            <div>
-              <label className="block text-[10px] text-slate-400 mb-1">
-                Microphone (Headset / Buds / Laptop)
-              </label>
-              <select
-                value={selectedMicId}
-                onChange={(e) => handleMicDeviceChange(e.target.value)}
-                className="w-full rounded bg-[#0F172A] border border-[#334155] text-[11px] text-slate-200 px-2 py-1 focus:outline-none"
-              >
-                <option value="">System Default Mic</option>
-                {micDevices.map((d) => (
-                  <option key={d.deviceId} value={d.deviceId}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] text-slate-400 mb-1">
-                Voice Output (Headphones / Speaker)
-              </label>
-              <select
-                value={selectedSpeakerId}
-                onChange={(e) => handleSpeakerDeviceChange(e.target.value)}
-                className="w-full rounded bg-[#0F172A] border border-[#334155] text-[11px] text-slate-200 px-2 py-1 focus:outline-none"
-              >
-                <option value="">System Default Output</option>
-                {speakerDevices.map((d) => (
-                  <option key={d.deviceId} value={d.deviceId}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col justify-between">
-              <span className="text-[10px] text-slate-400 mb-1">Mic Processing Mode</span>
-              <button
-                type="button"
-                onClick={handleRawModeToggle}
-                className={`px-2 py-1 rounded text-[11px] font-semibold border cursor-pointer ${
-                  rawMicMode
-                    ? "bg-cyan-950/60 border-cyan-400 text-cyan-300"
-                    : "bg-[#0F172A] border-[#334155] text-slate-300"
-                }`}
-              >
-                {rawMicMode ? "Raw Hardware Mic ON" : "Auto Noise-Filter ON"}
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Attached Media / Resume Pill Preview */}
         {attachedFile && (
@@ -1222,7 +1169,7 @@ Vijayawada | Hyderabad | dileep.bommali@email.com | pathfinder.ai
               </div>
               <span className="text-[10px] text-slate-400 truncate">
                 {micSilentWarning
-                  ? "Jack/headset quiet — check mute or pick mic in 🎧 Setup"
+                  ? micHealthHint || "Voice faint or muted — raise volume or check earphones/buds (auto-tuning...)"
                   : activeMicLabel || "Capturing 16kHz PCM"}
               </span>
             </div>

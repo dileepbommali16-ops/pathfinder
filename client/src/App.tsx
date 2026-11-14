@@ -17,35 +17,16 @@ export default function App() {
         <TooltipProvider>
           <Toaster />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Home />} />
-              <Route
-                path="/blueprints"
-                element={
-                  <AgentLayout>
-                    <BlueprintDetail />
-                  </AgentLayout>
-                }
-              />
-              <Route
-                path="/resume-studio"
-                element={
-                  <AgentLayout>
-                    <AtsResumeStudio />
-                  </AgentLayout>
-                }
-              />
-              <Route
-                path="/mock-interview"
-                element={
-                  <AgentLayout>
-                    <MockInterview />
-                  </AgentLayout>
-                }
-              />
-              <Route path="*" element={<Home />} />
-            </Routes>
+            <AgentLayout>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/dashboard" element={<Home />} />
+                <Route path="/blueprints" element={<BlueprintDetail />} />
+                <Route path="/resume-studio" element={<AtsResumeStudio />} />
+                <Route path="/mock-interview" element={<MockInterview />} />
+                <Route path="*" element={<Home />} />
+              </Routes>
+            </AgentLayout>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>

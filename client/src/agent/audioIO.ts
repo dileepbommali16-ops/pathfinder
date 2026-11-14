@@ -13,6 +13,8 @@ export async function fetchDeepgramMp3(
   return null;
 }
 
+let clearAudioEngineHook: (() => void) | null = null;
+
 export class Speaker {
   private ctxRef: AudioContext | null = null;
   analyser: AnalyserNode | null = null;
@@ -100,6 +102,7 @@ export class Speaker {
    */
   say(raw: string) {
     if (typeof window === "undefined") return;
+    clearAudioEngineHook?.();
 
     // Strict Pure Puck Voice Mode: Cancel and prevent any browser default robotic voices
     if ("speechSynthesis" in window) {
@@ -413,12 +416,19 @@ export interface MicSignalStatus {
   deviceLabel: string;
 }
 
+export interface VoiceHealthAlert {
+  issue: "low_volume" | "dead_accessory_mic";
+  deviceLabel: string;
+  volumePercent: number;
+}
+
 export interface MicCaptureOptions {
   deviceId?: string;
   rawMode?: boolean;
   onSignalStatus?: (status: MicSignalStatus) => void;
   onAutoFallback?: () => void;
   onAutoDeviceSwitch?: (device: MediaDeviceOption) => void;
+  onVoiceHealthAlert?: (alert: VoiceHealthAlert) => void;
   shouldSuppressEcho?: () => boolean;
   onSpeechIdle?: () => void;
 }
@@ -574,6 +584,12 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         if (this.drain && this.avail === 0) {
           this.drain = false;
           this.turnStarted = false;
+          this.gainEnv = 0;
+          if (this.wasActive) {
+            this.wasActive = false;
+            this.port.postMessage({ type: "playing", active: false });
+          }
+        }
           if (this.wasActive) {
             this.wasActive = false;
             this.port.postMessage({ type: "playing", active: false });
@@ -619,9 +635,12 @@ class DasPcmPlayer extends AudioWorkletProcessor {
           this.lastOut = 0;
           this.lastSample = 0;
           this.buffering = true;
+          this.gainEnv = 0;
           if (this.drain) {
             this.drain = false;
             this.turnStarted = false;
+            this.port.postMessage({ type: "playing", active: false });
+          }
             if (this.wasActive) {
               this.wasActive = false;
               this.port.postMessage({ type: "playing", active: false });
@@ -672,6 +691,10 @@ class AudioEngine {
   private speechOnsetFrames: number = 0;
   private typingSuppressUntilMs: number = 0;
   private zeroSignalMs: number = 0;
+  private weakSignalMs: number = 0;
+  private lastHealthAlertAt: number = 0;
+  private hadHealthySignal: boolean = false;
+  private deviceChangeBound: boolean = false;
   private rawFallbackAttempted: boolean = false;
   private deviceFallbackAttempted: boolean = false;
   private captureToken: number = 0;
@@ -759,10 +782,43 @@ class AudioEngine {
         (this.audioCtx as any).setSinkId(this.selectedSpeakerId).catch(() => {});
       }
       this.ensurePlayerWorklet();
+      this.audioCtx.onstatechange = () => {
+        if (this.audioCtx && (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted")) {
+          this.audioCtx.resume().catch(() => {});
+        }
+      };
+      this.bindAutoDeviceChange();
     }
-    if (this.audioCtx.state === "suspended") {
+    if (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted") {
       this.audioCtx.resume().catch(() => {});
     }
+  }
+
+  private bindAutoDeviceChange() {
+    if (this.deviceChangeBound || typeof navigator === "undefined" || !navigator.mediaDevices?.addEventListener) {
+      return;
+    }
+    this.deviceChangeBound = true;
+    navigator.mediaDevices.addEventListener("devicechange", () => {
+      void this.autoSyncOutputDevice();
+    });
+  }
+
+  public async autoSyncOutputDevice() {
+    try {
+      const devices = await this.listAudioDevices();
+      const preferred = devices.outputs.find((d) =>
+        /headphone|headset|earphone|earbud|airpod|buds|bluetooth|hands-free|realtek.*head/i.test(d.label)
+      );
+      if (preferred) {
+        await this.setOutputDevice(preferred.deviceId);
+      } else {
+        await this.setOutputDevice("");
+      }
+      if (this.audioCtx && (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted")) {
+        await this.audioCtx.resume().catch(() => {});
+      }
+    } catch {}
   }
 
   public unlockAudio() {
@@ -836,8 +892,17 @@ class AudioEngine {
   public playPcmChunk(base64Pcm: string, sampleRate = 24000) {
     this.initContext();
     if (!this.audioCtx || !this.analyser) return;
-    if (this.audioCtx.state === "suspended") {
+    if (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted") {
       this.audioCtx.resume().catch(() => {});
+    }
+    // Single-voice mutual exclusion: stop legacy Speaker & browser TTS so 2 voices NEVER overlap
+    if (!this.activeTurnMode) {
+      try {
+        speaker?.stop?.();
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+      } catch {}
     }
 
     let binaryStr: string;
@@ -869,10 +934,19 @@ class AudioEngine {
     }
     if (!this.activeTurnMode) {
       this.activeTurnMode = this.playerReady && this.playerNode ? "worklet" : "fallback";
+      if (this.activeTurnMode === "worklet" && this.activeSources.length > 0) {
+        this.activeSources.forEach((src) => {
+          try {
+            src.stop();
+            src.disconnect();
+          } catch {}
+        });
+        this.activeSources = [];
+      }
     }
 
     const baseMs = Math.max(nowPerf + 160, this.playingUntilPerfMs);
-    this.playingUntilPerfMs = Math.min(nowPerf + 30000, baseMs + durMs);
+    this.playingUntilPerfMs = Math.min(nowPerf + 60000, baseMs + durMs);
 
     if (this.activeTurnMode === "worklet" && this.playerReady && this.playerNode) {
       this.playerNode.port.postMessage(
@@ -891,7 +965,7 @@ class AudioEngine {
     source.connect(this.analyser);
 
     const currentTime = this.audioCtx.currentTime;
-    if (this.nextPlayTime < currentTime || this.nextPlayTime > currentTime + 3.0) {
+    if (this.nextPlayTime < currentTime - 0.01 || this.nextPlayTime > currentTime + 60.0) {
       this.nextPlayTime = currentTime + 0.04;
     }
     source.start(this.nextPlayTime);
@@ -1081,8 +1155,34 @@ class AudioEngine {
     // If selected headset jack / default device has 0.0000 digital flatline for 2.5s, switch to active hardware mic
     if (this.zeroSignalMs > 2500 && !this.deviceFallbackAttempted) {
       this.deviceFallbackAttempted = true;
+      options?.onVoiceHealthAlert?.({
+        issue: "dead_accessory_mic",
+        deviceLabel: this.activeMicLabel || "Audio Input",
+        volumePercent: 0,
+      });
       this.switchAwayFromDeadMic(onPcmChunk, options);
       return;
+    }
+
+    // Track very faint / low-volume input (~20% volume on earphones, buds, or headphones)
+    if (rms >= 0.0004 && rms < 0.011 && !this.isSpeaking()) {
+      this.weakSignalMs += frameMs;
+      const nowAlert = Date.now();
+      const cooldownOk = nowAlert - this.lastHealthAlertAt > 25000;
+      const thresholdMs = this.hadHealthySignal ? 2200 : 4200;
+      if (this.weakSignalMs > thresholdMs && cooldownOk) {
+        this.lastHealthAlertAt = nowAlert;
+        this.weakSignalMs = 0;
+        const estPct = Math.max(5, Math.min(25, Math.round((rms / 0.05) * 100)));
+        options?.onVoiceHealthAlert?.({
+          issue: "low_volume",
+          deviceLabel: this.activeMicLabel || "Connected Headset/Earphones",
+          volumePercent: estPct,
+        });
+      }
+    } else if (rms >= 0.014 && !this.isSpeaking()) {
+      this.weakSignalMs = 0;
+      this.hadHealthySignal = true;
     }
 
     // Ironclad Echo & Keyboard-Click Shield: never self-clear active audio or trigger phantom turns on speaker echo or keystrokes
@@ -1144,6 +1244,7 @@ class AudioEngine {
     this.stopMicCapture();
     const token = ++this.captureToken;
     this.zeroSignalMs = 0;
+    this.weakSignalMs = 0;
     this.softGain = 1.0;
     this.dcPrevX = 0;
     this.dcPrevY = 0;
@@ -1612,6 +1713,7 @@ export class CameraEngine {
 
 export const cameraEngine = new CameraEngine();
 export const audioEngine = new AudioEngine();
+clearAudioEngineHook = () => audioEngine.clearAudioQueue();
 export { AudioEngine as BrowserAudioLoop };
 export function getLiveAudioVolume(): number {
   return audioEngine.getVolume();
