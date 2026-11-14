@@ -140,7 +140,7 @@ def _synthesize_puck_tts_sync(text: str, voice_name: str = "Puck") -> Optional[D
 
     for key in keys:
         try:
-            client = genai.Client(api_key=key)
+            client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
             resp = client.models.generate_content(
                 model="gemini-2.5-flash-preview-tts",
                 contents=text,
