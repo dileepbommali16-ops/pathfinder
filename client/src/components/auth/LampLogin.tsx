@@ -792,25 +792,8 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               </p>
             )}
 
-            {/* Demo / Guest shortcuts */}
-            <div className="mt-5 space-y-2 text-center">
-              <button
-                type="button"
-                id="btn-demo-wizard"
-                onClick={() =>
-                  React.startTransition(() => {
-                    onLogin({
-                      username: "New Student",
-                      email: "newstudent@pathfinder.ai",
-                      isNewUser: true
-                    });
-                  })
-                }
-                className="block w-full text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors underline underline-offset-4"
-              >
-                Start as New Student (Step-Wise Onboarding Wizard) &rarr;
-              </button>
-
+            {/* Guest / Demo shortcut */}
+            <div className="mt-5 text-center">
               <button
                 type="button"
                 id="btn-demo-guest"

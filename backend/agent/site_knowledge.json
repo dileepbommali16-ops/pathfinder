@@ -106,11 +106,9 @@
         "Sign Up / New Student",
         ") : ( // Hacker Eye",
         "Or Continue With",
-        "Start as New Student (Step-Wise Onboarding Wizard) &rarr;",
         "Continue in Guest / Demo Mode &rarr;",
         "Pull or click this string to toggle the lamp (ON / OFF)",
         "Click or pull the lamp string to reveal candidate details",
-        "New Student",
         "Guest Student"
       ],
       "agent_ids": []
