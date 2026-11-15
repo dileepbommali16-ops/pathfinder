@@ -10,8 +10,7 @@ import { CohortExplorer, CohortAnalyticsData } from "@/components/dashboard/Coho
 import { ResumeStudio, ResumeFeedbackData } from "@/components/dashboard/ResumeStudio";
 import { LampLogin } from "@/components/auth/LampLogin";
 import { Ambient3DBackground } from "@/components/dashboard/Ambient3DBackground";
-import { AIActionCenter } from "@/components/dashboard/AIActionCenter";
-import { NextActionsWidget } from "@/components/dashboard/NextActionsWidget";
+import { GoogleAutomationCard } from "@/components/dashboard/AIActionCenter";
 import { ProjectRecommender } from "@/components/dashboard/ProjectRecommender";
 import { CareerDigitalTwin } from "@/components/dashboard/CareerDigitalTwin";
 import { WhatIfSimulator } from "@/components/dashboard/WhatIfSimulator";
@@ -32,7 +31,7 @@ import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
 import { getCareerAgentResponse, buildRagGeminiSystemPrompt } from "@/lib/careerAgent";
 import { geminiLive } from "@/agent/geminiLive";
 import { audioEngine } from "@/agent/audioIO";
-import { handleAuthLoginDetected, initAuthMode, getUserRole } from "@/lib/auth";
+import { handleAuthLoginDetected, initAuthMode, getUserRole, toHonorificKey } from "@/lib/auth";
 import {
   Sparkles,
   ArrowRight,
@@ -639,6 +638,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
       widgetsShown: knowledge?.widgets || [],
       focusOnDas,
       isAuthenticated,
+      honorific: getUserRole(),
+      userName: username,
+      userEmail: email,
       readinessChance: prediction.chance,
       tone: prediction.tone,
       branch: profile.branch,
@@ -671,11 +673,14 @@ export default function Home({ initialTab }: HomeProps = {}) {
     const params = new URLSearchParams(window.location.search);
     const userParam = params.get("username") || params.get("user");
     const emailParam = params.get("email");
-    if (userParam) {
-      setUsername(userParam);
-      setIsAuthenticated(true);
+    if (userParam || emailParam) {
+      if (userParam) {
+        setUsername(userParam);
+        setIsAuthenticated(true);
+      }
+      if (emailParam) setEmail(emailParam);
+      handleAuthLoginDetected(emailParam || "", userParam || "");
     }
-    if (emailParam) setEmail(emailParam);
 
     fetchPrediction(profile);
     fetchCohortAnalytics({ year: 2026, branch: "All", gender: "All", skill: "All" });
@@ -714,22 +719,29 @@ export default function Home({ initialTab }: HomeProps = {}) {
       role: role,
     };
     localStorage.setItem("pathfinder_user", JSON.stringify(userObj));
-    localStorage.setItem("userEmail", user.email);
-    localStorage.setItem("userRole", role);
-    if (role === "Boss") {
-      localStorage.setItem("isOwner", "true");
-      localStorage.setItem("das_mode", "BOSS");
-      localStorage.setItem("das_honorific_override", "Boss");
-    }
 
     // 2. Transition immediately into the main dashboard on the very first frame
     setUsername(user.username);
     setEmail(user.email);
     setUserRole(role);
+    setMessages([
+      {
+        role: "assistant",
+        content: `Hi ${role}, I'm your Pathfinder AI agent, how can I help you?`,
+      },
+    ]);
     setIsAuthenticated(true);
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("pathfinder:auth-change", { detail: { authenticated: true } })
+        new CustomEvent("pathfinder:auth-change", {
+          detail: {
+            authenticated: true,
+            role,
+            honorificKey: toHonorificKey(role),
+            email: user.email,
+            username: user.username,
+          },
+        })
       );
     }
 
@@ -761,8 +773,15 @@ export default function Home({ initialTab }: HomeProps = {}) {
             if (authData.token) {
               localStorage.setItem("pathfinder_token", authData.token);
               if (authData.user) {
-                localStorage.setItem("pathfinder_user", JSON.stringify(authData.user));
-                setUserRole(authData.user.role || "student");
+                localStorage.setItem(
+                  "pathfinder_user",
+                  JSON.stringify({ ...authData.user, honorific: role })
+                );
+                const resolved = handleAuthLoginDetected(
+                  authData.user.email || user.email,
+                  authData.user.username || user.username
+                );
+                setUserRole(resolved);
               }
             }
           }
@@ -1015,9 +1034,20 @@ export default function Home({ initialTab }: HomeProps = {}) {
     fetchPrediction(updated);
   };
 
-  const fetchPrediction = async (p: StudentProfileState) => {
+  const fetchPrediction = async (
+    p: StudentProfileState,
+    overrides?: { atsScore?: number | null; githubScore?: number | null }
+  ) => {
     setIsCalculating(true);
     try {
+      const githubUrl = (p.githubUrl ?? p.codingProfiles?.github ?? "").trim();
+      const leetcodeUrl = (p.leetcodeUrl ?? p.codingProfiles?.leetcode ?? "").trim();
+      const effectiveAts =
+        overrides?.atsScore !== undefined ? overrides.atsScore : resumeFeedback?.score ?? null;
+      const effectiveGithubScore =
+        overrides?.githubScore !== undefined
+          ? overrides.githubScore
+          : p.githubVerifiedScore ?? null;
       const payload = {
         cgpa: p.cgpa,
         backlogs: p.backlogs,
@@ -1028,6 +1058,15 @@ export default function Home({ initialTab }: HomeProps = {}) {
         target_tier: p.targetTier,
         branch: p.branch,
         graduation_year: p.graduationYear,
+        skills: p.technicalSkills || p.skills || [],
+        certifications: p.certifications || [],
+        projects_count: p.projectsCount ?? 0,
+        github_url: githubUrl,
+        leetcode_url: leetcodeUrl,
+        tenth_percentage: p.tenthPercentage ?? 0,
+        twelfth_percentage: p.twelfthPercentage ?? 0,
+        ats_score: effectiveAts,
+        github_verified_score: effectiveGithubScore,
       };
 
       const [predResp, skillResp] = await Promise.allSettled([
@@ -1069,52 +1108,112 @@ export default function Home({ initialTab }: HomeProps = {}) {
         }
         setPrediction(combined);
       } else {
-        fallbackPredict(p);
+        fallbackPredict(p, effectiveAts, effectiveGithubScore);
       }
     } catch {
-      fallbackPredict(p);
+      fallbackPredict(
+        p,
+        overrides?.atsScore !== undefined ? overrides.atsScore : resumeFeedback?.score ?? null,
+        overrides?.githubScore !== undefined ? overrides.githubScore : p.githubVerifiedScore ?? null
+      );
     } finally {
       setIsCalculating(false);
     }
   };
 
-  const fallbackPredict = (p: StudentProfileState) => {
-    const raw =
-      p.cgpa * 5.2 +
-      Math.max(0, 3 - p.backlogs) * 4 +
-      Math.min(p.internships, 3) * 5 +
-      p.communication * 2.2 +
-      p.coding * 2.7 -
-      Math.max(p.backlogs - 1, 0) * 5;
-    const chance = Math.max(18, Math.min(96, Math.round(raw)));
-    const tone = chance >= 75 ? "strong" : chance >= 55 ? "steady" : "focus";
+  const fallbackPredict = (
+    p: StudentProfileState,
+    atsScore?: number | null,
+    githubScore?: number | null
+  ) => {
+    const githubUrl = (p.githubUrl ?? p.codingProfiles?.github ?? "").trim();
+    const leetcodeUrl = (p.leetcodeUrl ?? p.codingProfiles?.leetcode ?? "").trim();
+    const hasGithub = Boolean(githubUrl);
+    const hasLeetcode = Boolean(leetcodeUrl);
+    const skills = p.technicalSkills || p.skills || [];
+    const certs = p.certifications || [];
+
+    const codingNorm = p.coding <= 10 ? p.coding : Math.round(p.coding / 10);
+    const commNorm = p.communication <= 10 ? p.communication : Math.round(p.communication / 10);
+    const effIntern = hasGithub ? Math.min(p.internships, 3) : Math.min(p.internships, 2);
+    const effCoding = !hasGithub && !hasLeetcode && codingNorm >= 8 ? 7.0 : codingNorm;
+    const effComm = !hasGithub && commNorm >= 8 ? 7.2 : commNorm;
+
+    const evidenceScore =
+      p.cgpa * 2.8 +
+      (p.backlogs === 0 ? 12 : Math.max(-18, 8 - p.backlogs * 9)) +
+      effCoding * 1.9 +
+      effComm * 1.2 +
+      effIntern * (hasGithub ? 3.8 : 2.2) +
+      Math.min(skills.length, 8) * 1.1 +
+      Math.min(certs.length, 3) * 2.5 +
+      (hasGithub ? 6.0 : -4.0) +
+      (hasLeetcode ? 4.0 : -2.0) +
+      (typeof atsScore === "number" ? (atsScore - 55) * 0.14 : -3.0) +
+      (typeof githubScore === "number" ? (githubScore - 50) * 0.16 : 0);
+
+    const chance = Math.max(15, Math.min(91, Math.round(evidenceScore)));
+    const tone = chance >= 76 ? "strong" : chance >= 56 ? "steady" : "focus";
     const label =
-      chance >= 75
+      chance >= 76
         ? "Strong Candidate Profile"
-        : chance >= 55
-          ? "Solid Foundation"
+        : chance >= 56
+          ? "Solid Foundation · Needs Verified Proof"
           : "Needs Focus & Acceleration";
+
+    const strengths: string[] = [
+      p.cgpa >= 7.5
+        ? `Meets Tier-1 academic cutoff (CGPA ${p.cgpa.toFixed(1)}/10.0)`
+        : `Current CGPA ${p.cgpa.toFixed(1)}/10.0`,
+      p.backlogs === 0
+        ? "Zero active backlogs (passes automated eligibility filters)"
+        : `${p.backlogs} active backlog(s) requiring immediate clearance`,
+    ];
+    if (hasGithub) {
+      strengths.push("Public GitHub portfolio attached for technical verification");
+    }
+
+    const priorities: string[] = [];
+    if (!hasGithub) {
+      priorities.push(
+        "Unverified project claim risk: attach and audit your GitHub repository in Fraud Shield."
+      );
+    }
+    if (p.internships >= 4 && !hasGithub) {
+      priorities.push(
+        `${p.internships} self-reported internships cannot raise shortlist odds without public code/ATS verification.`
+      );
+    }
+    if (!hasLeetcode) {
+      priorities.push(
+        `Self-rated ${codingNorm}/10 DSA needs an external LeetCode/Codeforces link plus timed OA practice.`
+      );
+    }
+    if (typeof atsScore !== "number") {
+      priorities.push(
+        "No verified ATS resume scan yet — upload your resume in 5. ATS Resume Studio to benchmark core keywords (SQL, Docker, Cloud, REST)."
+      );
+    }
+    if (certs.length === 0) {
+      priorities.push(
+        `Add at least 1 verifiable certification aligned with ${p.targetRole} (e.g. AWS, GCP, Oracle Java).`
+      );
+    }
 
     setPrediction({
       chance,
       label,
       tone,
-      strengths: [
-        `Academic CGPA ${p.cgpa.toFixed(1)}/10.0`,
-        p.backlogs === 0 ? "Clean Academic Record (0 Backlogs)" : "Eligible for standard drives",
-        p.internships > 0 ? `${p.internships} Practical Internship(s)` : "Active academic projects",
-      ],
-      priorities: [
-        p.cgpa < 7.0 ? "Raise CGPA to >= 7.0 for top-tier cutoff" : "Maintain academic consistency",
-        p.coding < 7
-          ? "Focus on high-frequency Blind 75 DSA patterns"
-          : "Participate in timed mock rounds",
-      ],
+      strengths,
+      priorities:
+        priorities.length > 0
+          ? priorities
+          : ["Practice system design trade-offs and timed 60s mock defense rounds."],
       breakdown: {
-        academics: Math.round(p.cgpa * 10),
-        coding_dsa: p.coding * 10,
-        communication: p.communication * 10,
-        experience: Math.min(100, p.internships * 35),
+        academics: Math.round(Math.min(100, p.cgpa * 9.8)),
+        coding_dsa: Math.round(effCoding * (hasLeetcode ? 10 : 8)),
+        communication: Math.round(effComm * 9),
+        experience: Math.min(hasGithub ? 90 : 58, effIntern * 14 + (hasGithub ? 24 : 10)),
         eligibility: Math.max(0, 100 - p.backlogs * 25),
       },
     });
@@ -1159,12 +1258,15 @@ export default function Home({ initialTab }: HomeProps = {}) {
   };
 
   // 3. AI Coach Messages
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "Hi sir, I'm your Pathfinder AI agent, how can I help you?",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const initialRole = typeof window !== "undefined" ? getUserRole() : "Boss";
+    return [
+      {
+        role: "assistant",
+        content: `Hi ${initialRole}, I'm your Pathfinder AI agent, how can I help you?`,
+      },
+    ];
+  });
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isChatWakingUp, setIsChatWakingUp] = useState(false);
   const [isGlobalServerWakingUp, setIsGlobalServerWakingUp] = useState(false);
@@ -1251,6 +1353,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
         screenName: tabKnowledge?.title || effectiveTab,
         screenPurpose: tabKnowledge?.purpose || "",
         cardContext: cardContext || "",
+        honorific: getUserRole(),
+        userName: username,
+        userEmail: email,
         placementReadinessChance: `${prediction.chance}%`,
         placementReadinessLabel: prediction.label,
         candidateBranch: profile.branch,
@@ -1276,7 +1381,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
         const ragPrompt = buildRagGeminiSystemPrompt({
           query: trimmed,
           profile: chatPayload.profile,
-          honorific: "Boss",
+          honorific: getUserRole(),
           activeTab: effectiveTab,
           readinessChance: `${prediction.chance}%`,
         });
@@ -1479,7 +1584,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           if (reply) {
             setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
           } else {
-            const instantReply = getCareerAgentResponse(trimmed, cleanHistory, profile);
+            const instantReply = getCareerAgentResponse(trimmed, cleanHistory, profile, getUserRole());
             setMessages((prev) => [...prev, { role: "assistant", content: instantReply }]);
           }
         });
@@ -1490,7 +1595,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       if (abortCtrl.signal.aborted) {
         return;
       }
-      const instantReply = getCareerAgentResponse(trimmed, cleanHistory, profile);
+      const instantReply = getCareerAgentResponse(trimmed, cleanHistory, profile, getUserRole());
       startTransition(() => {
         setMessages((prev) => [...prev, { role: "assistant", content: instantReply }]);
       });
@@ -1524,6 +1629,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
             screenName: tabKnowledge?.title || fromTab,
             screenPurpose: tabKnowledge?.purpose || "",
             cardContext: cardContext || "",
+            honorific: getUserRole(),
+            userName: username,
+            userEmail: email,
             placementReadinessChance: `${prediction.chance}%`,
             placementReadinessLabel: prediction.label,
             candidateBranch: profile.branch,
@@ -1636,7 +1744,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
       if (resp.ok) {
         const data = await resp.json();
         setResumeFeedback(data);
-        toast.success("Senior Hiring Manager & Deloitte ATS audit complete!");
+        toast.success("Senior Hiring Manager ATS audit complete!");
+        if (typeof data?.score === "number") {
+          fetchPrediction(profile, { atsScore: data.score });
+        }
       } else {
         let errDetail = "Resume analysis could not be completed. Please check your document.";
         try {
@@ -1718,6 +1829,12 @@ export default function Home({ initialTab }: HomeProps = {}) {
     } catch { }
     localStorage.removeItem("pathfinder_user");
     localStorage.removeItem("pathfinder_token");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("isOwner");
+    localStorage.removeItem("das_mode");
+    localStorage.removeItem("das_honorific_override");
     setIsAuthenticated(false);
     setShowResultScreen(false);
     setIsDemoProfile(true);
@@ -2016,6 +2133,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   predictionChance={prediction.chance}
                   predictionTone={prediction.tone}
                   onNavigateTab={setActiveTab}
+                  atsScore={resumeFeedback?.score ?? null}
                 />
               </section>
 
@@ -2075,14 +2193,44 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 />
                 <LiveSkillVerifier
                   currentProfile={profile}
-                  onApplyVerifiedSkills={(skills) => {
+                  onAuditComplete={(score, audited) => {
+                    const nextGithub =
+                      audited.repoUrl ||
+                      (audited.username ? `https://github.com/${audited.username}` : profile.githubUrl || "");
+                    const merged: StudentProfileState = {
+                      ...profile,
+                      githubVerifiedScore: score,
+                      githubUrl: nextGithub || profile.githubUrl,
+                      codingProfiles: {
+                        ...(profile.codingProfiles || {}),
+                        github: nextGithub || profile.codingProfiles?.github,
+                      },
+                    };
+                    setProfile(merged);
+                    localStorage.setItem("pathfinder_profile_draft", JSON.stringify(merged));
+                    fetchPrediction(merged, { githubScore: score });
+                  }}
+                  onApplyVerifiedSkills={(skills, stats) => {
                     const updatedSkills = Array.from(
                       new Set([...(profile.technicalSkills || []), ...skills])
                     );
-                    const merged = { ...profile, technicalSkills: updatedSkills };
+                    const verifiedUrl = stats?.targetUrl || profile.githubUrl;
+                    const merged: StudentProfileState = {
+                      ...profile,
+                      technicalSkills: updatedSkills,
+                      skills: updatedSkills,
+                      githubUrl: verifiedUrl,
+                      githubVerifiedScore: stats?.authenticityScore ?? profile.githubVerifiedScore,
+                      codingProfiles: {
+                        ...(profile.codingProfiles || {}),
+                        github: verifiedUrl || profile.codingProfiles?.github,
+                      },
+                    };
                     setProfile(merged);
                     handleSaveProfile(merged);
-                    fetchPrediction(merged);
+                    fetchPrediction(merged, {
+                      githubScore: stats?.authenticityScore ?? merged.githubVerifiedScore ?? null,
+                    });
                   }}
                 />
               </section>
@@ -2114,44 +2262,77 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 </div>
               </section>
 
-              <section id="career-next-actions" data-das-id="next-actions" className="space-y-4">
-                <SectionHeader
-                  title="Priority Next Best Actions"
-                  description="Targeted high-leverage steps recommended specifically for your active bottlenecks"
-                  badge="Step 7 · Next Tasks"
-                  accent="amber"
-                  icon={ArrowRight}
-                  helperLabel="Auto-prioritizes Blind 75 DSA, projects, or cutoff clearance"
-                  onAskCoach={handleAskCoach}
-                />
-                <NextActionsWidget
-                  profile={profile}
-                  onNavigateTab={setActiveTab}
-                  onAskCoach={handleAskCoach}
-                />
-              </section>
-
               <section id="career-action-center" data-das-id="action-center" className="space-y-4">
                 <SectionHeader
-                  title="AI Action Center"
-                  description="One-click automated intelligence tools integrated with your candidate profile"
-                  badge="Step 8 · Quick Tools"
+                  title="Workspace Sync & Next Preparation Stages"
+                  description="Sync your readiness profile or jump directly into dedicated execution modules without duplicate checklists"
+                  badge="Step 7 · Next Modules"
                   accent="blue"
                   icon={Zap}
-                  helperLabel="Click any tool to launch diagnostic audit"
+                  helperLabel="Continue into 3. 6-Week Roadmap, 4. Project Blueprints, 5. ATS Resume Studio, or 6. Interview & Defense"
                   onAskCoach={handleAskCoach}
                 />
-                <AIActionCenter
-                  onNavigateTab={setActiveTab}
-                  onTriggerCalculate={() => fetchPrediction(profile)}
-                  onStartMockInterview={() => {
-                    setActiveTab("interview");
-                  }}
-                  targetRole={profile.targetRole}
-                  profile={profile}
-                  prediction={prediction}
-                  apiBase={API_BASE}
-                />
+                <div className="grid gap-6 lg:grid-cols-3">
+                  <div className="lg:col-span-1">
+                    <GoogleAutomationCard
+                      profile={profile}
+                      prediction={prediction}
+                      apiBase={API_BASE}
+                    />
+                  </div>
+                  <div className="lg:col-span-2 grid gap-3 sm:grid-cols-2">
+                    {[
+                      {
+                        tab: "skills" as TabId,
+                        title: "3. 6-Week Roadmap",
+                        desc: "Personalized weekly milestone tracker & Blind 75 sprint targets.",
+                        icon: Compass,
+                      },
+                      {
+                        tab: "projects" as TabId,
+                        title: "4. Project Blueprints",
+                        desc: "23 production architectures & codebase specs to replace weak mini-apps.",
+                        icon: Lightbulb,
+                      },
+                      {
+                        tab: "resume" as TabId,
+                        title: "5. ATS Resume Studio",
+                        desc: "Senior hiring manager ATS scoring, missing keywords & impact audit.",
+                        icon: FileText,
+                      },
+                      {
+                        tab: "interview" as TabId,
+                        title: "6. Interview & Defense",
+                        desc: "Live timed technical rounds & project architecture viva defense.",
+                        icon: Mic,
+                      },
+                    ].map((stage) => {
+                      const StageIcon = stage.icon;
+                      return (
+                        <button
+                          key={stage.tab}
+                          type="button"
+                          onClick={() => {
+                            setActiveTab(stage.tab);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                          className="group flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-[#11131c] p-4 text-left transition-all hover:border-white/30 hover:bg-[#161925] active:scale-[0.99] cursor-pointer"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-xs font-bold text-[#f8fafc]">
+                                <StageIcon className="h-4 w-4 text-[#7c3aed]" />
+                                <span>{stage.title}</span>
+                              </div>
+                              <ArrowRight className="h-3.5 w-3.5 text-[#94a3b8] transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                            </div>
+                            <p className="mt-2 text-xs text-[#94a3b8] leading-relaxed">{stage.desc}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </section>
             </motion.div>
           )}

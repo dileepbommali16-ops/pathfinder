@@ -148,6 +148,12 @@ class DasAgentSocket {
     window.addEventListener("online", verifyConnectionAlive);
   }
 
+  private get roleHonorific(): string {
+    if (this.savedRole === "madam") return "Madam";
+    if (this.savedRole === "sir") return "Sir";
+    return "Boss";
+  }
+
   public connect(
     role: UserHonorificRole = "boss",
     onTranscript?: (text: string) => void,
@@ -191,7 +197,7 @@ class DasAgentSocket {
       if (mySeq !== this.connSeq) return;
       this.lastPongAt = Date.now();
       if (!this.isDirectGoogle) {
-        this.savedOnTranscript?.("Connecting to DAS Core (Puck Voice)...");
+        this.savedOnTranscript?.("Connecting to DAS Core...");
 
         // 8s keep-alive ping + 16s silent half-open socket detector for Render backend
         if (this.renderPingTimer) window.clearInterval(this.renderPingTimer);
@@ -468,7 +474,7 @@ CORE AUTONOMOUS CAPABILITIES:
         if (data.setupComplete !== undefined) {
           this.isConnected = true;
           this.savedOnStatusChange?.(true);
-          this.savedOnTranscript?.("ONLINE (Puck Voice + Compiler + Browser Ready)! Speak or type now, Boss.");
+          this.savedOnTranscript?.(`DAS Online (DAS Ready)! Speak or type now, ${this.roleHonorific}.`);
           this.flushPendingMessages();
           return;
         }
@@ -488,7 +494,7 @@ CORE AUTONOMOUS CAPABILITIES:
             this.activeAudioTurnId = null;
             this.interruptedTurnIds.clear();
             this.savedOnStatusChange?.(true);
-            this.savedOnTranscript?.(`DAS Online (${data.voice || "Puck"} Voice Ready)!`);
+            this.savedOnTranscript?.("DAS Online (DAS Ready)!");
             const ctxNow =
               this.latestPageContext ||
               (typeof window !== "undefined" ? (window as any).__DAS_PAGE_CONTEXT__ : null);
@@ -532,7 +538,7 @@ CORE AUTONOMOUS CAPABILITIES:
             }
             this.isSpeakingTurn = true;
             if (!this.currentAgentTranscript) {
-              this.savedOnTranscript?.("🔊 DAS Speaking (Puck Voice)...");
+              this.savedOnTranscript?.("🔊 DAS Speaking...");
             }
           }
           return;
@@ -565,7 +571,7 @@ CORE AUTONOMOUS CAPABILITIES:
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
           if (!this.currentAgentTranscript) {
-            this.savedOnTranscript?.("DAS Ready. Speak or type your next command, Boss!");
+            this.savedOnTranscript?.(`DAS Ready. Speak or type your next command, ${this.roleHonorific}!`);
           }
           return;
         }
@@ -631,7 +637,7 @@ CORE AUTONOMOUS CAPABILITIES:
             await triggerGoogleAutomation(args);
           } else if (data.name === "return_to_dashboard") {
             this.savedOnCodeReady?.(null as any);
-            this.savedOnTranscript?.(args.message || "Okay Boss, returning to your dashboard.");
+            this.savedOnTranscript?.(args.message || `Okay ${this.roleHonorific}, returning to your dashboard.`);
           }
           return;
         }
@@ -650,7 +656,7 @@ CORE AUTONOMOUS CAPABILITIES:
                 }
                 this.isSpeakingTurn = true;
                 if (!this.currentAgentTranscript) {
-                  this.savedOnTranscript?.("🔊 DAS Speaking (Puck Voice)...");
+                  this.savedOnTranscript?.("🔊 DAS Speaking...");
                 }
               }
             }
@@ -672,7 +678,7 @@ CORE AUTONOMOUS CAPABILITIES:
           this.awaitingNextTurn = true;
           audioEngine.flushAudioPlayer();
           if (!this.currentAgentTranscript) {
-            this.savedOnTranscript?.("DAS Ready. Speak or type your next command, Boss!");
+            this.savedOnTranscript?.(`DAS Ready. Speak or type your next command, ${this.roleHonorific}!`);
           }
           return;
         }
@@ -841,13 +847,13 @@ CORE AUTONOMOUS CAPABILITIES:
       if (!this.watchdogRetriedForText) {
         this.watchdogRetriedForText = true;
         this.pendingTexts = [text];
-        this.savedOnTranscript?.("Refreshing live connection and retrying, Boss...");
+        this.savedOnTranscript?.(`Refreshing live connection and retrying, ${this.roleHonorific}...`);
         this.forceReconnectNow();
       } else {
         this.lastUnansweredText = null;
         this.lastUnansweredSetAt = 0;
         this.watchdogRetriedForText = false;
-        this.savedOnTranscript?.("Live session timed out, Boss. Please try sending your message again.");
+        this.savedOnTranscript?.(`Live session timed out, ${this.roleHonorific}. Please try sending your message again.`);
       }
     }, 12000);
   }
@@ -991,7 +997,7 @@ CORE AUTONOMOUS CAPABILITIES:
     if (this.isSpeakingTurn || audioEngine.isSpeaking()) return;
     if (this.isDirectGoogle) {
       this.sendImmediateText(
-        `Friendly audio notice (${issue} on ${device}): tell Boss kindly like a friend that his voice sounds very quiet or muffled and suggest raising volume or checking his earphones/buds.`
+        `Friendly audio notice (${issue} on ${device}): tell ${this.roleHonorific} kindly like a friend that their voice sounds very quiet or muffled and suggest raising volume or checking their earphones/buds.`
       );
     } else {
       try {
@@ -1056,7 +1062,7 @@ CORE AUTONOMOUS CAPABILITIES:
       q.includes("close code")
     ) {
       this.savedOnCodeReady?.(null as any);
-      this.savedOnTranscript?.("Okay Boss, returning to your dashboard.");
+      this.savedOnTranscript?.(`Okay ${this.roleHonorific}, returning to your dashboard.`);
     }
 
     if (!this.ws || this.ws.readyState === WebSocket.CLOSED || this.ws.readyState === WebSocket.CLOSING) {

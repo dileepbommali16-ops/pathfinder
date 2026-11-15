@@ -86,7 +86,7 @@ def format_audio_packet(pcm_bytes: bytes) -> dict:
     """
     return {
         "type": "audio",
-        "voice": "Puck",
+        "voice": "DAS Neural",
         "sample_rate": RECEIVE_SAMPLE_RATE,
         "pcm_base64": base64.b64encode(pcm_bytes).decode("utf-8"),
     }

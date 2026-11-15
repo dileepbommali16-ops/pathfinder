@@ -154,5 +154,68 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIn("application/pdf", pdf_resp.headers.get("content-type", ""))
         self.assertTrue(pdf_resp.content.startswith(b"%PDF-"))
 
+    def test_calibrated_predict_prevents_unverified_inflation(self):
+        payload = {
+            "cgpa": 7.8,
+            "branch": "CSE",
+            "backlogs": 0,
+            "internships": 10,
+            "communication": 9.0,
+            "coding": 9.0,
+            "github_url": "",
+            "leetcode_url": "",
+            "skills": [],
+            "certifications": [],
+        }
+        response = self.client.post("/api/predict", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertLess(data["chance"], 70)
+        priorities_joined = " ".join(data.get("priorities", [])).lower()
+        strengths_joined = " ".join(data.get("strengths", [])).lower()
+        self.assertTrue(len(data.get("priorities", [])) > 0)
+        self.assertNotIn("exceptional practical experience", strengths_joined)
+        self.assertTrue("github" in priorities_joined or "unverified" in priorities_joined)
+
+    def test_github_target_parser_and_endpoint_validation(self):
+        from backend.routers.github_router import parse_github_target
+
+        self.assertEqual(
+            parse_github_target("https://github.com/dileepbommali/small-project"),
+            ("repo", "dileepbommali", "small-project"),
+        )
+        self.assertEqual(
+            parse_github_target("https://github.com/torvalds"),
+            ("profile", "torvalds", None),
+        )
+        self.assertEqual(parse_github_target("@priyanka"), ("profile", "priyanka", None))
+
+        bad_resp = self.client.post("/api/verify-github", json={"url_or_username": ""})
+        self.assertEqual(bad_resp.status_code, 400)
+
+    def test_madam_honorific_in_chat_and_persona(self):
+        from backend.gemini_engine import prepare_chat_context
+        from backend.agent.persona import build_system_prompt, get_greeting_for_user
+
+        sys_instruction, _, _, _, _ = prepare_chat_context(
+            message="How do I improve my placement score?",
+            page_context={"honorific": "Madam", "activeTab": "overview"},
+        )
+        self.assertIn("Madam", sys_instruction)
+        self.assertNotIn("Address her as 'Boss'", sys_instruction)
+
+        persona_prompt = build_system_prompt("guest", {"honorific": "Madam"})
+        self.assertIn("Madam", persona_prompt)
+        self.assertIn("DAS Neural Voice", persona_prompt)
+        self.assertNotIn("Puck", persona_prompt)
+        self.assertIn("Madam", get_greeting_for_user(None, honorific="Madam"))
+
+    def test_no_puck_exposed_in_agent_status(self):
+        resp = self.client.get("/agent/status")
+        self.assertEqual(resp.status_code, 200)
+        body = resp.text.lower()
+        self.assertNotIn("puck", body)
+        self.assertIn("das neural", body)
+
 if __name__ == "__main__":
     unittest.main()

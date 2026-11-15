@@ -14,6 +14,7 @@ from backend.supabase_rag import (
 BASE = pathlib.Path(__file__).parent
 
 OWNER_GREETING = "Hi Boss, what's up! I'm your DAS agent, how can I assist you?"
+MADAM_GREETING = "Hi Madam, I'm your DAS agent, how can I assist you?"
 GUEST_GREETING = "Hi Sir, I'm your DAS agent, how can I assist you?"
 STAKEHOLDER_GREETING = GUEST_GREETING  # backwards compatibility alias
 
@@ -105,12 +106,14 @@ def build_system_prompt(role: str, page: dict, query: str = "") -> str:
     Builds a compact (< 2000 tokens) Groq system prompt injecting ONLY the Top 3
     semantic search results from the 23 blueprints + 972 placement records.
     """
-    who = (
-        "the OWNER and BOSS (Dileep) who built Pathfinder. Address him warmly as 'Boss'."
-        if role == "owner"
-        else "a guest, student, or stakeholder. Address them respectfully as 'Sir'."
-    )
     page_dict = page or {}
+    hon = str(page_dict.get("honorific") or page_dict.get("userRole") or "").strip().lower()
+    if role == "owner" or hon == "boss":
+        who = "the OWNER and BOSS (Dileep) who built Pathfinder. Address him warmly as 'Boss'."
+    elif role == "madam" or hon == "madam":
+        who = "a respected female student or stakeholder. Address her politely and respectfully as 'Madam' (NEVER call her Boss or Sir)."
+    else:
+        who = "a guest, student, or stakeholder. Address them respectfully as 'Sir'."
     branch = str(page_dict.get("candidateBranch") or page_dict.get("branch") or "CSE")
     cgpa = page_dict.get("cgpa", 7.8)
     backlogs = page_dict.get("backlogs", 0)
@@ -131,7 +134,7 @@ def build_system_prompt(role: str, page: dict, query: str = "") -> str:
 You are speaking to {who}
 Candidate Profile: Branch={branch}, CGPA={cgpa}, Backlogs={backlogs}, Role={target_role}, Tab={active_tab}.
 
-OUTPUT FORMAT (spoken aloud via Gemini Live Puck voice):
+OUTPUT FORMAT (spoken aloud via DAS Neural Voice):
 1. First, write 1-2 short natural spoken sentences in the USER'S LANGUAGE (plain text, zero markdown/asterisks).
 2. Then write ||| followed by concise notes in same language if details are helpful.
 3. LANGUAGE RULE - MOST IMPORTANT: Auto-detect user language. User Telugu / Tenglish lo matladithe, nuvvu Telugu + English mix (Tenglish) lo reply ivvu. User Hindi lo matladithe Hindi lo reply ivvu. User English lo matladithe English lo reply ivvu. Never force English.
@@ -159,10 +162,21 @@ def build_system_instruction(
     query: str = "",
 ) -> str:
     from backend.owner_profile import is_owner_user
-    role = "owner" if is_owner_user(user) else "guest"
-    return build_system_prompt(role, current_page_context or {}, query=query)
+    ctx = current_page_context or {}
+    hon = str(ctx.get("honorific") or ctx.get("userRole") or "").strip().lower()
+    if is_owner_user(user):
+        role = "owner"
+    elif hon == "madam":
+        role = "madam"
+    else:
+        role = "guest"
+    return build_system_prompt(role, ctx, query=query)
 
 
-def get_greeting_for_user(user: Optional[Any] = None) -> str:
+def get_greeting_for_user(user: Optional[Any] = None, honorific: str = "") -> str:
     from backend.owner_profile import is_owner_user
-    return OWNER_GREETING if is_owner_user(user) else GUEST_GREETING
+    if is_owner_user(user):
+        return OWNER_GREETING
+    if str(honorific or "").strip().lower() == "madam":
+        return MADAM_GREETING
+    return GUEST_GREETING

@@ -4,7 +4,7 @@ import { dasSocket, UserHonorificRole } from "./agentSocket";
 export function useAgentController() {
   const [role, setRole] = useState<UserHonorificRole>("boss");
   const [isConnected, setIsConnected] = useState(false);
-  const [transcript, setTranscript] = useState("DAS Live Ready (Puck Voice)");
+  const [transcript, setTranscript] = useState("DAS Ready!");
 
   const toggleRole = useCallback((newRole: UserHonorificRole) => {
     setRole(newRole);

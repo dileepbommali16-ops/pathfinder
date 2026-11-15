@@ -129,35 +129,44 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
 
   const studentCgpa = Number(profile.cgpa) || 7.5;
   const studentBacklogs = Number(profile.backlogs ?? profile.activeBacklogs ?? 0);
-  const studentCoding = Number(profile.coding) || 75;
+  const rawCoding = Number(profile.coding ?? 5);
+  const studentCodingPct = rawCoding <= 10 ? rawCoding * 10 : Math.min(100, rawCoding);
   const studentInternships = Number(profile.internships) || 0;
+  const hasGithubProof = Boolean((profile.githubUrl || profile.codingProfiles?.github || "").trim());
+  const hasLeetcodeProof = Boolean((profile.leetcodeUrl || profile.codingProfiles?.leetcode || "").trim());
 
-  // Dynamic compatibility calculation
+  // Dynamic calibrated compatibility calculation (Senior Hiring Manager rubric)
   const calculateCompatibility = (comp: CompanyBenchmark) => {
-    let score = 50;
+    let score = 38;
 
     if (studentCgpa >= comp.minCgpa) {
       const extraCgpa = Math.min(studentCgpa - comp.minCgpa, 2.0);
-      score += 15 + extraCgpa * 5;
+      score += 12 + extraCgpa * 4;
     } else {
       score -= (comp.minCgpa - studentCgpa) * 18;
     }
 
     if (studentBacklogs === 0) {
-      score += 10;
+      score += 8;
     } else {
-      score -= studentBacklogs * 25;
+      score -= studentBacklogs * 22;
     }
 
-    score += (studentCoding / 100) * 15;
+    score += (studentCodingPct / 100) * 16;
 
-    if (studentInternships > 0) {
-      score += Math.min(studentInternships * 5, 10);
+    // Cap unverified self-reported internships cleanly
+    const effectiveInternships = Math.min(studentInternships, hasGithubProof ? 3 : 2);
+    if (effectiveInternships > 0) {
+      score += effectiveInternships * (hasGithubProof ? 4 : 2.5);
     }
+
+    if (hasGithubProof) score += 5;
+    else score -= 6;
+    if (hasLeetcodeProof) score += 3;
 
     score += (predictionChance / 100) * 10;
 
-    return Math.max(18, Math.min(96, Math.round(score)));
+    return Math.max(15, Math.min(91, Math.round(score)));
   };
 
   const getStatusBadge = (score: number, comp: CompanyBenchmark) => {

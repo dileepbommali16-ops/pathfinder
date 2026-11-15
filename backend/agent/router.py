@@ -9,11 +9,11 @@ router.include_router(ws_router)
 async def agent_voice_status():
     return {
         "agent_name": "DAS 3D Co-Pilot",
-        "voice_profile": "Puck",
+        "voice_profile": "DAS Neural",
         "sample_rate_hz": PUCK_SAMPLE_RATE,
         "websocket_url": "wss://pathfinder-backend-klrp.onrender.com/agent/ws",
         "multilingual": ["Telugu", "English", "Hindi"],
-        "honorific_modes": ["Boss (Dileep)", "Sir (Client/Evaluator)"]
+        "honorific_modes": ["Boss (Dileep)", "Madam (Guest)", "Sir (Guest)"]
     }
 
 agent_router = router

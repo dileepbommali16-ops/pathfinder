@@ -26,6 +26,7 @@ interface CareerDigitalTwinProps {
   predictionChance: number;
   predictionTone: "strong" | "steady" | "focus";
   onNavigateTab: (tabId: any) => void;
+  atsScore?: number | null;
 }
 
 interface ReadinessDimension {
@@ -47,35 +48,62 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
   predictionChance,
   predictionTone,
   onNavigateTab,
+  atsScore,
 }) => {
   const [expandedDimension, setExpandedDimension] = useState<string | null>("tech");
+
+  const hasGithub = Boolean((profile.githubUrl || profile.codingProfiles?.github || "").trim());
+  const hasLeetcode = Boolean((profile.leetcodeUrl || profile.codingProfiles?.leetcode || "").trim());
+  const skillsCount = (profile.technicalSkills || profile.skills || []).length;
+  const certsCount = (profile.certifications || []).length;
+  const codingTen = profile.coding <= 10 ? profile.coding : Math.round(profile.coding / 10);
+  const effectiveCodingTen = !hasGithub && !hasLeetcode && codingTen >= 8 ? 7 : codingTen;
 
   // Profile Completeness calculation
   const completenessFields = [
     Boolean(profile.cgpa),
-    Boolean(profile.coding),
+    Boolean(codingTen),
     Boolean(profile.communication),
     Boolean(profile.targetRole),
     Boolean(profile.targetTier),
     Boolean(profile.branch),
-    profile.internships > 0,
+    hasGithub,
+    hasLeetcode,
+    certsCount > 0,
     profile.backlogs === 0
   ];
   const completenessPercent = Math.round(
     (completenessFields.filter(Boolean).length / completenessFields.length) * 100
   );
 
-  // 7 Transparent Dimensions
+  // Calibrated Project & Experience Evidence (never inflates unverified self-reported internships to 100%)
+  const rawExpScore =
+    (hasGithub ? 26 : 6) +
+    Math.min(24, (profile.projectsCount || 0) * 8) +
+    Math.min(28, (profile.internships || 0) * 9) +
+    Math.min(12, certsCount * 6) +
+    (typeof profile.githubVerifiedScore === "number" ? Math.round(profile.githubVerifiedScore * 0.25) : 0);
+  const calibratedExpScore = Math.min(hasGithub ? 92 : 62, Math.max(18, rawExpScore));
+
+  // Calibrated ATS score (no fake hardcoded 78)
+  const effectiveAtsScore =
+    typeof atsScore === "number" && atsScore > 0
+      ? Math.round(atsScore)
+      : Math.min(60, 28 + Math.min(skillsCount, 8) * 3 + (hasGithub ? 8 : 0) + (certsCount > 0 ? 6 : 0));
+
+  // 6 Calibrated Dimensions
   const dimensions: ReadinessDimension[] = [
     {
       id: "tech",
       name: "Technical & DSA Problem Solving",
-      score: profile.coding * 10,
+      score: Math.min(hasLeetcode ? 95 : 75, effectiveCodingTen * 10),
       weight: "25% Weight",
       icon: Code2,
       source: "SYSTEM DERIVED",
-      currentState: `${profile.coding}/10 Confidence in Data Structures & Core Algorithms`,
-      missing: profile.coding < 8 ? "High-frequency Blind 75 patterns (Sliding Window, Trees, Binary Search)" : "Advanced Graph & DP edge cases",
+      currentState: !hasLeetcode && codingTen >= 8
+        ? `${codingTen}/10 self-rated DSA (capped to 75% until LeetCode/Codeforces link is attached)`
+        : `${codingTen}/10 Confidence in Data Structures & Core Algorithms`,
+      missing: !hasLeetcode ? "Attach verifiable LeetCode/GitHub profile + Blind 75 execution proof" : (codingTen < 8 ? "High-frequency Blind 75 patterns (Sliding Window, Trees, Binary Search)" : "Advanced Graph & DP edge cases"),
       whyItMatters: "85% of company screening tests use automated HackerRank/LeetCode coding rounds.",
       nextAction: "Review Blind 75 patterns and core skill gaps in your 6-Week Roadmap",
       actionTab: "skills"
@@ -83,14 +111,16 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
     {
       id: "projects",
       name: "Flagship Project Evidence",
-      score: Math.min(100, Math.max(30, profile.internships * 45)),
+      score: calibratedExpScore,
       weight: "20% Weight",
       icon: Briefcase,
       source: "USER DATA",
-      currentState: `${profile.internships} Practical Engineering Experience / Internships`,
-      missing: profile.internships < 2 ? "Production-grade deployed flagship project with OpenAPI docs & test suite" : "High-throughput performance profiling",
-      whyItMatters: "Interviewers spend 40% of technical rounds dissecting your architecture and decisions.",
-      nextAction: "Generate a role-aligned project blueprint in the Project Studio",
+      currentState: `${profile.projectsCount || 0} Project(s) · ${profile.internships} Self-Reported Internship(s)${hasGithub ? " · GitHub linked" : " · No GitHub URL attached"}`,
+      missing: !hasGithub
+        ? "Run a real GitHub audit in Fraud Shield — unverified internships/mini-apps are capped at 62%"
+        : (profile.projectsCount < 2 ? "Production-grade deployed flagship project with OpenAPI docs & test suite" : "Add automated tests, Docker, and live benchmarks"),
+      whyItMatters: "Hiring managers inspect actual GitHub codebases — starter demos and unverified claims are discounted heavily.",
+      nextAction: "Verify your repo in Fraud Shield or build a Tier-1 Blueprint",
       actionTab: "projects"
     },
     {
@@ -101,7 +131,7 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
       icon: Award,
       source: "USER DATA",
       currentState: `CGPA ${profile.cgpa.toFixed(1)}/10.0 · ${profile.backlogs} Active Backlog(s)`,
-      missing: profile.backlogs > 0 ? `Must clear ${profile.backlogs} backlog(s) before recruitment drives` : (profile.cgpa < 7.5 ? "Push CGPA above 7.5 to unlock top MNC cutoffs" : "Maintain academic consistency"),
+      missing: profile.backlogs > 0 ? `Must clear ${profile.backlogs} backlog(s) before recruitment drives` : (profile.cgpa < 7.5 ? "Push CGPA above 7.5 to unlock top MNC cutoffs" : "Academic cutoff satisfied — differentiate via engineering proof"),
       whyItMatters: "Top MNCs enforce automated cutoff filters (60%-70% / 7.0 CGPA) with 0 active backlogs.",
       nextAction: profile.backlogs > 0 ? "Prioritize backlog clearance roadmap immediately" : "Explore Cohort Benchmarks for your CGPA band",
       actionTab: "analytics"
@@ -109,39 +139,43 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
     {
       id: "role_align",
       name: "Target Role Alignment",
-      score: profile.coding >= 7 && profile.cgpa >= 7.5 ? 85 : 68,
+      score: Math.min(92, 42 + Math.min(skillsCount, 8) * 4 + (hasGithub ? 12 : 0) + (certsCount > 0 ? 8 : 0)),
       weight: "15% Weight",
       icon: Target,
       source: "AI RECOMMENDATION",
-      currentState: `Targeting: ${profile.targetRole}`,
-      missing: "Role-specific technology stack depth & domain architectural patterns",
-      whyItMatters: "Role alignment distinguishes tailored applicants from generic applicants.",
+      currentState: `Targeting: ${profile.targetRole} · ${skillsCount} tagged skill(s), ${certsCount} cert(s)`,
+      missing: skillsCount < 6 || certsCount === 0
+        ? "Add core role stack (SQL, System Design, Cloud/Docker) + at least 1 industry certification"
+        : "Role-specific distributed architecture & benchmark depth",
+      whyItMatters: "Recruiters shortlist candidates whose verified stack directly matches the job description.",
       nextAction: "Inspect Target Role Intelligence matrix",
       actionTab: "roles"
     },
     {
       id: "interview",
       name: "Interview Articulation (STAR)",
-      score: profile.communication * 10,
+      score: Math.min(hasGithub ? 92 : 76, (profile.communication <= 10 ? profile.communication : Math.round(profile.communication / 10)) * 10),
       weight: "10% Weight",
       icon: Mic,
       source: "SYSTEM DERIVED",
       currentState: `${profile.communication}/10 Communication & Storytelling readiness`,
-      missing: profile.communication < 8 ? "Structured STAR framing (Situation, Task, Action, Result) for behavioral rounds" : "System design trade-off articulation",
-      whyItMatters: "Final hiring decisions rely heavily on communication clarity and team fit.",
+      missing: profile.communication < 8 ? "Structured STAR framing (Situation, Task, Action, Result) for behavioral rounds" : "Timed system design trade-off articulation under pressure",
+      whyItMatters: "Final hiring decisions rely heavily on communication clarity and system trade-off defense.",
       nextAction: "Start an interactive Mock Interview round",
       actionTab: "interview"
     },
     {
       id: "resume",
       name: "ATS Resume Strength",
-      score: 78,
+      score: effectiveAtsScore,
       weight: "10% Weight",
       icon: FileText,
-      source: "AI RECOMMENDATION",
-      currentState: "Standard engineering resume format with technical skills",
-      missing: "Google X-Y-Z quantifiable metric bullets (Accomplished X measured by Y doing Z)",
-      whyItMatters: "75% of resumes are discarded by ATS keyword parsers before reaching humans.",
+      source: typeof atsScore === "number" && atsScore > 0 ? "ML OUTPUT" : "AI RECOMMENDATION",
+      currentState: typeof atsScore === "number" && atsScore > 0
+        ? `Measured ATS Resume Score: ${effectiveAtsScore}/100`
+        : "No resume PDF scanned yet — baseline estimated from profile skills only",
+      missing: "Upload your PDF in ATS Resume Studio to benchmark missing keywords, projects, and X-Y-Z metrics",
+      whyItMatters: "75% of resumes are rejected by ATS keyword parsers or hiring managers in under 15 seconds.",
       nextAction: "Audit your PDF resume in ATS Resume Studio",
       actionTab: "resume"
     }

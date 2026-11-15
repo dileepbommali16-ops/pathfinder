@@ -6,7 +6,14 @@ import { audioEngine, cameraEngine, MediaDeviceOption } from "./audioIO";
 import { CodeTaskPayload } from "./toolRunner";
 import { API_BASE } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
+import { getUserRole, getHonorificKey, setHonorificPreference, HonorificKey } from "@/lib/auth";
 import { toast } from "sonner";
+
+function getInitialGreeting(roleKey: HonorificKey): string {
+  if (roleKey === "madam") return "Hello Madam, what can I help you with today?";
+  if (roleKey === "sir") return "Hello Sir, what can I help you with today?";
+  return "Hi Boss! What's up?";
+}
 
 export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
@@ -23,9 +30,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [connected, setConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
-  const [role, setRole] = useState<UserHonorificRole>("boss");
+  const [role, setRole] = useState<UserHonorificRole>(() => getHonorificKey());
   const [inputText, setInputText] = useState("");
-  const [transcript, setTranscript] = useState("Hi Boss! What's up?");
+  const [transcript, setTranscript] = useState(() => getInitialGreeting(getHonorificKey()));
   const [userTranscript, setUserTranscript] = useState("");
   const [micSilentWarning, setMicSilentWarning] = useState(false);
   const [micHealthHint, setMicHealthHint] = useState("");
@@ -57,18 +64,40 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [attachedType, setAttachedType] = useState<"image" | "video" | "resume" | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Listen for login / logout state changes across Pathfinder
+  // Listen for login / logout & honorific changes across Pathfinder
   useEffect(() => {
+    const syncRoleFromAuth = (explicitKey?: HonorificKey) => {
+      const nextKey = explicitKey || getHonorificKey();
+      setRole((prev) => {
+        if (prev !== nextKey) {
+          setTranscript(getInitialGreeting(nextKey));
+          if (dasSocket.isConnected) {
+            dasSocket.switchRole(nextKey);
+          }
+        }
+        return nextKey;
+      });
+    };
+
     const handleAuthChange = (e: any) => {
-      setIsAuthenticated(Boolean(e.detail?.authenticated));
+      if (typeof e.detail?.authenticated === "boolean") {
+        setIsAuthenticated(e.detail.authenticated);
+      }
+      syncRoleFromAuth(e.detail?.honorificKey);
+    };
+    const handleHonorificChange = (e: any) => {
+      syncRoleFromAuth(e.detail?.honorificKey);
     };
     const handleStorage = () => {
       setIsAuthenticated(Boolean(localStorage.getItem("pathfinder_user")));
+      syncRoleFromAuth();
     };
     window.addEventListener("pathfinder:auth-change", handleAuthChange);
+    window.addEventListener("das:honorific-change", handleHonorificChange);
     window.addEventListener("storage", handleStorage);
     return () => {
       window.removeEventListener("pathfinder:auth-change", handleAuthChange);
+      window.removeEventListener("das:honorific-change", handleHonorificChange);
       window.removeEventListener("storage", handleStorage);
     };
   }, []);
@@ -139,8 +168,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const ensureSocketConnected = () => {
     if (dasSocket.isConnected) return;
+    const activeRole = getHonorificKey();
+    setRole(activeRole);
     dasSocket.connect(
-      role,
+      activeRole,
       (text: string) => setTranscript(text),
       (status: boolean) => setConnected(status),
       (path: string) => navigate(path),
@@ -235,7 +266,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 branch: parsedProfile.branch ?? "CSE",
               },
               active_tab: mergedCtx.activeTab || "overview",
-              page_context: mergedCtx,
+              page_context: { ...mergedCtx, honorific: getUserRole() },
             }),
           });
           if (resp.ok) {
@@ -247,7 +278,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         } catch {}
 
         if (!replyText) {
-          replyText = getCareerAgentResponse(query, [], parsedProfile);
+          replyText = getCareerAgentResponse(query, [], parsedProfile, getUserRole());
         }
         if (!settled && askCoachNonceRef.current === nonce && replyText) {
           cleanup();
@@ -449,15 +480,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleRoleToggle = (newRole: UserHonorificRole) => {
     audioEngine.unlockAudio();
     audioEngine.autoSyncOutputDevice();
+    setHonorificPreference(newRole === "boss" ? "Boss" : newRole === "madam" ? "Madam" : "Sir");
     setRole(newRole);
     dasSocket.switchRole(newRole);
-    if (newRole === "boss") {
-      setTranscript("Hi Boss! What's up?");
-    } else if (newRole === "madam") {
-      setTranscript("Hello Madam, what can I help you with today?");
-    } else {
-      setTranscript("Hello Sir, what can I help you with today?");
-    }
+    setTranscript(getInitialGreeting(newRole));
   };
 
   const handleSendText = (e: React.FormEvent) => {

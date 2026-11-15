@@ -125,6 +125,7 @@ from backend.routers.analytics_router import analytics_router
 from backend.routers.ai_router import ai_router
 from backend.routers.predictions_router import predictions_router
 from backend.routers.export_router import export_router
+from backend.routers.github_router import github_router
 from backend.routers.voice_routes import router as voice_routes
 from backend.routers.webhook_router import webhook_router
 from backend.agent.router import agent_router
@@ -264,6 +265,7 @@ app.include_router(profile_router)
 app.include_router(analytics_router)
 app.include_router(ai_router)
 app.include_router(predictions_router)
+app.include_router(github_router)
 app.include_router(export_router)
 app.include_router(voice_routes)
 app.include_router(webhook_router)
@@ -278,6 +280,7 @@ v1_app.include_router(profile_router)
 v1_app.include_router(analytics_router)
 v1_app.include_router(ai_router)
 v1_app.include_router(predictions_router)
+v1_app.include_router(github_router)
 v1_app.include_router(export_router)
 v1_app.include_router(webhook_router)
 v1_app.include_router(agent_router)
@@ -297,7 +300,7 @@ def get_gemini_live_key():
         "service": "pathfinder-agent-ws",
         "ws_endpoint": "/agent/ws",
         "model": os.getenv("GEMINI_LIVE_MODEL", "gemini-3.8-live"),
-        "voice": os.getenv("GEMINI_VOICE_NAME", "Puck")
+        "voice": "DAS Neural"
     }
 
 
@@ -318,7 +321,7 @@ async def test_live_debug():
         client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
         cfg = create_gemini_live_config(get_das_system_instruction("boss"), DAS_TOOLS)
         async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
-            return {"ok": True, "connected": True, "model": LIVE_MODEL, "voice": "Puck", "key_preview": key_preview}
+            return {"ok": True, "connected": True, "model": LIVE_MODEL, "voice": "DAS Neural", "key_preview": key_preview}
     except Exception as e:
         from backend.config.key_resolver import get_active_gemini_key
         key = get_active_gemini_key()

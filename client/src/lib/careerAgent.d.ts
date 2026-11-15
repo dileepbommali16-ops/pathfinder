@@ -15,5 +15,5 @@ export declare function semanticSearchSync(query?: string, profile?: any, topK?:
 export declare function semanticSearchPathfinderRAG(query?: string, profile?: any, topK?: number): Promise<any[]>;
 export declare function buildRagGeminiSystemPrompt(options?: any): string;
 export declare const buildRagGroqSystemPrompt: (options?: any) => string;
-export declare const getCareerAgentResponse: (userMessage: string, history?: any[], profile?: any) => string;
+export declare const getCareerAgentResponse: (userMessage: string, history?: any[], profile?: any, honorific?: string) => string;
 

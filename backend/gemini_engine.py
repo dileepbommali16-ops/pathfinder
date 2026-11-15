@@ -659,9 +659,12 @@ def generate_smart_fallback_reply(
         )
 
     # 8. Voice / Audio Feedback Handling
+    honorific_fallback = str((page_context or {}).get("honorific") or "Sir").strip()
+    if honorific_fallback.lower() not in ("boss", "madam", "sir"):
+        honorific_fallback = "Sir"
     if any(k in low_msg for k in ("voice", "vinapadatledhu", "vinapadtle", "hear", "sound", "audio", "silent", "speak", "talk")):
         return (
-            f"🎙️ **Audio & Voice Pipeline Restored, Boss!**\n\n"
+            f"🎙️ **Audio & Voice Pipeline Restored, {honorific_fallback}!**\n\n"
             f"My natural speech engine and 60 FPS 3D Avatar lip-sync are now fully active and calibrated for you. "
             f"I am ready to guide your placement prep, explain any of the 23 blueprints, or run a live mock technical interview. "
             f"What would you like to explore next?"
@@ -777,11 +780,15 @@ SAVED CANDIDATE PROFILE:
         sys_instruction += f"\n\n{site_ctx}"
     if profile_ctx:
         sys_instruction += f"\n\n{profile_ctx}"
-    honorific = (page_context or {}).get("honorific") if isinstance(page_context, dict) else None
-    if honorific == "Sir":
+    raw_honorific = str((page_context or {}).get("honorific") or "").strip().lower() if isinstance(page_context, dict) else ""
+    if raw_honorific in ("madam", "mam", "ma'am"):
+        sys_instruction += "\n\nADDRESSING RULE: You are speaking with a respected female user/candidate/mentor. Always address her politely as 'Madam' (never call her Boss)."
+    elif raw_honorific == "sir":
         sys_instruction += "\n\nADDRESSING RULE: You are speaking with a respected guest/candidate. Always address them respectfully as 'Sir' (never call them Boss)."
-    else:
+    elif raw_honorific == "boss":
         sys_instruction += "\n\nADDRESSING RULE: You are speaking with the Owner (Dileep). Always address him warmly and respectfully as 'Boss'."
+    else:
+        sys_instruction += "\n\nADDRESSING RULE: Address the user politely as 'Sir' or 'Madam' matching their name/context (never assume they are Boss unless explicitly verified as Dileep)."
 
     # Build strictly alternating multi-turn history (trimmed to 6 turns & max 2000 chars)
     contents: List[Dict[str, Any]] = []

@@ -180,41 +180,15 @@ def delete_profile(
 @profile_router.post("/api/profile/calculate", response_model=ReadinessAuditResult)
 def calculate_readiness_audit(profile: StudentProfile, background_tasks: BackgroundTasks):
     """Computes placement readiness probability, strengths, gaps, and benchmarks."""
-    pred = predict_placement(
-        cgpa=profile.cgpa,
-        coding=profile.coding,
-        communication=profile.communication,
-        internships=profile.internships,
-        backlogs=profile.active_backlogs
-    )
+    pred = predict_placement(profile)
 
     benchmark = compute_cohort_benchmark(
         branch=profile.branch or "CSE",
         cgpa=profile.cgpa
     )
 
-    strengths = []
-    gaps = []
-
-    if profile.cgpa >= 8.0:
-        strengths.append(f"Strong CGPA ({profile.cgpa}) comfortably satisfies all MNC hiring cutoffs.")
-    elif profile.cgpa < 7.0:
-        gaps.append(f"Current CGPA ({profile.cgpa}) is near cutoffs for tier-1 companies.")
-
-    if profile.coding >= 8:
-        strengths.append("High coding score guarantees high clearance in initial coding rounds.")
-    elif profile.coding < 6:
-        gaps.append("Coding confidence requires practice in dynamic programming and graph algorithms.")
-
-    if profile.internships >= 1:
-        strengths.append(f"Hands-on industry exposure ({profile.internships} internship(s)) strengthens resume ranking.")
-    else:
-        gaps.append("No recorded internships. Prioritize capstone full-stack deployments or open-source.")
-
-    if profile.active_backlogs == 0:
-        strengths.append("Zero active backlogs ensures eligibility for all recruitment drives.")
-    else:
-        gaps.append(f"Active backlogs ({profile.active_backlogs}) will disqualify from several Day-1 drives.")
+    strengths = list(pred.strengths)
+    gaps = list(pred.priorities)
 
     if profile.user_id and profile.user_id != "usr_anonymous":
         background_tasks.add_task(

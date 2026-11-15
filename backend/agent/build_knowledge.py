@@ -100,7 +100,7 @@ knowledge_payload = {
         "Role Gap Radar & Skill Mastery Matrix",
         "12-Week Sprint Personalized Dynamic Career Roadmap",
         "Peer Cohort Benchmarking and Tier Percentiles",
-        "Live 3D Cybernetic Voice Agent (Google Gemini Live WebSocket + Puck Voice + 60 FPS Lip Sync)"
+        "Live 3D Cybernetic Voice Agent (DAS Neural Voice + 60 FPS Lip Sync)"
     ]
 }
 

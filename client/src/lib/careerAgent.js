@@ -12,6 +12,7 @@
 import { DEFAULT_PROJECT_CATALOG } from "@/data/projectCatalog";
 import { createClient } from "@supabase/supabase-js";
 import { geminiLive } from "@/agent/geminiLive";
+import { getUserRole } from "@/lib/auth";
 
 export const EMBEDDING_DIM = 384;
 export const MAX_SYSTEM_PROMPT_TOKENS = 2000;
@@ -60,12 +61,19 @@ export async function getRelevantContext(query) {
  */
 export async function askDas(userQuery, onChunk) {
   const context = await getRelevantContext(userQuery);
+  const activeRole = typeof window !== "undefined" ? getUserRole() : "Boss";
+  const honorificRule =
+    activeRole === "Boss"
+      ? "Boss is Dileep Bommali. Address him warmly as Boss."
+      : activeRole === "Madam"
+      ? "The user is a respected female visitor/candidate. Always address her politely as Madam (NEVER call her Boss or Sir)."
+      : "The user is a guest/candidate. Always address them respectfully as Sir (NEVER call them Boss).";
 
-  const systemPrompt = `You are DAS, Pathfinder AI. Boss is Dileep Bommali.
+  const systemPrompt = `You are DAS, Pathfinder AI. ${honorificRule}
 Knowledge Base (Top 3 relevant only):
 ${context}
 
-Rules: If user speaks in Telugu/Tenglish, always reply in ENGLISH with JARVIS-level intelligence, warmth, and loyalty. If intent is navigation, emit das:navigate:xxx`;
+Rules: If user speaks in Telugu/Tenglish, match their language naturally with JARVIS-level intelligence and warmth. If intent is navigation, emit das:navigate:xxx`;
 
   try {
     const reply = await geminiLive.sendTurn(userQuery, {
@@ -84,7 +92,7 @@ Rules: If user speaks in Telugu/Tenglish, always reply in ENGLISH with JARVIS-le
   }
 
   // Local intelligent fallback
-  const fallback = getCareerAgentResponse(userQuery, [], {}, "Boss");
+  const fallback = getCareerAgentResponse(userQuery, [], {}, activeRole);
   onChunk?.(fallback);
   return fallback;
 }
@@ -356,10 +364,13 @@ export function buildRagGeminiSystemPrompt({
   const targetRole =
     profile?.target_role || profile?.targetRole || "Software Development Engineer (SDE)";
 
+  const normHon = String(honorific || "Boss").toLowerCase().trim();
   const whoRule =
-    honorific === "Boss"
+    normHon === "boss"
       ? `You are speaking with Dileep Bommali, your BOSS, founder, and lead architect of Pathfinder 2.0! Address him warmly, loyally, and enthusiastically as "Boss" in every reply. You know Dileep built you (DAS 3D cybernetic voice agent), built Pathfinder 2.0 with 23 production blueprints, 972 cohort placement datasets, and autonomous browser control. If he asks "what is my name", "who am I", or banters with you, proudly celebrate Dileep as your creator and mastermind!`
-      : `You are speaking with a respected guest, recruiter, client, or student. Address them respectfully as "Sir" in every reply (never call them Boss). Guide them through Dileep Bommali's Pathfinder 2.0 platform with professional brilliance and confidence.`;
+      : normHon === "madam" || normHon === "mam" || normHon === "ma'am"
+      ? `You are speaking with a respected female guest, recruiter, client, or student. Address her politely and respectfully as "Madam" in every reply (NEVER call her Boss or Sir). Guide her through Dileep Bommali's Pathfinder 2.0 platform with professional clarity and honest, uninflated feedback.`
+      : `You are speaking with a respected guest, recruiter, client, or student. Address them respectfully as "Sir" in every reply (never call them Boss). Guide them through Dileep Bommali's Pathfinder 2.0 platform with professional brilliance and honest feedback.`;
 
   let prompt = `You are DAS, not a chatbot. You are JARVIS for Dileep and Pathfinder 2.0.
 IDENTITY & CREATOR: ${whoRule}
@@ -405,7 +416,7 @@ export const getCareerAgentResponse = (
   message = "",
   history = [],
   profile = {},
-  honorific = "Boss"
+  honorific = ""
 ) => {
   const text = (message || "").toLowerCase().trim();
   const branch = profile?.branch || "CSE";
@@ -414,7 +425,16 @@ export const getCareerAgentResponse = (
   const coding = Number(profile?.coding || 7);
   const targetRole =
     profile?.target_role || profile?.targetRole || "Software Development Engineer (SDE)";
-  const title = honorific === "Sir" ? "Sir" : "Boss";
+  const rawHon = (honorific || (typeof window !== "undefined" ? getUserRole() : "Boss"))
+    .toString()
+    .toLowerCase()
+    .trim();
+  const title =
+    rawHon === "madam" || rawHon === "mam" || rawHon === "ma'am"
+      ? "Madam"
+      : rawHon === "sir"
+      ? "Sir"
+      : "Boss";
 
   // Perform semantic search first (Top 3 results from 23 blueprints + 972 placements)
   const top3Rag = semanticSearchSync(message, profile, 3);
@@ -435,9 +455,12 @@ export const getCareerAgentResponse = (
         `|||👑 **Identity Confirmed:** Dileep Bommali (Boss & Pathfinder 2.0 Creator).`
       );
     }
+    const storedName =
+      typeof window !== "undefined" ? localStorage.getItem("userName") || "" : "";
+    const guestLabel = storedName ? `${storedName} (${title})` : `our valued guest, ${title}`;
     return (
-      `You are currently signed in as our valued guest, Sir! If you happen to be Dileep, just say "I am Dileep" and I will instantly restore full Owner access.` +
-      `|||🎩 **Identity:** Guest User (Sir).`
+      `You are currently signed in as ${guestLabel}! How can I help you elevate your placement readiness today?` +
+      `|||✨ **Identity:** ${guestLabel}.`
     );
   }
 
@@ -446,6 +469,12 @@ export const getCareerAgentResponse = (
       if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Boss");
     } catch { }
     return `Welcome back, Boss! Identity confirmed as Dileep, creator of Pathfinder. All autonomous systems, 3D voice controls, and site navigation are at your command.|||👑 **Owner Identity Verified:** Addressing you as **Boss** across all voice and dashboard modules.`;
+  }
+  if (/\b(call\s*me\s*(?:madam|mam|ma'am)|i\s*am\s*a\s*(?:girl|woman|female|lady))\b/i.test(text)) {
+    try {
+      if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Madam");
+    } catch { }
+    return `Certainly, Madam! I have switched to Madam mode and will address you respectfully as Madam. How may I assist you with Pathfinder today?|||🌸 **Identity Active:** Addressing you as **Madam**.`;
   }
   if (/\b(call\s*me\s*sir|guest\s*mode|i\s*am\s*a\s*(guest|visitor|recruiter|student))\b/i.test(text)) {
     try {
@@ -465,8 +494,8 @@ export const getCareerAgentResponse = (
   // Witty response to "i want job bro" / "job kavali"
   if (/\b(i\s*want\s*(?:a\s*)?job|job\s*kavali|job\s*bro|need\s*job)\b/i.test(text)) {
     return (
-      `You're in prime position, ${title}! With a 91.9% placement readiness score and a rock-solid project portfolio, top tech companies will be chasing you. Let's run a quick mock interview round or fine-tune your ATS resume to seal the deal.` +
-      `|||💼 **Career Acceleration:** Profile readiness at **91.9%**. Target Role: **${targetRole}**.`
+      `Let's earn that offer systematically, ${title}! For ${targetRole}, recruiters screen for verified GitHub builds, strong DSA execution, and clean ATS keywords. Open ATS Resume Studio or Interview & Defense so we can close your highest-impact gaps first.` +
+      `|||💼 **Career Execution Plan:** Target Role: **${targetRole}** | CGPA: **${cgpa}**.`
     );
   }
 
@@ -510,7 +539,7 @@ export const getCareerAgentResponse = (
       const speech =
         title === "Boss"
           ? "Boss, I have opened the Real-Time Log Anomaly Detector blueprint for you. It is our top starter architecture with 16ms real-time latency, and the complete 6-step engineering lifecycle is now displayed on your screen."
-          : "Navigating to Blueprints and spotlighting the Real-Time Log Anomaly Detector. Here is your full 6-step Jarvis engineering lifecycle from VS Code setup to production deployment.";
+          : `${title}, I have opened the Real-Time Log Anomaly Detector blueprint for you. Here is your full 6-step engineering lifecycle from VS Code setup to production deployment.`;
 
       return (
         `${speech}` +

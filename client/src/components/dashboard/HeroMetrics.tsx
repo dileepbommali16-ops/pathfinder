@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { getUserRole } from "@/lib/auth";
 import {
   Sparkles,
   Award,
@@ -97,16 +98,13 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             </div>
 
             <h1 className="text-2xl font-bold tracking-tight text-[#f8fafc] sm:text-4xl">
-              Welcome back, <span className="text-[#f8fafc] drop-shadow-sm">{
-                (typeof window !== "undefined" &&
-                 (localStorage.getItem("userRole") === "Boss" ||
-                  localStorage.getItem("isOwner") === "true" ||
-                  localStorage.getItem("das_mode") === "BOSS" ||
-                  (username || "").toLowerCase().includes("dileep") ||
-                  (username || "").toLowerCase().includes("guest")))
-                  ? "Boss"
-                  : (username || "Engineer")
-              }</span>
+              Welcome back, <span className="text-[#f8fafc] drop-shadow-sm">{(() => {
+                const emailNow = typeof window !== "undefined" ? localStorage.getItem("userEmail") || undefined : undefined;
+                const activeRole = getUserRole(emailNow, username);
+                if (activeRole === "Boss") return "Boss";
+                if (username && !username.toLowerCase().includes("guest")) return username;
+                return activeRole;
+              })()}</span>
             </h1>
 
             <p className="max-w-xl text-sm leading-relaxed text-[#94a3b8]">

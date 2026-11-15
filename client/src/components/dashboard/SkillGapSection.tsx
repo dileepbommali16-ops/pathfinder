@@ -148,7 +148,7 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
               ))
             ) : (
               <div className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-3 text-xs text-[#94a3b8]">
-                No critical academic or eligibility blockers detected. Focus on interview polish and mock tests.
+                Upload a resume in 5. ATS Resume Studio and verify your GitHub repository in Fraud Shield to unlock granular recruiter critique items.
               </div>
             )}
           </div>

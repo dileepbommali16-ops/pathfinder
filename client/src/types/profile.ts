@@ -55,6 +55,8 @@ export interface StudentProfileState {
   // Step 5 & Completion status
   onboardingCompleted: boolean;
   wizardStep: number;
+  honorificPref?: "Auto" | "Madam" | "Sir" | "Boss";
+  githubVerifiedScore?: number | null;
 }
 
 export interface ReadinessAuditData {

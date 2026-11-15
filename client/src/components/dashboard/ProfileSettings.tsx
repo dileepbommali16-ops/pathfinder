@@ -17,6 +17,23 @@ import {
 } from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
 import { CollegeSelector } from "@/components/common/CollegeSelector";
+import { setHonorificPreference } from "@/lib/auth";
+
+const YEAR_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year"] as const;
+const YEAR_TO_SEM: Record<string, { sem: number; label: string }> = {
+  "1st Year": { sem: 2, label: "1st Year / Sem 2" },
+  "2nd Year": { sem: 4, label: "2nd Year / Sem 4" },
+  "3rd Year": { sem: 6, label: "3rd Year / Sem 6" },
+  "4th Year": { sem: 8, label: "4th Year / Sem 8" },
+};
+
+function normalizeYearOption(raw?: string | number): string {
+  const s = String(raw || "").trim().toLowerCase();
+  if (s.includes("1")) return "1st Year";
+  if (s.includes("2")) return "2nd Year";
+  if (s.includes("4")) return "4th Year";
+  return "3rd Year";
+}
 
 interface ProfileSettingsProps {
   profile: StudentProfileState;
@@ -65,7 +82,10 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   onGoToDashboard,
   apiBase
 }) => {
-  const [formData, setFormData] = useState<StudentProfileState>({ ...profile });
+  const [formData, setFormData] = useState<StudentProfileState>({
+    ...profile,
+    currentYear: normalizeYearOption(profile.currentYear),
+  });
   const [skillsText, setSkillsText] = useState<string>(
     (profile.technicalSkills || profile.skills || []).join(", ")
   );
@@ -73,7 +93,10 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    setFormData({ ...profile });
+    setFormData({
+      ...profile,
+      currentYear: normalizeYearOption(profile.currentYear),
+    });
     setSkillsText((profile.technicalSkills || profile.skills || []).join(", "));
   }, [profile]);
 
@@ -90,8 +113,16 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       const cleanGithub = (formData.githubUrl ?? formData.codingProfiles?.github ?? "").trim();
       const cleanLeetcode = (formData.leetcodeUrl ?? formData.codingProfiles?.leetcode ?? "").trim();
       const cleanLinkedin = (formData.codingProfiles?.linkedin ?? "").trim();
+      const normalizedYear = normalizeYearOption(formData.currentYear);
+      const semMeta = YEAR_TO_SEM[normalizedYear] || YEAR_TO_SEM["3rd Year"];
+      if (formData.honorificPref) {
+        setHonorificPreference(formData.honorificPref, formData.email);
+      }
       const updated: StudentProfileState = {
         ...formData,
+        currentYear: normalizedYear,
+        currentSemester: formData.currentSemester || semMeta.sem,
+        yearSemester: semMeta.label,
         githubUrl: cleanGithub,
         leetcodeUrl: cleanLeetcode,
         technicalSkills: parsedSkills,
@@ -213,13 +244,26 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   className="rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3 py-2 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
                   placeholder="e.g. B.Tech"
                 />
-                <input
-                  type="text"
-                  value={formData.currentYear}
-                  onChange={(e) => setFormData({ ...formData, currentYear: e.target.value })}
+                <select
+                  id="settings-current-year"
+                  aria-label="Academic Year"
+                  value={normalizeYearOption(formData.currentYear)}
+                  onChange={(e) => {
+                    const yr = e.target.value;
+                    const semMeta = YEAR_TO_SEM[yr] || YEAR_TO_SEM["3rd Year"];
+                    setFormData({
+                      ...formData,
+                      currentYear: yr,
+                      currentSemester: semMeta.sem,
+                      yearSemester: semMeta.label,
+                    });
+                  }}
                   className="rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3 py-2 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
-                  placeholder="e.g. 4th Year"
-                />
+                >
+                  {YEAR_OPTIONS.map((yr) => (
+                    <option key={yr} value={yr}>{yr}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -502,6 +546,25 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 {TIERS.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
+              </select>
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs font-semibold text-[#94a3b8]">AI Assistant Addressing Mode</label>
+              <select
+                id="settings-honorific-mode"
+                value={formData.honorificPref || "Auto"}
+                onChange={(e) => {
+                  const val = e.target.value as "Auto" | "Madam" | "Sir" | "Boss";
+                  setFormData({ ...formData, honorificPref: val });
+                  setHonorificPreference(val, formData.email);
+                }}
+                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+              >
+                <option value="Auto">Auto (Smart Name Detection — Madam / Sir / Boss)</option>
+                <option value="Madam">Always address me as Madam</option>
+                <option value="Sir">Always address me as Sir</option>
+                <option value="Boss">Boss Mode (Creator)</option>
               </select>
             </div>
           </div>

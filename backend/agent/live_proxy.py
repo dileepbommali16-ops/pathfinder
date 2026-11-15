@@ -371,7 +371,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             "type": "status",
             "status": "connected",
             "model": connected_model,
-            "voice": "Puck",
+            "voice": "DAS Neural",
             "role": user_role,
         })
 
@@ -551,8 +551,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             dev_name = (msg.get("device") or "connected audio device").strip()
                             hint_prompt = (
                                 f"[FRIENDLY AUDIO NOTICE: issue={issue}, device={dev_name}] "
-                                "Boss or the visitor may have just plugged in earphones, wireless buds, or headphones at very low volume (~20%) or a loose/muted mic, "
-                                "so their voice isn't coming through clearly right now. Speaking warmly like a trusted friend, "
+                                "The current user may have just plugged in earphones, wireless buds, or headphones at very low volume (~20%) or a loose/muted mic, "
+                                "so their voice isn't coming through clearly right now. Speaking warmly using the active honorific (Boss, Madam, or Sir), "
                                 "kindly let them know their voice is too faint or muted to hear properly, and suggest increasing the volume or checking their earphone/buds condition and connection in 1-2 natural sentences."
                             )
                             await send_vision_prompt(hint_prompt, include_screen_ctx=False)

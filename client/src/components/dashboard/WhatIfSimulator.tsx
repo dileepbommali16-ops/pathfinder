@@ -45,9 +45,14 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
   const [activeMode, setActiveMode] = useState<"sliders" | "milestones">("sliders");
   const [hasAppliedChanges, setHasAppliedChanges] = useState(false);
 
+  const toCodingPct = (val?: number) => {
+    const n = Number(val ?? 5);
+    return n <= 10 ? Math.max(20, Math.min(100, Math.round(n * 10))) : Math.max(20, Math.min(100, Math.round(n)));
+  };
+
   // Dynamic continuous slider states initialized with current profile
   const [cgpa, setCgpa] = useState<number>(currentProfile.cgpa || 7.5);
-  const [codingScore, setCodingScore] = useState<number>(currentProfile.coding || 65);
+  const [codingScore, setCodingScore] = useState<number>(toCodingPct(currentProfile.coding));
   const [projectsCount, setProjectsCount] = useState<number>(currentProfile.projectsCount || 2);
   const [internships, setInternships] = useState<number>(currentProfile.internships || 0);
   const [activeBacklogs, setActiveBacklogs] = useState<number>(
@@ -106,7 +111,7 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
   // Synchronize initial values when currentProfile changes
   React.useEffect(() => {
     setCgpa(currentProfile.cgpa || 7.5);
-    setCodingScore(currentProfile.coding || 65);
+    setCodingScore(toCodingPct(currentProfile.coding));
     setProjectsCount(currentProfile.projectsCount || 2);
     setInternships(currentProfile.internships || 0);
     setActiveBacklogs(currentProfile.activeBacklogs ?? currentProfile.backlogs ?? 0);
@@ -114,27 +119,32 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
 
   // Real-time dynamic calculations for Slider Mode
   const simulatedStats = useMemo(() => {
-    const cgpaDelta = (cgpa - (currentProfile.cgpa || 7.5)) * 4.8;
-    const codingDelta = (codingScore - (currentProfile.coding || 65)) * 0.35;
-    const projectDelta = (projectsCount - (currentProfile.projectsCount || 2)) * 3.5;
-    const internshipDelta = (internships - (currentProfile.internships || 0)) * 5.0;
+    const baseCodingPct = toCodingPct(currentProfile.coding);
+    const hasGithub = Boolean((currentProfile.githubUrl || currentProfile.codingProfiles?.github || "").trim());
+    const effectiveCurrInt = Math.min(currentProfile.internships || 0, hasGithub ? 3 : 2);
+    const effectiveSimInt = Math.min(internships, hasGithub ? 3 : 2);
+
+    const cgpaDelta = (cgpa - (currentProfile.cgpa || 7.5)) * 4.5;
+    const codingDelta = (codingScore - baseCodingPct) * 0.28;
+    const projectDelta = (Math.min(projectsCount, 5) - Math.min(currentProfile.projectsCount || 2, 5)) * 2.5;
+    const internshipDelta = (effectiveSimInt - effectiveCurrInt) * 3.5;
     const backlogPenalty = activeBacklogs * 12.0 - ((currentProfile.activeBacklogs ?? currentProfile.backlogs ?? 0) * 12.0);
 
     const calculatedChance = Math.min(
-      99,
+      91,
       Math.max(15, Math.round(currentScore + cgpaDelta + codingDelta + projectDelta + internshipDelta - backlogPenalty))
     );
 
     // Projected CTC in Lakhs Per Annum (LPA)
     let projectedPackage =
-      4.2 +
-      Math.max(0, cgpa - 6.0) * 1.4 +
-      (codingScore / 100) * 8.0 +
-      projectsCount * 1.5 +
-      internships * 2.8 -
+      4.0 +
+      Math.max(0, cgpa - 6.0) * 1.3 +
+      (codingScore / 100) * 6.5 +
+      Math.min(projectsCount, 4) * 1.1 +
+      effectiveSimInt * 2.2 -
       activeBacklogs * 2.2;
 
-    projectedPackage = Math.min(38.0, Math.max(3.2, Math.round(projectedPackage * 10) / 10));
+    projectedPackage = Math.min(28.0, Math.max(3.2, Math.round(projectedPackage * 10) / 10));
 
     // Determine target company tier
     let tierName = "Mass Recruiter (Tier-3)";
@@ -183,7 +193,7 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
 
   const resetAll = () => {
     setCgpa(currentProfile.cgpa || 7.5);
-    setCodingScore(currentProfile.coding || 65);
+    setCodingScore(toCodingPct(currentProfile.coding));
     setProjectsCount(currentProfile.projectsCount || 2);
     setInternships(currentProfile.internships || 0);
     setActiveBacklogs(currentProfile.activeBacklogs ?? currentProfile.backlogs ?? 0);
@@ -195,7 +205,7 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
     if (onApplySimulatedProfile) {
       onApplySimulatedProfile({
         cgpa,
-        coding: codingScore,
+        coding: Math.max(1, Math.min(10, Math.round(codingScore / 10))),
         projectsCount,
         internships,
         activeBacklogs,
@@ -210,7 +220,7 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
   const milestoneDelta = scenarios
     .filter(s => s.applied)
     .reduce((sum, s) => sum + s.impactDelta, 0);
-  const milestoneScore = Math.min(98, Math.max(18, Math.round(currentScore + milestoneDelta)));
+  const milestoneScore = Math.min(91, Math.max(15, Math.round(currentScore + milestoneDelta)));
 
   const displayChance = activeMode === "sliders" ? simulatedStats.calculatedChance : milestoneScore;
   const displayDelta = activeMode === "sliders" ? simulatedStats.totalDelta : milestoneDelta;

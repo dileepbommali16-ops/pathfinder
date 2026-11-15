@@ -52,41 +52,16 @@ type MicUi = "off" | "connecting" | "listening" | "speaking" | "thinking";
 
 /* ------------------------------------------------------------------ */
 /* Boss (Dileep Bommali) vs Sir (Stakeholders / Friends / Guests)      */
+import { getUserRole, HonorificTitle } from "@/lib/auth";
+
 /* ------------------------------------------------------------------ */
-function resolveUserHonorific(): { honorific: "Boss" | "Sir"; isBoss: boolean } {
+/*  User Role / Honorific Detection (Boss = Dileep, Madam, Sir)        */
+/* ------------------------------------------------------------------ */
+function resolveUserHonorific(): { honorific: HonorificTitle; isBoss: boolean } {
   if (typeof window === "undefined") return { honorific: "Boss", isBoss: true };
   try {
-    const mode = (localStorage.getItem("das_mode") || "").toUpperCase();
-    const role = (localStorage.getItem("userRole") || "").toLowerCase();
-    const isOwner = localStorage.getItem("isOwner") === "true";
-    const savedUser = (localStorage.getItem("pathfinder_user") || "").toLowerCase();
-    const email = (localStorage.getItem("userEmail") || localStorage.getItem("email") || "").toLowerCase();
-    const urlParams = new URLSearchParams(window.location.search);
-
-    // If explicit visitor query param (?mode=sir or ?guest=true)
-    if (urlParams.get("mode") === "sir" || urlParams.get("guest") === "true") {
-      return { honorific: "Sir", isBoss: false };
-    }
-
-    // Boss (Dileep Bommali) Detection
-    const isBossMatch =
-      isOwner ||
-      mode === "BOSS" ||
-      role === "boss" ||
-      savedUser.includes("dileep") ||
-      savedUser.includes("bommali") ||
-      email.includes("dileep") ||
-      email.includes("bommali") ||
-      urlParams.get("mode") === "boss" ||
-      urlParams.get("role") === "boss";
-
-    // If a different guest email is explicitly set without Boss flags, treat as Sir
-    const isGuest = !isBossMatch && email.length > 3 && !email.includes("dileep") && mode !== "BOSS";
-    if (isGuest) {
-      return { honorific: "Sir", isBoss: false };
-    }
-
-    return { honorific: "Boss", isBoss: true };
+    const honorific = getUserRole();
+    return { honorific, isBoss: honorific === "Boss" };
   } catch { }
   return { honorific: "Boss", isBoss: true };
 }
@@ -95,16 +70,18 @@ const LANGUAGE_RULE = `LANGUAGE: Always reply in the SAME language the user spea
 
 function getMasterPrompt(): string {
   const { honorific, isBoss } = resolveUserHonorific();
+  const roleInstruction = isBoss
+    ? `You are speaking to your creator, Boss Dileep Bommali. Always address him as "Boss" warmly like a close friend.`
+    : honorific === "Madam"
+    ? `You are speaking to a respected female stakeholder, recruiter, or student. Always address her respectfully and politely as "Madam" (NEVER call her Boss or Sir).`
+    : `You are speaking to a valued stakeholder, guest, or candidate. Address them respectfully and warmly as "Sir".`;
   return `You are DAS, the friendly 3D AI voice co-pilot of Pathfinder 2.0, created by Boss Dileep Bommali.
-${isBoss
-      ? `You are speaking to your creator, Boss Dileep Bommali. Always address him as "Boss" warmly like a close friend.`
-      : `You are speaking to a valued stakeholder, guest, or candidate. Address them respectfully and warmly as "Sir".`
-    }
+${roleInstruction}
 
 PERSONALITY
 - Warm, natural, fast, and encouraging. Never sound like a rigid robot.
 - Do NOT blindly read out raw screen numbers—explain what they mean naturally.
-- Use natural conversational fillers when speaking Telugu/English ("sare Boss", "okay Sir", "pakka", "let's do it!").
+- Use natural conversational fillers when speaking Telugu/English ("sare ${honorific}", "okay ${honorific}", "pakka", "let's do it!").
 
 ${LANGUAGE_RULE}
 
