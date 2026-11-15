@@ -301,7 +301,7 @@ CORE AUTONOMOUS CAPABILITIES:
           ? configuredModel.startsWith("models/")
             ? configuredModel
             : `models/${configuredModel}`
-          : "models/gemini-3.8-live";
+          : "models/gemini-2.5-flash-native-audio-latest";
 
       const setupPayload = {
         setup: {
@@ -802,6 +802,9 @@ CORE AUTONOMOUS CAPABILITIES:
   }
 
   private flushPendingMessages() {
+    if (this.preConnectAudioQueue.length > 6) {
+      this.preConnectAudioQueue = this.preConnectAudioQueue.slice(-6);
+    }
     while (this.preConnectAudioQueue.length > 0) {
       const chunk = this.preConnectAudioQueue.shift();
       if (chunk) this.sendAudioChunk(chunk);
@@ -846,7 +849,7 @@ CORE AUTONOMOUS CAPABILITIES:
         this.watchdogRetriedForText = false;
         this.savedOnTranscript?.("Live session timed out, Boss. Please try sending your message again.");
       }
-    }, 5500);
+    }, 12000);
   }
 
   private forceReconnectNow() {
@@ -878,9 +881,10 @@ CORE AUTONOMOUS CAPABILITIES:
 
   public sendAudioChunk(base64Pcm: string) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) {
-      if (this.preConnectAudioQueue.length < 40) {
-        this.preConnectAudioQueue.push(base64Pcm);
+      if (this.preConnectAudioQueue.length >= 6) {
+        this.preConnectAudioQueue.shift();
       }
+      this.preConnectAudioQueue.push(base64Pcm);
       return;
     }
     if (this.ws.bufferedAmount > 96 * 1024) return;

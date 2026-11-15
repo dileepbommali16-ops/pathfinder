@@ -189,6 +189,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [isLoadingVoice, setIsLoadingVoice] = useState<boolean>(false);
+  const [showAgentAnswer, setShowAgentAnswer] = useState<boolean>(false);
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
   const [copiedBenchmark, setCopiedBenchmark] = useState<boolean>(false);
   const speakGenRef = useRef<number>(0);
@@ -217,6 +218,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     setSelectedTrack(initialMode);
     setSelectedQuestionIndex(0);
     setUserAnswer("");
+    setShowAgentAnswer(false);
     setEvaluationResult(null);
   }, [initialMode]);
 
@@ -264,10 +266,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     };
   }, []);
 
-  // Silently pre-warm Render /api/voice/tts for the visible question so Hear Question plays immediately
+  // Silently pre-warm Render /api/voice/tts for the visible question's Agent answer so "See Answer from Agent" plays cleanly
   useEffect(() => {
-    const qText = currentQ?.question?.trim();
-    if (!qText || ttsCacheRef.current.has(qText)) return;
+    const answerText = currentQ?.benchmarkAnswer?.trim();
+    if (!answerText || ttsCacheRef.current.has(answerText)) return;
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
@@ -275,12 +277,12 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: controller.signal,
-          body: JSON.stringify({ text: qText, voice: "Puck" }),
+          body: JSON.stringify({ text: answerText, voice: "Puck" }),
         });
         if (resp.ok) {
           const data = await resp.json();
           if (data?.status === "ok" && data.pcm_base64) {
-            ttsCacheRef.current.set(qText, {
+            ttsCacheRef.current.set(answerText, {
               pcm: data.pcm_base64,
               rate: Number(data.sample_rate) || 24000,
             });
@@ -294,10 +296,11 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [currentQ?.question]);
+  }, [currentQ?.benchmarkAnswer]);
 
   const resetState = () => {
     setUserAnswer("");
+    setShowAgentAnswer(false);
     setEvaluationResult(null);
     setTimerSeconds(0);
     setTimerActive(false);
@@ -305,29 +308,28 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     stopRecording();
   };
 
-  // Text to Speech: Read exact interview question aloud verbatim via Gemini Puck TTS (never answer the question)
-  const handleToggleSpeak = async () => {
+  // Reveal Agent Model Answer & read concise walkthrough aloud via Gemini Puck TTS (isolated from webcam/vision)
+  const handleSeeAgentAnswer = async () => {
     if (isSpeaking || isLoadingVoice) {
       stopSpeaking();
       return;
     }
 
-    const questionText = currentQ.question.trim();
-    if (!questionText) return;
+    setShowAgentAnswer(true);
+    const answerText = currentQ.benchmarkAnswer.trim();
+    if (!answerText) return;
 
     audioEngine.unlockAudio();
     const gen = ++speakGenRef.current;
 
-    // Keep Hear Question strictly isolated from the live conversational DAS WebSocket (no fake HUD prompt).
-
-    const cached = ttsCacheRef.current.get(questionText);
+    const cached = ttsCacheRef.current.get(answerText);
     if (cached) {
       setIsSpeaking(true);
       const ok = await audioEngine.playWholePcmBase64(cached.pcm, cached.rate, () => {
         if (speakGenRef.current === gen) setIsSpeaking(false);
       });
       if (!ok && speakGenRef.current === gen) {
-        speaker.say(questionText);
+        speaker.say(answerText);
       }
       return;
     }
@@ -337,14 +339,14 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
       const resp = await fetch(`${API_BASE}/api/voice/tts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: questionText, voice: "Puck" }),
+        body: JSON.stringify({ text: answerText, voice: "Puck" }),
       });
       if (speakGenRef.current !== gen) return;
       if (resp.ok) {
         const data = await resp.json();
         if (data?.status === "ok" && data?.pcm_base64) {
           const rate = Number(data.sample_rate) || 24000;
-          ttsCacheRef.current.set(questionText, { pcm: data.pcm_base64, rate });
+          ttsCacheRef.current.set(answerText, { pcm: data.pcm_base64, rate });
           setIsLoadingVoice(false);
           setIsSpeaking(true);
           const played = await audioEngine.playWholePcmBase64(data.pcm_base64, rate, () => {
@@ -359,7 +361,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
 
     if (speakGenRef.current !== gen) return;
     setIsLoadingVoice(false);
-    speaker.say(questionText);
+    speaker.say(answerText);
   };
 
   const stopSpeaking = () => {
@@ -654,18 +656,46 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 ))}
               </div>
             </div>
+
+            {/* Agent Model Answer Panel (toggled on "See Answer from Agent") */}
+            {showAgentAnswer && (
+              <div
+                data-agent-id="agent-model-answer-panel"
+                className="mt-4 rounded-xl border border-cyan-400/30 bg-[#0c141c] p-3.5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-cyan-300">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>DAS Agent Structured Model Answer</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAgentAnswer(false)}
+                    className="text-[11px] font-semibold text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer"
+                  >
+                    Hide
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-[#e2e8f0] leading-relaxed">
+                  {currentQ.benchmarkAnswer}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Audio Controls */}
           <div className="mt-6 pt-4 border-t border-[rgba(255,255,255,0.08)] flex items-center justify-between">
             <button
               type="button"
-              onClick={handleToggleSpeak}
+              onClick={handleSeeAgentAnswer}
+              data-agent-id="see-agent-answer-btn"
               className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
                 isSpeaking
                   ? "border border-[#9f1239] bg-[#9f1239] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.4)]"
                   : isLoadingVoice
                   ? "border border-[#7c3aed]/50 bg-[#161926] text-[#f8fafc]"
+                  : showAgentAnswer
+                  ? "border border-cyan-400/40 bg-[#0f1b26] text-cyan-200 hover:bg-[#132230]"
                   : "border border-[rgba(255,255,255,0.08)] bg-[#11131c] text-[#94a3b8] hover:bg-[#161926] hover:text-[#f8fafc]"
               }`}
             >
@@ -677,7 +707,11 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 <Volume2 className="h-4 w-4" />
               )}
               <span>
-                {isLoadingVoice ? "Loading Voice..." : isSpeaking ? "Stop Voice" : "Hear Question"}
+                {isLoadingVoice
+                  ? "Loading Agent Answer..."
+                  : isSpeaking
+                  ? "Stop Agent Answer"
+                  : "See Answer from Agent"}
               </span>
             </button>
 

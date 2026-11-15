@@ -289,7 +289,15 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
     ensureSocketConnected();
 
+    const prewarmAudio = () => {
+      audioEngine.unlockAudio();
+    };
+    window.addEventListener("pointerdown", prewarmAudio, { once: true, passive: true });
+    window.addEventListener("keydown", prewarmAudio, { once: true, passive: true });
+
     return () => {
+      window.removeEventListener("pointerdown", prewarmAudio);
+      window.removeEventListener("keydown", prewarmAudio);
       dasSocket.setCameraActive(false);
       dasSocket.disconnect();
       cameraEngine.stopCameraCapture();

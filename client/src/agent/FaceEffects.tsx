@@ -4,6 +4,7 @@ import * as THREE from "three";
 export interface HologramUniforms {
   uTime: { value: number };
   uVoice: { value: number };
+  uBlink: { value: number };
 }
 
 /**
@@ -88,7 +89,7 @@ export function createHologramScanMaterial(
 
         vec3 col = mix(troughCyan * (0.55 + 0.45 * sculptedKey), cyanBody * boost, scanLine * microGrid);
         col += crestCyan * fresnel * 0.12;
-        ${isTeeth ? "col *= 0.28;" : ""}
+        ${isTeeth ? "col *= 0.14;" : ""}
 
         ${
           isShoulders
@@ -120,6 +121,7 @@ export function createMoltenRedEyeMaterial(sharedUniforms: HologramUniforms): TH
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = sharedUniforms.uTime;
     shader.uniforms.uVoice = sharedUniforms.uVoice;
+    shader.uniforms.uBlink = sharedUniforms.uBlink;
 
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -139,6 +141,7 @@ export function createMoltenRedEyeMaterial(sharedUniforms: HologramUniforms): TH
         `#include <common>
          uniform float uTime;
          uniform float uVoice;
+         uniform float uBlink;
          varying vec3 vEyeWorldPos;`
       )
       .replace(
@@ -164,6 +167,7 @@ export function createMoltenRedEyeMaterial(sharedUniforms: HologramUniforms): TH
         eyeCol = mix(eyeCol, crimsonLava, clamp(outerIris * (0.45 + 0.55 * vein), 0.0, 1.0));
         eyeCol = mix(eyeCol, hotCrimson, irisCore * (0.70 + uVoice * 0.25));
         eyeCol *= (1.05 + irisCore * 0.35 + uVoice * 0.22);
+        eyeCol *= (1.0 - smoothstep(0.28, 0.88, uBlink));
 
         outgoingLight = eyeCol;
         diffuseColor.a = 1.0;

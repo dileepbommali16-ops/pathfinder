@@ -10,7 +10,8 @@ from typing import Optional, Dict, Any
 from fastapi import APIRouter, Response, HTTPException, Query, Body, Request
 
 from backend.analytics_engine import filter_cohort_records
-from backend.pdf_engine import generate_analytics_pdf, generate_resume_pdf
+from backend.pdf_engine import generate_analytics_pdf
+from backend.resume_auditor import generate_resume_audit_pdf
 from backend.security import rate_limiter, get_client_ip
 
 logger = logging.getLogger("pathfinder.export")
@@ -76,7 +77,7 @@ def export_resume_pdf_endpoint(
         raise HTTPException(status_code=429, detail="Too many resume PDF compilation requests. Please wait 60 seconds.")
 
     try:
-        pdf_bytes = generate_resume_pdf(payload)
+        pdf_bytes = generate_resume_audit_pdf(payload)
         raw_name = str(payload.get("full_name") or "candidate").strip()
         candidate_name = re.sub(r"[^a-zA-Z0-9_\-]", "", raw_name.replace(" ", "_"))[:40] or "candidate"
         filename = f"{candidate_name}_ATS_Resume.pdf"

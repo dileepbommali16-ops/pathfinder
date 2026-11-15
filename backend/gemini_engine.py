@@ -71,11 +71,10 @@ DISALLOWED_MODEL_PATTERNS = (
 )
 
 PREFERRED_MODELS_ORDER = [
-    "gemini-3.1-flash-lite",
-    "gemini-flash-lite-latest",
-    "gemini-3.5-flash-lite",
-    "gemini-3.6-flash",
-    "gemini-3.8-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-flash-latest",
 ]
 
 
@@ -1171,6 +1170,7 @@ def generate_strict_json_evaluation(
     prompt: str,
     schema: Type[BaseModel],
     system_instruction: str,
+    pdf_bytes: Optional[bytes] = None,
 ) -> tuple[Optional[BaseModel], Optional[str], Optional[str]]:
     """
     Calls live Gemini models to produce a strictly validated Pydantic object.
@@ -1186,17 +1186,23 @@ def generate_strict_json_evaluation(
 
     client = get_gemini_client()
     if client and genai and types:
+        sdk_contents: Any = prompt
+        if pdf_bytes:
+            sdk_contents = [
+                types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
+                prompt,
+            ]
         for model in models_to_try:
             try:
                 response = client.models.generate_content(
                     model=model,
-                    contents=prompt,
+                    contents=sdk_contents,
                     config=types.GenerateContentConfig(
                         system_instruction=system_instruction,
                         response_mime_type="application/json",
                         response_schema=schema,
                         temperature=0.15,
-                        max_output_tokens=700,
+                        max_output_tokens=2400,
                         thinking_config=types.ThinkingConfig(thinking_budget=0)
                         if hasattr(types, "ThinkingConfig")
                         else None,

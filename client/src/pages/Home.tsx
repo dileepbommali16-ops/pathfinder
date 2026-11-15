@@ -1631,18 +1631,25 @@ export default function Home({ initialTab }: HomeProps = {}) {
           method: "POST",
           body: formData,
         },
-        12000
+        35000
       );
       if (resp.ok) {
         const data = await resp.json();
         setResumeFeedback(data);
-        toast.success("Resume parsed and analyzed successfully against ATS screening rubrics!");
+        toast.success("Senior Hiring Manager & Deloitte ATS audit complete!");
       } else {
-        toast.error("Resume analysis could not be completed. Please check your document.");
+        let errDetail = "Resume analysis could not be completed. Please check your document.";
+        try {
+          const errJson = await resp.json();
+          if (errJson?.detail && typeof errJson.detail === "string") {
+            errDetail = errJson.detail;
+          }
+        } catch {}
+        toast.error(errDetail);
       }
     } catch (err) {
       console.warn("Resume analysis warning:", err);
-      toast.error("Resume scanner service is currently busy. Please try again shortly.");
+      toast.error("Resume scanner timed out or backend is waking up. Please try again in a few seconds.");
     } finally {
       setIsAnalyzingResume(false);
     }
@@ -1672,39 +1679,36 @@ export default function Home({ initialTab }: HomeProps = {}) {
   };
 
   const handleDownloadResumePDF = async () => {
+    if (!resumeFeedback) {
+      toast.error("Upload or paste your resume first to generate the Senior ATS Audit PDF.");
+      return;
+    }
     try {
-      const resp = await fetch(`${API_BASE}/api/export/resume-pdf`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          resumeFeedback || {
-            score: 78,
-            verdict: "Strong technical foundation with measurable project work.",
-            strengths: ["Clean chronological structure", "Full-stack web & database projects"],
-            improvements: [
-              "Rewrite project bullets using the Google X-Y-Z formula",
-              "Add live deployment links",
-            ],
-            ats_keywords: ["REST APIs", "Data Structures", "PostgreSQL", "Docker"],
-            formatting_tips: ["Single-column layout", "Standard ATS taxonomies"],
-          }
-        ),
-      });
+      const resp = await fetchWithTimeout(
+        `${API_BASE}/api/export/resume-pdf`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(resumeFeedback),
+        },
+        20000
+      );
       if (resp.ok) {
         const blob = await resp.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "pathfinder-ats-resume-report.pdf";
+        a.download = "pathfinder-ats-resume-audit.pdf";
         document.body.appendChild(a);
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
+        toast.success("Downloaded Senior Hiring Manager & Deloitte ATS Audit PDF!");
       } else {
-        handleDownloadPDF();
+        toast.error("Failed to generate ATS Audit PDF. Please try again.");
       }
     } catch {
-      handleDownloadPDF();
+      toast.error("Unable to download ATS Audit PDF right now.");
     }
   };
 

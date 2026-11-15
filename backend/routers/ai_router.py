@@ -36,6 +36,10 @@ from backend.gemini_engine import (
     generate_smart_fallback_reply
 )
 from backend.pdf_engine import extract_text_from_pdf, extract_resume_text
+from backend.resume_auditor import (
+    analyze_resume_deterministically,
+    merge_with_deterministic_audit,
+)
 
 ai_router = APIRouter(tags=["AI Mentor & Coaching"])
 
@@ -263,33 +267,54 @@ async def resume_endpoint(
         if not text_to_analyze.strip() and not pdf_bytes:
             raise HTTPException(status_code=400, detail="Please upload an authentic PDF resume or provide resume text.")
 
-        material = text_to_analyze[:18000] if text_to_analyze.strip() else "(Attached PDF resume document)"
-        prompt = (
-            f"Review this candidate's resume for campus placement readiness. Resume material: {material}. "
-            "Return an ATS readiness score (0-100), concise professional verdict, strengths, prioritized improvement gaps, "
-            "recommended ATS keyword terms, and structural formatting tips."
+        deterministic_audit = analyze_resume_deterministically(
+            resume_text=text_to_analyze,
         )
-        feedback = generate_structured_ai(prompt, ResumeFeedback, pdf_bytes=pdf_bytes)
-        if feedback:
-            return feedback
 
-        # Deterministic fallback feedback
-        return ResumeFeedback(
-            score=82,
-            verdict="Solid technical foundation with strong project portfolio.",
-            strengths=[
-                "Clear project descriptions detailing technologies used",
-                "Well-structured academic history and coursework",
-                "Highlighted core skills matching software engineering roles"
-            ],
-            gaps=[
-                "Quantify project achievements with business impact (e.g., % latency reduced, users served)",
-                "Add dedicated section for cloud and deployment technologies (Docker, AWS/GCP, CI/CD)",
-                "Standardize bullet points using the Google X-Y-Z formula: Accomplished [X] as measured by [Y] by doing [Z]"
-            ],
-            keywords=["FastAPI", "React", "Docker", "PostgreSQL", "System Design", "CI/CD"],
-            formatting_tips="Ensure 1-page standard ATS length and single-column layout for ATS parser compatibility."
+        # If extracted text is virtually empty (scanned/blank PDF) without raw bytes, return immediate honest audit
+        if len(text_to_analyze.strip()) < 40 and not pdf_bytes:
+            return deterministic_audit
+
+        sys_instruction = (
+            "You are a candid Senior Deloitte Technology Consulting Manager and Staff Big-Tech Hiring Manager "
+            "(Deloitte, Amazon, Google, Microsoft). NEVER flatter thin, student-level, or toy/Streamlit-only resumes "
+            "or invent strengths absent from the resume. "
+            "If the resume shows thin skills, only Streamlit/academic mini-projects without production backend APIs "
+            "(FastAPI/Spring/Node), persistent SQL/NoSQL databases, Docker/AWS/Azure/GCP cloud deployment, CI/CD, "
+            "automated testing, or quantified metrics (latency %, scale, accuracy), score strictly 25-48 ('Major Overhaul Needed'). "
+            "Populate ALL lists thoroughly: strengths, improvements (blunt hiring manager blockers), missing_skills "
+            "(specific Backend, Cloud, DB, Testing, DSA skills missing), recommended_certifications (AWS, Azure AZ-900, GCP, Databricks), "
+            "project_upgrade_plan (how to graduate basic Streamlit demos into deployed production systems), ats_keywords, "
+            "formatting_tips, rewritten_bullets (Google X-Y-Z before/after examples for their projects), and "
+            "company_matches (exact objects for Deloitte, Amazon, Google, Microsoft, TCS Digital / Infosys, Fast-Growth AI Startup)."
         )
+
+        prompt = (
+            f"Deterministic Pre-Scan Summary: Detected skills={deterministic_audit.detected_skills or ['Minimal']}; "
+            f"Detected project lines={deterministic_audit.detected_projects or ['None clear']}; "
+            f"Baseline strict heuristic score={deterministic_audit.score}/100 ({deterministic_audit.recruiter_readiness_tier}).\n\n"
+            f"Extracted Resume Content:\n\"\"\"\n{text_to_analyze[:14000]}\n\"\"\"\n\n"
+            "Evaluate this exact resume critically as a Senior Deloitte & Big-Tech Manager and return strict JSON "
+            "matching ResumeFeedback (all lists non-empty where guidance applies; zero empty placeholder arrays)."
+        )
+
+        ai_feedback = None
+        if gemini_circuit_breaker.allow_request():
+            ai_result, model_name, err_reason = generate_strict_json_evaluation(
+                prompt=prompt,
+                schema=ResumeFeedback,
+                system_instruction=sys_instruction,
+                pdf_bytes=pdf_bytes if (pdf_bytes and len(text_to_analyze.strip()) < 250) else None,
+            )
+            if ai_result is not None:
+                ai_feedback = ai_result
+                ai_feedback.evaluation_source = f"Gemini AI ({model_name}) + Deloitte/Big-Tech Rubric"
+                gemini_circuit_breaker.record_success()
+            else:
+                gemini_circuit_breaker.record_failure(Exception(err_reason or "Gemini unavailable"))
+                logger.warning(f"[Resume Evaluation] Gemini unavailable ({err_reason}); serving strict deterministic audit.")
+
+        return merge_with_deterministic_audit(ai_feedback, deterministic_audit, text_to_analyze)
     except HTTPException:
         raise
     except Exception as exc:

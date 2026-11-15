@@ -323,6 +323,7 @@ export class Speaker {
     this.gen++;
     this.nextPcmTime = 0;
     this.pendingGreetingText = null;
+    this.stopLipSyncSimulation();
     this.scheduledPcmSources.forEach((s) => {
       try {
         s.onended = null;
@@ -601,8 +602,8 @@ class DasPcmPlayer extends AudioWorkletProcessor {
   process(inputs, outputs) {
     const out = outputs[0] && outputs[0][0];
     if (!out) return true;
-    const prebuffer = Math.round(this.srcRate * (this.turnStarted ? 0.05 : 0.12));
-    const waitCapFrames = Math.max(1, Math.round((this.turnStarted ? 0.08 : 0.18) * (sampleRate / out.length)));
+    const prebuffer = Math.round(this.srcRate * (this.turnStarted ? 0.022 : 0.04));
+    const waitCapFrames = Math.max(1, Math.round((this.turnStarted ? 0.05 : 0.08) * (sampleRate / out.length)));
     if (this.buffering) {
       if (this.avail > 0) {
         this.waitFrames++;
@@ -619,7 +620,7 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         this.turnStarted = true;
         this.waitFrames = 0;
       } else {
-        if ((this.drain && this.avail === 0) || (this.wasActive && this.avail === 0 && this.idleEmptySamples >= sampleRate * 0.35)) {
+        if ((this.drain && this.avail === 0) || (this.wasActive && this.avail === 0 && this.idleEmptySamples >= sampleRate * 0.85)) {
           this.drain = false;
           this.turnStarted = false;
           this.waitFrames = 0;
@@ -643,7 +644,7 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         const idx1 = (idx0 + 1) % this.cap;
         const frac = this.phase - Math.floor(this.phase);
         const s = this.ring[idx0] + frac * (this.ring[idx1] - this.ring[idx0]);
-        this.gainEnv = Math.min(1, this.gainEnv + 0.025);
+        this.gainEnv = Math.min(1, this.gainEnv + 0.06);
         this.lastOut = s * this.gainEnv;
         out[i] = this.lastOut;
         this.phase += step;
@@ -660,7 +661,7 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         this.readPos = (this.readPos + 1) % this.cap;
         this.avail = 0;
         this.phase = 0;
-        this.gainEnv = Math.min(1, this.gainEnv + 0.025);
+        this.gainEnv = Math.min(1, this.gainEnv + 0.06);
         this.lastOut = s * this.gainEnv;
         out[i] = this.lastOut;
       } else {
@@ -672,7 +673,7 @@ class DasPcmPlayer extends AudioWorkletProcessor {
           this.buffering = true;
           this.waitFrames = 0;
           this.gainEnv = 0;
-          if (this.drain || (this.wasActive && this.idleEmptySamples >= sampleRate * 0.35)) {
+          if (this.drain || (this.wasActive && this.idleEmptySamples >= sampleRate * 0.85)) {
             this.drain = false;
             this.turnStarted = false;
             this.idleEmptySamples = 0;
@@ -1394,11 +1395,11 @@ class AudioEngine {
         this.noiseFloor = Math.min(0.012, this.noiseFloor * 0.992 + rms * 0.008);
       }
     }
-    const speechThreshold = Math.max(0.0045, this.noiseFloor * 2.2);
+    const speechThreshold = Math.max(0.0032, this.noiseFloor * 1.9);
     if (rms >= speechThreshold) {
       this.speechOnsetFrames = Math.min(10, this.speechOnsetFrames + 1);
-      if (this.inUtterance || this.speechOnsetFrames >= 2 || rms >= speechThreshold * 1.45) {
-        this.gateHoldMs = 340;
+      if (this.inUtterance || this.speechOnsetFrames >= 1 || rms >= speechThreshold * 1.2) {
+        this.gateHoldMs = 460;
       }
     } else {
       this.speechOnsetFrames = Math.max(0, this.speechOnsetFrames - 1);
@@ -1503,17 +1504,17 @@ class AudioEngine {
       this.tailSilenceSentMs = 0;
       onPcmChunk(b64);
     } else if (this.inUtterance) {
-      // Stream 380ms of clean digital zeroes so Gemini VAD ends turn briskly without 1s lag
+      // Stream 520ms of clean digital zeroes so Gemini VAD ends turn cleanly without clipping trailing syllables
       this.tailSilenceSentMs += frameMs;
       onPcmChunk(b64);
-      if (this.tailSilenceSentMs >= 380) {
+      if (this.tailSilenceSentMs >= 520) {
         this.inUtterance = false;
         this.tailSilenceSentMs = 0;
         options?.onSpeechIdle?.();
       }
     } else {
       this.preRollChunks.push(b64);
-      if (this.preRollChunks.length > 4) {
+      if (this.preRollChunks.length > 6) {
         this.preRollChunks.shift();
       }
     }
@@ -1531,7 +1532,7 @@ class AudioEngine {
     this.softGain = 1.0;
     this.dcPrevX = 0;
     this.dcPrevY = 0;
-    this.noiseFloor = 0.0032;
+    this.noiseFloor = 0.0022;
     this.gateHoldMs = 0;
     this.inUtterance = false;
     this.tailSilenceSentMs = 0;
@@ -2003,5 +2004,56 @@ export const audioEngine = new AudioEngine();
 clearAudioEngineHook = () => audioEngine.clearAudioQueue();
 export { AudioEngine as BrowserAudioLoop };
 export function getLiveAudioVolume(): number {
-  return audioEngine.getVolume();
+  return getUnifiedSpeechFormants().volume;
+}
+
+/**
+ * Unifies live WebAudio PCM output (Gemini Live / Puck TTS) and browser SpeechSynthesis
+ * fallback into normalized 60fps vocal formants so 3D hologram lip-sync never freezes.
+ */
+export function getUnifiedSpeechFormants(nowSec?: number): {
+  volume: number;
+  low: number;
+  mid: number;
+  high: number;
+  isSpeaking: boolean;
+} {
+  const f = audioEngine.getSpeechFormants();
+  if (f.isSpeaking && f.volume > 0.015) {
+    const shaped = Math.min(1, Math.pow(f.volume * 1.45, 0.78));
+    return {
+      volume: shaped,
+      low: Math.max(f.low, shaped * 0.45),
+      mid: Math.max(f.mid, shaped * 0.40),
+      high: f.high,
+      isSpeaking: true,
+    };
+  }
+
+  const synthSpeaking =
+    typeof window !== "undefined" &&
+    "speechSynthesis" in window &&
+    Boolean(window.speechSynthesis.speaking);
+  if (speaker.isSpeaking || synthSpeaking) {
+    const t =
+      typeof nowSec === "number"
+        ? nowSec
+        : typeof performance !== "undefined"
+        ? performance.now() * 0.001
+        : Date.now() * 0.001;
+    const rawLevel = speaker.level();
+    const syllable =
+      0.5 + 0.5 * Math.sin(t * 14.5 + Math.sin(t * 5.2) * 1.1);
+    const vowelShift = 0.5 + 0.5 * Math.sin(t * 6.3);
+    const vol = Math.min(0.88, Math.max(0.24, rawLevel * 1.65) * (0.52 + 0.48 * syllable));
+    return {
+      volume: vol,
+      low: vol * (0.55 + 0.35 * vowelShift),
+      mid: vol * (0.45 + 0.45 * (1 - vowelShift)),
+      high: vol * (0.20 + 0.35 * syllable),
+      isSpeaking: true,
+    };
+  }
+
+  return { volume: 0, low: 0, mid: 0, high: 0, isSpeaking: false };
 }

@@ -116,5 +116,43 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(saved.get("coding_profiles", {}).get("linkedin"), "https://linkedin.com/in/dileep-test")
         self.assertEqual(saved.get("linkedin_url"), "https://linkedin.com/in/dileep-test")
 
+    def test_resume_audit_weak_streamlit_resume(self):
+        weak_resume = (
+            "Candidate Name\nB.Tech CSE Student\n"
+            "Skills: Python, Pandas, Streamlit, HTML\n"
+            "Projects:\n"
+            "1. Iris Flower Classifier built a basic app using Streamlit.\n"
+            "2. Movie Recommendation System mini-project in Streamlit.\n"
+            "3. Handwritten Digit Classifier built in Streamlit dashboard.\n"
+        )
+        resp = self.client.post("/api/ai/resume", data={"resume_text": weak_resume})
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertLess(data["score"], 50)
+        self.assertTrue(len(data.get("improvements", [])) > 0)
+        self.assertTrue(len(data.get("missing_skills", [])) > 0)
+        self.assertTrue(len(data.get("recommended_certifications", [])) > 0)
+        self.assertTrue(len(data.get("project_upgrade_plan", [])) > 0)
+        self.assertTrue(len(data.get("rewritten_bullets", [])) > 0)
+        self.assertTrue(len(data.get("ats_keywords", [])) > 0)
+        self.assertTrue(len(data.get("formatting_tips", [])) > 0)
+        companies = [c.get("company") for c in data.get("company_matches", [])]
+        self.assertGreater(len(companies), 0)
+        self.assertEqual(companies[0], "Deloitte")
+
+    def test_resume_audit_pdf_export(self):
+        audit_resp = self.client.post(
+            "/api/ai/resume",
+            data={
+                "resume_text": "Python & SQL developer. Built 3 Streamlit mini-projects (<basic>).",
+            },
+        )
+        self.assertEqual(audit_resp.status_code, 200)
+        payload = audit_resp.json()
+        pdf_resp = self.client.post("/api/export/resume-pdf", json=payload)
+        self.assertEqual(pdf_resp.status_code, 200)
+        self.assertIn("application/pdf", pdf_resp.headers.get("content-type", ""))
+        self.assertTrue(pdf_resp.content.startswith(b"%PDF-"))
+
 if __name__ == "__main__":
     unittest.main()

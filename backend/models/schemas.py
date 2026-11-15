@@ -97,28 +97,60 @@ class CohortInsight(BaseModel):
     actions: List[str]
 
 
-class ResumeFeedback(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="allow")
+class ScoreBreakdown(BaseModel):
+    model_config = ConfigDict(extra="ignore")
 
-    score: int = Field(default=78, ge=0, le=100)
-    verdict: str = Field(default="Solid technical foundation with strong project portfolio.")
-    breakdown: Optional[Dict[str, int]] = Field(default_factory=lambda: {
-        "keywords": 80,
-        "structure": 85,
-        "impact": 70,
-        "skills_match": 82,
-        "projects": 78,
-        "education": 90,
-        "formatting": 85
-    })
+    keywords: int = Field(default=0, ge=0, le=100)
+    structure: int = Field(default=0, ge=0, le=100)
+    impact: int = Field(default=0, ge=0, le=100)
+    skills_match: int = Field(default=0, ge=0, le=100)
+    projects: int = Field(default=0, ge=0, le=100)
+    education: int = Field(default=0, ge=0, le=100)
+    formatting: int = Field(default=0, ge=0, le=100)
+
+
+class BulletRewriteItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    before: str = ""
+    after: str = ""
+    reason: str = ""
+
+
+class CompanyMatchItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    company: str
+    cutoff_score: int = Field(default=80, ge=0, le=100)
+    match_score: int = Field(default=0, ge=0, le=100)
+    verdict: str = ""
+    matched_keywords: List[str] = Field(default_factory=list)
+    missing_keywords: List[str] = Field(default_factory=list)
+
+
+class ResumeFeedback(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    score: int = Field(default=42, ge=0, le=100)
+    recruiter_readiness_tier: str = Field(default="Major Overhaul Needed")
+    verdict: str = Field(default="Honest Senior Hiring Manager & Deloitte ATS Review")
+    manager_critique: str = Field(default="")
+    breakdown: ScoreBreakdown = Field(default_factory=ScoreBreakdown)
+    detected_skills: List[str] = Field(default_factory=list)
+    detected_projects: List[str] = Field(default_factory=list)
     strengths: List[str] = Field(default_factory=list)
     improvements: List[str] = Field(default_factory=list)
+    missing_skills: List[str] = Field(default_factory=list)
+    recommended_certifications: List[str] = Field(default_factory=list)
+    project_upgrade_plan: List[str] = Field(default_factory=list)
     ats_keywords: List[str] = Field(default_factory=list)
     missing_keywords: List[str] = Field(default_factory=list)
     formatting_tips: List[str] = Field(default_factory=list)
-    rewritten_bullets: List[Dict[str, str]] = Field(default_factory=list)
+    rewritten_bullets: List[BulletRewriteItem] = Field(default_factory=list)
     action_plan: List[str] = Field(default_factory=list)
     project_suggestions: List[str] = Field(default_factory=list)
+    company_matches: List[CompanyMatchItem] = Field(default_factory=list)
+    evaluation_source: str = Field(default="Senior Hiring Manager Audit Engine")
     spoken_summary: Optional[str] = None
 
 

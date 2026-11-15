@@ -65,8 +65,8 @@ class DasPcmPlayer extends AudioWorkletProcessor {
     const out = outputs[0] && outputs[0][0];
     if (!out) return true;
     // Fast 0.12s initial prebuffer and 0.05s rebuffer eliminate startup lag while smoothing transient jitter
-    const prebuffer = Math.round(this.srcRate * (this.turnStarted ? 0.05 : 0.12));
-    const waitCapFrames = Math.max(1, Math.round((this.turnStarted ? 0.08 : 0.18) * (sampleRate / out.length)));
+    const prebuffer = Math.round(this.srcRate * (this.turnStarted ? 0.022 : 0.04));
+    const waitCapFrames = Math.max(1, Math.round((this.turnStarted ? 0.05 : 0.08) * (sampleRate / out.length)));
     if (this.buffering) {
       if (this.avail > 0) {
         this.waitFrames++;
@@ -83,7 +83,7 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         this.turnStarted = true;
         this.waitFrames = 0;
       } else {
-        if ((this.drain && this.avail === 0) || (this.wasActive && this.avail === 0 && this.idleEmptySamples >= sampleRate * 0.35)) {
+        if ((this.drain && this.avail === 0) || (this.wasActive && this.avail === 0 && this.idleEmptySamples >= sampleRate * 0.85)) {
           this.drain = false;
           this.turnStarted = false;
           this.waitFrames = 0;
@@ -107,7 +107,7 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         const idx1 = (idx0 + 1) % this.cap;
         const frac = this.phase - Math.floor(this.phase);
         const s = this.ring[idx0] + frac * (this.ring[idx1] - this.ring[idx0]);
-        this.gainEnv = Math.min(1, this.gainEnv + 0.025);
+        this.gainEnv = Math.min(1, this.gainEnv + 0.06);
         this.lastOut = s * this.gainEnv;
         out[i] = this.lastOut;
         this.phase += step;
@@ -124,7 +124,7 @@ class DasPcmPlayer extends AudioWorkletProcessor {
         this.readPos = (this.readPos + 1) % this.cap;
         this.avail = 0;
         this.phase = 0;
-        this.gainEnv = Math.min(1, this.gainEnv + 0.025);
+        this.gainEnv = Math.min(1, this.gainEnv + 0.06);
         this.lastOut = s * this.gainEnv;
         out[i] = this.lastOut;
       } else {
@@ -136,7 +136,7 @@ class DasPcmPlayer extends AudioWorkletProcessor {
           this.buffering = true;
           this.waitFrames = 0;
           this.gainEnv = 0;
-          if (this.drain || (this.wasActive && this.idleEmptySamples >= sampleRate * 0.35)) {
+          if (this.drain || (this.wasActive && this.idleEmptySamples >= sampleRate * 0.85)) {
             this.drain = false;
             this.turnStarted = false;
             this.idleEmptySamples = 0;
