@@ -29,6 +29,8 @@ import {
   ReadinessAuditData,
   DEFAULT_STUDENT_PROFILE,
   pickCandidateFullName,
+  buildFreshOnboardingProfile,
+  buildInitialProfileFromStorage,
 } from "@/types/profile";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
@@ -333,24 +335,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
 
   const [profile, setProfile] = useState<StudentProfileState>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("pathfinder_profile_draft");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          const storedUser = JSON.parse(localStorage.getItem("pathfinder_user") || "{}");
-          const storedEmail = (storedUser?.email || "").toLowerCase();
-          const draftEmail = (parsed?.email || "").toLowerCase();
-          if (!storedEmail || !draftEmail || storedEmail === draftEmail) {
-            return {
-              ...DEFAULT_STUDENT_PROFILE,
-              ...parsed,
-              fullName:
-                pickCandidateFullName(parsed?.fullName, storedUser?.username) ||
-                DEFAULT_STUDENT_PROFILE.fullName,
-            };
-          }
-        } catch { }
-      }
+      return buildInitialProfileFromStorage(
+        localStorage.getItem("pathfinder_profile_draft"),
+        localStorage.getItem("pathfinder_user")
+      );
     }
     return DEFAULT_STUDENT_PROFILE;
   });
@@ -359,9 +347,14 @@ export default function Home({ initialTab }: HomeProps = {}) {
     if (typeof window === "undefined") return false;
     try {
       const saved = localStorage.getItem("pathfinder_profile_draft");
-      if (!saved) return true;
-      const parsed = JSON.parse(saved);
-      return (parsed?.email || "").toLowerCase() === "guest@pathfinder.ai";
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return (parsed?.email || "").toLowerCase() === "guest@pathfinder.ai";
+      }
+      const userRaw = localStorage.getItem("pathfinder_user");
+      if (!userRaw) return true;
+      const userParsed = JSON.parse(userRaw);
+      return (userParsed?.email || "").toLowerCase() === "guest@pathfinder.ai";
     } catch {
       return true;
     }
@@ -735,10 +728,11 @@ export default function Home({ initialTab }: HomeProps = {}) {
       username: user.username,
       email: user.email,
       role: role,
+      is_new_user: Boolean(user.isNewUser),
     };
     localStorage.setItem("pathfinder_user", JSON.stringify(userObj));
 
-    // 2. Transition immediately into the main dashboard on the very first frame
+    // 2. Stage identity & greeting synchronously; setIsAuthenticated commits together with target profile
     setUsername(user.username);
     setEmail(user.email);
     setUserRole(role);
@@ -748,7 +742,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
         content: `Hi ${role}, I'm your Pathfinder AI agent, how can I help you?`,
       },
     ]);
-    setIsAuthenticated(true);
     if (typeof window !== "undefined") {
       window.dispatchEvent(
         new CustomEvent("pathfinder:auth-change", {
@@ -793,7 +786,11 @@ export default function Home({ initialTab }: HomeProps = {}) {
               if (authData.user) {
                 localStorage.setItem(
                   "pathfinder_user",
-                  JSON.stringify({ ...authData.user, honorific: role })
+                  JSON.stringify({
+                    ...authData.user,
+                    honorific: role,
+                    is_new_user: Boolean(user.isNewUser ?? authData.is_new_user),
+                  })
                 );
                 const resolved = handleAuthLoginDetected(
                   authData.user.email || user.email,
@@ -808,23 +805,14 @@ export default function Home({ initialTab }: HomeProps = {}) {
     }
 
     if (user.isNewUser) {
-      const freshProfile: StudentProfileState = {
-        ...DEFAULT_STUDENT_PROFILE,
-        email: user.email,
-        fullName: pickCandidateFullName(user.username),
-        githubUrl: "",
-        leetcodeUrl: "",
-        codingProfiles: { github: "", leetcode: "", linkedin: "" },
-        onboardingCompleted: false,
-        wizardStep: 1,
-      };
-      startTransition(() => {
-        setProfile(freshProfile);
-        setIsDemoProfile(false);
-        setShowResultScreen(false);
-      });
+      const freshProfile = buildFreshOnboardingProfile(user.username, user.email);
       localStorage.removeItem("pathfinder_onboarding_draft");
-      localStorage.removeItem("pathfinder_profile_draft");
+      localStorage.removeItem("pathfinder_profile");
+      localStorage.setItem("pathfinder_profile_draft", JSON.stringify(freshProfile));
+      setProfile(freshProfile);
+      setIsDemoProfile(false);
+      setShowResultScreen(false);
+      setIsAuthenticated(true);
       return;
     }
 
@@ -836,12 +824,11 @@ export default function Home({ initialTab }: HomeProps = {}) {
         onboardingCompleted: true,
         wizardStep: 5,
       };
-      startTransition(() => {
-        setProfile(demoProfile);
-        setIsDemoProfile(true);
-        setShowResultScreen(false);
-        setActiveTab("profile");
-      });
+      setProfile(demoProfile);
+      setIsDemoProfile(true);
+      setShowResultScreen(false);
+      setActiveTab("profile");
+      setIsAuthenticated(true);
       fetchPrediction(demoProfile);
       return;
     }
@@ -868,6 +855,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           setProfile(hydrated);
           setIsDemoProfile(false);
           setActiveTab("profile");
+          setIsAuthenticated(true);
           fetchPrediction(hydrated);
         } else {
           localStorage.removeItem("pathfinder_profile_draft");
@@ -887,12 +875,11 @@ export default function Home({ initialTab }: HomeProps = {}) {
         codingProfiles: { github: "", leetcode: "", linkedin: "" },
         onboardingCompleted: true,
       };
-      startTransition(() => {
-        setProfile(initialUserProfile);
-        setIsDemoProfile(true);
-        setShowResultScreen(false);
-        setActiveTab("profile");
-      });
+      setProfile(initialUserProfile);
+      setIsDemoProfile(true);
+      setShowResultScreen(false);
+      setActiveTab("profile");
+      setIsAuthenticated(true);
     }
 
     try {
@@ -978,13 +965,30 @@ export default function Home({ initialTab }: HomeProps = {}) {
       breakdown: audit.breakdown || {},
     });
     localStorage.setItem("pathfinder_profile_draft", JSON.stringify(withEmail));
+    markStoredUserOnboardingComplete();
   };
+
+  function markStoredUserOnboardingComplete() {
+    try {
+      const rawUser = localStorage.getItem("pathfinder_user");
+      if (rawUser) {
+        const parsedUser = JSON.parse(rawUser);
+        if (parsedUser && parsedUser.is_new_user) {
+          localStorage.setItem(
+            "pathfinder_user",
+            JSON.stringify({ ...parsedUser, is_new_user: false })
+          );
+        }
+      }
+    } catch { }
+  }
 
   const handleSaveProfile = async (updated: StudentProfileState) => {
     const profileToSave = { ...updated, email: updated.email || email };
     setProfile(profileToSave);
     setIsDemoProfile(false);
     localStorage.setItem("pathfinder_profile_draft", JSON.stringify(profileToSave));
+    markStoredUserOnboardingComplete();
 
     try {
       const payload = {
@@ -1860,6 +1864,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
     } catch { }
     localStorage.removeItem("pathfinder_user");
     localStorage.removeItem("pathfinder_token");
+    localStorage.removeItem("pathfinder_profile");
     localStorage.removeItem("pathfinder_profile_draft");
     localStorage.removeItem("pathfinder_onboarding_draft");
     localStorage.removeItem("userEmail");

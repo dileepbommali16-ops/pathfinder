@@ -12,7 +12,13 @@ import {
   handleAuthLoginDetected,
 } from "../lib/auth";
 import { getCareerAgentResponse } from "../lib/careerAgent";
-import { isPlaceholderCandidateName, pickCandidateFullName } from "../types/profile";
+import {
+  DEFAULT_STUDENT_PROFILE,
+  buildFreshOnboardingProfile,
+  buildInitialProfileFromStorage,
+  isPlaceholderCandidateName,
+  pickCandidateFullName,
+} from "../types/profile";
 
 function installMemoryBrowserGlobals() {
   const store = new Map<string, string>();
@@ -112,5 +118,48 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(pickCandidateFullName("Student Candidate", "Dileep Bommali")).toBe("Dileep Bommali");
     expect(pickCandidateFullName("", "indala gayatri")).toBe("indala gayatri");
     expect(pickCandidateFullName("Priya Sharma", "Dileep Bommali")).toBe("Priya Sharma");
+  });
+
+  it("builds fresh onboarding profiles and hydrates signed-in users across reloads without placeholder names", () => {
+    const fresh = buildFreshOnboardingProfile("Rohan Verma", "rohan@example.com");
+    expect(fresh.fullName).toBe("Rohan Verma");
+    expect(fresh.email).toBe("rohan@example.com");
+    expect(fresh.onboardingCompleted).toBe(false);
+    expect(fresh.wizardStep).toBe(1);
+
+    // Reloading as a new student even if draft is missing stays in onboarding with real name
+    const reloadedNewUser = buildInitialProfileFromStorage(
+      null,
+      JSON.stringify({ username: "Rohan Verma", email: "rohan@example.com", is_new_user: true })
+    );
+    expect(reloadedNewUser.fullName).toBe("Rohan Verma");
+    expect(reloadedNewUser.email).toBe("rohan@example.com");
+    expect(reloadedNewUser.onboardingCompleted).toBe(false);
+
+    // Reloading with a stale/mismatched email draft falls back to the active signed-in user
+    const mismatchedDraft = JSON.stringify({
+      ...DEFAULT_STUDENT_PROFILE,
+      email: "olduser@example.com",
+      fullName: "Old User",
+    });
+    const switchedUser = buildInitialProfileFromStorage(
+      mismatchedDraft,
+      JSON.stringify({ username: "indala gayatri", email: "priyankabommali2@gmail.com" })
+    );
+    expect(switchedUser.fullName).toBe("indala gayatri");
+    expect(switchedUser.email).toBe("priyankabommali2@gmail.com");
+
+    // Draft containing placeholder fullName inherits authenticated username
+    const placeholderDraft = JSON.stringify({
+      ...DEFAULT_STUDENT_PROFILE,
+      email: "dileepbommali16@gmail.com",
+      fullName: "Student Candidate",
+    });
+    const repairedDraft = buildInitialProfileFromStorage(
+      placeholderDraft,
+      JSON.stringify({ username: "Dileep Bommali", email: "dileepbommali16@gmail.com" })
+    );
+    expect(repairedDraft.fullName).toBe("Dileep Bommali");
+    expect(repairedDraft.onboardingCompleted).toBe(true);
   });
 });

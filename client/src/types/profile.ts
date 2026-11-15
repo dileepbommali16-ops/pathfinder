@@ -98,6 +98,90 @@ export function pickCandidateFullName(candidate?: string | null, fallback?: stri
   return c || f || "";
 }
 
+/** Builds a clean onboarding profile pre-seeded with the new student's identity. */
+export function buildFreshOnboardingProfile(
+  username?: string | null,
+  email?: string | null
+): StudentProfileState {
+  const cleanEmail = (email || "").trim();
+  const cleanName = pickCandidateFullName(username) || (username || "").trim();
+  return {
+    ...DEFAULT_STUDENT_PROFILE,
+    email: cleanEmail,
+    fullName: cleanName,
+    githubUrl: "",
+    leetcodeUrl: "",
+    codingProfiles: { github: "", leetcode: "", linkedin: "" },
+    onboardingCompleted: false,
+    wizardStep: 1,
+  };
+}
+
+/** Hydrates initial profile state from localStorage draft and/or signed-in user record. */
+export function buildInitialProfileFromStorage(
+  savedDraftRaw?: string | null,
+  savedUserRaw?: string | null
+): StudentProfileState {
+  let storedUser: Record<string, any> = {};
+  if (savedUserRaw) {
+    try {
+      const parsed = JSON.parse(savedUserRaw);
+      if (parsed && typeof parsed === "object") {
+        storedUser = parsed;
+      }
+    } catch { }
+  }
+
+  const storedEmail = String(storedUser.email || "").trim();
+  const storedName = pickCandidateFullName(storedUser.username);
+  const storedEmailLower = storedEmail.toLowerCase();
+
+  if (savedDraftRaw) {
+    try {
+      const parsedDraft = JSON.parse(savedDraftRaw);
+      if (parsedDraft && typeof parsedDraft === "object") {
+        const draftEmailLower = String(parsedDraft.email || "").trim().toLowerCase();
+        if (!storedEmailLower || !draftEmailLower || storedEmailLower === draftEmailLower) {
+          return {
+            ...DEFAULT_STUDENT_PROFILE,
+            ...parsedDraft,
+            email: parsedDraft.email || storedEmail || DEFAULT_STUDENT_PROFILE.email,
+            fullName:
+              pickCandidateFullName(parsedDraft.fullName, storedName) ||
+              DEFAULT_STUDENT_PROFILE.fullName,
+          };
+        }
+      }
+    } catch { }
+  }
+
+  if (storedEmail || storedName) {
+    if (storedEmailLower === "guest@pathfinder.ai") {
+      return {
+        ...DEFAULT_STUDENT_PROFILE,
+        email: storedEmail,
+        fullName: "Guest Student",
+        onboardingCompleted: true,
+      };
+    }
+
+    const isOnboardingPending =
+      storedUser.is_new_user === true || storedUser.onboarding_completed === false;
+    return {
+      ...DEFAULT_STUDENT_PROFILE,
+      email: storedEmail || DEFAULT_STUDENT_PROFILE.email,
+      fullName: storedName || DEFAULT_STUDENT_PROFILE.fullName,
+      githubUrl: "",
+      leetcodeUrl: "",
+      codingProfiles: { github: "", leetcode: "", linkedin: "" },
+      onboardingCompleted: !isOnboardingPending,
+      wizardStep: isOnboardingPending ? 1 : DEFAULT_STUDENT_PROFILE.wizardStep,
+    };
+  }
+
+  return DEFAULT_STUDENT_PROFILE;
+}
+
 export const DEFAULT_STUDENT_PROFILE: StudentProfileState = {
   fullName: "Student Candidate",
   college: "Engineering Institute of Technology",
