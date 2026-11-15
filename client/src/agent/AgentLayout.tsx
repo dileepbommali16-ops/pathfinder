@@ -166,6 +166,56 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [cameraActive]);
 
+  const requestRestCoachReply = async (
+    query: string,
+    ctx: Record<string, any> = {}
+  ): Promise<string> => {
+    let parsedProfile: any = {};
+    const activeHonorific = getUserRole();
+    try {
+      const profileJson =
+        typeof window !== "undefined"
+          ? localStorage.getItem("pathfinder_profile_draft") ||
+            localStorage.getItem("pathfinder_profile")
+          : null;
+      parsedProfile = profileJson ? JSON.parse(profileJson) : {};
+      const controller = new AbortController();
+      const abortId = window.setTimeout(() => controller.abort(), 8000);
+      try {
+        const resp = await fetch(`${API_BASE}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            message: query,
+            history: [],
+            profile: {
+              cgpa: parsedProfile.cgpa ?? 7.8,
+              backlogs: parsedProfile.backlogs ?? parsedProfile.activeBacklogs ?? 0,
+              internships: parsedProfile.internships ?? 1,
+              communication: parsedProfile.communication ?? 6,
+              coding: parsedProfile.coding ?? 6,
+              target_role: parsedProfile.targetRole ?? "Software Engineer",
+              target_tier: parsedProfile.targetTier ?? "Product",
+              branch: parsedProfile.branch ?? "CSE",
+            },
+            active_tab: ctx.activeTab || "overview",
+            page_context: { ...ctx, honorific: activeHonorific },
+          }),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data?.reply && typeof data.reply === "string") {
+            return data.reply.trim();
+          }
+        }
+      } finally {
+        window.clearTimeout(abortId);
+      }
+    } catch {}
+    return getCareerAgentResponse(query, [], parsedProfile, activeHonorific);
+  };
+
   const ensureSocketConnected = () => {
     if (dasSocket.isConnected) return;
     const activeRole = getHonorificKey();
@@ -239,52 +289,24 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       askCoachUnbindRef.current = cleanup;
 
-      dasSocket.askCoach(query, mergedCtx);
-
-      timerId = window.setTimeout(async () => {
-        if (settled || askCoachNonceRef.current !== nonce) return;
-        let replyText = "";
-        let parsedProfile: any = {};
-        try {
-          const profileJson =
-            typeof window !== "undefined" ? localStorage.getItem("pathfinder_profile") : null;
-          parsedProfile = profileJson ? JSON.parse(profileJson) : {};
-          const resp = await fetch(`${API_BASE}/api/chat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: query,
-              history: [],
-              profile: {
-                cgpa: parsedProfile.cgpa ?? 7.8,
-                backlogs: parsedProfile.backlogs ?? 0,
-                internships: parsedProfile.internships ?? 1,
-                communication: parsedProfile.communication ?? 4,
-                coding: parsedProfile.coding ?? 4,
-                target_role: parsedProfile.targetRole ?? "Software Engineer",
-                target_tier: parsedProfile.targetTier ?? "Product",
-                branch: parsedProfile.branch ?? "CSE",
-              },
-              active_tab: mergedCtx.activeTab || "overview",
-              page_context: { ...mergedCtx, honorific: getUserRole() },
-            }),
-          });
-          if (resp.ok) {
-            const data = await resp.json();
-            if (data?.reply && typeof data.reply === "string") {
-              replyText = data.reply.trim();
-            }
-          }
-        } catch {}
-
-        if (!replyText) {
-          replyText = getCareerAgentResponse(query, [], parsedProfile, getUserRole());
-        }
+      const deliverRestReply = async () => {
+        const replyText = await requestRestCoachReply(query, mergedCtx);
         if (!settled && askCoachNonceRef.current === nonce && replyText) {
           cleanup();
           setTranscript(replyText);
         }
-      }, 6000);
+      };
+
+      if (!dasSocket.isSocketConnected) {
+        void deliverRestReply();
+        return;
+      }
+
+      dasSocket.askCoach(query, mergedCtx);
+      timerId = window.setTimeout(() => {
+        if (settled || askCoachNonceRef.current !== nonce) return;
+        void deliverRestReply();
+      }, 3500);
     };
 
     const onInterviewerPrompt = (e: Event) => {
@@ -491,6 +513,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!inputText.trim() && !attachedFile) return;
 
     askCoachNonceRef.current += 1;
+    const nonce = askCoachNonceRef.current;
     askCoachUnbindRef.current?.();
     askCoachUnbindRef.current = null;
 
@@ -500,6 +523,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     const commandText = inputText.trim() || (attachedFile ? `Look at this attached ${attachedType || "file"}: ${attachedFile.name}` : "");
     setUserTranscript(commandText);
     setTranscript("Thinking & Executing...");
+    setInputText("");
 
     if (attachedFile && attachedType === "image" && attachedPreview) {
       const commaIdx = attachedPreview.indexOf(",");
@@ -509,8 +533,43 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
+    const curCtx =
+      (typeof window !== "undefined" && (window as any).__DAS_PAGE_CONTEXT__) || {};
+
+    let settled = false;
+    let timerId: number | null = null;
+    const cleanup = () => {
+      settled = true;
+      if (timerId !== null) window.clearTimeout(timerId);
+      unsubSocket();
+      if (askCoachUnbindRef.current === cleanup) {
+        askCoachUnbindRef.current = null;
+      }
+    };
+    const unsubSocket = dasSocket.onAgentResponse(() => {
+      cleanup();
+    });
+    askCoachUnbindRef.current = cleanup;
+
+    const deliverRestReply = async () => {
+      const replyText = await requestRestCoachReply(commandText, curCtx);
+      if (!settled && askCoachNonceRef.current === nonce && replyText) {
+        cleanup();
+        setTranscript(replyText);
+      }
+    };
+
+    ensureSocketConnectedRef.current();
+    if (!dasSocket.isSocketConnected) {
+      void deliverRestReply();
+      return;
+    }
+
     dasSocket.sendTextCommand(commandText);
-    setInputText("");
+    timerId = window.setTimeout(() => {
+      if (settled || askCoachNonceRef.current !== nonce) return;
+      void deliverRestReply();
+    }, 3500);
   };
 
   // Handle Media & Resume File Selection

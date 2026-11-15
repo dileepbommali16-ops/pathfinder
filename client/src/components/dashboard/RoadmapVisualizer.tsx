@@ -46,13 +46,33 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
   onRegenerate,
 }) => {
   const currentRoadmap = roadmap || DEFAULT_ROADMAP;
-  const [completedWeeks, setCompletedWeeks] = useState<Record<number, boolean>>({});
+  const [completedWeeks, setCompletedWeeks] = useState<Record<number, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const saved = localStorage.getItem("pathfinder_roadmap_completed_v1");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const persistCompleted = (next: Record<number, boolean>) => {
+    try {
+      localStorage.setItem("pathfinder_roadmap_completed_v1", JSON.stringify(next));
+    } catch {}
+  };
 
   const toggleWeek = (index: number) => {
-    setCompletedWeeks((prev) => ({
-      ...prev,
-      [index]: !prev[index],
-    }));
+    setCompletedWeeks((prev) => {
+      const next = { ...prev, [index]: !prev[index] };
+      persistCompleted(next);
+      return next;
+    });
+  };
+
+  const resetProgress = () => {
+    setCompletedWeeks({});
+    persistCompleted({});
   };
 
   const completedCount = Object.values(completedWeeks).filter(Boolean).length;
@@ -70,9 +90,9 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7c3aed]/10 text-[#7c3aed] border border-[#7c3aed]/20">
               <Compass className="h-4 w-4" />
             </div>
-            <h2 className="text-xl font-bold tracking-tight text-[#f8fafc]">AI-Generated Career Roadmap</h2>
+            <h2 className="text-xl font-bold tracking-tight text-[#f8fafc]">AI-Generated 6-Week Roadmap</h2>
             <span className="rounded-md border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-2 py-0.5 text-[10px] font-semibold text-[#7c3aed] uppercase shadow-[0_0_10px_rgba(124, 58, 237,0.15)]">
-              Gemini Powered
+              AI Powered
             </span>
           </div>
           <p className="mt-1 text-xs text-[#94a3b8]">
@@ -80,14 +100,26 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={onRegenerate}
-          disabled={isLoading}
-          className="flex items-center gap-2 self-start rounded-xl border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-4 py-2.5 text-xs font-bold text-[#7c3aed] shadow-[0_0_15px_rgba(124, 58, 237,0.15)] transition-all hover:bg-[#7c3aed]/20 active:scale-95 disabled:opacity-50 sm:self-auto cursor-pointer"
-        >
-          <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-          <span>{isLoading ? "Generating with Gemini..." : "Regenerate Roadmap"}</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {completedCount > 0 && (
+            <button
+              type="button"
+              onClick={resetProgress}
+              className="rounded-xl border border-white/[0.12] bg-[#0a0b10] px-3 py-2.5 text-xs font-semibold text-[#94a3b8] transition-all hover:border-white/30 hover:text-white cursor-pointer"
+            >
+              Reset Progress
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onRegenerate}
+            disabled={isLoading}
+            className="flex items-center gap-2 rounded-xl border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-4 py-2.5 text-xs font-bold text-[#7c3aed] shadow-[0_0_15px_rgba(124, 58, 237,0.15)] transition-all hover:bg-[#7c3aed]/20 active:scale-95 disabled:opacity-50 cursor-pointer"
+          >
+            <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+            <span>{isLoading ? "Regenerating Roadmap..." : "Regenerate Roadmap"}</span>
+          </button>
+        </div>
       </div>
 
       {/* Progress & Skill Gaps Banner */}
@@ -131,18 +163,19 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
           const weekDescription = parts.length > 1 ? parts.slice(1).join(":").trim() : action;
 
           return (
-            <div
+            <button
               key={index}
+              type="button"
               onClick={() => toggleWeek(index)}
-              className={`group flex cursor-pointer items-start gap-4 rounded-2xl border p-4.5 transition-all sm:p-5 ${
+              aria-pressed={isDone}
+              className={`group w-full text-left flex cursor-pointer items-start gap-4 rounded-2xl border p-4.5 transition-all sm:p-5 ${
                 isDone
                   ? "border-[#7c3aed]/40 bg-[#7c3aed]/10 text-[#f8fafc] shadow-[0_4px_20px_rgba(124, 58, 237,0.1)]"
                   : "border-white/[0.08] bg-[#0a0b10] text-[#f8fafc] hover:border-[#7c3aed]/40 hover:bg-[#11131c] hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
               }`}
             >
-              {/* Checkbox Trigger */}
-              <button
-                type="button"
+              {/* Checkbox Visual Indicator */}
+              <span
                 className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all ${
                   isDone
                     ? "border-[#7c3aed] bg-[#7c3aed] text-white"
@@ -150,12 +183,12 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
                 }`}
               >
                 <CheckCircle className="h-4 w-4" />
-              </button>
+              </span>
 
               {/* Week Content */}
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs font-bold uppercase tracking-wider ${isDone ? "text-[#7c3aed]" : "text-[#7c3aed]"}`}>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#7c3aed]">
                     {weekTitle}
                   </span>
                   {isDone && (
@@ -168,7 +201,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
                   {weekDescription}
                 </p>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

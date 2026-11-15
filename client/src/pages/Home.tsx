@@ -15,7 +15,6 @@ import { ProjectRecommender } from "@/components/dashboard/ProjectRecommender";
 import { CareerDigitalTwin } from "@/components/dashboard/CareerDigitalTwin";
 import { WhatIfSimulator } from "@/components/dashboard/WhatIfSimulator";
 import { RoleIntelligence } from "@/components/dashboard/RoleIntelligence";
-import { CareerMissionTracker } from "@/components/dashboard/CareerMissionTracker";
 import { BranchIntelligence } from "@/components/dashboard/BranchIntelligence";
 import { SkillIntelligence } from "@/components/dashboard/SkillIntelligence";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
@@ -1714,9 +1713,13 @@ export default function Home({ initialTab }: HomeProps = {}) {
       if (resp.ok) {
         const data = await resp.json();
         setCohortInsight(data);
+        toast.success("Cohort intelligence summary generated!");
+      } else {
+        toast.error("Unable to generate cohort AI summary right now. Please retry.");
       }
     } catch (err) {
       console.warn("Cohort insight error:", err);
+      toast.error("Cohort insight request failed or timed out. Please retry.");
     } finally {
       setIsSummarizingCohort(false);
     }
@@ -2387,7 +2390,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 helperLabel="Milestones auto-adapt as you update skills and role"
                 onAskCoach={handleAskCoach}
               />
-              <CareerMissionTracker profile={profile} onNavigateTab={setActiveTab} />
               <div id="sprint-roadmap">
                 <RoadmapVisualizer
                   roadmap={roadmap}

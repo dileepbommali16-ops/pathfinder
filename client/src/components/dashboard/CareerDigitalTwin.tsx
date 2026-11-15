@@ -446,7 +446,7 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
         <div className="mt-6 flex items-start gap-2.5 rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-3.5 text-[11px] text-[#94a3b8]">
           <HelpCircle className="h-4 w-4 shrink-0 text-white mt-0.5" />
           <p className="leading-relaxed">
-            <strong className="text-[#f8fafc]">ML Model Transparency Notice:</strong> The placement probability estimate is derived from a supervised <code className="text-white font-mono">RandomForestClassifier</code> trained on 650 historical student placement records (2024–2026). It represents a statistical estimation based on historical hiring criteria, <span className="text-[#f8fafc] font-semibold">not a guaranteed placement outcome</span>. Real campus placement outcomes depend on company-specific drive criteria, written test performance, and live interview rounds.
+            <strong className="text-[#f8fafc]">ML Model Transparency Notice:</strong> The placement probability estimate is derived from a supervised <code className="text-white font-mono">RandomForestClassifier</code> trained on 972 historical student placement records (2024–2026). It represents a statistical estimation based on historical hiring criteria, <span className="text-[#f8fafc] font-semibold">not a guaranteed placement outcome</span>. Real campus placement outcomes depend on company-specific drive criteria, written test performance, and live interview rounds.
           </p>
         </div>
       </div>

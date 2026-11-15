@@ -28,6 +28,7 @@ import { StudentProfileState } from "@/types/profile";
 import { audioEngine, speaker } from "@/agent/audioIO";
 import { onVoiceStateChange } from "@/audio/voiceManager";
 import { API_BASE } from "@/lib/apiClient";
+import { toast } from "sonner";
 import { evaluateMockInterviewAnswer } from "@/lib/interviewEvaluator";
 
 interface MockInterviewConsoleProps {
@@ -389,7 +390,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Speech recognition is not supported in this browser. Please type your response directly.");
+      toast.error("Speech recognition is not supported in this browser. Please type your response directly.");
       return;
     }
 

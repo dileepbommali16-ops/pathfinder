@@ -19,123 +19,156 @@ import {
   ExternalLink,
   Sparkles,
   BookOpen,
-  Code2
+  Code2,
+  Calendar,
+  Download
 } from "lucide-react";
 import { TabId } from "./DashboardHeader";
 import { StudentProfileState, DEFAULT_STUDENT_PROFILE } from "@/types/profile";
 import { API_BASE } from "@/lib/apiClient";
 import { toast } from "sonner";
 
-export async function syncGoogleWorkspace(
-  studentData: {
-    fullName?: string;
-    branch?: string;
-    score?: number;
-    targetRole?: string;
-    email?: string;
-    companyName?: string;
-    interviewTime?: string;
-  },
-  apiBase: string = API_BASE
-) {
-  try {
-    const cleanBase = apiBase.replace(/\/$/, "");
-    const [sheetResp, calResp] = await Promise.all([
-      fetch(`${cleanBase}/api/google/sheets/log`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          student_name: studentData.fullName || "Dileep Bommali",
-          branch: studentData.branch || "CSE",
-          readiness_score: Number(studentData.score ?? 78),
-          target_role: studentData.targetRole || "Full Stack Engineer",
-        }),
-      }),
-      fetch(`${cleanBase}/api/google/calendar/schedule`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          student_email: studentData.email || "dileepbommali16@gmail.com",
-          company_name: studentData.companyName || "Tier-1 Product Drive",
-          interview_time:
-            studentData.interviewTime ||
-            new Date(Date.now() + 86400000).toISOString(),
-          role_title: studentData.targetRole || "Full Stack Engineer",
-        }),
-      }),
-    ]);
+function formatIcsDate(d: Date): string {
+  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
 
-    const data = await sheetResp.json().catch(() => null);
-    const calData = await calResp.json().catch(() => null);
-    if (data?.success) {
-      console.log("TPO Google Sheet Updated:", data.message);
-    }
-    return { sheet: data, calendar: calData };
-  } catch (err) {
-    console.error("Google sync error:", err);
-    return null;
-  }
+function downloadBlobFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 export function GoogleAutomationCard({
   profile,
   prediction,
-  apiBase = API_BASE,
 }: {
   profile?: StudentProfileState;
   prediction?: { chance: number };
   apiBase?: string;
 }) {
-  const [syncing, setSyncing] = useState(false);
+  const candidateName = (profile?.fullName || "").trim() || "Candidate";
+  const branch = profile?.branch || "CSE";
+  const targetRole = profile?.targetRole || "Software Engineer";
+  const readiness = typeof prediction?.chance === "number" ? prediction.chance : null;
 
-  const handleSyncGoogle = async () => {
-    setSyncing(true);
-    try {
-      await syncGoogleWorkspace(
-        {
-          fullName: profile?.fullName || "Dileep Bommali",
-          branch: profile?.branch || "CSE",
-          score: prediction?.chance ?? 78,
-          targetRole: profile?.targetRole || "Full Stack Engineer",
-        },
-        apiBase
-      );
-      toast.success(
-        "Google Calendar & Sheets synced successfully! Placement drive reminders active."
-      );
-    } catch {
-      toast.success(
-        "Google Calendar & Sheets synced successfully! Placement drive reminders active."
-      );
-    } finally {
-      setSyncing(false);
-    }
+  const getPrepWindow = () => {
+    const start = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    start.setHours(10, 0, 0, 0);
+    const end = new Date(start.getTime() + 45 * 60 * 1000);
+    return { start, end };
   };
 
+  const handleDownloadIcs = () => {
+    const { start, end } = getPrepWindow();
+    const scoreText = readiness !== null ? `${readiness}%` : "Pending Calculation";
+    const summary = `Pathfinder Interview Prep: ${targetRole}`;
+    const description = `Candidate: ${candidateName} (${branch}) | Target Role: ${targetRole} | Readiness Score: ${scoreText}. Focus: Blind 75 DSA & STAR Architecture Defense.`;
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Pathfinder 2.0//Placement Prep//EN",
+      "BEGIN:VEVENT",
+      `UID:pathfinder-${Date.now()}@pathfinder.local`,
+      `DTSTAMP:${formatIcsDate(new Date())}`,
+      `DTSTART:${formatIcsDate(start)}`,
+      `DTEND:${formatIcsDate(end)}`,
+      `SUMMARY:${summary}`,
+      `DESCRIPTION:${description}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    downloadBlobFile("pathfinder-interview-prep.ics", ics, "text/calendar;charset=utf-8");
+    toast.success("Downloaded Calendar Invite (.ics) for tomorrow's 10:00 AM prep session!");
+  };
+
+  const handleExportDossier = () => {
+    const dossier = {
+      exportedAt: new Date().toISOString(),
+      candidateName,
+      email: profile?.email || "",
+      branch,
+      graduationYear: profile?.graduationYear || 2026,
+      currentYear: profile?.currentYear || "",
+      cgpa: profile?.cgpa ?? null,
+      backlogs: profile?.backlogs ?? 0,
+      codingScore: profile?.coding ?? null,
+      communicationScore: profile?.communication ?? null,
+      targetRole,
+      readinessScore: readiness,
+      cohortBenchmarkRecords: 972,
+    };
+    downloadBlobFile(
+      "pathfinder-readiness-dossier.json",
+      JSON.stringify(dossier, null, 2),
+      "application/json;charset=utf-8"
+    );
+    toast.success("Exported your verified Career Readiness Dossier (.json)!");
+  };
+
+  const { start, end } = getPrepWindow();
+  const gcalDates = `${formatIcsDate(start)}/${formatIcsDate(end)}`;
+  const gcalParams = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `Pathfinder Placement Prep: ${targetRole}`,
+    dates: gcalDates,
+    details: `Candidate: ${candidateName} (${branch}) | Readiness: ${
+      readiness !== null ? `${readiness}%` : "N/A"
+    } | Focus: DSA Patterns + STAR Project Defense.`,
+  });
+  const googleCalUrl = `https://calendar.google.com/calendar/render?${gcalParams.toString()}`;
+
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#11131c] p-5 text-white shadow-xl">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
-          Google Workspace & TPO Automation
-        </h3>
-        <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-mono">
-          Active
-        </span>
+    <div className="rounded-2xl border border-white/10 bg-[#11131c] p-5 text-white shadow-xl flex flex-col justify-between h-full">
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-emerald-400" />
+            <span>Prep Schedule & Dossier Export</span>
+          </h3>
+          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-mono">
+            Ready
+          </span>
+        </div>
+        <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+          Export your verified readiness snapshot ({readiness !== null ? `${readiness}%` : "profile active"}) or lock a mock interview reminder directly into Google Calendar.
+        </p>
       </div>
-      <p className="text-xs text-zinc-400 mb-4">
-        Automatically locks mock interviews into Google Calendar and logs your verified readiness score into the TPO Master Placement Sheet.
-      </p>
-      <button
-        type="button"
-        onClick={handleSyncGoogle}
-        disabled={syncing}
-        className="w-full py-2.5 rounded-xl bg-white text-zinc-950 font-semibold text-xs hover:bg-zinc-200 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-      >
-        {syncing
-          ? "Syncing Google Services..."
-          : "Sync with Google Calendar & TPO Sheet"}
-      </button>
+      <div className="space-y-2">
+        <a
+          href={googleCalUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="w-full py-2.5 px-3 rounded-xl bg-white text-zinc-950 font-semibold text-xs hover:bg-zinc-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          <span>Add to Google Calendar</span>
+        </a>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={handleDownloadIcs}
+            className="py-2 px-2.5 rounded-xl border border-white/15 bg-white/[0.04] text-zinc-200 font-semibold text-[11px] hover:bg-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <Download className="h-3 w-3" />
+            <span>.ics Invite</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleExportDossier}
+            className="py-2 px-2.5 rounded-xl border border-white/15 bg-white/[0.04] text-zinc-200 font-semibold text-[11px] hover:bg-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <FileText className="h-3 w-3" />
+            <span>Dossier JSON</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -663,7 +696,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
       id: "analytics",
       title: "Cohort Placement Trends",
       subtitle: "[Campus Data]",
-      description: "Compare your branch and graduation year against 650+ verified campus offers.",
+      description: "Compare your branch and graduation year against 972 verified campus offers.",
       icon: TrendingUp,
       tag: loadingActionId === "analytics" ? "Querying..." : "Step 6 · Campus Data",
       iconColor: "text-[#ffffff]",

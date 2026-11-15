@@ -108,7 +108,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             </h1>
 
             <p className="max-w-xl text-sm leading-relaxed text-[#94a3b8]">
-              Your placement intelligence command center combines real campus recruitment cohort benchmarks (972 records), scikit-learn probability modeling, and Gemini placement coaching.
+              Your placement intelligence command center combines real campus recruitment cohort benchmarks (972 records), scikit-learn probability modeling, and DAS AI placement coaching.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">

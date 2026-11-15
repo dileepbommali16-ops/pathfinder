@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "sonner";
 import {
   TrendingUp,
   Download,
@@ -109,8 +110,33 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
   );
 
   const handleDispatchIntervention = () => {
+    if (atRiskStudents.length === 0) {
+      toast.info("No at-risk candidates match the current filters.");
+      return;
+    }
+    const headers = ["CandidateID", "Year", "Branch", "Gender", "SkillCategory", "CGPA", "CodingScore", "PlacementStatus"];
+    const escapeCsv = (val: unknown) => {
+      const s = String(val ?? "");
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+    const rows = atRiskStudents.map((r) =>
+      [r.sourceId, r.year, r.branch, r.gender, r.skillCategory, r.cgpa, r.codingScore, r.placed_label]
+        .map(escapeCsv)
+        .join(",")
+    );
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `at-risk-candidates-${filters.branch}-${filters.year}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
     setInterventionDispatched(true);
-    setTimeout(() => setInterventionDispatched(false), 5000);
+    toast.success(`Exported ${atRiskStudents.length} at-risk candidate records as CSV.`);
+    setTimeout(() => setInterventionDispatched(false), 6000);
   };
 
   const handlePrintReport = () => {
@@ -334,8 +360,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 onClick={handleDispatchIntervention}
                 className="flex items-center gap-2 rounded-xl bg-[#9f1239] px-4 py-2.5 text-xs font-bold text-white shadow-[0_0_20px_rgba(159, 18, 57,0.3)] transition-all hover:bg-[#9f1239]/90 active:scale-95 cursor-pointer"
               >
-                <Zap className="h-4 w-4" />
-                <span>Dispatch Remedial Intervention Plan</span>
+                <Download className="h-4 w-4" />
+                <span>Export At-Risk Candidates (CSV)</span>
               </button>
             </div>
 
@@ -343,7 +369,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/[0.08] bg-black/40 p-3 text-xs text-[#94a3b8]">
                 <CheckCircle2 className="h-4 w-4 text-[#9f1239]" />
                 <span>
-                  <strong>Intervention Triggered:</strong> Automated 6-week Blind 75 DSA roadmap and STAR interview clinic invites dispatched to all {atRiskStudents.length} candidates.
+                  <strong>CSV Dossier Exported:</strong> Downloaded actionable CSV roster of {atRiskStudents.length} filtered at-risk candidates in {filters.branch} ({filters.year}).
                 </span>
               </div>
             )}
@@ -369,26 +395,28 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <div className="mt-6 grid gap-4 sm:grid-cols-4">
               <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-center">
                 <span className="text-[10px] font-bold uppercase text-[#94a3b8]">Outgoing Batch</span>
-                <div className="text-2xl font-black text-white">{totalStudents}</div>
-                <span className="text-[11px] text-[#94a3b8]">Registered Candidates</span>
+                <div className="text-2xl font-black text-white">{records.length}</div>
+                <span className="text-[11px] text-[#94a3b8]">Filtered Candidates</span>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-center">
                 <span className="text-[10px] font-bold uppercase text-[#94a3b8]">Campus Placements</span>
                 <div className="text-2xl font-black text-[#9f1239]">{placedStudents}</div>
-                <span className="text-[11px] text-[#94a3b8]">{placementRate}% Clearance Rate</span>
+                <span className="text-[11px] text-[#94a3b8]">{records.length > 0 ? placementRate : 0}% Clearance Rate</span>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-center">
                 <span className="text-[10px] font-bold uppercase text-[#94a3b8]">Median CTC Package</span>
-                <div className="text-2xl font-black text-[#9f1239]">₹{analytics?.median_package ?? 6.8} LPA</div>
+                <div className="text-2xl font-black text-[#9f1239]">
+                  {analytics?.median_package ? `₹${analytics.median_package} LPA` : "—"}
+                </div>
                 <span className="text-[11px] text-[#94a3b8]">NAAC Benchmark Compliant</span>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-center">
-                <span className="text-[10px] font-bold uppercase text-[#94a3b8]">Tier-1 Product Share</span>
-                <div className="text-2xl font-black text-[#9f1239]">32.4%</div>
-                <span className="text-[11px] text-[#94a3b8]">&gt; 12 LPA Packages</span>
+                <span className="text-[10px] font-bold uppercase text-[#94a3b8]">Intervention Queue</span>
+                <div className="text-2xl font-black text-[#9f1239]">{atRiskStudents.length}</div>
+                <span className="text-[11px] text-[#94a3b8]">Need DSA / Academic Support</span>
               </div>
             </div>
 
@@ -406,30 +434,32 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.08] bg-[#11131c]">
-                  {(analytics?.branch_distribution || [
-                    { branch: "CSE", total: 180, placed: 162, placement_rate: 90 },
-                    { branch: "IT", total: 120, placed: 104, placement_rate: 86.6 },
-                    { branch: "ECE", total: 140, placed: 112, placement_rate: 80 },
-                    { branch: "MECH", total: 95, placed: 68, placement_rate: 71.5 },
-                    { branch: "CIVIL", total: 70, placed: 44, placement_rate: 62.8 },
-                  ]).map((dept, i) => (
-                    <tr key={i} className="hover:bg-white/[0.02]">
-                      <td className="px-5 py-3.5 font-bold text-white">{dept.branch}</td>
-                      <td className="px-5 py-3.5 text-[#94a3b8]">{dept.total}</td>
-                      <td className="px-5 py-3.5 text-white font-semibold">{dept.placed}</td>
-                      <td className="px-5 py-3.5">
-                        <span className={`font-bold ${dept.placement_rate >= 80 ? "text-[#9f1239]" : "text-[#94a3b8]"}`}>
-                          {dept.placement_rate.toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-[#94a3b8]">Google, Amazon, TCS, Infosys, Cisco</td>
-                      <td className="px-5 py-3.5">
-                        <span className="inline-flex items-center gap-1 rounded-full border border-[#9f1239]/30 bg-[#9f1239]/10 px-2 py-0.5 text-[10px] font-bold text-[#9f1239]">
-                          ✓ Verified
-                        </span>
+                  {(analytics?.branch_distribution && analytics.branch_distribution.length > 0) ? (
+                    analytics.branch_distribution.map((dept, i) => (
+                      <tr key={i} className="hover:bg-white/[0.02]">
+                        <td className="px-5 py-3.5 font-bold text-white">{dept.branch}</td>
+                        <td className="px-5 py-3.5 text-[#94a3b8]">{dept.total}</td>
+                        <td className="px-5 py-3.5 text-white font-semibold">{dept.placed}</td>
+                        <td className="px-5 py-3.5">
+                          <span className={`font-bold ${dept.placement_rate >= 80 ? "text-[#9f1239]" : "text-[#94a3b8]"}`}>
+                            {dept.placement_rate.toFixed(1)}%
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5 text-[#94a3b8]">TCS, Infosys, Accenture, Product Drives</td>
+                        <td className="px-5 py-3.5">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[#9f1239]/30 bg-[#9f1239]/10 px-2 py-0.5 text-[10px] font-bold text-[#9f1239]">
+                            ✓ Verified
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-6 text-center text-[#94a3b8]">
+                        No department records available for the selected filter criteria.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -447,12 +477,13 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               </div>
 
               <button
+                type="button"
                 onClick={onSummarizeAI}
                 disabled={isSummarizing}
                 className="flex items-center gap-1.5 self-start rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition-all cursor-pointer sm:self-auto"
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>{isSummarizing ? "Synthesizing signals..." : "Summarize with Gemini AI"}</span>
+                <span>{isSummarizing ? "Synthesizing signals..." : "Summarize with DAS AI"}</span>
               </button>
             </div>
 
