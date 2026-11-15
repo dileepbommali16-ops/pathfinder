@@ -31,6 +31,8 @@ export class Speaker {
   private activeSpeaking = false;
   private pendingGreetingText: string | null = null;
   private simInterval: any = null;
+  private activeUtterance: SpeechSynthesisUtterance | null = null;
+  private deferSpeakTimer: number | null = null;
 
   constructor(
     private getToken: () => string | null = () => null,
@@ -120,35 +122,63 @@ export class Speaker {
       .trim();
     if (!text) return;
 
-    // Stop any existing playback
+    const wasBusy =
+      "speechSynthesis" in window &&
+      Boolean(window.speechSynthesis.speaking || window.speechSynthesis.pending);
+
+    // Stop any existing playback before queuing the next utterance
     this.stop();
+    const runGen = this.gen;
 
     // Keep Speaker.say strictly local (browser speechSynthesis) so reading questions aloud never hijacks or pollutes the conversational Gemini Live WebSocket.
-
     if ("speechSynthesis" in window) {
-      try {
-        const utter = new SpeechSynthesisUtterance(text);
-        const voices = window.speechSynthesis.getVoices();
-        const preferred =
-          voices.find((v) => /en[-_](IN|US|GB)/i.test(v.lang) && /natural|neural|google|aria|guy|ravi|prabhat/i.test(v.name)) ||
-          voices.find((v) => /en/i.test(v.lang));
-        if (preferred) utter.voice = preferred;
-        utter.rate = 1.0;
-        utter.pitch = 1.0;
-        utter.onstart = () => {
+      const launchSpeak = () => {
+        if (this.gen !== runGen) return;
+        try {
+          const utter = new SpeechSynthesisUtterance(text);
+          const voices = window.speechSynthesis.getVoices();
+          const preferred =
+            voices.find((v) => /en[-_](IN|US|GB)/i.test(v.lang) && /natural|neural|google|aria|guy|ravi|prabhat/i.test(v.name)) ||
+            voices.find((v) => /en/i.test(v.lang));
+          if (preferred) utter.voice = preferred;
+          utter.rate = 1.0;
+          utter.pitch = 1.0;
+          this.activeUtterance = utter;
+          utter.onstart = () => {
+            if (this.gen !== runGen) return;
+            this.activeSpeaking = true;
+            this.onState?.(true);
+            this.startLipSyncSimulation();
+          };
+          const finish = () => {
+            if (this.activeUtterance === utter) {
+              this.activeUtterance = null;
+            }
+            if (this.gen !== runGen) return;
+            this.activeSpeaking = false;
+            this.onState?.(false);
+            this.stopLipSyncSimulation();
+          };
+          utter.onend = finish;
+          utter.onerror = finish;
+          try {
+            window.speechSynthesis.resume?.();
+          } catch {}
+          window.speechSynthesis.speak(utter);
           this.activeSpeaking = true;
           this.onState?.(true);
           this.startLipSyncSimulation();
-        };
-        const finish = () => {
-          this.activeSpeaking = false;
-          this.onState?.(false);
-          this.stopLipSyncSimulation();
-        };
-        utter.onend = finish;
-        utter.onerror = finish;
-        window.speechSynthesis.speak(utter);
-      } catch {}
+        } catch {}
+      };
+
+      if (wasBusy) {
+        this.deferSpeakTimer = window.setTimeout(() => {
+          this.deferSpeakTimer = null;
+          launchSpeak();
+        }, 45);
+      } else {
+        launchSpeak();
+      }
     }
   }
 
@@ -321,6 +351,11 @@ export class Speaker {
 
   stop() {
     this.gen++;
+    if (this.deferSpeakTimer !== null) {
+      window.clearTimeout(this.deferSpeakTimer);
+      this.deferSpeakTimer = null;
+    }
+    this.activeUtterance = null;
     this.nextPcmTime = 0;
     this.pendingGreetingText = null;
     this.stopLipSyncSimulation();
@@ -714,11 +749,13 @@ class AudioEngine {
   private workletBlobUrl: string | null = null;
   private micSource: MediaStreamAudioSourceNode | null = null;
   private keepaliveTimer: number | null = null;
-  private freqData: Uint8Array = new Uint8Array(128);
-  private timeData: Uint8Array = new Uint8Array(256);
+  private freqData: Uint8Array = new Uint8Array(512);
+  private timeData: Uint8Array = new Uint8Array(1024);
   public micVolume: number = 0;
   public activeMicLabel: string = "";
   public selectedSpeakerId: string = "";
+  private userSelectedSpeaker: boolean = false;
+  private globalUnlockBound: boolean = false;
   private softGain: number = 1.0;
   private dcPrevX: number = 0;
   private dcPrevY: number = 0;
@@ -748,6 +785,27 @@ class AudioEngine {
   private speakingListeners: Set<(speaking: boolean) => void> = new Set();
   private lastNotifiedSpeaking: boolean = false;
   private speakingEndTimer: number | null = null;
+
+  constructor() {
+    this.bindGlobalUnlock();
+  }
+
+  private bindGlobalUnlock() {
+    if (this.globalUnlockBound || typeof window === "undefined") return;
+    this.globalUnlockBound = true;
+    const resumeExisting = () => {
+      if (this.audioCtx && (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted")) {
+        this.audioCtx.resume().catch(() => {});
+      }
+      if (this.micCtx && (this.micCtx.state === "suspended" || (this.micCtx.state as string) === "interrupted")) {
+        this.micCtx.resume().catch(() => {});
+      }
+    };
+    window.addEventListener("pointerdown", resumeExisting, { passive: true });
+    window.addEventListener("keydown", resumeExisting, { passive: true });
+    window.addEventListener("touchstart", resumeExisting, { passive: true });
+    window.addEventListener("click", resumeExisting, { passive: true });
+  }
 
   public onSpeakingStateChange(cb: (speaking: boolean) => void): () => void {
     this.speakingListeners.add(cb);
@@ -888,8 +946,8 @@ class AudioEngine {
         }
       }
       this.analyser = this.audioCtx.createAnalyser();
-      this.analyser.fftSize = 256;
-      this.analyser.smoothingTimeConstant = 0.20;
+      this.analyser.fftSize = 1024;
+      this.analyser.smoothingTimeConstant = 0.28;
       this.masterGain = this.audioCtx.createGain();
       this.masterGain.gain.value = 1.0;
       this.analyser.connect(this.masterGain);
@@ -922,16 +980,19 @@ class AudioEngine {
 
   public async autoSyncOutputDevice() {
     try {
-      const devices = await this.listAudioDevices();
-      const preferred = devices.outputs.find((d) =>
-        /headphone|headset|earphone|earbud|airpod|buds|bluetooth|hands-free|realtek.*head/i.test(d.label)
-      );
-      const nextId = preferred ? preferred.deviceId : "";
-      if (nextId !== (this.lastAppliedSinkId ?? "")) {
-        await this.setOutputDevice(nextId);
+      // Keep Chrome's default sink ("") unless user explicitly picked a speaker so Windows BT/headset switches stay native
+      if (!this.userSelectedSpeaker || !this.selectedSpeakerId) {
+        if (this.audioCtx && this.lastAppliedSinkId && this.lastAppliedSinkId !== "") {
+          await this.setOutputDevice("", false);
+        }
+        return;
       }
-      if (this.audioCtx && (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted")) {
-        await this.audioCtx.resume().catch(() => {});
+      const devices = await this.listAudioDevices();
+      const stillPresent = devices.outputs.some((d) => d.deviceId === this.selectedSpeakerId);
+      if (!stillPresent) {
+        await this.setOutputDevice("", false);
+      } else if (this.selectedSpeakerId !== (this.lastAppliedSinkId ?? "")) {
+        await this.setOutputDevice(this.selectedSpeakerId, true);
       }
     } catch {}
   }
@@ -940,7 +1001,7 @@ class AudioEngine {
     try {
       this.initContext();
       if (!this.audioCtx || !this.masterGain) return;
-      if (this.audioCtx.state === "suspended") {
+      if (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted") {
         this.audioCtx.resume().catch(() => {});
       }
       const silentBuf = this.audioCtx.createBuffer(1, 1, this.audioCtx.sampleRate || 24000);
@@ -951,9 +1012,14 @@ class AudioEngine {
     } catch {}
   }
 
-  public async setOutputDevice(deviceId: string) {
+  public async setOutputDevice(deviceId: string, isUserChoice = true) {
     const normalized = deviceId || "";
     this.selectedSpeakerId = normalized;
+    this.userSelectedSpeaker = Boolean(isUserChoice && normalized);
+    if (!this.audioCtx && !normalized) {
+      this.lastAppliedSinkId = "";
+      return;
+    }
     this.initContext();
     if (this.lastAppliedSinkId === normalized) return;
     if (this.audioCtx && typeof (this.audioCtx as any).setSinkId === "function") {
@@ -1039,8 +1105,26 @@ class AudioEngine {
       sumSq += sample * sample;
     }
     const rms = Math.sqrt(sumSq / this.timeData.length);
-    const speakingNow = this.isSpeaking() || rms > 0.012;
-    if (!speakingNow || rms < 0.008) {
+    const activePlayback = this.isSpeaking();
+    const speakingNow = activePlayback || rms > 0.0055;
+    if (!speakingNow) {
+      const spk = speaker.level();
+      if (spk > 0.01) {
+        return {
+          volume: Math.min(1, spk * 1.4),
+          low: spk,
+          mid: spk * 0.75,
+          high: spk * 0.35,
+          isSpeaking: true,
+        };
+      }
+      return { volume: 0, low: 0, mid: 0, high: 0, isSpeaking: false };
+    }
+
+    if (rms < 0.004) {
+      if (activePlayback) {
+        return { volume: 0.075, low: 0.045, mid: 0.035, high: 0.012, isSpeaking: true };
+      }
       const spk = speaker.level();
       if (spk > 0.01) {
         return {
@@ -1069,7 +1153,7 @@ class AudioEngine {
     const low = bandEnergy(160, 850);
     const mid = bandEnergy(850, 2400);
     const high = bandEnergy(2400, 6200);
-    const volume = Math.min(1.0, Math.max(0.0, (rms - 0.008) * 3.8));
+    const volume = Math.min(1.0, Math.pow(Math.max(0.0, (rms - 0.0025) * 4.6), 0.72));
 
     return { volume, low, mid, high, isSpeaking: true };
   }
@@ -1097,6 +1181,58 @@ class AudioEngine {
       float32Data[i] = int16Data[i] / 32768.0;
     }
     return float32Data;
+  }
+
+  // Speak text aloud via Gemini Puck TTS (/api/voice/tts) -> WebAudio 24kHz PCM, falling back to browser SpeechSynthesis
+  public async speakTextPuckOrLocal(
+    rawText: string,
+    apiBase: string,
+    options?: { signal?: AbortSignal; shouldContinue?: () => boolean }
+  ): Promise<boolean> {
+    const cleaned = rawText
+      .split("|||")[0]
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replace(/```[\s\S]*?```/g, " code snippet shown on screen. ")
+      .replace(/[*_#`>|~]/g, " ")
+      .replace(/https?:\/\/\S+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 680);
+    if (!cleaned) return false;
+    if (options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
+      return false;
+    }
+
+    this.unlockAudio();
+    try {
+      const resp = await fetch(`${apiBase}/api/voice/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: options?.signal,
+        body: JSON.stringify({ text: cleaned, voice: "Puck" }),
+      });
+      if (options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
+        return false;
+      }
+      if (resp.ok) {
+        const data = await resp.json();
+        if (options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
+          return false;
+        }
+        if (data?.status === "ok" && data?.pcm_base64) {
+          const played = await this.playWholePcmBase64(data.pcm_base64, Number(data.sample_rate) || 24000);
+          if (played) return true;
+        }
+      }
+    } catch (err: any) {
+      if (err?.name === "AbortError") return false;
+    }
+
+    if (options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
+      return false;
+    }
+    speaker.say(cleaned);
+    return true;
   }
 
   public stopWholePcmPlayback() {
@@ -1260,6 +1396,9 @@ class AudioEngine {
 
   // Returns true while DAS is actively playing or draining audio (prevents mid-sentence speaker echo cuts)
   public isSpeaking(): boolean {
+    if (this.audioCtx && this.audioCtx.state === "suspended") {
+      return false;
+    }
     if (this.wholePcmSource || this.workletPlaying || this.pendingWorkletChunks.length > 0) {
       return true;
     }
@@ -2019,8 +2158,8 @@ export function getUnifiedSpeechFormants(nowSec?: number): {
   isSpeaking: boolean;
 } {
   const f = audioEngine.getSpeechFormants();
-  if (f.isSpeaking && f.volume > 0.015) {
-    const shaped = Math.min(1, Math.pow(f.volume * 1.45, 0.78));
+  if (f.isSpeaking && f.volume > 0.01) {
+    const shaped = Math.min(1, Math.pow(f.volume * 1.45, 0.76));
     return {
       volume: shaped,
       low: Math.max(f.low, shaped * 0.45),
@@ -2045,7 +2184,7 @@ export function getUnifiedSpeechFormants(nowSec?: number): {
     const syllable =
       0.5 + 0.5 * Math.sin(t * 14.5 + Math.sin(t * 5.2) * 1.1);
     const vowelShift = 0.5 + 0.5 * Math.sin(t * 6.3);
-    const vol = Math.min(0.88, Math.max(0.24, rawLevel * 1.65) * (0.52 + 0.48 * syllable));
+    const vol = Math.min(0.92, Math.max(0.32, rawLevel * 1.85) * (0.52 + 0.48 * syllable));
     return {
       volume: vol,
       low: vol * (0.55 + 0.35 * vowelShift),

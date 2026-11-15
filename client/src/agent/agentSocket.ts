@@ -1,4 +1,5 @@
 import { audioEngine, cameraEngine } from "./audioIO";
+import { API_BASE } from "@/lib/apiClient";
 import {
   executeWebsiteControl,
   WebsiteControlArgs,
@@ -87,11 +88,37 @@ class DasAgentSocket {
   private healthListenersAttached = false;
   private connSeq = 0;
   private activeAudioTurnId: number | null = null;
+  private audioChunksInTurn = 0;
+  private ttsFallbackAbort: AbortController | null = null;
   private interruptedTurnIds: Set<number> = new Set();
   private lastVisionGreetAt = 0;
   private lastTurnCompletedAt = 0;
   private latestPageContext: Record<string, any> | null = null;
   private cameraActiveState = false;
+
+  private cancelTtsFallback() {
+    if (this.ttsFallbackAbort) {
+      this.ttsFallbackAbort.abort();
+      this.ttsFallbackAbort = null;
+    }
+  }
+
+  private triggerTextOnlyTts(text: string) {
+    const cleaned = text.trim();
+    if (
+      !cleaned ||
+      cleaned.startsWith("Connecting") ||
+      cleaned.startsWith("Refreshing") ||
+      cleaned.startsWith("Server Error") ||
+      cleaned.startsWith("Live session")
+    ) {
+      return;
+    }
+    this.cancelTtsFallback();
+    const ac = new AbortController();
+    this.ttsFallbackAbort = ac;
+    void audioEngine.speakTextPuckOrLocal(cleaned, API_BASE, { signal: ac.signal });
+  }
 
   private closeExistingSocketOnly() {
     if (this.renderPingTimer) {
@@ -507,6 +534,7 @@ CORE AUTONOMOUS CAPABILITIES:
           if (data.status === "connected") {
             this.isConnected = true;
             this.activeAudioTurnId = null;
+            this.audioChunksInTurn = 0;
             this.interruptedTurnIds.clear();
             this.savedOnStatusChange?.(true);
             if (!this.lastUnansweredText && this.pendingTexts.length === 0 && Date.now() - this.lastTextSentAt > 6000) {
@@ -540,12 +568,16 @@ CORE AUTONOMOUS CAPABILITIES:
           if (tId !== null && this.activeAudioTurnId !== null && tId !== this.activeAudioTurnId) {
             audioEngine.clearAudioQueue();
             this.currentAgentTranscript = "";
+            this.audioChunksInTurn = 0;
           }
           if (tId !== null) {
             this.activeAudioTurnId = tId;
           }
           this.lastAudioChunkAt = Date.now();
+          this.audioChunksInTurn += 1;
+          this.cancelTtsFallback();
           this.clearTurnWatchdog();
+          this.notifyAgentResponse();
           audioEngine.playPcmChunk(data.pcm_base64, data.sample_rate || 24000);
           if (!this.isSpeakingTurn) {
             if (this.awaitingNextTurn) {
@@ -570,6 +602,8 @@ CORE AUTONOMOUS CAPABILITIES:
           if (this.awaitingNextTurn) {
             this.currentAgentTranscript = "";
             this.awaitingNextTurn = false;
+            this.audioChunksInTurn = 0;
+            this.cancelTtsFallback();
           }
           this.currentAgentTranscript += data.text;
           this.savedOnTranscript?.(this.currentAgentTranscript);
@@ -583,9 +617,15 @@ CORE AUTONOMOUS CAPABILITIES:
           if (!this.currentAgentTranscript && !this.isSpeakingTurn && Date.now() - this.lastTextSentAt < 700) {
             return;
           }
+          const completedText = this.currentAgentTranscript;
+          const hadAudio = this.audioChunksInTurn > 0;
+          this.audioChunksInTurn = 0;
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
+          if (!hadAudio && completedText.trim()) {
+            this.triggerTextOnlyTts(completedText);
+          }
           if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {
             this.savedOnTranscript?.(`DAS Ready. Speak or type your next command, ${this.roleHonorific}!`);
           }
@@ -610,6 +650,8 @@ CORE AUTONOMOUS CAPABILITIES:
             }
           }
           this.activeAudioTurnId = null;
+          this.audioChunksInTurn = 0;
+          this.cancelTtsFallback();
           if (!this.currentAgentTranscript && !this.isSpeakingTurn && Date.now() - this.lastTextSentAt < 700) {
             audioEngine.clearAudioQueue();
             return;
@@ -663,13 +705,17 @@ CORE AUTONOMOUS CAPABILITIES:
         if (parts && Array.isArray(parts)) {
           for (const part of parts) {
             if (part.inlineData?.data) {
+              if (this.awaitingNextTurn) {
+                this.currentAgentTranscript = "";
+                this.awaitingNextTurn = false;
+                this.audioChunksInTurn = 0;
+              }
+              this.audioChunksInTurn += 1;
+              this.cancelTtsFallback();
               this.clearTurnWatchdog();
+              this.notifyAgentResponse();
               audioEngine.playPcmChunk(part.inlineData.data, 24000);
               if (!this.isSpeakingTurn) {
-                if (this.awaitingNextTurn) {
-                  this.currentAgentTranscript = "";
-                  this.awaitingNextTurn = false;
-                }
                 this.isSpeakingTurn = true;
                 if (!this.currentAgentTranscript) {
                   this.savedOnTranscript?.("🔊 DAS Speaking...");
@@ -682,6 +728,8 @@ CORE AUTONOMOUS CAPABILITIES:
               if (this.awaitingNextTurn) {
                 this.currentAgentTranscript = "";
                 this.awaitingNextTurn = false;
+                this.audioChunksInTurn = 0;
+                this.cancelTtsFallback();
               }
               this.currentAgentTranscript += part.text;
               this.savedOnTranscript?.(this.currentAgentTranscript);
@@ -693,7 +741,13 @@ CORE AUTONOMOUS CAPABILITIES:
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
+          const completedText = this.currentAgentTranscript;
+          const hadAudio = this.audioChunksInTurn > 0;
+          this.audioChunksInTurn = 0;
           audioEngine.flushAudioPlayer();
+          if (!hadAudio && completedText.trim()) {
+            this.triggerTextOnlyTts(completedText);
+          }
           if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {
             this.savedOnTranscript?.(`DAS Ready. Speak or type your next command, ${this.roleHonorific}!`);
           }
@@ -702,6 +756,8 @@ CORE AUTONOMOUS CAPABILITIES:
 
         if (data.serverContent?.interrupted) {
           this.clearTurnWatchdog();
+          this.audioChunksInTurn = 0;
+          this.cancelTtsFallback();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
           audioEngine.clearAudioQueue();
@@ -1034,6 +1090,8 @@ CORE AUTONOMOUS CAPABILITIES:
   public speakVerbatim(text: string, mode = "coach_read") {
     const cleaned = text.trim();
     if (!cleaned) return;
+    this.cancelTtsFallback();
+    this.audioChunksInTurn = 0;
     this.currentAgentTranscript = "";
     this.isSpeakingTurn = false;
     this.awaitingNextTurn = false;
@@ -1055,6 +1113,8 @@ CORE AUTONOMOUS CAPABILITIES:
 
   public sendTextCommand(text: string) {
     if (!text.trim()) return;
+    this.cancelTtsFallback();
+    this.audioChunksInTurn = 0;
     this.currentAgentTranscript = "";
     this.isSpeakingTurn = false;
     this.awaitingNextTurn = false;
@@ -1166,6 +1226,8 @@ CORE AUTONOMOUS CAPABILITIES:
     this.manualClose = true;
     this.connSeq++;
     this.activeAudioTurnId = null;
+    this.audioChunksInTurn = 0;
+    this.cancelTtsFallback();
     this.cameraActiveState = false;
     this.clearTurnWatchdog();
     this.closeExistingSocketOnly();

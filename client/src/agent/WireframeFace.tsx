@@ -69,7 +69,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
   const fastEnv = useRef<number>(0);
   const slowEnv = useRef<number>(0);
   const syllableGate = useRef<number>(0);
-  const nextBlink = useRef<number>(1.8);
+  const nextBlink = useRef<number>(0.7);
   const isBlinking = useRef<boolean>(false);
   const blinkProg = useRef<number>(0);
   const pendingDoubleBlink = useRef<boolean>(false);
@@ -153,22 +153,28 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
     const t = state.clock.getElapsedTime();
 
     const { volume, low, mid, high, isSpeaking } = getUnifiedSpeechFormants(t);
-    const fastLerp = 1 - Math.exp(-(volume > fastEnv.current ? 34 : 20) * delta);
-    const slowLerp = 1 - Math.exp(-3.4 * delta);
+    const fastLerp = 1 - Math.exp(-(volume > fastEnv.current ? 36 : 22) * delta);
+    const slowLerp = 1 - Math.exp(-2.8 * delta);
     fastEnv.current += (volume - fastEnv.current) * fastLerp;
     slowEnv.current += (volume - slowEnv.current) * slowLerp;
 
     const v = THREE.MathUtils.clamp(fastEnv.current, 0, 1);
-    const relativeBurst = THREE.MathUtils.clamp(
-      (fastEnv.current - slowEnv.current * 0.62) / (slowEnv.current * 0.52 + 0.048),
+    const energyDelta = THREE.MathUtils.clamp(
+      (fastEnv.current - slowEnv.current * 0.42) / (slowEnv.current * 0.42 + 0.055),
       0,
-      1.3
+      1.25
     );
 
-    // Subtle natural speech cadence contrast only while actively speaking so sustained vowels still articulate
-    const cadenceWave = isSpeaking && v > 0.03 ? 0.64 + 0.36 * Math.sin(t * 20.5 + Math.sin(t * 8.2) * 1.35) : 1.0;
-    const targetGate = isSpeaking && v > 0.025 ? THREE.MathUtils.clamp(relativeBurst * cadenceWave, 0, 1.2) : 0;
-    syllableGate.current += (targetGate - syllableGate.current) * (1 - Math.exp(-28 * delta));
+    // Expressive syllable rhythm blended with acoustic envelope so vowels visibly open and consonants articulate crisply
+    const cadenceWave =
+      isSpeaking && v > 0.02
+        ? 0.52 + 0.48 * (0.5 + 0.5 * Math.sin(t * 17.5 + Math.sin(t * 6.4) * 1.15))
+        : 1.0;
+    const targetGate =
+      isSpeaking && v > 0.015
+        ? THREE.MathUtils.clamp(0.45 * energyDelta + 0.55 * cadenceWave, 0.15, 1.15)
+        : 0;
+    syllableGate.current += (targetGate - syllableGate.current) * (1 - Math.exp(-30 * delta));
     const gate = syllableGate.current;
 
     // 1. Subtle 3D Hologram Float + Head/Shoulders Counter-Rotation
@@ -186,35 +192,35 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
       shouldersRef.current.rotation.z = Math.cos(t * 0.26) * 0.008;
     }
 
-    // 2. Smooth Natural Eyelid Blink (~310ms close-hold-open with occasional quick double blink)
+    // 2. Smooth Natural Eyelid Blink (~375ms close-hold-open with occasional quick double blink)
     nextBlink.current -= delta;
     if (nextBlink.current <= 0 && !isBlinking.current) {
       isBlinking.current = true;
       blinkProg.current = 0;
-      if (!pendingDoubleBlink.current && Math.random() < 0.22) {
+      if (!pendingDoubleBlink.current && Math.random() < 0.24) {
         pendingDoubleBlink.current = true;
       }
     }
 
     let blinkVal = 0;
     if (isBlinking.current) {
-      blinkProg.current += delta * 3.25;
+      blinkProg.current += delta * 2.65;
       const p = Math.min(1, blinkProg.current);
-      if (p < 0.30) {
-        blinkVal = Math.sin((p / 0.30) * (Math.PI * 0.5));
-      } else if (p < 0.50) {
+      if (p < 0.28) {
+        blinkVal = Math.sin((p / 0.28) * (Math.PI * 0.5));
+      } else if (p < 0.52) {
         blinkVal = 1.0;
       } else {
-        blinkVal = 0.5 * (1 + Math.cos(((p - 0.50) / 0.50) * Math.PI));
+        blinkVal = 0.5 * (1 + Math.cos(((p - 0.52) / 0.48) * Math.PI));
       }
       if (blinkProg.current >= 1) {
         isBlinking.current = false;
         blinkVal = 0;
         if (pendingDoubleBlink.current) {
           pendingDoubleBlink.current = false;
-          nextBlink.current = 0.16;
+          nextBlink.current = 0.15;
         } else {
-          nextBlink.current = 2.3 + Math.random() * 2.2;
+          nextBlink.current = 1.9 + Math.random() * 1.9;
         }
       }
     }
@@ -237,45 +243,45 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
         }
       };
 
-      const active = isSpeaking && v > 0.025;
+      const active = isSpeaking && v > 0.015;
       const bandSum = low + mid + high + 0.001;
       const wLow = low / bandSum;
       const wMid = mid / bandSum;
       const wHigh = high / bandSum;
 
       // Vowel posture weights driven by live acoustic formants
-      const roundVowel = active ? THREE.MathUtils.clamp((wLow - wMid * 0.72) * 2.5, 0, 1) : 0;
-      const spreadVowel = active ? THREE.MathUtils.clamp((wMid - wLow * 0.42) * 2.4 + wHigh * 0.48, 0, 1) : 0;
-      const bilabialSnap = active && gate < 0.24 ? THREE.MathUtils.clamp((0.24 - gate) / 0.24, 0, 1) : 0;
+      const roundVowel = active ? THREE.MathUtils.clamp((wLow - wMid * 0.65) * 2.4, 0, 1) : 0;
+      const spreadVowel = active ? THREE.MathUtils.clamp((wMid - wLow * 0.38) * 2.3 + wHigh * 0.45, 0, 1) : 0;
+      const bilabialSnap = active && gate < 0.28 ? THREE.MathUtils.clamp((0.28 - gate) / 0.28, 0, 1) : 0;
 
-      // Conversational jaw range: readable (~0.18-0.44) with hard cap at 0.50 — zero feeding-rice yawning
+      // Vivid conversational jaw aperture (0.24..0.68, capped 0.72) so speech is clearly readable in 3D scanlines
       const rawJawTarget = active
-        ? Math.min(0.50, (0.16 + 0.30 * gate) * (0.50 + 0.50 * v) * (1.0 - 0.30 * roundVowel) * (1.0 - 0.32 * wHigh))
+        ? Math.min(0.72, (0.22 + 0.44 * gate) * (0.55 + 0.55 * v) * (1.0 - 0.20 * roundVowel) * (1.0 - 0.18 * wHigh))
         : 0;
 
       // Only engage mouthClose when jaw isn't actively opening, so consonant closures never fight vowels
-      const closeTarget = active && rawJawTarget < 0.14 ? bilabialSnap * 0.42 : 0;
-      const pressTarget = active && rawJawTarget < 0.14 ? bilabialSnap * 0.30 : 0;
-      const puckerTarget = active ? roundVowel * (0.30 + 0.34 * gate) : 0;
-      const funnelTarget = active ? (roundVowel * 0.28 + wHigh * 0.18) * (0.4 + 0.6 * gate) : 0;
-      const stretchTarget = active ? spreadVowel * (0.26 + 0.28 * v) : 0;
-      const upperUpTarget = active ? (spreadVowel * 0.18 + wHigh * 0.22 + gate * 0.12) * Math.min(1, v * 1.15) : 0;
-      const lowerDownTarget = active ? (gate * 0.22 + wLow * 0.12) * Math.min(1, v * 1.15) : 0;
+      const closeTarget = active && rawJawTarget < 0.15 ? bilabialSnap * 0.48 : 0;
+      const pressTarget = active && rawJawTarget < 0.15 ? bilabialSnap * 0.34 : 0;
+      const puckerTarget = active ? roundVowel * (0.34 + 0.40 * gate) : 0;
+      const funnelTarget = active ? (roundVowel * 0.34 + wHigh * 0.22) * (0.45 + 0.55 * gate) : 0;
+      const stretchTarget = active ? spreadVowel * (0.30 + 0.34 * v) : 0;
+      const upperUpTarget = active ? (spreadVowel * 0.24 + wHigh * 0.24 + gate * 0.18) * Math.min(1, 0.45 + v * 0.85) : 0;
+      const lowerDownTarget = active ? (gate * 0.32 + wLow * 0.18) * Math.min(1, 0.45 + v * 0.85) : 0;
 
-      setMorph("jawOpen", rawJawTarget, 30);
-      setMorph("mouthClose", closeTarget, 34);
-      setMorph("mouthPress_L", pressTarget, 32);
-      setMorph("mouthPress_R", pressTarget, 32);
-      setMorph("mouthPucker", puckerTarget, 26);
-      setMorph("mouthFunnel", funnelTarget, 26);
-      setMorph("mouthStretch_L", stretchTarget, 26);
-      setMorph("mouthStretch_R", stretchTarget, 26);
-      setMorph("mouthLowerDown_L", lowerDownTarget, 28);
-      setMorph("mouthLowerDown_R", lowerDownTarget, 28);
-      setMorph("mouthUpperUp_L", upperUpTarget, 28);
-      setMorph("mouthUpperUp_R", upperUpTarget, 28);
-      setMorph("mouthSmile_L", 0.06 + (active ? spreadVowel * 0.08 : 0), 10);
-      setMorph("mouthSmile_R", 0.06 + (active ? spreadVowel * 0.08 : 0), 10);
+      setMorph("jawOpen", rawJawTarget, 34);
+      setMorph("mouthClose", closeTarget, 36);
+      setMorph("mouthPress_L", pressTarget, 34);
+      setMorph("mouthPress_R", pressTarget, 34);
+      setMorph("mouthPucker", puckerTarget, 28);
+      setMorph("mouthFunnel", funnelTarget, 28);
+      setMorph("mouthStretch_L", stretchTarget, 28);
+      setMorph("mouthStretch_R", stretchTarget, 28);
+      setMorph("mouthLowerDown_L", lowerDownTarget, 32);
+      setMorph("mouthLowerDown_R", lowerDownTarget, 32);
+      setMorph("mouthUpperUp_L", upperUpTarget, 32);
+      setMorph("mouthUpperUp_R", upperUpTarget, 32);
+      setMorph("mouthSmile_L", 0.06 + (active ? spreadVowel * 0.10 : 0), 10);
+      setMorph("mouthSmile_R", 0.06 + (active ? spreadVowel * 0.10 : 0), 10);
 
       // Subtle brow engagement + micro gaze saccades during idle/speech
       setMorph("browInnerUp", 0.04 + (active ? gate * 0.16 : 0) + Math.sin(t * 0.9) * 0.02, 8);
@@ -293,9 +299,15 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
       setMorph("eyeLookDown_L", Math.max(0, -lookY), 10);
       setMorph("eyeLookDown_R", Math.max(0, -lookY), 10);
 
-      // Bilateral blinks closing sculpted eyelids cleanly over molten crimson eyes
-      setMorph("eyeBlink_L", blinkVal, 55);
-      setMorph("eyeBlink_R", blinkVal, 55);
+      // Bilateral blinks closing upper & lower eyelids cleanly over molten crimson eyes
+      setMorph("eyeBlink_L", blinkVal, 110);
+      setMorph("eyeBlink_R", blinkVal, 110);
+      setMorph("eyeSquint_L", blinkVal * 0.30, 85);
+      setMorph("eyeSquint_R", blinkVal * 0.30, 85);
+      const blinkLIdx = dict["eyeBlink_L"];
+      if (blinkLIdx !== undefined) {
+        sharedUniforms.current.uBlink.value = Math.max(blinkVal, inf[blinkLIdx]);
+      }
     }
   });
 

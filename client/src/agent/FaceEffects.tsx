@@ -89,12 +89,12 @@ export function createHologramScanMaterial(
 
         vec3 col = mix(troughCyan * (0.55 + 0.45 * sculptedKey), cyanBody * boost, scanLine * microGrid);
         col += crestCyan * fresnel * 0.12;
-        ${isTeeth ? "col *= 0.14;" : ""}
+        ${isTeeth ? "col *= 0.42;" : ""}
 
         ${
           isShoulders
             ? "float bustEdge = smoothstep(0.0, 0.90, vBustFade);\ncol *= bustEdge;\ndiffuseColor.a = clamp(0.96 * bustEdge, 0.0, 1.0);"
-            : "diffuseColor.a = clamp(0.86 + scanLine * 0.12 + fresnel * 0.02, 0.84, 0.98);"
+            : "diffuseColor.a = clamp(0.95 + scanLine * 0.05, 0.94, 1.0);"
         }
         outgoingLight = col;
         #include <opaque_fragment>`
@@ -167,7 +167,7 @@ export function createMoltenRedEyeMaterial(sharedUniforms: HologramUniforms): TH
         eyeCol = mix(eyeCol, crimsonLava, clamp(outerIris * (0.45 + 0.55 * vein), 0.0, 1.0));
         eyeCol = mix(eyeCol, hotCrimson, irisCore * (0.70 + uVoice * 0.25));
         eyeCol *= (1.05 + irisCore * 0.35 + uVoice * 0.22);
-        eyeCol *= (1.0 - smoothstep(0.28, 0.88, uBlink));
+        eyeCol *= (1.0 - smoothstep(0.18, 0.72, uBlink));
 
         outgoingLight = eyeCol;
         diffuseColor.a = 1.0;

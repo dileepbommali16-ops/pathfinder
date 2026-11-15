@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar3D } from "./Avatar3D";
 import { dasSocket, UserHonorificRole } from "./agentSocket";
-import { audioEngine, cameraEngine, MediaDeviceOption } from "./audioIO";
+import { audioEngine, cameraEngine, speaker, MediaDeviceOption } from "./audioIO";
 import { CodeTaskPayload } from "./toolRunner";
 import { API_BASE, getSessionId } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
@@ -50,6 +50,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const ensureSocketConnectedRef = useRef<() => void>(() => {});
   const askCoachNonceRef = useRef(0);
   const askCoachUnbindRef = useRef<(() => void) | null>(null);
+  const restTtsAbortRef = useRef<AbortController | null>(null);
+  const dispatchTurnRef = useRef<(q: string, ctx: Record<string, any>, mode: "coach" | "chat") => void>(() => {});
 
   // Live Multi-Language Code & Compiler Studio State
   const [codeTask, setCodeTask] = useState<CodeTaskPayload | null>(null);
@@ -106,7 +108,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const cams = await cameraEngine.listVideoDevices();
       setVideoDevices(cams);
-      await audioEngine.autoSyncOutputDevice();
     } catch {}
   };
 
@@ -260,6 +261,70 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   ensureSocketConnectedRef.current = ensureSocketConnected;
 
+  const dispatchTurnWithVoiceFallback = (
+    queryText: string,
+    ctx: Record<string, any>,
+    mode: "coach" | "chat"
+  ) => {
+    askCoachUnbindRef.current?.();
+    askCoachUnbindRef.current = null;
+    restTtsAbortRef.current?.abort();
+    restTtsAbortRef.current = null;
+    const nonce = ++askCoachNonceRef.current;
+
+    audioEngine.unlockAudio();
+    audioEngine.clearAudioQueue();
+    speaker.stop();
+
+    ensureSocketConnectedRef.current();
+
+    let settled = false;
+    let timerId: number | null = null;
+    const cleanup = () => {
+      settled = true;
+      if (timerId !== null) window.clearTimeout(timerId);
+      unsubSocket();
+      if (askCoachUnbindRef.current === cleanup) {
+        askCoachUnbindRef.current = null;
+      }
+    };
+    const unsubSocket = dasSocket.onAgentResponse(() => {
+      cleanup();
+    });
+    askCoachUnbindRef.current = cleanup;
+
+    const deliverRestReply = async () => {
+      const replyText = await requestRestCoachReply(queryText, ctx);
+      if (!settled && askCoachNonceRef.current === nonce && replyText) {
+        cleanup();
+        setTranscript(replyText);
+        restTtsAbortRef.current?.abort();
+        const ttsAc = new AbortController();
+        restTtsAbortRef.current = ttsAc;
+        void audioEngine.speakTextPuckOrLocal(replyText, API_BASE, {
+          signal: ttsAc.signal,
+          shouldContinue: () => askCoachNonceRef.current === nonce,
+        });
+      }
+    };
+
+    if (!dasSocket.isSocketConnected) {
+      void deliverRestReply();
+      return;
+    }
+
+    if (mode === "coach") {
+      dasSocket.askCoach(queryText, ctx);
+    } else {
+      dasSocket.sendTextCommand(queryText);
+    }
+    timerId = window.setTimeout(() => {
+      if (settled || askCoachNonceRef.current !== nonce) return;
+      void deliverRestReply();
+    }, 6500);
+  };
+  dispatchTurnRef.current = dispatchTurnWithVoiceFallback;
+
   // Wire single-click "Ask Coach about this" cards and Mock Interview verbatim prompts directly into the live DAS HUD
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -269,12 +334,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       const query = typeof detail.query === "string" ? detail.query.trim() : "";
       if (!query) return;
 
-      askCoachUnbindRef.current?.();
-      askCoachUnbindRef.current = null;
-      const nonce = ++askCoachNonceRef.current;
-
-      audioEngine.unlockAudio();
-      audioEngine.clearAudioQueue();
       setUserTranscript(query);
       setTranscript("Thinking & analyzing with DAS Coach...");
 
@@ -286,42 +345,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         ...(detail.originTab ? { activeTab: detail.originTab } : {}),
         ...(detail.cardContext ? { cardContext: detail.cardContext } : {}),
       };
-
-      ensureSocketConnectedRef.current();
-
-      let settled = false;
-      let timerId: number | null = null;
-      const cleanup = () => {
-        settled = true;
-        if (timerId !== null) window.clearTimeout(timerId);
-        unsubSocket();
-        if (askCoachUnbindRef.current === cleanup) {
-          askCoachUnbindRef.current = null;
-        }
-      };
-      const unsubSocket = dasSocket.onAgentResponse(() => {
-        cleanup();
-      });
-      askCoachUnbindRef.current = cleanup;
-
-      const deliverRestReply = async () => {
-        const replyText = await requestRestCoachReply(query, mergedCtx);
-        if (!settled && askCoachNonceRef.current === nonce && replyText) {
-          cleanup();
-          setTranscript(replyText);
-        }
-      };
-
-      if (!dasSocket.isSocketConnected) {
-        void deliverRestReply();
-        return;
-      }
-
-      dasSocket.askCoach(query, mergedCtx);
-      timerId = window.setTimeout(() => {
-        if (settled || askCoachNonceRef.current !== nonce) return;
-        void deliverRestReply();
-      }, 3500);
+      dispatchTurnRef.current(query, mergedCtx, "coach");
     };
 
     const onInterviewerPrompt = (e: Event) => {
@@ -340,6 +364,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       window.removeEventListener("das-interviewer-prompt", onInterviewerPrompt);
       askCoachUnbindRef.current?.();
       askCoachUnbindRef.current = null;
+      restTtsAbortRef.current?.abort();
+      restTtsAbortRef.current = null;
     };
   }, [isAuthenticated]);
 
@@ -436,6 +462,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     ensureSocketConnected();
 
     if (!micActive) {
+      restTtsAbortRef.current?.abort();
+      restTtsAbortRef.current = null;
+      speaker.stop();
+      audioEngine.clearAudioQueue();
       try {
         await beginMicStream(selectedMicIdRef.current);
         setTranscript("Listening... Speak cleanly through headphones, earphones, buds, or laptop mic!");
@@ -527,14 +557,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     e.preventDefault();
     if (!inputText.trim() && !attachedFile) return;
 
-    askCoachNonceRef.current += 1;
-    const nonce = askCoachNonceRef.current;
-    askCoachUnbindRef.current?.();
-    askCoachUnbindRef.current = null;
-
     audioEngine.notifyTypingActivity(1200);
     audioEngine.unlockAudio();
-    audioEngine.autoSyncOutputDevice();
     const commandText = inputText.trim() || (attachedFile ? `Look at this attached ${attachedType || "file"}: ${attachedFile.name}` : "");
     setUserTranscript(commandText);
     setTranscript("Thinking & Executing...");
@@ -550,41 +574,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const curCtx =
       (typeof window !== "undefined" && (window as any).__DAS_PAGE_CONTEXT__) || {};
-
-    let settled = false;
-    let timerId: number | null = null;
-    const cleanup = () => {
-      settled = true;
-      if (timerId !== null) window.clearTimeout(timerId);
-      unsubSocket();
-      if (askCoachUnbindRef.current === cleanup) {
-        askCoachUnbindRef.current = null;
-      }
-    };
-    const unsubSocket = dasSocket.onAgentResponse(() => {
-      cleanup();
-    });
-    askCoachUnbindRef.current = cleanup;
-
-    const deliverRestReply = async () => {
-      const replyText = await requestRestCoachReply(commandText, curCtx);
-      if (!settled && askCoachNonceRef.current === nonce && replyText) {
-        cleanup();
-        setTranscript(replyText);
-      }
-    };
-
-    ensureSocketConnectedRef.current();
-    if (!dasSocket.isSocketConnected) {
-      void deliverRestReply();
-      return;
-    }
-
-    dasSocket.sendTextCommand(commandText);
-    timerId = window.setTimeout(() => {
-      if (settled || askCoachNonceRef.current !== nonce) return;
-      void deliverRestReply();
-    }, 3500);
+    dispatchTurnWithVoiceFallback(commandText, curCtx, "chat");
   };
 
   // Handle Media & Resume File Selection
