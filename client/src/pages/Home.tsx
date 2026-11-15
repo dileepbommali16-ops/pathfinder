@@ -1973,7 +1973,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
       {/* Top Header */}
       <DashboardHeader
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => {
+          setFocusOnDas(false);
+          setActiveTab(tab);
+        }}
         username={username}
         email={email}
         onLogout={handleLogout}
@@ -1996,7 +1999,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       )}
 
       {/* Main Container */}
-      <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-8 pb-56 sm:px-6 lg:pt-10 sm:pb-64">
         {focusOnDas ? (
           <div className="flex items-center justify-center pb-4 animate-in fade-in duration-300">
             <button
@@ -2025,7 +2028,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
         )}
         <div
           className={`transition-all duration-300 ${
-            focusOnDas ? "pointer-events-none opacity-0 h-0 overflow-hidden" : "opacity-100 pointer-events-auto"
+            focusOnDas ? "hidden" : "opacity-100 pointer-events-auto"
           }`}
         >
         <AnimatePresence mode="wait" initial={false}>
