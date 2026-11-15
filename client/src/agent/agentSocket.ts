@@ -474,7 +474,9 @@ CORE AUTONOMOUS CAPABILITIES:
         if (data.setupComplete !== undefined) {
           this.isConnected = true;
           this.savedOnStatusChange?.(true);
-          this.savedOnTranscript?.(`DAS Online (DAS Ready)! Speak or type now, ${this.roleHonorific}.`);
+          if (!this.lastUnansweredText && this.pendingTexts.length === 0 && Date.now() - this.lastTextSentAt > 6000) {
+            this.savedOnTranscript?.(`DAS Online (DAS Ready)! Speak or type now, ${this.roleHonorific}.`);
+          }
           this.flushPendingMessages();
           return;
         }
@@ -485,7 +487,9 @@ CORE AUTONOMOUS CAPABILITIES:
             if (this.lastUnansweredText) {
               this.pendingTexts = [this.lastUnansweredText];
             }
-            this.savedOnTranscript?.(data.message || "Refreshing live session...");
+            if (Date.now() - this.lastTextSentAt > 6000) {
+              this.savedOnTranscript?.(data.message || "Refreshing live session...");
+            }
             this.forceReconnectNow();
             return;
           }
@@ -494,7 +498,9 @@ CORE AUTONOMOUS CAPABILITIES:
             this.activeAudioTurnId = null;
             this.interruptedTurnIds.clear();
             this.savedOnStatusChange?.(true);
-            this.savedOnTranscript?.("DAS Online (DAS Ready)!");
+            if (!this.lastUnansweredText && this.pendingTexts.length === 0 && Date.now() - this.lastTextSentAt > 6000) {
+              this.savedOnTranscript?.("DAS Online (DAS Ready)!");
+            }
             const ctxNow =
               this.latestPageContext ||
               (typeof window !== "undefined" ? (window as any).__DAS_PAGE_CONTEXT__ : null);
@@ -529,7 +535,6 @@ CORE AUTONOMOUS CAPABILITIES:
           }
           this.lastAudioChunkAt = Date.now();
           this.clearTurnWatchdog();
-          this.notifyAgentResponse();
           audioEngine.playPcmChunk(data.pcm_base64, data.sample_rate || 24000);
           if (!this.isSpeakingTurn) {
             if (this.awaitingNextTurn) {
@@ -570,7 +575,7 @@ CORE AUTONOMOUS CAPABILITIES:
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
-          if (!this.currentAgentTranscript) {
+          if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {
             this.savedOnTranscript?.(`DAS Ready. Speak or type your next command, ${this.roleHonorific}!`);
           }
           return;
@@ -662,6 +667,7 @@ CORE AUTONOMOUS CAPABILITIES:
             }
             if (part.text) {
               this.clearTurnWatchdog();
+              this.notifyAgentResponse();
               if (this.awaitingNextTurn) {
                 this.currentAgentTranscript = "";
                 this.awaitingNextTurn = false;
@@ -677,7 +683,7 @@ CORE AUTONOMOUS CAPABILITIES:
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
           audioEngine.flushAudioPlayer();
-          if (!this.currentAgentTranscript) {
+          if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {
             this.savedOnTranscript?.(`DAS Ready. Speak or type your next command, ${this.roleHonorific}!`);
           }
           return;
