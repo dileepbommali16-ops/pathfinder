@@ -12,6 +12,7 @@ import {
   handleAuthLoginDetected,
 } from "../lib/auth";
 import { getCareerAgentResponse } from "../lib/careerAgent";
+import { isPlaceholderCandidateName, pickCandidateFullName } from "../types/profile";
 
 function installMemoryBrowserGlobals() {
   const store = new Map<string, string>();
@@ -101,5 +102,15 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(builderAnswer).toContain("Vercel");
     expect(builderAnswer).toContain("Render");
     expect(builderAnswer).toContain("Cloudflare");
+  });
+
+  it("replaces generic placeholder candidate names with authenticated user names", () => {
+    expect(isPlaceholderCandidateName("Student Candidate")).toBe(true);
+    expect(isPlaceholderCandidateName("Guest Student")).toBe(true);
+    expect(isPlaceholderCandidateName("Dileep Bommali")).toBe(false);
+
+    expect(pickCandidateFullName("Student Candidate", "Dileep Bommali")).toBe("Dileep Bommali");
+    expect(pickCandidateFullName("", "indala gayatri")).toBe("indala gayatri");
+    expect(pickCandidateFullName("Priya Sharma", "Dileep Bommali")).toBe("Priya Sharma");
   });
 });

@@ -21,7 +21,12 @@ import {
   ShieldCheck,
   Check
 } from "lucide-react";
-import { StudentProfileState, ReadinessAuditData } from "@/types/profile";
+import {
+  StudentProfileState,
+  ReadinessAuditData,
+  isPlaceholderCandidateName,
+  pickCandidateFullName,
+} from "@/types/profile";
 import { CollegeSelector } from "@/components/common/CollegeSelector";
 
 interface OnboardingWizardProps {
@@ -163,19 +168,38 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
   onComplete,
   apiBase
 }) => {
-  // Restore draft from localStorage if available, or fall back to initialProfile
+  // Restore draft from localStorage only when it matches the active candidate email
   const [profile, setProfile] = useState<StudentProfileState>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("pathfinder_profile_draft");
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          return { ...initialProfile, ...parsed };
+          const initEmail = (initialProfile.email || "").toLowerCase();
+          const savedEmail = (parsed?.email || "").toLowerCase();
+          if (!initEmail || !savedEmail || initEmail === savedEmail) {
+            const merged = { ...initialProfile, ...parsed };
+            merged.fullName = pickCandidateFullName(merged.fullName, initialProfile.fullName);
+            return merged;
+          }
         } catch {}
       }
     }
-    return initialProfile;
+    return {
+      ...initialProfile,
+      fullName: pickCandidateFullName(initialProfile.fullName),
+    };
   });
+
+  // Replace placeholder fullName when async profile hydration resolves a real name
+  useEffect(() => {
+    if (
+      isPlaceholderCandidateName(profile.fullName) &&
+      !isPlaceholderCandidateName(initialProfile.fullName)
+    ) {
+      setProfile((prev) => ({ ...prev, fullName: initialProfile.fullName }));
+    }
+  }, [initialProfile.fullName]);
 
   const [step, setStep] = useState<number>(() => {
     if (typeof window !== "undefined") {
@@ -183,7 +207,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (parsed.wizardStep && parsed.wizardStep >= 1 && parsed.wizardStep <= 5) {
+          const initEmail = (initialProfile.email || "").toLowerCase();
+          const savedEmail = (parsed?.email || "").toLowerCase();
+          if (
+            (!initEmail || !savedEmail || initEmail === savedEmail) &&
+            parsed.wizardStep &&
+            parsed.wizardStep >= 1 &&
+            parsed.wizardStep <= 5
+          ) {
             return parsed.wizardStep;
           }
         } catch {}

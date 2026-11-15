@@ -24,7 +24,12 @@ import { LiveSkillVerifier } from "@/components/dashboard/LiveSkillVerifier";
 import { OnePageResumeModal } from "@/components/dashboard/OnePageResumeModal";
 import { CompanyPlacementRadar } from "@/components/dashboard/CompanyPlacementRadar";
 import { MockInterviewConsole } from "@/components/dashboard/MockInterviewConsole";
-import { StudentProfileState, ReadinessAuditData, DEFAULT_STUDENT_PROFILE } from "@/types/profile";
+import {
+  StudentProfileState,
+  ReadinessAuditData,
+  DEFAULT_STUDENT_PROFILE,
+  pickCandidateFullName,
+} from "@/types/profile";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
 import { getCareerAgentResponse, buildRagGeminiSystemPrompt } from "@/lib/careerAgent";
@@ -331,7 +336,19 @@ export default function Home({ initialTab }: HomeProps = {}) {
       const saved = localStorage.getItem("pathfinder_profile_draft");
       if (saved) {
         try {
-          return { ...DEFAULT_STUDENT_PROFILE, ...JSON.parse(saved) };
+          const parsed = JSON.parse(saved);
+          const storedUser = JSON.parse(localStorage.getItem("pathfinder_user") || "{}");
+          const storedEmail = (storedUser?.email || "").toLowerCase();
+          const draftEmail = (parsed?.email || "").toLowerCase();
+          if (!storedEmail || !draftEmail || storedEmail === draftEmail) {
+            return {
+              ...DEFAULT_STUDENT_PROFILE,
+              ...parsed,
+              fullName:
+                pickCandidateFullName(parsed?.fullName, storedUser?.username) ||
+                DEFAULT_STUDENT_PROFILE.fullName,
+            };
+          }
         } catch { }
       }
     }
@@ -794,8 +811,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       const freshProfile: StudentProfileState = {
         ...DEFAULT_STUDENT_PROFILE,
         email: user.email,
-        fullName:
-          user.username !== "Student" && user.username !== "New Student" ? user.username : "",
+        fullName: pickCandidateFullName(user.username),
         githubUrl: "",
         leetcodeUrl: "",
         codingProfiles: { github: "", leetcode: "", linkedin: "" },
@@ -808,6 +824,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
         setShowResultScreen(false);
       });
       localStorage.removeItem("pathfinder_onboarding_draft");
+      localStorage.removeItem("pathfinder_profile_draft");
       return;
     }
 
@@ -844,7 +861,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           const hydrated: StudentProfileState = {
             ...DEFAULT_STUDENT_PROFILE,
             ...parsedDraft,
-            fullName: parsedDraft.fullName || user.username,
+            fullName: pickCandidateFullName(parsedDraft.fullName, user.username) || user.username,
             email: user.email,
             onboardingCompleted: true,
           };
@@ -852,6 +869,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
           setIsDemoProfile(false);
           setActiveTab("profile");
           fetchPrediction(hydrated);
+        } else {
+          localStorage.removeItem("pathfinder_profile_draft");
+          localStorage.removeItem("pathfinder_onboarding_draft");
         }
       }
     } catch { }
@@ -860,7 +880,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       // First-time Sign In without saved profile: open 1. Profile / Settings first
       const initialUserProfile: StudentProfileState = {
         ...DEFAULT_STUDENT_PROFILE,
-        fullName: user.username,
+        fullName: pickCandidateFullName(user.username) || user.username,
         email: user.email,
         githubUrl: "",
         leetcodeUrl: "",
@@ -905,7 +925,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             targetTier: data.target_tier || DEFAULT_STUDENT_PROFILE.targetTier,
             branch: data.branch || DEFAULT_STUDENT_PROFILE.branch,
             graduationYear: data.graduation_year || 2026,
-            fullName: data.full_name || user.username,
+            fullName: pickCandidateFullName(data.full_name, user.username) || user.username,
             college: data.college || "",
             course: data.course || "",
             yearSemester: data.year_semester || "",
@@ -1840,6 +1860,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
     } catch { }
     localStorage.removeItem("pathfinder_user");
     localStorage.removeItem("pathfinder_token");
+    localStorage.removeItem("pathfinder_profile_draft");
+    localStorage.removeItem("pathfinder_onboarding_draft");
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userName");
     localStorage.removeItem("userRole");
@@ -1848,6 +1870,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
     localStorage.removeItem("das_honorific_override");
     setIsAuthenticated(false);
     setShowResultScreen(false);
+    setAuditResult(null);
+    setProfile(DEFAULT_STUDENT_PROFILE);
     setIsDemoProfile(true);
     setUserRole("student");
     if (typeof window !== "undefined") {
@@ -1917,6 +1941,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             </div>
 
             <OnboardingWizard
+              key={email || profile.email || "guest"}
               initialProfile={profile}
               onComplete={handleWizardComplete}
               apiBase={API_BASE}

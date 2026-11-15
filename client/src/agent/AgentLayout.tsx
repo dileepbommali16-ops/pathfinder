@@ -52,6 +52,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const askCoachUnbindRef = useRef<(() => void) | null>(null);
   const restTtsAbortRef = useRef<AbortController | null>(null);
   const dispatchTurnRef = useRef<(q: string, ctx: Record<string, any>, mode: "coach" | "chat") => void>(() => {});
+  const lastAuthIdentityRef = useRef<string | null>(
+    typeof window !== "undefined" ? (localStorage.getItem("userEmail") || "").toLowerCase() || null : null
+  );
 
   // Live Multi-Language Code & Compiler Studio State
   const [codeTask, setCodeTask] = useState<CodeTaskPayload | null>(null);
@@ -68,11 +71,27 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Listen for login / logout & honorific changes across Pathfinder
   useEffect(() => {
-    const syncRoleFromAuth = (explicitKey?: HonorificKey) => {
+    const resetConversationForSessionSwitch = (nextKey: HonorificKey) => {
+      askCoachUnbindRef.current?.();
+      askCoachUnbindRef.current = null;
+      restTtsAbortRef.current?.abort();
+      restTtsAbortRef.current = null;
+      speaker.stop();
+      audioEngine.clearAudioQueue();
+      setUserTranscript("");
+      setInputText("");
+      setCodeTask(null);
+      setTranscript(getInitialGreeting(nextKey));
+    };
+
+    const syncRoleFromAuth = (explicitKey?: HonorificKey, forceReset = false) => {
       const nextKey = explicitKey || getHonorificKey();
+      if (forceReset) {
+        resetConversationForSessionSwitch(nextKey);
+      }
       setRole((prev) => {
         if (prev !== nextKey) {
-          setTranscript(getInitialGreeting(nextKey));
+          if (!forceReset) setTranscript(getInitialGreeting(nextKey));
           if (dasSocket.isConnected) {
             dasSocket.switchRole(nextKey);
           }
@@ -82,17 +101,36 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     const handleAuthChange = (e: any) => {
-      if (typeof e.detail?.authenticated === "boolean") {
-        setIsAuthenticated(e.detail.authenticated);
+      const nextAuth = typeof e.detail?.authenticated === "boolean" ? e.detail.authenticated : undefined;
+      if (typeof nextAuth === "boolean") {
+        setIsAuthenticated(nextAuth);
       }
-      syncRoleFromAuth(e.detail?.honorificKey);
+      const nextIdentity = nextAuth === false
+        ? null
+        : (
+            e.detail?.email ||
+            localStorage.getItem("userEmail") ||
+            ""
+          )
+            .toLowerCase()
+            .trim() || null;
+      const sessionChanged =
+        nextAuth === false || nextIdentity !== lastAuthIdentityRef.current;
+      lastAuthIdentityRef.current = nextIdentity;
+      syncRoleFromAuth(e.detail?.honorificKey, sessionChanged);
     };
     const handleHonorificChange = (e: any) => {
       syncRoleFromAuth(e.detail?.honorificKey);
     };
     const handleStorage = () => {
-      setIsAuthenticated(Boolean(localStorage.getItem("pathfinder_user")));
-      syncRoleFromAuth();
+      const authed = Boolean(localStorage.getItem("pathfinder_user"));
+      setIsAuthenticated(authed);
+      const nextIdentity = authed
+        ? (localStorage.getItem("userEmail") || "").toLowerCase().trim() || null
+        : null;
+      const sessionChanged = !authed || nextIdentity !== lastAuthIdentityRef.current;
+      lastAuthIdentityRef.current = nextIdentity;
+      syncRoleFromAuth(undefined, sessionChanged);
     };
     window.addEventListener("pathfinder:auth-change", handleAuthChange);
     window.addEventListener("das:honorific-change", handleHonorificChange);

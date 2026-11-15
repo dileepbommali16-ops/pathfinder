@@ -110,7 +110,11 @@ class DasAgentSocket {
       cleaned.startsWith("Connecting") ||
       cleaned.startsWith("Refreshing") ||
       cleaned.startsWith("Server Error") ||
-      cleaned.startsWith("Live session")
+      cleaned.startsWith("Live session") ||
+      cleaned.startsWith("DAS Online") ||
+      cleaned.startsWith("DAS Ready") ||
+      cleaned.startsWith("Mic paused") ||
+      cleaned.startsWith("[Interrupted")
     ) {
       return;
     }

@@ -83,6 +83,21 @@ export interface ReadinessAuditData {
   next_steps: string[];
 }
 
+/** Returns true when a name is blank or a generic placeholder such as "Student Candidate". */
+export function isPlaceholderCandidateName(val?: string | null): boolean {
+  const s = (val || "").trim();
+  return !s || /^(student candidate|guest student|student|new student|candidate)$/i.test(s);
+}
+
+/** Prefers a concrete candidate name over generic template placeholders. */
+export function pickCandidateFullName(candidate?: string | null, fallback?: string | null): string {
+  const c = (candidate || "").trim();
+  if (!isPlaceholderCandidateName(c)) return c;
+  const f = (fallback || "").trim();
+  if (!isPlaceholderCandidateName(f)) return f;
+  return c || f || "";
+}
+
 export const DEFAULT_STUDENT_PROFILE: StudentProfileState = {
   fullName: "Student Candidate",
   college: "Engineering Institute of Technology",
