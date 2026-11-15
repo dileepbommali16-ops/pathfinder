@@ -69,14 +69,14 @@ TABS_KNOWLEDGE: Dict[str, Dict[str, Any]] = {
     },
     "projects": {
         "title": "Flagship Project Blueprints & Engineering Architectures",
-        "purpose": "Curated repository of 23 production architectures (15 Software + 8 Hardware & IoT) spanning all engineering departments (CSE, IT, ECE, EEE, Mech, Civil, Mining, Chemical, Biomedical).",
+        "purpose": "Curated repository of 28 production architectures (15 Software Systems, 8 Hardware & Embedded, and 5 Real-World RAG Pipelines) spanning all engineering departments (CSE, IT, ECE, EEE, Mech, Civil, AIML, CSD, Cyber Security).",
         "widgets": [
-            "Category Filters: All Architectures (23), Software Systems (15), Hardware & Embedded (8).",
+            "Category Filters: All Architectures (28), Software Systems (15), Hardware & Embedded (8), Real-World RAG (5).",
             "Full Architectural Pipeline Summaries and Tech Stack / Hardware Components chips.",
             "Key Implementation Features & Google X-Y-Z Resume Bullets with one-click clipboard copy.",
-            "Discuss Architecture with AI Coach Button: Instant handoff to Gemini Coach for A-to-Z build roadmaps and technical interview defense masterclasses."
+            "Discuss Architecture with AI Coach Button: Instant handoff to DAS AI Coach for A-to-Z build roadmaps, VS Code file trees, deployment steps, and viva defense masterclasses."
         ],
-        "data_sources": "Curated production engineering architectures across cloud, distributed systems, embedded IoT, robotics, and applied AI.",
+        "data_sources": "Curated production engineering architectures across cloud, distributed systems, embedded IoT, robotics, and applied RAG/AI.",
         "how_to_use": "Select your branch architecture, copy the resume bullet, or click 'Discuss Architecture with AI Coach' for step-by-step guidance.",
         "limitations": "Prototypes should be customized according to lab availability and team project scope."
     },
@@ -700,11 +700,13 @@ def get_site_knowledge_context(active_tab: Optional[str] = None, page_context: O
     for tab_id, info in TABS_KNOWLEDGE.items():
         ctx_parts.append(f"• [{info['title']}] (id: {tab_id}): {info['purpose']}")
 
-    # 23 Project Architectures Reference
+    # 28 Project Architectures + Modern Builder Ecosystem Reference
     ctx_parts.append("")
     ctx_parts.append("================================================================================")
-    ctx_parts.append("23 PRODUCTION ENGINEERING ARCHITECTURES AVAILABLE (Referenced in catalog above)")
+    ctx_parts.append("28 PRODUCTION ENGINEERING ARCHITECTURES AVAILABLE (15 Software + 8 Hardware + 5 Real-World RAG)")
     ctx_parts.append("================================================================================")
+    ctx_parts.append("")
+    ctx_parts.append(get_builder_ecosystem_guide())
     return "\n".join(ctx_parts)
 
 
@@ -714,11 +716,11 @@ def find_project_blueprint(
     page_context: Optional[Dict[str, Any]] = None
 ) -> Optional[Dict[str, Any]]:
     """
-    Finds a matching project blueprint from all 23 projects.
+    Finds a matching project blueprint from all 28 projects.
     Checks:
     1. Direct PS codes, project IDs, and exact titles in query.
-    2. Domain keywords in query.
-    3. Active page_context (e.g. projectTitle, cardContext).
+    2. Domain keywords in query (skipping generic meta-questions about IDEs/RAG/deploy).
+    3. Active page_context (e.g. projectTitle, activeProject, cardContext).
     4. Multi-turn conversation history (last discussed project).
     """
     if not query and not page_context and not history:
@@ -728,6 +730,36 @@ def find_project_blueprint(
     upper_q = clean_q.upper()
     lower_q = clean_q.lower()
 
+    # Do not hijack broad ecosystem/IDE/deployment/monitoring questions into a single blueprint card
+    is_meta_builder_q = any(
+        kw in lower_q
+        for kw in (
+            "antigravity",
+            "cursor",
+            "claude code",
+            "vs code",
+            "vscode",
+            "vercel",
+            "render",
+            "cloudflare",
+            "chatgpt",
+            "gemini ai",
+            "claude ai",
+            "image generat",
+            "video generat",
+            "which slide",
+            "what slide",
+            "who am i",
+            "folder structure",
+            "project structure",
+            "em files",
+            "which model",
+            "ela work cheyyali",
+            "after problem statement",
+            "next step",
+        )
+    )
+
     # 1. Match direct PS codes or IDs in query
     for p_id, proj in ALL_PROJECTS_DIRECTORY.items():
         if p_id.upper() in upper_q or proj["ps_code"].upper() in upper_q:
@@ -736,10 +768,13 @@ def find_project_blueprint(
     # 2. Match exact or substring titles in query
     for p_id, proj in ALL_PROJECTS_DIRECTORY.items():
         t_low = proj["title"].lower()
-        if t_low in lower_q or lower_q in t_low and len(lower_q) > 8:
+        if t_low in lower_q or (lower_q in t_low and len(lower_q) > 8):
             return proj
 
-    # 3. Keyword matching across all 23 projects
+    if is_meta_builder_q:
+        return None
+
+    # 3. Keyword matching across all 28 projects
     keyword_map = [
         # Flagship 6
         ("distributed asynchronous", "proj-sde-1"),
@@ -750,7 +785,7 @@ def find_project_blueprint(
         ("crdt", "proj-fullstack-1"),
         ("regulatory document", "proj-ai-1"),
         ("research engine", "proj-ai-1"),
-        ("rag", "proj-ai-1"),
+        ("regulatory rag", "proj-ai-1"),
         ("financial market data lake", "proj-data-1"),
         ("stream processing", "proj-data-1"),
         ("duckdb", "proj-data-1"),
@@ -810,7 +845,12 @@ def find_project_blueprint(
 
     # 4. Check page_context if passed
     if page_context and isinstance(page_context, dict):
-        proj_hint = page_context.get("projectTitle") or page_context.get("cardContext") or ""
+        proj_hint = (
+            page_context.get("activeProject")
+            or page_context.get("projectTitle")
+            or page_context.get("cardContext")
+            or ""
+        )
         if proj_hint:
             hint_low = proj_hint.lower()
             for p_id, proj in ALL_PROJECTS_DIRECTORY.items():
@@ -985,6 +1025,194 @@ When building and defending this architecture, avoid these critical mistakes:
 2. Initialize repository and install core dependencies.
 3. Build and verify the ingestion/sensor module first before touching the UI.
 
-{"*Inka database schema kavala leda specific code module kavali ante adugu bro, ventane build chedhdham! 🚀*" if is_telugu else "*Ask me anytime if you want the database schema, code templates, or circuit pinouts for any module! Let's build it! 🚀*"}"""
+{"*Ask me anytime if you want the database schema, code templates, or circuit pinouts for any module! Let's build it! 🚀*"}"""
 
     return guide
+
+
+def get_builder_ecosystem_guide() -> str:
+    """Single source of truth for beginner-to-production project building, IDEs, RAG, deployment, and AI tools."""
+    return (
+        "================================================================================\n"
+        "MODERN AI & FULL-STACK BUILDER ENCYCLOPEDIA (SSOT)\n"
+        "================================================================================\n"
+        "1) AFTER PICKING A PROBLEM STATEMENT (WHAT TO DO NEXT IF YOU ARE A BEGINNER):\n"
+        "   - Step 1: Create a clean GitHub repo + open folder in an AI coding IDE (Antigravity / Cursor / VS Code + Claude Code).\n"
+        "   - Step 2: Build one working vertical slice first (e.g. FastAPI /api/health + one core endpoint + simple React page) before styling.\n"
+        "   - Step 3: Add persistent database (SQLite WAL or Postgres/Supabase), .env secrets (never commit keys), and unit tests.\n"
+        "   - Step 4: Push to GitHub and deploy Frontend on Vercel/Cloudflare Pages + Backend on Render/Railway.\n\n"
+        "2) CODING IDEs & AGENTS — ANTIGRAVITY vs CURSOR vs CLAUDE CODE + MODEL CHOICE:\n"
+        "   - Antigravity: Autonomous agentic workspace that plans, edits multiple files, runs terminal tests, and verifies UI in browser — best when building complete features end-to-end from a blueprint.\n"
+        "   - Cursor: AI-powered VS Code fork great for fast inline editing (Tab autocomplete, Cmd+K, Agent composer) while coding hands-on.\n"
+        "   - Claude Code: Anthropic's terminal CLI agent — unbeatable for deep repo refactors, bug hunting, test loops, and git workflows.\n"
+        "   - Models to choose: Claude Sonnet 4 / Opus 4 for complex backend architecture & surgical debugging; Gemini 2.5 Pro / Flash for huge context (1M+ tokens), speed, and multimodal PDF/UI tasks; GPT-4o / o3 for general reasoning.\n\n"
+        "3) VS CODE FOLDER STRUCTURE & HOW LLM + RAG PROJECTS WORK:\n"
+        "   - Recommended Layout:\n"
+        "     project-root/\n"
+        "       backend/  (main.py, rag_pipeline.py, embeddings.py, llm_client.py, prompts.py, requirements.txt, .env)\n"
+        "       frontend/ (src/pages/, src/components/, src/lib/, package.json)\n"
+        "       README.md, .gitignore (.env must stay ignored)\n"
+        "   - How RAG works in 4 steps: (1) Parse PDF/Docs into 400-600 token chunks (PyMuPDF) -> (2) Convert chunks to vectors & store in Qdrant/Chroma/FAISS -> (3) Retrieve Top-K chunks via Hybrid BM25 + Vector search -> (4) Send retrieved chunks + strict 'cite sources only' system prompt to LLM.\n\n"
+        "4) WHERE TO DEPLOY & HOST LIVE (VERCEL, RENDER, CLOUDFLARE):\n"
+        "   - Vercel: Best for React, Vite, Next.js frontend hosting + instant GitHub CI previews (set VITE_API_URL env var).\n"
+        "   - Render: Best for FastAPI / Python / Node / WebSocket backends & background workers (connect repo, run uvicorn, set GEMINI_API_KEY).\n"
+        "   - Cloudflare (Pages / Workers / R2): Global CDN edge hosting, fast DNS, SSL, and zero-egress object storage.\n\n"
+        "5) BEST IMAGE & VIDEO GENERATION TOOLS:\n"
+        "   - Image Generation: Google Imagen / Gemini Image (photorealistic + clean text), Flux (crisp photorealism), Midjourney (cinematic art), Ideogram (typography & posters).\n"
+        "   - Video Generation: Google Veo (realistic physics + audio), OpenAI Sora, Runway Gen-4, Kling, Pika, plus Remotion / HyperFrames for code-driven UI/promo videos.\n\n"
+        "6) CHATGPT vs GEMINI AI vs CLAUDE AI:\n"
+        "   - ChatGPT (OpenAI): All-round conversational assistant, Data Analysis, Canvas, strong general reasoning.\n"
+        "   - Gemini AI (Google): Huge 1M-2M context window, native multimodal (PDF, video, audio, code together), fast low-latency Flash models.\n"
+        "   - Claude AI (Anthropic): Cleanest production code writing, nuanced technical architecture, structured writing, and Claude Code CLI."
+    )
+
+
+def answer_builder_or_monitor_question(
+    message: str,
+    profile: Optional[Any] = None,
+    active_tab: Optional[str] = None,
+    page_context: Optional[Dict[str, Any]] = None,
+    honorific: str = "Sir",
+) -> Optional[str]:
+    """
+    Answers real-time screen/identity monitoring queries and comprehensive
+    modern project-building / AI ecosystem questions cleanly in English.
+    Returns None when the message is not about these topics.
+    """
+    low = (message or "").lower().strip()
+    if not low:
+        return None
+
+    ctx = page_context if isinstance(page_context, dict) else {}
+    tab_id = str(active_tab or ctx.get("activeSlide") or ctx.get("activeTab") or "dashboard").lower()
+    tab_meta = TABS_KNOWLEDGE.get(tab_id) or TABS_KNOWLEDGE.get("overview") or {}
+    tab_title = str(ctx.get("slideLabel") or ctx.get("activeSlideTitle") or tab_meta.get("title") or tab_id).strip()
+    card_ctx = str(ctx.get("activeProject") or ctx.get("projectTitle") or ctx.get("cardContext") or "").strip()
+    user_name = str(ctx.get("userName") or "").strip()
+    user_email = str(ctx.get("userEmail") or "").strip()
+    if not user_name and profile is not None:
+        p_dict = profile.model_dump() if hasattr(profile, "model_dump") else (profile if isinstance(profile, dict) else getattr(profile, "__dict__", {}))
+        user_name = str(p_dict.get("full_name") or p_dict.get("username") or "").strip()
+        if not user_email:
+            user_email = str(p_dict.get("email") or "").strip()
+
+    # 1. Screen / Identity Monitoring queries
+    monitor_triggers = (
+        "who am i",
+        "what is my name",
+        "which account",
+        "what account",
+        "which slide",
+        "what slide",
+        "current slide",
+        "where am i",
+        "what screen",
+        "what am i looking at",
+        "which project am i",
+        "what do you see",
+        "monitor",
+        "enno slide",
+        "evaru login",
+    )
+    if any(t in low for t in monitor_triggers):
+        lines = [f"👁️ **Live Session & Screen Status, {honorific}**"]
+        if user_name or user_email:
+            acct = f"{user_name}" + (f" (`{user_email}`)" if user_email else "")
+            lines.append(f"- **Signed-in Account**: {acct} — addressed as **{honorific}**")
+        else:
+            lines.append(f"- **Signed-in Account**: Active Visitor — addressed as **{honorific}**")
+        lines.append(f"- **Current Slide / Tab**: `{tab_title}` (`{tab_id}`)")
+        if card_ctx:
+            lines.append(f"- **Focused Card / Project**: `{card_ctx}`")
+        lines.append(
+            "- **How I Can Help Right Now**: Ask me to explain any metric or blueprint on this screen, "
+            "design the VS Code folder structure, pick the right AI IDE/model, or walk through deployment!"
+        )
+        return "\n".join(lines)
+
+    # 2. Modern Builder Ecosystem & AI Tools queries
+    wants_ide = any(k in low for k in ("antigravity", "cursor", "claude code", "which ide", "which tool", "which model", "coding tool", "editor"))
+    wants_next_step = any(
+        k in low
+        for k in (
+            "problem statement",
+            "next step",
+            "building raad",
+            "don't know how to build",
+            "how to build",
+            "how to start building",
+            "blueprints lo",
+            "after blueprint",
+        )
+    )
+    wants_rag_vscode = any(k in low for k in ("rag", "llm", "project structure", "folder structure", "vs code", "vscode", "em files", "files add"))
+    wants_deploy = any(k in low for k in ("deploy", "vercel", "render", "cloudflare", "hosting", "live chey", "host website"))
+    wants_media = any(k in low for k in ("image generat", "video generat", "image tool", "video tool", "sora", "veo", "midjourney", "runway"))
+    wants_models_cmp = any(k in low for k in ("chatgpt", "gemini ai", "claude ai", "gpt vs", "gemini vs", "claude vs"))
+
+    if not any((wants_ide, wants_next_step, wants_rag_vscode, wants_deploy, wants_media, wants_models_cmp)):
+        return None
+
+    sections: List[str] = [f"🛠️ **Complete Project Building & AI Ecosystem Guide, {honorific}**"]
+
+    if wants_next_step or wants_ide:
+        sections.append(
+            "### 1. From Problem Statement -> Working App (Next Step)\n"
+            "- **Step 1**: Open a fresh GitHub repository folder in an AI coding IDE and create your `.env` + `.gitignore` first.\n"
+            "- **Step 2**: Build ONE end-to-end vertical slice first (backend `/health` + 1 core API route + minimal React screen) and test it before adding extra features.\n"
+            "- **Step 3**: Pick your AI builder tool & model:\n"
+            "  - **Antigravity**: Best for beginners and full-stack velocity — autonomously plans architecture, creates multi-file codebases, runs terminal checks, and verifies in a live browser (`Gemini 2.5 Pro` / `Claude Sonnet 4`).\n"
+            "  - **Cursor**: Best if you want VS Code-style interactive coding with inline `Cmd+K` edits and fast composer diffs.\n"
+            "  - **Claude Code**: Best terminal CLI agent for deep refactoring, debugging, and automated test suites (`Claude Sonnet 4 / Opus 4`)."
+        )
+
+    if wants_rag_vscode or wants_next_step:
+        sections.append(
+            "### 2. VS Code Folder Structure & How LLM + RAG Works\n"
+            "```text\n"
+            "my-ai-project/\n"
+            "  backend/\n"
+            "    main.py            # FastAPI server (/api/chat, /api/ingest)\n"
+            "    rag_pipeline.py    # PDF/Doc parser -> chunking -> retriever\n"
+            "    embeddings.py      # Embedding calls + Qdrant/Chroma/FAISS store\n"
+            "    llm_client.py      # Gemini / Claude / OpenAI response generator\n"
+            "    prompts.py         # Grounded system prompt ('cite sources only')\n"
+            "    requirements.txt   # fastapi, uvicorn, google-genai, pymupdf, qdrant-client\n"
+            "    .env               # API keys (never commit to GitHub!)\n"
+            "  frontend/\n"
+            "    src/pages/         # Dashboard & Chat views\n"
+            "    src/components/    # Upload box, streaming chat, source cards\n"
+            "    package.json\n"
+            "```\n"
+            "- **How RAG Works**: (1) **Ingest** PDFs and split into ~500-token chunks -> (2) **Embed & Index** vectors in FAISS/Chroma/Qdrant -> (3) **Retrieve** Top-K matching chunks on each query -> (4) **Generate** the final grounded answer from those chunks."
+        )
+
+    if wants_deploy or wants_next_step:
+        sections.append(
+            "### 3. Where & How to Deploy Live (Vercel, Render, Cloudflare)\n"
+            "- **Vercel**: Connect your GitHub repo to deploy the React/Vite/Next.js **frontend** automatically on every push (set `VITE_API_URL` to your backend URL).\n"
+            "- **Render**: Deploy the **FastAPI/Python or Node backend** (`pip install -r requirements.txt` -> `uvicorn backend.api:app --host 0.0.0.0 --port $PORT`) and add `GEMINI_API_KEY` in Environment Variables.\n"
+            "- **Cloudflare (Pages / Workers / R2)**: Use for ultra-fast global CDN edge caching, DNS, SSL security, static frontends, or object storage."
+        )
+
+    if wants_media:
+        sections.append(
+            "### 4. Best Image & Video Generation Tools\n"
+            "- **Best Image Generators**: **Google Imagen / Gemini Image** (clean text & realism), **Flux Pro** (photorealism), **Midjourney** (cinematic visual design), **Ideogram** (posters/logos).\n"
+            "- **Best Video Generators**: **Google Veo 2/3** (physics realism + audio), **OpenAI Sora**, **Runway Gen-4**, **Kling**, and **Remotion / HyperFrames** (code-driven product demo videos)."
+        )
+
+    if wants_models_cmp:
+        sections.append(
+            "### 5. ChatGPT vs Gemini AI vs Claude AI\n"
+            "- **ChatGPT (OpenAI GPT-4o / o-series)**: Great all-round assistant, quick prototyping, canvas & general Q&A.\n"
+            "- **Gemini AI (Google)**: Unmatched 1M-2M token context window, native multimodal (PDFs, video, audio, code together), and very fast low-latency Flash inference.\n"
+            "- **Claude AI (Anthropic)**: Top accuracy for structured software architecture, clean code diffs, deep repo comprehension, and terminal automation with Claude Code."
+        )
+
+    if card_ctx:
+        sections.append(f"\n💡 *Since you are currently viewing `{card_ctx}`, tell me if you want me to generate its exact starter files step by step!*")
+    else:
+        sections.append("\n💡 *Tell me which step you want to start with and I will walk you through every file command-by-command!*")
+
+    return "\n\n".join(sections)

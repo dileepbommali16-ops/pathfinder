@@ -49,7 +49,7 @@ import {
   Building2,
   LayoutDashboard,
 } from "lucide-react";
-import { getApiBase, API_BASE, fetchWithTimeout, api } from "@/lib/apiClient";
+import { getApiBase, API_BASE, fetchWithTimeout, api, getSessionId } from "@/lib/apiClient";
 import { getTabKnowledge } from "@/lib/siteKnowledge";
 import { Footer } from "@/components/dashboard/Footer";
 import { toast } from "sonner";
@@ -657,6 +657,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
     activeTab,
     focusOnDas,
     isAuthenticated,
+    username,
+    email,
     prediction.chance,
     prediction.tone,
     profile.branch,
@@ -1434,7 +1436,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
       try {
         const resp = await fetch(`${API_BASE}/api/chat/stream`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Session-ID": getSessionId(),
+          },
           signal: abortCtrl.signal,
           body: JSON.stringify(chatPayload),
         });
@@ -1527,7 +1532,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
           `${API_BASE}/api/chat`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "X-Session-ID": getSessionId(),
+            },
             signal: abortCtrl.signal,
             body: JSON.stringify(chatPayload),
           },

@@ -81,43 +81,36 @@ OWNER_PUBLIC_BIO = (
 )
 
 
+PRIMARY_OWNER_EMAIL = "dileepbommali16@gmail.com"
+
+
 def get_owner_emails() -> list[str]:
-    """Retrieves list of configured owner emails from environment variables."""
-    raw = os.getenv("OWNER_EMAIL", "dileepbommali16@gmail.com,dileepbommali16@users.noreply.github.com,dileep@pathfinder.ai,dileep")
-    return [e.strip().lower() for e in raw.split(",") if e.strip()]
+    """Strictly returns ONLY Dileep's verified primary Gmail owner account."""
+    return [PRIMARY_OWNER_EMAIL]
 
 
 def is_owner_user(user: Optional[Any] = None, email: Optional[str] = None, username: Optional[str] = None) -> bool:
     """
-    Cryptographic and server-side check to determine if the active session belongs to the owner.
-    Checks against OWNER_EMAIL configured in .env. Never relies on guessable passwords.
+    Strict server-side check: ONLY verified email dileepbommali16@gmail.com (or explicit OWNER_EMAIL) is Boss.
+    Never matches username substrings or email prefixes so friends/guests/girls cannot spoof Boss mode.
     """
-    owner_emails = get_owner_emails()
+    owner_emails = set(get_owner_emails())
 
     check_emails = []
     if email:
-        check_emails.append(email.strip().lower())
-    if username:
-        check_emails.append(username.strip().lower())
+        check_emails.append(str(email).strip().lower())
 
     if user:
         if isinstance(user, dict):
             if user.get("email"):
                 check_emails.append(str(user["email"]).strip().lower())
-            if user.get("username"):
-                check_emails.append(str(user["username"]).strip().lower())
         else:
             if hasattr(user, "email") and user.email:
                 check_emails.append(str(user.email).strip().lower())
-            if hasattr(user, "username") and user.username:
-                check_emails.append(str(user.username).strip().lower())
 
     for val in check_emails:
         if val in owner_emails:
             return True
-        for owner in owner_emails:
-            if val == owner or (owner.startswith(val) and len(val) >= 6):
-                return True
 
     return False
 

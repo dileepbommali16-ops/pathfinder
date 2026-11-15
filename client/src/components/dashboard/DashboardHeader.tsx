@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { isOwnerAccount } from "@/lib/auth";
 import {
   Target,
   Compass,
@@ -170,13 +171,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         {/* User Identity, Mobile Hamburger & Logout */}
         <div className="flex items-center gap-2.5 sm:gap-3">
           {(() => {
-            const isBoss =
-              typeof window !== "undefined" &&
-              (localStorage.getItem("userRole") === "Boss" ||
-                localStorage.getItem("isOwner") === "true" ||
-                localStorage.getItem("das_mode") === "BOSS" ||
-                (username || "").toLowerCase().includes("dileep") ||
-                (email || "").toLowerCase().includes("guest"));
+            const isBoss = isOwnerAccount(email);
 
             const displayUser = isBoss ? "Dileep (Boss)" : (username || "Student");
             const displayEmail = isBoss ? "dileepbommali16@gmail.com" : email;

@@ -8,8 +8,10 @@ Supports SQLite (local / Render persistent disk) and PostgreSQL (via DATABASE_UR
 import os
 import sys
 import json
+import time
 import sqlite3
 import logging
+import threading
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
@@ -23,15 +25,34 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = Path(os.getenv("DATABASE_PATH", str(DATA_DIR / "pathfinder_production.db")))
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
+_wal_lock = threading.Lock()
+_wal_configured = False
+_db_write_lock = threading.RLock()
+
+
+def _ensure_wal_once(conn: sqlite3.Connection) -> None:
+    global _wal_configured
+    if _wal_configured:
+        return
+    with _wal_lock:
+        if _wal_configured:
+            return
+        try:
+            conn.execute("PRAGMA journal_mode=WAL;")
+        except Exception as exc:
+            logger.debug(f"[Database] WAL setup notice: {exc}")
+        _wal_configured = True
+
 
 def get_db_connection() -> sqlite3.Connection:
-    """Returns a SQLite connection configured with WAL mode, foreign keys, and memory caches."""
-    conn = sqlite3.connect(str(DB_PATH), timeout=20.0)
+    """Returns a SQLite connection configured with busy timeout, WAL (once), foreign keys, and memory caches."""
+    conn = sqlite3.connect(str(DB_PATH), timeout=30.0, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout = 25000;")
+    _ensure_wal_once(conn)
     conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA foreign_keys=ON;")
-    conn.execute("PRAGMA cache_size = -64000;")  # 64MB memory page cache
+    conn.execute("PRAGMA cache_size = -32000;")
     conn.execute("PRAGMA temp_store = MEMORY;")
     return conn
 
@@ -319,14 +340,33 @@ def get_user_profile_by_email_or_username(identifier: str) -> Optional[Dict[str,
     return None
 
 
+def _execute_serialized_write(write_fn):
+    """Run a SQLite write callable under _db_write_lock with busy/locked backoff."""
+    last_err: Optional[Exception] = None
+    for attempt in range(4):
+        try:
+            with _db_write_lock:
+                with get_db_connection() as conn:
+                    return write_fn(conn)
+        except sqlite3.OperationalError as exc:
+            last_err = exc
+            if "locked" in str(exc).lower() or "busy" in str(exc).lower():
+                time.sleep(0.05 * (attempt + 1))
+                continue
+            raise
+    if last_err:
+        raise last_err
+    return None
+
+
 def save_user_profile(user_id: str, profile_dict: Dict[str, Any]) -> bool:
-    """Inserts or updates a student profile in the persistent database."""
+    """Inserts or updates a student profile in the persistent database (serialized + retry-safe)."""
     now = datetime.utcnow().isoformat()
     profile_dict["user_id"] = user_id
     profile_dict["updated_at"] = now
     payload_json = json.dumps(profile_dict)
 
-    with get_db_connection() as conn:
+    def _op(conn):
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO user_profiles (
@@ -359,16 +399,20 @@ def save_user_profile(user_id: str, profile_dict: Dict[str, Any]) -> bool:
             now
         ))
         conn.commit()
-    return True
+        return True
+
+    return bool(_execute_serialized_write(_op))
 
 
 def delete_user_profile(user_id: str) -> bool:
     """Deletes a student profile by user_id."""
-    with get_db_connection() as conn:
+    def _op(conn):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM user_profiles WHERE user_id = ?;", (user_id,))
         conn.commit()
         return cursor.rowcount > 0
+
+    return bool(_execute_serialized_write(_op))
 
 
 def query_cohort_paginated(
@@ -459,15 +503,26 @@ def save_user_readiness_history(
     target_role: Optional[str] = None
 ) -> int:
     """Appends a new evaluation snapshot to the student's historical timeline."""
-    with get_db_connection() as conn:
+    def _op(conn):
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO readiness_history
             (user_id, chance, cgpa, coding, communication, internships, backlogs, target_role, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
-        """, (user_id, float(chance), float(cgpa), float(coding), float(communication), int(internships), int(backlogs), target_role or "Software Engineer"))
+        """, (
+            user_id,
+            float(chance),
+            float(cgpa),
+            float(coding),
+            float(communication),
+            int(internships),
+            int(backlogs),
+            target_role or "Software Engineer",
+        ))
         conn.commit()
         return cursor.lastrowid or 1
+
+    return int(_execute_serialized_write(_op) or 1)
 
 
 def get_user_readiness_history(user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
@@ -529,7 +584,7 @@ def save_student_memory(
     new_topics = topics if topics is not None else existing.get("topics", [])
     new_summary = last_summary if last_summary is not None else existing.get("last_summary", "")
 
-    with get_db_connection() as conn:
+    def _op(conn):
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO student_memory (user_id, goals, weak_areas, topics, last_summary, last_session_at, updated_at)
@@ -550,6 +605,7 @@ def save_student_memory(
         ))
         conn.commit()
 
+    _execute_serialized_write(_op)
     return get_student_memory(clean_id)
 
 

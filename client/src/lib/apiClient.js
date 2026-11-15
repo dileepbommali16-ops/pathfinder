@@ -134,8 +134,8 @@ async function handleAutonomousEdgeRequest(urlStr, options = {}) {
   }
 
   if (pathname.endsWith("/api/auth/login")) {
-    const username = bodyObj.username || "Dileep";
-    const email = bodyObj.email || "dileepbommali16@gmail.com";
+    const username = bodyObj.username || "Student";
+    const email = bodyObj.email || "student@pathfinder.ai";
     return createJsonResponse(
       {
         token: "edge_jwt_" + Date.now(),
@@ -146,7 +146,7 @@ async function handleAutonomousEdgeRequest(urlStr, options = {}) {
   }
 
   if (pathname.endsWith("/api/auth/me")) {
-    let savedUser = { username: "Dileep", email: "dileepbommali16@gmail.com", role: "student" };
+    let savedUser = { username: "Student", email: "student@pathfinder.ai", role: "student" };
     try {
       const raw = localStorage.getItem("pathfinder_user");
       if (raw) savedUser = JSON.parse(raw);

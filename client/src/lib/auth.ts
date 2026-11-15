@@ -5,12 +5,9 @@
 export type HonorificTitle = "Boss" | "Madam" | "Sir";
 export type HonorificKey = "boss" | "madam" | "sir";
 
-export const OWNER_EMAILS = [
-  "dileepbommali16@gmail.com",
-  "dileepbommali2005@gmail.com",
-  "dileepbommali16",
-  "dileep@pathfinder.ai",
-];
+// ONLY Dileep's verified primary Google account is recognized as Boss (Owner).
+export const OWNER_EMAIL = "dileepbommali16@gmail.com";
+export const OWNER_EMAILS = [OWNER_EMAIL];
 
 // Extensive female given names / tokens across Indian & international accounts
 const FEMALE_NAME_TOKENS = new Set([
@@ -95,23 +92,11 @@ function getOverrideMap(): Record<string, HonorificTitle> {
   }
 }
 
-export function isOwnerAccount(email?: string, username?: string): boolean {
+export function isOwnerAccount(email?: string, _username?: string): boolean {
   const e = (email || "").toLowerCase().trim();
-  const u = (username || "").toLowerCase().trim();
-  const localPart = e.split("@")[0] || "";
-
-  // Exact known creator emails / handles — NEVER match surname "bommali" alone
-  if (e && OWNER_EMAILS.some((owner) => e === owner || localPart === owner)) {
-    return true;
-  }
-  if (localPart.startsWith("dileep")) {
-    return true;
-  }
-  if (u) {
-    const tokens = u.split(/[\s._-]+/).filter(Boolean);
-    if (tokens.includes("dileep")) return true;
-  }
-  return false;
+  // STRICT RULE: Only dileepbommali16@gmail.com is recognized as Boss (Owner).
+  // Any other account, username, or guest (even with "dileep" in the name) is treated as a regular visitor.
+  return e === OWNER_EMAIL;
 }
 
 export function isFemaleAccount(email?: string, username?: string): boolean {
@@ -160,14 +145,6 @@ export function toHonorificKey(title: HonorificTitle | string): HonorificKey {
 }
 
 export function getUserRole(email?: string, username?: string): HonorificTitle {
-  if (typeof window !== "undefined") {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlMode = (urlParams.get("mode") || urlParams.get("role") || "").toLowerCase().trim();
-    if (urlMode === "madam") return "Madam";
-    if (urlMode === "sir" || urlParams.get("guest") === "true") return "Sir";
-    if (urlMode === "boss") return "Boss";
-  }
-
   const storedPathfinder =
     typeof window !== "undefined" ? localStorage.getItem("pathfinder_user") || "" : "";
   let parsedPf: { email?: string; username?: string; name?: string } | null = null;
@@ -189,21 +166,31 @@ export function getUserRole(email?: string, username?: string): HonorificTitle {
       parsedPf?.name ||
       "");
 
+  const ownerVerified = isOwnerAccount(effectiveEmail);
+
   if (typeof window !== "undefined") {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlMode = (urlParams.get("mode") || urlParams.get("role") || "").toLowerCase().trim();
+    if (urlMode === "madam") return "Madam";
+    if (urlMode === "sir" || urlParams.get("guest") === "true") return "Sir";
+    if (urlMode === "boss" && ownerVerified) return "Boss";
+
     const key = (effectiveEmail || effectiveName || "").toLowerCase().trim();
     const overrideMap = getOverrideMap();
     if (key && overrideMap[key]) {
-      return overrideMap[key];
+      // Never grant stale/manually overridden Boss mode to non-owner accounts
+      if (overrideMap[key] !== "Boss" || ownerVerified) {
+        return overrideMap[key];
+      }
     }
 
     const storedRole = localStorage.getItem("userRole");
     if (!effectiveEmail && !effectiveName) {
       if (storedRole === "Madam") return "Madam";
-      if (storedRole === "Sir") return "Sir";
-      return "Boss"; // Direct unauthenticated preview defaults to Boss
+      return "Sir"; // Unauthenticated preview defaults strictly to neutral Sir (never Boss)
     }
   } else if (!effectiveEmail && !effectiveName) {
-    return "Boss";
+    return "Sir";
   }
 
   return inferHonorific(effectiveEmail, effectiveName);
@@ -215,11 +202,12 @@ export function getHonorificKey(email?: string, username?: string): HonorificKey
 
 export function setHonorificPreference(role: HonorificTitle | "Auto", email?: string): HonorificTitle {
   if (typeof window === "undefined") {
-    return role === "Auto" ? "Boss" : role;
+    return role === "Auto" ? "Sir" : role;
   }
 
   const activeEmail = email || localStorage.getItem("userEmail") || "";
   const activeName = localStorage.getItem("userName") || "";
+  const ownerVerified = isOwnerAccount(activeEmail);
   const key = (activeEmail || activeName || "").toLowerCase().trim();
   const overrideMap = getOverrideMap();
 
@@ -232,10 +220,13 @@ export function setHonorificPreference(role: HonorificTitle | "Auto", email?: st
       } catch {}
     }
     resolved = inferHonorific(activeEmail, activeName);
+  } else if (role === "Boss" && !ownerVerified) {
+    // Prevent non-owner sessions from switching into Boss mode
+    resolved = inferHonorific(activeEmail, activeName);
   } else {
     resolved = role;
     if (key) {
-      overrideMap[key] = role;
+      overrideMap[key] = resolved;
       try {
         localStorage.setItem("das_honorific_override_map", JSON.stringify(overrideMap));
       } catch {}
@@ -273,13 +264,18 @@ export function handleAuthLoginDetected(
     localStorage.removeItem("userRole");
   }
 
+  const ownerVerified = isOwnerAccount(effectiveEmail);
   const key = (effectiveEmail || effectiveName).toLowerCase().trim();
   const overrideMap = getOverrideMap();
   const savedPerAccount = key && !explicitPref ? overrideMap[key] : undefined;
-  const role: HonorificTitle =
+  const safeSaved = savedPerAccount && (savedPerAccount !== "Boss" || ownerVerified) ? savedPerAccount : undefined;
+  const requestedExplicit =
     explicitPref && explicitPref !== "Auto"
       ? inferHonorific(effectiveEmail, effectiveName, explicitPref)
-      : savedPerAccount || inferHonorific(effectiveEmail, effectiveName);
+      : undefined;
+  const safeExplicit =
+    requestedExplicit && (requestedExplicit !== "Boss" || ownerVerified) ? requestedExplicit : undefined;
+  const role: HonorificTitle = safeExplicit || safeSaved || inferHonorific(effectiveEmail, effectiveName);
 
   if (typeof window !== "undefined") {
     if (effectiveEmail) localStorage.setItem("userEmail", effectiveEmail);
@@ -289,7 +285,7 @@ export function handleAuthLoginDetected(
     localStorage.setItem("das_mode", role.toUpperCase());
     localStorage.setItem("das_honorific_override", role);
 
-    if (explicitPref && explicitPref !== "Auto" && key) {
+    if (safeExplicit && key) {
       overrideMap[key] = role;
       try {
         localStorage.setItem("das_honorific_override_map", JSON.stringify(overrideMap));
@@ -307,7 +303,7 @@ export function handleAuthLoginDetected(
 }
 
 export function initAuthMode(): HonorificTitle {
-  if (typeof window === "undefined") return "Boss";
+  if (typeof window === "undefined") return "Sir";
 
   const storedEmail = (localStorage.getItem("userEmail") || "").trim();
   const storedName = (localStorage.getItem("userName") || "").trim();
@@ -328,11 +324,10 @@ export function initAuthMode(): HonorificTitle {
 
   const storedRole = localStorage.getItem("userRole");
   if (storedRole === "Madam") return "Madam";
-  if (storedRole === "Sir") return "Sir";
 
-  localStorage.setItem("userRole", "Boss");
-  localStorage.setItem("isOwner", "true");
-  localStorage.setItem("das_mode", "BOSS");
-  localStorage.setItem("das_honorific_override", "Boss");
-  return "Boss";
+  localStorage.setItem("userRole", "Sir");
+  localStorage.setItem("isOwner", "false");
+  localStorage.setItem("das_mode", "SIR");
+  localStorage.setItem("das_honorific_override", "Sir");
+  return "Sir";
 }

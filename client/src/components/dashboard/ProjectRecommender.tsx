@@ -295,6 +295,21 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
               architectureSummary: proj.architectureSummary,
             });
 
+            const notifyActiveProject = () => {
+              try {
+                const prev = (window as any).__DAS_PAGE_CONTEXT__ || {};
+                const nextCtx = {
+                  ...prev,
+                  activeProject: proj.title,
+                  projectTitle: proj.title,
+                  cardContext: `${proj.title} (${proj.domain || proj.category || "Blueprint"})`,
+                  timestamp: Date.now(),
+                };
+                (window as any).__DAS_PAGE_CONTEXT__ = nextCtx;
+                window.dispatchEvent(new CustomEvent("das:page-context", { detail: nextCtx }));
+              } catch {}
+            };
+
             return (
               <div
                 key={proj.id}
@@ -304,6 +319,8 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                 data-size={bpSize}
                 data-blueprint-data={bpData}
                 data-difficulty={proj.difficulty}
+                onMouseEnter={notifyActiveProject}
+                onClick={notifyActiveProject}
                 className={`flex flex-col justify-between rounded-3xl border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all duration-500 ${
                   isHighlighted
                     ? "border-white ring-4 ring-white/50 scale-[1.03] bg-[#060608] z-20"
@@ -433,6 +450,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                   <button
                     type="button"
                     onClick={() => {
+                      notifyActiveProject();
                       try {
                         sessionStorage.setItem("pathfinder_blueprint_voice_trigger", "true");
                       } catch {}

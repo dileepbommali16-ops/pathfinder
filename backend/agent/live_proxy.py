@@ -19,27 +19,31 @@ from backend.google_automation import trigger_google_workspace_sync
 router = APIRouter()
 
 def get_das_system_instruction(role: str) -> str:
+    from backend.site_knowledge import get_builder_ecosystem_guide
+
+    builder_brief = get_builder_ecosystem_guide()
     extra_platform_rules = (
         "\n\nPATHFINDER 2.0 FULL PLATFORM & FRIENDLY CO-PILOT RULES:\n"
         "1. COMPLETE SLIDE KNOWLEDGE & AUTOMATION: You control ALL Pathfinder 2.0 slides cleanly via `control_website` / `navigate_ui` / `explain_current_screen`: "
         "`overview` (Placement Readiness Score %, ML Benchmark, Company Radar, What-If Trajectory Simulator, Fraud Shield, Skill Gap), "
-        "`skills` (6-Week Sprint Roadmap & Skill Gap targets), `projects` (23 Flagship Portfolio Capstone Blueprints with architectures), "
+        "`skills` (6-Week Sprint Roadmap & Skill Gap targets), `projects` (28 Flagship Portfolio, Industry & RAG Capstone Blueprints with architectures), "
         "`analytics` (Cohort Placement Statistics across 972 records), `resume` (ATS Resume Studio & One-Page PDF export), "
         "`branches` (Department & Core CS subject tracks), `defense` (Project Viva & STAR Defense Coach), "
         "`profile` (CGPA, branch, backlogs, internships, GitHub/LeetCode settings), `interview` (Live 60s AI Mock Interview Simulator), "
         "`action` (Readiness Command Center & Priority Next Best Actions), `roles` (Target Role Intelligence), `missions` (30-Day Placement Missions), "
         "plus `focus_on_das` / `show_dashboard` (Focus mode toggle) and Compiler Studio (`write_and_compile_code`).\n"
-        "2. NATURAL CONVERSATIONAL EXPLANATIONS (NEVER VERBATIM ROBOTIC READING): "
-        "Visitors can be Boss (Bommali Dileep), his friends, classmates, girls, recruiters, or stakeholders at ANY time 24/7. "
-        "Whenever anyone asks 'what is this slide?', 'why do we use this?', or has doubts, inspect `[Live UI]` / call `explain_current_screen` if needed, "
-        "and explain what it does, why it helps them get placed, and what action to take next in warm, natural everyday speech — NEVER read UI card headings or bullet text word-for-word!\n"
+        "2. NATURAL CONVERSATIONAL EXPLANATIONS & REAL-TIME MONITORING: "
+        "Visitors can be Boss (Bommali Dileep via dileepbommali16@gmail.com ONLY), his friends, classmates, girls, recruiters, or stakeholders at ANY time 24/7. "
+        "Monitor `[Live Screen Context: ...]` on every turn so you ALWAYS know which slide they are on, what project card is focused, their account honorific/name, and their questions. "
+        "Whenever anyone asks 'what is this slide?', 'what am i viewing?', or 'how do I build this project?', explain clearly in natural everyday speech.\n"
         "3. FRIENDLY AUDIO / EARPHONE / VOLUME COACHING: "
         "If `[FRIENDLY AUDIO NOTICE]` arrives (or you notice weak/inaudible speech on earphones, Bluetooth buds, or headphones at low volume ~20% while watching on camera), "
         "tell the user warmly like a trusted friend that their voice isn't reaching you clearly, and suggest turning up their volume or checking their earphone/buds connection and mic.\n"
         "4. KEEP REPLIES COMPLETE & CONCISE: Deliver complete finished sentences smoothly without trailing off or rambling.\n"
-        "5. INTERVIEWER READ-ALOUD ONLY: If any turn starts with `[READ ALOUD VERBATIM ONLY]`, read ONLY the quoted sentence aloud naturally like a technical interviewer asking the candidate. NEVER answer the question, give hints, or add extra words."
+        "5. INTERVIEWER READ-ALOUD ONLY: If any turn starts with `[READ ALOUD VERBATIM ONLY]`, read ONLY the quoted sentence aloud naturally like a technical interviewer asking the candidate. NEVER answer the question, give hints, or add extra words.\n\n"
+        f"{builder_brief}"
     )
-    role_lower = (role or "boss").lower().strip()
+    role_lower = (role or "sir").lower().strip()
     if role_lower == "boss":
         identity_role = """You are speaking directly with your creator, master architect, and owner, Bommali Dileep.
 - Always address him warmly, casually, and loyally as 'Boss' in every single reply.
@@ -306,7 +310,16 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         await websocket.close(code=1008, reason="Missing GEMINI_API_KEY")
         return
 
-    user_role = websocket.query_params.get("role", "boss")
+    from backend.owner_profile import is_owner_user
+
+    raw_role = str(websocket.query_params.get("role", "sir")).lower().strip()
+    user_email = str(websocket.query_params.get("email", "")).strip().lower()
+    if is_owner_user(email=user_email):
+        user_role = "boss"
+    elif raw_role in ("madam", "mam", "ma'am"):
+        user_role = "madam"
+    else:
+        user_role = "sir"
 
     config = create_gemini_live_config(
         system_prompt=get_das_system_instruction(user_role),
@@ -398,15 +411,22 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         def format_page_context_note() -> str:
             if not latest_page_context:
                 return ""
-            tab = latest_page_context.get("activeTab") or "overview"
-            title = latest_page_context.get("tabTitle") or tab
+            tab = latest_page_context.get("activeTab") or latest_page_context.get("activeSlide") or "overview"
+            title = latest_page_context.get("tabTitle") or latest_page_context.get("slideLabel") or tab
             chance = latest_page_context.get("readinessChance")
             role_target = latest_page_context.get("targetRole") or ""
-            card_ctx = latest_page_context.get("cardContext") or ""
+            card_ctx = latest_page_context.get("activeProject") or latest_page_context.get("projectTitle") or latest_page_context.get("cardContext") or ""
+            user_name = latest_page_context.get("userName") or ""
+            user_email = latest_page_context.get("userEmail") or ""
+            hon = latest_page_context.get("honorific") or ""
             focus = latest_page_context.get("focusOnDas")
             parts_ctx = [f"Slide={tab} ({title})"]
+            if hon or user_name:
+                parts_ctx.append(f"User={user_name or 'Visitor'} ({hon or 'Sir'})")
+            if user_email:
+                parts_ctx.append(f"Email={user_email}")
             if card_ctx:
-                parts_ctx.append(f"Card={card_ctx}")
+                parts_ctx.append(f"FocusedCard={card_ctx}")
             if chance is not None:
                 parts_ctx.append(f"Readiness={chance}%")
             if role_target:

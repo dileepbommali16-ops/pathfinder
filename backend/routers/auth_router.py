@@ -14,6 +14,7 @@ from backend.models import UserSession, LoginRequest, LoginResponse
 from backend.security import (
     rate_limiter,
     get_client_ip,
+    get_session_or_client_key,
     sanitize_user_input,
     require_role,
     log_admin_action,
@@ -98,8 +99,10 @@ def login_endpoint(payload: LoginRequest, request: Request):
         )
 
     client_ip = get_client_ip(request)
-    allowed, _ = rate_limiter.check(f"login_{client_ip}", max_requests=10, window_seconds=60)
-    if not allowed:
+    session_key = get_session_or_client_key(request, user_hint=payload.email or payload.username)
+    allowed, _ = rate_limiter.check(f"login:{session_key}", max_requests=25, window_seconds=60)
+    ip_burst_ok, _ = rate_limiter.check(f"login_burst:{client_ip}", max_requests=300, window_seconds=60)
+    if not allowed or not ip_burst_ok:
         raise HTTPException(
             status_code=429,
             detail="Too many authentication attempts. Please wait 60 seconds before trying again."

@@ -27,7 +27,7 @@ class DasAgentSocket {
   private isSpeakingTurn = false;
   private awaitingNextTurn = false;
   public isConnected = false;
-  public currentRole: UserHonorificRole = "boss";
+  public currentRole: UserHonorificRole = "sir";
 
   public get isSocketConnected(): boolean {
     return this.isConnected && this.ws?.readyState === WebSocket.OPEN;
@@ -155,7 +155,7 @@ class DasAgentSocket {
   }
 
   public connect(
-    role: UserHonorificRole = "boss",
+    role: UserHonorificRole = "sir",
     onTranscript?: (text: string) => void,
     onStatusChange?: (connected: boolean) => void,
     navigateFn?: (path: string) => void,
@@ -190,7 +190,11 @@ class DasAgentSocket {
       this.ws = new WebSocket(`${GOOGLE_LIVE_WS_URL}?key=${apiKey}`);
     } else {
       this.isDirectGoogle = false;
-      this.ws = new WebSocket(`${RENDER_WS_URL}?role=${encodeURIComponent(role)}`);
+      const storedEmail =
+        typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "";
+      const qs = new URLSearchParams({ role });
+      if (storedEmail) qs.set("email", storedEmail);
+      this.ws = new WebSocket(`${RENDER_WS_URL}?${qs.toString()}`);
     }
 
     this.ws.onopen = () => {
@@ -216,7 +220,7 @@ class DasAgentSocket {
         return;
       }
 
-      const roleKey = (this.savedRole || "boss").toLowerCase().trim();
+      const roleKey = (this.savedRole || "sir").toLowerCase().trim();
       const identityRole =
         roleKey === "boss"
           ? `You are speaking directly with your creator, master architect, and owner, Bommali Dileep.
@@ -290,14 +294,15 @@ CORE AUTONOMOUS CAPABILITIES:
    - When a compiler or syntax error occurs, or Boss says "fix the error", "code wrong undi", or "correct chey":
      Analyze the exact compiler diagnostics, rewrite the fully corrected source code, and immediately call 'write_and_compile_code' so the compiler studio updates and re-executes live on screen!
    - Explain the code in depth: why it's written this way, loops, recursion, data structures, and time/space complexity.
-4. ATS RESUME INTELLIGENCE & PLACEMENT ROADMAP:
-   - Provide elite Tier-1 ATS resume reviews calibrated to Google's X-Y-Z formula: "Accomplished [X] as measured by [Y] by doing [Z]".
-   - Guide Boss on top capstone projects, certifications (AWS Solutions Architect, GCP Data Engineer), and core subjects (DSA, OS, CN, DBMS, System Design) to guarantee 100% placement success.
+4. ATS RESUME, 28 PROJECT BLUEPRINTS & MODERN BUILDER GUIDANCE:
+   - Provide honest Tier-1 ATS resume reviews calibrated to Google's X-Y-Z formula: "Accomplished [X] as measured by [Y] by doing [Z]".
+   - Explain clearly what comes after a blueprint problem statement (VS Code / Antigravity / Cursor / Claude Code + picking models, VS Code folder/file layout for LLM + RAG apps, deploying frontend on Vercel/Cloudflare and backend on Render, Image & Video AI tools like Google Imagen/Veo/Flux/Midjourney/Runway/Sora, and ChatGPT vs Gemini AI vs Claude AI).
+   - Monitor [Live Screen Context: ...] so you always know who is signed in (Boss ONLY for dileepbommali16@gmail.com, Madam for female accounts, Sir for others), what slide is active, and what card/project is focused.
 5. OPEN ANY WEBSITE & EXPLAIN: When asked to open any website (Google, YouTube, GitHub, LeetCode, or any URL), call 'open_external_website' and explain it clearly.
 6. LINKEDIN PROFILE INTELLIGENCE: When asked about anyone's profile, call 'open_linkedin_profile' and summarize their background.
 7. GMAIL & WORKSPACE AUTOMATION: When asked to send an email or schedule a calendar, call 'trigger_google_workspace'.
 8. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
-   When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'close compiler', immediately reply warmly and loyally: "Okay Boss, returning to your dashboard." and dismiss any open compiler drawers.
+   When asked to return to dashboard or close compiler, immediately reply warmly ("Okay ${this.roleHonorific}, returning to your dashboard.") and dismiss any open compiler drawers.
 9. Keep voice replies energetic, warm, and conversational without robotic filler.`;
 
       const configuredModel =
@@ -476,6 +481,12 @@ CORE AUTONOMOUS CAPABILITIES:
           this.savedOnStatusChange?.(true);
           if (!this.lastUnansweredText && this.pendingTexts.length === 0 && Date.now() - this.lastTextSentAt > 6000) {
             this.savedOnTranscript?.(`DAS Online (DAS Ready)! Speak or type now, ${this.roleHonorific}.`);
+          }
+          const ctxNow =
+            this.latestPageContext ||
+            (typeof window !== "undefined" ? (window as any).__DAS_PAGE_CONTEXT__ : null);
+          if (ctxNow) {
+            this.sendPageContext(ctxNow);
           }
           this.flushPendingMessages();
           return;

@@ -31,8 +31,8 @@
 - **How a student uses it**: Students type or speak their doubts, ask for project plans, request mock interview feedback, or seek honest motivation.
 - **Result they get**: Instant, empathetic, context-aware answers tailored to their active screen, target branch, and actual skill level.
 
-### 5. Project Blueprints (23 Software & Hardware Architectures)
-- **What it does**: A curated catalog of 23 production-grade portfolio projects (6 flagship architectures + 17 national industry engineering blueprints) with difficulty tiers (Small, Medium, Hard) across software, AI, hardware/IoT, and distributed systems.
+### 5. Project Blueprints (28 Software, RAG & Hardware Architectures)
+- **What it does**: A curated catalog of 28 production-grade portfolio projects (6 flagship architectures + 17 national industry engineering blueprints + 5 Real-World RAG pipelines) with difficulty tiers (Small, Medium, Hard) across software, AI, hardware/IoT, and distributed systems.
 - **How a student uses it**: Students filter by domain/difficulty, review system architecture summaries, recommended tech stacks, key features, and defense talking points.
 - **Result they get**: Real, resume-worthy projects that impress technical recruiters instead of generic cloned tutorial apps.
 
@@ -79,7 +79,7 @@
 
 ### Gemini AI Coach (Conversational Mentor)
 - Powered by Google Gemini (`gemini-2.0-flash` / `gemini-2.5-flash`), with automated fallback to OpenRouter when needed.
-- Uses real multi-turn conversation memory (last 12 turns) and is dynamically grounded in this knowledge guide and the 23 project catalog.
+- Uses real multi-turn conversation memory (last 12 turns) and is dynamically grounded in this knowledge guide and the 28 project catalog.
 - Evaluates the student's active screen context so answers are tailored directly to what the student is looking at.
 
 ### Unified Data Tools
@@ -150,7 +150,7 @@
 ### Q6: Can a student manipulate their score by entering false numbers?
 **Answer**: While students can adjust their profile values to simulate scenarios (via the What-If Simulator), official placement drives require institutional grade sheet verification. The score is meant as an honest self-assessment diagnostic.
 
-### Q7: Are the 23 project blueprints just standard tutorial clones?
+### Q7: Are the 28 project blueprints just standard tutorial clones?
 **Answer**: No. They are comprehensive production-grade architectures (e.g., distributed asynchronous queues, smart IoT healthcare systems, high-scale industry problem statements) complete with system architecture, edge failure modes, and viva defense questions.
 
 ### Q8: Does Pathfinder store or leak student passwords?

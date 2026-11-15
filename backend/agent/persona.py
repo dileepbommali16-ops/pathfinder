@@ -81,7 +81,7 @@ TOOL_NAMES = {t["function"]["name"] for t in TOOLS}
 
 
 def _retrieve_top3_sync(query: str, branch: str = "CSE") -> str:
-    """Synchronous semantic retrieval of Top 3 chunks from the 23 blueprints + 972 placement records."""
+    """Synchronous semantic retrieval of Top 3 chunks from the 28 blueprints + 972 placement records."""
     corpus = build_rag_corpus(include_all_individual_records=False)
     q_text = f"{query} {branch}".strip()
     q_emb = compute_embedding_384(q_text)
@@ -98,49 +98,61 @@ def _retrieve_top3_sync(query: str, branch: str = "CSE") -> str:
 
     scored.sort(key=lambda item: item[0], reverse=True)
     top3 = [f"{i}. {doc['content']}" for i, (_, doc) in enumerate(scored[:3], start=1)]
-    return "\n".join(top3) if top3 else "1. Pathfinder 2.0: 23 Project Blueprints & 972 Placement Records active."
+    return "\n".join(top3) if top3 else "1. Pathfinder 2.0: 28 Project Blueprints & 972 Placement Records active."
 
 
 def build_system_prompt(role: str, page: dict, query: str = "") -> str:
     """
     Builds a compact (< 2000 tokens) Groq system prompt injecting ONLY the Top 3
-    semantic search results from the 23 blueprints + 972 placement records.
+    semantic search results from the 28 blueprints + 972 placement records.
     """
+    from backend.owner_profile import is_owner_user
+    from backend.site_knowledge import get_builder_ecosystem_guide
+
     page_dict = page or {}
+    user_email = str(page_dict.get("userEmail") or "").strip()
+    user_name = str(page_dict.get("userName") or "").strip()
     hon = str(page_dict.get("honorific") or page_dict.get("userRole") or "").strip().lower()
-    if role == "owner" or hon == "boss":
+    if role == "owner" or (hon == "boss" and is_owner_user(email=user_email)):
         who = "the OWNER and BOSS (Dileep) who built Pathfinder. Address him warmly as 'Boss'."
     elif role == "madam" or hon == "madam":
         who = "a respected female student or stakeholder. Address her politely and respectfully as 'Madam' (NEVER call her Boss or Sir)."
     else:
-        who = "a guest, student, or stakeholder. Address them respectfully as 'Sir'."
+        who = "a guest, student, or stakeholder. Address them respectfully as 'Sir' (NEVER call them Boss — only dileepbommali16@gmail.com is Boss)."
     branch = str(page_dict.get("candidateBranch") or page_dict.get("branch") or "CSE")
     cgpa = page_dict.get("cgpa", 7.8)
     backlogs = page_dict.get("backlogs", 0)
     target_role = page_dict.get("targetRole", "Software Development Engineer (SDE)")
-    active_tab = page_dict.get("activeTabTitle") or page_dict.get("route") or "overview"
+    active_tab = page_dict.get("activeTabTitle") or page_dict.get("activeTab") or page_dict.get("route") or "overview"
+    active_project = str(page_dict.get("activeProject") or page_dict.get("projectTitle") or page_dict.get("cardContext") or "").strip()
 
     rag_top_3 = _retrieve_top3_sync(query or active_tab, branch=branch)
 
     # Keep page snapshot compact (< 600 chars) so total system prompt stays well under 2,000 tokens
     compact_elements = (page_dict.get("elements") or [])[:12]
     snap = json.dumps(
-        {"route": page_dict.get("route", "/"), "tab": active_tab, "elements": compact_elements},
+        {"route": page_dict.get("route", "/"), "tab": active_tab, "project": active_project, "elements": compact_elements},
         ensure_ascii=False,
         separators=(",", ":"),
     )[:600]
 
+    builder_brief = get_builder_ecosystem_guide()[:950]
+
     prompt = f"""You are DAS, Pathfinder 2.0's JARVIS-style 3D AI Voice Agent & Career Co-Pilot.
 You are speaking to {who}
-Candidate Profile: Branch={branch}, CGPA={cgpa}, Backlogs={backlogs}, Role={target_role}, Tab={active_tab}.
+Active Account: Name={user_name or 'Visitor'}, Email={user_email or 'guest'}.
+Candidate Profile: Branch={branch}, CGPA={cgpa}, Backlogs={backlogs}, Role={target_role}, Tab={active_tab}, FocusedProject={active_project or 'none'}.
 
 OUTPUT FORMAT (spoken aloud via DAS Neural Voice):
-1. First, write 1-2 short natural spoken sentences in the USER'S LANGUAGE (plain text, zero markdown/asterisks).
-2. Then write ||| followed by concise notes in same language if details are helpful.
-3. LANGUAGE RULE - MOST IMPORTANT: Auto-detect user language. User Telugu / Tenglish lo matladithe, nuvvu Telugu + English mix (Tenglish) lo reply ivvu. User Hindi lo matladithe Hindi lo reply ivvu. User English lo matladithe English lo reply ivvu. Never force English.
+1. First, write 1-2 short natural spoken sentences in clear simple ENGLISH (plain text, zero markdown/asterisks).
+2. Then write ||| followed by concise details in ENGLISH if details are helpful.
+3. LANGUAGE RULE: Understand English, Telugu, Tenglish, and Hindi natively, and reply clearly in simple fluent ENGLISH so voice playback stays smooth.
 
-TOP 3 SEMANTIC RAG RESULTS (from 23 Blueprints + 972 Placement Records):
+TOP 3 SEMANTIC RAG RESULTS (from 28 Blueprints + 972 Placement Records):
 {rag_top_3}
+
+BUILDER ECOSYSTEM SUMMARY:
+{builder_brief}
 
 WEBSITE CONTROL ACTIONS (append at the very end ONLY when explicitly asked to open/navigate/scroll/filter/update):
 <!--ACTION: {{"type": "NAVIGATE_TAB", "target": "overview|interview|action|skills|projects|analytics|resume|branches|defense|profile|roles|missions"}}-->

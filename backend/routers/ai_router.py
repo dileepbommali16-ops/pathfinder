@@ -26,7 +26,14 @@ from backend.models import (
     InterviewEvaluationRequest,
     InterviewEvaluationResult,
 )
-from backend.security import rate_limiter, ai_budget_manager, get_client_ip, sanitize_user_input, validate_pdf_upload
+from backend.security import (
+    rate_limiter,
+    ai_budget_manager,
+    get_client_ip,
+    get_session_or_client_key,
+    sanitize_user_input,
+    validate_pdf_upload,
+)
 from backend.reliability import gemini_circuit_breaker
 from backend.gemini_engine import (
     chat_with_mentor,
@@ -48,18 +55,26 @@ ai_router = APIRouter(tags=["AI Mentor & Coaching"])
 @ai_router.post("/api/ai/chat")
 def chat_endpoint(request_body: ChatRequest, request: Request):
     """
-    AI Career Coach conversation endpoint with rate-limiting, budget caps,
-    circuit breaker protection, and deterministic offline fallbacks.
+    AI Career Coach conversation endpoint with session-isolated rate-limiting,
+    campus NAT burst headroom, circuit breaker protection, and grounded fallbacks.
     """
-    client_ip = get_client_ip(request)
+    user_context = getattr(request_body, "user_context", None) or getattr(request_body, "page_context", None) or {}
+    raw_history = getattr(request_body, "chat_history", None) or getattr(request_body, "history", None) or []
+    active_tab = getattr(request_body, "active_tab", None) or (user_context.get("active_tab") if isinstance(user_context, dict) else None)
+    profile = getattr(request_body, "profile", None)
+    user_hint = (user_context.get("userEmail") or user_context.get("userName") or "") if isinstance(user_context, dict) else ""
 
-    # 1. Sliding window rate limit: max 30 chat messages per minute per IP
-    allowed, remaining = rate_limiter.check(f"chat:{client_ip}", max_requests=30, window_seconds=60)
-    if not allowed:
+    client_ip = get_client_ip(request)
+    session_key = get_session_or_client_key(request, user_hint=str(user_hint))
+
+    # 1. Per-session sliding window rate limit + high campus NAT IP burst headroom
+    allowed, _ = rate_limiter.check(f"chat:{session_key}", max_requests=60, window_seconds=60)
+    ip_burst_ok, _ = rate_limiter.check(f"chat_burst:{client_ip}", max_requests=600, window_seconds=60)
+    if not allowed or not ip_burst_ok:
         raise HTTPException(status_code=429, detail="Chat rate limit reached. Please wait a moment.")
 
-    # 2. AI daily request budget
-    budget_ok, used, limit = ai_budget_manager.consume(client_ip)
+    # 2. Per-session AI daily request budget
+    budget_ok, used, limit = ai_budget_manager.consume(session_key)
     if not budget_ok:
         raise HTTPException(
             status_code=429,
@@ -68,17 +83,19 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
 
     # 3. Sanitize inputs
     sanitized_message = sanitize_user_input(request_body.message, max_length=2000)
-    user_context = getattr(request_body, "user_context", None) or getattr(request_body, "page_context", None) or {}
-    raw_history = getattr(request_body, "chat_history", None) or getattr(request_body, "history", None) or []
-    active_tab = getattr(request_body, "active_tab", None) or (user_context.get("active_tab") if isinstance(user_context, dict) else None)
-    profile = getattr(request_body, "profile", None)
 
-    # 4. Check circuit breaker status
+    # 4. Check circuit breaker status -> serve grounded domain answer seamlessly instead of dead-ending
     if not gemini_circuit_breaker.allow_request():
-        honest_error = "I couldn't reach the AI right now. Please tap retry in a moment!"
+        fallback_reply = generate_smart_fallback_reply(
+            message=sanitized_message,
+            history=raw_history,
+            profile=profile,
+            active_tab=active_tab,
+            page_context=user_context
+        )
         return {
-            "reply": honest_error,
-            "source": "Pathfinder AI (Circuit Breaker)",
+            "reply": fallback_reply,
+            "source": "Pathfinder Intelligence Engine (High-Availability Fallback)",
             "budget_remaining": limit - used
         }
 
@@ -108,10 +125,16 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
         }
     except Exception as e:
         gemini_circuit_breaker.record_failure(e)
-        honest_error = "I couldn't reach the AI right now. Please tap retry in a moment!"
+        fallback_reply = generate_smart_fallback_reply(
+            message=sanitized_message,
+            history=raw_history,
+            profile=profile,
+            active_tab=active_tab,
+            page_context=user_context
+        )
         return {
-            "reply": honest_error,
-            "source": "Pathfinder AI (Adaptive Guidance)",
+            "reply": fallback_reply,
+            "source": "Pathfinder Intelligence Engine (Adaptive Guidance)",
             "budget_remaining": limit - used
         }
 
@@ -124,8 +147,10 @@ async def chat_stream_endpoint(request_body: ChatRequest, request: Request):
     Streams chunks word-by-word for high-responsiveness interactive UX.
     """
     client_ip = get_client_ip(request)
-    allowed, _ = rate_limiter.check(f"chat_stream:{client_ip}", max_requests=20, window_seconds=60)
-    if not allowed:
+    session_key = get_session_or_client_key(request)
+    allowed, _ = rate_limiter.check(f"chat_stream:{session_key}", max_requests=40, window_seconds=60)
+    ip_burst_ok, _ = rate_limiter.check(f"chat_stream_burst:{client_ip}", max_requests=500, window_seconds=60)
+    if not allowed or not ip_burst_ok:
         raise HTTPException(status_code=429, detail="Too many streaming requests.")
 
     sanitized_message = sanitize_user_input(request_body.message, max_length=2000)
@@ -163,7 +188,7 @@ async def chat_stream_endpoint(request_body: ChatRequest, request: Request):
 
 @ai_router.post("/api/roadmap", response_model=Roadmap)
 @ai_router.post("/api/ai/roadmap", response_model=Roadmap)
-def roadmap_endpoint(payload: Dict[str, Any]):
+async def roadmap_endpoint(payload: Dict[str, Any]):
     """Generates structured 4-week preparation milestones for student candidate."""
     target_role = payload.get("target_role", "Software Development Engineer (SDE)")
     branch = payload.get("branch", "CSE")
@@ -175,7 +200,7 @@ def roadmap_endpoint(payload: Dict[str, Any]):
         f"Return JSON with 'headline' (string), 'skill_gaps' (array of strings), and 'weekly_actions' (array of 4 strings)."
     )
 
-    result = generate_structured_ai(prompt, Roadmap)
+    result = await asyncio.to_thread(generate_structured_ai, prompt, Roadmap)
     if result:
         return result
 
@@ -220,7 +245,7 @@ async def cohort_insight_endpoint(
         f"skill level {skill}. Return JSON with 'headline', 'summary' (2-3 sentences), "
         f"and 'actions' (3 tactical candidate recommendations)."
     )
-    result = generate_structured_ai(prompt, CohortInsight)
+    result = await asyncio.to_thread(generate_structured_ai, prompt, CohortInsight)
     if result:
         return result
 
@@ -241,13 +266,15 @@ async def resume_endpoint(
     resume_text: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None)
 ):
-    """ATS Resume evaluation with PDF validation and rate limiting."""
+    """ATS Resume evaluation with PDF validation, thread offload, and session-scoped limits."""
     client_ip = get_client_ip(request)
-    allowed, _ = rate_limiter.check(f"resume_{client_ip}", max_requests=10, window_seconds=60)
-    if not allowed:
+    session_key = get_session_or_client_key(request)
+    allowed_session, _ = rate_limiter.check(f"resume_{session_key}", max_requests=25, window_seconds=60)
+    allowed_ip, _ = rate_limiter.check(f"resume_burst_{client_ip}", max_requests=250, window_seconds=60)
+    if not (allowed_session and allowed_ip):
         raise HTTPException(status_code=429, detail="Too many resume reviews requested. Please wait 60 seconds.")
 
-    ok, _, limit = ai_budget_manager.consume(client_ip)
+    ok, _, limit = ai_budget_manager.consume(session_key)
     if not ok:
         raise HTTPException(status_code=429, detail=f"Daily AI resume quota reached ({limit}/{limit}).")
 
@@ -257,13 +284,18 @@ async def resume_endpoint(
         if file is not None:
             pdf_bytes = await file.read()
             validate_pdf_upload(file.filename or "resume.pdf", pdf_bytes)
-            extracted_text = extract_resume_text(pdf_bytes, file.filename or "resume.pdf")
+            extracted_text = await asyncio.to_thread(
+                extract_resume_text,
+                pdf_bytes,
+                file.filename or "resume.pdf",
+            )
 
         text_to_analyze = sanitize_user_input(extracted_text if extracted_text else (resume_text or ""), max_length=20000)
         if not text_to_analyze.strip() and not pdf_bytes:
             raise HTTPException(status_code=400, detail="Please upload an authentic PDF resume or provide resume text.")
 
-        deterministic_audit = analyze_resume_deterministically(
+        deterministic_audit = await asyncio.to_thread(
+            analyze_resume_deterministically,
             resume_text=text_to_analyze,
         )
 
@@ -296,7 +328,8 @@ async def resume_endpoint(
 
         ai_feedback = None
         if gemini_circuit_breaker.allow_request():
-            ai_result, model_name, err_reason = generate_strict_json_evaluation(
+            ai_result, model_name, err_reason = await asyncio.to_thread(
+                generate_strict_json_evaluation,
                 prompt=prompt,
                 schema=ResumeFeedback,
                 system_instruction=sys_instruction,
@@ -310,7 +343,12 @@ async def resume_endpoint(
                 gemini_circuit_breaker.record_failure(Exception(err_reason or "Gemini unavailable"))
                 logger.warning(f"[Resume Evaluation] Gemini unavailable ({err_reason}); serving strict deterministic audit.")
 
-        return merge_with_deterministic_audit(ai_feedback, deterministic_audit, text_to_analyze)
+        return await asyncio.to_thread(
+            merge_with_deterministic_audit,
+            ai_feedback,
+            deterministic_audit,
+            text_to_analyze,
+        )
     except HTTPException:
         raise
     except Exception as exc:
@@ -541,8 +579,10 @@ def evaluate_defense_endpoint(request_body: DefenseEvaluationRequest, request: R
     Detects abstentions ('I don't know', 'skip') at 0/100 and otherwise grades via live Gemini AI.
     """
     client_ip = get_client_ip(request)
-    allowed, _ = rate_limiter.check(f"defense:{client_ip}", max_requests=30, window_seconds=60)
-    if not allowed:
+    session_key = get_session_or_client_key(request)
+    allowed, _ = rate_limiter.check(f"defense:{session_key}", max_requests=45, window_seconds=60)
+    ip_burst_ok, _ = rate_limiter.check(f"defense_burst:{client_ip}", max_requests=450, window_seconds=60)
+    if not allowed or not ip_burst_ok:
         raise HTTPException(status_code=429, detail="Evaluation rate limit reached. Please wait 60 seconds.")
 
     clean_answer = sanitize_user_input(request_body.candidate_answer, max_length=6000)
@@ -593,7 +633,7 @@ def evaluate_defense_endpoint(request_body: DefenseEvaluationRequest, request: R
         "- is_non_answer: false unless the text avoids answering the question"
     )
 
-    ai_budget_manager.consume(client_ip)
+    ai_budget_manager.consume(session_key)
     ai_result, model_name, err_reason = generate_strict_json_evaluation(
         prompt=prompt,
         schema=DefenseEvaluationResult,
@@ -625,8 +665,10 @@ def evaluate_interview_endpoint(request_body: InterviewEvaluationRequest, reques
     Scores Technical Precision, Communication, and Problem Solving honestly using live Gemini AI.
     """
     client_ip = get_client_ip(request)
-    allowed, _ = rate_limiter.check(f"interview:{client_ip}", max_requests=30, window_seconds=60)
-    if not allowed:
+    session_key = get_session_or_client_key(request)
+    allowed, _ = rate_limiter.check(f"interview:{session_key}", max_requests=45, window_seconds=60)
+    ip_burst_ok, _ = rate_limiter.check(f"interview_burst:{client_ip}", max_requests=450, window_seconds=60)
+    if not allowed or not ip_burst_ok:
         raise HTTPException(status_code=429, detail="Interview evaluation rate limit reached. Please wait 60 seconds.")
 
     clean_answer = sanitize_user_input(request_body.candidate_answer, max_length=6000)
@@ -677,7 +719,7 @@ def evaluate_interview_endpoint(request_body: InterviewEvaluationRequest, reques
         "- is_non_answer: false unless off-topic or abstaining"
     )
 
-    ai_budget_manager.consume(client_ip)
+    ai_budget_manager.consume(session_key)
     ai_result, model_name, err_reason = generate_strict_json_evaluation(
         prompt=prompt,
         schema=InterviewEvaluationResult,

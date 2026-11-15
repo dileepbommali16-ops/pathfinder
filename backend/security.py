@@ -1,6 +1,8 @@
 import time
 import re
 import html
+import hashlib
+import threading
 from typing import Dict, Optional, Tuple, Any
 from collections import defaultdict
 from fastapi import Request, HTTPException, status, Header
@@ -10,26 +12,38 @@ from fastapi import Request, HTTPException, status, Header
 # ==========================================
 
 class SlidingWindowRateLimiter:
-    """In-memory thread-safe sliding window rate limiter."""
+    """In-memory thread-safe sliding window rate limiter safe under 50+ concurrent requests."""
     def __init__(self):
         # Key -> list of timestamps
         self.requests: Dict[str, list[float]] = defaultdict(list)
+        self._lock = threading.Lock()
 
     def check(self, key: str, max_requests: int, window_seconds: int = 60) -> Tuple[bool, int]:
         now = time.time()
         window_start = now - window_seconds
-        
-        # Clean older requests outside the window
-        timestamps = self.requests[key]
-        self.requests[key] = [t for t in timestamps if t > window_start]
-        
-        if len(self.requests[key]) >= max_requests:
-            remaining = 0
-            return False, remaining
-        
-        self.requests[key].append(now)
-        remaining = max_requests - len(self.requests[key])
-        return True, remaining
+        with self._lock:
+            # Clean older requests outside the window
+            timestamps = self.requests.get(key, [])
+            active = [t for t in timestamps if t > window_start]
+
+            if len(active) >= max_requests:
+                self.requests[key] = active
+                return False, 0
+
+            active.append(now)
+            self.requests[key] = active
+            remaining = max_requests - len(active)
+
+            # Prevent unbounded growth across thousands of ephemeral sessions
+            if len(self.requests) > 4000:
+                stale_keys = [
+                    k for k, ts in list(self.requests.items())
+                    if not ts or ts[-1] <= window_start
+                ]
+                for sk in stale_keys[:1000]:
+                    self.requests.pop(sk, None)
+
+            return True, remaining
 
 
 rate_limiter = SlidingWindowRateLimiter()
@@ -39,25 +53,33 @@ rate_limiter = SlidingWindowRateLimiter()
 # ==========================================
 
 class AIUsageBudgetManager:
-    """Protects Gemini AI budget by capping requests per user/IP per day."""
+    """Thread-safe AI budget guard capping requests per session/client per day."""
     def __init__(self, daily_limit: int = 60):
         self.daily_limit = daily_limit
+        self._lock = threading.Lock()
         # Key -> (day_bucket, count)
         self.usage: Dict[str, Dict[str, int]] = defaultdict(lambda: {"day": 0, "count": 0})
 
     def consume(self, user_key: str) -> Tuple[bool, int, int]:
         current_day = int(time.time() // 86400)
-        entry = self.usage[user_key]
-        
-        if entry["day"] != current_day:
-            entry["day"] = current_day
-            entry["count"] = 0
-            
-        if entry["count"] >= self.daily_limit:
-            return False, entry["count"], self.daily_limit
-            
-        entry["count"] += 1
-        return True, entry["count"], self.daily_limit
+        with self._lock:
+            entry = self.usage[user_key]
+
+            if entry["day"] != current_day:
+                entry["day"] = current_day
+                entry["count"] = 0
+
+            if entry["count"] >= self.daily_limit:
+                return False, entry["count"], self.daily_limit
+
+            entry["count"] += 1
+
+            if len(self.usage) > 4000:
+                old_keys = [k for k, v in list(self.usage.items()) if v.get("day") != current_day]
+                for ok in old_keys[:1000]:
+                    self.usage.pop(ok, None)
+
+            return True, entry["count"], self.daily_limit
 
 
 ai_budget_manager = AIUsageBudgetManager(daily_limit=200)
@@ -92,6 +114,30 @@ def get_client_ip(request: Request) -> str:
             return parts[0]
 
     return request.client.host if request.client else "0.0.0.0"
+
+
+def get_session_or_client_key(request: Request, user_hint: str = "") -> str:
+    """
+    Returns an isolated per-session / per-user bucket key so 50+ concurrent students sharing
+    a single college/hostel Wi-Fi NAT IP never lock each other out of rate limits or AI budgets.
+    """
+    sid = (request.headers.get("x-session-id") or "").strip()
+    if sid and re.match(r"^[A-Za-z0-9_.:-]{4,80}$", sid):
+        return f"sess:{sid}"
+
+    auth = (request.headers.get("authorization") or "").strip()
+    if auth.lower().startswith("bearer "):
+        tok = auth.split(" ", 1)[-1].strip()
+        if tok:
+            tok_hash = hashlib.sha256(tok.encode("utf-8")).hexdigest()[:16]
+            return f"tok:{tok_hash}"
+
+    clean_hint = (user_hint or "").strip().lower()
+    if clean_hint:
+        hint_hash = hashlib.sha256(clean_hint.encode("utf-8")).hexdigest()[:16]
+        return f"usr:{hint_hash}"
+
+    return f"ip:{get_client_ip(request)}"
 
 
 # ==========================================

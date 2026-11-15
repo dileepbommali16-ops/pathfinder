@@ -12,7 +12,7 @@ from fastapi import APIRouter, Response, HTTPException, Query, Body, Request
 from backend.analytics_engine import filter_cohort_records
 from backend.pdf_engine import generate_analytics_pdf
 from backend.resume_auditor import generate_resume_audit_pdf
-from backend.security import rate_limiter, get_client_ip
+from backend.security import rate_limiter, get_client_ip, get_session_or_client_key
 
 logger = logging.getLogger("pathfinder.export")
 export_router = APIRouter(tags=["Exports & Document Generation"])
@@ -46,8 +46,10 @@ def export_pdf_endpoint(
 ):
     """Generates an executive placement analytics summary PDF."""
     client_ip = get_client_ip(request)
-    allowed, _ = rate_limiter.check(f"pdf_{client_ip}", max_requests=10, window_seconds=60)
-    if not allowed:
+    session_key = get_session_or_client_key(request)
+    allowed, _ = rate_limiter.check(f"pdf:{session_key}", max_requests=20, window_seconds=60)
+    ip_burst_ok, _ = rate_limiter.check(f"pdf_burst:{client_ip}", max_requests=250, window_seconds=60)
+    if not allowed or not ip_burst_ok:
         raise HTTPException(status_code=429, detail="Too many PDF export requests. Please wait 60 seconds.")
 
     try:
@@ -72,8 +74,10 @@ def export_resume_pdf_endpoint(
 ):
     """Compiles structured candidate profile into a clean ATS-friendly PDF resume."""
     client_ip = get_client_ip(request)
-    allowed, _ = rate_limiter.check(f"resume_pdf_{client_ip}", max_requests=10, window_seconds=60)
-    if not allowed:
+    session_key = get_session_or_client_key(request, user_hint=str(payload.get("full_name") or ""))
+    allowed, _ = rate_limiter.check(f"resume_pdf:{session_key}", max_requests=20, window_seconds=60)
+    ip_burst_ok, _ = rate_limiter.check(f"resume_pdf_burst:{client_ip}", max_requests=250, window_seconds=60)
+    if not allowed or not ip_burst_ok:
         raise HTTPException(status_code=429, detail="Too many resume PDF compilation requests. Please wait 60 seconds.")
 
     try:

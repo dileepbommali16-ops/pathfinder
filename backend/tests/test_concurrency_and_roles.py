@@ -1,0 +1,189 @@
+import sys
+import unittest
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+from unittest.mock import patch
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from fastapi.testclient import TestClient  # noqa: E402
+from backend.api import app  # noqa: E402
+from backend.owner_profile import is_owner_user  # noqa: E402
+from backend.gemini_engine import generate_smart_fallback_reply, _resolve_verified_honorific  # noqa: E402
+
+
+class TestConcurrencyAndRoleSecurity(unittest.TestCase):
+    """Verifies 50 simultaneous client sessions behind one NAT IP + strict owner isolation."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = TestClient(app)
+
+    def test_strict_owner_identity_only_primary_gmail(self):
+        self.assertTrue(is_owner_user(email="dileepbommali16@gmail.com"))
+        self.assertTrue(is_owner_user(email="  DILEEPBOMMALI16@GMAIL.COM  "))
+        self.assertFalse(is_owner_user(email="dileep@pathfinder.ai"))
+        self.assertFalse(is_owner_user(email="dileepbommali2005@gmail.com"))
+        self.assertFalse(is_owner_user(email="priyankabommali2@gmail.com"))
+        self.assertFalse(is_owner_user(username="dileep"))
+        self.assertFalse(is_owner_user(username="Dileep Bommali"))
+
+        # Spoofed honorific="boss" for non-owner MUST be downgraded
+        self.assertEqual(
+            _resolve_verified_honorific(
+                page_context={"honorific": "boss", "userEmail": "friend_dileep@gmail.com"}
+            ),
+            "Sir",
+        )
+        self.assertEqual(
+            _resolve_verified_honorific(
+                page_context={"honorific": "madam", "userEmail": "priyankabommali2@gmail.com"}
+            ),
+            "Madam",
+        )
+        self.assertEqual(
+            _resolve_verified_honorific(
+                page_context={"honorific": "sir", "userEmail": "dileepbommali16@gmail.com"}
+            ),
+            "Boss",
+        )
+
+    def test_screen_monitor_and_builder_encyclopedia_answers(self):
+        monitor_reply = generate_smart_fallback_reply(
+            "which slide am i on and what project am i looking at?",
+            active_tab="projects",
+            page_context={
+                "userName": "indala gayatri",
+                "userEmail": "priyankabommali2@gmail.com",
+                "honorific": "Madam",
+                "activeProject": "Multi-Agent Regulatory Document Research Engine (RAG)",
+            },
+        )
+        self.assertIn("Madam", monitor_reply)
+        self.assertIn("projects", monitor_reply.lower())
+        self.assertIn("Multi-Agent Regulatory Document Research Engine", monitor_reply)
+
+        builder_reply = generate_smart_fallback_reply(
+            "After problem statement what next step should I do to build? "
+            "Antigravity vs Cursor vs Claude Code, VS Code folder structure for LLM and RAG, "
+            "how to deploy on Vercel Render Cloudflare, best image and video generation tools, "
+            "and ChatGPT vs Gemini AI vs Claude AI",
+            active_tab="projects",
+            page_context={"userEmail": "friend@gmail.com", "honorific": "Sir"},
+        )
+        for keyword in (
+            "Antigravity",
+            "Cursor",
+            "Claude Code",
+            "rag_pipeline.py",
+            "Vercel",
+            "Render",
+            "Cloudflare",
+            "Imagen",
+            "Veo",
+            "ChatGPT",
+            "Gemini AI",
+            "Claude AI",
+        ):
+            self.assertIn(keyword, builder_reply)
+        self.assertNotIn("Boss", builder_reply)
+
+    def test_50_concurrent_clients_behind_shared_nat_ip(self):
+        """Simulate 50 friends logging in, saving profiles, predicting readiness, and chatting at once."""
+
+        def run_single_client(idx: int):
+            sid = f"load-session-{idx}"
+            headers = {
+                "X-Session-ID": sid,
+                "X-Forwarded-For": "203.0.113.50",
+            }
+            is_female = idx % 2 == 0
+            email = f"student{idx}@example.com"
+            name = f"Priya Student {idx}" if is_female else f"Arjun Student {idx}"
+            honorific = "Madam" if is_female else "Sir"
+
+            r_login = self.client.post(
+                "/api/auth/login",
+                headers=headers,
+                json={"username": name, "email": email},
+            )
+            if r_login.status_code != 200:
+                return f"login {idx} -> {r_login.status_code}: {r_login.text}"
+            login_data = r_login.json()
+            token = login_data.get("token")
+            session_user_id = login_data.get("user", {}).get("user_id", f"load_user_{idx}")
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+
+            r_prof = self.client.post(
+                "/api/profile",
+                headers=headers,
+                json={
+                    "user_id": session_user_id,
+                    "username": name,
+                    "email": email,
+                    "full_name": name,
+                    "branch": "CSE" if idx % 3 == 0 else "AIML",
+                    "cgpa": round(6.8 + (idx % 10) * 0.25, 2),
+                    "active_backlogs": 0,
+                    "internships": idx % 3,
+                    "coding": 7,
+                    "communication": 7,
+                    "target_role": "Software Development Engineer (SDE)",
+                },
+            )
+            if r_prof.status_code != 200:
+                return f"profile {idx} -> {r_prof.status_code}: {r_prof.text}"
+
+            r_pred = self.client.post(
+                "/api/predict",
+                headers=headers,
+                json={
+                    "branch": "CSE",
+                    "cgpa": 8.2,
+                    "backlogs": 0,
+                    "internships": 1,
+                    "coding": 7,
+                    "communication": 7,
+                },
+            )
+            if r_pred.status_code != 200:
+                return f"predict {idx} -> {r_pred.status_code}: {r_pred.text}"
+
+            r_chat = self.client.post(
+                "/api/chat",
+                headers=headers,
+                json={
+                    "message": "After blueprint problem statement, how do I build RAG in VS Code and deploy on Vercel and Render?",
+                    "active_tab": "projects",
+                    "page_context": {
+                        "userName": name,
+                        "userEmail": email,
+                        "honorific": honorific,
+                    },
+                },
+            )
+            if r_chat.status_code != 200:
+                return f"chat {idx} -> {r_chat.status_code}: {r_chat.text}"
+            reply = r_chat.json().get("reply", "")
+            if "Vercel" not in reply or "Antigravity" not in reply:
+                return f"chat {idx} missing builder content"
+            return None
+
+        # Avoid external Gemini network latency/429 during local load benchmark while exercising full FastAPI pipeline
+        with patch("backend.gemini_engine.os.getenv", side_effect=lambda k, d="": "" if k in ("GEMINI_API_KEY", "OPENROUTER_API_KEY") else d):
+            errors = []
+            with ThreadPoolExecutor(max_workers=50) as pool:
+                futures = [pool.submit(run_single_client, i) for i in range(50)]
+                for fut in as_completed(futures):
+                    res = fut.result()
+                    if res:
+                        errors.append(res)
+
+        self.assertEqual(errors, [], f"Concurrency errors occurred: {errors[:5]}")
+
+
+if __name__ == "__main__":
+    unittest.main()

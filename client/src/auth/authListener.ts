@@ -1,48 +1,34 @@
 /**
- * authListener.ts - Boss Auto Switch Engine
+ * authListener.ts - Auto Honorific & Boss Account Verification Engine
  * - Runs on every page load
- * - Auto-detects Boss vs Sir with zero manual buttons
- * - Configures DAS mode and mood state
+ * - ONLY grants Boss mode to dileepbommali16@gmail.com
+ * - Auto-assigns Madam (female accounts) or Sir (male/guest accounts)
  */
+import { OWNER_EMAIL, isOwnerAccount, getUserRole, getHonorificKey } from "@/lib/auth";
 
-export const BOSS_EMAILS = [
-  "dileepbommali16@gmail.com",
-  "dileepbommali2005@gmail.com",
-  "dileep@pathfinder.ai",
-  "boss@pathfinder.ai",
-  "dileepbommali16",
-];
+export const BOSS_EMAILS = [OWNER_EMAIL];
 
 export function isBossUser(email?: string): boolean {
   if (!email) {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("userEmail") || localStorage.getItem("email") || "";
-      if (stored) {
-        return BOSS_EMAILS.some((e) => stored.toLowerCase().includes(e)) || stored.toLowerCase().includes("dileep");
-      }
+      return stored ? isOwnerAccount(stored) : false;
     }
-    return true; // Default to Boss
+    return false;
   }
-  const low = email.toLowerCase().trim();
-  return BOSS_EMAILS.some((e) => low.includes(e)) || low.includes("dileep");
+  return isOwnerAccount(email);
 }
 
 export function initAuthListener() {
   if (typeof window === "undefined") return;
 
-  const applyAuth = (email?: string) => {
-    const isBoss = isBossUser(email);
-    if (isBoss) {
-      localStorage.setItem("das_mode", "BOSS");
-      localStorage.setItem("userRole", "Boss");
-      localStorage.setItem("isOwner", "true");
-      (window as any).DASFace?.setMood?.("boss");
-    } else {
-      localStorage.setItem("das_mode", "SIR");
-      localStorage.setItem("userRole", "Sir");
-      localStorage.setItem("isOwner", "false");
-      (window as any).DASFace?.setMood?.("sir");
-    }
+  const applyAuth = (email?: string, username?: string) => {
+    const resolved = getUserRole(email, username);
+    const key = getHonorificKey(email, username);
+    localStorage.setItem("das_mode", resolved.toUpperCase());
+    localStorage.setItem("userRole", resolved);
+    localStorage.setItem("isOwner", resolved === "Boss" ? "true" : "false");
+    (window as any).DASFace?.setMood?.(key);
   };
 
   // Run automatically on page load
@@ -50,13 +36,13 @@ export function initAuthListener() {
 
   // Listen for login/logout events
   window.addEventListener("storage", (e) => {
-    if (e.key === "userEmail" || e.key === "das_mode") {
+    if (e.key === "userEmail" || e.key === "userName" || e.key === "das_mode") {
       applyAuth();
     }
   });
 
   window.addEventListener("das-auth-change", ((e: CustomEvent) => {
-    applyAuth(e.detail?.email);
+    applyAuth(e.detail?.email, e.detail?.username);
   }) as EventListener);
 }
 

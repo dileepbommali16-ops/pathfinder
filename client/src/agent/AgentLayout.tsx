@@ -4,9 +4,9 @@ import { Avatar3D } from "./Avatar3D";
 import { dasSocket, UserHonorificRole } from "./agentSocket";
 import { audioEngine, cameraEngine, MediaDeviceOption } from "./audioIO";
 import { CodeTaskPayload } from "./toolRunner";
-import { API_BASE } from "@/lib/apiClient";
+import { API_BASE, getSessionId } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
-import { getUserRole, getHonorificKey, setHonorificPreference, HonorificKey } from "@/lib/auth";
+import { getUserRole, getHonorificKey, setHonorificPreference, isOwnerAccount, HonorificKey } from "@/lib/auth";
 import { toast } from "sonner";
 
 function getInitialGreeting(roleKey: HonorificKey): string {
@@ -184,7 +184,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const resp = await fetch(`${API_BASE}/api/chat`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Session-ID": getSessionId(),
+          },
           signal: controller.signal,
           body: JSON.stringify({
             message: query,
@@ -200,7 +203,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               branch: parsedProfile.branch ?? "CSE",
             },
             active_tab: ctx.activeTab || "overview",
-            page_context: { ...ctx, honorific: activeHonorific },
+            page_context: {
+              ...ctx,
+              honorific: activeHonorific,
+              userEmail: ctx.userEmail || (typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : ""),
+              userName: ctx.userName || (typeof window !== "undefined" ? localStorage.getItem("userName") || "" : ""),
+            },
           }),
         });
         if (resp.ok) {
@@ -808,7 +816,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 type="button"
                 onClick={() => {
                   setCodeTask(null);
-                  setTranscript("Okay Boss, returned to your dashboard.");
+                  setTranscript(`Okay ${getUserRole()}, returned to your dashboard.`);
                 }}
                 className="px-2.5 py-1 bg-[#1E293B] hover:bg-[#334155] border border-[#334155] rounded-lg text-xs text-slate-200 font-medium transition cursor-pointer"
                 title="Return to Dashboard"
@@ -973,8 +981,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               type="button"
               onClick={(e) => {
                 e.currentTarget.blur();
-                const nextRole: UserHonorificRole =
-                  role === "boss" ? "sir" : role === "sir" ? "madam" : "boss";
+                const storedEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "";
+                const canBeBoss = isOwnerAccount(storedEmail);
+                const nextRole: UserHonorificRole = canBeBoss
+                  ? (role === "boss" ? "sir" : role === "sir" ? "madam" : "boss")
+                  : (role === "sir" ? "madam" : "sir");
                 handleRoleToggle(nextRole);
               }}
               className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold transition cursor-pointer border shadow-sm hover:brightness-110 active:scale-95 text-white"

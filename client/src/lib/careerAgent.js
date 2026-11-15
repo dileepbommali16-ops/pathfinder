@@ -2,7 +2,7 @@
  * DAS AI - Unified RAG Semantic Search & Fast JARVIS Intelligence Engine
  *
  * TASK 1 (RAG Refactor):
- * - Indexes all 23 Flagship Project Blueprints + 972 Campus Placement Cohort Records
+ * - Indexes all 28 Flagship Project Blueprints + 972 Campus Placement Cohort Records
  *   into 384-dimensional L2-normalized semantic vectors compatible with Supabase pgvector
  *   (`pathfinder_knowledge_embeddings` / `match_pathfinder_knowledge` RPC).
  * - Performs semantic search FIRST and injects ONLY the Top 3 results into the Gemini Live prompt.
@@ -250,7 +250,7 @@ const PLACEMENT_COHORT_VECTORS_RAW = [
 let _indexedKnowledgeStore = null;
 
 /**
- * Builds and caches the in-memory 384-D vector index for all 23 Flagship Project Blueprints
+ * Builds and caches the in-memory 384-D vector index for all 28 Flagship Project Blueprints
  * and the 972 Placement Cohort Benchmarks.
  */
 export function getIndexedKnowledgeStore() {
@@ -258,7 +258,7 @@ export function getIndexedKnowledgeStore() {
 
   const docs = [];
 
-  // 1. Index all 23 Flagship Project Blueprints from DEFAULT_PROJECT_CATALOG
+  // 1. Index all 28 Flagship Project Blueprints from DEFAULT_PROJECT_CATALOG
   const blueprints = Array.isArray(DEFAULT_PROJECT_CATALOG) ? DEFAULT_PROJECT_CATALOG : [];
   for (const bp of blueprints) {
     const stack = Array.isArray(bp.techStack) ? bp.techStack.join(", ") : "";
@@ -290,7 +290,7 @@ export function getIndexedKnowledgeStore() {
 }
 
 /**
- * Synchronous semantic search across the 23 blueprints + 972 placement records.
+ * Synchronous semantic search across the 28 blueprints + 972 placement records.
  * Returns strictly the Top-K (default 3) highest-scoring matches.
  */
 export function semanticSearchSync(query = "", profile = {}, topK = 3) {
@@ -328,11 +328,11 @@ export function semanticSearchSync(query = "", profile = {}, topK = 3) {
 /**
  * Async Semantic Search: Queries Supabase `match_pathfinder_knowledge` pgvector RPC first
  * (when VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY are configured), and falls back in <2ms
- * to the local 384-D vector index of the 23 blueprints + 972 placement records.
+ * to the local 384-D vector index of the 28 blueprints + 972 placement records.
  * Returns strictly Top 3 results.
  */
 export async function semanticSearchPathfinderRAG(query = "", profile = {}, topK = 3) {
-  // Instant <1ms local 384-D vector search across all 23 blueprints + 972 placement records
+  // Instant <1ms local 384-D vector search across all 28 blueprints + 972 placement records
   return semanticSearchSync(query, profile, topK);
 }
 
@@ -364,13 +364,16 @@ export function buildRagGeminiSystemPrompt({
   const targetRole =
     profile?.target_role || profile?.targetRole || "Software Development Engineer (SDE)";
 
-  const normHon = String(honorific || "Boss").toLowerCase().trim();
+  const normHon = String(honorific || "Sir").toLowerCase().trim();
+  const storedEmail =
+    typeof window !== "undefined" ? (localStorage.getItem("userEmail") || "").toLowerCase().trim() : "";
+  const isOwner = storedEmail === "dileepbommali16@gmail.com";
   const whoRule =
-    normHon === "boss"
-      ? `You are speaking with Dileep Bommali, your BOSS, founder, and lead architect of Pathfinder 2.0! Address him warmly, loyally, and enthusiastically as "Boss" in every reply. You know Dileep built you (DAS 3D cybernetic voice agent), built Pathfinder 2.0 with 23 production blueprints, 972 cohort placement datasets, and autonomous browser control. If he asks "what is my name", "who am I", or banters with you, proudly celebrate Dileep as your creator and mastermind!`
+    normHon === "boss" && isOwner
+      ? `You are speaking with Dileep Bommali (dileepbommali16@gmail.com), your BOSS, founder, and lead architect of Pathfinder 2.0! Address him warmly, loyally, and enthusiastically as "Boss" in every reply. You know Dileep built you (DAS 3D cybernetic voice agent), built Pathfinder 2.0 with 28 production blueprints, 972 cohort placement datasets, and autonomous browser control. If he asks "what is my name", "who am I", or banters with you, proudly celebrate Dileep as your creator and mastermind!`
       : normHon === "madam" || normHon === "mam" || normHon === "ma'am"
-      ? `You are speaking with a respected female guest, recruiter, client, or student. Address her politely and respectfully as "Madam" in every reply (NEVER call her Boss or Sir). Guide her through Dileep Bommali's Pathfinder 2.0 platform with professional clarity and honest, uninflated feedback.`
-      : `You are speaking with a respected guest, recruiter, client, or student. Address them respectfully as "Sir" in every reply (never call them Boss). Guide them through Dileep Bommali's Pathfinder 2.0 platform with professional brilliance and honest feedback.`;
+      ? `You are speaking with a respected female guest, recruiter, client, or student. Address her politely and respectfully as "Madam" in every reply (NEVER call her Boss or Sir). Guide her through Dileep Bommali's Pathfinder 2.0 platform with professional clarity, honest feedback, and step-by-step project building mentorship.`
+      : `You are speaking with a respected guest, recruiter, client, or student. Address them respectfully as "Sir" in every reply (NEVER call them Boss — only dileepbommali16@gmail.com is Boss). Guide them through Dileep Bommali's Pathfinder 2.0 platform with professional clarity, honest feedback, and step-by-step project building mentorship.`;
 
   let prompt = `You are DAS, not a chatbot. You are JARVIS for Dileep and Pathfinder 2.0.
 IDENTITY & CREATOR: ${whoRule}
@@ -425,18 +428,21 @@ export const getCareerAgentResponse = (
   const coding = Number(profile?.coding || 7);
   const targetRole =
     profile?.target_role || profile?.targetRole || "Software Development Engineer (SDE)";
-  const rawHon = (honorific || (typeof window !== "undefined" ? getUserRole() : "Boss"))
+  const storedEmailNow =
+    typeof window !== "undefined" ? (localStorage.getItem("userEmail") || "").toLowerCase().trim() : "";
+  const isVerifiedOwner = storedEmailNow === "dileepbommali16@gmail.com";
+  const rawHon = (honorific || (typeof window !== "undefined" ? getUserRole() : "Sir"))
     .toString()
     .toLowerCase()
     .trim();
   const title =
     rawHon === "madam" || rawHon === "mam" || rawHon === "ma'am"
       ? "Madam"
-      : rawHon === "sir"
-      ? "Sir"
-      : "Boss";
+      : rawHon === "boss" && isVerifiedOwner
+      ? "Boss"
+      : "Sir";
 
-  // Perform semantic search first (Top 3 results from 23 blueprints + 972 placements)
+  // Perform semantic search first (Top 3 results from 28 blueprints + 972 placements)
   const top3Rag = semanticSearchSync(message, profile, 3);
   const top3Markdown = top3Rag
     .map((m, i) => `${i + 1}. **${m.title}** *(score: ${m.similarity})*\n   ${m.content}`)
@@ -447,11 +453,32 @@ export const getCareerAgentResponse = (
     .slice(-3)
     .map((m) => (m.content || "").toLowerCase());
 
-  // 0. Identity & Name Recognition
+  // 0. Live Screen / Slide & Account Monitoring
+  const pageCtx =
+    typeof window !== "undefined" ? window.__DAS_PAGE_CONTEXT__ || {} : {};
+  if (
+    /\b(which\s*slide|what\s*slide|current\s*slide|where\s*am\s*i|what\s*screen|what\s*am\s*i\s*looking|enno\s*slide|monitor)\b/i.test(
+      text
+    )
+  ) {
+    const slideName = pageCtx?.tabTitle || pageCtx?.activeTab || "Dashboard";
+    const projName = pageCtx?.activeProject || pageCtx?.cardContext || "";
+    const userNameNow =
+      (typeof window !== "undefined" && localStorage.getItem("userName")) || "Visitor";
+    return (
+      `You are currently on ${slideName}, ${title}` +
+      (projName ? `, viewing ${projName}` : "") +
+      `. Signed in as ${userNameNow}.|||👁️ **Live Monitor (${title}):** Slide: **${slideName}**` +
+      (projName ? ` | Card/Project: **${projName}**` : "") +
+      ` | Account: **${userNameNow}** (${storedEmailNow || "guest"})`
+    );
+  }
+
+  // 0a. Identity & Name Recognition
   if (/\b(what\s*is\s*my\s*name|who\s*am\s*i|nenu\s*evaru|na\s*name\s*enti|na\s*peru\s*enti)\b/i.test(text)) {
-    if (title === "Boss" || /\b(dileep|boss)\b/i.test(text)) {
+    if (title === "Boss") {
       return (
-        `You're Dileep Bommali, Boss! The founder, chief architect, and mastermind behind Pathfinder 2.0 and DAS AI. You built this entire platform with 23 production blueprints and 3D voice agency. What are we building or testing next?` +
+        `You're Dileep Bommali, Boss! The founder, chief architect, and mastermind behind Pathfinder 2.0 and DAS AI. You built this entire platform with 28 production blueprints and 3D voice agency. What are we building or testing next?` +
         `|||👑 **Identity Confirmed:** Dileep Bommali (Boss & Pathfinder 2.0 Creator).`
       );
     }
@@ -464,11 +491,32 @@ export const getCareerAgentResponse = (
     );
   }
 
+  // 0b. Modern Builder Ecosystem (Antigravity/Cursor/Claude Code, VS Code RAG structure, Vercel/Render/Cloudflare, Image/Video AI, ChatGPT vs Gemini vs Claude)
+  if (
+    /\b(antigravity|cursor|claude\s*code|folder\s*structure|project\s*structure|vs\s*code|vscode|vercel|cloudflare|image\s*generat|video\s*generat|chatgpt|gemini\s*ai|claude\s*ai|building\s*raad|after\s*problem\s*statement)\b/i.test(
+      text
+    )
+  ) {
+    return (
+      `Here is the clear beginner-to-production roadmap, ${title}: use Antigravity or Cursor or Claude Code in VS Code with backend/ and frontend/ folders, deploy frontend on Vercel or Cloudflare and backend on Render, and match each AI model to the job.|||🛠️ **Complete Builder Guide (${title}):**\n` +
+      `- **After Problem Statement:** Create a repo -> open in **Antigravity** (full-stack multi-file autonomy), **Cursor** (fast AI VS Code edits), or **Claude Code** (terminal refactoring/debugging).\n` +
+      `- **VS Code LLM + RAG Structure:** \`backend/ (main.py, rag_pipeline.py, embeddings.py, llm_client.py, prompts.py, requirements.txt, .env)\` + \`frontend/ (src/pages/, src/components/)\` -> Ingest & chunk docs -> Embed in Qdrant/FAISS -> Retrieve Top-K -> Generate grounded answers.\n` +
+      `- **Live Hosting:** **Vercel** / **Cloudflare Pages** (React/Vite UI), **Render** (FastAPI/Node/WebSocket backend).\n` +
+      `- **Image & Video AI:** Imagen / Flux / Midjourney (images); Veo / Sora / Runway / Kling / Remotion (video).\n` +
+      `- **Models:** **ChatGPT** (general canvas/reasoning), **Gemini** (1M-2M context & multimodal), **Claude** (clean production code & debugging).`
+    );
+  }
+
   if (/\b(i\s*am\s*dileep|nenu\s*dileep|call\s*me\s*boss|i'm\s*the\s*owner|na\s*name\s*dileep)\b/i.test(text)) {
-    try {
-      if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Boss");
-    } catch { }
-    return `Welcome back, Boss! Identity confirmed as Dileep, creator of Pathfinder. All autonomous systems, 3D voice controls, and site navigation are at your command.|||👑 **Owner Identity Verified:** Addressing you as **Boss** across all voice and dashboard modules.`;
+    const storedEmail =
+      typeof window !== "undefined" ? (localStorage.getItem("userEmail") || "").toLowerCase().trim() : "";
+    if (storedEmail === "dileepbommali16@gmail.com" || title === "Boss") {
+      try {
+        if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Boss");
+      } catch { }
+      return `Welcome back, Boss! Identity confirmed as Dileep, creator of Pathfinder. All autonomous systems, 3D voice controls, and site navigation are at your command.|||👑 **Owner Identity Verified:** Addressing you as **Boss** across all voice and dashboard modules.`;
+    }
+    return `Boss Mode is locked strictly to Dileep's verified account (dileepbommali16@gmail.com), ${title}. All 3D voice, coding, and placement features remain ready to assist you!|||✨ **Verified Mode Active:** Assisting you respectfully as **${title}**.`;
   }
   if (/\b(call\s*me\s*(?:madam|mam|ma'am)|i\s*am\s*a\s*(?:girl|woman|female|lady))\b/i.test(text)) {
     try {
@@ -584,7 +632,7 @@ export const getCareerAgentResponse = (
       );
     }
     return (
-      `Pulling up the 23 production project blueprints for ${branch} now, ${title}.` +
+      `Pulling up the 28 production project blueprints for ${branch} now, ${title}.` +
       `|||📁 **Top 3 Semantic Blueprint Matches (${branch}):**\n${top3Markdown} <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}-->`
     );
   }
@@ -699,8 +747,8 @@ export const getCareerAgentResponse = (
   if (text.includes("project") || text.includes("blueprint")) {
     const firstTitle = top3Rag[0]?.title || "Distributed Asynchronous Job Queue";
     return (
-      `I ran a semantic vector search across our 23 flagship blueprints for ${branch}, ${title}, and your top match is ${firstTitle}. Check out the top 3 architectures on your screen!` +
-      `|||🚀 **Top 3 Semantic RAG Project Matches for ${branch} (${title}):**\n${top3Markdown}\n\n💡 *Say **"Open Projects"** to explore all 23 interactive blueprints!*`
+      `I ran a semantic vector search across our 28 flagship blueprints for ${branch}, ${title}, and your top match is ${firstTitle}. Check out the top 3 architectures on your screen!` +
+      `|||🚀 **Top 3 Semantic RAG Project Matches for ${branch} (${title}):**\n${top3Markdown}\n\n💡 *Say **"Open Projects"** to explore all 28 interactive blueprints!*`
     );
   }
 
@@ -714,10 +762,10 @@ export const getCareerAgentResponse = (
     text.includes("how does pathfinder work")
   ) {
     return (
-      `Pathfinder 2.0 is an autonomous AI campus placement and career intelligence platform built by Dileep, ${title}. Students use it because it predicts their exact Tier-1 placement probability using a machine learning model trained on 972 real student records, gives them 23 production-grade project blueprints, runs live AI mock interviews, builds an ATS-ready resume, and lets them control everything hands-free with me—their 3D JARVIS voice co-pilot.` +
+      `Pathfinder 2.0 is an autonomous AI campus placement and career intelligence platform built by Dileep, ${title}. Students use it because it predicts their exact Tier-1 placement probability using a machine learning model trained on 972 real student records, gives them 28 production-grade project blueprints, runs live AI mock interviews, builds an ATS-ready resume, and lets them control everything hands-free with me—their 3D JARVIS voice co-pilot.` +
       `|||🎯 **What is Pathfinder 2.0 & Why Every Engineering Student Needs It (${title}):**\n` +
       `1. **ML Placement Probability Engine:** Trained on **972 verified campus placement records (2024–2026)**.\n` +
-      `2. **23 Production Project Blueprints:** Real-world architectures (Docker, Redis, FastAPI, Kafka, RAG).\n` +
+      `2. **28 Production Project Blueprints:** Real-world architectures (Docker, Redis, FastAPI, Kafka, RAG).\n` +
       `3. **Top 3 Semantic RAG Context Retrieved:**\n${top3Markdown}`
     );
   }
@@ -737,7 +785,7 @@ export const getCareerAgentResponse = (
   // 6. Default Semantic RAG Grounded Answer
   const primaryMatch = top3Rag[0];
   return (
-    `Based on my semantic search across our 23 blueprints and 972 placement records for ${branch} at ${cgpa} CGPA, ${title}, ${primaryMatch ? primaryMatch.title : "focusing on DSA and a deployed system project"} is your highest-leverage move right now. I've displayed the top 3 matched insights on screen!` +
+    `Based on my semantic search across our 28 blueprints and 972 placement records for ${branch} at ${cgpa} CGPA, ${title}, ${primaryMatch ? primaryMatch.title : "focusing on DSA and a deployed system project"} is your highest-leverage move right now. I've displayed the top 3 matched insights on screen!` +
     `|||🧠 **Top 3 Semantic RAG Matches (${branch} • ${cgpa} CGPA):**\n${top3Markdown}`
   );
 };
