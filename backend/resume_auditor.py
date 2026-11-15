@@ -700,7 +700,7 @@ def merge_with_deterministic_audit(
         action_plan=_pick_list(getattr(ai_feedback, "action_plan", None), deterministic.action_plan),
         project_suggestions=_pick_list(getattr(ai_feedback, "project_suggestions", None), deterministic.project_suggestions),
         company_matches=ai_feedback.company_matches if getattr(ai_feedback, "company_matches", None) and len(ai_feedback.company_matches) >= 4 else deterministic.company_matches,
-        evaluation_source=(getattr(ai_feedback, "evaluation_source", "") or "").strip() or "Gemini AI + Deloitte/Big-Tech Rubric",
+        evaluation_source=(getattr(ai_feedback, "evaluation_source", "") or "").strip() or "DAS AI + Senior Hiring Manager Rubric",
         spoken_summary=(getattr(ai_feedback, "spoken_summary", "") or "").strip() or deterministic.manager_critique,
     )
 

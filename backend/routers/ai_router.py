@@ -96,12 +96,8 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
         else:
             gemini_circuit_breaker.record_failure(Exception("All LLM providers unavailable"))
         model_used = meta.get("model_used", "none")
-        if "gemini" in model_used.lower():
-            source = f"Google Gemini ({model_used})"
-        elif "openrouter" in model_used.lower():
-            source = f"OpenRouter ({model_used})"
-        elif model_used != "none":
-            source = f"Pathfinder AI ({model_used})"
+        if model_used and model_used != "none":
+            source = "DAS AI Core"
         else:
             source = "Pathfinder Intelligence Engine"
         return {
@@ -308,7 +304,7 @@ async def resume_endpoint(
             )
             if ai_result is not None:
                 ai_feedback = ai_result
-                ai_feedback.evaluation_source = f"Gemini AI ({model_name}) + Deloitte/Big-Tech Rubric"
+                ai_feedback.evaluation_source = "DAS AI + Senior Hiring Manager Rubric"
                 gemini_circuit_breaker.record_success()
             else:
                 gemini_circuit_breaker.record_failure(Exception(err_reason or "Gemini unavailable"))
@@ -593,7 +589,7 @@ def evaluate_defense_endpoint(request_body: DefenseEvaluationRequest, request: R
         "- strengths: list ONLY genuine technical points the candidate actually demonstrated (use [] if none!)\n"
         "- gaps: 2-4 specific technical omissions, inaccuracies, or unquantified claims in their answer\n"
         "- model_answer: a crisp, concrete 3-5 sentence STAR/architecture benchmark answer specifically for THIS question\n"
-        "- evaluation_source: set to 'gemini-ai'\n"
+        "- evaluation_source: set to 'DAS AI'\n"
         "- is_non_answer: false unless the text avoids answering the question"
     )
 
@@ -614,7 +610,7 @@ def evaluate_defense_endpoint(request_body: DefenseEvaluationRequest, request: R
             strengths=[s.strip() for s in (ai_result.strengths or []) if s and s.strip()][:5],
             gaps=[g.strip() for g in (ai_result.gaps or []) if g and g.strip()][:5],
             model_answer=ai_result.model_answer.strip() or (request_body.reference_answer or ""),
-            evaluation_source=f"Gemini AI ({model_name})",
+            evaluation_source="DAS AI Technical Review",
             is_non_answer=bool(ai_result.is_non_answer),
         )
 
@@ -677,7 +673,7 @@ def evaluate_interview_endpoint(request_body: InterviewEvaluationRequest, reques
         "- missing_keywords: items from Expected Core Keywords that the candidate missed or only name-dropped without explaining\n"
         "- coach_verdict: 1-2 direct honest sentences summarizing interview readiness on this question\n"
         "- model_critique: concrete feedback referencing what the candidate wrote, what was wrong/missing, and how to elevate it\n"
-        "- evaluation_source: 'gemini-ai'\n"
+        "- evaluation_source: 'DAS AI'\n"
         "- is_non_answer: false unless off-topic or abstaining"
     )
 
@@ -721,7 +717,7 @@ def evaluate_interview_endpoint(request_body: InterviewEvaluationRequest, reques
             missing_keywords=missing,
             coach_verdict=ai_result.coach_verdict.strip(),
             model_critique=ai_result.model_critique.strip(),
-            evaluation_source=f"Gemini AI ({model_name})",
+            evaluation_source="DAS AI Interview Panel",
             is_non_answer=bool(ai_result.is_non_answer),
         )
 

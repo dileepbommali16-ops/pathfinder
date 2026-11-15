@@ -196,6 +196,15 @@ if (typeof window !== "undefined" && typeof window.fetch === "function" && !wind
     try {
       const resp = await nativeFetch(input, init);
       if (resp.status === 502 || resp.status === 503 || resp.status === 504) {
+        // Preserve structured FastAPI JSON errors (e.g. 503 GitHub rate limit detail)
+        const contentType = resp.headers?.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const clone = resp.clone();
+          const data = await clone.json().catch(() => null);
+          if (data && typeof data.detail === "string") {
+            return resp;
+          }
+        }
         return handleAutonomousEdgeRequest(urlStr, init);
       }
       return resp;

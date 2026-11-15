@@ -10,7 +10,7 @@ class TestAPIEndpoints(unittest.TestCase):
         response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertIn(data.get("status"), ["healthy", "operational", "ok"])
+        self.assertIn(data.get("status"), ["healthy", "operational", "ok", "online"])
 
     def test_predict_endpoint(self):
         payload = {
@@ -216,6 +216,17 @@ class TestAPIEndpoints(unittest.TestCase):
         body = resp.text.lower()
         self.assertNotIn("puck", body)
         self.assertIn("das neural", body)
+
+    def test_skill_gap_returns_named_skills(self):
+        resp = self.client.post("/api/skill-gap", json={"cgpa": 7.8, "skills": ["Python"], "target_role": "SDE"})
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        gaps = data.get("gap_analysis") or []
+        self.assertGreater(len(gaps), 0)
+        for gap in gaps:
+            self.assertTrue((gap.get("skill") or "").strip(), f"Empty skill in gap item: {gap}")
+            self.assertGreater(float(gap.get("placement_rate", 0)), 0)
+            self.assertTrue((gap.get("recommendation") or "").strip())
 
 if __name__ == "__main__":
     unittest.main()

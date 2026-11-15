@@ -63,13 +63,15 @@ def skill_gap_endpoint(payload: Dict[str, Any] = Body(...)):
     gaps: List[Dict[str, Any]] = []
 
     for item in industry_skills:
-        skill_name = item.get("skill", "")
+        skill_name = (item.get("name") or item.get("skill") or "").strip()
+        if not skill_name:
+            continue
         if skill_name.lower() not in user_skills:
             gaps.append({
                 "skill": skill_name,
-                "importance": item.get("importance", "High"),
-                "placement_rate": item.get("placement_rate", 85.0),
-                "recommendation": f"Add verifiable {skill_name} evidence in a deployed repo."
+                "importance": item.get("priority") or item.get("importance", "High"),
+                "placement_rate": item.get("placementRateWithSkill") or item.get("placement_rate", 85.0),
+                "recommendation": item.get("actionableStep") or f"Add verifiable {skill_name} evidence in a deployed repo.",
             })
 
     return {

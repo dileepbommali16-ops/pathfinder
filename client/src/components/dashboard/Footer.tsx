@@ -105,7 +105,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                   onClick={() => { onNavigateTab("projects"); scrollToTop(); }}
                   className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
                 >
-                  23 Production Project Blueprints
+                  28 Production Project Blueprints
                 </button>
               </li>
               <li>

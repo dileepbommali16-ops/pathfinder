@@ -67,6 +67,12 @@ const NON_ANSWER_PATTERNS = [
   /\btell\s*me\s*the\s*answer\b/i,
 ];
 
+function sanitizeEvaluationSource(raw: unknown, fallback = "DAS AI"): string {
+  const val = String(raw || "").trim();
+  if (!val || /gemini|puck/i.test(val)) return fallback;
+  return val;
+}
+
 function clampScore(value: unknown): number {
   const num = Number(value);
   if (!Number.isFinite(num)) return 0;
@@ -339,7 +345,7 @@ export async function evaluateProjectDefenseAnswer(input: DefenseEvalInput): Pro
           strengths: Array.isArray(data.strengths) ? data.strengths : [],
           gaps: Array.isArray(data.gaps) ? data.gaps : [],
           modelAnswer: data.model_answer || input.referenceAnswer,
-          evaluationSource: data.evaluation_source || "Gemini AI",
+          evaluationSource: sanitizeEvaluationSource(data.evaluation_source, "DAS AI Technical Review"),
           isNonAnswer: Boolean(data.is_non_answer),
         };
       }
@@ -384,7 +390,7 @@ export async function evaluateProjectDefenseAnswer(input: DefenseEvalInput): Pro
             strengths: Array.isArray(parsed.strengths) ? parsed.strengths.map(String) : [],
             gaps: Array.isArray(parsed.gaps) ? parsed.gaps.map(String) : [],
             modelAnswer: String(parsed.model_answer || input.referenceAnswer),
-            evaluationSource: chatData.source || "Live AI",
+            evaluationSource: sanitizeEvaluationSource(chatData.source, "DAS AI Technical Review"),
             isNonAnswer: false,
           };
         }
@@ -458,7 +464,7 @@ export async function evaluateMockInterviewAnswer(input: InterviewEvalInput): Pr
           missingKeywords: Array.isArray(data.missing_keywords) ? data.missing_keywords : [],
           coachVerdict: data.coach_verdict || "",
           modelCritique: data.model_critique || input.contextHint,
-          evaluationSource: data.evaluation_source || "Gemini AI",
+          evaluationSource: sanitizeEvaluationSource(data.evaluation_source, "DAS AI Interview Panel"),
           isNonAnswer: Boolean(data.is_non_answer),
         };
       }
@@ -506,7 +512,7 @@ export async function evaluateMockInterviewAnswer(input: InterviewEvalInput): Pr
             missingKeywords: Array.isArray(parsed.missing_keywords) ? parsed.missing_keywords.map(String) : expectedKeywords,
             coachVerdict: String(parsed.coach_verdict || ""),
             modelCritique: String(parsed.model_critique || input.contextHint),
-            evaluationSource: chatData.source || "Live AI",
+            evaluationSource: sanitizeEvaluationSource(chatData.source, "DAS AI Technical Review"),
             isNonAnswer: false,
           };
         }

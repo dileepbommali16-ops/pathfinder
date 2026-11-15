@@ -2297,7 +2297,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                       {
                         tab: "projects" as TabId,
                         title: "4. Project Blueprints",
-                        desc: "23 production architectures & codebase specs to replace weak mini-apps.",
+                        desc: "28 production architectures & codebase specs to replace weak mini-apps.",
                         icon: Lightbulb,
                       },
                       {

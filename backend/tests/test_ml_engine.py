@@ -11,18 +11,32 @@ class TestMLEngine(unittest.TestCase):
         self.assertIn("coding_score", features)
 
     def test_predict_placement_high_caliber(self):
-        profile = StudentProfile(
+        verified_profile = StudentProfile(
             cgpa=9.2,
             branch="CSE",
             backlogs=0,
             internships=2,
             communication=9.0,
-            coding=9.0
+            coding=9.0,
+            github_url="https://github.com/torvalds",
+            leetcode_url="https://leetcode.com/u/demo",
         )
-        result = predict_placement(profile)
-        self.assertGreaterEqual(result.chance, 65.0)
-        self.assertEqual(result.tone, "strong")
-        self.assertIsNotNone(result.label)
+        verified_result = predict_placement(verified_profile)
+        self.assertGreaterEqual(verified_result.chance, 76.0)
+        self.assertEqual(verified_result.tone, "strong")
+        self.assertIsNotNone(verified_result.label)
+
+        unverified_profile = StudentProfile(
+            cgpa=9.2,
+            branch="CSE",
+            backlogs=0,
+            internships=2,
+            communication=9.0,
+            coding=9.0,
+        )
+        unverified_result = predict_placement(unverified_profile)
+        self.assertLessEqual(unverified_result.chance, 74.0)
+        self.assertEqual(unverified_result.tone, "steady")
 
     def test_predict_placement_at_risk(self):
         profile = StudentProfile(
