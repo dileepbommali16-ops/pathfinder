@@ -54,6 +54,8 @@ _validated_gemini_models: Optional[List[str]] = None
 _last_gemini_diagnostic: Dict[str, Any] = {"status": "none"}
 
 DISALLOWED_MODEL_PATTERNS = (
+    "3.5",
+    "3.8",
     "-tts",
     "-image",
     "imagen",

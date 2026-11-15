@@ -147,7 +147,8 @@ output.wav
 # Native binaries
 *.exe
 **/scripts/bin/
-playwright-mcp ignored
+# Playwright MCP temporary captures
+.playwright-mcp/
 
 # Test & Model Artifacts
 .pytest_cache/
