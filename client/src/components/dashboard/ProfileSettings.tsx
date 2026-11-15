@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
 import { CollegeSelector } from "@/components/common/CollegeSelector";
-import { setHonorificPreference } from "@/lib/auth";
+import { isOwnerAccount, setHonorificPreference } from "@/lib/auth";
 
 const YEAR_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year"] as const;
 const YEAR_TO_SEM: Record<string, { sem: number; label: string }> = {
@@ -92,6 +92,15 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  const resolvedEmail =
+    formData.email ||
+    (typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "");
+  const canSelectBossMode = isOwnerAccount(resolvedEmail);
+  const safeHonorificPref =
+    !canSelectBossMode && formData.honorificPref === "Boss"
+      ? "Auto"
+      : formData.honorificPref || "Auto";
+
   useEffect(() => {
     setFormData({
       ...profile,
@@ -116,10 +125,11 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       const normalizedYear = normalizeYearOption(formData.currentYear);
       const semMeta = YEAR_TO_SEM[normalizedYear] || YEAR_TO_SEM["3rd Year"];
       if (formData.honorificPref) {
-        setHonorificPreference(formData.honorificPref, formData.email);
+        setHonorificPreference(safeHonorificPref, resolvedEmail);
       }
       const updated: StudentProfileState = {
         ...formData,
+        honorificPref: safeHonorificPref,
         currentYear: normalizedYear,
         currentSemester: formData.currentSemester || semMeta.sem,
         yearSemester: semMeta.label,
@@ -553,18 +563,23 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               <label className="text-xs font-semibold text-[#94a3b8]">AI Assistant Addressing Mode</label>
               <select
                 id="settings-honorific-mode"
-                value={formData.honorificPref || "Auto"}
+                value={safeHonorificPref}
                 onChange={(e) => {
-                  const val = e.target.value as "Auto" | "Madam" | "Sir" | "Boss";
+                  const rawVal = e.target.value as "Auto" | "Madam" | "Sir" | "Boss";
+                  const val = !canSelectBossMode && rawVal === "Boss" ? "Auto" : rawVal;
                   setFormData({ ...formData, honorificPref: val });
-                  setHonorificPreference(val, formData.email);
+                  setHonorificPreference(val, resolvedEmail);
                 }}
                 className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               >
-                <option value="Auto">Auto (Smart Name Detection — Madam / Sir / Boss)</option>
+                <option value="Auto">
+                  {canSelectBossMode
+                    ? "Auto (Smart Name Detection — Madam / Sir / Boss)"
+                    : "Auto (Smart Name Detection — Madam / Sir)"}
+                </option>
                 <option value="Madam">Always address me as Madam</option>
                 <option value="Sir">Always address me as Sir</option>
-                <option value="Boss">Boss Mode (Creator)</option>
+                {canSelectBossMode && <option value="Boss">Boss Mode (Creator)</option>}
               </select>
             </div>
           </div>

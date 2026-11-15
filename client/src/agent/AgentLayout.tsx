@@ -228,6 +228,13 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     if (dasSocket.isConnected) return;
     const activeRole = getHonorificKey();
     setRole(activeRole);
+    setTranscript((prev) =>
+      prev === "Hello Sir, what can I help you with today?" ||
+      prev === "Hello Madam, what can I help you with today?" ||
+      prev === "Hi Boss! What's up?"
+        ? getInitialGreeting(activeRole)
+        : prev
+    );
     dasSocket.connect(
       activeRole,
       (text: string) => setTranscript(text),
@@ -993,7 +1000,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 backgroundColor: "#2b2024",
                 borderColor: "#2b2024",
               }}
-              title="Click to switch identity mode: Boss Mode / Sir Mode / Madam Mode"
+              title={
+                isOwnerAccount(typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "")
+                  ? "Click to switch identity mode: Boss Mode / Sir Mode / Madam Mode"
+                  : "Click to switch addressing mode: Sir Mode / Madam Mode"
+              }
             >
               <span>
                 {role === "boss"
