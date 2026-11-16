@@ -80,7 +80,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
   const persistCompleted = (next: Record<number, boolean>) => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(next));
-    } catch {}
+    } catch { }
   };
 
   const toggleWeek = (index: number) => {
@@ -189,19 +189,17 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
               type="button"
               onClick={() => toggleWeek(index)}
               aria-pressed={isDone}
-              className={`group w-full text-left flex cursor-pointer items-start gap-4 rounded-2xl border p-4.5 transition-all sm:p-5 ${
-                isDone
-                  ? "border-[#7c3aed]/40 bg-[#7c3aed]/10 text-[#f8fafc] shadow-[0_4px_20px_rgba(124, 58, 237,0.1)]"
-                  : "border-white/[0.08] bg-[#0a0b10] text-[#f8fafc] hover:border-[#7c3aed]/40 hover:bg-[#11131c] hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
-              }`}
+              className={`group w-full text-left flex cursor-pointer items-start gap-4 rounded-2xl border p-4.5 transition-all sm:p-5 ${isDone
+                ? "border-[#7c3aed]/40 bg-[#7c3aed]/10 text-[#f8fafc] shadow-[0_4px_20px_rgba(124, 58, 237,0.1)]"
+                : "border-white/[0.08] bg-[#0a0b10] text-[#f8fafc] hover:border-[#7c3aed]/40 hover:bg-[#11131c] hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
+                }`}
             >
               {/* Checkbox Visual Indicator */}
               <span
-                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all ${
-                  isDone
-                    ? "border-[#7c3aed] bg-[#7c3aed] text-white"
-                    : "border-white/[0.08] bg-[#11131c] text-transparent group-hover:border-[#7c3aed]/50"
-                }`}
+                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all ${isDone
+                  ? "border-[#7c3aed] bg-[#7c3aed] text-white"
+                  : "border-white/[0.08] bg-[#11131c] text-transparent group-hover:border-[#7c3aed]/50"
+                  }`}
               >
                 <CheckCircle className="h-4 w-4" />
               </span>
