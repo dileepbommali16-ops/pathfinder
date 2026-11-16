@@ -182,7 +182,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             merged.fullName = pickCandidateFullName(merged.fullName, initialProfile.fullName);
             return merged;
           }
-        } catch {}
+        } catch { }
       }
     }
     return {
@@ -217,7 +217,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
           ) {
             return parsed.wizardStep;
           }
-        } catch {}
+        } catch { }
       }
     }
     return 1;
@@ -566,13 +566,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     if (s.num <= step) setStep(s.num);
                   }}
                   disabled={s.num > step}
-                  className={`flex items-center justify-center gap-1.5 rounded-xl border p-2 text-left transition-all ${
-                    isCurrent
-                      ? "border-white/30 bg-white/15 text-white shadow-[0_0_15px_rgba(255,255,255,0.15)]"
-                      : isPast
+                  className={`flex items-center justify-center gap-1.5 rounded-xl border p-2 text-left transition-all ${isCurrent
+                    ? "border-white/30 bg-white/15 text-white shadow-[0_0_15px_rgba(255,255,255,0.15)]"
+                    : isPast
                       ? "border-white/10 bg-white/[0.04] text-zinc-300 hover:bg-white/[0.08]"
                       : "border-transparent text-zinc-600 cursor-not-allowed"
-                  }`}
+                    }`}
                 >
                   <Icon className="h-3.5 w-3.5 flex-shrink-0" />
                   <span className="hidden sm:inline text-xs font-semibold truncate">{s.label}</span>
@@ -1034,11 +1033,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         key={s}
                         type="button"
                         onClick={() => handleToggleSkill(s)}
-                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
-                          isSelected
-                            ? "border-[#ffffff]/40 bg-[#ffffff]/10 text-[#ffffff] shadow-[0_0_12px_rgba(241, 245, 249,0.2)]"
-                            : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
-                        }`}
+                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${isSelected
+                          ? "border-[#ffffff]/40 bg-[#ffffff]/10 text-[#ffffff] shadow-[0_0_12px_rgba(241, 245, 249,0.2)]"
+                          : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
+                          }`}
                       >
                         {isSelected && <Check className="h-3 w-3 text-[#ffffff]" />}
                         <span>{s}</span>
@@ -1092,11 +1090,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         key={lang}
                         type="button"
                         onClick={() => handleToggleLanguage(lang)}
-                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
-                          isSelected
-                            ? "border-[#ffffff]/40 bg-[#ffffff]/10 text-[#ffffff]"
-                            : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
-                        }`}
+                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${isSelected
+                          ? "border-[#ffffff]/40 bg-[#ffffff]/10 text-[#ffffff]"
+                          : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
+                          }`}
                       >
                         {isSelected && <Check className="h-3 w-3 text-[#ffffff]" />}
                         <span>{lang}</span>
@@ -1119,11 +1116,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         key={tool}
                         type="button"
                         onClick={() => handleToggleTool(tool)}
-                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
-                          isSelected
-                            ? "border-[#ffffff]/40 bg-[#ffffff]/10 text-[#ffffff]"
-                            : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
-                        }`}
+                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${isSelected
+                          ? "border-[#ffffff]/40 bg-[#ffffff]/10 text-[#ffffff]"
+                          : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
+                          }`}
                       >
                         {isSelected && <Check className="h-3 w-3 text-[#ffffff]" />}
                         <span>{tool}</span>
@@ -1264,11 +1260,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                             }));
                           }
                         }}
-                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
-                          isSelected
-                            ? "border-[#ffffff]/40 bg-[#ffffff]/10 text-[#ffffff] shadow-sm"
-                            : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
-                        }`}
+                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${isSelected
+                          ? "border-[#ffffff]/40 bg-[#ffffff]/10 text-[#ffffff] shadow-sm"
+                          : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
+                          }`}
                       >
                         {isSelected && <Check className="h-3 w-3 text-[#ffffff]" />}
                         <span>{cert}</span>
@@ -1415,11 +1410,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                             targetTier: r.tier
                           })
                         }
-                        className={`rounded-2xl border p-4 text-left transition-all ${
-                          isSelected
-                            ? "border-[#ffffff]/40 bg-[#ffffff]/10 shadow-[0_0_18px_rgba(241, 245, 249,0.2)]"
-                            : "border-white/10 bg-white/[0.02] hover:bg-white/[0.06]"
-                        }`}
+                        className={`rounded-2xl border p-4 text-left transition-all ${isSelected
+                          ? "border-[#ffffff]/40 bg-[#ffffff]/10 shadow-[0_0_18px_rgba(241, 245, 249,0.2)]"
+                          : "border-white/10 bg-white/[0.02] hover:bg-white/[0.06]"
+                          }`}
                       >
                         <div className="flex items-start justify-between">
                           <span className="text-sm font-bold text-white">{r.title}</span>
@@ -1697,11 +1691,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             id="btn-wizard-back"
             onClick={handleBack}
             disabled={step === 1 || isSubmitting}
-            className={`flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all ${
-              step === 1 || isSubmitting
-                ? "border-transparent text-zinc-600 cursor-not-allowed"
-                : "border-white/10 bg-white/[0.04] text-zinc-300 hover:bg-white/[0.08] active:scale-95 cursor-pointer"
-            }`}
+            className={`flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all ${step === 1 || isSubmitting
+              ? "border-transparent text-zinc-600 cursor-not-allowed"
+              : "border-white/10 bg-white/[0.04] text-zinc-300 hover:bg-white/[0.08] active:scale-95 cursor-pointer"
+              }`}
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Back</span>
@@ -1713,11 +1706,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               id="btn-wizard-next"
               onClick={handleNext}
               disabled={!stepValidation.isValid || isSubmitting}
-              className={`flex items-center gap-1.5 rounded-xl px-6 py-2.5 text-xs font-bold transition-all ${
-                stepValidation.isValid && !isSubmitting
-                  ? "bg-white text-zinc-950 shadow-lg shadow-white/20 hover:bg-zinc-200 active:scale-95 cursor-pointer"
-                  : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-              }`}
+              className={`flex items-center gap-1.5 rounded-xl px-6 py-2.5 text-xs font-bold transition-all ${stepValidation.isValid && !isSubmitting
+                ? "bg-white text-zinc-950 shadow-lg shadow-white/20 hover:bg-zinc-200 active:scale-95 cursor-pointer"
+                : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                }`}
             >
               <span>Next: {stepsList[step].label}</span>
               <ArrowRight className="h-3.5 w-3.5" />
