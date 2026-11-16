@@ -14,6 +14,7 @@ from backend.config import get_settings
 from backend.cache import cache
 from backend.reliability import gemini_circuit_breaker
 from backend.database import DB_PATH, get_db_connection
+from backend.supabase_store import is_cloud_db_configured
 from backend.data_service import get_placement_df
 from backend.gemini_engine import get_last_gemini_diagnostic, get_gemini_models
 
@@ -45,6 +46,7 @@ def full_health_check():
     gemini_configured = bool(gemini_key and len(gemini_key) > 5)
 
     sqlite_ok = DB_PATH.exists()
+    cloud_db_ok = is_cloud_db_configured()
 
     return {
         "status": "online" if dataset_ok else "degraded",
@@ -61,7 +63,7 @@ def full_health_check():
         },
         "mysql": {
             "status": "connected" if "mysql" in str(settings.database_url or "").lower() else "standalone_mode",
-            "configured": bool(settings.database_url or settings.mysql_url)
+            "configured": bool(settings.mysql_url) or ("mysql" in str(settings.database_url or "").lower())
         },
         "mongodb": {
             "status": "connected" if settings.mongodb_uri else "standalone_mode",
@@ -71,6 +73,12 @@ def full_health_check():
             "status": "ready" if sqlite_ok else "initializing",
             "engine": "sqlite_wal",
             "connected": sqlite_ok
+        },
+        "database_cloud": {
+            "status": "connected" if cloud_db_ok else "standalone_mode",
+            "engine": "supabase_postgres_pgvector",
+            "configured": cloud_db_ok,
+            "pgvector_rag": cloud_db_ok
         },
         "dataset": {
             "status": "ready" if dataset_ok else "missing",

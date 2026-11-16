@@ -5,12 +5,12 @@ Handles storage and time-series retrieval for student readiness audit snapshots.
 
 import time
 from typing import List, Dict, Any
-from backend.database import get_db_connection
+from backend.database import save_user_readiness_history, get_user_readiness_history
 from backend.logging_config import logger
 
 
 class HistoryRepository:
-    """Repository handling assessment history and progression tracking."""
+    """Repository handling assessment history and progression tracking across SQLite & Supabase."""
 
     @staticmethod
     def add_snapshot(
@@ -25,16 +25,16 @@ class HistoryRepository:
     ) -> bool:
         """Saves a timestamped readiness assessment record."""
         start = time.perf_counter()
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO readiness_history (
-                    user_id, chance, cgpa, coding, communication,
-                    internships, backlogs, target_role, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
-            """, (user_id, chance, cgpa, coding, communication, internships, backlogs, target_role))
-            conn.commit()
-
+        save_user_readiness_history(
+            user_id=user_id,
+            chance=chance,
+            cgpa=cgpa,
+            coding=coding,
+            communication=communication,
+            internships=internships,
+            backlogs=backlogs,
+            target_role=target_role,
+        )
         elapsed_ms = (time.perf_counter() - start) * 1000.0
         if elapsed_ms > 50.0:
             logger.warning(f"[SLOW QUERY] HistoryRepository.add_snapshot took {elapsed_ms:.2f}ms")
@@ -44,20 +44,8 @@ class HistoryRepository:
     def get_user_history(user_id: str, limit: int = 30) -> List[Dict[str, Any]]:
         """Retrieves chronological progression history for a candidate."""
         start = time.perf_counter()
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, user_id, chance, cgpa, coding, communication,
-                       internships, backlogs, target_role, created_at
-                FROM readiness_history
-                WHERE user_id = ?
-                ORDER BY created_at DESC
-                LIMIT ?;
-            """, (user_id, limit))
-            rows = cursor.fetchall()
-
+        rows = get_user_readiness_history(user_id, limit=limit)
         elapsed_ms = (time.perf_counter() - start) * 1000.0
         if elapsed_ms > 50.0:
             logger.warning(f"[SLOW QUERY] HistoryRepository.get_user_history took {elapsed_ms:.2f}ms")
-
-        return [dict(row) for row in rows]
+        return list(reversed(rows))

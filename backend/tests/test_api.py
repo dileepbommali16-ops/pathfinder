@@ -294,5 +294,34 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(data.get("count"), 3)
         self.assertEqual(len(data.get("results", [])), 3)
 
+    def test_supabase_cloud_hydration_and_health_status(self):
+        from unittest.mock import patch
+        from backend.database import get_user_profile_by_id, delete_user_profile
+
+        fake_uid = "usr_cloud_hydrate_test"
+        delete_user_profile(fake_uid)
+        cloud_payload = {
+            "user_id": fake_uid,
+            "email": "cloud.hydrate@example.com",
+            "full_name": "Cloud Student",
+            "branch": "CSE",
+            "cgpa": 9.2,
+            "onboarding_completed": True,
+        }
+        with patch("backend.database.cloud_get_profile_by_id", return_value=cloud_payload) as mock_get:
+            loaded = get_user_profile_by_id(fake_uid)
+            self.assertIsNotNone(loaded)
+            self.assertEqual(loaded["cgpa"], 9.2)
+            mock_get.assert_called_once_with(fake_uid)
+            # Second read hits local SQLite cache without repeating cloud query
+            cached = get_user_profile_by_id(fake_uid)
+            self.assertEqual(cached["cgpa"], 9.2)
+            mock_get.assert_called_once()
+        delete_user_profile(fake_uid)
+
+        health = self.client.get("/api/health").json()
+        self.assertIn("database_cloud", health)
+        self.assertEqual(health["database_cloud"]["engine"], "supabase_postgres_pgvector")
+
 if __name__ == "__main__":
     unittest.main()

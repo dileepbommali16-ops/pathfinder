@@ -16,6 +16,17 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
 
+from backend.supabase_store import (
+    cloud_upsert_profile,
+    cloud_get_profile_by_id,
+    cloud_get_profile_by_identifier,
+    cloud_delete_profile,
+    cloud_add_readiness_snapshot,
+    cloud_get_readiness_history,
+    cloud_get_student_memory,
+    cloud_save_student_memory,
+)
+
 logger = logging.getLogger("pathfinder.database")
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -248,9 +259,9 @@ def seed_demo_candidate_profile():
         }
     ]
     for p in demo_profiles:
-        save_user_profile(p["user_id"], p)
+        save_user_profile(p["user_id"], p, sync_cloud=False)
         if p.get("email"):
-            save_user_profile(p["email"], p)
+            save_user_profile(p["email"], p, sync_cloud=False)
 
 
 
@@ -318,7 +329,7 @@ def migrate_legacy_profiles_if_present():
 
 
 def get_user_profile_by_id(user_id: str) -> Optional[Dict[str, Any]]:
-    """Fetches a profile by user_id from the indexed SQL table."""
+    """Fetches a profile by user_id from SQLite cache or hydrates from Supabase cloud DB."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT profile_data FROM user_profiles WHERE user_id = ? LIMIT 1;", (user_id,))
@@ -328,24 +339,37 @@ def get_user_profile_by_id(user_id: str) -> Optional[Dict[str, Any]]:
                 return json.loads(row[0])
             except Exception:
                 return None
+
+    cloud_prof = cloud_get_profile_by_id(user_id)
+    if cloud_prof:
+        save_user_profile(user_id, cloud_prof, sync_cloud=False)
+        return cloud_prof
     return None
 
 
 def get_user_profile_by_email_or_username(identifier: str) -> Optional[Dict[str, Any]]:
-    """Look up profile by email, username, or full_name."""
+    """Look up profile by email, username, or full_name (case-insensitive) with Supabase cloud fallback."""
+    clean = (identifier or "").strip()
+    low = clean.lower()
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             SELECT profile_data FROM user_profiles 
-            WHERE email = ? OR username = ? OR full_name = ? 
+            WHERE LOWER(email) = ? OR LOWER(username) = ? OR LOWER(full_name) = ? OR user_id = ?
             ORDER BY updated_at DESC LIMIT 1;
-        """, (identifier, identifier, identifier))
+        """, (low, low, low, clean))
         row = cursor.fetchone()
         if row and row[0]:
             try:
                 return json.loads(row[0])
             except Exception:
                 return None
+
+    cloud_prof = cloud_get_profile_by_identifier(clean)
+    if cloud_prof:
+        target_uid = cloud_prof.get("user_id") or clean
+        save_user_profile(target_uid, cloud_prof, sync_cloud=False)
+        return cloud_prof
     return None
 
 
@@ -368,8 +392,8 @@ def _execute_serialized_write(write_fn):
     return None
 
 
-def save_user_profile(user_id: str, profile_dict: Dict[str, Any]) -> bool:
-    """Inserts or updates a student profile in the persistent database (serialized + retry-safe)."""
+def save_user_profile(user_id: str, profile_dict: Dict[str, Any], sync_cloud: bool = True) -> bool:
+    """Inserts or updates a student profile in SQLite WAL and syncs to Supabase Postgres."""
     now = datetime.utcnow().isoformat()
     profile_dict["user_id"] = user_id
     profile_dict["updated_at"] = now
@@ -410,7 +434,10 @@ def save_user_profile(user_id: str, profile_dict: Dict[str, Any]) -> bool:
         conn.commit()
         return True
 
-    return bool(_execute_serialized_write(_op))
+    saved_local = bool(_execute_serialized_write(_op))
+    if saved_local and sync_cloud:
+        cloud_upsert_profile(user_id, profile_dict)
+    return saved_local
 
 
 def delete_user_profile(user_id: str) -> bool:
@@ -421,7 +448,9 @@ def delete_user_profile(user_id: str) -> bool:
         conn.commit()
         return cursor.rowcount > 0
 
-    return bool(_execute_serialized_write(_op))
+    deleted_local = bool(_execute_serialized_write(_op))
+    deleted_cloud = cloud_delete_profile(user_id)
+    return deleted_local or deleted_cloud
 
 
 def query_cohort_paginated(
@@ -531,11 +560,22 @@ def save_user_readiness_history(
         conn.commit()
         return cursor.lastrowid or 1
 
-    return int(_execute_serialized_write(_op) or 1)
+    row_id = int(_execute_serialized_write(_op) or 1)
+    cloud_add_readiness_snapshot(
+        user_id=user_id,
+        chance=float(chance),
+        cgpa=float(cgpa),
+        coding=float(coding),
+        communication=float(communication),
+        internships=int(internships),
+        backlogs=int(backlogs),
+        target_role=target_role or "Software Engineer",
+    )
+    return row_id
 
 
 def get_user_readiness_history(user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
-    """Retrieves chronological readiness progression snapshots for a student."""
+    """Retrieves chronological readiness progression snapshots from SQLite or Supabase cloud DB."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -546,11 +586,15 @@ def get_user_readiness_history(user_id: str, limit: int = 50) -> List[Dict[str, 
             LIMIT ?;
         """, (user_id, limit))
         rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+        if rows:
+            return [dict(row) for row in rows]
+
+    cloud_rows = cloud_get_readiness_history(user_id, limit=limit)
+    return cloud_rows or []
 
 
 def get_student_memory(user_id: str) -> Dict[str, Any]:
-    """Retrieves long-term lightweight conversational memory for a student from SQLite."""
+    """Retrieves long-term conversational memory from SQLite cache or Supabase cloud DB."""
     clean_id = user_id or "default_student"
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -559,23 +603,28 @@ def get_student_memory(user_id: str) -> Dict[str, Any]:
             (clean_id,)
         )
         row = cursor.fetchone()
-        if not row:
+        if row:
             return {
-                "user_id": clean_id,
-                "goals": ["Software Development Engineer", "Product Tier 1"],
-                "weak_areas": ["Dynamic Programming", "System Design"],
-                "topics": ["DSA Practice", "Resume Feedback"],
-                "last_summary": "Initial candidate profile established.",
-                "last_session_at": datetime.now().strftime("%B %d, %Y")
+                "user_id": row["user_id"],
+                "goals": json.loads(row["goals"]) if row["goals"] else [],
+                "weak_areas": json.loads(row["weak_areas"]) if row["weak_areas"] else [],
+                "topics": json.loads(row["topics"]) if row["topics"] else [],
+                "last_summary": row["last_summary"] or "",
+                "last_session_at": str(row["last_session_at"])
             }
-        return {
-            "user_id": row["user_id"],
-            "goals": json.loads(row["goals"]) if row["goals"] else [],
-            "weak_areas": json.loads(row["weak_areas"]) if row["weak_areas"] else [],
-            "topics": json.loads(row["topics"]) if row["topics"] else [],
-            "last_summary": row["last_summary"] or "",
-            "last_session_at": str(row["last_session_at"])
-        }
+
+    cloud_mem = cloud_get_student_memory(clean_id)
+    if cloud_mem:
+        return cloud_mem
+
+    return {
+        "user_id": clean_id,
+        "goals": ["Software Development Engineer", "Product Tier 1"],
+        "weak_areas": ["Dynamic Programming", "System Design"],
+        "topics": ["DSA Practice", "Resume Feedback"],
+        "last_summary": "Initial candidate profile established.",
+        "last_session_at": datetime.now().strftime("%B %d, %Y")
+    }
 
 
 def save_student_memory(
@@ -585,7 +634,7 @@ def save_student_memory(
     topics: Optional[List[str]] = None,
     last_summary: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Saves and updates lightweight conversational memory for a student in SQLite."""
+    """Saves and updates conversational memory in SQLite WAL and Supabase Postgres."""
     clean_id = user_id or "default_student"
     existing = get_student_memory(clean_id)
     new_goals = goals if goals is not None else existing.get("goals", [])
@@ -615,6 +664,7 @@ def save_student_memory(
         conn.commit()
 
     _execute_serialized_write(_op)
+    cloud_save_student_memory(clean_id, new_goals, new_weak_areas, new_topics, new_summary)
     return get_student_memory(clean_id)
 
 
