@@ -1001,7 +1001,8 @@ def chat_with_mentor(
     with token-budgeted knowledge, candidate profile grounding, and tool iteration caps.
     """
     t_start = time.perf_counter()
-    api_key = os.getenv("GEMINI_API_KEY", "").strip() or get_active_gemini_key()
+    raw_env_key = os.getenv("GEMINI_API_KEY")
+    api_key = get_active_gemini_key() if raw_env_key is None else raw_env_key.strip()
     clean_msg = message.strip() if message else ""
 
     if not clean_msg:
@@ -1116,8 +1117,8 @@ def chat_with_mentor(
                 if http_err.code in (400, 404):
                     evict_gemini_model(model)
                 elif http_err.code == 429:
-                    logger.warning(f"[Gemini Engine] Gemini quota exhausted (HTTP 429). Switching immediately to domain knowledge engine.")
-                    break
+                    logger.warning(f"[Gemini Engine] Model '{model}' rate-limited (HTTP 429). Deprioritizing and trying next model.")
+                    deprioritize_gemini_model(model)
                 elif http_err.code == 503:
                     deprioritize_gemini_model(model)
                 continue
