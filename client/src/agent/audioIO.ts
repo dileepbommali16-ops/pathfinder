@@ -6,6 +6,13 @@
  * - Web Audio API AnalyserNode (`speaker.level()`) so the 3D Avatar mouth moves at 60 FPS in sync with speech.
  */
 
+import {
+  analyzeAcousticFrame,
+  buildVisemeTimeline,
+  type VisemeTimeline,
+  type VisemeWeights,
+} from "./viseme";
+
 export async function fetchDeepgramMp3(
   _text: string,
   _token?: string | null
@@ -33,6 +40,12 @@ export class Speaker {
   private simInterval: any = null;
   private activeUtterance: SpeechSynthesisUtterance | null = null;
   private deferSpeakTimer: number | null = null;
+  private simTimeline: VisemeTimeline | null = null;
+  private simStartMs = 0;
+  private simEstDurationMs = 0;
+  private boundaryCharIndex = -1;
+  private boundaryAtMs = 0;
+  private synthWatchTimer: number | null = null;
 
   constructor(
     private getToken: () => string | null = () => null,
@@ -144,12 +157,12 @@ export class Speaker {
           utter.rate = 1.0;
           utter.pitch = 1.0;
           this.activeUtterance = utter;
-          utter.onstart = () => {
-            if (this.gen !== runGen) return;
-            this.activeSpeaking = true;
-            this.onState?.(true);
-            this.startLipSyncSimulation();
-          };
+          this.simTimeline = buildVisemeTimeline(text);
+          this.simEstDurationMs = Math.max(900, (text.length / 13.5) * 1000);
+          this.simStartMs = typeof performance !== "undefined" ? performance.now() : Date.now();
+          this.boundaryCharIndex = -1;
+          this.boundaryAtMs = this.simStartMs;
+
           const finish = () => {
             if (this.activeUtterance === utter) {
               this.activeUtterance = null;
@@ -159,15 +172,32 @@ export class Speaker {
             this.onState?.(false);
             this.stopLipSyncSimulation();
           };
+
+          utter.onstart = () => {
+            if (this.gen !== runGen) return;
+            this.simStartMs = typeof performance !== "undefined" ? performance.now() : Date.now();
+            this.activeSpeaking = true;
+            this.onState?.(true);
+            this.startLipSyncSimulation();
+            this.startSynthWatchdog(runGen);
+          };
+          utter.onboundary = (e: SpeechSynthesisEvent) => {
+            if (this.gen !== runGen) return;
+            this.boundaryCharIndex = typeof e.charIndex === "number" ? e.charIndex : this.boundaryCharIndex;
+            this.boundaryAtMs = typeof performance !== "undefined" ? performance.now() : Date.now();
+            if (!this.activeSpeaking) {
+              this.activeSpeaking = true;
+              this.onState?.(true);
+              this.startLipSyncSimulation();
+            }
+          };
           utter.onend = finish;
           utter.onerror = finish;
           try {
             window.speechSynthesis.resume?.();
           } catch {}
           window.speechSynthesis.speak(utter);
-          this.activeSpeaking = true;
-          this.onState?.(true);
-          this.startLipSyncSimulation();
+          this.startSynthWatchdog(runGen);
         } catch {}
       };
 
@@ -182,14 +212,55 @@ export class Speaker {
     }
   }
 
+  private startSynthWatchdog(runGen: number) {
+    if (this.synthWatchTimer !== null) {
+      window.clearInterval(this.synthWatchTimer);
+      this.synthWatchTimer = null;
+    }
+    const launchedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+    this.synthWatchTimer = window.setInterval(() => {
+      if (this.gen !== runGen) {
+        if (this.synthWatchTimer !== null) {
+          window.clearInterval(this.synthWatchTimer);
+          this.synthWatchTimer = null;
+        }
+        return;
+      }
+      const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+      const synthBusy =
+        typeof window !== "undefined" &&
+        "speechSynthesis" in window &&
+        Boolean(window.speechSynthesis.speaking || window.speechSynthesis.pending);
+
+      // Sync activeSpeaking if browser began speaking without firing onstart
+      if (!this.activeSpeaking && synthBusy && window.speechSynthesis.speaking) {
+        this.simStartMs = now;
+        this.activeSpeaking = true;
+        this.onState?.(true);
+        this.startLipSyncSimulation();
+      }
+
+      // Auto-clear if Chrome dropped onend/onerror or blocked autoplay after 1.5s grace
+      const pastGrace = now - launchedAt > 900;
+      const pastMax = now - launchedAt > this.simEstDurationMs + 3000;
+      if ((pastGrace && !synthBusy) || pastMax) {
+        this.activeSpeaking = false;
+        this.activeUtterance = null;
+        this.onState?.(false);
+        this.stopLipSyncSimulation();
+      }
+    }, 120);
+  }
+
   private startLipSyncSimulation() {
-    this.stopLipSyncSimulation();
-    let tick = 0;
+    if (this.simInterval) {
+      clearInterval(this.simInterval);
+      this.simInterval = null;
+    }
     this.simInterval = setInterval(() => {
-      tick++;
-      // Natural speech rhythm with syllable cadence around 128 baseline
-      const wave = Math.abs(Math.sin(tick * 0.38) * Math.cos(tick * 0.19));
-      const simulatedVal = Math.floor(128 + wave * 75);
+      const sample = this.getSpeechViseme();
+      const amp = sample ? Math.min(1, sample.volume) : 0;
+      const simulatedVal = Math.floor(128 + amp * 76);
       for (let i = 0; i < 64; i++) {
         this.buf[i] = simulatedVal;
       }
@@ -201,7 +272,28 @@ export class Speaker {
       clearInterval(this.simInterval);
       this.simInterval = null;
     }
+    if (this.synthWatchTimer !== null) {
+      window.clearInterval(this.synthWatchTimer);
+      this.synthWatchTimer = null;
+    }
+    this.simTimeline = null;
+    this.boundaryCharIndex = -1;
     this.buf.fill(0);
+  }
+
+  getSpeechViseme(): { weights: VisemeWeights; volume: number } | null {
+    if (!this.activeSpeaking || !this.simTimeline) return null;
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    let weights: VisemeWeights;
+    if (this.boundaryCharIndex >= 0) {
+      const subProgress = Math.max(0, Math.min(0.95, (now - this.boundaryAtMs) / 260));
+      weights = this.simTimeline.sampleAtCharIndex(this.boundaryCharIndex, subProgress);
+    } else {
+      const frac = Math.max(0, Math.min(1, (now - this.simStartMs) / Math.max(400, this.simEstDurationMs)));
+      weights = this.simTimeline.sampleAtFraction(frac);
+    }
+    const openEnergy = Math.min(1, Math.max(0, weights.jawOpen * 1.45 + weights.upperUp * 0.65 + weights.stretch * 0.25));
+    return { weights, volume: openEnergy };
   }
 
   streamChunk(chunkText: string) {
@@ -782,6 +874,9 @@ class AudioEngine {
   private pendingDrain: boolean = false;
   private lastAppliedSinkId: string | null = null;
   private wholePcmSource: AudioBufferSourceNode | null = null;
+  private ttsTimeline: VisemeTimeline | null = null;
+  private ttsStartPerfMs: number = 0;
+  private ttsDurationMs: number = 0;
   private speakingListeners: Set<(speaking: boolean) => void> = new Set();
   private lastNotifiedSpeaking: boolean = false;
   private speakingEndTimer: number | null = null;
@@ -1065,29 +1160,48 @@ class AudioEngine {
   }
 
   /**
-   * Returns instantaneous syllable amplitude + vocal formant bands (F1 low, F2 mid, sibilant high)
-   * with fast time-domain RMS tracking so 3D lip-sync snaps crisply across consonants & vowels
-   * instead of averaging into a sluggish wide-open jaw hold.
+   * Returns instantaneous syllable amplitude, zero-crossing rate (ZCR), vocal formant bands,
+   * and optional audio-locked phonetic viseme weights when whole-clip text is active.
    */
   public getSpeechFormants(): {
     volume: number;
     low: number;
     mid: number;
     high: number;
+    zcr: number;
     isSpeaking: boolean;
+    viseme?: VisemeWeights | null;
   } {
-    if (!this.analyser || !this.audioCtx) {
+    const speakerFallback = () => {
+      const sv = speaker.getSpeechViseme();
+      if (sv) {
+        return {
+          volume: sv.volume,
+          low: sv.weights.pucker + sv.weights.jawOpen * 0.6,
+          mid: sv.weights.stretch + sv.weights.upperUp * 0.5,
+          high: sv.weights.funnel * 0.5 + (sv.weights.stretch > 0.3 ? 0.2 : 0),
+          zcr: 0.08,
+          isSpeaking: true,
+          viseme: sv.weights,
+        };
+      }
       const spk = speaker.level();
       if (spk <= 0.01) {
-        return { volume: 0, low: 0, mid: 0, high: 0, isSpeaking: false };
+        return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, isSpeaking: false, viseme: null };
       }
       return {
         volume: Math.min(1, spk * 1.4),
         low: spk,
         mid: spk * 0.75,
         high: spk * 0.35,
+        zcr: 0.08,
         isSpeaking: true,
+        viseme: null,
       };
+    };
+
+    if (!this.analyser || !this.audioCtx) {
+      return speakerFallback();
     }
 
     const fftSize = this.analyser.fftSize;
@@ -1099,63 +1213,37 @@ class AudioEngine {
     }
 
     this.analyser.getByteTimeDomainData(this.timeData as any);
-    let sumSq = 0;
-    for (let i = 0; i < this.timeData.length; i++) {
-      const sample = (this.timeData[i] - 128) / 128;
-      sumSq += sample * sample;
-    }
-    const rms = Math.sqrt(sumSq / this.timeData.length);
-    const activePlayback = this.isSpeaking();
-    const speakingNow = activePlayback || rms > 0.0055;
-    if (!speakingNow) {
-      const spk = speaker.level();
-      if (spk > 0.01) {
-        return {
-          volume: Math.min(1, spk * 1.4),
-          low: spk,
-          mid: spk * 0.75,
-          high: spk * 0.35,
-          isSpeaking: true,
-        };
-      }
-      return { volume: 0, low: 0, mid: 0, high: 0, isSpeaking: false };
-    }
-
-    if (rms < 0.004) {
-      if (activePlayback) {
-        return { volume: 0.075, low: 0.045, mid: 0.035, high: 0.012, isSpeaking: true };
-      }
-      const spk = speaker.level();
-      if (spk > 0.01) {
-        return {
-          volume: Math.min(1, spk * 1.4),
-          low: spk,
-          mid: spk * 0.75,
-          high: spk * 0.35,
-          isSpeaking: true,
-        };
-      }
-      return { volume: 0, low: 0, mid: 0, high: 0, isSpeaking: false };
-    }
-
     this.analyser.getByteFrequencyData(this.freqData as any);
-    const binHz = (this.audioCtx.sampleRate || 48000) / Math.max(64, fftSize);
-    const bandEnergy = (minHz: number, maxHz: number): number => {
-      const start = Math.max(1, Math.floor(minHz / binHz));
-      const end = Math.min(this.freqData.length - 1, Math.max(start, Math.ceil(maxHz / binHz)));
-      let total = 0;
-      for (let i = start; i <= end; i++) {
-        total += this.freqData[i];
+    const { rms, zcr, low, mid, high } = analyzeAcousticFrame(
+      this.timeData,
+      this.freqData,
+      this.audioCtx.sampleRate || 48000,
+      fftSize
+    );
+
+    const activePlayback = this.isSpeaking();
+    const speakingNow = activePlayback || rms > 0.0065;
+    if (!speakingNow) {
+      return speakerFallback();
+    }
+
+    // Genuine pause / silence inside an active turn -> close lips cleanly instead of holding an open mouth
+    if (rms < 0.0075) {
+      if (activePlayback) {
+        return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, isSpeaking: true, viseme: null };
       }
-      return total / ((end - start + 1) * 255);
-    };
+      return speakerFallback();
+    }
 
-    const low = bandEnergy(160, 850);
-    const mid = bandEnergy(850, 2400);
-    const high = bandEnergy(2400, 6200);
-    const volume = Math.min(1.0, Math.pow(Math.max(0.0, (rms - 0.0025) * 4.6), 0.72));
+    const volume = Math.min(1.0, Math.pow(Math.max(0.0, (rms - 0.007) * 5.2), 0.78));
+    let viseme: VisemeWeights | null = null;
+    if (this.wholePcmSource && this.ttsTimeline && this.ttsDurationMs > 0) {
+      const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
+      const frac = Math.max(0, Math.min(1, (nowPerf - this.ttsStartPerfMs) / this.ttsDurationMs));
+      viseme = this.ttsTimeline.sampleAtFraction(frac);
+    }
 
-    return { volume, low, mid, high, isSpeaking: true };
+    return { volume, low, mid, high, zcr, isSpeaking: true, viseme };
   }
 
   private decodeBase64Pcm16(base64Pcm: string): Float32Array | null {
@@ -1220,7 +1308,12 @@ class AudioEngine {
           return false;
         }
         if (data?.status === "ok" && data?.pcm_base64) {
-          const played = await this.playWholePcmBase64(data.pcm_base64, Number(data.sample_rate) || 24000);
+          const played = await this.playWholePcmBase64(
+            data.pcm_base64,
+            Number(data.sample_rate) || 24000,
+            undefined,
+            cleaned
+          );
           if (played) return true;
         }
       }
@@ -1238,6 +1331,8 @@ class AudioEngine {
   public stopWholePcmPlayback() {
     const prev = this.wholePcmSource;
     this.wholePcmSource = null;
+    this.ttsTimeline = null;
+    this.ttsDurationMs = 0;
     if (prev) {
       prev.onended = null;
       try {
@@ -1248,7 +1343,12 @@ class AudioEngine {
     this.notifySpeakingListeners();
   }
 
-  public async playWholePcmBase64(base64Pcm: string, sampleRate = 24000, onEnded?: () => void): Promise<boolean> {
+  public async playWholePcmBase64(
+    base64Pcm: string,
+    sampleRate = 24000,
+    onEnded?: () => void,
+    spokenText?: string
+  ): Promise<boolean> {
     const float32Data = this.decodeBase64Pcm16(base64Pcm);
     if (!float32Data || float32Data.length === 0) return false;
 
@@ -1285,10 +1385,15 @@ class AudioEngine {
     this.wholePcmSource = src;
 
     const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
+    this.ttsTimeline = spokenText ? buildVisemeTimeline(spokenText) : null;
+    this.ttsStartPerfMs = nowPerf;
+    this.ttsDurationMs = Math.max(120, buffer.duration * 1000);
     this.playingUntilPerfMs = nowPerf + buffer.duration * 1000;
     src.onended = () => {
       if (this.wholePcmSource === src) {
         this.wholePcmSource = null;
+        this.ttsTimeline = null;
+        this.ttsDurationMs = 0;
         this.playingUntilPerfMs = 0;
         this.notifySpeakingListeners();
         onEnded?.();
@@ -1422,6 +1527,8 @@ class AudioEngine {
     this.pendingDrain = false;
     const prevWhole = this.wholePcmSource;
     this.wholePcmSource = null;
+    this.ttsTimeline = null;
+    this.ttsDurationMs = 0;
     if (prevWhole) {
       prevWhole.onended = null;
       try {
@@ -2148,51 +2255,50 @@ export function getLiveAudioVolume(): number {
 
 /**
  * Unifies live WebAudio PCM output (Gemini Live / Puck TTS) and browser SpeechSynthesis
- * fallback into normalized 60fps vocal formants so 3D hologram lip-sync never freezes.
+ * fallback into normalized 60fps vocal formants + phonetic visemes so 3D hologram lip-sync
+ * opens, rounds, widens, and closes in exact sync with speech.
  */
-export function getUnifiedSpeechFormants(nowSec?: number): {
+export function getUnifiedSpeechFormants(_nowSec?: number): {
   volume: number;
   low: number;
   mid: number;
   high: number;
+  zcr: number;
   isSpeaking: boolean;
+  viseme?: VisemeWeights | null;
 } {
   const f = audioEngine.getSpeechFormants();
   if (f.isSpeaking && f.volume > 0.01) {
-    const shaped = Math.min(1, Math.pow(f.volume * 1.45, 0.76));
     return {
-      volume: shaped,
-      low: Math.max(f.low, shaped * 0.45),
-      mid: Math.max(f.mid, shaped * 0.40),
+      volume: f.volume,
+      low: f.low,
+      mid: f.mid,
       high: f.high,
+      zcr: f.zcr,
       isSpeaking: true,
+      viseme: f.viseme ?? null,
     };
   }
 
+  // Browser speechSynthesis fallback: return phonetic timeline viseme (not flat sine oscillation)
   const synthSpeaking =
     typeof window !== "undefined" &&
     "speechSynthesis" in window &&
     Boolean(window.speechSynthesis.speaking);
-  if (speaker.isSpeaking || synthSpeaking) {
-    const t =
-      typeof nowSec === "number"
-        ? nowSec
-        : typeof performance !== "undefined"
-        ? performance.now() * 0.001
-        : Date.now() * 0.001;
-    const rawLevel = speaker.level();
-    const syllable =
-      0.5 + 0.5 * Math.sin(t * 14.5 + Math.sin(t * 5.2) * 1.1);
-    const vowelShift = 0.5 + 0.5 * Math.sin(t * 6.3);
-    const vol = Math.min(0.92, Math.max(0.32, rawLevel * 1.85) * (0.52 + 0.48 * syllable));
-    return {
-      volume: vol,
-      low: vol * (0.55 + 0.35 * vowelShift),
-      mid: vol * (0.45 + 0.45 * (1 - vowelShift)),
-      high: vol * (0.20 + 0.35 * syllable),
-      isSpeaking: true,
-    };
+  if (speaker.isSpeaking && (synthSpeaking || speaker.getSpeechViseme() !== null)) {
+    const sv = speaker.getSpeechViseme();
+    if (sv) {
+      return {
+        volume: sv.volume,
+        low: sv.weights.pucker + sv.weights.jawOpen * 0.5,
+        mid: sv.weights.stretch + sv.weights.upperUp * 0.5,
+        high: sv.weights.funnel * 0.5 + (sv.weights.stretch > 0.3 ? 0.18 : 0),
+        zcr: 0.08,
+        isSpeaking: true,
+        viseme: sv.weights,
+      };
+    }
   }
 
-  return { volume: 0, low: 0, mid: 0, high: 0, isSpeaking: false };
+  return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, isSpeaking: false, viseme: null };
 }

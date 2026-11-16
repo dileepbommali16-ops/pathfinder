@@ -5,17 +5,20 @@ export interface HologramUniforms {
   uTime: { value: number };
   uVoice: { value: number };
   uBlink: { value: number };
+  uJawOpen: { value: number };
 }
 
 /**
  * High-resolution cyan horizontal-scanline hologram shader matched to the Sketchfab reference bust
  * while preserving Three.js r186 morph targets (#include <morphtarget_vertex>) for 3D lip-sync and blinks.
- * Uses true linear-space RGB values so SRGB output matches #5BC0DE / #00F0FF without pastel washout.
+ * Uses true linear-space RGB values so SRGB output matches #5BC0DE / #00F0FF without pastel washout,
+ * plus recessed oral cavity shading (aMouthCavity) and jaw-tracked lower teeth (aLowerTooth).
  */
 export function createHologramScanMaterial(
   sharedUniforms: HologramUniforms,
-  options?: { isTeeth?: boolean; isShoulders?: boolean }
+  options?: { isHead?: boolean; isTeeth?: boolean; isShoulders?: boolean }
 ): THREE.MeshPhongMaterial {
+  const isHead = Boolean(options?.isHead);
   const isTeeth = Boolean(options?.isTeeth);
   const isShoulders = Boolean(options?.isShoulders);
 
@@ -31,18 +34,32 @@ export function createHologramScanMaterial(
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = sharedUniforms.uTime;
     shader.uniforms.uVoice = sharedUniforms.uVoice;
+    shader.uniforms.uJawOpen = sharedUniforms.uJawOpen;
 
     shader.vertexShader = shader.vertexShader
       .replace(
         "#include <common>",
         `#include <common>
          varying vec3 vHoloWorldPos;
+         ${isHead ? "attribute float aMouthCavity;\nvarying float vMouthCavity;" : ""}
+         ${isTeeth ? "attribute float aLowerTooth;\nuniform float uJawOpen;" : ""}
          ${isShoulders ? "attribute float aBustFade;\nvarying float vBustFade;" : ""}`
       )
       .replace(
         "#include <project_vertex>",
         `#include <project_vertex>
-         vHoloWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+         vec4 holoWorld4 = modelMatrix * vec4(transformed, 1.0);
+         ${
+           isTeeth
+             ? `float jawDrop = clamp(uJawOpen, 0.0, 1.0) * aLowerTooth;
+                holoWorld4.y -= jawDrop * 0.195;
+                holoWorld4.z -= jawDrop * 0.080;
+                mvPosition = viewMatrix * holoWorld4;
+                gl_Position = projectionMatrix * mvPosition;`
+             : ""
+         }
+         vHoloWorldPos = holoWorld4.xyz;
+         ${isHead ? "vMouthCavity = aMouthCavity;" : ""}
          ${isShoulders ? "vBustFade = aBustFade;" : ""}`
       );
 
@@ -53,6 +70,7 @@ export function createHologramScanMaterial(
          uniform float uTime;
          uniform float uVoice;
          varying vec3 vHoloWorldPos;
+         ${isHead ? "varying float vMouthCavity;" : ""}
          ${isShoulders ? "varying float vBustFade;" : ""}`
       )
       .replace(
@@ -89,11 +107,17 @@ export function createHologramScanMaterial(
 
         vec3 col = mix(troughCyan * (0.55 + 0.45 * sculptedKey), cyanBody * boost, scanLine * microGrid);
         col += crestCyan * fresnel * 0.12;
-        ${isTeeth ? "col *= 0.42;" : ""}
+        ${isTeeth ? "col *= (0.14 + 0.12 * sculptedKey);" : ""}
 
         ${
-          isShoulders
+          isHead
+            ? `float cavityMask = clamp(vMouthCavity, 0.0, 1.0);
+               col *= mix(1.0, 0.035, cavityMask);
+               diffuseColor.a = mix(clamp(0.95 + scanLine * 0.05, 0.94, 1.0), 0.99, cavityMask);`
+            : isShoulders
             ? "float bustEdge = smoothstep(0.0, 0.90, vBustFade);\ncol *= bustEdge;\ndiffuseColor.a = clamp(0.96 * bustEdge, 0.0, 1.0);"
+            : isTeeth
+            ? "diffuseColor.a = 0.88;"
             : "diffuseColor.a = clamp(0.95 + scanLine * 0.05, 0.94, 1.0);"
         }
         outgoingLight = col;
