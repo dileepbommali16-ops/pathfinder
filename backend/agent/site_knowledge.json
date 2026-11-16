@@ -400,7 +400,7 @@
         "Executive Readiness Dashboard",
         "AI Mock Interview Simulator",
         "DAS AI Voice Coach (EN / TE / HI)",
-        "23 Production Project Blueprints",
+        "28 Production Project Blueprints",
         "ATS Resume Studio & Scanner",
         "STAR Architecture Defense Console",
         "Institutional Intelligence",
@@ -1256,10 +1256,10 @@
     "POST /reply",
     "POST /stream"
   ],
-  "blueprints_count": 23,
+  "blueprints_count": 28,
   "core_features": [
     "ATS Resume Studio with 3-Layer Scoring (Lexical, Semantic, ATS Parsing)",
-    "Random Forest Placement Probability Estimator with 23 domain-tailored blueprints",
+    "Random Forest Placement Probability Estimator with 28 domain-tailored blueprints",
     "Role Gap Radar & Skill Mastery Matrix",
     "12-Week Sprint Personalized Dynamic Career Roadmap",
     "Peer Cohort Benchmarking and Tier Percentiles",

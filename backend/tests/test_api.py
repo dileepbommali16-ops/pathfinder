@@ -287,5 +287,12 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertNotIn("strictly limited", fallback_reply.lower())
         self.assertNotIn("28 project blueprints", fallback_reply.lower())
 
+    def test_rag_search_endpoint_returns_results(self):
+        resp = self.client.post("/api/rag/search", json={"query": "CSE distributed cloud", "top_k": 3})
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data.get("count"), 3)
+        self.assertEqual(len(data.get("results", [])), 3)
+
 if __name__ == "__main__":
     unittest.main()

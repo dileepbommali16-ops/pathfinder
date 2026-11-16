@@ -75,7 +75,7 @@ This guide details every page, tab, modal, and interactive component in Pathfind
 - **Data used**: `data/skills.json` and `backend/data_service.py`.
 
 ### Tab 4: Flagship Portfolio Blueprints (`activeTab = "projects"`)
-- **Purpose**: End-to-end production architecture guides for 23 high-impact engineering projects.
+- **Purpose**: End-to-end production architecture guides for 28 high-impact engineering projects.
 - **What the student sees**:
   - Project grid filterable by Branch (CSE, AIML, ECE, EEE, Mech, Cyber) and Difficulty (Small, Medium, Hard).
   - Project cards featuring: Title, Domain, Architecture Flow, Recommended Tech Stack, Key Features, and Google X-Y-Z Resume Bullet point.
@@ -129,7 +129,7 @@ This guide details every page, tab, modal, and interactive component in Pathfind
 ### Tab 9: STAR Architecture Defense Simulator (`activeTab = "defense"`)
 - **Purpose**: Technical viva defense simulator testing your ability to explain complex project decisions.
 - **What the student sees**:
-  - Project selector loading any of the 23 blueprints or custom projects.
+  - Project selector loading any of the 28 blueprints or custom projects.
   - STAR methodology breakdown (Situation, Task, Action, Result).
   - High-pressure viva questions (e.g., "Why did you choose Redis over Memcached? How do you handle cache stampedes?").
   - Automated rubric score with depth and clarity feedback.

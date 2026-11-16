@@ -4,7 +4,7 @@
 Pathfinder 2.0 is an autonomous AI career intelligence and campus placement co-pilot engineered for undergraduate engineering students.
 It transforms ambiguous, stressful campus placement preparation into a transparent, data-calibrated roadmap backed by actual recruitment telemetry.
 Instead of relying on generic advice, Pathfinder analyzes each student's specific academic parameters, coding benchmarks, and portfolio projects to predict placement readiness with 88% model accuracy.
-The platform combines a calibrated Machine Learning readiness score, an interactive 6-week technical roadmap, 23 production project blueprints, an ATS resume optimizer, and an autonomous 3D voice mentor named DAS.
+The platform combines a calibrated Machine Learning readiness score, an interactive 6-week technical roadmap, 28 production project blueprints, an ATS resume optimizer, and an autonomous 3D voice mentor named DAS.
 
 ## The Real-World Problem
 Every year, over 1.5 million engineering students across India graduate, yet fewer than 20% are placed in core or product development roles that match their aspirations.
@@ -21,14 +21,14 @@ Students struggle with three crippling real-world hurdles:
 ## Why Students Should Use Pathfinder
 - **True Calibration**: Benchmarked against 972 real cohort placement records and recruitment cutoffs across 9 engineering departments.
 - **Actionable Daily Clarity**: Replaces overwhelming syllabus lists with a day-by-day 6-week sprint schedule.
-- **Defense-Ready Portfolio**: Access to 23 comprehensive project architectures complete with system design and viva defense talking points.
+- **Defense-Ready Portfolio**: Access to 28 comprehensive project architectures complete with system design and viva defense talking points.
 - **Continuous Voice AI Coaching**: DAS AI provides personalized technical guidance, viva drills, and resume audits available 24/7.
 
 ## What Students Get
 1. Calibrated Placement Probability Score (0-100%) with five core readiness vectors.
 2. Interactive What-If Simulator to calculate the exact impact of improving CGPA, internships, or coding ratings.
 3. 6-Week Structured DSA Roadmap broken down by algorithmic patterns.
-4. Curated library of 23 software, embedded, AI, and systems engineering project blueprints.
+4. Curated library of 28 software, embedded, AI, and systems engineering project blueprints.
 5. One-Page ATS Resume Studio with Google X-Y-Z metric formatting.
 6. Real-time Cohort Placement Analytics across 9 branches with salary distributions (up to 44.6 LPA).
 7. AI Mock Interview & Viva Simulator with live audio and automated scoring.
@@ -53,11 +53,11 @@ Students struggle with three crippling real-world hurdles:
 ---
 
 ## 30-Second Elevator Pitch
-"Pathfinder 2.0 is an autonomous campus placement co-pilot that replaces guesswork with real recruitment data. Trained on 972 student cohort records, it predicts your placement readiness score, maps out a tailored 6-week DSA sprint, gives you 23 production project architectures, and provides a continuous 3D AI voice coach named DAS to conduct mock technical vivas. It bridges the gap between academic textbooks and high-paying engineering careers."
+"Pathfinder 2.0 is an autonomous campus placement co-pilot that replaces guesswork with real recruitment data. Trained on 972 student cohort records, it predicts your placement readiness score, maps out a tailored 6-week DSA sprint, gives you 28 production project architectures, and provides a continuous 3D AI voice coach named DAS to conduct mock technical vivas. It bridges the gap between academic textbooks and high-paying engineering careers."
 
 ## 2-Minute Comprehensive Pitch
 "Most engineering students discover what companies actually test—system design, DSA patterns, and measurable project outcomes—during their 7th semester, when it is already too late. Pathfinder was created to solve this placement readiness crisis.
 When a student signs up, our Random Forest intelligence engine audits their academic standing, backlogs, and coding skills against actual campus recruitment telemetry from 972 alumni across 9 engineering disciplines.
 Students immediately see their calibrated placement readiness percentage and can run 'What-If' simulations to see how an internship or higher LeetCode ranking elevates their placement ceiling up to 44.6 LPA.
-Next, Pathfinder generates a 6-week sprint roadmap covering high-frequency algorithmic topics, pairs it with 23 production-grade project blueprints featuring Docker configs and architecture diagrams, and polishes their resume in our One-Page ATS Studio.
+Next, Pathfinder generates a 6-week sprint roadmap covering high-frequency algorithmic topics, pairs it with 28 production-grade project blueprints featuring Docker configs and architecture diagrams, and polishes their resume in our One-Page ATS Studio.
 Throughout this entire journey, DAS AI—an autonomous 3D voice mentor—walks with the student. DAS can navigate the website by voice, quiz the student on data structures, teach step-by-step project building, and audit resume bullet points without ever restarting or interrupting when the student switches between pages. Pathfinder turns campus placement from an anxious gamble into an engineered success."

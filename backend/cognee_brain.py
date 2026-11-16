@@ -103,7 +103,7 @@ class CogneeBrain:
     def _search_fallback_knowledge(self, query: str) -> str:
         """
         Grounding knowledge base for Pathfinder platform, slide decks, technical architecture,
-        candidate profile (CSE branch), DSA roadmaps, mock interviews, and 23 project blueprints.
+        candidate profile (CSE branch), DSA roadmaps, mock interviews, and 28 project blueprints.
         """
         q = query.lower()
         matched_chunks = []
@@ -146,7 +146,7 @@ class CogneeBrain:
         # 4. Project Blueprints
         if any(w in q for w in ["project", "blueprint", "portfolio", "build", "resume"]):
             matched_chunks.append(
-                "PATHFINDER 23 PROJECT BLUEPRINTS:\n"
+                "PATHFINDER 28 PROJECT BLUEPRINTS:\n"
                 "- Tier-1 Portfolio Blueprints across Distributed Systems, AI/ML, Cloud & DevOps:\n"
                 "  * High-Throughput Distributed Cache with LRU eviction and consistent hashing.\n"
                 "  * Real-Time Collaborative Document Editor using Operational Transformation & WebSockets.\n"
@@ -158,7 +158,7 @@ class CogneeBrain:
         if not matched_chunks:
             matched_chunks.append(
                 "PATHFINDER SYSTEM OVERVIEW:\n"
-                "Pathfinder is a comprehensive career intelligence and placement readiness platform featuring real-time AI mentoring, ML placement probability scoring across 972 cohort records, 23 production project blueprints, and the DAS 3D AI Voice Agent."
+                "Pathfinder is a comprehensive career intelligence and placement readiness platform featuring real-time AI mentoring, ML placement probability scoring across 972 cohort records, 28 production project blueprints, and the DAS 3D AI Voice Agent."
             )
 
         return "\n\n".join(matched_chunks)

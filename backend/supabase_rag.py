@@ -1,7 +1,7 @@
 """
-Pathfinder 2.0 - Supabase pgvector RAG Engine (23 Flagship Blueprints + 972 Placements)
+Pathfinder 2.0 - Supabase pgvector RAG Engine (28 Flagship Blueprints + 972 Placements)
 - Generates deterministic 384-dimensional normalized semantic embeddings for all
-  23 project blueprints and 972 verified campus placement records.
+  28 project blueprints and 972 verified campus placement records.
 - Syncs/queries Supabase `pathfinder_knowledge_embeddings` via `match_pathfinder_knowledge` RPC.
 - Provides instant (<2ms) in-memory cosine similarity fallback and enforces a strict
   < 2000 token Groq system prompt with ONLY the Top 3 semantic matches injected.
@@ -73,9 +73,9 @@ def cosine_similarity(a: List[float], b: List[float]) -> float:
 
 def build_rag_corpus(include_all_individual_records: bool = False) -> List[Dict[str, Any]]:
     """
-    Loads the 23 Flagship Project Blueprints + 972 Placement Records.
+    Loads the 28 Flagship Project Blueprints + 972 Placement Records.
     For fast semantic search, indexes:
-      - All 23 Project Blueprints
+      - All 28 Project Blueprints
       - Branch x Skill Cohort Analytical Summaries (aggregated from all 972 records)
       - Representative individual placement records (or all 972 when seeding Supabase)
     """
@@ -85,7 +85,7 @@ def build_rag_corpus(include_all_individual_records: bool = False) -> List[Dict[
 
     docs: List[Dict[str, Any]] = []
 
-    # 1. Load 23 Project Blueprints
+    # 1. Load 28 Project Blueprints
     if PROJECTS_PATH.exists():
         try:
             projects = json.loads(PROJECTS_PATH.read_text(encoding="utf-8"))
@@ -222,7 +222,7 @@ async def semantic_search_rag(
     """
     Executes vector semantic search first against Supabase `match_pathfinder_knowledge` RPC
     (when SUPABASE_URL & SUPABASE_KEY are set), with instant in-memory cosine similarity
-    fallback across the 23 blueprints and 972 placement cohort vectors.
+    fallback across the 28 blueprints and 972 placement cohort vectors.
     Returns strictly Top-K (default 3) results.
     """
     q_text = f"{query} {branch or ''}".strip()
@@ -314,7 +314,7 @@ async def build_rag_system_prompt(
     rag_lines = []
     for idx, m in enumerate(top_matches, start=1):
         rag_lines.append(f"{idx}. {m.get('content', '')}")
-    rag_block = "\n".join(rag_lines) if rag_lines else "1. Pathfinder 2.0: 972 placement records & 23 blueprints active."
+    rag_block = "\n".join(rag_lines) if rag_lines else "1. Pathfinder 2.0: 972 placement records & 28 blueprints active."
 
     template = (
         DAS_SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
@@ -343,7 +343,7 @@ async def build_rag_system_prompt(
 
 async def seed_supabase_knowledge_table() -> Dict[str, Any]:
     """
-    Seeds all 23 Project Blueprints + 972 Placement Records + Cohort Summaries
+    Seeds all 28 Project Blueprints + 972 Placement Records + Cohort Summaries
     into Supabase `pathfinder_knowledge_embeddings`.
     """
     docs = build_rag_corpus(include_all_individual_records=True)
@@ -389,4 +389,13 @@ async def seed_supabase_knowledge_table() -> Dict[str, Any]:
         "inserted": inserted,
         "total_vectors": len(docs),
     }
+
+
+async def query_semantic_rag(
+    query: str,
+    branch: Optional[str] = None,
+    top_k: int = 3,
+) -> List[Dict[str, Any]]:
+    """Backwards-compatible alias for `semantic_search_rag` used by `/api/rag/search`."""
+    return await semantic_search_rag(query=query, branch=branch, top_k=top_k)
 

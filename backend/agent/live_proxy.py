@@ -355,7 +355,7 @@ async def _lookup_factual_info_async(query: str) -> dict:
     # 2. Fallback to Gemini + Google Search grounding
     for key in get_gemini_key_candidates():
         client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
-        for fallback_model in ("gemini-flash-latest", "gemini-3.8-flash", "gemini-2.0-flash"):
+        for fallback_model in ("gemini-3.5-flash", "gemini-3.8-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"):
             try:
                 resp = await asyncio.to_thread(
                     client.models.generate_content,

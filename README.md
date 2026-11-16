@@ -36,7 +36,7 @@ Pathfinder 2.0 is a complete, unified **AI Career Operating System** designed to
 
 - **Predictive Placement Flight Controller**: An 88% precision Machine Learning engine calibrated against 972 verified campus recruitment outcomes, calculating instant placement odds, expected CTC brackets, and personalized preparation roadmaps.
 - **DAS 3D Autonomous Cybernetic Co-Pilot**: An autonomous 3D wireframe head rendered in Three.js WebGL at 60 FPS, powered by Google's **Gemini Multimodal Live WebSocket** with the **Puck** neural voice for fluid, low-latency speech, real-time procedural eye blinking, frequency-based lip-sync, and hands-free browser control.
-- **Production-Grade Flagship Blueprints**: A curated library of 23 real-world system architectures (Distributed Task Queues, Enterprise Vector RAG, High-Throughput Stream Processing, Real-Time CRDT Canvases) with architectural blueprints and resume-ready Google X-Y-Z bullet points.
+- **Production-Grade Flagship Blueprints**: A curated library of 28 real-world system architectures (Distributed Task Queues, Enterprise Vector RAG, High-Throughput Stream Processing, Real-Time CRDT Canvases) with architectural blueprints and resume-ready Google X-Y-Z bullet points.
 - **Technical Defense & Mock Interview Console**: Interactive viva defense simulators challenging students with realistic architecture trade-offs tailored to target roles (SDE-1, AI Engineer, Data Scientist, Full-Stack).
 - **1-Page Google X-Y-Z ATS Resume Studio**: Automated diagnostic scanner auditing resumes against Google's proven impact formula with single-click PDF export.
 - **Automated Institutional Sync**: Autonomous synchronization with Google Sheets for college placement cell records and Google Calendar for interview scheduling via n8n cloud workflows.
@@ -48,7 +48,7 @@ Pathfinder 2.0 is a complete, unified **AI Career Operating System** designed to
 | What Students Need | How Pathfinder 2.0 Delivers | Student Outcome |
 | :--- | :--- | :--- |
 | **Objective Placement Odds** | Random Forest ML trained on 972 real campus records | Know your realistic chances and cutoffs before applying blindly. |
-| **Industry-Grade Projects** | 23 production architectures replacing generic tutorial clones | Stand out in interviews with real system design depth. |
+| **Industry-Grade Projects** | 28 production architectures replacing generic tutorial clones | Stand out in interviews with real system design depth. |
 | **Hands-Free AI Mentorship** | DAS 3D co-pilot powered by Gemini Live & Puck voice | Practice technical viva, get advice, and navigate hands-free. |
 | **ATS-Proof Resume** | Google X-Y-Z formula scanner & single-page builder | Pass automated recruiter screening filters with zero formatting drop-off. |
 | **Campus Drive Preparation** | 6-week customized roadmap based on skill gaps | Targeted preparation focused only on high-impact weaknesses. |
@@ -65,7 +65,7 @@ Pathfinder 2.0 is a complete, unified **AI Career Operating System** designed to
 - **Audio Processing**: Web Audio API, AnalyserNode (60 FPS FFT mouth & jaw lip-sync)
 
 ### Artificial Intelligence & Voice Brain
-- **Live Voice Engine**: **Google Gemini Multimodal Live API (`gemini-2.0-flash-exp`)** via WebSocket
+- **Live Voice Engine**: **Google Gemini Multimodal Live API (`gemini-3.8-live`)** via WebSocket
 - **Voice Persona**: **Puck** neural voice (24kHz 16-bit PCM streaming)
 - **Tool Calling**: Autonomous browser DOM navigation (`navigate_ui`) & Google Workspace dispatch (`run_google_automation`)
 - **Semantic Retrieval (RAG)**: Supabase PostgreSQL + `pgvector`

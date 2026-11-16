@@ -39,7 +39,7 @@
       "title": "Flagship Portfolio Blueprints",
       "route": "/",
       "tab": "projects",
-      "purpose": "23 production-grade project architectures across all branches with folder trees and defense guides.",
+      "purpose": "28 production-grade project architectures across all branches with folder trees and defense guides.",
       "sections": [
         { "id": "project-recommender", "name": "Project Recommender Grid", "selector": "[data-das-id='project-recommender']" }
       ]

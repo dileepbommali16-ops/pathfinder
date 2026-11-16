@@ -43,7 +43,7 @@ DAS is mounted in a persistent global application shell outside individual page 
 ### 13. How does the 6-Week Roadmap work?
 It breaks down algorithmic preparation into daily milestones across 6 progressive weeks—from basic arrays and two-pointers up to advanced dynamic programming and system design.
 
-### 14. What are the 23 Project Blueprints?
+### 14. What are the 28 Project Blueprints?
 They are production-grade system architectures across software, AI, embedded IoT, core engineering, and cyber security with complete folder structures, implementation steps, and viva talking points.
 
 ### 15. How does the ATS Resume Studio work?

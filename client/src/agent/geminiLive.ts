@@ -46,7 +46,7 @@ const LIVE_MODEL =
     ? rawLive
     : "gemini-2.5-flash-native-audio-latest";
 const VOICE_NAME = "Puck";
-const TEXT_MODEL = ENV.VITE_GEMINI_TEXT_MODEL || "gemini-flash-lite-latest";
+const TEXT_MODEL = ENV.VITE_GEMINI_TEXT_MODEL || ENV.VITE_GEMINI_MODEL || "gemini-3.5-flash";
 
 type MicUi = "off" | "connecting" | "listening" | "speaking" | "thinking";
 
@@ -563,10 +563,11 @@ export class PathfinderGeminiLive {
       if (client) {
         const textCandidates = Array.from(
           new Set([
-            "gemini-3.1-flash-lite",
-            "gemini-flash-lite-latest",
+            TEXT_MODEL,
+            "gemini-3.5-flash",
+            "gemini-3.8-flash",
             "gemini-3.5-flash-lite",
-            TEXT_MODEL
+            "gemini-flash-latest",
           ].filter(Boolean) as string[])
         );
 

@@ -22,7 +22,8 @@ export const SUPABASE_URL =
 export const SUPABASE_ANON_KEY =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) || "";
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase =
+  SUPABASE_URL && SUPABASE_ANON_KEY ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 export const DAS_TOOLS = [
   {
@@ -61,7 +62,7 @@ export async function getRelevantContext(query) {
  */
 export async function askDas(userQuery, onChunk) {
   const context = await getRelevantContext(userQuery);
-  const activeRole = typeof window !== "undefined" ? getUserRole() : "Boss";
+  const activeRole = typeof window !== "undefined" ? getUserRole() : "Sir";
   const honorificRule =
     activeRole === "Boss"
       ? "Boss is Dileep Bommali. Address him warmly as Boss."
@@ -73,7 +74,7 @@ export async function askDas(userQuery, onChunk) {
 Knowledge Base (Top 3 relevant only):
 ${context}
 
-Rules: If user speaks in Telugu/Tenglish, match their language naturally with JARVIS-level intelligence and warmth. If intent is navigation, emit das:navigate:xxx`;
+Rules: Beyond Pathfinder, you also hold full general knowledge (history, Indian & regional leaders such as Vangaveeti Mohana Ranga, science, tech, culture). NEVER claim your knowledge is strictly limited to Dileep or Pathfinder, and never substitute a similar person's name for the exact name asked. If user speaks in Telugu/Tenglish, match their language naturally with JARVIS-level intelligence and warmth. If intent is navigation, emit das:navigate:xxx`;
 
   try {
     const reply = await geminiLive.sendTurn(userQuery, {
