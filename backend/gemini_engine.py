@@ -369,8 +369,10 @@ def call_gemini_rest(
         "temperature": temperature,
         "maxOutputTokens": max_output_tokens
     }
-    # Zero thinking budget eliminates reasoning latency for fast conversational response
-    if not include_thinking and any(tag in model.lower() for tag in ("thinking", "2.5", "3.", "flash-latest")):
+    # Zero thinking budget eliminates reasoning latency on thinking-capable Flash models
+    # Exclude *-lite models (e.g. gemini-3.5-flash-lite) which reject thinkingConfig with 400 INVALID_ARGUMENT
+    m_low = model.lower()
+    if not include_thinking and "lite" not in m_low and any(tag in m_low for tag in ("thinking", "2.5", "3.", "flash-latest")):
         gen_config["thinkingConfig"] = {"thinkingBudget": 0}
 
     payload = {
@@ -1058,12 +1060,12 @@ def chat_with_mentor(
     gemini_call_ms = 0.0
     model_used = "none"
 
-    # Execute with low-latency attempts across primary Gemini models (18s budget across 4 models)
+    # Execute with low-latency attempts across primary Gemini models (22s budget across 4 models)
     models_to_try = list(get_gemini_models())[:4]
     if api_key:
         for model in models_to_try:
-            if (time.perf_counter() - t_start) > 18.0:
-                logger.info("[Gemini Engine] Time budget reached (18.0s), switching to intelligent fallback.")
+            if (time.perf_counter() - t_start) > 22.0:
+                logger.info("[Gemini Engine] Time budget reached (22.0s), switching to intelligent fallback.")
                 break
 
             t_call_start = time.perf_counter()
@@ -1076,7 +1078,7 @@ def chat_with_mentor(
                     temperature=0.85,
                     max_output_tokens=600,
                     include_thinking=False,
-                    timeout_sec=9.0
+                    timeout_sec=8.0
                 )
                 call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
                 attempts_log.append({"model": model, "duration_ms": call_duration, "status": "ok" if reply else "empty"})
