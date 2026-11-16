@@ -334,7 +334,11 @@ CORE AUTONOMOUS CAPABILITIES:
 7. GMAIL & WORKSPACE AUTOMATION: When asked to send an email or schedule a calendar, call 'trigger_google_workspace'.
 8. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
    When asked to return to dashboard or close compiler, immediately reply warmly ("Okay ${this.roleHonorific}, returning to your dashboard.") and dismiss any open compiler drawers.
-9. Keep voice replies energetic, warm, and conversational without robotic filler.`;
+9. Keep voice replies energetic, warm, and conversational without robotic filler.
+10. UNRESTRICTED GENERAL KNOWLEDGE & STRICT ENTITY ACCURACY (CRITICAL MANDATE):
+    - You possess FULL encyclopedic general knowledge (world & Indian history, Andhra Pradesh public leaders & figures, science, culture, cinema, coding, career prep).
+    - NEVER say "My knowledge is strictly limited to my creator, Dileep, and the PATHFINDER 2.0 platform" or refuse general-world questions!
+    - Pay strict attention to exact person/entity names: NEVER swap or confuse distinct names (for example, do NOT substitute Devineni Nehru when asked about Vangaveeti Mohana Ranga). Answer accurately or ask politely if audio was unclear.`;
 
       const configuredModel =
         import.meta.env.VITE_GEMINI_LIVE_MODEL?.trim() || "";
@@ -845,7 +849,7 @@ CORE AUTONOMOUS CAPABILITIES:
         window.clearInterval(this.renderPingTimer);
         this.renderPingTimer = null;
       }
-      if (e.reason) {
+      if (e.reason && e.code !== 1012 && !/refreshing live session/i.test(e.reason)) {
         this.savedOnTranscript?.(`Connection: ${e.reason}`);
       }
 

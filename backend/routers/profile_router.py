@@ -140,14 +140,10 @@ def update_profile(profile: StudentProfile, user: UserSession = Depends(get_curr
     # 3. Persist to SQL Database
     save_user_profile(target_key, profile.model_dump())
 
-    # Keep memory caches synced
+    # Keep memory caches synced strictly by unique user_id / normalized email (never display name!)
     _user_profiles[target_key] = profile
     if profile.email:
-        _user_profiles[profile.email] = profile
-    if user.username and user.username != "Student Candidate":
-        _user_profiles[user.username] = profile
-    if profile.full_name:
-        _user_profiles[profile.full_name] = profile
+        _user_profiles[profile.email.strip().lower()] = profile
 
     return profile
 

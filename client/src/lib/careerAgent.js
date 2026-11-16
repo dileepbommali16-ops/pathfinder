@@ -66,8 +66,8 @@ export async function askDas(userQuery, onChunk) {
     activeRole === "Boss"
       ? "Boss is Dileep Bommali. Address him warmly as Boss."
       : activeRole === "Madam"
-      ? "The user is a respected female visitor/candidate. Always address her politely as Madam (NEVER call her Boss or Sir)."
-      : "The user is a guest/candidate. Always address them respectfully as Sir (NEVER call them Boss).";
+        ? "The user is a respected female visitor/candidate. Always address her politely as Madam (NEVER call her Boss or Sir)."
+        : "The user is a guest/candidate. Always address them respectfully as Sir (NEVER call them Boss).";
 
   const systemPrompt = `You are DAS, Pathfinder AI. ${honorificRule}
 Knowledge Base (Top 3 relevant only):
@@ -372,8 +372,8 @@ export function buildRagGeminiSystemPrompt({
     normHon === "boss" && isOwner
       ? `You are speaking with Dileep Bommali (dileepbommali16@gmail.com), your BOSS, founder, and lead architect of Pathfinder 2.0! Address him warmly, loyally, and enthusiastically as "Boss" in every reply. You know Dileep built you (DAS 3D cybernetic voice agent), built Pathfinder 2.0 with 28 production blueprints, 972 cohort placement datasets, and autonomous browser control. If he asks "what is my name", "who am I", or banters with you, proudly celebrate Dileep as your creator and mastermind!`
       : normHon === "madam" || normHon === "mam" || normHon === "ma'am"
-      ? `You are speaking with a respected female guest, recruiter, client, or student. Address her politely and respectfully as "Madam" in every reply (NEVER call her Boss or Sir). Guide her through Dileep Bommali's Pathfinder 2.0 platform with professional clarity, honest feedback, and step-by-step project building mentorship.`
-      : `You are speaking with a respected guest, recruiter, client, or student. Address them respectfully as "Sir" in every reply (NEVER call them Boss — only dileepbommali16@gmail.com is Boss). Guide them through Dileep Bommali's Pathfinder 2.0 platform with professional clarity, honest feedback, and step-by-step project building mentorship.`;
+        ? `You are speaking with a respected female guest, recruiter, client, or student. Address her politely and respectfully as "Madam" in every reply (NEVER call her Boss or Sir). Guide her through Dileep Bommali's Pathfinder 2.0 platform with professional clarity, honest feedback, and step-by-step project building mentorship.`
+        : `You are speaking with a respected guest, recruiter, client, or student. Address them respectfully as "Sir" in every reply (NEVER call them Boss — only dileepbommali16@gmail.com is Boss). Guide them through Dileep Bommali's Pathfinder 2.0 platform with professional clarity, honest feedback, and step-by-step project building mentorship.`;
 
   let prompt = `You are DAS, not a chatbot. You are JARVIS for Dileep and Pathfinder 2.0.
 IDENTITY & CREATOR: ${whoRule}
@@ -439,8 +439,8 @@ export const getCareerAgentResponse = (
     rawHon === "madam" || rawHon === "mam" || rawHon === "ma'am"
       ? "Madam"
       : rawHon === "boss" && isVerifiedOwner
-      ? "Boss"
-      : "Sir";
+        ? "Boss"
+        : "Sir";
 
   // Perform semantic search first (Top 3 results from 28 blueprints + 972 placements)
   const top3Rag = semanticSearchSync(message, profile, 3);
@@ -782,7 +782,18 @@ export const getCareerAgentResponse = (
     );
   }
 
-  // 6. Default Semantic RAG Grounded Answer
+  // 6. General-knowledge guard vs Semantic RAG Grounded Answer
+  const isCareerOrSiteQuery =
+    /(pathfinder|cgpa|backlog|branch|placement|resume|ats|interview|roadmap|blueprint|project|code|dsa|leetcode|github|skill|salary|package|company|role|rag|llm|vercel|render|antigravity|sar|internship|score)/i.test(
+      text
+    );
+  if (!isCareerOrSiteQuery && /\b(who is|who was|tell me about|what is|history of|explain)\b/i.test(text)) {
+    return (
+      `I couldn't reach the live knowledge server just now, ${title}, so I won't guess or redirect you to unrelated project blueprints for "${String(message || "").slice(0, 80)}". Reconnect briefly and ask again for an accurate real-world answer!` +
+      `|||🌐 **Live Knowledge Lookup Reconnecting (${title}):** General-world questions are fully supported alongside Pathfinder — please resend once reconnected so I can fetch verified facts without guessing.`
+    );
+  }
+
   const primaryMatch = top3Rag[0];
   return (
     `Based on my semantic search across our 28 blueprints and 972 placement records for ${branch} at ${cgpa} CGPA, ${title}, ${primaryMatch ? primaryMatch.title : "focusing on DSA and a deployed system project"} is your highest-leverage move right now. I've displayed the top 3 matched insights on screen!` +

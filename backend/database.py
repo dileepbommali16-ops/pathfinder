@@ -44,9 +44,18 @@ def _ensure_wal_once(conn: sqlite3.Connection) -> None:
         _wal_configured = True
 
 
+class _ClosingConnection(sqlite3.Connection):
+    """SQLite connection that commits/rolls back AND closes reliably on `with` exit."""
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            return super().__exit__(exc_type, exc_val, exc_tb)
+        finally:
+            self.close()
+
+
 def get_db_connection() -> sqlite3.Connection:
-    """Returns a SQLite connection configured with busy timeout, WAL (once), foreign keys, and memory caches."""
-    conn = sqlite3.connect(str(DB_PATH), timeout=30.0, check_same_thread=False)
+    """Returns a SQLite connection configured with busy timeout, WAL (once), foreign keys, and auto-close on context exit."""
+    conn = sqlite3.connect(str(DB_PATH), timeout=30.0, check_same_thread=False, factory=_ClosingConnection)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA busy_timeout = 25000;")
     _ensure_wal_once(conn)

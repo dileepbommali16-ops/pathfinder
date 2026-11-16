@@ -237,14 +237,24 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       localStorage.setItem("pathfinder_profile_draft", JSON.stringify(draft));
       setSaveIndicator("All changes saved locally");
 
-      // Debounced backend save
+      // Debounced backend save (includes Bearer token & session ID so ownership checks always pass)
       const timeout = setTimeout(() => {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (typeof window !== "undefined") {
+          const token = localStorage.getItem("pathfinder_token");
+          const sid = localStorage.getItem("pathfinder_session_id");
+          if (token) headers["Authorization"] = `Bearer ${token}`;
+          if (sid) headers["X-Session-ID"] = sid;
+        }
         fetch(`${apiBase}/api/profile`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ ...draft, onboarding_completed: false })
         })
-          .then(() => setSaveIndicator("Cloud & local sync complete"))
+          .then((res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            setSaveIndicator("Cloud & local sync complete");
+          })
           .catch(() => setSaveIndicator("Saved locally in browser"));
       }, 800);
 
@@ -381,18 +391,28 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-    const completePayload: StudentProfileState = {
+    const completePayload = {
       ...profile,
       backlogs: profile.activeBacklogs,
       onboardingCompleted: true,
-      wizardStep: 5
+      onboarding_completed: true,
+      wizardStep: 5,
+      wizard_step: 5,
     };
 
+    const reqHeaders: Record<string, string> = { "Content-Type": "application/json" };
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("pathfinder_token");
+      const sid = localStorage.getItem("pathfinder_session_id");
+      if (token) reqHeaders["Authorization"] = `Bearer ${token}`;
+      if (sid) reqHeaders["X-Session-ID"] = sid;
+    }
+
     try {
-      // 1. Persist completed profile to backend
+      // 1. Persist completed profile to backend with active session Bearer token
       const saveResp = await fetch(`${apiBase}/api/profile`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: reqHeaders,
         body: JSON.stringify(completePayload),
         signal: controller.signal
       });
@@ -400,7 +420,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       // 2. Call calculation audit endpoint
       const auditResp = await fetch(`${apiBase}/api/profile/calculate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: reqHeaders,
         body: JSON.stringify(completePayload),
         signal: controller.signal
       });

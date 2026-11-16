@@ -722,6 +722,33 @@ export default function Home({ initialTab }: HomeProps = {}) {
     isNewUser?: boolean;
     bypassOnboarding?: boolean;
   }) => {
+    // 1a. Reset cross-account caches synchronously so a previous student's state never leaks
+    setResumeFeedback(null);
+    setRoadmap(null);
+    setCohortInsight(null);
+    setAuditResult(null);
+    localStorage.removeItem("pathfinder_backend_profile");
+    try {
+      const prevDraft = JSON.parse(localStorage.getItem("pathfinder_profile_draft") || "{}");
+      if (!prevDraft?.email || prevDraft.email.toLowerCase() !== user.email.toLowerCase()) {
+        localStorage.removeItem("pathfinder_profile_draft");
+        localStorage.removeItem("pathfinder_onboarding_draft");
+      }
+    } catch {
+      localStorage.removeItem("pathfinder_profile_draft");
+      localStorage.removeItem("pathfinder_onboarding_draft");
+    }
+    const prevSidEmail = localStorage.getItem("pathfinder_session_email");
+    if (prevSidEmail && prevSidEmail.toLowerCase() !== user.email.toLowerCase()) {
+      localStorage.setItem(
+        "pathfinder_session_id",
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `pf-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+      );
+    }
+    localStorage.setItem("pathfinder_session_email", user.email.toLowerCase());
+
     // 1. Immediately persist user session synchronously to eliminate any login delay or double-clicking
     const role = handleAuthLoginDetected(user.email, user.username);
     const userObj = {
@@ -756,7 +783,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       );
     }
 
-    // 3. Background server token sync (non-blocking)
+    // 3. Synchronize server Bearer token BEFORE profile/onboarding calls to eliminate 403 ownership mismatches
     const storedToken = localStorage.getItem("pathfinder_token");
     let isOAuth = false;
     if (storedToken) {
@@ -769,39 +796,40 @@ export default function Home({ initialTab }: HomeProps = {}) {
     }
 
     if (!isOAuth) {
-      fetchWithTimeout(
-        `${API_BASE}/api/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: user.username, email: user.email }),
-        },
-        5000
-      )
-        .then(async (loginResp) => {
-          if (loginResp.ok) {
-            const authData = await loginResp.json();
-            if (authData.token) {
-              localStorage.setItem("pathfinder_token", authData.token);
-              if (authData.user) {
-                localStorage.setItem(
-                  "pathfinder_user",
-                  JSON.stringify({
-                    ...authData.user,
-                    honorific: role,
-                    is_new_user: Boolean(user.isNewUser ?? authData.is_new_user),
-                  })
-                );
-                const resolved = handleAuthLoginDetected(
-                  authData.user.email || user.email,
-                  authData.user.username || user.username
-                );
-                setUserRole(resolved);
-              }
+      // Clear any previous account's bearer token before authenticating this account
+      localStorage.removeItem("pathfinder_token");
+      try {
+        const loginResp = await fetchWithTimeout(
+          `${API_BASE}/api/auth/login`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: user.username, email: user.email }),
+          },
+          4500
+        );
+        if (loginResp.ok) {
+          const authData = await loginResp.json();
+          if (authData.token) {
+            localStorage.setItem("pathfinder_token", authData.token);
+            if (authData.user) {
+              localStorage.setItem(
+                "pathfinder_user",
+                JSON.stringify({
+                  ...authData.user,
+                  honorific: role,
+                  is_new_user: Boolean(user.isNewUser ?? authData.is_new_user),
+                })
+              );
+              const resolved = handleAuthLoginDetected(
+                authData.user.email || user.email,
+                authData.user.username || user.username
+              );
+              setUserRole(resolved);
             }
           }
-        })
-        .catch(() => {});
+        }
+      } catch { }
     }
 
     if (user.isNewUser) {
@@ -864,6 +892,87 @@ export default function Home({ initialTab }: HomeProps = {}) {
       }
     } catch { }
 
+    try {
+      const resp = await fetchWithTimeout(
+        `${API_BASE}/api/profile?email=${encodeURIComponent(user.email)}`,
+        {},
+        5000
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.branch) {
+          const restoredCodingProfiles = {
+            ...(data.coding_profiles || {}),
+            github: data.github_url ?? data.coding_profiles?.github ?? "",
+            leetcode: data.leetcode_url ?? data.coding_profiles?.leetcode ?? "",
+            linkedin: data.linkedin_url ?? data.coding_profiles?.linkedin ?? "",
+          };
+          const mappedSkills =
+            Array.isArray(data.technicalSkills) && data.technicalSkills.length > 0
+              ? data.technicalSkills
+              : Array.isArray(data.technical_skills) && data.technical_skills.length > 0
+                ? data.technical_skills
+                : Array.isArray(data.skills) && data.skills.length > 0
+                  ? data.skills
+                  : DEFAULT_STUDENT_PROFILE.technicalSkills;
+          const mappedBacklogs = data.active_backlogs ?? data.activeBacklogs ?? data.backlogs ?? 0;
+          const mappedOnboarded = Boolean(data.onboarding_completed || data.onboardingCompleted);
+          const mappedFullName =
+            pickCandidateFullName(data.fullName ?? data.full_name, user.username) || user.username;
+          const mapped: StudentProfileState = {
+            ...DEFAULT_STUDENT_PROFILE,
+            ...data,
+            email: user.email,
+            onboardingCompleted: mappedOnboarded,
+            wizardStep: data.wizard_step ?? data.wizardStep ?? 1,
+            cgpa: data.cgpa ?? 7.8,
+            backlogs: mappedBacklogs,
+            activeBacklogs: mappedBacklogs,
+            internships: data.internships ?? 1,
+            coding: data.coding ?? 7,
+            communication: data.communication ?? 7,
+            projectsCount: data.projects_count ?? data.projectsCount ?? DEFAULT_STUDENT_PROFILE.projectsCount,
+            technicalSkills: mappedSkills,
+            skills: mappedSkills,
+            certifications: Array.isArray(data.certifications)
+              ? data.certifications
+              : DEFAULT_STUDENT_PROFILE.certifications,
+            targetRole: data.target_role || data.targetRole || DEFAULT_STUDENT_PROFILE.targetRole,
+            targetTier: data.target_tier || data.targetTier || DEFAULT_STUDENT_PROFILE.targetTier,
+            branch: data.branch || DEFAULT_STUDENT_PROFILE.branch,
+            graduationYear: data.graduation_year || data.graduationYear || 2026,
+            currentYear: data.current_year || data.currentYear || DEFAULT_STUDENT_PROFILE.currentYear,
+            fullName: mappedFullName,
+            college: data.college || "",
+            course: data.course || "",
+            yearSemester: data.year_semester || data.yearSemester || "",
+            tenthPercentage: data.tenth_percentage ?? data.tenthPercentage ?? 90,
+            twelfthPercentage: data.twelfth_percentage ?? data.twelfthPercentage ?? 88,
+            percentage: data.percentage ?? 74.1,
+            githubUrl: restoredCodingProfiles.github,
+            leetcodeUrl: restoredCodingProfiles.leetcode,
+            codingProfiles: restoredCodingProfiles,
+          };
+          setProfile(mapped);
+          localStorage.setItem("pathfinder_profile_draft", JSON.stringify(mapped));
+          if (!mapped.onboardingCompleted) {
+            setIsDemoProfile(false);
+            setShowResultScreen(false);
+            setIsAuthenticated(true);
+          } else {
+            setIsDemoProfile(false);
+            setShowResultScreen(false);
+            setActiveTab("profile");
+            setIsAuthenticated(true);
+            fetchPrediction(mapped);
+          }
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not retrieve backend profile on login:", err);
+    }
+
     if (!hasLocalMatch) {
       // First-time Sign In without saved profile: open 1. Profile / Settings first
       const initialUserProfile: StudentProfileState = {
@@ -880,70 +989,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       setShowResultScreen(false);
       setActiveTab("profile");
       setIsAuthenticated(true);
-    }
-
-    try {
-      const resp = await fetchWithTimeout(
-        `${API_BASE}/api/profile?email=${encodeURIComponent(user.email)}`,
-        {},
-        45000
-      );
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data && data.branch) {
-          const restoredCodingProfiles = {
-            ...(data.coding_profiles || {}),
-            github: data.github_url ?? data.coding_profiles?.github ?? "",
-            leetcode: data.leetcode_url ?? data.coding_profiles?.leetcode ?? "",
-            linkedin: data.linkedin_url ?? data.coding_profiles?.linkedin ?? "",
-          };
-          const mapped: StudentProfileState = {
-            ...DEFAULT_STUDENT_PROFILE,
-            ...data,
-            email: user.email,
-            onboardingCompleted: data.onboarding_completed ?? false,
-            wizardStep: data.wizard_step ?? 1,
-            cgpa: data.cgpa ?? 7.8,
-            backlogs: data.backlogs ?? 0,
-            internships: data.internships ?? 1,
-            coding: data.coding ?? 7,
-            communication: data.communication ?? 7,
-            targetRole: data.target_role || DEFAULT_STUDENT_PROFILE.targetRole,
-            targetTier: data.target_tier || DEFAULT_STUDENT_PROFILE.targetTier,
-            branch: data.branch || DEFAULT_STUDENT_PROFILE.branch,
-            graduationYear: data.graduation_year || 2026,
-            fullName: pickCandidateFullName(data.full_name, user.username) || user.username,
-            college: data.college || "",
-            course: data.course || "",
-            yearSemester: data.year_semester || "",
-            tenthPercentage: data.tenth_percentage ?? 90,
-            twelfthPercentage: data.twelfth_percentage ?? 88,
-            percentage: data.percentage ?? 74.1,
-            githubUrl: restoredCodingProfiles.github,
-            leetcodeUrl: restoredCodingProfiles.leetcode,
-            codingProfiles: restoredCodingProfiles,
-          };
-          setProfile(mapped);
-          localStorage.setItem("pathfinder_profile_draft", JSON.stringify(mapped));
-          if (!mapped.onboardingCompleted) {
-            setIsDemoProfile(false);
-            setShowResultScreen(false);
-          } else {
-            setIsDemoProfile(false);
-            setActiveTab("profile");
-            fetchPrediction(mapped);
-          }
-          return;
-        }
-      }
-      if (!hasLocalMatch) {
-        toast.info("Step 1: Confirm your academic details below and click Save to build your Dashboard.");
-      }
-    } catch (err) {
-      console.warn("Could not retrieve backend profile on login:", err);
-      if (!hasLocalMatch) {
-        toast.info("Step 1: Confirm your academic details below and click Save to build your Dashboard.");
-      }
+      toast.info("Step 1: Confirm your academic details below and click Save to build your Dashboard.");
     }
   };
 
@@ -1790,7 +1836,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           if (errJson?.detail && typeof errJson.detail === "string") {
             errDetail = errJson.detail;
           }
-        } catch {}
+        } catch { }
         toast.error(errDetail);
       }
     } catch (err) {
@@ -1867,6 +1913,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
     localStorage.removeItem("pathfinder_profile");
     localStorage.removeItem("pathfinder_profile_draft");
     localStorage.removeItem("pathfinder_onboarding_draft");
+    localStorage.removeItem("pathfinder_backend_profile");
+    localStorage.removeItem("pathfinder_session_id");
+    localStorage.removeItem("pathfinder_session_email");
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userName");
     localStorage.removeItem("userRole");
@@ -1875,7 +1924,11 @@ export default function Home({ initialTab }: HomeProps = {}) {
     localStorage.removeItem("das_honorific_override");
     setIsAuthenticated(false);
     setShowResultScreen(false);
+    setActiveTab("profile");
     setAuditResult(null);
+    setResumeFeedback(null);
+    setRoadmap(null);
+    setCohortInsight(null);
     setProfile(DEFAULT_STUDENT_PROFILE);
     setIsDemoProfile(true);
     setUserRole("student");
@@ -1917,40 +1970,40 @@ export default function Home({ initialTab }: HomeProps = {}) {
           <Ambient3DBackground activeTab={activeTab} />
         </div>
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
-            <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#11131c] border border-[#ffffff]/30 text-[#ffffff] shadow-md">
-                  <Sparkles className="h-5 w-5 text-[#ffffff]" />
-                </div>
-                <div>
-                  <h1 className="text-base font-bold text-[#f8fafc] tracking-tight">
-                    Pathfinder Candidate Onboarding
-                  </h1>
-                  <p className="text-xs text-[#94a3b8]">
-                    Step-Wise Profile Setup for AI Career Readiness Assessment
-                  </p>
-                </div>
+          <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#11131c] border border-[#ffffff]/30 text-[#ffffff] shadow-md">
+                <Sparkles className="h-5 w-5 text-[#ffffff]" />
               </div>
-              <div className="flex items-center gap-3">
-                <span className="hidden sm:inline-block rounded-full border border-white/[0.08] bg-[#11131c] px-3 py-1 text-xs font-medium text-[#f8fafc] shadow-sm">
-                  Logged in as {username}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] transition-colors cursor-pointer"
-                >
-                  Sign Out
-                </button>
+              <div>
+                <h1 className="text-base font-bold text-[#f8fafc] tracking-tight">
+                  Pathfinder Candidate Onboarding
+                </h1>
+                <p className="text-xs text-[#94a3b8]">
+                  Step-Wise Profile Setup for AI Career Readiness Assessment
+                </p>
               </div>
             </div>
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline-block rounded-full border border-white/[0.08] bg-[#11131c] px-3 py-1 text-xs font-medium text-[#f8fafc] shadow-sm">
+                Logged in as {username}
+              </span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] transition-colors cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
 
-            <OnboardingWizard
-              key={email || profile.email || "guest"}
-              initialProfile={profile}
-              onComplete={handleWizardComplete}
-              apiBase={API_BASE}
-            />
+          <OnboardingWizard
+            key={email || profile.email || "guest"}
+            initialProfile={profile}
+            onComplete={handleWizardComplete}
+            apiBase={API_BASE}
+          />
         </div>
       </div>
     );
@@ -1965,31 +2018,31 @@ export default function Home({ initialTab }: HomeProps = {}) {
           <Ambient3DBackground activeTab={activeTab} />
         </div>
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
-            <OnboardingResultScreen
-              profile={profile}
-              auditResult={auditResult}
-              onGoToDashboard={() => {
-                setShowResultScreen(false);
-                setActiveTab("overview");
-              }}
-              onEditProfile={() => {
-                setShowResultScreen(false);
-                setActiveTab("profile");
-              }}
-              onStartMockInterview={() => {
-                setShowResultScreen(false);
-                setActiveTab("interview");
-                handleSendMessage(
-                  "Let's do an interactive mock interview for my role. Ask me question 1."
-                );
-              }}
-              onNavigateTab={(tab: string) => {
-                setShowResultScreen(false);
-                setActiveTab(tab as TabId);
-              }}
-            />
-          </div>
+          <OnboardingResultScreen
+            profile={profile}
+            auditResult={auditResult}
+            onGoToDashboard={() => {
+              setShowResultScreen(false);
+              setActiveTab("overview");
+            }}
+            onEditProfile={() => {
+              setShowResultScreen(false);
+              setActiveTab("profile");
+            }}
+            onStartMockInterview={() => {
+              setShowResultScreen(false);
+              setActiveTab("interview");
+              handleSendMessage(
+                "Let's do an interactive mock interview for my role. Ask me question 1."
+              );
+            }}
+            onNavigateTab={(tab: string) => {
+              setShowResultScreen(false);
+              setActiveTab(tab as TabId);
+            }}
+          />
         </div>
+      </div>
     );
   }
 
@@ -2065,577 +2118,576 @@ export default function Home({ initialTab }: HomeProps = {}) {
           </div>
         )}
         <div
-          className={`transition-all duration-300 ${
-            focusOnDas ? "hidden" : "opacity-100 pointer-events-auto"
-          }`}
+          className={`transition-all duration-300 ${focusOnDas ? "hidden" : "opacity-100 pointer-events-auto"
+            }`}
         >
-        <AnimatePresence mode="wait" initial={false}>
-          {/* TAB 1: OVERVIEW */}
-          {activeTab === "overview" && (
-            <motion.div
-              key="overview"
-              data-slide-theme="dashboard-black-plum"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
-            >
-
-              {isDemoProfile ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-400/30 bg-[#060608] p-5 backdrop-blur-md shadow-[0_0_24px_rgba(255,214,0,0.08)]">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-400/15 text-amber-300">
-                      <User className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-[#f8fafc]">
-                        Viewing Sample Profile ({profile.branch}, {profile.cgpa} CGPA)
-                      </p>
-                      <p className="text-xs text-[#94a3b8]">
-                        Enter and save your real details in 1. Profile / Settings to personalize all scores and recommendations below.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("profile")}
-                    className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-white hover:bg-zinc-200 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition-colors shadow-sm cursor-pointer"
-                  >
-                    <span>Edit 1. Profile / Settings</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </button>
-                </div>
-              ) : isProfilePartiallyIncomplete && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#34222E] bg-[#060608] p-5 backdrop-blur-md shadow-[0_0_24px_rgba(52,34,46,0.22)]">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
-                      <Sparkles className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-[#f8fafc]">
-                        Profile Acceleration Available
-                      </p>
-                      <p className="text-xs text-[#94a3b8]">
-                        Add your GitHub / LeetCode profiles or certifications in 1. Profile / Settings
-                        to elevate your career readiness score by up to +12%.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("profile")}
-                    className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-white hover:bg-zinc-200 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition-colors shadow-sm cursor-pointer"
-                  >
-                    <span>Complete Profile</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </button>
-                </div>
-              )}
-
-              <section
-                id="career-readiness-assessment"
-                data-das-id="hero-metrics"
-                className="space-y-4"
+          <AnimatePresence mode="wait" initial={false}>
+            {/* TAB 1: OVERVIEW */}
+            {activeTab === "overview" && (
+              <motion.div
+                key="overview"
+                data-slide-theme="dashboard-black-plum"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-12 sm:space-y-16"
               >
-                <SectionHeader
-                  title="Campus Placement Readiness Overview"
-                  description="Real-time placement probability and primary eligibility benchmark"
-                  badge="Step 1 · Class of 2026"
-                  accent="cyan"
-                  icon={Target}
-                  helperLabel="Calculated via Random Forest model trained on 972 student records"
-                  onAskCoach={handleAskCoach}
-                />
-                <HeroMetrics
-                  username={username}
-                  chance={prediction.chance}
-                  label={prediction.label}
-                  tone={prediction.tone}
-                  cgpa={profile.cgpa}
-                  backlogs={profile.backlogs}
-                  internships={profile.internships}
-                  coding={profile.coding}
-                  communication={profile.communication}
-                  onNavigateTab={setActiveTab}
-                  onAskCoach={handleAskCoach}
-                />
-              </section>
 
-              <section id="career-digital-twin" data-das-id="career-twin" className="space-y-4">
-                <SectionHeader
-                  title="Candidate Readiness Vectors"
-                  description="Transparent multi-dimensional evaluation of your academic standing, practical coding, and communication confidence"
-                  badge="Step 2 · Breakdown"
-                  accent="purple"
-                  icon={Zap}
-                  helperLabel="5 vectors calibrated against Tier-1 campus drive cutoffs"
-                  onAskCoach={handleAskCoach}
-                />
-                <CareerDigitalTwin
-                  profile={profile}
-                  predictionChance={prediction.chance}
-                  predictionTone={prediction.tone}
-                  onNavigateTab={setActiveTab}
-                  atsScore={resumeFeedback?.score ?? null}
-                />
-              </section>
+                {isDemoProfile ? (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-400/30 bg-[#060608] p-5 backdrop-blur-md shadow-[0_0_24px_rgba(255,214,0,0.08)]">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-400/15 text-amber-300">
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[#f8fafc]">
+                          Viewing Sample Profile ({profile.branch}, {profile.cgpa} CGPA)
+                        </p>
+                        <p className="text-xs text-[#94a3b8]">
+                          Enter and save your real details in 1. Profile / Settings to personalize all scores and recommendations below.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("profile")}
+                      className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-white hover:bg-zinc-200 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <span>Edit 1. Profile / Settings</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : isProfilePartiallyIncomplete && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#34222E] bg-[#060608] p-5 backdrop-blur-md shadow-[0_0_24px_rgba(52,34,46,0.22)]">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
+                        <Sparkles className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[#f8fafc]">
+                          Profile Acceleration Available
+                        </p>
+                        <p className="text-xs text-[#94a3b8]">
+                          Add your GitHub / LeetCode profiles or certifications in 1. Profile / Settings
+                          to elevate your career readiness score by up to +12%.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("profile")}
+                      className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-white hover:bg-zinc-200 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <span>Complete Profile</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
 
-              <section id="career-skill-gap" data-das-id="skill-gap" className="space-y-4">
-                <SectionHeader
-                  title="Target Role Skill Gap Analysis"
-                  description="Direct alignment of your competencies against hiring cutoffs for your chosen domain"
-                  badge="Step 3 · Skill Gaps"
-                  accent="amber"
-                  icon={Sparkles}
-                  onAskCoach={handleAskCoach}
-                />
-                <div id="skill-gap-matrix">
-                  <SkillGapSection
-                    strengths={prediction.strengths}
-                    priorities={prediction.priorities}
-                    breakdown={prediction.breakdown}
+                <section
+                  id="career-readiness-assessment"
+                  data-das-id="hero-metrics"
+                  className="space-y-4"
+                >
+                  <SectionHeader
+                    title="Campus Placement Readiness Overview"
+                    description="Real-time placement probability and primary eligibility benchmark"
+                    badge="Step 1 · Class of 2026"
+                    accent="cyan"
+                    icon={Target}
+                    helperLabel="Calculated via Random Forest model trained on 972 student records"
                     onAskCoach={handleAskCoach}
-                    apiBase={API_BASE}
                   />
-                </div>
-              </section>
+                  <HeroMetrics
+                    username={username}
+                    chance={prediction.chance}
+                    label={prediction.label}
+                    tone={prediction.tone}
+                    cgpa={profile.cgpa}
+                    backlogs={profile.backlogs}
+                    internships={profile.internships}
+                    coding={profile.coding}
+                    communication={profile.communication}
+                    onNavigateTab={setActiveTab}
+                    onAskCoach={handleAskCoach}
+                  />
+                </section>
 
-              <section id="career-company-radar" data-das-id="company-radar" className="space-y-4">
-                <SectionHeader
-                  title="Target Company Placement Radar"
-                  description="Real-time hiring compatibility score mapped against historical campus drive cutoffs and technical rubrics"
-                  badge="Step 4 · Companies"
-                  accent="accent"
-                  icon={Building2}
-                  helperLabel="Evaluates eligibility for Google, Razorpay, Amazon, and TCS Digital"
-                  onAskCoach={handleAskCoach}
-                />
-                <div id="placement-radar">
-                  <CompanyPlacementRadar
+                <section id="career-digital-twin" data-das-id="career-twin" className="space-y-4">
+                  <SectionHeader
+                    title="Candidate Readiness Vectors"
+                    description="Transparent multi-dimensional evaluation of your academic standing, practical coding, and communication confidence"
+                    badge="Step 2 · Breakdown"
+                    accent="purple"
+                    icon={Zap}
+                    helperLabel="5 vectors calibrated against Tier-1 campus drive cutoffs"
+                    onAskCoach={handleAskCoach}
+                  />
+                  <CareerDigitalTwin
                     profile={profile}
                     predictionChance={prediction.chance}
-                    onLaunchMockInterview={handleLaunchMockInterview}
+                    predictionTone={prediction.tone}
+                    onNavigateTab={setActiveTab}
+                    atsScore={resumeFeedback?.score ?? null}
+                  />
+                </section>
+
+                <section id="career-skill-gap" data-das-id="skill-gap" className="space-y-4">
+                  <SectionHeader
+                    title="Target Role Skill Gap Analysis"
+                    description="Direct alignment of your competencies against hiring cutoffs for your chosen domain"
+                    badge="Step 3 · Skill Gaps"
+                    accent="amber"
+                    icon={Sparkles}
                     onAskCoach={handleAskCoach}
                   />
-                </div>
-              </section>
-
-              <section
-                id="career-live-skill-verifier"
-                data-das-id="live-verifier"
-                className="space-y-4"
-              >
-                <SectionHeader
-                  title="Live Technical Footprint & Fraud Shield"
-                  description="Audit real-time GitHub repositories, programming languages, and cryptographic authenticity badge"
-                  badge="Step 5 · GitHub Check"
-                  accent="cyan"
-                  icon={ShieldCheck}
-                  helperLabel="Validates original code authorship and syncs verified technologies"
-                  onAskCoach={handleAskCoach}
-                />
-                <LiveSkillVerifier
-                  currentProfile={profile}
-                  onAuditComplete={(score, audited) => {
-                    const nextGithub =
-                      audited.repoUrl ||
-                      (audited.username ? `https://github.com/${audited.username}` : profile.githubUrl || "");
-                    const merged: StudentProfileState = {
-                      ...profile,
-                      githubVerifiedScore: score,
-                      githubUrl: nextGithub || profile.githubUrl,
-                      codingProfiles: {
-                        ...(profile.codingProfiles || {}),
-                        github: nextGithub || profile.codingProfiles?.github,
-                      },
-                    };
-                    setProfile(merged);
-                    localStorage.setItem("pathfinder_profile_draft", JSON.stringify(merged));
-                    fetchPrediction(merged, { githubScore: score });
-                  }}
-                  onApplyVerifiedSkills={(skills, stats) => {
-                    const updatedSkills = Array.from(
-                      new Set([...(profile.technicalSkills || []), ...skills])
-                    );
-                    const verifiedUrl = stats?.targetUrl || profile.githubUrl;
-                    const merged: StudentProfileState = {
-                      ...profile,
-                      technicalSkills: updatedSkills,
-                      skills: updatedSkills,
-                      githubUrl: verifiedUrl,
-                      githubVerifiedScore: stats?.authenticityScore ?? profile.githubVerifiedScore,
-                      codingProfiles: {
-                        ...(profile.codingProfiles || {}),
-                        github: verifiedUrl || profile.codingProfiles?.github,
-                      },
-                    };
-                    setProfile(merged);
-                    handleSaveProfile(merged);
-                    fetchPrediction(merged, {
-                      githubScore: stats?.authenticityScore ?? merged.githubVerifiedScore ?? null,
-                    });
-                  }}
-                />
-              </section>
-
-              <section
-                id="career-trajectory-simulator"
-                data-das-id="whatif-simulator"
-                className="space-y-4"
-              >
-                <SectionHeader
-                  title="What-If? Career Trajectory Simulator"
-                  description="Simulate the immediate placement probability boost of boosting CGPA, clearing backlogs, or shipping an internship"
-                  badge="Step 6 · Simulator"
-                  accent="rose"
-                  icon={TrendingUp}
-                  helperLabel="Interactive sliders instantly re-simulate placement probability"
-                  onAskCoach={handleAskCoach}
-                />
-                <div id="what-if-simulator">
-                  <WhatIfSimulator
-                    currentProfile={profile}
-                    currentScore={prediction.chance}
-                    onApplySimulatedProfile={(updated) => {
-                      const merged = { ...profile, ...updated };
-                      setProfile(merged);
-                      fetchPrediction(merged);
-                    }}
-                  />
-                </div>
-              </section>
-
-              <section id="career-action-center" data-das-id="action-center" className="space-y-4">
-                <SectionHeader
-                  title="Workspace Sync & Next Preparation Stages"
-                  description="Sync your readiness profile or jump directly into dedicated execution modules without duplicate checklists"
-                  badge="Step 7 · Next Modules"
-                  accent="blue"
-                  icon={Zap}
-                  helperLabel="Continue into 3. 6-Week Roadmap, 4. Project Blueprints, 5. ATS Resume Studio, or 6. Interview & Defense"
-                  onAskCoach={handleAskCoach}
-                />
-                <div className="grid gap-6 lg:grid-cols-3">
-                  <div className="lg:col-span-1">
-                    <GoogleAutomationCard
-                      profile={profile}
-                      prediction={prediction}
+                  <div id="skill-gap-matrix">
+                    <SkillGapSection
+                      strengths={prediction.strengths}
+                      priorities={prediction.priorities}
+                      breakdown={prediction.breakdown}
+                      onAskCoach={handleAskCoach}
                       apiBase={API_BASE}
                     />
                   </div>
-                  <div className="lg:col-span-2 grid gap-3 sm:grid-cols-2">
-                    {[
-                      {
-                        tab: "skills" as TabId,
-                        title: "3. 6-Week Roadmap",
-                        desc: "Personalized weekly milestone tracker & Blind 75 sprint targets.",
-                        icon: Compass,
-                      },
-                      {
-                        tab: "projects" as TabId,
-                        title: "4. Project Blueprints",
-                        desc: "28 production architectures & codebase specs to replace weak mini-apps.",
-                        icon: Lightbulb,
-                      },
-                      {
-                        tab: "resume" as TabId,
-                        title: "5. ATS Resume Studio",
-                        desc: "Senior hiring manager ATS scoring, missing keywords & impact audit.",
-                        icon: FileText,
-                      },
-                      {
-                        tab: "interview" as TabId,
-                        title: "6. Interview & Defense",
-                        desc: "Live timed technical rounds & project architecture viva defense.",
-                        icon: Mic,
-                      },
-                    ].map((stage) => {
-                      const StageIcon = stage.icon;
-                      return (
-                        <button
-                          key={stage.tab}
-                          type="button"
-                          onClick={() => {
-                            setActiveTab(stage.tab);
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
-                          className="group flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-[#11131c] p-4 text-left transition-all hover:border-white/30 hover:bg-[#161925] active:scale-[0.99] cursor-pointer"
-                        >
-                          <div>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-xs font-bold text-[#f8fafc]">
-                                <StageIcon className="h-4 w-4 text-[#7c3aed]" />
-                                <span>{stage.title}</span>
-                              </div>
-                              <ArrowRight className="h-3.5 w-3.5 text-[#94a3b8] transition-transform group-hover:translate-x-1 group-hover:text-white" />
-                            </div>
-                            <p className="mt-2 text-xs text-[#94a3b8] leading-relaxed">{stage.desc}</p>
-                          </div>
-                        </button>
-                      );
-                    })}
+                </section>
+
+                <section id="career-company-radar" data-das-id="company-radar" className="space-y-4">
+                  <SectionHeader
+                    title="Target Company Placement Radar"
+                    description="Real-time hiring compatibility score mapped against historical campus drive cutoffs and technical rubrics"
+                    badge="Step 4 · Companies"
+                    accent="accent"
+                    icon={Building2}
+                    helperLabel="Evaluates eligibility for Google, Razorpay, Amazon, and TCS Digital"
+                    onAskCoach={handleAskCoach}
+                  />
+                  <div id="placement-radar">
+                    <CompanyPlacementRadar
+                      profile={profile}
+                      predictionChance={prediction.chance}
+                      onLaunchMockInterview={handleLaunchMockInterview}
+                      onAskCoach={handleAskCoach}
+                    />
                   </div>
-                </div>
-              </section>
-            </motion.div>
-          )}
+                </section>
 
-          {/* TAB: INTERVIEW */}
-          {activeTab === "interview" && (
-            <motion.div
-              key="interview"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
-            >
-              <SectionHeader
-                title="Interview & Project Defense Simulator"
-                description="Practice timed company hiring rounds or defend your project architecture trade-offs with live AI grading and voice"
-                badge="Live Audio & Grading"
-                accent="accent"
-                icon={Mic}
-                helperLabel="Switch between Company Rounds and Project Defense (Viva) tracks"
-                onAskCoach={handleAskCoach}
-              />
-              <MockInterviewConsole
-                profile={profile}
-                initialCompany={interviewCompany}
-                initialRole={interviewRole}
-                initialMode={interviewMode}
-                onNavigateTab={(tab) => setActiveTab(tab as TabId)}
-                onAskCoach={handleAskCoach}
-              />
-            </motion.div>
-          )}
+                <section
+                  id="career-live-skill-verifier"
+                  data-das-id="live-verifier"
+                  className="space-y-4"
+                >
+                  <SectionHeader
+                    title="Live Technical Footprint & Fraud Shield"
+                    description="Audit real-time GitHub repositories, programming languages, and cryptographic authenticity badge"
+                    badge="Step 5 · GitHub Check"
+                    accent="cyan"
+                    icon={ShieldCheck}
+                    helperLabel="Validates original code authorship and syncs verified technologies"
+                    onAskCoach={handleAskCoach}
+                  />
+                  <LiveSkillVerifier
+                    currentProfile={profile}
+                    onAuditComplete={(score, audited) => {
+                      const nextGithub =
+                        audited.repoUrl ||
+                        (audited.username ? `https://github.com/${audited.username}` : profile.githubUrl || "");
+                      const merged: StudentProfileState = {
+                        ...profile,
+                        githubVerifiedScore: score,
+                        githubUrl: nextGithub || profile.githubUrl,
+                        codingProfiles: {
+                          ...(profile.codingProfiles || {}),
+                          github: nextGithub || profile.codingProfiles?.github,
+                        },
+                      };
+                      setProfile(merged);
+                      localStorage.setItem("pathfinder_profile_draft", JSON.stringify(merged));
+                      fetchPrediction(merged, { githubScore: score });
+                    }}
+                    onApplyVerifiedSkills={(skills, stats) => {
+                      const updatedSkills = Array.from(
+                        new Set([...(profile.technicalSkills || []), ...skills])
+                      );
+                      const verifiedUrl = stats?.targetUrl || profile.githubUrl;
+                      const merged: StudentProfileState = {
+                        ...profile,
+                        technicalSkills: updatedSkills,
+                        skills: updatedSkills,
+                        githubUrl: verifiedUrl,
+                        githubVerifiedScore: stats?.authenticityScore ?? profile.githubVerifiedScore,
+                        codingProfiles: {
+                          ...(profile.codingProfiles || {}),
+                          github: verifiedUrl || profile.codingProfiles?.github,
+                        },
+                      };
+                      setProfile(merged);
+                      handleSaveProfile(merged);
+                      fetchPrediction(merged, {
+                        githubScore: stats?.authenticityScore ?? merged.githubVerifiedScore ?? null,
+                      });
+                    }}
+                  />
+                </section>
 
-          {/* TAB 3: SKILLS */}
-          {activeTab === "skills" && (
-            <motion.div
-              key="skills"
-              data-das-id="roadmap-visualizer"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
-            >
-              <SectionHeader
-                title="6-Week Strategic Placement Roadmap"
-                description="Custom weekly milestone plan designed to eliminate skill bottlenecks before drive season"
-                badge="Sprint Tracker"
-                accent="purple"
-                icon={Compass}
-                helperLabel="Milestones auto-adapt as you update skills and role"
-                onAskCoach={handleAskCoach}
-              />
-              <div id="sprint-roadmap">
-                <RoadmapVisualizer
-                  roadmap={roadmap}
-                  isLoading={isRoadmapLoading}
-                  onRegenerate={fetchRoadmap}
+                <section
+                  id="career-trajectory-simulator"
+                  data-das-id="whatif-simulator"
+                  className="space-y-4"
+                >
+                  <SectionHeader
+                    title="What-If? Career Trajectory Simulator"
+                    description="Simulate the immediate placement probability boost of boosting CGPA, clearing backlogs, or shipping an internship"
+                    badge="Step 6 · Simulator"
+                    accent="rose"
+                    icon={TrendingUp}
+                    helperLabel="Interactive sliders instantly re-simulate placement probability"
+                    onAskCoach={handleAskCoach}
+                  />
+                  <div id="what-if-simulator">
+                    <WhatIfSimulator
+                      currentProfile={profile}
+                      currentScore={prediction.chance}
+                      onApplySimulatedProfile={(updated) => {
+                        const merged = { ...profile, ...updated };
+                        setProfile(merged);
+                        fetchPrediction(merged);
+                      }}
+                    />
+                  </div>
+                </section>
+
+                <section id="career-action-center" data-das-id="action-center" className="space-y-4">
+                  <SectionHeader
+                    title="Workspace Sync & Next Preparation Stages"
+                    description="Sync your readiness profile or jump directly into dedicated execution modules without duplicate checklists"
+                    badge="Step 7 · Next Modules"
+                    accent="blue"
+                    icon={Zap}
+                    helperLabel="Continue into 3. 6-Week Roadmap, 4. Project Blueprints, 5. ATS Resume Studio, or 6. Interview & Defense"
+                    onAskCoach={handleAskCoach}
+                  />
+                  <div className="grid gap-6 lg:grid-cols-3">
+                    <div className="lg:col-span-1">
+                      <GoogleAutomationCard
+                        profile={profile}
+                        prediction={prediction}
+                        apiBase={API_BASE}
+                      />
+                    </div>
+                    <div className="lg:col-span-2 grid gap-3 sm:grid-cols-2">
+                      {[
+                        {
+                          tab: "skills" as TabId,
+                          title: "3. 6-Week Roadmap",
+                          desc: "Personalized weekly milestone tracker & Blind 75 sprint targets.",
+                          icon: Compass,
+                        },
+                        {
+                          tab: "projects" as TabId,
+                          title: "4. Project Blueprints",
+                          desc: "28 production architectures & codebase specs to replace weak mini-apps.",
+                          icon: Lightbulb,
+                        },
+                        {
+                          tab: "resume" as TabId,
+                          title: "5. ATS Resume Studio",
+                          desc: "Senior hiring manager ATS scoring, missing keywords & impact audit.",
+                          icon: FileText,
+                        },
+                        {
+                          tab: "interview" as TabId,
+                          title: "6. Interview & Defense",
+                          desc: "Live timed technical rounds & project architecture viva defense.",
+                          icon: Mic,
+                        },
+                      ].map((stage) => {
+                        const StageIcon = stage.icon;
+                        return (
+                          <button
+                            key={stage.tab}
+                            type="button"
+                            onClick={() => {
+                              setActiveTab(stage.tab);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
+                            className="group flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-[#11131c] p-4 text-left transition-all hover:border-white/30 hover:bg-[#161925] active:scale-[0.99] cursor-pointer"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-xs font-bold text-[#f8fafc]">
+                                  <StageIcon className="h-4 w-4 text-[#7c3aed]" />
+                                  <span>{stage.title}</span>
+                                </div>
+                                <ArrowRight className="h-3.5 w-3.5 text-[#94a3b8] transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                              </div>
+                              <p className="mt-2 text-xs text-[#94a3b8] leading-relaxed">{stage.desc}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+              </motion.div>
+            )}
+
+            {/* TAB: INTERVIEW */}
+            {activeTab === "interview" && (
+              <motion.div
+                key="interview"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-12 sm:space-y-16"
+              >
+                <SectionHeader
+                  title="Interview & Project Defense Simulator"
+                  description="Practice timed company hiring rounds or defend your project architecture trade-offs with live AI grading and voice"
+                  badge="Live Audio & Grading"
+                  accent="accent"
+                  icon={Mic}
+                  helperLabel="Switch between Company Rounds and Project Defense (Viva) tracks"
+                  onAskCoach={handleAskCoach}
                 />
-              </div>
-              <SkillIntelligence
-                apiBase={API_BASE}
-                selectedYear={profile.graduationYear || 2026}
-                selectedBranch={profile.branch || "All"}
-                onAskCoach={handleAskCoach}
-                onNavigateTab={setActiveTab}
-              />
-            </motion.div>
-          )}
+                <MockInterviewConsole
+                  profile={profile}
+                  initialCompany={interviewCompany}
+                  initialRole={interviewRole}
+                  initialMode={interviewMode}
+                  onNavigateTab={(tab) => setActiveTab(tab as TabId)}
+                  onAskCoach={handleAskCoach}
+                />
+              </motion.div>
+            )}
 
-          {/* TAB 4: BRANCHES */}
-          {activeTab === "branches" && (
-            <motion.div
-              key="branches"
-              data-das-id="branch-intelligence"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
-            >
-              <SectionHeader
-                title="Branch Intelligence & Course Trends"
-                description="Comparative placement rates, top-tier recruiters, and course relevance across engineering departments"
-                badge="9 Departments"
-                accent="blue"
-                icon={GraduationCap}
-                helperLabel="Verified campus records for 2024-2026 batches"
-                onAskCoach={handleAskCoach}
-              />
-              <BranchIntelligence
-                apiBase={API_BASE}
-                selectedYear={profile.graduationYear || 2026}
-                currentBranch={profile.branch || "CSE"}
-                onAskCoach={handleAskCoach}
-                onNavigateTab={setActiveTab}
-              />
-            </motion.div>
-          )}
+            {/* TAB 3: SKILLS */}
+            {activeTab === "skills" && (
+              <motion.div
+                key="skills"
+                data-das-id="roadmap-visualizer"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-12 sm:space-y-16"
+              >
+                <SectionHeader
+                  title="6-Week Strategic Placement Roadmap"
+                  description="Custom weekly milestone plan designed to eliminate skill bottlenecks before drive season"
+                  badge="Sprint Tracker"
+                  accent="purple"
+                  icon={Compass}
+                  helperLabel="Milestones auto-adapt as you update skills and role"
+                  onAskCoach={handleAskCoach}
+                />
+                <div id="sprint-roadmap">
+                  <RoadmapVisualizer
+                    roadmap={roadmap}
+                    isLoading={isRoadmapLoading}
+                    onRegenerate={fetchRoadmap}
+                  />
+                </div>
+                <SkillIntelligence
+                  apiBase={API_BASE}
+                  selectedYear={profile.graduationYear || 2026}
+                  selectedBranch={profile.branch || "All"}
+                  onAskCoach={handleAskCoach}
+                  onNavigateTab={setActiveTab}
+                />
+              </motion.div>
+            )}
 
-          {/* TAB 5: ANALYTICS */}
-          {activeTab === "analytics" && (
-            <motion.div
-              key="analytics"
-              data-das-id="cohort-explorer"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
-            >
-              <SectionHeader
-                title="Cohort Placement Analytics & Benchmarks"
-                description="Authoritative campus placement records across 972 engineering candidates"
-                badge="972 Records"
-                accent="blue"
-                icon={TrendingUp}
-                helperLabel="Filter by branch, year, package, and package tier"
-                onAskCoach={handleAskCoach}
-              />
-              <CohortExplorer
-                analytics={cohortAnalytics}
-                filters={cohortFilters}
-                onFilterChange={(newFilters) => {
-                  setCohortFilters(newFilters);
-                  fetchCohortAnalytics(newFilters);
-                }}
-                onSummarizeAI={handleSummarizeCohort}
-                isSummarizing={isSummarizingCohort}
-                aiInsight={cohortInsight}
-                onDownloadCSV={handleDownloadCSV}
-                onDownloadPDF={handleDownloadPDF}
-              />
-            </motion.div>
-          )}
+            {/* TAB 4: BRANCHES */}
+            {activeTab === "branches" && (
+              <motion.div
+                key="branches"
+                data-das-id="branch-intelligence"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-12 sm:space-y-16"
+              >
+                <SectionHeader
+                  title="Branch Intelligence & Course Trends"
+                  description="Comparative placement rates, top-tier recruiters, and course relevance across engineering departments"
+                  badge="9 Departments"
+                  accent="blue"
+                  icon={GraduationCap}
+                  helperLabel="Verified campus records for 2024-2026 batches"
+                  onAskCoach={handleAskCoach}
+                />
+                <BranchIntelligence
+                  apiBase={API_BASE}
+                  selectedYear={profile.graduationYear || 2026}
+                  currentBranch={profile.branch || "CSE"}
+                  onAskCoach={handleAskCoach}
+                  onNavigateTab={setActiveTab}
+                />
+              </motion.div>
+            )}
 
-          {/* TAB 7: PROFILE */}
-          {activeTab === "profile" && (
-            <motion.div
-              key="profile"
-              data-das-id="profile-settings"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
-            >
-              <SectionHeader
-                title="Candidate Profile & System Settings"
-                description="Step 1: Enter your academic marks, coding ratings, and target role (Single Source of Truth synced across all recommendations)"
-                badge="Step 1 · Input"
-                accent="cyan"
-                icon={User}
-                helperLabel="Saving here recalculates all placement probabilities and opens 2. Dashboard"
-                onAskCoach={handleAskCoach}
-              />
-              <ProfileSettings
-                profile={profile}
-                onSaveProfile={handleSaveProfile}
-                onResetToDefaults={() => {
-                  setProfile(DEFAULT_STUDENT_PROFILE);
-                  handleSaveProfile(DEFAULT_STUDENT_PROFILE);
-                }}
-                onGoToDashboard={() => {
-                  setActiveTab("overview");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                apiBase={API_BASE}
-              />
-            </motion.div>
-          )}
+            {/* TAB 5: ANALYTICS */}
+            {activeTab === "analytics" && (
+              <motion.div
+                key="analytics"
+                data-das-id="cohort-explorer"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-12 sm:space-y-16"
+              >
+                <SectionHeader
+                  title="Cohort Placement Analytics & Benchmarks"
+                  description="Authoritative campus placement records across 972 engineering candidates"
+                  badge="972 Records"
+                  accent="blue"
+                  icon={TrendingUp}
+                  helperLabel="Filter by branch, year, package, and package tier"
+                  onAskCoach={handleAskCoach}
+                />
+                <CohortExplorer
+                  analytics={cohortAnalytics}
+                  filters={cohortFilters}
+                  onFilterChange={(newFilters) => {
+                    setCohortFilters(newFilters);
+                    fetchCohortAnalytics(newFilters);
+                  }}
+                  onSummarizeAI={handleSummarizeCohort}
+                  isSummarizing={isSummarizingCohort}
+                  aiInsight={cohortInsight}
+                  onDownloadCSV={handleDownloadCSV}
+                  onDownloadPDF={handleDownloadPDF}
+                />
+              </motion.div>
+            )}
 
-          {/* RESUME STUDIO */}
-          {activeTab === "resume" && (
-            <motion.div
-              key="resume"
-              data-slide-theme="pure-black"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
-            >
-              <SectionHeader
-                title="ATS Resume Studio & Diagnostic Scanner"
-                description="Upload and scan your PDF resume against recruiter screening standards and Google X-Y-Z formula"
-                badge="ATS Scanner"
-                accent="rose"
-                icon={FileText}
-                helperLabel="Single-column ATS compliance and keyword gap detection"
-                onAskCoach={handleAskCoach}
-              />
-              <ResumeStudio
-                feedback={resumeFeedback}
-                onAnalyze={handleAnalyzeResume}
-                isLoading={isAnalyzingResume}
-                onDownloadFeedbackPDF={handleDownloadResumePDF}
-                onApplyResumeSkills={(skills) => {
-                  const updatedSkills = Array.from(
-                    new Set([...(profile.technicalSkills || []), ...skills])
-                  );
-                  const merged = { ...profile, technicalSkills: updatedSkills };
-                  setProfile(merged);
-                  handleSaveProfile(merged);
-                  fetchPrediction(merged);
-                }}
-              />
-            </motion.div>
-          )}
+            {/* TAB 7: PROFILE */}
+            {activeTab === "profile" && (
+              <motion.div
+                key="profile"
+                data-das-id="profile-settings"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-12 sm:space-y-16"
+              >
+                <SectionHeader
+                  title="Candidate Profile & System Settings"
+                  description="Step 1: Enter your academic marks, coding ratings, and target role (Single Source of Truth synced across all recommendations)"
+                  badge="Step 1 · Input"
+                  accent="cyan"
+                  icon={User}
+                  helperLabel="Saving here recalculates all placement probabilities and opens 2. Dashboard"
+                  onAskCoach={handleAskCoach}
+                />
+                <ProfileSettings
+                  profile={profile}
+                  onSaveProfile={handleSaveProfile}
+                  onResetToDefaults={() => {
+                    setProfile(DEFAULT_STUDENT_PROFILE);
+                    handleSaveProfile(DEFAULT_STUDENT_PROFILE);
+                  }}
+                  onGoToDashboard={() => {
+                    setActiveTab("overview");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  apiBase={API_BASE}
+                />
+              </motion.div>
+            )}
 
-          {/* PROJECTS */}
-          {activeTab === "projects" && (
-            <motion.div
-              key="projects"
-              data-slide-theme="pure-black"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-12 sm:space-y-16"
-            >
-              <SectionHeader
-                title="Flagship Project Blueprints & Portfolio"
-                description="Production-grade project architectures mapped to recruiter rubrics and technical defense rounds"
-                badge="Portfolio Blueprints"
-                accent="amber"
-                icon={Lightbulb}
-                helperLabel="Includes live architecture specs and STAR storytelling defense points"
-                onAskCoach={handleAskCoach}
-              />
-              <ProjectRecommender
-                targetRole={profile.targetRole}
-                onAskCoach={handleAskCoach}
-                apiBase={API_BASE}
-              />
-            </motion.div>
-          )}
+            {/* RESUME STUDIO */}
+            {activeTab === "resume" && (
+              <motion.div
+                key="resume"
+                data-slide-theme="pure-black"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-12 sm:space-y-16"
+              >
+                <SectionHeader
+                  title="ATS Resume Studio & Diagnostic Scanner"
+                  description="Upload and scan your PDF resume against recruiter screening standards and Google X-Y-Z formula"
+                  badge="ATS Scanner"
+                  accent="rose"
+                  icon={FileText}
+                  helperLabel="Single-column ATS compliance and keyword gap detection"
+                  onAskCoach={handleAskCoach}
+                />
+                <ResumeStudio
+                  feedback={resumeFeedback}
+                  onAnalyze={handleAnalyzeResume}
+                  isLoading={isAnalyzingResume}
+                  onDownloadFeedbackPDF={handleDownloadResumePDF}
+                  onApplyResumeSkills={(skills) => {
+                    const updatedSkills = Array.from(
+                      new Set([...(profile.technicalSkills || []), ...skills])
+                    );
+                    const merged = { ...profile, technicalSkills: updatedSkills };
+                    setProfile(merged);
+                    handleSaveProfile(merged);
+                    fetchPrediction(merged);
+                  }}
+                />
+              </motion.div>
+            )}
 
-          {/* ROLES */}
-          {activeTab === "roles" && (
-            <motion.div
-              key="roles"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
-              <RoleIntelligence
-                currentProfile={profile}
-                onUpdateTargetRole={handleUpdateTargetRole}
-                onNavigateTab={setActiveTab}
-                onAskCoach={handleAskCoach}
-                apiBase={API_BASE}
-              />
-            </motion.div>
-          )}
+            {/* PROJECTS */}
+            {activeTab === "projects" && (
+              <motion.div
+                key="projects"
+                data-slide-theme="pure-black"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-12 sm:space-y-16"
+              >
+                <SectionHeader
+                  title="Flagship Project Blueprints & Portfolio"
+                  description="Production-grade project architectures mapped to recruiter rubrics and technical defense rounds"
+                  badge="Portfolio Blueprints"
+                  accent="amber"
+                  icon={Lightbulb}
+                  helperLabel="Includes live architecture specs and STAR storytelling defense points"
+                  onAskCoach={handleAskCoach}
+                />
+                <ProjectRecommender
+                  targetRole={profile.targetRole}
+                  onAskCoach={handleAskCoach}
+                  apiBase={API_BASE}
+                />
+              </motion.div>
+            )}
 
-        </AnimatePresence>
+            {/* ROLES */}
+            {activeTab === "roles" && (
+              <motion.div
+                key="roles"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+              >
+                <RoleIntelligence
+                  currentProfile={profile}
+                  onUpdateTargetRole={handleUpdateTargetRole}
+                  onNavigateTab={setActiveTab}
+                  onAskCoach={handleAskCoach}
+                  apiBase={API_BASE}
+                />
+              </motion.div>
+            )}
+
+          </AnimatePresence>
         </div>
 
         {/* 1-Page ATS Engineering Resume Modal */}

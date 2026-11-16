@@ -228,5 +228,64 @@ class TestAPIEndpoints(unittest.TestCase):
             self.assertGreater(float(gap.get("placement_rate", 0)), 0)
             self.assertTrue((gap.get("recommendation") or "").strip())
 
+    def test_relogin_deterministic_user_id_and_db_auto_close(self):
+        from backend.database import get_db_connection
+
+        # SQLite connection must close automatically when leaving `with` block
+        conn = get_db_connection()
+        with conn as db:
+            db.execute("SELECT 1").fetchone()
+        import sqlite3
+        with self.assertRaises(sqlite3.ProgrammingError):
+            conn.execute("SELECT 1")
+
+        # Returning user login gets identical user_id so saving profile never 403s
+        email = "relogin.student@example.com"
+        r1 = self.client.post("/api/auth/login", json={"username": "Student Test", "email": email})
+        self.assertEqual(r1.status_code, 200)
+        d1 = r1.json()
+        p1 = self.client.post(
+            "/api/profile",
+            headers={"Authorization": f"Bearer {d1['token']}"},
+            json={"email": email, "full_name": "Student Test", "branch": "AIML", "cgpa": 8.4, "skills": ["Python", "Docker"]},
+        )
+        self.assertEqual(p1.status_code, 200)
+
+        r2 = self.client.post("/api/auth/login", json={"username": "Student Test", "email": email})
+        self.assertEqual(r2.status_code, 200)
+        d2 = r2.json()
+        self.assertEqual(d1["user"]["user_id"], d2["user"]["user_id"])
+
+        p2 = self.client.post(
+            "/api/profile",
+            headers={"Authorization": f"Bearer {d2['token']}"},
+            json={
+                "user_id": d1["user"]["user_id"],
+                "email": email,
+                "full_name": "Student Test",
+                "branch": "CSE",
+                "cgpa": 8.9,
+                "skills": ["Python", "Docker", "Kubernetes"],
+            },
+        )
+        self.assertEqual(p2.status_code, 200)
+        self.assertEqual(p2.json()["cgpa"], 8.9)
+
+    def test_das_unrestricted_general_knowledge_prompt_and_fallback(self):
+        from backend.agent.live_proxy import get_das_system_instruction
+        from backend.gemini_engine import generate_smart_fallback_reply
+
+        live_prompt = get_das_system_instruction("madam")
+        self.assertIn("Vangaveeti Mohana Ranga", live_prompt)
+        self.assertIn("UNRESTRICTED GENERAL KNOWLEDGE", live_prompt)
+
+        fallback_reply = generate_smart_fallback_reply(
+            "who is vangaveeti mohana ranga?",
+            active_tab="overview",
+            page_context={"honorific": "Madam", "userEmail": "priyankabommali2@gmail.com"},
+        )
+        self.assertNotIn("strictly limited", fallback_reply.lower())
+        self.assertNotIn("28 project blueprints", fallback_reply.lower())
+
 if __name__ == "__main__":
     unittest.main()

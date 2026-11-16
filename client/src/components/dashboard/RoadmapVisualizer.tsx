@@ -46,19 +46,40 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
   onRegenerate,
 }) => {
   const currentRoadmap = roadmap || DEFAULT_ROADMAP;
+  const getRoadmapStorageKey = () => {
+    if (typeof window === "undefined") return "pathfinder_roadmap_completed_v1_guest";
+    const email = (localStorage.getItem("userEmail") || "guest").trim().toLowerCase() || "guest";
+    return `pathfinder_roadmap_completed_v1_${email}`;
+  };
+  const [storageKey, setStorageKey] = useState<string>(getRoadmapStorageKey);
   const [completedWeeks, setCompletedWeeks] = useState<Record<number, boolean>>(() => {
     if (typeof window === "undefined") return {};
     try {
-      const saved = localStorage.getItem("pathfinder_roadmap_completed_v1");
+      const saved = localStorage.getItem(getRoadmapStorageKey());
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
     }
   });
 
+  React.useEffect(() => {
+    const syncKey = () => {
+      const nextKey = getRoadmapStorageKey();
+      setStorageKey(nextKey);
+      try {
+        const saved = localStorage.getItem(nextKey);
+        setCompletedWeeks(saved ? JSON.parse(saved) : {});
+      } catch {
+        setCompletedWeeks({});
+      }
+    };
+    window.addEventListener("pathfinder:auth-change", syncKey);
+    return () => window.removeEventListener("pathfinder:auth-change", syncKey);
+  }, []);
+
   const persistCompleted = (next: Record<number, boolean>) => {
     try {
-      localStorage.setItem("pathfinder_roadmap_completed_v1", JSON.stringify(next));
+      localStorage.setItem(storageKey, JSON.stringify(next));
     } catch {}
   };
 

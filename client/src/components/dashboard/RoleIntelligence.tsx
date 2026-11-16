@@ -227,7 +227,59 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
     };
   }, [apiBase]);
 
-  const activeRole = roles.find(r => r.id === selectedRoleId) || roles[0];
+  const personalizedRoles = React.useMemo(() => {
+    const rawUserSkills = (
+      currentProfile.technicalSkills?.length
+        ? currentProfile.technicalSkills
+        : currentProfile.skills || []
+    )
+      .map((s) => String(s || "").trim())
+      .filter(Boolean);
+    const normUserSkills = rawUserSkills.map((s) => s.toLowerCase());
+    const cgpaBonus = Math.max(-10, Math.min(12, ((currentProfile.cgpa || 7.5) - 7.5) * 6));
+    const codingBonus = Math.max(-8, Math.min(12, ((currentProfile.coding || 6) - 6) * 3));
+    const expBonus = Math.min(10, (currentProfile.internships || 0) * 5);
+
+    return roles.map((role) => {
+      const benchmarkPool = Array.from(
+        new Set([...(role.existingSkills || []), ...(role.missingSkills || [])].map((s) => s.trim()).filter(Boolean))
+      );
+      if (benchmarkPool.length === 0) return role;
+
+      const matched: string[] = [];
+      const missing: string[] = [];
+      for (const reqSkill of benchmarkPool) {
+        const reqLow = reqSkill.toLowerCase();
+        const reqTokens = reqLow.split(/[^a-z0-9+.#]+/).filter((t) => t.length >= 2);
+        const hasSkill = normUserSkills.some(
+          (us) =>
+            us.includes(reqLow) ||
+            reqLow.includes(us) ||
+            (reqTokens.length > 0 && reqTokens.some((tok) => us.includes(tok)))
+        );
+        if (hasSkill) matched.push(reqSkill);
+        else missing.push(reqSkill);
+      }
+
+      // Include any extra candidate skills not in the preset list so the UI reflects their real profile
+      const extraUserMatched = rawUserSkills.filter(
+        (us) => !matched.some((m) => m.toLowerCase() === us.toLowerCase())
+      );
+      const effectiveMatched = matched.length > 0 ? matched : extraUserMatched.slice(0, 4);
+      const skillRatio = matched.length / Math.max(1, benchmarkPool.length);
+      const rawScore = Math.round(skillRatio * 72 + 16 + cgpaBonus + codingBonus + expBonus);
+      const dynamicAlignment = Math.max(18, Math.min(98, rawScore));
+
+      return {
+        ...role,
+        alignment: dynamicAlignment,
+        existingSkills: effectiveMatched.length > 0 ? effectiveMatched : ["Add core technical skills in Profile / Settings"],
+        missingSkills: missing.length > 0 ? missing : ["System Design & Scale Benchmarking"],
+      };
+    });
+  }, [roles, currentProfile]);
+
+  const activeRole = personalizedRoles.find(r => r.id === selectedRoleId) || personalizedRoles[0];
 
   const handleSelectRole = (role: RoleBlueprint) => {
     setSelectedRoleId(role.id);
@@ -272,7 +324,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
 
         {/* Role Selector Chips */}
         <div className="mt-6 flex flex-wrap gap-2">
-          {roles.map(r => {
+          {personalizedRoles.map(r => {
             const isSelected = r.id === selectedRoleId;
             return (
               <button

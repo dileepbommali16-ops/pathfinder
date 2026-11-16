@@ -127,8 +127,24 @@ def login_endpoint(payload: LoginRequest, request: Request):
             (email and email.lower().startswith("admin@"))
         )
     role = "admin" if is_admin else "student"
+    email_norm = (email or "").strip().lower()
+    stable_user_id = None
+    if email_norm and email_norm != "candidate@pathfinder.ai":
+        try:
+            from backend.database import get_user_profile_by_email_or_username
+            existing_db_profile = get_user_profile_by_email_or_username(email_norm)
+            if existing_db_profile and existing_db_profile.get("user_id") and str(existing_db_profile.get("user_id")) != "usr_anonymous":
+                stable_user_id = str(existing_db_profile["user_id"])
+        except Exception:
+            stable_user_id = None
+        if not stable_user_id:
+            import hashlib
+            stable_user_id = f"usr_{hashlib.sha256(email_norm.encode('utf-8')).hexdigest()[:12]}"
+    else:
+        stable_user_id = f"usr_{secrets.token_hex(6)}"
+
     session = UserSession(
-        user_id=f"usr_{secrets.token_hex(6)}",
+        user_id=stable_user_id,
         username=username,
         email=email,
         role=role,

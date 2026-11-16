@@ -138,14 +138,16 @@ def _synthesize_puck_tts_sync(text: str, voice_name: str = "Puck") -> Optional[D
     if not keys:
         return None
 
+    tts_input = f"Say cleanly and verbatim without answering or adding extra words: {text}"
     for key in keys:
         try:
             client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
             resp = client.models.generate_content(
                 model="gemini-2.5-flash-preview-tts",
-                contents=text,
+                contents=tts_input,
                 config=types.GenerateContentConfig(
                     response_modalities=["AUDIO"],
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
                     speech_config=types.SpeechConfig(
                         voice_config=types.VoiceConfig(
                             prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice_name)

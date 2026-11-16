@@ -40,7 +40,12 @@ def get_das_system_instruction(role: str) -> str:
         "If `[FRIENDLY AUDIO NOTICE]` arrives (or you notice weak/inaudible speech on earphones, Bluetooth buds, or headphones at low volume ~20% while watching on camera), "
         "tell the user warmly like a trusted friend that their voice isn't reaching you clearly, and suggest turning up their volume or checking their earphone/buds connection and mic.\n"
         "4. KEEP REPLIES COMPLETE & CONCISE: Deliver complete finished sentences smoothly without trailing off or rambling.\n"
-        "5. INTERVIEWER READ-ALOUD ONLY: If any turn starts with `[READ ALOUD VERBATIM ONLY]`, read ONLY the quoted sentence aloud naturally like a technical interviewer asking the candidate. NEVER answer the question, give hints, or add extra words.\n\n"
+        "5. INTERVIEWER READ-ALOUD ONLY: If any turn starts with `[READ ALOUD VERBATIM ONLY]`, read ONLY the quoted sentence aloud naturally like a technical interviewer asking the candidate. NEVER answer the question, give hints, or add extra words.\n"
+        "6. UNRESTRICTED GENERAL KNOWLEDGE & STRICT ENTITY ACCURACY (CRITICAL MANDATE): "
+        "You have FULL encyclopedic world knowledge (Indian & Andhra Pradesh history, political/public leaders, geography, science, arts, cinema, coding, current affairs). "
+        "NEVER say 'My knowledge is strictly limited to my creator, Dileep, and the PATHFINDER 2.0 platform' or refuse general-world questions! "
+        "STRICT ENTITY FIDELITY: Pay exact attention to every person or topic name asked — NEVER confuse or substitute a similar regional/Indian name (for example, do NOT substitute Devineni Nehru when asked about Vangaveeti Mohana Ranga, or vice versa). "
+        "If audio sounded noisy or ambiguous, politely ask the user to repeat. Whenever asked about ANY real-world figure, historical event, or factual topic, call `lookup_factual_info` when helpful to verify facts before speaking.\n\n"
         f"{builder_brief}"
     )
     role_lower = (role or "sir").lower().strip()
@@ -287,14 +292,88 @@ DAS_TOOLS = [
                     },
                 ),
             ),
+            types.FunctionDeclaration(
+                name="lookup_factual_info",
+                description="Look up accurate encyclopedic or real-world facts about any public figure, historical leader, event, organization, or general-knowledge topic outside Pathfinder (e.g. Vangaveeti Mohana Ranga, scientific concepts, news) so you answer accurately without guessing.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "query": types.Schema(
+                            type="STRING",
+                            description="Exact person name, topic, or factual question to look up verbatim"
+                        )
+                    },
+                    required=["query"],
+                ),
+            ),
         ]
     ),
 ]
 
+import httpx
 import logging
+from urllib.parse import quote
 from backend.config.key_resolver import get_gemini_key_candidates
 
 live_logger = logging.getLogger("pathfinder.live_proxy")
+
+
+async def _lookup_factual_info_async(query: str) -> dict:
+    """Fast grounded lookup via Gemini Google Search with Wikipedia REST fallback."""
+    clean_q = (query or "").strip()
+    if not clean_q:
+        return {"status": "empty", "summary": "No query provided."}
+
+    # 1. Try Wikipedia search + summary (fast ~250ms, exact entity matching, zero quota usage)
+    try:
+        async with httpx.AsyncClient(timeout=4.5, headers={"User-Agent": "PathfinderDAS/2.0"}) as client:
+            search_resp = await client.get(
+                "https://en.wikipedia.org/w/api.php",
+                params={"action": "query", "list": "search", "srsearch": clean_q, "srlimit": 2, "format": "json"},
+            )
+            if search_resp.status_code == 200:
+                hits = ((search_resp.json() or {}).get("query") or {}).get("search") or []
+                if hits:
+                    title = hits[0].get("title", "")
+                    if title:
+                        sum_resp = await client.get(
+                            f"https://en.wikipedia.org/api/rest_v1/page/summary/{quote(title)}"
+                        )
+                        if sum_resp.status_code == 200:
+                            sdata = sum_resp.json() or {}
+                            extract = (sdata.get("extract") or "").strip()
+                            if extract:
+                                return {
+                                    "status": "ok",
+                                    "source": "wikipedia",
+                                    "entity": title,
+                                    "summary": extract[:900],
+                                }
+    except Exception as wiki_err:
+        live_logger.debug(f"[Factual Lookup] Wikipedia lookup skipped: {wiki_err}")
+
+    # 2. Fallback to Gemini + Google Search grounding
+    for key in get_gemini_key_candidates():
+        client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
+        for fallback_model in ("gemini-flash-latest", "gemini-3.8-flash", "gemini-2.0-flash"):
+            try:
+                resp = await asyncio.to_thread(
+                    client.models.generate_content,
+                    model=fallback_model,
+                    contents=f"Give a concise, factual 2-3 sentence encyclopedic summary of exactly: {clean_q}. Do not confuse with similar names.",
+                    config=types.GenerateContentConfig(
+                        tools=[types.Tool(google_search=types.GoogleSearch())],
+                        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+                        temperature=0.1,
+                    ),
+                )
+                txt = (getattr(resp, "text", None) or "").strip()
+                if txt:
+                    return {"status": "ok", "source": "google_search", "entity": clean_q, "summary": txt[:900]}
+            except Exception as g_err:
+                live_logger.debug(f"[Factual Lookup] Gemini search fallback ({fallback_model}) skipped: {g_err}")
+
+    return {"status": "unavailable", "entity": clean_q, "summary": f"Answer '{clean_q}' directly using verified encyclopedic knowledge without substituting another person."}
 
 
 @router.websocket("/agent/ws")
@@ -800,6 +879,17 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             for fc in response.tool_call.function_calls:
                                 args = fc.args or {}
 
+                                if fc.name == "lookup_factual_info":
+                                    lookup_res = await _lookup_factual_info_async(str(args.get("query") or ""))
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=fc.name,
+                                            id=fc.id,
+                                            response=lookup_res,
+                                        )
+                                    )
+                                    continue
+
                                 if fc.name == "explain_current_screen":
                                     topic = (args.get("topic") or "").strip()
                                     ctx_snapshot = latest_page_context or {"activeTab": "overview", "tabTitle": "Executive Dashboard"}
@@ -885,9 +975,13 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 pass
             except Exception as stream_err:
                 err_str = str(stream_err)
-                live_logger.warning(f"[Gemini Stream Notice] {err_str}")
+                is_idle_refresh = "inactivity" in err_str.lower() or "1008" in err_str or "closed" in err_str.lower()
+                if is_idle_refresh:
+                    live_logger.info(f"[Gemini Stream Notice] Idle/session refresh: {err_str}")
+                else:
+                    live_logger.warning(f"[Gemini Stream Notice] {err_str}")
                 try:
-                    if "inactivity" in err_str.lower() or "1008" in err_str or "closed" in err_str.lower():
+                    if is_idle_refresh:
                         await websocket.send_json({
                             "type": "status",
                             "status": "reconnecting",

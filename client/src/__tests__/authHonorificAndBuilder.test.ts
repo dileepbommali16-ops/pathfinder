@@ -162,4 +162,17 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(repairedDraft.fullName).toBe("Dileep Bommali");
     expect(repairedDraft.onboardingCompleted).toBe(true);
   });
+
+  it("never falls back to unrelated blueprints or limited-knowledge phrasing for general factual queries", () => {
+    handleAuthLoginDetected("priyankabommali2@gmail.com", "indala gayatri");
+    const gkReply = getCareerAgentResponse(
+      "who is vangaveeti mohana ranga",
+      [],
+      { branch: "CSE", cgpa: 8.2 },
+      "Madam"
+    );
+    expect(gkReply.toLowerCase()).not.toContain("28 blueprints");
+    expect(gkReply.toLowerCase()).not.toContain("strictly limited");
+    expect(gkReply.toLowerCase()).toContain("vangaveeti mohana ranga");
+  });
 });

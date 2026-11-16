@@ -798,19 +798,20 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   runCodeLiveRef.current = runCodeLive;
 
-  // 1. Never render HUD, Avatar, or commands if not strictly authenticated
+  // 1. Keep outer wrapper + <main>{children}</main> identical across auth transitions so Home never unmounts mid-login
   const hasUser = typeof window !== "undefined" && Boolean(localStorage.getItem("pathfinder_user"));
-  if (!isAuthenticated && !hasUser) {
-    return <main className="relative min-h-screen bg-transparent">{children}</main>;
-  }
+  const showAgent = isAuthenticated || hasUser;
 
   return (
-    <div className="relative min-h-screen bg-transparent text-white overflow-x-hidden">
+    <div className={showAgent ? "relative min-h-screen bg-transparent text-white overflow-x-hidden" : "relative min-h-screen bg-transparent"}>
       {/* Background 3D Robot Face */}
-      <Avatar3D />
+      {showAgent && <Avatar3D />}
 
       {/* Main Dashboard Content */}
-      <main className="relative z-10 pb-44 bg-transparent">{children}</main>
+      <main className={showAgent ? "relative z-10 pb-44 bg-transparent" : "relative min-h-screen bg-transparent"}>{children}</main>
+
+      {showAgent && (
+        <>
 
       {/* Hidden File Input for Photos, Videos, and Resumes */}
       <input
@@ -1266,6 +1267,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           </button>
         </form>
       </div>
+        </>
+      )}
     </div>
   );
 };

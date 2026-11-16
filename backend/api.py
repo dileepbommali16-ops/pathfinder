@@ -294,12 +294,14 @@ app.mount("/api/v1", v1_app)
 @v1_app.get("/api/agent/session-token")
 def get_gemini_live_key():
     """Secure endpoint providing Gemini Live session metadata. Never exposes raw credentials."""
-    has_key = bool(os.getenv("GEMINI_API_KEY", "").strip())
+    from backend.config.key_resolver import get_active_gemini_key
+    from backend.agent.puck_voice import LIVE_MODEL
+    has_key = bool(get_active_gemini_key() or os.getenv("GEMINI_API_KEY", "").strip())
     return {
         "status": "ready" if has_key else "missing_api_key",
         "service": "pathfinder-agent-ws",
         "ws_endpoint": "/agent/ws",
-        "model": os.getenv("GEMINI_LIVE_MODEL", "gemini-3.8-live"),
+        "model": os.getenv("GEMINI_LIVE_MODEL", LIVE_MODEL),
         "voice": "DAS Neural"
     }
 
@@ -307,26 +309,33 @@ def get_gemini_live_key():
 @app.get("/api/test-live")
 @v1_app.get("/api/test-live")
 async def test_live_debug():
-    """Diagnostic endpoint to test Gemini Live API connectivity and catch errors."""
-    import traceback
+    """Diagnostic endpoint to test Gemini Live API connectivity cleanly without exposing stacktraces."""
     try:
         from backend.agent.puck_voice import LIVE_MODEL, create_gemini_live_config
         from backend.agent.live_proxy import DAS_TOOLS, get_das_system_instruction
-        from backend.config.key_resolver import get_active_gemini_key
+        from backend.config.key_resolver import get_gemini_key_candidates
         from google import genai
-        key = get_active_gemini_key()
-        if not key:
-            return {"ok": False, "error": "No GEMINI_API_KEY set on server"}
-        key_preview = f"{key[:8]}...{key[-6:]}" if len(key) > 14 else "short"
-        client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
+        keys = get_gemini_key_candidates()
+        if not keys:
+            return {"ok": False, "error": "No GEMINI_API_KEY configured on server"}
+        models_to_try = []
+        for candidate in (LIVE_MODEL, "gemini-2.5-flash-native-audio-latest", "gemini-2.0-flash-live-001"):
+            if candidate and candidate not in models_to_try:
+                models_to_try.append(candidate)
         cfg = create_gemini_live_config(get_das_system_instruction("boss"), DAS_TOOLS)
-        async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
-            return {"ok": True, "connected": True, "model": LIVE_MODEL, "voice": "DAS Neural", "key_preview": key_preview}
+        last_err = ""
+        for key in keys:
+            client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
+            key_preview = f"{key[:8]}...{key[-4:]}" if len(key) > 12 else "redacted"
+            for model_name in models_to_try:
+                try:
+                    async with client.aio.live.connect(model=model_name, config=cfg):
+                        return {"ok": True, "connected": True, "model": model_name, "voice": "DAS Neural", "key_preview": key_preview}
+                except Exception as inner_exc:
+                    last_err = f"{type(inner_exc).__name__}: {inner_exc}"
+        return {"ok": False, "error": last_err[:180] or "Gemini Live connection unavailable"}
     except Exception as e:
-        from backend.config.key_resolver import get_active_gemini_key
-        key = get_active_gemini_key()
-        key_preview = f"{key[:8]}...{key[-6:]}" if len(key) > 14 else "short"
-        return {"ok": False, "error": str(e), "type": type(e).__name__, "key_preview": key_preview, "trace": traceback.format_exc()}
+        return {"ok": False, "error": str(e)[:180], "type": type(e).__name__}
 
 
 @app.post("/api/rag/search")

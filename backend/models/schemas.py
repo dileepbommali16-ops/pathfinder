@@ -1,9 +1,62 @@
 from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
+
+
+_PROFILE_CAMEL_TO_SNAKE = {
+    "userId": "user_id",
+    "fullName": "full_name",
+    "currentYear": "current_year",
+    "currentSemester": "current_semester",
+    "tenthPercentage": "tenth_percentage",
+    "twelfthPercentage": "twelfth_percentage",
+    "cgpaFormulaMultiplier": "cgpa_formula_multiplier",
+    "semesterCgpas": "semester_cgpas",
+    "activeBacklogs": "active_backlogs",
+    "historyBacklogs": "history_backlogs",
+    "historyOfBacklogs": "history_backlogs",
+    "technicalSkills": "technical_skills",
+    "programmingLanguages": "programming_languages",
+    "projectsCount": "projects_count",
+    "codingProfiles": "coding_profiles",
+    "targetRole": "target_role",
+    "targetDomain": "target_domain",
+    "preferredLocation": "preferred_location",
+    "expectedPackage": "expected_package",
+    "preferredCompanyType": "preferred_company_type",
+    "targetTier": "target_tier",
+    "graduationYear": "graduation_year",
+    "onboardingCompleted": "onboarding_completed",
+    "wizardStep": "wizard_step",
+}
 
 
 class StudentProfile(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _sync_camel_and_snake_fields(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        normalized = dict(data)
+        for camel, snake in _PROFILE_CAMEL_TO_SNAKE.items():
+            if camel in normalized and normalized[camel] is not None:
+                # Prefer truthy completion / non-placeholder names / richer values when snake had default
+                c_val = normalized[camel]
+                if snake not in normalized or normalized[snake] is None:
+                    normalized[snake] = c_val
+                elif snake == "onboarding_completed" and bool(c_val):
+                    normalized[snake] = True
+                elif snake == "full_name" and str(normalized[snake]).strip() in ("", "Student Candidate"):
+                    normalized[snake] = c_val
+                elif snake in ("technical_skills", "projects_count", "tenth_percentage", "twelfth_percentage", "active_backlogs", "wizard_step"):
+                    normalized[snake] = c_val
+        if "skills" in normalized and isinstance(normalized["skills"], list) and len(normalized["skills"]) > 0:
+            if not normalized.get("technical_skills"):
+                normalized["technical_skills"] = normalized["skills"]
+        if normalized.get("technical_skills") and not normalized.get("skills"):
+            normalized["skills"] = normalized["technical_skills"]
+        return normalized
 
     # Identification
     user_id: Optional[str] = Field(default=None, max_length=64)

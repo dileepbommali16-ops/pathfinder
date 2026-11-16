@@ -57,8 +57,6 @@ _validated_gemini_models: Optional[List[str]] = None
 _last_gemini_diagnostic: Dict[str, Any] = {"status": "none"}
 
 DISALLOWED_MODEL_PATTERNS = (
-    "3.5",
-    "3.8",
     "-tts",
     "-image",
     "imagen",
@@ -76,10 +74,11 @@ DISALLOWED_MODEL_PATTERNS = (
 )
 
 PREFERRED_MODELS_ORDER = [
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-    "gemini-2.0-flash",
+    "gemini-3.5-flash",
+    "gemini-3.8-flash",
     "gemini-flash-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-2.0-flash",
 ]
 
 
@@ -173,7 +172,7 @@ def get_gemini_client():
         try:
             _client = genai.Client(
                 api_key=key,
-                http_options=types.HttpOptions(timeout=25.0)
+                http_options=types.HttpOptions(timeout=25000)
             )
             return _client
         except Exception as exc:
@@ -371,7 +370,7 @@ def call_gemini_rest(
         "maxOutputTokens": max_output_tokens
     }
     # Zero thinking budget eliminates reasoning latency for fast conversational response
-    if "thinking" in model.lower() or "2.5" in model.lower():
+    if not include_thinking and any(tag in model.lower() for tag in ("thinking", "2.5", "3.", "flash-latest")):
         gen_config["thinkingConfig"] = {"thinkingBudget": 0}
 
     payload = {
@@ -712,13 +711,27 @@ def generate_smart_fallback_reply(
             f"What would you like to explore next?"
         )
 
-    # 9. General Adaptive Mentorship Fallback
+    # 9. General Adaptive Mentorship / Honest General-Knowledge Fallback
     p_name = "Candidate"
     p_branch = "Engineering"
     if profile:
         p_dict = profile.model_dump() if hasattr(profile, "model_dump") else (profile if isinstance(profile, dict) else profile.__dict__)
         p_name = p_dict.get("full_name") or p_dict.get("username") or p_dict.get("name") or "Candidate"
         p_branch = p_dict.get("branch") or "Engineering"
+
+    is_career_or_site_query = any(
+        k in low_msg
+        for k in (
+            "pathfinder", "cgpa", "backlog", "branch", "placement", "resume", "ats", "interview",
+            "roadmap", "blueprint", "project", "code", "dsa", "leetcode", "github", "skill",
+            "salary", "package", "company", "role", "rag", "llm", "vercel", "render", "antigravity",
+        )
+    )
+    if not is_career_or_site_query and re.search(r"\b(who is|who was|tell me about|what is|explain|history of|about )\b", low_msg):
+        return (
+            f"My live external search/LLM connection is temporarily congested, {honorific_fallback}, so I couldn't fetch verified web details on "
+            f"\"{clean_msg[:80]}\" in offline mode — please resend once in a moment so I can answer accurately from live knowledge!"
+        )
 
     return (
         f"👋 **Hello {p_name} ({honorific_fallback})!**\n\n"
@@ -831,6 +844,12 @@ SAVED CANDIDATE PROFILE:
     else:
         sys_instruction += "\nADDRESSING RULE: You are speaking with a respected guest/candidate. Always address them respectfully as 'Sir' (NEVER call them Boss — ONLY dileepbommali16@gmail.com is Boss)."
 
+    sys_instruction += (
+        "\nGENERAL KNOWLEDGE & ENTITY ACCURACY: You possess full encyclopedic knowledge beyond Pathfinder "
+        "(history, public leaders including regional Indian/Andhra leaders like Vangaveeti Mohana Ranga, science, culture, coding). "
+        "NEVER claim your knowledge is strictly limited to Dileep or Pathfinder, and NEVER swap distinct names (e.g., never substitute Devineni Nehru when asked about Vangaveeti Mohana Ranga)."
+    )
+
     # Build strictly alternating multi-turn history (trimmed to 6 turns & max 2000 chars)
     contents: List[Dict[str, Any]] = []
     openrouter_messages: List[Dict[str, str]] = []
@@ -922,7 +941,7 @@ async def stream_chat_with_mentor(
     # 1. Primary Live streaming via Google Gemini SDK
     if api_key and genai:
         try:
-            client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=10.0))
+            client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=10000))
             contents_sdk = []
             for c in contents:
                 contents_sdk.append({"role": c["role"], "parts": [{"text": c["parts"][0]["text"]}]})
@@ -934,6 +953,9 @@ async def stream_chat_with_mentor(
                     system_instruction=sys_instruction,
                     temperature=0.7,
                     max_output_tokens=600,
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
+                    if hasattr(types, "AutomaticFunctionCallingConfig")
+                    else None,
                     thinking_config=types.ThinkingConfig(thinking_budget=0) if hasattr(types, "ThinkingConfig") else None
                 )
             )
@@ -979,7 +1001,7 @@ def chat_with_mentor(
     with token-budgeted knowledge, candidate profile grounding, and tool iteration caps.
     """
     t_start = time.perf_counter()
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    api_key = os.getenv("GEMINI_API_KEY", "").strip() or get_active_gemini_key()
     clean_msg = message.strip() if message else ""
 
     if not clean_msg:
@@ -1035,12 +1057,12 @@ def chat_with_mentor(
     gemini_call_ms = 0.0
     model_used = "none"
 
-    # Execute with low-latency attempts across primary Gemini models (strict 4.5s budget)
-    models_to_try = list(get_gemini_models())[:2]
+    # Execute with low-latency attempts across primary Gemini models (18s budget across 4 models)
+    models_to_try = list(get_gemini_models())[:4]
     if api_key:
         for model in models_to_try:
-            if (time.perf_counter() - t_start) > 4.5:
-                logger.info("[Gemini Engine] Time budget reached (4.5s), switching to intelligent fallback.")
+            if (time.perf_counter() - t_start) > 18.0:
+                logger.info("[Gemini Engine] Time budget reached (18.0s), switching to intelligent fallback.")
                 break
 
             t_call_start = time.perf_counter()
@@ -1053,7 +1075,7 @@ def chat_with_mentor(
                     temperature=0.85,
                     max_output_tokens=600,
                     include_thinking=False,
-                    timeout_sec=4.0
+                    timeout_sec=9.0
                 )
                 call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
                 attempts_log.append({"model": model, "duration_ms": call_duration, "status": "ok" if reply else "empty"})
@@ -1237,7 +1259,7 @@ def generate_strict_json_evaluation(
     if not api_key:
         return None, None, "GEMINI_API_KEY not configured"
 
-    models_to_try = list(get_gemini_models())[:2]
+    models_to_try = list(get_gemini_models())[:4]
     last_error = "No Gemini models available"
 
     client = get_gemini_client()
@@ -1259,6 +1281,9 @@ def generate_strict_json_evaluation(
                         response_schema=schema,
                         temperature=0.15,
                         max_output_tokens=2400,
+                        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
+                        if hasattr(types, "AutomaticFunctionCallingConfig")
+                        else None,
                         thinking_config=types.ThinkingConfig(thinking_budget=0)
                         if hasattr(types, "ThinkingConfig")
                         else None,
@@ -1266,13 +1291,17 @@ def generate_strict_json_evaluation(
                 )
                 parsed = getattr(response, "parsed", None)
                 if parsed is not None:
+                    promote_gemini_model(model)
                     return schema.model_validate(parsed), model, None
                 raw_dict = _extract_json_object(getattr(response, "text", "") or "")
                 if raw_dict is not None:
+                    promote_gemini_model(model)
                     return schema.model_validate(raw_dict), model, None
                 last_error = f"{model}: empty structured output"
             except Exception as exc:
                 last_error = f"{model}: {exc}"
+                if "404" in last_error or "not found" in last_error.lower() or "no longer available" in last_error.lower():
+                    evict_gemini_model(model)
                 logger.warning(f"[Strict Evaluation] SDK '{model}' failed: {exc}")
 
     # Secondary attempt via lightweight REST endpoint with explicit JSON schema instruction

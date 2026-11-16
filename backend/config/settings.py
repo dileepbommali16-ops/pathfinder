@@ -64,6 +64,10 @@ class Settings:
         origins = [
             "https://pathfinder-client-fzom.vercel.app",
         ]
+        if not os.getenv("RENDER") and not os.getenv("VERCEL"):
+            for local_origin in ("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5000", "http://127.0.0.1:5000"):
+                if local_origin not in origins:
+                    origins.append(local_origin)
         if frontend_env:
             import re
             for item in frontend_env.split(","):

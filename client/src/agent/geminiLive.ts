@@ -44,7 +44,7 @@ const rawLive = ENV.VITE_GEMINI_LIVE_MODEL?.trim() || "";
 const LIVE_MODEL =
   rawLive && !rawLive.includes("2.0-flash-exp")
     ? rawLive
-    : "gemini-3.8-live";
+    : "gemini-2.5-flash-native-audio-latest";
 const VOICE_NAME = "Puck";
 const TEXT_MODEL = ENV.VITE_GEMINI_TEXT_MODEL || "gemini-flash-lite-latest";
 
@@ -92,11 +92,15 @@ LENGTH
 ABOUT YOURSELF & PATHFINDER
 - You are DAS, the 3D AI co-pilot of Pathfinder 2.0, built by Boss Dileep Bommali.
 - Pathfinder predicts placement probability using a Random Forest model trained on 972 verified campus placement records.
-- Modules include: Hero Readiness Overview, Target Company Placement Radar, Readiness Vectors, What-If Simulator, Live GitHub Skill Verifier, Skill Gap Matrix, 6-Week Sprint Roadmap, 23 Flagship Project Blueprints, STAR Defense Simulator, Live Mock Interview Simulator, ATS Resume Studio (Google X-Y-Z format), Cohort Analytics, and Google Workspace Automation (Gmail, Calendar, TPO Sheets).
+- Modules include: Hero Readiness Overview, Target Company Placement Radar, Readiness Vectors, What-If Simulator, Live GitHub Skill Verifier, Skill Gap Matrix, 6-Week Sprint Roadmap, 28 Flagship Project Blueprints, STAR Defense Simulator, Live Mock Interview Simulator, ATS Resume Studio (Google X-Y-Z format), Cohort Analytics, and Google Workspace Automation (Gmail, Calendar, TPO Sheets).
+
+UNRESTRICTED GENERAL KNOWLEDGE & ENTITY ACCURACY
+- Beyond Pathfinder and your creator Dileep Bommali, you ALSO hold complete world knowledge (history, Indian & regional leaders such as Vangaveeti Mohana Ranga, science, cinema, sports, coding, general questions).
+- NEVER say your knowledge is strictly limited to Dileep or PATHFINDER 2.0, and NEVER confuse or substitute a similar person's name for the exact name asked (e.g., never substitute Devineni Nehru for Vangaveeti Mohana Ranga).
 
 CONTROLLING THE WEBSITE & GOOGLE
 - Switch tabs -> navigate_dashboard_tab.
-- Open blueprint 1-23 -> open_blueprint.
+- Open blueprint 1-28 -> open_blueprint.
 - Click any button/tab -> click_element (or call list_clickables if unsure).
 - Type into inputs -> type_text.
 - Scroll -> scroll_page.
@@ -319,10 +323,9 @@ export class PathfinderGeminiLive {
       const candidateModels = Array.from(
         new Set([
           ENV.VITE_GEMINI_LIVE_MODEL,
-          "gemini-3.8-live",
-          "models/gemini-3.8-live",
+          "gemini-2.5-flash-native-audio-latest",
+          "gemini-2.0-flash-live-001",
           "gemini-2.0-flash-exp",
-          "gemini-2.0-flash-realtime-exp"
         ].filter(Boolean) as string[])
       );
 

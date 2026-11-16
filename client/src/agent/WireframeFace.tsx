@@ -191,6 +191,19 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
     };
   }, [materials]);
 
+  useEffect(() => {
+    return () => {
+      if (!loadedModel) return;
+      loadedModel.traverse((child: any) => {
+        if (child?.isMesh) {
+          child.geometry?.dispose?.();
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach((m: any) => m?.dispose?.());
+        }
+      });
+    };
+  }, [loadedModel]);
+
   useFrame((state, rawDelta) => {
     const delta = Math.min(0.05, rawDelta);
     const t = state.clock.getElapsedTime();
