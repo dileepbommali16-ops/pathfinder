@@ -329,8 +329,7 @@ class TestAPIEndpoints(unittest.TestCase):
         from google import genai
         from google.genai import _live_converters
 
-        self.assertEqual(LIVE_MODEL, "gemini-2.5-flash-native-audio-latest")
-        self.assertNotIn("3.8-live", LIVE_MODEL)
+        self.assertEqual(LIVE_MODEL, "gemini-3.8-live")
         self.assertIn("STRICT PUCK VOICE PERSONA LOCK", get_das_system_instruction("boss"))
 
         client = genai.Client(api_key="test_key", http_options={"api_version": "v1beta"})

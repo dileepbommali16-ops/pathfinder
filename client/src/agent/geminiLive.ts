@@ -39,15 +39,12 @@ export interface GeminiLiveCallbacks {
 }
 
 const ENV = import.meta.env as Record<string, string | undefined>;
-// FIXED: Strictly lock Gemini Live WebSocket model to 2.5 Native Audio so Puck voice never switches to female/monotone voices!
+// Strictly locked to gemini-3.8-live with the Puck voice
 const rawLive = ENV.VITE_GEMINI_LIVE_MODEL?.trim() || "";
 const LIVE_MODEL =
-  rawLive &&
-  !rawLive.includes("2.0-flash-exp") &&
-  !rawLive.includes("3.8-live") &&
-  !rawLive.includes("3.5-live")
+  rawLive && !rawLive.includes("2.0-flash-exp")
     ? rawLive
-    : "gemini-2.5-flash-native-audio-latest";
+    : "gemini-3.8-live";
 const VOICE_NAME = "Puck";
 const TEXT_MODEL = ENV.VITE_GEMINI_TEXT_MODEL || ENV.VITE_GEMINI_MODEL || "gemini-3.5-flash";
 
@@ -76,8 +73,8 @@ function getMasterPrompt(): string {
   const roleInstruction = isBoss
     ? `You are speaking to your creator, Boss Dileep Bommali. Always address him as "Boss" warmly like a close friend.`
     : honorific === "Madam"
-    ? `You are speaking to a respected female stakeholder, recruiter, or student. Always address her respectfully and politely as "Madam" (NEVER call her Boss or Sir).`
-    : `You are speaking to a valued stakeholder, guest, or candidate. Address them respectfully and warmly as "Sir".`;
+      ? `You are speaking to a respected female stakeholder, recruiter, or student. Always address her respectfully and politely as "Madam" (NEVER call her Boss or Sir).`
+      : `You are speaking to a valued stakeholder, guest, or candidate. Address them respectfully and warmly as "Sir".`;
   return `You are DAS, the friendly 3D AI voice co-pilot of Pathfinder 2.0, created by Boss Dileep Bommali.
 ${roleInstruction}
 
@@ -327,9 +324,7 @@ export class PathfinderGeminiLive {
         new Set(
           [
             LIVE_MODEL,
-            "gemini-2.5-flash-native-audio-latest",
-            "gemini-2.5-flash-native-audio-preview-12-2025",
-            "gemini-2.0-flash-live-001",
+            "gemini-3.8-live",
           ].filter(Boolean) as string[]
         )
       );

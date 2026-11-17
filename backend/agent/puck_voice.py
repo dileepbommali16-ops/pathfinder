@@ -7,16 +7,10 @@ RECEIVE_SAMPLE_RATE = 24000
 PUCK_SAMPLE_RATE = RECEIVE_SAMPLE_RATE
 CHUNK_SIZE = 1024
 
-# Strictly lock to Gemini 2.5 Native Audio model which honors the 'Puck' prebuilt male voice.
-# Note: gemini-3.8-live ignores PrebuiltVoiceConfig('Puck') and switches between female/monotone voices.
-DEFAULT_LIVE_MODEL = "gemini-2.5-flash-native-audio-latest"
+# Production-grade Gemini Multimodal Live model locked to gemini-3.8-live with 'Puck' voice
+DEFAULT_LIVE_MODEL = "gemini-3.8-live"
 RAW_MODEL = os.getenv("GEMINI_LIVE_MODEL", DEFAULT_LIVE_MODEL).strip()
-if (
-    not RAW_MODEL
-    or "2.0-flash-exp" in RAW_MODEL
-    or "3.8-live" in RAW_MODEL
-    or "3.5-live" in RAW_MODEL
-):
+if not RAW_MODEL or "2.0-flash-exp" in RAW_MODEL:
     RAW_MODEL = DEFAULT_LIVE_MODEL
 LIVE_MODEL = RAW_MODEL.replace("models/", "")
 

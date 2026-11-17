@@ -408,9 +408,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
     candidate_models = [
         LIVE_MODEL,
-        "gemini-2.5-flash-native-audio-latest",
-        "gemini-2.5-flash-native-audio-preview-12-2025",
-        "gemini-2.0-flash-live-001",
+        "gemini-3.8-live",
     ]
     seen = set()
     models_to_try = [m for m in candidate_models if m and not (m in seen or seen.add(m))]

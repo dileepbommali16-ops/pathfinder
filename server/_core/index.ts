@@ -63,7 +63,7 @@ async function startServer() {
       status: hasKey ? "ready" : "missing_api_key",
       service: "pathfinder-agent-ws",
       ws_endpoint: "/agent/ws",
-      model: process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-latest",
+      model: process.env.GEMINI_LIVE_MODEL || "gemini-3.8-live",
       voice: process.env.GEMINI_VOICE_NAME || "Puck",
     });
   });

@@ -180,11 +180,11 @@ def _synthesize_puck_tts_sync(text: str, voice_name: str = "Puck") -> Optional[D
 
 
 async def _synthesize_puck_live_fallback(text: str) -> Optional[Dict[str, Any]]:
-    """Fallback 24kHz Puck PCM synthesis via Gemini 2.5 Native Audio Live if preview-tts is busy."""
+    """Synthesize 24kHz Puck PCM audio via gemini-3.8-live locked to the Puck prebuilt voice."""
     from google import genai
     from google.genai import types
     from backend.config.key_resolver import get_gemini_key_candidates
-    from backend.agent.puck_voice import get_puck_speech_config
+    from backend.agent.puck_voice import LIVE_MODEL, get_puck_speech_config
 
     keys = get_gemini_key_candidates()
     if not keys:
@@ -205,7 +205,7 @@ async def _synthesize_puck_live_fallback(text: str) -> Optional[Dict[str, Any]]:
     prompt = f"[READ ALOUD VERBATIM ONLY]: {text}"
     for key in keys:
         client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
-        for model_name in ("gemini-2.5-flash-native-audio-latest", "gemini-2.5-flash-native-audio-preview-12-2025"):
+        for model_name in (LIVE_MODEL, "gemini-3.8-live"):
             try:
                 pcm_buf = bytearray()
                 async with client.aio.live.connect(model=model_name, config=cfg) as session:
@@ -228,33 +228,33 @@ async def _synthesize_puck_live_fallback(text: str) -> Optional[Dict[str, Any]]:
                         "voice": "Puck",
                     }
             except Exception as exc:
-                logger.warning("[Voice TTS Live Fallback] %s failed: %s", model_name, exc)
+                logger.warning("[Voice TTS Live Puck] %s failed: %s", model_name, exc)
                 continue
     return None
 
 
 @router.post("/voice/tts")
 async def voice_tts(req: dict, request: Request):
-    """Synthesize exact verbatim 24kHz Puck PCM audio (strictly locked to Puck voice)."""
+    """Synthesize exact verbatim 24kHz Puck PCM audio via gemini-3.8-live Puck voice."""
     text = (req.get("text", "") if isinstance(req, dict) else "").strip()[:900]
     voice_name = "Puck"
     if not text:
         raise HTTPException(400, "Text is required.")
 
-    cache_key = f"{voice_name}:{text}"
+    cache_key = f"{voice_name}:3.8-live:{text}"
     if cache_key in _TTS_PCM_CACHE:
         _TTS_PCM_CACHE.move_to_end(cache_key)
         cached = _TTS_PCM_CACHE[cache_key]
         return {
             "status": "ok",
             "cached": True,
-            "provider": "gemini-2.5-flash-preview-tts",
+            "provider": "gemini-3.8-live-puck",
             **cached,
         }
 
-    synthesized = await asyncio.to_thread(_synthesize_puck_tts_sync, text, voice_name)
+    synthesized = await _synthesize_puck_live_fallback(text)
     if not synthesized:
-        synthesized = await _synthesize_puck_live_fallback(text)
+        synthesized = await asyncio.to_thread(_synthesize_puck_tts_sync, text, voice_name)
 
     if synthesized:
         _TTS_PCM_CACHE[cache_key] = synthesized
@@ -264,7 +264,7 @@ async def voice_tts(req: dict, request: Request):
         return {
             "status": "ok",
             "cached": False,
-            "provider": "gemini-2.5-puck-tts",
+            "provider": "gemini-3.8-live-puck",
             **synthesized,
         }
 
@@ -272,7 +272,7 @@ async def voice_tts(req: dict, request: Request):
         "status": "fallback_live",
         "text": text,
         "voice": "Puck",
-        "provider": "gemini-live-native-audio",
+        "provider": "gemini-3.8-live-puck",
     }
 
 

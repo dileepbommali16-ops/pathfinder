@@ -343,14 +343,11 @@ CORE AUTONOMOUS CAPABILITIES:
       const configuredModel =
         import.meta.env.VITE_GEMINI_LIVE_MODEL?.trim() || "";
       const validModel =
-        configuredModel &&
-        !configuredModel.includes("2.0-flash-exp") &&
-        !configuredModel.includes("3.8-live") &&
-        !configuredModel.includes("3.5-live")
+        configuredModel && !configuredModel.includes("2.0-flash-exp")
           ? configuredModel.startsWith("models/")
             ? configuredModel
             : `models/${configuredModel}`
-          : "models/gemini-2.5-flash-native-audio-latest";
+          : "models/gemini-3.8-live";
 
       const setupPayload = {
         setup: {
@@ -631,18 +628,10 @@ CORE AUTONOMOUS CAPABILITIES:
           if (!this.currentAgentTranscript && !this.isSpeakingTurn && Date.now() - this.lastTextSentAt < 700) {
             return;
           }
-          const completedText = this.currentAgentTranscript;
-          const hadRecentLiveAudio =
-            this.audioChunksInTurn > 0 ||
-            audioEngine.isSpeaking() ||
-            (this.lastAudioChunkAt > 0 && Date.now() - this.lastAudioChunkAt < 8000);
           this.audioChunksInTurn = 0;
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
-          if (!hadRecentLiveAudio && completedText.trim()) {
-            this.triggerTextOnlyTts(completedText);
-          }
           if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {
             this.savedOnTranscript?.(`DAS Ready. Speak or type your next command, ${this.roleHonorific}!`);
           }
@@ -761,16 +750,8 @@ CORE AUTONOMOUS CAPABILITIES:
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
-          const completedText = this.currentAgentTranscript;
-          const hadRecentLiveAudio =
-            this.audioChunksInTurn > 0 ||
-            audioEngine.isSpeaking() ||
-            (this.lastAudioChunkAt > 0 && Date.now() - this.lastAudioChunkAt < 8000);
           this.audioChunksInTurn = 0;
           audioEngine.flushAudioPlayer();
-          if (!hadRecentLiveAudio && completedText.trim()) {
-            this.triggerTextOnlyTts(completedText);
-          }
           if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {
             this.savedOnTranscript?.(`DAS Ready. Speak or type your next command, ${this.roleHonorific}!`);
           }

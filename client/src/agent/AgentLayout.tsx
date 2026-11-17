@@ -357,9 +357,16 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       dasSocket.sendTextCommand(queryText);
     }
     timerId = window.setTimeout(() => {
-      if (settled || askCoachNonceRef.current !== nonce) return;
+      if (
+        settled ||
+        askCoachNonceRef.current !== nonce ||
+        dasSocket.isAgentSpeaking ||
+        audioEngine.isSpeaking()
+      ) {
+        return;
+      }
       void deliverRestReply();
-    }, 6500);
+    }, 15000);
   };
   dispatchTurnRef.current = dispatchTurnWithVoiceFallback;
 
