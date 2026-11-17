@@ -7,12 +7,44 @@ RECEIVE_SAMPLE_RATE = 24000
 PUCK_SAMPLE_RATE = RECEIVE_SAMPLE_RATE
 CHUNK_SIZE = 1024
 
-# Production-grade Gemini Multimodal Live model locked to supported Gemini Live endpoint
-DEFAULT_LIVE_MODEL = "gemini-3.8-live"
+# Strictly lock to Gemini 2.5 Native Audio model which honors the 'Puck' prebuilt male voice.
+# Note: gemini-3.8-live ignores PrebuiltVoiceConfig('Puck') and switches between female/monotone voices.
+DEFAULT_LIVE_MODEL = "gemini-2.5-flash-native-audio-latest"
 RAW_MODEL = os.getenv("GEMINI_LIVE_MODEL", DEFAULT_LIVE_MODEL).strip()
-if not RAW_MODEL or "2.0-flash-exp" in RAW_MODEL:
+if (
+    not RAW_MODEL
+    or "2.0-flash-exp" in RAW_MODEL
+    or "3.8-live" in RAW_MODEL
+    or "3.5-live" in RAW_MODEL
+):
     RAW_MODEL = DEFAULT_LIVE_MODEL
 LIVE_MODEL = RAW_MODEL.replace("models/", "")
+
+# Ensure google-genai WebSocket setup payload always serializes speechConfig in canonical camelCase
+try:
+    from google.genai import _live_converters as _lc
+
+    _orig_live_cfg_to_mldev = getattr(_lc, "_LiveConnectConfig_to_mldev", None)
+    if callable(_orig_live_cfg_to_mldev) and not getattr(_lc, "_puck_camel_patched", False):
+        def _patched_live_cfg_to_mldev(api_client, from_object, parent_object=None):
+            res = _orig_live_cfg_to_mldev(api_client, from_object, parent_object)
+            if isinstance(parent_object, dict):
+                setup_obj = parent_object.setdefault("setup", {})
+                gen_cfg = setup_obj.setdefault("generationConfig", {})
+                gen_cfg["speechConfig"] = {
+                    "voiceConfig": {
+                        "prebuiltVoiceConfig": {
+                            "voiceName": "Puck",
+                        }
+                    }
+                }
+            return res
+
+        _lc._LiveConnectConfig_to_mldev = _patched_live_cfg_to_mldev
+        _lc._puck_camel_patched = True
+except Exception:
+    pass
+
 
 def get_puck_speech_config() -> types.SpeechConfig:
     """

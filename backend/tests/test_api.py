@@ -323,5 +323,25 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIn("database_cloud", health)
         self.assertEqual(health["database_cloud"]["engine"], "supabase_postgres_pgvector")
 
+    def test_puck_voice_lock_and_camel_case_speech_config(self):
+        from backend.agent.puck_voice import LIVE_MODEL, create_gemini_live_config
+        from backend.agent.live_proxy import get_das_system_instruction
+        from google import genai
+        from google.genai import _live_converters
+
+        self.assertEqual(LIVE_MODEL, "gemini-2.5-flash-native-audio-latest")
+        self.assertNotIn("3.8-live", LIVE_MODEL)
+        self.assertIn("STRICT PUCK VOICE PERSONA LOCK", get_das_system_instruction("boss"))
+
+        client = genai.Client(api_key="test_key", http_options={"api_version": "v1beta"})
+        cfg = create_gemini_live_config("Test prompt", [])
+        parent = {}
+        _live_converters._LiveConnectConfig_to_mldev(client._api_client, cfg.model_dump(exclude_none=True), parent)
+        speech_cfg = parent.get("setup", {}).get("generationConfig", {}).get("speechConfig", {})
+        self.assertEqual(
+            speech_cfg,
+            {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": "Puck"}}},
+        )
+
 if __name__ == "__main__":
     unittest.main()

@@ -39,10 +39,13 @@ export interface GeminiLiveCallbacks {
 }
 
 const ENV = import.meta.env as Record<string, string | undefined>;
-// FIXED: Valid Gemini Live WebSocket model so Puck voice never fails!
+// FIXED: Strictly lock Gemini Live WebSocket model to 2.5 Native Audio so Puck voice never switches to female/monotone voices!
 const rawLive = ENV.VITE_GEMINI_LIVE_MODEL?.trim() || "";
 const LIVE_MODEL =
-  rawLive && !rawLive.includes("2.0-flash-exp")
+  rawLive &&
+  !rawLive.includes("2.0-flash-exp") &&
+  !rawLive.includes("3.8-live") &&
+  !rawLive.includes("3.5-live")
     ? rawLive
     : "gemini-2.5-flash-native-audio-latest";
 const VOICE_NAME = "Puck";
@@ -321,12 +324,14 @@ export class PathfinderGeminiLive {
       const liveAi = new GoogleGenAI({ apiKey: key });
 
       const candidateModels = Array.from(
-        new Set([
-          ENV.VITE_GEMINI_LIVE_MODEL,
-          "gemini-2.5-flash-native-audio-latest",
-          "gemini-2.0-flash-live-001",
-          "gemini-2.0-flash-exp",
-        ].filter(Boolean) as string[])
+        new Set(
+          [
+            LIVE_MODEL,
+            "gemini-2.5-flash-native-audio-latest",
+            "gemini-2.5-flash-native-audio-preview-12-2025",
+            "gemini-2.0-flash-live-001",
+          ].filter(Boolean) as string[]
+        )
       );
 
       let lastErr: any = null;
@@ -491,20 +496,13 @@ export class PathfinderGeminiLive {
     }
   }
 
-  /* ---------------- Speak via Gemini Live or Resilient Audio ---------------- */
+  /* ---------------- Speak strictly via Gemini Puck 24kHz Audio ---------------- */
   private async speakAloud(text: string): Promise<void> {
     const clean = text.replace(/[*#_`~]/g, "").trim();
     if (!clean) return;
     try {
       speaker.say(clean);
     } catch { }
-    if (this.session) {
-      try {
-        this.sendText(
-          `Speak this exact message aloud naturally: "${clean}"`
-        );
-      } catch { }
-    }
   }
 
   async speakText(text: string): Promise<boolean> {

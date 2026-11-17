@@ -343,7 +343,10 @@ CORE AUTONOMOUS CAPABILITIES:
       const configuredModel =
         import.meta.env.VITE_GEMINI_LIVE_MODEL?.trim() || "";
       const validModel =
-        configuredModel && !configuredModel.includes("2.0-flash-exp")
+        configuredModel &&
+        !configuredModel.includes("2.0-flash-exp") &&
+        !configuredModel.includes("3.8-live") &&
+        !configuredModel.includes("3.5-live")
           ? configuredModel.startsWith("models/")
             ? configuredModel
             : `models/${configuredModel}`
@@ -578,6 +581,11 @@ CORE AUTONOMOUS CAPABILITIES:
             this.currentAgentTranscript = "";
             this.audioChunksInTurn = 0;
           }
+          if (this.awaitingNextTurn) {
+            this.currentAgentTranscript = "";
+            this.awaitingNextTurn = false;
+            this.audioChunksInTurn = 0;
+          }
           if (tId !== null) {
             this.activeAudioTurnId = tId;
           }
@@ -588,10 +596,6 @@ CORE AUTONOMOUS CAPABILITIES:
           this.notifyAgentResponse();
           audioEngine.playPcmChunk(data.pcm_base64, data.sample_rate || 24000);
           if (!this.isSpeakingTurn) {
-            if (this.awaitingNextTurn) {
-              this.currentAgentTranscript = "";
-              this.awaitingNextTurn = false;
-            }
             this.isSpeakingTurn = true;
             if (!this.currentAgentTranscript) {
               this.savedOnTranscript?.("🔊 DAS Speaking...");
@@ -610,7 +614,9 @@ CORE AUTONOMOUS CAPABILITIES:
           if (this.awaitingNextTurn) {
             this.currentAgentTranscript = "";
             this.awaitingNextTurn = false;
-            this.audioChunksInTurn = 0;
+            if (!this.isSpeakingTurn && this.audioChunksInTurn === 0) {
+              this.audioChunksInTurn = 0;
+            }
             this.cancelTtsFallback();
           }
           this.currentAgentTranscript += data.text;
@@ -626,12 +632,15 @@ CORE AUTONOMOUS CAPABILITIES:
             return;
           }
           const completedText = this.currentAgentTranscript;
-          const hadAudio = this.audioChunksInTurn > 0;
+          const hadRecentLiveAudio =
+            this.audioChunksInTurn > 0 ||
+            audioEngine.isSpeaking() ||
+            (this.lastAudioChunkAt > 0 && Date.now() - this.lastAudioChunkAt < 8000);
           this.audioChunksInTurn = 0;
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
-          if (!hadAudio && completedText.trim()) {
+          if (!hadRecentLiveAudio && completedText.trim()) {
             this.triggerTextOnlyTts(completedText);
           }
           if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {
@@ -641,7 +650,7 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "user_transcript" && data.text) {
-          if (!this.isSpeakingTurn) {
+          if (!this.isSpeakingTurn && this.audioChunksInTurn === 0) {
             this.awaitingNextTurn = true;
           }
           this.savedOnUserTranscript?.(data.text);
@@ -718,6 +727,7 @@ CORE AUTONOMOUS CAPABILITIES:
                 this.awaitingNextTurn = false;
                 this.audioChunksInTurn = 0;
               }
+              this.lastAudioChunkAt = Date.now();
               this.audioChunksInTurn += 1;
               this.cancelTtsFallback();
               this.clearTurnWatchdog();
@@ -736,7 +746,9 @@ CORE AUTONOMOUS CAPABILITIES:
               if (this.awaitingNextTurn) {
                 this.currentAgentTranscript = "";
                 this.awaitingNextTurn = false;
-                this.audioChunksInTurn = 0;
+                if (!this.isSpeakingTurn && this.audioChunksInTurn === 0) {
+                  this.audioChunksInTurn = 0;
+                }
                 this.cancelTtsFallback();
               }
               this.currentAgentTranscript += part.text;
@@ -750,10 +762,13 @@ CORE AUTONOMOUS CAPABILITIES:
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
           const completedText = this.currentAgentTranscript;
-          const hadAudio = this.audioChunksInTurn > 0;
+          const hadRecentLiveAudio =
+            this.audioChunksInTurn > 0 ||
+            audioEngine.isSpeaking() ||
+            (this.lastAudioChunkAt > 0 && Date.now() - this.lastAudioChunkAt < 8000);
           this.audioChunksInTurn = 0;
           audioEngine.flushAudioPlayer();
-          if (!hadAudio && completedText.trim()) {
+          if (!hadRecentLiveAudio && completedText.trim()) {
             this.triggerTextOnlyTts(completedText);
           }
           if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {

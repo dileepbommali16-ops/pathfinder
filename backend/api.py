@@ -301,8 +301,8 @@ def get_gemini_live_key():
         "status": "ready" if has_key else "missing_api_key",
         "service": "pathfinder-agent-ws",
         "ws_endpoint": "/agent/ws",
-        "model": os.getenv("GEMINI_LIVE_MODEL", LIVE_MODEL),
-        "voice": "DAS Neural"
+        "model": LIVE_MODEL,
+        "voice": "Puck"
     }
 
 

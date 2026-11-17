@@ -111,15 +111,15 @@ export class Speaker {
   }
 
   /**
-   * Resilient Neural Voice Synthesizer & Speech Player:
-   * - Speaks aloud instantly with authoritative natural male voice profile.
-   * - Integrates directly with Web Audio API for real-time 60 FPS 3D Avatar lip sync.
+   * Strict Pure Puck Voice Synthesizer & Speech Player:
+   * - Routes ALL spoken utterances exclusively through Gemini Puck 24kHz PCM (/api/voice/tts -> Gemini Live Puck).
+   * - Strictly disables browser window.speechSynthesis so female or robotic OS voices NEVER play.
    */
   say(raw: string) {
     if (typeof window === "undefined") return;
     clearAudioEngineHook?.();
 
-    // Strict Pure Puck Voice Mode: Cancel and prevent any browser default robotic voices
+    // Strict Pure Puck Voice Mode: Cancel and prevent any browser default female/robotic OS voices
     if ("speechSynthesis" in window) {
       try {
         window.speechSynthesis.cancel();
@@ -135,81 +135,12 @@ export class Speaker {
       .trim();
     if (!text) return;
 
-    const wasBusy =
-      "speechSynthesis" in window &&
-      Boolean(window.speechSynthesis.speaking || window.speechSynthesis.pending);
-
-    // Stop any existing playback before queuing the next utterance
     this.stop();
-    const runGen = this.gen;
-
-    // Keep Speaker.say strictly local (browser speechSynthesis) so reading questions aloud never hijacks or pollutes the conversational Gemini Live WebSocket.
-    if ("speechSynthesis" in window) {
-      const launchSpeak = () => {
-        if (this.gen !== runGen) return;
-        try {
-          const utter = new SpeechSynthesisUtterance(text);
-          const voices = window.speechSynthesis.getVoices();
-          const preferred =
-            voices.find((v) => /en[-_](IN|US|GB)/i.test(v.lang) && /natural|neural|google|aria|guy|ravi|prabhat/i.test(v.name)) ||
-            voices.find((v) => /en/i.test(v.lang));
-          if (preferred) utter.voice = preferred;
-          utter.rate = 1.0;
-          utter.pitch = 1.0;
-          this.activeUtterance = utter;
-          this.simTimeline = buildVisemeTimeline(text);
-          this.simEstDurationMs = Math.max(900, (text.length / 13.5) * 1000);
-          this.simStartMs = typeof performance !== "undefined" ? performance.now() : Date.now();
-          this.boundaryCharIndex = -1;
-          this.boundaryAtMs = this.simStartMs;
-
-          const finish = () => {
-            if (this.activeUtterance === utter) {
-              this.activeUtterance = null;
-            }
-            if (this.gen !== runGen) return;
-            this.activeSpeaking = false;
-            this.onState?.(false);
-            this.stopLipSyncSimulation();
-          };
-
-          utter.onstart = () => {
-            if (this.gen !== runGen) return;
-            this.simStartMs = typeof performance !== "undefined" ? performance.now() : Date.now();
-            this.activeSpeaking = true;
-            this.onState?.(true);
-            this.startLipSyncSimulation();
-            this.startSynthWatchdog(runGen);
-          };
-          utter.onboundary = (e: SpeechSynthesisEvent) => {
-            if (this.gen !== runGen) return;
-            this.boundaryCharIndex = typeof e.charIndex === "number" ? e.charIndex : this.boundaryCharIndex;
-            this.boundaryAtMs = typeof performance !== "undefined" ? performance.now() : Date.now();
-            if (!this.activeSpeaking) {
-              this.activeSpeaking = true;
-              this.onState?.(true);
-              this.startLipSyncSimulation();
-            }
-          };
-          utter.onend = finish;
-          utter.onerror = finish;
-          try {
-            window.speechSynthesis.resume?.();
-          } catch {}
-          window.speechSynthesis.speak(utter);
-          this.startSynthWatchdog(runGen);
-        } catch {}
-      };
-
-      if (wasBusy) {
-        this.deferSpeakTimer = window.setTimeout(() => {
-          this.deferSpeakTimer = null;
-          launchSpeak();
-        }, 45);
-      } else {
-        launchSpeak();
-      }
-    }
+    const apiBase =
+      (import.meta as any).env?.VITE_API_BASE_URL ||
+      (import.meta as any).env?.VITE_BACKEND_URL ||
+      "https://pathfinder-backend-klrp.onrender.com";
+    void audioEngine.speakTextPuckOrLocal(text, apiBase);
   }
 
   private startSynthWatchdog(runGen: number) {
@@ -1271,12 +1202,17 @@ class AudioEngine {
     return float32Data;
   }
 
-  // Speak text aloud via Gemini Puck TTS (/api/voice/tts) -> WebAudio 24kHz PCM, falling back to browser SpeechSynthesis
+  // Speak text aloud strictly via Gemini Puck TTS (/api/voice/tts) -> WebAudio 24kHz PCM, or Gemini Live Puck WebSocket (NEVER browser SpeechSynthesis)
   public async speakTextPuckOrLocal(
     rawText: string,
-    apiBase: string,
+    apiBase?: string,
     options?: { signal?: AbortSignal; shouldContinue?: () => boolean }
   ): Promise<boolean> {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
     const cleaned = rawText
       .split("|||")[0]
       .replace(/<!--[\s\S]*?-->/g, " ")
@@ -1291,41 +1227,55 @@ class AudioEngine {
       return false;
     }
 
+    const effectiveApiBase =
+      apiBase ||
+      (import.meta as any).env?.VITE_API_BASE_URL ||
+      (import.meta as any).env?.VITE_BACKEND_URL ||
+      "https://pathfinder-backend-klrp.onrender.com";
+
     this.unlockAudio();
-    try {
-      const resp = await fetch(`${apiBase}/api/voice/tts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: options?.signal,
-        body: JSON.stringify({ text: cleaned, voice: "Puck" }),
-      });
-      if (options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
-        return false;
-      }
-      if (resp.ok) {
-        const data = await resp.json();
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const resp = await fetch(`${effectiveApiBase}/api/voice/tts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: options?.signal,
+          body: JSON.stringify({ text: cleaned, voice: "Puck" }),
+        });
         if (options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
           return false;
         }
-        if (data?.status === "ok" && data?.pcm_base64) {
-          const played = await this.playWholePcmBase64(
-            data.pcm_base64,
-            Number(data.sample_rate) || 24000,
-            undefined,
-            cleaned
-          );
-          if (played) return true;
+        if (resp.ok) {
+          const data = await resp.json();
+          if (options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
+            return false;
+          }
+          if (data?.status === "ok" && data?.pcm_base64) {
+            const played = await this.playWholePcmBase64(
+              data.pcm_base64,
+              Number(data.sample_rate) || 24000,
+              undefined,
+              cleaned
+            );
+            if (played) return true;
+          }
         }
+      } catch (err: any) {
+        if (err?.name === "AbortError") return false;
       }
-    } catch (err: any) {
-      if (err?.name === "AbortError") return false;
+      if (attempt === 0) {
+        await new Promise((r) => setTimeout(r, 300));
+      }
     }
 
     if (options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
       return false;
     }
-    speaker.say(cleaned);
-    return true;
+    if (typeof window !== "undefined" && (window as any).dasSocket?.speakVerbatim) {
+      (window as any).dasSocket.speakVerbatim(cleaned);
+      return true;
+    }
+    return false;
   }
 
   public stopWholePcmPlayback() {

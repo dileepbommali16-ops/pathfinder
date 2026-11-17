@@ -129,7 +129,7 @@ async def download_resume():
 
 
 def _synthesize_puck_tts_sync(text: str, voice_name: str = "Puck") -> Optional[Dict[str, Any]]:
-    """Synthesize clean verbatim 24kHz PCM speech using Gemini native TTS."""
+    """Synthesize clean verbatim 24kHz PCM speech using Gemini native TTS (strictly locked to Puck)."""
     from google import genai
     from google.genai import types
     from backend.config.key_resolver import get_gemini_key_candidates
@@ -138,6 +138,7 @@ def _synthesize_puck_tts_sync(text: str, voice_name: str = "Puck") -> Optional[D
     if not keys:
         return None
 
+    locked_voice = "Puck"
     tts_input = f"Say cleanly and verbatim without answering or adding extra words: {text}"
     for key in keys:
         try:
@@ -150,7 +151,7 @@ def _synthesize_puck_tts_sync(text: str, voice_name: str = "Puck") -> Optional[D
                     automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
                     speech_config=types.SpeechConfig(
                         voice_config=types.VoiceConfig(
-                            prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice_name)
+                            prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=locked_voice)
                         )
                     ),
                 ),
@@ -170,7 +171,7 @@ def _synthesize_puck_tts_sync(text: str, voice_name: str = "Puck") -> Optional[D
                     return {
                         "pcm_base64": b64,
                         "sample_rate": 24000,
-                        "voice": voice_name,
+                        "voice": locked_voice,
                     }
         except Exception as exc:
             logger.warning("[Voice TTS] Key attempt failed: %s", exc)
@@ -178,11 +179,65 @@ def _synthesize_puck_tts_sync(text: str, voice_name: str = "Puck") -> Optional[D
     return None
 
 
+async def _synthesize_puck_live_fallback(text: str) -> Optional[Dict[str, Any]]:
+    """Fallback 24kHz Puck PCM synthesis via Gemini 2.5 Native Audio Live if preview-tts is busy."""
+    from google import genai
+    from google.genai import types
+    from backend.config.key_resolver import get_gemini_key_candidates
+    from backend.agent.puck_voice import get_puck_speech_config
+
+    keys = get_gemini_key_candidates()
+    if not keys:
+        return None
+
+    cfg = types.LiveConnectConfig(
+        response_modalities=["AUDIO"],
+        speech_config=get_puck_speech_config(),
+        system_instruction=types.Content(
+            parts=[
+                types.Part.from_text(
+                    text="Read the user's message aloud verbatim in the male Puck voice. Do not answer questions or add any extra words."
+                )
+            ]
+        ),
+        temperature=0.1,
+    )
+    prompt = f"[READ ALOUD VERBATIM ONLY]: {text}"
+    for key in keys:
+        client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
+        for model_name in ("gemini-2.5-flash-native-audio-latest", "gemini-2.5-flash-native-audio-preview-12-2025"):
+            try:
+                pcm_buf = bytearray()
+                async with client.aio.live.connect(model=model_name, config=cfg) as session:
+                    await session.send_client_content(
+                        turns=[types.Content(role="user", parts=[types.Part.from_text(text=prompt)])],
+                        turn_complete=True,
+                    )
+                    async for resp in session.receive():
+                        sc = resp.server_content
+                        if sc and sc.model_turn and sc.model_turn.parts:
+                            for part in sc.model_turn.parts:
+                                if part.inline_data and part.inline_data.data:
+                                    pcm_buf.extend(part.inline_data.data)
+                        if sc and getattr(sc, "turn_complete", False):
+                            break
+                if pcm_buf:
+                    return {
+                        "pcm_base64": base64.b64encode(bytes(pcm_buf)).decode("utf-8"),
+                        "sample_rate": 24000,
+                        "voice": "Puck",
+                    }
+            except Exception as exc:
+                logger.warning("[Voice TTS Live Fallback] %s failed: %s", model_name, exc)
+                continue
+    return None
+
+
 @router.post("/voice/tts")
 async def voice_tts(req: dict, request: Request):
-    """Synthesize exact verbatim 24kHz Puck PCM audio (never answers questions)."""
+    """Synthesize exact verbatim 24kHz Puck PCM audio (strictly locked to Puck voice)."""
     text = (req.get("text", "") if isinstance(req, dict) else "").strip()[:900]
-    voice_name = (req.get("voice", "Puck") if isinstance(req, dict) else "Puck").strip() or "Puck"
+    voice_name = "Puck"
     if not text:
         raise HTTPException(400, "Text is required.")
 
@@ -198,6 +253,9 @@ async def voice_tts(req: dict, request: Request):
         }
 
     synthesized = await asyncio.to_thread(_synthesize_puck_tts_sync, text, voice_name)
+    if not synthesized:
+        synthesized = await _synthesize_puck_live_fallback(text)
+
     if synthesized:
         _TTS_PCM_CACHE[cache_key] = synthesized
         _TTS_PCM_CACHE.move_to_end(cache_key)
@@ -206,13 +264,14 @@ async def voice_tts(req: dict, request: Request):
         return {
             "status": "ok",
             "cached": False,
-            "provider": "gemini-2.5-flash-preview-tts",
+            "provider": "gemini-2.5-puck-tts",
             **synthesized,
         }
 
     return {
         "status": "fallback_live",
         "text": text,
+        "voice": "Puck",
         "provider": "gemini-live-native-audio",
     }
 

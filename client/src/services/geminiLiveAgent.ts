@@ -13,10 +13,16 @@ const ai = new GoogleGenAI({
  * Starts a unified Gemini Live WebSocket session (Voice + Brain + Website Tools).
  */
 export async function startPathfinderAgent(onAudioChunk, onUiAction) {
+  const rawLive = (import.meta.env.VITE_GEMINI_LIVE_MODEL || "").trim();
+  const liveModel =
+    rawLive &&
+    !rawLive.includes("2.0-flash-exp") &&
+    !rawLive.includes("3.8-live") &&
+    !rawLive.includes("3.5-live")
+      ? rawLive
+      : "gemini-2.5-flash-native-audio-latest";
   const session = await ai.live.connect({
-    model:
-      import.meta.env.VITE_GEMINI_LIVE_MODEL ||
-      "gemini-2.5-flash-native-audio-latest",
+    model: liveModel,
     config: {
       responseModalities: [Modality.AUDIO],
       outputAudioTranscription: {},
