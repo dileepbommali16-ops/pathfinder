@@ -974,7 +974,16 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 pass
             except Exception as stream_err:
                 err_str = str(stream_err)
-                is_idle_refresh = "inactivity" in err_str.lower() or "1008" in err_str or "closed" in err_str.lower()
+                err_lower = err_str.lower()
+                is_idle_refresh = (
+                    "inactivity" in err_lower
+                    or "1008" in err_str
+                    or "1011" in err_str
+                    or "1012" in err_str
+                    or "closed" in err_lower
+                    or "exhausted" in err_lower
+                    or "deadline" in err_lower
+                )
                 if is_idle_refresh:
                     live_logger.info(f"[Gemini Stream Notice] Idle/session refresh: {err_str}")
                 else:

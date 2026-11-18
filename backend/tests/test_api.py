@@ -342,5 +342,12 @@ class TestAPIEndpoints(unittest.TestCase):
             {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": "Puck"}}},
         )
 
+        import inspect
+        import backend.routers.voice_routes as vr
+
+        vr_src = inspect.getsource(vr)
+        self.assertNotIn("gemini-2.5-flash-preview-tts", vr_src)
+        self.assertIn("gemini-3.8-live", vr_src)
+
 if __name__ == "__main__":
     unittest.main()

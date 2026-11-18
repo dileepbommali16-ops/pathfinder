@@ -21,6 +21,7 @@ export async function fetchDeepgramMp3(
 }
 
 let clearAudioEngineHook: (() => void) | null = null;
+let audioEngineSpeakingHook: (() => boolean) | null = null;
 
 export class Speaker {
   private ctxRef: AudioContext | null = null;
@@ -117,7 +118,6 @@ export class Speaker {
    */
   say(raw: string) {
     if (typeof window === "undefined") return;
-    clearAudioEngineHook?.();
 
     // Strict Pure Puck Voice Mode: Cancel and prevent any browser default female/robotic OS voices
     if ("speechSynthesis" in window) {
@@ -135,7 +135,7 @@ export class Speaker {
       .trim();
     if (!text) return;
 
-    this.stop();
+    this.stop(true);
     const apiBase =
       (import.meta as any).env?.VITE_API_BASE_URL ||
       (import.meta as any).env?.VITE_BACKEND_URL ||
@@ -313,7 +313,11 @@ export class Speaker {
   }
 
   get isSpeaking(): boolean {
-    return this.activeSpeaking || this.scheduledPcmSources.size > 0;
+    return (
+      this.activeSpeaking ||
+      this.scheduledPcmSources.size > 0 ||
+      Boolean(audioEngineSpeakingHook?.())
+    );
   }
 
   /**
@@ -372,8 +376,11 @@ export class Speaker {
     };
   }
 
-  stop() {
+  stop(clearSharedEngine = true) {
     this.gen++;
+    if (clearSharedEngine) {
+      clearAudioEngineHook?.();
+    }
     if (this.deferSpeakTimer !== null) {
       window.clearTimeout(this.deferSpeakTimer);
       this.deferSpeakTimer = null;
@@ -1312,7 +1319,7 @@ class AudioEngine {
 
     this.clearAudioQueue();
     try {
-      speaker?.stop?.();
+      speaker?.stop?.(false);
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
@@ -1365,7 +1372,7 @@ class AudioEngine {
     if (!this.activeTurnMode) {
       this.stopWholePcmPlayback();
       try {
-        speaker?.stop?.();
+        speaker?.stop?.(false);
         if (typeof window !== "undefined" && "speechSynthesis" in window) {
           window.speechSynthesis.cancel();
         }
@@ -2198,6 +2205,7 @@ export class CameraEngine {
 export const cameraEngine = new CameraEngine();
 export const audioEngine = new AudioEngine();
 clearAudioEngineHook = () => audioEngine.clearAudioQueue();
+audioEngineSpeakingHook = () => audioEngine.isSpeaking();
 export { AudioEngine as BrowserAudioLoop };
 export function getLiveAudioVolume(): number {
   return getUnifiedSpeechFormants().volume;

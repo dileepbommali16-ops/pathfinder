@@ -319,7 +319,7 @@ async def test_live_debug():
         if not keys:
             return {"ok": False, "error": "No GEMINI_API_KEY configured on server"}
         models_to_try = []
-        for candidate in (LIVE_MODEL, "gemini-2.5-flash-native-audio-latest", "gemini-2.0-flash-live-001"):
+        for candidate in (LIVE_MODEL, "gemini-3.8-live"):
             if candidate and candidate not in models_to_try:
                 models_to_try.append(candidate)
         cfg = create_gemini_live_config(get_das_system_instruction("boss"), DAS_TOOLS)

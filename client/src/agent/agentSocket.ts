@@ -95,6 +95,7 @@ class DasAgentSocket {
   private lastTurnCompletedAt = 0;
   private latestPageContext: Record<string, any> | null = null;
   private cameraActiveState = false;
+  private hasConversationActivity = false;
 
   private cancelTtsFallback() {
     if (this.ttsFallbackAbort) {
@@ -514,7 +515,12 @@ CORE AUTONOMOUS CAPABILITIES:
         if (data.setupComplete !== undefined) {
           this.isConnected = true;
           this.savedOnStatusChange?.(true);
-          if (!this.lastUnansweredText && this.pendingTexts.length === 0 && Date.now() - this.lastTextSentAt > 6000) {
+          if (
+            !this.hasConversationActivity &&
+            !this.lastUnansweredText &&
+            this.pendingTexts.length === 0 &&
+            Date.now() - this.lastTextSentAt > 6000
+          ) {
             this.savedOnTranscript?.(`DAS Online (DAS Ready)! Speak or type now, ${this.roleHonorific}.`);
           }
           const ctxNow =
@@ -532,8 +538,8 @@ CORE AUTONOMOUS CAPABILITIES:
           if (data.status === "reconnecting") {
             if (this.lastUnansweredText) {
               this.pendingTexts = [this.lastUnansweredText];
-            }
-            if (Date.now() - this.lastTextSentAt > 6000) {
+              this.savedOnTranscript?.(data.message || "Refreshing live session...");
+            } else if (!this.hasConversationActivity && Date.now() - this.lastTextSentAt > 6000) {
               this.savedOnTranscript?.(data.message || "Refreshing live session...");
             }
             this.forceReconnectNow();
@@ -545,7 +551,12 @@ CORE AUTONOMOUS CAPABILITIES:
             this.audioChunksInTurn = 0;
             this.interruptedTurnIds.clear();
             this.savedOnStatusChange?.(true);
-            if (!this.lastUnansweredText && this.pendingTexts.length === 0 && Date.now() - this.lastTextSentAt > 6000) {
+            if (
+              !this.hasConversationActivity &&
+              !this.lastUnansweredText &&
+              this.pendingTexts.length === 0 &&
+              Date.now() - this.lastTextSentAt > 6000
+            ) {
               this.savedOnTranscript?.("DAS Online (DAS Ready)!");
             }
             const ctxNow =
@@ -586,6 +597,7 @@ CORE AUTONOMOUS CAPABILITIES:
           if (tId !== null) {
             this.activeAudioTurnId = tId;
           }
+          this.hasConversationActivity = true;
           this.lastAudioChunkAt = Date.now();
           this.audioChunksInTurn += 1;
           this.cancelTtsFallback();
@@ -606,6 +618,7 @@ CORE AUTONOMOUS CAPABILITIES:
           if (tId !== null && this.interruptedTurnIds.has(tId)) {
             return;
           }
+          this.hasConversationActivity = true;
           this.clearTurnWatchdog();
           this.notifyAgentResponse();
           if (this.awaitingNextTurn) {
@@ -639,6 +652,7 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "user_transcript" && data.text) {
+          this.hasConversationActivity = true;
           if (!this.isSpeakingTurn && this.audioChunksInTurn === 0) {
             this.awaitingNextTurn = true;
           }
@@ -716,7 +730,8 @@ CORE AUTONOMOUS CAPABILITIES:
                 this.awaitingNextTurn = false;
                 this.audioChunksInTurn = 0;
               }
-              this.lastAudioChunkAt = Date.now();
+              this.hasConversationActivity = true;
+          this.lastAudioChunkAt = Date.now();
               this.audioChunksInTurn += 1;
               this.cancelTtsFallback();
               this.clearTurnWatchdog();
@@ -919,7 +934,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.lastUnansweredSetAt = Date.now();
     this.turnWatchdogTimer = window.setTimeout(() => {
       this.turnWatchdogTimer = null;
-      if (this.lastUnansweredText !== text) return;
+      if (this.lastUnansweredText !== text || this.isSpeakingTurn || audioEngine.isSpeaking()) return;
 
       if (!this.watchdogRetriedForText) {
         this.watchdogRetriedForText = true;
@@ -932,7 +947,7 @@ CORE AUTONOMOUS CAPABILITIES:
         this.watchdogRetriedForText = false;
         this.savedOnTranscript?.(`Live session timed out, ${this.roleHonorific}. Please try sending your message again.`);
       }
-    }, 12000);
+    }, 18000);
   }
 
   private forceReconnectNow() {
@@ -1179,6 +1194,7 @@ CORE AUTONOMOUS CAPABILITIES:
   private sendImmediateText(text: string) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
+    this.hasConversationActivity = true;
     this.lastTextSentAt = Date.now();
     try {
       if (this.isDirectGoogle) {
@@ -1242,6 +1258,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.isConnected = false;
     this.isSpeakingTurn = false;
     this.awaitingNextTurn = false;
+    this.hasConversationActivity = false;
     this.lastAudioChunkAt = 0;
     this.savedOnStatusChange?.(false);
   }

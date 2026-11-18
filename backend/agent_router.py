@@ -102,7 +102,7 @@ def create_agent_router(user_dependency: Optional[Callable] = None) -> APIRouter
         return {
             "key_present": bool(os.getenv("GEMINI_API_KEY", "").strip()),
             "gemini_model": os.getenv("GEMINI_MODEL", "gemini-flash-latest"),
-            "gemini_live_model": os.getenv("GEMINI_LIVE_MODEL", "gemini-2.5-flash-native-audio-latest"),
+            "gemini_live_model": os.getenv("GEMINI_LIVE_MODEL", "gemini-3.8-live"),
             "voice_engine": "Gemini Live 24kHz Native Audio WebSocket",
             "knowledge_status": "online"
         }
