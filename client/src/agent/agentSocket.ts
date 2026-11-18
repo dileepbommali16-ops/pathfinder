@@ -58,6 +58,13 @@ class DasAgentSocket {
     };
   }
 
+  public onVisionTelemetry(cb: (telemetry: Record<string, any>) => void): () => void {
+    this.visionObservers.add(cb);
+    return () => {
+      this.visionObservers.delete(cb);
+    };
+  }
+
   private notifyAgentResponse() {
     this.responseObservers.forEach((cb) => {
       try {
@@ -83,6 +90,7 @@ class DasAgentSocket {
   private lastUnansweredSetAt = 0;
   private lastAudioChunkAt = 0;
   private responseObservers: Set<() => void> = new Set();
+  private visionObservers: Set<(telemetry: Record<string, any>) => void> = new Set();
   private watchdogRetriedForText = false;
   private lastTextSentAt = 0;
   private healthListenersAttached = false;
@@ -318,9 +326,13 @@ CORE AUTONOMOUS CAPABILITIES:
      * You CANNOT see Boss, his room, what he is wearing, or his posture.
      * STRICTLY NEVER lie or pretend you can see him (NEVER say "I see you clearly", "You're sitting right there", or "I see you looking at the camera").
      * Answer his voice/text requests helpfully, and only if he explicitly asks "Can you see me?", honestly say: "My camera eye is turned off right now, Boss — tap Cam if you want me to see you!"
-   - WHEN CAMERA IS ON (live frames arriving):
-     * You CAN see Boss, his face, his expressions, outfit, and whatever objects he holds in front of the camera!
-     * Name exact held objects, colors, features, and answer appearance/looksmaxxing or scene questions directly from the real video frame.
+    - WHEN CAMERA IS ON (live frames arriving):
+      * You CAN see the user, their hair, exact current outfit color (e.g. light green vs white vs black), hand gestures, dancing, and held objects in real time!
+      * Describe ONLY exact current pixels visible RIGHT NOW and NEVER repeat old shirt colors (such as blue from an earlier day/session) or invent details from memory!
+      * React immediately and naturally when dancing, hand-dancing, waving, or motion happens.
+    - ZERO SYCOPHANCY & HONEST REALISM:
+      * NEVER blindly agree ("Yes you're right / all correct!") or give fake flattery just to please Boss, Sir, Madam, or any group! Tell the honest truth directly when answers, logic, code, or camera hairstyle/looks have flaws.
+      * Always use your consistent male 'Puck' voice delivery across all accounts (never imitate female voices or external browser voices).
 3. MASTER PROGRAMMING & COMPILER (C, C++, Python, Java, JS, TS, SQL):
    - When asked to write any program or algorithm (small or large), call 'write_and_compile_code' with clean, compilable code and explain the logic step-by-step.
    - When a compiler or syntax error occurs, or Boss says "fix the error", "code wrong undi", or "correct chey":
@@ -703,6 +715,14 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         // 3. Render Backend Tool Calls
+        if (data.type === "vision_telemetry") {
+          this.visionObservers.forEach((cb) => {
+            try {
+              cb(data);
+            } catch {}
+          });
+          return;
+        }
         if (data.type === "tool_call" && data.name) {
           this.clearTurnWatchdog();
           const args = data.args || {};
@@ -1051,37 +1071,44 @@ CORE AUTONOMOUS CAPABILITIES:
         })
       );
     } else {
-      this.ws.send(JSON.stringify({ type: "frame", jpeg_base64: base64Jpeg }));
+      this.cameraActiveState = true;
+      this.ws.send(JSON.stringify({ type: "frame", jpeg_base64: base64Jpeg, active: true }));
     }
   }
 
   public sendVisionGreet() {
-    if (!cameraEngine.isStreaming || !this.cameraActiveState) return;
+    if (!cameraEngine.isStreaming) return;
+    this.cameraActiveState = true;
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
-    if (this.isSpeakingTurn || audioEngine.isSpeaking()) return;
     this.lastVisionGreetAt = Date.now();
     audioEngine.unlockAudio();
     const freshFrame = cameraEngine.getLatestFrameBase64();
     if (!freshFrame) return;
+    this.setCameraActive(true);
     this.sendVideoFrame(freshFrame);
+    if (this.isSpeakingTurn || audioEngine.isSpeaking()) return;
     if (this.isDirectGoogle) {
       this.sendImmediateText(
-        "Camera just turned on! Look at the live camera frame: greet me warmly by my name if you recognize Boss Dileep, and briefly tell me what you see."
+        "Camera just turned on! Inspect the attached live pixels: greet warmly if appropriate and honestly describe only the current outfit color, hair, or held objects you see RIGHT NOW (ignore old memory)."
       );
     } else {
       this.ws.send(JSON.stringify({ type: "vision_greet", role: this.savedRole }));
     }
   }
 
-  public sendAutoVisionCheck(frameBase64?: string) {
-    if (!cameraEngine.isStreaming || !this.cameraActiveState) return;
+  public sendAutoVisionCheck(
+    frameBase64?: string,
+    meta?: { reason?: "dance_or_motion" | "scene_change"; motionScore?: number }
+  ) {
+    if (!cameraEngine.isStreaming) return;
+    this.cameraActiveState = true;
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
     const now = Date.now();
     if (
       this.isSpeakingTurn ||
       audioEngine.isSpeaking() ||
-      now - this.lastVisionGreetAt < 6500 ||
-      now - this.lastTurnCompletedAt < 1800
+      now - this.lastVisionGreetAt < 5500 ||
+      now - this.lastTurnCompletedAt < 1400
     ) {
       return;
     }
@@ -1089,12 +1116,21 @@ CORE AUTONOMOUS CAPABILITIES:
     if (frameBase64) {
       this.sendVideoFrame(frameBase64);
     }
+    const reason = meta?.reason || "scene_change";
     if (this.isDirectGoogle) {
       this.sendImmediateText(
-        "Look closely at the updated camera frame and tell me in 1-2 short sentences what new object(s) I am showing or what I am doing now."
+        reason === "dance_or_motion"
+          ? "Noticeable dancing or hand gestures detected live! React naturally in 1-2 short sentences to the movement visible right now."
+          : "Look closely at the updated camera frame and honestly describe what changed or what you see right now (only current pixels)."
       );
     } else {
-      this.ws.send(JSON.stringify({ type: "vision_auto_check" }));
+      this.ws.send(
+        JSON.stringify({
+          type: "vision_auto_check",
+          reason,
+          motion_score: meta?.motionScore,
+        })
+      );
     }
   }
 
@@ -1262,6 +1298,17 @@ CORE AUTONOMOUS CAPABILITIES:
         this.ws.send(JSON.stringify({ type: "camera_state", active }));
       } catch {}
     }
+  }
+
+  public reconnectForAccountSwitch(role: UserHonorificRole) {
+    this.currentRole = role;
+    this.savedRole = role;
+    this.hasConversationActivity = false;
+    this.pendingTexts = [];
+    this.cancelTtsFallback();
+    this.clearTurnWatchdog();
+    if (this.manualClose || !this.savedOnTranscript) return;
+    this.forceReconnectNow();
   }
 
   public disconnect() {

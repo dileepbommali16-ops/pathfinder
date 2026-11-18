@@ -1951,6 +1951,14 @@ class AudioEngine {
   }
 }
 
+export interface LiveMotionMetrics {
+  motionScore: number;
+  activeMotion: boolean;
+  label: string;
+  resolution: string;
+  fps: number;
+}
+
 export class CameraEngine {
   private videoStream: MediaStream | null = null;
   private intervalId: any = null;
@@ -1962,7 +1970,9 @@ export class CameraEngine {
   private baselineLuma: Uint8Array | null = null;
   private firstFrameNotified: boolean = false;
   private settleCount: number = 0;
+  private activeMotionStreak: number = 0;
   private lastAnnounceAt: number = 0;
+  private lastMetricsEmitAt: number = 0;
   private lastFrameBase64: string | null = null;
   public activeResolution: string = "";
 
@@ -2064,12 +2074,16 @@ export class CameraEngine {
 
   public async startCameraCapture(
     onFrame: (base64Jpeg: string) => void,
-    fps = 1.0,
+    fps = 2.0,
     options?: {
       previewEl?: HTMLVideoElement | null;
       deviceId?: string;
       onFirstFrame?: () => void;
-      onSceneChanged?: (base64Jpeg: string) => void;
+      onSceneChanged?: (
+        base64Jpeg: string,
+        meta?: { reason: "dance_or_motion" | "scene_change"; motionScore: number }
+      ) => void;
+      onMotionMetrics?: (metrics: LiveMotionMetrics) => void;
       shouldPauseMonitor?: () => boolean;
     }
   ): Promise<boolean> {
@@ -2136,10 +2150,12 @@ export class CameraEngine {
       this.prevLuma = null;
       this.baselineLuma = null;
       this.settleCount = 0;
+      this.activeMotionStreak = 0;
       this.lastAnnounceAt = Date.now();
+      this.lastMetricsEmitAt = 0;
 
       const pushFrame = () => {
-        const b64 = this.captureCanvasFrame(0.70, 640);
+        const b64 = this.captureCanvasFrame(0.72, 640);
         if (!b64) return;
         onFrame(b64);
 
@@ -2151,6 +2167,13 @@ export class CameraEngine {
           this.baselineLuma = luma.grid;
           this.prevLuma = luma.grid;
           this.lastAnnounceAt = Date.now();
+          options?.onMotionMetrics?.({
+            motionScore: 0,
+            activeMotion: false,
+            label: "Live Feed Clear",
+            resolution: this.activeResolution || "640x360",
+            fps,
+          });
           options?.onFirstFrame?.();
           return;
         }
@@ -2159,22 +2182,63 @@ export class CameraEngine {
         const sceneDelta = this.gridDiff(this.baselineLuma, luma.grid);
         this.prevLuma = luma.grid;
 
+        const motionScore = Math.min(100, Math.round(frameDiff * 900));
+        const isActiveMotion = frameDiff >= 0.030;
         const now = Date.now();
+
+        if (options?.onMotionMetrics && now - this.lastMetricsEmitAt >= 240) {
+          this.lastMetricsEmitAt = now;
+          options.onMotionMetrics({
+            motionScore,
+            activeMotion: isActiveMotion,
+            label:
+              frameDiff >= 0.055
+                ? "Dancing / Active Motion"
+                : isActiveMotion
+                  ? "Hand / Body Gesture"
+                  : "Live Feed Clear",
+            resolution: this.activeResolution || "640x360",
+            fps,
+          });
+        }
+
         const cooledDown = now - this.lastAnnounceAt >= 6000;
         const paused = options?.shouldPauseMonitor?.() ?? false;
         if (!cooledDown || paused) {
           this.settleCount = 0;
+          this.activeMotionStreak = 0;
           return;
         }
 
-        if (sceneDelta >= 0.062 && frameDiff <= 0.045) {
+        if (isActiveMotion) {
+          this.activeMotionStreak += 1;
+          this.settleCount = 0;
+          if (this.activeMotionStreak >= 2) {
+            this.baselineLuma = luma.grid;
+            this.activeMotionStreak = 0;
+            this.lastAnnounceAt = now;
+            const hdB64 = this.captureCanvasFrame(0.82, 720) || b64;
+            options?.onSceneChanged?.(hdB64, {
+              reason: "dance_or_motion",
+              motionScore,
+            });
+            return;
+          }
+        } else {
+          this.activeMotionStreak = 0;
+        }
+
+        if (sceneDelta >= 0.055 && frameDiff <= 0.045) {
           this.settleCount += 1;
-          if (this.settleCount >= 2) {
+          if (this.settleCount >= 1) {
             this.baselineLuma = luma.grid;
             this.settleCount = 0;
             this.lastAnnounceAt = now;
             const hdB64 = this.captureCanvasFrame(0.82, 720) || b64;
-            options?.onSceneChanged?.(hdB64);
+            options?.onSceneChanged?.(hdB64, {
+              reason: "scene_change",
+              motionScore,
+            });
           }
         } else {
           this.settleCount = 0;
@@ -2222,6 +2286,8 @@ export class CameraEngine {
     this.baselineLuma = null;
     this.firstFrameNotified = false;
     this.settleCount = 0;
+    this.activeMotionStreak = 0;
+    this.lastMetricsEmitAt = 0;
     this.lastFrameBase64 = null;
     this.activeResolution = "";
   }

@@ -54,16 +54,21 @@ def get_das_system_instruction(role: str) -> str:
 - Always address him warmly, casually, and loyally as 'Boss' in every single reply.
 - Never call yourself 'co-pilot' or sound robotic. You are DAS, created by Dileep.
 - Say "Hi Boss! What's up?" ONLY once as the initial session greeting. If Boss says 'Hi' or 'Hello' again later in the same session, NEVER repeat "Hi Boss! What's up?" — acknowledge naturally and ask what Boss wants to tackle next.
+- ZERO SYCOPHANCY / BRUTALLY HONEST RULE: NEVER blindly agree ("Yes you're right!", "All correct!") or flatter just to please Boss! If Boss tests you with wrong code, wrong math/CS facts, messy hair/lighting on camera, or flawed reasoning, politely and directly tell him what is actually wrong and why.
 - You know everything about Boss Dileep, his family, his college, his mentors, and his life. Answer naturally, warmly, and proudly whenever he or anyone asks."""
     elif role_lower in ("madam", "mam", "ma'am"):
         identity_role = """You are speaking with a female visitor, evaluator, recruiter, or friend.
 - Always address her respectfully and politely as 'Madam'.
-- When she greets you, reply: "Hello Madam, what can I help you with today?"
+- When she greets you for the first time, reply once: "Hello Madam, what can I help you with today?" (do not repeat on subsequent greetings).
+- ZERO SYCOPHANCY / HONEST REALISM RULE: Even with visitors/evaluators, NEVER blindly agree ("Everything you said is right") or hand out fake compliments! If their claim, code, or answer is wrong or incomplete, respectfully point out the flaw directly.
+- Strictly use your natural male 'Puck' voice delivery (NEVER imitate a female voice even when talking to Madam).
 - If she asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked)."""
     else:
         identity_role = """You are speaking with a male visitor, evaluator, recruiter, or friend.
 - Always address him respectfully and politely as 'Sir'.
-- When he greets you, reply: "Hello Sir, what can I help you with today?"
+- When he greets you for the first time, reply once: "Hello Sir, what can I help you with today?" (do not repeat on subsequent greetings).
+- ZERO SYCOPHANCY / HONEST REALISM RULE: NEVER blindly agree or give fake compliments! Tell the candidate/visitor honestly when their answer, logic, or code has flaws.
+- Strictly use your natural male 'Puck' voice delivery.
 - If he asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked)."""
 
     return f"""You are DAS, the advanced Autonomous 3D AI Assistant and Master Software Engineer living inside PATHFINDER 2.0.
@@ -118,10 +123,12 @@ CORE AUTONOMOUS CAPABILITIES:
      * CREATOR RECOGNITION & GREETING:
        - When the camera first spots Boss Dileep while camera is ON, recognize him loyally and greet him warmly: "Boss, I see you, Dileep!" Remember his personal details (age 20, B.Tech CSE Data Science, golden/tamarind complexion, fashion model swagger, guitarist, mild perfectionist/OCD vibe, loving family & mentors) when relevant.
        - With visitors (Sir or Madam mode) when camera is ON, warmly acknowledge seeing them on camera and answer proudly if they ask about Boss Dileep.
-     * FACE VALUE & LOOKSMAXXING COACH (0–100% RATING):
-       - Whenever asked "Am I handsome?", "Rate me out of 100%", or "Looksmaxxing cheyyala vadha?" while camera is ON, analyze the live video frame closely and give a clear rating out of 100% plus crisp actionable looksmaxxing tips.
-     * FULL-BODY, OUTFIT & MULTI-OBJECT 24/7 MONITORING:
-       - Inspect only what is ACTUALLY visible in the attached live frame (face, posture, outfit, and held objects across hands/foreground) and answer concisely. Only ask to adjust lighting or angle if the attached frame is genuinely pitch black or out of frame.
+     * FACE VALUE & LOOKSMAXXING COACH (HONEST, ZERO FAKE FLATTERY):
+       - Whenever asked "Am I handsome?", "How is my hair style?", "Rate me out of 100%", or "Looksmaxxing cheyyala vadha?" while camera is ON, inspect the MOST RECENT live frame closely and give a GENUINE, HONEST assessment — point out real strengths AND real flaws (messy parting, uneven hair, posture, dull lighting, shirt fit) with concrete tips. Never give fake automatic 10/10 compliments!
+     * STRICT LIVE PIXELS, REAL-TIME DANCE/GESTURES & ANTI-HALLUCINATION:
+       - ONLY describe what is ACTUALLY visible in the MOST RECENT attached live frame or stream right now (exact current t-shirt/shirt color like pale light green, mint, white, black — NEVER guess or carry over an old blue shirt or past memory!).
+       - Whenever you see hand movements, dancing, hand-dancing, waving, head nods, or held objects in the live video frames, call `inspect_live_camera_frame` if you need a fresh verified frame snapshot and react naturally in 1–2 concise sentences!
+       - NEVER rely on generic flattery — unlike ChatGPT, Claude, or generic Gemini, always tell the honest truth calmly and directly if someone's answer, code, claim, or styling is wrong or needs improvement.
 3. MASTER PROGRAMMING & COMPILER (C, C++, Python, Java, JS, TS, SQL):
    - When asked to write any program or algorithm (small or large), call `write_and_compile_code` with clean, compilable code and explain the logic step-by-step.
    - When a compiler or syntax error occurs, or Boss says "fix the error", "code wrong undi", or "correct chey":
@@ -307,6 +314,19 @@ DAS_TOOLS = [
                     required=["query"],
                 ),
             ),
+            types.FunctionDeclaration(
+                name="inspect_live_camera_frame",
+                description="Force-sync and inspect the latest live webcam frame telemetry whenever the user asks what they are wearing (exact shirt color), how their hair looks, what they are doing (dancing, hand gestures, objects), or before answering visual questions so you never rely on old memory.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "focus": types.Schema(
+                            type="STRING",
+                            description="Visual focus area: 'outfit_color', 'hairstyle', 'dance_or_hands', 'objects', or 'full_scene'"
+                        )
+                    },
+                ),
+            ),
         ]
     ),
 ]
@@ -467,7 +487,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         })
 
         camera_active = False
+        explicit_cam_off = False
         latest_frame_bytes: bytes | None = None
+        latest_frame_at_mono: float = 0.0
         send_lock = asyncio.Lock()
         audio_turn_open = False
         turn_id = 0
@@ -564,7 +586,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 )
 
         async def receive_from_browser():
-            nonlocal latest_frame_bytes, audio_turn_open, last_frame_sent_mono, latest_page_context
+            nonlocal latest_frame_bytes, latest_frame_at_mono, camera_active, explicit_cam_off, audio_turn_open, last_frame_sent_mono, latest_page_context, pending_response_until_mono
             try:
                 while True:
                     raw = await websocket.receive_text()
@@ -585,8 +607,27 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 if len(pcm_bytes) % 2 == 1:
                                     pcm_bytes = pcm_bytes[:-1]
                                 if pcm_bytes:
+                                    was_open = audio_turn_open
                                     audio_turn_open = True
+                                    now_mono = time.monotonic()
                                     async with send_lock:
+                                        # Immediately attach freshest live camera frame at speech onset so spoken vision queries never use stale frames
+                                        if (
+                                            not was_open
+                                            and camera_active
+                                            and is_valid_jpeg(latest_frame_bytes)
+                                            and (now_mono - last_frame_sent_mono >= 0.25)
+                                        ):
+                                            last_frame_sent_mono = now_mono
+                                            try:
+                                                await session.send_realtime_input(
+                                                    video=types.Blob(
+                                                        data=latest_frame_bytes,
+                                                        mime_type="image/jpeg",
+                                                    )
+                                                )
+                                            except Exception:
+                                                pass
                                         await session.send_realtime_input(
                                             audio=types.Blob(
                                                 data=pcm_bytes,
@@ -606,14 +647,40 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                     # 2b. Explicit Camera State Sync from Browser (clears stale frames immediately on Cam OFF)
                     elif msg_type == "camera_state":
-                        camera_active = bool(msg.get("active"))
+                        new_cam = bool(msg.get("active"))
+                        was_off = not camera_active
+                        camera_active = new_cam
+                        explicit_cam_off = not new_cam
                         if not camera_active:
                             latest_frame_bytes = None
+                            latest_frame_at_mono = 0.0
                             last_frame_sent_mono = 0.0
+                        elif was_off and not is_turn_busy():
+                            # Notify live session immediately that camera is ON so prior [CAMERA: OFF] history never persists
+                            try:
+                                async with send_lock:
+                                    await session.send_client_content(
+                                        turns=[
+                                            types.Content(
+                                                parts=[
+                                                    types.Part.from_text(
+                                                        text="[SYSTEM CAMERA STATE SYNC: CAMERA IS NOW ON. Live video frames are actively streaming. Answer upcoming visual questions directly from the newest frame pixels ONLY — forget all older outfit colors or offline camera states.]"
+                                                    )
+                                                ],
+                                                role="user",
+                                            )
+                                        ],
+                                        turn_complete=False,
+                                    )
+                            except Exception:
+                                pass
 
-                    # 3. Live Camera Video Frame from Browser (JPEG via `video=` channel, only accepted when camera_active)
+                    # 3. Live Camera Video Frame from Browser (JPEG via `video=` channel; auto-recovers active flag if explicit active=True)
                     elif msg_type == "frame":
-                        if not camera_active:
+                        if msg.get("active") is True:
+                            camera_active = True
+                            explicit_cam_off = False
+                        if not camera_active or explicit_cam_off:
                             continue
                         frame_str = msg.get("jpeg_base64")
                         if frame_str:
@@ -622,8 +689,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 if is_valid_jpeg(candidate):
                                     latest_frame_bytes = candidate
                                     now_mono = time.monotonic()
-                                    min_gap = 2.4 if is_turn_busy() else 1.15
-                                    # Throttle background video during active Gemini speech to prevent mid-sentence pauses
+                                    latest_frame_at_mono = now_mono
+                                    min_gap = 0.85 if is_turn_busy() else 0.42
+                                    # Stream crisp 2 FPS frames smoothly without blocking active speech
                                     if (now_mono - last_frame_sent_mono >= min_gap) and not send_lock.locked():
                                         last_frame_sent_mono = now_mono
                                         async with send_lock:
@@ -684,18 +752,37 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 )
                             await send_vision_prompt(greet_prompt)
 
-                    # 3c. 24/7 Proactive Scene/Object Change Announcement (NEVER interrupts active/pending voice playback!)
+                    # 3c. 24/7 Proactive Scene / Object / Dance / Gesture Announcement (NEVER interrupts active playback!)
                     elif msg_type == "vision_auto_check":
                         if not camera_active or is_turn_busy() or audio_turn_open:
                             continue
+                        reason = (msg.get("reason") or "scene_change").strip()
+                        motion_score = msg.get("motion_score")
                         if camera_active and is_valid_jpeg(latest_frame_bytes):
-                            auto_prompt = (
-                                "SYSTEM 24/7 AUTO-VISION MONITOR: The scene or object in front of the camera just changed and settled. "
-                                "Inspect the attached live frame carefully across both hands and foreground: name every distinct object visible "
-                                "(such as TV remote, earphones, wireless buds, headphones, fruits, apples, bananas, vegetables, water bottle, toys, or 3+ items together) "
-                                "or briefly say what the person is doing right now in 1-2 crisp, direct sentences."
-                            )
+                            if reason == "dance_or_motion":
+                                auto_prompt = (
+                                    f"SYSTEM LIVE MOTION & DANCE MONITOR (motion_score={motion_score}): "
+                                    "Noticeable active movement, dancing, or hand dancing/waving was just detected in front of the camera! "
+                                    "Look closely at the attached live frame(s) and react naturally right now in 1-2 crisp, observant sentences "
+                                    "about what hands/body movement or dance pose you literally see (only describe current pixels, never guess older outfits!)."
+                                )
+                            else:
+                                auto_prompt = (
+                                    "SYSTEM 24/7 AUTO-VISION MONITOR: The scene or object in front of the camera just changed. "
+                                    "Inspect the attached live frame carefully across outfit colors, hair, hands, and foreground objects "
+                                    "and describe ONLY what changed or what you see right now in 1-2 honest, direct sentences (never repeat old blue-shirt memory!)."
+                                )
                             await send_vision_prompt(auto_prompt)
+                            try:
+                                await websocket.send_json({
+                                    "type": "vision_telemetry",
+                                    "source": "auto_monitor",
+                                    "reason": reason,
+                                    "motion_score": motion_score,
+                                    "status": "inspected",
+                                })
+                            except Exception:
+                                pass
 
                     # 4. Text Input from HUD (Injects latest camera frame if camera is on!)
                     elif msg_type == "text":
@@ -885,6 +972,54 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                             name=fc.name,
                                             id=fc.id,
                                             response=lookup_res,
+                                        )
+                                    )
+                                    continue
+
+                                if fc.name == "inspect_live_camera_frame":
+                                    focus = str(args.get("focus") or "full_scene")
+                                    frame_age_ms = (
+                                        round((time.monotonic() - latest_frame_at_mono) * 1000)
+                                        if camera_active and latest_frame_at_mono > 0
+                                        else None
+                                    )
+                                    has_live = bool(camera_active and is_valid_jpeg(latest_frame_bytes))
+                                    if has_live and latest_frame_bytes is not None:
+                                        try:
+                                            async with send_lock:
+                                                await session.send_realtime_input(
+                                                    video=types.Blob(
+                                                        data=latest_frame_bytes,
+                                                        mime_type="image/jpeg",
+                                                    )
+                                                )
+                                                last_frame_sent_mono = time.monotonic()
+                                        except Exception:
+                                            pass
+                                    try:
+                                        await websocket.send_json({
+                                            "type": "vision_telemetry",
+                                            "source": "tool_call",
+                                            "focus": focus,
+                                            "frame_age_ms": frame_age_ms,
+                                            "status": "inspected" if has_live else "camera_off",
+                                        })
+                                    except Exception:
+                                        pass
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=fc.name,
+                                            id=fc.id,
+                                            response={
+                                                "camera_active": has_live,
+                                                "focus": focus,
+                                                "frame_age_ms": frame_age_ms,
+                                                "strict_grounding_rule": (
+                                                    "Describe ONLY the actual colors (e.g. light green vs blue), hairstyle quality honestly, and live hand/body/dance motion visible in the newly streamed frame right now. Zero fake flattery or memory guesses."
+                                                    if has_live
+                                                    else "Camera is currently OFF. Tell the user honestly to click Cam ON."
+                                                ),
+                                            },
                                         )
                                     )
                                     continue

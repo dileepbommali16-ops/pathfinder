@@ -223,6 +223,8 @@ class ChatRequest(BaseModel):
     user_context: Optional[Dict[str, Any]] = None
     voice_mode: Optional[bool] = False
     language: Optional[str] = "auto"
+    camera_active: Optional[bool] = False
+    live_frame_base64: Optional[str] = Field(default=None, max_length=1500000)
 
 
 class CohortFilters(BaseModel):

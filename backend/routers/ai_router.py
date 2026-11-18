@@ -108,6 +108,8 @@ async def chat_endpoint(request_body: ChatRequest, request: Request):
             active_tab=active_tab,
             page_context=user_context,
             return_meta=True,
+            live_frame_base64=getattr(request_body, "live_frame_base64", None),
+            camera_active=bool(getattr(request_body, "camera_active", False)),
         )
         if meta.get("status") == "success":
             gemini_circuit_breaker.record_success()

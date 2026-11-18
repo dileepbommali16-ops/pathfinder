@@ -207,6 +207,25 @@ class TestAPIEndpoints(unittest.TestCase):
         live_prompt = get_das_system_instruction("madam")
         self.assertIn("Madam", live_prompt)
         self.assertIn("STRICT PUCK VOICE PERSONA LOCK", live_prompt)
+        self.assertIn("ZERO SYCOPHANCY", live_prompt)
+        self.assertIn("NEVER imitate a female voice", live_prompt)
+
+    def test_vision_tool_camera_frame_schema_and_anti_sycophancy(self):
+        from backend.agent.live_proxy import DAS_TOOLS
+        from backend.models import ChatRequest
+        from backend.gemini_engine import SYSTEM_INSTRUCTION
+
+        tool_names = [fn.name for t in DAS_TOOLS for fn in (t.function_declarations or [])]
+        self.assertIn("inspect_live_camera_frame", tool_names)
+        self.assertIn("ZERO SYCOPHANCY", SYSTEM_INSTRUCTION)
+
+        req = ChatRequest(
+            message="What color t-shirt am I wearing?",
+            camera_active=True,
+            live_frame_base64="data:image/jpeg;base64,/9j/4AAQSkZJRg==",
+        )
+        self.assertTrue(req.camera_active)
+        self.assertIsNotNone(req.live_frame_base64)
 
     def test_no_puck_exposed_in_agent_status(self):
         resp = self.client.get("/agent/status")

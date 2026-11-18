@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar3D } from "./Avatar3D";
 import { dasSocket, UserHonorificRole } from "./agentSocket";
-import { audioEngine, cameraEngine, speaker, MediaDeviceOption } from "./audioIO";
+import { audioEngine, cameraEngine, speaker, MediaDeviceOption, LiveMotionMetrics } from "./audioIO";
 import { CodeTaskPayload } from "./toolRunner";
 import { API_BASE, getSessionId } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
@@ -41,6 +41,15 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedCameraId, setSelectedCameraId] = useState("");
   const [mirrorCamera, setMirrorCamera] = useState(true);
   const [minimizedCamPreview, setMinimizedCamPreview] = useState(false);
+  const [expandedCamPreview, setExpandedCamPreview] = useState(false);
+  const [camMotion, setCamMotion] = useState<LiveMotionMetrics>({
+    motionScore: 0,
+    activeMotion: false,
+    label: "Live Feed Clear",
+    resolution: "640x360",
+    fps: 2,
+  });
+  const [visionStatusNote, setVisionStatusNote] = useState("2.0 FPS Synced");
   const cameraPreviewRef = useRef<HTMLVideoElement>(null);
   const micBarRef = useRef<HTMLDivElement>(null);
   const micSilentRef = useRef(false);
@@ -100,7 +109,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         resetConversationForSessionSwitch(nextKey);
       }
       setRole((prev) => {
-        if (prev !== nextKey) {
+        if (forceReset && dasSocket.isConnected) {
+          dasSocket.reconnectForAccountSwitch(nextKey);
+        } else if (prev !== nextKey) {
           if (!forceReset) setTranscript(getInitialGreeting(nextKey));
           if (dasSocket.isConnected) {
             dasSocket.switchRole(nextKey);
@@ -203,6 +214,22 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
     window.addEventListener("das:page-context", onPageContext);
     window.addEventListener("click", onGlobalClick, true);
+    const unsubVision = dasSocket.onVisionTelemetry((telemetry) => {
+      if (telemetry?.status === "inspected") {
+        const tag =
+          telemetry.reason === "dance_or_motion"
+            ? "Motion Seen"
+            : telemetry.focus
+              ? `Inspected: ${telemetry.focus}`
+              : "AI Frame Synced";
+        setVisionStatusNote(tag);
+      }
+    });
+    return () => {
+      window.removeEventListener("das:page-context", onPageContext);
+      window.removeEventListener("click", onGlobalClick, true);
+      unsubVision();
+    };
     return () => {
       window.removeEventListener("das:page-context", onPageContext);
       window.removeEventListener("click", onGlobalClick, true);
@@ -253,6 +280,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               branch: parsedProfile.branch ?? "CSE",
             },
             active_tab: ctx.activeTab || "overview",
+            camera_active: Boolean(cameraEngine.isStreaming),
+            live_frame_base64: cameraEngine.isStreaming ? cameraEngine.getLatestFrameBase64() : null,
             page_context: {
               ...ctx,
               honorific: activeHonorific,
@@ -578,11 +607,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const startCameraFeed = async (deviceId?: string) => {
+    setVisionStatusNote("2.0 FPS Synced");
     return cameraEngine.startCameraCapture(
       (b64Jpeg) => {
         dasSocket.sendVideoFrame(b64Jpeg);
       },
-      1.0,
+      2.0,
       {
         deviceId: deviceId || undefined,
         previewEl: cameraPreviewRef.current,
@@ -590,8 +620,16 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           dasSocket.setCameraActive(true);
           dasSocket.sendVisionGreet();
         },
-        onSceneChanged: (hdB64) => {
-          dasSocket.sendAutoVisionCheck(hdB64);
+        onSceneChanged: (hdB64, meta) => {
+          setVisionStatusNote(
+            meta?.reason === "dance_or_motion"
+              ? `Motion React (${meta.motionScore}%)`
+              : "Scene Updated"
+          );
+          dasSocket.sendAutoVisionCheck(hdB64, meta);
+        },
+        onMotionMetrics: (metrics) => {
+          setCamMotion(metrics);
         },
         shouldPauseMonitor: () =>
           dasSocket.isAgentSpeaking || dasSocket.isAwaitingResponse || audioEngine.isSpeaking(),
@@ -624,6 +662,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       dasSocket.setCameraActive(false);
       cameraEngine.stopCameraCapture();
       setCameraActive(false);
+      setExpandedCamPreview(false);
+      setVisionStatusNote("Camera Paused");
       toast.info("Camera paused.");
     }
   };
@@ -962,15 +1002,19 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         </div>
       )}
 
-      {/* Live HD Camera Preview Card — docked on bottom-left clear of right-edge icons & bottom HUD */}
+      {/* Live HD Camera Preview & Real-Time Motion/Vision Visualizer Card */}
       {cameraActive && (
         <div
           className={`fixed bottom-52 sm:bottom-44 left-2 sm:left-6 z-40 rounded-2xl overflow-hidden border shadow-2xl transition-all ${
-            minimizedCamPreview ? "w-36 sm:w-40" : "w-36 sm:w-52"
+            minimizedCamPreview
+              ? "w-40 sm:w-44"
+              : expandedCamPreview
+                ? "w-72 sm:w-96"
+                : "w-44 sm:w-60"
           }`}
           style={{
             backgroundColor: "#000000",
-            borderColor: "#2b2024",
+            borderColor: camMotion.activeMotion ? "#10b981" : "#2b2024",
             boxShadow: "0 16px 40px rgba(0, 0, 0, 0.85)",
           }}
         >
@@ -986,24 +1030,43 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             />
             <div
               className="absolute top-1.5 left-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-[#f4eef0] border"
-              style={{ backgroundColor: "#000000", borderColor: "#2b2024" }}
+              style={{ backgroundColor: "rgba(0,0,0,0.82)", borderColor: "#2b2024" }}
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-[#d8c4cb] animate-pulse" />
+              <span
+                className={`h-1.5 w-1.5 rounded-full animate-pulse ${
+                  camMotion.activeMotion ? "bg-emerald-400" : "bg-[#d8c4cb]"
+                }`}
+              />
               <span>24/7 VISION</span>
             </div>
             <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
               {!minimizedCamPreview && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.currentTarget.blur();
-                    setMirrorCamera((v) => !v);
-                  }}
-                  className="px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
-                  title="Mirror / Flip Preview"
-                >
-                  ⇄
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.currentTarget.blur();
+                      setExpandedCamPreview((v) => !v);
+                    }}
+                    className="px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
+                    title={expandedCamPreview ? "Compact Camera View" : "Larger Real View"}
+                    aria-label={expandedCamPreview ? "Shrink camera preview" : "Expand camera preview"}
+                  >
+                    {expandedCamPreview ? "↙" : "⤢"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.currentTarget.blur();
+                      setMirrorCamera((v) => !v);
+                    }}
+                    className="px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
+                    title="Mirror / Flip Preview"
+                    aria-label="Mirror camera preview"
+                  >
+                    ⇄
+                  </button>
+                </>
               )}
               <button
                 type="button"
@@ -1013,11 +1076,38 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 }}
                 className="px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
                 title={minimizedCamPreview ? "Expand Camera Preview" : "Minimize Camera Preview"}
+                aria-label={minimizedCamPreview ? "Expand camera preview" : "Minimize camera preview"}
               >
                 {minimizedCamPreview ? "▢" : "–"}
               </button>
             </div>
           </div>
+
+          {/* Live Motion & AI Perception Visualizer Strip */}
+          {!minimizedCamPreview && (
+            <div className="px-2.5 py-1.5 border-t border-white/10 bg-[#07080d] flex flex-col gap-1">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className={camMotion.activeMotion ? "text-emerald-400 font-semibold" : "text-zinc-300 font-medium"}>
+                  {camMotion.label}
+                </span>
+                <span className="text-zinc-400 font-mono">{visionStatusNote}</span>
+              </div>
+              <div className="flex items-end gap-0.5 h-3" aria-label="Live motion visualizer">
+                {[0.25, 0.45, 0.7, 1.0, 0.85, 0.6, 0.4, 0.2].map((w, idx) => {
+                  const pct = Math.max(18, Math.min(100, Math.round(camMotion.motionScore * w + (camMotion.activeMotion ? 18 : 8))));
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex-1 rounded-sm transition-all duration-150 ${
+                        camMotion.activeMotion ? "bg-emerald-400" : "bg-zinc-600"
+                      }`}
+                      style={{ height: `${pct}%` }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {!minimizedCamPreview && videoDevices.length > 1 && (
             <div className="px-2 py-1.5 border-t border-slate-800 bg-[#0B1120]">
               <select

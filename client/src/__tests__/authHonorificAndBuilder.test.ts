@@ -212,4 +212,15 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     const platformOverview = getCareerAgentResponse("what is pathfinder", [], { branch: "CSE" }, "Boss");
     expect(platformOverview.toLowerCase()).not.toContain("co-pilot");
   });
+
+  it("enforces Puck-only voice (no browser speechSynthesis) and zero-sycophancy & live vision rules across female and male accounts", () => {
+    const srcRoot = path.resolve(__dirname, "..");
+    const audioSrc = fs.readFileSync(path.join(srcRoot, "agent/audioIO.ts"), "utf-8");
+    const socketSrc = fs.readFileSync(path.join(srcRoot, "agent/agentSocket.ts"), "utf-8");
+
+    expect(audioSrc).not.toContain("speechSynthesis.speak(");
+    expect(audioSrc).toContain("dance_or_motion");
+    expect(socketSrc).toContain("reconnectForAccountSwitch");
+    expect(socketSrc).toContain("ZERO SYCOPHANCY");
+  });
 });
