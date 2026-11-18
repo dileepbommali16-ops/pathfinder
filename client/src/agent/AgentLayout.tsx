@@ -327,13 +327,21 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
     const unsubSocket = dasSocket.onAgentResponse(() => {
+      restTtsAbortRef.current?.abort();
+      restTtsAbortRef.current = null;
       cleanup();
     });
     askCoachUnbindRef.current = cleanup;
 
     const deliverRestReply = async () => {
       const replyText = await requestRestCoachReply(queryText, ctx);
-      if (!settled && askCoachNonceRef.current === nonce && replyText) {
+      if (
+        !settled &&
+        askCoachNonceRef.current === nonce &&
+        replyText &&
+        !dasSocket.isAgentSpeaking &&
+        !audioEngine.isSpeaking()
+      ) {
         cleanup();
         setTranscript(replyText);
         restTtsAbortRef.current?.abort();
@@ -341,7 +349,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         restTtsAbortRef.current = ttsAc;
         void audioEngine.speakTextPuckOrLocal(replyText, API_BASE, {
           signal: ttsAc.signal,
-          shouldContinue: () => askCoachNonceRef.current === nonce,
+          shouldContinue: () =>
+            askCoachNonceRef.current === nonce &&
+            !dasSocket.isAgentSpeaking &&
+            !audioEngine.isSpeaking(),
         });
       }
     };
@@ -447,7 +458,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     micSilentRef.current = false;
     setMicSilentWarning(false);
     setMicHealthHint("");
-    await audioEngine.autoSyncOutputDevice();
+    // Start capture immediately so iOS Safari / Android Chrome keep the synchronous tap gesture token for micCtx & getUserMedia
     await audioEngine.startMicCapture((b64) => dasSocket.sendAudioChunk(b64), {
       deviceId: deviceId || undefined,
       rawMode: false,
@@ -490,6 +501,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       },
     });
     await refreshMediaDevices();
+    void audioEngine.autoSyncOutputDevice();
     const lbl = audioEngine.activeMicLabel || "Default Microphone";
     activeMicLabelRef.current = lbl;
     setActiveMicLabel(lbl);
@@ -815,7 +827,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {showAgent && <Avatar3D />}
 
       {/* Main Dashboard Content */}
-      <main className={showAgent ? "relative z-10 pb-44 bg-transparent" : "relative min-h-screen bg-transparent"}>{children}</main>
+      <main className={showAgent ? "relative z-10 pb-56 sm:pb-44 bg-transparent" : "relative min-h-screen bg-transparent"}>{children}</main>
 
       {showAgent && (
         <>
@@ -831,7 +843,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
       {/* DAS Live Multi-Language Code & Compiler Studio Drawer */}
       {codeTask && (
-        <div className="fixed top-20 right-6 z-50 w-[94%] max-w-2xl bg-[#0F172A]/95 backdrop-blur-2xl border border-[#334155] rounded-2xl shadow-2xl p-4 flex flex-col gap-3">
+        <div className="fixed top-16 left-2 right-2 sm:left-auto sm:top-20 sm:right-6 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#0F172A]/95 border border-[#334155] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3">
           <div className="flex items-center justify-between border-b border-[#334155] pb-2">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase px-2.5 py-0.5 rounded bg-cyan-500 text-slate-950">
@@ -918,8 +930,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {/* Live HD Camera Preview Card — docked on bottom-left clear of right-edge icons & bottom HUD */}
       {cameraActive && (
         <div
-          className={`fixed bottom-44 left-4 sm:left-6 z-40 rounded-2xl overflow-hidden border shadow-2xl transition-all ${
-            minimizedCamPreview ? "w-40" : "w-44 sm:w-52"
+          className={`fixed bottom-52 sm:bottom-44 left-2 sm:left-6 z-40 rounded-2xl overflow-hidden border shadow-2xl transition-all ${
+            minimizedCamPreview ? "w-36 sm:w-40" : "w-36 sm:w-52"
           }`}
           style={{
             backgroundColor: "#000000",
@@ -991,10 +1003,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         </div>
       )}
 
-      {/* Bottom Center DAS HUD — Styled strictly in #2b2024 and #000000 */}
+      {/* Bottom Center DAS HUD — Responsive across Phone, Tablet, Laptop & MacBook */}
       <div
         id="das-bottom-hud"
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-3xl rounded-2xl p-3 shadow-2xl flex flex-col gap-2 border"
+        className="fixed bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[96%] sm:w-[92%] max-w-3xl rounded-2xl p-2 sm:p-3 shadow-2xl flex flex-col gap-1.5 sm:gap-2 border"
         style={{
           backgroundColor: "#000000",
           borderColor: "#2b2024",
@@ -1173,12 +1185,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         )}
 
         {/* Command & Control Bar */}
-        <form onSubmit={handleSendText} className="flex items-center gap-2">
+        <form onSubmit={handleSendText} className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2">
           {/* Hands-free Voice Speak / Mute Button */}
           <button
             type="button"
             onClick={toggleMic}
-            className={`px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer flex items-center gap-2 border text-white hover:brightness-110`}
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer flex items-center gap-1.5 border text-white hover:brightness-110 shrink-0"
             style={{
               backgroundColor: micActive ? "#000000" : "#2b2024",
               borderColor: "#2b2024",
@@ -1202,21 +1214,21 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <button
             type="button"
             onClick={toggleCamera}
-            className="px-3 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110"
+            className="px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110 shrink-0"
             style={{
               backgroundColor: cameraActive ? "#2b2024" : "#000000",
               borderColor: "#2b2024",
             }}
             title="Toggle Camera (Live Video Streaming to DAS)"
           >
-            {cameraActive ? "📹 Cam On" : "📷 Cam"}
+            {cameraActive ? "📹 On" : "📷 Cam"}
           </button>
 
           {/* Media / Resume Attachment Button */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110"
+            className="px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110 shrink-0"
             style={{ backgroundColor: "#000000", borderColor: "#2b2024" }}
             title="Upload Photo, Video, or Resume for Instant Review"
           >
@@ -1234,7 +1246,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               setInputText(e.target.value);
             }}
             placeholder="Ask DAS: 'Who is your boss?', 'Write QuickSort in C', 'Look at my hands'..."
-            className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-400 focus:outline-none border"
+            className="min-w-[140px] flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-white placeholder-zinc-400 focus:outline-none border"
             style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           />
 
@@ -1251,7 +1263,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               inputEl?.focus();
               inputEl?.select();
             }}
-            className="px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow flex items-center gap-1 hover:brightness-110 text-white"
+            className="px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow flex items-center gap-1 hover:brightness-110 text-white shrink-0"
             style={{
               backgroundColor: "#000000",
               borderColor: "#2b2024",
@@ -1264,7 +1276,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           {/* Send Button */}
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition cursor-pointer border shadow hover:brightness-110"
+            className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white transition cursor-pointer border shadow hover:brightness-110 shrink-0"
             style={{
               backgroundColor: "#2b2024",
               borderColor: "#2b2024",

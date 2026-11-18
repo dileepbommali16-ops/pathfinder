@@ -157,7 +157,7 @@ class DasAgentSocket {
         this.forceReconnectNow();
         return;
       }
-      if (this.ws.readyState === WebSocket.OPEN && !this.isDirectGoogle && Date.now() - this.lastPongAt > 12000) {
+      if (this.ws.readyState === WebSocket.OPEN && !this.isDirectGoogle && Date.now() - this.lastPongAt > 24000) {
         const probeAt = this.lastPongAt;
         try {
           this.ws.send(JSON.stringify({ type: "ping" }));
@@ -165,7 +165,7 @@ class DasAgentSocket {
             if (!this.manualClose && this.lastPongAt === probeAt && this.ws?.readyState === WebSocket.OPEN) {
               this.forceReconnectNow();
             }
-          }, 2500);
+          }, 3500);
         } catch {
           this.forceReconnectNow();
         }
@@ -235,11 +235,11 @@ class DasAgentSocket {
       if (!this.isDirectGoogle) {
         this.savedOnTranscript?.("Connecting to DAS Core...");
 
-        // 8s keep-alive ping + 16s silent half-open socket detector for Render backend
+        // 10s keep-alive ping + 26s silent half-open socket detector (tolerates mobile/tablet background throttling)
         if (this.renderPingTimer) window.clearInterval(this.renderPingTimer);
         this.renderPingTimer = window.setInterval(() => {
           if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-          if (Date.now() - this.lastPongAt > 16000) {
+          if (Date.now() - this.lastPongAt > 26000) {
             this.forceReconnectNow();
             return;
           }
@@ -248,7 +248,7 @@ class DasAgentSocket {
           } catch {
             this.forceReconnectNow();
           }
-        }, 8000);
+        }, 10000);
         return;
       }
 
@@ -855,6 +855,10 @@ CORE AUTONOMOUS CAPABILITIES:
     this.ws.onclose = (e) => {
       if (mySeq !== this.connSeq) return;
       this.isConnected = false;
+      this.isSpeakingTurn = false;
+      this.activeAudioTurnId = null;
+      this.audioChunksInTurn = 0;
+      this.awaitingNextTurn = true;
       this.savedOnStatusChange?.(false);
       if (this.renderPingTimer) {
         window.clearInterval(this.renderPingTimer);
@@ -934,7 +938,15 @@ CORE AUTONOMOUS CAPABILITIES:
     this.lastUnansweredSetAt = Date.now();
     this.turnWatchdogTimer = window.setTimeout(() => {
       this.turnWatchdogTimer = null;
-      if (this.lastUnansweredText !== text || this.isSpeakingTurn || audioEngine.isSpeaking()) return;
+      if (
+        this.lastUnansweredText !== text ||
+        this.isSpeakingTurn ||
+        audioEngine.isSpeaking() ||
+        this.audioChunksInTurn > 0 ||
+        this.currentAgentTranscript
+      ) {
+        return;
+      }
 
       if (!this.watchdogRetriedForText) {
         this.watchdogRetriedForText = true;
@@ -954,6 +966,10 @@ CORE AUTONOMOUS CAPABILITIES:
     if (this.manualClose) return;
     this.connSeq++;
     this.isConnected = false;
+    this.isSpeakingTurn = false;
+    this.activeAudioTurnId = null;
+    this.audioChunksInTurn = 0;
+    this.awaitingNextTurn = true;
     this.savedOnStatusChange?.(false);
     if (this.renderPingTimer) {
       window.clearInterval(this.renderPingTimer);

@@ -16,61 +16,38 @@ interface FireflyCoord {
   y: string[];
 }
 
-// Pre-computed swirling orbital dots (Motion ga tiruguthuu) and wandering yellow dots
-const SWIRL_RING_1 = Array.from({ length: 24 }, (_, i) => {
-  const angle = (i / 24) * 2 * Math.PI;
-  const radius = 220 + (i % 6) * 70; // 220px to 570px
+// Lightweight pre-computed orbital dots (GPU transform-only, zero heavy multi-shadow repaints)
+const SWIRL_RING_1 = Array.from({ length: 10 }, (_, i) => {
+  const angle = (i / 10) * 2 * Math.PI;
+  const radius = 230 + (i % 4) * 75;
   const x = Math.round(500 + radius * Math.cos(angle));
   const y = Math.round(500 + radius * Math.sin(angle));
-  const size = (i % 3) + 3; // 3px to 5px
-  return { id: `ring1-${i}`, x, y, size, delay: `${(i % 6) * 0.4}s` };
+  const size = (i % 2) + 3;
+  return { id: `ring1-${i}`, x, y, size, delay: `${(i % 5) * 0.5}s` };
 });
 
-const SWIRL_RING_2 = Array.from({ length: 28 }, (_, i) => {
-  const angle = (i / 28) * 2 * Math.PI;
-  const radius = 260 + (i % 7) * 80; // 260px to 740px
+const SWIRL_RING_2 = Array.from({ length: 12 }, (_, i) => {
+  const angle = (i / 12) * 2 * Math.PI;
+  const radius = 280 + (i % 5) * 85;
   const x = Math.round(750 + radius * Math.cos(angle));
   const y = Math.round(750 + radius * Math.sin(angle));
-  const size = (i % 4) + 2.5; // 2.5px to 5.5px
-  return { id: `ring2-${i}`, x, y, size, delay: `${(i % 7) * 0.5}s` };
+  const size = (i % 3) + 2.5;
+  return { id: `ring2-${i}`, x, y, size, delay: `${(i % 5) * 0.6}s` };
 });
 
 const WANDERING_YELLOW_DOTS = [
-  { top: "8%", left: "10%", size: 4, duration: "18s", delay: "0s" },
-  { top: "14%", left: "25%", size: 3, duration: "22s", delay: "2s" },
-  { top: "6%", left: "45%", size: 5, duration: "20s", delay: "1s" },
-  { top: "18%", left: "62%", size: 4, duration: "24s", delay: "3s" },
-  { top: "11%", left: "82%", size: 3, duration: "19s", delay: "0.5s" },
-  { top: "22%", left: "92%", size: 5, duration: "25s", delay: "2.5s" },
-  { top: "29%", left: "7%", size: 3, duration: "21s", delay: "4s" },
-  { top: "33%", left: "38%", size: 4, duration: "17s", delay: "1.5s" },
-  { top: "27%", left: "55%", size: 5, duration: "23s", delay: "3.5s" },
-  { top: "36%", left: "75%", size: 3, duration: "26s", delay: "0s" },
-  { top: "42%", left: "88%", size: 4, duration: "19s", delay: "2s" },
-  { top: "48%", left: "15%", size: 5, duration: "22s", delay: "4.5s" },
-  { top: "53%", left: "32%", size: 3, duration: "20s", delay: "1s" },
-  { top: "58%", left: "48%", size: 4, duration: "24s", delay: "3s" },
-  { top: "46%", left: "68%", size: 3, duration: "18s", delay: "0.5s" },
-  { top: "55%", left: "85%", size: 5, duration: "25s", delay: "2.5s" },
-  { top: "64%", left: "6%", size: 4, duration: "21s", delay: "4s" },
-  { top: "68%", left: "22%", size: 3, duration: "19s", delay: "1.5s" },
-  { top: "72%", left: "42%", size: 5, duration: "23s", delay: "3.5s" },
-  { top: "65%", left: "58%", size: 3, duration: "26s", delay: "0s" },
-  { top: "75%", left: "78%", size: 4, duration: "20s", delay: "2s" },
-  { top: "70%", left: "94%", size: 5, duration: "22s", delay: "4.5s" },
-  { top: "82%", left: "12%", size: 3, duration: "24s", delay: "1s" },
-  { top: "86%", left: "28%", size: 4, duration: "18s", delay: "3s" },
-  { top: "79%", left: "50%", size: 5, duration: "25s", delay: "0.5s" },
-  { top: "85%", left: "68%", size: 3, duration: "21s", delay: "2.5s" },
-  { top: "89%", left: "84%", size: 4, duration: "19s", delay: "4s" },
-  { top: "94%", left: "40%", size: 5, duration: "23s", delay: "1.5s" },
-  { top: "92%", left: "60%", size: 3, duration: "22s", delay: "3.5s" },
-  { top: "95%", left: "75%", size: 4, duration: "20s", delay: "0.5s" },
+  { top: "10%", left: "12%", size: 4, duration: "18s", delay: "0s" },
+  { top: "18%", left: "62%", size: 4, duration: "24s", delay: "2s" },
+  { top: "28%", left: "84%", size: 3, duration: "20s", delay: "1s" },
+  { top: "46%", left: "14%", size: 4, duration: "22s", delay: "3s" },
+  { top: "56%", left: "78%", size: 4, duration: "24s", delay: "1.5s" },
+  { top: "74%", left: "24%", size: 3, duration: "19s", delay: "2.5s" },
+  { top: "82%", left: "68%", size: 4, duration: "21s", delay: "0.5s" },
+  { top: "90%", left: "44%", size: 4, duration: "23s", delay: "1.2s" },
 ];
 
 export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) => {
   const [isOn, setIsOn] = useState(false);
-  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [username, setUsername] = useState("");
@@ -116,16 +93,18 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     return () => clearTimeout(timer);
   }, [socialLoading]);
 
-  // Generate glowing firefly lights when the lamp turns on
+  // Generate lightweight glowing firefly lights when the lamp turns on (skip heavy layers on compact phones)
   useEffect(() => {
     if (isOn) {
-      const generated: FireflyCoord[] = Array.from({ length: 28 }, (_, i) => ({
+      const compact = typeof window !== "undefined" && window.innerWidth < 768;
+      const count = compact ? 6 : 12;
+      const generated: FireflyCoord[] = Array.from({ length: count }, (_, i) => ({
         id: i,
-        size: Math.random() * 5 + 3,
-        duration: Math.random() * 15 + 20,
+        size: Math.random() * 4 + 3,
+        duration: Math.random() * 14 + 18,
         delay: Math.random() * 2,
-        x: Array.from({ length: 5 }, () => `${Math.random() * 95}vw`),
-        y: Array.from({ length: 5 }, () => `${Math.random() * 92}vh`),
+        x: Array.from({ length: 4 }, () => `${Math.random() * 94}vw`),
+        y: Array.from({ length: 4 }, () => `${Math.random() * 90}vh`),
       }));
       setFireflies(generated);
     } else {
@@ -216,7 +195,6 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
     onLogin({
       username: finalUser,
       email: finalEmail,
-      isNewUser: authMode === "signup"
     });
   };
 
@@ -339,8 +317,8 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 top: `${p.y}px`,
                 width: `${p.size}px`,
                 height: `${p.size}px`,
-                boxShadow: "0 0 10px 3px rgba(255,234,0,0.95), 0 0 20px rgba(255,200,0,0.6)",
-                animation: "yellowDotPulse 3.5s ease-in-out infinite alternate",
+                boxShadow: "0 0 8px 1px rgba(255,234,0,0.65)",
+                animation: "yellowDotPulse 4s ease-in-out infinite alternate",
                 animationDelay: p.delay,
               }}
             />
@@ -349,7 +327,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
 
         {/* Swirling Counter-Clockwise Yellow Dots Ring (Motion ga tiruguthuu) */}
         <div
-          className="absolute top-[5%] right-[-200px] w-[1500px] h-[1500px] pointer-events-none"
+          className="hidden sm:block absolute top-[5%] right-[-200px] w-[1500px] h-[1500px] pointer-events-none"
           style={{
             animation: "swirlRotateCounter 48s linear infinite",
             willChange: "transform",
@@ -364,8 +342,8 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 top: `${p.y}px`,
                 width: `${p.size}px`,
                 height: `${p.size}px`,
-                boxShadow: "0 0 10px 3px rgba(255,214,0,0.9), 0 0 18px rgba(255,180,0,0.55)",
-                animation: "yellowDotPulse 4s ease-in-out infinite alternate",
+                boxShadow: "0 0 8px 1px rgba(255,214,0,0.6)",
+                animation: "yellowDotPulse 4.5s ease-in-out infinite alternate",
                 animationDelay: p.delay,
               }}
             />
@@ -382,7 +360,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               left: dot.left,
               width: `${dot.size}px`,
               height: `${dot.size}px`,
-              boxShadow: "0 0 10px 3px rgba(255,234,0,0.9), 0 0 20px rgba(255,200,0,0.6)",
+              boxShadow: "0 0 8px 1px rgba(255,234,0,0.6)",
               animation: `yellowDotDrift ${dot.duration} ease-in-out infinite alternate`,
               animationDelay: dot.delay,
               willChange: "transform, opacity",
@@ -401,8 +379,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
               style={{
                 width: f.size,
                 height: f.size,
-                boxShadow:
-                  "0 0 12px 4px rgba(255,234,0,0.95), 0 0 24px rgba(255,180,0,0.7), 0 0 36px rgba(255,214,0,0.4)",
+                boxShadow: "0 0 10px 2px rgba(255,234,0,0.7)",
               }}
               animate={{
                 x: f.x,
@@ -577,58 +554,22 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
             <div className="hidden lg:block w-full max-w-[420px] min-h-[360px]" aria-hidden="true" />
           ) : (
             <div
-              className="relative w-full max-w-[420px] rounded-[22px] border border-white/10 bg-white/[0.05] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-500 pointer-events-auto"
+              className="relative w-full max-w-[420px] rounded-[22px] border border-white/10 bg-[#121216]/90 p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md lg:backdrop-blur-2xl transition-all duration-500 pointer-events-auto"
             >
             {/* Glossy top border line */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
             {/* Header */}
-            <div className="mb-4 text-center">
+            <div className="mb-5 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ffd600] font-bold text-slate-950 shadow-[0_10px_25px_rgba(255,214,0,0.3)]">
                 AI
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                {authMode === "signup" ? "Create Account" : "Welcome Back"}
+                Welcome Back
               </h2>
               <p className="mt-1 text-sm text-slate-400">
-                {authMode === "signup"
-                  ? "Join Pathfinder & unlock step-wise career onboarding"
-                  : "Sign in to Pathfinder Career Intelligence"}
+                Sign in to Pathfinder Career Intelligence
               </p>
-            </div>
-
-            {/* Mode Switcher: Sign In vs Sign Up */}
-            <div className="mb-5 flex rounded-xl border border-white/10 bg-black/40 p-1">
-              <button
-                type="button"
-                id="tab-auth-signin"
-                onClick={() => {
-                  setAuthMode("signin");
-                  setErrorMessage(null);
-                }}
-                className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all ${
-                  authMode === "signin"
-                    ? "bg-[#ffd600] text-slate-950 shadow-md"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                id="tab-auth-signup"
-                onClick={() => {
-                  setAuthMode("signup");
-                  setErrorMessage(null);
-                }}
-                className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all ${
-                  authMode === "signup"
-                    ? "bg-[#ffd600] text-slate-950 shadow-md"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Sign Up / New Student
-              </button>
             </div>
 
             {/* Error Message */}
@@ -688,7 +629,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 id="btn-auth-submit"
                 className="w-full rounded-2xl bg-[#ffd600] py-3.5 text-base font-semibold text-slate-950 transition-all hover:bg-[#ffdc64] hover:shadow-[0_0_20px_rgba(255,220,100,0.4)] hover:scale-[1.02] active:scale-[0.98]"
               >
-                {authMode === "signup" ? "Create Account & Start Onboarding" : "Sign In to Dashboard"}
+                Sign In to Dashboard
               </button>
             </form>
 

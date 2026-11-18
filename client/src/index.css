@@ -327,6 +327,34 @@
   -webkit-backdrop-filter: blur(2px) !important;
 }
 
+/* Mobile, Tablet & Touch-Device Smoothness: eliminate multi-layer WebGL framebuffer blur readbacks while keeping dark translucent glass */
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+  .pathfinder-dashboard section [class*="bg-[#11131c]"],
+  .pathfinder-dashboard main > div [class*="bg-[#11131c]"],
+  .pathfinder-dashboard main > div [class*="bg-[#0a0b10]"],
+  .pathfinder-dashboard main > div [class*="bg-[#0F172A]"],
+  .pathfinder-dashboard main > div [class*="bg-[#0f172a]"],
+  .pathfinder-dashboard main > div [class*="bg-[#060608]"] {
+    background-color: rgba(4, 6, 10, 0.72) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .pathfinder-dashboard main .backdrop-blur-2xl:not(.fixed),
+  .pathfinder-dashboard main .backdrop-blur-xl:not(.fixed),
+  .pathfinder-dashboard main .backdrop-blur-lg:not(.fixed),
+  .pathfinder-dashboard main .backdrop-blur-md:not(.fixed),
+  .glass-depth-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    will-change: auto !important;
+  }
+
+  .glass-depth-card:hover {
+    transform: none !important;
+  }
+}
+
 /* Pure Black (#000000) translucent glass across Project Defense, ATS Resume Studio, and Project Blueprints */
 [data-slide-theme="pure-black"] [class*="bg-[#11131c]"],
 [data-slide-theme="pure-black"] [class*="bg-[#161926]"],

@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({ rpc: vi.fn() })),
@@ -124,17 +126,16 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     const fresh = buildFreshOnboardingProfile("Rohan Verma", "rohan@example.com");
     expect(fresh.fullName).toBe("Rohan Verma");
     expect(fresh.email).toBe("rohan@example.com");
-    expect(fresh.onboardingCompleted).toBe(false);
-    expect(fresh.wizardStep).toBe(1);
+    expect(fresh.onboardingCompleted).toBe(true);
 
-    // Reloading as a new student even if draft is missing stays in onboarding with real name
+    // Reloading never traps users inside the removed step-wise onboarding wizard
     const reloadedNewUser = buildInitialProfileFromStorage(
       null,
       JSON.stringify({ username: "Rohan Verma", email: "rohan@example.com", is_new_user: true })
     );
     expect(reloadedNewUser.fullName).toBe("Rohan Verma");
     expect(reloadedNewUser.email).toBe("rohan@example.com");
-    expect(reloadedNewUser.onboardingCompleted).toBe(false);
+    expect(reloadedNewUser.onboardingCompleted).toBe(true);
 
     // Reloading with a stale/mismatched email draft falls back to the active signed-in user
     const mismatchedDraft = JSON.stringify({
@@ -174,5 +175,19 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(gkReply.toLowerCase()).not.toContain("28 blueprints");
     expect(gkReply.toLowerCase()).not.toContain("strictly limited");
     expect(gkReply.toLowerCase()).toContain("vangaveeti mohana ranga");
+  });
+
+  it("permanently removes Sign Up / New Student and blocking OnboardingWizard across all entry flows", () => {
+    const srcRoot = path.resolve(__dirname, "..");
+    const lampLoginSrc = fs.readFileSync(path.join(srcRoot, "components/auth/LampLogin.tsx"), "utf-8");
+    const homeSrc = fs.readFileSync(path.join(srcRoot, "pages/Home.tsx"), "utf-8");
+    const audioSrc = fs.readFileSync(path.join(srcRoot, "agent/audioIO.ts"), "utf-8");
+
+    expect(lampLoginSrc).not.toContain("Sign Up / New Student");
+    expect(lampLoginSrc).not.toContain("Start Onboarding");
+    expect(homeSrc).not.toContain("<OnboardingWizard");
+    expect(homeSrc).not.toContain("buildFreshOnboardingProfile");
+    expect(audioSrc).toContain("echoGuardUntilPerfMs");
+    expect(audioSrc).toContain("ttsSpeakSeq");
   });
 });

@@ -604,7 +604,7 @@ const PCM_PLAYER_WORKLET_CODE = `
 class DasPcmPlayer extends AudioWorkletProcessor {
   constructor() {
     super();
-    this.cap = 24000 * 30;
+    this.cap = 24000 * 60;
     this.ring = new Float32Array(this.cap);
     this.readPos = 0;
     this.writePos = 0;
@@ -770,6 +770,8 @@ class AudioEngine {
   private playerInitPromise: Promise<void> | null = null;
   private playerReady: boolean = false;
   private playingUntilPerfMs: number = 0;
+  private echoGuardUntilPerfMs: number = 0;
+  private ttsSpeakSeq: number = 0;
   private nextPlayTime: number = 0;
   private activeSources: AudioBufferSourceNode[] = [];
   private micStream: MediaStream | null = null;
@@ -916,6 +918,7 @@ class AudioEngine {
             if (!active) {
               const nowP = typeof performance !== "undefined" ? performance.now() : Date.now();
               this.playingUntilPerfMs = nowP + 110;
+              this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, nowP + 520);
             }
             this.notifySpeakingListeners();
           }
@@ -1138,7 +1141,8 @@ class AudioEngine {
       };
     };
 
-    if (!this.analyser || !this.audioCtx) {
+    const activePlayback = this.isSpeaking();
+    if (!this.analyser || !this.audioCtx || !activePlayback) {
       return speakerFallback();
     }
 
@@ -1158,8 +1162,6 @@ class AudioEngine {
       this.audioCtx.sampleRate || 48000,
       fftSize
     );
-
-    const activePlayback = this.isSpeaking();
     const speakingNow = activePlayback || rms > 0.0065;
     if (!speakingNow) {
       return speakerFallback();
@@ -1240,6 +1242,7 @@ class AudioEngine {
       (import.meta as any).env?.VITE_BACKEND_URL ||
       "https://pathfinder-backend-klrp.onrender.com";
 
+    const speakSeq = ++this.ttsSpeakSeq;
     this.unlockAudio();
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
@@ -1249,12 +1252,20 @@ class AudioEngine {
           signal: options?.signal,
           body: JSON.stringify({ text: cleaned, voice: "Puck" }),
         });
-        if (options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
+        if (
+          speakSeq !== this.ttsSpeakSeq ||
+          options?.signal?.aborted ||
+          (options?.shouldContinue && !options.shouldContinue())
+        ) {
           return false;
         }
         if (resp.ok) {
           const data = await resp.json();
-          if (options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
+          if (
+            speakSeq !== this.ttsSpeakSeq ||
+            options?.signal?.aborted ||
+            (options?.shouldContinue && !options.shouldContinue())
+          ) {
             return false;
           }
           if (data?.status === "ok" && data?.pcm_base64) {
@@ -1278,7 +1289,7 @@ class AudioEngine {
       }
     }
 
-    if (options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
+    if (speakSeq !== this.ttsSpeakSeq || options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
       return false;
     }
     if (typeof window !== "undefined" && (window as any).dasSocket?.speakVerbatim) {
@@ -1349,12 +1360,15 @@ class AudioEngine {
     this.ttsStartPerfMs = nowPerf;
     this.ttsDurationMs = Math.max(120, buffer.duration * 1000);
     this.playingUntilPerfMs = nowPerf + buffer.duration * 1000;
+    this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, this.playingUntilPerfMs + 520);
     src.onended = () => {
       if (this.wholePcmSource === src) {
+        const endNow = typeof performance !== "undefined" ? performance.now() : Date.now();
         this.wholePcmSource = null;
         this.ttsTimeline = null;
         this.ttsDurationMs = 0;
         this.playingUntilPerfMs = 0;
+        this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, endNow + 480);
         this.notifySpeakingListeners();
         onEnded?.();
       }
@@ -1372,7 +1386,7 @@ class AudioEngine {
       this.audioCtx.resume().catch(() => {});
     }
     // Single-voice mutual exclusion: stop legacy Speaker, full-clip TTS, & browser TTS so 2 voices NEVER overlap
-    if (!this.activeTurnMode) {
+    if (this.wholePcmSource || !this.activeTurnMode) {
       this.stopWholePcmPlayback();
       try {
         speaker?.stop?.(false);
@@ -1404,7 +1418,8 @@ class AudioEngine {
     }
 
     const baseMs = Math.max(nowPerf + 40, this.playingUntilPerfMs);
-    this.playingUntilPerfMs = Math.min(nowPerf + 15000, baseMs + durMs);
+    this.playingUntilPerfMs = Math.min(nowPerf + 45000, baseMs + durMs);
+    this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, this.playingUntilPerfMs + 520);
 
     if (this.playerReady && this.playerNode) {
       this.playerNode.port.postMessage(
@@ -1481,6 +1496,7 @@ class AudioEngine {
 
   // Clear audio queue immediately when user genuinely interrupts DAS or starts a new turn
   public clearAudioQueue() {
+    this.ttsSpeakSeq++;
     this.activeTurnMode = null;
     this.workletPlaying = false;
     this.pendingWorkletChunks = [];
@@ -1511,6 +1527,7 @@ class AudioEngine {
     });
     this.activeSources = [];
     this.playingUntilPerfMs = 0;
+    this.echoGuardUntilPerfMs = 0;
     if (this.audioCtx) {
       this.nextPlayTime = this.audioCtx.currentTime;
     }
@@ -1675,8 +1692,11 @@ class AudioEngine {
       this.hadHealthySignal = true;
     }
 
-    // Ironclad Echo & Keyboard-Click Shield: never self-clear active audio or trigger phantom turns on speaker echo or keystrokes
-    const echoActive = this.isSpeaking() || (options?.shouldSuppressEcho?.() ?? false);
+    // Ironclad Echo & Keyboard-Click Shield: keep trailing speaker echo suppressed across mobile/tablet speakers
+    const echoActive =
+      this.isSpeaking() ||
+      now < this.echoGuardUntilPerfMs ||
+      (options?.shouldSuppressEcho?.() ?? false);
     const typingSuppressed = now < this.typingSuppressUntilMs && !this.inUtterance;
     if (echoActive || typingSuppressed) {
       this.speechOnsetFrames = 0;
@@ -1750,6 +1770,19 @@ class AudioEngine {
       this.deviceFallbackAttempted = false;
     }
 
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+
+    // Create & unlock AudioContext synchronously inside the tap handler BEFORE async getUserMedia (critical for iOS Safari / iPadOS / Android)
+    let preMicCtx: AudioContext | null = null;
+    try {
+      preMicCtx = new AudioContextClass({ latencyHint: "interactive" });
+      if (preMicCtx.state === "suspended") {
+        void preMicCtx.resume().catch(() => {});
+      }
+    } catch {}
+
     const raw = Boolean(options?.rawMode);
     const devConstraint = options?.deviceId
       ? { deviceId: { ideal: options.deviceId } }
@@ -1770,14 +1803,21 @@ class AudioEngine {
         this.micStream = await navigator.mediaDevices.getUserMedia({
           audio: options?.deviceId ? { deviceId: { ideal: options.deviceId } } : true,
         });
-      } catch {
-        this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        try {
+          this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (finalErr) {
+          try {
+            preMicCtx?.close();
+          } catch {}
+          throw finalErr ?? err;
+        }
       }
     }
 
     // Re-init playback context AFTER Bluetooth HFP/microphone acquisition so output routing stays active
     this.initContext();
-    if (this.audioCtx?.state === "suspended") {
+    if (this.audioCtx && (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted")) {
       await this.audioCtx.resume().catch(() => {});
     }
 
@@ -1794,30 +1834,33 @@ class AudioEngine {
       };
     }
 
-    const AudioContextClass =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (this.captureToken !== token) {
+      try {
+        preMicCtx?.close();
+      } catch {}
+      return;
+    }
 
-    this.micCtx = new AudioContextClass({ latencyHint: "interactive" });
-    if (this.micCtx.state === "suspended") {
-      await this.micCtx.resume();
+    this.micCtx = preMicCtx || new AudioContextClass({ latencyHint: "interactive" });
+    if (this.micCtx.state === "suspended" || (this.micCtx.state as string) === "interrupted") {
+      await this.micCtx.resume().catch(() => {});
     }
 
     const inputSampleRate = this.micCtx.sampleRate;
     const source = this.micCtx.createMediaStreamSource(this.micStream);
     this.micSource = source;
 
-    // Watchdog keeps both mic and speaker contexts awake across Windows BT/headset transitions
+    // Watchdog keeps both mic and speaker contexts awake across Windows/MacBook/iOS BT transitions
     this.keepaliveTimer = window.setInterval(() => {
-      if (this.micCtx && this.micCtx.state === "suspended") {
+      if (this.micCtx && (this.micCtx.state === "suspended" || (this.micCtx.state as string) === "interrupted")) {
         this.micCtx.resume().catch(() => {});
       }
-      if (this.audioCtx && this.audioCtx.state === "suspended") {
+      if (this.audioCtx && (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted")) {
         this.audioCtx.resume().catch(() => {});
       }
     }, 1200);
 
-    // Primary path: AudioWorkletNode (modern, zero deprecation/culling across Chromium)
+    // Primary path: AudioWorkletNode (modern, zero deprecation/culling across Chromium & WebKit)
     let workletReady = false;
     if (this.micCtx.audioWorklet && typeof Blob !== "undefined") {
       try {
@@ -1833,18 +1876,18 @@ class AudioEngine {
         this.workletNode = new AudioWorkletNode(this.micCtx, "das-mic-processor", {
           numberOfInputs: 1,
           numberOfOutputs: 1,
-          channelCount: 2,
+          channelCount: 1,
           channelCountMode: "explicit",
         });
         this.workletNode.port.onmessage = (evt) => {
           const mono = new Float32Array(evt.data);
           this.processCapturedFloatFrame(mono, inputSampleRate, onPcmChunk, options, token);
         };
-        const ultraLowGain = this.micCtx.createGain();
-        ultraLowGain.gain.value = 0.00001;
+        const silentSink = this.micCtx.createGain();
+        silentSink.gain.value = 0;
         source.connect(this.workletNode);
-        this.workletNode.connect(ultraLowGain);
-        ultraLowGain.connect(this.micCtx.destination);
+        this.workletNode.connect(silentSink);
+        silentSink.connect(this.micCtx.destination);
         workletReady = true;
       } catch (err) {
         console.warn("AudioWorklet fallback to ScriptProcessor:", err);
@@ -1853,7 +1896,7 @@ class AudioEngine {
 
     if (!workletReady) {
       const bufferSize = 2048;
-      this.processor = this.micCtx.createScriptProcessor(bufferSize, 2, 1);
+      this.processor = this.micCtx.createScriptProcessor(bufferSize, 1, 1);
       this.processor.onaudioprocess = (event) => {
         const buf = event.inputBuffer;
         const ch0 = buf.getChannelData(0);
@@ -1868,11 +1911,11 @@ class AudioEngine {
         }
         this.processCapturedFloatFrame(mono, inputSampleRate, onPcmChunk, options, token);
       };
-      const ultraLowGain = this.micCtx.createGain();
-      ultraLowGain.gain.value = 0.00001;
+      const silentSink = this.micCtx.createGain();
+      silentSink.gain.value = 0;
       source.connect(this.processor);
-      this.processor.connect(ultraLowGain);
-      ultraLowGain.connect(this.micCtx.destination);
+      this.processor.connect(silentSink);
+      silentSink.connect(this.micCtx.destination);
     }
   }
 

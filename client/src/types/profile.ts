@@ -112,8 +112,8 @@ export function buildFreshOnboardingProfile(
     githubUrl: "",
     leetcodeUrl: "",
     codingProfiles: { github: "", leetcode: "", linkedin: "" },
-    onboardingCompleted: false,
-    wizardStep: 1,
+    onboardingCompleted: true,
+    wizardStep: 5,
   };
 }
 
@@ -145,6 +145,7 @@ export function buildInitialProfileFromStorage(
           return {
             ...DEFAULT_STUDENT_PROFILE,
             ...parsedDraft,
+            onboardingCompleted: true,
             email: parsedDraft.email || storedEmail || DEFAULT_STUDENT_PROFILE.email,
             fullName:
               pickCandidateFullName(parsedDraft.fullName, storedName) ||
@@ -165,8 +166,6 @@ export function buildInitialProfileFromStorage(
       };
     }
 
-    const isOnboardingPending =
-      storedUser.is_new_user === true || storedUser.onboarding_completed === false;
     return {
       ...DEFAULT_STUDENT_PROFILE,
       email: storedEmail || DEFAULT_STUDENT_PROFILE.email,
@@ -174,8 +173,8 @@ export function buildInitialProfileFromStorage(
       githubUrl: "",
       leetcodeUrl: "",
       codingProfiles: { github: "", leetcode: "", linkedin: "" },
-      onboardingCompleted: !isOnboardingPending,
-      wizardStep: isOnboardingPending ? 1 : DEFAULT_STUDENT_PROFILE.wizardStep,
+      onboardingCompleted: true,
+      wizardStep: DEFAULT_STUDENT_PROFILE.wizardStep,
     };
   }
 

@@ -17,7 +17,6 @@ import { WhatIfSimulator } from "@/components/dashboard/WhatIfSimulator";
 import { RoleIntelligence } from "@/components/dashboard/RoleIntelligence";
 import { BranchIntelligence } from "@/components/dashboard/BranchIntelligence";
 import { SkillIntelligence } from "@/components/dashboard/SkillIntelligence";
-import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { OnboardingResultScreen } from "@/components/onboarding/OnboardingResultScreen";
 import { ProfileSettings } from "@/components/dashboard/ProfileSettings";
 import { LiveSkillVerifier } from "@/components/dashboard/LiveSkillVerifier";
@@ -29,7 +28,6 @@ import {
   ReadinessAuditData,
   DEFAULT_STUDENT_PROFILE,
   pickCandidateFullName,
-  buildFreshOnboardingProfile,
   buildInitialProfileFromStorage,
 } from "@/types/profile";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
@@ -535,7 +533,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
             await handleLogin({
               username: authData.user.username || "Student",
               email: authData.user.email,
-              isNewUser: authData.is_new_user === true,
             });
           } catch (error) {
             const isAbort = error instanceof DOMException && error.name === "AbortError";
@@ -566,7 +563,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
 
     const token = params.get("oauth_token");
     const error = params.get("oauth_error");
-    const isNew = params.get("new") === "1";
 
     window.history.replaceState(null, "", window.location.pathname + window.location.search);
 
@@ -594,7 +590,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
               await handleLogin({
                 username: userData.username || "Student",
                 email: userData.email,
-                isNewUser: isNew,
               });
             }
           } else {
@@ -832,18 +827,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
       } catch { }
     }
 
-    if (user.isNewUser) {
-      const freshProfile = buildFreshOnboardingProfile(user.username, user.email);
-      localStorage.removeItem("pathfinder_onboarding_draft");
-      localStorage.removeItem("pathfinder_profile");
-      localStorage.setItem("pathfinder_profile_draft", JSON.stringify(freshProfile));
-      setProfile(freshProfile);
-      setIsDemoProfile(false);
-      setShowResultScreen(false);
-      setIsAuthenticated(true);
-      return;
-    }
-
     if (user.bypassOnboarding) {
       const demoProfile: StudentProfileState = {
         ...DEFAULT_STUDENT_PROFILE,
@@ -916,15 +899,14 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   ? data.skills
                   : DEFAULT_STUDENT_PROFILE.technicalSkills;
           const mappedBacklogs = data.active_backlogs ?? data.activeBacklogs ?? data.backlogs ?? 0;
-          const mappedOnboarded = Boolean(data.onboarding_completed || data.onboardingCompleted);
           const mappedFullName =
             pickCandidateFullName(data.fullName ?? data.full_name, user.username) || user.username;
           const mapped: StudentProfileState = {
             ...DEFAULT_STUDENT_PROFILE,
             ...data,
             email: user.email,
-            onboardingCompleted: mappedOnboarded,
-            wizardStep: data.wizard_step ?? data.wizardStep ?? 1,
+            onboardingCompleted: true,
+            wizardStep: data.wizard_step ?? data.wizardStep ?? 5,
             cgpa: data.cgpa ?? 7.8,
             backlogs: mappedBacklogs,
             activeBacklogs: mappedBacklogs,
@@ -955,17 +937,11 @@ export default function Home({ initialTab }: HomeProps = {}) {
           };
           setProfile(mapped);
           localStorage.setItem("pathfinder_profile_draft", JSON.stringify(mapped));
-          if (!mapped.onboardingCompleted) {
-            setIsDemoProfile(false);
-            setShowResultScreen(false);
-            setIsAuthenticated(true);
-          } else {
-            setIsDemoProfile(false);
-            setShowResultScreen(false);
-            setActiveTab("profile");
-            setIsAuthenticated(true);
-            fetchPrediction(mapped);
-          }
+          setIsDemoProfile(false);
+          setShowResultScreen(false);
+          setActiveTab("overview");
+          setIsAuthenticated(true);
+          fetchPrediction(mapped);
           return;
         }
       }
@@ -991,27 +967,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
       setIsAuthenticated(true);
       toast.info("Step 1: Confirm your academic details below and click Save to build your Dashboard.");
     }
-  };
-
-  const handleWizardComplete = (
-    completedProfile: StudentProfileState,
-    audit: ReadinessAuditData
-  ) => {
-    const withEmail = { ...completedProfile, email: completedProfile.email || email };
-    setProfile(withEmail);
-    setIsDemoProfile(false);
-    setAuditResult(audit);
-    setShowResultScreen(true);
-    setPrediction({
-      chance: audit.chance,
-      label: audit.label,
-      tone: audit.tone,
-      strengths: audit.strengths || [],
-      priorities: audit.priorities || audit.gaps || [],
-      breakdown: audit.breakdown || {},
-    });
-    localStorage.setItem("pathfinder_profile_draft", JSON.stringify(withEmail));
-    markStoredUserOnboardingComplete();
   };
 
   function markStoredUserOnboardingComplete() {
@@ -1961,55 +1916,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
     return <LampLogin onLogin={handleLogin} initialError={oauthError} />;
   }
 
-  // 2. ONBOARDING WIZARD
-  if (!profile.onboardingCompleted) {
-    return (
-      <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
-        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 bg-transparent" />
-          <Ambient3DBackground activeTab={activeTab} />
-        </div>
-        <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
-          <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#11131c] border border-[#ffffff]/30 text-[#ffffff] shadow-md">
-                <Sparkles className="h-5 w-5 text-[#ffffff]" />
-              </div>
-              <div>
-                <h1 className="text-base font-bold text-[#f8fafc] tracking-tight">
-                  Pathfinder Candidate Onboarding
-                </h1>
-                <p className="text-xs text-[#94a3b8]">
-                  Step-Wise Profile Setup for AI Career Readiness Assessment
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-block rounded-full border border-white/[0.08] bg-[#11131c] px-3 py-1 text-xs font-medium text-[#f8fafc] shadow-sm">
-                Logged in as {username}
-              </span>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] transition-colors cursor-pointer"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-
-          <OnboardingWizard
-            key={email || profile.email || "guest"}
-            initialProfile={profile}
-            onComplete={handleWizardComplete}
-            apiBase={API_BASE}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // 3. IMMEDIATE RESULT SCREEN POST-SUBMIT
+  // 2. IMMEDIATE RESULT SCREEN POST-SUBMIT
   if (showResultScreen && auditResult) {
     return (
       <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
