@@ -1244,14 +1244,16 @@ def _build_sdk_gen_config(
     system_instruction: Optional[str] = None,
     temperature: float = 0.2,
     max_output_tokens: int = 2400,
+    use_response_schema: bool = False,
 ):
     m_low = model.lower()
     kwargs: Dict[str, Any] = {
         "response_mime_type": "application/json",
-        "response_schema": schema,
         "temperature": temperature,
         "max_output_tokens": max_output_tokens,
     }
+    if use_response_schema:
+        kwargs["response_schema"] = schema
     if system_instruction:
         kwargs["system_instruction"] = system_instruction
     if hasattr(types, "AutomaticFunctionCallingConfig"):
@@ -1270,12 +1272,65 @@ def _refresh_candidate_models(limit: int = 4) -> List[str]:
     return models
 
 
+def _format_json_schema_prompt(prompt: str, schema: Type[BaseModel]) -> str:
+    schema_json = json.dumps(schema.model_json_schema(), indent=2)
+    return (
+        f"{prompt}\n\n"
+        "Respond with ONLY a single valid JSON object matching this JSON Schema (no markdown fences):\n"
+        f"{schema_json}"
+    )
+
+
+def _handle_gemini_error(model: str, exc: Exception, stage: str) -> str:
+    err_str = str(exc)
+    err_low = err_str.lower()
+    if "deadline" not in err_low and (
+        "404" in err_low or "not found" in err_low or "no longer available" in err_low
+    ):
+        evict_gemini_model(model)
+    elif "503" in err_low or "429" in err_low or "timeout" in err_low or "504" in err_low:
+        deprioritize_gemini_model(model)
+    logger.warning(f"{stage} '{model}' failed: {exc}")
+    return f"{model}: {err_str}"
+
+
 def generate_structured_ai(prompt: str, schema: Type[BaseModel], pdf_bytes: Optional[bytes] = None) -> BaseModel:
-    t_deadline = time.perf_counter() + 12.0
+    t_deadline = time.perf_counter() + 9.5
+    api_key = _resolve_gemini_api_key()
+    json_prompt = _format_json_schema_prompt(prompt, schema)
+
+    if api_key and pdf_bytes is None:
+        for model in _refresh_candidate_models(3):
+            remaining = t_deadline - time.perf_counter()
+            if remaining <= 0.8:
+                break
+            try:
+                text = call_gemini_rest(
+                    model=model,
+                    contents=[{"role": "user", "parts": [{"text": json_prompt}]}],
+                    sys_instruction="Return ONLY valid raw JSON matching the requested schema.",
+                    api_key=api_key,
+                    temperature=0.25,
+                    max_output_tokens=1400,
+                    include_thinking=False,
+                    timeout_sec=min(4.8, remaining),
+                    response_mime_type="application/json",
+                )
+                raw_dict = _extract_json_object(text or "")
+                if raw_dict is not None:
+                    promote_gemini_model(model)
+                    return schema.model_validate(raw_dict)
+            except Exception as exc:
+                _handle_gemini_error(model, exc, "[Structured AI] REST")
+
     client = get_gemini_client()
-    if client and genai and types:
-        contents = [types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"), prompt] if pdf_bytes else prompt
-        for model in _refresh_candidate_models(4):
+    if client and genai and types and time.perf_counter() < t_deadline:
+        contents: Any = (
+            [types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"), json_prompt]
+            if pdf_bytes
+            else json_prompt
+        )
+        for model in _refresh_candidate_models(2):
             if time.perf_counter() >= t_deadline:
                 break
             try:
@@ -1289,22 +1344,12 @@ def generate_structured_ai(prompt: str, schema: Type[BaseModel], pdf_bytes: Opti
                         max_output_tokens=1600,
                     ),
                 )
-                parsed = getattr(response, "parsed", None)
-                if parsed is not None:
-                    promote_gemini_model(model)
-                    return schema.model_validate(parsed)
                 raw_dict = _extract_json_object(getattr(response, "text", "") or "")
                 if raw_dict is not None:
                     promote_gemini_model(model)
                     return schema.model_validate(raw_dict)
             except Exception as exc:
-                err_str = str(exc).lower()
-                if "deadline" not in err_str and ("404" in err_str or "not found" in err_str or "no longer available" in err_str):
-                    evict_gemini_model(model)
-                elif "503" in err_str or "429" in err_str or "timeout" in err_str:
-                    deprioritize_gemini_model(model)
-                logger.warning(f"[Structured AI] Model '{model}' structured generation failed: {exc}")
-                continue
+                _handle_gemini_error(model, exc, "[Structured AI] SDK")
 
     return local_structured_fallback(schema)
 
@@ -1338,26 +1383,53 @@ def generate_strict_json_evaluation(
 ) -> tuple[Optional[BaseModel], Optional[str], Optional[str]]:
     """
     Calls live Gemini models to produce a strictly validated Pydantic object.
-    Never returns synthetic or canned fallback responses on failure.
-    Returns: (validated_model, model_name, error_reason)
+    Uses low-latency REST JSON mode first (~2s) to avoid server-side schema-grammar stalls,
+    with SDK fallback for multimodal PDF bytes. Never returns synthetic fallback responses.
     """
     api_key = _resolve_gemini_api_key()
     if not api_key:
         return None, None, "GEMINI_API_KEY not configured"
 
-    t_deadline = time.perf_counter() + 12.0
-    models_to_try = _refresh_candidate_models(4)
+    t_deadline = time.perf_counter() + 9.5
     last_error = "No Gemini models available"
+    json_prompt = _format_json_schema_prompt(prompt, schema)
 
+    # 1. Fast REST JSON-mode path (bypasses 11s+ server-side response_schema grammar compilation stalls)
+    if pdf_bytes is None:
+        for model in _refresh_candidate_models(3):
+            remaining = t_deadline - time.perf_counter()
+            if remaining <= 0.8:
+                last_error = f"{last_error}; strict evaluation deadline reached"
+                break
+            try:
+                text = call_gemini_rest(
+                    model=model,
+                    contents=[{"role": "user", "parts": [{"text": json_prompt}]}],
+                    sys_instruction=system_instruction,
+                    api_key=api_key,
+                    temperature=0.15,
+                    max_output_tokens=1200,
+                    include_thinking=False,
+                    timeout_sec=min(4.8, remaining),
+                    response_mime_type="application/json",
+                )
+                raw_dict = _extract_json_object(text or "")
+                if raw_dict is not None:
+                    promote_gemini_model(model)
+                    return schema.model_validate(raw_dict), model, None
+                last_error = f"{model}: unparseable JSON"
+            except Exception as exc:
+                last_error = _handle_gemini_error(model, exc, "[Strict Evaluation] REST")
+
+    # 2. SDK path (required for binary PDF bytes or secondary retry if budget remains)
     client = get_gemini_client()
-    if client and genai and types:
-        sdk_contents: Any = prompt
-        if pdf_bytes:
-            sdk_contents = [
-                types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
-                prompt,
-            ]
-        for model in models_to_try:
+    if client and genai and types and time.perf_counter() < t_deadline:
+        sdk_contents: Any = (
+            [types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"), json_prompt]
+            if pdf_bytes
+            else json_prompt
+        )
+        for model in _refresh_candidate_models(2):
             if time.perf_counter() >= t_deadline:
                 last_error = f"{last_error}; strict evaluation deadline reached"
                 break
@@ -1370,64 +1442,16 @@ def generate_strict_json_evaluation(
                         schema=schema,
                         system_instruction=system_instruction,
                         temperature=0.15,
-                        max_output_tokens=2048,
+                        max_output_tokens=1600,
                     ),
                 )
-                parsed = getattr(response, "parsed", None)
-                if parsed is not None:
-                    promote_gemini_model(model)
-                    return schema.model_validate(parsed), model, None
                 raw_dict = _extract_json_object(getattr(response, "text", "") or "")
                 if raw_dict is not None:
                     promote_gemini_model(model)
                     return schema.model_validate(raw_dict), model, None
                 last_error = f"{model}: empty structured output"
             except Exception as exc:
-                last_error = f"{model}: {exc}"
-                err_low = last_error.lower()
-                if "deadline" not in err_low and ("404" in err_low or "not found" in err_low or "no longer available" in err_low):
-                    evict_gemini_model(model)
-                elif "503" in err_low or "429" in err_low or "timeout" in err_low:
-                    deprioritize_gemini_model(model)
-                logger.warning(f"[Strict Evaluation] SDK '{model}' failed: {exc}")
-
-    # Secondary attempt via lightweight REST endpoint with explicit JSON schema instruction (shares deadline)
-    if time.perf_counter() < t_deadline:
-        schema_json = json.dumps(schema.model_json_schema(), indent=2)
-        rest_prompt = (
-            f"{prompt}\n\n"
-            "Respond with ONLY a single valid JSON object matching this JSON Schema (no markdown fences):\n"
-            f"{schema_json}"
-        )
-        for model in _refresh_candidate_models(3):
-            remaining = t_deadline - time.perf_counter()
-            if remaining <= 1.0:
-                break
-            try:
-                text = call_gemini_rest(
-                    model=model,
-                    contents=[{"role": "user", "parts": [{"text": rest_prompt}]}],
-                    sys_instruction=system_instruction,
-                    api_key=api_key,
-                    temperature=0.15,
-                    max_output_tokens=1024,
-                    include_thinking=False,
-                    timeout_sec=min(4.5, remaining),
-                    response_mime_type="application/json",
-                )
-                raw_dict = _extract_json_object(text or "")
-                if raw_dict is not None:
-                    promote_gemini_model(model)
-                    return schema.model_validate(raw_dict), model, None
-                last_error = f"{model}: unparseable JSON"
-            except Exception as exc:
-                last_error = f"{model}: {exc}"
-                err_low = last_error.lower()
-                if "404" in err_low or "400" in err_low or "not found" in err_low or "invalid_argument" in err_low:
-                    evict_gemini_model(model)
-                elif "503" in err_low or "429" in err_low or "timeout" in err_low:
-                    deprioritize_gemini_model(model)
-                logger.warning(f"[Strict Evaluation] REST '{model}' failed: {exc}")
+                last_error = _handle_gemini_error(model, exc, "[Strict Evaluation] SDK")
 
     return None, None, last_error
 
