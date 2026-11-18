@@ -24,6 +24,7 @@ router = APIRouter(prefix="/api", tags=["voice"])
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10MB cap (plaintext resumes / text are small)
 _TTS_CACHE_MAX = 40
 _TTS_PCM_CACHE: "OrderedDict[str, Dict[str, Any]]" = OrderedDict()
+_TTS_INFLIGHT: Dict[str, asyncio.Task] = {}
 _TTS_LIVE_LOCK: Optional[asyncio.Lock] = None
 
 
@@ -136,7 +137,7 @@ async def download_resume():
     return RESUME_STATUS.get("last", {}).get("download_url") or ""
 
 
-async def _synthesize_puck_via_38_live(text: str) -> Optional[Dict[str, Any]]:
+async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str, Any]]:
     """Synthesize clean verbatim 24kHz PCM speech exclusively via gemini-3.8-live Puck voice."""
     from google import genai
     from google.genai import types
@@ -160,39 +161,68 @@ async def _synthesize_puck_via_38_live(text: str) -> Optional[Dict[str, Any]]:
         temperature=0.2,
     )
 
-    async with _get_tts_lock():
-        for key in keys:
-            client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
-            for model_name in (LIVE_MODEL, "gemini-3.8-live"):
-                try:
-                    pcm_buf = bytearray()
+    for key in keys:
+        client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
+        try:
+            pcm_buf = bytearray()
 
-                    async def _run_live():
-                        async with client.aio.live.connect(model=model_name, config=cfg) as session:
-                            await session.send_client_content(
-                                turns=[types.Content(role="user", parts=[types.Part.from_text(text=text)])],
-                                turn_complete=True,
-                            )
-                            async for resp in session.receive():
-                                sc = resp.server_content
-                                if sc and sc.model_turn and sc.model_turn.parts:
-                                    for part in sc.model_turn.parts:
-                                        if part.inline_data and part.inline_data.data:
-                                            pcm_buf.extend(part.inline_data.data)
-                                if sc and getattr(sc, "turn_complete", False):
-                                    break
+            async def _run_live():
+                async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
+                    await session.send_client_content(
+                        turns=[types.Content(role="user", parts=[types.Part.from_text(text=text)])],
+                        turn_complete=True,
+                    )
+                    async for resp in session.receive():
+                        sc = resp.server_content
+                        if sc and sc.model_turn and sc.model_turn.parts:
+                            for part in sc.model_turn.parts:
+                                if part.inline_data and part.inline_data.data:
+                                    pcm_buf.extend(part.inline_data.data)
+                        # Gemini Live emits generation_complete immediately when audio finishes generating,
+                        # whereas turn_complete can lag by the real-time playback duration (30s+ on long answers).
+                        if sc and (
+                            getattr(sc, "turn_complete", False)
+                            or (pcm_buf and getattr(sc, "generation_complete", False))
+                        ):
+                            break
 
-                    await asyncio.wait_for(_run_live(), timeout=12.0)
-                    if pcm_buf:
-                        return {
-                            "pcm_base64": base64.b64encode(bytes(pcm_buf)).decode("utf-8"),
-                            "sample_rate": 24000,
-                            "voice": "Puck",
-                        }
-                except Exception as exc:
-                    logger.warning("[Voice TTS Live Puck] %s failed: %s", model_name, exc)
-                    continue
+            await asyncio.wait_for(_run_live(), timeout=20.0)
+            if pcm_buf:
+                return {
+                    "pcm_base64": base64.b64encode(bytes(pcm_buf)).decode("utf-8"),
+                    "sample_rate": 24000,
+                    "voice": "Puck",
+                }
+        except Exception as exc:
+            logger.warning("[Voice TTS Live Puck] %s failed: %r", LIVE_MODEL, exc)
+            continue
     return None
+
+
+async def _synthesize_puck_via_38_live(text: str) -> Optional[Dict[str, Any]]:
+    async with _get_tts_lock():
+        return await _synthesize_puck_via_38_live_unlocked(text)
+
+
+def _store_tts_cache(cache_key: str, synthesized: Dict[str, Any]) -> None:
+    _TTS_PCM_CACHE[cache_key] = synthesized
+    _TTS_PCM_CACHE.move_to_end(cache_key)
+    while len(_TTS_PCM_CACHE) > _TTS_CACHE_MAX:
+        _TTS_PCM_CACHE.popitem(last=False)
+
+
+async def _synthesize_and_cache(cache_key: str, text: str) -> Optional[Dict[str, Any]]:
+    try:
+        async with _get_tts_lock():
+            if cache_key in _TTS_PCM_CACHE:
+                _TTS_PCM_CACHE.move_to_end(cache_key)
+                return _TTS_PCM_CACHE[cache_key]
+            synthesized = await _synthesize_puck_via_38_live_unlocked(text)
+            if synthesized:
+                _store_tts_cache(cache_key, synthesized)
+            return synthesized
+    finally:
+        _TTS_INFLIGHT.pop(cache_key, None)
 
 
 @router.post("/voice/tts")
@@ -214,16 +244,18 @@ async def voice_tts(req: dict, request: Request):
             **cached,
         }
 
-    synthesized = await _synthesize_puck_via_38_live(text)
+    task = _TTS_INFLIGHT.get(cache_key)
+    joined_inflight = task is not None and not task.done()
+    if not joined_inflight:
+        task = asyncio.create_task(_synthesize_and_cache(cache_key, text))
+        _TTS_INFLIGHT[cache_key] = task
+
+    synthesized = await asyncio.shield(task)
 
     if synthesized:
-        _TTS_PCM_CACHE[cache_key] = synthesized
-        _TTS_PCM_CACHE.move_to_end(cache_key)
-        if len(_TTS_PCM_CACHE) > _TTS_CACHE_MAX:
-            _TTS_PCM_CACHE.popitem(last=False)
         return {
             "status": "ok",
-            "cached": False,
+            "cached": joined_inflight,
             "provider": "gemini-3.8-live-puck",
             **synthesized,
         }

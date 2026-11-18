@@ -1266,7 +1266,10 @@ class AudioEngine {
             );
             if (played) return true;
           }
+          // Server explicitly returned HTTP 200 fallback_live — don't hammer the same endpoint twice
+          break;
         }
+        if (resp.status < 500) break;
       } catch (err: any) {
         if (err?.name === "AbortError") return false;
       }

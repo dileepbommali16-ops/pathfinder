@@ -326,11 +326,16 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     const cached = ttsCacheRef.current.get(answerText);
     if (cached) {
       setIsSpeaking(true);
-      const ok = await audioEngine.playWholePcmBase64(cached.pcm, cached.rate, () => {
-        if (speakGenRef.current === gen) setIsSpeaking(false);
-      });
+      const ok = await audioEngine.playWholePcmBase64(
+        cached.pcm,
+        cached.rate,
+        () => {
+          if (speakGenRef.current === gen) setIsSpeaking(false);
+        },
+        answerText
+      );
       if (!ok && speakGenRef.current === gen) {
-        speaker.say(answerText);
+        (window as any).dasSocket?.speakVerbatim?.(answerText);
       }
       return;
     }
@@ -350,19 +355,24 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
           ttsCacheRef.current.set(answerText, { pcm: data.pcm_base64, rate });
           setIsLoadingVoice(false);
           setIsSpeaking(true);
-          const played = await audioEngine.playWholePcmBase64(data.pcm_base64, rate, () => {
-            if (speakGenRef.current === gen) setIsSpeaking(false);
-          });
+          const played = await audioEngine.playWholePcmBase64(
+            data.pcm_base64,
+            rate,
+            () => {
+              if (speakGenRef.current === gen) setIsSpeaking(false);
+            },
+            answerText
+          );
           if (played) return;
         }
       }
     } catch {
-      // Fall through cleanly to verbatim Speaker fallback if offline
+      // Fall through cleanly to direct Gemini Live Puck verbatim fallback
     }
 
     if (speakGenRef.current !== gen) return;
     setIsLoadingVoice(false);
-    speaker.say(answerText);
+    (window as any).dasSocket?.speakVerbatim?.(answerText);
   };
 
   const stopSpeaking = () => {

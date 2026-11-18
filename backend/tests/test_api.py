@@ -348,6 +348,38 @@ class TestAPIEndpoints(unittest.TestCase):
         vr_src = inspect.getsource(vr)
         self.assertNotIn("gemini-2.5-flash-preview-tts", vr_src)
         self.assertIn("gemini-3.8-live", vr_src)
+        self.assertIn("generation_complete", vr_src)
+        self.assertIn("_TTS_INFLIGHT", vr_src)
+
+    def test_voice_tts_dedups_inflight_concurrent_requests(self):
+        import asyncio
+        from unittest.mock import AsyncMock, patch
+        import backend.routers.voice_routes as vr
+
+        calls = 0
+
+        async def fake_synth(text: str):
+            nonlocal calls
+            calls += 1
+            await asyncio.sleep(0.05)
+            return {"pcm_base64": "AAAA", "sample_rate": 24000, "voice": "Puck"}
+
+        vr._TTS_PCM_CACHE.clear()
+        vr._TTS_INFLIGHT.clear()
+
+        async def _run_concurrent():
+            with patch.object(vr, "_synthesize_puck_via_38_live_unlocked", side_effect=fake_synth):
+                return await asyncio.gather(
+                    vr.voice_tts({"text": "Idempotency concurrent test", "voice": "Puck"}, None),
+                    vr.voice_tts({"text": "Idempotency concurrent test", "voice": "Puck"}, None),
+                )
+
+        r1, r2 = asyncio.run(_run_concurrent())
+        self.assertEqual(calls, 1)
+        self.assertEqual(r1["status"], "ok")
+        self.assertEqual(r2["status"], "ok")
+        self.assertEqual(r1["pcm_base64"], "AAAA")
+        self.assertEqual(r2["pcm_base64"], "AAAA")
 
 if __name__ == "__main__":
     unittest.main()
