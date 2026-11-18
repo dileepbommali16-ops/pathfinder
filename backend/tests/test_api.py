@@ -195,7 +195,7 @@ class TestAPIEndpoints(unittest.TestCase):
 
     def test_madam_honorific_in_chat_and_persona(self):
         from backend.gemini_engine import prepare_chat_context
-        from backend.agent.persona import build_system_prompt, get_greeting_for_user
+        from backend.agent.live_proxy import get_das_system_instruction
 
         sys_instruction, _, _, _, _ = prepare_chat_context(
             message="How do I improve my placement score?",
@@ -204,11 +204,9 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIn("Madam", sys_instruction)
         self.assertNotIn("Address her as 'Boss'", sys_instruction)
 
-        persona_prompt = build_system_prompt("guest", {"honorific": "Madam"})
-        self.assertIn("Madam", persona_prompt)
-        self.assertIn("DAS Neural Voice", persona_prompt)
-        self.assertNotIn("Puck", persona_prompt)
-        self.assertIn("Madam", get_greeting_for_user(None, honorific="Madam"))
+        live_prompt = get_das_system_instruction("madam")
+        self.assertIn("Madam", live_prompt)
+        self.assertIn("STRICT PUCK VOICE PERSONA LOCK", live_prompt)
 
     def test_no_puck_exposed_in_agent_status(self):
         resp = self.client.get("/agent/status")

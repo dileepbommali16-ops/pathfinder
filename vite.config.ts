@@ -10,10 +10,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(rootDir, "./client/src"),
-      "@shared": path.resolve(rootDir, "./shared"),
-      "@assets": path.resolve(rootDir, "./attached_assets"),
-      "@designcodeio/threeui/style.css": path.resolve(rootDir, "./client/src/shaders/threeui.css"),
-      "@designcodeio/threeui": path.resolve(rootDir, "./client/src/shaders/index.ts"),
       "@supabase/supabase-js": path.resolve(rootDir, "./client/src/lib/supabaseClient.ts"),
     },
     dedupe: ["three", "react", "react-dom"],

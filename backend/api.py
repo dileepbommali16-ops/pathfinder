@@ -64,11 +64,6 @@ from backend.database import (
     delete_user_profile,
     query_cohort_paginated
 )
-from backend.repositories import (
-    UserRepository,
-    CohortRepository,
-    HistoryRepository
-)
 
 # 5. Core Services
 from backend.data_service import (
@@ -127,7 +122,6 @@ from backend.routers.predictions_router import predictions_router
 from backend.routers.export_router import export_router
 from backend.routers.github_router import github_router
 from backend.routers.voice_routes import router as voice_routes
-from backend.routers.webhook_router import webhook_router
 from backend.agent.router import agent_router
 
 # Setup application logger
@@ -268,30 +262,10 @@ app.include_router(predictions_router)
 app.include_router(github_router)
 app.include_router(export_router)
 app.include_router(voice_routes)
-app.include_router(webhook_router)
 app.include_router(agent_router)
-
-# Versioned API Prefix (/api/v1) for Standard API Versioning
-v1_app = FastAPI(title="Pathfinder v1 Sub-API")
-v1_app.include_router(health_router)
-v1_app.include_router(oauth_router)
-v1_app.include_router(auth_router)
-v1_app.include_router(profile_router)
-v1_app.include_router(analytics_router)
-v1_app.include_router(ai_router)
-v1_app.include_router(predictions_router)
-v1_app.include_router(github_router)
-v1_app.include_router(export_router)
-v1_app.include_router(webhook_router)
-v1_app.include_router(agent_router)
-v1_app.include_router(voice_routes)
-app.mount("/api/v1", v1_app)
 
 
 @app.get("/api/gemini-live-key")
-@app.get("/api/agent/session-token")
-@v1_app.get("/api/gemini-live-key")
-@v1_app.get("/api/agent/session-token")
 def get_gemini_live_key():
     """Secure endpoint providing Gemini Live session metadata. Never exposes raw credentials."""
     from backend.config.key_resolver import get_active_gemini_key
@@ -307,7 +281,6 @@ def get_gemini_live_key():
 
 
 @app.get("/api/test-live")
-@v1_app.get("/api/test-live")
 async def test_live_debug():
     """Diagnostic endpoint to test Gemini Live API connectivity cleanly without exposing stacktraces."""
     try:
@@ -339,7 +312,6 @@ async def test_live_debug():
 
 
 @app.post("/api/rag/search")
-@v1_app.post("/api/rag/search")
 async def rag_search_endpoint(payload: Dict[str, Any] = Body(...)):
     """Centralized Supabase pgvector semantic search endpoint."""
     from backend.supabase_rag import query_semantic_rag
@@ -349,44 +321,6 @@ async def rag_search_endpoint(payload: Dict[str, Any] = Body(...)):
     return {"results": results, "count": len(results)}
 
 
-@app.get("/api/student-memory")
-@v1_app.get("/api/student-memory")
-def fetch_student_memory(user_id: Optional[str] = None):
-    """Retrieves persistent lightweight conversational memory for a student."""
-    from backend.database import get_student_memory
-    target_id = user_id or "default_student"
-    memory_data = get_student_memory(target_id)
-    return {"success": True, "data": memory_data}
-
-
-@app.post("/api/student-memory")
-@v1_app.post("/api/student-memory")
-async def update_student_memory(request: Request):
-    """Updates persistent lightweight conversational memory for a student."""
-    from backend.database import save_student_memory
-    body = await request.json()
-    user_id = body.get("user_id", "default_student")
-    goals = body.get("goals")
-    weak_areas = body.get("weak_areas")
-    topics = body.get("topics")
-    last_summary = body.get("last_summary")
-
-    saved = save_student_memory(
-        user_id=user_id,
-        goals=goals,
-        weak_areas=weak_areas,
-        topics=topics,
-        last_summary=last_summary
-    )
-    return {"success": True, "data": saved}
-
-
-
-# Backward Compatibility helper for tests expecting _user_profiles dictionary
-_user_profiles: Dict[str, StudentProfile] = {}
-
-
-# backend/api.py lo import chesi router mount cheyandi:
 from backend.google_sync_api import router as google_sync_router
 from backend.compiler_engine import execute_code_live
 
@@ -394,7 +328,6 @@ app.include_router(google_sync_router)
 
 
 @app.post("/api/compile")
-@v1_app.post("/api/compile")
 async def compile_code_endpoint(payload: Dict[str, Any] = Body(...)):
     """Universal code execution endpoint for C, C++, Python, JS, TS, SQL, Rust, Go."""
     language = payload.get("language", "python")

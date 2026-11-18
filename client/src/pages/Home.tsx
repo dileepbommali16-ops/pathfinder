@@ -17,7 +17,6 @@ import { WhatIfSimulator } from "@/components/dashboard/WhatIfSimulator";
 import { RoleIntelligence } from "@/components/dashboard/RoleIntelligence";
 import { BranchIntelligence } from "@/components/dashboard/BranchIntelligence";
 import { SkillIntelligence } from "@/components/dashboard/SkillIntelligence";
-import { OnboardingResultScreen } from "@/components/onboarding/OnboardingResultScreen";
 import { ProfileSettings } from "@/components/dashboard/ProfileSettings";
 import { LiveSkillVerifier } from "@/components/dashboard/LiveSkillVerifier";
 import { OnePageResumeModal } from "@/components/dashboard/OnePageResumeModal";
@@ -25,7 +24,6 @@ import { CompanyPlacementRadar } from "@/components/dashboard/CompanyPlacementRa
 import { MockInterviewConsole } from "@/components/dashboard/MockInterviewConsole";
 import {
   StudentProfileState,
-  ReadinessAuditData,
   DEFAULT_STUDENT_PROFILE,
   pickCandidateFullName,
   buildInitialProfileFromStorage,
@@ -358,8 +356,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
     }
   });
 
-  const [auditResult, setAuditResult] = useState<ReadinessAuditData | null>(null);
-  const [showResultScreen, setShowResultScreen] = useState<boolean>(false);
   const [showOnePageResume, setShowOnePageResume] = useState<boolean>(false);
   const [interviewCompany, setInterviewCompany] = useState<string>("Razorpay / Fintech");
   const [interviewRole, setInterviewRole] = useState<string>("Full Stack Engineer");
@@ -441,7 +437,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
   useEffect(() => {
     const handleRemoteLogout = () => {
       setIsAuthenticated(false);
-      setShowResultScreen(false);
       setUserRole("student");
     };
     window.addEventListener("pathfinder_logout", handleRemoteLogout);
@@ -721,7 +716,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
     setResumeFeedback(null);
     setRoadmap(null);
     setCohortInsight(null);
-    setAuditResult(null);
     localStorage.removeItem("pathfinder_backend_profile");
     try {
       const prevDraft = JSON.parse(localStorage.getItem("pathfinder_profile_draft") || "{}");
@@ -837,7 +831,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
       };
       setProfile(demoProfile);
       setIsDemoProfile(true);
-      setShowResultScreen(false);
       setActiveTab("profile");
       setIsAuthenticated(true);
       fetchPrediction(demoProfile);
@@ -938,7 +931,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
           setProfile(mapped);
           localStorage.setItem("pathfinder_profile_draft", JSON.stringify(mapped));
           setIsDemoProfile(false);
-          setShowResultScreen(false);
           setActiveTab("overview");
           setIsAuthenticated(true);
           fetchPrediction(mapped);
@@ -962,7 +954,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
       };
       setProfile(initialUserProfile);
       setIsDemoProfile(true);
-      setShowResultScreen(false);
       setActiveTab("profile");
       setIsAuthenticated(true);
       toast.info("Step 1: Confirm your academic details below and click Save to build your Dashboard.");
@@ -1878,9 +1869,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
     localStorage.removeItem("das_mode");
     localStorage.removeItem("das_honorific_override");
     setIsAuthenticated(false);
-    setShowResultScreen(false);
     setActiveTab("profile");
-    setAuditResult(null);
     setResumeFeedback(null);
     setRoadmap(null);
     setCohortInsight(null);
@@ -1916,44 +1905,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
     return <LampLogin onLogin={handleLogin} initialError={oauthError} />;
   }
 
-  // 2. IMMEDIATE RESULT SCREEN POST-SUBMIT
-  if (showResultScreen && auditResult) {
-    return (
-      <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] font-sans overflow-x-hidden">
-        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 bg-transparent" />
-          <Ambient3DBackground activeTab={activeTab} />
-        </div>
-        <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
-          <OnboardingResultScreen
-            profile={profile}
-            auditResult={auditResult}
-            onGoToDashboard={() => {
-              setShowResultScreen(false);
-              setActiveTab("overview");
-            }}
-            onEditProfile={() => {
-              setShowResultScreen(false);
-              setActiveTab("profile");
-            }}
-            onStartMockInterview={() => {
-              setShowResultScreen(false);
-              setActiveTab("interview");
-              handleSendMessage(
-                "Let's do an interactive mock interview for my role. Ask me question 1."
-              );
-            }}
-            onNavigateTab={(tab: string) => {
-              setShowResultScreen(false);
-              setActiveTab(tab as TabId);
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // 4. MAIN DASHBOARD & PLATFORM NAVIGATION
+  // 2. MAIN DASHBOARD & PLATFORM NAVIGATION
   return (
     <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] selection:bg-[#ffffff]/35 selection:text-[#f8fafc] font-sans overflow-x-hidden">
       {isGlobalServerWakingUp && (

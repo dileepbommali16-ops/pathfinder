@@ -135,37 +135,3 @@ async def log_to_tpo_sheet(payload: SheetLogRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/placement-brief")
-async def get_placement_brief_for_agent(query: str = Query("Google")):
-    """Complete Google & Top-Tier Company Placement Intelligence for natural agent explanations."""
-    q = query.lower().strip()
-
-    if "google" in q:
-        return {
-            "company": "Google India (SDE-1, STEP Intern, Cloud & AI Roles)",
-            "compensation": "28 LPA - 44 LPA Base + Stock (University Grad) | ₹80k-₹1.1L/month Stipend (Intern)",
-            "eligibility_requirements": {
-                "cgpa": "8.0+ recommended for campus drives (7.5+ accepted with strong competitive programming/projects)",
-                "backlogs": "0 active backlogs at the time of interview",
-                "resume_rule": "1-Page ATS format using Google's X-Y-Z bullet formula ('Accomplished [X] as measured by [Y], by doing [Z]')"
-            },
-            "interview_stages": [
-                "Stage 1: Google Online Challenge (GOC) - 2 Medium/Hard DSA questions in 60 mins",
-                "Stage 2: Recruiter Screening & 45-min Technical Phone Screen (Live coding without IDE autocomplete)",
-                "Stage 3: 3x Technical Onsite Rounds (Graphs, Trees, Dynamic Programming, Tries, Sliding Window, & System Design)",
-                "Stage 4: Googliness & Leadership Round (Behavioral questions on ambiguity, teamwork, and ethics)"
-            ],
-            "top_pathfinder_blueprints_for_google": [
-                "Blueprint #1: Distributed Cloud Task Orchestrator",
-                "Blueprint #5: Autonomous Multi-Agent RAG & Voice Co-Pilot"
-            ]
-        }
-
-    return {
-        "cohort_records": 972,
-        "overall_placement_rate": "84.6%",
-        "tier1_requirements": "CGPA 7.5+, 0 Backlogs, Blind 75 DSA mastery, 2 Production Capstones",
-        "tip": "Use Resume Studio for Google X-Y-Z bullet optimization and STAR Defense tab to practice project cross-questioning."
-    }

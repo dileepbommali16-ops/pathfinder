@@ -5,11 +5,10 @@ and historical snapshots using the database repository layer with async backgrou
 """
 
 from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, HTTPException, Query, BackgroundTasks, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends
 
 from backend.models import StudentProfile, ReadinessAuditResult, UserSession
 from backend.repositories.user_repository import UserRepository
-from backend.repositories.history_repository import HistoryRepository
 from backend.routers.auth_router import get_current_user
 from backend.data_service import compute_cohort_benchmark
 from backend.ml_engine import predict_placement
@@ -18,8 +17,6 @@ from backend.database import (
     get_user_profile_by_email_or_username,
     save_user_profile,
     delete_user_profile,
-    get_user_readiness_history,
-    save_user_readiness_history
 )
 from backend.logging_config import logger
 
@@ -174,7 +171,7 @@ def delete_profile(
 
 
 @profile_router.post("/api/profile/calculate", response_model=ReadinessAuditResult)
-def calculate_readiness_audit(profile: StudentProfile, background_tasks: BackgroundTasks):
+def calculate_readiness_audit(profile: StudentProfile):
     """Computes placement readiness probability, strengths, gaps, and benchmarks."""
     pred = predict_placement(profile)
 
@@ -185,19 +182,6 @@ def calculate_readiness_audit(profile: StudentProfile, background_tasks: Backgro
 
     strengths = list(pred.strengths)
     gaps = list(pred.priorities)
-
-    if profile.user_id and profile.user_id != "usr_anonymous":
-        background_tasks.add_task(
-            HistoryRepository.add_snapshot,
-            user_id=profile.user_id,
-            chance=pred.chance,
-            cgpa=profile.cgpa,
-            coding=profile.coding,
-            communication=profile.communication,
-            internships=int(profile.internships),
-            backlogs=int(profile.active_backlogs),
-            target_role=profile.target_role or "SDE"
-        )
 
     return ReadinessAuditResult(
         chance=pred.chance,
@@ -219,31 +203,3 @@ def calculate_readiness_audit(profile: StudentProfile, background_tasks: Backgro
         is_estimated=False,
         data_source="Random Forest Classifier (88% Accuracy)"
     )
-
-
-@profile_router.get("/api/profile/history")
-def get_profile_history(user: UserSession = Depends(get_current_user)):
-    """Returns the student's historical readiness evaluations over time."""
-    target_uid = user.user_id if (user.is_authenticated and user.user_id) else "usr_anonymous"
-    history = get_user_readiness_history(target_uid)
-    return {"user_id": target_uid, "history": history, "total": len(history)}
-
-
-@profile_router.post("/api/profile/history")
-def add_profile_history(
-    payload: Dict[str, Any],
-    user: UserSession = Depends(get_current_user)
-):
-    """Records a new historical readiness snapshot."""
-    target_uid = user.user_id if (user.is_authenticated and user.user_id) else (payload.get("user_id") or "usr_anonymous")
-    row_id = save_user_readiness_history(
-        user_id=target_uid,
-        chance=float(payload.get("chance", 70.0)),
-        cgpa=float(payload.get("cgpa", 8.0)),
-        coding=float(payload.get("coding", 7.0)),
-        communication=float(payload.get("communication", 7.0)),
-        internships=int(payload.get("internships", 1)),
-        backlogs=int(payload.get("backlogs", 0)),
-        target_role=payload.get("target_role") or payload.get("targetRole")
-    )
-    return {"success": True, "id": row_id}
