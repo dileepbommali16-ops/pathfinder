@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: pathfinder-backend-klrp
+    name: pathfinder-backend-sg
     runtime: python
     region: singapore
     plan: free
@@ -12,6 +12,8 @@ services:
         value: 3.11.9
       - key: ENVIRONMENT
         value: production
+      - key: UVICORN_TIMEOUT_KEEP_ALIVE
+        value: "120"
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
@@ -23,9 +25,9 @@ services:
       - key: GEMINI_VOICE_NAME
         value: Puck
       - key: BACKEND_URL
-        value: https://pathfinder-backend-klrp.onrender.com
+        value: https://pathfinder-backend-sg.onrender.com
       - key: BACKEND_PUBLIC_URL
-        value: https://pathfinder-backend-klrp.onrender.com
+        value: https://pathfinder-backend-sg.onrender.com
       - key: FRONTEND_URL
         value: https://pathfinder-client-fzom.vercel.app
       - key: OWNER_EMAIL

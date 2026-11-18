@@ -139,7 +139,7 @@ export class Speaker {
     const apiBase =
       (import.meta as any).env?.VITE_API_BASE_URL ||
       (import.meta as any).env?.VITE_BACKEND_URL ||
-      "https://pathfinder-backend-klrp.onrender.com";
+      "https://pathfinder-backend-sg.onrender.com";
     void audioEngine.speakTextPuckOrLocal(text, apiBase);
   }
 
@@ -1240,7 +1240,7 @@ class AudioEngine {
       apiBase ||
       (import.meta as any).env?.VITE_API_BASE_URL ||
       (import.meta as any).env?.VITE_BACKEND_URL ||
-      "https://pathfinder-backend-klrp.onrender.com";
+      "https://pathfinder-backend-sg.onrender.com";
 
     const speakSeq = ++this.ttsSpeakSeq;
     this.unlockAudio();

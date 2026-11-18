@@ -13,10 +13,10 @@ import {
 export const GEMINI_LIVE_CONFIG = {
   wsEndpoint:
     (import.meta as any).env?.VITE_WS_URL ||
-    "wss://pathfinder-backend-klrp.onrender.com/agent/ws",
+    "wss://pathfinder-backend-sg.onrender.com/agent/ws",
   apiEndpoint:
     (import.meta as any).env?.VITE_BACKEND_URL ||
-    "https://pathfinder-backend-klrp.onrender.com",
+    "https://pathfinder-backend-sg.onrender.com",
   voiceName: "Puck",
   inputSampleRate: 16000,
   outputSampleRate: 24000,

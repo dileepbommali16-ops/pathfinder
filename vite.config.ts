@@ -21,12 +21,12 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       "/api": {
-        target: "https://pathfinder-backend-klrp.onrender.com",
+        target: "https://pathfinder-backend-sg.onrender.com",
         changeOrigin: true,
         secure: true,
       },
       "/agent/ws": {
-        target: "wss://pathfinder-backend-klrp.onrender.com",
+        target: "wss://pathfinder-backend-sg.onrender.com",
         ws: true,
         changeOrigin: true,
         secure: true,

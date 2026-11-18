@@ -17,7 +17,7 @@ const GOOGLE_LIVE_WS_URL =
 
 const RENDER_WS_URL =
   import.meta.env.VITE_WS_URL ||
-  "wss://pathfinder-backend-klrp.onrender.com/agent/ws";
+  "wss://pathfinder-backend-sg.onrender.com/agent/ws";
 
 class DasAgentSocket {
   private ws: WebSocket | null = null;

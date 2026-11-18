@@ -6,7 +6,7 @@
  * - 401 interception: clean logout and redirect event
  */
 
-export const PROD_BACKEND_URL = "https://pathfinder-backend-klrp.onrender.com";
+export const PROD_BACKEND_URL = "https://pathfinder-backend-sg.onrender.com";
 
 export const getApiBase = () => {
   if (typeof window !== "undefined") {

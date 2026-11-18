@@ -3,7 +3,7 @@
 > **India's premier AI-powered career operating system for engineering candidates. Built to bridge the critical gap between academic curriculum and high-paying Tier-1 campus recruitment through predictive data science, production architectures, and an autonomous 3D cybernetic voice co-pilot.**
 
 [![Live Platform](https://img.shields.io/badge/🚀_Live_Demo-Vercel_Edge-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://pathfinder-client-fzom.vercel.app/)
-[![Backend Engine](https://img.shields.io/badge/⚙️_FastAPI_Backend-Render_Cloud-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://pathfinder-backend-klrp.onrender.com)
+[![Backend Engine](https://img.shields.io/badge/⚙️_FastAPI_Backend-Render_Cloud-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://pathfinder-backend-sg.onrender.com)
 [![Voice AI Engine](https://img.shields.io/badge/🎙️_Gemini_Live-Puck_Voice_24kHz-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://pathfinder-client-fzom.vercel.app/)
 [![ML Accuracy](https://img.shields.io/badge/📈_Model_Accuracy-88%25_Random_Forest-success?style=for-the-badge)](https://pathfinder-client-fzom.vercel.app/)
 [![Workflow Automation](https://img.shields.io/badge/⚡_Automation-n8n_Cloud-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)](https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync)

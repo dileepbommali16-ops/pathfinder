@@ -80,7 +80,7 @@ class Settings:
         self.allowed_origins: List[str] = origins
 
         # Public URLs
-        self.backend_public_url: str = os.getenv("BACKEND_PUBLIC_URL", "https://pathfinder-backend-klrp.onrender.com")
+        self.backend_public_url: str = os.getenv("BACKEND_PUBLIC_URL", "https://pathfinder-backend-sg.onrender.com")
 
     @property
     def is_production(self) -> bool:
