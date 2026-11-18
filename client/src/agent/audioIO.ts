@@ -820,6 +820,10 @@ class AudioEngine {
   private speakingListeners: Set<(speaking: boolean) => void> = new Set();
   private lastNotifiedSpeaking: boolean = false;
   private speakingEndTimer: number | null = null;
+  private pendingUnlockSpeech: { text: string; apiBase?: string } | null = null;
+  private prefetchedTtsCache: Map<string, { pcm_base64: string; sample_rate: number }> = new Map();
+  private speechFramesInUtterance: number = 0;
+  private postSpeechSilenceMs: number = 0;
 
   constructor() {
     this.bindGlobalUnlock();
@@ -829,17 +833,31 @@ class AudioEngine {
     if (this.globalUnlockBound || typeof window === "undefined") return;
     this.globalUnlockBound = true;
     const resumeExisting = () => {
-      if (this.audioCtx && (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted")) {
-        this.audioCtx.resume().catch(() => {});
-      }
+      this.unlockAudio();
       if (this.micCtx && (this.micCtx.state === "suspended" || (this.micCtx.state as string) === "interrupted")) {
         this.micCtx.resume().catch(() => {});
       }
+      const pending = this.pendingUnlockSpeech;
+      if (pending && this.audioCtx && this.audioCtx.state === "running" && !this.isSpeaking()) {
+        this.pendingUnlockSpeech = null;
+        void this.speakTextPuckOrLocal(pending.text, pending.apiBase);
+      } else if (pending && this.audioCtx && this.audioCtx.state === "suspended") {
+        void this.audioCtx
+          .resume()
+          .then(() => {
+            const p = this.pendingUnlockSpeech;
+            if (p && this.audioCtx?.state === "running" && !this.isSpeaking()) {
+              this.pendingUnlockSpeech = null;
+              void this.speakTextPuckOrLocal(p.text, p.apiBase);
+            }
+          })
+          .catch(() => {});
+      }
     };
+    window.addEventListener("click", resumeExisting, { passive: true });
+    window.addEventListener("touchend", resumeExisting, { passive: true });
     window.addEventListener("pointerdown", resumeExisting, { passive: true });
     window.addEventListener("keydown", resumeExisting, { passive: true });
-    window.addEventListener("touchstart", resumeExisting, { passive: true });
-    window.addEventListener("click", resumeExisting, { passive: true });
   }
 
   public onSpeakingStateChange(cb: (speaking: boolean) => void): () => void {
@@ -991,7 +1009,6 @@ class AudioEngine {
       if (this.selectedSpeakerId && typeof (this.audioCtx as any).setSinkId === "function") {
         (this.audioCtx as any).setSinkId(this.selectedSpeakerId).catch(() => {});
       }
-      this.ensurePlayerWorklet();
       this.audioCtx.onstatechange = () => {
         if (this.audioCtx && (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted")) {
           this.audioCtx.resume().catch(() => {});
@@ -1243,7 +1260,30 @@ class AudioEngine {
       "https://pathfinder-backend-sg.onrender.com";
 
     const speakSeq = ++this.ttsSpeakSeq;
+    this.pendingUnlockSpeech = null;
     this.unlockAudio();
+
+    const cachedAudio = this.prefetchedTtsCache.get(cleaned);
+    if (cachedAudio) {
+      if (this.audioCtx && this.audioCtx.state === "suspended") {
+        await Promise.race([
+          this.audioCtx.resume().catch(() => {}),
+          new Promise<void>((r) => setTimeout(r, 150)),
+        ]);
+      }
+      if (this.audioCtx && this.audioCtx.state !== "running") {
+        this.pendingUnlockSpeech = { text: cleaned, apiBase: effectiveApiBase };
+        return false;
+      }
+      const playedCached = await this.playWholePcmBase64(
+        cachedAudio.pcm_base64,
+        cachedAudio.sample_rate,
+        undefined,
+        cleaned
+      );
+      if (playedCached) return true;
+    }
+
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const resp = await fetch(`${effectiveApiBase}/api/voice/tts`, {
@@ -1269,9 +1309,25 @@ class AudioEngine {
             return false;
           }
           if (data?.status === "ok" && data?.pcm_base64) {
+            const sr = Number(data.sample_rate) || 24000;
+            this.prefetchedTtsCache.set(cleaned, { pcm_base64: data.pcm_base64, sample_rate: sr });
+            if (this.prefetchedTtsCache.size > 16) {
+              const oldest = this.prefetchedTtsCache.keys().next().value;
+              if (oldest !== undefined) this.prefetchedTtsCache.delete(oldest);
+            }
+            if (this.audioCtx && this.audioCtx.state === "suspended") {
+              await Promise.race([
+                this.audioCtx.resume().catch(() => {}),
+                new Promise<void>((r) => setTimeout(r, 150)),
+              ]);
+            }
+            if (this.audioCtx && this.audioCtx.state !== "running") {
+              this.pendingUnlockSpeech = { text: cleaned, apiBase: effectiveApiBase };
+              return false;
+            }
             const played = await this.playWholePcmBase64(
               data.pcm_base64,
-              Number(data.sample_rate) || 24000,
+              sr,
               undefined,
               cleaned
             );
@@ -1289,6 +1345,10 @@ class AudioEngine {
       }
     }
 
+    if (this.audioCtx && this.audioCtx.state !== "running") {
+      this.pendingUnlockSpeech = { text: cleaned, apiBase: effectiveApiBase };
+      return false;
+    }
     if (speakSeq !== this.ttsSpeakSeq || options?.signal?.aborted || (options?.shouldContinue && !options.shouldContinue())) {
       return false;
     }
@@ -1326,9 +1386,16 @@ class AudioEngine {
     this.initContext();
     if (!this.audioCtx || !this.analyser) return false;
     if (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted") {
-      try {
-        await this.audioCtx.resume();
-      } catch {}
+      await Promise.race([
+        this.audioCtx.resume().catch(() => {}),
+        new Promise<void>((r) => setTimeout(r, 180)),
+      ]);
+    }
+    if (this.audioCtx.state !== "running") {
+      if (spokenText) {
+        this.pendingUnlockSpeech = { text: spokenText };
+      }
+      return false;
     }
 
     this.clearAudioQueue();
@@ -1378,7 +1445,7 @@ class AudioEngine {
     return true;
   }
 
-  // Play incoming 24kHz 16-bit PCM base64 audio via continuous AudioWorklet ring buffer (zero gap/stutter!)
+  // Play incoming 24kHz 16-bit PCM base64 audio via gapless AudioBufferSourceNode scheduling (reliable across Desktop, iOS & Android)
   public playPcmChunk(base64Pcm: string, sampleRate = 24000) {
     this.initContext();
     if (!this.audioCtx || !this.analyser) return;
@@ -1399,50 +1466,23 @@ class AudioEngine {
     const float32Data = this.decodeBase64Pcm16(base64Pcm);
     if (!float32Data) return;
 
-    const durMs = (float32Data.length / Math.max(8000, sampleRate)) * 1000;
-    const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
-    if (!this.isSpeaking() && this.activeSources.length === 0 && this.pendingWorkletChunks.length === 0) {
-      this.activeTurnMode = null;
-    }
-    if (!this.activeTurnMode) {
-      this.activeTurnMode = !this.playerFailed && this.audioCtx?.audioWorklet ? "worklet" : "fallback";
-      if (this.activeTurnMode === "worklet" && this.activeSources.length > 0) {
-        this.activeSources.forEach((src) => {
-          try {
-            src.stop();
-            src.disconnect();
-          } catch {}
-        });
-        this.activeSources = [];
-      }
-    }
-
-    const baseMs = Math.max(nowPerf + 40, this.playingUntilPerfMs);
-    this.playingUntilPerfMs = Math.min(nowPerf + 45000, baseMs + durMs);
-    this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, this.playingUntilPerfMs + 520);
-
-    if (this.playerReady && this.playerNode) {
-      this.playerNode.port.postMessage(
-        { type: "push", pcm: float32Data.buffer, rate: sampleRate },
-        [float32Data.buffer]
-      );
-      this.notifySpeakingListeners();
-      return;
-    }
-
-    if (!this.playerFailed && this.playerInitPromise) {
-      this.pendingWorkletChunks.push({ pcm: float32Data, rate: sampleRate });
-      this.notifySpeakingListeners();
-      return;
-    }
-
+    this.activeTurnMode = "fallback";
     this.scheduleFallbackFloatPcm(float32Data, sampleRate);
     this.notifySpeakingListeners();
   }
 
   private scheduleFallbackFloatPcm(float32Data: Float32Array, sampleRate = 24000) {
     if (!this.audioCtx || !this.analyser || float32Data.length === 0) return;
-    const audioBuffer = this.audioCtx.createBuffer(1, float32Data.length, sampleRate);
+    const rate = Math.max(8000, sampleRate);
+    // Apply subtle 2ms edge ramp on the first chunk of a turn to avoid startup clicks
+    if (this.activeSources.length === 0) {
+      const rampSamples = Math.min(float32Data.length >> 2, Math.round(rate * 0.002));
+      for (let i = 0; i < rampSamples; i++) {
+        float32Data[i] *= i / Math.max(1, rampSamples);
+      }
+    }
+
+    const audioBuffer = this.audioCtx.createBuffer(1, float32Data.length, rate);
     audioBuffer.getChannelData(0).set(float32Data);
 
     const source = this.audioCtx.createBufferSource();
@@ -1450,16 +1490,22 @@ class AudioEngine {
     source.connect(this.analyser);
 
     const currentTime = this.audioCtx.currentTime;
-    if (this.nextPlayTime < currentTime - 0.01 || this.nextPlayTime > currentTime + 60.0) {
-      this.nextPlayTime = currentTime + 0.14;
+    if (this.nextPlayTime < currentTime - 0.005 || this.nextPlayTime > currentTime + 60.0) {
+      this.nextPlayTime = currentTime + 0.05;
     }
-    source.start(this.nextPlayTime);
-    this.nextPlayTime += audioBuffer.duration;
+    const startAt = this.nextPlayTime;
+    source.start(startAt);
+    this.nextPlayTime = startAt + audioBuffer.duration;
     this.activeSources.push(source);
+
+    const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const totalRemainingMs = Math.max(0, (this.nextPlayTime - currentTime) * 1000);
+    this.playingUntilPerfMs = Math.max(this.playingUntilPerfMs, nowPerf + totalRemainingMs);
+    this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, this.playingUntilPerfMs + 520);
 
     source.onended = () => {
       this.activeSources = this.activeSources.filter((s) => s !== source);
-      if (this.activeSources.length === 0 && !this.isSpeaking()) {
+      if (this.activeSources.length === 0) {
         this.activeTurnMode = null;
       }
       this.notifySpeakingListeners();
@@ -1621,6 +1667,8 @@ class AudioEngine {
     const speechThreshold = Math.min(0.0065, Math.max(0.0022, this.noiseFloor * 1.65));
     if (rms >= speechThreshold) {
       this.speechOnsetFrames = Math.min(10, this.speechOnsetFrames + 1);
+      this.speechFramesInUtterance += 1;
+      this.postSpeechSilenceMs = 0;
       if (this.inUtterance || this.speechOnsetFrames >= 1 || rms >= speechThreshold * 1.15) {
         this.gateHoldMs = 520;
       }
@@ -1629,8 +1677,12 @@ class AudioEngine {
       if (this.gateHoldMs > 0) {
         this.gateHoldMs = Math.max(0, this.gateHoldMs - frameMs);
       }
+      if (this.speechFramesInUtterance >= 2) {
+        this.postSpeechSilenceMs += frameMs;
+      }
     }
-    const gateOpen = this.gateHoldMs > 0;
+    const gateOpen =
+      this.gateHoldMs > 0 || (this.speechFramesInUtterance >= 2 && this.postSpeechSilenceMs < 850);
 
     // Mild adaptive speech boost ONLY when gate is open (never boost background noise!)
     if (gateOpen && rms >= speechThreshold && rms < 0.09) {
@@ -1659,8 +1711,10 @@ class AudioEngine {
       });
     }
 
-    // If selected headset jack / default device has 0.0000 digital flatline for 2.5s, switch to active hardware mic
-    if (this.zeroSignalMs > 2500 && !this.deviceFallbackAttempted) {
+    // If desktop jack / default device has 0.0000 digital flatline for 2.5s, switch to active hardware mic (skip on mobile to avoid mid-turn restarts)
+    const isMobileDevice =
+      typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    if (this.zeroSignalMs > 2500 && !this.deviceFallbackAttempted && !isMobileDevice) {
       this.deviceFallbackAttempted = true;
       options?.onVoiceHealthAlert?.({
         issue: "dead_accessory_mic",
@@ -1700,6 +1754,8 @@ class AudioEngine {
     const typingSuppressed = now < this.typingSuppressUntilMs && !this.inUtterance;
     if (echoActive || typingSuppressed) {
       this.speechOnsetFrames = 0;
+      this.speechFramesInUtterance = 0;
+      this.postSpeechSilenceMs = 0;
       this.gateHoldMs = 0;
       this.inUtterance = false;
       this.tailSilenceSentMs = 0;
@@ -1707,8 +1763,27 @@ class AudioEngine {
       return;
     }
 
+    // Hybrid VAD end-of-speech flush on sustained silence so mobile/desktop Gemini Live replies immediately
+    if (this.speechFramesInUtterance >= 2 && this.postSpeechSilenceMs >= 850) {
+      this.speechFramesInUtterance = 0;
+      this.postSpeechSilenceMs = 0;
+      this.gateHoldMs = 0;
+      this.inUtterance = false;
+      const silentPcm = downsampleTo16k(filtered, inputSampleRate, 1.0, false);
+      if (silentPcm.length > 0) {
+        const silentU8 = new Uint8Array(silentPcm.buffer);
+        let sBin = "";
+        for (let i = 0; i < silentU8.byteLength; i++) {
+          sBin += String.fromCharCode(silentU8[i]);
+        }
+        onPcmChunk(window.btoa(sBin));
+      }
+      options?.onSpeechIdle?.();
+      return;
+    }
+
     // Stream continuous 16kHz PCM whenever mic is live & not echo-suppressed so Gemini Live neural VAD handles speech & silence cleanly
-    const pcm16 = downsampleTo16k(filtered, inputSampleRate, gateOpen ? this.softGain : 1.0, true);
+    const pcm16 = downsampleTo16k(filtered, inputSampleRate, gateOpen ? this.softGain : 1.0, gateOpen);
     if (pcm16.length === 0) return;
 
     const uint8 = new Uint8Array(pcm16.buffer);
@@ -1744,6 +1819,8 @@ class AudioEngine {
     this.noiseFloor = 0.0022;
     this.gateHoldMs = 0;
     this.inUtterance = false;
+    this.speechFramesInUtterance = 0;
+    this.postSpeechSilenceMs = 0;
     this.tailSilenceSentMs = 0;
     this.preRollChunks = [];
     this.lastUiStatusAt = 0;
@@ -1756,15 +1833,6 @@ class AudioEngine {
     const AudioContextClass =
       window.AudioContext ||
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-
-    // Create & unlock AudioContext synchronously inside the tap handler BEFORE async getUserMedia (critical for iOS Safari / iPadOS / Android)
-    let preMicCtx: AudioContext | null = null;
-    try {
-      preMicCtx = new AudioContextClass({ latencyHint: "interactive" });
-      if (preMicCtx.state === "suspended") {
-        void preMicCtx.resume().catch(() => {});
-      }
-    } catch {}
 
     const raw = Boolean(options?.rawMode);
     const devConstraint = options?.deviceId
@@ -1787,21 +1855,18 @@ class AudioEngine {
           audio: options?.deviceId ? { deviceId: { ideal: options.deviceId } } : true,
         });
       } catch (err) {
-        try {
-          this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch (finalErr) {
-          try {
-            preMicCtx?.close();
-          } catch {}
-          throw finalErr ?? err;
-        }
+        this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        void err;
       }
     }
 
-    // Re-init playback context AFTER Bluetooth HFP/microphone acquisition so output routing stays active
+    // Re-init playback context AFTER Bluetooth HFP/mobile microphone acquisition so output routing stays active without hanging
     this.initContext();
     if (this.audioCtx && (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted")) {
-      await this.audioCtx.resume().catch(() => {});
+      await Promise.race([
+        this.audioCtx.resume().catch(() => {}),
+        new Promise<void>((r) => setTimeout(r, 300)),
+      ]);
     }
 
     const tracks = this.micStream.getAudioTracks();
@@ -1818,15 +1883,15 @@ class AudioEngine {
     }
 
     if (this.captureToken !== token) {
-      try {
-        preMicCtx?.close();
-      } catch {}
       return;
     }
 
-    this.micCtx = preMicCtx || new AudioContextClass({ latencyHint: "interactive" });
+    this.micCtx = new AudioContextClass({ latencyHint: "interactive" });
     if (this.micCtx.state === "suspended" || (this.micCtx.state as string) === "interrupted") {
-      await this.micCtx.resume().catch(() => {});
+      await Promise.race([
+        this.micCtx.resume().catch(() => {}),
+        new Promise<void>((r) => setTimeout(r, 400)),
+      ]);
     }
 
     const inputSampleRate = this.micCtx.sampleRate;
@@ -1843,17 +1908,26 @@ class AudioEngine {
       }
     }, 1200);
 
-    // Primary path: AudioWorkletNode (modern, zero deprecation/culling across Chromium & WebKit)
+    // Primary path: AudioWorkletNode with 1200ms mobile timeout guard -> clean ScriptProcessor fallback
     let workletReady = false;
     if (this.micCtx.audioWorklet && typeof Blob !== "undefined") {
       try {
-        try {
-          await this.micCtx.audioWorklet.addModule("/worklets/das-mic-processor.js");
-        } catch {
-          const blob = new Blob([MIC_WORKLET_CODE], { type: "application/javascript" });
-          this.workletBlobUrl = URL.createObjectURL(blob);
-          await this.micCtx.audioWorklet.addModule(this.workletBlobUrl);
-        }
+        const loadWorklet = async () => {
+          if (!this.micCtx?.audioWorklet) throw new Error("No AudioWorklet");
+          try {
+            await this.micCtx.audioWorklet.addModule("/worklets/das-mic-processor.js");
+          } catch {
+            const blob = new Blob([MIC_WORKLET_CODE], { type: "application/javascript" });
+            this.workletBlobUrl = URL.createObjectURL(blob);
+            await this.micCtx.audioWorklet.addModule(this.workletBlobUrl);
+          }
+        };
+        await Promise.race([
+          loadWorklet(),
+          new Promise<never>((_, reject) =>
+            window.setTimeout(() => reject(new Error("AudioWorklet addModule timeout")), 1200)
+          ),
+        ]);
         if (this.captureToken !== token || !this.micCtx) return;
 
         this.workletNode = new AudioWorkletNode(this.micCtx, "das-mic-processor", {

@@ -27,8 +27,74 @@ def _get_tts_lock() -> asyncio.Lock:
     return _TTS_LIVE_LOCK
 
 
+def _strip_wav_header_if_present(raw_bytes: bytes) -> tuple[bytes, int]:
+    """Converts RIFF/WAVE bytes (if returned by unary TTS) into raw 16-bit mono PCM bytes + sample rate."""
+    if not raw_bytes:
+        return b"", 24000
+    sample_rate = 24000
+    if len(raw_bytes) > 44 and raw_bytes[:4] == b"RIFF" and raw_bytes[8:12] == b"WAVE":
+        parsed_rate = int.from_bytes(raw_bytes[24:28], "little")
+        if 8000 <= parsed_rate <= 96000:
+            sample_rate = parsed_rate
+        data_idx = raw_bytes.find(b"data", 12, min(len(raw_bytes), 256))
+        if data_idx != -1 and data_idx + 8 < len(raw_bytes):
+            pcm = raw_bytes[data_idx + 8 :]
+            return pcm[: len(pcm) - (len(pcm) % 2)], sample_rate
+    return raw_bytes[: len(raw_bytes) - (len(raw_bytes) % 2)], sample_rate
+
+
+async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optional[Dict[str, Any]]:
+    """Fallback unary Gemini 3.8 TTS using Puck voice when concurrent Live sessions hit resource exhaustion."""
+    from google import genai
+    from google.genai import types
+    from backend.agent.puck_voice import get_puck_speech_config
+
+    for key in keys:
+        client = genai.Client(http_options={"api_version": "v1beta", "timeout": 8000}, api_key=key)
+        for tts_model in ("gemini-3.8-flash-lite-tts", "gemini-3.8-flash-tts"):
+            try:
+                cfg = types.GenerateContentConfig(
+                    response_modalities=["AUDIO"],
+                    speech_config=get_puck_speech_config(),
+                )
+                resp = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        client.models.generate_content,
+                        model=tts_model,
+                        contents=text,
+                        config=cfg,
+                    ),
+                    timeout=8.5,
+                )
+                pcm_chunks = bytearray()
+                sample_rate = 24000
+                candidates = getattr(resp, "candidates", None) or []
+                for cand in candidates:
+                    content = getattr(cand, "content", None)
+                    parts = getattr(content, "parts", None) or []
+                    for part in parts:
+                        inline = getattr(part, "inline_data", None)
+                        raw_data = getattr(inline, "data", None) if inline else None
+                        if raw_data:
+                            if isinstance(raw_data, str):
+                                raw_data = base64.b64decode(raw_data)
+                            cleaned_pcm, detected_rate = _strip_wav_header_if_present(bytes(raw_data))
+                            sample_rate = detected_rate
+                            pcm_chunks.extend(cleaned_pcm)
+                if pcm_chunks:
+                    return {
+                        "pcm_base64": base64.b64encode(bytes(pcm_chunks)).decode("utf-8"),
+                        "sample_rate": sample_rate,
+                        "voice": "Puck",
+                    }
+            except Exception as exc:
+                logger.warning("[Voice TTS Unary %s] failed: %r", tts_model, exc)
+                continue
+    return None
+
+
 async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str, Any]]:
-    """Synthesize clean verbatim 24kHz PCM speech exclusively via gemini-3.8-live Puck voice."""
+    """Synthesize clean verbatim 24kHz PCM speech exclusively via gemini-3.8-live Puck voice (with 3.8 unary TTS fallback)."""
     from google import genai
     from google.genai import types
     from backend.config.key_resolver import get_gemini_key_candidates
@@ -86,7 +152,8 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
         except Exception as exc:
             logger.warning("[Voice TTS Live Puck] %s failed: %r", LIVE_MODEL, exc)
             continue
-    return None
+
+    return await _synthesize_puck_via_38_unary_fallback(text, keys)
 
 
 async def _synthesize_puck_via_38_live(text: str) -> Optional[Dict[str, Any]]:
@@ -115,37 +182,39 @@ async def _synthesize_and_cache(cache_key: str, text: str) -> Optional[Dict[str,
         _TTS_INFLIGHT.pop(cache_key, None)
 
 
-@router.post("/voice/tts")
-async def voice_tts(req: dict, request: Request):
-    """Synthesize exact verbatim 24kHz Puck PCM audio strictly via gemini-3.8-live Puck."""
-    text = (req.get("text", "") if isinstance(req, dict) else "").strip()[:900]
-    voice_name = "Puck"
-    if not text:
-        raise HTTPException(400, "Text is required.")
-
-    cache_key = f"{voice_name}:3.8-live:{text}"
+async def synthesize_puck_pcm(text: str) -> Optional[Dict[str, Any]]:
+    """Shared cached/inflight-deduplicated 24kHz Puck PCM synthesis helper for REST TTS and WebSocket fallback."""
+    cleaned = (text or "").strip()[:900]
+    if not cleaned:
+        return None
+    cache_key = f"Puck:3.8-live:{cleaned}"
     if cache_key in _TTS_PCM_CACHE:
         _TTS_PCM_CACHE.move_to_end(cache_key)
-        cached = _TTS_PCM_CACHE[cache_key]
-        return {
-            "status": "ok",
-            "cached": True,
-            "provider": "gemini-3.8-live-puck",
-            **cached,
-        }
+        return {"cached": True, **_TTS_PCM_CACHE[cache_key]}
 
     task = _TTS_INFLIGHT.get(cache_key)
     joined_inflight = task is not None and not task.done()
     if not joined_inflight:
-        task = asyncio.create_task(_synthesize_and_cache(cache_key, text))
+        task = asyncio.create_task(_synthesize_and_cache(cache_key, cleaned))
         _TTS_INFLIGHT[cache_key] = task
 
     synthesized = await asyncio.shield(task)
+    if synthesized:
+        return {"cached": joined_inflight, **synthesized}
+    return None
 
+
+@router.post("/voice/tts")
+async def voice_tts(req: dict, request: Request):
+    """Synthesize exact verbatim 24kHz Puck PCM audio strictly via gemini-3.8-live Puck."""
+    text = (req.get("text", "") if isinstance(req, dict) else "").strip()[:900]
+    if not text:
+        raise HTTPException(400, "Text is required.")
+
+    synthesized = await synthesize_puck_pcm(text)
     if synthesized:
         return {
             "status": "ok",
-            "cached": joined_inflight,
             "provider": "gemini-3.8-live-puck",
             **synthesized,
         }

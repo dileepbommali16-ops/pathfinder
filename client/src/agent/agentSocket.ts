@@ -659,11 +659,15 @@ CORE AUTONOMOUS CAPABILITIES:
           if (!this.currentAgentTranscript && !this.isSpeakingTurn && Date.now() - this.lastTextSentAt < 700) {
             return;
           }
+          const hadAudio = this.audioChunksInTurn > 0;
+          const completedText = this.currentAgentTranscript.trim();
           this.audioChunksInTurn = 0;
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
-          if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {
+          if (!hadAudio && completedText && !audioEngine.isSpeaking()) {
+            this.triggerTextOnlyTts(completedText);
+          } else if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {
             this.savedOnTranscript?.(`DAS Ready. Speak or type your next command, ${this.roleHonorific}!`);
           }
           return;
@@ -740,8 +744,12 @@ CORE AUTONOMOUS CAPABILITIES:
           ) {
             await triggerGoogleAutomation(args);
           } else if (data.name === "return_to_dashboard") {
+            const retMsg = args.message || `Okay ${this.roleHonorific}, returning to your dashboard.`;
             this.savedOnCodeReady?.(null as any);
-            this.savedOnTranscript?.(args.message || `Okay ${this.roleHonorific}, returning to your dashboard.`);
+            this.savedOnTranscript?.(retMsg);
+            if (this.audioChunksInTurn === 0 && !audioEngine.isSpeaking()) {
+              this.triggerTextOnlyTts(retMsg);
+            }
           }
           return;
         }
@@ -791,9 +799,13 @@ CORE AUTONOMOUS CAPABILITIES:
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
+          const hadAudio = this.audioChunksInTurn > 0;
+          const completedText = this.currentAgentTranscript.trim();
           this.audioChunksInTurn = 0;
           audioEngine.flushAudioPlayer();
-          if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {
+          if (!hadAudio && completedText && !audioEngine.isSpeaking()) {
+            this.triggerTextOnlyTts(completedText);
+          } else if (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt >= 6000) {
             this.savedOnTranscript?.(`DAS Ready. Speak or type your next command, ${this.roleHonorific}!`);
           }
           return;
@@ -840,9 +852,13 @@ CORE AUTONOMOUS CAPABILITIES:
             ) {
               resultMsg = await triggerGoogleAutomation(args);
             } else if (fc.name === "return_to_dashboard") {
+              const retMsg = args.message || `Okay ${this.roleHonorific}, returning to your dashboard.`;
               this.savedOnCodeReady?.(null as any);
               resultMsg = "Returned to dashboard successfully.";
-              this.savedOnTranscript?.(args.message || "Okay Boss, returning to your dashboard.");
+              this.savedOnTranscript?.(retMsg);
+              if (this.audioChunksInTurn === 0 && !audioEngine.isSpeaking()) {
+                this.triggerTextOnlyTts(retMsg);
+              }
             }
 
             functionResponses.push({
@@ -910,8 +926,16 @@ CORE AUTONOMOUS CAPABILITIES:
         return;
       }
 
-      // Auto-reconnect so 2nd, 3rd, 50th question auto-reconnects seamlessly
+      // Auto-reconnect so 2nd, 3rd, 50th question auto-reconnects seamlessly (skip spinning hidden background tabs)
       if (!this.manualClose) {
+        if (
+          typeof document !== "undefined" &&
+          document.visibilityState === "hidden" &&
+          !cameraEngine.isStreaming &&
+          !this.lastUnansweredText
+        ) {
+          return;
+        }
         if (this.reconnectTimer) window.clearTimeout(this.reconnectTimer);
         this.reconnectTimer = window.setTimeout(() => {
           this.ws = null;

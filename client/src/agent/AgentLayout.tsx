@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Avatar3D } from "./Avatar3D";
 import { dasSocket, UserHonorificRole } from "./agentSocket";
 import { audioEngine, cameraEngine, speaker, MediaDeviceOption, LiveMotionMetrics } from "./audioIO";
-import { CodeTaskPayload } from "./toolRunner";
+import { CodeTaskPayload, tryExecuteClientAutomationIntent } from "./toolRunner";
 import { API_BASE, getSessionId } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
 import { getUserRole, getHonorificKey, setHonorificPreference, isOwnerAccount, HonorificKey } from "@/lib/auth";
@@ -61,6 +61,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const askCoachUnbindRef = useRef<(() => void) | null>(null);
   const restTtsAbortRef = useRef<AbortController | null>(null);
   const dispatchTurnRef = useRef<(q: string, ctx: Record<string, any>, mode: "coach" | "chat") => void>(() => {});
+  const spokenGreetingKeyRef = useRef<string>("");
+  const micBusyRef = useRef<boolean>(false);
   const chatHistoryRef = useRef<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const transcriptRef = useRef<string>(transcript);
   const userTranscriptRef = useRef<string>(userTranscript);
@@ -100,6 +102,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       setInputText("");
       setCodeTask(null);
       chatHistoryRef.current = [];
+      spokenGreetingKeyRef.current = "";
       setTranscript(getInitialGreeting(nextKey));
     };
 
@@ -230,11 +233,21 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       window.removeEventListener("click", onGlobalClick, true);
       unsubVision();
     };
-    return () => {
-      window.removeEventListener("das:page-context", onPageContext);
-      window.removeEventListener("click", onGlobalClick, true);
-    };
   }, [isAuthenticated, connected]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !connected) return;
+    const identity = lastAuthIdentityRef.current || "guest";
+    const greetKey = `${identity}:${role}`;
+    if (
+      spokenGreetingKeyRef.current !== greetKey &&
+      chatHistoryRef.current.length === 0 &&
+      !userTranscriptRef.current.trim()
+    ) {
+      spokenGreetingKeyRef.current = greetKey;
+      void audioEngine.speakTextPuckOrLocal(getInitialGreeting(role), API_BASE);
+    }
+  }, [isAuthenticated, connected, role]);
 
   useEffect(() => {
     if (cameraActive && cameraPreviewRef.current) {
@@ -429,9 +442,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     if (mode === "coach") {
       dasSocket.askCoach(queryText, ctx);
     } else {
+      tryExecuteClientAutomationIntent(queryText, navigate);
       dasSocket.sendTextCommand(queryText);
     }
-    const fallbackDelayMs = wasSocketReady ? 10500 : 4500;
+    const fallbackDelayMs = wasSocketReady ? 6500 : 3500;
     timerId = window.setTimeout(() => {
       if (
         settled ||
@@ -523,11 +537,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     micSilentRef.current = false;
     setMicSilentWarning(false);
     setMicHealthHint("");
-    // Start capture immediately so iOS Safari / Android Chrome keep the synchronous tap gesture token for micCtx & getUserMedia
+    // Start capture immediately so iOS Safari / Android Chrome keep the synchronous tap gesture token for getUserMedia
     await audioEngine.startMicCapture((b64) => dasSocket.sendAudioChunk(b64), {
       deviceId: deviceId || undefined,
       rawMode: false,
       shouldSuppressEcho: () => audioEngine.isSpeaking() || dasSocket.isAgentSpeaking,
+      onSpeechIdle: () => dasSocket.sendAudioStreamEnd(),
       onAutoDeviceSwitch: (newDev) => {
         selectedMicIdRef.current = newDev.deviceId;
         activeMicLabelRef.current = newDev.label;
@@ -542,7 +557,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             : "Earphone/bud mic unclear — check connection & volume";
         setMicHealthHint(friendlyMsg);
         setMicSilentWarning(true);
-        dasSocket.sendFriendlyAudioHint(alert.issue, alert.deviceLabel);
         toast.info(friendlyMsg);
       },
       onSignalStatus: (st) => {
@@ -564,12 +578,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       },
     });
-    await refreshMediaDevices();
-    void audioEngine.autoSyncOutputDevice();
     const lbl = audioEngine.activeMicLabel || "Default Microphone";
     activeMicLabelRef.current = lbl;
     setActiveMicLabel(lbl);
     setMicActive(true);
+    void refreshMediaDevices();
+    void audioEngine.autoSyncOutputDevice();
     if (cameraEngine.isStreaming) {
       const snap = cameraEngine.getLatestFrameBase64();
       if (snap) dasSocket.sendVideoFrame(snap);
@@ -578,31 +592,37 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const toggleMic = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     e?.currentTarget?.blur();
-    audioEngine.unlockAudio();
-    audioEngine.autoSyncOutputDevice();
-    ensureSocketConnected();
+    if (micBusyRef.current) return;
+    micBusyRef.current = true;
+    try {
+      audioEngine.unlockAudio();
+      void audioEngine.autoSyncOutputDevice();
+      ensureSocketConnected();
 
-    if (!micActive) {
-      restTtsAbortRef.current?.abort();
-      restTtsAbortRef.current = null;
-      speaker.stop();
-      audioEngine.clearAudioQueue();
-      try {
-        await beginMicStream(selectedMicIdRef.current);
-        setTranscript("Listening... Speak cleanly through headphones, earphones, buds, or laptop mic!");
-      } catch {
-        setTranscript("Mic Permission Denied! Browser address bar lo Mic allow cheyyandi.");
-        toast.error("Please allow Microphone permission in your browser.");
+      if (!micActive) {
+        restTtsAbortRef.current?.abort();
+        restTtsAbortRef.current = null;
+        speaker.stop();
+        audioEngine.clearAudioQueue();
+        try {
+          await beginMicStream(selectedMicIdRef.current);
+          setTranscript("Listening... Speak cleanly through headphones, earphones, buds, or laptop mic!");
+        } catch {
+          setTranscript("Mic Permission Denied! Browser address bar lo Mic allow cheyyandi.");
+          toast.error("Please allow Microphone permission in your browser.");
+        }
+      } else {
+        audioEngine.stopMicCapture();
+        dasSocket.sendAudioStreamEnd();
+        micSilentRef.current = false;
+        if (micBarRef.current) micBarRef.current.style.width = "4%";
+        setMicActive(false);
+        setMicSilentWarning(false);
+        setMicHealthHint("");
+        setTranscript("Mic paused.");
       }
-    } else {
-      audioEngine.stopMicCapture();
-      dasSocket.sendAudioStreamEnd();
-      micSilentRef.current = false;
-      if (micBarRef.current) micBarRef.current.style.width = "4%";
-      setMicActive(false);
-      setMicSilentWarning(false);
-      setMicHealthHint("");
-      setTranscript("Mic paused.");
+    } finally {
+      micBusyRef.current = false;
     }
   };
 

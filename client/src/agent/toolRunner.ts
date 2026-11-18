@@ -227,6 +227,85 @@ export function tryInstantBrowserCommand(rawInput: string): {
   return { handled: false };
 }
 
+const CLIENT_TAB_INTENTS: Array<{ route: string; patterns: RegExp[] }> = [
+  { route: "focus_on_das", patterns: [/\bfocus\s+on\s+das\b/, /\bhide\s+dashboard\b/] },
+  { route: "show_dashboard", patterns: [/\bshow\s+(?:the\s+)?dashboard\b/, /\bexit\s+focus\b/] },
+  {
+    route: "projects",
+    patterns: [
+      /\b(?:open|go\s+to|show|switch\s+to|navigate(?:\s+to)?)\s+(?:the\s+)?(?:project\s+)?blueprints?\b/,
+      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?projects\b/,
+    ],
+  },
+  {
+    route: "interview",
+    patterns: [
+      /\b(?:open|go\s+to|start|launch|show|switch\s+to)\s+(?:the\s+)?mock\s+interview\b/,
+      /\b(?:open|go\s+to|start|show|switch\s+to)\s+(?:the\s+)?(?:project\s+)?defense\b/,
+    ],
+  },
+  {
+    route: "resume",
+    patterns: [
+      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:ats\s+)?resume(?:\s+studio)?\b/,
+    ],
+  },
+  {
+    route: "analytics",
+    patterns: [
+      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:cohort\s+)?analytics\b/,
+    ],
+  },
+  {
+    route: "skills",
+    patterns: [
+      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:6-week\s+)?roadmap\b/,
+      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?skill\s+gap\b/,
+    ],
+  },
+  {
+    route: "branches",
+    patterns: [/\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?branches\b/],
+  },
+  {
+    route: "roles",
+    patterns: [/\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?target\s+roles?\b/],
+  },
+  {
+    route: "profile",
+    patterns: [/\b(?:open|go\s+to|show|switch\s+to)\s+(?:my\s+|the\s+)?profile(?:\s+settings)?\b/],
+  },
+  {
+    route: "overview",
+    patterns: [/\b(?:open|go\s+to|return\s+to)\s+(?:the\s+)?(?:overview|dashboard)\b/],
+  },
+];
+
+export function tryExecuteClientAutomationIntent(
+  rawQuery: string,
+  navigateFn?: (path: string) => void
+): boolean {
+  const instant = tryInstantBrowserCommand(rawQuery);
+  if (instant.handled) {
+    return true;
+  }
+  const clean = norm(rawQuery);
+  if (!clean) return false;
+  for (const intent of CLIENT_TAB_INTENTS) {
+    if (intent.patterns.some((rx) => rx.test(clean))) {
+      if (intent.route === "focus_on_das") {
+        executeWebsiteControl({ action: "focus_das" as any, route: "focus_on_das" }, navigateFn);
+      } else if (intent.route === "show_dashboard") {
+        executeWebsiteControl({ action: "show_dashboard" as any, route: "show_dashboard" }, navigateFn);
+      } else {
+        executeWebsiteControl({ action: "navigate", route: intent.route }, navigateFn);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
 /* ------------------------------------------------------------------ */
 /* Tool Declarations (Website Control + Google Search + Gmail/Sheets)  */
 /* ------------------------------------------------------------------ */

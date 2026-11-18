@@ -282,6 +282,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       }
     };
 
+    window.addEventListener("das-navigate", handleDASNavigate);
     window.addEventListener("das-navigate-tab", handleDASNavigate);
     window.addEventListener("das-open-resume-builder", handleDASResume);
     window.addEventListener("das-open-mock-interview", handleDASInterview);
@@ -290,6 +291,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
     window.addEventListener("pathfinder:agent-action", handleAgentAction);
 
     return () => {
+      window.removeEventListener("das-navigate", handleDASNavigate);
       window.removeEventListener("das-navigate-tab", handleDASNavigate);
       window.removeEventListener("das-open-resume-builder", handleDASResume);
       window.removeEventListener("das-open-mock-interview", handleDASInterview);
