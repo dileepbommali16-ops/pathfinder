@@ -76,8 +76,8 @@ DISALLOWED_MODEL_PATTERNS = (
 )
 
 PREFERRED_MODELS_ORDER = [
-    "gemini-3-flash-preview",
     "gemini-3.1-flash-lite",
+    "gemini-3-flash-preview",
     "gemini-3.1-flash-lite-preview",
     "gemini-3.5-flash",
     "gemini-3.6-flash",
@@ -138,8 +138,6 @@ def get_gemini_models() -> List[str]:
 
     models: List[str] = []
     env_m = os.getenv("GEMINI_MODEL", "").strip()
-    if env_m and not any(bad in env_m.lower() for bad in DISALLOWED_MODEL_PATTERNS):
-        models.append(env_m)
 
     key = _resolve_gemini_api_key()
     if key:
@@ -162,10 +160,13 @@ def get_gemini_models() -> List[str]:
         except Exception as exc:
             logger.debug(f"[Gemini Engine] Model discovery endpoint check skipped: {exc}")
 
-    # Standard verified models
+    # Standard verified models (prioritized before custom env fallback)
     for candidate in PREFERRED_MODELS_ORDER:
         if candidate not in models:
             models.append(candidate)
+
+    if env_m and env_m not in models and not any(bad in env_m.lower() for bad in DISALLOWED_MODEL_PATTERNS):
+        models.append(env_m)
 
     _validated_gemini_models = models
     return models
@@ -183,7 +184,7 @@ def get_gemini_client():
     if key and genai:
         try:
             http_opts_kwargs: Dict[str, Any] = {
-                "timeout": 5500,
+                "timeout": 12000,
                 "api_version": "v1beta",
             }
             if hasattr(types, "HttpRetryOptions"):
@@ -1270,7 +1271,7 @@ def _refresh_candidate_models(limit: int = 4) -> List[str]:
 
 
 def generate_structured_ai(prompt: str, schema: Type[BaseModel], pdf_bytes: Optional[bytes] = None) -> BaseModel:
-    t_deadline = time.perf_counter() + 10.5
+    t_deadline = time.perf_counter() + 12.0
     client = get_gemini_client()
     if client and genai and types:
         contents = [types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"), prompt] if pdf_bytes else prompt
@@ -1298,7 +1299,7 @@ def generate_structured_ai(prompt: str, schema: Type[BaseModel], pdf_bytes: Opti
                     return schema.model_validate(raw_dict)
             except Exception as exc:
                 err_str = str(exc).lower()
-                if "404" in err_str or "400" in err_str or "not found" in err_str or "invalid_argument" in err_str:
+                if "deadline" not in err_str and ("404" in err_str or "not found" in err_str or "no longer available" in err_str):
                     evict_gemini_model(model)
                 elif "503" in err_str or "429" in err_str or "timeout" in err_str:
                     deprioritize_gemini_model(model)
@@ -1344,7 +1345,7 @@ def generate_strict_json_evaluation(
     if not api_key:
         return None, None, "GEMINI_API_KEY not configured"
 
-    t_deadline = time.perf_counter() + 10.0
+    t_deadline = time.perf_counter() + 12.0
     models_to_try = _refresh_candidate_models(4)
     last_error = "No Gemini models available"
 
@@ -1384,7 +1385,7 @@ def generate_strict_json_evaluation(
             except Exception as exc:
                 last_error = f"{model}: {exc}"
                 err_low = last_error.lower()
-                if "404" in err_low or "400" in err_low or "not found" in err_low or "no longer available" in err_low or "invalid_argument" in err_low:
+                if "deadline" not in err_low and ("404" in err_low or "not found" in err_low or "no longer available" in err_low):
                     evict_gemini_model(model)
                 elif "503" in err_low or "429" in err_low or "timeout" in err_low:
                     deprioritize_gemini_model(model)

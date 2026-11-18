@@ -188,8 +188,8 @@ class TestConcurrencyAndRoleSecurity(unittest.TestCase):
         from backend.gemini_engine import PREFERRED_MODELS_ORDER
 
         self.assertNotIn("gemini-2.0-flash", PREFERRED_MODELS_ORDER)
-        self.assertEqual(PREFERRED_MODELS_ORDER[0], "gemini-3-flash-preview")
-        self.assertIn("gemini-3.1-flash-lite", PREFERRED_MODELS_ORDER[:3])
+        self.assertEqual(PREFERRED_MODELS_ORDER[0], "gemini-3.1-flash-lite")
+        self.assertIn("gemini-3-flash-preview", PREFERRED_MODELS_ORDER[:3])
 
         boss_ctx = {"userEmail": "dileepbommali16@gmail.com", "honorific": "Boss"}
         first_hi = generate_smart_fallback_reply("hi", history=[], page_context=boss_ctx)
