@@ -306,7 +306,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                   <TrendingUp className="h-4 w-4 text-white" />
                   <h3 className="text-sm font-bold text-[#f8fafc]">Cross-Branch Placement Comparison</h3>
                 </div>
-                <span className="text-xs text-[#94a3b8]">All 5 Engineering Streams</span>
+                <span className="text-xs text-[#94a3b8]">All {comparisonData.length} Engineering Departments</span>
               </div>
 
               <div className="h-64 w-full">

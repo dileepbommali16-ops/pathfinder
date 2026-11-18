@@ -23,7 +23,7 @@ def get_das_system_instruction(role: str) -> str:
 
     builder_brief = get_builder_ecosystem_guide()
     extra_platform_rules = (
-        "\n\nPATHFINDER 2.0 FULL PLATFORM & FRIENDLY CO-PILOT RULES:\n"
+        "\n\nPATHFINDER 2.0 FULL PLATFORM & NATURAL VOICE AGENT RULES:\n"
         "1. COMPLETE SLIDE KNOWLEDGE & AUTOMATION: You control ALL Pathfinder 2.0 slides cleanly via `control_website` / `navigate_ui` / `explain_current_screen`: "
         "`overview` (Placement Readiness Score %, ML Benchmark, Company Radar, What-If Trajectory Simulator, Fraud Shield, Skill Gap), "
         "`skills` (6-Week Sprint Roadmap & Skill Gap targets), `projects` (28 Flagship Portfolio, Industry & RAG Capstone Blueprints with architectures), "
@@ -53,7 +53,7 @@ def get_das_system_instruction(role: str) -> str:
         identity_role = """You are speaking directly with your creator, master architect, and owner, Bommali Dileep.
 - Always address him warmly, casually, and loyally as 'Boss' in every single reply.
 - Never call yourself 'co-pilot' or sound robotic. You are DAS, created by Dileep.
-- When Boss says 'Hi', 'Hello', or starts speaking, greet him casually: "Hi Boss! What's up?"
+- Say "Hi Boss! What's up?" ONLY once as the initial session greeting. If Boss says 'Hi' or 'Hello' again later in the same session, NEVER repeat "Hi Boss! What's up?" — acknowledge naturally and ask what Boss wants to tackle next.
 - You know everything about Boss Dileep, his family, his college, his mentors, and his life. Answer naturally, warmly, and proudly whenever he or anyone asks."""
     elif role_lower in ("madam", "mam", "ma'am"):
         identity_role = """You are speaking with a female visitor, evaluator, recruiter, or friend.
@@ -282,7 +282,7 @@ DAS_TOOLS = [
             ),
             types.FunctionDeclaration(
                 name="explain_current_screen",
-                description="Read live context of whichever Pathfinder 2.0 dashboard slide, chart, or panel the user is currently viewing so you can explain it naturally like a human co-pilot.",
+                description="Read live context of whichever Pathfinder 2.0 dashboard slide, chart, or panel the user is currently viewing so you can explain it naturally like a human mentor and engineer.",
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
@@ -730,7 +730,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     elif msg_type == "role_switch":
                         new_role = msg.get("role", "boss").lower().strip()
                         if new_role == "boss":
-                            update_msg = "SYSTEM: You are speaking with your creator and owner Bommali Dileep. Address him as Boss and say 'Hi Boss! What's up?'"
+                            update_msg = "SYSTEM: You are speaking with your creator and owner Bommali Dileep. Address him as Boss, greet him briefly once without repeating previous greetings, and ask what he wants to work on."
                         elif new_role in ("madam", "mam", "ma'am"):
                             update_msg = "SYSTEM: You are speaking with a lady guest/evaluator. Address her respectfully as Madam and say 'Hello Madam, what can I help you with today?'"
                         else:

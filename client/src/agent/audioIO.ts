@@ -1610,19 +1610,19 @@ class AudioEngine {
       this.zeroSignalMs = 0;
     }
 
-    // Bi-directional adaptive ambient noise floor with crisp voice onset for short greetings
+    // Bi-directional adaptive ambient noise floor with tight ceiling so normal/soft mics stay unclipped
     if (rms > 0.0001) {
       if (rms < this.noiseFloor) {
-        this.noiseFloor = Math.max(0.0008, this.noiseFloor * 0.85 + rms * 0.15);
-      } else if (rms < 0.020 && this.gateHoldMs <= 0) {
-        this.noiseFloor = Math.min(0.012, this.noiseFloor * 0.992 + rms * 0.008);
+        this.noiseFloor = Math.max(0.0006, this.noiseFloor * 0.85 + rms * 0.15);
+      } else if (rms < 0.012 && this.gateHoldMs <= 0) {
+        this.noiseFloor = Math.min(0.0045, this.noiseFloor * 0.992 + rms * 0.008);
       }
     }
-    const speechThreshold = Math.max(0.0032, this.noiseFloor * 1.9);
+    const speechThreshold = Math.min(0.0065, Math.max(0.0022, this.noiseFloor * 1.65));
     if (rms >= speechThreshold) {
       this.speechOnsetFrames = Math.min(10, this.speechOnsetFrames + 1);
-      if (this.inUtterance || this.speechOnsetFrames >= 1 || rms >= speechThreshold * 1.2) {
-        this.gateHoldMs = 460;
+      if (this.inUtterance || this.speechOnsetFrames >= 1 || rms >= speechThreshold * 1.15) {
+        this.gateHoldMs = 520;
       }
     } else {
       this.speechOnsetFrames = Math.max(0, this.speechOnsetFrames - 1);
@@ -1707,7 +1707,8 @@ class AudioEngine {
       return;
     }
 
-    const pcm16 = downsampleTo16k(filtered, inputSampleRate, this.softGain, gateOpen);
+    // Stream continuous 16kHz PCM whenever mic is live & not echo-suppressed so Gemini Live neural VAD handles speech & silence cleanly
+    const pcm16 = downsampleTo16k(filtered, inputSampleRate, gateOpen ? this.softGain : 1.0, true);
     if (pcm16.length === 0) return;
 
     const uint8 = new Uint8Array(pcm16.buffer);
@@ -1717,33 +1718,15 @@ class AudioEngine {
     }
     const b64 = window.btoa(binary);
 
-    if (gateOpen) {
-      // Flush short pre-roll ring when speech begins so initial consonants are crystal clear
-      if (!this.inUtterance) {
-        this.inUtterance = true;
-        this.tailSilenceSentMs = 0;
-        for (const pre of this.preRollChunks) {
-          onPcmChunk(pre);
-        }
-        this.preRollChunks = [];
-      }
+    if (!this.inUtterance) {
+      this.inUtterance = true;
       this.tailSilenceSentMs = 0;
-      onPcmChunk(b64);
-    } else if (this.inUtterance) {
-      // Stream 520ms of clean digital zeroes so Gemini VAD ends turn cleanly without clipping trailing syllables
-      this.tailSilenceSentMs += frameMs;
-      onPcmChunk(b64);
-      if (this.tailSilenceSentMs >= 520) {
-        this.inUtterance = false;
-        this.tailSilenceSentMs = 0;
-        options?.onSpeechIdle?.();
+      for (const pre of this.preRollChunks) {
+        onPcmChunk(pre);
       }
-    } else {
-      this.preRollChunks.push(b64);
-      if (this.preRollChunks.length > 6) {
-        this.preRollChunks.shift();
-      }
+      this.preRollChunks = [];
     }
+    onPcmChunk(b64);
   }
 
   // Start capturing 16kHz PCM audio across all hardware (Bluetooth buds, headphones, earphones, built-in mic)

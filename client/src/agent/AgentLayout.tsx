@@ -52,6 +52,15 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const askCoachUnbindRef = useRef<(() => void) | null>(null);
   const restTtsAbortRef = useRef<AbortController | null>(null);
   const dispatchTurnRef = useRef<(q: string, ctx: Record<string, any>, mode: "coach" | "chat") => void>(() => {});
+  const chatHistoryRef = useRef<Array<{ role: "user" | "assistant"; content: string }>>([]);
+  const transcriptRef = useRef<string>(transcript);
+  const userTranscriptRef = useRef<string>(userTranscript);
+  useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
+  useEffect(() => {
+    userTranscriptRef.current = userTranscript;
+  }, [userTranscript]);
   const lastAuthIdentityRef = useRef<string | null>(
     typeof window !== "undefined" ? (localStorage.getItem("userEmail") || "").toLowerCase() || null : null
   );
@@ -81,6 +90,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       setUserTranscript("");
       setInputText("");
       setCodeTask(null);
+      chatHistoryRef.current = [];
       setTranscript(getInitialGreeting(nextKey));
     };
 
@@ -207,7 +217,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const requestRestCoachReply = async (
     query: string,
-    ctx: Record<string, any> = {}
+    ctx: Record<string, any> = {},
+    priorHistory: Array<{ role: "user" | "assistant"; content: string }> = []
   ): Promise<string> => {
     let parsedProfile: any = {};
     const activeHonorific = getUserRole();
@@ -230,7 +241,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           signal: controller.signal,
           body: JSON.stringify({
             message: query,
-            history: [],
+            history: priorHistory,
             profile: {
               cgpa: parsedProfile.cgpa ?? 7.8,
               backlogs: parsedProfile.backlogs ?? parsedProfile.activeBacklogs ?? 0,
@@ -260,7 +271,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         window.clearTimeout(abortId);
       }
     } catch {}
-    return getCareerAgentResponse(query, [], parsedProfile, activeHonorific);
+    return getCareerAgentResponse(query, priorHistory, parsedProfile, activeHonorific);
   };
 
   const ensureSocketConnected = () => {
@@ -333,8 +344,32 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     });
     askCoachUnbindRef.current = cleanup;
 
+    const latestTranscript = (transcriptRef.current || "").trim();
+    const isTransientBanner =
+      !latestTranscript ||
+      latestTranscript === "Thinking & Executing..." ||
+      latestTranscript === "Connecting to DAS Core..." ||
+      latestTranscript === "[Interrupted — Listening...]" ||
+      latestTranscript === "Mic paused." ||
+      latestTranscript.startsWith("Listening...");
+    const isUntouchedInitial =
+      chatHistoryRef.current.length === 0 &&
+      !userTranscriptRef.current.trim() &&
+      latestTranscript === getInitialGreeting(getHonorificKey());
+    if (!isTransientBanner && !isUntouchedInitial) {
+      const prevEntry = chatHistoryRef.current[chatHistoryRef.current.length - 1];
+      if (!prevEntry || prevEntry.role !== "assistant" || prevEntry.content !== latestTranscript) {
+        chatHistoryRef.current.push({ role: "assistant", content: latestTranscript });
+      }
+    }
+    const priorHistory = chatHistoryRef.current.slice(-10);
+    chatHistoryRef.current = [
+      ...chatHistoryRef.current,
+      { role: "user" as const, content: queryText },
+    ].slice(-12);
+
     const deliverRestReply = async () => {
-      const replyText = await requestRestCoachReply(queryText, ctx);
+      const replyText = await requestRestCoachReply(queryText, ctx, priorHistory);
       if (
         !settled &&
         askCoachNonceRef.current === nonce &&
@@ -343,6 +378,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         !audioEngine.isSpeaking()
       ) {
         cleanup();
+        chatHistoryRef.current = [
+          ...chatHistoryRef.current,
+          { role: "assistant" as const, content: replyText },
+        ].slice(-12);
         setTranscript(replyText);
         restTtsAbortRef.current?.abort();
         const ttsAc = new AbortController();
@@ -357,16 +396,13 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
 
-    if (!dasSocket.isSocketConnected) {
-      void deliverRestReply();
-      return;
-    }
-
+    const wasSocketReady = dasSocket.isSocketConnected;
     if (mode === "coach") {
       dasSocket.askCoach(queryText, ctx);
     } else {
       dasSocket.sendTextCommand(queryText);
     }
+    const fallbackDelayMs = wasSocketReady ? 10500 : 4500;
     timerId = window.setTimeout(() => {
       if (
         settled ||
@@ -377,7 +413,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         return;
       }
       void deliverRestReply();
-    }, 15000);
+    }, fallbackDelayMs);
   };
   dispatchTurnRef.current = dispatchTurnWithVoiceFallback;
 
@@ -463,7 +499,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       deviceId: deviceId || undefined,
       rawMode: false,
       shouldSuppressEcho: () => audioEngine.isSpeaking() || dasSocket.isAgentSpeaking,
-      onSpeechIdle: () => dasSocket.sendAudioStreamEnd(),
       onAutoDeviceSwitch: (newDev) => {
         selectedMicIdRef.current = newDev.deviceId;
         activeMicLabelRef.current = newDev.label;
@@ -1069,7 +1104,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         {/* User Voice / Input Transcript */}
         {userTranscript && (
           <div
-            className="text-xs text-emerald-400 rounded-xl px-3 py-1.5 max-h-16 overflow-y-auto whitespace-pre-wrap leading-relaxed border"
+            className="text-xs text-emerald-400 rounded-xl px-3 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
             style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           >
             🎤 You: {userTranscript}
@@ -1078,7 +1113,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
         {/* Agent Spoken Response Transcript */}
         <div
-          className="text-sm text-zinc-100 rounded-xl px-3 py-2 max-h-24 overflow-y-auto whitespace-pre-wrap leading-relaxed border"
+          className="text-sm text-zinc-100 rounded-xl px-3 py-2 max-h-24 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
           style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
         >
           🔊 DAS: {transcript}

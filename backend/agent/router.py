@@ -11,7 +11,7 @@ async def agent_voice_status():
     base = get_settings().backend_public_url.rstrip("/")
     ws_base = base.replace("https://", "wss://", 1).replace("http://", "ws://", 1)
     return {
-        "agent_name": "DAS 3D Co-Pilot",
+        "agent_name": "DAS 3D Autonomous Agent",
         "voice_profile": "DAS Neural",
         "sample_rate_hz": PUCK_SAMPLE_RATE,
         "websocket_url": f"{ws_base}/agent/ws",

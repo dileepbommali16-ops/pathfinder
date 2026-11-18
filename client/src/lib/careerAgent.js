@@ -536,7 +536,7 @@ export const getCareerAgentResponse = (
   if (/\b(voice|vinapadatledhu|vinapadtle|vinipinchatledhu|can'?t\s*hear|silent|sound|audio|speak|matladu)\b/i.test(text)) {
     return (
       `I hear you loud and clear, ${title}! My voice engine and 60 FPS 3D Avatar lip-sync are active and calibrated. You should be able to hear my speech smoothly right now. What would you like to prepare next?` +
-      `|||🎙️ **Audio & Speech Engine Active:**\n- Voice: Resonant, high-clarity natural AI audio\n- Lip-Sync: 60 FPS real-time facial mesh synthesis\n- Mode: Live Autonomous Co-Pilot`
+      `|||🎙️ **Audio & Speech Engine Active:**\n- Voice: Resonant, high-clarity natural AI audio\n- Lip-Sync: 60 FPS real-time facial mesh synthesis\n- Mode: Live Autonomous Voice Agent`
     );
   }
 
@@ -720,15 +720,36 @@ export const getCareerAgentResponse = (
       text
     );
   if (isGreeting) {
-    if (recentAssistantTexts.some((t) => t.includes("how can i assist") || t.includes("ready when you are"))) {
+    const alreadyGreeted =
+      history.length > 0 ||
+      recentAssistantTexts.some(
+        (t) =>
+          t.includes("what's up") ||
+          t.includes("whats up") ||
+          t.includes("how can i assist") ||
+          t.includes("ready when you are") ||
+          t.includes("right here") ||
+          t.includes("das online") ||
+          t.includes("profile is synced") ||
+          t.includes("what can i help")
+      );
+    if (alreadyGreeted) {
+      const followUps = [
+        `Still right here, ${title}! Tell me what you want to work on next — projects, mock interview, or ATS resume.`,
+        `Listening closely, ${title}! Pick any tab, test your mock interview answers, or ask me anything.`,
+        `All systems ready, ${title}! What should we dive into next for ${targetRole}?`,
+      ];
+      const replyIdx = recentAssistantTexts.length % followUps.length;
       return (
-        `Hey ${title}! I'm right here and listening. Tell me which tab to open, or ask me anything about your ${branch} placement prep, projects, or mock interviews!` +
-        `|||👋 **Always Online, ${title}!**\n- Say **"Open Projects"**, **"Open Roadmap"**, **"Start Mock Interview"**, or **"Open ATS Resume"** to control the website hands-free.`
+        followUps[replyIdx] +
+        `|||👋 **Always Online, ${title}!**\n- Say **"Open Projects"**, **"Open Roadmap"**, **"Start Mock Interview"**, or **"Open ATS Resume"** to navigate hands-free.`
       );
     }
+    const greetingLine =
+      title === "Boss" ? "Hi Boss! What's up?" : `Hello ${title}! Ready when you are.`;
     return (
-      `Hello ${title}! I'm DAS, your autonomous 3D voice co-pilot. Your profile is synced at ${cgpa} CGPA in ${branch} targeting ${targetRole}. What should we tackle first?` +
-      `|||👋 **Welcome, ${title}! DAS Co-Pilot is Synced:**\n- **Profile:** ${branch} • **${cgpa} CGPA** • ${backlogs} Backlogs • Target: **${targetRole}**\n- **Top 3 RAG Context Ready:**\n${top3Markdown}`
+      greetingLine +
+      `|||👋 **Welcome, ${title}! DAS is Synced:**\n- **Profile:** ${branch} • **${cgpa} CGPA** • ${backlogs} Backlogs • Target: **${targetRole}**\n- **Top 3 RAG Context Ready:**\n${top3Markdown}`
     );
   }
 
@@ -763,7 +784,7 @@ export const getCareerAgentResponse = (
     text.includes("how does pathfinder work")
   ) {
     return (
-      `Pathfinder 2.0 is an autonomous AI campus placement and career intelligence platform built by Dileep, ${title}. Students use it because it predicts their exact Tier-1 placement probability using a machine learning model trained on 972 real student records, gives them 28 production-grade project blueprints, runs live AI mock interviews, builds an ATS-ready resume, and lets them control everything hands-free with me—their 3D JARVIS voice co-pilot.` +
+      `Pathfinder 2.0 is an autonomous AI campus placement and career intelligence platform built by Dileep, ${title}. Students use it because it predicts their exact Tier-1 placement probability using a machine learning model trained on 972 real student records, gives them 28 production-grade project blueprints, runs live AI mock interviews, builds an ATS-ready resume, and lets them control everything hands-free with me—their 3D JARVIS voice agent.` +
       `|||🎯 **What is Pathfinder 2.0 & Why Every Engineering Student Needs It (${title}):**\n` +
       `1. **ML Placement Probability Engine:** Trained on **972 verified campus placement records (2024–2026)**.\n` +
       `2. **28 Production Project Blueprints:** Real-world architectures (Docker, Redis, FastAPI, Kafka, RAG).\n` +

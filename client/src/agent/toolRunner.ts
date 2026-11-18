@@ -23,6 +23,7 @@ const CLICKABLE =
 const norm = (s?: string | null) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
 
 function isVisible(el: HTMLElement): boolean {
+  if (!el || typeof el.getBoundingClientRect !== "function") return false;
   if (el.closest("[data-das-ignore]")) return false;
   const r = el.getBoundingClientRect();
   if (r.width < 2 || r.height < 2) return false;
@@ -837,7 +838,7 @@ export async function triggerGoogleAutomation(args: {
       const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
         args.recipient_email || ""
       )}&su=${encodeURIComponent(
-        args.subject || "Message from DAS AI Co-Pilot"
+        args.subject || "Message from DAS AI Agent"
       )}&body=${encodeURIComponent(args.details || "")}`;
       window.open(gmailUrl, "_blank", "noopener,noreferrer");
       return `Opened Gmail compose window with recipient, subject, and body pre-filled.`;
@@ -848,7 +849,7 @@ export async function triggerGoogleAutomation(args: {
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
       args.recipient_email || ""
     )}&su=${encodeURIComponent(
-      args.subject || "Message from DAS AI Co-Pilot"
+      args.subject || "Message from DAS AI Agent"
     )}&body=${encodeURIComponent(args.details || "")}`;
     window.open(gmailUrl, "_blank", "noopener,noreferrer");
     return `Opened Gmail compose window with recipient, subject, and body pre-filled.`;

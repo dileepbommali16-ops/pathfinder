@@ -1766,7 +1766,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           method: "POST",
           body: formData,
         },
-        35000
+        20000
       );
       if (resp.ok) {
         const data = await resp.json();

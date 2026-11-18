@@ -50,7 +50,7 @@ def full_health_check():
 
     return {
         "status": "online" if dataset_ok else "degraded",
-        "agent": "DAS 3D Live Co-Pilot",
+        "agent": "DAS 3D Live Agent",
         "service": "Pathfinder 2.0 Intelligence Engine",
         "version": "2.0.0",
         "git_sha": _GIT_SHA,

@@ -1232,7 +1232,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
               <div className="h-24 w-24 rounded-full border-2 border-cyan-400/40 flex items-center justify-center bg-cyan-950/30 animate-pulse">
                 <span className="text-3xl">🎙️</span>
               </div>
-              <h4 className="mt-4 text-sm font-bold text-cyan-300">DAS 3D AI Co-Pilot Stage</h4>
+              <h4 className="mt-4 text-sm font-bold text-cyan-300">DAS 3D AI Voice Stage</h4>
               <p className="mt-1 text-xs text-slate-400">
                 Active 60 FPS Holographic Avatar rendered in your background canvas
               </p>

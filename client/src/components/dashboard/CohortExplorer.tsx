@@ -608,6 +608,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               <span>Page {currentPage} of {totalPages}</span>
               <div className="flex items-center gap-1.5">
                 <button
+                  type="button"
+                  aria-label="Previous page"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   className="rounded-lg border border-white/[0.08] bg-[#0a0b10] p-1.5 text-[#f8fafc] hover:bg-[rgba(255,255,255,0.08)] disabled:opacity-40 cursor-pointer"
@@ -615,6 +617,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button
+                  type="button"
+                  aria-label="Next page"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                   className="rounded-lg border border-white/[0.08] bg-[#0a0b10] p-1.5 text-[#f8fafc] hover:bg-[rgba(255,255,255,0.08)] disabled:opacity-40 cursor-pointer"

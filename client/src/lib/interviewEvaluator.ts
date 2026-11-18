@@ -333,7 +333,7 @@ export async function evaluateProjectDefenseAnswer(input: DefenseEvalInput): Pro
           profile: serializeProfileForEval(input.profile),
         }),
       },
-      25000
+      12000
     );
 
     if (resp.ok) {
@@ -376,7 +376,7 @@ export async function evaluateProjectDefenseAnswer(input: DefenseEvalInput): Pro
           active_tab: "defense",
         }),
       },
-      15000
+      6000
     );
 
     if (chatResp.ok) {
@@ -449,7 +449,7 @@ export async function evaluateMockInterviewAnswer(input: InterviewEvalInput): Pr
           profile: serializeProfileForEval(input.profile),
         }),
       },
-      25000
+      12000
     );
 
     if (resp.ok) {
@@ -495,7 +495,7 @@ export async function evaluateMockInterviewAnswer(input: InterviewEvalInput): Pr
           active_tab: "mockinterview",
         }),
       },
-      15000
+      6000
     );
 
     if (chatResp.ok) {

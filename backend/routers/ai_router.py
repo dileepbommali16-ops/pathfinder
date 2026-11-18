@@ -53,7 +53,7 @@ ai_router = APIRouter(tags=["AI Mentor & Coaching"])
 
 @ai_router.post("/api/chat")
 @ai_router.post("/api/ai/chat")
-def chat_endpoint(request_body: ChatRequest, request: Request):
+async def chat_endpoint(request_body: ChatRequest, request: Request):
     """
     AI Career Coach conversation endpoint with session-isolated rate-limiting,
     campus NAT burst headroom, circuit breaker protection, and grounded fallbacks.
@@ -100,13 +100,14 @@ def chat_endpoint(request_body: ChatRequest, request: Request):
         }
 
     try:
-        reply_text, meta = chat_with_mentor(
+        reply_text, meta = await asyncio.to_thread(
+            chat_with_mentor,
             message=sanitized_message,
             history=raw_history,
             profile=profile,
             active_tab=active_tab,
             page_context=user_context,
-            return_meta=True
+            return_meta=True,
         )
         if meta.get("status") == "success":
             gemini_circuit_breaker.record_success()
@@ -573,7 +574,7 @@ def _score_interview_offline(req: InterviewEvaluationRequest) -> InterviewEvalua
 
 
 @ai_router.post("/api/ai/evaluate-defense", response_model=DefenseEvaluationResult)
-def evaluate_defense_endpoint(request_body: DefenseEvaluationRequest, request: Request):
+async def evaluate_defense_endpoint(request_body: DefenseEvaluationRequest, request: Request):
     """
     Genuine strict technical interviewer evaluation for Project Defense.
     Detects abstentions ('I don't know', 'skip') at 0/100 and otherwise grades via live Gemini AI.
@@ -634,7 +635,8 @@ def evaluate_defense_endpoint(request_body: DefenseEvaluationRequest, request: R
     )
 
     ai_budget_manager.consume(session_key)
-    ai_result, model_name, err_reason = generate_strict_json_evaluation(
+    ai_result, model_name, err_reason = await asyncio.to_thread(
+        generate_strict_json_evaluation,
         prompt=prompt,
         schema=DefenseEvaluationResult,
         system_instruction=sys_instruction,
@@ -659,7 +661,7 @@ def evaluate_defense_endpoint(request_body: DefenseEvaluationRequest, request: R
 
 
 @ai_router.post("/api/ai/evaluate-interview", response_model=InterviewEvaluationResult)
-def evaluate_interview_endpoint(request_body: InterviewEvaluationRequest, request: Request):
+async def evaluate_interview_endpoint(request_body: InterviewEvaluationRequest, request: Request):
     """
     Genuine strict Mock Interview evaluation endpoint.
     Scores Technical Precision, Communication, and Problem Solving honestly using live Gemini AI.
@@ -720,7 +722,8 @@ def evaluate_interview_endpoint(request_body: InterviewEvaluationRequest, reques
     )
 
     ai_budget_manager.consume(session_key)
-    ai_result, model_name, err_reason = generate_strict_json_evaluation(
+    ai_result, model_name, err_reason = await asyncio.to_thread(
+        generate_strict_json_evaluation,
         prompt=prompt,
         schema=InterviewEvaluationResult,
         system_instruction=sys_instruction,

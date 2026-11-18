@@ -184,6 +184,25 @@ class TestConcurrencyAndRoleSecurity(unittest.TestCase):
 
         self.assertEqual(errors, [], f"Concurrency errors occurred: {errors[:5]}")
 
+    def test_first_vs_repeat_greeting_and_active_model_priority(self):
+        from backend.gemini_engine import PREFERRED_MODELS_ORDER
+
+        self.assertNotIn("gemini-2.0-flash", PREFERRED_MODELS_ORDER)
+        self.assertEqual(PREFERRED_MODELS_ORDER[0], "gemini-3-flash-preview")
+        self.assertIn("gemini-3.1-flash-lite", PREFERRED_MODELS_ORDER[:3])
+
+        boss_ctx = {"userEmail": "dileepbommali16@gmail.com", "honorific": "Boss"}
+        first_hi = generate_smart_fallback_reply("hi", history=[], page_context=boss_ctx)
+        self.assertEqual(first_hi, "Hi Boss! What's up?")
+
+        repeat_hi = generate_smart_fallback_reply(
+            "hi",
+            history=[{"role": "user", "content": "hi"}, {"role": "assistant", "content": first_hi}],
+            page_context=boss_ctx,
+        )
+        self.assertNotIn("What's up", repeat_hi)
+        self.assertNotIn("co-pilot", repeat_hi.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

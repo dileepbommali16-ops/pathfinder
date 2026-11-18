@@ -36,7 +36,7 @@ class DasAgentSocket {
 
   public get isAgentSpeaking(): boolean {
     if (!this.isSpeakingTurn) return false;
-    if (this.lastAudioChunkAt > 0 && Date.now() - this.lastAudioChunkAt > 2600 && !audioEngine.isSpeaking()) {
+    if (this.lastAudioChunkAt > 0 && Date.now() - this.lastAudioChunkAt > 900 && !audioEngine.isSpeaking()) {
       this.isSpeakingTurn = false;
       return false;
     }
@@ -232,7 +232,7 @@ class DasAgentSocket {
     this.ws.onopen = () => {
       if (mySeq !== this.connSeq) return;
       this.lastPongAt = Date.now();
-      if (!this.isDirectGoogle) {
+      if (!this.isDirectGoogle && !this.hasConversationActivity) {
         this.savedOnTranscript?.("Connecting to DAS Core...");
 
         // 10s keep-alive ping + 26s silent half-open socket detector (tolerates mobile/tablet background throttling)
@@ -258,7 +258,7 @@ class DasAgentSocket {
           ? `You are speaking directly with your creator, master architect, and owner, Bommali Dileep.
 - Always address him warmly, casually, and loyally as 'Boss' in every single reply.
 - Never call yourself 'co-pilot' or sound robotic. You are DAS, created by Dileep.
-- When Boss says 'Hi', 'Hello', or starts speaking, greet him casually: "Hi Boss! What's up?"
+- Say "Hi Boss! What's up?" ONLY once as the initial session greeting. If Boss says 'Hi' or 'Hello' again later in the same session, NEVER repeat "Hi Boss! What's up?" — acknowledge naturally and ask what Boss wants to tackle next.
 - You know everything about Boss Dileep, his family, his college, his mentors, and his life. Answer naturally, warmly, and proudly whenever he or anyone asks.`
           : roleKey === "madam"
           ? `You are speaking with a female visitor, evaluator, recruiter, or friend.
@@ -557,7 +557,13 @@ CORE AUTONOMOUS CAPABILITIES:
               this.pendingTexts.length === 0 &&
               Date.now() - this.lastTextSentAt > 6000
             ) {
-              this.savedOnTranscript?.("DAS Online (DAS Ready)!");
+              const greeting =
+                this.currentRole === "madam"
+                  ? "Hello Madam, what can I help you with today?"
+                  : this.currentRole === "sir"
+                    ? "Hello Sir, what can I help you with today?"
+                    : "Hi Boss! What's up?";
+              this.savedOnTranscript?.(greeting);
             }
             const ctxNow =
               this.latestPageContext ||
@@ -1238,10 +1244,10 @@ CORE AUTONOMOUS CAPABILITIES:
       if (this.isDirectGoogle) {
         this.sendImmediateText(
           role === "boss"
-            ? "You are now speaking with your creator Bommali Dileep. Address him warmly as Boss and say 'Hi Boss! What's up?'"
+            ? "You are now speaking with your creator Bommali Dileep. Address him warmly as Boss without repeating previous greetings."
             : role === "madam"
-            ? "You are now speaking with a lady guest. Address her politely as Madam and say 'Hello Madam, what can I help you with today?'"
-            : "You are now speaking with a gentleman guest. Address him politely as Sir and say 'Hello Sir, what can I help you with today?'"
+            ? "You are now speaking with a lady guest. Address her politely as Madam and ask how you can help."
+            : "You are now speaking with a gentleman guest. Address him politely as Sir and ask how you can help."
         );
       } else {
         this.ws.send(JSON.stringify({ type: "role_switch", role }));

@@ -230,8 +230,8 @@ export const CareerDigitalTwin: React.FC<CareerDigitalTwinProps> = ({
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
           <div className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-4">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">Target Role</span>
-            <p className="mt-1 text-sm font-bold text-[#f8fafc] truncate" title={profile.targetRole}>
-              {profile.targetRole.split(" ")[0]}...
+            <p className="mt-1 text-sm font-bold text-[#f8fafc] break-words leading-snug" title={profile.targetRole}>
+              {profile.targetRole}
             </p>
             <span className="text-[10px] text-white font-medium">User Verified</span>
           </div>
