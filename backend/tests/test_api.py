@@ -508,5 +508,75 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIn("sandboxed-only-ok", py_res["output"])
         mock_post.assert_called_once()
 
+    def test_contacts_lookup_gmail_fallback_and_name_resolution(self):
+        import asyncio
+        from unittest.mock import AsyncMock, MagicMock, patch
+        from backend.oauth import GOOGLE_WORKSPACE_SCOPES
+        import backend.google_sync_api as gs
+
+        self.assertIn("https://www.googleapis.com/auth/contacts.readonly", GOOGLE_WORKSPACE_SCOPES)
+
+        def _mk_resp(status_code: int, payload: dict):
+            m = MagicMock()
+            m.status_code = status_code
+            m.json.return_value = payload
+            return m
+
+        async def fake_get(url: str, headers=None, params=None):
+            if "people.googleapis.com" in url:
+                return _mk_resp(403, {"error": {"code": 403, "message": "People API disabled"}})
+            if url.endswith("/messages"):
+                return _mk_resp(200, {"messages": [{"id": "msg_priya_1"}]})
+            if "/messages/msg_priya_1" in url:
+                return _mk_resp(
+                    200,
+                    {
+                        "payload": {
+                            "headers": [
+                                {"name": "From", "value": "Priyanka Bommali <priyankabommali2@gmail.com>"},
+                                {"name": "To", "value": "dileepbommali16@gmail.com"},
+                            ]
+                        }
+                    },
+                )
+            return _mk_resp(404, {})
+
+        with patch.object(gs, "get_valid_google_access_token", AsyncMock(return_value="ya29.fake_token")), \
+             patch("httpx.AsyncClient.get", side_effect=fake_get):
+            res = asyncio.run(gs.contacts_lookup_service("dileepbommali16@gmail.com", "Priyanka"))
+            self.assertTrue(res["ok"])
+            self.assertFalse(res["people_api_enabled"])
+            self.assertEqual(res["count"], 1)
+            self.assertEqual(res["contacts"][0]["email"], "priyankabommali2@gmail.com")
+            self.assertEqual(res["contacts"][0]["source"], "gmail_history")
+
+            direct_email, direct_err = asyncio.run(
+                gs._resolve_recipient_email_if_name("dileepbommali16@gmail.com", "hr@google.com")
+            )
+            self.assertEqual(direct_email, "hr@google.com")
+            self.assertIsNone(direct_err)
+
+            by_name, name_err = asyncio.run(
+                gs._resolve_recipient_email_if_name("dileepbommali16@gmail.com", "Priyanka")
+            )
+            self.assertEqual(by_name, "priyankabommali2@gmail.com")
+            self.assertIsNone(name_err)
+
+        ambig_lookup = {
+            "ok": True,
+            "contacts": [
+                {"name": "Rahul Sharma", "email": "rahul1@example.com"},
+                {"name": "Rahul Verma", "email": "rahul2@example.com"},
+            ],
+        }
+        with patch.object(gs, "contacts_lookup_service", AsyncMock(return_value=ambig_lookup)):
+            amb_email, amb_err = asyncio.run(
+                gs._resolve_recipient_email_if_name("dileepbommali16@gmail.com", "Rahul")
+            )
+            self.assertIsNone(amb_email)
+            self.assertIsNotNone(amb_err)
+            self.assertTrue(amb_err.get("ambiguous"))
+            self.assertEqual(len(amb_err.get("matches", [])), 2)
+
 if __name__ == "__main__":
     unittest.main()

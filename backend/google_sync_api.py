@@ -7,6 +7,7 @@ draft, reply, send real emails, and schedule real Calendar events directly from 
 import asyncio
 import base64
 import email.mime.text
+import email.utils
 import html
 import ipaddress
 import json
@@ -297,6 +298,202 @@ async def gmail_read_message_service(user_email: str, message_id: str) -> Dict[s
         }
 
 
+_CONTACT_HONORIFICS = {"sir", "madam", "mam", "maam", "garu", "akka", "anna", "bro"}
+_EMAIL_ADDRESS_RX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _normalize_contact_query(query: str) -> tuple[str, List[str]]:
+    raw = (query or "").strip()
+    tokens = [
+        t for t in re.split(r"[^a-z0-9]+", raw.lower())
+        if len(t) >= 2 and t not in _CONTACT_HONORIFICS
+    ]
+    if not tokens:
+        tokens = [t for t in re.split(r"[^a-z0-9]+", raw.lower()) if len(t) >= 2]
+    clean_q = " ".join(tokens) if tokens else raw
+    return clean_q, tokens
+
+
+async def contacts_lookup_service(
+    user_email: str, query: str, max_results: int = 8
+) -> Dict[str, Any]:
+    """Resolves contacts via Google People API with instant fallback to Gmail message header history."""
+    clean_q, tokens = _normalize_contact_query(query)
+    limit = max(1, min(int(max_results or 8), 15))
+    if not clean_q:
+        return {"ok": False, "contacts": [], "message": "Contact name or query is required."}
+
+    token = await get_valid_google_access_token(user_email)
+    if not token:
+        return {
+            "ok": False,
+            "needs_auth": True,
+            "contacts": [],
+            "message": "Gmail is not authorized yet. Click 'Connect Gmail' in Pathfinder HUD once.",
+        }
+
+    headers = {"Authorization": f"Bearer {token}"}
+    owner_lower = (user_email or DEFAULT_OWNER_EMAIL).strip().lower()
+    owner_local = owner_lower.split("@")[0]
+    candidates: List[Dict[str, Any]] = []
+    seen_keys = set()
+    people_ok = True
+
+    def _add_entry(name: str, email_addr: str, phone: str, source: str, score: int):
+        e_clean = (email_addr or "").strip()
+        e_low = e_clean.lower()
+        p_clean = (phone or "").strip()
+        key = e_low or p_clean
+        if not key or key in seen_keys:
+            return
+        seen_keys.add(key)
+        candidates.append(
+            {
+                "name": (name or (e_clean.split("@")[0] if e_clean else p_clean)).strip(),
+                "email": e_clean,
+                "phone": p_clean,
+                "source": source,
+                "_score": score,
+            }
+        )
+
+    def _score_text(name: str, email_addr: str) -> int:
+        hay = f"{name or ''} {(email_addr or '').split('@')[0]} {email_addr or ''}".lower()
+        if not tokens:
+            return 1
+        hits = sum(1 for tok in tokens if tok in hay)
+        if hits == 0:
+            return 0
+        bonus = 3 if (name or "").lower().startswith(tokens[0]) else 0
+        all_bonus = 5 if hits == len(tokens) else 0
+        return hits * 2 + all_bonus + bonus
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        # 1. Google People API (Personal Contacts + Other Contacts)
+        for endpoint in (
+            "https://people.googleapis.com/v1/people:searchContacts",
+            "https://people.googleapis.com/v1/otherContacts:search",
+        ):
+            try:
+                p_resp = await client.get(
+                    endpoint,
+                    headers=headers,
+                    params={
+                        "query": clean_q,
+                        "readMask": "names,emailAddresses,phoneNumbers",
+                        "pageSize": 10,
+                    },
+                )
+                if p_resp.status_code in (401, 403):
+                    people_ok = False
+                    continue
+                if p_resp.status_code == 200:
+                    p_data = p_resp.json() or {}
+                    for item in p_data.get("results") or []:
+                        person = item.get("person") or {}
+                        names = person.get("names") or []
+                        emails = person.get("emailAddresses") or []
+                        phones = person.get("phoneNumbers") or []
+                        disp_name = (names[0].get("displayName") if names else "") or ""
+                        e_val = (emails[0].get("value") if emails else "") or ""
+                        p_val = (phones[0].get("canonicalForm") or phones[0].get("value") if phones else "") or ""
+                        sc = max(1, _score_text(disp_name, e_val) + (2 if p_val and not e_val else 0))
+                        _add_entry(disp_name, e_val, p_val, "google_contacts", sc)
+            except Exception:
+                people_ok = False
+
+        # 2. Instant Zero-Setup Gmail History Contact Resolver
+        try:
+            g_resp = await client.get(
+                "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+                headers=headers,
+                params={"q": clean_q, "maxResults": 10},
+            )
+            if g_resp.status_code == 200:
+                refs = (g_resp.json() or {}).get("messages") or []
+                for ref in refs[:8]:
+                    mid = ref.get("id")
+                    if not mid:
+                        continue
+                    m_resp = await client.get(
+                        f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{mid}",
+                        headers=headers,
+                        params={"format": "metadata", "metadataHeaders": ["From", "To", "Cc"]},
+                    )
+                    if m_resp.status_code != 200:
+                        continue
+                    hdrs = ((m_resp.json().get("payload") or {}).get("headers")) or []
+                    for hdr in hdrs:
+                        raw_val = hdr.get("value") or ""
+                        for disp_name, addr in email.utils.getaddresses([raw_val]):
+                            addr_low = (addr or "").strip().lower()
+                            if not addr_low or "@" not in addr_low:
+                                continue
+                            if addr_low == owner_lower and owner_local not in clean_q.lower():
+                                continue
+                            sc = _score_text(disp_name, addr)
+                            if sc > 0:
+                                _add_entry(disp_name, addr, "", "gmail_history", sc)
+        except Exception:
+            pass
+
+    candidates.sort(key=lambda c: (c.get("_score", 0), 1 if c.get("source") == "google_contacts" else 0), reverse=True)
+    cleaned = [
+        {k: v for k, v in item.items() if k != "_score"}
+        for item in candidates[:limit]
+    ]
+    return {
+        "ok": True,
+        "query": query,
+        "count": len(cleaned),
+        "contacts": cleaned,
+        "people_api_enabled": people_ok,
+    }
+
+
+async def _resolve_recipient_email_if_name(
+    user_email: str, raw_recipient: str
+) -> tuple[Optional[str], Optional[Dict[str, Any]]]:
+    clean_r = (raw_recipient or "").strip()
+    if not clean_r:
+        return None, {"ok": False, "message": "Recipient email or contact name is required."}
+    if _EMAIL_ADDRESS_RX.match(clean_r):
+        return clean_r, None
+
+    lookup = await contacts_lookup_service(user_email, clean_r, max_results=6)
+    if lookup.get("needs_auth"):
+        return None, lookup
+
+    matches = [c for c in (lookup.get("contacts") or []) if c.get("email")]
+    if not matches:
+        return None, {
+            "ok": False,
+            "not_found": True,
+            "message": (
+                f"No email found for '{clean_r}' in Google Contacts or Gmail history. "
+                "Please provide their email address, or enable Google People API & click Connect Gmail once."
+            ),
+        }
+
+    _, q_tokens = _normalize_contact_query(clean_r)
+    if len(matches) == 1:
+        return matches[0]["email"], None
+
+    def _full_token_match(c: Dict[str, Any]) -> bool:
+        hay = f"{c.get('name', '')} {c.get('email', '')}".lower()
+        return bool(q_tokens) and all(tok in hay for tok in q_tokens)
+
+    if _full_token_match(matches[0]) and not _full_token_match(matches[1]):
+        return matches[0]["email"], None
+
+    return None, {
+        "ok": False,
+        "ambiguous": True,
+        "matches": matches[:5],
+        "message": f"Found {len(matches)} contacts matching '{clean_r}'. Ask which email address to send to.",
+    }
+
+
 async def gmail_send_message_service(
     user_email: str,
     recipient_email: str,
@@ -304,9 +501,13 @@ async def gmail_send_message_service(
     body: str,
     thread_id: str = "",
 ) -> Dict[str, Any]:
+    resolved_email, resolve_err = await _resolve_recipient_email_if_name(user_email, recipient_email)
+    if resolve_err or not resolved_email:
+        return resolve_err or {"ok": False, "message": "Could not resolve recipient email."}
+
     token = await get_valid_google_access_token(user_email)
     if token:
-        raw_b64 = _build_rfc2822_base64url(recipient_email, subject, body)
+        raw_b64 = _build_rfc2822_base64url(resolved_email, subject, body)
         req_body: Dict[str, Any] = {"raw": raw_b64}
         if thread_id:
             req_body["threadId"] = thread_id
@@ -321,9 +522,10 @@ async def gmail_send_message_service(
                 return {
                     "ok": True,
                     "provider": "gmail_api_oauth",
+                    "resolved_email": resolved_email,
                     "message_id": sent_data.get("id"),
                     "threadId": sent_data.get("threadId"),
-                    "message": f"Real Gmail sent to {recipient_email} with subject '{subject}'.",
+                    "message": f"Real Gmail sent to {resolved_email} with subject '{subject}'.",
                 }
             err_preview = resp.text[:160]
             if resp.status_code == 401:
@@ -336,13 +538,14 @@ async def gmail_send_message_service(
     # Fallback to n8n webhook if Gmail OAuth isn't connected yet
     n8n_ok = await trigger_n8n_webhook_async(
         "gmail_send",
-        {"recipient_email": recipient_email, "subject": subject, "body": body},
+        {"recipient_email": resolved_email, "subject": subject, "body": body},
     )
     if n8n_ok:
         return {
             "ok": True,
             "provider": "n8n_webhook",
-            "message": f"Email queued via n8n webhook to {recipient_email}. (Connect Gmail OAuth in HUD for direct Gmail API send/read!)",
+            "resolved_email": resolved_email,
+            "message": f"Email queued via n8n webhook to {resolved_email}. (Connect Gmail OAuth in HUD for direct Gmail API send/read!)",
         }
     return {
         "ok": False,
@@ -354,6 +557,10 @@ async def gmail_send_message_service(
 async def gmail_create_draft_service(
     user_email: str, recipient_email: str, subject: str, body: str
 ) -> Dict[str, Any]:
+    resolved_email, resolve_err = await _resolve_recipient_email_if_name(user_email, recipient_email)
+    if resolve_err or not resolved_email:
+        return resolve_err or {"ok": False, "message": "Could not resolve recipient email."}
+
     token = await get_valid_google_access_token(user_email)
     if not token:
         return {
@@ -361,7 +568,7 @@ async def gmail_create_draft_service(
             "needs_auth": True,
             "message": "Gmail is not authorized yet. Click 'Connect Gmail' in Pathfinder HUD once.",
         }
-    raw_b64 = _build_rfc2822_base64url(recipient_email, subject, body)
+    raw_b64 = _build_rfc2822_base64url(resolved_email, subject, body)
     async with httpx.AsyncClient(timeout=12.0) as client:
         resp = await client.post(
             "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
@@ -372,8 +579,9 @@ async def gmail_create_draft_service(
             data = resp.json()
             return {
                 "ok": True,
+                "resolved_email": resolved_email,
                 "draft_id": data.get("id"),
-                "message": f"Saved real Gmail draft to {recipient_email} ('{subject}').",
+                "message": f"Saved real Gmail draft to {resolved_email} ('{subject}').",
             }
         return {"ok": False, "message": f"Gmail draft error ({resp.status_code}): {resp.text[:150]}"}
 
@@ -465,15 +673,26 @@ async def workspace_oauth_status(
     scopes = (tok.get("scope") or "").split() if tok else []
     has_gmail = any("gmail" in s for s in scopes)
     has_cal = any("calendar" in s for s in scopes)
+    has_contacts = any("contacts" in s for s in scopes)
     base_url = os.getenv("BACKEND_PUBLIC_URL", "https://pathfinder-backend-sg.onrender.com").rstrip("/")
     return {
         "connected": bool(tok and (has_gmail or tok.get("access_token"))),
         "email": clean_email,
         "has_gmail": has_gmail,
         "has_calendar": has_cal,
+        "has_contacts": has_contacts,
         "has_refresh_token": bool(tok and tok.get("refresh_token")),
         "connect_url": f"{base_url}/api/auth/google/workspace/start",
     }
+
+
+@router.get("/contacts/search")
+async def search_google_contacts_route(
+    q: str = Query(..., min_length=1),
+    email: str = Query(default=DEFAULT_OWNER_EMAIL),
+    max_results: int = Query(default=8, ge=1, le=15),
+):
+    return await contacts_lookup_service(email, query=q, max_results=max_results)
 
 
 @router.get("/gmail/list")

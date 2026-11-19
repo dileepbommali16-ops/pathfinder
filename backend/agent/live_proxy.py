@@ -150,12 +150,12 @@ CORE AUTONOMOUS CAPABILITIES:
    - TELUGU / TENGLISH VOICE COMMANDS: Understand naturally: `"kinda unna link nokku"`, `"first link nokku"`, `"official link open chey"`, `"adhi open chesi explain chey"`, `"scroll down chey"`, `"tabs chupinchu"`, `"pathfinder ki vellu"`.
    - STRICT ACTION HONESTY: NEVER claim you clicked a link, opened a site, sent an email, or sent a WhatsApp message unless the actual tool call succeeded!
 6. LINKEDIN PROFILE INTELLIGENCE: When asked about anyone's profile, call `open_linkedin_profile` and summarize their background.
-7. REAL FULL GMAIL, WORKSPACE & WHATSAPP AUTOMATION:
-   - Call `gmail_workspace_control` for ALL Gmail, Calendar, and Sheets tasks:
-     * `list_emails` (check inbox / search emails via `query`), `read_email` (read full message body by `message_id`), `send_email` (send real Gmail directly via OAuth API), `create_draft`, `open_gmail_tab` / `open_email_visual` / `search_gmail_visual` / `compose_visual` / `reply_email` / `click_gmail` (control Gmail visually in Chrome OR inside Pathfinder's built-in Live Gmail Workspace on phone/tablet), `schedule_calendar` (real Google Calendar event), `log_sheet`.
-   - Understand Telugu/Tenglish commands naturally: `"na gmail open chey"`, `"first mail open chey"`, `"Priyanka mail chupinchu"`, `"evarki mail pettamante pettu"`, `"reply ivvu"`.
-   - Call `whatsapp_message_control` when asked to send a WhatsApp or quick message (`"msg pettu"`, `"whatsapp message send chey"`): pass `action="send_message"`, `contact` (or `phone`), and `message`.
-   - If `needs_auth: true` is returned, clearly tell Boss to click the "Connect Gmail" button in the Pathfinder HUD once to authorize Gmail access.
+7. REAL FULL GMAIL, CONTACTS, WORKSPACE & WHATSAPP AUTOMATION:
+   - Call `gmail_workspace_control` for ALL Gmail, Contacts, Calendar, and Sheets tasks:
+     * `lookup_contact` (resolve a person's email/phone by name via Google Contacts + Gmail history), `list_emails` (check inbox / search emails via `query`), `read_email` (read full message body by `message_id`), `send_email` (send real Gmail directly — `recipient_email` accepts EITHER an email OR a contact name like `"Priyanka"`!), `create_draft`, `open_gmail_tab` / `open_email_visual` / `search_gmail_visual` / `compose_visual` / `reply_email` / `click_gmail` (control Gmail visually in Chrome OR inside Pathfinder's built-in Live Gmail Workspace on phone/tablet), `schedule_calendar` (real Google Calendar event), `log_sheet`.
+   - Understand Telugu/Tenglish commands naturally: `"na gmail open chey"`, `"first mail open chey"`, `"Priyanka ki mail pettu"`, `"Murali Sir ki mail pettu"`, `"evarki mail pettamante pettu"`, `"reply ivvu"`. If multiple contacts match a name, ask Boss which email to use before sending.
+   - Call `whatsapp_message_control` when asked to send a WhatsApp or quick message (`"msg pettu"`, `"Priyanka ki msg pettu"`, `"whatsapp message send chey"`): pass `action="send_message"`, `contact` (or `phone`), and `message`.
+   - If `needs_auth: true` is returned, clearly tell Boss to click the "Connect Gmail" button in the Pathfinder HUD once to authorize Gmail & Contacts access.
 8. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
    When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'switch back to pathfinder', immediately call `chrome_browser_control(action="return_to_pathfinder")` (or `return_to_dashboard`) and reply warmly: "Okay Boss, returning to your dashboard."
 9. STRICT PUCK VOICE PERSONA LOCK: Your voice is permanently locked to the male 'Puck' voice. Keep a consistent, warm, energetic male vocal delivery on every turn — never imitate a female voice or switch vocal personas.
@@ -414,7 +414,7 @@ DAS_TOOLS = [
                     properties={
                         "action": types.Schema(
                             type="STRING",
-                            description="One of: 'list_emails', 'read_email', 'send_email', 'create_draft', 'open_gmail_tab', 'open_email_visual', 'search_gmail_visual', 'compose_visual', 'reply_email', 'click_gmail', 'schedule_calendar', 'log_sheet'"
+                            description="One of: 'lookup_contact', 'list_emails', 'read_email', 'send_email', 'create_draft', 'open_gmail_tab', 'open_email_visual', 'search_gmail_visual', 'compose_visual', 'reply_email', 'click_gmail', 'schedule_calendar', 'log_sheet'"
                         ),
                         "recipient_email": types.Schema(type="STRING"),
                         "subject": types.Schema(type="STRING"),
@@ -897,6 +897,17 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 }
 
             if fc_name == "whatsapp_message_control":
+                if args.get("contact") and not args.get("phone"):
+                    try:
+                        from backend.google_sync_api import contacts_lookup_service
+                        acct_email = user_email or "dileepbommali16@gmail.com"
+                        c_lookup = await contacts_lookup_service(acct_email, str(args.get("contact") or ""), max_results=4)
+                        with_phone = [c for c in (c_lookup.get("contacts") or []) if c.get("phone")]
+                        if with_phone:
+                            args["phone"] = with_phone[0]["phone"]
+                    except Exception:
+                        pass
+
                 call_id = str(call_id_hint or f"wa_{turn_id}_{int(time.monotonic() * 1000)}")
                 loop = asyncio.get_running_loop()
                 fut = loop.create_future()
@@ -930,6 +941,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
             if fc_name == "gmail_workspace_control":
                 from backend.google_sync_api import (
+                    contacts_lookup_service,
                     gmail_list_messages_service,
                     gmail_read_message_service,
                     gmail_send_message_service,
@@ -961,7 +973,10 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         pending_tool_futures.pop(cid, None)
                         return {"ok": True, "message": "Triggered Gmail view."}
 
-                if g_act == "list_emails":
+                if g_act == "lookup_contact":
+                    q_name = str(args.get("query") or args.get("target") or args.get("recipient_email") or "").strip()
+                    g_res = await contacts_lookup_service(acct_email, query=q_name, max_results=int(args.get("max_results") or 6))
+                elif g_act == "list_emails":
                     g_res = await gmail_list_messages_service(
                         acct_email,
                         query=str(args.get("query") or ""),

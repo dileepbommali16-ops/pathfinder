@@ -24,6 +24,13 @@ interface GmailReadItem {
   body: string;
 }
 
+interface ContactMatchItem {
+  name: string;
+  email: string;
+  phone: string;
+  source?: string;
+}
+
 interface AutomationWorkspaceDrawerProps {
   gmailConnected: boolean;
   chromeBridgeReady: boolean;
@@ -55,16 +62,59 @@ export const AutomationWorkspaceDrawer: React.FC<AutomationWorkspaceDrawerProps>
   const [composeBody, setComposeBody] = useState("");
   const [replyText, setReplyText] = useState("");
   const [sendingGmail, setSendingGmail] = useState(false);
+  const [contactSearching, setContactSearching] = useState(false);
+  const [gmailContactMatches, setGmailContactMatches] = useState<ContactMatchItem[]>([]);
 
   // WhatsApp Messaging state
   const [waContact, setWaContact] = useState("");
   const [waPhone, setWaPhone] = useState("");
   const [waMessage, setWaMessage] = useState("");
   const [waStatusNote, setWaStatusNote] = useState("");
+  const [waContactMatches, setWaContactMatches] = useState<ContactMatchItem[]>([]);
 
   const userEmail =
     (typeof window !== "undefined" ? localStorage.getItem("userEmail") : "") ||
     "dileepbommali16@gmail.com";
+
+  const lookupContacts = async (query: string, mode: "gmail" | "whatsapp") => {
+    const cleanQ = query.trim();
+    if (!cleanQ) {
+      toast.info("Type a contact name first (e.g. Priyanka or Murali Sir).");
+      return;
+    }
+    setContactSearching(true);
+    try {
+      const resp = await fetch(
+        `${API_BASE}/api/google/contacts/search?email=${encodeURIComponent(userEmail)}&q=${encodeURIComponent(cleanQ)}&max_results=6`,
+        { cache: "no-store" }
+      );
+      const data = await resp.json();
+      const list: ContactMatchItem[] = Array.isArray(data?.contacts) ? data.contacts : [];
+      if (mode === "gmail") {
+        const emailList = list.filter((c) => Boolean(c.email));
+        setGmailContactMatches(emailList);
+        if (emailList.length === 1) {
+          setComposeTo(emailList[0].email);
+          toast.success(`Found ${emailList[0].name} (${emailList[0].email})`);
+        } else if (emailList.length === 0) {
+          toast.info(`No email contact found for "${cleanQ}". Reconnect OAuth with People API or enter email directly.`);
+        }
+      } else {
+        setWaContactMatches(list);
+        const withPhone = list.filter((c) => Boolean(c.phone));
+        if (withPhone.length >= 1) {
+          setWaPhone(withPhone[0].phone);
+          toast.success(`Resolved phone for ${withPhone[0].name}: ${withPhone[0].phone}`);
+        } else if (list.length === 0) {
+          toast.info(`No phone number found for "${cleanQ}". Enable People API & Reconnect OAuth or type phone number.`);
+        }
+      }
+    } catch {
+      toast.error("Contact lookup failed.");
+    } finally {
+      setContactSearching(false);
+    }
+  };
 
   const fetchGmailList = async (qOverride?: string) => {
     setGmailLoading(true);
@@ -670,6 +720,14 @@ export const AutomationWorkspaceDrawer: React.FC<AutomationWorkspaceDrawerProps>
               >
                 Gmail Web ↗
               </a>
+              <a
+                href={oauthStartUrl}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-white border"
+                style={{ backgroundColor: "#2B2024", borderColor: "#A80139" }}
+                title="Reconnect Google OAuth to grant Gmail & Contacts permissions"
+              >
+                Reconnect OAuth
+              </a>
             </div>
 
             {(!gmailConnected || gmailNeedsAuth) && (
@@ -697,15 +755,44 @@ export const AutomationWorkspaceDrawer: React.FC<AutomationWorkspaceDrawerProps>
                 style={{ backgroundColor: "#000000", borderColor: "#2B2024" }}
               >
                 <div className="text-xs font-bold text-white">Compose Real Email (via {userEmail})</div>
-                <input
-                  type="email"
-                  required
-                  value={composeTo}
-                  onChange={(e) => setComposeTo(e.target.value)}
-                  placeholder="To (recipient@gmail.com)..."
-                  className="w-full rounded-lg px-2.5 py-1.5 text-xs text-white border focus:outline-none"
-                  style={{ backgroundColor: "#000000", borderColor: "#2B2024" }}
-                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    required
+                    value={composeTo}
+                    onChange={(e) => setComposeTo(e.target.value)}
+                    placeholder="To (email or contact name like Priyanka)..."
+                    className="flex-1 rounded-lg px-2.5 py-1.5 text-xs text-white border focus:outline-none"
+                    style={{ backgroundColor: "#000000", borderColor: "#2B2024" }}
+                  />
+                  <button
+                    type="button"
+                    disabled={contactSearching}
+                    onClick={() => void lookupContacts(composeTo, "gmail")}
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-white cursor-pointer border shrink-0"
+                    style={{ backgroundColor: "#2B2024", borderColor: "#A80139" }}
+                  >
+                    {contactSearching ? "Finding..." : "Find Contact"}
+                  </button>
+                </div>
+                {gmailContactMatches.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {gmailContactMatches.map((c) => (
+                      <button
+                        key={c.email}
+                        type="button"
+                        onClick={() => {
+                          setComposeTo(c.email);
+                          setGmailContactMatches([]);
+                        }}
+                        className="px-2 py-1 rounded text-[10px] font-semibold text-white cursor-pointer border"
+                        style={{ backgroundColor: "#2B2024", borderColor: "#A80139" }}
+                      >
+                        {c.name} · {c.email}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <input
                   type="text"
                   value={composeSubject}
@@ -832,14 +919,25 @@ export const AutomationWorkspaceDrawer: React.FC<AutomationWorkspaceDrawerProps>
             <div className="rounded-xl p-3 border space-y-2" style={{ backgroundColor: "#000000", borderColor: "#2B2024" }}>
               <div className="text-xs font-bold text-white">WhatsApp Quick Send (Laptop Chrome + Phone/Tablet)</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  value={waContact}
-                  onChange={(e) => setWaContact(e.target.value)}
-                  placeholder="Contact Name (for Chrome Web)..."
-                  className="rounded-lg px-2.5 py-1.5 text-xs text-white border focus:outline-none"
-                  style={{ backgroundColor: "#000000", borderColor: "#2B2024" }}
-                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={waContact}
+                    onChange={(e) => setWaContact(e.target.value)}
+                    placeholder="Contact Name (e.g. Priyanka)..."
+                    className="flex-1 rounded-lg px-2.5 py-1.5 text-xs text-white border focus:outline-none"
+                    style={{ backgroundColor: "#000000", borderColor: "#2B2024" }}
+                  />
+                  <button
+                    type="button"
+                    disabled={contactSearching}
+                    onClick={() => void lookupContacts(waContact, "whatsapp")}
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-white cursor-pointer border shrink-0"
+                    style={{ backgroundColor: "#2B2024", borderColor: "#A80139" }}
+                  >
+                    {contactSearching ? "..." : "Find"}
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={waPhone}
@@ -849,6 +947,25 @@ export const AutomationWorkspaceDrawer: React.FC<AutomationWorkspaceDrawerProps>
                   style={{ backgroundColor: "#000000", borderColor: "#2B2024" }}
                 />
               </div>
+              {waContactMatches.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {waContactMatches.map((c, idx) => (
+                    <button
+                      key={`${c.name}-${idx}`}
+                      type="button"
+                      onClick={() => {
+                        setWaContact(c.name);
+                        if (c.phone) setWaPhone(c.phone);
+                        setWaContactMatches([]);
+                      }}
+                      className="px-2 py-1 rounded text-[10px] font-semibold text-white cursor-pointer border"
+                      style={{ backgroundColor: "#2B2024", borderColor: "#A80139" }}
+                    >
+                      {c.name}{c.phone ? ` · ${c.phone}` : c.email ? ` · ${c.email}` : ""}
+                    </button>
+                  ))}
+                </div>
+              )}
               <textarea
                 rows={3}
                 value={waMessage}
