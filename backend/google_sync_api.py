@@ -1,21 +1,39 @@
 # backend/google_sync_api.py
-import os
+"""
+Real Google Workspace (Gmail API v1, Google Calendar API v3, Google Sheets) + n8n fallback.
+Uses stored OAuth 2.0 tokens with automatic refresh so DAS AI can read inbox, read messages,
+draft, reply, send real emails, and schedule real Calendar events directly from Boss's Gmail.
+"""
+import asyncio
+import base64
+import email.mime.text
 import json
+import os
+import time
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
+
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
+
+from backend.database import get_google_workspace_tokens, save_google_workspace_tokens
 from backend.google_automation import google_auto
 
 router = APIRouter(prefix="/api/google", tags=["Google Workspace, Gmail & Placement Automation"])
 
-N8N_WEBHOOK_URL = os.getenv("N8N_WEBHOOK_URL", "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync").strip()
+N8N_WEBHOOK_URL = os.getenv(
+    "N8N_WEBHOOK_URL",
+    "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync",
+).strip()
+DEFAULT_OWNER_EMAIL = "dileepbommali16@gmail.com"
 
 
 async def trigger_n8n_webhook_async(event_type: str, data: dict) -> bool:
     urls = [
         N8N_WEBHOOK_URL,
         "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync",
-        "https://dileepdas.app.n8n.cloud/webhook-test/pathfinder-google-sync"
+        "https://dileepdas.app.n8n.cloud/webhook-test/pathfinder-google-sync",
     ]
     seen = set()
     for u in urls:
@@ -39,7 +57,7 @@ def trigger_n8n_webhook(event_type: str, data: dict) -> bool:
     urls = [
         N8N_WEBHOOK_URL,
         "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync",
-        "https://dileepdas.app.n8n.cloud/webhook-test/pathfinder-google-sync"
+        "https://dileepdas.app.n8n.cloud/webhook-test/pathfinder-google-sync",
     ]
     seen = set()
     for u in urls:
@@ -59,10 +77,362 @@ def trigger_n8n_webhook(event_type: str, data: dict) -> bool:
     return False
 
 
+# ============================================================================
+# REAL GOOGLE OAUTH 2.0 TOKEN MANAGEMENT & AUTO-REFRESH
+# ============================================================================
+
+async def get_valid_google_access_token(user_email: str) -> Optional[str]:
+    clean_email = (user_email or DEFAULT_OWNER_EMAIL).strip().lower()
+    tok = await asyncio.to_thread(get_google_workspace_tokens, clean_email)
+    if not tok:
+        return None
+
+    access_token = tok.get("access_token") or ""
+    refresh_token = tok.get("refresh_token") or ""
+    expires_at = float(tok.get("expires_at") or 0.0)
+
+    if access_token and expires_at > time.time() + 90:
+        return access_token
+
+    if not refresh_token:
+        return access_token or None
+
+    client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+    if not client_id or not client_secret:
+        return access_token or None
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "refresh_token": refresh_token,
+                    "grant_type": "refresh_token",
+                },
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                new_access = data.get("access_token") or ""
+                new_exp = time.time() + float(data.get("expires_in") or 3500)
+                if new_access:
+                    await asyncio.to_thread(
+                        save_google_workspace_tokens,
+                        clean_email,
+                        new_access,
+                        refresh_token,
+                        new_exp,
+                        tok.get("scope", ""),
+                    )
+                    return new_access
+    except Exception:
+        pass
+    return access_token or None
+
+
+def _decode_gmail_body(payload: Dict[str, Any]) -> str:
+    """Recursively extracts clean UTF-8 text from a Gmail API message payload."""
+    if not isinstance(payload, dict):
+        return ""
+    mime = (payload.get("mimeType") or "").lower()
+    body_data = (payload.get("body") or {}).get("data")
+    if body_data and mime in ("text/plain", ""):
+        try:
+            padded = body_data + "=" * (-len(body_data) % 4)
+            return base64.urlsafe_b64decode(padded).decode("utf-8", errors="replace").strip()
+        except Exception:
+            pass
+    parts = payload.get("parts") or []
+    plain_chunks: List[str] = []
+    html_fallback: List[str] = []
+    for part in parts:
+        p_mime = (part.get("mimeType") or "").lower()
+        if p_mime == "text/plain":
+            txt = _decode_gmail_body(part)
+            if txt:
+                plain_chunks.append(txt)
+        elif p_mime.startswith("multipart/"):
+            txt = _decode_gmail_body(part)
+            if txt:
+                plain_chunks.append(txt)
+        elif p_mime == "text/html" and (part.get("body") or {}).get("data"):
+            try:
+                raw_h = part["body"]["data"]
+                padded = raw_h + "=" * (-len(raw_h) % 4)
+                html_txt = base64.urlsafe_b64decode(padded).decode("utf-8", errors="replace")
+                import re
+                stripped = re.sub(r"<[^>]+>", " ", html_txt)
+                stripped = re.sub(r"\s+", " ", stripped).strip()
+                if stripped:
+                    html_fallback.append(stripped)
+            except Exception:
+                pass
+    if plain_chunks:
+        return "\n".join(plain_chunks).strip()
+    if html_fallback:
+        return "\n".join(html_fallback).strip()
+    if body_data:
+        try:
+            padded = body_data + "=" * (-len(body_data) % 4)
+            return base64.urlsafe_b64decode(padded).decode("utf-8", errors="replace").strip()
+        except Exception:
+            return ""
+    return ""
+
+
+def _build_rfc2822_base64url(to_addr: str, subject: str, body_text: str, in_reply_to: str = "") -> str:
+    msg = email.mime.text.MIMEText(body_text or "", "plain", "utf-8")
+    msg["To"] = to_addr
+    msg["Subject"] = subject or "Message from DAS AI"
+    if in_reply_to:
+        msg["In-Reply-To"] = in_reply_to
+        msg["References"] = in_reply_to
+    raw_bytes = msg.as_bytes()
+    return base64.urlsafe_b64encode(raw_bytes).decode("ascii")
+
+
+# ============================================================================
+# REAL GMAIL + CALENDAR SERVICE HELPERS (callable by HTTP routes AND live_proxy!)
+# ============================================================================
+
+async def gmail_list_messages_service(
+    user_email: str, query: str = "", max_results: int = 5
+) -> Dict[str, Any]:
+    token = await get_valid_google_access_token(user_email)
+    if not token:
+        return {
+            "ok": False,
+            "needs_auth": True,
+            "message": "Gmail is not authorized yet. Click 'Connect Gmail' in Pathfinder HUD once to grant Gmail read/send access.",
+        }
+
+    headers = {"Authorization": f"Bearer {token}"}
+    params: Dict[str, Any] = {"maxResults": max(1, min(int(max_results or 5), 15))}
+    if query:
+        params["q"] = query
+
+    async with httpx.AsyncClient(timeout=12.0) as client:
+        list_resp = await client.get(
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+            headers=headers,
+            params=params,
+        )
+        if list_resp.status_code == 401:
+            return {
+                "ok": False,
+                "needs_auth": True,
+                "message": "Gmail authorization expired. Please click 'Connect Gmail' once to reconnect.",
+            }
+        if list_resp.status_code >= 400:
+            return {"ok": False, "message": f"Gmail API error ({list_resp.status_code}): {list_resp.text[:160]}"}
+
+        refs = (list_resp.json() or {}).get("messages") or []
+        emails: List[Dict[str, Any]] = []
+        for ref in refs[: params["maxResults"]]:
+            mid = ref.get("id")
+            if not mid:
+                continue
+            m_resp = await client.get(
+                f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{mid}",
+                headers=headers,
+                params={"format": "metadata", "metadataHeaders": ["From", "Subject", "Date"]},
+            )
+            if m_resp.status_code == 200:
+                m_data = m_resp.json()
+                hdrs = {
+                    h.get("name", "").lower(): h.get("value", "")
+                    for h in ((m_data.get("payload") or {}).get("headers") or [])
+                }
+                emails.append({
+                    "id": mid,
+                    "threadId": m_data.get("threadId", ""),
+                    "from": hdrs.get("from", ""),
+                    "subject": hdrs.get("subject", "(No Subject)"),
+                    "date": hdrs.get("date", ""),
+                    "snippet": (m_data.get("snippet") or "")[:200],
+                })
+        return {"ok": True, "count": len(emails), "emails": emails}
+
+
+async def gmail_read_message_service(user_email: str, message_id: str) -> Dict[str, Any]:
+    token = await get_valid_google_access_token(user_email)
+    if not token:
+        return {
+            "ok": False,
+            "needs_auth": True,
+            "message": "Gmail is not authorized yet. Click 'Connect Gmail' in Pathfinder HUD once.",
+        }
+
+    headers = {"Authorization": f"Bearer {token}"}
+    async with httpx.AsyncClient(timeout=12.0) as client:
+        resp = await client.get(
+            f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}",
+            headers=headers,
+            params={"format": "full"},
+        )
+        if resp.status_code >= 400:
+            return {"ok": False, "message": f"Unable to read email {message_id} ({resp.status_code})."}
+        data = resp.json()
+        payload = data.get("payload") or {}
+        hdrs = {h.get("name", "").lower(): h.get("value", "") for h in (payload.get("headers") or [])}
+        body = _decode_gmail_body(payload)
+        return {
+            "ok": True,
+            "id": data.get("id"),
+            "threadId": data.get("threadId"),
+            "from": hdrs.get("from", ""),
+            "to": hdrs.get("to", ""),
+            "subject": hdrs.get("subject", ""),
+            "date": hdrs.get("date", ""),
+            "body": (body or data.get("snippet") or "")[:2500],
+        }
+
+
+async def gmail_send_message_service(
+    user_email: str,
+    recipient_email: str,
+    subject: str,
+    body: str,
+    thread_id: str = "",
+) -> Dict[str, Any]:
+    token = await get_valid_google_access_token(user_email)
+    if token:
+        raw_b64 = _build_rfc2822_base64url(recipient_email, subject, body)
+        req_body: Dict[str, Any] = {"raw": raw_b64}
+        if thread_id:
+            req_body["threadId"] = thread_id
+        async with httpx.AsyncClient(timeout=12.0) as client:
+            resp = await client.post(
+                "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json=req_body,
+            )
+            if resp.status_code < 400:
+                sent_data = resp.json()
+                return {
+                    "ok": True,
+                    "provider": "gmail_api_oauth",
+                    "message_id": sent_data.get("id"),
+                    "threadId": sent_data.get("threadId"),
+                    "message": f"Real Gmail sent to {recipient_email} with subject '{subject}'.",
+                }
+            err_preview = resp.text[:160]
+            if resp.status_code == 401:
+                return {
+                    "ok": False,
+                    "needs_auth": True,
+                    "message": f"Gmail token expired ({err_preview}). Click 'Connect Gmail' once to refresh authorization.",
+                }
+
+    # Fallback to n8n webhook if Gmail OAuth isn't connected yet
+    n8n_ok = await trigger_n8n_webhook_async(
+        "gmail_send",
+        {"recipient_email": recipient_email, "subject": subject, "body": body},
+    )
+    if n8n_ok:
+        return {
+            "ok": True,
+            "provider": "n8n_webhook",
+            "message": f"Email queued via n8n webhook to {recipient_email}. (Connect Gmail OAuth in HUD for direct Gmail API send/read!)",
+        }
+    return {
+        "ok": False,
+        "needs_auth": True,
+        "message": "Gmail OAuth is not connected yet. Click 'Connect Gmail' in Pathfinder HUD once so DAS can send and read real emails directly.",
+    }
+
+
+async def gmail_create_draft_service(
+    user_email: str, recipient_email: str, subject: str, body: str
+) -> Dict[str, Any]:
+    token = await get_valid_google_access_token(user_email)
+    if not token:
+        return {
+            "ok": False,
+            "needs_auth": True,
+            "message": "Gmail is not authorized yet. Click 'Connect Gmail' in Pathfinder HUD once.",
+        }
+    raw_b64 = _build_rfc2822_base64url(recipient_email, subject, body)
+    async with httpx.AsyncClient(timeout=12.0) as client:
+        resp = await client.post(
+            "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"message": {"raw": raw_b64}},
+        )
+        if resp.status_code < 400:
+            data = resp.json()
+            return {
+                "ok": True,
+                "draft_id": data.get("id"),
+                "message": f"Saved real Gmail draft to {recipient_email} ('{subject}').",
+            }
+        return {"ok": False, "message": f"Gmail draft error ({resp.status_code}): {resp.text[:150]}"}
+
+
+async def calendar_create_event_service(
+    user_email: str, summary: str, description: str, start_iso: str = ""
+) -> Dict[str, Any]:
+    token = await get_valid_google_access_token(user_email)
+    if token:
+        now_utc = datetime.now(timezone.utc)
+        start_dt = now_utc + timedelta(hours=24)
+        if start_iso:
+            try:
+                parsed = datetime.fromisoformat(start_iso.replace("Z", "+00:00"))
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=timezone.utc)
+                start_dt = parsed
+            except Exception:
+                pass
+        end_dt = start_dt + timedelta(hours=1)
+        event_payload = {
+            "summary": summary or "Pathfinder Interview / Event",
+            "description": description or "Scheduled by DAS AI Agent",
+            "start": {"dateTime": start_dt.isoformat()},
+            "end": {"dateTime": end_dt.isoformat()},
+        }
+        async with httpx.AsyncClient(timeout=12.0) as client:
+            resp = await client.post(
+                "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json=event_payload,
+            )
+            if resp.status_code < 400:
+                ev = resp.json()
+                return {
+                    "ok": True,
+                    "provider": "google_calendar_api",
+                    "event_id": ev.get("id"),
+                    "htmlLink": ev.get("htmlLink"),
+                    "message": f"Scheduled real Google Calendar event: '{summary}'.",
+                }
+    n8n_ok = await trigger_n8n_webhook_async(
+        "calendar_schedule",
+        {"student_email": user_email, "summary": summary, "description": description, "start_iso": start_iso},
+    )
+    return {
+        "ok": n8n_ok,
+        "provider": "n8n_webhook" if n8n_ok else "unconnected",
+        "message": (
+            f"Calendar event sent via n8n webhook: '{summary}'."
+            if n8n_ok
+            else "Connect Gmail/Workspace in HUD once to schedule real Google Calendar events."
+        ),
+    }
+
+
+# ============================================================================
+# FASTAPI ROUTES
+# ============================================================================
+
 class GmailSendRequest(BaseModel):
     recipient_email: str
     subject: str
     body: str
+    user_email: Optional[str] = None
+    thread_id: Optional[str] = None
 
 
 class CalendarSyncRequest(BaseModel):
@@ -79,40 +449,88 @@ class SheetLogRequest(BaseModel):
     target_role: str
 
 
+@router.get("/workspace/status")
+async def workspace_oauth_status(
+    request: Request, email: str = Query(default=DEFAULT_OWNER_EMAIL)
+):
+    clean_email = (email or DEFAULT_OWNER_EMAIL).strip().lower()
+    tok = await asyncio.to_thread(get_google_workspace_tokens, clean_email)
+    scopes = (tok.get("scope") or "").split() if tok else []
+    has_gmail = any("gmail" in s for s in scopes)
+    has_cal = any("calendar" in s for s in scopes)
+    base_url = os.getenv("BACKEND_PUBLIC_URL", "https://pathfinder-backend-sg.onrender.com").rstrip("/")
+    return {
+        "connected": bool(tok and (has_gmail or tok.get("access_token"))),
+        "email": clean_email,
+        "has_gmail": has_gmail,
+        "has_calendar": has_cal,
+        "has_refresh_token": bool(tok and tok.get("refresh_token")),
+        "connect_url": f"{base_url}/api/auth/google/workspace/start",
+    }
+
+
+@router.get("/gmail/list")
+async def list_gmail_messages(
+    email: str = Query(default=DEFAULT_OWNER_EMAIL),
+    query: str = Query(default=""),
+    max_results: int = Query(default=5, ge=1, le=15),
+):
+    return await gmail_list_messages_service(email, query=query, max_results=max_results)
+
+
+@router.get("/gmail/read/{message_id}")
+async def read_gmail_message(
+    message_id: str, email: str = Query(default=DEFAULT_OWNER_EMAIL)
+):
+    return await gmail_read_message_service(email, message_id)
+
+
 @router.post("/gmail/send")
 async def send_gmail_message(payload: GmailSendRequest):
-    """Sends automated Gmail message (TPO Dossier, Interview Invite, or Readiness Summary)."""
+    """Sends a real Gmail message via Gmail API OAuth (with n8n fallback)."""
     try:
-        if hasattr(google_auto, "send_tpo_placement_report"):
-            google_auto.send_tpo_placement_report(
-                tpo_email=payload.recipient_email,
-                student_name=payload.subject,
-                readiness_score=85.0,
-            )
-        n8n_synced = trigger_n8n_webhook("gmail_send", payload.model_dump())
+        sender = (payload.user_email or DEFAULT_OWNER_EMAIL).strip().lower()
+        res = await gmail_send_message_service(
+            user_email=sender,
+            recipient_email=payload.recipient_email,
+            subject=payload.subject,
+            body=payload.body,
+            thread_id=payload.thread_id or "",
+        )
         return {
-            "success": True,
-            "n8n_synced": n8n_synced,
-            "message": f"Email sent to {payload.recipient_email} with subject '{payload.subject}'.",
+            "success": bool(res.get("ok")),
+            "n8n_synced": res.get("provider") == "n8n_webhook",
+            **res,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/gmail/draft")
+async def draft_gmail_message(payload: GmailSendRequest):
+    sender = (payload.user_email or DEFAULT_OWNER_EMAIL).strip().lower()
+    return await gmail_create_draft_service(
+        user_email=sender,
+        recipient_email=payload.recipient_email,
+        subject=payload.subject,
+        body=payload.body,
+    )
+
+
 @router.post("/calendar/schedule")
 async def schedule_google_calendar(payload: CalendarSyncRequest):
     try:
-        local_res = google_auto.schedule_interview_calendar(
-            student_email=payload.student_email,
-            company_name=payload.company_name,
-            interview_time=payload.interview_time,
+        res = await calendar_create_event_service(
+            user_email=payload.student_email or DEFAULT_OWNER_EMAIL,
+            summary=f"{payload.company_name} — {payload.role_title}",
+            description=f"Scheduled via Pathfinder DAS AI for {payload.interview_time}",
+            start_iso=payload.interview_time,
         )
-        n8n_triggered = trigger_n8n_webhook("calendar_schedule", payload.model_dump())
         return {
-            "success": True,
-            "n8n_synced": n8n_triggered,
-            "message": f"Scheduled {payload.company_name} ({payload.role_title}) on Google Calendar for {payload.interview_time}.",
-            "details": local_res,
+            "success": bool(res.get("ok")),
+            "n8n_synced": res.get("provider") == "n8n_webhook",
+            "details": res,
+            "message": res.get("message", "Scheduled interview."),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -126,7 +544,7 @@ async def log_to_tpo_sheet(payload: SheetLogRequest):
             branch=payload.branch,
             score=payload.readiness_score,
         )
-        n8n_triggered = trigger_n8n_webhook("tpo_sheet_log", payload.model_dump())
+        n8n_triggered = await trigger_n8n_webhook_async("tpo_sheet_log", payload.model_dump())
         return {
             "success": True,
             "n8n_synced": n8n_triggered,

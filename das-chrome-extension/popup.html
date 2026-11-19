@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DAS AI Chrome Bridge</title>
+  <style>
+    body {
+      width: 300px;
+      margin: 0;
+      padding: 14px;
+      background: #070b14;
+      color: #f1f5f9;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .title {
+      font-weight: 700;
+      font-size: 14px;
+      color: #38bdf8;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.16);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .box {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #cbd5e1;
+      margin-bottom: 10px;
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+    button {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #334155;
+    }
+    .primary {
+      background: #0284c7;
+      border-color: #0ea5e9;
+      color: #fff;
+    }
+    .primary:hover {
+      background: #0369a1;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="title">DAS AI Chrome Bridge</span>
+    <span class="badge">ACTIVE</span>
+  </div>
+  <div class="box">
+    <div><strong>Last Action:</strong> <span id="lastAction">Ready for commands</span></div>
+    <div style="margin-top:6px;color:#94a3b8;">
+      Controls real Programiz compilers (C, C++, Python, Java, JS, SQL), Google search/click/read, tab switching, and Gmail visuals.
+    </div>
+  </div>
+  <div class="btn-row">
+    <button id="openPathfinder" class="primary">Open Pathfinder</button>
+    <button id="openProgramiz">Programiz C</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

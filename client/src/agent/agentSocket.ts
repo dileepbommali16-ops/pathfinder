@@ -1,4 +1,5 @@
 import { audioEngine, cameraEngine } from "./audioIO";
+import { chromeBridge } from "./chromeBridge";
 import { API_BASE } from "@/lib/apiClient";
 import {
   executeWebsiteControl,
@@ -760,26 +761,55 @@ CORE AUTONOMOUS CAPABILITIES:
         if (data.type === "tool_call" && data.name) {
           this.clearTurnWatchdog();
           const args = data.args || {};
+          const sendToolResult = (result: any) => {
+            if (!data.call_id || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+            try {
+              this.ws.send(
+                JSON.stringify({
+                  type: "tool_result",
+                  call_id: data.call_id,
+                  result: typeof result === "object" && result !== null ? result : { result: String(result) },
+                })
+              );
+            } catch {}
+          };
+
           if (data.name === "control_website" || data.name === "navigate_ui") {
             executeWebsiteControl(args as WebsiteControlArgs, this.savedNavigateFn);
+            sendToolResult({ ok: true, navigated: true });
+          } else if (data.name === "programiz_compiler") {
+            const progRes = await chromeBridge.runProgramizCompiler(args);
+            sendToolResult(progRes);
+          } else if (data.name === "chrome_browser_control") {
+            const browserRes = await chromeBridge.runChromeBrowserControl(args);
+            sendToolResult(browserRes);
+          } else if (data.name === "gmail_workspace_control") {
+            const gmRes = await chromeBridge.openGmailVisualTab(args);
+            sendToolResult(gmRes);
           } else if (data.name === "open_external_website") {
-            openExternalWebsiteOrSearch(args);
+            const extRes = await openExternalWebsiteOrSearch(args);
+            sendToolResult(extRes);
           } else if (data.name === "open_linkedin_profile") {
-            openLinkedInProfile(args);
+            const liRes = openLinkedInProfile(args);
+            sendToolResult({ ok: true, message: liRes });
           } else if (data.name === "write_and_compile_code") {
-            await handleCodeGenerationAndCompiler(args, this.savedOnCodeReady);
+            const compRes = await handleCodeGenerationAndCompiler(args, this.savedOnCodeReady);
+            sendToolResult(compRes);
           } else if (
             data.name === "run_google_automation" ||
             data.name === "trigger_google_workspace"
           ) {
-            await triggerGoogleAutomation(args);
+            const gRes = await triggerGoogleAutomation(args);
+            sendToolResult({ ok: true, message: gRes });
           } else if (data.name === "return_to_dashboard") {
             const retMsg = args.message || `Okay ${this.roleHonorific}, returning to your dashboard.`;
             this.savedOnCodeReady?.(null as any);
+            await chromeBridge.runChromeBrowserControl({ action: "return_to_pathfinder" });
             this.savedOnTranscript?.(retMsg);
             if (this.audioChunksInTurn === 0 && !audioEngine.isSpeaking()) {
               this.triggerTextOnlyTts(retMsg);
             }
+            sendToolResult({ ok: true, message: retMsg });
           }
           return;
         }
@@ -868,13 +898,12 @@ CORE AUTONOMOUS CAPABILITIES:
               executeWebsiteControl(args as WebsiteControlArgs, this.savedNavigateFn);
               resultMsg = `Navigated website to ${args.route || args.selector}`;
             } else if (fc.name === "open_external_website") {
-              resultMsg = openExternalWebsiteOrSearch(args);
+              resultMsg = JSON.stringify(await openExternalWebsiteOrSearch(args));
             } else if (fc.name === "open_linkedin_profile") {
               resultMsg = openLinkedInProfile(args);
             } else if (fc.name === "write_and_compile_code") {
-              resultMsg = await handleCodeGenerationAndCompiler(
-                args,
-                this.savedOnCodeReady
+              resultMsg = JSON.stringify(
+                await handleCodeGenerationAndCompiler(args, this.savedOnCodeReady)
               );
             } else if (
               fc.name === "trigger_google_workspace" ||

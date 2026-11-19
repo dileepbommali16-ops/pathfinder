@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar3D } from "./Avatar3D";
 import { dasSocket, UserHonorificRole } from "./agentSocket";
+import { chromeBridge } from "./chromeBridge";
 import { audioEngine, cameraEngine, speaker, MediaDeviceOption, LiveMotionMetrics } from "./audioIO";
 import { CodeTaskPayload, tryExecuteClientAutomationIntent } from "./toolRunner";
 import { API_BASE, getSessionId } from "@/lib/apiClient";
@@ -28,6 +29,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [connected, setConnected] = useState(false);
+  const [chromeBridgeReady, setChromeBridgeReady] = useState(false);
+  const [gmailConnected, setGmailConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [role, setRole] = useState<UserHonorificRole>(() => getHonorificKey());
@@ -172,6 +175,40 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       setVideoDevices(cams);
     } catch {}
   };
+
+  useEffect(() => {
+    const unsubBridge = chromeBridge.onStatusChange((isReady) => {
+      setChromeBridgeReady(isReady);
+    });
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("workspace_connected") === "1") {
+        setGmailConnected(true);
+        toast.success("Gmail, Calendar & Sheets OAuth connected! DAS now has full Workspace access.");
+        params.delete("workspace_connected");
+        params.delete("workspace_email");
+        const cleanQuery = params.toString();
+        window.history.replaceState({}, "", `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ""}`);
+      }
+    }
+    return () => {
+      unsubBridge();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const email = (typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "").trim();
+    if (!email) return;
+    fetch(`${API_BASE}/api/google/workspace/status?email=${encodeURIComponent(email)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && typeof data.connected === "boolean") {
+          setGmailConnected(Boolean(data.connected));
+        }
+      })
+      .catch(() => {});
+  }, [isAuthenticated, connected]);
 
   useEffect(() => {
     refreshMediaDevices();
@@ -1202,6 +1239,50 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             >
               {connected ? "ONLINE" : "CONNECTING..."}
             </span>
+            <button
+              type="button"
+              onClick={() => {
+                chromeBridge.ping();
+                if (chromeBridgeReady) {
+                  toast.success("DAS Chrome Automation Bridge active — Programiz, Google & Tab control ready!");
+                } else {
+                  toast.info("Open chrome://extensions -> Developer mode ON -> Load unpacked -> select 'das-chrome-extension' folder, then refresh this tab.");
+                }
+              }}
+              className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border transition cursor-pointer ${
+                chromeBridgeReady
+                  ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
+                  : "bg-[#2b2024] border-[#3d2d33] text-zinc-300 hover:text-white"
+              }`}
+              title={
+                chromeBridgeReady
+                  ? "Real Chrome Automation Extension Connected"
+                  : "Click for 30-sec Chrome Extension setup steps"
+              }
+            >
+              <span>⚡</span>
+              <span>{chromeBridgeReady ? "Chrome Live" : "Chrome Bridge"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const origin = typeof window !== "undefined" ? window.location.origin : "https://pathfinder-client-fzom.vercel.app";
+                window.location.href = `${API_BASE}/api/auth/google/workspace/start?origin=${encodeURIComponent(origin)}`;
+              }}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border transition cursor-pointer ${
+                gmailConnected
+                  ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
+                  : "bg-[#2b2024] border-[#3d2d33] text-zinc-300 hover:text-white"
+              }`}
+              title={
+                gmailConnected
+                  ? "Gmail, Calendar & Sheets API Connected (click to refresh authorization)"
+                  : "Connect Gmail, Calendar & Sheets OAuth in 1 click"
+              }
+            >
+              <span>✉️</span>
+              <span>{gmailConnected ? "Gmail Live" : "Connect Gmail"}</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2">

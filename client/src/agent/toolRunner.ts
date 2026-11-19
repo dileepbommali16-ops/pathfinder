@@ -1,6 +1,7 @@
 // client/src/agent/toolRunner.ts
 import { Type, FunctionDeclaration } from "@google/genai";
 import { API_BASE } from "@/lib/apiClient";
+import { chromeBridge, PROGRAMIZ_LANGUAGE_URLS } from "./chromeBridge";
 import { toast } from "sonner";
 
 export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking" | "interrupted";
@@ -144,6 +145,9 @@ export function showGoogleSearchOverlay(_query: string, _summaryText?: string) {
 }
 
 export function closeGoogleAndReturnToPage() {
+  if (chromeBridge.isConnected) {
+    void chromeBridge.runChromeBrowserControl({ action: "return_to_pathfinder" });
+  }
   if (activeExternalWindow && !activeExternalWindow.closed) {
     try {
       activeExternalWindow.close();
@@ -810,27 +814,31 @@ const COMPILER_URLS: Record<string, string> = {
 const N8N_WEBHOOK_URL =
   "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync";
 
-// 1. Universal External Website / Google Search Opener
-export function openExternalWebsiteOrSearch(args: {
+// 1. Universal External Website / Google Search Opener (uses real Chrome Bridge when loaded!)
+export async function openExternalWebsiteOrSearch(args: {
   url?: string;
   search_query?: string;
   site_name?: string;
-}): string {
-  let targetUrl = args.url || "";
+}): Promise<Record<string, any>> {
+  if (args.search_query && !args.url) {
+    return await chromeBridge.runChromeBrowserControl({
+      action: "google_search",
+      query: args.search_query,
+    });
+  }
 
-  if (!targetUrl && args.search_query) {
-    targetUrl = `https://www.google.com/search?q=${encodeURIComponent(
-      args.search_query
-    )}`;
-  } else if (targetUrl && !targetUrl.startsWith("http")) {
+  let targetUrl = args.url || "";
+  if (targetUrl && !targetUrl.startsWith("http")) {
     targetUrl = `https://${targetUrl}`;
   }
 
   if (targetUrl) {
-    window.open(targetUrl, "_blank", "noopener,noreferrer");
-    return `Opened ${args.site_name || targetUrl} in a new browser tab.`;
+    return await chromeBridge.runChromeBrowserControl({
+      action: "open_url",
+      url: targetUrl,
+    });
   }
-  return "No URL provided.";
+  return { ok: false, message: "No URL provided." };
 }
 
 // 2. LinkedIn Profile Opener & Search
@@ -851,43 +859,30 @@ export function openLinkedInProfile(args: {
   return `Opened LinkedIn profile for ${args.person_name}.`;
 }
 
-// 3. Multi-Language Code Writer & Online Compiler Launcher (C, C++, Python, Java, JS, TS, SQL)
+// 3. Real Programiz Chrome Compiler Automation (NO fake internal popup drawer!)
 export async function handleCodeGenerationAndCompiler(
   args: {
+    action?: string;
     language: string;
-    program_title: string;
-    source_code: string;
+    program_title?: string;
+    source_code?: string;
     logic_explanation?: string;
     open_external_tab?: boolean;
   },
-  onCodeReady?: (payload: CodeTaskPayload) => void
-): Promise<string> {
+  _onCodeReady?: (payload: CodeTaskPayload) => void
+): Promise<Record<string, any>> {
   const langKey = (args.language || "c").toLowerCase().trim();
-  const compilerUrl =
-    COMPILER_URLS[langKey] || `https://onecompiler.com/${langKey}`;
-
-  try {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      await navigator.clipboard.writeText(args.source_code);
-      toast.success("Code ready in DAS Studio & copied to clipboard!");
-    }
-  } catch {
-    // Ignore clipboard warning if window not focused
-  }
-
-  onCodeReady?.({
+  const compilerUrl = PROGRAMIZ_LANGUAGE_URLS[langKey] || PROGRAMIZ_LANGUAGE_URLS.c;
+  const res = await chromeBridge.runProgramizCompiler({
+    action: args.action || "write_and_run",
     language: langKey,
-    title: args.program_title || `${langKey.toUpperCase()} Program`,
-    code: args.source_code,
-    explanation: args.logic_explanation || "",
-    compilerUrl,
+    program_title: args.program_title || `${langKey.toUpperCase()} Program`,
+    source_code: args.source_code || "",
   });
-
-  if (args.open_external_tab === true) {
-    window.open(compilerUrl, "_blank", "noopener,noreferrer");
-  }
-
-  return `Generated ${args.language} code for "${args.program_title}" and displayed in the DAS Live Compiler Studio.`;
+  return {
+    compilerUrl,
+    ...res,
+  };
 }
 
 // 4. Gmail / Google Calendar / Google Sheets Automation via n8n + Direct Fallback

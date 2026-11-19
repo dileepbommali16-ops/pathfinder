@@ -130,19 +130,23 @@ CORE AUTONOMOUS CAPABILITIES:
        - ONLY describe what is ACTUALLY visible in the MOST RECENT attached live frame or stream right now (exact current t-shirt/shirt color like pale light green, mint, white, black — NEVER guess or carry over an old blue shirt or past memory!).
        - Whenever you see hand movements, dancing, hand-dancing, waving, head nods, or held objects in the live video frames, call `inspect_live_camera_frame` if you need a fresh verified frame snapshot and react naturally in 1–2 concise sentences!
        - NEVER rely on generic flattery — unlike ChatGPT, Claude, or generic Gemini, always tell the honest truth calmly and directly if someone's answer, code, claim, or styling is wrong or needs improvement.
-3. MASTER PROGRAMMING & COMPILER (C, C++, Python, Java, JS, TS, SQL):
-   - When asked to write any program or algorithm (small or large), call `write_and_compile_code` with clean, compilable code and explain the logic step-by-step.
-   - When a compiler or syntax error occurs, or Boss says "fix the error", "code wrong undi", or "correct chey":
-     Analyze the exact compiler diagnostics, rewrite the fully corrected source code, and immediately call `write_and_compile_code` so the compiler studio updates and re-executes live on screen!
-   - Explain the code in depth: why it's written this way, loops, recursion, data structures, and time/space complexity.
+3. REAL CHROME PROGRAMIZ COMPILER AUTOMATION (C, C++, Python, Java, JS, SQL, C#, Go, Rust, PHP):
+   - NEVER use fake sidebars when controlling Chrome — call `programiz_compiler` to open and automate the REAL Programiz online compiler in Chrome (`https://www.programiz.com/<lang>/online-compiler/`).
+   - Actions: `write_and_run` (writes complete clean zero-error code into Programiz's real CodeMirror editor, clicks Run, and returns real terminal stdout/stderr), `clear` (removes/clears code & terminal output when user says "remove code / clear code"), `read_output` (reads current code & terminal output), `open` (opens the compiler tab).
+   - AUTO-FIX COMPILER ERRORS: If `programiz_compiler` returns `hasError: true` in the tool result, IMMEDIATELY analyze the exact compiler error in `output`, rewrite corrected zero-error code, and call `programiz_compiler` again with `action="write_and_run"` until it compiles and runs cleanly!
+   - Always explain the code logic, time/space complexity, and the REAL terminal output returned from Programiz.
 4. ATS RESUME INTELLIGENCE & PLACEMENT ROADMAP:
    - Provide elite Tier-1 ATS resume reviews calibrated to Google's X-Y-Z formula: "Accomplished [X] as measured by [Y] by doing [Z]".
    - Guide Boss on top capstone projects, certifications (AWS Solutions Architect, GCP Data Engineer), and core subjects (DSA, OS, CN, DBMS, System Design) to guarantee 100% placement success.
-5. OPEN ANY WEBSITE & EXPLAIN: When asked to open any website (Google, YouTube, GitHub, LeetCode, or any URL), call `open_external_website` and explain it clearly.
+5. REAL CHROME BROWSER AUTOMATION (GOOGLE SEARCH, CLICK, TYPE, SCROLL, READ/EXPLAIN, TAB SWITCH):
+   - Call `chrome_browser_control` to search Google (`google_search`), open any website (`open_url`), click links/buttons/search results (`click` by visible text or 1-based `index`), type into search boxes (`type`), scroll (`scroll`), read & explain whatever is currently visible in Chrome (`read_page`), list/switch Chrome tabs (`list_tabs`, `switch_tab`), or jump straight back to Pathfinder (`return_to_pathfinder`).
 6. LINKEDIN PROFILE INTELLIGENCE: When asked about anyone's profile, call `open_linkedin_profile` and summarize their background.
-7. GMAIL & WORKSPACE AUTOMATION: When asked to send an email or schedule a calendar, call `run_google_automation`.
+7. REAL FULL GMAIL & GOOGLE WORKSPACE AUTOMATION:
+   - Call `gmail_workspace_control` for ALL Gmail, Calendar, and Sheets tasks:
+     * `list_emails` (check inbox / search emails via `query`), `read_email` (read full message body by `message_id`), `send_email` (send real Gmail directly), `create_draft`, `open_gmail_tab` (show Gmail live on screen in Chrome), `schedule_calendar` (real Google Calendar event), `log_sheet`.
+   - If `needs_auth: true` is returned, clearly tell Boss to click the "Connect Gmail" button in the Pathfinder HUD once to authorize Gmail access.
 8. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
-   When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'close compiler', immediately reply warmly and loyally: "Okay Boss, returning to your dashboard." and call the `return_to_dashboard` tool to dismiss any open compiler drawers.
+   When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'switch back to pathfinder', immediately call `chrome_browser_control(action="return_to_pathfinder")` (or `return_to_dashboard`) and reply warmly: "Okay Boss, returning to your dashboard."
 9. STRICT PUCK VOICE PERSONA LOCK: Your voice is permanently locked to the male 'Puck' voice. Keep a consistent, warm, energetic male vocal delivery on every turn — never imitate a female voice or switch vocal personas.
 10. Keep voice replies energetic, warm, and conversational without robotic filler.""" + extra_platform_rules
 
@@ -313,6 +317,110 @@ DAS_TOOLS = [
                         )
                     },
                     required=["query"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="programiz_compiler",
+                description="Control the REAL Programiz Online Compiler in Google Chrome (https://www.programiz.com/<lang>/online-compiler/): open any language compiler, write/type source code directly into Programiz, click Run, read real terminal output/errors to auto-fix bugs, or remove/clear all code.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "action": types.Schema(
+                            type="STRING",
+                            description="One of: 'write_and_run', 'clear', 'read_output', 'open'"
+                        ),
+                        "language": types.Schema(
+                            type="STRING",
+                            description="Language: c, cpp, python, java, javascript, sql, csharp, go, rust, php, html"
+                        ),
+                        "program_title": types.Schema(
+                            type="STRING",
+                            description="Short descriptive program title"
+                        ),
+                        "source_code": types.Schema(
+                            type="STRING",
+                            description="Complete, compilable, zero-error source code to type and run in Programiz"
+                        ),
+                        "logic_explanation": types.Schema(
+                            type="STRING",
+                            description="Concise explanation of logic and complexity"
+                        ),
+                    },
+                    required=["action"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="chrome_browser_control",
+                description="Full real Google Chrome automation via DAS Chrome Bridge extension: search Google and inspect results, open any URL, click links/buttons/search results, type into inputs, scroll pages, read active Chrome page to explain it aloud, list or switch tabs, or return to Pathfinder tab.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "action": types.Schema(
+                            type="STRING",
+                            description="One of: 'google_search', 'open_url', 'click', 'type', 'scroll', 'read_page', 'switch_tab', 'list_tabs', 'return_to_pathfinder'"
+                        ),
+                        "query": types.Schema(
+                            type="STRING",
+                            description="Search query for google_search or tab filter for switch_tab"
+                        ),
+                        "url": types.Schema(
+                            type="STRING",
+                            description="Website URL for open_url"
+                        ),
+                        "target": types.Schema(
+                            type="STRING",
+                            description="Visible text/label of link, button, tab, or input box"
+                        ),
+                        "text": types.Schema(
+                            type="STRING",
+                            description="Text to type into an input box"
+                        ),
+                        "submit": types.Schema(
+                            type="BOOLEAN",
+                            description="Press Enter / submit after typing"
+                        ),
+                        "direction": types.Schema(
+                            type="STRING",
+                            description="Scroll direction: 'down', 'up', 'top', 'bottom'"
+                        ),
+                        "index": types.Schema(
+                            type="INTEGER",
+                            description="1-based search result or link index to click (e.g. 1 for first Google result)"
+                        ),
+                    },
+                    required=["action"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="gmail_workspace_control",
+                description="Full real Gmail, Google Calendar, and Google Sheets automation using official Google OAuth API + Chrome visual Gmail tab control.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "action": types.Schema(
+                            type="STRING",
+                            description="One of: 'list_emails', 'read_email', 'send_email', 'create_draft', 'open_gmail_tab', 'schedule_calendar', 'log_sheet'"
+                        ),
+                        "recipient_email": types.Schema(type="STRING"),
+                        "subject": types.Schema(type="STRING"),
+                        "body": types.Schema(type="STRING"),
+                        "query": types.Schema(
+                            type="STRING",
+                            description="Optional Gmail search filter (e.g. 'is:unread', 'from:google', 'interview')"
+                        ),
+                        "message_id": types.Schema(
+                            type="STRING",
+                            description="Gmail message ID returned by list_emails to read full email body"
+                        ),
+                        "max_results": types.Schema(type="INTEGER"),
+                        "company_name": types.Schema(type="STRING"),
+                        "interview_time": types.Schema(type="STRING"),
+                        "view": types.Schema(
+                            type="STRING",
+                            description="For open_gmail_tab: 'inbox' or 'sent'"
+                        ),
+                    },
+                    required=["action"],
                 ),
             ),
             types.FunctionDeclaration(
@@ -500,6 +608,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         fallback_audio_active = False
         fallback_history: list[dict] = []
         fallback_tasks: set[asyncio.Task] = set()
+        pending_tool_futures: dict[str, asyncio.Future] = {}
 
         def is_turn_busy() -> bool:
             now_m = time.monotonic()
@@ -866,6 +975,14 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     # 1. Keep-alive Ping
                     if msg_type == "ping":
                         await websocket.send_json({"type": "pong"})
+                        continue
+
+                    # 1b. Real two-way Client Tool / Chrome Extension Result
+                    if msg_type == "tool_result":
+                        cid = str(msg.get("call_id") or "")
+                        fut = pending_tool_futures.pop(cid, None)
+                        if fut and not fut.done():
+                            fut.set_result(msg.get("result") or {})
                         continue
 
                     # 2. Real-time 16kHz Mic PCM chunks from Browser
@@ -1385,11 +1502,50 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     continue
 
                                 if fc.name in (
+                                    "programiz_compiler",
+                                    "chrome_browser_control",
+                                    "write_and_compile_code",
+                                    "open_external_website",
+                                ):
+                                    call_id = str(fc.id or f"tc_{turn_id}_{int(time.monotonic() * 1000)}")
+                                    loop = asyncio.get_running_loop()
+                                    fut: asyncio.Future = loop.create_future()
+                                    pending_tool_futures[call_id] = fut
+                                    if websocket.client_state != WebSocketState.DISCONNECTED:
+                                        await websocket.send_json({
+                                            "type": "tool_call",
+                                            "call_id": call_id,
+                                            "name": fc.name,
+                                            "args": args,
+                                        })
+                                    try:
+                                        client_res = await asyncio.wait_for(fut, timeout=18.0)
+                                    except asyncio.TimeoutError:
+                                        pending_tool_futures.pop(call_id, None)
+                                        client_res = {
+                                            "ok": False,
+                                            "status": "timeout",
+                                            "note": "Chrome tab opened/triggered, awaiting output.",
+                                        }
+                                    except Exception as wait_err:
+                                        pending_tool_futures.pop(call_id, None)
+                                        client_res = {"ok": False, "error": str(wait_err)}
+
+                                    if not isinstance(client_res, dict):
+                                        client_res = {"result": str(client_res)}
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=fc.name,
+                                            id=fc.id,
+                                            response=client_res,
+                                        )
+                                    )
+                                    continue
+
+                                if fc.name in (
                                     "control_website",
                                     "navigate_ui",
-                                    "open_external_website",
                                     "open_linkedin_profile",
-                                    "write_and_compile_code",
                                     "return_to_dashboard",
                                 ):
                                     if websocket.client_state != WebSocketState.DISCONNECTED:
@@ -1409,12 +1565,109 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                             },
                                         )
                                     )
+                                    continue
+
+                                if fc.name == "gmail_workspace_control":
+                                    from backend.google_sync_api import (
+                                        gmail_list_messages_service,
+                                        gmail_read_message_service,
+                                        gmail_send_message_service,
+                                        gmail_create_draft_service,
+                                        calendar_create_event_service,
+                                        trigger_n8n_webhook_async,
+                                    )
+
+                                    g_act = str(args.get("action") or "list_emails").lower().strip()
+                                    acct_email = user_email or "dileepbommali16@gmail.com"
+                                    g_res: dict = {"ok": False, "message": f"Unsupported Gmail action: {g_act}"}
+
+                                    if g_act == "list_emails":
+                                        g_res = await gmail_list_messages_service(
+                                            acct_email,
+                                            query=str(args.get("query") or ""),
+                                            max_results=int(args.get("max_results") or 5),
+                                        )
+                                    elif g_act == "read_email":
+                                        mid = str(args.get("message_id") or "").strip()
+                                        if not mid:
+                                            g_res = {"ok": False, "message": "message_id is required; call list_emails first."}
+                                        else:
+                                            g_res = await gmail_read_message_service(acct_email, mid)
+                                    elif g_act == "send_email":
+                                        g_res = await gmail_send_message_service(
+                                            user_email=acct_email,
+                                            recipient_email=str(args.get("recipient_email") or ""),
+                                            subject=str(args.get("subject") or "Message from DAS AI"),
+                                            body=str(args.get("body") or args.get("details") or ""),
+                                        )
+                                    elif g_act == "create_draft":
+                                        g_res = await gmail_create_draft_service(
+                                            user_email=acct_email,
+                                            recipient_email=str(args.get("recipient_email") or ""),
+                                            subject=str(args.get("subject") or "Draft from DAS AI"),
+                                            body=str(args.get("body") or args.get("details") or ""),
+                                        )
+                                    elif g_act == "schedule_calendar":
+                                        g_res = await calendar_create_event_service(
+                                            user_email=acct_email,
+                                            summary=str(args.get("subject") or args.get("company_name") or "DAS Scheduled Event"),
+                                            description=str(args.get("body") or ""),
+                                            start_iso=str(args.get("interview_time") or ""),
+                                        )
+                                    elif g_act == "log_sheet":
+                                        ok_s = await trigger_n8n_webhook_async("tpo_sheet_log", dict(args))
+                                        g_res = {"ok": ok_s, "message": "Logged row to Google Sheets." if ok_s else "Sheets webhook unavailable."}
+                                    elif g_act == "open_gmail_tab":
+                                        call_id = str(fc.id or f"gm_{turn_id}_{int(time.monotonic() * 1000)}")
+                                        loop = asyncio.get_running_loop()
+                                        fut = loop.create_future()
+                                        pending_tool_futures[call_id] = fut
+                                        if websocket.client_state != WebSocketState.DISCONNECTED:
+                                            await websocket.send_json({
+                                                "type": "tool_call",
+                                                "call_id": call_id,
+                                                "name": "gmail_workspace_control",
+                                                "args": args,
+                                            })
+                                        try:
+                                            g_res = await asyncio.wait_for(fut, timeout=10.0)
+                                        except Exception:
+                                            pending_tool_futures.pop(call_id, None)
+                                            g_res = {"ok": True, "message": "Opened Gmail in Chrome."}
+
+                                    if websocket.client_state != WebSocketState.DISCONNECTED:
+                                        await websocket.send_json({"type": "automation_status", "data": g_res})
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=fc.name,
+                                            id=fc.id,
+                                            response=g_res if isinstance(g_res, dict) else {"result": str(g_res)},
+                                        )
+                                    )
+                                    continue
 
                                 elif fc.name == "run_google_automation":
-                                    n8n_res = await trigger_google_workspace_sync(
-                                        action=args.get("automation_type", "sync"),
-                                        payload=args,
-                                    )
+                                    from backend.google_sync_api import gmail_send_message_service, calendar_create_event_service
+                                    a_type = str(args.get("automation_type") or "sync").lower().strip()
+                                    acct_email = user_email or "dileepbommali16@gmail.com"
+                                    if a_type == "send_email" and args.get("recipient_email"):
+                                        n8n_res = await gmail_send_message_service(
+                                            user_email=acct_email,
+                                            recipient_email=str(args.get("recipient_email") or ""),
+                                            subject=str(args.get("subject") or "Message from DAS AI"),
+                                            body=str(args.get("details") or ""),
+                                        )
+                                    elif a_type == "schedule_calendar":
+                                        n8n_res = await calendar_create_event_service(
+                                            user_email=acct_email,
+                                            summary=str(args.get("subject") or "Interview Schedule"),
+                                            description=str(args.get("details") or ""),
+                                        )
+                                    else:
+                                        n8n_res = await trigger_google_workspace_sync(
+                                            action=a_type,
+                                            payload=args,
+                                        )
                                     if websocket.client_state != WebSocketState.DISCONNECTED:
                                         await websocket.send_json({
                                             "type": "automation_status",

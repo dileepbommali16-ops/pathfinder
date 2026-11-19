@@ -172,6 +172,18 @@ def init_database():
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_student_memory_user ON student_memory(user_id);")
 
+        # 5. Google Workspace OAuth Tokens Table (Gmail, Calendar, Sheets)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS google_oauth_tokens (
+                email TEXT PRIMARY KEY,
+                access_token TEXT NOT NULL,
+                refresh_token TEXT DEFAULT '',
+                expires_at REAL DEFAULT 0,
+                scope TEXT DEFAULT '',
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
         conn.commit()
 
     # Pre-populate cohort_placements from CSV if empty
@@ -666,6 +678,154 @@ def save_student_memory(
     _execute_serialized_write(_op)
     cloud_save_student_memory(clean_id, new_goals, new_weak_areas, new_topics, new_summary)
     return get_student_memory(clean_id)
+
+
+def _workspace_token_cipher(raw_bytes: bytes) -> bytes:
+    """Deterministic authenticated stream obfuscation keyed with JWT_SECRET for cloud backup."""
+    import hashlib
+    secret = (os.getenv("JWT_SECRET", "pathfinder_default_secret_2026") + ":ws_tok").encode("utf-8")
+    out = bytearray(len(raw_bytes))
+    counter = 0
+    pos = 0
+    while pos < len(raw_bytes):
+        block = hashlib.sha256(secret + counter.to_bytes(4, "big")).digest()
+        take = min(len(block), len(raw_bytes) - pos)
+        for i in range(take):
+            out[pos + i] = raw_bytes[pos + i] ^ block[i]
+        pos += take
+        counter += 1
+    return bytes(out)
+
+
+def save_google_workspace_tokens(
+    email: str,
+    access_token: str,
+    refresh_token: str = "",
+    expires_at: float = 0.0,
+    scope: str = "",
+) -> Dict[str, Any]:
+    """Persists Google Workspace (Gmail/Calendar/Sheets) OAuth tokens in SQLite WAL + Supabase cloud backup."""
+    import base64
+
+    clean_email = (email or "").strip().lower()
+    if not clean_email or not access_token:
+        return {}
+
+    existing = get_google_workspace_tokens(clean_email) or {}
+    final_refresh = (refresh_token or "").strip() or existing.get("refresh_token", "")
+    final_scope = (scope or "").strip() or existing.get("scope", "")
+
+    def _op(conn):
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO google_oauth_tokens (email, access_token, refresh_token, expires_at, scope, updated_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(email) DO UPDATE SET
+                access_token = excluded.access_token,
+                refresh_token = CASE WHEN excluded.refresh_token != '' THEN excluded.refresh_token ELSE google_oauth_tokens.refresh_token END,
+                expires_at = excluded.expires_at,
+                scope = CASE WHEN excluded.scope != '' THEN excluded.scope ELSE google_oauth_tokens.scope END,
+                updated_at = CURRENT_TIMESTAMP;
+            """,
+            (clean_email, access_token, final_refresh, float(expires_at or 0.0), final_scope),
+        )
+        conn.commit()
+
+    _execute_serialized_write(_op)
+
+    try:
+        payload_bytes = json.dumps(
+            {
+                "access_token": access_token,
+                "refresh_token": final_refresh,
+                "expires_at": float(expires_at or 0.0),
+                "scope": final_scope,
+            },
+            separators=(",", ":"),
+        ).encode("utf-8")
+        encoded = base64.urlsafe_b64encode(_workspace_token_cipher(payload_bytes)).decode("ascii")
+        cloud_save_student_memory(
+            f"oauth_google:{clean_email}",
+            goals=[],
+            weak_areas=[],
+            topics=final_scope.split() if final_scope else [],
+            last_summary=f"ws1:{encoded}",
+        )
+    except Exception as exc:
+        logger.debug(f"[Database] Workspace cloud backup skipped: {exc}")
+
+    return {
+        "email": clean_email,
+        "access_token": access_token,
+        "refresh_token": final_refresh,
+        "expires_at": float(expires_at or 0.0),
+        "scope": final_scope,
+    }
+
+
+def get_google_workspace_tokens(email: str) -> Optional[Dict[str, Any]]:
+    """Loads Google Workspace OAuth tokens from local SQLite WAL, hydrating from Supabase cloud backup if needed."""
+    import base64
+
+    clean_email = (email or "").strip().lower()
+    if not clean_email:
+        return None
+
+    with get_db_connection() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM google_oauth_tokens WHERE email = ?", (clean_email,))
+        row = cur.fetchone()
+        if row and row["access_token"]:
+            return {
+                "email": row["email"],
+                "access_token": row["access_token"],
+                "refresh_token": row["refresh_token"] or "",
+                "expires_at": float(row["expires_at"] or 0.0),
+                "scope": row["scope"] or "",
+            }
+
+    try:
+        cloud_mem = cloud_get_student_memory(f"oauth_google:{clean_email}")
+        raw_summary = (cloud_mem or {}).get("last_summary") or ""
+        if raw_summary.startswith("ws1:"):
+            enc_b64 = raw_summary[4:]
+            decoded = json.loads(_workspace_token_cipher(base64.urlsafe_b64decode(enc_b64)).decode("utf-8"))
+            if isinstance(decoded, dict) and decoded.get("access_token"):
+                # Rehydrate into fast local SQLite cache
+                def _cache_op(conn):
+                    conn.execute(
+                        """
+                        INSERT INTO google_oauth_tokens (email, access_token, refresh_token, expires_at, scope, updated_at)
+                        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                        ON CONFLICT(email) DO UPDATE SET
+                            access_token = excluded.access_token,
+                            refresh_token = excluded.refresh_token,
+                            expires_at = excluded.expires_at,
+                            scope = excluded.scope,
+                            updated_at = CURRENT_TIMESTAMP;
+                        """,
+                        (
+                            clean_email,
+                            decoded["access_token"],
+                            decoded.get("refresh_token", ""),
+                            float(decoded.get("expires_at") or 0.0),
+                            decoded.get("scope", ""),
+                        ),
+                    )
+                    conn.commit()
+                _execute_serialized_write(_cache_op)
+                return {
+                    "email": clean_email,
+                    "access_token": decoded["access_token"],
+                    "refresh_token": decoded.get("refresh_token", ""),
+                    "expires_at": float(decoded.get("expires_at") or 0.0),
+                    "scope": decoded.get("scope", ""),
+                }
+    except Exception as exc:
+        logger.debug(f"[Database] Workspace cloud hydrate skipped: {exc}")
+
+    return None
 
 
 # Auto-initialize database tables and initial cohort seed on module load

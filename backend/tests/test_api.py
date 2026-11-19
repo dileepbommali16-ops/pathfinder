@@ -416,5 +416,34 @@ class TestAPIEndpoints(unittest.TestCase):
         # Immediate ONLINE status must be sent before opening an upstream Live connection
         self.assertLess(lp_src.find('"status": "connected"'), lp_src.find("client.aio.live.connect"))
 
+    def test_chrome_bridge_tools_and_google_workspace_oauth_persistence(self):
+        from backend.agent.live_proxy import DAS_TOOLS
+        from backend.database import save_google_workspace_tokens, get_google_workspace_tokens
+
+        declared = {fn.name for t in DAS_TOOLS for fn in (t.function_declarations or [])}
+        self.assertIn("programiz_compiler", declared)
+        self.assertIn("chrome_browser_control", declared)
+        self.assertIn("gmail_workspace_control", declared)
+
+        test_email = "workspace.test.unit@example.com"
+        save_google_workspace_tokens(
+            email=test_email,
+            access_token="ya29.unit_test_access",
+            refresh_token="1//unit_test_refresh",
+            expires_at=9999999999.0,
+            scope="openid email https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.readonly",
+        )
+        loaded = get_google_workspace_tokens(test_email)
+        self.assertIsNotNone(loaded)
+        self.assertEqual(loaded["access_token"], "ya29.unit_test_access")
+        self.assertEqual(loaded["refresh_token"], "1//unit_test_refresh")
+
+        st = self.client.get(f"/api/google/workspace/status?email={test_email}")
+        self.assertEqual(st.status_code, 200)
+        st_json = st.json()
+        self.assertTrue(st_json["connected"])
+        self.assertTrue(st_json["has_gmail"])
+        self.assertIn("/api/auth/google/workspace/start", st_json["connect_url"])
+
 if __name__ == "__main__":
     unittest.main()
