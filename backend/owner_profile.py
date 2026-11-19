@@ -98,7 +98,10 @@ def is_owner_user(user: Optional[Any] = None, email: Optional[str] = None, usern
 
     check_emails = []
     if email:
-        check_emails.append(str(email).strip().lower())
+        for part in str(email).split(","):
+            clean_p = part.strip().lower()
+            if clean_p:
+                check_emails.append(clean_p)
 
     if user:
         if isinstance(user, dict):

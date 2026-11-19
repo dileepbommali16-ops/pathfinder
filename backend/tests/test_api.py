@@ -613,12 +613,12 @@ class TestAPIEndpoints(unittest.TestCase):
                 err_msg2 = ws_non_owner.receive_json()
                 self.assertEqual(err_msg2.get("type"), "auth_error")
 
-            # 3. Valid token + Boss email registers, updates status, and disconnects cleanly
+            # 3. Valid token + Boss email (even comma-separated from root .env) registers, updates status, and disconnects cleanly
             with self.client.websocket_connect("/ws/desktop-bridge") as ws_ok:
                 ws_ok.send_json({
                     "type": "auth",
                     "token": "unit_test_secret_token_999",
-                    "owner_email": "dileepbommali16@gmail.com",
+                    "owner_email": "dileepbommali16@gmail.com,dileep@pathfinder.ai",
                     "host": "dileep-windows-laptop",
                     "capabilities": ["chrome", "gmail", "vscode"],
                 })

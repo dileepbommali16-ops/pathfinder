@@ -86,6 +86,11 @@ class DesktopBridgeHub:
     @staticmethod
     def _normalize_owner_email(email: str) -> str:
         clean = (email or "").strip().lower()
+        if "," in clean:
+            parts = [p.strip() for p in clean.split(",") if p.strip()]
+            if PRIMARY_OWNER_EMAIL in parts:
+                return PRIMARY_OWNER_EMAIL
+            clean = parts[0] if parts else ""
         return clean or PRIMARY_OWNER_EMAIL
 
     def is_connected(self, email: str = "") -> bool:

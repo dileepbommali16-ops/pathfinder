@@ -13,6 +13,8 @@ Usage:
 
 import argparse
 import asyncio
+import hashlib
+import hmac
 import json
 import logging
 import os
@@ -35,8 +37,10 @@ except ImportError:
 import websockets
 
 BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(BASE_DIR / ".env")
 load_dotenv(BASE_DIR.parent / ".env")
+load_dotenv(BASE_DIR.parent / "backend" / ".env")
+# Always let desktop-agent/.env override VS Code's auto-injected root .env
+load_dotenv(BASE_DIR / ".env", override=True)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -157,6 +161,7 @@ class RealChromeController:
                 "no_viewport": True,
                 "ignore_default_args": ["--enable-automation"],
                 "args": [
+                    "--remote-debugging-port=9222",
                     "--disable-blink-features=AutomationControlled",
                     "--start-maximized",
                     "--no-first-run",
@@ -945,13 +950,38 @@ def handle_vscode_control(args: Dict[str, Any]) -> Dict[str, Any]:
     return {"ok": False, "error": f"Unsupported vscode_control action: {action}"}
 
 
+def _resolve_owner_email() -> str:
+    raw = (os.getenv("OWNER_EMAIL") or "dileepbommali16@gmail.com").strip().lower()
+    if "," in raw:
+        parts = [p.strip() for p in raw.split(",") if p.strip()]
+        for p in parts:
+            if p == "dileepbommali16@gmail.com":
+                return p
+        return parts[0] if parts else "dileepbommali16@gmail.com"
+    return raw or "dileepbommali16@gmail.com"
+
+
+def _resolve_bridge_token() -> str:
+    token = (os.getenv("DAS_BRIDGE_TOKEN") or "").strip()
+    if token and token != "replace_with_your_32_byte_hex_bridge_token":
+        return token
+    g_secret = (os.getenv("GOOGLE_CLIENT_SECRET") or "").strip()
+    if g_secret:
+        return hmac.new(
+            g_secret.encode("utf-8"),
+            b"pathfinder-das-desktop-bridge-v1",
+            hashlib.sha256,
+        ).hexdigest()
+    return ""
+
+
 async def run_bridge_daemon(open_chrome_on_start: bool = False, probe_only: bool = False) -> int:
     ws_url = (
         os.getenv("DAS_BRIDGE_WS_URL")
         or "wss://pathfinder-backend-sg.onrender.com/ws/desktop-bridge"
     ).strip()
-    token = (os.getenv("DAS_BRIDGE_TOKEN") or "").strip()
-    owner_email = (os.getenv("OWNER_EMAIL") or "dileepbommali16@gmail.com").strip().lower()
+    token = _resolve_bridge_token()
+    owner_email = _resolve_owner_email()
 
     if not token:
         logger.error("DAS_BRIDGE_TOKEN is missing in desktop-agent/.env")
@@ -960,9 +990,6 @@ async def run_bridge_daemon(open_chrome_on_start: bool = False, probe_only: bool
     chrome = RealChromeController()
     vscode_available = bool(shutil.which("code"))
     host_name = socket.gethostname()
-
-    if open_chrome_on_start and not probe_only:
-        await chrome.ensure_started()
 
     backoff = 2.0
     try:
@@ -989,6 +1016,12 @@ async def run_bridge_daemon(open_chrome_on_start: bool = False, probe_only: bool
 
                     logger.info("CONNECTED! Laptop Desktop Bridge is LIVE for %s (host=%s).", owner_email, host_name)
                     backoff = 2.0
+
+                    if open_chrome_on_start and not probe_only:
+                        try:
+                            await chrome.ensure_started()
+                        except Exception as chrome_err:
+                            logger.warning("Initial Chrome launch deferred until first command: %s", chrome_err)
 
                     tel = chrome.get_telemetry()
                     await ws.send(
