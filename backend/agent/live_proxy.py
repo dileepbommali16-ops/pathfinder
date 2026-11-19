@@ -133,29 +133,31 @@ CORE AUTONOMOUS CAPABILITIES:
        - ONLY describe what is ACTUALLY visible in the MOST RECENT attached live frame or stream right now (exact current t-shirt/shirt color like pale light green, mint, white, black — NEVER guess or carry over an old blue shirt or past memory!).
        - Whenever you see hand movements, dancing, hand-dancing, waving, head nods, or held objects in the live video frames, call `inspect_live_camera_frame` if you need a fresh verified frame snapshot and react naturally in 1–2 concise sentences!
        - NEVER rely on generic flattery — unlike ChatGPT, Claude, or generic Gemini, always tell the honest truth calmly and directly if someone's answer, code, claim, or styling is wrong or needs improvement.
-3. REAL CHROME PROGRAMIZ COMPILER AUTOMATION (C, C++, Python, Java, JS, SQL, C#, Go, Rust, PHP):
-   - NEVER use fake sidebars when controlling Chrome — call `programiz_compiler` to open and automate the REAL Programiz online compiler in Chrome (`https://www.programiz.com/<lang>/online-compiler/`).
-   - Actions: `write_and_run` (writes complete clean zero-error code into Programiz's real CodeMirror editor, clicks Run, and returns real terminal stdout/stderr), `clear` (removes/clears code & terminal output when user says "remove code / clear code"), `read_output` (reads current code & terminal output), `open` (opens the compiler tab).
-   - AUTO-FIX COMPILER ERRORS: If `programiz_compiler` returns `hasError: true` in the tool result, IMMEDIATELY analyze the exact compiler error in `output`, rewrite corrected zero-error code, and call `programiz_compiler` again with `action="write_and_run"` until it compiles and runs cleanly!
-   - Always explain the code logic, time/space complexity, and the REAL terminal output returned from Programiz.
+3. REAL CHROME PROGRAMIZ & BUILT-IN CODING STUDIO AUTOMATION (C, C++, Python, Java, JS, TS, SQL, Go, Rust, C#, PHP):
+   - Use `coding_studio_control` for ALL voice/live coding tasks on BOTH Phone & Laptop: open the coding studio (`open`), switch any language (`switch_language`), write/edit code (`write_code` with mode `'replace'`, `'append'`, `'insert_lines'`, or `'replace_lines'`), read exact code with line numbers (`read_code`), delete all code, line ranges, or specific text (`delete_code`), execute live (`run_code`), stop execution immediately (`stop_code`), inspect/explain terminal output (`get_output`), or close (`close`).
+   - Also keep `write_and_compile_code` supported for quick one-shot generation, `programiz_compiler` when Boss specifically asks for Programiz in Chrome, and `vscode_control` (`write_file`, `read_file`, `delete_code`, `open_file`, `list_files`) when Boss asks to write/open/edit code in VS Code on his laptop!
+   - AUTO-FIX COMPILER ERRORS: If execution returns a compile or runtime error in `output` or `stderr`, immediately analyze the exact error line, rewrite clean corrected code using `coding_studio_control(action="write_code", mode="replace", auto_run=True)` until it runs cleanly!
+   - Always explain the code logic, complexity, and the real terminal output clearly.
 4. ATS RESUME INTELLIGENCE & PLACEMENT ROADMAP:
    - Provide elite Tier-1 ATS resume reviews calibrated to Google's X-Y-Z formula: "Accomplished [X] as measured by [Y] by doing [Z]".
    - Guide Boss on top capstone projects, certifications (AWS Solutions Architect, GCP Data Engineer), and core subjects (DSA, OS, CN, DBMS, System Design) to guarantee 100% placement success.
-5. REAL CHROME BROWSER & WEB AUTOMATION (MULTI-STEP CHAINS + TELUGU/TENGLISH):
-   - Call `chrome_browser_control` for ALL Google Search (`google_search`), opening URLs (`open_url`), clicking search results/links/buttons (`click` by `target`, `index`, or `url`), typing (`type`), scrolling (`scroll`), reading & explaining whatever page opened (`read_page`), listing/switching Chrome tabs (`list_tabs`, `switch_tab`), or returning to Pathfinder (`return_to_pathfinder`).
+5. REAL CHROME BROWSER & WEB AUTOMATION (LAPTOP BRIDGE + CHROME EXTENSION + MULTI-STEP CHAINS):
+   - Call `chrome_browser_control` for ALL real Chrome actions: `google_search`, `open_url`, `click` (search results, links, buttons by `target`, `index`, or `url`), `type`, `scroll`, `read_page` (read & explain aloud), `list_tabs`, `switch_tab`, `close_tab`, `go_back`, `go_forward`, and `return_to_pathfinder`.
+   - When Boss's Laptop Desktop Bridge is connected, every `chrome_browser_control` call runs directly inside his REAL Chrome window on Windows — even when Boss is speaking from his Phone!
    - MULTI-STEP EXECUTION MANDATE: NEVER stop halfway! Whenever Boss says things like "open google, search claude code, and click official link" or "search X and open 1st link and explain":
      1) Call `chrome_browser_control(action="google_search", query=...)` and inspect the returned `results` (each has `index`, `title`, `url`, `host`, `isOfficial`).
      2) IMMEDIATELY follow up with `chrome_browser_control(action="click", url=..., target=..., index=...)` (or `open_url` with that official URL).
      3) Read the `title`, `headings`, and `text` returned in the tool response and explain the opened page clearly aloud!
-   - TELUGU / TENGLISH VOICE COMMANDS: Understand naturally: `"kinda unna link nokku"`, `"first link nokku"`, `"official link open chey"`, `"adhi open chesi explain chey"`, `"scroll down chey"`, `"tabs chupinchu"`, `"pathfinder ki vellu"`.
-   - STRICT ACTION HONESTY: NEVER claim you clicked a link, opened a site, sent an email, or sent a WhatsApp message unless the actual tool call succeeded!
+   - TELUGU / TENGLISH VOICE COMMANDS: Understand naturally: `"kinda unna link nokku"`, `"first link nokku"`, `"official link open chey"`, `"adhi open chesi explain chey"`, `"scroll down chey"`, `"tabs chupinchu"`, `"tab close chey"`, `"back vellu"`, `"pathfinder ki vellu"`.
+   - STRICT ACTION HONESTY: NEVER claim you clicked a link, opened a site, sent an email, edited code, or sent a WhatsApp message unless the actual tool call succeeded!
 6. LINKEDIN PROFILE INTELLIGENCE: When asked about anyone's profile, call `open_linkedin_profile` and summarize their background.
-7. REAL FULL GMAIL, CONTACTS, WORKSPACE & WHATSAPP AUTOMATION:
-   - Call `gmail_workspace_control` for ALL Gmail, Contacts, Calendar, and Sheets tasks:
-     * `lookup_contact` (resolve a person's email/phone by name via Google Contacts + Gmail history), `list_emails` (check inbox / search emails via `query`), `read_email` (read full message body by `message_id`), `send_email` (send real Gmail directly — `recipient_email` accepts EITHER an email OR a contact name like `"Priyanka"`!), `create_draft`, `open_gmail_tab` / `open_email_visual` / `search_gmail_visual` / `compose_visual` / `reply_email` / `click_gmail` (control Gmail visually in Chrome OR inside Pathfinder's built-in Live Gmail Workspace on phone/tablet), `schedule_calendar` (real Google Calendar event), `log_sheet`.
+7. REAL GMAIL (`mail.google.com`), CONTACTS, WORKSPACE & WHATSAPP AUTOMATION (ZERO FAKE COPY):
+   - NEVER use or refer to a fake/copy Gmail drawer! When Boss asks to open Gmail (`"open gmail"`, `"na gmail open chey"`), search Gmail, click/open an email visually, compose, or reply visually, call `gmail_workspace_control` (`open_gmail_tab`, `open_email_visual`, `search_gmail_visual`, `compose_visual`, `reply_email`, `click_gmail`) — when the Laptop Bridge is connected, this directly controls Boss's real `https://mail.google.com/mail/u/0/#inbox` in Chrome; otherwise it opens real `mail.google.com` directly.
+   - Use `lookup_contact`, `list_emails`, `read_email`, `send_email`, `create_draft`, `schedule_calendar`, `log_sheet` for instant Gmail/Contacts API actions alongside real browser control.
    - Understand Telugu/Tenglish commands naturally: `"na gmail open chey"`, `"first mail open chey"`, `"Priyanka ki mail pettu"`, `"Murali Sir ki mail pettu"`, `"evarki mail pettamante pettu"`, `"reply ivvu"`. If multiple contacts match a name, ask Boss which email to use before sending.
    - Call `whatsapp_message_control` when asked to send a WhatsApp or quick message (`"msg pettu"`, `"Priyanka ki msg pettu"`, `"whatsapp message send chey"`): pass `action="send_message"`, `contact` (or `phone`), and `message`.
    - If `needs_auth: true` is returned, clearly tell Boss to click the "Connect Gmail" button in the Pathfinder HUD once to authorize Gmail & Contacts access.
+   - If `needs_chrome_login: true` is returned, tell Boss warmly to sign into `dileepbommali16@gmail.com` once inside the Chrome window opened by his Laptop Bridge so Gmail stays logged in automatically.
 8. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
    When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'switch back to pathfinder', immediately call `chrome_browser_control(action="return_to_pathfinder")` (or `return_to_dashboard`) and reply warmly: "Okay Boss, returning to your dashboard."
 9. STRICT PUCK VOICE PERSONA LOCK: Your voice is permanently locked to the male 'Puck' voice. Keep a consistent, warm, energetic male vocal delivery on every turn — never imitate a female voice or switch vocal personas.
@@ -361,14 +363,102 @@ DAS_TOOLS = [
                 ),
             ),
             types.FunctionDeclaration(
-                name="chrome_browser_control",
-                description="Full real Google Chrome & cloud web automation (Laptop Chrome extension OR Phone/Tablet built-in Web Hub): search Google, open any URL or official link, click search results/links/buttons (pass url, target text, or 1-based index), type into inputs, scroll pages, read active page to explain it aloud, list/switch tabs, or return to Pathfinder.",
+                name="coding_studio_control",
+                description="Full voice & live control over Pathfinder's built-in multi-language Coding Studio (works on BOTH Phone and Laptop): open studio, switch language (C, C++, Python, Java, JS, TS, SQL, Go, Rust, C#, PHP), write/edit/append/insert code, read exact code with line numbers, delete all/lines/text, run live, stop running execution, inspect/explain output, or close studio.",
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
                         "action": types.Schema(
                             type="STRING",
-                            description="One of: 'google_search', 'open_url', 'click', 'type', 'scroll', 'read_page', 'switch_tab', 'list_tabs', 'return_to_pathfinder'"
+                            description="One of: 'open', 'switch_language', 'write_code', 'read_code', 'delete_code', 'run_code', 'stop_code', 'get_output', 'close'"
+                        ),
+                        "language": types.Schema(
+                            type="STRING",
+                            description="Target programming language: c, cpp, python, java, javascript, typescript, sql, go, rust, csharp, php"
+                        ),
+                        "program_title": types.Schema(
+                            type="STRING",
+                            description="Optional title of the program or file"
+                        ),
+                        "source_code": types.Schema(
+                            type="STRING",
+                            description="Complete or partial source code to write, append, or insert"
+                        ),
+                        "mode": types.Schema(
+                            type="STRING",
+                            description="For write_code: 'replace' (default), 'append', 'insert_lines', or 'replace_lines'"
+                        ),
+                        "line_number": types.Schema(
+                            type="INTEGER",
+                            description="1-based line number for insert_lines"
+                        ),
+                        "start_line": types.Schema(
+                            type="INTEGER",
+                            description="1-based start line for replace_lines or delete_code"
+                        ),
+                        "end_line": types.Schema(
+                            type="INTEGER",
+                            description="1-based inclusive end line for replace_lines or delete_code"
+                        ),
+                        "target_text": types.Schema(
+                            type="STRING",
+                            description="Specific snippet/text to remove in delete_code (use 'ALL' or omit lines/target_text to clear entire editor)"
+                        ),
+                        "stdin": types.Schema(
+                            type="STRING",
+                            description="Optional standard input to supply when running the program"
+                        ),
+                        "auto_run": types.Schema(
+                            type="BOOLEAN",
+                            description="True to compile & run immediately after writing/switching"
+                        ),
+                        "logic_explanation": types.Schema(
+                            type="STRING",
+                            description="Concise explanation of algorithm logic and complexity"
+                        ),
+                    },
+                    required=["action"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="vscode_control",
+                description="Write, read, delete lines, list files, and open real code files in Boss's scoped laptop workspace / VS Code via the Laptop Desktop Bridge.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "action": types.Schema(
+                            type="STRING",
+                            description="One of: 'write_file', 'read_file', 'delete_code', 'open_file', 'list_files'"
+                        ),
+                        "filename": types.Schema(
+                            type="STRING",
+                            description="Relative filename inside the safe bridge workspace (e.g. 'fibonacci.c', 'main.py')"
+                        ),
+                        "source_code": types.Schema(type="STRING"),
+                        "mode": types.Schema(
+                            type="STRING",
+                            description="'replace' or 'append' for write_file"
+                        ),
+                        "start_line": types.Schema(type="INTEGER"),
+                        "end_line": types.Schema(type="INTEGER"),
+                        "target_text": types.Schema(type="STRING"),
+                        "open_in_vscode": types.Schema(
+                            type="BOOLEAN",
+                            description="True to open the file directly in VS Code on Boss's laptop"
+                        ),
+                    },
+                    required=["action"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="chrome_browser_control",
+                description="Full real Google Chrome & cloud web automation (Laptop Desktop Bridge OR Chrome extension OR cloud fallback): search Google, open any URL or official link, click search results/links/buttons (pass url, target text, or 1-based index), type into inputs, scroll pages, read active page to explain it aloud, list/switch/close tabs, navigate back/forward, or return to Pathfinder.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "action": types.Schema(
+                            type="STRING",
+                            description="One of: 'google_search', 'open_url', 'click', 'type', 'scroll', 'read_page', 'switch_tab', 'list_tabs', 'close_tab', 'go_back', 'go_forward', 'return_to_pathfinder'"
                         ),
                         "query": types.Schema(
                             type="STRING",
@@ -836,6 +926,71 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     ),
                 }
 
+            from backend.desktop_bridge import desktop_bridge_hub
+
+            acct_email = user_email or "dileepbommali16@gmail.com"
+            bridge_active = bool(is_owner and desktop_bridge_hub.is_connected(acct_email))
+
+            if fc_name == "vscode_control":
+                if not bridge_active:
+                    return {
+                        "ok": False,
+                        "bridge_offline": True,
+                        "message": (
+                            "Laptop Bridge is offline right now. Start desktop-agent\\start_bridge.bat on your laptop for VS Code control, "
+                            "or I can run it right now in Pathfinder's built-in Coding Studio!"
+                        ),
+                    }
+                v_res = await desktop_bridge_hub.execute(acct_email, "vscode_control", args, timeout=20.0)
+                return v_res if isinstance(v_res, dict) else {"ok": False, "error": "No response from laptop VS Code bridge."}
+
+            if fc_name == "coding_studio_control":
+                call_id = str(call_id_hint or f"code_{turn_id}_{int(time.monotonic() * 1000)}")
+                loop = asyncio.get_running_loop()
+                fut_code: asyncio.Future = loop.create_future()
+                pending_tool_futures[call_id] = fut_code
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    await websocket.send_json({
+                        "type": "tool_call",
+                        "call_id": call_id,
+                        "name": "coding_studio_control",
+                        "args": args,
+                    })
+                try:
+                    c_res = await asyncio.wait_for(fut_code, timeout=28.0)
+                except asyncio.TimeoutError:
+                    pending_tool_futures.pop(call_id, None)
+                    c_res = {"ok": False, "status": "timeout", "error": "Coding studio action timed out."}
+                except Exception as wait_err:
+                    pending_tool_futures.pop(call_id, None)
+                    c_res = {"ok": False, "error": str(wait_err)}
+                return c_res if isinstance(c_res, dict) else {"ok": True, "result": str(c_res)}
+
+            if fc_name in (
+                "programiz_compiler",
+                "chrome_browser_control",
+                "open_external_website",
+            ) and bridge_active:
+                target_tool = fc_name
+                target_args = dict(args)
+                if fc_name == "open_external_website":
+                    target_tool = "chrome_browser_control"
+                    if target_args.get("search_query") and not target_args.get("url"):
+                        target_args = {"action": "google_search", "query": target_args.get("search_query")}
+                    else:
+                        target_args = {"action": "open_url", "url": target_args.get("url") or target_args.get("site_name") or "https://www.google.com"}
+                b_res = await desktop_bridge_hub.execute(acct_email, target_tool, target_args, timeout=28.0)
+                if isinstance(b_res, dict):
+                    if target_tool == "chrome_browser_control" and websocket.client_state != WebSocketState.DISCONNECTED:
+                        try:
+                            await websocket.send_json({
+                                "type": "automation_status",
+                                "data": {"kind": "web", "action": target_args.get("action"), **b_res},
+                            })
+                        except Exception:
+                            pass
+                    return b_res
+
             if fc_name in (
                 "programiz_compiler",
                 "chrome_browser_control",
@@ -900,13 +1055,25 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 if args.get("contact") and not args.get("phone"):
                     try:
                         from backend.google_sync_api import contacts_lookup_service
-                        acct_email = user_email or "dileepbommali16@gmail.com"
                         c_lookup = await contacts_lookup_service(acct_email, str(args.get("contact") or ""), max_results=4)
                         with_phone = [c for c in (c_lookup.get("contacts") or []) if c.get("phone")]
                         if with_phone:
                             args["phone"] = with_phone[0]["phone"]
                     except Exception:
                         pass
+
+                if bridge_active:
+                    w_bridge = await desktop_bridge_hub.execute(acct_email, "whatsapp_message_control", args, timeout=25.0)
+                    if isinstance(w_bridge, dict):
+                        if websocket.client_state != WebSocketState.DISCONNECTED:
+                            try:
+                                await websocket.send_json({
+                                    "type": "automation_status",
+                                    "data": {"kind": "whatsapp", **args, **w_bridge},
+                                })
+                            except Exception:
+                                pass
+                        return w_bridge
 
                 call_id = str(call_id_hint or f"wa_{turn_id}_{int(time.monotonic() * 1000)}")
                 loop = asyncio.get_running_loop()
@@ -951,8 +1118,27 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 )
 
                 g_act = str(args.get("action") or "list_emails").lower().strip()
-                acct_email = user_email or "dileepbommali16@gmail.com"
                 g_res: dict = {"ok": False, "message": f"Unsupported Gmail action: {g_act}"}
+
+                raw_recipient = str(args.get("recipient_email") or "").strip()
+                if g_act in ("compose_visual", "send_email", "create_draft") and raw_recipient and "@" not in raw_recipient:
+                    try:
+                        c_match = await contacts_lookup_service(acct_email, query=raw_recipient, max_results=6)
+                        email_hits = [c for c in (c_match.get("contacts") or []) if c.get("email")]
+                        exact_hits = [
+                            c for c in email_hits if str(c.get("name") or "").strip().lower() == raw_recipient.lower()
+                        ]
+                        chosen = exact_hits[0] if len(exact_hits) == 1 else (email_hits[0] if len(email_hits) == 1 else None)
+                        if chosen and chosen.get("email"):
+                            args["recipient_email"] = chosen["email"]
+                        elif len(email_hits) > 1:
+                            return {
+                                "ok": False,
+                                "ambiguous_contacts": email_hits,
+                                "message": f"Multiple contacts match '{raw_recipient}'. Ask Boss which email address to use.",
+                            }
+                    except Exception:
+                        pass
 
                 async def _dispatch_visual_gmail(v_args: dict) -> dict:
                     cid = str(call_id_hint or f"gm_{turn_id}_{int(time.monotonic() * 1000)}")
@@ -1023,7 +1209,20 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     "reply_email",
                     "click_gmail",
                 ):
-                    if g_act in ("open_gmail_tab", "search_gmail_visual"):
+                    if bridge_active:
+                        b_gm = await desktop_bridge_hub.execute(acct_email, "gmail_workspace_control", args, timeout=28.0)
+                        if isinstance(b_gm, dict):
+                            if g_act in ("open_gmail_tab", "search_gmail_visual") and b_gm.get("needs_chrome_login"):
+                                api_preview = await gmail_list_messages_service(
+                                    acct_email,
+                                    query=str(args.get("query") or ""),
+                                    max_results=int(args.get("max_results") or 6),
+                                )
+                                b_gm["emails"] = api_preview.get("emails", [])
+                            g_res = b_gm
+                        else:
+                            g_res = await _dispatch_visual_gmail(args)
+                    elif g_act in ("open_gmail_tab", "search_gmail_visual"):
                         v_res, api_res = await asyncio.gather(
                             _dispatch_visual_gmail(args),
                             gmail_list_messages_service(

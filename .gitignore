@@ -156,3 +156,8 @@ output.wav
 htmlcov/
 *.pkl
 model.pkl
+
+# Local Laptop Desktop Bridge Agent (Secrets, Chrome session profile & scratch workspace)
+desktop-agent/.env
+desktop-agent/chrome-profile/
+desktop-agent/workspace/

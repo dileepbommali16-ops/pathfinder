@@ -337,8 +337,10 @@ async def rag_search_endpoint(payload: Dict[str, Any] = Body(...)):
 
 from backend.google_sync_api import router as google_sync_router
 from backend.compiler_engine import execute_code_live
+from backend.desktop_bridge import bridge_router
 
 app.include_router(google_sync_router)
+app.include_router(bridge_router)
 
 
 @app.post("/api/compile")
