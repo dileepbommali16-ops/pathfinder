@@ -35,4 +35,3 @@ export async function playPuckVoice(text: string): Promise<void> {
 }
 
 export const speak = playPuckVoice;
-export { playPuckVoice as playElevenLabs, playPuckVoice as speakElevenLabs };

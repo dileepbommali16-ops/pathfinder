@@ -792,7 +792,7 @@ export const getCareerAgentResponse = (
     );
   }
 
-  // 5. Telugu / Tenglish Queries -> Understand natively, reply strictly in fluent English for Donovan voice
+  // 5. Telugu / Tenglish Queries -> Understand natively, reply strictly in fluent English for Puck voice
   const isTelugu =
     /(naku|kavali|cheppu|ela|cheyyali|placement|udyogam|job|chudu|telugu|em\s*chey|salah|artham)/i.test(
       text

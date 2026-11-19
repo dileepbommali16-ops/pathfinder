@@ -341,33 +341,43 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     }
 
     setIsLoadingVoice(true);
-    try {
-      const resp = await fetch(`${API_BASE}/api/voice/tts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: answerText, voice: "Puck" }),
-      });
-      if (speakGenRef.current !== gen) return;
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data?.status === "ok" && data?.pcm_base64) {
-          const rate = Number(data.sample_rate) || 24000;
-          ttsCacheRef.current.set(answerText, { pcm: data.pcm_base64, rate });
-          setIsLoadingVoice(false);
-          setIsSpeaking(true);
-          const played = await audioEngine.playWholePcmBase64(
-            data.pcm_base64,
-            rate,
-            () => {
-              if (speakGenRef.current === gen) setIsSpeaking(false);
-            },
-            answerText
-          );
-          if (played) return;
+    const canUseSameOriginEdge =
+      typeof window !== "undefined" &&
+      window.location?.protocol?.startsWith("http") &&
+      !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname || "");
+    const ttsUrls = [
+      `${API_BASE}/api/voice/tts`,
+      ...(canUseSameOriginEdge ? ["/api/edge-tts"] : []),
+    ];
+    for (const url of ttsUrls) {
+      try {
+        const resp = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: answerText, voice: "Puck" }),
+        });
+        if (speakGenRef.current !== gen) return;
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data?.status === "ok" && data?.pcm_base64) {
+            const rate = Number(data.sample_rate) || 24000;
+            ttsCacheRef.current.set(answerText, { pcm: data.pcm_base64, rate });
+            setIsLoadingVoice(false);
+            setIsSpeaking(true);
+            const played = await audioEngine.playWholePcmBase64(
+              data.pcm_base64,
+              rate,
+              () => {
+                if (speakGenRef.current === gen) setIsSpeaking(false);
+              },
+              answerText
+            );
+            if (played) return;
+          }
         }
+      } catch {
+        // Try next strictly-Puck endpoint
       }
-    } catch {
-      // Fall through cleanly to direct Gemini Live Puck verbatim fallback
     }
 
     if (speakGenRef.current !== gen) return;

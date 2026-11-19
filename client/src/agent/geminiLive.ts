@@ -46,7 +46,7 @@ const LIVE_MODEL =
     ? rawLive
     : "gemini-3.8-live";
 const VOICE_NAME = "Puck";
-const TEXT_MODEL = ENV.VITE_GEMINI_TEXT_MODEL || ENV.VITE_GEMINI_MODEL || "gemini-3.5-flash";
+const TEXT_MODEL = ENV.VITE_GEMINI_TEXT_MODEL || ENV.VITE_GEMINI_MODEL || "gemini-3.1-flash-lite";
 
 type MicUi = "off" | "connecting" | "listening" | "speaking" | "thinking";
 

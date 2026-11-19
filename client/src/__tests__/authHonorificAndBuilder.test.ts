@@ -213,12 +213,16 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(platformOverview.toLowerCase()).not.toContain("co-pilot");
   });
 
-  it("enforces Puck-only voice (no browser speechSynthesis) and zero-sycophancy & live vision rules across female and male accounts", () => {
+  it("enforces Puck-only voice (no browser speechSynthesis or alternate voices) and zero-sycophancy & live vision rules across female and male accounts", () => {
     const srcRoot = path.resolve(__dirname, "..");
     const audioSrc = fs.readFileSync(path.join(srcRoot, "agent/audioIO.ts"), "utf-8");
     const socketSrc = fs.readFileSync(path.join(srcRoot, "agent/agentSocket.ts"), "utf-8");
+    const voiceMgrSrc = fs.readFileSync(path.join(srcRoot, "audio/voiceManager.ts"), "utf-8");
+    const coachSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/AICoachConsole.tsx"), "utf-8");
+    const combinedVoiceSrc = [audioSrc, socketSrc, voiceMgrSrc, coachSrc].join("\n");
 
     expect(audioSrc).not.toContain("speechSynthesis.speak(");
+    expect(combinedVoiceSrc).not.toMatch(/SpeechSynthesisUtterance|Aoede|Kore|Fenrir|Charon|Donovan|fetchDeepgramMp3|playElevenLabs|speakElevenLabs/i);
     expect(audioSrc).toContain("dance_or_motion");
     expect(socketSrc).toContain("reconnectForAccountSwitch");
     expect(socketSrc).toContain("ZERO SYCOPHANCY");

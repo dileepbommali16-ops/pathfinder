@@ -1,7 +1,7 @@
 /**
- * audioIO.ts - Unified Gemini Voice Audio I/O & 3D Lip-Sync Analyser
- * - Gapless sample-accurate 24kHz PCM playback for Gemini Live native audio chunks (`playAudioChunk`).
- * - High-clarity natural neural voice synthesis with Puck/Charon resonance profile for spoken replies (`say`).
+ * audioIO.ts - Unified Gemini Puck Voice Audio I/O & 3D Lip-Sync Analyser
+ * - Gapless sample-accurate 24kHz PCM playback for Gemini Live native Puck audio chunks (`playAudioChunk`).
+ * - Strictly locked Gemini Puck 24kHz male voice synthesis for all spoken replies (`say`) across every account.
  * - Real-time 16kHz PCM microphone capture (`startLiveMicStream`) for Gemini Live (`sendRealtimeInput`).
  * - Web Audio API AnalyserNode (`speaker.level()`) so the 3D Avatar mouth moves at 60 FPS in sync with speech.
  */
@@ -12,13 +12,6 @@ import {
   type VisemeTimeline,
   type VisemeWeights,
 } from "./viseme";
-
-export async function fetchDeepgramMp3(
-  _text: string,
-  _token?: string | null
-): Promise<ArrayBuffer | null> {
-  return null;
-}
 
 let clearAudioEngineHook: (() => void) | null = null;
 let audioEngineSpeakingHook: (() => boolean) | null = null;
@@ -39,14 +32,12 @@ export class Speaker {
   private activeSpeaking = false;
   private pendingGreetingText: string | null = null;
   private simInterval: any = null;
-  private activeUtterance: SpeechSynthesisUtterance | null = null;
   private deferSpeakTimer: number | null = null;
   private simTimeline: VisemeTimeline | null = null;
   private simStartMs = 0;
   private simEstDurationMs = 0;
   private boundaryCharIndex = -1;
   private boundaryAtMs = 0;
-  private synthWatchTimer: number | null = null;
 
   constructor(
     private getToken: () => string | null = () => null,
@@ -143,69 +134,10 @@ export class Speaker {
     void audioEngine.speakTextPuckOrLocal(text, apiBase);
   }
 
-  private startSynthWatchdog(runGen: number) {
-    if (this.synthWatchTimer !== null) {
-      window.clearInterval(this.synthWatchTimer);
-      this.synthWatchTimer = null;
-    }
-    const launchedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
-    this.synthWatchTimer = window.setInterval(() => {
-      if (this.gen !== runGen) {
-        if (this.synthWatchTimer !== null) {
-          window.clearInterval(this.synthWatchTimer);
-          this.synthWatchTimer = null;
-        }
-        return;
-      }
-      const now = typeof performance !== "undefined" ? performance.now() : Date.now();
-      const synthBusy =
-        typeof window !== "undefined" &&
-        "speechSynthesis" in window &&
-        Boolean(window.speechSynthesis.speaking || window.speechSynthesis.pending);
-
-      // Sync activeSpeaking if browser began speaking without firing onstart
-      if (!this.activeSpeaking && synthBusy && window.speechSynthesis.speaking) {
-        this.simStartMs = now;
-        this.activeSpeaking = true;
-        this.onState?.(true);
-        this.startLipSyncSimulation();
-      }
-
-      // Auto-clear if Chrome dropped onend/onerror or blocked autoplay after 1.5s grace
-      const pastGrace = now - launchedAt > 900;
-      const pastMax = now - launchedAt > this.simEstDurationMs + 3000;
-      if ((pastGrace && !synthBusy) || pastMax) {
-        this.activeSpeaking = false;
-        this.activeUtterance = null;
-        this.onState?.(false);
-        this.stopLipSyncSimulation();
-      }
-    }, 120);
-  }
-
-  private startLipSyncSimulation() {
-    if (this.simInterval) {
-      clearInterval(this.simInterval);
-      this.simInterval = null;
-    }
-    this.simInterval = setInterval(() => {
-      const sample = this.getSpeechViseme();
-      const amp = sample ? Math.min(1, sample.volume) : 0;
-      const simulatedVal = Math.floor(128 + amp * 76);
-      for (let i = 0; i < 64; i++) {
-        this.buf[i] = simulatedVal;
-      }
-    }, 40);
-  }
-
   private stopLipSyncSimulation() {
     if (this.simInterval) {
       clearInterval(this.simInterval);
       this.simInterval = null;
-    }
-    if (this.synthWatchTimer !== null) {
-      window.clearInterval(this.synthWatchTimer);
-      this.synthWatchTimer = null;
     }
     this.simTimeline = null;
     this.boundaryCharIndex = -1;
@@ -385,7 +317,6 @@ export class Speaker {
       window.clearTimeout(this.deferSpeakTimer);
       this.deferSpeakTimer = null;
     }
-    this.activeUtterance = null;
     this.nextPcmTime = 0;
     this.pendingGreetingText = null;
     this.stopLipSyncSimulation();
@@ -2400,9 +2331,9 @@ export function getLiveAudioVolume(): number {
 }
 
 /**
- * Unifies live WebAudio PCM output (Gemini Live / Puck TTS) and browser SpeechSynthesis
- * fallback into normalized 60fps vocal formants + phonetic visemes so 3D hologram lip-sync
- * opens, rounds, widens, and closes in exact sync with speech.
+ * Unifies live WebAudio PCM output (Gemini Live / Puck TTS) into normalized 60fps vocal
+ * formants + phonetic visemes so 3D hologram lip-sync opens, rounds, widens, and closes
+ * in exact sync with Puck speech.
  */
 export function getUnifiedSpeechFormants(_nowSec?: number): {
   volume: number;
@@ -2424,26 +2355,6 @@ export function getUnifiedSpeechFormants(_nowSec?: number): {
       isSpeaking: true,
       viseme: f.viseme ?? null,
     };
-  }
-
-  // Browser speechSynthesis fallback: return phonetic timeline viseme (not flat sine oscillation)
-  const synthSpeaking =
-    typeof window !== "undefined" &&
-    "speechSynthesis" in window &&
-    Boolean(window.speechSynthesis.speaking);
-  if (speaker.isSpeaking && (synthSpeaking || speaker.getSpeechViseme() !== null)) {
-    const sv = speaker.getSpeechViseme();
-    if (sv) {
-      return {
-        volume: sv.volume,
-        low: sv.weights.pucker + sv.weights.jawOpen * 0.5,
-        mid: sv.weights.stretch + sv.weights.upperUp * 0.5,
-        high: sv.weights.funnel * 0.5 + (sv.weights.stretch > 0.3 ? 0.18 : 0),
-        zcr: 0.08,
-        isSpeaking: true,
-        viseme: sv.weights,
-      };
-    }
   }
 
   return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, isSpeaking: false, viseme: null };

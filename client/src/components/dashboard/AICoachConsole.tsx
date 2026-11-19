@@ -36,7 +36,7 @@ import { Streamdown } from "streamdown";
 import { StudentProfileState } from "@/types/profile";
 import { API_BASE } from "@/lib/apiClient";
 import { Avatar3D } from "@/agent/Avatar3D";
-import { fetchDeepgramMp3, speaker } from "@/agent/audioIO";
+import { speaker } from "@/agent/audioIO";
 import { geminiLive } from "@/agent/geminiLive";
 
 export interface Message {
@@ -608,56 +608,6 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
         }
         return;
       }
-
-      const mp3Bytes = await fetchDeepgramMp3(nextText);
-      if (mp3Bytes && mp3Bytes.byteLength > 200 && genId === generationIdRef.current) {
-        const blob = new Blob([mp3Bytes], { type: "audio/mpeg" });
-        const audioUrl = URL.createObjectURL(blob);
-        const audio = new Audio(audioUrl);
-        serverAudioRef.current = audio;
-
-        audio.onplay = () => {
-          stopMicrophone();
-          isSpeakingRef.current = true;
-          setCurrentSpokenSentence(nextText);
-          setVoiceStatus("speaking");
-        };
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-          serverAudioRef.current = null;
-          isSpeakingSentenceRef.current = false;
-          setCurrentSpokenSentence("");
-          if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
-            processSpeechQueue(targetLang, genId);
-          } else {
-            isSpeakingRef.current = false;
-            setVoiceStatus("idle");
-            setSpeakingIndex(null);
-            if (userTurnedListeningOnRef.current) {
-              setTimeout(() => {
-                if (!isSpeakingRef.current && userTurnedListeningOnRef.current) {
-                  toggleListening(true);
-                }
-              }, 600);
-            }
-          }
-        };
-        audio.onerror = () => {
-          URL.revokeObjectURL(audioUrl);
-          serverAudioRef.current = null;
-          isSpeakingSentenceRef.current = false;
-          setCurrentSpokenSentence("");
-          if (genId === generationIdRef.current && speechQueueRef.current.length > 0) {
-            processSpeechQueue(targetLang, genId);
-          } else {
-            isSpeakingRef.current = false;
-            setVoiceStatus("idle");
-            setSpeakingIndex(null);
-          }
-        };
-        await audio.play();
-        return;
-      }
     } catch {
       // Speech interrupted or autoplay blocked
     }
@@ -735,8 +685,8 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
       tutor_state: tutorState,
     };
 
-    // Feed user message immediately to the console (Unified Gemini Live handles both text + 24kHz voice)
-    setActiveProvider("Gemini Live 2.5 Native Audio WebSocket");
+    // Feed user message immediately to the console (Unified Gemini 3.8 Live Puck handles both text + 24kHz voice)
+    setActiveProvider("Gemini 3.8 Live Puck Native Audio");
     startTransition(() => {
       onSendMessage(trimmed);
     });
@@ -878,7 +828,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
     }
   };
 
-  // Text-to-Speech audio reader for individual messages via Deepgram flux-donovan-en
+  // Text-to-Speech audio reader for individual messages strictly via Gemini Puck voice
   const speakText = async (text: string, index?: number) => {
     if (typeof window === "undefined") return;
 
