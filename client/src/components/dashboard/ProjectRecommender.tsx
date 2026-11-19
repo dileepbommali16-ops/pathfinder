@@ -167,8 +167,8 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Hero Header — Strictly #000000 and #060608 */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#060608] p-6 shadow-2xl backdrop-blur-2xl sm:p-8">
+      {/* Hero Header — Strictly #000000 and #000000 */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#000000] p-6 shadow-2xl backdrop-blur-2xl sm:p-8">
         <div className="relative z-10 max-w-3xl space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-[#000000] px-3 py-1 text-xs font-semibold text-[#f8fafc]">
@@ -199,13 +199,13 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
             onClick={() => setActiveTab("all")}
             className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
               activeTab === "all"
-                ? "border border-white/35 bg-[#060608] text-white shadow-md"
+                ? "border border-white/35 bg-[#000000] text-white shadow-md"
                 : "border border-white/10 bg-[#000000] text-[#94a3b8] hover:border-white/25 hover:text-white"
             }`}
           >
             <Sparkles className="h-3.5 w-3.5" />
             <span>All Architectures</span>
-            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "all" ? "bg-[#000000] text-white" : "bg-[#060608] text-[#94a3b8]"}`}>
+            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "all" ? "bg-[#000000] text-white" : "bg-[#000000] text-[#94a3b8]"}`}>
               {counts.all}
             </span>
           </button>
@@ -215,13 +215,13 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
             onClick={() => setActiveTab("software")}
             className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
               activeTab === "software"
-                ? "border border-white/35 bg-[#060608] text-white shadow-md"
+                ? "border border-white/35 bg-[#000000] text-white shadow-md"
                 : "border border-white/10 bg-[#000000] text-[#94a3b8] hover:border-white/25 hover:text-white"
             }`}
           >
             <Laptop className="h-3.5 w-3.5" />
             <span>Software Systems</span>
-            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "software" ? "bg-[#000000] text-white" : "bg-[#060608] text-[#94a3b8]"}`}>
+            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "software" ? "bg-[#000000] text-white" : "bg-[#000000] text-[#94a3b8]"}`}>
               {counts.software}
             </span>
           </button>
@@ -231,13 +231,13 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
             onClick={() => setActiveTab("hardware")}
             className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
               activeTab === "hardware"
-                ? "border border-white/35 bg-[#060608] text-white shadow-md"
+                ? "border border-white/35 bg-[#000000] text-white shadow-md"
                 : "border border-white/10 bg-[#000000] text-[#94a3b8] hover:border-white/25 hover:text-white"
             }`}
           >
             <Cpu className="h-3.5 w-3.5" />
             <span>Hardware & Embedded</span>
-            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "hardware" ? "bg-[#000000] text-white" : "bg-[#060608] text-[#94a3b8]"}`}>
+            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${activeTab === "hardware" ? "bg-[#000000] text-white" : "bg-[#000000] text-[#94a3b8]"}`}>
               {counts.hardware}
             </span>
           </button>
@@ -323,32 +323,32 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                 onClick={notifyActiveProject}
                 className={`flex flex-col justify-between rounded-3xl border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all duration-500 ${
                   isHighlighted
-                    ? "border-white ring-4 ring-white/50 scale-[1.03] bg-[#060608] z-20"
-                    : "border-white/10 bg-[#000000] hover:border-white/25 hover:bg-[#060608]"
+                    ? "border-white ring-4 ring-white/50 scale-[1.03] bg-[#000000] z-20"
+                    : "border-white/10 bg-[#000000] hover:border-white/25 hover:bg-[#000000]"
                 }`}
               >
                 <div className="space-y-4">
                   {/* Badges / Header */}
                   <div className="flex flex-wrap items-center justify-between gap-1.5">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold border border-white/15 bg-[#060608] text-[#f8fafc]">
+                      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold border border-white/15 bg-[#000000] text-[#f8fafc]">
                         {isHardware ? <Cpu className="h-3 w-3" /> : <Laptop className="h-3 w-3" />}
                         {isHardware ? "Hardware & Embedded" : "Software Systems"}
                       </span>
                       {proj.domain && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#060608] px-2 py-0.5 text-[10px] font-medium text-[#f8fafc]">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#000000] px-2 py-0.5 text-[10px] font-medium text-[#f8fafc]">
                           {proj.domain}
                         </span>
                       )}
                       {isHighlighted && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-white/40 bg-[#060608] px-2.5 py-0.5 text-[10px] font-bold text-white animate-pulse">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-white/40 bg-[#000000] px-2.5 py-0.5 text-[10px] font-bold text-white animate-pulse">
                           <Sparkles className="h-3 w-3 text-white" />
                           🎯 DAS Recommended Blueprint
                         </span>
                       )}
                     </div>
 
-                    <span className="rounded-full border border-white/10 bg-[#060608] px-2.5 py-0.5 text-[10px] font-semibold text-[#94a3b8]">
+                    <span className="rounded-full border border-white/10 bg-[#000000] px-2.5 py-0.5 text-[10px] font-semibold text-[#94a3b8]">
                       {proj.difficulty}
                     </span>
                   </div>
@@ -383,7 +383,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
 
                   {/* Architecture Summary (if present) */}
                   {proj.architectureSummary && (
-                    <div className="rounded-2xl border border-white/10 bg-[#060608] p-3 text-[11px] leading-relaxed text-[#f8fafc]">
+                    <div className="rounded-2xl border border-white/10 bg-[#000000] p-3 text-[11px] leading-relaxed text-[#f8fafc]">
                       <span className="font-bold text-[#f8fafc]">Architecture: </span>
                       {proj.architectureSummary}
                     </div>
@@ -394,7 +394,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                     {proj.techStack.map((tech) => (
                       <span
                         key={tech}
-                        className="rounded-lg border border-white/10 bg-[#060608] px-2 py-0.5 text-[11px] font-medium text-[#f8fafc]"
+                        className="rounded-lg border border-white/10 bg-[#000000] px-2 py-0.5 text-[11px] font-medium text-[#f8fafc]"
                       >
                         {tech}
                       </span>
@@ -417,7 +417,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                   </div>
 
                   {/* Resume Ready Bullet */}
-                  <div className="rounded-2xl border border-white/10 bg-[#060608] p-3.5 space-y-1.5">
+                  <div className="rounded-2xl border border-white/10 bg-[#000000] p-3.5 space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] font-semibold text-[#94a3b8]">
                       <span>Google X-Y-Z Resume Bullet:</span>
                       <button
@@ -458,7 +458,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                         `Let's discuss how to build '${proj.title}'. What should the complete system architecture, component stack, 5-phase build roadmap, and top technical interview defense talking points look like?`
                       );
                     }}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#060608] border border-white/15 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#000000] hover:border-white/35 active:scale-95 shadow-sm cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#000000] border border-white/15 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#000000] hover:border-white/35 active:scale-95 shadow-sm cursor-pointer"
                   >
                     <Bot className="h-3.5 w-3.5 text-[#f8fafc]" />
                     <span>Discuss Architecture with AI Coach</span>

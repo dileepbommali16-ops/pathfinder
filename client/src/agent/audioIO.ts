@@ -52,17 +52,12 @@ export class Speaker {
     if (typeof window === "undefined") return;
     const unlock = () => {
       if (this.ctxRef && this.ctxRef.state === "suspended") {
-        this.ctxRef.resume().catch(() => { });
-      }
-      if (this.pendingGreetingText && !this.activeSpeaking) {
-        const textToSpeak = this.pendingGreetingText;
-        this.pendingGreetingText = null;
-        this.say(textToSpeak);
+        this.ctxRef.resume().catch(() => {});
       }
     };
-    window.addEventListener("pointerdown", unlock, { passive: true });
-    window.addEventListener("keydown", unlock, { passive: true });
-    window.addEventListener("touchstart", unlock, { passive: true });
+    window.addEventListener("pointerdown", unlock, { passive: true, once: true });
+    window.addEventListener("keydown", unlock, { passive: true, once: true });
+    window.addEventListener("touchstart", unlock, { passive: true, once: true });
   }
 
   private ensureContext(): AudioContext | null {
@@ -764,29 +759,13 @@ class AudioEngine {
     if (this.globalUnlockBound || typeof window === "undefined") return;
     this.globalUnlockBound = true;
     const resumeExisting = () => {
-      this.unlockAudio();
+      if (!this.audioCtx || this.audioCtx.state !== "running") {
+        this.unlockAudio();
+      }
       if (this.micCtx && (this.micCtx.state === "suspended" || (this.micCtx.state as string) === "interrupted")) {
         this.micCtx.resume().catch(() => {});
       }
-      const pending = this.pendingUnlockSpeech;
-      if (pending && this.audioCtx && this.audioCtx.state === "running" && !this.isSpeaking()) {
-        this.pendingUnlockSpeech = null;
-        void this.speakTextPuckOrLocal(pending.text, pending.apiBase);
-      } else if (pending && this.audioCtx && this.audioCtx.state === "suspended") {
-        void this.audioCtx
-          .resume()
-          .then(() => {
-            const p = this.pendingUnlockSpeech;
-            if (p && this.audioCtx?.state === "running" && !this.isSpeaking()) {
-              this.pendingUnlockSpeech = null;
-              void this.speakTextPuckOrLocal(p.text, p.apiBase);
-            }
-          })
-          .catch(() => {});
-      }
     };
-    window.addEventListener("click", resumeExisting, { passive: true });
-    window.addEventListener("touchend", resumeExisting, { passive: true });
     window.addEventListener("pointerdown", resumeExisting, { passive: true });
     window.addEventListener("keydown", resumeExisting, { passive: true });
   }
@@ -985,6 +964,7 @@ class AudioEngine {
     try {
       this.initContext();
       if (!this.audioCtx || !this.masterGain) return;
+      if (this.audioCtx.state === "running") return;
       if (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted") {
         this.audioCtx.resume().catch(() => {});
       }
@@ -1424,9 +1404,9 @@ class AudioEngine {
   private scheduleFallbackFloatPcm(float32Data: Float32Array, sampleRate = 24000) {
     if (!this.audioCtx || !this.analyser || float32Data.length === 0) return;
     const rate = Math.max(8000, sampleRate);
-    // Apply subtle 2ms edge ramp on the first chunk of a turn to avoid startup clicks
+    // Apply smooth 3ms edge ramp on the first chunk of a turn to avoid startup clicks
     if (this.activeSources.length === 0) {
-      const rampSamples = Math.min(float32Data.length >> 2, Math.round(rate * 0.002));
+      const rampSamples = Math.min(float32Data.length >> 2, Math.round(rate * 0.003));
       for (let i = 0; i < rampSamples; i++) {
         float32Data[i] *= i / Math.max(1, rampSamples);
       }
@@ -1441,7 +1421,7 @@ class AudioEngine {
 
     const currentTime = this.audioCtx.currentTime;
     if (this.nextPlayTime < currentTime - 0.005 || this.nextPlayTime > currentTime + 60.0) {
-      this.nextPlayTime = currentTime + 0.05;
+      this.nextPlayTime = currentTime + (this.activeSources.length === 0 ? 0.095 : 0.035);
     }
     const startAt = this.nextPlayTime;
     source.start(startAt);
@@ -1858,24 +1838,20 @@ class AudioEngine {
       }
     }, 1200);
 
-    // Primary path: AudioWorkletNode with 1200ms mobile timeout guard -> clean ScriptProcessor fallback
+    // Primary path: inline Blob AudioWorkletNode (instant <20ms load without extra network fetch) -> ScriptProcessor fallback
     let workletReady = false;
     if (this.micCtx.audioWorklet && typeof Blob !== "undefined") {
       try {
         const loadWorklet = async () => {
           if (!this.micCtx?.audioWorklet) throw new Error("No AudioWorklet");
-          try {
-            await this.micCtx.audioWorklet.addModule("/worklets/das-mic-processor.js");
-          } catch {
-            const blob = new Blob([MIC_WORKLET_CODE], { type: "application/javascript" });
-            this.workletBlobUrl = URL.createObjectURL(blob);
-            await this.micCtx.audioWorklet.addModule(this.workletBlobUrl);
-          }
+          const blob = new Blob([MIC_WORKLET_CODE], { type: "application/javascript" });
+          this.workletBlobUrl = URL.createObjectURL(blob);
+          await this.micCtx.audioWorklet.addModule(this.workletBlobUrl);
         };
         await Promise.race([
           loadWorklet(),
           new Promise<never>((_, reject) =>
-            window.setTimeout(() => reject(new Error("AudioWorklet addModule timeout")), 1200)
+            window.setTimeout(() => reject(new Error("AudioWorklet addModule timeout")), 600)
           ),
         ]);
         if (this.captureToken !== token || !this.micCtx) return;
@@ -2118,8 +2094,8 @@ export class CameraEngine {
       }
 
       const videoConstraints: MediaTrackConstraints = {
-        width: { ideal: 1280, min: 640 },
-        height: { ideal: 720, min: 360 },
+        width: { ideal: 640 },
+        height: { ideal: 360 },
         frameRate: { ideal: 15, max: 30 },
         ...(options?.deviceId
           ? { deviceId: { ideal: options.deviceId } }

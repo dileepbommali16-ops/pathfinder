@@ -56,7 +56,6 @@ import { getApiBase, API_BASE, fetchWithTimeout, api, getSessionId } from "@/lib
 import { getTabKnowledge } from "@/lib/siteKnowledge";
 import { Footer } from "@/components/dashboard/Footer";
 import { toast } from "sonner";
-import DepthText from "@/components/dashboard/DepthText";
 
 export interface HomeProps {
   initialTab?: TabId;
@@ -1911,7 +1910,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
   return (
     <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] selection:bg-[#ffffff]/35 selection:text-[#f8fafc] font-sans overflow-x-hidden">
       {isGlobalServerWakingUp && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[rgba(255,255,255,0.08)] bg-[#11131c]/95 px-4 py-2 text-xs font-medium text-[#f8fafc] shadow-[0_4px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[#2B2024] bg-[#000000]/95 px-4 py-2 text-xs font-medium text-[#f8fafc] shadow-[0_4px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
           <Loader2 className="h-3.5 w-3.5 animate-spin text-[#ffffff]" />
           <span>Waking up the server, this can take up to a minute...</span>
         </div>
@@ -1936,7 +1935,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       />
 
       {isServerWakingUp && (
-        <div className="relative z-40 border-b border-[#161926] bg-[#0a0b10] px-4 py-2 text-center text-xs font-medium text-[#f8fafc] backdrop-blur-md">
+        <div className="relative z-40 border-b border-[#2B2024] bg-[#000000] px-4 py-2 text-center text-xs font-medium text-[#f8fafc] backdrop-blur-md">
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
@@ -1957,9 +1956,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
             <button
               type="button"
               onClick={() => setFocusOnDas(false)}
-              className="px-4 py-2 rounded-full border border-cyan-400/50 bg-[#070d1f]/90 hover:bg-cyan-500/20 text-xs font-semibold text-cyan-200 backdrop-blur-xl shadow-[0_0_25px_rgba(34,211,238,0.3)] transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
+              className="px-4 py-2 rounded-full border border-[#2B2024] bg-[#000000]/90 hover:bg-[#2B2024] text-xs font-semibold text-white backdrop-blur-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
             >
-              <LayoutDashboard className="w-3.5 h-3.5 text-cyan-300" />
+              <LayoutDashboard className="w-3.5 h-3.5 text-white" />
               <span>Show Dashboard</span>
             </button>
           </div>
@@ -1971,9 +1970,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 setFocusOnDas(true);
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className="px-3.5 py-1.5 rounded-full border border-cyan-500/40 bg-[#0c101d]/75 hover:bg-cyan-500/20 text-xs font-semibold text-cyan-200 backdrop-blur-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+              className="px-3.5 py-1.5 rounded-full border border-[#2B2024] bg-[#000000]/85 hover:bg-[#2B2024] text-xs font-semibold text-white backdrop-blur-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
             >
-              <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
+              <Sparkles className="w-3.5 h-3.5 text-white" />
               <span>Focus on DAS</span>
             </button>
           </div>
@@ -1996,9 +1995,9 @@ export default function Home({ initialTab }: HomeProps = {}) {
               >
 
                 {isDemoProfile ? (
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-400/30 bg-[#060608] p-5 backdrop-blur-md shadow-[0_0_24px_rgba(255,214,0,0.08)]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#2B2024] bg-[#000000] p-5 backdrop-blur-md shadow-lg">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-400/15 text-amber-300">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#2B2024] text-white">
                         <User className="h-5 w-5" />
                       </div>
                       <div>
@@ -2013,16 +2012,16 @@ export default function Home({ initialTab }: HomeProps = {}) {
                     <button
                       type="button"
                       onClick={() => setActiveTab("profile")}
-                      className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-white hover:bg-zinc-200 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition-colors shadow-sm cursor-pointer"
+                      className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-[#2B2024] hover:brightness-110 border border-[#2B2024] px-3.5 py-2 text-xs font-semibold text-white transition-colors shadow-sm cursor-pointer"
                     >
                       <span>Edit 1. Profile / Settings</span>
                       <ArrowRight className="h-3 w-3" />
                     </button>
                   </div>
                 ) : isProfilePartiallyIncomplete && (
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#34222E] bg-[#060608] p-5 backdrop-blur-md shadow-[0_0_24px_rgba(52,34,46,0.22)]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#2B2024] bg-[#000000] p-5 backdrop-blur-md shadow-lg">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#2B2024] text-white">
                         <Sparkles className="h-5 w-5" />
                       </div>
                       <div>
@@ -2038,7 +2037,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                     <button
                       type="button"
                       onClick={() => setActiveTab("profile")}
-                      className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-white hover:bg-zinc-200 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition-colors shadow-sm cursor-pointer"
+                      className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-[#2B2024] hover:brightness-110 border border-[#2B2024] px-3.5 py-2 text-xs font-semibold text-white transition-colors shadow-sm cursor-pointer"
                     >
                       <span>Complete Profile</span>
                       <ArrowRight className="h-3 w-3" />
@@ -2273,12 +2272,12 @@ export default function Home({ initialTab }: HomeProps = {}) {
                               setActiveTab(stage.tab);
                               window.scrollTo({ top: 0, behavior: "smooth" });
                             }}
-                            className="group flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-[#11131c] p-4 text-left transition-all hover:border-white/30 hover:bg-[#161925] active:scale-[0.99] cursor-pointer"
+                            className="group flex flex-col justify-between rounded-2xl border border-[#2B2024] bg-[#000000] p-4 text-left transition-all hover:bg-[#2B2024] active:scale-[0.99] cursor-pointer"
                           >
                             <div>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 text-xs font-bold text-[#f8fafc]">
-                                  <StageIcon className="h-4 w-4 text-[#7c3aed]" />
+                                  <StageIcon className="h-4 w-4 text-white" />
                                   <span>{stage.title}</span>
                                 </div>
                                 <ArrowRight className="h-3.5 w-3.5 text-[#94a3b8] transition-transform group-hover:translate-x-1 group-hover:text-white" />
@@ -2298,6 +2297,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             {activeTab === "interview" && (
               <motion.div
                 key="interview"
+                data-slide-theme="dashboard-black-plum"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
@@ -2328,6 +2328,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             {activeTab === "skills" && (
               <motion.div
                 key="skills"
+                data-slide-theme="dashboard-black-plum"
                 data-das-id="roadmap-visualizer"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -2365,6 +2366,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             {activeTab === "branches" && (
               <motion.div
                 key="branches"
+                data-slide-theme="dashboard-black-plum"
                 data-das-id="branch-intelligence"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -2395,6 +2397,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             {activeTab === "analytics" && (
               <motion.div
                 key="analytics"
+                data-slide-theme="dashboard-black-plum"
                 data-das-id="cohort-explorer"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -2431,6 +2434,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             {activeTab === "profile" && (
               <motion.div
                 key="profile"
+                data-slide-theme="dashboard-black-plum"
                 data-das-id="profile-settings"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -2467,7 +2471,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             {activeTab === "resume" && (
               <motion.div
                 key="resume"
-                data-slide-theme="pure-black"
+                data-slide-theme="dashboard-black-plum"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
@@ -2505,7 +2509,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             {activeTab === "projects" && (
               <motion.div
                 key="projects"
-                data-slide-theme="pure-black"
+                data-slide-theme="dashboard-black-plum"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
@@ -2533,6 +2537,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             {activeTab === "roles" && (
               <motion.div
                 key="roles"
+                data-slide-theme="dashboard-black-plum"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}

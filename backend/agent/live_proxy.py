@@ -54,20 +54,23 @@ def get_das_system_instruction(role: str) -> str:
         identity_role = """You are speaking directly with your creator, master architect, and owner, Bommali Dileep.
 - Always address him warmly, casually, and loyally as 'Boss' in every single reply.
 - Never call yourself 'co-pilot' or sound robotic. You are DAS, created by Dileep.
-- Say "Hi Boss! What's up?" ONLY once as the initial session greeting. If Boss says 'Hi' or 'Hello' again later in the same session, NEVER repeat "Hi Boss! What's up?" — acknowledge naturally and ask what Boss wants to tackle next.
+- STRICT 'HI' GREETING RULE (CRITICAL):
+  * NEVER speak automatically when the website opens before Boss speaks.
+  * The VERY FIRST time Boss says "Hi" or "Hello" in the session, reply ONLY with these exact words: "Hi Boss! What's up?" (nothing else, no extra sentences).
+  * The SECOND time (or ANY subsequent time in the session) Boss says "Hi" or "Hello", NEVER repeat "Hi Boss! What's up?" — reply ONLY with these exact words: "Boss, I'm here." (nothing else).
 - ZERO SYCOPHANCY / BRUTALLY HONEST RULE: NEVER blindly agree ("Yes you're right!", "All correct!") or flatter just to please Boss! If Boss tests you with wrong code, wrong math/CS facts, messy hair/lighting on camera, or flawed reasoning, politely and directly tell him what is actually wrong and why.
 - You know everything about Boss Dileep, his family, his college, his mentors, and his life. Answer naturally, warmly, and proudly whenever he or anyone asks."""
     elif role_lower in ("madam", "mam", "ma'am"):
         identity_role = """You are speaking with a female visitor, evaluator, recruiter, or friend.
 - Always address her respectfully and politely as 'Madam'.
-- When she greets you for the first time, reply once: "Hello Madam, what can I help you with today?" (do not repeat on subsequent greetings).
+- STRICT 'HI' GREETING RULE: The first time she says "Hi" or "Hello", reply ONLY: "Hello Madam, what can I help you with today?" On the second or any subsequent "Hi" or "Hello", reply ONLY: "Madam, I'm here."
 - ZERO SYCOPHANCY / HONEST REALISM RULE: Even with visitors/evaluators, NEVER blindly agree ("Everything you said is right") or hand out fake compliments! If their claim, code, or answer is wrong or incomplete, respectfully point out the flaw directly.
 - Strictly use your natural male 'Puck' voice delivery (NEVER imitate a female voice even when talking to Madam).
 - If she asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked)."""
     else:
         identity_role = """You are speaking with a male visitor, evaluator, recruiter, or friend.
 - Always address him respectfully and politely as 'Sir'.
-- When he greets you for the first time, reply once: "Hello Sir, what can I help you with today?" (do not repeat on subsequent greetings).
+- STRICT 'HI' GREETING RULE: The first time he says "Hi" or "Hello", reply ONLY: "Hello Sir, what can I help you with today?" On the second or any subsequent "Hi" or "Hello", reply ONLY: "Sir, I'm here."
 - ZERO SYCOPHANCY / HONEST REALISM RULE: NEVER blindly agree or give fake compliments! Tell the candidate/visitor honestly when their answer, logic, or code has flaws.
 - Strictly use your natural male 'Puck' voice delivery.
 - If he asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked)."""
@@ -609,6 +612,31 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         fallback_history: list[dict] = []
         fallback_tasks: set[asyncio.Task] = set()
         pending_tool_futures: dict[str, asyncio.Future] = {}
+        hi_greeting_count = 0
+
+        import re as _re_hi
+
+        def is_pure_hi_greeting(txt: str) -> bool:
+            return bool(
+                _re_hi.match(
+                    r"^\s*(hi+|hello+|hey+|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$",
+                    (txt or "").strip().lower(),
+                )
+            )
+
+        def get_exact_hi_reply(role_str: str, count: int) -> str:
+            r_low = (role_str or "sir").lower().strip()
+            if count == 0:
+                if r_low == "boss":
+                    return "Hi Boss! What's up?"
+                if r_low in ("madam", "mam", "ma'am"):
+                    return "Hello Madam, what can I help you with today?"
+                return "Hello Sir, what can I help you with today?"
+            if r_low == "boss":
+                return "Boss, I'm here."
+            if r_low in ("madam", "mam", "ma'am"):
+                return "Madam, I'm here."
+            return "Sir, I'm here."
 
         def is_turn_busy() -> bool:
             now_m = time.monotonic()
@@ -965,7 +993,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 raise send_err
 
         async def receive_from_browser():
-            nonlocal latest_frame_bytes, latest_frame_at_mono, camera_active, explicit_cam_off, audio_turn_open, last_frame_sent_mono, latest_page_context, pending_response_until_mono, pending_user_text, user_role, config, last_activity_mono, fallback_audio_active
+            nonlocal latest_frame_bytes, latest_frame_at_mono, camera_active, explicit_cam_off, audio_turn_open, last_frame_sent_mono, latest_page_context, pending_response_until_mono, pending_user_text, user_role, config, last_activity_mono, fallback_audio_active, hi_greeting_count, turn_id, completed_turn_id
             try:
                 while True:
                     raw = await websocket.receive_text()
@@ -975,6 +1003,14 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     # 1. Keep-alive Ping
                     if msg_type == "ping":
                         await websocket.send_json({"type": "pong"})
+                        continue
+
+                    # 1a. Proactive Warmup when user clicks Speak or Cam
+                    if msg_type == "warmup":
+                        last_activity_mono = time.monotonic()
+                        t_w = asyncio.create_task(ensure_live_session())
+                        fallback_tasks.add(t_w)
+                        t_w.add_done_callback(fallback_tasks.discard)
                         continue
 
                     # 1b. Real two-way Client Tool / Chrome Extension Result
@@ -1200,6 +1236,39 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     elif msg_type == "text":
                         text = (msg.get("text") or "").strip()
                         if text:
+                            if is_pure_hi_greeting(text):
+                                exact_hi = get_exact_hi_reply(user_role, hi_greeting_count)
+                                hi_greeting_count += 1
+                                pending_user_text = None
+                                last_activity_mono = time.monotonic()
+                                turn_id += 1
+                                this_hi_turn = turn_id
+                                completed_turn_id = this_hi_turn
+                                await websocket.send_json({
+                                    "type": "transcript",
+                                    "text": exact_hi,
+                                    "turn_id": this_hi_turn,
+                                })
+                                try:
+                                    from backend.routers.voice_routes import synthesize_puck_pcm
+                                    tts_res = await synthesize_puck_pcm(exact_hi)
+                                    if (
+                                        tts_res
+                                        and tts_res.get("pcm_base64")
+                                        and websocket.client_state != WebSocketState.DISCONNECTED
+                                    ):
+                                        await websocket.send_json({
+                                            "type": "audio",
+                                            "voice": "DAS Neural",
+                                            "sample_rate": int(tts_res.get("sample_rate") or 24000),
+                                            "pcm_base64": tts_res["pcm_base64"],
+                                            "turn_id": this_hi_turn,
+                                        })
+                                except Exception:
+                                    pass
+                                if websocket.client_state != WebSocketState.DISCONNECTED:
+                                    await websocket.send_json({"type": "turn_complete", "turn_id": this_hi_turn})
+                                continue
                             pending_user_text = text
                             await send_vision_prompt(text, is_user_text=True, allow_fallback=True)
 

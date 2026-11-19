@@ -11,9 +11,25 @@ import { getUserRole, getHonorificKey, setHonorificPreference, isOwnerAccount, H
 import { toast } from "sonner";
 
 function getInitialGreeting(roleKey: HonorificKey): string {
-  if (roleKey === "madam") return "Hello Madam, what can I help you with today?";
-  if (roleKey === "sir") return "Hello Sir, what can I help you with today?";
-  return "Hi Boss! What's up?";
+  void roleKey;
+  return "DAS Ready — Say 'Hi' or ask anything.";
+}
+
+function isPureHiGreeting(text: string): boolean {
+  return /^\s*(hi+|hello+|hey+|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$/i.test(
+    (text || "").trim()
+  );
+}
+
+function getExactHiReply(roleKey: HonorificKey, greetCount: number): string {
+  if (greetCount <= 0) {
+    if (roleKey === "madam") return "Hello Madam, what can I help you with today?";
+    if (roleKey === "sir") return "Hello Sir, what can I help you with today?";
+    return "Hi Boss! What's up?";
+  }
+  if (roleKey === "madam") return "Madam, I'm here.";
+  if (roleKey === "sir") return "Sir, I'm here.";
+  return "Boss, I'm here.";
 }
 
 export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -65,7 +81,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const restTtsAbortRef = useRef<AbortController | null>(null);
   const dispatchTurnRef = useRef<(q: string, ctx: Record<string, any>, mode: "coach" | "chat") => void>(() => {});
   const spokenGreetingKeyRef = useRef<string>("");
+  const hiGreetCountRef = useRef<number>(0);
   const micBusyRef = useRef<boolean>(false);
+  const camBusyRef = useRef<boolean>(false);
+  const speechRecRef = useRef<any>(null);
   const chatHistoryRef = useRef<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const transcriptRef = useRef<string>(transcript);
   const userTranscriptRef = useRef<string>(userTranscript);
@@ -106,6 +125,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       setCodeTask(null);
       chatHistoryRef.current = [];
       spokenGreetingKeyRef.current = "";
+      hiGreetCountRef.current = 0;
       setTranscript(getInitialGreeting(nextKey));
     };
 
@@ -272,20 +292,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [isAuthenticated, connected]);
 
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const identity = lastAuthIdentityRef.current || "guest";
-    const greetKey = `${identity}:${role}`;
-    if (
-      spokenGreetingKeyRef.current !== greetKey &&
-      chatHistoryRef.current.length === 0 &&
-      !userTranscriptRef.current.trim()
-    ) {
-      spokenGreetingKeyRef.current = greetKey;
-      void audioEngine.speakTextPuckOrLocal(getInitialGreeting(role), API_BASE);
-    }
-  }, [isAuthenticated, connected, role]);
-
+  // Strictly NEVER speak automatically on website entry / login — wait until user says 'Hi' or speaks/types!
   useEffect(() => {
     if (cameraActive && cameraPreviewRef.current) {
       cameraEngine.attachPreviewElement(cameraPreviewRef.current);
@@ -457,6 +464,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       latestTranscript === "Connecting to DAS Core..." ||
       latestTranscript === "[Interrupted — Listening...]" ||
       latestTranscript === "Mic paused." ||
+      latestTranscript.startsWith("DAS Ready") ||
       latestTranscript.startsWith("Listening...");
     const isUntouchedInitial =
       chatHistoryRef.current.length === 0 &&
@@ -473,6 +481,26 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       ...chatHistoryRef.current,
       { role: "user" as const, content: queryText },
     ].slice(-12);
+
+    // Strict deterministic "Hi" rule: 1st time -> "Hi Boss! What's up?", 2nd+ time -> "Boss, I'm here."
+    if (mode === "chat" && isPureHiGreeting(queryText)) {
+      const activeKey = getHonorificKey();
+      const exactHi = getExactHiReply(activeKey, hiGreetCountRef.current);
+      hiGreetCountRef.current += 1;
+      cleanup();
+      chatHistoryRef.current = [
+        ...chatHistoryRef.current,
+        { role: "assistant" as const, content: exactHi },
+      ].slice(-12);
+      setTranscript(exactHi);
+      const ttsAc = new AbortController();
+      restTtsAbortRef.current = ttsAc;
+      void audioEngine.speakTextPuckOrLocal(exactHi, API_BASE, {
+        signal: ttsAc.signal,
+        shouldContinue: () => askCoachNonceRef.current === nonce,
+      });
+      return;
+    }
 
     const deliverRestReply = async () => {
       const replyText = await requestRestCoachReply(queryText, ctx, priorHistory);
@@ -656,6 +684,79 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const stopParallelSpeechRec = () => {
+    const rec = speechRecRef.current;
+    speechRecRef.current = null;
+    if (rec) {
+      try {
+        rec.onresult = null;
+        rec.onend = null;
+        rec.onerror = null;
+        rec.stop();
+      } catch {}
+    }
+  };
+
+  const startParallelSpeechRec = () => {
+    stopParallelSpeechRec();
+    if (typeof window === "undefined") return;
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+    try {
+      const rec = new SR();
+      rec.lang = "en-IN";
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.onresult = (ev: any) => {
+        if (audioEngine.isSpeaking() || dasSocket.isAgentSpeaking) return;
+        let interim = "";
+        let finalized = "";
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const piece = (ev.results[i][0]?.transcript || "").trim();
+          if (!piece) continue;
+          if (ev.results[i].isFinal) {
+            finalized += (finalized ? " " : "") + piece;
+          } else {
+            interim += (interim ? " " : "") + piece;
+          }
+        }
+        if (interim && !finalized) {
+          setUserTranscript(interim);
+        }
+        if (finalized) {
+          const cleanSpoken = finalized.trim();
+          setUserTranscript(cleanSpoken);
+          const curCtx =
+            (typeof window !== "undefined" && (window as any).__DAS_PAGE_CONTEXT__) || {};
+          if (isPureHiGreeting(cleanSpoken)) {
+            dispatchTurnRef.current(cleanSpoken, curCtx, "chat");
+          } else {
+            const nonceBefore = askCoachNonceRef.current;
+            window.setTimeout(() => {
+              if (
+                askCoachNonceRef.current === nonceBefore &&
+                !dasSocket.isAgentSpeaking &&
+                !audioEngine.isSpeaking()
+              ) {
+                dispatchTurnRef.current(cleanSpoken, curCtx, "chat");
+              }
+            }, 950);
+          }
+        }
+      };
+      rec.onerror = () => {};
+      rec.onend = () => {
+        if (speechRecRef.current === rec) {
+          try {
+            rec.start();
+          } catch {}
+        }
+      };
+      speechRecRef.current = rec;
+      rec.start();
+    } catch {}
+  };
+
   const toggleMic = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     e?.currentTarget?.blur();
     if (micBusyRef.current) return;
@@ -664,6 +765,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       audioEngine.unlockAudio();
       void audioEngine.autoSyncOutputDevice();
       ensureSocketConnected();
+      dasSocket.warmup();
 
       if (!micActive) {
         restTtsAbortRef.current?.abort();
@@ -672,12 +774,15 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         audioEngine.clearAudioQueue();
         try {
           await beginMicStream(selectedMicIdRef.current);
+          startParallelSpeechRec();
           setTranscript("Listening... Speak cleanly through headphones, earphones, buds, or laptop mic!");
         } catch {
+          stopParallelSpeechRec();
           setTranscript("Mic Permission Denied! Browser address bar lo Mic allow cheyyandi.");
           toast.error("Please allow Microphone permission in your browser.");
         }
       } else {
+        stopParallelSpeechRec();
         audioEngine.stopMicCapture();
         dasSocket.sendAudioStreamEnd();
         micSilentRef.current = false;
@@ -725,32 +830,39 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const toggleCamera = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     e?.currentTarget?.blur();
-    audioEngine.unlockAudio();
-    audioEngine.autoSyncOutputDevice();
+    if (camBusyRef.current) return;
+    camBusyRef.current = true;
+    try {
+      audioEngine.unlockAudio();
+      void audioEngine.autoSyncOutputDevice();
 
-    if (!cameraActive) {
-      ensureSocketConnected();
-      setMinimizedCamPreview(false);
-      dasSocket.setCameraActive(true);
-
-      const started = await startCameraFeed(selectedCameraId);
-      if (started) {
+      if (!cameraActive) {
+        ensureSocketConnected();
+        dasSocket.warmup();
+        setMinimizedCamPreview(false);
         dasSocket.setCameraActive(true);
-        setCameraActive(true);
-        await refreshMediaDevices();
-        toast.success("24/7 HD Vision active! Show yourself, outfit, or 3+ objects to DAS!");
+
+        const started = await startCameraFeed(selectedCameraId);
+        if (started) {
+          dasSocket.setCameraActive(true);
+          setCameraActive(true);
+          await refreshMediaDevices();
+          toast.success("24/7 HD Vision active! Show yourself, outfit, or 3+ objects to DAS!");
+        } else {
+          dasSocket.setCameraActive(false);
+          setTranscript("Camera access was denied or is unavailable.");
+          toast.error("Please allow Camera permission in browser settings.");
+        }
       } else {
         dasSocket.setCameraActive(false);
-        setTranscript("Camera access was denied or is unavailable.");
-        toast.error("Please allow Camera permission in browser settings.");
+        cameraEngine.stopCameraCapture();
+        setCameraActive(false);
+        setExpandedCamPreview(false);
+        setVisionStatusNote("Camera Paused");
+        toast.info("Camera paused.");
       }
-    } else {
-      dasSocket.setCameraActive(false);
-      cameraEngine.stopCameraCapture();
-      setCameraActive(false);
-      setExpandedCamPreview(false);
-      setVisionStatusNote("Camera Paused");
-      toast.info("Camera paused.");
+    } finally {
+      camBusyRef.current = false;
     }
   };
 
@@ -1004,13 +1116,13 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
       {/* DAS Live Multi-Language Code & Compiler Studio Drawer */}
       {codeTask && (
-        <div className="fixed top-16 left-2 right-2 sm:left-auto sm:top-20 sm:right-6 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#0F172A]/95 border border-[#334155] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between border-b border-[#334155] pb-2">
+        <div className="fixed top-16 left-2 right-2 sm:left-auto sm:top-20 sm:right-6 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#000000]/95 border border-[#2B2024] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between border-b border-[#2B2024] pb-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase px-2.5 py-0.5 rounded bg-cyan-500 text-slate-950">
+              <span className="text-xs font-bold uppercase px-2.5 py-0.5 rounded bg-[#2B2024] text-white">
                 {codeTask.language}
               </span>
-              <span className="font-bold text-cyan-300 text-sm truncate max-w-xs">
+              <span className="font-bold text-white text-sm truncate max-w-xs">
                 {codeTask.title}
               </span>
             </div>
@@ -1024,7 +1136,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   } catch {}
                   window.open(codeTask.compilerUrl, "_blank");
                 }}
-                className="px-3 py-1 bg-[#1E293B] hover:bg-[#334155] border border-[#334155] rounded-lg text-xs text-cyan-300 transition cursor-pointer"
+                className="px-3 py-1 bg-[#2B2024] hover:brightness-110 border border-[#2B2024] rounded-lg text-xs text-white transition cursor-pointer"
               >
                 Copy & Open External ↗
               </button>
@@ -1034,7 +1146,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   setCodeTask(null);
                   setTranscript(`Okay ${getUserRole()}, returned to your dashboard.`);
                 }}
-                className="px-2.5 py-1 bg-[#1E293B] hover:bg-[#334155] border border-[#334155] rounded-lg text-xs text-slate-200 font-medium transition cursor-pointer"
+                className="px-2.5 py-1 bg-[#000000] hover:bg-[#2B2024] border border-[#2B2024] rounded-lg text-xs text-white font-medium transition cursor-pointer"
                 title="Return to Dashboard"
               >
                 Return to Dashboard
@@ -1042,7 +1154,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               <button
                 type="button"
                 onClick={() => setCodeTask(null)}
-                className="px-2.5 py-1 bg-rose-600/80 hover:bg-rose-600 rounded-lg text-xs font-bold transition cursor-pointer"
+                className="px-2.5 py-1 bg-[#2B2024] hover:brightness-110 rounded-lg text-xs text-white font-bold transition cursor-pointer"
                 title="Close Compiler Studio"
               >
                 ✕
@@ -1051,8 +1163,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           </div>
 
           {codeTask.explanation && (
-            <div className="bg-[#0B1120] border border-[#334155] rounded-xl p-3 text-xs text-slate-200 whitespace-pre-wrap max-h-36 overflow-y-auto">
-              <span className="font-bold text-cyan-400 block mb-1">💡 Logic, Structure & Walkthrough:</span>
+            <div className="bg-[#000000] border border-[#2B2024] rounded-xl p-3 text-xs text-white whitespace-pre-wrap max-h-36 overflow-y-auto">
+              <span className="font-bold text-white block mb-1">💡 Logic, Structure & Walkthrough:</span>
               {codeTask.explanation}
             </div>
           )}
@@ -1061,7 +1173,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             value={editableCode}
             onChange={(e) => setEditableCode(e.target.value)}
             rows={9}
-            className="w-full bg-[#0B1120] border border-[#334155] rounded-xl p-3 font-mono text-xs text-emerald-300 focus:outline-none focus:border-cyan-500 selection:bg-cyan-900"
+            className="w-full bg-[#000000] border border-[#2B2024] rounded-xl p-3 font-mono text-xs text-white focus:outline-none focus:border-white/40 selection:bg-[#2B2024]"
           />
 
           <div className="flex items-center gap-2">
@@ -1070,19 +1182,19 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               value={stdinInput}
               onChange={(e) => setStdinInput(e.target.value)}
               placeholder="Optional program input (stdin)..."
-              className="flex-1 bg-[#0B1120] border border-[#334155] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+              className="flex-1 bg-[#000000] border border-[#2B2024] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-white/40"
             />
             <button
               type="button"
               onClick={() => runCodeLive()}
               disabled={isRunningCode}
-              className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-emerald-500/30"
+              className="px-4 py-1.5 bg-[#2B2024] hover:brightness-110 text-white font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1.5 border border-[#2B2024] shadow-lg"
             >
               {isRunningCode ? "Running..." : "▶ Run Code Live"}
             </button>
           </div>
 
-          <div className="bg-black/90 border border-[#334155] rounded-xl p-3 font-mono text-xs text-cyan-200 max-h-36 overflow-y-auto whitespace-pre-wrap">
+          <div className="bg-[#000000] border border-[#2B2024] rounded-xl p-3 font-mono text-xs text-white max-h-36 overflow-y-auto whitespace-pre-wrap">
             {compileOutput}
           </div>
         </div>
@@ -1100,7 +1212,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           }`}
           style={{
             backgroundColor: "#000000",
-            borderColor: camMotion.activeMotion ? "#10b981" : "#2b2024",
+            borderColor: "#2B2024",
             boxShadow: "0 16px 40px rgba(0, 0, 0, 0.85)",
           }}
         >
@@ -1115,14 +1227,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               }`}
             />
             <div
-              className="absolute top-1.5 left-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-[#f4eef0] border"
-              style={{ backgroundColor: "rgba(0,0,0,0.82)", borderColor: "#2b2024" }}
+              className="absolute top-1.5 left-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-white border"
+              style={{ backgroundColor: "rgba(0,0,0,0.82)", borderColor: "#2B2024" }}
             >
-              <span
-                className={`h-1.5 w-1.5 rounded-full animate-pulse ${
-                  camMotion.activeMotion ? "bg-emerald-400" : "bg-[#d8c4cb]"
-                }`}
-              />
+              <span className="h-1.5 w-1.5 rounded-full animate-pulse bg-white" />
               <span>24/7 VISION</span>
             </div>
             <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
@@ -1134,7 +1242,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                       e.currentTarget.blur();
                       setExpandedCamPreview((v) => !v);
                     }}
-                    className="px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
+                    className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-white border border-[#2B2024] cursor-pointer"
                     title={expandedCamPreview ? "Compact Camera View" : "Larger Real View"}
                     aria-label={expandedCamPreview ? "Shrink camera preview" : "Expand camera preview"}
                   >
@@ -1146,7 +1254,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                       e.currentTarget.blur();
                       setMirrorCamera((v) => !v);
                     }}
-                    className="px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
+                    className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-white border border-[#2B2024] cursor-pointer"
                     title="Mirror / Flip Preview"
                     aria-label="Mirror camera preview"
                   >
@@ -1160,7 +1268,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   e.currentTarget.blur();
                   setMinimizedCamPreview((v) => !v);
                 }}
-                className="px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
+                className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-white border border-[#2B2024] cursor-pointer"
                 title={minimizedCamPreview ? "Expand Camera Preview" : "Minimize Camera Preview"}
                 aria-label={minimizedCamPreview ? "Expand camera preview" : "Minimize camera preview"}
               >
@@ -1171,9 +1279,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
           {/* Live Motion & AI Perception Visualizer Strip */}
           {!minimizedCamPreview && (
-            <div className="px-2.5 py-1.5 border-t border-white/10 bg-[#07080d] flex flex-col gap-1">
+            <div className="px-2.5 py-1.5 border-t border-[#2B2024] bg-[#000000] flex flex-col gap-1">
               <div className="flex items-center justify-between text-[10px]">
-                <span className={camMotion.activeMotion ? "text-emerald-400 font-semibold" : "text-zinc-300 font-medium"}>
+                <span className="text-white font-semibold">
                   {camMotion.label}
                 </span>
                 <span className="text-zinc-400 font-mono">{visionStatusNote}</span>
@@ -1185,7 +1293,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                     <div
                       key={idx}
                       className={`flex-1 rounded-sm transition-all duration-150 ${
-                        camMotion.activeMotion ? "bg-emerald-400" : "bg-zinc-600"
+                        camMotion.activeMotion ? "bg-white" : "bg-[#2B2024]"
                       }`}
                       style={{ height: `${pct}%` }}
                     />
@@ -1195,12 +1303,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             </div>
           )}
           {!minimizedCamPreview && videoDevices.length > 1 && (
-            <div className="px-2 py-1.5 border-t border-slate-800 bg-[#0B1120]">
+            <div className="px-2 py-1.5 border-t border-[#2B2024] bg-[#000000]">
               <select
                 value={selectedCameraId}
                 onChange={(e) => handleCameraDeviceChange(e.target.value)}
                 aria-label="Select Camera"
-                className="w-full rounded bg-[#0F172A] border border-[#334155] text-[10px] text-slate-200 px-1.5 py-1 focus:outline-none"
+                className="w-full rounded bg-[#000000] border border-[#2B2024] text-[10px] text-white px-1.5 py-1 focus:outline-none"
               >
                 <option value="">Default Camera</option>
                 {videoDevices.map((d) => (
@@ -1229,7 +1337,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <div className="flex items-center gap-2">
             <span
               className={`h-2.5 w-2.5 rounded-full ${
-                connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+                connected ? "bg-white animate-pulse" : "bg-zinc-400"
               }`}
             />
             <span className="font-bold tracking-wider text-white">DAS AI</span>
@@ -1249,11 +1357,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   toast.info("Open chrome://extensions -> Developer mode ON -> Load unpacked -> select 'das-chrome-extension' folder, then refresh this tab.");
                 }
               }}
-              className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border transition cursor-pointer ${
-                chromeBridgeReady
-                  ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
-                  : "bg-[#2b2024] border-[#3d2d33] text-zinc-300 hover:text-white"
-              }`}
+              className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
+              style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
               title={
                 chromeBridgeReady
                   ? "Real Chrome Automation Extension Connected"
@@ -1269,11 +1374,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 const origin = typeof window !== "undefined" ? window.location.origin : "https://pathfinder-client-fzom.vercel.app";
                 window.location.href = `${API_BASE}/api/auth/google/workspace/start?origin=${encodeURIComponent(origin)}`;
               }}
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border transition cursor-pointer ${
-                gmailConnected
-                  ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
-                  : "bg-[#2b2024] border-[#3d2d33] text-zinc-300 hover:text-white"
-              }`}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
+              style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
               title={
                 gmailConnected
                   ? "Gmail, Calendar & Sheets API Connected (click to refresh authorization)"
@@ -1324,7 +1426,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         {/* User Voice / Input Transcript */}
         {userTranscript && (
           <div
-            className="text-xs text-emerald-400 rounded-xl px-3 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
+            className="text-xs text-white rounded-xl px-3 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
             style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           >
             🎤 You: {userTranscript}
@@ -1371,7 +1473,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               <button
                 type="button"
                 onClick={removeAttachment}
-                className="text-xs text-rose-400 hover:text-rose-300 font-bold ml-1"
+                className="text-xs text-white hover:text-zinc-300 font-bold ml-1"
                 title="Remove File"
               >
                 ✕
@@ -1386,17 +1488,17 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
             style={{
               backgroundColor: "#2b2024",
-              borderColor: micSilentWarning ? "#f59e0b" : "#2b2024",
+              borderColor: "#2b2024",
             }}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="font-bold text-emerald-400 shrink-0">
+              <span className="font-bold text-white shrink-0">
                 {micSilentWarning ? "⚠️ NO MIC SIGNAL" : "🎙️ MIC LIVE"}
               </span>
               <div className="w-24 h-2 rounded-full bg-[#000000] overflow-hidden shrink-0">
                 <div
                   ref={micBarRef}
-                  className="h-full bg-emerald-400 transition-[width] duration-75"
+                  className="h-full bg-white transition-[width] duration-75"
                   style={{ width: "4%" }}
                 />
               </div>
@@ -1409,7 +1511,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <button
               type="button"
               onClick={toggleMic}
-              className="text-[11px] text-rose-400 hover:text-rose-300 font-bold ml-2 cursor-pointer shrink-0"
+              className="text-[11px] text-white hover:text-zinc-300 font-bold ml-2 cursor-pointer shrink-0"
             >
               Mute
             </button>
@@ -1423,7 +1525,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           >
             <div className="flex items-center gap-2 truncate">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
               <span className="font-bold text-white">● 24/7 LIVE CAMERA</span>
               <span className="text-[10px] text-zinc-300 truncate">
                 (Auto-monitoring face, outfit & multi-objects continuously)
@@ -1432,7 +1534,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <button
               type="button"
               onClick={toggleCamera}
-              className="text-[11px] text-rose-400 hover:text-rose-300 font-bold ml-2 cursor-pointer shrink-0"
+              className="text-[11px] text-white hover:text-zinc-300 font-bold ml-2 cursor-pointer shrink-0"
             >
               Stop Cam
             </button>
@@ -1455,8 +1557,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             {micActive ? (
               <>
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
                 </span>
                 <span>Listening...</span>
               </>

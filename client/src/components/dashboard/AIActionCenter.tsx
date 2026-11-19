@@ -125,14 +125,14 @@ export function GoogleAutomationCard({
   const googleCalUrl = `https://calendar.google.com/calendar/render?${gcalParams.toString()}`;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#11131c] p-5 text-white shadow-xl flex flex-col justify-between h-full">
+    <div className="rounded-2xl border border-white/10 bg-[#000000] p-5 text-white shadow-xl flex flex-col justify-between h-full">
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-emerald-400" />
+            <Calendar className="h-4 w-4 text-[#f8fafc]" />
             <span>Prep Schedule & Dossier Export</span>
           </h3>
-          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-mono">
+          <span className="text-[10px] bg-[#2B2024] text-[#f8fafc] px-2 py-0.5 rounded-full font-mono">
             Ready
           </span>
         </div>
@@ -708,7 +708,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 shadow-2xl backdrop-blur-2xl sm:p-8">
+    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-2xl backdrop-blur-2xl sm:p-8">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2.5">
@@ -777,7 +777,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               data-testid={`btn-action-${act.id}`}
               disabled={Boolean(loadingActionId)}
               onClick={() => executeCardAction(act.id)}
-              className={`group flex flex-col justify-between rounded-2xl border bg-[#0a0b10] p-4 text-left transition-all duration-200 active:scale-[0.98] shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${act.btnClass}`}
+              className={`group flex flex-col justify-between rounded-2xl border bg-[#000000] p-4 text-left transition-all duration-200 active:scale-[0.98] shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${act.btnClass}`}
             >
               <div>
                 <div className="flex items-center justify-between">
@@ -788,7 +788,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                       <Icon className="h-4 w-4" />
                     )}
                   </div>
-                  <span className="rounded-full border border-white/[0.08] bg-[#11131c] px-2 py-0.5 text-[10px] font-semibold text-[#94a3b8]">
+                  <span className="rounded-full border border-white/[0.08] bg-[#000000] px-2 py-0.5 text-[10px] font-semibold text-[#94a3b8]">
                     {act.tag}
                   </span>
                 </div>
@@ -841,7 +841,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
               transition={{ duration: 0.2 }}
-              className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8)]"
+              className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8)]"
             >
               {/* Decorative Horizon Glow */}
               <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-[#ffffff]/10 blur-3xl" />
@@ -873,7 +873,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                 <button
                   id="btn-close-readiness-modal"
                   onClick={() => setActiveModal(null)}
-                  className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-2 text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/10 transition-colors cursor-pointer"
+                  className="rounded-xl border border-white/[0.08] bg-[#000000] p-2 text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/10 transition-colors cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -901,7 +901,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               )}
 
               {/* Main Score Banner */}
-              <div className="mt-6 rounded-2xl border border-[#ffffff]/30 bg-[#0a0b10] p-5 backdrop-blur-md">
+              <div className="mt-6 rounded-2xl border border-[#ffffff]/30 bg-[#000000] p-5 backdrop-blur-md">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#ffffff]">
@@ -913,7 +913,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#11131c] px-3.5 py-2">
+                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2">
                     <ShieldCheck className="h-4 w-4 text-[#ffffff] flex-shrink-0" />
                     <span className="text-xs font-medium text-[#f8fafc]">
                       {activeProfile.cgpa >= 7.5 && activeProfile.backlogs === 0
@@ -932,7 +932,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                 </h4>
 
                 <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3">
                     <div className="flex justify-between text-xs font-semibold">
                       <span className="text-[#94a3b8]">Academics</span>
                       <span className="text-[#ffffff]">{readinessData.cgpa ?? activeProfile.cgpa}/10 ({readinessData.breakdown.academics ?? 0}%)</span>
@@ -942,7 +942,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3">
                     <div className="flex justify-between text-xs font-semibold">
                       <span className="text-[#94a3b8]">Skills</span>
                       <span className="text-[#ffffff]">{readinessData.breakdown.skills ?? readinessData.breakdown.coding ?? 70}%</span>
@@ -952,7 +952,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3">
                     <div className="flex justify-between text-xs font-semibold">
                       <span className="text-[#94a3b8]">Projects</span>
                       <span className="text-[#ffffff]">{activeProfile.projectsCount} portfolio ({readinessData.breakdown.projects ?? 50}%)</span>
@@ -962,7 +962,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3">
                     <div className="flex justify-between text-xs font-semibold">
                       <span className="text-[#94a3b8]">Internships</span>
                       <span className="text-[#ffffff]">{activeProfile.internships} verified ({readinessData.breakdown.internships ?? 0}%)</span>
@@ -972,7 +972,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3">
                     <div className="flex justify-between text-xs font-semibold">
                       <span className="text-[#94a3b8]">Coding</span>
                       <span className="text-[#ffffff]">{activeProfile.coding}/10 ({readinessData.breakdown.coding ?? readinessData.breakdown.coding_dsa ?? 70}%)</span>
@@ -982,7 +982,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3">
                     <div className="flex justify-between text-xs font-semibold">
                       <span className="text-[#94a3b8]">Communication</span>
                       <span className="text-[#f8fafc]">{activeProfile.communication}/10 ({readinessData.breakdown.communication ?? 70}%)</span>
@@ -996,7 +996,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
               {/* Strengths & Priority Milestones */}
               <div className="mt-5 grid gap-3 sm:grid-cols-2 text-xs">
-                <div className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-3.5">
+                <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3.5">
                   <span className="font-bold text-[#f8fafc] flex items-center gap-1.5">
                     <CheckCircle2 className="h-3.5 w-3.5 text-[#ffffff]" />
                     <span>Top Candidate Strengths</span>
@@ -1023,7 +1023,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
 
               {/* Recommended Skills */}
               {readinessData.recommended_skills?.length > 0 && (
-                <div className="mt-4 rounded-xl border border-white/[0.08] bg-[#0a0b10] p-3 text-xs">
+                <div className="mt-4 rounded-xl border border-white/[0.08] bg-[#000000] p-3 text-xs">
                   <span className="font-bold text-[#f8fafc] flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5 text-white" />
                     <span>Targeted Recommended Skills</span>
@@ -1045,7 +1045,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     setActiveModal(null);
                     onStartMockInterview();
                   }}
-                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#0a0b10] px-4 py-2 text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] hover:border-[#ffffff]/50 transition-all cursor-pointer"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#000000] px-4 py-2 text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] hover:border-[#ffffff]/50 transition-all cursor-pointer"
                 >
                   <Mic className="h-3.5 w-3.5" />
                   <span>Start Mock Interview</span>
@@ -1077,7 +1077,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-2xl rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 sm:p-8 text-[#f8fafc] shadow-2xl"
+              className="relative w-full max-w-2xl rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 text-[#f8fafc] shadow-2xl"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -1087,14 +1087,14 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                   </h3>
                   <p className="text-xs text-[#94a3b8] mt-1">{roadmapData.headline}</p>
                 </div>
-                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-2 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
+                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#000000] p-2 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               <div className="mt-6 space-y-2.5">
                 {(roadmapData.weeks || []).map((w: any) => (
-                  <div key={w.week} className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-[#0a0b10] p-3 text-xs">
+                  <div key={w.week} className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-[#000000] p-3 text-xs">
                     <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ffffff]/10 text-[#ffffff] font-bold border border-[#ffffff]/30 flex-shrink-0">
                       W{w.week}
                     </span>
@@ -1132,7 +1132,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-xl rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 sm:p-8 text-[#f8fafc] shadow-2xl"
+              className="relative w-full max-w-xl rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 text-[#f8fafc] shadow-2xl"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -1142,12 +1142,12 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                   </h3>
                   <p className="text-xs text-[#94a3b8] mt-1">Profile alignment against standard recruiter ATS filters</p>
                 </div>
-                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-2 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
+                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#000000] p-2 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-[#ffffff]/30 bg-[#0a0b10] p-4 flex items-center justify-between">
+              <div className="mt-5 rounded-2xl border border-[#ffffff]/30 bg-[#000000] p-4 flex items-center justify-between">
                 <div>
                   <span className="text-[11px] font-bold text-[#ffffff] uppercase">Estimated ATS Match</span>
                   <div className="text-3xl font-black text-[#f8fafc]">{resumeData.matchScore}%</div>
@@ -1162,7 +1162,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                   <p className="font-semibold text-[#94a3b8] mb-1.5">Detected Technical Keywords:</p>
                   <div className="flex flex-wrap gap-1.5">
                     {resumeData.detectedKeywords.map((kw: string, i: number) => (
-                      <span key={i} className="rounded-md bg-[#0a0b10] border border-white/[0.08] px-2 py-0.5 text-[#f8fafc] text-[11px]">
+                      <span key={i} className="rounded-md bg-[#000000] border border-white/[0.08] px-2 py-0.5 text-[#f8fafc] text-[11px]">
                         ✓ {kw}
                       </span>
                     ))}
@@ -1207,7 +1207,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-2xl rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 sm:p-8 text-[#f8fafc] shadow-2xl"
+              className="relative w-full max-w-2xl rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 text-[#f8fafc] shadow-2xl"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -1217,14 +1217,14 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                   </h3>
                   <p className="text-xs text-[#94a3b8] mt-1">Production-ready projects to demonstrate high-value engineering skills</p>
                 </div>
-                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-2 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
+                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#000000] p-2 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               <div className="mt-5 space-y-3">
                 {projectsData.map((proj: any, idx: number) => (
-                  <div key={idx} className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-4 text-xs">
+                  <div key={idx} className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 text-xs">
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-[#f8fafc] text-sm">{proj.title}</h4>
                       <span className="rounded-full bg-[#ffffff]/10 border border-[#ffffff]/30 px-2 py-0.5 text-[10px] text-[#ffffff] font-semibold">
@@ -1234,7 +1234,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                     <p className="text-[#94a3b8] mt-1 leading-relaxed">{proj.impact || proj.description}</p>
                     <div className="mt-2.5 flex flex-wrap gap-1.5">
                       {(proj.stack || proj.techStack || []).map((t: string, i: number) => (
-                        <span key={i} className="rounded-md bg-[#11131c] border border-white/[0.08] px-2 py-0.5 text-[10px] text-[#94a3b8] font-mono">
+                        <span key={i} className="rounded-md bg-[#000000] border border-white/[0.08] px-2 py-0.5 text-[10px] text-[#94a3b8] font-mono">
                           {t}
                         </span>
                       ))}
@@ -1269,7 +1269,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-xl rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 sm:p-8 text-[#f8fafc] shadow-2xl"
+              className="relative w-full max-w-xl rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 text-[#f8fafc] shadow-2xl"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -1279,21 +1279,21 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                   </h3>
                   <p className="text-xs text-[#94a3b8] mt-1">Verified 2024–2026 data across 972 engineering candidates</p>
                 </div>
-                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#0a0b10] p-2 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
+                <button onClick={() => setActiveModal(null)} className="rounded-xl border border-white/[0.08] bg-[#000000] p-2 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-3.5">
+                <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-3.5">
                   <span className="text-[10px] uppercase font-bold text-[#ffffff]">Branch Placement Rate</span>
                   <div className="text-2xl font-black text-[#f8fafc] mt-1">{analyticsData.placementRate}%</div>
                 </div>
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-3.5">
+                <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-3.5">
                   <span className="text-[10px] uppercase font-bold text-[#ffffff]">Highest Package</span>
                   <div className="text-2xl font-black text-[#f8fafc] mt-1">{analyticsData.highestPackage} LPA</div>
                 </div>
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-3.5 col-span-2 sm:col-span-1">
+                <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-3.5 col-span-2 sm:col-span-1">
                   <span className="text-[10px] uppercase font-bold text-[#ffffff]">Median Package</span>
                   <div className="text-2xl font-black text-[#f8fafc] mt-1">{analyticsData.medianPackage} LPA</div>
                 </div>
@@ -1303,7 +1303,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                 <p className="font-semibold text-[#94a3b8] mb-1.5">Top Frequent Campus Recruiters:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {analyticsData.topRecruiters.map((rec: string, i: number) => (
-                    <span key={i} className="rounded-md bg-[#0a0b10] border border-white/[0.08] px-2.5 py-1 text-[#f8fafc]">
+                    <span key={i} className="rounded-md bg-[#000000] border border-white/[0.08] px-2.5 py-1 text-[#f8fafc]">
                       {rec}
                     </span>
                   ))}
@@ -1336,7 +1336,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md rounded-3xl border border-[#ffffff]/40 bg-[#11131c] p-6 sm:p-8 text-[#f8fafc] shadow-2xl"
+              className="relative w-full max-w-md rounded-3xl border border-[#ffffff]/40 bg-[#000000] p-6 sm:p-8 text-[#f8fafc] shadow-2xl"
             >
               <div className="flex items-center gap-3 text-[#ffffff]">
                 <AlertTriangle className="h-6 w-6" />
@@ -1346,7 +1346,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                 Pathfinder’s AI models require your academic details, skills, and target role to generate accurate placement predictions and roadmaps.
               </p>
 
-              <div className="mt-4 rounded-xl border border-white/[0.08] bg-[#0a0b10] p-3 text-xs text-[#94a3b8] space-y-1">
+              <div className="mt-4 rounded-xl border border-white/[0.08] bg-[#000000] p-3 text-xs text-[#94a3b8] space-y-1">
                 <p>• Academic CGPA and active backlog count</p>
                 <p>• Technical skills and preferred programming stack</p>
                 <p>• Target role and industry preferences</p>
@@ -1356,7 +1356,7 @@ export const AIActionCenter: React.FC<AIActionCenterProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveModal(null)}
-                  className="rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2 text-xs text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer"
+                  className="rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2 text-xs text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer"
                 >
                   Dismiss
                 </button>

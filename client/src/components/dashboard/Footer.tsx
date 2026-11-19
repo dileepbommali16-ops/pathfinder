@@ -37,25 +37,25 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
   return (
     <footer className="mt-20 border-t border-white/[0.08] bg-[#000000] text-[#94a3b8] transition-colors relative z-10">
       {/* Top Ambient Horizon Gradient */}
-      <div className="pointer-events-none absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#34222E] to-transparent" />
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#2B2024] to-transparent" />
 
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Column 1: Brand & Positioning */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#060608] ring-1 ring-[#34222E]">
-                <GraduationCap className="h-5 w-5 text-[#74F9FE]" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#000000] ring-1 ring-[#A80139]">
+                <GraduationCap className="h-5 w-5 text-[#FD0053]" />
               </div>
-              <span className="text-lg font-bold tracking-tight text-[#ACE5F6] font-['Space_Grotesk']">
-                Pathfinder <span className="text-[#74F9FE]">2.0</span>
+              <span className="text-lg font-bold tracking-tight text-[#FD0053] font-['Space_Grotesk']">
+                Pathfinder <span className="text-[#A80139]">2.0</span>
               </span>
             </div>
             <p className="text-xs leading-relaxed text-[#94a3b8]">
               Autonomous full-stack AI career intelligence platform benchmarked on 972 verified campus records. Calibrates student profiles, tutors production architectures, and prepares engineering candidates for Tier-1 recruitment filters.
             </p>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#2B2024] bg-[#2B2024] px-3 py-1 text-[11px] font-medium text-white">
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
               <span>All 7 Engineering Pillars Operational</span>
             </div>
           </div>
@@ -82,7 +82,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                   className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left flex items-center gap-1.5"
                 >
                   <span>Interview &amp; Project Defense Simulator</span>
-                  <span className="text-[9px] bg-[#34222E]/60 text-[#f8fafc] border border-[#34222E] px-1 rounded">Live</span>
+                  <span className="text-[9px] bg-[#2B2024] text-[#f8fafc] border border-[#2B2024] px-1 rounded">Live</span>
                 </button>
               </li>
               <li>
@@ -194,7 +194,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                 className="flex items-center gap-2.5 text-[#94a3b8] hover:text-[#f8fafc] transition-colors group cursor-pointer"
                 title="Send an email to Pathfinder Support"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#34222E]/50 text-[#e4d8df] group-hover:bg-[#34222E]/80 transition-colors">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2B2024] text-white group-hover:brightness-110 transition-colors">
                   <Mail className="h-3.5 w-3.5" />
                 </div>
                 <span>support@pathfinder-ai.io</span>
@@ -206,14 +206,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                 className="flex items-center gap-2.5 text-[#94a3b8] hover:text-[#f8fafc] transition-colors group cursor-pointer"
                 title="Call Placement Office Helpline"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#34222E]/50 text-[#e4d8df] group-hover:bg-[#34222E]/80 transition-colors">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2B2024] text-white group-hover:brightness-110 transition-colors">
                   <Phone className="h-3.5 w-3.5" />
                 </div>
                 <span>+91 (800) 012-3456 (Placement Helpline)</span>
               </a>
 
               <div className="flex items-center gap-2.5 text-[#94a3b8] pt-1">
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/5 text-[#94a3b8]">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2B2024] text-[#94a3b8]">
                   <MapPin className="h-3.5 w-3.5" />
                 </div>
                 <span>National Engineering Campus, Academic Block</span>
@@ -223,7 +223,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
         </div>
 
         {/* Bottom Bar: Copyright & Compliance */}
-        <div className="mt-12 pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748b]">
+        <div className="mt-12 pt-6 border-t border-[#2B2024] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748b]">
           {/* Dynamic Copyright Year & Open Source */}
           <div className="flex flex-wrap items-center gap-2">
             <span>© {currentYear} Pathfinder 2.0. All rights reserved.</span>
@@ -248,7 +248,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="inline-flex items-center gap-1.5 text-emerald-400">
+            <span className="inline-flex items-center gap-1.5 text-white">
               <ShieldCheck className="h-3.5 w-3.5" />
               <span>OWASP 19-Point Hardened</span>
             </span>
@@ -256,7 +256,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
             <button
               type="button"
               onClick={scrollToTop}
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#060608] px-2.5 py-1 text-xs text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/5 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg border border-[#2B2024] bg-[#000000] px-2.5 py-1 text-xs text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#2B2024] transition-colors cursor-pointer"
               title="Back to top"
             >
               <ArrowUp className="h-3.5 w-3.5" />

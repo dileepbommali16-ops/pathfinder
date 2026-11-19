@@ -85,7 +85,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-[#161926] bg-[#11131c] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
+    <div className="relative overflow-hidden rounded-3xl border border-[#000000] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
       {/* Subtle background ambient mesh */}
       <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#ffffff]/[0.05] blur-3xl" />
 
@@ -113,13 +113,13 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           </button>
           <button
             onClick={() => applyPreset("average")}
-            className="rounded-lg border border-[#161926] bg-[#0a0b10] px-2.5 py-1 text-[11px] font-semibold text-[#f8fafc] hover:border-[#ffffff]/40 transition-all active:scale-95"
+            className="rounded-lg border border-[#000000] bg-[#000000] px-2.5 py-1 text-[11px] font-semibold text-[#f8fafc] hover:border-[#ffffff]/40 transition-all active:scale-95"
           >
             Solid Benchmark
           </button>
           <button
             onClick={() => applyPreset("starter")}
-            className="rounded-lg border border-[#9f1239]/30 bg-[#9f1239]/10 px-2.5 py-1 text-[11px] font-semibold text-[#9f1239] shadow-[0_0_10px_rgba(159, 18, 57,0.15)] hover:bg-[#9f1239]/20 transition-all active:scale-95"
+            className="rounded-lg border border-[#2B2024]/30 bg-[#2B2024]/10 px-2.5 py-1 text-[11px] font-semibold text-[#2B2024] shadow-[0_0_10px_rgba(159, 18, 57,0.15)] hover:bg-[#2B2024]/20 transition-all active:scale-95"
           >
             Needs Support
           </button>
@@ -128,7 +128,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
 
       <div className="relative z-10 mt-6 grid gap-6 md:grid-cols-2">
         {/* Left Column: Sliders */}
-        <div className="space-y-5 rounded-2xl border border-[#161926] bg-[#0a0b10] p-5 backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+        <div className="space-y-5 rounded-2xl border border-[#000000] bg-[#000000] p-5 backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
           <span className="text-xs font-bold uppercase tracking-wider text-[#ffffff]">
             1. Core Academic & Technical Sliders
           </span>
@@ -137,7 +137,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
               <span className="font-semibold text-[#f8fafc]">Cumulative CGPA</span>
-              <span className="rounded bg-[#161926] px-2 py-0.5 font-bold text-[#ffffff]">
+              <span className="rounded bg-[#000000] px-2 py-0.5 font-bold text-[#ffffff]">
                 {profile.cgpa.toFixed(1)} / 10.0
               </span>
             </div>
@@ -148,7 +148,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
               step="0.1"
               value={profile.cgpa}
               onChange={(e) => onChange({ cgpa: parseFloat(e.target.value) })}
-              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#161926] accent-[#ffffff]"
+              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#000000] accent-[#ffffff]"
             />
             <div className="flex justify-between text-[10px] text-[#94a3b8]">
               <span>4.0 (Minimum)</span>
@@ -161,7 +161,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
               <span className="font-semibold text-[#f8fafc]">Active Academic Backlogs</span>
-              <span className={`rounded px-2 py-0.5 font-bold ${profile.backlogs === 0 ? "bg-[#161926] text-[#f8fafc]" : "bg-[#9f1239]/20 text-[#9f1239]"}`}>
+              <span className={`rounded px-2 py-0.5 font-bold ${profile.backlogs === 0 ? "bg-[#000000] text-[#f8fafc]" : "bg-[#2B2024]/20 text-[#2B2024]"}`}>
                 {profile.backlogs} {profile.backlogs === 1 ? "Backlog" : "Backlogs"}
               </span>
             </div>
@@ -172,7 +172,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
               step="1"
               value={profile.backlogs}
               onChange={(e) => onChange({ backlogs: parseInt(e.target.value, 10) })}
-              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#161926] accent-rose-500"
+              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#000000] accent-rose-500"
             />
             <div className="flex justify-between text-[10px] text-[#94a3b8]">
               <span>0 (Clean Eligibility)</span>
@@ -185,7 +185,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
               <span className="font-semibold text-[#f8fafc]">Internships Completed</span>
-              <span className="rounded bg-[#161926] px-2 py-0.5 font-bold text-[#ffffff]">
+              <span className="rounded bg-[#000000] px-2 py-0.5 font-bold text-[#ffffff]">
                 {profile.internships} {profile.internships === 1 ? "Internship" : "Internships"}
               </span>
             </div>
@@ -196,7 +196,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
               step="1"
               value={profile.internships}
               onChange={(e) => onChange({ internships: parseInt(e.target.value, 10) })}
-              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#161926] accent-[#ffffff]"
+              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#000000] accent-[#ffffff]"
             />
             <div className="flex justify-between text-[10px] text-[#94a3b8]">
               <span>0 (Academic Only)</span>
@@ -209,7 +209,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
               <span className="font-semibold text-[#f8fafc]">DSA & Problem Solving Confidence</span>
-              <span className="rounded bg-[#161926] px-2 py-0.5 font-bold text-[#ffffff]">
+              <span className="rounded bg-[#000000] px-2 py-0.5 font-bold text-[#ffffff]">
                 {profile.coding} / 10
               </span>
             </div>
@@ -220,7 +220,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
               step="1"
               value={profile.coding}
               onChange={(e) => onChange({ coding: parseInt(e.target.value, 10) })}
-              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#161926] accent-[#ffffff]"
+              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#000000] accent-[#ffffff]"
             />
             <div className="flex justify-between text-[10px] text-[#94a3b8]">
               <span>1 (Beginner)</span>
@@ -233,7 +233,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
               <span className="font-semibold text-[#f8fafc]">Technical Communication Confidence</span>
-              <span className="rounded bg-[#161926] px-2 py-0.5 font-bold text-[#ffffff]">
+              <span className="rounded bg-[#000000] px-2 py-0.5 font-bold text-[#ffffff]">
                 {profile.communication} / 10
               </span>
             </div>
@@ -244,7 +244,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
               step="1"
               value={profile.communication}
               onChange={(e) => onChange({ communication: parseInt(e.target.value, 10) })}
-              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#161926] accent-[#ffffff]"
+              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#000000] accent-[#ffffff]"
             />
             <div className="flex justify-between text-[10px] text-[#94a3b8]">
               <span>1 (Shy)</span>
@@ -255,7 +255,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
         </div>
 
         {/* Right Column: Career Target & Dropdowns */}
-        <div className="flex flex-col justify-between space-y-4 rounded-2xl border border-[#161926] bg-[#0a0b10] p-5 backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+        <div className="flex flex-col justify-between space-y-4 rounded-2xl border border-[#000000] bg-[#000000] p-5 backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
           <div className="space-y-4">
             <span className="text-xs font-bold uppercase tracking-wider text-[#ffffff]">
               2. Career Aspirations & Cohort Mapping
@@ -270,7 +270,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
               <select
                 value={profile.targetRole}
                 onChange={(e) => onChange({ targetRole: e.target.value })}
-                className="w-full rounded-xl border border-[#161926] bg-[#11131c] px-3.5 py-2.5 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#ffffff] focus:ring-1 focus:ring-[#ffffff]/20"
+                className="w-full rounded-xl border border-[#000000] bg-[#000000] px-3.5 py-2.5 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#ffffff] focus:ring-1 focus:ring-[#ffffff]/20"
               >
                 {ROLES.map((r) => (
                   <option key={r} value={r}>
@@ -289,7 +289,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
               <select
                 value={profile.targetTier}
                 onChange={(e) => onChange({ targetTier: e.target.value })}
-                className="w-full rounded-xl border border-[#161926] bg-[#11131c] px-3.5 py-2.5 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#ffffff] focus:ring-1 focus:ring-[#ffffff]/20"
+                className="w-full rounded-xl border border-[#000000] bg-[#000000] px-3.5 py-2.5 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#ffffff] focus:ring-1 focus:ring-[#ffffff]/20"
               >
                 {TIERS.map((t) => (
                   <option key={t} value={t}>
@@ -309,7 +309,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
                 <select
                   value={profile.branch}
                   onChange={(e) => onChange({ branch: e.target.value })}
-                  className="w-full rounded-xl border border-[#161926] bg-[#11131c] px-3 py-2.5 text-xs font-medium text-[#f8fafc] outline-none focus:border-[#ffffff] focus:ring-1 focus:ring-[#ffffff]/20"
+                  className="w-full rounded-xl border border-[#000000] bg-[#000000] px-3 py-2.5 text-xs font-medium text-[#f8fafc] outline-none focus:border-[#ffffff] focus:ring-1 focus:ring-[#ffffff]/20"
                 >
                   {BRANCHES.map((b) => (
                     <option key={b} value={b}>
@@ -327,7 +327,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
                 <select
                   value={profile.graduationYear}
                   onChange={(e) => onChange({ graduationYear: parseInt(e.target.value, 10) })}
-                  className="w-full rounded-xl border border-[#161926] bg-[#11131c] px-3 py-2.5 text-xs font-medium text-[#f8fafc] outline-none focus:border-white/50 focus:ring-1 focus:ring-white/20"
+                  className="w-full rounded-xl border border-[#000000] bg-[#000000] px-3 py-2.5 text-xs font-medium text-[#f8fafc] outline-none focus:border-white/50 focus:ring-1 focus:ring-white/20"
                 >
                   {[2028, 2027, 2026, 2025, 2024].map((y) => (
                     <option key={y} value={y}>
@@ -344,7 +344,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
             <button
               onClick={onCalculate}
               disabled={isCalculating}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#7c3aed] px-5 py-3 text-xs font-bold text-white shadow-[0_0_25px_rgba(124,58,237,0.3)] transition-all hover:bg-[#6d28d9] active:scale-95 disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2B2024] px-5 py-3 text-xs font-bold text-white shadow-[0_0_25px_rgba(124,58,237,0.3)] transition-all hover:bg-[#2B2024] active:scale-95 disabled:opacity-50"
             >
               <Zap className="h-4 w-4" />
               <span>{isCalculating ? "Evaluating with ML..." : "⚡ Calculate Placement Probability"}</span>
@@ -353,7 +353,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
             <button
               onClick={onReset}
               title="Reset parameters to defaults"
-              className="flex items-center justify-center rounded-xl border border-[#161926] bg-[#11131c] px-3.5 py-3 text-[#94a3b8] hover:text-[#f8fafc] hover:border-white/20 transition-all active:scale-95"
+              className="flex items-center justify-center rounded-xl border border-[#000000] bg-[#000000] px-3.5 py-3 text-[#94a3b8] hover:text-[#f8fafc] hover:border-white/20 transition-all active:scale-95"
             >
               <RotateCcw className="h-4 w-4" />
             </button>

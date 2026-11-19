@@ -49,66 +49,26 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string 
   { id: "branches", label: "Branches and Courses", icon: GraduationCap, badge: "Dept" },
 ];
 
-const WINE_THEME = {
-  activeBg: "bg-[#9f1239]/20",
+const UNIFIED_BLACK_BROWN_THEME = {
+  activeBg: "bg-[#2B2024]",
   text: "text-[#f8fafc] font-semibold",
-  icon: "text-[#9f1239]",
-  border: "border-[#9f1239]/50",
-  glow: "shadow-[0_0_18px_rgba(159,18,57,0.3)]",
-  badge: "bg-[#9f1239]/30 text-[#f8fafc] border-[#9f1239]/50",
-  indicator: "from-transparent via-[#9f1239] to-transparent"
-};
-
-const VIOLET_THEME = {
-  activeBg: "bg-[#7c3aed]/20",
-  text: "text-[#f8fafc] font-semibold",
-  icon: "text-[#7c3aed]",
-  border: "border-[#7c3aed]/50",
-  glow: "shadow-[0_0_18px_rgba(124,58,237,0.3)]",
-  badge: "bg-[#7c3aed]/30 text-[#f8fafc] border-[#7c3aed]/50",
-  indicator: "from-transparent via-[#7c3aed] to-transparent"
-};
-
-const MONO_THEME = {
-  activeBg: "bg-white/15",
-  text: "text-white font-semibold",
-  icon: "text-white",
-  border: "border-white/40",
-  glow: "shadow-[0_0_15px_rgba(255,255,255,0.18)]",
-  badge: "bg-white/20 text-white border-white/40",
-  indicator: "from-transparent via-white to-transparent"
-};
-
-const DASHBOARD_BLACK_PLUM_THEME = {
-  activeBg: "bg-[#060608]",
-  text: "text-[#f8fafc]",
   icon: "text-[#f8fafc]",
-  border: "border-[#34222E]",
-  glow: "shadow-[0_0_16px_rgba(52,34,46,0.6)]",
-  badge: "bg-[#34222E] text-[#f8fafc] border-[#34222E]",
-  indicator: "from-[#000000] via-[#34222E] to-[#000000]"
+  border: "border-[#2B2024]",
+  glow: "shadow-[0_0_16px_rgba(43,32,36,0.75)]",
+  badge: "bg-[#000000] text-[#f8fafc] border-[#2B2024]",
+  indicator: "from-[#000000] via-[#2B2024] to-[#000000]"
 };
 
-const PURE_BLACK_THEME = {
-  activeBg: "bg-[#060608]",
-  text: "text-[#f8fafc]",
-  icon: "text-[#f8fafc]",
-  border: "border-white/15",
-  glow: "shadow-[0_0_16px_rgba(0,0,0,0.9)]",
-  badge: "bg-[#000000] text-[#f8fafc] border-white/15",
-  indicator: "from-[#000000] via-[#060608] to-[#000000]"
-};
-
-const TAB_THEMES: Record<TabId, typeof WINE_THEME> = {
-  overview: DASHBOARD_BLACK_PLUM_THEME,
-  interview: VIOLET_THEME,
-  skills: WINE_THEME,
-  projects: PURE_BLACK_THEME,
-  analytics: WINE_THEME,
-  resume: PURE_BLACK_THEME,
-  branches: VIOLET_THEME,
-  profile: MONO_THEME,
-  roles: VIOLET_THEME,
+const TAB_THEMES: Record<TabId, typeof UNIFIED_BLACK_BROWN_THEME> = {
+  overview: UNIFIED_BLACK_BROWN_THEME,
+  interview: UNIFIED_BLACK_BROWN_THEME,
+  skills: UNIFIED_BLACK_BROWN_THEME,
+  projects: UNIFIED_BLACK_BROWN_THEME,
+  analytics: UNIFIED_BLACK_BROWN_THEME,
+  resume: UNIFIED_BLACK_BROWN_THEME,
+  branches: UNIFIED_BLACK_BROWN_THEME,
+  profile: UNIFIED_BLACK_BROWN_THEME,
+  roles: UNIFIED_BLACK_BROWN_THEME,
 };
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -127,12 +87,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#000000]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.9)]">
+    <header className="sticky top-0 z-50 border-b border-[#2B2024] bg-[#000000]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.9)]">
       {/* Subtle Dual Horizon Accent */}
-      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#74F9FE]/30 to-transparent" />
+      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#A80139]/50 to-transparent" />
 
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        {/* Clickable Website Brand Logo — Styled strictly in #ACE5F6 & #74F9FE */}
+        {/* Clickable Website Brand Logo — Styled strictly in #FD0053 & #A80139 */}
         <button
           type="button"
           onClick={() => {
@@ -142,29 +102,29 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           className="flex items-center gap-3 text-left cursor-pointer group focus:outline-none"
           title="Return to Dashboard Overview"
         >
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#060608] shadow-md ring-1 ring-[#74F9FE]/45 transition-transform group-hover:scale-105">
-            <GraduationCap className="h-5 w-5 text-[#74F9FE] transition-colors group-hover:text-[#ACE5F6]" />
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#000000] shadow-md ring-1 ring-[#A80139] transition-transform group-hover:scale-105">
+            <GraduationCap className="h-5 w-5 text-[#FD0053] transition-colors group-hover:text-[#A80139]" />
             <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#74F9FE] opacity-75"></span>
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#ACE5F6] shadow-[0_0_8px_#74F9FE]"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FD0053] opacity-75"></span>
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#FD0053] shadow-[0_0_8px_#A80139]"></span>
             </span>
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <span id="brand-site-title" className="text-lg font-bold tracking-tight text-[#ACE5F6] drop-shadow-sm font-['Space_Grotesk'] group-hover:text-[#74F9FE]">
-                Pathfinder <span className="text-[#74F9FE]">2.0</span>
+              <span id="brand-site-title" className="text-lg font-bold tracking-tight text-[#FD0053] drop-shadow-sm font-['Space_Grotesk'] group-hover:text-[#A80139]">
+                Pathfinder <span className="text-[#A80139]">2.0</span>
               </span>
-              <span className="rounded-md border border-[#74F9FE]/50 bg-[#060608] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#74F9FE] uppercase shadow-sm">
+              <span className="rounded-md border border-[#A80139] bg-[#000000] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#FD0053] uppercase shadow-sm">
                 AI
               </span>
               {userRole === "admin" && (
-                <span className="rounded-md border border-[#ACE5F6]/30 bg-[#060608] px-2 py-0.5 text-[10px] font-medium text-[#ACE5F6] uppercase tracking-wider">
+                <span className="rounded-md border border-[#A80139] bg-[#000000] px-2 py-0.5 text-[10px] font-medium text-[#FD0053] uppercase tracking-wider">
                   Admin Portal
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#ACE5F6]/85">Campus Placement & Engineering Intelligence</p>
+            <p className="text-xs text-[#A80139] font-medium">Campus Placement &amp; Engineering Intelligence</p>
           </div>
         </button>
 
@@ -181,18 +141,18 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 type="button"
                 onClick={() => setActiveTab("profile")}
                 title="View & Edit Candidate Profile"
-                className="hidden sm:flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-[#11131c] px-3.5 py-1.5 shadow-sm backdrop-blur-xl hover:border-red-500/40 hover:bg-[#161926] transition-all cursor-pointer text-left"
+                className="hidden sm:flex items-center gap-2.5 rounded-full border border-[#2B2024] bg-[#000000] px-3.5 py-1.5 shadow-sm backdrop-blur-xl hover:bg-[#2B2024] transition-all cursor-pointer text-left"
               >
-                <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold shadow-sm ring-1 ${isBoss ? "bg-red-500/20 text-red-400 ring-red-500/40" : "bg-[#7c3aed]/20 text-[#7c3aed] ring-[#7c3aed]/40"}`}>
+                <div className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold shadow-sm ring-1 bg-[#2B2024] text-white ring-[#2B2024]">
                   {isBoss ? "👑" : (username ? username.charAt(0).toUpperCase() : "U")}
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 leading-none">
                     <span className="text-xs font-semibold text-[#f8fafc]">{displayUser}</span>
                     {isBoss ? (
-                      <span className="text-[9px] font-bold text-red-300 bg-red-950/80 border border-red-500/40 px-1 rounded shadow-[0_0_8px_rgba(239,68,68,0.3)]">BOSS</span>
+                      <span className="text-[9px] font-bold text-white bg-[#2B2024] border border-[#2B2024] px-1 rounded">BOSS</span>
                     ) : userRole === "admin" ? (
-                      <span className="text-[9px] font-medium text-[#7c3aed] bg-[#7c3aed]/10 border border-[#7c3aed]/30 px-1 rounded">ADMIN</span>
+                      <span className="text-[9px] font-medium text-white bg-[#2B2024] border border-[#2B2024] px-1 rounded">ADMIN</span>
                     ) : (
                       <ShieldCheck className="h-3 w-3 text-[#94a3b8]" />
                     )}
@@ -207,7 +167,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#11131c] text-[#f8fafc] hover:bg-white/10 transition-colors cursor-pointer"
+            className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-[#2B2024] bg-[#000000] text-[#f8fafc] hover:bg-[#2B2024] transition-colors cursor-pointer"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
@@ -218,7 +178,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             onClick={onLogout}
             data-agent-id="logout-btn"
             data-agent-danger="true"
-            className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#11131c] px-3 py-1.5 text-xs font-medium text-[#94a3b8] transition-all hover:border-[#9f1239]/40 hover:text-[#f8fafc] active:scale-95 shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-[#2B2024] bg-[#000000] px-3 py-1.5 text-xs font-medium text-[#94a3b8] transition-all hover:bg-[#2B2024] hover:text-[#f8fafc] active:scale-95 shadow-sm cursor-pointer"
             title="Sign out of Pathfinder"
           >
             <LogOut className="h-3.5 w-3.5" />
@@ -228,12 +188,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       </div>
 
       {/* Navigation Tabs Bar (Desktop and Horizontal Scroll) */}
-      <div className="border-t border-[rgba(255,255,255,0.08)] bg-[#000000]/95 px-4 sm:px-6">
+      <div className="border-t border-[#2B2024] bg-[#000000]/95 px-4 sm:px-6">
         <div className="mx-auto flex max-w-7xl flex-nowrap items-center gap-1.5 overflow-x-auto py-2.5 scrollbar-none">
           {TABS.map((tab, idx) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            const theme = TAB_THEMES[tab.id] || WINE_THEME;
+            const theme = TAB_THEMES[tab.id] || UNIFIED_BLACK_BROWN_THEME;
             return (
               <button
                 key={tab.id}
@@ -244,16 +204,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
                   isActive
                     ? `${theme.activeBg} ${theme.text} border ${theme.border} ${theme.glow}`
-                    : "text-[#94a3b8] hover:bg-white/[0.04] hover:text-[#f8fafc] border border-transparent"
+                    : "bg-[#000000] text-[#94a3b8] hover:bg-[#2B2024]/60 hover:text-[#f8fafc] border border-transparent"
                 }`}
               >
-                <span className={`text-[10px] font-bold tabular-nums ${isActive ? "text-white/90" : "text-white/40"}`}>
+                <span className={`text-[10px] font-bold tabular-nums ${isActive ? "text-white" : "text-white/50"}`}>
                   {idx + 1}.
                 </span>
                 <Icon className={`h-3.5 w-3.5 ${isActive ? theme.icon : "text-[#94a3b8]"}`} />
                 <span>{tab.label}</span>
                 {tab.badge && (
-                  <span className={`rounded border px-1.5 py-0.5 text-[9px] font-medium ${isActive ? theme.badge : "bg-[#11131c] text-[#94a3b8] border-[rgba(255,255,255,0.08)]"}`}>
+                  <span className={`rounded border px-1.5 py-0.5 text-[9px] font-medium ${isActive ? theme.badge : "bg-[#2B2024] text-[#f8fafc] border-[#2B2024]"}`}>
                     {tab.badge}
                   </span>
                 )}
@@ -278,13 +238,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden border-t border-white/10 bg-[#0c0e17] px-4 py-4 shadow-2xl overflow-hidden"
+            className="md:hidden border-t border-[#2B2024] bg-[#000000] px-4 py-4 shadow-2xl overflow-hidden"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {TABS.map((tab, idx) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
-                const theme = TAB_THEMES[tab.id] || WINE_THEME;
+                const theme = TAB_THEMES[tab.id] || UNIFIED_BLACK_BROWN_THEME;
                 return (
                   <button
                     key={`mobile-${tab.id}`}
@@ -293,11 +253,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     className={`flex items-center justify-between rounded-xl p-3 text-left transition-all ${
                       isActive
                         ? `${theme.activeBg} ${theme.text} border ${theme.border}`
-                        : "bg-[#11131c]/80 text-[#94a3b8] hover:bg-white/5 hover:text-white border border-white/5"
+                        : "bg-[#000000] text-[#94a3b8] hover:bg-[#2B2024] hover:text-white border border-[#2B2024]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? "bg-white/10 text-white" : "bg-white/5 text-[#94a3b8]"}`}>
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? "bg-[#000000] text-white" : "bg-[#2B2024] text-[#94a3b8]"}`}>
                         <Icon className="h-4 w-4" />
                       </div>
                       <span className="text-xs font-semibold">
@@ -306,7 +266,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       </span>
                     </div>
                     {tab.badge && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${isActive ? theme.badge : "bg-white/5 text-gray-400 border-white/10"}`}>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${isActive ? theme.badge : "bg-[#2B2024] text-white border-[#2B2024]"}`}>
                         {tab.badge}
                       </span>
                     )}

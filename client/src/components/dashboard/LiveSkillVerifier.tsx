@@ -139,7 +139,7 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
   const isStrongScore = (result?.authenticityScore ?? 0) >= 62;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
       <div className="absolute -left-20 -top-20 h-56 w-56 rounded-full bg-[#ffffff]/10 blur-3xl pointer-events-none" />
 
       <div className="relative z-10">
@@ -183,7 +183,7 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
           <button
             type="submit"
             disabled={isVerifying || !githubInput.trim()}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-[#7c3aed] px-6 py-3.5 text-xs font-bold text-white shadow-[0_0_25px_rgba(124,58,237,0.3)] transition-all hover:bg-[#6d28d9] active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-[#2B2024] px-6 py-3.5 text-xs font-bold text-white shadow-[0_0_25px_rgba(124,58,237,0.3)] transition-all hover:bg-[#2B2024] active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {isVerifying ? (
               <>
@@ -200,15 +200,15 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
         </form>
 
         {error && (
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#9f1239]/50 bg-[#9f1239]/15 p-3.5 text-xs text-rose-200">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-rose-400" />
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#2B2024]/50 bg-[#2B2024]/15 p-3.5 text-xs text-[#f8fafc]">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-[#f8fafc]" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Verification Result Card */}
         {result && (
-          <div className="mt-6 rounded-2xl border border-white/[0.08] bg-[#11131c] p-6 shadow-[0_4px_24px_rgba(0,0,0,0.3)] space-y-6">
+          <div className="mt-6 rounded-2xl border border-white/[0.08] bg-[#000000] p-6 shadow-[0_4px_24px_rgba(0,0,0,0.3)] space-y-6">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               {/* Repo or User Profile Header */}
               <div className="flex items-center gap-4">
@@ -227,8 +227,8 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
                     <span
                       className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
                         result.isVerified
-                          ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
-                          : "border-amber-400/40 bg-amber-500/15 text-amber-200"
+                          ? "border-[#2B2024] bg-[#2B2024] text-[#f8fafc]"
+                          : "border-[#2B2024] bg-[#2B2024] text-[#f8fafc]"
                       }`}
                     >
                       {result.mode === "repo"
@@ -294,12 +294,12 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
                 <div
                   className={`rounded-xl border p-3 text-center min-w-[115px] ${
                     isStrongScore
-                      ? "border-emerald-400/40 bg-emerald-500/10"
-                      : "border-rose-400/40 bg-rose-500/10"
+                      ? "border-[#2B2024] bg-[#2B2024]"
+                      : "border-[#2B2024] bg-[#2B2024]"
                   }`}
                 >
                   <span className="text-[10px] uppercase font-bold text-[#94a3b8]">Audit Score</span>
-                  <div className={`text-lg font-black ${isStrongScore ? "text-emerald-300" : "text-rose-300"}`}>
+                  <div className={`text-lg font-black ${isStrongScore ? "text-[#f8fafc]" : "text-[#f8fafc]"}`}>
                     {result.authenticityScore}/100
                   </div>
                 </div>
@@ -315,19 +315,19 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 flex items-center justify-between">
                   <span className="text-[#94a3b8]">Tests</span>
-                  <span className={result.repoMetrics.hasTests ? "font-bold text-emerald-300" : "font-bold text-rose-300"}>
+                  <span className={result.repoMetrics.hasTests ? "font-bold text-[#f8fafc]" : "font-bold text-[#f8fafc]"}>
                     {result.repoMetrics.hasTests ? "Present" : "Missing"}
                   </span>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 flex items-center justify-between">
                   <span className="text-[#94a3b8]">Docker</span>
-                  <span className={result.repoMetrics.hasDocker ? "font-bold text-emerald-300" : "font-bold text-rose-300"}>
+                  <span className={result.repoMetrics.hasDocker ? "font-bold text-[#f8fafc]" : "font-bold text-[#f8fafc]"}>
                     {result.repoMetrics.hasDocker ? "Present" : "Missing"}
                   </span>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 flex items-center justify-between">
                   <span className="text-[#94a3b8]">CI/CD</span>
-                  <span className={result.repoMetrics.hasCi ? "font-bold text-emerald-300" : "font-bold text-rose-300"}>
+                  <span className={result.repoMetrics.hasCi ? "font-bold text-[#f8fafc]" : "font-bold text-[#f8fafc]"}>
                     {result.repoMetrics.hasCi ? "Active" : "Missing"}
                   </span>
                 </div>
@@ -364,14 +364,14 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
             {/* Senior Engineering Strengths & Gaps */}
             <div className="grid gap-4 md:grid-cols-2 border-t border-white/[0.08] pt-4">
               <div className="rounded-xl border border-white/10 bg-black/35 p-4 space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#f8fafc]">
                   <CheckCircle2 className="h-4 w-4" />
                   <span>Verified Signals</span>
                 </div>
                 <ul className="space-y-1.5 text-xs text-zinc-300">
                   {(result.strengths || []).map((s, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-emerald-400 mt-0.5">•</span>
+                      <span className="text-[#f8fafc] mt-0.5">•</span>
                       <span>{s}</span>
                     </li>
                   ))}
@@ -379,7 +379,7 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
               </div>
 
               <div className="rounded-xl border border-white/10 bg-black/35 p-4 space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-rose-300">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#f8fafc]">
                   <ShieldAlert className="h-4 w-4" />
                   <span>Hiring Manager Critique &amp; Gaps</span>
                 </div>
@@ -387,7 +387,7 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
                   <ul className="space-y-1.5 text-xs text-zinc-300">
                     {result.gaps.map((g, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <XCircle className="h-3.5 w-3.5 text-rose-400 shrink-0 mt-0.5" />
+                        <XCircle className="h-3.5 w-3.5 text-[#f8fafc] shrink-0 mt-0.5" />
                         <span>{g}</span>
                       </li>
                     ))}
@@ -401,7 +401,7 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
             {/* Verdict & Sync */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-black/40 p-3.5 text-xs">
               <div className="flex items-center gap-2 text-[#f8fafc]">
-                <CheckCircle2 className={`h-4 w-4 shrink-0 ${isStrongScore ? "text-emerald-400" : "text-amber-300"}`} />
+                <CheckCircle2 className={`h-4 w-4 shrink-0 ${isStrongScore ? "text-[#f8fafc]" : "text-[#f8fafc]"}`} />
                 <span>
                   <strong>Audit Verdict:</strong> {result.verdict}
                 </span>
@@ -411,7 +411,7 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
                 <button
                   type="button"
                   onClick={handleSyncToProfile}
-                  className="flex items-center gap-1.5 rounded-xl bg-[#7c3aed] px-3.5 py-1.5 text-xs font-bold text-white transition-all hover:bg-[#6d28d9] active:scale-95 shadow-sm cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl bg-[#2B2024] px-3.5 py-1.5 text-xs font-bold text-white transition-all hover:bg-[#2B2024] active:scale-95 shadow-sm cursor-pointer"
                 >
                   {applied ? (
                     <>

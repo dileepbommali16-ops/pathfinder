@@ -102,7 +102,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
 
 
 async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str, Any]]:
-    """Synthesize clean verbatim 24kHz PCM speech via Gemini 3.8 Puck voice (unary-first for multi-user scale, gemini-3.8-live fallback)."""
+    """Synthesize clean verbatim 24kHz PCM speech via genuine gemini-3.8-live Puck voice first (with unary fallback if Live quota is saturated)."""
     from google import genai
     from google.genai import types
     from backend.config.key_resolver import get_gemini_key_candidates
@@ -112,12 +112,7 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
     if not keys:
         return None
 
-    # 1. Fast unary Gemini 3.8 Puck TTS first: consumes ZERO concurrent gemini-3.8-live WebSocket slots (~2.4s)
-    unary_result = await _synthesize_puck_via_38_unary_fallback(text, keys)
-    if unary_result:
-        return unary_result
-
-    # 2. Fallback to gemini-3.8-live Puck WebSocket (serialized via lock so Live slots aren't exhausted)
+    # 1. Primary: genuine gemini-3.8-live Puck WebSocket voice (serialized via lock so Live slots aren't exhausted)
     cfg = types.LiveConnectConfig(
         response_modalities=["AUDIO"],
         speech_config=get_puck_speech_config(),
@@ -149,15 +144,13 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                                 for part in sc.model_turn.parts:
                                     if part.inline_data and part.inline_data.data:
                                         pcm_buf.extend(part.inline_data.data)
-                            # Gemini Live emits generation_complete immediately when audio finishes generating,
-                            # whereas turn_complete can lag by the real-time playback duration (30s+ on long answers).
                             if sc and (
                                 getattr(sc, "turn_complete", False)
                                 or (pcm_buf and getattr(sc, "generation_complete", False))
                             ):
                                 break
 
-                await asyncio.wait_for(_run_live(), timeout=20.0)
+                await asyncio.wait_for(_run_live(), timeout=14.0)
                 if pcm_buf:
                     return {
                         "pcm_base64": base64.b64encode(bytes(pcm_buf)).decode("utf-8"),
@@ -167,6 +160,11 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
             except Exception as exc:
                 logger.warning("[Voice TTS Live Puck] %s failed: %r", LIVE_MODEL, exc)
                 continue
+
+    # 2. Fallback: unary Gemini 3.8 Puck TTS if concurrent Live sessions hit resource exhaustion
+    unary_result = await _synthesize_puck_via_38_unary_fallback(text, keys)
+    if unary_result:
+        return unary_result
 
     return None
 

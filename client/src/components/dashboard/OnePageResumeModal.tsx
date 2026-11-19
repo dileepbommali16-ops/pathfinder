@@ -66,11 +66,11 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
       {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-4xl rounded-3xl border border-white/10 bg-[#0a0b10] shadow-[0_16px_64px_rgba(0,0,0,0.85)] overflow-hidden my-8 cursor-default"
+        className="relative w-full max-w-4xl rounded-3xl border border-white/10 bg-[#000000] shadow-[0_16px_64px_rgba(0,0,0,0.85)] overflow-hidden my-8 cursor-default"
       >
         
         {/* Top Controls Bar (Sticky, Hidden during Print) */}
-        <div className="print:hidden sticky top-0 z-40 flex items-center justify-between border-b border-white/[0.08] bg-[#11131c]/95 backdrop-blur-xl px-4 sm:px-6 py-3.5 shadow-md">
+        <div className="print:hidden sticky top-0 z-40 flex items-center justify-between border-b border-white/[0.08] bg-[#000000]/95 backdrop-blur-xl px-4 sm:px-6 py-3.5 shadow-md">
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
@@ -242,7 +242,7 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
         </div>
 
         {/* Bottom Controls Bar (Hidden during Print) */}
-        <div className="print:hidden sticky bottom-0 z-40 flex items-center justify-between border-t border-white/[0.08] bg-[#11131c]/95 backdrop-blur-xl px-6 py-3.5 shadow-lg">
+        <div className="print:hidden sticky bottom-0 z-40 flex items-center justify-between border-t border-white/[0.08] bg-[#000000]/95 backdrop-blur-xl px-6 py-3.5 shadow-lg">
           <button
             onClick={onClose}
             className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white hover:bg-white/20 hover:border-white/40 transition-all cursor-pointer active:scale-95 shadow-sm"

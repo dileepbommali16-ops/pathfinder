@@ -509,10 +509,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
   };
 
   return (
-    <div className="relative rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-6 sm:p-8 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+    <div className="relative rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-6 sm:p-8 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.5)] overflow-hidden">
       {/* Subtle Warm Copper & Rust Ambient Glow */}
       <div className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#ffffff]/10 blur-[140px]" />
-      <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[#9f1239]/10 blur-[140px]" />
+      <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[#2B2024]/10 blur-[140px]" />
 
       {/* Header bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[rgba(255,255,255,0.08)]">
@@ -540,7 +540,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
 
         {/* Drill Timer & Switcher */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] px-3.5 py-1.5 text-xs text-[#94a3b8]">
+          <div className="flex items-center gap-2 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] px-3.5 py-1.5 text-xs text-[#94a3b8]">
             <Clock className="h-4 w-4 text-[#ffffff]" />
             <span className="font-mono font-bold text-[#f8fafc]">
               {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, "0")}
@@ -551,7 +551,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
           <button
             type="button"
             onClick={resetState}
-            className="flex items-center gap-1.5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#161926] hover:bg-[#1c2030] px-3 py-1.5 text-xs font-medium text-[#94a3b8] hover:text-[#f8fafc] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] hover:bg-[#000000] px-3 py-1.5 text-xs font-medium text-[#94a3b8] hover:text-[#f8fafc] transition-colors cursor-pointer"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>Reset</span>
@@ -570,8 +570,8 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
           }}
           className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
             selectedTrack === "company"
-              ? "border border-[#ffffff] bg-[#ffffff] text-[#0a0b10] shadow-sm"
-              : "border border-white/10 bg-[#0a0b10] text-[#94a3b8] hover:text-[#f8fafc]"
+              ? "border border-[#ffffff] bg-[#ffffff] text-[#000000] shadow-sm"
+              : "border border-white/10 bg-[#000000] text-[#94a3b8] hover:text-[#f8fafc]"
           }`}
         >
           <Briefcase className="h-3.5 w-3.5" />
@@ -587,8 +587,8 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
           }}
           className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
             selectedTrack === "defense"
-              ? "border border-[#ffffff] bg-[#ffffff] text-[#0a0b10] shadow-sm"
-              : "border border-white/10 bg-[#0a0b10] text-[#94a3b8] hover:text-[#f8fafc]"
+              ? "border border-[#ffffff] bg-[#ffffff] text-[#000000] shadow-sm"
+              : "border border-white/10 bg-[#000000] text-[#94a3b8] hover:text-[#f8fafc]"
           }`}
         >
           <ShieldAlert className="h-3.5 w-3.5" />
@@ -608,8 +608,8 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             }}
             className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all cursor-pointer ${
               selectedQuestionIndex === idx
-                ? "border border-[#7c3aed] bg-[#7c3aed] text-white font-bold shadow-[0_0_15px_rgba(124,58,237,0.3)]"
-                : "border border-[rgba(255,255,255,0.08)] bg-[#161926]/50 text-[#94a3b8] hover:border-[#ffffff]/50 hover:text-[#f8fafc]"
+                ? "border border-[#2B2024] bg-[#2B2024] text-white font-bold shadow-[0_0_15px_rgba(124,58,237,0.3)]"
+                : "border border-[rgba(255,255,255,0.08)] bg-[#000000]/50 text-[#94a3b8] hover:border-[#ffffff]/50 hover:text-[#f8fafc]"
             }`}
           >
             <span className="font-semibold">
@@ -625,17 +625,17 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
       {/* Main Interview Stage */}
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Question Prompt Card & Audio */}
-        <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#161926]/60 p-6 backdrop-blur-xl shadow-lg">
+        <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#000000]/60 p-6 backdrop-blur-xl shadow-lg">
           <div>
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-[rgba(255,255,255,0.08)]">
               <span className="rounded-md border border-[#ffffff]/30 bg-[#ffffff]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ffffff] shadow-sm">
                 {currentQ.company}
               </span>
-              <span className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#11131c] px-2 py-0.5 text-[10px] font-medium text-[#94a3b8]">
+              <span className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#000000] px-2 py-0.5 text-[10px] font-medium text-[#94a3b8]">
                 {currentQ.roundType}
               </span>
-              <span className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#11131c] px-2 py-0.5 text-[10px] font-medium text-[#94a3b8]">
+              <span className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#000000] px-2 py-0.5 text-[10px] font-medium text-[#94a3b8]">
                 Difficulty: {currentQ.difficulty}
               </span>
             </div>
@@ -651,7 +651,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             </div>
 
             {/* Context Hint */}
-            <div className="mt-5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3.5">
+            <div className="mt-5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-3.5">
               <div className="flex items-center gap-2 text-xs font-semibold text-[#ffffff]">
                 <HelpCircle className="h-4 w-4 text-[#ffffff]" />
                 <span>Interviewer Expectation</span>
@@ -670,7 +670,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 {currentQ.keyConcepts.map((c, i) => (
                   <span
                     key={i}
-                    className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#11131c] px-2 py-0.5 text-[11px] font-medium text-[#f8fafc]"
+                    className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#000000] px-2 py-0.5 text-[11px] font-medium text-[#f8fafc]"
                   >
                     {c}
                   </span>
@@ -682,10 +682,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             {showAgentAnswer && (
               <div
                 data-agent-id="agent-model-answer-panel"
-                className="mt-4 rounded-xl border border-cyan-400/30 bg-[#0c141c] p-3.5"
+                className="mt-4 rounded-xl border border-[#2B2024] bg-[#000000] p-3.5"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-cyan-300">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#f8fafc]">
                     <Sparkles className="h-3.5 w-3.5" />
                     <span>DAS Agent Structured Model Answer</span>
                   </div>
@@ -712,12 +712,12 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               data-agent-id="see-agent-answer-btn"
               className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
                 isSpeaking
-                  ? "border border-[#9f1239] bg-[#9f1239] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.4)]"
+                  ? "border border-[#2B2024] bg-[#2B2024] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.4)]"
                   : isLoadingVoice
-                  ? "border border-[#7c3aed]/50 bg-[#161926] text-[#f8fafc]"
+                  ? "border border-[#2B2024]/50 bg-[#000000] text-[#f8fafc]"
                   : showAgentAnswer
-                  ? "border border-cyan-400/40 bg-[#0f1b26] text-cyan-200 hover:bg-[#132230]"
-                  : "border border-[rgba(255,255,255,0.08)] bg-[#11131c] text-[#94a3b8] hover:bg-[#161926] hover:text-[#f8fafc]"
+                  ? "border border-[#2B2024] bg-[#000000] text-[#f8fafc] hover:bg-[#000000]"
+                  : "border border-[rgba(255,255,255,0.08)] bg-[#000000] text-[#94a3b8] hover:bg-[#000000] hover:text-[#f8fafc]"
               }`}
             >
               {isLoadingVoice ? (
@@ -739,7 +739,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             <button
               type="button"
               onClick={handleFillBenchmark}
-              className="flex items-center gap-1.5 rounded-xl border border-[#f1f5f9]/40 bg-[#11131c] hover:bg-[#161926] px-3 py-2 text-xs font-semibold text-[#f8fafc] transition-colors shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl border border-[#f1f5f9]/40 bg-[#000000] hover:bg-[#000000] px-3 py-2 text-xs font-semibold text-[#f8fafc] transition-colors shadow-sm cursor-pointer"
               title="Fills a senior engineer answer for quick interview evaluation"
             >
               <Sparkles className="h-3.5 w-3.5 text-[#f1f5f9]" />
@@ -751,7 +751,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
         {/* Right Column: Answer Input & Real-Time AI Scorecard */}
         <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
           {/* Answer Workspace */}
-          <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#161926]/60 p-5 backdrop-blur-xl">
+          <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#000000]/60 p-5 backdrop-blur-xl">
             <div className="flex items-center justify-between pb-3 border-b border-[rgba(255,255,255,0.08)]">
               <span className="text-xs font-semibold text-[#94a3b8]">
                 Your Response Workspace
@@ -767,8 +767,8 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                   onClick={handleToggleRecord}
                   className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
                     isRecording
-                      ? "border border-[#9f1239] bg-[#9f1239] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.5)]"
-                      : "border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] text-[#94a3b8] hover:text-[#f8fafc]"
+                      ? "border border-[#2B2024] bg-[#2B2024] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.5)]"
+                      : "border border-[rgba(255,255,255,0.08)] bg-[#000000] text-[#94a3b8] hover:text-[#f8fafc]"
                   }`}
                 >
                   {isRecording ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
@@ -785,7 +785,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               }}
               placeholder="Type your structured answer here, or click 'Speak Answer' to speak via microphone... (Use the STAR framework: Situation, Task, Action, Result)."
               rows={6}
-              className="mt-3 w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] p-4 text-xs sm:text-sm text-[#f8fafc] placeholder-[#94a3b8]/50 focus:border-[#ffffff] focus:outline-none focus:ring-1 focus:ring-[#ffffff] resize-none leading-relaxed font-sans"
+              className="mt-3 w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-4 text-xs sm:text-sm text-[#f8fafc] placeholder-[#94a3b8]/50 focus:border-[#ffffff] focus:outline-none focus:ring-1 focus:ring-[#ffffff] resize-none leading-relaxed font-sans"
             />
 
             {/* Submit Action */}
@@ -798,16 +798,16 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 type="button"
                 disabled={!userAnswer.trim() || isEvaluating}
                 onClick={handleEvaluateAnswer}
-                className="flex items-center gap-2 rounded-xl border border-[#ffffff] bg-gradient-to-r from-[#ffffff] via-[#f1f5f9] to-[#e2e8f0] hover:from-[#f1f5f9] hover:to-[#cbd5e1] disabled:opacity-40 px-5 py-2.5 text-xs font-bold text-[#0a0b10] shadow-[0_4px_20px_rgba(255,255,255,0.25)] transition-all active:scale-95 cursor-pointer"
+                className="flex items-center gap-2 rounded-xl border border-[#ffffff] bg-gradient-to-r from-[#ffffff] via-[#f1f5f9] to-[#e2e8f0] hover:from-[#f1f5f9] hover:to-[#cbd5e1] disabled:opacity-40 px-5 py-2.5 text-xs font-bold text-[#000000] shadow-[0_4px_20px_rgba(255,255,255,0.25)] transition-all active:scale-95 cursor-pointer"
               >
                 {isEvaluating ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin text-[#0a0b10]" />
+                    <Loader2 className="h-4 w-4 animate-spin text-[#000000]" />
                     <span>Grading with AI Engine...</span>
                   </>
                 ) : (
                   <>
-                    <Zap className="h-4 w-4 text-[#0a0b10]" />
+                    <Zap className="h-4 w-4 text-[#000000]" />
                     <span>Evaluate My Answer</span>
                   </>
                 )}
@@ -822,27 +822,27 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -14 }}
-                className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#161926]/80 p-6 backdrop-blur-xl shadow-xl space-y-5"
+                className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#000000]/80 p-6 backdrop-blur-xl shadow-xl space-y-5"
               >
                 {/* Score Summary Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[rgba(255,255,255,0.08)]">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border bg-[#0a0b10] shadow-[0_0_20px_rgba(255,255,255,0.15)] ${
+                      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border bg-[#000000] shadow-[0_0_20px_rgba(255,255,255,0.15)] ${
                         evaluationResult.overallScore >= 70
-                          ? "border-emerald-400/60"
+                          ? "border-[#2B2024]"
                           : evaluationResult.overallScore >= 40
-                          ? "border-amber-400/60"
-                          : "border-rose-400/60"
+                          ? "border-[#2B2024]"
+                          : "border-[#2B2024]"
                       }`}
                     >
                       <span
                         className={`text-xl font-bold font-mono ${
                           evaluationResult.overallScore >= 70
-                            ? "text-emerald-300"
+                            ? "text-[#f8fafc]"
                             : evaluationResult.overallScore >= 40
-                            ? "text-amber-300"
-                            : "text-rose-300"
+                            ? "text-[#f8fafc]"
+                            : "text-[#f8fafc]"
                         }`}
                       >
                         {evaluationResult.overallScore}%
@@ -866,14 +866,14 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
 
                 {/* Score Vector Bars */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-3">
                     <div className="flex justify-between text-xs">
                       <span className="text-[#94a3b8]">Technical Depth</span>
                       <span className="font-bold font-mono text-[#f8fafc]">
                         {evaluationResult.technicalPrecision}%
                       </span>
                     </div>
-                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#0a0b10] overflow-hidden">
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#000000] overflow-hidden">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-[#f1f5f9] via-[#ffffff] to-[#ffffff] shadow-[0_0_10px_rgba(255,255,255,0.4)]"
                         style={{ width: `${evaluationResult.technicalPrecision}%` }}
@@ -881,14 +881,14 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-3">
                     <div className="flex justify-between text-xs">
                       <span className="text-[#94a3b8]">Communication & Clarity</span>
                       <span className="font-bold font-mono text-[#f8fafc]">
                         {evaluationResult.communicationScore}%
                       </span>
                     </div>
-                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#0a0b10] overflow-hidden">
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#000000] overflow-hidden">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-[#f1f5f9] via-[#ffffff] to-[#ffffff] shadow-[0_0_10px_rgba(255,255,255,0.4)]"
                         style={{ width: `${evaluationResult.communicationScore}%` }}
@@ -896,14 +896,14 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-3">
                     <div className="flex justify-between text-xs">
                       <span className="text-[#94a3b8]">Problem Solving</span>
                       <span className="font-bold font-mono text-[#f8fafc]">
                         {evaluationResult.problemSolvingScore}%
                       </span>
                     </div>
-                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#0a0b10] overflow-hidden">
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-[#000000] overflow-hidden">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-[#f1f5f9] via-[#ffffff] to-[#ffffff] shadow-[0_0_10px_rgba(255,255,255,0.4)]"
                         style={{ width: `${evaluationResult.problemSolvingScore}%` }}
@@ -914,7 +914,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
 
                 {/* Keyword Analysis */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-3">
                     <span className="font-semibold text-[#ffffff]">
                       ✓ Strong Key Primitives Detected
                     </span>
@@ -923,7 +923,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                         evaluationResult.matchedKeywords.map((kw, i) => (
                           <span
                             key={i}
-                            className="rounded-md border border-[#ffffff]/30 bg-[#161926] px-2 py-0.5 text-[11px] font-medium text-[#ffffff] shadow-sm"
+                            className="rounded-md border border-[#ffffff]/30 bg-[#000000] px-2 py-0.5 text-[11px] font-medium text-[#ffffff] shadow-sm"
                           >
                             {kw}
                           </span>
@@ -934,7 +934,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-3">
                     <span className="font-semibold text-[#94a3b8]">
                       Expected Core Keywords
                     </span>
@@ -943,7 +943,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                         evaluationResult.missingKeywords.map((kw, i) => (
                           <span
                             key={i}
-                            className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] px-2 py-0.5 text-[11px] font-medium text-[#94a3b8]"
+                            className="rounded-md border border-[rgba(255,255,255,0.08)] bg-[#000000] px-2 py-0.5 text-[11px] font-medium text-[#94a3b8]"
                           >
                             {kw}
                           </span>
@@ -957,7 +957,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
 
                 {/* Detailed Critique */}
                 {evaluationResult.modelCritique && (
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] p-3.5 text-xs">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-3.5 text-xs">
                     <span className="font-semibold text-[#f8fafc] block mb-1">
                       Interviewer Technical Critique & Guidance
                     </span>
@@ -968,7 +968,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 )}
 
                 {/* Reference Benchmark Response (Copyable) */}
-                <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#0a0b10] p-3.5 text-xs">
+                <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-3.5 text-xs">
                   <div className="flex items-center justify-between pb-1.5 border-b border-white/[0.06]">
                     <span className="font-semibold text-[#f8fafc]">
                       Model Interviewer STAR Response
@@ -1000,7 +1000,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                       setSelectedQuestionIndex(nextIdx);
                       resetState();
                     }}
-                    className="flex items-center gap-1.5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#11131c] hover:bg-[#161926] px-4 py-2 text-xs font-semibold text-[#f8fafc] transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] hover:bg-[#000000] px-4 py-2 text-xs font-semibold text-[#f8fafc] transition-colors cursor-pointer"
                   >
                     <span>Next Drill Question</span>
                     <ChevronRight className="h-4 w-4 text-[#ffffff]" />

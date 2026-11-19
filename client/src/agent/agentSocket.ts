@@ -595,13 +595,7 @@ CORE AUTONOMOUS CAPABILITIES:
               this.pendingTexts.length === 0 &&
               Date.now() - this.lastTextSentAt > 6000
             ) {
-              const greeting =
-                this.currentRole === "madam"
-                  ? "Hello Madam, what can I help you with today?"
-                  : this.currentRole === "sir"
-                    ? "Hello Sir, what can I help you with today?"
-                    : "Hi Boss! What's up?";
-              this.savedOnTranscript?.(greeting);
+              this.savedOnTranscript?.("DAS Ready — Say 'Hi' or ask anything.");
             }
             const ctxNow =
               this.latestPageContext ||
@@ -1104,6 +1098,13 @@ CORE AUTONOMOUS CAPABILITIES:
         this.savedOnCodeReady
       );
     }, 250);
+  }
+
+  public warmup() {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || this.isDirectGoogle) return;
+    try {
+      this.ws.send(JSON.stringify({ type: "warmup" }));
+    } catch {}
   }
 
   public sendAudioChunk(base64Pcm: string) {

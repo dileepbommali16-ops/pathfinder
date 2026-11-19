@@ -146,13 +146,13 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Controls & View Mode Bar */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
         <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/[0.04] blur-3xl" />
 
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white border border-white/20">
-              {viewMode === "explorer" ? <TrendingUp className="h-4 w-4" /> : <Building2 className="h-4 w-4 text-[#9f1239]" />}
+              {viewMode === "explorer" ? <TrendingUp className="h-4 w-4" /> : <Building2 className="h-4 w-4 text-[#2B2024]" />}
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -173,7 +173,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
           <div className="flex flex-wrap items-center gap-2">
             {/* View Mode Switcher */}
-            <div className="flex items-center rounded-xl border border-white/[0.08] bg-[#11131c] p-1">
+            <div className="flex items-center rounded-xl border border-white/[0.08] bg-[#000000] p-1">
               <button
                 type="button"
                 onClick={() => setViewMode("explorer")}
@@ -191,7 +191,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 onClick={() => setViewMode("tpo")}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                   viewMode === "tpo"
-                    ? "bg-[#9f1239] text-white font-bold shadow-sm"
+                    ? "bg-[#2B2024] text-white font-bold shadow-sm"
                     : "text-[#94a3b8] hover:text-[#f8fafc]"
                 }`}
               >
@@ -237,7 +237,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <select
               value={filters.year}
               onChange={(e) => onFilterChange({ ...filters, year: parseInt(e.target.value, 10) })}
-              className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#9f1239]/50 focus:ring-1 focus:ring-[#9f1239]/20"
+              className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#2B2024]/50 focus:ring-1 focus:ring-[#2B2024]/20"
             >
               {years.map((y) => (
                 <option key={y} value={y}>
@@ -252,7 +252,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <select
               value={filters.branch}
               onChange={(e) => onFilterChange({ ...filters, branch: e.target.value })}
-              className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#9f1239]/50 focus:ring-1 focus:ring-[#9f1239]/20"
+              className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#2B2024]/50 focus:ring-1 focus:ring-[#2B2024]/20"
             >
               {branches.map((b) => (
                 <option key={b} value={b}>
@@ -267,7 +267,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <select
               value={filters.gender}
               onChange={(e) => onFilterChange({ ...filters, gender: e.target.value })}
-              className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#9f1239]/50 focus:ring-1 focus:ring-[#9f1239]/20"
+              className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#2B2024]/50 focus:ring-1 focus:ring-[#2B2024]/20"
             >
               <option value="All">All Genders</option>
               <option value="Male">Male Candidates</option>
@@ -280,7 +280,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <select
               value={filters.skill}
               onChange={(e) => onFilterChange({ ...filters, skill: e.target.value })}
-              className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#9f1239]/50 focus:ring-1 focus:ring-[#9f1239]/20"
+              className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#2B2024]/50 focus:ring-1 focus:ring-[#2B2024]/20"
             >
               {skills.map((s) => (
                 <option key={s} value={s}>
@@ -298,9 +298,9 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <p className="mt-1 text-xl font-black text-[#f8fafc]">{analytics?.total_records ?? "—"}</p>
           </div>
 
-          <div className="rounded-2xl border border-[#9f1239]/30 bg-[#9f1239]/10 p-3 text-center">
-            <span className="text-[10px] uppercase tracking-wider text-[#9f1239] font-semibold">Placement Rate</span>
-            <p className="mt-1 text-xl font-black text-[#9f1239]">
+          <div className="rounded-2xl border border-[#2B2024]/30 bg-[#2B2024]/10 p-3 text-center">
+            <span className="text-[10px] uppercase tracking-wider text-[#2B2024] font-semibold">Placement Rate</span>
+            <p className="mt-1 text-xl font-black text-[#2B2024]">
               {analytics?.placement_rate ? `${analytics.placement_rate.toFixed(1)}%` : "—"}
             </p>
           </div>
@@ -319,16 +319,16 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.08] bg-[#11131c] p-3 text-center">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-3 text-center">
             <span className="text-[10px] uppercase tracking-wider text-[#94a3b8] font-semibold">Average CTC</span>
-            <p className="mt-1 text-xl font-black text-[#9f1239]">
+            <p className="mt-1 text-xl font-black text-[#2B2024]">
               {analytics?.avg_package ? `${analytics.avg_package.toFixed(1)} LPA` : "—"}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.08] bg-[#11131c] p-3 text-center">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-3 text-center">
             <span className="text-[10px] uppercase tracking-wider text-[#94a3b8] font-semibold">Highest Package</span>
-            <p className="mt-1 text-xl font-black text-[#9f1239]">
+            <p className="mt-1 text-xl font-black text-[#2B2024]">
               {analytics?.highest_package ? `${analytics.highest_package.toFixed(1)} LPA` : "—"}
             </p>
           </div>
@@ -339,10 +339,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
       {viewMode === "tpo" ? (
         <div className="space-y-6">
           {/* At-Risk Intervention Radar */}
-          <div className="rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 shadow-xl backdrop-blur-xl">
+          <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-xl backdrop-blur-xl">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#9f1239]/40 bg-[#9f1239]/10 text-[#9f1239]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#2B2024]/40 bg-[#2B2024]/10 text-[#2B2024]">
                   <AlertOctagon className="h-5 w-5" />
                 </div>
                 <div>
@@ -350,7 +350,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                     At-Risk Student Intervention Radar (Early Warning System)
                   </h3>
                   <p className="text-xs text-[#94a3b8]">
-                    Identified <strong className="text-[#9f1239]">{atRiskStudents.length} candidates</strong> in {filters.branch} with low coding index (&lt;5/10) or pending placement status.
+                    Identified <strong className="text-[#2B2024]">{atRiskStudents.length} candidates</strong> in {filters.branch} with low coding index (&lt;5/10) or pending placement status.
                   </p>
                 </div>
               </div>
@@ -358,7 +358,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               <button
                 type="button"
                 onClick={handleDispatchIntervention}
-                className="flex items-center gap-2 rounded-xl bg-[#9f1239] px-4 py-2.5 text-xs font-bold text-white shadow-[0_0_20px_rgba(159, 18, 57,0.3)] transition-all hover:bg-[#9f1239]/90 active:scale-95 cursor-pointer"
+                className="flex items-center gap-2 rounded-xl bg-[#2B2024] px-4 py-2.5 text-xs font-bold text-white shadow-[0_0_20px_rgba(159, 18, 57,0.3)] transition-all hover:bg-[#2B2024]/90 active:scale-95 cursor-pointer"
               >
                 <Download className="h-4 w-4" />
                 <span>Export At-Risk Candidates (CSV)</span>
@@ -367,7 +367,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
             {interventionDispatched && (
               <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/[0.08] bg-black/40 p-3 text-xs text-[#94a3b8]">
-                <CheckCircle2 className="h-4 w-4 text-[#9f1239]" />
+                <CheckCircle2 className="h-4 w-4 text-[#2B2024]" />
                 <span>
                   <strong>CSV Dossier Exported:</strong> Downloaded actionable CSV roster of {atRiskStudents.length} filtered at-risk candidates in {filters.branch} ({filters.year}).
                 </span>
@@ -376,7 +376,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
 
           {/* Official NAAC & NIRF Criterion 5.2.1 Compliance Matrix */}
-          <div className="rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 shadow-xl backdrop-blur-xl">
+          <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-xl backdrop-blur-xl">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.08] pb-4">
               <div>
                 <h3 className="text-base font-bold text-[#f8fafc]">
@@ -386,7 +386,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                   Self-Study Report (SSR) Metric: Placement of Outgoing Students during academic year {filters.year}
                 </p>
               </div>
-              <span className="rounded-md border border-[#9f1239]/30 bg-[#9f1239]/10 px-3 py-1 text-xs font-bold text-[#9f1239]">
+              <span className="rounded-md border border-[#2B2024]/30 bg-[#2B2024]/10 px-3 py-1 text-xs font-bold text-[#2B2024]">
                 Accreditation Ready
               </span>
             </div>
@@ -401,13 +401,13 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
               <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-center">
                 <span className="text-[10px] font-bold uppercase text-[#94a3b8]">Campus Placements</span>
-                <div className="text-2xl font-black text-[#9f1239]">{placedStudents}</div>
+                <div className="text-2xl font-black text-[#2B2024]">{placedStudents}</div>
                 <span className="text-[11px] text-[#94a3b8]">{records.length > 0 ? placementRate : 0}% Clearance Rate</span>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-center">
                 <span className="text-[10px] font-bold uppercase text-[#94a3b8]">Median CTC Package</span>
-                <div className="text-2xl font-black text-[#9f1239]">
+                <div className="text-2xl font-black text-[#2B2024]">
                   {analytics?.median_package ? `₹${analytics.median_package} LPA` : "—"}
                 </div>
                 <span className="text-[11px] text-[#94a3b8]">NAAC Benchmark Compliant</span>
@@ -415,7 +415,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
               <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-center">
                 <span className="text-[10px] font-bold uppercase text-[#94a3b8]">Intervention Queue</span>
-                <div className="text-2xl font-black text-[#9f1239]">{atRiskStudents.length}</div>
+                <div className="text-2xl font-black text-[#2B2024]">{atRiskStudents.length}</div>
                 <span className="text-[11px] text-[#94a3b8]">Need DSA / Academic Support</span>
               </div>
             </div>
@@ -433,7 +433,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                     <th className="px-5 py-3 font-semibold">Audit Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.08] bg-[#11131c]">
+                <tbody className="divide-y divide-white/[0.08] bg-[#000000]">
                   {(analytics?.branch_distribution && analytics.branch_distribution.length > 0) ? (
                     analytics.branch_distribution.map((dept, i) => (
                       <tr key={i} className="hover:bg-white/[0.02]">
@@ -441,13 +441,13 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                         <td className="px-5 py-3.5 text-[#94a3b8]">{dept.total}</td>
                         <td className="px-5 py-3.5 text-white font-semibold">{dept.placed}</td>
                         <td className="px-5 py-3.5">
-                          <span className={`font-bold ${dept.placement_rate >= 80 ? "text-[#9f1239]" : "text-[#94a3b8]"}`}>
+                          <span className={`font-bold ${dept.placement_rate >= 80 ? "text-[#2B2024]" : "text-[#94a3b8]"}`}>
                             {dept.placement_rate.toFixed(1)}%
                           </span>
                         </td>
                         <td className="px-5 py-3.5 text-[#94a3b8]">TCS, Infosys, Accenture, Product Drives</td>
                         <td className="px-5 py-3.5">
-                          <span className="inline-flex items-center gap-1 rounded-full border border-[#9f1239]/30 bg-[#9f1239]/10 px-2 py-0.5 text-[10px] font-bold text-[#9f1239]">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[#2B2024]/30 bg-[#2B2024]/10 px-2 py-0.5 text-[10px] font-bold text-[#2B2024]">
                             ✓ Verified
                           </span>
                         </td>
@@ -469,10 +469,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
         /* VIEW MODE 2: STANDARD COHORT EXPLORER */
         <>
           {/* AI Cohort Insight Section */}
-          <div className="rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 shadow-xl backdrop-blur-xl">
+          <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-xl backdrop-blur-xl">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#9f1239]" />
+                <Sparkles className="h-4 w-4 text-[#2B2024]" />
                 <span className="text-sm font-bold text-[#f8fafc]">AI Cohort Intelligence</span>
               </div>
 
@@ -488,12 +488,12 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             </div>
 
             {aiInsight && (
-              <div className="mt-4 space-y-3 rounded-2xl border border-white/[0.08] bg-[#0a0b10] p-4.5">
-                <h4 className="text-sm font-bold text-[#9f1239]">{aiInsight.headline}</h4>
+              <div className="mt-4 space-y-3 rounded-2xl border border-white/[0.08] bg-[#000000] p-4.5">
+                <h4 className="text-sm font-bold text-[#2B2024]">{aiInsight.headline}</h4>
                 <p className="text-xs sm:text-sm leading-relaxed text-[#94a3b8]">{aiInsight.summary}</p>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {aiInsight.actions.map((act, i) => (
-                    <span key={i} className="rounded-md border border-white/[0.08] bg-[#11131c] px-2 py-1 text-[11px] text-[#f8fafc]">
+                    <span key={i} className="rounded-md border border-white/[0.08] bg-[#000000] px-2 py-1 text-[11px] text-[#f8fafc]">
                       🎯 {act}
                     </span>
                   ))}
@@ -505,7 +505,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           {/* Modern Interactive Charts Grid */}
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Branch Placement Rates Chart */}
-            <div className="rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 shadow-xl backdrop-blur-xl">
+            <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-xl backdrop-blur-xl">
               <h3 className="text-sm font-bold text-[#f8fafc]">Branch Placement Distribution</h3>
               <p className="text-xs text-[#94a3b8]">Placement conversion rate (%) across engineering departments</p>
               <div className="mt-4 h-64 w-full">
@@ -515,16 +515,16 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                     <XAxis dataKey="branch" stroke="#94a3b8" fontSize={11} />
                     <YAxis stroke="#94a3b8" fontSize={11} domain={[0, 100]} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: "#11131c", borderColor: "rgba(255,255,255,0.08)", borderRadius: "12px", fontSize: "12px", color: "#f8fafc" }}
+                      contentStyle={{ backgroundColor: "#000000", borderColor: "rgba(255,255,255,0.08)", borderRadius: "12px", fontSize: "12px", color: "#f8fafc" }}
                     />
-                    <Bar dataKey="placement_rate" fill="#9f1239" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="placement_rate" fill="#2B2024" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* Skill Domain Placement Rates */}
-            <div className="rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 shadow-xl backdrop-blur-xl">
+            <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-xl backdrop-blur-xl">
               <h3 className="text-sm font-bold text-[#f8fafc]">Skill Domain Conversion Rates</h3>
               <p className="text-xs text-[#94a3b8]">Success rate (%) based on primary student programming domain</p>
               <div className="mt-4 h-64 w-full">
@@ -534,9 +534,9 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                     <XAxis dataKey="skill" stroke="#94a3b8" fontSize={11} />
                     <YAxis stroke="#94a3b8" fontSize={11} domain={[0, 100]} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: "#11131c", borderColor: "rgba(255,255,255,0.08)", borderRadius: "12px", fontSize: "12px", color: "#f8fafc" }}
+                      contentStyle={{ backgroundColor: "#000000", borderColor: "rgba(255,255,255,0.08)", borderRadius: "12px", fontSize: "12px", color: "#f8fafc" }}
                     />
-                    <Bar dataKey="placement_rate" fill="#9f1239" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="placement_rate" fill="#2B2024" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -544,7 +544,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
 
           {/* Filtered Records Data Table */}
-          <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-[#11131c] shadow-xl backdrop-blur-xl">
+          <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-[#000000] shadow-xl backdrop-blur-xl">
             <div className="flex items-center justify-between border-b border-white/[0.08] p-6">
               <div>
                 <h3 className="text-sm font-bold text-[#f8fafc]">Audited Student Records</h3>
@@ -556,7 +556,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-white/[0.08] bg-[#0a0b10] text-[11px] uppercase tracking-wider text-[#94a3b8]">
+                <thead className="border-b border-white/[0.08] bg-[#000000] text-[11px] uppercase tracking-wider text-[#94a3b8]">
                   <tr>
                     <th className="px-6 py-3 font-semibold">Candidate ID</th>
                     <th className="px-6 py-3 font-semibold">Class Year</th>
@@ -582,14 +582,14 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                         <td className="px-6 py-3 text-[#94a3b8]">{r.year}</td>
                         <td className="px-6 py-3 text-[#f8fafc]">{r.branch}</td>
                         <td className="px-6 py-3 text-[#94a3b8]">{r.gender}</td>
-                        <td className="px-6 py-3 text-[#9f1239]">{r.skillCategory ?? (r as any).skill_category ?? "-"}</td>
+                        <td className="px-6 py-3 text-[#2B2024]">{r.skillCategory ?? (r as any).skill_category ?? "-"}</td>
                         <td className="px-6 py-3 text-[#f8fafc]">{(Number(r.cgpa) || 0).toFixed(1)}</td>
                         <td className="px-6 py-3 text-[#f8fafc]">{(Number(r.codingScore ?? (r as any).coding_score) || 0).toFixed(1)}/10</td>
                         <td className="px-6 py-3">
                           <span
                             className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
                               r.placed_label === "Placed"
-                                ? "bg-[#9f1239]/20 text-[#9f1239]"
+                                ? "bg-[#2B2024]/20 text-[#2B2024]"
                                 : "bg-[rgba(255,255,255,0.08)] text-[#94a3b8]"
                             }`}
                           >
@@ -612,7 +612,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                   aria-label="Previous page"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="rounded-lg border border-white/[0.08] bg-[#0a0b10] p-1.5 text-[#f8fafc] hover:bg-[rgba(255,255,255,0.08)] disabled:opacity-40 cursor-pointer"
+                  className="rounded-lg border border-white/[0.08] bg-[#000000] p-1.5 text-[#f8fafc] hover:bg-[rgba(255,255,255,0.08)] disabled:opacity-40 cursor-pointer"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -621,7 +621,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                   aria-label="Next page"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="rounded-lg border border-white/[0.08] bg-[#0a0b10] p-1.5 text-[#f8fafc] hover:bg-[rgba(255,255,255,0.08)] disabled:opacity-40 cursor-pointer"
+                  className="rounded-lg border border-white/[0.08] bg-[#000000] p-1.5 text-[#f8fafc] hover:bg-[rgba(255,255,255,0.08)] disabled:opacity-40 cursor-pointer"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>

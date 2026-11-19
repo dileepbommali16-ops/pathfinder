@@ -57,29 +57,28 @@
      - Borders: rgba(255, 255, 255, 0.08)
      ========================================================================== */
 
-  --bg-base: #0a0b10;
-  --bg-card: #11131c;
-  --bg-card-subtle: #161926;
-  --bg-card-hover: #1c2030;
+  --bg-base: #000000;
+  --bg-card: #000000;
+  --bg-card-subtle: #2B2024;
+  --bg-card-hover: #2B2024;
 
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
   --text-heading: #f8fafc;
 
-  /* Tier 1: Wine + Black Accents */
-  --accent-wine: #9f1239;
-  --accent-wine-hover: #881337;
-  --accent-wine-soft: rgba(159, 18, 57, 0.14);
-  --accent-wine-border: rgba(159, 18, 57, 0.35);
-  --accent-wine-glow: rgba(159, 18, 57, 0.25);
+  /* Tier 1 & Tier 2 unified to #000000 & #2B2024 */
+  --accent-wine: #2B2024;
+  --accent-wine-hover: #2B2024;
+  --accent-wine-soft: rgba(43, 32, 36, 0.35);
+  --accent-wine-border: #2B2024;
+  --accent-wine-glow: rgba(43, 32, 36, 0.45);
 
-  /* Tier 2: Violet + Black Accents */
-  --accent-violet: #7c3aed;
-  --accent-violet-hover: #6d28d9;
-  --accent-violet-soft: rgba(124, 58, 237, 0.14);
-  --accent-violet-border: rgba(124, 58, 237, 0.35);
-  --accent-violet-glow: rgba(124, 58, 237, 0.25);
+  --accent-violet: #2B2024;
+  --accent-violet-hover: #2B2024;
+  --accent-violet-soft: rgba(43, 32, 36, 0.35);
+  --accent-violet-border: #2B2024;
+  --accent-violet-glow: rgba(43, 32, 36, 0.45);
 
   /* Tier 3: Clean Obsidian + Crisp Platinum White Accents */
   --accent-mono: #ffffff;
@@ -88,78 +87,78 @@
   --accent-mono-glow: rgba(255, 255, 255, 0.15);
 
   /* Section Tone Variations */
-  --accent-readiness: #9f1239;
-  --accent-readiness-bg: rgba(159, 18, 57, 0.14);
-  --accent-readiness-border: rgba(159, 18, 57, 0.35);
+  --accent-readiness: #2B2024;
+  --accent-readiness-bg: rgba(43, 32, 36, 0.35);
+  --accent-readiness-border: #2B2024;
 
-  --accent-roadmap: #881337;
-  --accent-roadmap-bg: rgba(136, 19, 55, 0.14);
-  --accent-roadmap-border: rgba(136, 19, 55, 0.35);
+  --accent-roadmap: #2B2024;
+  --accent-roadmap-bg: rgba(43, 32, 36, 0.35);
+  --accent-roadmap-border: #2B2024;
 
-  --accent-coach: #7c3aed;
-  --accent-coach-bg: rgba(124, 58, 237, 0.14);
-  --accent-coach-border: rgba(124, 58, 237, 0.35);
+  --accent-coach: #2B2024;
+  --accent-coach-bg: rgba(43, 32, 36, 0.35);
+  --accent-coach-border: #2B2024;
 
-  --accent-projects: #6d28d9;
-  --accent-projects-bg: rgba(109, 40, 217, 0.14);
-  --accent-projects-border: rgba(109, 40, 217, 0.35);
+  --accent-projects: #2B2024;
+  --accent-projects-bg: rgba(43, 32, 36, 0.35);
+  --accent-projects-border: #2B2024;
 
-  --accent-cohort: #9f1239;
-  --accent-cohort-bg: rgba(159, 18, 57, 0.14);
-  --accent-cohort-border: rgba(159, 18, 57, 0.35);
+  --accent-cohort: #2B2024;
+  --accent-cohort-bg: rgba(43, 32, 36, 0.35);
+  --accent-cohort-border: #2B2024;
 
-  --accent-resume: #7c3aed;
-  --accent-resume-bg: rgba(124, 58, 237, 0.12);
-  --accent-resume-border: rgba(124, 58, 237, 0.30);
+  --accent-resume: #2B2024;
+  --accent-resume-bg: rgba(43, 32, 36, 0.35);
+  --accent-resume-border: #2B2024;
 
-  --accent-interview: #7c3aed;
-  --accent-interview-bg: rgba(124, 58, 237, 0.14);
-  --accent-interview-border: rgba(124, 58, 237, 0.35);
+  --accent-interview: #2B2024;
+  --accent-interview-bg: rgba(43, 32, 36, 0.35);
+  --accent-interview-border: #2B2024;
 
   /* Semantic Meaning Colors */
-  --color-success: #7c3aed;
-  --color-warning: #9f1239;
-  --color-error: #881337;
-  --color-info: #7c3aed;
+  --color-success: #2B2024;
+  --color-warning: #2B2024;
+  --color-error: #2B2024;
+  --color-info: #2B2024;
 
   /* Layout, Card, and Spacing Tokens */
-  --card-bg: #11131c;
-  --card-border: rgba(255, 255, 255, 0.08);
+  --card-bg: #000000;
+  --card-border: #2B2024;
   --card-radius: 1.25rem;
   --card-padding: 1.75rem;
   --card-gap: 1.5rem;
 
-  --background: #0a0b10;
+  --background: #000000;
   --foreground: #f8fafc;
-  --card: #11131c;
+  --card: #000000;
   --card-foreground: #f8fafc;
-  --popover: #11131c;
+  --popover: #000000;
   --popover-foreground: #f8fafc;
-  --primary: #9f1239;
+  --primary: #2B2024;
   --primary-foreground: #f8fafc;
-  --secondary: #161926;
+  --secondary: #2B2024;
   --secondary-foreground: #94a3b8;
-  --muted: #161926;
+  --muted: #2B2024;
   --muted-foreground: #94a3b8;
-  --accent: #161926;
+  --accent: #2B2024;
   --accent-foreground: #f8fafc;
-  --destructive: #881337;
+  --destructive: #2B2024;
   --destructive-foreground: #f8fafc;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #9f1239;
-  --sidebar: #0a0b10;
+  --border: #2B2024;
+  --input: #2B2024;
+  --ring: #2B2024;
+  --sidebar: #000000;
   --sidebar-foreground: #f8fafc;
-  --sidebar-accent: #11131c;
+  --sidebar-accent: #2B2024;
   --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #9f1239;
+  --sidebar-border: #2B2024;
+  --sidebar-ring: #2B2024;
   --radius: 0.75rem;
 
-  --chart-1: #9f1239;
-  --chart-2: #7c3aed;
-  --chart-3: #881337;
-  --chart-4: #6d28d9;
+  --chart-1: #2B2024;
+  --chart-2: #ffffff;
+  --chart-3: #2B2024;
+  --chart-4: #94a3b8;
   --chart-5: #ffffff;
 }
 
@@ -169,39 +168,39 @@
   --text-muted: #64748b;
   --text-heading: #f8fafc;
 
-  --accent-readiness: #9f1239;
-  --accent-roadmap: #881337;
-  --accent-coach: #7c3aed;
-  --accent-projects: #6d28d9;
-  --accent-cohort: #9f1239;
-  --accent-resume: #7c3aed;
-  --accent-interview: #7c3aed;
+  --accent-readiness: #2B2024;
+  --accent-roadmap: #2B2024;
+  --accent-coach: #2B2024;
+  --accent-projects: #2B2024;
+  --accent-cohort: #2B2024;
+  --accent-resume: #2B2024;
+  --accent-interview: #2B2024;
 
-  --color-success: #7c3aed;
-  --color-warning: #9f1239;
-  --color-error: #881337;
-  --color-info: #7c3aed;
+  --color-success: #2B2024;
+  --color-warning: #2B2024;
+  --color-error: #2B2024;
+  --color-info: #2B2024;
 
-  --card-bg: #11131c;
-  --card-border: rgba(255, 255, 255, 0.08);
+  --card-bg: #000000;
+  --card-border: #2B2024;
 
-  --background: #0a0b10;
+  --background: #000000;
   --foreground: #f8fafc;
-  --card: #11131c;
+  --card: #000000;
   --card-foreground: #f8fafc;
-  --popover: #11131c;
+  --popover: #000000;
   --popover-foreground: #f8fafc;
-  --secondary: #161926;
+  --secondary: #2B2024;
   --secondary-foreground: #94a3b8;
-  --muted: #161926;
+  --muted: #2B2024;
   --muted-foreground: #94a3b8;
-  --accent: #161926;
+  --accent: #2B2024;
   --accent-foreground: #f8fafc;
-  --destructive: #881337;
+  --destructive: #2B2024;
   --destructive-foreground: #f8fafc;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #9f1239;
+  --border: #2B2024;
+  --input: #2B2024;
+  --ring: #2B2024;
 }
 
 @layer base {
@@ -310,12 +309,14 @@
 }
 
 .pathfinder-dashboard section [class*="bg-[#11131c]"],
+.pathfinder-dashboard section [class*="bg-[#000000]"],
+.pathfinder-dashboard main > div [class*="bg-[#000000]"],
 .pathfinder-dashboard main > div [class*="bg-[#11131c]"],
 .pathfinder-dashboard main > div [class*="bg-[#0a0b10]"],
 .pathfinder-dashboard main > div [class*="bg-[#0F172A]"],
 .pathfinder-dashboard main > div [class*="bg-[#0f172a]"],
 .pathfinder-dashboard main > div [class*="bg-[#060608]"] {
-  background-color: rgba(0, 0, 0, 0.36) !important;
+  background-color: rgba(0, 0, 0, 0.42) !important;
   backdrop-filter: blur(2px) !important;
   -webkit-backdrop-filter: blur(2px) !important;
 }

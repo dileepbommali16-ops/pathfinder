@@ -173,27 +173,27 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
     if (studentBacklogs > comp.maxBacklogs) {
       return {
         label: "Backlog Clearance Needed",
-        color: "border-[#881337]/50 bg-[#881337]/20 text-[#f8fafc]",
+        color: "border-[#2B2024]/50 bg-[#2B2024]/20 text-[#f8fafc]",
         icon: AlertCircle
       };
     }
     if (studentCgpa < comp.minCgpa) {
       return {
         label: `CGPA Gap (<${comp.minCgpa})`,
-        color: "border-[#881337]/50 bg-[#881337]/20 text-[#f8fafc]",
+        color: "border-[#2B2024]/50 bg-[#2B2024]/20 text-[#f8fafc]",
         icon: AlertCircle
       };
     }
     if (score >= 80) {
       return {
         label: "High Match · Ready for Drives",
-        color: "border-[#7c3aed]/50 bg-[#7c3aed]/20 text-[#f8fafc] shadow-[0_0_12px_rgba(124,58,237,0.3)]",
+        color: "border-[#2B2024]/50 bg-[#2B2024]/20 text-[#f8fafc] shadow-[0_0_12px_rgba(124,58,237,0.3)]",
         icon: CheckCircle2
       };
     }
     return {
       label: "Competitive · Interview Polish Needed",
-      color: "border-[#6d28d9]/50 bg-[#6d28d9]/20 text-[#f8fafc]",
+      color: "border-[#2B2024]/50 bg-[#2B2024]/20 text-[#f8fafc]",
       icon: Sparkles
     };
   };
@@ -207,22 +207,22 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
   const selectedStatus = getStatusBadge(selectedScore, selectedCompany);
 
   return (
-    <div className="relative rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 sm:p-8 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.65)] overflow-hidden">
+    <div className="relative rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.65)] overflow-hidden">
       {/* Subtle Royal Violet Ambient Glow */}
-      <div className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#7c3aed]/15 blur-[140px]" />
-      <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[#6d28d9]/10 blur-[140px]" />
+      <div className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#2B2024]/15 blur-[140px]" />
+      <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[#2B2024]/10 blur-[140px]" />
 
       {/* Top Banner Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#7c3aed]/40 bg-[#7c3aed]/15 text-[#7c3aed] shadow-[0_0_12px_rgba(124,58,237,0.25)]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#2B2024]/40 bg-[#2B2024]/15 text-[#2B2024] shadow-[0_0_12px_rgba(124,58,237,0.25)]">
               <Building2 className="h-4 w-4" />
             </span>
             <span className="text-xs font-semibold uppercase tracking-wider text-[#94a3b8]">
               Industry Placement Benchmark
             </span>
-            <span className="rounded-full border border-[#7c3aed]/40 bg-[#7c3aed]/15 px-2.5 py-0.5 text-[11px] font-medium text-[#7c3aed] shadow-sm">
+            <span className="rounded-full border border-[#2B2024]/40 bg-[#2B2024]/15 px-2.5 py-0.5 text-[11px] font-medium text-[#2B2024] shadow-sm">
               Live Hiring Matrix
             </span>
           </div>
@@ -243,8 +243,8 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
               onClick={() => setFilterCategory(cat)}
               className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${
                 filterCategory === cat
-                  ? "border border-[#7c3aed] bg-[#7c3aed] text-[#f8fafc] font-bold shadow-[0_0_15px_rgba(124,58,237,0.35)]"
-                  : "border border-white/[0.08] bg-[#161926]/60 text-[#94a3b8] hover:border-[#7c3aed]/50 hover:text-[#f8fafc]"
+                  ? "border border-[#2B2024] bg-[#2B2024] text-[#f8fafc] font-bold shadow-[0_0_15px_rgba(124,58,237,0.35)]"
+                  : "border border-white/[0.08] bg-[#000000]/60 text-[#94a3b8] hover:border-[#2B2024]/50 hover:text-[#f8fafc]"
               }`}
             >
               {cat}
@@ -275,17 +275,17 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   onClick={() => setSelectedCompanyId(comp.id)}
                   className={`group relative flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition-all duration-200 ${
                     isSelected
-                      ? "border-[#7c3aed]/70 bg-gradient-to-r from-[#161926] to-[#11131c] shadow-[0_8px_25px_rgba(124,58,237,0.25)] ring-1 ring-[#7c3aed]/40"
-                      : "border-white/[0.08] bg-[#161926]/40 hover:border-[#7c3aed]/40 hover:bg-[#1c2030]"
+                      ? "border-[#2B2024]/70 bg-gradient-to-r from-[#000000] to-[#000000] shadow-[0_8px_25px_rgba(124,58,237,0.25)] ring-1 ring-[#2B2024]/40"
+                      : "border-white/[0.08] bg-[#000000]/40 hover:border-[#2B2024]/40 hover:bg-[#000000]"
                   }`}
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#7c3aed]/30 bg-[#0a0b10] font-mono text-xs font-bold text-[#7c3aed] shadow-sm">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#2B2024]/30 bg-[#000000] font-mono text-xs font-bold text-[#2B2024] shadow-sm">
                       {comp.logoText}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[#f8fafc] group-hover:text-[#7c3aed] transition-colors">
+                        <span className="text-sm font-semibold text-[#f8fafc] group-hover:text-[#2B2024] transition-colors">
                           {comp.name}
                         </span>
                       </div>
@@ -300,12 +300,12 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   {/* Score Pill */}
                   <div className="flex items-center gap-2">
                     <div className="text-right">
-                      <div className="text-base font-bold font-mono text-[#7c3aed]">
+                      <div className="text-base font-bold font-mono text-[#2B2024]">
                         {compScore}%
                       </div>
                       <div className="text-[10px] text-[#94a3b8]">Readiness</div>
                     </div>
-                    <ChevronRight className={`h-4 w-4 transition-transform ${isSelected ? "text-[#7c3aed] translate-x-0.5" : "text-[#94a3b8]"}`} />
+                    <ChevronRight className={`h-4 w-4 transition-transform ${isSelected ? "text-[#2B2024] translate-x-0.5" : "text-[#94a3b8]"}`} />
                   </div>
                 </motion.div>
               );
@@ -314,13 +314,13 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
         </div>
 
         {/* Right Column: Deep Dive Benchmark Diagnostic */}
-        <div className="lg:col-span-7 rounded-2xl border border-white/[0.08] bg-[#161926]/60 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+        <div className="lg:col-span-7 rounded-2xl border border-white/[0.08] bg-[#000000]/60 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
           <div>
             {/* Header info */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-white/[0.08]">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md border border-[#7c3aed]/30 bg-[#7c3aed]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#7c3aed]">
+                  <span className="rounded-md border border-[#2B2024]/30 bg-[#2B2024]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#2B2024]">
                     {selectedCompany.category}
                   </span>
                   <span className="text-xs text-[#94a3b8]">
@@ -341,21 +341,21 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
 
             {/* Score & Progress Metric */}
             <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="rounded-xl border border-white/[0.08] bg-[#11131c] p-3.5">
+              <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3.5">
                 <span className="text-xs text-[#94a3b8]">Match Probability</span>
-                <div className="mt-1 text-2xl font-bold font-mono text-[#7c3aed] flex items-baseline gap-1">
+                <div className="mt-1 text-2xl font-bold font-mono text-[#2B2024] flex items-baseline gap-1">
                   <span>{selectedScore}%</span>
                   <span className="text-xs text-[#94a3b8] font-normal">Score</span>
                 </div>
-                <div className="mt-2 h-1.5 w-full rounded-full bg-[#0a0b10] overflow-hidden">
+                <div className="mt-2 h-1.5 w-full rounded-full bg-[#000000] overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#6d28d9] via-[#7c3aed] to-[#8b5cf6] shadow-[0_0_10px_rgba(124,58,237,0.5)] transition-all duration-500"
+                    className="h-full rounded-full bg-gradient-to-r from-[#2B2024] via-[#2B2024] to-[#2B2024] shadow-[0_0_10px_rgba(124,58,237,0.5)] transition-all duration-500"
                     style={{ width: `${selectedScore}%` }}
                   />
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/[0.08] bg-[#11131c] p-3.5">
+              <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3.5">
                 <span className="text-xs text-[#94a3b8]">Package Compensation</span>
                 <div className="mt-1 text-lg font-bold font-mono text-[#f8fafc]">
                   {selectedCompany.packageRange}
@@ -365,7 +365,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/[0.08] bg-[#11131c] p-3.5">
+              <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3.5">
                 <span className="text-xs text-[#94a3b8]">Academic Cutoff</span>
                 <div className="mt-1 text-base font-semibold text-[#f8fafc] flex items-center gap-2">
                   <span>≥ {selectedCompany.minCgpa} CGPA</span>
@@ -389,7 +389,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   {selectedCompany.requiredSkills.map((skill, idx) => (
                     <span
                       key={idx}
-                      className="rounded-lg border border-white/[0.08] bg-[#11131c] px-2.5 py-1 text-xs font-medium text-[#f8fafc] shadow-sm"
+                      className="rounded-lg border border-white/[0.08] bg-[#000000] px-2.5 py-1 text-xs font-medium text-[#f8fafc] shadow-sm"
                     >
                       {skill}
                     </span>
@@ -405,9 +405,9 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   {selectedCompany.interviewRounds.map((rnd, idx) => (
                     <div
                       key={idx}
-                      className="rounded-xl border border-white/[0.08] bg-[#11131c] p-2.5 text-xs text-[#94a3b8]"
+                      className="rounded-xl border border-white/[0.08] bg-[#000000] p-2.5 text-xs text-[#94a3b8]"
                     >
-                      <span className="text-[10px] font-bold uppercase text-[#7c3aed]">
+                      <span className="text-[10px] font-bold uppercase text-[#2B2024]">
                         Round {idx + 1}
                       </span>
                       <p className="mt-0.5 font-medium text-[#f8fafc]">{rnd}</p>
@@ -424,9 +424,9 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   {selectedCompany.recommendedProjects.map((proj, idx) => (
                     <span
                       key={idx}
-                      className="flex items-center gap-1.5 rounded-lg border border-[#7c3aed]/30 bg-[#11131c] px-2.5 py-1 text-xs font-medium text-[#f8fafc] shadow-sm"
+                      className="flex items-center gap-1.5 rounded-lg border border-[#2B2024]/30 bg-[#000000] px-2.5 py-1 text-xs font-medium text-[#f8fafc] shadow-sm"
                     >
-                      <Sparkles className="h-3 w-3 text-[#7c3aed]" />
+                      <Sparkles className="h-3 w-3 text-[#2B2024]" />
                       <span>{proj}</span>
                     </span>
                   ))}
@@ -450,7 +450,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                       `How do I crack ${selectedCompany.name} campus drive with my profile (CGPA: ${studentCgpa}, Backlogs: ${studentBacklogs})? Give me a 4-week preparation strategy.`
                     )
                   }
-                  className="w-full sm:w-auto rounded-xl border border-white/[0.08] bg-[#11131c] hover:bg-[#161926] hover:text-[#7c3aed] px-3.5 py-2 text-xs font-semibold text-[#f8fafc] transition-colors"
+                  className="w-full sm:w-auto rounded-xl border border-white/[0.08] bg-[#000000] hover:bg-[#000000] hover:text-[#2B2024] px-3.5 py-2 text-xs font-semibold text-[#f8fafc] transition-colors"
                 >
                   Ask Coach Strategy
                 </button>
@@ -462,7 +462,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   onClick={() =>
                     onLaunchMockInterview(selectedCompany.name, selectedCompany.requiredSkills[0])
                   }
-                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl border border-[#7c3aed] bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] hover:from-[#6d28d9] hover:to-[#5b21b6] px-4 py-2 text-xs font-bold text-[#f8fafc] shadow-[0_4px_20px_rgba(124,58,237,0.35)] transition-all active:scale-95 cursor-pointer"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl border border-[#2B2024] bg-gradient-to-r from-[#2B2024] to-[#2B2024] hover:from-[#2B2024] hover:to-[#2B2024] px-4 py-2 text-xs font-bold text-[#f8fafc] shadow-[0_4px_20px_rgba(124,58,237,0.35)] transition-all active:scale-95 cursor-pointer"
                 >
                   <Zap className="h-3.5 w-3.5 text-[#f8fafc]" />
                   <span>Start Mock Interview</span>

@@ -40,10 +40,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
 
       - name: Install Node Dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Type Check (tsc --noEmit)
         run: npm run check

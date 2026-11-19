@@ -714,9 +714,9 @@ export const getCareerAgentResponse = (
     }
   }
 
-  // 2. Casual Greetings
+  // 2. Casual Greetings — Strict 1st time ("Hi Boss! What's up?") vs 2nd+ time ("Boss, I'm here.")
   const isGreeting =
-    /^(hi|hello|hey|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai|namaskaram)[\s!.,?]*$/i.test(
+    /^\s*(hi+|hello+|hey+|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$/i.test(
       text
     );
   if (isGreeting) {
@@ -726,31 +726,22 @@ export const getCareerAgentResponse = (
         (t) =>
           t.includes("what's up") ||
           t.includes("whats up") ||
+          t.includes("i'm here") ||
+          t.includes("im here") ||
           t.includes("how can i assist") ||
           t.includes("ready when you are") ||
           t.includes("right here") ||
-          t.includes("das online") ||
-          t.includes("profile is synced") ||
           t.includes("what can i help")
       );
     if (alreadyGreeted) {
-      const followUps = [
-        `Still right here, ${title}! Tell me what you want to work on next — projects, mock interview, or ATS resume.`,
-        `Listening closely, ${title}! Pick any tab, test your mock interview answers, or ask me anything.`,
-        `All systems ready, ${title}! What should we dive into next for ${targetRole}?`,
-      ];
-      const replyIdx = recentAssistantTexts.length % followUps.length;
-      return (
-        followUps[replyIdx] +
-        `|||👋 **Always Online, ${title}!**\n- Say **"Open Projects"**, **"Open Roadmap"**, **"Start Mock Interview"**, or **"Open ATS Resume"** to navigate hands-free.`
-      );
+      const shortHere = title === "Boss" ? "Boss, I'm here." : `${title}, I'm here.`;
+      return `${shortHere}|||👋 **${shortHere}**`;
     }
     const greetingLine =
-      title === "Boss" ? "Hi Boss! What's up?" : `Hello ${title}! Ready when you are.`;
-    return (
-      greetingLine +
-      `|||👋 **Welcome, ${title}! DAS is Synced:**\n- **Profile:** ${branch} • **${cgpa} CGPA** • ${backlogs} Backlogs • Target: **${targetRole}**\n- **Top 3 RAG Context Ready:**\n${top3Markdown}`
-    );
+      title === "Boss"
+        ? "Hi Boss! What's up?"
+        : `Hello ${title}, what can I help you with today?`;
+    return `${greetingLine}|||👋 **${greetingLine}**`;
   }
 
   // 3a. Specific RAG Projects Query (e.g. "Pathfinder lo RAG projects enti?", "what are the rag projects", "rag blueprints")

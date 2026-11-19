@@ -769,17 +769,17 @@ def generate_smart_fallback_reply(
         )
 
     is_greeting_only = bool(
-        re.match(r"^(hi|hello|hey|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai|namaskaram)[\s!.,?]*$", low_msg)
+        re.match(r"^\s*(hi+|hello+|hey+|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$", low_msg)
     )
     if is_greeting_only:
         prior_greeted = bool(history and len(history) > 0)
         if prior_greeted:
             if honorific_fallback == "Boss":
-                return "Still right here, Boss! Tell me what you want to work on next — projects, mock interview, or coding prep."
-            return f"Listening closely, {honorific_fallback}! Which part of {p_branch} placement prep or project building should we tackle next?"
+                return "Boss, I'm here."
+            return f"{honorific_fallback}, I'm here."
         if honorific_fallback == "Boss":
             return "Hi Boss! What's up?"
-        return f"Hello {honorific_fallback}! Ready to help with your {p_branch} placement preparation, projects, or mock interview practice."
+        return f"Hello {honorific_fallback}, what can I help you with today?"
 
     return (
         f"👋 **Hello {p_name} ({honorific_fallback})!**\n\n"
@@ -1062,6 +1062,25 @@ def chat_with_mentor(
         if return_meta:
             return empty_text, {"prep_ms": 0.0, "gemini_call_ms": 0.0, "novelty_ms": 0.0, "model_used": "none"}
         return empty_text
+
+    # Strict deterministic 1st "Hi" -> "Hi Boss! What's up?" vs 2nd+ "Hi" -> "Boss, I'm here."
+    if re.match(
+        r"^\s*(hi+|hello+|hey+|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$",
+        clean_msg.lower(),
+    ):
+        hon_now = _resolve_verified_honorific(profile, page_context)
+        has_prior = bool(history and len(history) > 0)
+        if has_prior:
+            hi_reply = "Boss, I'm here." if hon_now == "Boss" else f"{hon_now}, I'm here."
+        else:
+            hi_reply = (
+                "Hi Boss! What's up?"
+                if hon_now == "Boss"
+                else f"Hello {hon_now}, what can I help you with today?"
+            )
+        if return_meta:
+            return hi_reply, {"prep_ms": 0.1, "gemini_call_ms": 0.0, "novelty_ms": 0.0, "model_used": "deterministic-hi-rule"}
+        return hi_reply
 
     sys_instruction, contents, openrouter_messages, clean_msg, prior_assistant_replies = prepare_chat_context(
         message=clean_msg,

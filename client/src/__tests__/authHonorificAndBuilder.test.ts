@@ -191,10 +191,10 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(audioSrc).toContain("ttsSpeakSeq");
   });
 
-  it("greets Boss once with 'Hi Boss! What's up?' on first hi, never repeats on second hi, and avoids co-pilot", () => {
+  it("greets Boss once with 'Hi Boss! What's up?' on first hi, replies 'Boss, I'm here.' on second hi, and avoids co-pilot", () => {
     handleAuthLoginDetected("dileepbommali16@gmail.com", "Dileep");
     const first = getCareerAgentResponse("hi", [], { branch: "CSE", cgpa: 8.5 }, "Boss");
-    expect(first).toContain("Hi Boss! What's up?");
+    expect(first.split("|||")[0]).toBe("Hi Boss! What's up?");
     expect(first.toLowerCase()).not.toContain("co-pilot");
 
     const second = getCareerAgentResponse(
@@ -206,6 +206,7 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
       { branch: "CSE", cgpa: 8.5 },
       "Boss"
     );
+    expect(second.split("|||")[0]).toBe("Boss, I'm here.");
     expect(second.toLowerCase()).not.toContain("what's up");
     expect(second.toLowerCase()).not.toContain("co-pilot");
 

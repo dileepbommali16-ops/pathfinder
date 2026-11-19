@@ -139,7 +139,7 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
 
       {matchedCollege && !open && (
         <div className="mt-1.5 flex items-center gap-1.5 px-1 text-[11px] text-slate-300">
-          <MapPin className="h-3 w-3 shrink-0 text-[#5BC0DE]" />
+          <MapPin className="h-3 w-3 shrink-0 text-[#2B2024]" />
           <span className="truncate">{matchedCollege.location}</span>
           <span className="ml-auto shrink-0 rounded-full border border-white/15 bg-black px-2 py-0.5 text-[10px] font-semibold text-white">
             {matchedCollege.status}
@@ -151,7 +151,7 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
         <div className="absolute left-0 right-0 top-full z-[70] mt-1.5 overflow-hidden rounded-xl border border-white/20 bg-black shadow-2xl shadow-black/90">
           <div className="flex items-center justify-between border-b border-white/10 bg-black px-3 py-2 text-[11px] text-slate-400">
             <span className="flex items-center gap-1.5">
-              <Search className="h-3 w-3 text-[#5BC0DE]" />
+              <Search className="h-3 w-3 text-[#2B2024]" />
               {filteredColleges.length} verified campuses (or type any college name)
             </span>
             <span className="text-[10px] font-semibold uppercase tracking-wider text-white">
@@ -190,7 +190,7 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                      <MapPin className="h-3 w-3 shrink-0 text-[#5BC0DE]" />
+                      <MapPin className="h-3 w-3 shrink-0 text-[#2B2024]" />
                       <span className="truncate">{entry.location}</span>
                     </div>
                   </button>

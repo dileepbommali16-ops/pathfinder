@@ -76,6 +76,25 @@ export async function POST(request) {
     const cameraActive = Boolean(body?.camera_active && liveFrameB64);
 
     const history = Array.isArray(body?.history) ? body.history.slice(-8) : [];
+    const isPureHi = /^\s*(hi+|hello+|hey+|hai+|hlo+|yo+|namaste|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$/i.test(
+      message
+    );
+    if (isPureHi) {
+      const hasPriorTurns = history.length > 0;
+      const hiReply = hasPriorTurns
+        ? `${honorific}, I'm here.`
+        : honorific === "Boss"
+          ? "Hi Boss! What's up?"
+          : `Hello ${honorific}, what can I help you with today?`;
+      return Response.json({
+        status: "ok",
+        reply: hiReply,
+        model: "deterministic-hi-rule",
+        honorific,
+        provider: "vercel-fluid-gemini",
+      });
+    }
+
     const contents = [];
     for (const turn of history) {
       const txt = String(turn?.content || "").trim();

@@ -12,12 +12,12 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl border border-white/[0.08] bg-[#0a0b10] p-6 sm:p-8 shadow-2xl text-[#f8fafc]">
+      <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 shadow-2xl text-[#f8fafc]">
         {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 rounded-xl border border-white/[0.08] bg-[#11131c] text-[#94a3b8] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          className="absolute top-6 right-6 p-2 rounded-xl border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
@@ -25,7 +25,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
         {type === "privacy" ? (
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7c3aed]/15 text-[#7c3aed] ring-1 ring-[#7c3aed]/40">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2B2024]/15 text-[#2B2024] ring-1 ring-[#2B2024]/40">
                 <Lock className="w-5 h-5" />
               </div>
               <div>
@@ -39,7 +39,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
             <div className="space-y-4 text-xs text-[#94a3b8] leading-relaxed">
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#f8fafc] flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <CheckCircle2 className="w-4 h-4 text-[#f8fafc]" />
                   1. Zero Voice Retention Policy
                 </h3>
                 <p>
@@ -49,7 +49,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
 
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#f8fafc] flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <CheckCircle2 className="w-4 h-4 text-[#f8fafc]" />
                   2. Candidate Profile Confidentiality
                 </h3>
                 <p>
@@ -59,7 +59,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
 
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#f8fafc] flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <CheckCircle2 className="w-4 h-4 text-[#f8fafc]" />
                   3. Benchmark Data Disclosure
                 </h3>
                 <p>
@@ -69,7 +69,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
 
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#f8fafc] flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <CheckCircle2 className="w-4 h-4 text-[#f8fafc]" />
                   4. Third-Party Intelligence Providers
                 </h3>
                 <p>
@@ -81,7 +81,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
         ) : (
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#9f1239]/15 text-[#9f1239] ring-1 ring-[#9f1239]/40">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2B2024]/15 text-[#2B2024] ring-1 ring-[#2B2024]/40">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
@@ -95,7 +95,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
             <div className="space-y-4 text-xs text-[#94a3b8] leading-relaxed">
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#f8fafc] flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4 text-[#9f1239]" />
+                  <AlertCircle className="w-4 h-4 text-[#2B2024]" />
                   1. Placement Prediction Disclaimer
                 </h3>
                 <p>
@@ -105,7 +105,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
 
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#f8fafc] flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4 text-[#9f1239]" />
+                  <AlertCircle className="w-4 h-4 text-[#2B2024]" />
                   2. Project Blueprint IP & Educational Licensing
                 </h3>
                 <p>
@@ -115,7 +115,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
 
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#f8fafc] flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4 text-[#9f1239]" />
+                  <AlertCircle className="w-4 h-4 text-[#2B2024]" />
                   3. Acceptable Use & Automated Scraping
                 </h3>
                 <p>
@@ -130,7 +130,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-xl text-xs font-semibold bg-[#11131c] hover:bg-white/10 text-[#f8fafc] border border-white/[0.08] transition-colors cursor-pointer"
+            className="px-5 py-2 rounded-xl text-xs font-semibold bg-[#000000] hover:bg-white/10 text-[#f8fafc] border border-white/[0.08] transition-colors cursor-pointer"
           >
             Acknowledge & Close
           </button>

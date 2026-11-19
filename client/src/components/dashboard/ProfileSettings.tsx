@@ -162,7 +162,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   return (
     <div className="relative mx-auto max-w-4xl space-y-6">
       {/* Header */}
-      <div className="rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 shadow-2xl backdrop-blur-2xl">
+      <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-2xl backdrop-blur-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#ffffff]/30 bg-[#ffffff]/10 px-3 py-1 text-xs font-semibold text-[#ffffff]">
@@ -179,7 +179,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             <button
               type="button"
               onClick={onResetToDefaults}
-              className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3 py-2 text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/5 transition-all active:scale-95"
+              className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/5 transition-all active:scale-95"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span>Reset Defaults</span>
@@ -200,7 +200,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       </div>
 
       {/* Main Settings Form */}
-      <form onSubmit={handleSave} className="rounded-3xl border border-white/[0.08] bg-[#11131c] p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
+      <form onSubmit={handleSave} className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
         {/* Section 1: Identity & College */}
         <div className="space-y-4">
           <h3 className="text-sm font-bold uppercase tracking-wider text-[#ffffff] flex items-center gap-2">
@@ -216,7 +216,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 id="settings-full-name"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               />
             </div>
 
@@ -236,7 +236,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 id="settings-branch"
                 value={formData.branch}
                 onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               >
                 {BRANCHES.map((b) => (
                   <option key={b} value={b}>{b}</option>
@@ -251,7 +251,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   type="text"
                   value={formData.course}
                   onChange={(e) => setFormData({ ...formData, course: e.target.value })}
-                  className="rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3 py-2 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                  className="rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
                   placeholder="e.g. B.Tech"
                 />
                 <select
@@ -268,7 +268,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                       yearSemester: semMeta.label,
                     });
                   }}
-                  className="rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3 py-2 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                  className="rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
                 >
                   {YEAR_OPTIONS.map((yr) => (
                     <option key={yr} value={yr}>{yr}</option>
@@ -309,7 +309,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     percentage: Math.round(cgpa * mult * 10) / 10
                   });
                 }}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               />
             </div>
 
@@ -319,7 +319,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 type="number"
                 disabled
                 value={(formData.cgpa * (formData.cgpaFormulaMultiplier || 9.5)).toFixed(1)}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs font-bold text-[#f8fafc] outline-none"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs font-bold text-[#f8fafc] outline-none"
               />
             </div>
 
@@ -336,7 +336,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     percentage: Math.round(formData.cgpa * mult * 10) / 10
                   });
                 }}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               >
                 <option value={9.5}>AICTE / Standard (× 9.5)</option>
                 <option value={10.0}>Direct Scale (× 10.0)</option>
@@ -353,7 +353,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 step="0.1"
                 value={formData.tenthPercentage}
                 onChange={(e) => setFormData({ ...formData, tenthPercentage: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               />
             </div>
 
@@ -366,7 +366,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 step="0.1"
                 value={formData.twelfthPercentage}
                 onChange={(e) => setFormData({ ...formData, twelfthPercentage: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               />
             </div>
 
@@ -381,7 +381,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   const val = parseInt(e.target.value, 10) || 0;
                   setFormData({ ...formData, activeBacklogs: val, backlogs: val });
                 }}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               />
             </div>
           </div>
@@ -403,7 +403,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 max="20"
                 value={formData.projectsCount}
                 onChange={(e) => setFormData({ ...formData, projectsCount: parseInt(e.target.value, 10) || 0 })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               />
             </div>
 
@@ -415,7 +415,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 max="10"
                 value={formData.internships}
                 onChange={(e) => setFormData({ ...formData, internships: parseInt(e.target.value, 10) || 0 })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               />
             </div>
 
@@ -459,7 +459,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 value={skillsText}
                 onChange={(e) => setSkillsText(e.target.value)}
                 placeholder="e.g. Python, JavaScript, React, SQL, Data Structures"
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               />
             </div>
 
@@ -479,7 +479,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     });
                   }}
                   placeholder="https://github.com/your-username"
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
                 />
               </div>
 
@@ -498,7 +498,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     });
                   }}
                   placeholder="https://leetcode.com/your-username"
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
                 />
               </div>
 
@@ -516,7 +516,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     });
                   }}
                   placeholder="https://linkedin.com/in/your-username"
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
                 />
               </div>
             </div>
@@ -537,7 +537,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 id="settings-target-role"
                 value={formData.targetRole}
                 onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               >
                 {ROLES.map((r) => (
                   <option key={r} value={r}>{r}</option>
@@ -551,7 +551,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 id="settings-target-tier"
                 value={formData.targetTier}
                 onChange={(e) => setFormData({ ...formData, targetTier: e.target.value, preferredCompanyType: e.target.value })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               >
                 {TIERS.map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -570,7 +570,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   setFormData({ ...formData, honorificPref: val });
                   setHonorificPreference(val, resolvedEmail);
                 }}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0b10] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               >
                 <option value="Auto">
                   {canSelectBossMode
@@ -591,7 +591,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             <button
               type="button"
               onClick={onGoToDashboard}
-              className="flex items-center gap-1.5 rounded-2xl border border-white/[0.08] bg-[#0a0b10] px-4 py-3 text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/5 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 rounded-2xl border border-white/[0.08] bg-[#000000] px-4 py-3 text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/5 transition-all cursor-pointer"
             >
               <span>Skip to 2. Dashboard</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -601,7 +601,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             type="submit"
             id="btn-save-settings"
             disabled={isSaving}
-            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#9f1239] to-[#7c3aed] hover:from-[#881337] hover:to-[#6d28d9] px-6 py-3 text-xs font-bold text-white shadow-xl shadow-[#ffffff]/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#2B2024] to-[#2B2024] hover:from-[#2B2024] hover:to-[#2B2024] px-6 py-3 text-xs font-bold text-white shadow-xl shadow-[#ffffff]/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {isSaving ? (
               <>
