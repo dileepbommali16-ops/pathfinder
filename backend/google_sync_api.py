@@ -638,6 +638,82 @@ def _compute_is_official(query: str, title: str, url: str) -> bool:
     return False
 
 
+_SEARCH_STOPWORDS = {
+    "the", "and", "for", "with", "from", "that", "this", "what", "who",
+    "official", "website", "site", "link", "links", "open", "search", "page",
+}
+
+
+def _is_relevant_search_result(query: str, title: str, url: str, snippet: str = "") -> bool:
+    """Rejects unrelated regional/spam results that share zero query tokens with title/url/snippet."""
+    raw_tokens = [
+        t for t in re.split(r"[^a-z0-9]+", (query or "").lower())
+        if len(t) >= 3 and t not in _SEARCH_STOPWORDS
+    ]
+    if not raw_tokens:
+        raw_tokens = [t for t in re.split(r"[^a-z0-9]+", (query or "").lower()) if len(t) >= 2]
+    if not raw_tokens:
+        return True
+
+    expanded = list(raw_tokens)
+    if "claude" in raw_tokens:
+        expanded.append("anthropic")
+
+    haystack = f"{title or ''} {url or ''} {snippet or ''}".lower()
+    return any(tok in haystack for tok in expanded)
+
+
+def _unwrap_yahoo_url(raw_href: str) -> str:
+    if not raw_href:
+        return ""
+    m = re.search(r"/RU=([^/]+)/", raw_href)
+    if m:
+        try:
+            return urllib.parse.unquote(m.group(1))
+        except Exception:
+            pass
+    return raw_href
+
+
+class _YahooSearchHTMLParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.results: List[Dict[str, str]] = []
+        self._in_h3 = False
+        self._in_a = False
+        self._cur_href = ""
+        self._buf: List[str] = []
+
+    def handle_starttag(self, tag: str, attrs: List[tuple]):
+        t = tag.lower()
+        if t == "h3":
+            self._in_h3 = True
+        elif t == "a" and self._in_h3:
+            attr_map = dict(attrs)
+            href = attr_map.get("href") or ""
+            if href:
+                self._in_a = True
+                self._cur_href = href
+                self._buf = []
+
+    def handle_data(self, data: str):
+        if self._in_a:
+            self._buf.append(data)
+
+    def handle_endtag(self, tag: str):
+        t = tag.lower()
+        if t == "a" and self._in_a:
+            title = re.sub(r"\s+", " ", "".join(self._buf)).strip()
+            real_url = _unwrap_yahoo_url(self._cur_href)
+            if title and real_url.startswith(("http://", "https://")):
+                self.results.append({"title": title, "url": real_url, "snippet": ""})
+            self._in_a = False
+            self._cur_href = ""
+            self._buf = []
+        elif t == "h3":
+            self._in_h3 = False
+
+
 class _DuckDuckGoHTMLParser(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -776,90 +852,93 @@ async def web_search_service(query: str, max_results: int = 8) -> Dict[str, Any]
         return {"ok": False, "error": "Search query is required.", "results": []}
 
     results: List[Dict[str, Any]] = []
-    # 1. Fast Bing RSS organic search (clean URLs & snippets, no CAPTCHA on cloud IPs)
+    browser_headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        ),
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+
+    async def _append_candidate(title: str, raw_url: str, snippet: str = "", force_official: Optional[bool] = None):
+        real_url = (raw_url or "").strip()
+        if not real_url.startswith(("http://", "https://")):
+            return
+        if any(x.get("url") == real_url for x in results):
+            return
+        if not await asyncio.to_thread(_is_safe_public_url, real_url):
+            return
+        clean_title = html.unescape((title or "").strip())
+        clean_snip = html.unescape(re.sub(r"\s+", " ", (snippet or "").strip()))
+        if not _is_relevant_search_result(clean_q, clean_title, real_url, clean_snip):
+            return
+        host = (urllib.parse.urlparse(real_url).hostname or "").lower().replace("www.", "")
+        results.append(
+            {
+                "index": len(results) + 1,
+                "title": (clean_title or host or real_url)[:140],
+                "url": real_url,
+                "host": host,
+                "snippet": clean_snip[:220],
+                "is_official": (
+                    bool(force_official)
+                    if force_official is not None
+                    else _compute_is_official(clean_q, clean_title, real_url)
+                ),
+            }
+        )
+
+    # 1. Yahoo Web Search HTML (works reliably with relevance validation)
     try:
-        async with httpx.AsyncClient(
-            timeout=6.0,
-            follow_redirects=True,
-            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36"},
-        ) as client:
-            bing_resp = await client.get(
-                "https://www.bing.com/search",
-                params={"q": clean_q, "format": "rss"},
-            )
-            if bing_resp.status_code == 200 and "<item>" in bing_resp.text:
-                root = ET.fromstring(bing_resp.text)
-                seen_urls = set()
-                for item in root.findall(".//item"):
-                    real_url = (item.findtext("link") or "").strip()
-                    if not real_url.startswith(("http://", "https://")) or real_url in seen_urls:
+        async with httpx.AsyncClient(timeout=7.0, follow_redirects=True, headers=browser_headers) as client:
+            y_resp = await client.get("https://search.yahoo.com/search", params={"p": clean_q})
+            if y_resp.status_code == 200 and y_resp.text:
+                y_parser = _YahooSearchHTMLParser()
+                y_parser.feed(y_resp.text)
+                for item in y_parser.results:
+                    u = item.get("url", "")
+                    host = (urllib.parse.urlparse(u).hostname or "").lower()
+                    if any(b in host for b in ("yahoo.com", "bing.com")):
                         continue
-                    seen_urls.add(real_url)
-                    host = (urllib.parse.urlparse(real_url).hostname or "").lower().replace("www.", "")
-                    title = html.unescape((item.findtext("title") or host or real_url).strip())
-                    desc = html.unescape(re.sub(r"\s+", " ", (item.findtext("description") or "").strip()))
-                    results.append(
-                        {
-                            "index": len(results) + 1,
-                            "title": title[:140],
-                            "url": real_url,
-                            "host": host,
-                            "snippet": desc[:220],
-                            "is_official": _compute_is_official(clean_q, title, real_url),
-                        }
-                    )
+                    await _append_candidate(item.get("title", ""), u, item.get("snippet", ""))
                     if len(results) >= limit:
                         break
     except Exception:
         pass
 
-    # 2. Fast DuckDuckGo HTML search fallback
+    # 2. Bing RSS US-localized (with strict relevance validation to reject regional spam)
     if not results:
         try:
-            headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
-                ),
-                "Accept-Language": "en-US,en;q=0.9",
-            }
-            async with httpx.AsyncClient(timeout=6.0, follow_redirects=True, headers=headers) as client:
-                resp = await client.get("https://html.duckduckgo.com/html/", params={"q": clean_q})
-                if resp.status_code == 200 and resp.text:
-                    parser = _DuckDuckGoHTMLParser()
-                    parser.feed(resp.text)
-                    if parser._current and parser._current.get("url"):
-                        parser.results.append(parser._current)
-                    seen_urls = set()
-                    for item in parser.results:
-                        real_url = _unwrap_ddg_url(item.get("url", ""))
-                        if not real_url.startswith(("http://", "https://")) or real_url in seen_urls:
-                            continue
-                        seen_urls.add(real_url)
-                        host = (urllib.parse.urlparse(real_url).hostname or "").lower().replace("www.", "")
-                        title = html.unescape(item.get("title") or host or real_url)
-                        results.append(
-                            {
-                                "index": len(results) + 1,
-                                "title": title[:140],
-                                "url": real_url,
-                                "host": host,
-                                "snippet": html.unescape(item.get("snippet") or "")[:220],
-                                "is_official": _compute_is_official(clean_q, title, real_url),
-                            }
+            async with httpx.AsyncClient(timeout=6.0, follow_redirects=True, headers=browser_headers) as client:
+                bing_resp = await client.get(
+                    "https://www.bing.com/search",
+                    params={"q": clean_q, "cc": "US", "mkt": "en-US", "setlang": "en", "format": "rss"},
+                )
+                if bing_resp.status_code == 200 and "<item>" in bing_resp.text:
+                    root = ET.fromstring(bing_resp.text)
+                    for item in root.findall(".//item"):
+                        await _append_candidate(
+                            item.findtext("title") or "",
+                            item.findtext("link") or "",
+                            item.findtext("description") or "",
                         )
                         if len(results) >= limit:
                             break
         except Exception:
             pass
 
-    # 3. Gemini Google Search grounding fallback if web feeds returned 0 results
+    # 3. Cloud-Safe Gemini 3.8 Flash structured URL + Wikipedia OpenSearch fallback
     if not results:
         try:
             from google import genai
             from google.genai import types
             from backend.config.key_resolver import get_gemini_key_candidates
 
+            prompt = (
+                f'Return up to {limit} real, authoritative web search results for "{clean_q}" as a JSON array. '
+                'Each object must have keys: "title" (string), "url" (valid https URL of official site/docs/GitHub/Wikipedia), '
+                '"snippet" (1 short sentence), "is_official" (boolean).'
+            )
             for key in get_gemini_key_candidates():
                 gclient = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
                 for m_name in ("gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"):
@@ -867,37 +946,27 @@ async def web_search_service(query: str, max_results: int = 8) -> Dict[str, Any]
                         resp = await asyncio.to_thread(
                             gclient.models.generate_content,
                             model=m_name,
-                            contents=f"Search the web for: {clean_q}. Include official website URLs.",
+                            contents=prompt,
                             config=types.GenerateContentConfig(
-                                tools=[types.Tool(google_search=types.GoogleSearch())],
+                                response_mime_type="application/json",
                                 temperature=0.1,
-                                max_output_tokens=300,
+                                max_output_tokens=700,
                             ),
                         )
-                        cands = getattr(resp, "candidates", None) or []
-                        gm = getattr(cands[0], "grounding_metadata", None) if cands else None
-                        chunks = getattr(gm, "grounding_chunks", None) or []
-                        seen = set()
-                        for ch in chunks:
-                            web = getattr(ch, "web", None)
-                            uri = getattr(web, "uri", None) if web else None
-                            title = getattr(web, "title", None) if web else ""
-                            if not uri or uri in seen:
-                                continue
-                            seen.add(uri)
-                            host = (urllib.parse.urlparse(uri).hostname or "").lower().replace("www.", "")
-                            results.append(
-                                {
-                                    "index": len(results) + 1,
-                                    "title": (title or host or uri)[:140],
-                                    "url": uri,
-                                    "host": host,
-                                    "snippet": "",
-                                    "is_official": _compute_is_official(clean_q, title or "", uri),
-                                }
-                            )
-                            if len(results) >= limit:
-                                break
+                        raw_json = (getattr(resp, "text", None) or "").strip()
+                        parsed = json.loads(raw_json) if raw_json else []
+                        if isinstance(parsed, list):
+                            for entry in parsed:
+                                if not isinstance(entry, dict):
+                                    continue
+                                await _append_candidate(
+                                    str(entry.get("title") or ""),
+                                    str(entry.get("url") or ""),
+                                    str(entry.get("snippet") or ""),
+                                    force_official=entry.get("is_official"),
+                                )
+                                if len(results) >= limit:
+                                    break
                         if results:
                             break
                     except Exception:
@@ -906,6 +975,27 @@ async def web_search_service(query: str, max_results: int = 8) -> Dict[str, Any]
                     break
         except Exception:
             pass
+
+        if len(results) < limit:
+            try:
+                async with httpx.AsyncClient(
+                    timeout=5.0,
+                    headers={"User-Agent": "PathfinderAI/2.0 (https://pathfinder-client-fzom.vercel.app)"},
+                ) as client:
+                    w_resp = await client.get(
+                        "https://en.wikipedia.org/w/api.php",
+                        params={"action": "opensearch", "search": clean_q, "limit": 3, "format": "json"},
+                    )
+                    if w_resp.status_code == 200:
+                        w_data = w_resp.json()
+                        if isinstance(w_data, list) and len(w_data) >= 4:
+                            titles, descs, urls = w_data[1], w_data[2], w_data[3]
+                            for t_i, d_i, u_i in zip(titles, descs, urls):
+                                await _append_candidate(f"{t_i} - Wikipedia", u_i, d_i)
+                                if len(results) >= limit:
+                                    break
+            except Exception:
+                pass
 
     return {
         "ok": True,

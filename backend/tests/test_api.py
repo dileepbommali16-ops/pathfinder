@@ -446,7 +446,7 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIn("/api/auth/google/workspace/start", st_json["connect_url"])
 
     def test_cloud_web_ssrf_guard_and_whatsapp_tool_declaration(self):
-        from backend.google_sync_api import _is_safe_public_url
+        from backend.google_sync_api import _is_safe_public_url, _is_relevant_search_result
         from backend.agent.live_proxy import DAS_TOOLS
 
         self.assertFalse(_is_safe_public_url("http://127.0.0.1:8000/secret"))
@@ -454,6 +454,11 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertFalse(_is_safe_public_url("http://169.254.169.254/latest/meta-data/"))
         self.assertFalse(_is_safe_public_url("file:///etc/passwd"))
         self.assertTrue(_is_safe_public_url("https://docs.anthropic.com/en/docs/claude-code"))
+
+        self.assertFalse(_is_relevant_search_result("claude code", "PRUPanel Connect - Prudential Singapore", "https://www.prudential.com.sg/", "healthcare"))
+        self.assertTrue(_is_relevant_search_result("claude code", "Claude Code by Anthropic", "https://claude.com/product/claude-code", "AI coding agent"))
+        self.assertFalse(_is_relevant_search_result("allu arjun", "Home | I am a Young Scientist", "https://youngscientist.sscglobal.com.sg/", "badge"))
+        self.assertTrue(_is_relevant_search_result("allu arjun", "Allu Arjun - Wikipedia", "https://en.wikipedia.org/wiki/Allu_Arjun", "Indian actor"))
 
         ssrf_resp = self.client.get("/api/google/web/read?url=http://127.0.0.1:8080/internal")
         self.assertEqual(ssrf_resp.status_code, 400)
