@@ -1,5 +1,6 @@
 import { audioEngine, cameraEngine } from "./audioIO";
 import { chromeBridge } from "./chromeBridge";
+import { codingStudioController } from "./codingStudioController";
 import { API_BASE } from "@/lib/apiClient";
 import {
   executeWebsiteControl,
@@ -467,6 +468,39 @@ CORE AUTONOMOUS CAPABILITIES:
                   },
                 },
                 {
+                  name: "coding_studio_control",
+                  description:
+                    "Full control over Pathfinder's multi-language Coding Studio (open, switch_language, write_code, read_code, delete_code, run_code, stop_code, get_output, close).",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      action: {
+                        type: "STRING",
+                        description:
+                          "One of: 'open', 'switch_language', 'write_code', 'read_code', 'delete_code', 'run_code', 'stop_code', 'get_output', 'close'",
+                      },
+                      language: {
+                        type: "STRING",
+                        description: "c, cpp, python, java, javascript, typescript, sql, go, rust, csharp, php",
+                      },
+                      program_title: { type: "STRING" },
+                      source_code: { type: "STRING" },
+                      mode: {
+                        type: "STRING",
+                        description: "'replace', 'append', 'insert_lines', or 'replace_lines'",
+                      },
+                      line_number: { type: "INTEGER" },
+                      start_line: { type: "INTEGER" },
+                      end_line: { type: "INTEGER" },
+                      target_text: { type: "STRING" },
+                      stdin: { type: "STRING" },
+                      auto_run: { type: "BOOLEAN" },
+                      logic_explanation: { type: "STRING" },
+                    },
+                    required: ["action"],
+                  },
+                },
+                {
                   name: "write_and_compile_code",
                   description:
                     "Open the online compiler (C, C++, Python, Java, JS, TS, SQL), write complete working code, and explain its logic.",
@@ -776,6 +810,9 @@ CORE AUTONOMOUS CAPABILITIES:
           if (data.name === "control_website" || data.name === "navigate_ui") {
             executeWebsiteControl(args as WebsiteControlArgs, this.savedNavigateFn);
             sendToolResult({ ok: true, navigated: true });
+          } else if (data.name === "coding_studio_control") {
+            const codeRes = await codingStudioController.execute(args);
+            sendToolResult(codeRes);
           } else if (data.name === "programiz_compiler") {
             const progRes = await chromeBridge.runProgramizCompiler(args);
             sendToolResult(progRes);
@@ -903,6 +940,8 @@ CORE AUTONOMOUS CAPABILITIES:
               resultMsg = JSON.stringify(await openExternalWebsiteOrSearch(args));
             } else if (fc.name === "open_linkedin_profile") {
               resultMsg = openLinkedInProfile(args);
+            } else if (fc.name === "coding_studio_control") {
+              resultMsg = JSON.stringify(await codingStudioController.execute(args));
             } else if (fc.name === "write_and_compile_code") {
               resultMsg = JSON.stringify(
                 await handleCodeGenerationAndCompiler(args, this.savedOnCodeReady)
