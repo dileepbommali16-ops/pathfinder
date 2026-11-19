@@ -1,12 +1,31 @@
 // client/src/agent/chromeBridge.ts
-// Real Chrome Automation Bridge connecting Pathfinder 2.0 web app to the
-// Manifest V3 `das-chrome-extension` for Programiz multi-language compiling,
-// Google search/click/scroll/read, tab switching, and Gmail visuals.
+// Real Chrome Automation Bridge connecting Pathfinder 2.0 web app to:
+// 1. Manifest V3 `das-chrome-extension` on Laptop Chrome (direct tab control, clicks, Gmail UI, WhatsApp Web, Programiz)
+// 2. Cloud Search / Page Reader + Live Gmail & WhatsApp Workspace Drawer fallback on Phone / Tablet / unextended browsers
 
 import { toast } from "sonner";
+import { API_BASE } from "@/lib/apiClient";
 
 const WEB_SOURCE = "PATHFINDER_DAS_WEB";
 const EXT_SOURCE = "DAS_CHROME_BRIDGE";
+
+export interface WebSearchResultItem {
+  index: number;
+  title: string;
+  url: string;
+  host?: string;
+  snippet?: string;
+  isOfficial?: boolean;
+  is_official?: boolean;
+}
+
+export interface WebPageData {
+  url: string;
+  title: string;
+  headings?: string[];
+  links?: Array<{ text: string; href: string }>;
+  text?: string;
+}
 
 export const PROGRAMIZ_LANGUAGE_URLS: Record<string, string> = {
   c: "https://www.programiz.com/c-programming/online-compiler/",
@@ -40,6 +59,13 @@ class DasChromeBridgeClient {
   private reqSeq = 0;
   private pending = new Map<string, PendingReq>();
   private listeners = new Set<(connected: boolean) => void>();
+  public lastWebResults: WebSearchResultItem[] = [];
+  public lastPageData: WebPageData | null = null;
+
+  public emitAutomationUpdate(payload: Record<string, any>) {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("das:automation-update", { detail: payload }));
+  }
 
   public get isConnected(): boolean {
     this.init();
@@ -71,7 +97,7 @@ class DasChromeBridgeClient {
       if (data.type === "BRIDGE_READY") {
         const changed = !this.connected;
         this.connected = true;
-        this.version = data.version || "1.0.0";
+        this.version = data.version || "2.0.0";
         if (changed) this.notify();
         return;
       }
@@ -118,7 +144,7 @@ class DasChromeBridgeClient {
   public sendAction(
     action: string,
     payload: Record<string, any> = {},
-    timeoutMs = 16000
+    timeoutMs = 18000
   ): Promise<{ ok: boolean; result?: any; error?: string; bridgeMissing?: boolean }> {
     this.init();
     if (typeof window === "undefined") {
@@ -129,7 +155,7 @@ class DasChromeBridgeClient {
       return Promise.resolve({
         ok: false,
         bridgeMissing: true,
-        error: "DAS Chrome Automation Bridge extension is not loaded in this browser yet.",
+        error: "DAS Chrome Automation Bridge extension is not loaded in this browser.",
       });
     }
 
@@ -203,12 +229,11 @@ class DasChromeBridgeClient {
       };
     }
 
-    // Extension not loaded yet -> open the real Programiz URL (NEVER open the fake internal sidebar!)
     if (action !== "clear" && action !== "read_output") {
       window.open(url, "_blank", "noopener,noreferrer");
     }
     toast.info(
-      "Opened real Programiz tab & copied code! Load 'das-chrome-extension' in chrome://extensions for full hands-free typing & Run."
+      "Opened real Programiz tab & copied code! Load 'das-chrome-extension' in chrome://extensions for hands-free Run."
     );
     return {
       ok: false,
@@ -217,8 +242,67 @@ class DasChromeBridgeClient {
       language: langKey,
       copiedToClipboard: Boolean(code),
       message:
-        "Real Programiz tab opened and code copied to clipboard. To type, run, clear, and auto-fix inside Programiz automatically, load the 'das-chrome-extension' folder in chrome://extensions.",
+        "Real Programiz tab opened and code copied to clipboard. Load 'das-chrome-extension' in chrome://extensions for automated Run.",
     };
+  }
+
+  private resolveClickUrlFromCache(args: { url?: string; target?: string; index?: number }): string | null {
+    if (args.url && /^https?:\/\//i.test(args.url)) return args.url;
+    if (!this.lastWebResults.length) return null;
+
+    const lower = (args.target || "").toLowerCase().trim();
+    let idx = Number(args.index || 0);
+    if (!idx && lower) {
+      if (/\b(1st|first|top)\b/.test(lower)) idx = 1;
+      else if (/\b(2nd|second)\b/.test(lower)) idx = 2;
+      else if (/\b(3rd|third)\b/.test(lower)) idx = 3;
+      else if (/\b(4th|fourth)\b/.test(lower)) idx = 4;
+      else if (/\b(5th|fifth)\b/.test(lower)) idx = 5;
+    }
+
+    if (/\b(official|main site|homepage|docs|documentation)\b/.test(lower)) {
+      const strip = /\b(open|click|link|links|website|site|official|the|of|and|in|on|nokku|nokkandi)\b/g;
+      const tokens = lower.replace(strip, " ").trim().split(/\s+/).filter((t) => t.length >= 2);
+      let best: WebSearchResultItem | null = null;
+      let bestScore = -1;
+      for (const r of this.lastWebResults) {
+        let s = r.isOfficial || r.is_official ? 5 : 0;
+        const hay = `${r.title} ${r.host || ""} ${r.url} ${r.snippet || ""}`.toLowerCase();
+        for (const tok of tokens) {
+          if ((r.host || "").includes(tok)) s += 4;
+          else if (hay.includes(tok)) s += 2;
+        }
+        if (s > bestScore) {
+          bestScore = s;
+          best = r;
+        }
+      }
+      if (best?.url) return best.url;
+    }
+
+    if (idx >= 1 && this.lastWebResults[idx - 1]?.url) {
+      return this.lastWebResults[idx - 1].url;
+    }
+
+    if (lower) {
+      const tokens = lower.split(/\s+/).filter((t) => t.length >= 3);
+      let best: WebSearchResultItem | null = null;
+      let bestScore = 0;
+      for (const r of this.lastWebResults) {
+        const hay = `${r.title} ${r.host || ""} ${r.url} ${r.snippet || ""}`.toLowerCase();
+        let s = 0;
+        for (const tok of tokens) {
+          if (hay.includes(tok)) s += 2;
+        }
+        if (s > bestScore) {
+          bestScore = s;
+          best = r;
+        }
+      }
+      if (best?.url && bestScore >= 2) return best.url;
+    }
+
+    return this.lastWebResults[0]?.url || null;
   }
 
   public async runChromeBrowserControl(args: {
@@ -226,6 +310,7 @@ class DasChromeBridgeClient {
     query?: string;
     url?: string;
     target?: string;
+    domain?: string;
     text?: string;
     submit?: boolean;
     direction?: string;
@@ -234,55 +319,232 @@ class DasChromeBridgeClient {
     const action = (args.action || "read_page").toLowerCase().trim();
 
     if (this.isConnected) {
-      const resp = await this.sendAction(action, args, 15000);
-      if (resp.ok) {
-        return { ok: true, bridge: "chrome_extension", ...(resp.result || {}) };
+      const resp = await this.sendAction(action, args, 18000);
+      if (resp.ok && resp.result) {
+        if (Array.isArray(resp.result.results)) {
+          this.lastWebResults = resp.result.results;
+        }
+        if (resp.result.url && resp.result.text) {
+          this.lastPageData = {
+            url: resp.result.url,
+            title: resp.result.title || resp.result.url,
+            headings: resp.result.headings,
+            links: resp.result.clickables,
+            text: resp.result.text,
+          };
+        }
+        this.emitAutomationUpdate({
+          kind: "web",
+          action,
+          openDrawer: false,
+          ...resp.result,
+        });
+        return { ok: true, bridge: "chrome_extension", ...resp.result };
       }
       return { ok: false, bridge: "chrome_extension", error: resp.error || "Chrome action failed." };
     }
 
-    // Graceful browser fallbacks when extension isn't loaded yet
+    // Cloud Web Hub mode for Phone / Tablet / unextended browsers (Zero popup blocks!)
     if (action === "google_search" && args.query) {
-      const u = `https://www.google.com/search?q=${encodeURIComponent(args.query)}`;
-      window.open(u, "_blank", "noopener,noreferrer");
-      toast.success(`Opened Google Search for "${args.query}"`);
+      try {
+        const r = await fetch(
+          `${API_BASE}/api/google/web/search?q=${encodeURIComponent(args.query)}&max_results=8`
+        );
+        const data = r.ok ? await r.json() : { ok: false, results: [] };
+        const results: WebSearchResultItem[] = Array.isArray(data.results) ? data.results : [];
+        this.lastWebResults = results;
+        this.emitAutomationUpdate({
+          kind: "web",
+          action: "google_search",
+          openDrawer: true,
+          query: args.query,
+          results,
+        });
+        return {
+          ok: true,
+          mode: "cloud_web_drawer",
+          query: args.query,
+          results,
+          message: `Found ${results.length} results for "${args.query}" inside DAS Web Hub.`,
+        };
+      } catch (err) {
+        return { ok: false, mode: "cloud_web_drawer", error: String(err) };
+      }
+    }
+
+    if (action === "click" || action === "open_url") {
+      let targetUrl =
+        action === "open_url" && args.url
+          ? /^https?:\/\//i.test(args.url)
+            ? args.url
+            : `https://${args.url}`
+          : this.resolveClickUrlFromCache(args);
+
+      if (!targetUrl && args.target && /^https?:\/\//i.test(args.target)) {
+        targetUrl = args.target;
+      }
+
+      if (!targetUrl && action === "click" && this.lastPageData?.links?.length) {
+        const lower = (args.target || "").toLowerCase();
+        const foundLink = this.lastPageData.links.find(
+          (l) => l.text.toLowerCase().includes(lower) || l.href.toLowerCase().includes(lower)
+        );
+        if (foundLink?.href) targetUrl = foundLink.href;
+      }
+
+      if (!targetUrl) {
+        return {
+          ok: false,
+          mode: "cloud_web_drawer",
+          error: "No matching URL or previous search results found. Search Google first.",
+        };
+      }
+
+      try {
+        const r = await fetch(`${API_BASE}/api/google/web/read?url=${encodeURIComponent(targetUrl)}`);
+        const pageData = r.ok
+          ? await r.json()
+          : { ok: false, url: targetUrl, title: targetUrl, headings: [], links: [], text: "" };
+        this.lastPageData = pageData;
+        this.emitAutomationUpdate({
+          kind: "web",
+          action: "read",
+          openDrawer: true,
+          ...pageData,
+        });
+        return {
+          ok: true,
+          mode: "cloud_web_drawer",
+          clicked: pageData.title || targetUrl,
+          ...pageData,
+        };
+      } catch (err) {
+        return { ok: false, mode: "cloud_web_drawer", url: targetUrl, error: String(err) };
+      }
+    }
+
+    if (action === "read_page") {
+      if (this.lastPageData) {
+        this.emitAutomationUpdate({ kind: "web", action: "read", openDrawer: true, ...this.lastPageData });
+        return { ok: true, mode: "cloud_web_drawer", ...this.lastPageData };
+      }
+      const root = (document.querySelector("main") as HTMLElement | null) || document.body;
       return {
         ok: true,
-        bridgeMissing: true,
-        url: u,
-        message: "Opened Google Search tab. Load 'das-chrome-extension' for clicking links, scrolling, and reading pages live.",
+        title: document.title,
+        url: window.location.href,
+        text: (root?.innerText || "").replace(/\s+/g, " ").slice(0, 2200),
       };
     }
-    if (action === "open_url" && args.url) {
-      const u = /^https?:\/\//i.test(args.url) ? args.url : `https://${args.url}`;
-      window.open(u, "_blank", "noopener,noreferrer");
-      return { ok: true, bridgeMissing: true, url: u };
-    }
+
     if (action === "return_to_pathfinder") {
+      this.emitAutomationUpdate({ kind: "close_drawer" });
       window.focus();
-      return { ok: true, message: "Focused Pathfinder dashboard." };
+      return { ok: true, message: "Returned to Pathfinder dashboard." };
     }
-    toast.info("Load 'das-chrome-extension' in chrome://extensions for full Chrome click/scroll/read control.");
+
+    this.emitAutomationUpdate({ kind: "web", openDrawer: true });
     return {
       ok: false,
-      bridgeMissing: true,
-      message:
-        "DAS Chrome Bridge extension is not loaded in Chrome yet. Enable Developer Mode at chrome://extensions and Load Unpacked 'das-chrome-extension'.",
+      mode: "cloud_web_drawer",
+      message: "Opened DAS Web Hub. For external tab scroll/typing on laptop, reload 'das-chrome-extension' in chrome://extensions.",
+    };
+  }
+
+  public async runGmailVisualAction(args: {
+    action?: string;
+    query?: string;
+    view?: string;
+    thread_id?: string;
+    message_id?: string;
+    target?: string;
+    index?: number;
+    recipient_email?: string;
+    subject?: string;
+    body?: string;
+    send_now?: boolean;
+  } = {}): Promise<Record<string, any>> {
+    if (this.isConnected) {
+      const resp = await this.sendAction("gmail_action", args, 15000);
+      if (resp.ok) {
+        this.emitAutomationUpdate({
+          kind: "gmail",
+          action: args.action || "open_gmail_tab",
+          openDrawer: false,
+          query: args.query,
+          view: args.view,
+          ...(resp.result || {}),
+        });
+        return { ok: true, bridge: "chrome_extension", ...(resp.result || {}) };
+      }
+    }
+
+    // Phone / Tablet / Unextended Browser: Open Built-In Live Gmail Workspace Drawer seamlessly!
+    this.emitAutomationUpdate({
+      kind: "gmail",
+      action: args.action || "open_gmail_tab",
+      openDrawer: true,
+      query: args.query,
+      view: args.view,
+      thread_id: args.thread_id,
+      message_id: args.message_id,
+      target: args.target,
+      index: args.index,
+      recipient_email: args.recipient_email,
+      subject: args.subject,
+      body: args.body,
+    });
+    return {
+      ok: true,
+      mode: "live_gmail_drawer",
+      message: "Opened Live Gmail Workspace right inside Pathfinder.",
+    };
+  }
+
+  public async runWhatsAppAction(args: {
+    action?: string;
+    contact?: string;
+    phone?: string;
+    message?: string;
+  } = {}): Promise<Record<string, any>> {
+    const cleanDigits = String(args.phone || "").replace(/[^\d]/g, "");
+    const encodedMsg = encodeURIComponent(String(args.message || ""));
+    const waUrl = cleanDigits
+      ? `https://wa.me/${cleanDigits}?text=${encodedMsg}`
+      : `https://api.whatsapp.com/send?text=${encodedMsg}`;
+
+    if (this.isConnected) {
+      const resp = await this.sendAction("whatsapp_action", { ...args, send_now: true }, 16000);
+      this.emitAutomationUpdate({
+        kind: "whatsapp",
+        openDrawer: !resp.ok,
+        ...args,
+        waUrl,
+        ...(resp.result || {}),
+        error: resp.error,
+      });
+      if (resp.ok) {
+        return { ok: true, bridge: "chrome_extension", waUrl, ...(resp.result || {}) };
+      }
+      return { ok: false, bridge: "chrome_extension", waUrl, error: resp.error || "WhatsApp Web needs QR scan or contact match." };
+    }
+
+    this.emitAutomationUpdate({
+      kind: "whatsapp",
+      openDrawer: true,
+      ...args,
+      waUrl,
+    });
+    return {
+      ok: true,
+      mode: "whatsapp_drawer",
+      waUrl,
+      message: "Opened WhatsApp Messaging card inside Pathfinder HUD — tap Send in WhatsApp!",
     };
   }
 
   public async openGmailVisualTab(args: { query?: string; view?: string } = {}): Promise<Record<string, any>> {
-    if (this.isConnected) {
-      const resp = await this.sendAction("open_gmail_tab", args, 10000);
-      if (resp.ok) return { ok: true, bridge: "chrome_extension", ...(resp.result || {}) };
-    }
-    const url = args.query
-      ? `https://mail.google.com/mail/u/0/#search/${encodeURIComponent(args.query)}`
-      : args.view === "sent"
-        ? "https://mail.google.com/mail/u/0/#sent"
-        : "https://mail.google.com/mail/u/0/#inbox";
-    window.open(url, "_blank", "noopener,noreferrer");
-    return { ok: true, url, message: "Opened Gmail in Chrome." };
+    return this.runGmailVisualAction({ action: "open_gmail_tab", ...args });
   }
 }
 

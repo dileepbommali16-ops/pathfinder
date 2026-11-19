@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar3D } from "./Avatar3D";
+import { AutomationWorkspaceDrawer } from "./AutomationWorkspaceDrawer";
 import { dasSocket, UserHonorificRole } from "./agentSocket";
 import { chromeBridge } from "./chromeBridge";
 import { audioEngine, cameraEngine, speaker, MediaDeviceOption, LiveMotionMetrics } from "./audioIO";
@@ -1104,6 +1105,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
       {showAgent && (
         <>
+      <AutomationWorkspaceDrawer
+        gmailConnected={gmailConnected}
+        chromeBridgeReady={chromeBridgeReady}
+      />
 
       {/* Hidden File Input for Photos, Videos, and Resumes */}
       <input
@@ -1371,14 +1376,37 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <button
               type="button"
               onClick={() => {
-                const origin = typeof window !== "undefined" ? window.location.origin : "https://pathfinder-client-fzom.vercel.app";
-                window.location.href = `${API_BASE}/api/auth/google/workspace/start?origin=${encodeURIComponent(origin)}`;
+                window.dispatchEvent(
+                  new CustomEvent("das:open-automation-drawer", { detail: { tab: "web" } })
+                );
+              }}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
+              style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
+              title="Open Web, Gmail & WhatsApp Automation Hub (Phone, Tablet & Laptop)"
+            >
+              <span>🌐</span>
+              <span>Hub</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (gmailConnected) {
+                  window.dispatchEvent(
+                    new CustomEvent("das:open-automation-drawer", { detail: { tab: "gmail" } })
+                  );
+                } else {
+                  const origin =
+                    typeof window !== "undefined"
+                      ? window.location.origin
+                      : "https://pathfinder-client-fzom.vercel.app";
+                  window.location.href = `${API_BASE}/api/auth/google/workspace/start?origin=${encodeURIComponent(origin)}`;
+                }
               }}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
               style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
               title={
                 gmailConnected
-                  ? "Gmail, Calendar & Sheets API Connected (click to refresh authorization)"
+                  ? "Open Live Gmail Workspace (Inbox, Read, Compose, Reply)"
                   : "Connect Gmail, Calendar & Sheets OAuth in 1 click"
               }
             >

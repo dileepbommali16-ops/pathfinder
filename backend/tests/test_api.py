@@ -445,5 +445,21 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertTrue(st_json["has_gmail"])
         self.assertIn("/api/auth/google/workspace/start", st_json["connect_url"])
 
+    def test_cloud_web_ssrf_guard_and_whatsapp_tool_declaration(self):
+        from backend.google_sync_api import _is_safe_public_url
+        from backend.agent.live_proxy import DAS_TOOLS
+
+        self.assertFalse(_is_safe_public_url("http://127.0.0.1:8000/secret"))
+        self.assertFalse(_is_safe_public_url("http://localhost/admin"))
+        self.assertFalse(_is_safe_public_url("http://169.254.169.254/latest/meta-data/"))
+        self.assertFalse(_is_safe_public_url("file:///etc/passwd"))
+        self.assertTrue(_is_safe_public_url("https://docs.anthropic.com/en/docs/claude-code"))
+
+        ssrf_resp = self.client.get("/api/google/web/read?url=http://127.0.0.1:8080/internal")
+        self.assertEqual(ssrf_resp.status_code, 400)
+
+        declared = {fn.name for t in DAS_TOOLS for fn in (t.function_declarations or [])}
+        self.assertIn("whatsapp_message_control", declared)
+
 if __name__ == "__main__":
     unittest.main()

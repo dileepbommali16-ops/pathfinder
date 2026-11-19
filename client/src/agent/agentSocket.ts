@@ -752,8 +752,13 @@ CORE AUTONOMOUS CAPABILITIES:
           });
           return;
         }
+        if (data.type === "automation_status" && data.data) {
+          chromeBridge.emitAutomationUpdate(data.data);
+          return;
+        }
         if (data.type === "tool_call" && data.name) {
           this.clearTurnWatchdog();
+          this.notifyAgentResponse();
           const args = data.args || {};
           const sendToolResult = (result: any) => {
             if (!data.call_id || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
@@ -778,8 +783,11 @@ CORE AUTONOMOUS CAPABILITIES:
             const browserRes = await chromeBridge.runChromeBrowserControl(args);
             sendToolResult(browserRes);
           } else if (data.name === "gmail_workspace_control") {
-            const gmRes = await chromeBridge.openGmailVisualTab(args);
+            const gmRes = await chromeBridge.runGmailVisualAction(args);
             sendToolResult(gmRes);
+          } else if (data.name === "whatsapp_message_control") {
+            const waRes = await chromeBridge.runWhatsAppAction(args);
+            sendToolResult(waRes);
           } else if (data.name === "open_external_website") {
             const extRes = await openExternalWebsiteOrSearch(args);
             sendToolResult(extRes);

@@ -197,37 +197,12 @@ export function tryInstantBrowserCommand(rawInput: string): {
     closeGoogleAndReturnToPage();
     return {
       handled: true,
-      actionSummary: "closed Google and returned right back to your Pathfinder page"
+      actionSummary: "closed Google and returned right back to your Pathfinder page",
     };
   }
 
-  const searchMatch =
-    text.match(
-      /(?:go to google and search|open google and search|search on google for|google search|search google for)\s+(.+)/i
-    ) || text.match(/search\s+(.+)\s+on\s+google/i);
-
-  if (searchMatch && searchMatch[1]) {
-    const query = searchMatch[1].replace(/^(for|about)\s+/i, "").trim();
-    if (query) {
-      openExternal(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
-      toast.success(`Searching Google for "${query}"...`);
-      return {
-        handled: true,
-        isSearchQuery: true,
-        searchQuery: query,
-        actionSummary: `searched Google for "${query}"`
-      };
-    }
-  }
-
-  for (const [key, site] of Object.entries(SITE_MAP)) {
-    if (text === `open ${key}` || text === `go to ${key}`) {
-      openExternal(site.url);
-      toast.success(`Opened ${site.name}!`);
-      return { handled: true, actionSummary: `opened ${site.name}` };
-    }
-  }
-
+  // All search, open-google, link-click, and Gmail commands route through DAS tools
+  // so Chrome Extension Bridge and Cloud Web/Gmail Hub stay synchronized without popup blocks.
   return { handled: false };
 }
 
