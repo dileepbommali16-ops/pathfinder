@@ -9,6 +9,7 @@ WhatsApp Web, real Programiz) and scoped local VS Code workspace files.
 """
 
 import asyncio
+import hashlib
 import hmac
 import logging
 import os
@@ -26,18 +27,38 @@ logger = logging.getLogger("pathfinder.desktop_bridge")
 bridge_router = APIRouter()
 
 
-def _get_expected_bridge_token() -> str:
-    """Reads DAS_BRIDGE_TOKEN dynamically so runtime/test updates apply immediately."""
-    return (os.getenv("DAS_BRIDGE_TOKEN") or "").strip()
+def _get_expected_bridge_tokens() -> list[str]:
+    """
+    Returns valid bridge tokens dynamically:
+    1. Explicit DAS_BRIDGE_TOKEN environment variable (primary).
+    2. Deterministic HMAC-SHA256 derived from GOOGLE_CLIENT_SECRET when present.
+    Fail-closed if neither is configured.
+    """
+    tokens: list[str] = []
+    explicit = (os.getenv("DAS_BRIDGE_TOKEN") or "").strip()
+    if explicit:
+        tokens.append(explicit)
+    g_secret = (os.getenv("GOOGLE_CLIENT_SECRET") or "").strip()
+    if g_secret:
+        derived = hmac.new(
+            g_secret.encode("utf-8"),
+            b"pathfinder-das-desktop-bridge-v1",
+            hashlib.sha256,
+        ).hexdigest()
+        if derived not in tokens:
+            tokens.append(derived)
+    return tokens
 
 
 def _verify_bridge_token(candidate: str) -> bool:
     """Fail-closed constant-time token comparison."""
-    expected = _get_expected_bridge_token()
     provided = (candidate or "").strip()
-    if not expected or not provided:
+    if not provided:
         return False
-    return hmac.compare_digest(expected, provided)
+    expected_list = _get_expected_bridge_tokens()
+    if not expected_list:
+        return False
+    return any(hmac.compare_digest(exp, provided) for exp in expected_list)
 
 
 @dataclass

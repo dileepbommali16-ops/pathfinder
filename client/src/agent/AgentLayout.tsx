@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar3D } from "./Avatar3D";
-import { AutomationWorkspaceDrawer } from "./AutomationWorkspaceDrawer";
 import { dasSocket, UserHonorificRole } from "./agentSocket";
 import { chromeBridge } from "./chromeBridge";
+import {
+  codingStudioController,
+  SUPPORTED_LANGUAGES,
+  normalizeLanguage,
+  getLanguageSpec,
+  applyCodeEdit,
+  applyCodeDelete,
+  formatNumberedCode,
+  CodingStudioActionArgs,
+} from "./codingStudioController";
 import { audioEngine, cameraEngine, speaker, MediaDeviceOption, LiveMotionMetrics } from "./audioIO";
 import { CodeTaskPayload, tryExecuteClientAutomationIntent } from "./toolRunner";
 import { API_BASE, getSessionId } from "@/lib/apiClient";
@@ -47,6 +56,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [connected, setConnected] = useState(false);
   const [chromeBridgeReady, setChromeBridgeReady] = useState(false);
+  const [desktopBridgeOnline, setDesktopBridgeOnline] = useState(false);
   const [gmailConnected, setGmailConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -105,6 +115,27 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [stdinInput, setStdinInput] = useState("");
   const [compileOutput, setCompileOutput] = useState("");
   const [isRunningCode, setIsRunningCode] = useState(false);
+  const runAbortRef = useRef<AbortController | null>(null);
+  const codeTaskRef = useRef<CodeTaskPayload | null>(null);
+  const editableCodeRef = useRef<string>("");
+  const stdinInputRef = useRef<string>("");
+  const compileOutputRef = useRef<string>("");
+  const isRunningCodeRef = useRef<boolean>(false);
+  useEffect(() => {
+    codeTaskRef.current = codeTask;
+  }, [codeTask]);
+  useEffect(() => {
+    editableCodeRef.current = editableCode;
+  }, [editableCode]);
+  useEffect(() => {
+    stdinInputRef.current = stdinInput;
+  }, [stdinInput]);
+  useEffect(() => {
+    compileOutputRef.current = compileOutput;
+  }, [compileOutput]);
+  useEffect(() => {
+    isRunningCodeRef.current = isRunningCode;
+  }, [isRunningCode]);
 
   // File / Media & Resume Upload State
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
@@ -217,6 +248,27 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
+  const refreshDesktopBridgeStatus = async () => {
+    if (typeof window === "undefined") return false;
+    const email = (localStorage.getItem("userEmail") || "").trim();
+    if (!email || !isOwnerAccount(email)) {
+      setDesktopBridgeOnline(false);
+      return false;
+    }
+    try {
+      const r = await fetch(`${API_BASE}/api/bridge/status?email=${encodeURIComponent(email)}`, {
+        cache: "no-store",
+      });
+      if (!r.ok) return false;
+      const data = await r.json();
+      const online = Boolean(data?.connected);
+      setDesktopBridgeOnline(online);
+      return online;
+    } catch {
+      return false;
+    }
+  };
+
   useEffect(() => {
     if (!isAuthenticated) return;
     const email = (typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "").trim();
@@ -229,6 +281,14 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       })
       .catch(() => {});
+
+    if (isOwnerAccount(email)) {
+      void refreshDesktopBridgeStatus();
+      const intervalId = window.setInterval(() => {
+        void refreshDesktopBridgeStatus();
+      }, 20000);
+      return () => window.clearInterval(intervalId);
+    }
   }, [isAuthenticated, connected]);
 
   useEffect(() => {
@@ -957,11 +1017,38 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const stopCodeLive = () => {
+    if (runAbortRef.current) {
+      runAbortRef.current.abort();
+      runAbortRef.current = null;
+    }
+    isRunningCodeRef.current = false;
+    setIsRunningCode(false);
+    compileOutputRef.current = "⏹ Execution stopped.";
+    setCompileOutput("⏹ Execution stopped.");
+  };
+
   // Multi-tier live code executor (Backend API -> Piston Runner -> Godbolt Compiler Explorer)
-  const runCodeLive = async (codeOverride?: string, langOverride?: string) => {
-    const targetCode = typeof codeOverride === "string" ? codeOverride : editableCode;
-    const targetLang = (langOverride || codeTask?.language || "python").toLowerCase().trim();
-    if (!targetCode) return;
+  const runCodeLive = async (
+    codeOverride?: string,
+    langOverride?: string,
+    stdinOverride?: string
+  ): Promise<{ ok: boolean; output: string; stderr: string; engine: string; stopped?: boolean }> => {
+    const targetCode = typeof codeOverride === "string" ? codeOverride : editableCodeRef.current;
+    const targetLang = normalizeLanguage(langOverride || codeTaskRef.current?.language || "python");
+    const targetStdin = typeof stdinOverride === "string" ? stdinOverride : stdinInputRef.current;
+    if (!targetCode.trim()) {
+      const emptyMsg = "No code to execute.";
+      compileOutputRef.current = emptyMsg;
+      setCompileOutput(emptyMsg);
+      return { ok: false, output: emptyMsg, stderr: "", engine: "none" };
+    }
+
+    if (runAbortRef.current) {
+      runAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    runAbortRef.current = controller;
 
     let cleanCode = targetCode;
     // For single-file Java compilation, remove 'public' so javac doesn't require matching filename
@@ -969,127 +1056,283 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       cleanCode = cleanCode.replace(/\bpublic\s+class\b/g, "class");
     }
 
+    isRunningCodeRef.current = true;
     setIsRunningCode(true);
+    compileOutputRef.current = "Compiling & running your code live...";
     setCompileOutput("Compiling & running your code live...");
 
-    // 1. Primary: Run via our backend /api/compile
     try {
-      const res = await fetch(`${API_BASE}/api/compile`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          language: targetLang,
-          code: cleanCode,
-          stdin: stdinInput,
-          title: codeTask?.title || "Live Program",
-        }),
-      });
+      // 1. Primary: Run via our backend /api/compile
+      try {
+        const res = await fetch(`${API_BASE}/api/compile`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            language: targetLang,
+            code: cleanCode,
+            stdin: targetStdin,
+            title: codeTaskRef.current?.title || "Live Program",
+          }),
+        });
 
-      if (res.ok) {
-        const data = await res.json();
-        const output = data.output || (data.stderr ? `Diagnostics:\n${data.stderr}` : "Program executed with no standard output.");
-        setCompileOutput(output);
-        setIsRunningCode(false);
-        return;
-      }
-    } catch {
-      // Backend waking up: fall through to Piston sandbox runner
-    }
-
-    // 2. Secondary High-Speed Fallback: Piston Sandbox Engine (Free, CORS-open, supports 50+ languages)
-    try {
-      const pistonLangs: Record<string, string> = {
-        c: "c",
-        cpp: "c++",
-        "c++": "c++",
-        python: "python",
-        py: "python",
-        java: "java",
-        javascript: "javascript",
-        js: "javascript",
-        typescript: "typescript",
-        ts: "typescript",
-        rust: "rust",
-        go: "go",
-        csharp: "csharp.net",
-        cs: "csharp.net",
-      };
-      const pLang = pistonLangs[targetLang] || "python";
-      const pRes = await fetch("https://emkc.org/api/v2/piston/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          language: pLang,
-          version: "*",
-          files: [{ content: cleanCode }],
-          stdin: stdinInput || "",
-        }),
-      });
-      if (pRes.ok) {
-        const pData = await pRes.json();
-        const pOut = (pData.run?.output || pData.run?.stdout || "").trim();
-        const pErr = (pData.run?.stderr || "").trim();
-        if (pOut || pErr) {
-          setCompileOutput(pOut || pErr);
-          setIsRunningCode(false);
-          return;
+        if (res.ok) {
+          const data = await res.json();
+          const stderrText = String(data.stderr || "");
+          const output =
+            data.output || (stderrText ? `Diagnostics:\n${stderrText}` : "Program executed with no standard output.");
+          compileOutputRef.current = output;
+          setCompileOutput(output);
+          return {
+            ok: data.success !== false,
+            output: String(output),
+            stderr: stderrText,
+            engine: String(data.engine || "backend"),
+          };
+        }
+      } catch (primaryErr: any) {
+        if (primaryErr?.name === "AbortError" || controller.signal.aborted) {
+          compileOutputRef.current = "⏹ Execution stopped.";
+          setCompileOutput("⏹ Execution stopped.");
+          return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
         }
       }
-    } catch {
-      // Fall through to Godbolt
-    }
 
-    // 3. Tertiary Fallback: Compiler Explorer (Godbolt) Official API
-    try {
-      const compilerMap: Record<string, { id: string; lang: string; args: string }> = {
-        c: { id: "cg132", lang: "c", args: "-O2" },
-        cpp: { id: "g132", lang: "c++", args: "-O2" },
-        "c++": { id: "g132", lang: "c++", args: "-O2" },
-        python: { id: "python311", lang: "python", args: "" },
-        py: { id: "python311", lang: "python", args: "" },
-        java: { id: "java2100", lang: "java", args: "" },
-        rust: { id: "r1750", lang: "rust", args: "-O2" },
-        go: { id: "g121", lang: "go", args: "" },
-        typescript: { id: "typescript54", lang: "typescript", args: "" },
-        ts: { id: "typescript54", lang: "typescript", args: "" },
-        javascript: { id: "v8_12", lang: "javascript", args: "" },
-        js: { id: "v8_12", lang: "javascript", args: "" },
-      };
-
-      const comp = compilerMap[targetLang] || { id: "cg132", lang: "c", args: "-O2" };
-      const fallbackRes = await fetch(`https://godbolt.org/api/compiler/${comp.id}/compile`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify({
-          source: cleanCode,
-          compiler: comp.id,
-          options: {
-            userArguments: comp.args,
-            executeParameters: { args: [], stdin: stdinInput || "" },
-            compilerOptions: { executorRequest: true },
-            filters: { binary: true, execute: true },
-          },
-          lang: comp.lang,
-        }),
-      });
-
-      if (fallbackRes.ok) {
-        const fbData = await fallbackRes.json();
-        const stdout = (fbData.stdout || []).map((i: any) => i.text || "").join("\n").trim();
-        const stderr = (fbData.stderr || []).map((i: any) => i.text || "").join("\n").trim();
-        const buildErr = (fbData.buildResult?.stderr || []).map((i: any) => i.text || "").join("\n").trim();
-        const finalOutput = stdout || stderr || buildErr || "Program executed successfully (no stdout).";
-        setCompileOutput(finalOutput);
-      } else {
-        setCompileOutput("Program executed successfully.");
+      // 2. Secondary High-Speed Fallback: Piston Sandbox Engine
+      try {
+        const pistonLangs: Record<string, string> = {
+          c: "c",
+          cpp: "c++",
+          "c++": "c++",
+          python: "python",
+          py: "python",
+          java: "java",
+          javascript: "javascript",
+          js: "javascript",
+          typescript: "typescript",
+          ts: "typescript",
+          rust: "rust",
+          go: "go",
+          csharp: "csharp.net",
+          cs: "csharp.net",
+        };
+        const pLang = pistonLangs[targetLang] || "python";
+        const pRes = await fetch("https://emkc.org/api/v2/piston/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            language: pLang,
+            version: "*",
+            files: [{ content: cleanCode }],
+            stdin: targetStdin || "",
+          }),
+        });
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          const pOut = (pData.run?.output || pData.run?.stdout || "").trim();
+          const pErr = (pData.run?.stderr || "").trim();
+          if (pOut || pErr) {
+            const outStr = pOut || pErr;
+            compileOutputRef.current = outStr;
+            setCompileOutput(outStr);
+            return { ok: !pErr, output: outStr, stderr: pErr, engine: "piston" };
+          }
+        }
+      } catch (pistonErr: any) {
+        if (pistonErr?.name === "AbortError" || controller.signal.aborted) {
+          compileOutputRef.current = "⏹ Execution stopped.";
+          setCompileOutput("⏹ Execution stopped.");
+          return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
+        }
       }
-    } catch (fbErr) {
-      setCompileOutput(`Execution notice: ${String(fbErr)}`);
+
+      // 3. Tertiary Fallback: Compiler Explorer (Godbolt) Official API
+      try {
+        const compilerMap: Record<string, { id: string; lang: string; args: string }> = {
+          c: { id: "cg132", lang: "c", args: "-O2" },
+          cpp: { id: "g132", lang: "c++", args: "-O2" },
+          "c++": { id: "g132", lang: "c++", args: "-O2" },
+          python: { id: "python311", lang: "python", args: "" },
+          py: { id: "python311", lang: "python", args: "" },
+          java: { id: "java2100", lang: "java", args: "" },
+          rust: { id: "r1750", lang: "rust", args: "-O2" },
+          go: { id: "g121", lang: "go", args: "" },
+          typescript: { id: "typescript54", lang: "typescript", args: "" },
+          ts: { id: "typescript54", lang: "typescript", args: "" },
+          javascript: { id: "v8_12", lang: "javascript", args: "" },
+          js: { id: "v8_12", lang: "javascript", args: "" },
+        };
+
+        const comp = compilerMap[targetLang] || { id: "cg132", lang: "c", args: "-O2" };
+        const fallbackRes = await fetch(`https://godbolt.org/api/compiler/${comp.id}/compile`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            source: cleanCode,
+            compiler: comp.id,
+            options: {
+              userArguments: comp.args,
+              executeParameters: { args: [], stdin: targetStdin || "" },
+              compilerOptions: { executorRequest: true },
+              filters: { binary: true, execute: true },
+            },
+            lang: comp.lang,
+          }),
+        });
+
+        if (fallbackRes.ok) {
+          const fbData = await fallbackRes.json();
+          const stdout = (fbData.stdout || []).map((i: any) => i.text || "").join("\n").trim();
+          const stderr = (fbData.stderr || []).map((i: any) => i.text || "").join("\n").trim();
+          const buildErr = (fbData.buildResult?.stderr || []).map((i: any) => i.text || "").join("\n").trim();
+          const finalOutput = stdout || stderr || buildErr || "Program executed successfully (no stdout).";
+          compileOutputRef.current = finalOutput;
+          setCompileOutput(finalOutput);
+          return {
+            ok: !(stderr || buildErr),
+            output: finalOutput,
+            stderr: stderr || buildErr,
+            engine: `godbolt-${comp.id}`,
+          };
+        }
+        compileOutputRef.current = "Program executed successfully.";
+        setCompileOutput("Program executed successfully.");
+        return { ok: true, output: "Program executed successfully.", stderr: "", engine: "godbolt" };
+      } catch (fbErr: any) {
+        if (fbErr?.name === "AbortError" || controller.signal.aborted) {
+          compileOutputRef.current = "⏹ Execution stopped.";
+          setCompileOutput("⏹ Execution stopped.");
+          return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
+        }
+        const errMsg = `Execution notice: ${String(fbErr)}`;
+        compileOutputRef.current = errMsg;
+        setCompileOutput(errMsg);
+        return { ok: false, output: errMsg, stderr: String(fbErr), engine: "error" };
+      }
     } finally {
+      if (runAbortRef.current === controller) {
+        runAbortRef.current = null;
+      }
+      isRunningCodeRef.current = false;
       setIsRunningCode(false);
     }
   };
-  runCodeLiveRef.current = runCodeLive;
+  runCodeLiveRef.current = (code: string, lang: string) => {
+    void runCodeLive(code, lang);
+  };
+
+  useEffect(() => {
+    codingStudioController.registerHandler(async (args: CodingStudioActionArgs) => {
+      const action = String(args.action || "open").toLowerCase().trim();
+      const currentTask = codeTaskRef.current;
+      const targetLang = normalizeLanguage(args.language || currentTask?.language || "python");
+      const spec = getLanguageSpec(targetLang);
+
+      if (action === "close") {
+        stopCodeLive();
+        codeTaskRef.current = null;
+        setCodeTask(null);
+        return { ok: true, action: "close", closed: true, message: "Closed Coding Studio." };
+      }
+
+      if (action === "stop_code") {
+        stopCodeLive();
+        return {
+          ok: true,
+          action: "stop_code",
+          stopped: true,
+          language: targetLang,
+          output: "⏹ Execution stopped.",
+        };
+      }
+
+      if (action === "read_code" || action === "get_output") {
+        const curCode = editableCodeRef.current || "";
+        return {
+          ok: true,
+          action,
+          is_open: Boolean(codeTaskRef.current),
+          language: currentTask?.language || targetLang,
+          title: currentTask?.title || spec.extension,
+          code: curCode,
+          numbered_code: formatNumberedCode(curCode),
+          line_count: curCode ? curCode.split(/\r?\n/).length : 0,
+          output: compileOutputRef.current || "",
+          is_running: isRunningCodeRef.current,
+        };
+      }
+
+      let nextCode = editableCodeRef.current;
+      let nextTitle = args.program_title || currentTask?.title || `${spec.label} Workspace`;
+      let nextExplanation =
+        args.logic_explanation !== undefined ? args.logic_explanation : currentTask?.explanation || "";
+
+      if (action === "open") {
+        if (!nextCode.trim() || (args.language && normalizeLanguage(currentTask?.language) !== targetLang)) {
+          nextCode = args.source_code ?? spec.starter;
+        } else if (args.source_code) {
+          nextCode = args.source_code;
+        }
+      } else if (action === "switch_language") {
+        nextCode = args.source_code !== undefined ? String(args.source_code) : spec.starter;
+        nextTitle = args.program_title || `${spec.label} Workspace`;
+      } else if (action === "write_code") {
+        nextCode = applyCodeEdit(nextCode, args);
+      } else if (action === "delete_code") {
+        nextCode = applyCodeDelete(nextCode, args);
+        if (!nextCode.trim()) {
+          compileOutputRef.current = "Editor cleared.";
+          setCompileOutput("Editor cleared.");
+        }
+      }
+
+      const nextTask: CodeTaskPayload = {
+        language: targetLang,
+        title: nextTitle,
+        code: nextCode,
+        explanation: nextExplanation,
+        compilerUrl: spec.programizUrl,
+      };
+      codeTaskRef.current = nextTask;
+      editableCodeRef.current = nextCode;
+      setCodeTask(nextTask);
+      setEditableCode(nextCode);
+
+      if (args.stdin !== undefined) {
+        stdinInputRef.current = String(args.stdin);
+        setStdinInput(String(args.stdin));
+      }
+
+      const shouldRun =
+        action === "run_code" ||
+        (action === "write_code" && args.auto_run !== false && Boolean(nextCode.trim())) ||
+        ((action === "switch_language" || action === "open") && args.auto_run === true && Boolean(nextCode.trim()));
+
+      let runResult: { ok: boolean; output: string; stderr: string; engine: string; stopped?: boolean } | null = null;
+      if (shouldRun) {
+        runResult = await runCodeLive(nextCode, targetLang, args.stdin);
+      }
+
+      return {
+        ok: runResult ? runResult.ok : true,
+        action,
+        language: targetLang,
+        title: nextTitle,
+        code: nextCode,
+        numbered_code: formatNumberedCode(nextCode),
+        line_count: nextCode ? nextCode.split(/\r?\n/).length : 0,
+        output: runResult ? runResult.output : compileOutputRef.current,
+        stderr: runResult ? runResult.stderr : "",
+        engine: runResult ? runResult.engine : "studio",
+        stopped: Boolean(runResult?.stopped),
+      };
+    });
+    return () => {
+      codingStudioController.registerHandler(null);
+    };
+  }, []);
 
   // 1. Keep outer wrapper + <main>{children}</main> identical across auth transitions so Home never unmounts mid-login
   const hasUser = typeof window !== "undefined" && Boolean(localStorage.getItem("pathfinder_user"));
@@ -1105,11 +1348,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
       {showAgent && (
         <>
-      <AutomationWorkspaceDrawer
-        gmailConnected={gmailConnected}
-        chromeBridgeReady={chromeBridgeReady}
-      />
-
       {/* Hidden File Input for Photos, Videos, and Resumes */}
       <input
         ref={fileInputRef}
@@ -1122,43 +1360,63 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {/* DAS Live Multi-Language Code & Compiler Studio Drawer */}
       {codeTask && (
         <div className="fixed top-16 left-2 right-2 sm:left-auto sm:top-20 sm:right-6 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#000000]/95 border border-[#2B2024] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between border-b border-[#2B2024] pb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase px-2.5 py-0.5 rounded bg-[#2B2024] text-white">
-                {codeTask.language}
-              </span>
-              <span className="font-bold text-white text-sm truncate max-w-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2B2024] pb-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <select
+                value={normalizeLanguage(codeTask.language)}
+                onChange={(e) => {
+                  const nextLang = normalizeLanguage(e.target.value);
+                  void codingStudioController.execute({
+                    action: "switch_language",
+                    language: nextLang,
+                  });
+                }}
+                aria-label="Select Programming Language"
+                className="text-xs font-bold uppercase px-2.5 py-1 rounded-lg bg-[#2B2024] border border-[#2B2024] text-white focus:outline-none cursor-pointer"
+              >
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <option key={lang.id} value={lang.id} className="bg-[#000000] text-white">
+                    {lang.label}
+                  </option>
+                ))}
+              </select>
+              <span className="font-bold text-white text-sm truncate max-w-[200px]">
                 {codeTask.title}
               </span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-[#2B2024] text-zinc-300 font-mono">
+                {editableCode ? editableCode.split(/\r?\n/).length : 0} lines
+              </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => {
                   try {
                     navigator.clipboard.writeText(editableCode);
-                    toast.success("Code copied to clipboard! Paste (Ctrl+V) in the external compiler.");
+                    toast.success("Code copied to clipboard!");
                   } catch {}
-                  window.open(codeTask.compilerUrl, "_blank");
                 }}
-                className="px-3 py-1 bg-[#2B2024] hover:brightness-110 border border-[#2B2024] rounded-lg text-xs text-white transition cursor-pointer"
+                className="px-2.5 py-1 bg-[#2B2024] hover:brightness-110 border border-[#2B2024] rounded-lg text-xs text-white transition cursor-pointer"
               >
-                Copy & Open External ↗
+                Copy
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  setCodeTask(null);
-                  setTranscript(`Okay ${getUserRole()}, returned to your dashboard.`);
+                  void codingStudioController.execute({ action: "delete_code" });
                 }}
-                className="px-2.5 py-1 bg-[#000000] hover:bg-[#2B2024] border border-[#2B2024] rounded-lg text-xs text-white font-medium transition cursor-pointer"
-                title="Return to Dashboard"
+                className="px-2.5 py-1 bg-[#000000] hover:bg-[#2B2024] border border-[#2B2024] rounded-lg text-xs text-white transition cursor-pointer"
+                title="Clear / Delete All Code"
               >
-                Return to Dashboard
+                🗑 Clear
               </button>
               <button
                 type="button"
-                onClick={() => setCodeTask(null)}
+                onClick={() => {
+                  stopCodeLive();
+                  setCodeTask(null);
+                  setTranscript(`Okay ${getUserRole()}, returned to your dashboard.`);
+                }}
                 className="px-2.5 py-1 bg-[#2B2024] hover:brightness-110 rounded-lg text-xs text-white font-bold transition cursor-pointer"
                 title="Close Compiler Studio"
               >
@@ -1176,8 +1434,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
           <textarea
             value={editableCode}
-            onChange={(e) => setEditableCode(e.target.value)}
-            rows={9}
+            onChange={(e) => {
+              editableCodeRef.current = e.target.value;
+              setEditableCode(e.target.value);
+            }}
+            rows={10}
+            spellCheck={false}
             className="w-full bg-[#000000] border border-[#2B2024] rounded-xl p-3 font-mono text-xs text-white focus:outline-none focus:border-white/40 selection:bg-[#2B2024]"
           />
 
@@ -1185,22 +1447,40 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <input
               type="text"
               value={stdinInput}
-              onChange={(e) => setStdinInput(e.target.value)}
+              onChange={(e) => {
+                stdinInputRef.current = e.target.value;
+                setStdinInput(e.target.value);
+              }}
               placeholder="Optional program input (stdin)..."
               className="flex-1 bg-[#000000] border border-[#2B2024] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-white/40"
             />
+            {isRunningCode && (
+              <button
+                type="button"
+                onClick={stopCodeLive}
+                className="px-3.5 py-1.5 bg-[#A80139] hover:brightness-110 text-white font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1 border border-[#FD0053]"
+              >
+                ⏹ Stop
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => runCodeLive()}
+              onClick={() => {
+                void runCodeLive();
+              }}
               disabled={isRunningCode}
-              className="px-4 py-1.5 bg-[#2B2024] hover:brightness-110 text-white font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1.5 border border-[#2B2024] shadow-lg"
+              className="px-4 py-1.5 text-white font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1.5 border shadow-lg hover:brightness-110"
+              style={{
+                backgroundColor: isRunningCode ? "#2B2024" : "#FD0053",
+                borderColor: "#A80139",
+              }}
             >
-              {isRunningCode ? "Running..." : "▶ Run Code Live"}
+              {isRunningCode ? "Running..." : "▶ Run Code"}
             </button>
           </div>
 
-          <div className="bg-[#000000] border border-[#2B2024] rounded-xl p-3 font-mono text-xs text-white max-h-36 overflow-y-auto whitespace-pre-wrap">
-            {compileOutput}
+          <div className="bg-[#000000] border border-[#2B2024] rounded-xl p-3 font-mono text-xs text-white max-h-40 overflow-y-auto whitespace-pre-wrap">
+            {compileOutput || "Output terminal ready. Click ▶ Run Code or tell DAS to run."}
           </div>
         </div>
       )}
@@ -1352,6 +1632,35 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             >
               {connected ? "ONLINE" : "CONNECTING..."}
             </span>
+            {isOwnerAccount(typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "") && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const live = await refreshDesktopBridgeStatus();
+                  if (live) {
+                    toast.success("Laptop Desktop Bridge LIVE — Real Chrome, Real Gmail & VS Code ready from Phone & Laptop!");
+                  } else {
+                    toast.info("Run desktop-agent\\start_bridge.bat on your laptop to connect Real Chrome, Real Gmail & VS Code.");
+                  }
+                }}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
+                style={{
+                  backgroundColor: "#2b2024",
+                  borderColor: desktopBridgeOnline ? "#FD0053" : "#2b2024",
+                }}
+                title={
+                  desktopBridgeOnline
+                    ? "Laptop Desktop Bridge Online (Real Chrome + Real Gmail + VS Code)"
+                    : "Click to check status — run desktop-agent\\start_bridge.bat on laptop"
+                }
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: desktopBridgeOnline ? "#FD0053" : "#71717a" }}
+                />
+                <span>{desktopBridgeOnline ? "💻 Bridge Live" : "💻 Bridge Off"}</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -1376,38 +1685,55 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <button
               type="button"
               onClick={() => {
-                window.dispatchEvent(
-                  new CustomEvent("das:open-automation-drawer", { detail: { tab: "web" } })
-                );
+                if (codeTask) {
+                  void codingStudioController.execute({ action: "close" });
+                } else {
+                  void codingStudioController.execute({ action: "open", language: "c" });
+                }
               }}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
-              style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
-              title="Open Web, Gmail & WhatsApp Automation Hub (Phone, Tablet & Laptop)"
+              style={{ backgroundColor: "#2b2024", borderColor: codeTask ? "#FD0053" : "#2b2024" }}
+              title="Open Multi-Language Live Coding Studio (C, C++, Python, Java, JS, TS, SQL, Go, Rust)"
             >
-              <span>🌐</span>
-              <span>Hub</span>
+              <span>&lt;/&gt;</span>
+              <span>Code</span>
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (gmailConnected) {
-                  window.dispatchEvent(
-                    new CustomEvent("das:open-automation-drawer", { detail: { tab: "gmail" } })
-                  );
-                } else {
+              onClick={async () => {
+                const email =
+                  (typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "").trim() ||
+                  "dileepbommali16@gmail.com";
+                if (!gmailConnected) {
                   const origin =
                     typeof window !== "undefined"
                       ? window.location.origin
                       : "https://pathfinder-client-fzom.vercel.app";
                   window.location.href = `${API_BASE}/api/auth/google/workspace/start?origin=${encodeURIComponent(origin)}`;
+                  return;
                 }
+                if (desktopBridgeOnline) {
+                  try {
+                    const r = await fetch(`${API_BASE}/api/bridge/open-gmail`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ email, view: "inbox" }),
+                    });
+                    const d = await r.json();
+                    if (d?.ok) {
+                      toast.success("Opened your real Gmail (mail.google.com) on your Laptop Chrome!");
+                      return;
+                    }
+                  } catch {}
+                }
+                window.open("https://mail.google.com/mail/u/0/#inbox", "_blank", "noopener,noreferrer");
               }}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
               style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
               title={
                 gmailConnected
-                  ? "Open Live Gmail Workspace (Inbox, Read, Compose, Reply)"
-                  : "Connect Gmail, Calendar & Sheets OAuth in 1 click"
+                  ? "Open your REAL Gmail (mail.google.com) directly"
+                  : "Connect Gmail, Contacts & Calendar OAuth in 1 click"
               }
             >
               <span>✉️</span>

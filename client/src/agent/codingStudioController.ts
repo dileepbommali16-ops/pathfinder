@@ -183,18 +183,20 @@ export function applyCodeEdit(currentCode: string, args: CodingStudioActionArgs)
 
 export function applyCodeDelete(currentCode: string, args: CodingStudioActionArgs): string {
   const base = String(currentCode || "");
-  const target = String(args.target_text || "").trim();
+  const rawTarget = String(args.target_text || "");
+  const trimmedTarget = rawTarget.trim();
   const hasRange = args.start_line !== undefined || args.end_line !== undefined || args.line_number !== undefined;
 
-  if (target && target.toUpperCase() !== "ALL") {
+  if (trimmedTarget && trimmedTarget.toUpperCase() !== "ALL") {
+    const needle = base.includes(rawTarget) ? rawTarget : trimmedTarget;
     return base
-      .split(target)
+      .split(needle)
       .join("")
-      .replace(/\n{3,}/g, "\n\n")
+      .replace(/\n{2,}/g, "\n")
       .replace(/^\n+/, "");
   }
 
-  if (hasRange && target.toUpperCase() !== "ALL") {
+  if (hasRange && trimmedTarget.toUpperCase() !== "ALL") {
     const lines = base ? base.split(/\r?\n/) : [];
     const start = Math.max(1, Number(args.start_line || args.line_number || 1));
     const end = Math.max(start, Number(args.end_line || start));

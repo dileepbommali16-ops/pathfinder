@@ -578,5 +578,90 @@ class TestAPIEndpoints(unittest.TestCase):
             self.assertTrue(amb_err.get("ambiguous"))
             self.assertEqual(len(amb_err.get("matches", [])), 2)
 
+    def test_desktop_bridge_auth_isolation_and_command_roundtrip(self):
+        import os
+        import py_compile
+        from unittest.mock import patch
+        from backend.desktop_bridge import desktop_bridge_hub
+
+        # Verify desktop-agent/bridge_agent.py compiles with zero syntax errors
+        py_compile.compile("desktop-agent/bridge_agent.py", doraise=True)
+
+        # Initially disconnected and owner-isolated
+        st_visitor = self.client.get("/api/bridge/status?email=visitor@example.com").json()
+        self.assertFalse(st_visitor["connected"])
+        self.assertTrue(st_visitor["owner_only"])
+
+        with patch.dict(os.environ, {"DAS_BRIDGE_TOKEN": "unit_test_secret_token_999"}, clear=False):
+            # 1. Reject bad token on /ws/desktop-bridge
+            with self.client.websocket_connect("/ws/desktop-bridge") as ws_bad:
+                ws_bad.send_json({
+                    "type": "auth",
+                    "token": "wrong_token",
+                    "owner_email": "dileepbommali16@gmail.com",
+                })
+                err_msg = ws_bad.receive_json()
+                self.assertEqual(err_msg.get("type"), "auth_error")
+
+            # 2. Reject non-owner email even with valid token
+            with self.client.websocket_connect("/ws/desktop-bridge") as ws_non_owner:
+                ws_non_owner.send_json({
+                    "type": "auth",
+                    "token": "unit_test_secret_token_999",
+                    "owner_email": "stranger@example.com",
+                })
+                err_msg2 = ws_non_owner.receive_json()
+                self.assertEqual(err_msg2.get("type"), "auth_error")
+
+            # 3. Valid token + Boss email registers, updates status, and disconnects cleanly
+            with self.client.websocket_connect("/ws/desktop-bridge") as ws_ok:
+                ws_ok.send_json({
+                    "type": "auth",
+                    "token": "unit_test_secret_token_999",
+                    "owner_email": "dileepbommali16@gmail.com",
+                    "host": "dileep-windows-laptop",
+                    "capabilities": ["chrome", "gmail", "vscode"],
+                })
+                ok_msg = ws_ok.receive_json()
+                self.assertEqual(ok_msg.get("type"), "auth_ok")
+
+                ws_ok.send_json({
+                    "type": "heartbeat",
+                    "chrome_ready": True,
+                    "vscode_ready": True,
+                    "active_url": "https://mail.google.com/mail/u/0/#inbox",
+                    "active_title": "Inbox - dileepbommali16@gmail.com",
+                    "tabs_count": 3,
+                })
+                ws_ok.send_json({"type": "ping"})
+                pong = ws_ok.receive_json()
+                self.assertEqual(pong.get("type"), "pong")
+
+                st_owner = self.client.get("/api/bridge/status?email=dileepbommali16@gmail.com").json()
+                self.assertTrue(st_owner["connected"])
+                self.assertTrue(st_owner["chrome_ready"])
+                self.assertEqual(st_owner["tabs_count"], 3)
+                self.assertFalse(desktop_bridge_hub.is_connected("visitor@example.com"))
+
+            st_after = self.client.get("/api/bridge/status?email=dileepbommali16@gmail.com").json()
+            self.assertFalse(st_after["connected"])
+
+    def test_coding_studio_and_vscode_tool_declarations(self):
+        from backend.agent.live_proxy import DAS_TOOLS
+
+        fn_map = {fn.name: fn for t in DAS_TOOLS for fn in (t.function_declarations or [])}
+        self.assertIn("coding_studio_control", fn_map)
+        self.assertIn("vscode_control", fn_map)
+        self.assertIn("chrome_browser_control", fn_map)
+        self.assertIn("gmail_workspace_control", fn_map)
+
+        code_desc = fn_map["coding_studio_control"].parameters.properties["action"].description
+        for act in ("open", "switch_language", "write_code", "read_code", "delete_code", "run_code", "stop_code", "get_output", "close"):
+            self.assertIn(act, code_desc)
+
+        chrome_desc = fn_map["chrome_browser_control"].parameters.properties["action"].description
+        for act in ("google_search", "click", "type", "read_page", "switch_tab", "close_tab", "go_back", "go_forward"):
+            self.assertIn(act, chrome_desc)
+
 if __name__ == "__main__":
     unittest.main()
