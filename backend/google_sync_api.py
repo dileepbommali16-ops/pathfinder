@@ -15,6 +15,7 @@ import re
 import socket
 import time
 import urllib.parse
+import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 from typing import Any, Dict, List, Optional
@@ -775,37 +776,35 @@ async def web_search_service(query: str, max_results: int = 8) -> Dict[str, Any]
         return {"ok": False, "error": "Search query is required.", "results": []}
 
     results: List[Dict[str, Any]] = []
-    # 1. Fast DuckDuckGo HTML search
+    # 1. Fast Bing RSS organic search (clean URLs & snippets, no CAPTCHA on cloud IPs)
     try:
-        headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
-            ),
-            "Accept-Language": "en-US,en;q=0.9",
-        }
-        async with httpx.AsyncClient(timeout=8.0, follow_redirects=True, headers=headers) as client:
-            resp = await client.get("https://html.duckduckgo.com/html/", params={"q": clean_q})
-            if resp.status_code == 200 and resp.text:
-                parser = _DuckDuckGoHTMLParser()
-                parser.feed(resp.text)
-                if parser._current and parser._current.get("url"):
-                    parser.results.append(parser._current)
+        async with httpx.AsyncClient(
+            timeout=6.0,
+            follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36"},
+        ) as client:
+            bing_resp = await client.get(
+                "https://www.bing.com/search",
+                params={"q": clean_q, "format": "rss"},
+            )
+            if bing_resp.status_code == 200 and "<item>" in bing_resp.text:
+                root = ET.fromstring(bing_resp.text)
                 seen_urls = set()
-                for item in parser.results:
-                    real_url = _unwrap_ddg_url(item.get("url", ""))
+                for item in root.findall(".//item"):
+                    real_url = (item.findtext("link") or "").strip()
                     if not real_url.startswith(("http://", "https://")) or real_url in seen_urls:
                         continue
                     seen_urls.add(real_url)
                     host = (urllib.parse.urlparse(real_url).hostname or "").lower().replace("www.", "")
-                    title = html.unescape(item.get("title") or host or real_url)
+                    title = html.unescape((item.findtext("title") or host or real_url).strip())
+                    desc = html.unescape(re.sub(r"\s+", " ", (item.findtext("description") or "").strip()))
                     results.append(
                         {
                             "index": len(results) + 1,
                             "title": title[:140],
                             "url": real_url,
                             "host": host,
-                            "snippet": html.unescape(item.get("snippet") or "")[:220],
+                            "snippet": desc[:220],
                             "is_official": _compute_is_official(clean_q, title, real_url),
                         }
                     )
@@ -814,7 +813,47 @@ async def web_search_service(query: str, max_results: int = 8) -> Dict[str, Any]
     except Exception:
         pass
 
-    # 2. Gemini Google Search grounding fallback if DuckDuckGo returned 0 results or blocked
+    # 2. Fast DuckDuckGo HTML search fallback
+    if not results:
+        try:
+            headers = {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+                ),
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+            async with httpx.AsyncClient(timeout=6.0, follow_redirects=True, headers=headers) as client:
+                resp = await client.get("https://html.duckduckgo.com/html/", params={"q": clean_q})
+                if resp.status_code == 200 and resp.text:
+                    parser = _DuckDuckGoHTMLParser()
+                    parser.feed(resp.text)
+                    if parser._current and parser._current.get("url"):
+                        parser.results.append(parser._current)
+                    seen_urls = set()
+                    for item in parser.results:
+                        real_url = _unwrap_ddg_url(item.get("url", ""))
+                        if not real_url.startswith(("http://", "https://")) or real_url in seen_urls:
+                            continue
+                        seen_urls.add(real_url)
+                        host = (urllib.parse.urlparse(real_url).hostname or "").lower().replace("www.", "")
+                        title = html.unescape(item.get("title") or host or real_url)
+                        results.append(
+                            {
+                                "index": len(results) + 1,
+                                "title": title[:140],
+                                "url": real_url,
+                                "host": host,
+                                "snippet": html.unescape(item.get("snippet") or "")[:220],
+                                "is_official": _compute_is_official(clean_q, title, real_url),
+                            }
+                        )
+                        if len(results) >= limit:
+                            break
+        except Exception:
+            pass
+
+    # 3. Gemini Google Search grounding fallback if web feeds returned 0 results
     if not results:
         try:
             from google import genai
@@ -823,7 +862,7 @@ async def web_search_service(query: str, max_results: int = 8) -> Dict[str, Any]
 
             for key in get_gemini_key_candidates():
                 gclient = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
-                for m_name in ("gemini-3.5-flash", "gemini-3.8-flash", "gemini-flash-latest"):
+                for m_name in ("gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"):
                     try:
                         resp = await asyncio.to_thread(
                             gclient.models.generate_content,
