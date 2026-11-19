@@ -3,7 +3,7 @@
 // between the Pathfinder web page and the Manifest V3 service worker.
 
 (() => {
-  const BRIDGE_VERSION = "1.0.0";
+  const BRIDGE_VERSION = "2.0.0";
   const WEB_SOURCE = "PATHFINDER_DAS_WEB";
   const EXT_SOURCE = "DAS_CHROME_BRIDGE";
 

@@ -7,10 +7,16 @@ draft, reply, send real emails, and schedule real Calendar events directly from 
 import asyncio
 import base64
 import email.mime.text
+import html
+import ipaddress
 import json
 import os
+import re
+import socket
 import time
+import urllib.parse
 from datetime import datetime, timedelta, timezone
+from html.parser import HTMLParser
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -553,3 +559,405 @@ async def log_to_tpo_sheet(payload: SheetLogRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# CLOUD WEB SEARCH & SSRF-SAFE PAGE READER (LAPTOP + PHONE/TABLET SUPPORT)
+# ============================================================================
+
+def _is_public_ip(ip_obj: Any) -> bool:
+    return not (
+        ip_obj.is_private
+        or ip_obj.is_loopback
+        or ip_obj.is_link_local
+        or ip_obj.is_reserved
+        or ip_obj.is_multicast
+        or ip_obj.is_unspecified
+    )
+
+
+def _is_safe_public_url(url: str) -> bool:
+    """Blocks non-HTTP(S) schemes, localhost, internal hostnames, and private/loopback/link-local IPs."""
+    raw = (url or "").strip()
+    if not raw or len(raw) > 2048:
+        return False
+    try:
+        parsed = urllib.parse.urlparse(raw)
+    except Exception:
+        return False
+
+    if parsed.scheme.lower() not in ("http", "https"):
+        return False
+
+    hostname = (parsed.hostname or "").strip().lower().rstrip(".")
+    if not hostname:
+        return False
+    if hostname in ("localhost", "ip6-localhost", "ip6-loopback") or hostname.endswith(
+        (".localhost", ".local", ".internal", ".arpa")
+    ):
+        return False
+
+    # Direct IP literal check (catches IPv4, IPv6, decimal/hex normalized by urlparse/ipaddress)
+    try:
+        ip_lit = ipaddress.ip_address(hostname)
+        return _is_public_ip(ip_lit)
+    except ValueError:
+        pass
+
+    # Best-effort DNS resolution check when network DNS is available
+    try:
+        infos = socket.getaddrinfo(hostname, None)
+        for info in infos:
+            addr = info[4][0].split("%")[0]
+            try:
+                resolved_ip = ipaddress.ip_address(addr)
+                if not _is_public_ip(resolved_ip):
+                    return False
+            except ValueError:
+                return False
+    except OSError:
+        # Offline / restricted DNS environments still validate literal IPs and reserved suffixes above
+        pass
+
+    return True
+
+
+def _compute_is_official(query: str, title: str, url: str) -> bool:
+    try:
+        host = (urllib.parse.urlparse(url).hostname or "").lower().replace("www.", "")
+    except Exception:
+        host = ""
+    q_tokens = [t for t in re.split(r"[^a-z0-9]+", (query or "").lower()) if len(t) >= 3]
+    if any(tok in host for tok in q_tokens):
+        return True
+    if "claude" in q_tokens and ("anthropic.com" in host or "claude.ai" in host):
+        return True
+    if "official" in (title or "").lower():
+        return True
+    return False
+
+
+class _DuckDuckGoHTMLParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.results: List[Dict[str, str]] = []
+        self._in_title_a = False
+        self._in_snippet = False
+        self._current: Optional[Dict[str, str]] = None
+        self._buf: List[str] = []
+
+    def handle_starttag(self, tag: str, attrs: List[tuple]):
+        attr_map = dict(attrs)
+        cls = (attr_map.get("class") or "").split()
+        if tag == "a" and "result__a" in cls:
+            if self._current and self._current.get("url"):
+                self.results.append(self._current)
+            self._current = {"title": "", "url": attr_map.get("href", ""), "snippet": ""}
+            self._in_title_a = True
+            self._buf = []
+        elif tag in ("a", "div", "span") and "result__snippet" in cls and self._current is not None:
+            self._in_snippet = True
+            self._buf = []
+
+    def handle_data(self, data: str):
+        if self._in_title_a or self._in_snippet:
+            self._buf.append(data)
+
+    def handle_endtag(self, tag: str):
+        if tag == "a" and self._in_title_a and self._current is not None:
+            self._current["title"] = re.sub(r"\s+", " ", "".join(self._buf)).strip()
+            self._in_title_a = False
+            self._buf = []
+        elif tag in ("a", "div", "span") and self._in_snippet and self._current is not None:
+            self._current["snippet"] = re.sub(r"\s+", " ", "".join(self._buf)).strip()
+            self._in_snippet = False
+            self._buf = []
+            if self._current.get("url"):
+                self.results.append(self._current)
+                self._current = None
+
+
+def _unwrap_ddg_url(raw_href: str) -> str:
+    if not raw_href:
+        return ""
+    if raw_href.startswith("//"):
+        raw_href = "https:" + raw_href
+    try:
+        parsed = urllib.parse.urlparse(raw_href)
+        if "duckduckgo.com" in (parsed.hostname or "") and parsed.path.startswith("/l"):
+            qs = urllib.parse.parse_qs(parsed.query)
+            if qs.get("uddg"):
+                return qs["uddg"][0]
+    except Exception:
+        pass
+    return raw_href
+
+
+class _ReadablePageParser(HTMLParser):
+    _SKIP_TAGS = {"script", "style", "noscript", "svg", "iframe"}
+
+    def __init__(self, base_url: str):
+        super().__init__()
+        self.base_url = base_url
+        self.title = ""
+        self.headings: List[str] = []
+        self.links: List[Dict[str, str]] = []
+        self._text_parts: List[str] = []
+        self._skip_depth = 0
+        self._in_title = False
+        self._in_heading = False
+        self._in_link = False
+        self._link_href = ""
+        self._buf: List[str] = []
+
+    def handle_starttag(self, tag: str, attrs: List[tuple]):
+        t = tag.lower()
+        if t in self._SKIP_TAGS:
+            self._skip_depth += 1
+            return
+        if self._skip_depth > 0:
+            return
+        if t == "title":
+            self._in_title = True
+            self._buf = []
+        elif t in ("h1", "h2", "h3"):
+            self._in_heading = True
+            self._buf = []
+        elif t == "a":
+            href = dict(attrs).get("href") or ""
+            abs_href = urllib.parse.urljoin(self.base_url, href)
+            if abs_href.startswith(("http://", "https://")):
+                self._in_link = True
+                self._link_href = abs_href
+                self._buf = []
+
+    def handle_data(self, data: str):
+        if self._skip_depth > 0:
+            return
+        clean = data.strip()
+        if clean:
+            self._text_parts.append(clean)
+        if self._in_title or self._in_heading or self._in_link:
+            self._buf.append(data)
+
+    def handle_endtag(self, tag: str):
+        t = tag.lower()
+        if t in self._SKIP_TAGS and self._skip_depth > 0:
+            self._skip_depth -= 1
+            return
+        if t == "title" and self._in_title:
+            self.title = re.sub(r"\s+", " ", "".join(self._buf)).strip()
+            self._in_title = False
+            self._buf = []
+        elif t in ("h1", "h2", "h3") and self._in_heading:
+            txt = re.sub(r"\s+", " ", "".join(self._buf)).strip()
+            if txt and len(self.headings) < 15:
+                self.headings.append(txt[:140])
+            self._in_heading = False
+            self._buf = []
+        elif t == "a" and self._in_link:
+            txt = re.sub(r"\s+", " ", "".join(self._buf)).strip()
+            if txt and len(txt) >= 2 and len(self.links) < 15:
+                self.links.append({"text": txt[:80], "href": self._link_href})
+            self._in_link = False
+            self._link_href = ""
+            self._buf = []
+
+    @property
+    def body_text(self) -> str:
+        return re.sub(r"\s+", " ", " ".join(self._text_parts)).strip()
+
+
+async def web_search_service(query: str, max_results: int = 8) -> Dict[str, Any]:
+    clean_q = (query or "").strip()
+    limit = max(1, min(int(max_results or 8), 12))
+    if not clean_q:
+        return {"ok": False, "error": "Search query is required.", "results": []}
+
+    results: List[Dict[str, Any]] = []
+    # 1. Fast DuckDuckGo HTML search
+    try:
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+            ),
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        async with httpx.AsyncClient(timeout=8.0, follow_redirects=True, headers=headers) as client:
+            resp = await client.get("https://html.duckduckgo.com/html/", params={"q": clean_q})
+            if resp.status_code == 200 and resp.text:
+                parser = _DuckDuckGoHTMLParser()
+                parser.feed(resp.text)
+                if parser._current and parser._current.get("url"):
+                    parser.results.append(parser._current)
+                seen_urls = set()
+                for item in parser.results:
+                    real_url = _unwrap_ddg_url(item.get("url", ""))
+                    if not real_url.startswith(("http://", "https://")) or real_url in seen_urls:
+                        continue
+                    seen_urls.add(real_url)
+                    host = (urllib.parse.urlparse(real_url).hostname or "").lower().replace("www.", "")
+                    title = html.unescape(item.get("title") or host or real_url)
+                    results.append(
+                        {
+                            "index": len(results) + 1,
+                            "title": title[:140],
+                            "url": real_url,
+                            "host": host,
+                            "snippet": html.unescape(item.get("snippet") or "")[:220],
+                            "is_official": _compute_is_official(clean_q, title, real_url),
+                        }
+                    )
+                    if len(results) >= limit:
+                        break
+    except Exception:
+        pass
+
+    # 2. Gemini Google Search grounding fallback if DuckDuckGo returned 0 results or blocked
+    if not results:
+        try:
+            from google import genai
+            from google.genai import types
+            from backend.config.key_resolver import get_gemini_key_candidates
+
+            for key in get_gemini_key_candidates():
+                gclient = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
+                for m_name in ("gemini-3.5-flash", "gemini-3.8-flash", "gemini-flash-latest"):
+                    try:
+                        resp = await asyncio.to_thread(
+                            gclient.models.generate_content,
+                            model=m_name,
+                            contents=f"Search the web for: {clean_q}. Include official website URLs.",
+                            config=types.GenerateContentConfig(
+                                tools=[types.Tool(google_search=types.GoogleSearch())],
+                                temperature=0.1,
+                                max_output_tokens=300,
+                            ),
+                        )
+                        cands = getattr(resp, "candidates", None) or []
+                        gm = getattr(cands[0], "grounding_metadata", None) if cands else None
+                        chunks = getattr(gm, "grounding_chunks", None) or []
+                        seen = set()
+                        for ch in chunks:
+                            web = getattr(ch, "web", None)
+                            uri = getattr(web, "uri", None) if web else None
+                            title = getattr(web, "title", None) if web else ""
+                            if not uri or uri in seen:
+                                continue
+                            seen.add(uri)
+                            host = (urllib.parse.urlparse(uri).hostname or "").lower().replace("www.", "")
+                            results.append(
+                                {
+                                    "index": len(results) + 1,
+                                    "title": (title or host or uri)[:140],
+                                    "url": uri,
+                                    "host": host,
+                                    "snippet": "",
+                                    "is_official": _compute_is_official(clean_q, title or "", uri),
+                                }
+                            )
+                            if len(results) >= limit:
+                                break
+                        if results:
+                            break
+                    except Exception:
+                        continue
+                if results:
+                    break
+        except Exception:
+            pass
+
+    return {
+        "ok": True,
+        "query": clean_q,
+        "count": len(results),
+        "results": results,
+    }
+
+
+async def web_read_page_service(url: str) -> Dict[str, Any]:
+    target_url = (url or "").strip()
+    if target_url and not re.match(r"^https?://", target_url, re.I):
+        target_url = f"https://{target_url}"
+
+    safe = await asyncio.to_thread(_is_safe_public_url, target_url)
+    if not safe:
+        raise HTTPException(
+            status_code=400,
+            detail="Blocked unsafe or non-public URL for security reasons.",
+        )
+
+    title = ""
+    headings: List[str] = []
+    links: List[Dict[str, str]] = []
+    body_text = ""
+    final_url = target_url
+
+    try:
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True, headers=headers) as client:
+            resp = await client.get(target_url)
+            final_url = str(resp.url)
+            if not await asyncio.to_thread(_is_safe_public_url, final_url):
+                raise HTTPException(status_code=400, detail="Blocked redirect to unsafe internal URL.")
+            if resp.status_code < 400 and resp.text:
+                parser = _ReadablePageParser(final_url)
+                parser.feed(resp.text)
+                title = html.unescape(parser.title)
+                headings = [html.unescape(h) for h in parser.headings]
+                links = parser.links
+                body_text = html.unescape(parser.body_text)
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
+    # SPA / JS-rendered fallback via r.jina.ai markdown reader
+    if len(body_text) < 150:
+        try:
+            async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+                jina_resp = await client.get(
+                    f"https://r.jina.ai/{final_url}",
+                    headers={"Accept": "text/plain"},
+                )
+                if jina_resp.status_code == 200 and len(jina_resp.text.strip()) > len(body_text):
+                    jina_txt = jina_resp.text.strip()
+                    if not title:
+                        m_title = re.search(r"^Title:\s*(.+)$", jina_txt, re.M)
+                        if m_title:
+                            title = m_title.group(1).strip()
+                    cleaned = re.sub(r"^(Title|URL Source|Markdown Content):.*$", "", jina_txt, flags=re.M)
+                    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+                    if cleaned:
+                        body_text = cleaned
+        except Exception:
+            pass
+
+    return {
+        "ok": bool(body_text or headings or title),
+        "url": final_url,
+        "title": title or final_url,
+        "headings": headings[:15],
+        "links": links[:15],
+        "text": body_text[:3500],
+    }
+
+
+@router.get("/web/search")
+async def google_web_search_route(
+    q: str = Query(..., min_length=1),
+    max_results: int = Query(default=8, ge=1, le=12),
+):
+    return await web_search_service(q, max_results=max_results)
+
+
+@router.get("/web/read")
+async def google_web_read_route(url: str = Query(..., min_length=4)):
+    return await web_read_page_service(url)

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DAS AI — Real Chrome Automation Bridge",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Connects Pathfinder 2.0 DAS AI to real Chrome tabs for Programiz multi-language compiling, Google search/click/read automation, tab switching, and Gmail visuals.",
   "permissions": [
     "tabs",

@@ -141,12 +141,20 @@ CORE AUTONOMOUS CAPABILITIES:
 4. ATS RESUME INTELLIGENCE & PLACEMENT ROADMAP:
    - Provide elite Tier-1 ATS resume reviews calibrated to Google's X-Y-Z formula: "Accomplished [X] as measured by [Y] by doing [Z]".
    - Guide Boss on top capstone projects, certifications (AWS Solutions Architect, GCP Data Engineer), and core subjects (DSA, OS, CN, DBMS, System Design) to guarantee 100% placement success.
-5. REAL CHROME BROWSER AUTOMATION (GOOGLE SEARCH, CLICK, TYPE, SCROLL, READ/EXPLAIN, TAB SWITCH):
-   - Call `chrome_browser_control` to search Google (`google_search`), open any website (`open_url`), click links/buttons/search results (`click` by visible text or 1-based `index`), type into search boxes (`type`), scroll (`scroll`), read & explain whatever is currently visible in Chrome (`read_page`), list/switch Chrome tabs (`list_tabs`, `switch_tab`), or jump straight back to Pathfinder (`return_to_pathfinder`).
+5. REAL CHROME BROWSER & WEB AUTOMATION (MULTI-STEP CHAINS + TELUGU/TENGLISH):
+   - Call `chrome_browser_control` for ALL Google Search (`google_search`), opening URLs (`open_url`), clicking search results/links/buttons (`click` by `target`, `index`, or `url`), typing (`type`), scrolling (`scroll`), reading & explaining whatever page opened (`read_page`), listing/switching Chrome tabs (`list_tabs`, `switch_tab`), or returning to Pathfinder (`return_to_pathfinder`).
+   - MULTI-STEP EXECUTION MANDATE: NEVER stop halfway! Whenever Boss says things like "open google, search claude code, and click official link" or "search X and open 1st link and explain":
+     1) Call `chrome_browser_control(action="google_search", query=...)` and inspect the returned `results` (each has `index`, `title`, `url`, `host`, `isOfficial`).
+     2) IMMEDIATELY follow up with `chrome_browser_control(action="click", url=..., target=..., index=...)` (or `open_url` with that official URL).
+     3) Read the `title`, `headings`, and `text` returned in the tool response and explain the opened page clearly aloud!
+   - TELUGU / TENGLISH VOICE COMMANDS: Understand naturally: `"kinda unna link nokku"`, `"first link nokku"`, `"official link open chey"`, `"adhi open chesi explain chey"`, `"scroll down chey"`, `"tabs chupinchu"`, `"pathfinder ki vellu"`.
+   - STRICT ACTION HONESTY: NEVER claim you clicked a link, opened a site, sent an email, or sent a WhatsApp message unless the actual tool call succeeded!
 6. LINKEDIN PROFILE INTELLIGENCE: When asked about anyone's profile, call `open_linkedin_profile` and summarize their background.
-7. REAL FULL GMAIL & GOOGLE WORKSPACE AUTOMATION:
+7. REAL FULL GMAIL, WORKSPACE & WHATSAPP AUTOMATION:
    - Call `gmail_workspace_control` for ALL Gmail, Calendar, and Sheets tasks:
-     * `list_emails` (check inbox / search emails via `query`), `read_email` (read full message body by `message_id`), `send_email` (send real Gmail directly), `create_draft`, `open_gmail_tab` (show Gmail live on screen in Chrome), `schedule_calendar` (real Google Calendar event), `log_sheet`.
+     * `list_emails` (check inbox / search emails via `query`), `read_email` (read full message body by `message_id`), `send_email` (send real Gmail directly via OAuth API), `create_draft`, `open_gmail_tab` / `open_email_visual` / `search_gmail_visual` / `compose_visual` / `reply_email` / `click_gmail` (control Gmail visually in Chrome OR inside Pathfinder's built-in Live Gmail Workspace on phone/tablet), `schedule_calendar` (real Google Calendar event), `log_sheet`.
+   - Understand Telugu/Tenglish commands naturally: `"na gmail open chey"`, `"first mail open chey"`, `"Priyanka mail chupinchu"`, `"evarki mail pettamante pettu"`, `"reply ivvu"`.
+   - Call `whatsapp_message_control` when asked to send a WhatsApp or quick message (`"msg pettu"`, `"whatsapp message send chey"`): pass `action="send_message"`, `contact` (or `phone`), and `message`.
    - If `needs_auth: true` is returned, clearly tell Boss to click the "Connect Gmail" button in the Pathfinder HUD once to authorize Gmail access.
 8. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
    When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'switch back to pathfinder', immediately call `chrome_browser_control(action="return_to_pathfinder")` (or `return_to_dashboard`) and reply warmly: "Okay Boss, returning to your dashboard."
@@ -354,7 +362,7 @@ DAS_TOOLS = [
             ),
             types.FunctionDeclaration(
                 name="chrome_browser_control",
-                description="Full real Google Chrome automation via DAS Chrome Bridge extension: search Google and inspect results, open any URL, click links/buttons/search results, type into inputs, scroll pages, read active Chrome page to explain it aloud, list or switch tabs, or return to Pathfinder tab.",
+                description="Full real Google Chrome & cloud web automation (Laptop Chrome extension OR Phone/Tablet built-in Web Hub): search Google, open any URL or official link, click search results/links/buttons (pass url, target text, or 1-based index), type into inputs, scroll pages, read active page to explain it aloud, list/switch tabs, or return to Pathfinder.",
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
@@ -368,11 +376,15 @@ DAS_TOOLS = [
                         ),
                         "url": types.Schema(
                             type="STRING",
-                            description="Website URL for open_url"
+                            description="Exact https URL for open_url OR exact result URL when clicking a link"
                         ),
                         "target": types.Schema(
                             type="STRING",
-                            description="Visible text/label of link, button, tab, or input box"
+                            description="Visible text/label of link/button/input, or 'official' / 'first' / 'second'"
+                        ),
+                        "domain": types.Schema(
+                            type="STRING",
+                            description="Optional domain filter to pick target tab (e.g. 'google.com', 'anthropic.com')"
                         ),
                         "text": types.Schema(
                             type="STRING",
@@ -396,13 +408,13 @@ DAS_TOOLS = [
             ),
             types.FunctionDeclaration(
                 name="gmail_workspace_control",
-                description="Full real Gmail, Google Calendar, and Google Sheets automation using official Google OAuth API + Chrome visual Gmail tab control.",
+                description="Full real Gmail (API + Visual Chrome/Drawer UI), Google Calendar, and Google Sheets automation: list inbox emails, read full email, send real email, save draft, open Gmail inbox/sent/search, click/open a specific email visually, compose/reply in UI, schedule Calendar, or log Sheet.",
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
                         "action": types.Schema(
                             type="STRING",
-                            description="One of: 'list_emails', 'read_email', 'send_email', 'create_draft', 'open_gmail_tab', 'schedule_calendar', 'log_sheet'"
+                            description="One of: 'list_emails', 'read_email', 'send_email', 'create_draft', 'open_gmail_tab', 'open_email_visual', 'search_gmail_visual', 'compose_visual', 'reply_email', 'click_gmail', 'schedule_calendar', 'log_sheet'"
                         ),
                         "recipient_email": types.Schema(type="STRING"),
                         "subject": types.Schema(type="STRING"),
@@ -415,12 +427,54 @@ DAS_TOOLS = [
                             type="STRING",
                             description="Gmail message ID returned by list_emails to read full email body"
                         ),
+                        "thread_id": types.Schema(
+                            type="STRING",
+                            description="Gmail thread ID to open directly on screen"
+                        ),
+                        "target": types.Schema(
+                            type="STRING",
+                            description="Sender name, subject text, or Gmail UI button label ('Compose', 'Sent', 'Inbox', 'Reply')"
+                        ),
+                        "index": types.Schema(
+                            type="INTEGER",
+                            description="1-based row index in Gmail inbox to click/open"
+                        ),
+                        "send_now": types.Schema(
+                            type="BOOLEAN",
+                            description="True to click Send immediately in visual compose/reply"
+                        ),
                         "max_results": types.Schema(type="INTEGER"),
                         "company_name": types.Schema(type="STRING"),
                         "interview_time": types.Schema(type="STRING"),
                         "view": types.Schema(
                             type="STRING",
-                            description="For open_gmail_tab: 'inbox' or 'sent'"
+                            description="For open_gmail_tab: 'inbox', 'sent', 'drafts', or 'starred'"
+                        ),
+                    },
+                    required=["action"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="whatsapp_message_control",
+                description="Send a WhatsApp message (direct via WhatsApp Web in Laptop Chrome, or 1-tap launch in Phone/Tablet Messaging Hub) or open WhatsApp.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "action": types.Schema(
+                            type="STRING",
+                            description="One of: 'send_message', 'open_whatsapp'"
+                        ),
+                        "contact": types.Schema(
+                            type="STRING",
+                            description="Recipient contact name in WhatsApp"
+                        ),
+                        "phone": types.Schema(
+                            type="STRING",
+                            description="Phone number with country code (e.g. +919876543210)"
+                        ),
+                        "message": types.Schema(
+                            type="STRING",
+                            description="Message text to send"
                         ),
                     },
                     required=["action"],
@@ -716,6 +770,376 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 except Exception:
                     pass
 
+        async def _execute_single_tool_call(
+            fc_name: str,
+            args: dict,
+            call_id_hint: str,
+            active_sess=None,
+        ) -> dict:
+            nonlocal last_frame_sent_mono
+            args = dict(args or {})
+
+            if fc_name == "lookup_factual_info":
+                return await _lookup_factual_info_async(str(args.get("query") or ""))
+
+            if fc_name == "inspect_live_camera_frame":
+                focus = str(args.get("focus") or "full_scene")
+                frame_age_ms = (
+                    round((time.monotonic() - latest_frame_at_mono) * 1000)
+                    if camera_active and latest_frame_at_mono > 0
+                    else None
+                )
+                has_live = bool(camera_active and is_valid_jpeg(latest_frame_bytes))
+                if has_live and latest_frame_bytes is not None and active_sess is not None:
+                    try:
+                        async with send_lock:
+                            await active_sess.send_realtime_input(
+                                video=types.Blob(
+                                    data=latest_frame_bytes,
+                                    mime_type="image/jpeg",
+                                )
+                            )
+                            last_frame_sent_mono = time.monotonic()
+                    except Exception:
+                        pass
+                try:
+                    await websocket.send_json({
+                        "type": "vision_telemetry",
+                        "source": "tool_call",
+                        "focus": focus,
+                        "frame_age_ms": frame_age_ms,
+                        "status": "inspected" if has_live else "camera_off",
+                    })
+                except Exception:
+                    pass
+                return {
+                    "camera_active": has_live,
+                    "focus": focus,
+                    "frame_age_ms": frame_age_ms,
+                    "strict_grounding_rule": (
+                        "Describe ONLY the actual colors (e.g. light green vs blue), hairstyle quality honestly, and live hand/body/dance motion visible in the newly streamed frame right now. Zero fake flattery or memory guesses."
+                        if has_live
+                        else "Camera is currently OFF. Tell the user honestly to click Cam ON."
+                    ),
+                }
+
+            if fc_name == "explain_current_screen":
+                topic = (args.get("topic") or "").strip()
+                ctx_snapshot = latest_page_context or {"activeTab": "overview", "tabTitle": "Executive Dashboard"}
+                return {
+                    "status": "screen_inspected",
+                    "topic": topic,
+                    "active_screen": ctx_snapshot,
+                    "instruction": (
+                        "Explain what this active slide/feature does, why it matters for placement, and what the visitor should do next "
+                        "in friendly everyday language WITHOUT reading bullet points verbatim."
+                    ),
+                }
+
+            if fc_name in (
+                "programiz_compiler",
+                "chrome_browser_control",
+                "write_and_compile_code",
+                "open_external_website",
+            ):
+                call_id = str(call_id_hint or f"tc_{turn_id}_{int(time.monotonic() * 1000)}")
+                loop = asyncio.get_running_loop()
+                fut: asyncio.Future = loop.create_future()
+                pending_tool_futures[call_id] = fut
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    await websocket.send_json({
+                        "type": "tool_call",
+                        "call_id": call_id,
+                        "name": fc_name,
+                        "args": args,
+                    })
+                try:
+                    client_res = await asyncio.wait_for(fut, timeout=18.0)
+                except asyncio.TimeoutError:
+                    pending_tool_futures.pop(call_id, None)
+                    client_res = {
+                        "ok": False,
+                        "status": "timeout",
+                        "note": "Chrome tab opened/triggered, awaiting output.",
+                    }
+                except Exception as wait_err:
+                    pending_tool_futures.pop(call_id, None)
+                    client_res = {"ok": False, "error": str(wait_err)}
+
+                if not isinstance(client_res, dict):
+                    client_res = {"result": str(client_res)}
+                if fc_name == "chrome_browser_control" and websocket.client_state != WebSocketState.DISCONNECTED:
+                    try:
+                        await websocket.send_json({
+                            "type": "automation_status",
+                            "data": {"kind": "web", "action": args.get("action"), **client_res},
+                        })
+                    except Exception:
+                        pass
+                return client_res
+
+            if fc_name in (
+                "control_website",
+                "navigate_ui",
+                "open_linkedin_profile",
+                "return_to_dashboard",
+            ):
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    await websocket.send_json({
+                        "type": "tool_call",
+                        "name": fc_name,
+                        "args": args,
+                    })
+                return {
+                    "status": "executed_on_client",
+                    "action": fc_name,
+                    "result": f"Successfully performed {fc_name} on the user screen.",
+                }
+
+            if fc_name == "whatsapp_message_control":
+                call_id = str(call_id_hint or f"wa_{turn_id}_{int(time.monotonic() * 1000)}")
+                loop = asyncio.get_running_loop()
+                fut = loop.create_future()
+                pending_tool_futures[call_id] = fut
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    await websocket.send_json({
+                        "type": "tool_call",
+                        "call_id": call_id,
+                        "name": "whatsapp_message_control",
+                        "args": args,
+                    })
+                try:
+                    w_res = await asyncio.wait_for(fut, timeout=16.0)
+                except asyncio.TimeoutError:
+                    pending_tool_futures.pop(call_id, None)
+                    w_res = {"ok": False, "status": "timeout", "message": "Opened WhatsApp compose action."}
+                except Exception as wait_err:
+                    pending_tool_futures.pop(call_id, None)
+                    w_res = {"ok": False, "error": str(wait_err)}
+                if not isinstance(w_res, dict):
+                    w_res = {"result": str(w_res)}
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    try:
+                        await websocket.send_json({
+                            "type": "automation_status",
+                            "data": {"kind": "whatsapp", **args, **w_res},
+                        })
+                    except Exception:
+                        pass
+                return w_res
+
+            if fc_name == "gmail_workspace_control":
+                from backend.google_sync_api import (
+                    gmail_list_messages_service,
+                    gmail_read_message_service,
+                    gmail_send_message_service,
+                    gmail_create_draft_service,
+                    calendar_create_event_service,
+                    trigger_n8n_webhook_async,
+                )
+
+                g_act = str(args.get("action") or "list_emails").lower().strip()
+                acct_email = user_email or "dileepbommali16@gmail.com"
+                g_res: dict = {"ok": False, "message": f"Unsupported Gmail action: {g_act}"}
+
+                async def _dispatch_visual_gmail(v_args: dict) -> dict:
+                    cid = str(call_id_hint or f"gm_{turn_id}_{int(time.monotonic() * 1000)}")
+                    lp = asyncio.get_running_loop()
+                    ft = lp.create_future()
+                    pending_tool_futures[cid] = ft
+                    if websocket.client_state != WebSocketState.DISCONNECTED:
+                        await websocket.send_json({
+                            "type": "tool_call",
+                            "call_id": cid,
+                            "name": "gmail_workspace_control",
+                            "args": v_args,
+                        })
+                    try:
+                        vres = await asyncio.wait_for(ft, timeout=12.0)
+                        return vres if isinstance(vres, dict) else {"result": str(vres)}
+                    except Exception:
+                        pending_tool_futures.pop(cid, None)
+                        return {"ok": True, "message": "Triggered Gmail view."}
+
+                if g_act == "list_emails":
+                    g_res = await gmail_list_messages_service(
+                        acct_email,
+                        query=str(args.get("query") or ""),
+                        max_results=int(args.get("max_results") or 5),
+                    )
+                elif g_act == "read_email":
+                    mid = str(args.get("message_id") or "").strip()
+                    if not mid:
+                        g_res = {"ok": False, "message": "message_id is required; call list_emails first."}
+                    else:
+                        g_res = await gmail_read_message_service(acct_email, mid)
+                        if g_res.get("ok") and g_res.get("threadId"):
+                            await _dispatch_visual_gmail({"action": "open_email_visual", "thread_id": g_res["threadId"]})
+                elif g_act == "send_email":
+                    g_res = await gmail_send_message_service(
+                        user_email=acct_email,
+                        recipient_email=str(args.get("recipient_email") or ""),
+                        subject=str(args.get("subject") or "Message from DAS AI"),
+                        body=str(args.get("body") or args.get("details") or ""),
+                        thread_id=str(args.get("thread_id") or ""),
+                    )
+                elif g_act == "create_draft":
+                    g_res = await gmail_create_draft_service(
+                        user_email=acct_email,
+                        recipient_email=str(args.get("recipient_email") or ""),
+                        subject=str(args.get("subject") or "Draft from DAS AI"),
+                        body=str(args.get("body") or args.get("details") or ""),
+                    )
+                elif g_act == "schedule_calendar":
+                    g_res = await calendar_create_event_service(
+                        user_email=acct_email,
+                        summary=str(args.get("subject") or args.get("company_name") or "DAS Scheduled Event"),
+                        description=str(args.get("body") or ""),
+                        start_iso=str(args.get("interview_time") or ""),
+                    )
+                elif g_act == "log_sheet":
+                    ok_s = await trigger_n8n_webhook_async("tpo_sheet_log", dict(args))
+                    g_res = {"ok": ok_s, "message": "Logged row to Google Sheets." if ok_s else "Sheets webhook unavailable."}
+                elif g_act in (
+                    "open_gmail_tab",
+                    "open_email_visual",
+                    "search_gmail_visual",
+                    "compose_visual",
+                    "reply_email",
+                    "click_gmail",
+                ):
+                    if g_act in ("open_gmail_tab", "search_gmail_visual"):
+                        v_res, api_res = await asyncio.gather(
+                            _dispatch_visual_gmail(args),
+                            gmail_list_messages_service(
+                                acct_email,
+                                query=str(args.get("query") or ""),
+                                max_results=int(args.get("max_results") or 8),
+                            ),
+                            return_exceptions=True,
+                        )
+                        v_dict = v_res if isinstance(v_res, dict) else {}
+                        a_dict = api_res if isinstance(api_res, dict) else {}
+                        g_res = {
+                            **v_dict,
+                            "ok": bool(v_dict.get("ok") or a_dict.get("ok") or True),
+                            "emails": a_dict.get("emails", []),
+                            "count": a_dict.get("count", 0),
+                            "needs_auth": a_dict.get("needs_auth", False),
+                        }
+                    else:
+                        g_res = await _dispatch_visual_gmail(args)
+
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    try:
+                        await websocket.send_json({
+                            "type": "automation_status",
+                            "data": {"kind": "gmail", "action": g_act, **g_res},
+                        })
+                    except Exception:
+                        pass
+                return g_res
+
+            if fc_name == "run_google_automation":
+                from backend.google_sync_api import gmail_send_message_service, calendar_create_event_service
+                a_type = str(args.get("automation_type") or "sync").lower().strip()
+                acct_email = user_email or "dileepbommali16@gmail.com"
+                if a_type == "send_email" and args.get("recipient_email"):
+                    n8n_res = await gmail_send_message_service(
+                        user_email=acct_email,
+                        recipient_email=str(args.get("recipient_email") or ""),
+                        subject=str(args.get("subject") or "Message from DAS AI"),
+                        body=str(args.get("details") or ""),
+                    )
+                elif a_type == "schedule_calendar":
+                    n8n_res = await calendar_create_event_service(
+                        user_email=acct_email,
+                        summary=str(args.get("subject") or "Interview Schedule"),
+                        description=str(args.get("details") or ""),
+                    )
+                else:
+                    n8n_res = await trigger_google_workspace_sync(
+                        action=a_type,
+                        payload=args,
+                    )
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    await websocket.send_json({
+                        "type": "automation_status",
+                        "data": {"kind": "gmail", "action": a_type, **n8n_res},
+                    })
+                return n8n_res
+
+            return {"ok": False, "error": f"Unknown tool: {fc_name}"}
+
+        async def _run_rest_tool_loop(
+            initial_contents: list,
+            model_candidates: tuple,
+            extra_instruction: str = "",
+        ) -> str:
+            """Executes up to 3 tool-calling rounds via Gemini REST so clicks/Gmail/WhatsApp work even in fallback mode."""
+            sys_prompt = get_das_system_instruction(user_role)
+            if extra_instruction:
+                sys_prompt = f"{sys_prompt}\n\n{extra_instruction}"
+            contents = list(initial_contents)
+            for round_idx in range(3):
+                round_resp = None
+                for api_key in api_keys:
+                    rest_client = genai.Client(http_options={"api_version": "v1beta", "timeout": 14000}, api_key=api_key)
+                    for m_name in model_candidates:
+                        try:
+                            round_resp = await asyncio.wait_for(
+                                asyncio.to_thread(
+                                    rest_client.models.generate_content,
+                                    model=m_name,
+                                    contents=contents,
+                                    config=types.GenerateContentConfig(
+                                        system_instruction=sys_prompt,
+                                        tools=DAS_TOOLS,
+                                        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+                                        temperature=0.3,
+                                        max_output_tokens=320,
+                                    ),
+                                ),
+                                timeout=14.0,
+                            )
+                            if round_resp:
+                                break
+                        except Exception as loop_err:
+                            live_logger.debug(f"[REST Tool Loop {m_name} r={round_idx}] skipped: {loop_err}")
+                    if round_resp:
+                        break
+
+                if not round_resp:
+                    break
+
+                fn_calls = getattr(round_resp, "function_calls", None)
+                if fn_calls:
+                    cands = getattr(round_resp, "candidates", None) or []
+                    if cands and getattr(cands[0], "content", None):
+                        contents.append(cands[0].content)
+                    fn_parts = []
+                    for f_idx, fc in enumerate(fn_calls):
+                        f_res = await _execute_single_tool_call(
+                            fc.name,
+                            dict(fc.args or {}),
+                            f"rest_{round_idx}_{f_idx}_{int(time.monotonic() * 1000)}",
+                            active_sess=None,
+                        )
+                        fn_parts.append(
+                            types.Part.from_function_response(
+                                name=fc.name,
+                                response=f_res if isinstance(f_res, dict) else {"result": str(f_res)},
+                            )
+                        )
+                    contents.append(types.Content(role="user", parts=fn_parts))
+                    continue
+
+                txt = (getattr(round_resp, "text", None) or "").strip()
+                if txt:
+                    return txt
+                break
+            return ""
+
         async def _deliver_fallback_turn(user_text: str):
             nonlocal pending_user_text, turn_id, completed_turn_id, gemini_turn_active, pending_response_until_mono, output_tx_in_turn, last_activity_mono
             clean_u = (user_text or "").strip()
@@ -740,18 +1164,44 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     else None
                 )
                 prior_hist = list(fallback_history[-8:])
-                reply_raw = await asyncio.to_thread(
-                    chat_with_mentor,
-                    clean_u,
-                    None,
-                    prior_hist,
-                    ctx_for_chat.get("activeTab"),
-                    ctx_for_chat,
-                    False,
-                    frame_b64,
-                    has_live_cam,
+
+                cam_note = (
+                    "[CAMERA: ON — LIVE FRAME ATTACHED]"
+                    if has_live_cam
+                    else "[CAMERA: OFF — NO LIVE VIDEO; NEVER CLAIM TO SEE USER]"
                 )
-                reply_text = (reply_raw or "").split("|||")[0].strip()
+                ctx_note = format_page_context_note()
+                hist_contents = []
+                for h_item in prior_hist[-6:]:
+                    h_role = "model" if h_item.get("role") == "assistant" else "user"
+                    h_txt = (h_item.get("content") or "").strip()
+                    if h_txt:
+                        hist_contents.append(types.Content(role=h_role, parts=[types.Part.from_text(text=h_txt)]))
+                user_parts = []
+                if has_live_cam and latest_frame_bytes is not None:
+                    user_parts.append(types.Part.from_bytes(data=latest_frame_bytes, mime_type="image/jpeg"))
+                user_parts.append(types.Part.from_text(text=f"{cam_note}\n{ctx_note}\n{clean_u}".strip()))
+                hist_contents.append(types.Content(role="user", parts=user_parts))
+
+                reply_text = await _run_rest_tool_loop(
+                    hist_contents,
+                    ("gemini-3.5-flash", "gemini-3.8-flash", "gemini-flash-latest"),
+                )
+
+                if not reply_text:
+                    reply_raw = await asyncio.to_thread(
+                        chat_with_mentor,
+                        clean_u,
+                        None,
+                        prior_hist,
+                        ctx_for_chat.get("activeTab"),
+                        ctx_for_chat,
+                        False,
+                        frame_b64,
+                        has_live_cam,
+                    )
+                    reply_text = (reply_raw or "").split("|||")[0].strip()
+
                 if not reply_text or websocket.client_state == WebSocketState.DISCONNECTED:
                     return
 
@@ -812,38 +1262,42 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 prompt_parts.append(
                     types.Part.from_text(
                         text=(
-                            f"You are DAS inside PATHFINDER 2.0, created by Dileep Bommali. "
-                            f"Address the speaker strictly as '{hon}' (never call a visitor Boss unless they are Boss). "
-                            f"Listen to the attached user audio (may be English, Telugu, Tenglish, or Hindi) and reply directly, honestly (zero sycophancy), "
-                            f"and concisely in clear fluent English (1-3 sentences). "
-                            f"{'Camera is ON and a live frame is attached; describe ONLY current pixels if asked visually.' if has_live_cam else 'Camera is OFF; never claim to see the user.'} "
+                            f"Address the speaker strictly as '{hon}'. "
+                            f"Listen carefully to the audio (English, Telugu, Tenglish, or Hindi). "
+                            f"If the user asks to search Google, click links, open sites, check/send Gmail, or send WhatsApp messages, ALWAYS invoke the matching tool(s) first and explain the real result concisely. "
+                            f"{'Camera is ON and a live frame is attached.' if has_live_cam else 'Camera is OFF; never claim to see the user.'} "
                             f"{ctx_note}"
                         )
                     )
                 )
 
-                reply_text = ""
-                for api_key in api_keys:
-                    audio_client = genai.Client(http_options={"api_version": "v1beta", "timeout": 12000}, api_key=api_key)
-                    for model_name in ("gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"):
-                        try:
-                            resp = await asyncio.wait_for(
-                                asyncio.to_thread(
-                                    audio_client.models.generate_content,
-                                    model=model_name,
-                                    contents=[types.Content(role="user", parts=prompt_parts)],
-                                    config=types.GenerateContentConfig(temperature=0.4, max_output_tokens=240),
-                                ),
-                                timeout=12.0,
-                            )
-                            candidate_txt = (getattr(resp, "text", None) or "").strip()
-                            if candidate_txt:
-                                reply_text = candidate_txt
-                                break
-                        except Exception as audio_err:
-                            live_logger.debug(f"[Fallback Audio {model_name}] skipped: {audio_err}")
-                    if reply_text:
-                        break
+                reply_text = await _run_rest_tool_loop(
+                    [types.Content(role="user", parts=prompt_parts)],
+                    ("gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"),
+                )
+
+                if not reply_text:
+                    for api_key in api_keys:
+                        audio_client = genai.Client(http_options={"api_version": "v1beta", "timeout": 12000}, api_key=api_key)
+                        for model_name in ("gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"):
+                            try:
+                                resp = await asyncio.wait_for(
+                                    asyncio.to_thread(
+                                        audio_client.models.generate_content,
+                                        model=model_name,
+                                        contents=[types.Content(role="user", parts=prompt_parts)],
+                                        config=types.GenerateContentConfig(temperature=0.4, max_output_tokens=240),
+                                    ),
+                                    timeout=12.0,
+                                )
+                                candidate_txt = (getattr(resp, "text", None) or "").strip()
+                                if candidate_txt:
+                                    reply_text = candidate_txt
+                                    break
+                            except Exception as audio_err:
+                                live_logger.debug(f"[Fallback Audio {model_name}] skipped: {audio_err}")
+                        if reply_text:
+                            break
 
                 if not reply_text or websocket.client_state == WebSocketState.DISCONNECTED:
                     return
@@ -1489,266 +1943,19 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             pending_user_text = None
                             function_responses = []
                             for fc in response.tool_call.function_calls:
-                                args = fc.args or {}
-
-                                if fc.name == "lookup_factual_info":
-                                    lookup_res = await _lookup_factual_info_async(str(args.get("query") or ""))
-                                    function_responses.append(
-                                        types.FunctionResponse(
-                                            name=fc.name,
-                                            id=fc.id,
-                                            response=lookup_res,
-                                        )
+                                exec_res = await _execute_single_tool_call(
+                                    fc.name,
+                                    dict(fc.args or {}),
+                                    str(fc.id or f"tc_{turn_id}_{int(time.monotonic() * 1000)}"),
+                                    active_sess=active_sess,
+                                )
+                                function_responses.append(
+                                    types.FunctionResponse(
+                                        name=fc.name,
+                                        id=fc.id,
+                                        response=exec_res if isinstance(exec_res, dict) else {"result": str(exec_res)},
                                     )
-                                    continue
-
-                                if fc.name == "inspect_live_camera_frame":
-                                    focus = str(args.get("focus") or "full_scene")
-                                    frame_age_ms = (
-                                        round((time.monotonic() - latest_frame_at_mono) * 1000)
-                                        if camera_active and latest_frame_at_mono > 0
-                                        else None
-                                    )
-                                    has_live = bool(camera_active and is_valid_jpeg(latest_frame_bytes))
-                                    if has_live and latest_frame_bytes is not None:
-                                        try:
-                                            async with send_lock:
-                                                await active_sess.send_realtime_input(
-                                                    video=types.Blob(
-                                                        data=latest_frame_bytes,
-                                                        mime_type="image/jpeg",
-                                                    )
-                                                )
-                                                last_frame_sent_mono = time.monotonic()
-                                        except Exception:
-                                            pass
-                                    try:
-                                        await websocket.send_json({
-                                            "type": "vision_telemetry",
-                                            "source": "tool_call",
-                                            "focus": focus,
-                                            "frame_age_ms": frame_age_ms,
-                                            "status": "inspected" if has_live else "camera_off",
-                                        })
-                                    except Exception:
-                                        pass
-                                    function_responses.append(
-                                        types.FunctionResponse(
-                                            name=fc.name,
-                                            id=fc.id,
-                                            response={
-                                                "camera_active": has_live,
-                                                "focus": focus,
-                                                "frame_age_ms": frame_age_ms,
-                                                "strict_grounding_rule": (
-                                                    "Describe ONLY the actual colors (e.g. light green vs blue), hairstyle quality honestly, and live hand/body/dance motion visible in the newly streamed frame right now. Zero fake flattery or memory guesses."
-                                                    if has_live
-                                                    else "Camera is currently OFF. Tell the user honestly to click Cam ON."
-                                                ),
-                                            },
-                                        )
-                                    )
-                                    continue
-
-                                if fc.name == "explain_current_screen":
-                                    topic = (args.get("topic") or "").strip()
-                                    ctx_snapshot = latest_page_context or {"activeTab": "overview", "tabTitle": "Executive Dashboard"}
-                                    function_responses.append(
-                                        types.FunctionResponse(
-                                            name=fc.name,
-                                            id=fc.id,
-                                            response={
-                                                "status": "screen_inspected",
-                                                "topic": topic,
-                                                "active_screen": ctx_snapshot,
-                                                "instruction": (
-                                                    "Explain what this active slide/feature does, why it matters for placement, and what the visitor should do next "
-                                                    "in friendly everyday language WITHOUT reading bullet points verbatim."
-                                                ),
-                                            },
-                                        )
-                                    )
-                                    continue
-
-                                if fc.name in (
-                                    "programiz_compiler",
-                                    "chrome_browser_control",
-                                    "write_and_compile_code",
-                                    "open_external_website",
-                                ):
-                                    call_id = str(fc.id or f"tc_{turn_id}_{int(time.monotonic() * 1000)}")
-                                    loop = asyncio.get_running_loop()
-                                    fut: asyncio.Future = loop.create_future()
-                                    pending_tool_futures[call_id] = fut
-                                    if websocket.client_state != WebSocketState.DISCONNECTED:
-                                        await websocket.send_json({
-                                            "type": "tool_call",
-                                            "call_id": call_id,
-                                            "name": fc.name,
-                                            "args": args,
-                                        })
-                                    try:
-                                        client_res = await asyncio.wait_for(fut, timeout=18.0)
-                                    except asyncio.TimeoutError:
-                                        pending_tool_futures.pop(call_id, None)
-                                        client_res = {
-                                            "ok": False,
-                                            "status": "timeout",
-                                            "note": "Chrome tab opened/triggered, awaiting output.",
-                                        }
-                                    except Exception as wait_err:
-                                        pending_tool_futures.pop(call_id, None)
-                                        client_res = {"ok": False, "error": str(wait_err)}
-
-                                    if not isinstance(client_res, dict):
-                                        client_res = {"result": str(client_res)}
-                                    function_responses.append(
-                                        types.FunctionResponse(
-                                            name=fc.name,
-                                            id=fc.id,
-                                            response=client_res,
-                                        )
-                                    )
-                                    continue
-
-                                if fc.name in (
-                                    "control_website",
-                                    "navigate_ui",
-                                    "open_linkedin_profile",
-                                    "return_to_dashboard",
-                                ):
-                                    if websocket.client_state != WebSocketState.DISCONNECTED:
-                                        await websocket.send_json({
-                                            "type": "tool_call",
-                                            "name": fc.name,
-                                            "args": args,
-                                        })
-                                    function_responses.append(
-                                        types.FunctionResponse(
-                                            name=fc.name,
-                                            id=fc.id,
-                                            response={
-                                                "status": "executed_on_client",
-                                                "action": fc.name,
-                                                "result": f"Successfully performed {fc.name} on the user screen.",
-                                            },
-                                        )
-                                    )
-                                    continue
-
-                                if fc.name == "gmail_workspace_control":
-                                    from backend.google_sync_api import (
-                                        gmail_list_messages_service,
-                                        gmail_read_message_service,
-                                        gmail_send_message_service,
-                                        gmail_create_draft_service,
-                                        calendar_create_event_service,
-                                        trigger_n8n_webhook_async,
-                                    )
-
-                                    g_act = str(args.get("action") or "list_emails").lower().strip()
-                                    acct_email = user_email or "dileepbommali16@gmail.com"
-                                    g_res: dict = {"ok": False, "message": f"Unsupported Gmail action: {g_act}"}
-
-                                    if g_act == "list_emails":
-                                        g_res = await gmail_list_messages_service(
-                                            acct_email,
-                                            query=str(args.get("query") or ""),
-                                            max_results=int(args.get("max_results") or 5),
-                                        )
-                                    elif g_act == "read_email":
-                                        mid = str(args.get("message_id") or "").strip()
-                                        if not mid:
-                                            g_res = {"ok": False, "message": "message_id is required; call list_emails first."}
-                                        else:
-                                            g_res = await gmail_read_message_service(acct_email, mid)
-                                    elif g_act == "send_email":
-                                        g_res = await gmail_send_message_service(
-                                            user_email=acct_email,
-                                            recipient_email=str(args.get("recipient_email") or ""),
-                                            subject=str(args.get("subject") or "Message from DAS AI"),
-                                            body=str(args.get("body") or args.get("details") or ""),
-                                        )
-                                    elif g_act == "create_draft":
-                                        g_res = await gmail_create_draft_service(
-                                            user_email=acct_email,
-                                            recipient_email=str(args.get("recipient_email") or ""),
-                                            subject=str(args.get("subject") or "Draft from DAS AI"),
-                                            body=str(args.get("body") or args.get("details") or ""),
-                                        )
-                                    elif g_act == "schedule_calendar":
-                                        g_res = await calendar_create_event_service(
-                                            user_email=acct_email,
-                                            summary=str(args.get("subject") or args.get("company_name") or "DAS Scheduled Event"),
-                                            description=str(args.get("body") or ""),
-                                            start_iso=str(args.get("interview_time") or ""),
-                                        )
-                                    elif g_act == "log_sheet":
-                                        ok_s = await trigger_n8n_webhook_async("tpo_sheet_log", dict(args))
-                                        g_res = {"ok": ok_s, "message": "Logged row to Google Sheets." if ok_s else "Sheets webhook unavailable."}
-                                    elif g_act == "open_gmail_tab":
-                                        call_id = str(fc.id or f"gm_{turn_id}_{int(time.monotonic() * 1000)}")
-                                        loop = asyncio.get_running_loop()
-                                        fut = loop.create_future()
-                                        pending_tool_futures[call_id] = fut
-                                        if websocket.client_state != WebSocketState.DISCONNECTED:
-                                            await websocket.send_json({
-                                                "type": "tool_call",
-                                                "call_id": call_id,
-                                                "name": "gmail_workspace_control",
-                                                "args": args,
-                                            })
-                                        try:
-                                            g_res = await asyncio.wait_for(fut, timeout=10.0)
-                                        except Exception:
-                                            pending_tool_futures.pop(call_id, None)
-                                            g_res = {"ok": True, "message": "Opened Gmail in Chrome."}
-
-                                    if websocket.client_state != WebSocketState.DISCONNECTED:
-                                        await websocket.send_json({"type": "automation_status", "data": g_res})
-                                    function_responses.append(
-                                        types.FunctionResponse(
-                                            name=fc.name,
-                                            id=fc.id,
-                                            response=g_res if isinstance(g_res, dict) else {"result": str(g_res)},
-                                        )
-                                    )
-                                    continue
-
-                                elif fc.name == "run_google_automation":
-                                    from backend.google_sync_api import gmail_send_message_service, calendar_create_event_service
-                                    a_type = str(args.get("automation_type") or "sync").lower().strip()
-                                    acct_email = user_email or "dileepbommali16@gmail.com"
-                                    if a_type == "send_email" and args.get("recipient_email"):
-                                        n8n_res = await gmail_send_message_service(
-                                            user_email=acct_email,
-                                            recipient_email=str(args.get("recipient_email") or ""),
-                                            subject=str(args.get("subject") or "Message from DAS AI"),
-                                            body=str(args.get("details") or ""),
-                                        )
-                                    elif a_type == "schedule_calendar":
-                                        n8n_res = await calendar_create_event_service(
-                                            user_email=acct_email,
-                                            summary=str(args.get("subject") or "Interview Schedule"),
-                                            description=str(args.get("details") or ""),
-                                        )
-                                    else:
-                                        n8n_res = await trigger_google_workspace_sync(
-                                            action=a_type,
-                                            payload=args,
-                                        )
-                                    if websocket.client_state != WebSocketState.DISCONNECTED:
-                                        await websocket.send_json({
-                                            "type": "automation_status",
-                                            "data": n8n_res,
-                                        })
-                                    function_responses.append(
-                                        types.FunctionResponse(
-                                            name=fc.name,
-                                            id=fc.id,
-                                            response=n8n_res,
-                                        )
-                                    )
+                                )
 
                             if function_responses:
                                 async with send_lock:
