@@ -236,7 +236,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [isAuthenticated, connected]);
 
   useEffect(() => {
-    if (!isAuthenticated || !connected) return;
+    if (!isAuthenticated) return;
     const identity = lastAuthIdentityRef.current || "guest";
     const greetKey = `${identity}:${role}`;
     if (
@@ -269,48 +269,75 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             localStorage.getItem("pathfinder_profile")
           : null;
       parsedProfile = profileJson ? JSON.parse(profileJson) : {};
-      const controller = new AbortController();
-      const abortId = window.setTimeout(() => controller.abort(), 8000);
-      try {
-        const resp = await fetch(`${API_BASE}/api/chat`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Session-ID": getSessionId(),
-          },
-          signal: controller.signal,
-          body: JSON.stringify({
-            message: query,
-            history: priorHistory,
-            profile: {
-              cgpa: parsedProfile.cgpa ?? 7.8,
-              backlogs: parsedProfile.backlogs ?? parsedProfile.activeBacklogs ?? 0,
-              internships: parsedProfile.internships ?? 1,
-              communication: parsedProfile.communication ?? 6,
-              coding: parsedProfile.coding ?? 6,
-              target_role: parsedProfile.targetRole ?? "Software Engineer",
-              target_tier: parsedProfile.targetTier ?? "Product",
-              branch: parsedProfile.branch ?? "CSE",
+      const payload = {
+        message: query,
+        history: priorHistory,
+        profile: {
+          cgpa: parsedProfile.cgpa ?? 7.8,
+          backlogs: parsedProfile.backlogs ?? parsedProfile.activeBacklogs ?? 0,
+          internships: parsedProfile.internships ?? 1,
+          communication: parsedProfile.communication ?? 6,
+          coding: parsedProfile.coding ?? 6,
+          target_role: parsedProfile.targetRole ?? "Software Engineer",
+          target_tier: parsedProfile.targetTier ?? "Product",
+          branch: parsedProfile.branch ?? "CSE",
+        },
+        active_tab: ctx.activeTab || "overview",
+        camera_active: Boolean(cameraEngine.isStreaming),
+        live_frame_base64: cameraEngine.isStreaming ? cameraEngine.getLatestFrameBase64() : null,
+        page_context: {
+          ...ctx,
+          honorific: activeHonorific,
+          userEmail: ctx.userEmail || (typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : ""),
+          userName: ctx.userName || (typeof window !== "undefined" ? localStorage.getItem("userName") || "" : ""),
+        },
+      };
+
+      const tryChatEndpoint = async (url: string, timeoutMs: number): Promise<string | null> => {
+        const controller = new AbortController();
+        const abortId = window.setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const resp = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Session-ID": getSessionId(),
             },
-            active_tab: ctx.activeTab || "overview",
-            camera_active: Boolean(cameraEngine.isStreaming),
-            live_frame_base64: cameraEngine.isStreaming ? cameraEngine.getLatestFrameBase64() : null,
-            page_context: {
-              ...ctx,
-              honorific: activeHonorific,
-              userEmail: ctx.userEmail || (typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : ""),
-              userName: ctx.userName || (typeof window !== "undefined" ? localStorage.getItem("userName") || "" : ""),
-            },
-          }),
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data?.reply && typeof data.reply === "string") {
-            return data.reply.trim();
+            signal: controller.signal,
+            body: JSON.stringify(payload),
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data?.reply && typeof data.reply === "string" && data.reply.trim()) {
+              return data.reply.trim();
+            }
           }
+        } catch {
+          // Try next tier
+        } finally {
+          window.clearTimeout(abortId);
         }
-      } finally {
-        window.clearTimeout(abortId);
+        return null;
+      };
+
+      const canUseSameOriginEdge =
+        typeof window !== "undefined" &&
+        window.location?.protocol?.startsWith("http") &&
+        !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname || "");
+
+      const endpoints = dasSocket.isSocketConnected
+        ? [
+            { url: `${API_BASE}/api/chat`, timeoutMs: 6500 },
+            ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 7500 }] : []),
+          ]
+        : [
+            ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 7500 }] : []),
+            { url: `${API_BASE}/api/chat`, timeoutMs: 6500 },
+          ];
+
+      for (const ep of endpoints) {
+        const reply = await tryChatEndpoint(ep.url, ep.timeoutMs);
+        if (reply) return reply;
       }
     } catch {}
     return getCareerAgentResponse(query, priorHistory, parsedProfile, activeHonorific);
@@ -445,7 +472,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       tryExecuteClientAutomationIntent(queryText, navigate);
       dasSocket.sendTextCommand(queryText);
     }
-    const fallbackDelayMs = wasSocketReady ? 6500 : 3500;
+    const fallbackDelayMs = wasSocketReady ? 6000 : 1600;
     timerId = window.setTimeout(() => {
       if (
         settled ||
@@ -516,6 +543,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
+    // Wake Render backend proactively for returning sessions that bypass the login screen
+    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
     ensureSocketConnected();
 
     const prewarmAudio = () => {

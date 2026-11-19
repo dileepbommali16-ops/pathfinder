@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/((?!worklets/|assets/|models/|favicon\\.svg|og-image\\.png).*)",
+      "source": "/((?!api/|worklets/|assets/|models/|favicon\\.svg|og-image\\.png).*)",
       "destination": "/index.html"
     }
   ],

@@ -10,6 +10,7 @@ Implements modern enterprise FastAPI architecture across all 7 engineering pilla
 7. Security & Essentials (JWT/Session Verification, RBAC, Sliding Rate Limiting, OWASP Headers)
 """
 
+import asyncio
 import os
 import sys
 import time
@@ -135,23 +136,36 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manages application lifecycle: pre-warming databases, models, and caches on startup."""
+    """Manages application lifecycle: fast port-bind startup with background cache warming."""
     logger.info("Initializing Pathfinder 2.0 backend services...")
     try:
-        # Initialize database tables and composite indexes
+        # Initialize database tables and composite indexes synchronously (fast)
         init_database()
-        # Pre-warm cohort dataset and cache
-        df = get_placement_df()
-        get_roles()
-        get_skills()
-        get_projects()
-        get_branches()
-        warm_up_data_caches()
-        logger.info(f"Database, datasets, and analytics caches pre-warmed ({len(df)} placement records loaded).")
     except Exception as exc:
-        logger.error(f"Startup initialization warning: {exc}", exc_info=True)
+        logger.error(f"Startup DB initialization warning: {exc}", exc_info=True)
 
-    yield  # Application serves requests
+    def _warm_caches_sync():
+        try:
+            df = get_placement_df()
+            get_roles()
+            get_skills()
+            get_projects()
+            get_branches()
+            warm_up_data_caches()
+            logger.info(f"Datasets and analytics caches pre-warmed in background ({len(df)} placement records loaded).")
+        except Exception as exc:
+            logger.warning(f"Background warm-up warning: {exc}")
+
+    warmup_task = asyncio.create_task(asyncio.to_thread(_warm_caches_sync))
+
+    yield  # Application serves requests immediately without blocking cold start
+
+    if not warmup_task.done():
+        warmup_task.cancel()
+        try:
+            await warmup_task
+        except (asyncio.CancelledError, Exception):
+            pass
 
     # Graceful shutdown
     logger.info("Pathfinder 2.0 backend shutting down: flushing caches and closing connections.")

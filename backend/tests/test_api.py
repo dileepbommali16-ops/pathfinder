@@ -398,5 +398,23 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(r1["pcm_base64"], "AAAA")
         self.assertEqual(r2["pcm_base64"], "AAAA")
 
+    def test_on_demand_multiuser_live_proxy_and_wav_fallback(self):
+        import inspect
+        import backend.agent.live_proxy as lp
+
+        wav = lp._pcm16_to_wav_bytes(b"\x01\x02" * 160, sample_rate=16000)
+        self.assertEqual(wav[:4], b"RIFF")
+        self.assertEqual(wav[8:12], b"WAVE")
+        self.assertEqual(int.from_bytes(wav[24:28], "little"), 16000)
+        self.assertEqual(len(wav), 44 + 320)
+
+        lp_src = inspect.getsource(lp.das_multimodal_live_ws)
+        self.assertIn("ensure_live_session", lp_src)
+        self.assertIn("_deliver_fallback_audio_turn", lp_src)
+        self.assertIn("generation_complete", lp_src)
+        self.assertIn("idle_reaper_loop", lp_src)
+        # Immediate ONLINE status must be sent before opening an upstream Live connection
+        self.assertLess(lp_src.find('"status": "connected"'), lp_src.find("client.aio.live.connect"))
+
 if __name__ == "__main__":
     unittest.main()

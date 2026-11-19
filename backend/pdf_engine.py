@@ -1,11 +1,6 @@
 from io import BytesIO
 from typing import Dict, Any, Optional
 import pandas as pd
-from pypdf import PdfReader
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
 from backend.models import ResumeFeedback
 
@@ -16,6 +11,8 @@ import xml.etree.ElementTree as ET
 
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     try:
+        from pypdf import PdfReader
+
         reader = PdfReader(BytesIO(pdf_bytes))
         extracted = []
         for page in reader.pages:
@@ -79,6 +76,11 @@ def generate_analytics_pdf(
             filters = {"Year": year, "Branch": branch}
     if filters is None:
         filters = {"Cohort": "All"}
+
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
     output = BytesIO()
     doc = SimpleDocTemplate(
@@ -166,6 +168,11 @@ def generate_analytics_pdf(
 
 
 def generate_resume_pdf(feedback: ResumeFeedback) -> bytes:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+
     output = BytesIO()
     doc = SimpleDocTemplate(
         output,

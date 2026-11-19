@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
 
 from backend.models import StudentProfile, PredictionResult
 from backend.data_service import get_placement_df
@@ -13,7 +12,7 @@ _cached_model = None
 _cached_features = None
 
 
-def get_trained_model() -> Tuple[RandomForestClassifier, List[str]]:
+def get_trained_model() -> Tuple[Any, List[str]]:
     global _cached_model, _cached_features
     if _cached_model is not None and _cached_features is not None:
         return _cached_model, _cached_features
@@ -44,6 +43,8 @@ def get_trained_model() -> Tuple[RandomForestClassifier, List[str]]:
     training = df.rename(columns=col_map)
     if "backlogs" not in training.columns:
         training["backlogs"] = 0
+
+    from sklearn.ensemble import RandomForestClassifier
 
     model = RandomForestClassifier(n_estimators=120, random_state=42)
     model.fit(training[features], training["placed"])

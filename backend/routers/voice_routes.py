@@ -14,10 +14,11 @@ logger = logging.getLogger("agent.routes.voice")
 
 router = APIRouter(prefix="/api", tags=["voice"])
 
-_TTS_CACHE_MAX = 40
+_TTS_CACHE_MAX = 64
 _TTS_PCM_CACHE: "OrderedDict[str, Dict[str, Any]]" = OrderedDict()
 _TTS_INFLIGHT: Dict[str, asyncio.Task] = {}
 _TTS_LIVE_LOCK: Optional[asyncio.Lock] = None
+_TTS_CONCURRENCY_SEM: Optional[asyncio.Semaphore] = None
 
 
 def _get_tts_lock() -> asyncio.Lock:
@@ -25,6 +26,13 @@ def _get_tts_lock() -> asyncio.Lock:
     if _TTS_LIVE_LOCK is None:
         _TTS_LIVE_LOCK = asyncio.Lock()
     return _TTS_LIVE_LOCK
+
+
+def _get_tts_semaphore() -> asyncio.Semaphore:
+    global _TTS_CONCURRENCY_SEM
+    if _TTS_CONCURRENCY_SEM is None:
+        _TTS_CONCURRENCY_SEM = asyncio.Semaphore(6)
+    return _TTS_CONCURRENCY_SEM
 
 
 def _strip_wav_header_if_present(raw_bytes: bytes) -> tuple[bytes, int]:
@@ -51,7 +59,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
 
     for key in keys:
         client = genai.Client(http_options={"api_version": "v1beta", "timeout": 8000}, api_key=key)
-        for tts_model in ("gemini-3.8-flash-lite-tts", "gemini-3.8-flash-tts"):
+        for tts_model in ("gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"):
             try:
                 cfg = types.GenerateContentConfig(
                     response_modalities=["AUDIO"],
@@ -94,7 +102,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
 
 
 async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str, Any]]:
-    """Synthesize clean verbatim 24kHz PCM speech exclusively via gemini-3.8-live Puck voice (with 3.8 unary TTS fallback)."""
+    """Synthesize clean verbatim 24kHz PCM speech via Gemini 3.8 Puck voice (unary-first for multi-user scale, gemini-3.8-live fallback)."""
     from google import genai
     from google.genai import types
     from backend.config.key_resolver import get_gemini_key_candidates
@@ -104,6 +112,12 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
     if not keys:
         return None
 
+    # 1. Fast unary Gemini 3.8 Puck TTS first: consumes ZERO concurrent gemini-3.8-live WebSocket slots (~2.4s)
+    unary_result = await _synthesize_puck_via_38_unary_fallback(text, keys)
+    if unary_result:
+        return unary_result
+
+    # 2. Fallback to gemini-3.8-live Puck WebSocket (serialized via lock so Live slots aren't exhausted)
     cfg = types.LiveConnectConfig(
         response_modalities=["AUDIO"],
         speech_config=get_puck_speech_config(),
@@ -117,47 +131,48 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
         temperature=0.2,
     )
 
-    for key in keys:
-        client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
-        try:
-            pcm_buf = bytearray()
+    async with _get_tts_lock():
+        for key in keys:
+            client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
+            try:
+                pcm_buf = bytearray()
 
-            async def _run_live():
-                async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
-                    await session.send_client_content(
-                        turns=[types.Content(role="user", parts=[types.Part.from_text(text=text)])],
-                        turn_complete=True,
-                    )
-                    async for resp in session.receive():
-                        sc = resp.server_content
-                        if sc and sc.model_turn and sc.model_turn.parts:
-                            for part in sc.model_turn.parts:
-                                if part.inline_data and part.inline_data.data:
-                                    pcm_buf.extend(part.inline_data.data)
-                        # Gemini Live emits generation_complete immediately when audio finishes generating,
-                        # whereas turn_complete can lag by the real-time playback duration (30s+ on long answers).
-                        if sc and (
-                            getattr(sc, "turn_complete", False)
-                            or (pcm_buf and getattr(sc, "generation_complete", False))
-                        ):
-                            break
+                async def _run_live():
+                    async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
+                        await session.send_client_content(
+                            turns=[types.Content(role="user", parts=[types.Part.from_text(text=text)])],
+                            turn_complete=True,
+                        )
+                        async for resp in session.receive():
+                            sc = resp.server_content
+                            if sc and sc.model_turn and sc.model_turn.parts:
+                                for part in sc.model_turn.parts:
+                                    if part.inline_data and part.inline_data.data:
+                                        pcm_buf.extend(part.inline_data.data)
+                            # Gemini Live emits generation_complete immediately when audio finishes generating,
+                            # whereas turn_complete can lag by the real-time playback duration (30s+ on long answers).
+                            if sc and (
+                                getattr(sc, "turn_complete", False)
+                                or (pcm_buf and getattr(sc, "generation_complete", False))
+                            ):
+                                break
 
-            await asyncio.wait_for(_run_live(), timeout=20.0)
-            if pcm_buf:
-                return {
-                    "pcm_base64": base64.b64encode(bytes(pcm_buf)).decode("utf-8"),
-                    "sample_rate": 24000,
-                    "voice": "Puck",
-                }
-        except Exception as exc:
-            logger.warning("[Voice TTS Live Puck] %s failed: %r", LIVE_MODEL, exc)
-            continue
+                await asyncio.wait_for(_run_live(), timeout=20.0)
+                if pcm_buf:
+                    return {
+                        "pcm_base64": base64.b64encode(bytes(pcm_buf)).decode("utf-8"),
+                        "sample_rate": 24000,
+                        "voice": "Puck",
+                    }
+            except Exception as exc:
+                logger.warning("[Voice TTS Live Puck] %s failed: %r", LIVE_MODEL, exc)
+                continue
 
-    return await _synthesize_puck_via_38_unary_fallback(text, keys)
+    return None
 
 
 async def _synthesize_puck_via_38_live(text: str) -> Optional[Dict[str, Any]]:
-    async with _get_tts_lock():
+    async with _get_tts_semaphore():
         return await _synthesize_puck_via_38_live_unlocked(text)
 
 
@@ -170,7 +185,7 @@ def _store_tts_cache(cache_key: str, synthesized: Dict[str, Any]) -> None:
 
 async def _synthesize_and_cache(cache_key: str, text: str) -> Optional[Dict[str, Any]]:
     try:
-        async with _get_tts_lock():
+        async with _get_tts_semaphore():
             if cache_key in _TTS_PCM_CACHE:
                 _TTS_PCM_CACHE.move_to_end(cache_key)
                 return _TTS_PCM_CACHE[cache_key]

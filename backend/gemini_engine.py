@@ -172,7 +172,14 @@ def get_gemini_models() -> List[str]:
     return models
 
 
-GEMINI_MODELS = get_gemini_models()
+_env_startup_model = os.getenv("GEMINI_MODEL", "").strip()
+GEMINI_MODELS: List[str] = list(PREFERRED_MODELS_ORDER)
+if (
+    _env_startup_model
+    and _env_startup_model not in GEMINI_MODELS
+    and not any(bad in _env_startup_model.lower() for bad in DISALLOWED_MODEL_PATTERNS)
+):
+    GEMINI_MODELS.append(_env_startup_model)
 _client = None
 
 

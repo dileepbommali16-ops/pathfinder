@@ -83,6 +83,7 @@ class DasAgentSocket {
   private savedOnCodeReady?: (payload: CodeTaskPayload) => void;
   private renderPingTimer: number | null = null;
   private reconnectTimer: number | null = null;
+  private connectTimeoutTimer: number | null = null;
   private manualClose = false;
   private lastPongAt = 0;
   private turnWatchdogTimer: number | null = null;
@@ -141,6 +142,10 @@ class DasAgentSocket {
     if (this.reconnectTimer) {
       window.clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
+    }
+    if (this.connectTimeoutTimer) {
+      window.clearTimeout(this.connectTimeoutTimer);
+      this.connectTimeoutTimer = null;
     }
     if (this.ws) {
       const stale = this.ws;
@@ -235,13 +240,32 @@ class DasAgentSocket {
       const qs = new URLSearchParams({ role });
       if (storedEmail) qs.set("email", storedEmail);
       this.ws = new WebSocket(`${RENDER_WS_URL}?${qs.toString()}`);
+
+      // Guard against infinite CONNECTING hang during Render cold starts or mobile network handoffs
+      if (this.connectTimeoutTimer) window.clearTimeout(this.connectTimeoutTimer);
+      this.connectTimeoutTimer = window.setTimeout(() => {
+        this.connectTimeoutTimer = null;
+        if (mySeq !== this.connSeq || this.manualClose) return;
+        if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+          if (typeof fetch !== "undefined") {
+            fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
+          }
+          this.forceReconnectNow();
+        }
+      }, 12000);
     }
 
     this.ws.onopen = () => {
       if (mySeq !== this.connSeq) return;
+      if (this.connectTimeoutTimer) {
+        window.clearTimeout(this.connectTimeoutTimer);
+        this.connectTimeoutTimer = null;
+      }
       this.lastPongAt = Date.now();
-      if (!this.isDirectGoogle && !this.hasConversationActivity) {
-        this.savedOnTranscript?.("Connecting to DAS Core...");
+      if (!this.isDirectGoogle) {
+        if (!this.hasConversationActivity) {
+          this.savedOnTranscript?.("Connecting to DAS Core...");
+        }
 
         // 10s keep-alive ping + 26s silent half-open socket detector (tolerates mobile/tablet background throttling)
         if (this.renderPingTimer) window.clearInterval(this.renderPingTimer);
@@ -656,7 +680,12 @@ CORE AUTONOMOUS CAPABILITIES:
           audioEngine.flushAudioPlayer();
           this.lastTurnCompletedAt = Date.now();
           this.activeAudioTurnId = null;
-          if (!this.currentAgentTranscript && !this.isSpeakingTurn && Date.now() - this.lastTextSentAt < 700) {
+          if (
+            !this.currentAgentTranscript &&
+            this.audioChunksInTurn === 0 &&
+            !this.isSpeakingTurn &&
+            Date.now() - this.lastTextSentAt < 2500
+          ) {
             return;
           }
           const hadAudio = this.audioChunksInTurn > 0;
@@ -905,6 +934,10 @@ CORE AUTONOMOUS CAPABILITIES:
       if (this.renderPingTimer) {
         window.clearInterval(this.renderPingTimer);
         this.renderPingTimer = null;
+      }
+      if (this.connectTimeoutTimer) {
+        window.clearTimeout(this.connectTimeoutTimer);
+        this.connectTimeoutTimer = null;
       }
       if (e.reason && e.code !== 1012 && !/refreshing live session/i.test(e.reason)) {
         this.savedOnTranscript?.(`Connection: ${e.reason}`);

@@ -2,6 +2,7 @@ import os
 import time
 import json
 import base64
+import struct
 import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
@@ -397,6 +398,33 @@ async def _lookup_factual_info_async(query: str) -> dict:
     return {"status": "unavailable", "entity": clean_q, "summary": f"Answer '{clean_q}' directly using verified encyclopedic knowledge without substituting another person."}
 
 
+def _pcm16_to_wav_bytes(pcm_bytes: bytes, sample_rate: int = 16000) -> bytes:
+    """Wraps raw 16-bit mono PCM bytes into a standard 44-byte RIFF/WAVE payload for Gemini REST audio fallback."""
+    even_len = len(pcm_bytes) - (len(pcm_bytes) % 2)
+    payload = pcm_bytes[:even_len]
+    channels = 1
+    bits_per_sample = 16
+    byte_rate = sample_rate * channels * (bits_per_sample // 8)
+    block_align = channels * (bits_per_sample // 8)
+    header = struct.pack(
+        "<4sI4s4sIHHIIHH4sI",
+        b"RIFF",
+        36 + len(payload),
+        b"WAVE",
+        b"fmt ",
+        16,
+        1,
+        channels,
+        sample_rate,
+        byte_rate,
+        block_align,
+        bits_per_sample,
+        b"data",
+        len(payload),
+    )
+    return header + payload
+
+
 @router.websocket("/agent/ws")
 async def das_multimodal_live_ws(websocket: WebSocket):
     await websocket.accept()
@@ -414,7 +442,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
     raw_role = str(websocket.query_params.get("role", "sir")).lower().strip()
     user_email = str(websocket.query_params.get("email", "")).strip().lower()
-    if is_owner_user(email=user_email):
+    is_owner = is_owner_user(email=user_email)
+    if is_owner:
         user_role = "boss"
     elif raw_role in ("madam", "mam", "ma'am"):
         user_role = "madam"
@@ -435,53 +464,19 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
     session_cm = None
     session = None
-    connected_model = None
-    last_error = ""
-
-    # Try every key x model combination; skip remaining models for a key the API rejects.
-    for key_index, api_key in enumerate(api_keys):
-        client = genai.Client(
-            http_options={"api_version": "v1beta"},
-            api_key=api_key,
-        )
-        for model_name in models_to_try:
-            try:
-                cm = client.aio.live.connect(model=model_name, config=config)
-                session = await cm.__aenter__()
-                session_cm = cm
-                connected_model = model_name
-                break
-            except Exception as conn_err:
-                last_error = f"{type(conn_err).__name__}: {conn_err}"
-                live_logger.warning(
-                    f"[DAS Live Proxy] key#{key_index} model '{model_name}' connect failed: {last_error}"
-                )
-                if "API key not valid" in str(conn_err):
-                    break  # this key is rejected; move on to the next key
-                continue
-        if session_cm:
-            if key_index > 0:
-                live_logger.warning(
-                    "[DAS Live Proxy] Primary GEMINI_API_KEY rejected; connected using fallback key."
-                )
-            break
-
-    if not session_cm or not session or not connected_model:
-        live_logger.error(f"[DAS Live Proxy] All Gemini Live connection attempts failed. Last error: {last_error}")
-        await websocket.send_json({
-            "type": "error",
-            "message": f"Unable to initialize Gemini Live session on any supported model. ({last_error[:160]})",
-        })
-        await websocket.close(code=1011, reason="Live model connection failed")
-        return
-
-    live_logger.info(f"[DAS Live Proxy] Connected to Gemini Live model '{connected_model}' (role={user_role}).")
+    connected_model: str | None = LIVE_MODEL
+    gemini_reader_task: asyncio.Task | None = None
+    session_lifecycle_lock = asyncio.Lock()
+    live_quota_cooldown_until = 0.0
+    last_activity_mono = time.monotonic()
 
     try:
+        # Immediately announce ONLINE so 50+ concurrent users never hang on CONNECTING
+        # or exhaust Google's concurrent Live WebSocket quota while idle.
         await websocket.send_json({
             "type": "status",
             "status": "connected",
-            "model": connected_model,
+            "model": LIVE_MODEL,
             "voice": "DAS Neural",
             "role": user_role,
         })
@@ -493,6 +488,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         send_lock = asyncio.Lock()
         audio_turn_open = False
         turn_id = 0
+        completed_turn_id = 0
         gemini_turn_active = False
         audio_end_mono = 0.0
         pending_response_until_mono = 0.0
@@ -500,6 +496,10 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         last_frame_sent_mono = 0.0
         latest_page_context: dict = {}
         pending_user_text: str | None = None
+        fallback_audio_buf = bytearray()
+        fallback_audio_active = False
+        fallback_history: list[dict] = []
+        fallback_tasks: set[asyncio.Task] = set()
 
         def is_turn_busy() -> bool:
             now_m = time.monotonic()
@@ -518,14 +518,14 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             role_target = latest_page_context.get("targetRole") or ""
             card_ctx = latest_page_context.get("activeProject") or latest_page_context.get("projectTitle") or latest_page_context.get("cardContext") or ""
             user_name = latest_page_context.get("userName") or ""
-            user_email = latest_page_context.get("userEmail") or ""
+            ctx_email = latest_page_context.get("userEmail") or ""
             hon = latest_page_context.get("honorific") or ""
             focus = latest_page_context.get("focusOnDas")
             parts_ctx = [f"Slide={tab} ({title})"]
             if hon or user_name:
                 parts_ctx.append(f"User={user_name or 'Visitor'} ({hon or 'Sir'})")
-            if user_email:
-                parts_ctx.append(f"Email={user_email}")
+            if ctx_email:
+                parts_ctx.append(f"Email={ctx_email}")
             if card_ctx:
                 parts_ctx.append(f"FocusedCard={card_ctx}")
             if chance is not None:
@@ -539,8 +539,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         def is_valid_jpeg(raw_bytes: bytes | None) -> bool:
             return bool(raw_bytes and len(raw_bytes) > 128 and raw_bytes[:2] == b"\xff\xd8")
 
-        def is_gemini_ws_closed() -> bool:
-            ws_obj = getattr(session, "_ws", None)
+        def is_gemini_ws_closed(target_session=None) -> bool:
+            s = target_session if target_session is not None else session
+            if s is None:
+                return True
+            ws_obj = getattr(s, "_ws", None)
             if ws_obj is None:
                 return False
             if getattr(ws_obj, "closed", False) or getattr(ws_obj, "close_code", None) is not None:
@@ -550,8 +553,34 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 return True
             return False
 
+        async def close_live_session(target_session=None):
+            nonlocal session_cm, session, gemini_reader_task, audio_turn_open, gemini_turn_active, pending_response_until_mono, output_tx_in_turn
+            async with session_lifecycle_lock:
+                if target_session is not None and session is not target_session:
+                    return
+                cm_to_close = session_cm
+                reader_to_cancel = gemini_reader_task
+                session_cm = None
+                session = None
+                gemini_reader_task = None
+                audio_turn_open = False
+                gemini_turn_active = False
+                pending_response_until_mono = 0.0
+                output_tx_in_turn = False
+            if reader_to_cancel and not reader_to_cancel.done() and reader_to_cancel is not asyncio.current_task():
+                reader_to_cancel.cancel()
+                try:
+                    await reader_to_cancel
+                except (asyncio.CancelledError, Exception):
+                    pass
+            if cm_to_close:
+                try:
+                    await cm_to_close.__aexit__(None, None, None)
+                except Exception:
+                    pass
+
         async def _deliver_fallback_turn(user_text: str):
-            nonlocal pending_user_text, turn_id, gemini_turn_active, pending_response_until_mono, output_tx_in_turn
+            nonlocal pending_user_text, turn_id, completed_turn_id, gemini_turn_active, pending_response_until_mono, output_tx_in_turn, last_activity_mono
             clean_u = (user_text or "").strip()
             pending_user_text = None
             if not clean_u or websocket.client_state == WebSocketState.DISCONNECTED:
@@ -561,9 +590,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 from backend.routers.voice_routes import synthesize_puck_pcm
 
                 ctx_for_chat = dict(latest_page_context or {})
-                ctx_for_chat.setdefault(
-                    "honorific",
-                    "Boss" if user_role == "boss" else ("Madam" if user_role == "madam" else "Sir"),
+                ctx_for_chat["honorific"] = (
+                    "Boss" if user_role == "boss" else ("Madam" if user_role == "madam" else "Sir")
                 )
                 if user_email:
                     ctx_for_chat.setdefault("userEmail", user_email)
@@ -574,11 +602,12 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     if has_live_cam and latest_frame_bytes is not None
                     else None
                 )
+                prior_hist = list(fallback_history[-8:])
                 reply_raw = await asyncio.to_thread(
                     chat_with_mentor,
                     clean_u,
                     None,
-                    None,
+                    prior_hist,
                     ctx_for_chat.get("activeTab"),
                     ctx_for_chat,
                     False,
@@ -589,11 +618,18 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 if not reply_text or websocket.client_state == WebSocketState.DISCONNECTED:
                     return
 
+                fallback_history.append({"role": "user", "content": clean_u})
+                fallback_history.append({"role": "assistant", "content": reply_text})
+                if len(fallback_history) > 12:
+                    del fallback_history[:-12]
+
                 turn_id += 1
                 this_turn = turn_id
+                completed_turn_id = this_turn
                 gemini_turn_active = False
                 pending_response_until_mono = 0.0
                 output_tx_in_turn = False
+                last_activity_mono = time.monotonic()
 
                 await websocket.send_json({
                     "type": "transcript",
@@ -620,12 +656,164 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             except Exception as fb_err:
                 live_logger.warning(f"[Live Proxy Fallback Turn Notice] {fb_err}")
 
+        async def _deliver_fallback_audio_turn(pcm_bytes: bytes):
+            nonlocal turn_id, completed_turn_id, gemini_turn_active, pending_response_until_mono, output_tx_in_turn, last_activity_mono
+            if len(pcm_bytes) < 4800 or websocket.client_state == WebSocketState.DISCONNECTED:
+                return
+            try:
+                from backend.routers.voice_routes import synthesize_puck_pcm
+
+                wav_bytes = _pcm16_to_wav_bytes(pcm_bytes, sample_rate=SEND_SAMPLE_RATE)
+                hon = "Boss" if user_role == "boss" else ("Madam" if user_role == "madam" else "Sir")
+                has_live_cam = bool(camera_active and is_valid_jpeg(latest_frame_bytes))
+                ctx_note = format_page_context_note()
+                prompt_parts = [
+                    types.Part.from_bytes(data=wav_bytes, mime_type="audio/wav"),
+                ]
+                if has_live_cam and latest_frame_bytes is not None:
+                    prompt_parts.append(types.Part.from_bytes(data=latest_frame_bytes, mime_type="image/jpeg"))
+                prompt_parts.append(
+                    types.Part.from_text(
+                        text=(
+                            f"You are DAS inside PATHFINDER 2.0, created by Dileep Bommali. "
+                            f"Address the speaker strictly as '{hon}' (never call a visitor Boss unless they are Boss). "
+                            f"Listen to the attached user audio (may be English, Telugu, Tenglish, or Hindi) and reply directly, honestly (zero sycophancy), "
+                            f"and concisely in clear fluent English (1-3 sentences). "
+                            f"{'Camera is ON and a live frame is attached; describe ONLY current pixels if asked visually.' if has_live_cam else 'Camera is OFF; never claim to see the user.'} "
+                            f"{ctx_note}"
+                        )
+                    )
+                )
+
+                reply_text = ""
+                for api_key in api_keys:
+                    audio_client = genai.Client(http_options={"api_version": "v1beta", "timeout": 12000}, api_key=api_key)
+                    for model_name in ("gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"):
+                        try:
+                            resp = await asyncio.wait_for(
+                                asyncio.to_thread(
+                                    audio_client.models.generate_content,
+                                    model=model_name,
+                                    contents=[types.Content(role="user", parts=prompt_parts)],
+                                    config=types.GenerateContentConfig(temperature=0.4, max_output_tokens=240),
+                                ),
+                                timeout=12.0,
+                            )
+                            candidate_txt = (getattr(resp, "text", None) or "").strip()
+                            if candidate_txt:
+                                reply_text = candidate_txt
+                                break
+                        except Exception as audio_err:
+                            live_logger.debug(f"[Fallback Audio {model_name}] skipped: {audio_err}")
+                    if reply_text:
+                        break
+
+                if not reply_text or websocket.client_state == WebSocketState.DISCONNECTED:
+                    return
+
+                turn_id += 1
+                this_turn = turn_id
+                completed_turn_id = this_turn
+                gemini_turn_active = False
+                pending_response_until_mono = 0.0
+                output_tx_in_turn = False
+                last_activity_mono = time.monotonic()
+
+                await websocket.send_json({
+                    "type": "transcript",
+                    "text": reply_text,
+                    "turn_id": this_turn,
+                })
+                tts_res = await synthesize_puck_pcm(reply_text)
+                if (
+                    tts_res
+                    and tts_res.get("pcm_base64")
+                    and websocket.client_state != WebSocketState.DISCONNECTED
+                ):
+                    await websocket.send_json({
+                        "type": "audio",
+                        "voice": "DAS Neural",
+                        "sample_rate": int(tts_res.get("sample_rate") or 24000),
+                        "pcm_base64": tts_res["pcm_base64"],
+                        "turn_id": this_turn,
+                    })
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    await websocket.send_json({"type": "turn_complete", "turn_id": this_turn})
+            except Exception as fb_audio_err:
+                live_logger.warning(f"[Live Proxy Fallback Audio Notice] {fb_audio_err}")
+
+        async def ensure_live_session():
+            nonlocal session_cm, session, connected_model, gemini_reader_task, live_quota_cooldown_until, last_activity_mono
+            if session is not None and not is_gemini_ws_closed(session):
+                return session
+            if time.monotonic() < live_quota_cooldown_until:
+                return None
+
+            async with session_lifecycle_lock:
+                if session is not None and not is_gemini_ws_closed(session):
+                    return session
+                if time.monotonic() < live_quota_cooldown_until:
+                    return None
+
+                # Clean up any dead upstream handle before opening fresh session
+                if session_cm is not None:
+                    stale_cm = session_cm
+                    session_cm = None
+                    session = None
+                    try:
+                        await stale_cm.__aexit__(None, None, None)
+                    except Exception:
+                        pass
+
+                last_error = ""
+                for key_index, api_key in enumerate(api_keys):
+                    client = genai.Client(
+                        http_options={"api_version": "v1beta"},
+                        api_key=api_key,
+                    )
+                    for model_name in models_to_try:
+                        try:
+                            cm = client.aio.live.connect(model=model_name, config=config)
+                            new_sess = await asyncio.wait_for(cm.__aenter__(), timeout=8.0)
+                            session_cm = cm
+                            session = new_sess
+                            connected_model = model_name
+                            last_activity_mono = time.monotonic()
+                            gemini_reader_task = asyncio.create_task(receive_from_gemini(new_sess))
+                            live_logger.info(
+                                f"[DAS Live Proxy] On-demand upstream connected to '{connected_model}' (role={user_role})."
+                            )
+                            return session
+                        except Exception as conn_err:
+                            last_error = f"{type(conn_err).__name__}: {conn_err}"
+                            live_logger.warning(
+                                f"[DAS Live Proxy] key#{key_index} model '{model_name}' connect failed: {last_error}"
+                            )
+                            err_l = last_error.lower()
+                            if "1011" in last_error or "exhausted" in err_l or "quota" in err_l or "429" in last_error:
+                                live_quota_cooldown_until = time.monotonic() + 20.0
+                            if "api key not valid" in err_l:
+                                break
+                            continue
+                live_logger.warning(
+                    f"[DAS Live Proxy] Upstream Live unavailable ({last_error[:140]}); using instant REST + 3.8 Puck fallback."
+                )
+                return None
+
         async def send_vision_prompt(
             prompt_text: str,
             include_screen_ctx: bool = True,
             is_user_text: bool = False,
+            allow_fallback: bool = True,
         ):
-            nonlocal audio_turn_open, pending_response_until_mono, pending_user_text
+            nonlocal audio_turn_open, pending_response_until_mono, pending_user_text, last_activity_mono
+            last_activity_mono = time.monotonic()
+            active_sess = await ensure_live_session()
+            if active_sess is None:
+                if allow_fallback:
+                    await _deliver_fallback_turn(pending_user_text if is_user_text and pending_user_text else prompt_text)
+                return
+
             has_live_cam = bool(camera_active and is_valid_jpeg(latest_frame_bytes))
             cam_marker = (
                 "[CAMERA: ON — LIVE VIDEO ATTACHED]"
@@ -648,26 +836,27 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             parts.append(types.Part.from_text(text=final_text))
             try:
                 async with send_lock:
-                    # Finalize any open audio stream before injecting text/vision content
                     if audio_turn_open:
                         audio_turn_open = False
                         try:
-                            await session.send_realtime_input(audio_stream_end=True)
+                            await active_sess.send_realtime_input(audio_stream_end=True)
                         except Exception:
                             pass
                     pending_response_until_mono = time.monotonic() + 3.0
-                    await session.send_client_content(
+                    await active_sess.send_client_content(
                         turns=[types.Content(parts=parts, role="user")],
                         turn_complete=True,
                     )
             except Exception as send_err:
-                if is_user_text and pending_user_text:
-                    await _deliver_fallback_turn(pending_user_text)
+                live_logger.warning(f"[DAS Live Proxy] send_client_content failed: {send_err}")
+                await close_live_session(active_sess)
+                if allow_fallback:
+                    await _deliver_fallback_turn(pending_user_text if is_user_text and pending_user_text else prompt_text)
                     return
                 raise send_err
 
         async def receive_from_browser():
-            nonlocal latest_frame_bytes, latest_frame_at_mono, camera_active, explicit_cam_off, audio_turn_open, last_frame_sent_mono, latest_page_context, pending_response_until_mono
+            nonlocal latest_frame_bytes, latest_frame_at_mono, camera_active, explicit_cam_off, audio_turn_open, last_frame_sent_mono, latest_page_context, pending_response_until_mono, pending_user_text, user_role, config, last_activity_mono, fallback_audio_active
             try:
                 while True:
                     raw = await websocket.receive_text()
@@ -688,43 +877,68 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 if len(pcm_bytes) % 2 == 1:
                                     pcm_bytes = pcm_bytes[:-1]
                                 if pcm_bytes:
+                                    last_activity_mono = time.monotonic()
+                                    active_sess = await ensure_live_session()
+                                    if active_sess is None:
+                                        # Multi-user fallback: buffer spoken PCM locally until audio_stream_end
+                                        fallback_audio_active = True
+                                        if len(fallback_audio_buf) < 800_000:
+                                            fallback_audio_buf.extend(pcm_bytes)
+                                        continue
+
                                     was_open = audio_turn_open
                                     audio_turn_open = True
                                     now_mono = time.monotonic()
-                                    async with send_lock:
-                                        # Immediately attach freshest live camera frame at speech onset so spoken vision queries never use stale frames
-                                        if (
-                                            not was_open
-                                            and camera_active
-                                            and is_valid_jpeg(latest_frame_bytes)
-                                            and (now_mono - last_frame_sent_mono >= 0.25)
-                                        ):
-                                            last_frame_sent_mono = now_mono
-                                            try:
-                                                await session.send_realtime_input(
-                                                    video=types.Blob(
-                                                        data=latest_frame_bytes,
-                                                        mime_type="image/jpeg",
+                                    try:
+                                        async with send_lock:
+                                            if (
+                                                not was_open
+                                                and camera_active
+                                                and is_valid_jpeg(latest_frame_bytes)
+                                                and (now_mono - last_frame_sent_mono >= 0.25)
+                                            ):
+                                                last_frame_sent_mono = now_mono
+                                                try:
+                                                    await active_sess.send_realtime_input(
+                                                        video=types.Blob(
+                                                            data=latest_frame_bytes,
+                                                            mime_type="image/jpeg",
+                                                        )
                                                     )
+                                                except Exception:
+                                                    pass
+                                            await active_sess.send_realtime_input(
+                                                audio=types.Blob(
+                                                    data=pcm_bytes,
+                                                    mime_type=f"audio/pcm;rate={SEND_SAMPLE_RATE}",
                                                 )
-                                            except Exception:
-                                                pass
-                                        await session.send_realtime_input(
-                                            audio=types.Blob(
-                                                data=pcm_bytes,
-                                                mime_type=f"audio/pcm;rate={SEND_SAMPLE_RATE}",
                                             )
-                                        )
+                                    except Exception as send_a_err:
+                                        live_logger.warning(f"[Audio Chunk Fallback] {send_a_err}")
+                                        await close_live_session(active_sess)
+                                        fallback_audio_active = True
+                                        if len(fallback_audio_buf) < 800_000:
+                                            fallback_audio_buf.extend(pcm_bytes)
                             except Exception as a_err:
                                 live_logger.warning(f"[Audio Chunk Notice] {a_err}")
 
                     elif msg_type == "audio_stream_end":
                         audio_turn_open = False
-                        try:
-                            async with send_lock:
-                                await session.send_realtime_input(audio_stream_end=True)
-                        except Exception:
-                            pass
+                        last_activity_mono = time.monotonic()
+                        if fallback_audio_active and len(fallback_audio_buf) > 0:
+                            captured = bytes(fallback_audio_buf)
+                            fallback_audio_buf.clear()
+                            fallback_audio_active = False
+                            t = asyncio.create_task(_deliver_fallback_audio_turn(captured))
+                            fallback_tasks.add(t)
+                            t.add_done_callback(fallback_tasks.discard)
+                            continue
+                        if session is not None and not is_gemini_ws_closed(session):
+                            try:
+                                async with send_lock:
+                                    await session.send_realtime_input(audio_stream_end=True)
+                            except Exception:
+                                pass
 
                     # 2b. Explicit Camera State Sync from Browser (clears stale frames immediately on Cam OFF)
                     elif msg_type == "camera_state":
@@ -736,8 +950,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             latest_frame_bytes = None
                             latest_frame_at_mono = 0.0
                             last_frame_sent_mono = 0.0
-                        elif was_off and not is_turn_busy():
-                            # Notify live session immediately that camera is ON so prior [CAMERA: OFF] history never persists
+                        elif was_off and not is_turn_busy() and session is not None and not is_gemini_ws_closed(session):
                             try:
                                 async with send_lock:
                                     await session.send_client_content(
@@ -756,7 +969,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             except Exception:
                                 pass
 
-                    # 3. Live Camera Video Frame from Browser (JPEG via `video=` channel; auto-recovers active flag if explicit active=True)
+                    # 3. Live Camera Video Frame from Browser (stores locally for both Live and REST Vision)
                     elif msg_type == "frame":
                         if msg.get("active") is True:
                             camera_active = True
@@ -771,17 +984,17 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     latest_frame_bytes = candidate
                                     now_mono = time.monotonic()
                                     latest_frame_at_mono = now_mono
-                                    min_gap = 0.85 if is_turn_busy() else 0.42
-                                    # Stream crisp 2 FPS frames smoothly without blocking active speech
-                                    if (now_mono - last_frame_sent_mono >= min_gap) and not send_lock.locked():
-                                        last_frame_sent_mono = now_mono
-                                        async with send_lock:
-                                            await session.send_realtime_input(
-                                                video=types.Blob(
-                                                    data=candidate,
-                                                    mime_type="image/jpeg",
+                                    if session is not None and not is_gemini_ws_closed(session):
+                                        min_gap = 0.85 if is_turn_busy() else 0.42
+                                        if (now_mono - last_frame_sent_mono >= min_gap) and not send_lock.locked():
+                                            last_frame_sent_mono = now_mono
+                                            async with send_lock:
+                                                await session.send_realtime_input(
+                                                    video=types.Blob(
+                                                        data=candidate,
+                                                        mime_type="image/jpeg",
+                                                    )
                                                 )
-                                            )
                             except Exception as f_err:
                                 live_logger.warning(f"[Frame Process Notice] {f_err}")
 
@@ -808,8 +1021,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     elif msg_type == "vision_greet":
                         if not camera_active:
                             continue
-                        role_now = (msg.get("role") or user_role or "boss").lower().strip()
-                        # Wait briefly up to 3.5s if a response is pending or currently playing
+                        role_now = (msg.get("role") or user_role or "sir").lower().strip()
+                        if role_now == "boss" and not is_owner:
+                            role_now = "sir"
                         waited = 0.0
                         while is_turn_busy() and waited < 3.5:
                             await asyncio.sleep(0.25)
@@ -870,68 +1084,102 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         text = (msg.get("text") or "").strip()
                         if text:
                             pending_user_text = text
-                            await send_vision_prompt(text, is_user_text=True)
+                            await send_vision_prompt(text, is_user_text=True, allow_fallback=True)
 
                     # 4b. Verbatim Interviewer Read-Aloud (strictly never answers or explains)
                     elif msg_type == "speak_verbatim":
                         v_text = (msg.get("text") or "").strip()
                         if v_text:
+                            last_activity_mono = time.monotonic()
+                            active_sess = await ensure_live_session()
+                            if active_sess is None:
+                                from backend.routers.voice_routes import synthesize_puck_pcm
+                                tts_res = await synthesize_puck_pcm(v_text)
+                                if tts_res and tts_res.get("pcm_base64") and websocket.client_state != WebSocketState.DISCONNECTED:
+                                    turn_id += 1
+                                    completed_turn_id = turn_id
+                                    await websocket.send_json({
+                                        "type": "audio",
+                                        "voice": "DAS Neural",
+                                        "sample_rate": int(tts_res.get("sample_rate") or 24000),
+                                        "pcm_base64": tts_res["pcm_base64"],
+                                        "turn_id": turn_id,
+                                    })
+                                    await websocket.send_json({"type": "turn_complete", "turn_id": turn_id})
+                                continue
+
                             read_prompt = (
                                 "[CAMERA: OFF — READ ALOUD VERBATIM ONLY; DO NOT GREET OR CLAIM TO SEE BOSS]\n"
                                 "Read the exact sentence below aloud naturally as the technical interviewer asking the candidate. "
                                 "Do NOT answer the question, explain concepts, give hints, mention any camera, or add intro/outro commentary:\n"
                                 f"\"{v_text}\""
                             )
-                            async with send_lock:
-                                if audio_turn_open:
-                                    audio_turn_open = False
-                                    try:
-                                        await session.send_realtime_input(audio_stream_end=True)
-                                    except Exception:
-                                        pass
-                                pending_response_until_mono = time.monotonic() + 3.0
-                                await session.send_client_content(
-                                    turns=[types.Content(parts=[types.Part.from_text(text=read_prompt)], role="user")],
-                                    turn_complete=True,
-                                )
-
-                    # 5. Role Switch
-                    elif msg_type == "role_switch":
-                        new_role = msg.get("role", "boss").lower().strip()
-                        if new_role == "boss":
-                            update_msg = "SYSTEM: You are speaking with your creator and owner Bommali Dileep. Address him as Boss, greet him briefly once without repeating previous greetings, and ask what he wants to work on."
-                        elif new_role in ("madam", "mam", "ma'am"):
-                            update_msg = "SYSTEM: You are speaking with a lady guest/evaluator. Address her respectfully as Madam and say 'Hello Madam, what can I help you with today?'"
-                        else:
-                            update_msg = "SYSTEM: You are speaking with a gentleman guest/evaluator. Address him respectfully as Sir and say 'Hello Sir, what can I help you with today?'"
-
-                        async with send_lock:
-                            await session.send_client_content(
-                                turns=[
-                                    types.Content(
-                                        parts=[types.Part.from_text(text=update_msg)],
-                                        role="user",
+                            try:
+                                async with send_lock:
+                                    if audio_turn_open:
+                                        audio_turn_open = False
+                                        try:
+                                            await active_sess.send_realtime_input(audio_stream_end=True)
+                                        except Exception:
+                                            pass
+                                    pending_response_until_mono = time.monotonic() + 3.0
+                                    await active_sess.send_client_content(
+                                        turns=[types.Content(parts=[types.Part.from_text(text=read_prompt)], role="user")],
+                                        turn_complete=True,
                                     )
-                                ],
-                                turn_complete=True,
-                            )
+                            except Exception:
+                                await close_live_session(active_sess)
+
+                    # 5. Role Switch (enforces strict Boss lock for owner email only)
+                    elif msg_type == "role_switch":
+                        req_role = str(msg.get("role", "sir")).lower().strip()
+                        if req_role == "boss" and is_owner:
+                            new_role = "boss"
+                        elif req_role in ("madam", "mam", "ma'am"):
+                            new_role = "madam"
+                        else:
+                            new_role = "sir"
+                        user_role = new_role
+                        config = create_gemini_live_config(
+                            system_prompt=get_das_system_instruction(user_role),
+                            tools_list=DAS_TOOLS,
+                        )
+                        if session is not None and not is_gemini_ws_closed(session):
+                            if new_role == "boss":
+                                update_msg = "SYSTEM: You are speaking with your creator and owner Bommali Dileep. Address him as Boss, greet him briefly once without repeating previous greetings, and ask what he wants to work on."
+                            elif new_role == "madam":
+                                update_msg = "SYSTEM: You are speaking with a lady guest/evaluator. Address her respectfully as Madam and say 'Hello Madam, what can I help you with today?'"
+                            else:
+                                update_msg = "SYSTEM: You are speaking with a gentleman guest/evaluator. Address him respectfully as Sir and say 'Hello Sir, what can I help you with today?'"
+                            try:
+                                async with send_lock:
+                                    await session.send_client_content(
+                                        turns=[
+                                            types.Content(
+                                                parts=[types.Part.from_text(text=update_msg)],
+                                                role="user",
+                                            )
+                                        ],
+                                        turn_complete=True,
+                                    )
+                            except Exception:
+                                await close_live_session(session)
 
             except (WebSocketDisconnect, asyncio.CancelledError):
                 pass
             except Exception as b_err:
                 live_logger.warning(f"[Browser Receive Notice] {b_err}")
 
-        async def receive_from_gemini():
-            nonlocal audio_turn_open, turn_id, gemini_turn_active, audio_end_mono, pending_response_until_mono, output_tx_in_turn, pending_user_text
+        async def receive_from_gemini(active_sess):
+            nonlocal audio_turn_open, turn_id, completed_turn_id, gemini_turn_active, audio_end_mono, pending_response_until_mono, output_tx_in_turn, pending_user_text, last_activity_mono, last_frame_sent_mono, live_quota_cooldown_until
             pcm_coalesce_buf = bytearray()
             pcm_coalesce_turn_id = 0
 
             async def flush_coalesced_pcm():
                 if not pcm_coalesce_buf:
                     return
-                # Ensure even byte count (16-bit PCM samples)
                 even_len = len(pcm_coalesce_buf) - (len(pcm_coalesce_buf) % 2)
-                if even_len > 0:
+                if even_len > 0 and websocket.client_state != WebSocketState.DISCONNECTED:
                     pkt = format_audio_packet(bytes(pcm_coalesce_buf[:even_len]))
                     pkt["turn_id"] = pcm_coalesce_turn_id
                     await websocket.send_json(pkt)
@@ -941,22 +1189,16 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 while True:
                     if websocket.client_state == WebSocketState.DISCONNECTED:
                         break
-                    if is_gemini_ws_closed():
+                    if session is not active_sess or is_gemini_ws_closed(active_sess):
                         break
 
                     yielded_any = False
-                    async for response in session.receive():
+                    async for response in active_sess.receive():
                         yielded_any = True
+                        last_activity_mono = time.monotonic()
                         if getattr(response, "go_away", None):
-                            await websocket.send_json({
-                                "type": "status",
-                                "status": "reconnecting",
-                                "message": "Refreshing live session...",
-                            })
-                            try:
-                                await websocket.close(code=1012, reason="Refreshing live session")
-                            except Exception:
-                                pass
+                            live_logger.info("[DAS Live Proxy] Upstream go_away received; releasing Live session cleanly while keeping browser ONLINE.")
+                            await close_live_session(active_sess)
                             return
 
                         # Check for interruption
@@ -970,26 +1212,29 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             audio_end_mono = 0.0
                             pending_response_until_mono = 0.0
                             output_tx_in_turn = False
-                            await websocket.send_json({"type": "interrupted", "turn_id": turn_id})
+                            if websocket.client_state != WebSocketState.DISCONNECTED:
+                                await websocket.send_json({"type": "interrupted", "turn_id": turn_id})
 
                         # Transcription events
                         if response.server_content:
                             sc = response.server_content
                             input_tx = getattr(sc, "input_transcription", None)
                             if input_tx and getattr(input_tx, "text", None):
-                                await websocket.send_json({
-                                    "type": "user_transcript",
-                                    "text": input_tx.text,
-                                    "finished": getattr(input_tx, "finished", False),
-                                })
+                                if websocket.client_state != WebSocketState.DISCONNECTED:
+                                    await websocket.send_json({
+                                        "type": "user_transcript",
+                                        "text": input_tx.text,
+                                        "finished": getattr(input_tx, "finished", False),
+                                    })
                             else:
                                 interim_tx = getattr(sc, "interim_input_transcription", None)
                                 if interim_tx and getattr(interim_tx, "text", None):
-                                    await websocket.send_json({
-                                        "type": "user_transcript",
-                                        "text": interim_tx.text,
-                                        "interim": True,
-                                    })
+                                    if websocket.client_state != WebSocketState.DISCONNECTED:
+                                        await websocket.send_json({
+                                            "type": "user_transcript",
+                                            "text": interim_tx.text,
+                                            "interim": True,
+                                        })
 
                             output_tx = getattr(sc, "output_transcription", None)
                             if output_tx and getattr(output_tx, "text", None):
@@ -1000,11 +1245,12 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     pending_response_until_mono = 0.0
                                     output_tx_in_turn = False
                                 output_tx_in_turn = True
-                                await websocket.send_json({
-                                    "type": "transcript",
-                                    "text": output_tx.text,
-                                    "turn_id": turn_id,
-                                })
+                                if websocket.client_state != WebSocketState.DISCONNECTED:
+                                    await websocket.send_json({
+                                        "type": "transcript",
+                                        "text": output_tx.text,
+                                        "turn_id": turn_id,
+                                    })
 
                             # Audio and Model Turn - ONLY single audio stream with turn_id to eliminate overlap
                             if sc.model_turn and sc.model_turn.parts:
@@ -1021,7 +1267,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                         audio_end_mono = max(time.monotonic(), audio_end_mono) + pcm_dur
                                         pcm_coalesce_turn_id = turn_id
                                         pcm_coalesce_buf.extend(raw_pcm)
-                                        # Coalesce tiny sub-40ms fragments (e.g. 2-byte click chunks) into crisp frames
                                         if len(pcm_coalesce_buf) >= 2400:
                                             await flush_coalesced_pcm()
                                     if part.text and not output_tx_in_turn and not getattr(part, "thought", False):
@@ -1030,20 +1275,28 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                             turn_id += 1
                                             gemini_turn_active = True
                                             pending_response_until_mono = 0.0
-                                        await websocket.send_json({
-                                            "type": "transcript",
-                                            "text": part.text,
-                                            "turn_id": turn_id,
-                                        })
+                                        if websocket.client_state != WebSocketState.DISCONNECTED:
+                                            await websocket.send_json({
+                                                "type": "transcript",
+                                                "text": part.text,
+                                                "turn_id": turn_id,
+                                            })
 
-                            if getattr(sc, "turn_complete", False):
+                            # Emit turn_complete as soon as generation_complete OR turn_complete arrives
+                            # (prevents Turn 1's delayed turn_complete from swallowing Turn 2!)
+                            is_turn_done = getattr(sc, "turn_complete", False) or (
+                                gemini_turn_active and getattr(sc, "generation_complete", False)
+                            )
+                            if is_turn_done and turn_id > completed_turn_id:
+                                completed_turn_id = turn_id
                                 pending_user_text = None
                                 await flush_coalesced_pcm()
                                 audio_turn_open = False
                                 gemini_turn_active = False
                                 pending_response_until_mono = 0.0
                                 output_tx_in_turn = False
-                                await websocket.send_json({"type": "turn_complete", "turn_id": turn_id})
+                                if websocket.client_state != WebSocketState.DISCONNECTED:
+                                    await websocket.send_json({"type": "turn_complete", "turn_id": turn_id})
 
                         # Handle Function Calling inside active session.receive() stream
                         if response.tool_call:
@@ -1074,7 +1327,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     if has_live and latest_frame_bytes is not None:
                                         try:
                                             async with send_lock:
-                                                await session.send_realtime_input(
+                                                await active_sess.send_realtime_input(
                                                     video=types.Blob(
                                                         data=latest_frame_bytes,
                                                         mime_type="image/jpeg",
@@ -1139,11 +1392,12 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     "write_and_compile_code",
                                     "return_to_dashboard",
                                 ):
-                                    await websocket.send_json({
-                                        "type": "tool_call",
-                                        "name": fc.name,
-                                        "args": args,
-                                    })
+                                    if websocket.client_state != WebSocketState.DISCONNECTED:
+                                        await websocket.send_json({
+                                            "type": "tool_call",
+                                            "name": fc.name,
+                                            "args": args,
+                                        })
                                     function_responses.append(
                                         types.FunctionResponse(
                                             name=fc.name,
@@ -1161,10 +1415,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                         action=args.get("automation_type", "sync"),
                                         payload=args,
                                     )
-                                    await websocket.send_json({
-                                        "type": "automation_status",
-                                        "data": n8n_res,
-                                    })
+                                    if websocket.client_state != WebSocketState.DISCONNECTED:
+                                        await websocket.send_json({
+                                            "type": "automation_status",
+                                            "data": n8n_res,
+                                        })
                                     function_responses.append(
                                         types.FunctionResponse(
                                             name=fc.name,
@@ -1175,66 +1430,52 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                             if function_responses:
                                 async with send_lock:
-                                    await session.send_tool_response(
+                                    await active_sess.send_tool_response(
                                         function_responses=function_responses
                                     )
 
-                    if not yielded_any and is_gemini_ws_closed():
-                        if pending_user_text:
-                            await _deliver_fallback_turn(pending_user_text)
-                        if websocket.client_state != WebSocketState.DISCONNECTED:
-                            try:
-                                await websocket.send_json({
-                                    "type": "status",
-                                    "status": "reconnecting",
-                                    "message": "Refreshing live session...",
-                                })
-                                await websocket.close(code=1012, reason="Gemini session closed")
-                            except Exception:
-                                pass
+                    if not yielded_any and is_gemini_ws_closed(active_sess):
                         break
 
             except (WebSocketDisconnect, asyncio.CancelledError):
-                pass
+                return
             except Exception as stream_err:
                 err_str = str(stream_err)
                 err_lower = err_str.lower()
-                is_idle_refresh = (
-                    "inactivity" in err_lower
-                    or "1008" in err_str
-                    or "1011" in err_str
-                    or "1012" in err_str
-                    or "closed" in err_lower
-                    or "exhausted" in err_lower
-                    or "deadline" in err_lower
-                )
-                if is_idle_refresh:
-                    live_logger.info(f"[Gemini Stream Notice] Idle/session refresh: {err_str}")
-                else:
-                    live_logger.warning(f"[Gemini Stream Notice] {err_str}")
-                if pending_user_text:
-                    await _deliver_fallback_turn(pending_user_text)
-                try:
-                    if is_idle_refresh:
-                        await websocket.send_json({
-                            "type": "status",
-                            "status": "reconnecting",
-                            "message": "Refreshing live session...",
-                        })
-                        await websocket.close(code=1012, reason="Refreshing live session")
-                    else:
-                        await websocket.send_json({
-                            "type": "error",
-                            "message": f"Gemini Live error: {err_str}",
-                        })
-                except Exception:
-                    pass
+                if "1011" in err_str or "exhausted" in err_lower or "quota" in err_lower or "429" in err_str:
+                    live_quota_cooldown_until = time.monotonic() + 20.0
+                live_logger.info(f"[Gemini Stream Notice] Upstream session ended cleanly ({err_str[:160]}); browser stays ONLINE.")
+            finally:
+                # Release ONLY the upstream Gemini Live session; keep the browser WebSocket ONLINE!
+                if session is active_sess:
+                    await close_live_session(active_sess)
+                if pending_user_text and websocket.client_state != WebSocketState.DISCONNECTED:
+                    text_to_rescue = pending_user_text
+                    t = asyncio.create_task(_deliver_fallback_turn(text_to_rescue))
+                    fallback_tasks.add(t)
+                    t.add_done_callback(fallback_tasks.discard)
+
+        async def idle_reaper_loop():
+            try:
+                while websocket.client_state != WebSocketState.DISCONNECTED:
+                    await asyncio.sleep(10.0)
+                    if session is not None and not is_turn_busy() and not audio_turn_open:
+                        idle_limit = 100.0 if camera_active else 65.0
+                        if time.monotonic() - last_activity_mono >= idle_limit:
+                            live_logger.info("[DAS Live Proxy] Releasing idle upstream Gemini Live slot (browser stays ONLINE).")
+                            await close_live_session(session)
+            except asyncio.CancelledError:
+                pass
 
         b_task = asyncio.create_task(receive_from_browser())
-        g_task = asyncio.create_task(receive_from_gemini())
-        done, pending = await asyncio.wait([b_task, g_task], return_when=asyncio.FIRST_COMPLETED)
-        for p in pending:
-            p.cancel()
+        reaper_task = asyncio.create_task(idle_reaper_loop())
+        try:
+            await b_task
+        finally:
+            reaper_task.cancel()
+            for ft in list(fallback_tasks):
+                ft.cancel()
+            await close_live_session()
 
     except (WebSocketDisconnect, asyncio.CancelledError):
         pass

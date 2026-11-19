@@ -1284,12 +1284,33 @@ class AudioEngine {
       if (playedCached) return true;
     }
 
-    for (let attempt = 0; attempt < 2; attempt++) {
+    const wsOnline =
+      typeof window !== "undefined" && Boolean((window as any).dasSocket?.isSocketConnected);
+    const canUseSameOriginEdge =
+      typeof window !== "undefined" &&
+      window.location?.protocol?.startsWith("http") &&
+      !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname || "");
+
+    const ttsEndpoints = wsOnline
+      ? [
+          { url: `${effectiveApiBase}/api/voice/tts`, timeoutMs: 6500 },
+          ...(canUseSameOriginEdge ? [{ url: "/api/edge-tts", timeoutMs: 9000 }] : []),
+        ]
+      : [
+          ...(canUseSameOriginEdge ? [{ url: "/api/edge-tts", timeoutMs: 9000 }] : []),
+          { url: `${effectiveApiBase}/api/voice/tts`, timeoutMs: 6500 },
+        ];
+
+    for (const ep of ttsEndpoints) {
+      const localAc = new AbortController();
+      const onOuterAbort = () => localAc.abort();
+      options?.signal?.addEventListener("abort", onOuterAbort, { once: true });
+      const timerId = window.setTimeout(() => localAc.abort(), ep.timeoutMs);
       try {
-        const resp = await fetch(`${effectiveApiBase}/api/voice/tts`, {
+        const resp = await fetch(ep.url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          signal: options?.signal,
+          signal: localAc.signal,
           body: JSON.stringify({ text: cleaned, voice: "Puck" }),
         });
         if (
@@ -1333,15 +1354,13 @@ class AudioEngine {
             );
             if (played) return true;
           }
-          // Server explicitly returned HTTP 200 fallback_live — don't hammer the same endpoint twice
-          break;
         }
-        if (resp.status < 500) break;
       } catch (err: any) {
-        if (err?.name === "AbortError") return false;
-      }
-      if (attempt === 0) {
-        await new Promise((r) => setTimeout(r, 300));
+        if (options?.signal?.aborted) return false;
+        void err;
+      } finally {
+        window.clearTimeout(timerId);
+        options?.signal?.removeEventListener("abort", onOuterAbort);
       }
     }
 

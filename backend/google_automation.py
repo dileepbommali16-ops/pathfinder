@@ -39,7 +39,14 @@ def _load_google_sdk() -> Dict[str, Any]:
 class PathfinderGoogleAutomation:
     def __init__(self) -> None:
         self.creds: Optional[Any] = None
+        self._sdk: Optional[Dict[str, Any]] = None
+        self._initialized = False
+
+    def _ensure_initialized(self) -> Dict[str, Any]:
+        if self._initialized and self._sdk is not None:
+            return self._sdk
         self._sdk = _load_google_sdk()
+        self._initialized = True
         creds_path = "backend/config/google_creds.json"
         token_path = "backend/config/google_token.json"
 
@@ -59,6 +66,7 @@ class PathfinderGoogleAutomation:
                 self.creds = flow
             except Exception:
                 self.creds = None
+        return self._sdk
 
     def schedule_interview_calendar(
         self, student_email: str, company_name: str, interview_time: str
@@ -67,9 +75,10 @@ class PathfinderGoogleAutomation:
         print(
             f"[Google Calendar] Scheduling interview for {student_email} with {company_name} at {interview_time}"
         )
-        if self.creds and self._sdk["build"] and hasattr(self.creds, "valid"):
+        sdk = self._ensure_initialized()
+        if self.creds and sdk["build"] and hasattr(self.creds, "valid"):
             try:
-                service = self._sdk["build"]("calendar", "v3", credentials=self.creds)
+                service = sdk["build"]("calendar", "v3", credentials=self.creds)
                 _ = service
             except Exception:
                 pass
