@@ -890,7 +890,7 @@ async def web_search_service(query: str, max_results: int = 8) -> Dict[str, Any]
 
     # 1. Yahoo Web Search HTML (works reliably with relevance validation)
     try:
-        async with httpx.AsyncClient(timeout=7.0, follow_redirects=True, headers=browser_headers) as client:
+        async with httpx.AsyncClient(timeout=4.5, follow_redirects=True, headers=browser_headers) as client:
             y_resp = await client.get("https://search.yahoo.com/search", params={"p": clean_q})
             if y_resp.status_code == 200 and y_resp.text:
                 y_parser = _YahooSearchHTMLParser()
@@ -909,7 +909,7 @@ async def web_search_service(query: str, max_results: int = 8) -> Dict[str, Any]
     # 2. Bing RSS US-localized (with strict relevance validation to reject regional spam)
     if not results:
         try:
-            async with httpx.AsyncClient(timeout=6.0, follow_redirects=True, headers=browser_headers) as client:
+            async with httpx.AsyncClient(timeout=4.0, follow_redirects=True, headers=browser_headers) as client:
                 bing_resp = await client.get(
                     "https://www.bing.com/search",
                     params={"q": clean_q, "cc": "US", "mkt": "en-US", "setlang": "en", "format": "rss"},
@@ -927,7 +927,7 @@ async def web_search_service(query: str, max_results: int = 8) -> Dict[str, Any]
         except Exception:
             pass
 
-    # 3. Cloud-Safe Gemini 3.8 Flash structured URL + Wikipedia OpenSearch fallback
+    # 3. Fast Gemini 3.1 Flash Lite structured URL + Wikipedia OpenSearch fallback
     if not results:
         try:
             from google import genai
@@ -939,20 +939,39 @@ async def web_search_service(query: str, max_results: int = 8) -> Dict[str, Any]
                 'Each object must have keys: "title" (string), "url" (valid https URL of official site/docs/GitHub/Wikipedia), '
                 '"snippet" (1 short sentence), "is_official" (boolean).'
             )
+            cfg_kwargs: Dict[str, Any] = {
+                "response_mime_type": "application/json",
+                "temperature": 0.1,
+                "max_output_tokens": 1600,
+            }
+            if hasattr(types, "ThinkingConfig"):
+                cfg_kwargs["thinking_config"] = types.ThinkingConfig(thinking_budget=0)
+
             for key in get_gemini_key_candidates():
                 gclient = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
-                for m_name in ("gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"):
+                for m_name in ("gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"):
                     try:
-                        resp = await asyncio.to_thread(
-                            gclient.models.generate_content,
-                            model=m_name,
-                            contents=prompt,
-                            config=types.GenerateContentConfig(
-                                response_mime_type="application/json",
-                                temperature=0.1,
-                                max_output_tokens=700,
-                            ),
-                        )
+                        try:
+                            resp = await asyncio.wait_for(
+                                asyncio.to_thread(
+                                    gclient.models.generate_content,
+                                    model=m_name,
+                                    contents=prompt,
+                                    config=types.GenerateContentConfig(**cfg_kwargs),
+                                ),
+                                timeout=10.0,
+                            )
+                        except Exception:
+                            fallback_cfg = {k: v for k, v in cfg_kwargs.items() if k != "thinking_config"}
+                            resp = await asyncio.wait_for(
+                                asyncio.to_thread(
+                                    gclient.models.generate_content,
+                                    model=m_name,
+                                    contents=prompt,
+                                    config=types.GenerateContentConfig(**fallback_cfg),
+                                ),
+                                timeout=10.0,
+                            )
                         raw_json = (getattr(resp, "text", None) or "").strip()
                         parsed = json.loads(raw_json) if raw_json else []
                         if isinstance(parsed, list):

@@ -542,7 +542,7 @@ async def _lookup_factual_info_async(query: str) -> dict:
     # 2. Fallback to Gemini + Google Search grounding
     for key in get_gemini_key_candidates():
         client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
-        for fallback_model in ("gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"):
+        for fallback_model in ("gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"):
             try:
                 resp = await asyncio.to_thread(
                     client.models.generate_content,
@@ -1097,7 +1097,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                         tools=DAS_TOOLS,
                                         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
                                         temperature=0.3,
-                                        max_output_tokens=320,
+                                        max_output_tokens=800,
                                     ),
                                 ),
                                 timeout=14.0,
@@ -1185,7 +1185,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                 reply_text = await _run_rest_tool_loop(
                     hist_contents,
-                    ("gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"),
+                    ("gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"),
                 )
 
                 if not reply_text:
@@ -1273,7 +1273,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                 reply_text = await _run_rest_tool_loop(
                     [types.Content(role="user", parts=prompt_parts)],
-                    ("gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"),
+                    ("gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"),
                 )
 
                 if not reply_text:
