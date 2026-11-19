@@ -2,6 +2,7 @@
 import { Type, FunctionDeclaration } from "@google/genai";
 import { API_BASE } from "@/lib/apiClient";
 import { chromeBridge, PROGRAMIZ_LANGUAGE_URLS } from "./chromeBridge";
+import { codingStudioController } from "./codingStudioController";
 import { toast } from "sonner";
 
 export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking" | "interrupted";
@@ -70,7 +71,7 @@ function findByLabel(label: string, pool?: HTMLElement[]): HTMLElement | null {
 
 function flash(el: HTMLElement) {
   const old = el.style.outline;
-  el.style.outline = "3px solid #22d3ee";
+  el.style.outline = "3px solid #FD0053";
   setTimeout(() => (el.style.outline = old), 900);
 }
 
@@ -717,7 +718,7 @@ export function executeWebsiteControl(
       el.scrollIntoView({ behavior: "smooth", block: "center" });
 
       el.style.transition = "all 0.4s ease";
-      el.style.boxShadow = "0 0 28px rgba(0, 240, 255, 0.75)";
+      el.style.boxShadow = "0 0 28px rgba(253, 0, 83, 0.65)";
       setTimeout(() => {
         el.style.boxShadow = "";
       }, 2500);
@@ -834,7 +835,7 @@ export function openLinkedInProfile(args: {
   return `Opened LinkedIn profile for ${args.person_name}.`;
 }
 
-// 3. Real Programiz Chrome Compiler Automation (NO fake internal popup drawer!)
+// 3. Built-In Multi-Language Live Coding Studio + External Programiz Option
 export async function handleCodeGenerationAndCompiler(
   args: {
     action?: string;
@@ -848,15 +849,32 @@ export async function handleCodeGenerationAndCompiler(
 ): Promise<Record<string, any>> {
   const langKey = (args.language || "c").toLowerCase().trim();
   const compilerUrl = PROGRAMIZ_LANGUAGE_URLS[langKey] || PROGRAMIZ_LANGUAGE_URLS.c;
-  const res = await chromeBridge.runProgramizCompiler({
-    action: args.action || "write_and_run",
+
+  if (args.open_external_tab === true) {
+    const res = await chromeBridge.runProgramizCompiler({
+      action: args.action || "write_and_run",
+      language: langKey,
+      program_title: args.program_title || `${langKey.toUpperCase()} Program`,
+      source_code: args.source_code || "",
+    });
+    return {
+      compilerUrl,
+      ...res,
+    };
+  }
+
+  const studioAction = args.action === "clear" ? "delete_code" : "write_code";
+  const studioRes = await codingStudioController.execute({
+    action: studioAction,
     language: langKey,
     program_title: args.program_title || `${langKey.toUpperCase()} Program`,
     source_code: args.source_code || "",
+    logic_explanation: args.logic_explanation || "",
+    auto_run: studioAction === "write_code",
   });
   return {
     compilerUrl,
-    ...res,
+    ...studioRes,
   };
 }
 

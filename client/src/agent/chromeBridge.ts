@@ -467,37 +467,40 @@ class DasChromeBridgeClient {
     if (this.isConnected) {
       const resp = await this.sendAction("gmail_action", args, 15000);
       if (resp.ok) {
-        this.emitAutomationUpdate({
-          kind: "gmail",
-          action: args.action || "open_gmail_tab",
-          openDrawer: false,
-          query: args.query,
-          view: args.view,
-          ...(resp.result || {}),
-        });
         return { ok: true, bridge: "chrome_extension", ...(resp.result || {}) };
       }
     }
 
-    // Phone / Tablet / Unextended Browser: Open Built-In Live Gmail Workspace Drawer seamlessly!
-    this.emitAutomationUpdate({
-      kind: "gmail",
-      action: args.action || "open_gmail_tab",
-      openDrawer: true,
-      query: args.query,
-      view: args.view,
-      thread_id: args.thread_id,
-      message_id: args.message_id,
-      target: args.target,
-      index: args.index,
-      recipient_email: args.recipient_email,
-      subject: args.subject,
-      body: args.body,
-    });
+    // Direct REAL Gmail URL launch (ZERO fake copy/blueprint drawer!)
+    const act = String(args.action || "open_gmail_tab").toLowerCase().trim();
+    const view = String(args.view || "inbox").toLowerCase().trim();
+    let realUrl = "https://mail.google.com/mail/u/0/#inbox";
+
+    if (act === "compose_visual" || act === "send_email" || (args.recipient_email && (args.subject || args.body))) {
+      const to = encodeURIComponent(String(args.recipient_email || ""));
+      const su = encodeURIComponent(String(args.subject || ""));
+      const body = encodeURIComponent(String(args.body || ""));
+      realUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}&body=${body}`;
+    } else if (args.thread_id || args.message_id) {
+      const tid = encodeURIComponent(String(args.thread_id || args.message_id || ""));
+      realUrl = `https://mail.google.com/mail/u/0/#all/${tid}`;
+    } else if (act === "search_gmail_visual" && args.query) {
+      realUrl = `https://mail.google.com/mail/u/0/#search/${encodeURIComponent(String(args.query))}`;
+    } else if (view === "sent" || view === "drafts" || view === "starred") {
+      realUrl = `https://mail.google.com/mail/u/0/#${view}`;
+    }
+
+    if (typeof window !== "undefined" && typeof window.open === "function") {
+      try {
+        window.open(realUrl, "_blank", "noopener,noreferrer");
+      } catch {}
+    }
+
     return {
       ok: true,
-      mode: "live_gmail_drawer",
-      message: "Opened Live Gmail Workspace right inside Pathfinder.",
+      mode: "real_gmail_url",
+      url: realUrl,
+      message: "Opened your real Gmail (mail.google.com) directly.",
     };
   }
 
@@ -515,31 +518,22 @@ class DasChromeBridgeClient {
 
     if (this.isConnected) {
       const resp = await this.sendAction("whatsapp_action", { ...args, send_now: true }, 16000);
-      this.emitAutomationUpdate({
-        kind: "whatsapp",
-        openDrawer: !resp.ok,
-        ...args,
-        waUrl,
-        ...(resp.result || {}),
-        error: resp.error,
-      });
       if (resp.ok) {
         return { ok: true, bridge: "chrome_extension", waUrl, ...(resp.result || {}) };
       }
-      return { ok: false, bridge: "chrome_extension", waUrl, error: resp.error || "WhatsApp Web needs QR scan or contact match." };
     }
 
-    this.emitAutomationUpdate({
-      kind: "whatsapp",
-      openDrawer: true,
-      ...args,
-      waUrl,
-    });
+    if (typeof window !== "undefined" && typeof window.open === "function") {
+      try {
+        window.open(waUrl, "_blank", "noopener,noreferrer");
+      } catch {}
+    }
+
     return {
       ok: true,
-      mode: "whatsapp_drawer",
+      mode: "real_whatsapp_url",
       waUrl,
-      message: "Opened WhatsApp Messaging card inside Pathfinder HUD — tap Send in WhatsApp!",
+      message: "Opened real WhatsApp directly.",
     };
   }
 
