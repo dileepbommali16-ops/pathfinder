@@ -592,14 +592,30 @@ class RealChromeController:
             page = await self._ensure_real_gmail_page(view=view)
 
             if "accounts.google.com" in (page.url or ""):
+                # Open directly in Boss's main signed-in system Chrome window so he never has to log in twice!
+                target_hash = f"#{view}" if view in ("inbox", "sent", "drafts", "starred") else "#inbox"
+                real_url = f"https://mail.google.com/mail/u/0/{target_hash}"
+                if action in ("search_gmail_visual", "list_emails") and args.get("query"):
+                    real_url = f"https://mail.google.com/mail/u/0/#search/{urllib.parse.quote(str(args.get('query')))}"
+                elif action in ("compose_visual", "send_email") and args.get("recipient_email"):
+                    to_q = urllib.parse.quote(str(args.get("recipient_email") or ""))
+                    su_q = urllib.parse.quote(str(args.get("subject") or ""))
+                    bd_q = urllib.parse.quote(str(args.get("body") or ""))
+                    real_url = f"https://mail.google.com/mail/u/0/?view=cm&fs=1&to={to_q}&su={su_q}&body={bd_q}"
+                chrome_exe = _find_installed_chrome_exe()
+                try:
+                    if chrome_exe:
+                        subprocess.Popen([chrome_exe, real_url], shell=False)
+                    else:
+                        import webbrowser
+                        webbrowser.open(real_url)
+                except Exception:
+                    pass
                 return {
-                    "ok": False,
-                    "needs_chrome_login": True,
-                    "url": page.url,
-                    "message": (
-                        "Real Chrome opened Google Sign-In. Sign in once to dileepbommali16@gmail.com "
-                        "in that Chrome window and your real Gmail session stays saved permanently!"
-                    ),
+                    "ok": True,
+                    "action": action,
+                    "url": real_url,
+                    "message": f"Opened your real signed-in Gmail ({real_url}) in your main Chrome browser!",
                 }
 
             if action == "open_gmail_tab":

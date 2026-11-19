@@ -1701,9 +1701,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <button
               type="button"
               onClick={async () => {
-                const email =
-                  (typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "").trim() ||
-                  "dileepbommali16@gmail.com";
                 if (!gmailConnected) {
                   const origin =
                     typeof window !== "undefined"
@@ -1712,21 +1709,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   window.location.href = `${API_BASE}/api/auth/google/workspace/start?origin=${encodeURIComponent(origin)}`;
                   return;
                 }
-                if (desktopBridgeOnline) {
-                  try {
-                    const r = await fetch(`${API_BASE}/api/bridge/open-gmail`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ email, view: "inbox" }),
-                    });
-                    const d = await r.json();
-                    if (d?.ok) {
-                      toast.success("Opened your real Gmail (mail.google.com) on your Laptop Chrome!");
-                      return;
-                    }
-                  } catch {}
+                const res = await chromeBridge.openGmailVisualTab({ view: "inbox" });
+                if (res?.ok) {
+                  toast.success("Opened your real Gmail (mail.google.com) directly!");
                 }
-                window.open("https://mail.google.com/mail/u/0/#inbox", "_blank", "noopener,noreferrer");
               }}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
               style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}

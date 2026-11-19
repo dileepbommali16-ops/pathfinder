@@ -1368,7 +1368,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return;
       }
 
-      if (action === "switch_tab" || action === "list_tabs" || action === "return_to_pathfinder") {
+      if (
+        action === "switch_tab" ||
+        action === "list_tabs" ||
+        action === "return_to_pathfinder" ||
+        action === "close_tab" ||
+        action === "go_back" ||
+        action === "go_forward"
+      ) {
+        if (action === "close_tab") {
+          const tab = await resolveTargetTab(payload.domain);
+          if (tab?.id) {
+            await chrome.tabs.remove(tab.id);
+            sendResponse({ ok: true, result: { closedTabId: tab.id, title: tab.title } });
+          } else {
+            sendResponse({ ok: false, error: "No active tab to close." });
+          }
+          return;
+        }
+        if (action === "go_back" || action === "go_forward") {
+          const tab = await resolveTargetTab(payload.domain);
+          if (tab?.id) {
+            if (action === "go_back") await chrome.tabs.goBack(tab.id).catch(() => {});
+            else await chrome.tabs.goForward(tab.id).catch(() => {});
+            await sleep(600);
+            const info = await readTabPage(tab.id);
+            sendResponse({ ok: true, result: { tabId: tab.id, ...info } });
+          } else {
+            sendResponse({ ok: false, error: "No active tab found." });
+          }
+          return;
+        }
         sendResponse(await handleSwitchOrListTabs(action, payload, sender?.tab?.id));
         return;
       }

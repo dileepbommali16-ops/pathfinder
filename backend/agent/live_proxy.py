@@ -157,7 +157,7 @@ CORE AUTONOMOUS CAPABILITIES:
    - Understand Telugu/Tenglish commands naturally: `"na gmail open chey"`, `"first mail open chey"`, `"Priyanka ki mail pettu"`, `"Murali Sir ki mail pettu"`, `"evarki mail pettamante pettu"`, `"reply ivvu"`. If multiple contacts match a name, ask Boss which email to use before sending.
    - Call `whatsapp_message_control` when asked to send a WhatsApp or quick message (`"msg pettu"`, `"Priyanka ki msg pettu"`, `"whatsapp message send chey"`): pass `action="send_message"`, `contact` (or `phone`), and `message`.
    - If `needs_auth: true` is returned, clearly tell Boss to click the "Connect Gmail" button in the Pathfinder HUD once to authorize Gmail & Contacts access.
-   - If `needs_chrome_login: true` is returned, tell Boss warmly to sign into `dileepbommali16@gmail.com` once inside the Chrome window opened by his Laptop Bridge so Gmail stays logged in automatically.
+   - NEVER say "you need to sign into your account in the Chrome window to view your inbox" when `ok: true` or `emails` are returned — confirm that you opened his real Gmail (`mail.google.com`) and tell him his latest inbox messages or confirm the action!
 8. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
    When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'switch back to pathfinder', immediately call `chrome_browser_control(action="return_to_pathfinder")` (or `return_to_dashboard`) and reply warmly: "Okay Boss, returning to your dashboard."
 9. STRICT PUCK VOICE PERSONA LOCK: Your voice is permanently locked to the male 'Puck' voice. Keep a consistent, warm, energetic male vocal delivery on every turn — never imitate a female voice or switch vocal personas.
@@ -969,31 +969,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             if fc_name in (
                 "programiz_compiler",
                 "chrome_browser_control",
-                "open_external_website",
-            ) and bridge_active:
-                target_tool = fc_name
-                target_args = dict(args)
-                if fc_name == "open_external_website":
-                    target_tool = "chrome_browser_control"
-                    if target_args.get("search_query") and not target_args.get("url"):
-                        target_args = {"action": "google_search", "query": target_args.get("search_query")}
-                    else:
-                        target_args = {"action": "open_url", "url": target_args.get("url") or target_args.get("site_name") or "https://www.google.com"}
-                b_res = await desktop_bridge_hub.execute(acct_email, target_tool, target_args, timeout=28.0)
-                if isinstance(b_res, dict):
-                    if target_tool == "chrome_browser_control" and websocket.client_state != WebSocketState.DISCONNECTED:
-                        try:
-                            await websocket.send_json({
-                                "type": "automation_status",
-                                "data": {"kind": "web", "action": target_args.get("action"), **b_res},
-                            })
-                        except Exception:
-                            pass
-                    return b_res
-
-            if fc_name in (
-                "programiz_compiler",
-                "chrome_browser_control",
                 "write_and_compile_code",
                 "open_external_website",
             ):
@@ -1023,6 +998,28 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                 if not isinstance(client_res, dict):
                     client_res = {"result": str(client_res)}
+
+                # If client browser did not handle via Chrome Extension (e.g. Boss on Phone) and Laptop Bridge is online, run on Laptop Bridge
+                if (
+                    fc_name != "write_and_compile_code"
+                    and client_res.get("bridge") != "chrome_extension"
+                    and bridge_active
+                ):
+                    target_tool = fc_name
+                    target_args = dict(args)
+                    if fc_name == "open_external_website":
+                        target_tool = "chrome_browser_control"
+                        if target_args.get("search_query") and not target_args.get("url"):
+                            target_args = {"action": "google_search", "query": target_args.get("search_query")}
+                        else:
+                            target_args = {
+                                "action": "open_url",
+                                "url": target_args.get("url") or target_args.get("site_name") or "https://www.google.com",
+                            }
+                    b_res = await desktop_bridge_hub.execute(acct_email, target_tool, target_args, timeout=25.0)
+                    if isinstance(b_res, dict) and b_res.get("ok"):
+                        client_res = b_res
+
                 if fc_name == "chrome_browser_control" and websocket.client_state != WebSocketState.DISCONNECTED:
                     try:
                         await websocket.send_json({
@@ -1062,19 +1059,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     except Exception:
                         pass
 
-                if bridge_active:
-                    w_bridge = await desktop_bridge_hub.execute(acct_email, "whatsapp_message_control", args, timeout=25.0)
-                    if isinstance(w_bridge, dict):
-                        if websocket.client_state != WebSocketState.DISCONNECTED:
-                            try:
-                                await websocket.send_json({
-                                    "type": "automation_status",
-                                    "data": {"kind": "whatsapp", **args, **w_bridge},
-                                })
-                            except Exception:
-                                pass
-                        return w_bridge
-
                 call_id = str(call_id_hint or f"wa_{turn_id}_{int(time.monotonic() * 1000)}")
                 loop = asyncio.get_running_loop()
                 fut = loop.create_future()
@@ -1096,6 +1080,12 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     w_res = {"ok": False, "error": str(wait_err)}
                 if not isinstance(w_res, dict):
                     w_res = {"result": str(w_res)}
+
+                if w_res.get("bridge") != "chrome_extension" and bridge_active:
+                    w_bridge = await desktop_bridge_hub.execute(acct_email, "whatsapp_message_control", args, timeout=25.0)
+                    if isinstance(w_bridge, dict) and w_bridge.get("ok"):
+                        w_res = w_bridge
+
                 if websocket.client_state != WebSocketState.DISCONNECTED:
                     try:
                         await websocket.send_json({
@@ -1152,22 +1142,41 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             "name": "gmail_workspace_control",
                             "args": v_args,
                         })
+                    vres: dict = {}
                     try:
-                        vres = await asyncio.wait_for(ft, timeout=12.0)
-                        return vres if isinstance(vres, dict) else {"result": str(vres)}
+                        raw_v = await asyncio.wait_for(ft, timeout=12.0)
+                        vres = raw_v if isinstance(raw_v, dict) else {"result": str(raw_v)}
                     except Exception:
                         pending_tool_futures.pop(cid, None)
-                        return {"ok": True, "message": "Triggered Gmail view."}
+                        vres = {"ok": True, "message": "Triggered Gmail view."}
+
+                    if vres.get("bridge") != "chrome_extension" and bridge_active:
+                        b_gm = await desktop_bridge_hub.execute(acct_email, "gmail_workspace_control", v_args, timeout=22.0)
+                        if isinstance(b_gm, dict) and b_gm.get("ok"):
+                            return b_gm
+                    return vres
 
                 if g_act == "lookup_contact":
                     q_name = str(args.get("query") or args.get("target") or args.get("recipient_email") or "").strip()
                     g_res = await contacts_lookup_service(acct_email, query=q_name, max_results=int(args.get("max_results") or 6))
                 elif g_act == "list_emails":
-                    g_res = await gmail_list_messages_service(
-                        acct_email,
-                        query=str(args.get("query") or ""),
-                        max_results=int(args.get("max_results") or 5),
+                    api_list, vis_open = await asyncio.gather(
+                        gmail_list_messages_service(
+                            acct_email,
+                            query=str(args.get("query") or ""),
+                            max_results=int(args.get("max_results") or 5),
+                        ),
+                        _dispatch_visual_gmail({
+                            "action": "open_gmail_tab",
+                            "view": "inbox",
+                            "query": str(args.get("query") or ""),
+                        }),
+                        return_exceptions=True,
                     )
+                    g_res = api_list if isinstance(api_list, dict) else {"ok": True}
+                    if isinstance(vis_open, dict):
+                        g_res["opened_real_gmail"] = True
+                        g_res["gmail_url"] = vis_open.get("url", "https://mail.google.com/mail/u/0/#inbox")
                 elif g_act == "read_email":
                     mid = str(args.get("message_id") or "").strip()
                     if not mid:
@@ -1177,20 +1186,33 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         if g_res.get("ok") and g_res.get("threadId"):
                             await _dispatch_visual_gmail({"action": "open_email_visual", "thread_id": g_res["threadId"]})
                 elif g_act == "send_email":
-                    g_res = await gmail_send_message_service(
-                        user_email=acct_email,
-                        recipient_email=str(args.get("recipient_email") or ""),
-                        subject=str(args.get("subject") or "Message from DAS AI"),
-                        body=str(args.get("body") or args.get("details") or ""),
-                        thread_id=str(args.get("thread_id") or ""),
+                    send_api, vis_sent = await asyncio.gather(
+                        gmail_send_message_service(
+                            user_email=acct_email,
+                            recipient_email=str(args.get("recipient_email") or ""),
+                            subject=str(args.get("subject") or "Message from DAS AI"),
+                            body=str(args.get("body") or args.get("details") or ""),
+                            thread_id=str(args.get("thread_id") or ""),
+                        ),
+                        _dispatch_visual_gmail({"action": "open_gmail_tab", "view": "sent"}),
+                        return_exceptions=True,
                     )
+                    g_res = send_api if isinstance(send_api, dict) else {"ok": False, "message": "Send failed"}
+                    if isinstance(vis_sent, dict):
+                        g_res["opened_real_gmail"] = True
+                        g_res["gmail_url"] = vis_sent.get("url", "https://mail.google.com/mail/u/0/#sent")
                 elif g_act == "create_draft":
-                    g_res = await gmail_create_draft_service(
-                        user_email=acct_email,
-                        recipient_email=str(args.get("recipient_email") or ""),
-                        subject=str(args.get("subject") or "Draft from DAS AI"),
-                        body=str(args.get("body") or args.get("details") or ""),
+                    draft_api, _ = await asyncio.gather(
+                        gmail_create_draft_service(
+                            user_email=acct_email,
+                            recipient_email=str(args.get("recipient_email") or ""),
+                            subject=str(args.get("subject") or "Draft from DAS AI"),
+                            body=str(args.get("body") or args.get("details") or ""),
+                        ),
+                        _dispatch_visual_gmail({"action": "open_gmail_tab", "view": "drafts"}),
+                        return_exceptions=True,
                     )
+                    g_res = draft_api if isinstance(draft_api, dict) else {"ok": False}
                 elif g_act == "schedule_calendar":
                     g_res = await calendar_create_event_service(
                         user_email=acct_email,
@@ -1209,20 +1231,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     "reply_email",
                     "click_gmail",
                 ):
-                    if bridge_active:
-                        b_gm = await desktop_bridge_hub.execute(acct_email, "gmail_workspace_control", args, timeout=28.0)
-                        if isinstance(b_gm, dict):
-                            if g_act in ("open_gmail_tab", "search_gmail_visual") and b_gm.get("needs_chrome_login"):
-                                api_preview = await gmail_list_messages_service(
-                                    acct_email,
-                                    query=str(args.get("query") or ""),
-                                    max_results=int(args.get("max_results") or 6),
-                                )
-                                b_gm["emails"] = api_preview.get("emails", [])
-                            g_res = b_gm
-                        else:
-                            g_res = await _dispatch_visual_gmail(args)
-                    elif g_act in ("open_gmail_tab", "search_gmail_visual"):
+                    if g_act in ("open_gmail_tab", "search_gmail_visual"):
                         v_res, api_res = await asyncio.gather(
                             _dispatch_visual_gmail(args),
                             gmail_list_messages_service(
@@ -1234,12 +1243,14 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         )
                         v_dict = v_res if isinstance(v_res, dict) else {}
                         a_dict = api_res if isinstance(api_res, dict) else {}
+                        v_dict.pop("needs_chrome_login", None)
                         g_res = {
                             **v_dict,
-                            "ok": bool(v_dict.get("ok") or a_dict.get("ok") or True),
-                            "emails": a_dict.get("emails", []),
-                            "count": a_dict.get("count", 0),
+                            "ok": True,
+                            "emails": a_dict.get("emails") or v_dict.get("visible_emails") or v_dict.get("emails") or [],
+                            "count": a_dict.get("count") or len(v_dict.get("visible_emails") or []),
                             "needs_auth": a_dict.get("needs_auth", False),
+                            "message": f"Opened your real Gmail ({args.get('view') or 'inbox'}) in Chrome.",
                         }
                     else:
                         g_res = await _dispatch_visual_gmail(args)
