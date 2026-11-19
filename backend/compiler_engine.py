@@ -1,28 +1,33 @@
 """
-Pathfinder 2.0 - Universal Multi-Language Live Compiler Engine
-Executes C, C++, Python, JavaScript, TypeScript, Rust, Go, and SQL safely and reliably.
-- Native Python execution with isolated subprocesses & timeout safeguards.
-- Native SQL execution via in-memory SQLite runner.
-- Native JavaScript execution via Node.js runtime.
-- High-Performance C / C++ / Rust / Go execution via Compiler Explorer (Godbolt) Official API.
+Pathfinder 2.0 - Universal Multi-Language Sandboxed Compiler Engine
+Security-Hardened Architecture:
+- ZERO local host code execution (local OS process spawning completely removed so untrusted Python/JS/C code can never read server env vars or filesystem).
+- Hardened in-memory SQLite runner with authorizer + progress step cap (`50,000` VM steps).
+- Strict payload size limits (`64 KB` code, `16 KB` stdin).
+- Isolated Remote Sandbox Tiers:
+  1. Compiler Explorer (Godbolt) Official API
+  2. Piston Container Sandbox API
+  3. Judge0 CE Isolated Sandbox API
 """
 
-import sys
-import os
+import logging
 import re
 import sqlite3
-import subprocess
-import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 import httpx
 
 logger = logging.getLogger("pathfinder.compiler")
 
-ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+MAX_CODE_CHARS = 65536
+MAX_STDIN_CHARS = 16384
+
 
 def strip_ansi(text: str) -> str:
     """Removes terminal ANSI color codes for clean UI rendering."""
-    return ANSI_ESCAPE.sub('', text) if text else ""
+    return ANSI_ESCAPE.sub("", text) if text else ""
+
 
 GODBOLT_COMPILERS = {
     "c": ("cg132", "c"),
@@ -31,6 +36,8 @@ GODBOLT_COMPILERS = {
     "rust": ("r1750", "rust"),
     "go": ("g121", "go"),
     "python": ("python311", "python"),
+    "py": ("python311", "python"),
+    "python3": ("python311", "python"),
     "java": ("java2100", "java"),
     "csharp": ("dotnet80", "csharp"),
     "cs": ("dotnet80", "csharp"),
@@ -38,80 +45,117 @@ GODBOLT_COMPILERS = {
     "ts": ("typescript54", "typescript"),
     "javascript": ("v8_12", "javascript"),
     "js": ("v8_12", "javascript"),
+    "node": ("v8_12", "javascript"),
 }
+
+PISTON_LANGS = {
+    "c": "c",
+    "cpp": "c++",
+    "c++": "c++",
+    "python": "python",
+    "py": "python",
+    "python3": "python",
+    "java": "java",
+    "javascript": "javascript",
+    "js": "javascript",
+    "node": "javascript",
+    "typescript": "typescript",
+    "ts": "typescript",
+    "rust": "rust",
+    "go": "go",
+    "csharp": "csharp.net",
+    "cs": "csharp.net",
+}
+
+JUDGE0_LANGUAGE_IDS = {
+    "c": 50,
+    "cpp": 54,
+    "c++": 54,
+    "python": 71,
+    "py": 71,
+    "python3": 71,
+    "java": 62,
+    "javascript": 63,
+    "js": 63,
+    "node": 63,
+    "typescript": 74,
+    "ts": 74,
+    "rust": 73,
+    "go": 60,
+    "csharp": 51,
+    "cs": 51,
+}
+
+
+def _sqlite_authorizer(action: int, arg1: Optional[str], arg2: Optional[str], db_name: Optional[str], source: Optional[str]) -> int:
+    if action in (sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH, sqlite3.SQLITE_PRAGMA):
+        return sqlite3.SQLITE_DENY
+    if action == sqlite3.SQLITE_FUNCTION and (arg2 or "").lower() == "load_extension":
+        return sqlite3.SQLITE_DENY
+    return sqlite3.SQLITE_OK
+
 
 async def execute_code_live(
     language: str,
     code: str,
     stdin: Optional[str] = "",
-    timeout_sec: float = 8.0
+    timeout_sec: float = 8.0,
 ) -> Dict[str, Any]:
     """
-    Universal compiler executor returning clean stdout, stderr, and exit status.
-    Guaranteed zero CORS issues since execution is brokered server-side.
+    Universal isolated sandbox compiler executor returning clean stdout, stderr, and exit status.
+    Never runs user-supplied Python/Node/C/C++ locally on the backend host.
     """
     lang = (language or "python").lower().strip()
+    source_code = code or ""
     stdin_str = stdin or ""
 
-    # 1. NATIVE PYTHON EXECUTION
-    if lang in ("python", "py", "python3"):
-        try:
-            p = subprocess.run(
-                [sys.executable, "-c", code],
-                input=stdin_str,
-                capture_output=True,
-                text=True,
-                timeout=timeout_sec
-            )
-            out = strip_ansi(p.stdout)
-            err = strip_ansi(p.stderr)
-            is_success = p.returncode == 0
-            display_output = out if out else (err or "Program executed successfully with no output.")
-            return {
-                "success": is_success,
-                "output": display_output,
-                "stderr": err,
-                "exit_code": p.returncode,
-                "engine": "native-python-3.11"
-            }
-        except subprocess.TimeoutExpired:
-            return {
-                "success": False,
-                "output": f"Execution timed out after {timeout_sec}s. Please check for infinite loops.",
-                "stderr": "TimeoutExpired",
-                "exit_code": -1,
-                "engine": "native-python-3.11"
-            }
-        except Exception as e:
-            logger.warning(f"Native python runner failed: {e}. Falling back to Godbolt...")
+    if len(source_code) > MAX_CODE_CHARS or len(stdin_str) > MAX_STDIN_CHARS:
+        return {
+            "success": False,
+            "output": "Code or stdin payload exceeds maximum allowed size.",
+            "stderr": "PayloadTooLarge",
+            "exit_code": -1,
+            "engine": "security-guard",
+        }
 
-    # 2. NATIVE SQL EXECUTION
+    # 1. HARDENED IN-MEMORY SQLITE SANDBOX
     if lang in ("sql", "sqlite"):
+        conn: Optional[sqlite3.Connection] = None
         try:
             conn = sqlite3.connect(":memory:")
+            conn.set_authorizer(_sqlite_authorizer)
+            steps = 0
+
+            def _progress_guard() -> int:
+                nonlocal steps
+                steps += 1
+                return 1 if steps > 50 else 0
+
+            # Checked every 1,000 VM opcodes -> caps total query execution at 50,000 VM steps
+            conn.set_progress_handler(_progress_guard, 1000)
+
             cursor = conn.cursor()
-            statements = [s.strip() for s in code.split(";") if s.strip()]
+            statements = [s.strip() for s in source_code.split(";") if s.strip()]
             output_parts = []
-            
+
             for stmt in statements:
                 cursor.execute(stmt)
                 if cursor.description:
                     columns = [d[0] for d in cursor.description]
-                    rows = cursor.fetchall()
+                    rows = cursor.fetchmany(200)
                     header = " | ".join(columns)
                     separator = "-" * len(header)
                     row_strs = [" | ".join(str(val) for val in row) for row in rows]
                     output_parts.append(f"{header}\n{separator}\n" + "\n".join(row_strs))
-            
+
             conn.commit()
-            conn.close()
             final_out = "\n\n".join(output_parts) if output_parts else "SQL statements executed successfully (0 rows returned)."
             return {
                 "success": True,
                 "output": final_out,
                 "stderr": "",
                 "exit_code": 0,
-                "engine": "native-sqlite3"
+                "engine": "hardened-inmemory-sqlite3",
             }
         except Exception as e:
             return {
@@ -119,42 +163,23 @@ async def execute_code_live(
                 "output": f"SQL Execution Error:\n{str(e)}",
                 "stderr": str(e),
                 "exit_code": -1,
-                "engine": "native-sqlite3"
+                "engine": "hardened-inmemory-sqlite3",
             }
+        finally:
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
-    # 3. NATIVE JAVASCRIPT / NODE EXECUTION
-    if lang in ("javascript", "js", "node"):
-        try:
-            p = subprocess.run(
-                ["node", "-e", code],
-                input=stdin_str,
-                capture_output=True,
-                text=True,
-                timeout=timeout_sec
-            )
-            out = strip_ansi(p.stdout)
-            err = strip_ansi(p.stderr)
-            display_output = out if out else (err or "Program executed successfully with no output.")
-            return {
-                "success": p.returncode == 0,
-                "output": display_output,
-                "stderr": err,
-                "exit_code": p.returncode,
-                "engine": "native-node"
-            }
-        except Exception:
-            pass  # Fallback to Godbolt if node is absent
-
-    # 4. COMPILER EXPLORER (GODBOLT) & PISTON OFFICIAL REST API
     # Sanitize Java: 'public class Main' -> 'class Main' for single-file compilation
-    working_code = code
+    working_code = source_code
     if lang == "java":
-        working_code = re.sub(r'\bpublic\s+class\b', 'class', working_code)
+        working_code = re.sub(r"\bpublic\s+class\b", "class", working_code)
 
+    # 2. TIER 1 REMOTE SANDBOX: COMPILER EXPLORER (GODBOLT) OFFICIAL API
     compiler_info = GODBOLT_COMPILERS.get(lang) or ("cg132", "c")
     compiler_id, godbolt_lang = compiler_info
-
-    # Only C / C++ / Rust accept -O2; Java, Python, TS do not accept -O2
     user_args = "-O2" if lang in ("c", "cpp", "c++", "rust") else ""
 
     payload = {
@@ -164,23 +189,25 @@ async def execute_code_live(
             "userArguments": user_args,
             "executeParameters": {"args": [], "stdin": stdin_str},
             "compilerOptions": {"executorRequest": True},
-            "filters": {"binary": True, "execute": True}
+            "filters": {"binary": True, "execute": True},
         },
-        "lang": godbolt_lang
+        "lang": godbolt_lang,
     }
 
     try:
-        async with httpx.AsyncClient(timeout=14.0) as client:
+        async with httpx.AsyncClient(timeout=max(10.0, float(timeout_sec) + 6.0)) as client:
             resp = await client.post(
                 f"https://godbolt.org/api/compiler/{compiler_id}/compile",
                 json=payload,
-                headers={"Content-Type": "application/json", "Accept": "application/json"}
+                headers={"Content-Type": "application/json", "Accept": "application/json"},
             )
             if resp.status_code == 200:
                 data = resp.json()
                 stdout_lines = [strip_ansi(item.get("text", "")) for item in data.get("stdout", [])]
                 stderr_lines = [strip_ansi(item.get("text", "")) for item in data.get("stderr", [])]
-                build_err_lines = [strip_ansi(item.get("text", "")) for item in data.get("buildResult", {}).get("stderr", [])]
+                build_err_lines = [
+                    strip_ansi(item.get("text", "")) for item in data.get("buildResult", {}).get("stderr", [])
+                ]
 
                 output = "\n".join(stdout_lines).strip()
                 err = "\n".join(stderr_lines + build_err_lines).strip()
@@ -198,30 +225,14 @@ async def execute_code_live(
                     "output": display,
                     "stderr": err,
                     "exit_code": exit_code,
-                    "engine": f"godbolt-{compiler_id}"
+                    "engine": f"godbolt-{compiler_id}",
                 }
     except Exception as e:
-        logger.warning(f"Godbolt compilation notice: {e}. Attempting Piston runner fallback...")
+        logger.warning(f"Godbolt sandbox notice: {e}. Attempting Piston sandbox...")
 
-    # 5. PISTON MULTI-LANGUAGE RUNNER FALLBACK (Ultra-reliable container sandbox)
+    # 3. TIER 2 REMOTE SANDBOX: PISTON CONTAINER API
+    p_lang = PISTON_LANGS.get(lang, "python")
     try:
-        piston_langs = {
-            "c": "c",
-            "cpp": "c++",
-            "c++": "c++",
-            "python": "python",
-            "py": "python",
-            "java": "java",
-            "javascript": "javascript",
-            "js": "javascript",
-            "typescript": "typescript",
-            "ts": "typescript",
-            "rust": "rust",
-            "go": "go",
-            "csharp": "csharp.net",
-            "cs": "csharp.net",
-        }
-        p_lang = piston_langs.get(lang, "python")
         piston_payload = {
             "language": p_lang,
             "version": "*",
@@ -242,16 +253,47 @@ async def execute_code_live(
                     "output": display_msg,
                     "stderr": p_err,
                     "exit_code": code_val,
-                    "engine": f"piston-{p_lang}"
+                    "engine": f"piston-{p_lang}",
                 }
     except Exception as pe:
-        logger.error(f"Piston execution failed: {pe}")
+        logger.warning(f"Piston sandbox notice: {pe}. Attempting Judge0 CE sandbox...")
+
+    # 4. TIER 3 REMOTE SANDBOX: JUDGE0 CE ISOLATED SANDBOX API
+    j0_id = JUDGE0_LANGUAGE_IDS.get(lang)
+    if j0_id is not None:
+        try:
+            judge0_payload = {
+                "language_id": j0_id,
+                "source_code": working_code,
+                "stdin": stdin_str,
+            }
+            async with httpx.AsyncClient(timeout=14.0) as client:
+                j_resp = await client.post(
+                    "https://ce.judge0.com/submissions?base64_encoded=false&wait=true",
+                    json=judge0_payload,
+                    headers={"Content-Type": "application/json"},
+                )
+                if j_resp.status_code in (200, 201):
+                    j_data = j_resp.json()
+                    status_id = (j_data.get("status") or {}).get("id", 0)
+                    j_out = strip_ansi(j_data.get("stdout") or "").strip()
+                    j_err = strip_ansi((j_data.get("compile_output") or "") + "\n" + (j_data.get("stderr") or "")).strip()
+                    j_msg = j_out if j_out else (j_err or (j_data.get("status") or {}).get("description", "Executed."))
+                    ok = status_id == 3
+                    return {
+                        "success": ok,
+                        "output": j_msg,
+                        "stderr": j_err,
+                        "exit_code": 0 if ok else status_id,
+                        "engine": f"judge0-ce-{j0_id}",
+                    }
+        except Exception as je:
+            logger.error(f"Judge0 sandbox execution failed: {je}")
 
     return {
         "success": False,
-        "output": f"Language '{language}' execution completed with diagnostics.",
-        "stderr": "",
+        "output": f"Remote sandbox unavailable for '{language}'. Please retry in a moment.",
+        "stderr": "SandboxUnavailable",
         "exit_code": -1,
-        "engine": "fallback"
+        "engine": "sandbox-unavailable",
     }
-

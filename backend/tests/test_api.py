@@ -466,5 +466,47 @@ class TestAPIEndpoints(unittest.TestCase):
         declared = {fn.name for t in DAS_TOOLS for fn in (t.function_declarations or [])}
         self.assertIn("whatsapp_message_control", declared)
 
+    def test_compiler_engine_zero_local_subprocess_and_sqlite_authorizer(self):
+        import asyncio
+        import inspect
+        from unittest.mock import AsyncMock, MagicMock, patch
+        import backend.compiler_engine as ce
+
+        src = inspect.getsource(ce)
+        self.assertNotIn("subprocess", src)
+
+        oversized = asyncio.run(ce.execute_code_live("python", "a" * 70000))
+        self.assertFalse(oversized["success"])
+        self.assertEqual(oversized["engine"], "security-guard")
+
+        attach_res = asyncio.run(ce.execute_code_live("sql", "ATTACH DATABASE 'pathfinder.db' AS stolen;"))
+        self.assertFalse(attach_res["success"])
+        self.assertIn("not authorized", attach_res["output"].lower())
+
+        good_sql = asyncio.run(
+            ce.execute_code_live(
+                "sql",
+                "CREATE TABLE t(x INT); INSERT INTO t VALUES (42); SELECT x FROM t;",
+            )
+        )
+        self.assertTrue(good_sql["success"])
+        self.assertIn("42", good_sql["output"])
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "code": 0,
+            "stdout": [{"text": "sandboxed-only-ok"}],
+            "stderr": [],
+            "buildResult": {"stderr": []},
+        }
+        mock_post = AsyncMock(return_value=mock_resp)
+        with patch("httpx.AsyncClient.post", mock_post):
+            py_res = asyncio.run(ce.execute_code_live("python", "import os; print(os.environ)"))
+        self.assertTrue(py_res["success"])
+        self.assertEqual(py_res["engine"], "godbolt-python311")
+        self.assertIn("sandboxed-only-ok", py_res["output"])
+        mock_post.assert_called_once()
+
 if __name__ == "__main__":
     unittest.main()
