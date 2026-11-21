@@ -41,7 +41,7 @@ export function createHologramScanMaterial(
         "#include <common>",
         `#include <common>
          varying vec3 vHoloWorldPos;
-         ${isHead ? "attribute float aMouthCavity;\nvarying float vMouthCavity;" : ""}
+         ${isHead ? "attribute float aMouthCavity;\nattribute float aLipRim;\nvarying float vMouthCavity;\nvarying float vLipRim;" : ""}
          ${isTeeth ? "attribute float aLowerTooth;\nuniform float uJawOpen;" : ""}
          ${isShoulders ? "attribute float aBustFade;\nvarying float vBustFade;" : ""}`
       )
@@ -59,7 +59,7 @@ export function createHologramScanMaterial(
              : ""
          }
          vHoloWorldPos = holoWorld4.xyz;
-         ${isHead ? "vMouthCavity = aMouthCavity;" : ""}
+         ${isHead ? "vMouthCavity = aMouthCavity;\nvLipRim = aLipRim;" : ""}
          ${isShoulders ? "vBustFade = aBustFade;" : ""}`
       );
 
@@ -70,7 +70,7 @@ export function createHologramScanMaterial(
          uniform float uTime;
          uniform float uVoice;
          varying vec3 vHoloWorldPos;
-         ${isHead ? "varying float vMouthCavity;" : ""}
+         ${isHead ? "varying float vMouthCavity;\nvarying float vLipRim;" : ""}
          ${isShoulders ? "varying float vBustFade;" : ""}`
       )
       .replace(
@@ -107,17 +107,22 @@ export function createHologramScanMaterial(
 
         vec3 col = mix(troughCyan * (0.55 + 0.45 * sculptedKey), cyanBody * boost, scanLine * microGrid);
         col += crestCyan * fresnel * 0.12;
-        ${isTeeth ? "col *= (0.14 + 0.12 * sculptedKey);" : ""}
+        ${
+          isTeeth
+            ? "col = mix(col * (0.55 + 0.35 * sculptedKey), vec3(0.32, 0.88, 1.0) * (0.48 + 0.38 * sculptedKey), 0.32);"
+            : ""
+        }
 
         ${
           isHead
             ? `float cavityMask = clamp(vMouthCavity, 0.0, 1.0);
-               col *= mix(1.0, 0.035, cavityMask);
+               col *= mix(1.0, 0.11, cavityMask);
+               col += crestCyan * clamp(vLipRim, 0.0, 1.0) * (0.15 + uVoice * 0.14);
                diffuseColor.a = mix(clamp(0.95 + scanLine * 0.05, 0.94, 1.0), 0.99, cavityMask);`
             : isShoulders
             ? "float bustEdge = smoothstep(0.0, 0.90, vBustFade);\ncol *= bustEdge;\ndiffuseColor.a = clamp(0.96 * bustEdge, 0.0, 1.0);"
             : isTeeth
-            ? "diffuseColor.a = 0.88;"
+            ? "diffuseColor.a = 0.94;"
             : "diffuseColor.a = clamp(0.95 + scanLine * 0.05, 0.94, 1.0);"
         }
         outgoingLight = col;

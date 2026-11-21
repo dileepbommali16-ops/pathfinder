@@ -54,9 +54,8 @@ def get_puck_speech_config() -> types.SpeechConfig:
 
 def create_gemini_live_config(system_prompt: str, tools_list: list) -> types.LiveConnectConfig:
     """
-    LiveConnectConfig calibrated for ultra-responsive Multimodal Live streaming:
+    LiveConnectConfig calibrated for ultra-responsive Multimodal Live voice streaming:
     - Voice: Puck (24kHz)
-    - High-resolution video frame perception & full A/V turn coverage
     - Sliding-window context compression to avoid abrupt session drops
     - Tuned automatic VAD for reliable capture across headsets, buds, and laptop mics
     - Real-time input & output speech transcription enabled
@@ -75,9 +74,6 @@ def create_gemini_live_config(system_prompt: str, tools_list: list) -> types.Liv
         kwargs["input_audio_transcription"] = types.AudioTranscriptionConfig()
         kwargs["output_audio_transcription"] = types.AudioTranscriptionConfig()
 
-    if hasattr(types, "MediaResolution"):
-        kwargs["media_resolution"] = types.MediaResolution.MEDIA_RESOLUTION_HIGH
-
     if hasattr(types, "ContextWindowCompressionConfig") and hasattr(types, "SlidingWindow"):
         kwargs["context_window_compression"] = types.ContextWindowCompressionConfig(
             sliding_window=types.SlidingWindow()
@@ -85,10 +81,8 @@ def create_gemini_live_config(system_prompt: str, tools_list: list) -> types.Liv
 
     if hasattr(types, "RealtimeInputConfig"):
         rt_kwargs = {}
-        if hasattr(types, "TurnCoverage"):
-            rt_kwargs["turn_coverage"] = (
-                types.TurnCoverage.TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO
-            )
+        if hasattr(types, "TurnCoverage") and hasattr(types.TurnCoverage, "TURN_INCLUDES_ONLY_ACTIVITY"):
+            rt_kwargs["turn_coverage"] = types.TurnCoverage.TURN_INCLUDES_ONLY_ACTIVITY
         if (
             hasattr(types, "AutomaticActivityDetection")
             and hasattr(types, "StartSensitivity")

@@ -55,85 +55,85 @@ export const VISEME_PRESETS: Record<VisemeId, VisemeWeights> = {
   },
   MBP: {
     jawOpen: 0.0,
-    close: 0.62,
-    press: 0.48,
+    close: 0.78,
+    press: 0.62,
     pucker: 0.0,
     funnel: 0.0,
     stretch: 0.0,
     upperUp: 0.0,
     lowerDown: 0.0,
-    rollLower: 0.14,
+    rollLower: 0.2,
     smile: 0.02,
   },
   FV: {
-    jawOpen: 0.05,
+    jawOpen: 0.06,
     close: 0.08,
     press: 0.06,
     pucker: 0.0,
-    funnel: 0.05,
-    stretch: 0.18,
-    upperUp: 0.28,
+    funnel: 0.06,
+    stretch: 0.22,
+    upperUp: 0.34,
     lowerDown: 0.0,
-    rollLower: 0.46,
-    smile: 0.04,
+    rollLower: 0.58,
+    smile: 0.05,
   },
   TH_TD: {
-    jawOpen: 0.12,
+    jawOpen: 0.14,
     close: 0.0,
     press: 0.0,
     pucker: 0.02,
-    funnel: 0.08,
-    stretch: 0.24,
-    upperUp: 0.16,
-    lowerDown: 0.14,
+    funnel: 0.1,
+    stretch: 0.28,
+    upperUp: 0.22,
+    lowerDown: 0.18,
     rollLower: 0.0,
-    smile: 0.06,
+    smile: 0.07,
   },
   SH_SZ: {
-    jawOpen: 0.07,
+    jawOpen: 0.09,
     close: 0.0,
     press: 0.0,
-    pucker: 0.04,
-    funnel: 0.22,
-    stretch: 0.36,
-    upperUp: 0.24,
-    lowerDown: 0.12,
+    pucker: 0.05,
+    funnel: 0.32,
+    stretch: 0.46,
+    upperUp: 0.3,
+    lowerDown: 0.16,
     rollLower: 0.0,
-    smile: 0.1,
+    smile: 0.12,
   },
   EE: {
-    jawOpen: 0.2,
+    jawOpen: 0.22,
     close: 0.0,
     press: 0.0,
     pucker: 0.0,
     funnel: 0.0,
-    stretch: 0.54,
-    upperUp: 0.24,
-    lowerDown: 0.2,
+    stretch: 0.68,
+    upperUp: 0.34,
+    lowerDown: 0.26,
     rollLower: 0.0,
-    smile: 0.22,
+    smile: 0.26,
   },
   OO: {
-    jawOpen: 0.21,
+    jawOpen: 0.26,
     close: 0.0,
     press: 0.0,
-    pucker: 0.56,
-    funnel: 0.42,
+    pucker: 0.76,
+    funnel: 0.56,
     stretch: 0.0,
-    upperUp: 0.06,
-    lowerDown: 0.1,
+    upperUp: 0.08,
+    lowerDown: 0.12,
     rollLower: 0.0,
     smile: 0.0,
   },
   AA: {
-    jawOpen: 0.41,
+    jawOpen: 0.44,
     close: 0.0,
     press: 0.0,
     pucker: 0.0,
-    funnel: 0.05,
-    stretch: 0.16,
-    upperUp: 0.24,
-    lowerDown: 0.34,
+    funnel: 0.06,
+    stretch: 0.18,
+    upperUp: 0.3,
+    lowerDown: 0.44,
     rollLower: 0.0,
     smile: 0.08,
   },
@@ -357,6 +357,8 @@ export function analyzeAcousticFrame(
   low: number;
   mid: number;
   high: number;
+  f2Low: number;
+  f2High: number;
 } {
   let sumSq = 0;
   let crossings = 0;
@@ -386,9 +388,11 @@ export function analyzeAcousticFrame(
     return total / ((end - start + 1) * 255);
   };
 
-  const low = bandEnergy(180, 780);
+  const low = bandEnergy(180, 750);
   const mid = bandEnergy(850, 2400);
   const high = bandEnergy(2500, 6800);
+  const f2Low = bandEnergy(750, 1350);
+  const f2High = bandEnergy(1650, 3100);
 
-  return { rms, zcr, low, mid, high };
+  return { rms, zcr, low, mid, high, f2Low, f2High };
 }

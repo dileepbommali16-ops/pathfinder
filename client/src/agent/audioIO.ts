@@ -743,6 +743,10 @@ class AudioEngine {
   private ttsTimeline: VisemeTimeline | null = null;
   private ttsStartPerfMs: number = 0;
   private ttsDurationMs: number = 0;
+  private liveTranscriptText: string = "";
+  private liveVisemeTimeline: VisemeTimeline | null = null;
+  private liveAudioStartCtxSec: number = 0;
+  private liveAudioEndCtxSec: number = 0;
   private speakingListeners: Set<(speaking: boolean) => void> = new Set();
   private lastNotifiedSpeaking: boolean = false;
   private speakingEndTimer: number | null = null;

@@ -87,6 +87,7 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
         <input
           type="text"
           id={id}
+          name={id}
           role="combobox"
           aria-expanded={open}
           aria-autocomplete="list"

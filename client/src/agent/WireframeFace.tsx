@@ -75,6 +75,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
   const isBlinking = useRef<boolean>(false);
   const blinkProg = useRef<number>(0);
   const pendingDoubleBlink = useRef<boolean>(false);
+  const elapsedRef = useRef<number>(0);
 
   const materials = useMemo(() => {
     const headMat = createHologramScanMaterial(sharedUniforms.current, { isHead: true });
@@ -111,6 +112,31 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
 
         const worldVert = new THREE.Vector3();
 
+        let teethMinY = -0.175;
+        let teethMaxY = -0.055;
+        let teethMidY = -0.115;
+        let teethMaxZ = 0.44;
+        scene.traverse((obj) => {
+          if ((obj as THREE.Mesh).isMesh) {
+            const m = obj as THREE.Mesh;
+            const full = `${(m.parent?.name || "").toLowerCase()}:${(m.name || "").toLowerCase()}`;
+            if (full.includes("teeth") && m.geometry?.attributes?.position) {
+              const tPos = m.geometry.attributes.position;
+              const tBox = new THREE.Box3();
+              for (let i = 0; i < tPos.count; i++) {
+                worldVert.fromBufferAttribute(tPos, i).applyMatrix4(m.matrixWorld);
+                tBox.expandByPoint(worldVert);
+              }
+              if (!tBox.isEmpty()) {
+                teethMinY = tBox.min.y;
+                teethMaxY = tBox.max.y;
+                teethMidY = (teethMinY + teethMaxY) * 0.5;
+                teethMaxZ = tBox.max.z;
+              }
+            }
+          }
+        });
+
         scene.traverse((obj) => {
           if ((obj as THREE.Mesh).isMesh) {
             const mesh = obj as THREE.Mesh;
@@ -126,7 +152,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
                 const lowerFlags = new Float32Array(posAttr.count);
                 for (let i = 0; i < posAttr.count; i++) {
                   worldVert.fromBufferAttribute(posAttr, i).applyMatrix4(mesh.matrixWorld);
-                  lowerFlags[i] = worldVert.y < -0.105 ? 1.0 : 0.0;
+                  lowerFlags[i] = worldVert.y < teethMidY ? 1.0 : 0.0;
                 }
                 mesh.geometry.setAttribute("aLowerTooth", new THREE.BufferAttribute(lowerFlags, 1));
               }
@@ -145,21 +171,34 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
                 }
                 const uvScale = uvMax > 2.0 ? 4096.0 : 1.0;
                 const cavityMask = new Float32Array(posAttr.count);
+                const lipRim = new Float32Array(posAttr.count);
                 for (let i = 0; i < posAttr.count; i++) {
                   worldVert.fromBufferAttribute(posAttr, i).applyMatrix4(mesh.matrixWorld);
                   const uNorm = uvAttr ? uvAttr.getX(i) / uvScale : 1.0;
                   const vNorm = uvAttr ? uvAttr.getY(i) / uvScale : 1.0;
                   const inInnerUvIsland = uNorm < 0.43 && vNorm < 0.65;
-                  const inMouthCone =
-                    Math.abs(worldVert.x) < 0.16 &&
-                    worldVert.y > -0.24 &&
-                    worldVert.y < -0.01 &&
-                    worldVert.z > 0.08;
-                  if (inInnerUvIsland && inMouthCone) {
-                    cavityMask[i] = THREE.MathUtils.clamp((0.445 - worldVert.z) / 0.075, 0.35, 1.0);
+                  const inDeepCavity =
+                    inInnerUvIsland &&
+                    Math.abs(worldVert.x) < 0.14 &&
+                    worldVert.y > teethMinY - 0.08 &&
+                    worldVert.y < teethMaxY + 0.08 &&
+                    worldVert.z < teethMaxZ + 0.01;
+                  if (inDeepCavity) {
+                    cavityMask[i] = THREE.MathUtils.clamp((teethMaxZ + 0.015 - worldVert.z) / 0.065, 0.3, 1.0);
+                  } else if (
+                    !inInnerUvIsland &&
+                    Math.abs(worldVert.x) < 0.135 &&
+                    worldVert.y > teethMinY - 0.06 &&
+                    worldVert.y < teethMaxY + 0.06 &&
+                    worldVert.z >= teethMaxZ - 0.015
+                  ) {
+                    lipRim[i] =
+                      Math.exp(-Math.pow((worldVert.y - teethMidY) / 0.042, 2)) *
+                      Math.exp(-Math.pow(worldVert.x / 0.125, 2));
                   }
                 }
                 mesh.geometry.setAttribute("aMouthCavity", new THREE.BufferAttribute(cavityMask, 1));
+                mesh.geometry.setAttribute("aLipRim", new THREE.BufferAttribute(lipRim, 1));
               }
               mesh.material = materials.headMat;
               if (mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
@@ -204,30 +243,35 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
     };
   }, [loadedModel]);
 
-  useFrame((state, rawDelta) => {
+  useFrame((_, rawDelta) => {
     const delta = Math.min(0.05, rawDelta);
-    const t = state.clock.getElapsedTime();
+    elapsedRef.current += delta;
+    const t = elapsedRef.current;
 
-    const { volume, low, mid, high, zcr, isSpeaking, viseme } = getUnifiedSpeechFormants(t);
-    const fastLerp = 1 - Math.exp(-(volume > fastEnv.current ? 42 : 30) * delta);
+    const { volume, low, mid, high, zcr, f2Low, f2High, isSpeaking, viseme } =
+      getUnifiedSpeechFormants(t);
+    const fastLerp = 1 - Math.exp(-(volume > fastEnv.current ? 46 : 32) * delta);
     fastEnv.current += (volume - fastEnv.current) * fastLerp;
     const v = THREE.MathUtils.clamp(fastEnv.current, 0, 1);
 
     if (isSpeaking && volume > 0.015) {
-      const avgRate = 1 - Math.exp(-4.5 * delta);
+      const avgRate = 1 - Math.exp(-5.0 * delta);
       localSyllableAvg.current += (volume - localSyllableAvg.current) * avgRate;
     } else {
-      localSyllableAvg.current *= Math.exp(-10 * delta);
+      localSyllableAvg.current *= Math.exp(-12 * delta);
     }
 
-    // 1. Subtle 3D Hologram Float + Head/Shoulders Counter-Rotation
+    const activeSpeech = isSpeaking && (fastEnv.current > 0.015 || volume > 0.015);
+    const energyAmp = activeSpeech ? THREE.MathUtils.clamp(fastEnv.current * 1.2, 0, 1) : 0;
+
+    // 1. Subtle 3D Hologram Float + Head/Shoulders Counter-Rotation + Speaking Micro-Nod
     const floatY = Math.sin(t * 1.05) * 0.028;
     if (rootGroupRef.current) {
       rootGroupRef.current.position.y = position[1] + floatY;
     }
     if (headPivotRef.current) {
       headPivotRef.current.rotation.y = Math.sin(t * 0.42) * 0.13;
-      headPivotRef.current.rotation.x = Math.sin(t * 0.30) * 0.038 + v * 0.036;
+      headPivotRef.current.rotation.x = Math.sin(t * 0.30) * 0.038 + v * 0.036 + energyAmp * 0.025;
       headPivotRef.current.rotation.z = Math.cos(t * 0.26) * 0.02;
     }
     if (shouldersRef.current) {
@@ -272,13 +316,13 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
     sharedUniforms.current.uVoice.value = v;
     sharedUniforms.current.uBlink.value = blinkVal;
 
-    // 3. Phonetic + Acoustic Coarticulated Conversational Lip-Sync
+    // 3. Phonetic + Formant Coarticulated 18-Morph Human Lip-Sync (with sealed resting lips)
     const mesh = headMorphMeshRef.current;
     if (mesh && mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
       const dict = mesh.morphTargetDictionary;
       const inf = mesh.morphTargetInfluences;
 
-      const setMorph = (name: string, target: number, speed = 34) => {
+      const setMorph = (name: string, target: number, speed = 36) => {
         const idx = dict[name];
         if (idx !== undefined) {
           const factor = 1 - Math.exp(-speed * delta);
@@ -286,86 +330,97 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
         }
       };
 
-      const active = isSpeaking && (fastEnv.current > 0.015 || volume > 0.015);
       const bandSum = low + mid + high + 0.001;
       const wLow = low / bandSum;
       const wMid = mid / bandSum;
       const wHigh = high / bandSum;
 
-      if (active && volume > 0.04) {
-        const baseRate = 1 - Math.exp(-1.6 * delta);
+      if (activeSpeech && volume > 0.04) {
+        const baseRate = 1 - Math.exp(-1.8 * delta);
         baseLowRatio.current += (wLow - baseLowRatio.current) * baseRate;
         baseMidRatio.current += (wMid - baseMidRatio.current) * baseRate;
       }
 
       const dLow = Math.max(0, wLow - baseLowRatio.current);
       const dMid = Math.max(0, wMid - baseMidRatio.current);
-      const isSibilant = active
-        ? THREE.MathUtils.clamp((zcr - 0.065) * 6.5 + (wHigh - 0.10) * 3.5, 0, 1)
+      const f2Sum = f2Low + f2High + 0.001;
+      const roundBias = f2Low / f2Sum;
+      const spreadBias = f2High / f2Sum;
+      const isSibilant = activeSpeech
+        ? THREE.MathUtils.clamp((zcr - 0.065) * 6.8 + (wHigh - 0.10) * 3.8, 0, 1)
         : 0;
 
-      // Crisp syllable valley lip closures so live speech snaps shut smoothly between syllables/words
+      // Stronger syllable/plosive valley lip closures so live speech snaps shut between syllables & words
       const valleyClose =
-        active && localSyllableAvg.current > 0.08 && fastEnv.current < localSyllableAvg.current * 0.72
+        activeSpeech && localSyllableAvg.current > 0.075 && fastEnv.current < localSyllableAvg.current * 0.74
           ? THREE.MathUtils.clamp(
-              (localSyllableAvg.current * 0.72 - fastEnv.current) /
-                Math.max(0.06, localSyllableAvg.current * 0.45),
+              (localSyllableAvg.current * 0.74 - fastEnv.current) /
+                Math.max(0.055, localSyllableAvg.current * 0.42),
               0,
               1
             )
           : 0;
 
-      const roundW = active ? THREE.MathUtils.clamp(dLow * 7.5 * (1 - isSibilant * 0.8), 0, 0.72) : 0;
-      const spreadW = active
-        ? THREE.MathUtils.clamp((dMid * 7.2 + isSibilant * 0.38) * (1 - roundW * 0.7), 0, 0.72)
+      const roundW = activeSpeech
+        ? THREE.MathUtils.clamp((roundBias * 0.75 + dLow * 5.2) * (1 - isSibilant * 0.75), 0, 0.84)
         : 0;
-      const energyAmp = active ? THREE.MathUtils.clamp(fastEnv.current * 1.15, 0, 1) : 0;
+      const spreadW = activeSpeech
+        ? THREE.MathUtils.clamp((spreadBias * 0.72 + dMid * 4.8 + isSibilant * 0.35) * (1 - roundW * 0.65), 0, 0.84)
+        : 0;
 
+      // Natural sealed resting mouth pose when silent (eliminates dark parted-lip void at rest)
       let jawTarget = 0;
-      let closeTarget = 0;
-      let pressTarget = 0;
+      let closeTarget = 0.30;
+      let pressTarget = 0.24;
       let puckerTarget = 0;
       let funnelTarget = 0;
       let stretchTarget = 0;
       let upperUpTarget = 0;
       let lowerDownTarget = 0;
-      let rollLowerTarget = 0;
-      let smileTarget = 0.05;
+      let rollLowerTarget = 0.06;
+      let rollUpperTarget = 0.04;
+      let shrugLowerTarget = 0.16;
+      let shrugUpperTarget = 0.06;
+      let smileTarget = 0.09;
+      let dimpleTarget = 0.06;
 
-      if (active) {
-        const openGate = 1.0 - valleyClose * 0.92;
+      if (activeSpeech) {
+        const openGate = 1.0 - valleyClose * 0.94;
         const baseAcJaw = THREE.MathUtils.clamp(
-          energyAmp * 0.42 * (1 - isSibilant * 0.65) * (1 - roundW * 0.25),
-          0.04,
-          0.44
+          energyAmp * 0.50 * (1 - isSibilant * 0.62) * (1 - roundW * 0.22),
+          0.05,
+          0.52
         );
         const acJaw = baseAcJaw * openGate;
-        const acClose = valleyClose * 0.56;
-        const acPress = valleyClose * 0.42;
-        const acPucker = roundW * 0.56 * openGate;
-        const acFunnel = (roundW * 0.34 + isSibilant * 0.22) * openGate;
-        const acStretch = spreadW * 0.56 * (1 - valleyClose * 0.65);
-        const acUpperUp = (0.06 + spreadW * 0.18 + isSibilant * 0.16 + energyAmp * 0.12) * openGate;
-        const acLowerDown = energyAmp * 0.28 * (1 - isSibilant * 0.5) * openGate;
-        const acRollLower = isSibilant > 0.52 && energyAmp < 0.38 ? 0.30 : 0;
-        const acSmile = 0.05 + spreadW * 0.14;
+        const acClose = valleyClose * 0.68;
+        const acPress = valleyClose * 0.52;
+        const acPucker = roundW * 0.68 * openGate;
+        const acFunnel = (roundW * 0.42 + isSibilant * 0.28) * openGate;
+        const acStretch = spreadW * 0.64 * (1 - valleyClose * 0.62);
+        const acUpperUp = (0.08 + spreadW * 0.22 + isSibilant * 0.18 + energyAmp * 0.16) * openGate;
+        const acLowerDown = energyAmp * 0.36 * (1 - isSibilant * 0.45) * openGate;
+        const acRollLower = isSibilant > 0.50 && energyAmp < 0.40 ? 0.38 : valleyClose * 0.14;
+        const acSmile = 0.06 + spreadW * 0.18;
 
         if (viseme) {
-          // Phonetic viseme timeline locked to live acoustic loudness & closure stops
           const isClosure = viseme.close > 0.25;
-          const ampGain = isClosure ? 1.0 : THREE.MathUtils.clamp(0.45 + fastEnv.current * 0.85, 0.35, 1.08);
-          const vMix = isClosure ? 0.92 : 0.78;
+          const ampGain = isClosure ? 1.0 : THREE.MathUtils.clamp(0.50 + fastEnv.current * 0.85, 0.40, 1.25);
+          const vMix = isClosure ? 0.90 : 0.72;
           const aMix = 1.0 - vMix;
-          jawTarget = isClosure ? 0 : (viseme.jawOpen * ampGain) * vMix + acJaw * aMix;
+          jawTarget = isClosure ? 0 : Math.min(0.56, viseme.jawOpen * ampGain) * vMix + acJaw * aMix;
           closeTarget = viseme.close * vMix + acClose * aMix;
           pressTarget = viseme.press * vMix + acPress * aMix;
-          puckerTarget = isClosure ? 0 : (viseme.pucker * ampGain) * vMix + acPucker * aMix;
-          funnelTarget = isClosure ? 0 : (viseme.funnel * ampGain) * vMix + acFunnel * aMix;
-          stretchTarget = isClosure ? 0 : (viseme.stretch * ampGain) * vMix + acStretch * aMix;
-          upperUpTarget = isClosure ? 0 : (viseme.upperUp * ampGain) * vMix + acUpperUp * aMix;
-          lowerDownTarget = isClosure ? 0 : (viseme.lowerDown * ampGain) * vMix + acLowerDown * aMix;
+          puckerTarget = isClosure ? 0 : Math.min(0.85, viseme.pucker * ampGain) * vMix + acPucker * aMix;
+          funnelTarget = isClosure ? 0 : Math.min(0.75, viseme.funnel * ampGain) * vMix + acFunnel * aMix;
+          stretchTarget = isClosure ? 0 : Math.min(0.75, viseme.stretch * ampGain) * vMix + acStretch * aMix;
+          upperUpTarget = isClosure ? 0 : Math.min(0.48, viseme.upperUp * ampGain) * vMix + acUpperUp * aMix;
+          lowerDownTarget = isClosure ? 0 : Math.min(0.55, viseme.lowerDown * ampGain) * vMix + acLowerDown * aMix;
           rollLowerTarget = viseme.rollLower * vMix + acRollLower * aMix;
+          rollUpperTarget = closeTarget * 0.24;
+          shrugLowerTarget = closeTarget * 0.20 + puckerTarget * 0.14;
+          shrugUpperTarget = closeTarget * 0.08 + funnelTarget * 0.10;
           smileTarget = viseme.smile * vMix + acSmile * aMix;
+          dimpleTarget = smileTarget * 0.45;
         } else {
           jawTarget = acJaw;
           closeTarget = acClose;
@@ -376,25 +431,39 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
           upperUpTarget = acUpperUp;
           lowerDownTarget = acLowerDown;
           rollLowerTarget = acRollLower;
+          rollUpperTarget = acClose * 0.24;
+          shrugLowerTarget = acClose * 0.20 + acPucker * 0.14;
+          shrugUpperTarget = acClose * 0.08 + acFunnel * 0.10;
           smileTarget = acSmile;
+          dimpleTarget = acSmile * 0.45;
         }
       }
 
-      setMorph("jawOpen", jawTarget, 40);
-      setMorph("mouthClose", closeTarget, 42);
-      setMorph("mouthPress_L", pressTarget, 40);
-      setMorph("mouthPress_R", pressTarget, 40);
-      setMorph("mouthPucker", puckerTarget, 34);
-      setMorph("mouthFunnel", funnelTarget, 34);
-      setMorph("mouthStretch_L", stretchTarget, 34);
-      setMorph("mouthStretch_R", stretchTarget, 34);
-      setMorph("mouthLowerDown_L", lowerDownTarget, 38);
-      setMorph("mouthLowerDown_R", lowerDownTarget, 38);
-      setMorph("mouthUpperUp_L", upperUpTarget, 38);
-      setMorph("mouthUpperUp_R", upperUpTarget, 38);
-      setMorph("mouthRollLower", rollLowerTarget, 36);
-      setMorph("mouthSmile_L", smileTarget, 14);
-      setMorph("mouthSmile_R", smileTarget, 14);
+      setMorph("jawOpen", jawTarget, 42);
+      setMorph("jawForward", puckerTarget * 0.14, 34);
+      setMorph("mouthClose", closeTarget, 44);
+      setMorph("mouthPress_L", pressTarget, 42);
+      setMorph("mouthPress_R", pressTarget, 42);
+      setMorph("mouthPucker", puckerTarget, 36);
+      setMorph("mouthFunnel", funnelTarget, 36);
+      setMorph("mouthStretch_L", stretchTarget, 36);
+      setMorph("mouthStretch_R", stretchTarget, 36);
+      setMorph("mouthLowerDown_L", lowerDownTarget, 40);
+      setMorph("mouthLowerDown_R", lowerDownTarget, 40);
+      setMorph("mouthUpperUp_L", upperUpTarget, 40);
+      setMorph("mouthUpperUp_R", upperUpTarget, 40);
+      setMorph("mouthRollLower", rollLowerTarget, 38);
+      setMorph("mouthRollUpper", rollUpperTarget, 38);
+      setMorph("mouthShrugLower", shrugLowerTarget, 34);
+      setMorph("mouthShrugUpper", shrugUpperTarget, 34);
+      setMorph("mouthSmile_L", smileTarget, 16);
+      setMorph("mouthSmile_R", smileTarget, 16);
+      setMorph("mouthDimple_L", dimpleTarget, 16);
+      setMorph("mouthDimple_R", dimpleTarget, 16);
+      setMorph("cheekSquint_L", activeSpeech ? energyAmp * 0.14 + smileTarget * 0.22 : 0.02, 14);
+      setMorph("cheekSquint_R", activeSpeech ? energyAmp * 0.14 + smileTarget * 0.22 : 0.02, 14);
+      setMorph("noseSneer_L", activeSpeech ? upperUpTarget * 0.18 : 0, 18);
+      setMorph("noseSneer_R", activeSpeech ? upperUpTarget * 0.18 : 0, 18);
 
       const jawIdx = dict["jawOpen"];
       if (jawIdx !== undefined) {
@@ -402,9 +471,9 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
       }
 
       // Subtle brow engagement + micro gaze saccades during idle/speech
-      setMorph("browInnerUp", 0.04 + (active ? energyAmp * 0.14 : 0) + Math.sin(t * 0.9) * 0.02, 8);
-      setMorph("browOuterUp_L", active ? v * 0.12 : 0, 8);
-      setMorph("browOuterUp_R", active ? v * 0.12 : 0, 8);
+      setMorph("browInnerUp", 0.04 + (activeSpeech ? energyAmp * 0.14 : 0) + Math.sin(t * 0.9) * 0.02, 8);
+      setMorph("browOuterUp_L", activeSpeech ? v * 0.12 : 0, 8);
+      setMorph("browOuterUp_R", activeSpeech ? v * 0.12 : 0, 8);
 
       const lookX = Math.sin(t * 0.55) * 0.08;
       const lookY = Math.sin(t * 0.37) * 0.05;

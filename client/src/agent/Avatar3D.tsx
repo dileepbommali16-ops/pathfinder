@@ -25,6 +25,20 @@ export interface Avatar3DProps {
 // Global Singleton Guard: Prevents duplicate Three.js Canvases from mounting
 let activeAvatarCount = 0;
 
+if (typeof window !== "undefined" && !(window as any).__THREE_CLOCK_WARN_FILTERED__) {
+  (window as any).__THREE_CLOCK_WARN_FILTERED__ = true;
+  const origWarn = console.warn.bind(console);
+  console.warn = (...args: any[]) => {
+    if (
+      typeof args[0] === "string" &&
+      args[0].includes("THREE.Clock: This module has been deprecated")
+    ) {
+      return;
+    }
+    origWarn(...args);
+  };
+}
+
 export const Avatar3D: React.FC<Avatar3DProps> = React.memo(({
   className = "",
   style = {},
