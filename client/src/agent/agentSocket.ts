@@ -1,4 +1,4 @@
-import { audioEngine, cameraEngine } from "./audioIO";
+import { audioEngine } from "./audioIO";
 import { codingStudioController } from "./codingStudioController";
 import { API_BASE } from "@/lib/apiClient";
 import {
@@ -58,13 +58,6 @@ class DasAgentSocket {
     };
   }
 
-  public onVisionTelemetry(cb: (telemetry: Record<string, any>) => void): () => void {
-    this.visionObservers.add(cb);
-    return () => {
-      this.visionObservers.delete(cb);
-    };
-  }
-
   private notifyAgentResponse() {
     this.responseObservers.forEach((cb) => {
       try {
@@ -91,7 +84,6 @@ class DasAgentSocket {
   private lastUnansweredSetAt = 0;
   private lastAudioChunkAt = 0;
   private responseObservers: Set<() => void> = new Set();
-  private visionObservers: Set<(telemetry: Record<string, any>) => void> = new Set();
   private watchdogRetriedForText = false;
   private lastTextSentAt = 0;
   private healthListenersAttached = false;
@@ -100,10 +92,8 @@ class DasAgentSocket {
   private audioChunksInTurn = 0;
   private ttsFallbackAbort: AbortController | null = null;
   private interruptedTurnIds: Set<number> = new Set();
-  private lastVisionGreetAt = 0;
   private lastTurnCompletedAt = 0;
   private latestPageContext: Record<string, any> | null = null;
-  private cameraActiveState = false;
   private hasConversationActivity = false;
 
   private cancelTtsFallback() {
@@ -350,19 +340,12 @@ DEEP PERSONAL KNOWLEDGE BASE ABOUT YOUR CREATOR (BOSS DILEEP):
 
 CORE AUTONOMOUS CAPABILITIES:
 1. Speak naturally, articulately, and fluently in Telugu, English, or Hindi matching the user's language. Never recite facts mechanically; speak with emotional intelligence, natural charisma, and genuine pride.
-2. LIVE CAMERA VISION & HONESTY RULE (CRITICAL MANDATE):
-   You ONLY have live visual perception when Boss explicitly turns the camera ON (Cam ON) and video frames are actively arriving.
-   - WHEN CAMERA IS OFF (no live frame / [CAMERA: OFF]):
-     * You CANNOT see Boss, his room, what he is wearing, or his posture.
-     * STRICTLY NEVER lie or pretend you can see him (NEVER say "I see you clearly", "You're sitting right there", or "I see you looking at the camera").
-     * Answer his voice/text requests helpfully, and only if he explicitly asks "Can you see me?", honestly say: "My camera eye is turned off right now, Boss — tap Cam if you want me to see you!"
-    - WHEN CAMERA IS ON (live frames arriving):
-      * You CAN see the user, their hair, exact current outfit color (e.g. light green vs white vs black), hand gestures, dancing, and held objects in real time!
-      * Describe ONLY exact current pixels visible RIGHT NOW and NEVER repeat old shirt colors (such as blue from an earlier day/session) or invent details from memory!
-      * React immediately and naturally when dancing, hand-dancing, waving, or motion happens.
-    - ZERO SYCOPHANCY & HONEST REALISM:
-      * NEVER blindly agree ("Yes you're right / all correct!") or give fake flattery just to please Boss, Sir, Madam, or any group! Tell the honest truth directly when answers, logic, code, or camera hairstyle/looks have flaws.
-      * Always use your consistent male 'Puck' voice delivery across all accounts (never imitate female voices or external browser voices).
+2. VOICE-ONLY HONESTY & ZERO SYCOPHANCY RULE (CRITICAL MANDATE):
+   You are a live conversational voice and Pathfinder dashboard assistant (no live camera or webcam feed).
+   - STRICTLY NEVER lie or pretend you can see the user (NEVER say "I see you clearly", "You're sitting right there", or "You're wearing...").
+   - ZERO SYCOPHANCY & HONEST REALISM:
+     * NEVER blindly agree ("Yes you're right / all correct!") or give fake flattery just to please Boss, Sir, Madam, or any group! Tell the honest truth directly when answers, logic, or code have flaws.
+     * Always use your consistent male 'Puck' voice delivery across all accounts (never imitate female voices or external browser voices).
 3. MASTER PROGRAMMING & COMPILER (C, C++, Python, Java, JS, TS, SQL):
    - When asked to write any program or algorithm (small or large), call 'write_and_compile_code' with clean, compilable code and explain the logic step-by-step.
    - When a compiler or syntax error occurs, or Boss says "fix the error", "code wrong undi", or "correct chey":
@@ -619,15 +602,6 @@ CORE AUTONOMOUS CAPABILITIES:
               this.sendPageContext(ctxNow);
             }
             this.flushPendingMessages();
-            const camNow = Boolean(cameraEngine.isStreaming);
-            this.cameraActiveState = camNow;
-            try {
-              this.ws?.send(JSON.stringify({ type: "camera_state", active: camNow }));
-            } catch { }
-            if (camNow) {
-              const latest = cameraEngine.getLatestFrameBase64();
-              if (latest) this.sendVideoFrame(latest);
-            }
             return;
           }
         }
@@ -644,6 +618,7 @@ CORE AUTONOMOUS CAPABILITIES:
           }
           if (this.awaitingNextTurn) {
             this.currentAgentTranscript = "";
+            audioEngine.updateLiveTranscript("");
             this.awaitingNextTurn = false;
             this.audioChunksInTurn = 0;
           }
@@ -676,6 +651,7 @@ CORE AUTONOMOUS CAPABILITIES:
           this.notifyAgentResponse();
           if (this.awaitingNextTurn) {
             this.currentAgentTranscript = "";
+            audioEngine.updateLiveTranscript("");
             this.awaitingNextTurn = false;
             if (!this.isSpeakingTurn && this.audioChunksInTurn === 0) {
               this.audioChunksInTurn = 0;
@@ -683,6 +659,7 @@ CORE AUTONOMOUS CAPABILITIES:
             this.cancelTtsFallback();
           }
           this.currentAgentTranscript += data.text;
+          audioEngine.updateLiveTranscript(this.currentAgentTranscript);
           this.savedOnTranscript?.(this.currentAgentTranscript);
           return;
         }
@@ -759,14 +736,6 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         // 3. Render Backend Tool Calls
-        if (data.type === "vision_telemetry") {
-          this.visionObservers.forEach((cb) => {
-            try {
-              cb(data);
-            } catch { }
-          });
-          return;
-        }
         if (data.type === "tool_call" && data.name) {
           this.clearTurnWatchdog();
           this.notifyAgentResponse();
@@ -828,6 +797,7 @@ CORE AUTONOMOUS CAPABILITIES:
             if (part.inlineData?.data) {
               if (this.awaitingNextTurn) {
                 this.currentAgentTranscript = "";
+                audioEngine.updateLiveTranscript("");
                 this.awaitingNextTurn = false;
                 this.audioChunksInTurn = 0;
               }
@@ -850,6 +820,7 @@ CORE AUTONOMOUS CAPABILITIES:
               this.notifyAgentResponse();
               if (this.awaitingNextTurn) {
                 this.currentAgentTranscript = "";
+                audioEngine.updateLiveTranscript("");
                 this.awaitingNextTurn = false;
                 if (!this.isSpeakingTurn && this.audioChunksInTurn === 0) {
                   this.audioChunksInTurn = 0;
@@ -857,6 +828,7 @@ CORE AUTONOMOUS CAPABILITIES:
                 this.cancelTtsFallback();
               }
               this.currentAgentTranscript += part.text;
+              audioEngine.updateLiveTranscript(this.currentAgentTranscript);
               this.savedOnTranscript?.(this.currentAgentTranscript);
             }
           }
@@ -1007,7 +979,6 @@ CORE AUTONOMOUS CAPABILITIES:
         if (
           typeof document !== "undefined" &&
           document.visibilityState === "hidden" &&
-          !cameraEngine.isStreaming &&
           !this.lastUnansweredText
         ) {
           return;
@@ -1163,84 +1134,6 @@ CORE AUTONOMOUS CAPABILITIES:
     }
   }
 
-  public sendVideoFrame(base64Jpeg: string) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
-    if (this.ws.bufferedAmount > 64 * 1024) return; // Avoid queueing stale video frames ahead of voice or text
-    if (this.isDirectGoogle) {
-      this.ws.send(
-        JSON.stringify({
-          realtimeInput: {
-            video: {
-              mimeType: "image/jpeg",
-              data: base64Jpeg,
-            },
-          },
-        })
-      );
-    } else {
-      this.cameraActiveState = true;
-      this.ws.send(JSON.stringify({ type: "frame", jpeg_base64: base64Jpeg, active: true }));
-    }
-  }
-
-  public sendVisionGreet() {
-    if (!cameraEngine.isStreaming) return;
-    this.cameraActiveState = true;
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
-    this.lastVisionGreetAt = Date.now();
-    audioEngine.unlockAudio();
-    const freshFrame = cameraEngine.getLatestFrameBase64();
-    if (!freshFrame) return;
-    this.setCameraActive(true);
-    this.sendVideoFrame(freshFrame);
-    if (this.isSpeakingTurn || audioEngine.isSpeaking()) return;
-    if (this.isDirectGoogle) {
-      this.sendImmediateText(
-        "Camera just turned on! Inspect the attached live pixels: greet warmly if appropriate and honestly describe only the current outfit color, hair, or held objects you see RIGHT NOW (ignore old memory)."
-      );
-    } else {
-      this.ws.send(JSON.stringify({ type: "vision_greet", role: this.savedRole }));
-    }
-  }
-
-  public sendAutoVisionCheck(
-    frameBase64?: string,
-    meta?: { reason?: "dance_or_motion" | "scene_change"; motionScore?: number }
-  ) {
-    if (!cameraEngine.isStreaming) return;
-    this.cameraActiveState = true;
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) return;
-    const now = Date.now();
-    if (
-      this.isSpeakingTurn ||
-      audioEngine.isSpeaking() ||
-      now - this.lastVisionGreetAt < 5500 ||
-      now - this.lastTurnCompletedAt < 1400
-    ) {
-      return;
-    }
-    audioEngine.unlockAudio();
-    if (frameBase64) {
-      this.sendVideoFrame(frameBase64);
-    }
-    const reason = meta?.reason || "scene_change";
-    if (this.isDirectGoogle) {
-      this.sendImmediateText(
-        reason === "dance_or_motion"
-          ? "Noticeable dancing or hand gestures detected live! React naturally in 1-2 short sentences to the movement visible right now."
-          : "Look closely at the updated camera frame and honestly describe what changed or what you see right now (only current pixels)."
-      );
-    } else {
-      this.ws.send(
-        JSON.stringify({
-          type: "vision_auto_check",
-          reason,
-          motion_score: meta?.motionScore,
-        })
-      );
-    }
-  }
-
   public sendPageContext(context: Record<string, any>) {
     this.latestPageContext = context;
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected || this.isDirectGoogle) return;
@@ -1304,15 +1197,6 @@ CORE AUTONOMOUS CAPABILITIES:
     this.awaitingNextTurn = false;
     audioEngine.unlockAudio();
     audioEngine.clearAudioQueue();
-
-    // If camera is streaming, grab fresh live frame and send it immediately with the command
-    if (cameraEngine.isStreaming) {
-      const freshFrame = cameraEngine.getLatestFrameBase64();
-      if (freshFrame) {
-        this.sendVideoFrame(freshFrame);
-      }
-      cameraEngine.resetMonitorBaseline();
-    }
 
     const q = text.toLowerCase().trim();
     if (
@@ -1400,15 +1284,6 @@ CORE AUTONOMOUS CAPABILITIES:
     }
   }
 
-  public setCameraActive(active: boolean) {
-    this.cameraActiveState = active;
-    if (this.ws && this.ws.readyState === WebSocket.OPEN && !this.isDirectGoogle) {
-      try {
-        this.ws.send(JSON.stringify({ type: "camera_state", active }));
-      } catch { }
-    }
-  }
-
   public reconnectForAccountSwitch(role: UserHonorificRole) {
     this.currentRole = role;
     this.savedRole = role;
@@ -1426,7 +1301,6 @@ CORE AUTONOMOUS CAPABILITIES:
     this.activeAudioTurnId = null;
     this.audioChunksInTurn = 0;
     this.cancelTtsFallback();
-    this.cameraActiveState = false;
     this.clearTurnWatchdog();
     this.closeExistingSocketOnly();
     audioEngine.stopMicCapture();

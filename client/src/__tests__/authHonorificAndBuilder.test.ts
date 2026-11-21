@@ -262,9 +262,13 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     const coachSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/AICoachConsole.tsx"), "utf-8");
     const combinedVoiceSrc = [audioSrc, socketSrc, voiceMgrSrc, coachSrc].join("\n");
 
+    const layoutSrc = fs.readFileSync(path.join(srcRoot, "agent/AgentLayout.tsx"), "utf-8");
     expect(audioSrc).not.toContain("speechSynthesis.speak(");
     expect(combinedVoiceSrc).not.toMatch(/SpeechSynthesisUtterance|Aoede|Kore|Fenrir|Charon|Donovan|fetchDeepgramMp3|playElevenLabs|speakElevenLabs/i);
-    expect(audioSrc).toContain("dance_or_motion");
+    expect(audioSrc).not.toContain("CameraEngine");
+    expect(audioSrc).not.toContain("startCameraCapture");
+    expect(layoutSrc).not.toContain("toggleCamera");
+    expect(layoutSrc).not.toContain("📷 Cam");
     expect(socketSrc).toContain("reconnectForAccountSwitch");
     expect(socketSrc).toContain("ZERO SYCOPHANCY");
   });

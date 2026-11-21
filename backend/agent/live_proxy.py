@@ -354,19 +354,6 @@ DAS_TOOLS = [
                 ),
             ),
             types.FunctionDeclaration(
-                name="inspect_live_camera_frame",
-                description="Force-sync and inspect the latest live webcam frame telemetry whenever the user asks what they are wearing (exact shirt color), how their hair looks, what they are doing (dancing, hand gestures, objects), or before answering visual questions so you never rely on old memory.",
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "focus": types.Schema(
-                            type="STRING",
-                            description="Visual focus area: 'outfit_color', 'hairstyle', 'dance_or_hands', 'objects', or 'full_scene'"
-                        )
-                    },
-                ),
-            ),
-            types.FunctionDeclaration(
                 name="update_student_profile",
                 description="Directly update the user's live Pathfinder profile fields (cgpa, branch, backlogs, coding, communication, internships, targetRole) on the dashboard and recalculate placement readiness. Always call this when the user asks to set, change, or update their CGPA, branch, backlogs, coding rating, or target role.",
                 parameters=types.Schema(
@@ -545,10 +532,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             "role": user_role,
         })
 
-        camera_active = False
-        explicit_cam_off = False
-        latest_frame_bytes: bytes | None = None
-        latest_frame_at_mono: float = 0.0
         send_lock = asyncio.Lock()
         audio_turn_open = False
         turn_id = 0
@@ -557,7 +540,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         audio_end_mono = 0.0
         pending_response_until_mono = 0.0
         output_tx_in_turn = False
-        last_frame_sent_mono = 0.0
         latest_page_context: dict = {}
         pending_user_text: str | None = None
         fallback_audio_buf = bytearray()
@@ -642,9 +624,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 parts_ctx.append("FocusOnDAS=ON")
             return "[Live Screen Context: " + ", ".join(parts_ctx) + "]"
 
-        def is_valid_jpeg(raw_bytes: bytes | None) -> bool:
-            return bool(raw_bytes and len(raw_bytes) > 128 and raw_bytes[:2] == b"\xff\xd8")
-
         def is_gemini_ws_closed(target_session=None) -> bool:
             s = target_session if target_session is not None else session
             if s is None:
@@ -691,52 +670,10 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             call_id_hint: str,
             active_sess=None,
         ) -> dict:
-            nonlocal last_frame_sent_mono
             args = dict(args or {})
 
             if fc_name == "lookup_factual_info":
                 return await _lookup_factual_info_async(str(args.get("query") or ""))
-
-            if fc_name == "inspect_live_camera_frame":
-                focus = str(args.get("focus") or "full_scene")
-                frame_age_ms = (
-                    round((time.monotonic() - latest_frame_at_mono) * 1000)
-                    if camera_active and latest_frame_at_mono > 0
-                    else None
-                )
-                has_live = bool(camera_active and is_valid_jpeg(latest_frame_bytes))
-                if has_live and latest_frame_bytes is not None and active_sess is not None:
-                    try:
-                        async with send_lock:
-                            await active_sess.send_realtime_input(
-                                video=types.Blob(
-                                    data=latest_frame_bytes,
-                                    mime_type="image/jpeg",
-                                )
-                            )
-                            last_frame_sent_mono = time.monotonic()
-                    except Exception:
-                        pass
-                try:
-                    await websocket.send_json({
-                        "type": "vision_telemetry",
-                        "source": "tool_call",
-                        "focus": focus,
-                        "frame_age_ms": frame_age_ms,
-                        "status": "inspected" if has_live else "camera_off",
-                    })
-                except Exception:
-                    pass
-                return {
-                    "camera_active": has_live,
-                    "focus": focus,
-                    "frame_age_ms": frame_age_ms,
-                    "strict_grounding_rule": (
-                        "Describe ONLY the actual colors (e.g. light green vs blue), hairstyle quality honestly, and live hand/body/dance motion visible in the newly streamed frame right now. Zero fake flattery or memory guesses."
-                        if has_live
-                        else "Camera is currently OFF. Tell the user honestly to click Cam ON."
-                    ),
-                }
 
             if fc_name == "explain_current_screen":
                 topic = (args.get("topic") or "").strip()
@@ -928,19 +865,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 if user_email:
                     ctx_for_chat.setdefault("userEmail", user_email)
 
-                has_live_cam = bool(camera_active and is_valid_jpeg(latest_frame_bytes))
-                frame_b64 = (
-                    base64.b64encode(latest_frame_bytes).decode("utf-8")
-                    if has_live_cam and latest_frame_bytes is not None
-                    else None
-                )
                 prior_hist = list(fallback_history[-8:])
-
-                cam_note = (
-                    "[CAMERA: ON — LIVE FRAME ATTACHED]"
-                    if has_live_cam
-                    else "[CAMERA: OFF — NO LIVE VIDEO; NEVER CLAIM TO SEE USER]"
-                )
                 ctx_note = format_page_context_note()
                 hist_contents = []
                 for h_item in prior_hist[-6:]:
@@ -948,10 +873,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     h_txt = (h_item.get("content") or "").strip()
                     if h_txt:
                         hist_contents.append(types.Content(role=h_role, parts=[types.Part.from_text(text=h_txt)]))
-                user_parts = []
-                if has_live_cam and latest_frame_bytes is not None:
-                    user_parts.append(types.Part.from_bytes(data=latest_frame_bytes, mime_type="image/jpeg"))
-                user_parts.append(types.Part.from_text(text=f"{cam_note}\n{ctx_note}\n{clean_u}".strip()))
+                user_parts = [types.Part.from_text(text=f"{ctx_note}\n{clean_u}".strip())]
                 hist_contents.append(types.Content(role="user", parts=user_parts))
 
                 reply_text = await _run_rest_tool_loop(
@@ -968,8 +890,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         ctx_for_chat.get("activeTab"),
                         ctx_for_chat,
                         False,
-                        frame_b64,
-                        has_live_cam,
+                        None,
+                        False,
                     )
                     reply_text = (reply_raw or "").split("|||")[0].strip()
 
@@ -1023,24 +945,18 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                 wav_bytes = _pcm16_to_wav_bytes(pcm_bytes, sample_rate=SEND_SAMPLE_RATE)
                 hon = _honorific_label(user_role)
-                has_live_cam = bool(camera_active and is_valid_jpeg(latest_frame_bytes))
                 ctx_note = format_page_context_note()
                 prompt_parts = [
                     types.Part.from_bytes(data=wav_bytes, mime_type="audio/wav"),
-                ]
-                if has_live_cam and latest_frame_bytes is not None:
-                    prompt_parts.append(types.Part.from_bytes(data=latest_frame_bytes, mime_type="image/jpeg"))
-                prompt_parts.append(
                     types.Part.from_text(
                         text=(
                             f"Address the speaker strictly as '{hon}'. "
                             f"Listen carefully to the audio (English, Telugu, Tenglish, or Hindi). "
                             f"If the user asks to navigate Pathfinder, practice coding or run programs in the Online Compiler, search Google, or open websites, ALWAYS invoke the matching tool(s) first and explain the real result concisely. "
-                            f"{'Camera is ON and a live frame is attached.' if has_live_cam else 'Camera is OFF; never claim to see the user.'} "
                             f"{ctx_note}"
                         )
-                    )
-                )
+                    ),
+                ]
 
                 reply_text = await _run_rest_tool_loop(
                     [types.Content(role="user", parts=prompt_parts)],
@@ -1176,26 +1092,12 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     await _deliver_fallback_turn(pending_user_text if is_user_text and pending_user_text else prompt_text)
                 return
 
-            has_live_cam = bool(camera_active and is_valid_jpeg(latest_frame_bytes))
-            cam_marker = (
-                "[CAMERA: ON — LIVE VIDEO ATTACHED]"
-                if has_live_cam
-                else "[CAMERA: OFF — NO LIVE VIDEO ATTACHED; STRICTLY NEVER CLAIM TO SEE BOSS OR ANY PERSON SITTING THERE]"
-            )
-            final_text = f"{cam_marker}\n{prompt_text}"
+            final_text = prompt_text
             if include_screen_ctx:
                 ctx_note = format_page_context_note()
                 if ctx_note:
-                    final_text = f"{cam_marker}\n{ctx_note}\n{prompt_text}"
-            parts = []
-            if has_live_cam and latest_frame_bytes is not None:
-                parts.append(
-                    types.Part.from_bytes(
-                        data=latest_frame_bytes,
-                        mime_type="image/jpeg",
-                    )
-                )
-            parts.append(types.Part.from_text(text=final_text))
+                    final_text = f"{ctx_note}\n{prompt_text}"
+            parts = [types.Part.from_text(text=final_text)]
             try:
                 async with send_lock:
                     if audio_turn_open:
@@ -1218,7 +1120,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 raise send_err
 
         async def receive_from_browser():
-            nonlocal latest_frame_bytes, latest_frame_at_mono, camera_active, explicit_cam_off, audio_turn_open, last_frame_sent_mono, latest_page_context, pending_response_until_mono, pending_user_text, user_role, config, last_activity_mono, fallback_audio_active, hi_greeting_count, turn_id, completed_turn_id
+            nonlocal audio_turn_open, latest_page_context, pending_response_until_mono, pending_user_text, user_role, config, last_activity_mono, fallback_audio_active, hi_greeting_count, turn_id, completed_turn_id
             try:
                 while True:
                     raw = await websocket.receive_text()
@@ -1230,7 +1132,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         await websocket.send_json({"type": "pong"})
                         continue
 
-                    # 1a. Proactive Warmup when user clicks Speak or Cam
+                    # 1a. Proactive Warmup when user clicks Speak
                     if msg_type == "warmup":
                         last_activity_mono = time.monotonic()
                         t_w = asyncio.create_task(ensure_live_session())
@@ -1238,7 +1140,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         t_w.add_done_callback(fallback_tasks.discard)
                         continue
 
-                    # 1b. Real two-way Client Tool / Chrome Extension Result
+                    # 1b. Real two-way Client Tool Result
                     if msg_type == "tool_result":
                         cid = str(msg.get("call_id") or "")
                         fut = pending_tool_futures.pop(cid, None)
@@ -1264,27 +1166,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                             fallback_audio_buf.extend(pcm_bytes)
                                         continue
 
-                                    was_open = audio_turn_open
                                     audio_turn_open = True
-                                    now_mono = time.monotonic()
                                     try:
                                         async with send_lock:
-                                            if (
-                                                not was_open
-                                                and camera_active
-                                                and is_valid_jpeg(latest_frame_bytes)
-                                                and (now_mono - last_frame_sent_mono >= 0.25)
-                                            ):
-                                                last_frame_sent_mono = now_mono
-                                                try:
-                                                    await active_sess.send_realtime_input(
-                                                        video=types.Blob(
-                                                            data=latest_frame_bytes,
-                                                            mime_type="image/jpeg",
-                                                        )
-                                                    )
-                                                except Exception:
-                                                    pass
                                             await active_sess.send_realtime_input(
                                                 audio=types.Blob(
                                                     data=pcm_bytes,
@@ -1318,64 +1202,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             except Exception:
                                 pass
 
-                    # 2b. Explicit Camera State Sync from Browser (clears stale frames immediately on Cam OFF)
-                    elif msg_type == "camera_state":
-                        new_cam = bool(msg.get("active"))
-                        was_off = not camera_active
-                        camera_active = new_cam
-                        explicit_cam_off = not new_cam
-                        if not camera_active:
-                            latest_frame_bytes = None
-                            latest_frame_at_mono = 0.0
-                            last_frame_sent_mono = 0.0
-                        elif was_off and not is_turn_busy() and session is not None and not is_gemini_ws_closed(session):
-                            try:
-                                async with send_lock:
-                                    await session.send_client_content(
-                                        turns=[
-                                            types.Content(
-                                                parts=[
-                                                    types.Part.from_text(
-                                                        text="[SYSTEM CAMERA STATE SYNC: CAMERA IS NOW ON. Live video frames are actively streaming. Answer upcoming visual questions directly from the newest frame pixels ONLY — forget all older outfit colors or offline camera states.]"
-                                                    )
-                                                ],
-                                                role="user",
-                                            )
-                                        ],
-                                        turn_complete=False,
-                                    )
-                            except Exception:
-                                pass
-
-                    # 3. Live Camera Video Frame from Browser (stores locally for both Live and REST Vision)
-                    elif msg_type == "frame":
-                        if msg.get("active") is True:
-                            camera_active = True
-                            explicit_cam_off = False
-                        if not camera_active or explicit_cam_off:
-                            continue
-                        frame_str = msg.get("jpeg_base64")
-                        if frame_str:
-                            try:
-                                candidate = base64.b64decode(frame_str)
-                                if is_valid_jpeg(candidate):
-                                    latest_frame_bytes = candidate
-                                    now_mono = time.monotonic()
-                                    latest_frame_at_mono = now_mono
-                                    if session is not None and not is_gemini_ws_closed(session):
-                                        min_gap = 0.85 if is_turn_busy() else 0.42
-                                        if (now_mono - last_frame_sent_mono >= min_gap) and not send_lock.locked():
-                                            last_frame_sent_mono = now_mono
-                                            async with send_lock:
-                                                await session.send_realtime_input(
-                                                    video=types.Blob(
-                                                        data=candidate,
-                                                        mime_type="image/jpeg",
-                                                    )
-                                                )
-                            except Exception as f_err:
-                                live_logger.warning(f"[Frame Process Notice] {f_err}")
-
                     # 3a-bis. Silent Live UI / Slide Context Sync (Zero interruption to audio)
                     elif msg_type == "page_context":
                         ctx_data = msg.get("context")
@@ -1395,76 +1221,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             )
                             await send_vision_prompt(hint_prompt, include_screen_ctx=False)
 
-                    # 3b. Proactive Initial Camera Greeting (never interrupts an active greeting mid-sentence)
-                    elif msg_type == "vision_greet":
-                        if not camera_active:
-                            continue
-                        role_now = (msg.get("role") or user_role or "stranger").lower().strip()
-                        if is_owner:
-                            role_now = "boss"
-                        elif is_guest or role_now in ("stranger", "guest"):
-                            role_now = "stranger"
-                        waited = 0.0
-                        while is_turn_busy() and waited < 3.5:
-                            await asyncio.sleep(0.25)
-                            waited += 0.25
-                        if camera_active and is_valid_jpeg(latest_frame_bytes):
-                            if role_now == "boss":
-                                greet_prompt = (
-                                    "SYSTEM VISION GREET: Camera just turned ON! Look closely at the attached live camera frame. "
-                                    "If you see your creator Bommali Dileep, greet him immediately and warmly like 'Boss, I see you, Dileep!' "
-                                    "and concisely describe what he is wearing, holding, or doing right now in 1-2 natural sentences."
-                                )
-                            elif role_now in ("madam", "mam", "ma'am"):
-                                greet_prompt = (
-                                    "SYSTEM VISION GREET: Camera just turned ON! Look closely at the attached live frame. "
-                                    "Greet her respectfully as Madam ('Hi Madam! I can see you clearly!') and briefly note how she looks or what she is holding/doing."
-                                )
-                            elif role_now == "stranger":
-                                greet_prompt = (
-                                    "SYSTEM VISION GREET: Camera just turned ON! Look closely at the attached live frame. "
-                                    "Greet the visitor politely as Stranger ('Hi stranger, tell me your name first — I can see you clearly!') and briefly note what they look like or are holding."
-                                )
-                            else:
-                                greet_prompt = (
-                                    "SYSTEM VISION GREET: Camera just turned ON! Look closely at the attached live frame. "
-                                    "Greet him respectfully as Sir ('Hi Sir! I can see you clearly!') and briefly note how he looks or what he is holding/doing."
-                                )
-                            await send_vision_prompt(greet_prompt)
-
-                    # 3c. 24/7 Proactive Scene / Object / Dance / Gesture Announcement (NEVER interrupts active playback!)
-                    elif msg_type == "vision_auto_check":
-                        if not camera_active or is_turn_busy() or audio_turn_open:
-                            continue
-                        reason = (msg.get("reason") or "scene_change").strip()
-                        motion_score = msg.get("motion_score")
-                        if camera_active and is_valid_jpeg(latest_frame_bytes):
-                            if reason == "dance_or_motion":
-                                auto_prompt = (
-                                    f"SYSTEM LIVE MOTION & DANCE MONITOR (motion_score={motion_score}): "
-                                    "Noticeable active movement, dancing, or hand dancing/waving was just detected in front of the camera! "
-                                    "Look closely at the attached live frame(s) and react naturally right now in 1-2 crisp, observant sentences "
-                                    "about what hands/body movement or dance pose you literally see (only describe current pixels, never guess older outfits!)."
-                                )
-                            else:
-                                auto_prompt = (
-                                    "SYSTEM 24/7 AUTO-VISION MONITOR: The scene or object in front of the camera just changed. "
-                                    "Inspect the attached live frame carefully across outfit colors, hair, hands, and foreground objects "
-                                    "and describe ONLY what changed or what you see right now in 1-2 honest, direct sentences (never repeat old blue-shirt memory!)."
-                                )
-                            await send_vision_prompt(auto_prompt)
-                            try:
-                                await websocket.send_json({
-                                    "type": "vision_telemetry",
-                                    "source": "auto_monitor",
-                                    "reason": reason,
-                                    "motion_score": motion_score,
-                                    "status": "inspected",
-                                })
-                            except Exception:
-                                pass
-
-                    # 4. Text Input from HUD (Injects latest camera frame if camera is on!)
+                    # 4. Text Input from HUD
                     elif msg_type == "text":
                         text = (msg.get("text") or "").strip()
                         if text:
@@ -1610,7 +1367,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 live_logger.warning(f"[Browser Receive Notice] {b_err}")
 
         async def receive_from_gemini(active_sess):
-            nonlocal audio_turn_open, turn_id, completed_turn_id, gemini_turn_active, audio_end_mono, pending_response_until_mono, output_tx_in_turn, pending_user_text, last_activity_mono, last_frame_sent_mono, live_quota_cooldown_until
+            nonlocal audio_turn_open, turn_id, completed_turn_id, gemini_turn_active, audio_end_mono, pending_response_until_mono, output_tx_in_turn, pending_user_text, last_activity_mono, live_quota_cooldown_until
             pcm_coalesce_buf = bytearray()
             pcm_coalesce_turn_id = 0
             pcm_bytes_in_turn = 0
@@ -1806,7 +1563,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 while websocket.client_state != WebSocketState.DISCONNECTED:
                     await asyncio.sleep(10.0)
                     if session is not None and not is_turn_busy() and not audio_turn_open:
-                        idle_limit = 100.0 if camera_active else 65.0
+                        idle_limit = 65.0
                         if time.monotonic() - last_activity_mono >= idle_limit:
                             live_logger.info("[DAS Live Proxy] Releasing idle upstream Gemini Live slot (browser stays ONLINE).")
                             await close_live_session(session)

@@ -82,4 +82,22 @@ describe("Real Phonetic Viseme & Acoustic Lip-Sync Engine", () => {
     expect(VISEME_PRESETS.SIL.pucker).toBe(0);
     expect(VISEME_PRESETS.SIL.funnel).toBe(0);
   });
+
+  it("separates rounded F2-low formants (~1000 Hz OO) from spread F2-high formants (~2400 Hz EE)", () => {
+    const fftSize = 1024;
+    const sr = 48000;
+    const timeBuf = new Uint8Array(fftSize).fill(140);
+
+    // Bin ~46.875 Hz -> 950-1150 Hz = bins 20..25 (rounded OO)
+    const ooFreq = new Uint8Array(fftSize / 2);
+    ooFreq.fill(220, 20, 26);
+    const ooRes = analyzeAcousticFrame(timeBuf, ooFreq, sr, fftSize);
+    expect(ooRes.f2Low).toBeGreaterThan(ooRes.f2High * 3);
+
+    // 2000-2600 Hz = bins 43..55 (spread EE)
+    const eeFreq = new Uint8Array(fftSize / 2);
+    eeFreq.fill(220, 43, 56);
+    const eeRes = analyzeAcousticFrame(timeBuf, eeFreq, sr, fftSize);
+    expect(eeRes.f2High).toBeGreaterThan(eeRes.f2Low * 3);
+  });
 });

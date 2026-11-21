@@ -915,7 +915,7 @@ class AudioEngine {
       }
       this.analyser = this.audioCtx.createAnalyser();
       this.analyser.fftSize = 1024;
-      this.analyser.smoothingTimeConstant = 0.28;
+      this.analyser.smoothingTimeConstant = 0.18;
       this.masterGain = this.audioCtx.createGain();
       this.masterGain.gain.value = 1.0;
       this.analyser.connect(this.masterGain);
@@ -1032,9 +1032,22 @@ class AudioEngine {
     return this.getSpeechFormants().volume;
   }
 
+  public updateLiveTranscript(fullText: string) {
+    const clean = (fullText || "").trim();
+    if (!clean) {
+      this.liveTranscriptText = "";
+      this.liveVisemeTimeline = null;
+      return;
+    }
+    if (clean !== this.liveTranscriptText) {
+      this.liveTranscriptText = clean;
+      this.liveVisemeTimeline = buildVisemeTimeline(clean);
+    }
+  }
+
   /**
-   * Returns instantaneous syllable amplitude, zero-crossing rate (ZCR), vocal formant bands,
-   * and optional audio-locked phonetic viseme weights when whole-clip text is active.
+   * Returns instantaneous syllable amplitude, zero-crossing rate (ZCR), vocal formant bands (including F2 low/high),
+   * and audio-locked phonetic viseme weights for both whole-clip TTS and live streaming PCM turns.
    */
   public getSpeechFormants(): {
     volume: number;
@@ -1042,25 +1055,31 @@ class AudioEngine {
     mid: number;
     high: number;
     zcr: number;
+    f2Low: number;
+    f2High: number;
     isSpeaking: boolean;
     viseme?: VisemeWeights | null;
   } {
     const speakerFallback = () => {
       const sv = speaker.getSpeechViseme();
       if (sv) {
+        const lowVal = sv.weights.pucker + sv.weights.jawOpen * 0.6;
+        const midVal = sv.weights.stretch + sv.weights.upperUp * 0.5;
         return {
           volume: sv.volume,
-          low: sv.weights.pucker + sv.weights.jawOpen * 0.6,
-          mid: sv.weights.stretch + sv.weights.upperUp * 0.5,
+          low: lowVal,
+          mid: midVal,
           high: sv.weights.funnel * 0.5 + (sv.weights.stretch > 0.3 ? 0.2 : 0),
           zcr: 0.08,
+          f2Low: sv.weights.pucker * 0.8 + sv.weights.funnel * 0.4,
+          f2High: sv.weights.stretch * 0.8 + sv.weights.smile * 0.3,
           isSpeaking: true,
           viseme: sv.weights,
         };
       }
       const spk = speaker.level();
       if (spk <= 0.01) {
-        return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, isSpeaking: false, viseme: null };
+        return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, f2Low: 0, f2High: 0, isSpeaking: false, viseme: null };
       }
       return {
         volume: Math.min(1, spk * 1.4),
@@ -1068,6 +1087,8 @@ class AudioEngine {
         mid: spk * 0.75,
         high: spk * 0.35,
         zcr: 0.08,
+        f2Low: spk * 0.5,
+        f2High: spk * 0.5,
         isSpeaking: true,
         viseme: null,
       };
@@ -1088,7 +1109,7 @@ class AudioEngine {
 
     this.analyser.getByteTimeDomainData(this.timeData as any);
     this.analyser.getByteFrequencyData(this.freqData as any);
-    const { rms, zcr, low, mid, high } = analyzeAcousticFrame(
+    const { rms, zcr, low, mid, high, f2Low, f2High } = analyzeAcousticFrame(
       this.timeData,
       this.freqData,
       this.audioCtx.sampleRate || 48000,
@@ -1102,20 +1123,32 @@ class AudioEngine {
     // Genuine pause / silence inside an active turn -> close lips cleanly instead of holding an open mouth
     if (rms < 0.0075) {
       if (activePlayback) {
-        return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, isSpeaking: true, viseme: null };
+        return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, f2Low: 0, f2High: 0, isSpeaking: true, viseme: null };
       }
       return speakerFallback();
     }
 
-    const volume = Math.min(1.0, Math.pow(Math.max(0.0, (rms - 0.007) * 5.2), 0.78));
+    const volume = Math.min(1.0, Math.pow(Math.max(0.0, (rms - 0.006) * 5.8), 0.72));
     let viseme: VisemeWeights | null = null;
     if (this.wholePcmSource && this.ttsTimeline && this.ttsDurationMs > 0) {
       const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
       const frac = Math.max(0, Math.min(1, (nowPerf - this.ttsStartPerfMs) / this.ttsDurationMs));
       viseme = this.ttsTimeline.sampleAtFraction(frac);
+    } else if (
+      this.liveVisemeTimeline &&
+      this.audioCtx &&
+      this.liveAudioEndCtxSec > this.liveAudioStartCtxSec
+    ) {
+      const elapsedSec = Math.max(0, this.audioCtx.currentTime - this.liveAudioStartCtxSec);
+      const totalSec = Math.max(
+        this.liveAudioEndCtxSec - this.liveAudioStartCtxSec,
+        this.liveTranscriptText.length * 0.056,
+        0.35
+      );
+      viseme = this.liveVisemeTimeline.sampleAtFraction(Math.min(1, elapsedSec / totalSec));
     }
 
-    return { volume, low, mid, high, zcr, isSpeaking: true, viseme };
+    return { volume, low, mid, high, zcr, f2Low, f2High, isSpeaking: true, viseme };
   }
 
   private decodeBase64Pcm16(base64Pcm: string): Float32Array | null {
@@ -1474,6 +1507,7 @@ class AudioEngine {
         float32Data[i] *= i / Math.max(1, rampSamples);
       }
       this.nextPlayTime = currentTime + (this.activeSources.length === 0 ? 0.08 : 0.03);
+      this.liveAudioStartCtxSec = this.nextPlayTime;
     }
 
     const audioBuffer = this.audioCtx.createBuffer(1, float32Data.length, rate);
@@ -1486,6 +1520,7 @@ class AudioEngine {
     const startAt = this.nextPlayTime;
     source.start(startAt);
     this.nextPlayTime = startAt + audioBuffer.duration;
+    this.liveAudioEndCtxSec = this.nextPlayTime;
     this.activeSources.push(source);
 
     const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -1498,6 +1533,8 @@ class AudioEngine {
       if (this.activeSources.length === 0) {
         this.activeTurnMode = null;
         this.playingUntilPerfMs = 0;
+        this.liveAudioStartCtxSec = 0;
+        this.liveAudioEndCtxSec = 0;
       }
       this.notifySpeakingListeners();
     };
@@ -1542,6 +1579,10 @@ class AudioEngine {
     this.wholePcmSource = null;
     this.ttsTimeline = null;
     this.ttsDurationMs = 0;
+    this.liveTranscriptText = "";
+    this.liveVisemeTimeline = null;
+    this.liveAudioStartCtxSec = 0;
+    this.liveAudioEndCtxSec = 0;
     if (prevWhole) {
       prevWhole.onended = null;
       try {
@@ -2012,353 +2053,6 @@ class AudioEngine {
   }
 }
 
-export interface LiveMotionMetrics {
-  motionScore: number;
-  activeMotion: boolean;
-  label: string;
-  resolution: string;
-  fps: number;
-}
-
-export class CameraEngine {
-  private videoStream: MediaStream | null = null;
-  private intervalId: any = null;
-  public videoEl: HTMLVideoElement | null = null;
-  private ownedVideoEl: boolean = false;
-  private canvasEl: HTMLCanvasElement | null = null;
-  private lumaCanvas: HTMLCanvasElement | null = null;
-  private prevLuma: Uint8Array | null = null;
-  private baselineLuma: Uint8Array | null = null;
-  private firstFrameNotified: boolean = false;
-  private settleCount: number = 0;
-  private activeMotionStreak: number = 0;
-  private lastAnnounceAt: number = 0;
-  private lastMetricsEmitAt: number = 0;
-  private lastFrameBase64: string | null = null;
-  public activeResolution: string = "";
-
-  public async listVideoDevices(): Promise<MediaDeviceOption[]> {
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) {
-      return [];
-    }
-    const all = await navigator.mediaDevices.enumerateDevices();
-    return all
-      .filter((d) => d.kind === "videoinput")
-      .map((d, idx) => ({
-        deviceId: d.deviceId,
-        label: d.label || `Camera ${idx + 1}`,
-        kind: d.kind,
-      }));
-  }
-
-  public attachPreviewElement(previewEl: HTMLVideoElement | null) {
-    if (!previewEl || !this.videoStream) return;
-    if (previewEl.srcObject !== this.videoStream) {
-      previewEl.muted = true;
-      previewEl.autoplay = true;
-      previewEl.playsInline = true;
-      previewEl.srcObject = this.videoStream;
-      previewEl.play().catch(() => {});
-    }
-    if (this.ownedVideoEl && this.videoEl && this.videoEl !== previewEl) {
-      if (this.videoEl.parentNode) this.videoEl.parentNode.removeChild(this.videoEl);
-      this.ownedVideoEl = false;
-    }
-    this.videoEl = previewEl;
-  }
-
-  private sampleLumaGrid(): { grid: Uint8Array; mean: number } | null {
-    if (!this.videoEl || this.videoEl.readyState < 2) return null;
-    if (!this.lumaCanvas) {
-      this.lumaCanvas = document.createElement("canvas");
-      this.lumaCanvas.width = 24;
-      this.lumaCanvas.height = 18;
-    }
-    const lctx = this.lumaCanvas.getContext("2d", { willReadFrequently: true });
-    if (!lctx) return null;
-    lctx.drawImage(this.videoEl, 0, 0, 24, 18);
-    const data = lctx.getImageData(0, 0, 24, 18).data;
-    const grid = new Uint8Array(24 * 18);
-    let total = 0;
-    for (let i = 0, p = 0; i < grid.length; i++, p += 4) {
-      const y = (data[p] * 77 + data[p + 1] * 150 + data[p + 2] * 29) >> 8;
-      grid[i] = y;
-      total += y;
-    }
-    return { grid, mean: total / grid.length };
-  }
-
-  private gridDiff(a: Uint8Array | null, b: Uint8Array): number {
-    if (!a || a.length !== b.length) return 1.0;
-    let diff = 0;
-    for (let i = 0; i < b.length; i++) {
-      diff += Math.abs(a[i] - b[i]);
-    }
-    return diff / (b.length * 255);
-  }
-
-  public resetMonitorBaseline() {
-    const sample = this.sampleLumaGrid();
-    if (sample) {
-      this.baselineLuma = sample.grid;
-      this.prevLuma = sample.grid;
-    }
-    this.settleCount = 0;
-    this.lastAnnounceAt = Date.now();
-  }
-
-  private captureCanvasFrame(quality: number, maxWidth = 640): string | null {
-    if (!this.videoEl || !this.canvasEl) return this.lastFrameBase64;
-    if (this.videoEl.readyState < 2) return this.lastFrameBase64;
-    const vw = this.videoEl.videoWidth || 1280;
-    const vh = this.videoEl.videoHeight || 720;
-    const scale = vw > maxWidth ? maxWidth / vw : 1;
-    const cw = Math.max(320, Math.round(vw * scale));
-    const ch = Math.max(240, Math.round(vh * scale));
-    if (this.canvasEl.width !== cw || this.canvasEl.height !== ch) {
-      this.canvasEl.width = cw;
-      this.canvasEl.height = ch;
-    }
-    this.activeResolution = `${vw}x${vh}`;
-    const ctx = this.canvasEl.getContext("2d");
-    if (!ctx) return this.lastFrameBase64;
-    ctx.drawImage(this.videoEl, 0, 0, cw, ch);
-    const dataUrl = this.canvasEl.toDataURL("image/jpeg", quality);
-    const commaIdx = dataUrl.indexOf(",");
-    if (commaIdx !== -1) {
-      const b64 = dataUrl.substring(commaIdx + 1);
-      this.lastFrameBase64 = b64;
-      return b64;
-    }
-    return this.lastFrameBase64;
-  }
-
-  public async startCameraCapture(
-    onFrame: (base64Jpeg: string) => void,
-    fps = 2.0,
-    options?: {
-      previewEl?: HTMLVideoElement | null;
-      deviceId?: string;
-      onFirstFrame?: () => void;
-      onSceneChanged?: (
-        base64Jpeg: string,
-        meta?: { reason: "dance_or_motion" | "scene_change"; motionScore: number }
-      ) => void;
-      onMotionMetrics?: (metrics: LiveMotionMetrics) => void;
-      shouldPauseMonitor?: () => boolean;
-    }
-  ): Promise<boolean> {
-    try {
-      this.stopCameraCapture();
-      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-        return false;
-      }
-
-      const videoConstraints: MediaTrackConstraints = {
-        width: { ideal: 640 },
-        height: { ideal: 360 },
-        frameRate: { ideal: 15, max: 30 },
-        ...(options?.deviceId
-          ? { deviceId: { ideal: options.deviceId } }
-          : { facingMode: "user" }),
-      };
-
-      try {
-        this.videoStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
-      } catch {
-        this.videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      }
-
-      if (options?.previewEl) {
-        this.videoEl = options.previewEl;
-        this.ownedVideoEl = false;
-      } else {
-        this.videoEl = document.createElement("video");
-        this.ownedVideoEl = true;
-        this.videoEl.style.position = "fixed";
-        this.videoEl.style.bottom = "4px";
-        this.videoEl.style.left = "4px";
-        this.videoEl.style.width = "160px";
-        this.videoEl.style.height = "90px";
-        this.videoEl.style.opacity = "0.01";
-        this.videoEl.style.pointerEvents = "none";
-        this.videoEl.style.zIndex = "0";
-        document.body.appendChild(this.videoEl);
-      }
-
-      this.videoEl.muted = true;
-      this.videoEl.autoplay = true;
-      this.videoEl.playsInline = true;
-      this.videoEl.setAttribute("playsinline", "true");
-      this.videoEl.setAttribute("webkit-playsinline", "true");
-      this.videoEl.srcObject = this.videoStream;
-
-      await new Promise<void>((resolve) => {
-        if (!this.videoEl) return resolve();
-        if (this.videoEl.readyState >= 1) return resolve();
-        const timer = window.setTimeout(resolve, 1500);
-        this.videoEl.onloadedmetadata = () => {
-          clearTimeout(timer);
-          resolve();
-        };
-      });
-      await this.videoEl.play().catch(() => {});
-
-      this.canvasEl = document.createElement("canvas");
-      this.canvasEl.width = 720;
-      this.canvasEl.height = 405;
-      this.firstFrameNotified = false;
-      this.prevLuma = null;
-      this.baselineLuma = null;
-      this.settleCount = 0;
-      this.activeMotionStreak = 0;
-      this.lastAnnounceAt = Date.now();
-      this.lastMetricsEmitAt = 0;
-
-      const pushFrame = () => {
-        const b64 = this.captureCanvasFrame(0.72, 640);
-        if (!b64) return;
-        onFrame(b64);
-
-        const luma = this.sampleLumaGrid();
-        if (!luma || luma.mean < 6) return;
-
-        if (!this.firstFrameNotified) {
-          this.firstFrameNotified = true;
-          this.baselineLuma = luma.grid;
-          this.prevLuma = luma.grid;
-          this.lastAnnounceAt = Date.now();
-          options?.onMotionMetrics?.({
-            motionScore: 0,
-            activeMotion: false,
-            label: "Live Feed Clear",
-            resolution: this.activeResolution || "640x360",
-            fps,
-          });
-          options?.onFirstFrame?.();
-          return;
-        }
-
-        const frameDiff = this.gridDiff(this.prevLuma, luma.grid);
-        const sceneDelta = this.gridDiff(this.baselineLuma, luma.grid);
-        this.prevLuma = luma.grid;
-
-        const motionScore = Math.min(100, Math.round(frameDiff * 900));
-        const isActiveMotion = frameDiff >= 0.030;
-        const now = Date.now();
-
-        if (options?.onMotionMetrics && now - this.lastMetricsEmitAt >= 240) {
-          this.lastMetricsEmitAt = now;
-          options.onMotionMetrics({
-            motionScore,
-            activeMotion: isActiveMotion,
-            label:
-              frameDiff >= 0.055
-                ? "Dancing / Active Motion"
-                : isActiveMotion
-                  ? "Hand / Body Gesture"
-                  : "Live Feed Clear",
-            resolution: this.activeResolution || "640x360",
-            fps,
-          });
-        }
-
-        const cooledDown = now - this.lastAnnounceAt >= 6000;
-        const paused = options?.shouldPauseMonitor?.() ?? false;
-        if (!cooledDown || paused) {
-          this.settleCount = 0;
-          this.activeMotionStreak = 0;
-          return;
-        }
-
-        if (isActiveMotion) {
-          this.activeMotionStreak += 1;
-          this.settleCount = 0;
-          if (this.activeMotionStreak >= 2) {
-            this.baselineLuma = luma.grid;
-            this.activeMotionStreak = 0;
-            this.lastAnnounceAt = now;
-            const hdB64 = this.captureCanvasFrame(0.82, 720) || b64;
-            options?.onSceneChanged?.(hdB64, {
-              reason: "dance_or_motion",
-              motionScore,
-            });
-            return;
-          }
-        } else {
-          this.activeMotionStreak = 0;
-        }
-
-        if (sceneDelta >= 0.055 && frameDiff <= 0.045) {
-          this.settleCount += 1;
-          if (this.settleCount >= 1) {
-            this.baselineLuma = luma.grid;
-            this.settleCount = 0;
-            this.lastAnnounceAt = now;
-            const hdB64 = this.captureCanvasFrame(0.82, 720) || b64;
-            options?.onSceneChanged?.(hdB64, {
-              reason: "scene_change",
-              motionScore,
-            });
-          }
-        } else {
-          this.settleCount = 0;
-        }
-      };
-
-      window.setTimeout(pushFrame, 180);
-      this.intervalId = setInterval(pushFrame, Math.round(1000 / Math.max(0.5, fps)));
-      return true;
-    } catch (e) {
-      console.warn("Camera access denied or failed:", e);
-      this.stopCameraCapture();
-      return false;
-    }
-  }
-
-  public getLatestFrameBase64(): string | null {
-    try {
-      return this.captureCanvasFrame(0.82, 720);
-    } catch {
-      return this.lastFrameBase64;
-    }
-  }
-
-  public stopCameraCapture() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
-    if (this.videoStream) {
-      this.videoStream.getTracks().forEach((t) => t.stop());
-      this.videoStream = null;
-    }
-    if (this.videoEl) {
-      this.videoEl.srcObject = null;
-      if (this.ownedVideoEl && this.videoEl.parentNode) {
-        this.videoEl.parentNode.removeChild(this.videoEl);
-      }
-      this.videoEl = null;
-      this.ownedVideoEl = false;
-    }
-    this.canvasEl = null;
-    this.lumaCanvas = null;
-    this.prevLuma = null;
-    this.baselineLuma = null;
-    this.firstFrameNotified = false;
-    this.settleCount = 0;
-    this.activeMotionStreak = 0;
-    this.lastMetricsEmitAt = 0;
-    this.lastFrameBase64 = null;
-    this.activeResolution = "";
-  }
-
-  public get isStreaming(): boolean {
-    return this.videoStream !== null;
-  }
-}
-
-export const cameraEngine = new CameraEngine();
 export const audioEngine = new AudioEngine();
 clearAudioEngineHook = () => audioEngine.clearAudioQueue();
 audioEngineSpeakingHook = () => audioEngine.isSpeaking();
@@ -2369,8 +2063,8 @@ export function getLiveAudioVolume(): number {
 
 /**
  * Unifies live WebAudio PCM output (Gemini Live / Puck TTS) into normalized 60fps vocal
- * formants + phonetic visemes so 3D hologram lip-sync opens, rounds, widens, and closes
- * in exact sync with Puck speech.
+ * formants (including F2 low/high) + phonetic visemes so 3D hologram lip-sync opens, rounds,
+ * widens, and closes in exact sync with Puck speech.
  */
 export function getUnifiedSpeechFormants(_nowSec?: number): {
   volume: number;
@@ -2378,6 +2072,8 @@ export function getUnifiedSpeechFormants(_nowSec?: number): {
   mid: number;
   high: number;
   zcr: number;
+  f2Low: number;
+  f2High: number;
   isSpeaking: boolean;
   viseme?: VisemeWeights | null;
 } {
@@ -2389,10 +2085,22 @@ export function getUnifiedSpeechFormants(_nowSec?: number): {
       mid: f.mid,
       high: f.high,
       zcr: f.zcr,
+      f2Low: f.f2Low,
+      f2High: f.f2High,
       isSpeaking: true,
       viseme: f.viseme ?? null,
     };
   }
 
-  return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, isSpeaking: false, viseme: null };
+  return {
+    volume: 0,
+    low: 0,
+    mid: 0,
+    high: 0,
+    zcr: 0,
+    f2Low: 0,
+    f2High: 0,
+    isSpeaking: false,
+    viseme: null,
+  };
 }

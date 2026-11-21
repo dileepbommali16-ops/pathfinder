@@ -12,7 +12,7 @@ import {
   formatNumberedCode,
   CodingStudioActionArgs,
 } from "./codingStudioController";
-import { audioEngine, cameraEngine, speaker, MediaDeviceOption, LiveMotionMetrics } from "./audioIO";
+import { audioEngine, speaker } from "./audioIO";
 import { CodeTaskPayload, tryExecuteClientAutomationIntent } from "./toolRunner";
 import { API_BASE, getSessionId } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
@@ -60,7 +60,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [connected, setConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
-  const [cameraActive, setCameraActive] = useState(false);
   const [role, setRole] = useState<UserHonorificRole>(() => getHonorificKey());
   const [inputText, setInputText] = useState("");
   const [transcript, setTranscript] = useState(() => getInitialGreeting(getHonorificKey()));
@@ -68,20 +67,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [micSilentWarning, setMicSilentWarning] = useState(false);
   const [micHealthHint, setMicHealthHint] = useState("");
   const [activeMicLabel, setActiveMicLabel] = useState("");
-  const [videoDevices, setVideoDevices] = useState<MediaDeviceOption[]>([]);
-  const [selectedCameraId, setSelectedCameraId] = useState("");
-  const [mirrorCamera, setMirrorCamera] = useState(true);
-  const [minimizedCamPreview, setMinimizedCamPreview] = useState(false);
-  const [expandedCamPreview, setExpandedCamPreview] = useState(false);
-  const [camMotion, setCamMotion] = useState<LiveMotionMetrics>({
-    motionScore: 0,
-    activeMotion: false,
-    label: "Live Feed Clear",
-    resolution: "640x360",
-    fps: 2,
-  });
-  const [visionStatusNote, setVisionStatusNote] = useState("2.0 FPS Synced");
-  const cameraPreviewRef = useRef<HTMLVideoElement>(null);
   const micBarRef = useRef<HTMLDivElement>(null);
   const micSilentRef = useRef(false);
   const selectedMicIdRef = useRef("");
@@ -95,7 +80,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const spokenGreetingKeyRef = useRef<string>("");
   const hiGreetCountRef = useRef<number>(0);
   const micBusyRef = useRef<boolean>(false);
-  const camBusyRef = useRef<boolean>(false);
   const speechRecRef = useRef<any>(null);
   const chatHistoryRef = useRef<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const transcriptRef = useRef<string>(transcript);
@@ -227,18 +211,14 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const refreshMediaDevices = async () => {
-    try {
-      const cams = await cameraEngine.listVideoDevices();
-      setVideoDevices(cams);
-    } catch {}
+    void audioEngine.autoSyncOutputDevice();
   };
 
   useEffect(() => {
-    refreshMediaDevices();
+    void refreshMediaDevices();
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.addEventListener) return;
     const onDeviceChange = () => {
-      refreshMediaDevices();
-      audioEngine.autoSyncOutputDevice();
+      void refreshMediaDevices();
     };
     navigator.mediaDevices.addEventListener("devicechange", onDeviceChange);
     return () => {
@@ -277,30 +257,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
     window.addEventListener("das:page-context", onPageContext);
     window.addEventListener("click", onGlobalClick, true);
-    const unsubVision = dasSocket.onVisionTelemetry((telemetry) => {
-      if (telemetry?.status === "inspected") {
-        const tag =
-          telemetry.reason === "dance_or_motion"
-            ? "Motion Seen"
-            : telemetry.focus
-              ? `Inspected: ${telemetry.focus}`
-              : "AI Frame Synced";
-        setVisionStatusNote(tag);
-      }
-    });
     return () => {
       window.removeEventListener("das:page-context", onPageContext);
       window.removeEventListener("click", onGlobalClick, true);
-      unsubVision();
     };
   }, [isAuthenticated, connected]);
-
-  // Strictly NEVER speak automatically on website entry / login — wait until user says 'Hi' or speaks/types!
-  useEffect(() => {
-    if (cameraActive && cameraPreviewRef.current) {
-      cameraEngine.attachPreviewElement(cameraPreviewRef.current);
-    }
-  }, [cameraActive]);
 
   const requestRestCoachReply = async (
     query: string,
@@ -330,8 +291,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           branch: parsedProfile.branch ?? "CSE",
         },
         active_tab: ctx.activeTab || "overview",
-        camera_active: Boolean(cameraEngine.isStreaming),
-        live_frame_base64: cameraEngine.isStreaming ? cameraEngine.getLatestFrameBase64() : null,
         page_context: {
           ...ctx,
           honorific: activeHonorific,
@@ -628,13 +587,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [isAuthenticated]);
 
   // Connect to Gemini Live multimodal agent ONLY when authenticated inside the dashboard
-  // Keep `role` OUT of dependencies so toggling Sir/Madam never disconnects WS or stops camera!
+  // Keep `role` OUT of dependencies so toggling Sir/Madam never disconnects WS!
   useEffect(() => {
     if (!isAuthenticated) {
-      dasSocket.setCameraActive(false);
       dasSocket.disconnect();
-      cameraEngine.stopCameraCapture();
-      setCameraActive(false);
       setMicActive(false);
       return;
     }
@@ -657,9 +613,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => {
       window.removeEventListener("pointerdown", prewarmAudio);
       window.removeEventListener("keydown", prewarmAudio);
-      dasSocket.setCameraActive(false);
       dasSocket.disconnect();
-      cameraEngine.stopCameraCapture();
     };
   }, [isAuthenticated]);
 
@@ -714,10 +668,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     setMicActive(true);
     void refreshMediaDevices();
     void audioEngine.autoSyncOutputDevice();
-    if (cameraEngine.isStreaming) {
-      const snap = cameraEngine.getLatestFrameBase64();
-      if (snap) dasSocket.sendVideoFrame(snap);
-    }
   };
 
   const stopParallelSpeechRec = () => {
@@ -833,83 +783,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const startCameraFeed = async (deviceId?: string) => {
-    setVisionStatusNote("2.0 FPS Synced");
-    return cameraEngine.startCameraCapture(
-      (b64Jpeg) => {
-        dasSocket.sendVideoFrame(b64Jpeg);
-      },
-      2.0,
-      {
-        deviceId: deviceId || undefined,
-        previewEl: cameraPreviewRef.current,
-        onFirstFrame: () => {
-          dasSocket.setCameraActive(true);
-          dasSocket.sendVisionGreet();
-        },
-        onSceneChanged: (hdB64, meta) => {
-          setVisionStatusNote(
-            meta?.reason === "dance_or_motion"
-              ? `Motion React (${meta.motionScore}%)`
-              : "Scene Updated"
-          );
-          dasSocket.sendAutoVisionCheck(hdB64, meta);
-        },
-        onMotionMetrics: (metrics) => {
-          setCamMotion(metrics);
-        },
-        shouldPauseMonitor: () =>
-          dasSocket.isAgentSpeaking || dasSocket.isAwaitingResponse || audioEngine.isSpeaking(),
-      }
-    );
-  };
-
-  const toggleCamera = async (e?: React.MouseEvent<HTMLButtonElement>) => {
-    e?.currentTarget?.blur();
-    if (camBusyRef.current) return;
-    camBusyRef.current = true;
-    try {
-      audioEngine.unlockAudio();
-      void audioEngine.autoSyncOutputDevice();
-
-      if (!cameraActive) {
-        ensureSocketConnected();
-        dasSocket.warmup();
-        setMinimizedCamPreview(false);
-        dasSocket.setCameraActive(true);
-
-        const started = await startCameraFeed(selectedCameraId);
-        if (started) {
-          dasSocket.setCameraActive(true);
-          setCameraActive(true);
-          await refreshMediaDevices();
-          toast.success("24/7 HD Vision active! Show yourself, outfit, or 3+ objects to DAS!");
-        } else {
-          dasSocket.setCameraActive(false);
-          setTranscript("Camera access was denied or is unavailable.");
-          toast.error("Please allow Camera permission in browser settings.");
-        }
-      } else {
-        dasSocket.setCameraActive(false);
-        cameraEngine.stopCameraCapture();
-        setCameraActive(false);
-        setExpandedCamPreview(false);
-        setVisionStatusNote("Camera Paused");
-        toast.info("Camera paused.");
-      }
-    } finally {
-      camBusyRef.current = false;
-    }
-  };
-
-  const handleCameraDeviceChange = async (newDeviceId: string) => {
-    setSelectedCameraId(newDeviceId);
-    if (cameraActive) {
-      const started = await startCameraFeed(newDeviceId);
-      if (started) toast.success("Switched camera feed!");
-    }
-  };
-
   const handleRoleToggle = (newRole: UserHonorificRole) => {
     audioEngine.unlockAudio();
     audioEngine.autoSyncOutputDevice();
@@ -946,14 +819,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     setTranscript("Thinking & Executing...");
     setInputText("");
 
-    if (attachedFile && attachedType === "image" && attachedPreview) {
-      const commaIdx = attachedPreview.indexOf(",");
-      if (commaIdx !== -1) {
-        const b64 = attachedPreview.substring(commaIdx + 1);
-        dasSocket.sendVideoFrame(b64);
-      }
-    }
-
     const curCtx =
       (typeof window !== "undefined" && (window as any).__DAS_PAGE_CONTEXT__) || {};
     dispatchTurnWithVoiceFallback(commandText, curCtx, "chat");
@@ -974,11 +839,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       reader.onload = (ev) => {
         const result = ev.target?.result as string;
         setAttachedPreview(result);
-        const commaIdx = result.indexOf(",");
-        if (commaIdx !== -1) {
-          const b64 = result.substring(commaIdx + 1);
-          dasSocket.sendVideoFrame(b64);
-        }
       };
       reader.readAsDataURL(file);
       toast.success(`Photo attached: ${file.name}. DAS can now inspect it!`);
@@ -1475,128 +1335,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         </div>
       )}
 
-      {/* Live HD Camera Preview & Real-Time Motion/Vision Visualizer Card */}
-      {cameraActive && (
-        <div
-          className={`fixed bottom-52 sm:bottom-44 left-2 sm:left-6 z-40 rounded-2xl overflow-hidden border shadow-2xl transition-all ${
-            minimizedCamPreview
-              ? "w-40 sm:w-44"
-              : expandedCamPreview
-                ? "w-72 sm:w-96"
-                : "w-44 sm:w-60"
-          }`}
-          style={{
-            backgroundColor: "#000000",
-            borderColor: "#2B2024",
-            boxShadow: "0 16px 40px rgba(0, 0, 0, 0.85)",
-          }}
-        >
-          <div className={`relative w-full bg-[#000000] ${minimizedCamPreview ? "h-8" : "aspect-video"}`}>
-            <video
-              ref={cameraPreviewRef}
-              muted
-              autoPlay
-              playsInline
-              className={`w-full h-full object-cover ${mirrorCamera ? "-scale-x-100" : ""} ${
-                minimizedCamPreview ? "opacity-25" : ""
-              }`}
-            />
-            <div
-              className="absolute top-1.5 left-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-white border"
-              style={{ backgroundColor: "rgba(0,0,0,0.82)", borderColor: "#2B2024" }}
-            >
-              <span className="h-1.5 w-1.5 rounded-full animate-pulse bg-white" />
-              <span>24/7 VISION</span>
-            </div>
-            <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
-              {!minimizedCamPreview && (
-                <>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.currentTarget.blur();
-                      setExpandedCamPreview((v) => !v);
-                    }}
-                    className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-white border border-[#2B2024] cursor-pointer"
-                    title={expandedCamPreview ? "Compact Camera View" : "Larger Real View"}
-                    aria-label={expandedCamPreview ? "Shrink camera preview" : "Expand camera preview"}
-                  >
-                    {expandedCamPreview ? "↙" : "⤢"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.currentTarget.blur();
-                      setMirrorCamera((v) => !v);
-                    }}
-                    className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-white border border-[#2B2024] cursor-pointer"
-                    title="Mirror / Flip Preview"
-                    aria-label="Mirror camera preview"
-                  >
-                    ⇄
-                  </button>
-                </>
-              )}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.currentTarget.blur();
-                  setMinimizedCamPreview((v) => !v);
-                }}
-                className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-white border border-[#2B2024] cursor-pointer"
-                title={minimizedCamPreview ? "Expand Camera Preview" : "Minimize Camera Preview"}
-                aria-label={minimizedCamPreview ? "Expand camera preview" : "Minimize camera preview"}
-              >
-                {minimizedCamPreview ? "▢" : "–"}
-              </button>
-            </div>
-          </div>
-
-          {/* Live Motion & AI Perception Visualizer Strip */}
-          {!minimizedCamPreview && (
-            <div className="px-2.5 py-1.5 border-t border-[#2B2024] bg-[#000000] flex flex-col gap-1">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-white font-semibold">
-                  {camMotion.label}
-                </span>
-                <span className="text-zinc-400 font-mono">{visionStatusNote}</span>
-              </div>
-              <div className="flex items-end gap-0.5 h-3" aria-label="Live motion visualizer">
-                {[0.25, 0.45, 0.7, 1.0, 0.85, 0.6, 0.4, 0.2].map((w, idx) => {
-                  const pct = Math.max(18, Math.min(100, Math.round(camMotion.motionScore * w + (camMotion.activeMotion ? 18 : 8))));
-                  return (
-                    <div
-                      key={idx}
-                      className={`flex-1 rounded-sm transition-all duration-150 ${
-                        camMotion.activeMotion ? "bg-white" : "bg-[#2B2024]"
-                      }`}
-                      style={{ height: `${pct}%` }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          {!minimizedCamPreview && videoDevices.length > 1 && (
-            <div className="px-2 py-1.5 border-t border-[#2B2024] bg-[#000000]">
-              <select
-                value={selectedCameraId}
-                onChange={(e) => handleCameraDeviceChange(e.target.value)}
-                aria-label="Select Camera"
-                className="w-full rounded bg-[#000000] border border-[#2B2024] text-[10px] text-white px-1.5 py-1 focus:outline-none"
-              >
-                <option value="">Default Camera</option>
-                {videoDevices.map((d) => (
-                  <option key={d.deviceId} value={d.deviceId}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Bottom Center DAS HUD — Responsive across Phone, Tablet, Laptop & MacBook */}
       <div
         id="das-bottom-hud"
@@ -1792,29 +1530,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           </div>
         )}
 
-        {/* Live Camera Active Status Badge */}
-        {cameraActive && (
-          <div
-            className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
-            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
-          >
-            <div className="flex items-center gap-2 truncate">
-              <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-              <span className="font-bold text-white">● 24/7 LIVE CAMERA</span>
-              <span className="text-[10px] text-zinc-300 truncate">
-                (Auto-monitoring face, outfit & multi-objects continuously)
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={toggleCamera}
-              className="text-[11px] text-white hover:text-zinc-300 font-bold ml-2 cursor-pointer shrink-0"
-            >
-              Stop Cam
-            </button>
-          </div>
-        )}
-
         {/* Command & Control Bar */}
         <form onSubmit={handleSendText} className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2">
           {/* Hands-free Voice Speak / Mute Button */}
@@ -1841,27 +1556,13 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             )}
           </button>
 
-          {/* Camera Button */}
-          <button
-            type="button"
-            onClick={toggleCamera}
-            className="px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110 shrink-0"
-            style={{
-              backgroundColor: cameraActive ? "#2b2024" : "#000000",
-              borderColor: "#2b2024",
-            }}
-            title="Toggle Camera (Live Video Streaming to DAS)"
-          >
-            {cameraActive ? "📹 On" : "📷 Cam"}
-          </button>
-
           {/* Media / Resume Attachment Button */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110 shrink-0"
             style={{ backgroundColor: "#000000", borderColor: "#2b2024" }}
-            title="Upload Photo, Video, or Resume for Instant Review"
+            title="Upload Photo or Resume for Instant Review"
           >
             📎
           </button>
@@ -1876,7 +1577,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               audioEngine.notifyTypingActivity(850);
               setInputText(e.target.value);
             }}
-            placeholder="Ask DAS: 'Who is your boss?', 'Write QuickSort in C', 'Look at my hands'..."
+            placeholder="Ask DAS: 'Who is your boss?', 'Write QuickSort in C', 'Set my CGPA to 8.9'..."
             className="min-w-[140px] flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-white placeholder-zinc-400 focus:outline-none border"
             style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           />
