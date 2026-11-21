@@ -222,7 +222,7 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: "Space Grotesk", sans-serif;
-    color: #f8fafc;
+    color: #050606;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -386,16 +386,16 @@
 [data-slide-theme="pure-black"] [class*="border-[#7c3aed]"],
 [data-slide-theme="pure-black"] [class*="border-[#161926]"],
 [data-slide-theme="pure-black"] [class*="border-[#9f1239]"] {
-  border-color: rgba(255, 255, 255, 0.14) !important;
+  border-color: #050606 !important;
 }
 
 [data-slide-theme="pure-black"] [class*="text-[#7c3aed]"],
 [data-slide-theme="pure-black"] [class*="text-[#a78bfa]"],
 [data-slide-theme="pure-black"] [class*="text-[#9f1239]"] {
-  color: #f8fafc !important;
+  color: #050606 !important;
 }
 
-/* Pure Black (#000000) translucent surfaces for Dashboard Overview while preserving white elements & graphs */
+/* Pure Black (#000000) translucent surfaces for Dashboard Overview */
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#11131c]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#161926]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#1c2030]"],
@@ -435,19 +435,19 @@
 [data-slide-theme="dashboard-black-plum"] [class*="border-[#9f1239]"],
 [data-slide-theme="dashboard-black-plum"] [class*="border-[#881337]"],
 [data-slide-theme="dashboard-black-plum"] [class*="border-[#34222E]"] {
-  border-color: rgba(255, 255, 255, 0.14) !important;
+  border-color: #050606 !important;
 }
 
 [data-slide-theme="dashboard-black-plum"] [class*="text-[#7c3aed]"],
 [data-slide-theme="dashboard-black-plum"] [class*="text-[#9f1239]"],
 [data-slide-theme="dashboard-black-plum"] [class*="text-[#e11d48]"] {
-  color: #f8fafc !important;
+  color: #050606 !important;
 }
 
 .glass-depth-card:hover {
   transform: translateY(-3px) scale(1.004);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.85), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.85);
+  border-color: #050606;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -459,130 +459,84 @@
 }
 
 /* ==========================================================================
-   ENTERPRISE-GRADE TYPOGRAPHY & DESIGN SYSTEM (PATHFINDER DASHBOARD)
-   Scoped to .pathfinder-dashboard to never touch LampLogin/Auth
-   Palette:
-     - Main page titles & primary headings: #f8fafc (Crisp Platinum White)
-     - Tier 1 Accent (Deep Wine Velvet):    #9f1239 / #881337
-     - Tier 2 Accent (Royal Violet Amethyst): #7c3aed / #6d28d9
-     - Tier 3 Accent (Clean Platinum White):  #ffffff / #f1f5f9
-     - Supporting & body text:             #94a3b8 (Refined Silver Grey)
-     - Key metrics & statistics:            #f8fafc (Crisp Platinum White)
+   PATHFINDER DASHBOARD STRICT BLACK PALETTE (#000000 & #050606 ONLY)
    ========================================================================== */
 
 .pathfinder-dashboard {
-  --pf-heading-primary: #f8fafc;
-  --pf-wine-accent: #9f1239;
-  --pf-violet-accent: #7c3aed;
-  --pf-heading-secondary: #f8fafc;
-  --pf-text-body: #94a3b8;
-  --pf-metric-value: #f8fafc;
+  --pf-heading-primary: #050606;
+  --pf-wine-accent: #050606;
+  --pf-violet-accent: #050606;
+  --pf-heading-secondary: #050606;
+  --pf-text-body: #050606;
+  --pf-metric-value: #050606;
 
   font-family: "Outfit", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #94a3b8;
+  color: #050606;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 1. Main page titles and primary headings: #f8fafc */
 .pathfinder-dashboard h1 {
   font-family: "Space Grotesk", "Outfit", sans-serif;
-  color: #f8fafc !important;
+  color: #050606 !important;
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.18;
 }
 
-/* 2. Section headings and subheadings: #f8fafc */
 .pathfinder-dashboard h2,
 .pathfinder-dashboard h3,
 .pathfinder-dashboard h4,
 .pathfinder-dashboard h5,
 .pathfinder-dashboard h6 {
   font-family: "Space Grotesk", "Outfit", sans-serif;
-  color: #f8fafc !important;
+  color: #050606 !important;
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.28;
 }
 
-/* 3. Paragraphs, descriptions, supporting text: #94a3b8 */
 .pathfinder-dashboard p {
-  color: #94a3b8;
+  color: #050606 !important;
   font-weight: 400;
   line-height: 1.65;
 }
 
-/* 4. AI-highlighted words and accents */
-.pathfinder-dashboard .ai-highlight-wine {
-  color: #9f1239 !important;
-  font-weight: 600;
-}
-
+.pathfinder-dashboard .ai-highlight-wine,
 .pathfinder-dashboard .ai-highlight-violet {
-  color: #7c3aed !important;
+  color: #050606 !important;
   font-weight: 600;
 }
 
-/* 5. Utility class color mappings consolidated to SSOT */
 .pathfinder-dashboard .text-slate-100,
 .pathfinder-dashboard .text-slate-200,
-.pathfinder-dashboard .text-white {
-  color: #f8fafc !important;
-}
-
+.pathfinder-dashboard .text-white,
 .pathfinder-dashboard .text-slate-400,
 .pathfinder-dashboard .text-slate-500,
 .pathfinder-dashboard .text-zinc-400,
 .pathfinder-dashboard .text-zinc-500,
 .pathfinder-dashboard .text-gray-400,
 .pathfinder-dashboard .text-gray-500 {
-  color: #94a3b8 !important;
+  color: #050606 !important;
 }
 
-/* Wine Button Utility */
-.pathfinder-dashboard .btn-wine {
-  background: linear-gradient(135deg, #9f1239, #881337) !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(159, 18, 57, 0.45) !important;
-  box-shadow: 0 4px 20px rgba(159, 18, 57, 0.3) !important;
-}
-
-.pathfinder-dashboard .btn-wine:hover {
-  background: linear-gradient(135deg, #881337, #701a35) !important;
-}
-
-/* Violet Button Utility */
-.pathfinder-dashboard .btn-violet {
-  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(124, 58, 237, 0.45) !important;
-  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3) !important;
-}
-
-.pathfinder-dashboard .btn-violet:hover {
-  background: linear-gradient(135deg, #6d28d9, #5b21b6) !important;
-}
-
-/* Crisp Monochrome Button Utility */
+.pathfinder-dashboard .btn-wine,
+.pathfinder-dashboard .btn-wine:hover,
+.pathfinder-dashboard .btn-violet,
+.pathfinder-dashboard .btn-violet:hover,
 .pathfinder-dashboard .btn-mono,
-.pathfinder-dashboard .btn-mono * {
-  background: #ffffff !important;
-  color: #0a0b10 !important;
-  border: 1px solid rgba(255, 255, 255, 0.8) !important;
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15) !important;
-}
-
+.pathfinder-dashboard .btn-mono *,
 .pathfinder-dashboard .btn-mono:hover,
 .pathfinder-dashboard .btn-mono:hover * {
-  background: #f1f5f9 !important;
-  color: #0a0b10 !important;
+  background: #050606 !important;
+  color: #050606 !important;
+  border: 1px solid #050606 !important;
+  box-shadow: none !important;
 }
 
-/* Selection highlight */
 .pathfinder-dashboard ::selection {
-  background: rgba(124, 58, 237, 0.35);
-  color: #f8fafc;
+  background: #050606;
+  color: #000000;
 }
 
 /* ==========================================================================
@@ -642,7 +596,7 @@ pre, code {
 
 /* Agent Action Highlight */
 .das-highlight {
-  outline: 2px solid var(--primary, #FF6B4A);
+  outline: 2px solid #050606;
   outline-offset: 4px;
   border-radius: 8px;
   transition: outline 0.2s ease;
@@ -672,42 +626,57 @@ pre, code {
    STRICT FULL-WEBSITE STEALTH BLACK LOCK (#000000 & #050606 ONLY)
    Leaves the 3D Agent Face (#das-singleton-avatar & its WebGL canvas) 100% untouched.
    ========================================================================== */
-body *:not(#das-singleton-avatar):not(#das-singleton-avatar *) {
+html body *:not(#das-singleton-avatar):not(#das-singleton-avatar *),
+html body .pathfinder-dashboard *:not(#das-singleton-avatar):not(#das-singleton-avatar *) {
   color: #050606 !important;
+  -webkit-text-fill-color: #050606 !important;
   border-color: #050606 !important;
   outline-color: #050606 !important;
   caret-color: #050606 !important;
   text-shadow: none !important;
+  background-image: none !important;
   --tw-ring-color: #050606 !important;
   --tw-shadow-color: #000000 !important;
 }
 
-body *:not(#das-singleton-avatar):not(#das-singleton-avatar *)::placeholder {
+html body *:not(#das-singleton-avatar):not(#das-singleton-avatar *)::placeholder {
   color: #050606 !important;
+  -webkit-text-fill-color: #050606 !important;
   opacity: 1 !important;
 }
 
-body svg:not(#das-singleton-avatar *) {
+html body svg:not(#das-singleton-avatar *),
+html body svg:not(#das-singleton-avatar *) * {
   color: #050606 !important;
   stroke: #050606 !important;
 }
 
-body [class*="bg-[#2B2024]"]:not(#das-singleton-avatar *),
-body [class*="bg-[#2b2024]"]:not(#das-singleton-avatar *),
-body [class*="bg-[#FD0053]"]:not(#das-singleton-avatar *),
-body [class*="bg-[#A80139]"]:not(#das-singleton-avatar *),
-body [class*="bg-white"]:not(#das-singleton-avatar *),
-body [class*="bg-zinc-"]:not(#das-singleton-avatar *),
-body [class*="bg-slate-"]:not(#das-singleton-avatar *),
-body .btn-wine,
-body .btn-violet,
-body .btn-mono,
-body .btn-mono * {
+html body svg:not(#das-singleton-avatar *) [fill]:not([fill="none"]):not([fill="transparent"]) {
+  fill: #050606 !important;
+}
+
+html body [class*="bg-"]:not([class*="bg-transparent"]):not([class*="bg-[#000000]"]):not(#das-singleton-avatar):not(#das-singleton-avatar *),
+html body [data-sonner-toast],
+html body [data-sonner-toast] * {
   background-color: #050606 !important;
   background-image: none !important;
   color: #050606 !important;
   border-color: #050606 !important;
   box-shadow: none !important;
+}
+
+html body [class*="bg-[#000000]"]:not(#das-singleton-avatar):not(#das-singleton-avatar *) {
+  background-color: #000000 !important;
+}
+
+html body .pathfinder-dashboard main > div [class*="bg-"],
+html body .pathfinder-dashboard section [class*="bg-"] {
+  background-color: rgba(0, 0, 0, 0.36) !important;
+}
+
+html body main,
+html body .pathfinder-dashboard {
+  background-color: transparent !important;
 }
 
 
