@@ -1,7 +1,5 @@
 // client/src/agent/toolRunner.ts
 import { Type, FunctionDeclaration } from "@google/genai";
-import { API_BASE } from "@/lib/apiClient";
-import { chromeBridge, PROGRAMIZ_LANGUAGE_URLS } from "./chromeBridge";
 import { codingStudioController } from "./codingStudioController";
 import { toast } from "sonner";
 
@@ -146,9 +144,6 @@ export function showGoogleSearchOverlay(_query: string, _summaryText?: string) {
 }
 
 export function closeGoogleAndReturnToPage() {
-  if (chromeBridge.isConnected) {
-    void chromeBridge.runChromeBrowserControl({ action: "return_to_pathfinder" });
-  }
   if (activeExternalWindow && !activeExternalWindow.closed) {
     try {
       activeExternalWindow.close();
@@ -202,8 +197,7 @@ export function tryInstantBrowserCommand(rawInput: string): {
     };
   }
 
-  // All search, open-google, link-click, and Gmail commands route through DAS tools
-  // so Chrome Extension Bridge and Cloud Web/Gmail Hub stay synchronized without popup blocks.
+  // All search, open-google, and link-click commands route cleanly through DAS tools.
   return { handled: false };
 }
 
@@ -287,7 +281,7 @@ export function tryExecuteClientAutomationIntent(
 }
 
 /* ------------------------------------------------------------------ */
-/* Tool Declarations (Website Control + Google Search + Gmail/Sheets)  */
+/* Tool Declarations (Website Control + Google Search + Online Compiler) */
 /* ------------------------------------------------------------------ */
 export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[] = [
   {
@@ -374,46 +368,6 @@ export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[]
         name: "read_page",
         description: "Reads visible headings and text of the current page.",
         parameters: { type: Type.OBJECT, properties: {} }
-      },
-      {
-        name: "send_gmail_automation",
-        description: "Sends an automated Gmail message.",
-        parameters: {
-          type: Type.OBJECT,
-          properties: {
-            recipientEmail: { type: Type.STRING },
-            subject: { type: Type.STRING },
-            summaryMessage: { type: Type.STRING }
-          },
-          required: ["recipientEmail", "subject", "summaryMessage"]
-        }
-      },
-      {
-        name: "schedule_google_calendar_interview",
-        description: "Schedules an interview on Google Calendar.",
-        parameters: {
-          type: Type.OBJECT,
-          properties: {
-            companyName: { type: Type.STRING },
-            roleTitle: { type: Type.STRING },
-            interviewTime: { type: Type.STRING }
-          },
-          required: ["companyName", "roleTitle", "interviewTime"]
-        }
-      },
-      {
-        name: "sync_student_to_tpo_google_sheet",
-        description: "Logs student readiness score to the TPO Master Google Sheet.",
-        parameters: {
-          type: Type.OBJECT,
-          properties: {
-            studentName: { type: Type.STRING },
-            branch: { type: Type.STRING },
-            readinessScore: { type: Type.NUMBER },
-            targetRole: { type: Type.STRING }
-          },
-          required: ["studentName", "branch", "readinessScore", "targetRole"]
-        }
       }
     ]
   }
@@ -546,50 +500,6 @@ export function runTool(
           headings: heads,
           text: root.innerText.replace(/\s+/g, " ").slice(0, 1500)
         };
-      }
-
-      case "send_gmail_automation": {
-        toast.success(`Gmail Sent to ${args.recipientEmail}!`);
-        fetch(`${API_BASE}/api/google/gmail/send`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            recipient_email: args.recipientEmail,
-            subject: args.subject,
-            body: args.summaryMessage
-          })
-        }).catch(() => { });
-        return { status: "gmail_sent", ok: true };
-      }
-
-      case "schedule_google_calendar_interview": {
-        toast.success(`Google Calendar Booked: ${args.companyName} (${args.interviewTime})`);
-        fetch(`${API_BASE}/api/google/calendar/schedule`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            student_email: "candidate@pathfinder.ai",
-            company_name: args.companyName,
-            role_title: args.roleTitle,
-            interview_time: args.interviewTime
-          })
-        }).catch(() => { });
-        return { status: "calendar_scheduled", ok: true };
-      }
-
-      case "sync_student_to_tpo_google_sheet": {
-        toast.success(`TPO Google Sheet Synced for ${args.studentName}!`);
-        fetch(`${API_BASE}/api/google/sheets/log`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            student_name: args.studentName,
-            branch: args.branch,
-            readiness_score: Number(args.readinessScore || 80),
-            target_role: args.targetRole
-          })
-        }).catch(() => { });
-        return { status: "sheet_synced", ok: true };
       }
 
       default:
@@ -763,7 +673,7 @@ export function snapshot(): Record<string, any> {
 }
 
 /* ------------------------------------------------------------------ */
-/* Autonomous Browser, Multi-Language Compiler & LinkedIn Intelligence */
+/* Autonomous Browser, Multi-Language Online Compiler & LinkedIn Tools */
 /* ------------------------------------------------------------------ */
 
 export interface CodeTaskPayload {
@@ -771,48 +681,29 @@ export interface CodeTaskPayload {
   title: string;
   code: string;
   explanation: string;
-  compilerUrl: string;
+  compilerUrl?: string;
 }
 
-const COMPILER_URLS: Record<string, string> = {
-  c: "https://www.programiz.com/c-programming/online-compiler/",
-  cpp: "https://www.programiz.com/cpp-programming/online-compiler/",
-  "c++": "https://www.programiz.com/cpp-programming/online-compiler/",
-  python: "https://www.programiz.com/python-programming/online-compiler/",
-  java: "https://www.programiz.com/java-programming/online-compiler/",
-  javascript: "https://www.programiz.com/javascript/online-compiler/",
-  js: "https://www.programiz.com/javascript/online-compiler/",
-  typescript: "https://onecompiler.com/typescript",
-  ts: "https://onecompiler.com/typescript",
-  sql: "https://www.programiz.com/sql/online-compiler/",
-};
-
-const N8N_WEBHOOK_URL =
-  "https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync";
-
-// 1. Universal External Website / Google Search Opener (uses real Chrome Bridge when loaded!)
+// 1. External Website / Google Search Opener
 export async function openExternalWebsiteOrSearch(args: {
   url?: string;
   search_query?: string;
   site_name?: string;
 }): Promise<Record<string, any>> {
-  if (args.search_query && !args.url) {
-    return await chromeBridge.runChromeBrowserControl({
-      action: "google_search",
-      query: args.search_query,
-    });
-  }
-
   let targetUrl = args.url || "";
-  if (targetUrl && !targetUrl.startsWith("http")) {
+  if (args.search_query && !targetUrl) {
+    targetUrl = `https://www.google.com/search?q=${encodeURIComponent(args.search_query)}`;
+  } else if (targetUrl && !targetUrl.startsWith("http")) {
     targetUrl = `https://${targetUrl}`;
   }
 
   if (targetUrl) {
-    return await chromeBridge.runChromeBrowserControl({
-      action: "open_url",
-      url: targetUrl,
-    });
+    if (typeof window !== "undefined" && typeof window.open === "function") {
+      try {
+        activeExternalWindow = window.open(targetUrl, "_blank", "noopener,noreferrer");
+      } catch {}
+    }
+    return { ok: true, url: targetUrl, message: `Opened ${args.site_name || targetUrl}.` };
   }
   return { ok: false, message: "No URL provided." };
 }
@@ -835,7 +726,7 @@ export function openLinkedInProfile(args: {
   return `Opened LinkedIn profile for ${args.person_name}.`;
 }
 
-// 3. Built-In Multi-Language Live Coding Studio + External Programiz Option
+// 3. Built-In Multi-Language Live Online Compiler Studio
 export async function handleCodeGenerationAndCompiler(
   args: {
     action?: string;
@@ -843,28 +734,12 @@ export async function handleCodeGenerationAndCompiler(
     program_title?: string;
     source_code?: string;
     logic_explanation?: string;
-    open_external_tab?: boolean;
   },
   _onCodeReady?: (payload: CodeTaskPayload) => void
 ): Promise<Record<string, any>> {
-  const langKey = (args.language || "c").toLowerCase().trim();
-  const compilerUrl = PROGRAMIZ_LANGUAGE_URLS[langKey] || PROGRAMIZ_LANGUAGE_URLS.c;
-
-  if (args.open_external_tab === true) {
-    const res = await chromeBridge.runProgramizCompiler({
-      action: args.action || "write_and_run",
-      language: langKey,
-      program_title: args.program_title || `${langKey.toUpperCase()} Program`,
-      source_code: args.source_code || "",
-    });
-    return {
-      compilerUrl,
-      ...res,
-    };
-  }
-
+  const langKey = (args.language || "python").toLowerCase().trim();
   const studioAction = args.action === "clear" ? "delete_code" : "write_code";
-  const studioRes = await codingStudioController.execute({
+  return await codingStudioController.execute({
     action: studioAction,
     language: langKey,
     program_title: args.program_title || `${langKey.toUpperCase()} Program`,
@@ -872,55 +747,4 @@ export async function handleCodeGenerationAndCompiler(
     logic_explanation: args.logic_explanation || "",
     auto_run: studioAction === "write_code",
   });
-  return {
-    compilerUrl,
-    ...studioRes,
-  };
-}
-
-// 4. Gmail / Google Calendar / Google Sheets Automation via n8n + Direct Fallback
-export async function triggerGoogleAutomation(args: {
-  automation_type: "send_email" | "schedule_calendar" | "log_sheet" | string;
-  recipient_email?: string;
-  subject?: string;
-  details?: string;
-}): Promise<string> {
-  try {
-    const res = await fetch(N8N_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: args.automation_type,
-        source: "PATHFINDER_DAS_AGENT",
-        data: args,
-      }),
-    });
-
-    if (res.ok) {
-      return `Successfully triggered ${args.automation_type} via n8n Google Workspace webhook.`;
-    }
-  } catch {
-    // Fallback if n8n is offline: open Gmail compose window directly
-    if (args.automation_type === "send_email") {
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-        args.recipient_email || ""
-      )}&su=${encodeURIComponent(
-        args.subject || "Message from DAS AI Agent"
-      )}&body=${encodeURIComponent(args.details || "")}`;
-      window.open(gmailUrl, "_blank", "noopener,noreferrer");
-      return `Opened Gmail compose window with recipient, subject, and body pre-filled.`;
-    }
-  }
-
-  if (args.automation_type === "send_email") {
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-      args.recipient_email || ""
-    )}&su=${encodeURIComponent(
-      args.subject || "Message from DAS AI Agent"
-    )}&body=${encodeURIComponent(args.details || "")}`;
-    window.open(gmailUrl, "_blank", "noopener,noreferrer");
-    return `Opened Gmail compose window with recipient, subject, and body pre-filled.`;
-  }
-
-  return `Executed ${args.automation_type} request.`;
 }

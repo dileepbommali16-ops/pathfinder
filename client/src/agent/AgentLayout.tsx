@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar3D } from "./Avatar3D";
 import { dasSocket, UserHonorificRole } from "./agentSocket";
-import { chromeBridge } from "./chromeBridge";
 import {
   codingStudioController,
   SUPPORTED_LANGUAGES,
@@ -55,9 +54,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [connected, setConnected] = useState(false);
-  const [chromeBridgeReady, setChromeBridgeReady] = useState(false);
-  const [desktopBridgeOnline, setDesktopBridgeOnline] = useState(false);
-  const [gmailConnected, setGmailConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [role, setRole] = useState<UserHonorificRole>(() => getHonorificKey());
@@ -227,69 +223,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       setVideoDevices(cams);
     } catch {}
   };
-
-  useEffect(() => {
-    const unsubBridge = chromeBridge.onStatusChange((isReady) => {
-      setChromeBridgeReady(isReady);
-    });
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("workspace_connected") === "1") {
-        setGmailConnected(true);
-        toast.success("Gmail, Calendar & Sheets OAuth connected! DAS now has full Workspace access.");
-        params.delete("workspace_connected");
-        params.delete("workspace_email");
-        const cleanQuery = params.toString();
-        window.history.replaceState({}, "", `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ""}`);
-      }
-    }
-    return () => {
-      unsubBridge();
-    };
-  }, []);
-
-  const refreshDesktopBridgeStatus = async () => {
-    if (typeof window === "undefined") return false;
-    const email = (localStorage.getItem("userEmail") || "").trim();
-    if (!email || !isOwnerAccount(email)) {
-      setDesktopBridgeOnline(false);
-      return false;
-    }
-    try {
-      const r = await fetch(`${API_BASE}/api/bridge/status?email=${encodeURIComponent(email)}`, {
-        cache: "no-store",
-      });
-      if (!r.ok) return false;
-      const data = await r.json();
-      const online = Boolean(data?.connected);
-      setDesktopBridgeOnline(online);
-      return online;
-    } catch {
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const email = (typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "").trim();
-    if (!email) return;
-    fetch(`${API_BASE}/api/google/workspace/status?email=${encodeURIComponent(email)}`, { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data && typeof data.connected === "boolean") {
-          setGmailConnected(Boolean(data.connected));
-        }
-      })
-      .catch(() => {});
-
-    if (isOwnerAccount(email)) {
-      void refreshDesktopBridgeStatus();
-      const intervalId = window.setInterval(() => {
-        void refreshDesktopBridgeStatus();
-      }, 20000);
-      return () => window.clearInterval(intervalId);
-    }
-  }, [isAuthenticated, connected]);
 
   useEffect(() => {
     refreshMediaDevices();
@@ -1293,7 +1226,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         title: nextTitle,
         code: nextCode,
         explanation: nextExplanation,
-        compilerUrl: spec.programizUrl,
       };
       codeTaskRef.current = nextTask;
       editableCodeRef.current = nextCode;
@@ -1632,98 +1564,21 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             >
               {connected ? "ONLINE" : "CONNECTING..."}
             </span>
-            {isOwnerAccount(typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "") && (
-              <button
-                type="button"
-                onClick={async () => {
-                  const live = await refreshDesktopBridgeStatus();
-                  if (live) {
-                    toast.success("Laptop Desktop Bridge LIVE — Real Chrome, Real Gmail & VS Code ready from Phone & Laptop!");
-                  } else {
-                    toast.info("Run desktop-agent\\start_bridge.bat on your laptop to connect Real Chrome, Real Gmail & VS Code.");
-                  }
-                }}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
-                style={{
-                  backgroundColor: "#2b2024",
-                  borderColor: desktopBridgeOnline ? "#FD0053" : "#2b2024",
-                }}
-                title={
-                  desktopBridgeOnline
-                    ? "Laptop Desktop Bridge Online (Real Chrome + Real Gmail + VS Code)"
-                    : "Click to check status — run desktop-agent\\start_bridge.bat on laptop"
-                }
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: desktopBridgeOnline ? "#FD0053" : "#71717a" }}
-                />
-                <span>{desktopBridgeOnline ? "💻 Bridge Live" : "💻 Bridge Off"}</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                chromeBridge.ping();
-                if (chromeBridgeReady) {
-                  toast.success("DAS Chrome Automation Bridge active — Programiz, Google & Tab control ready!");
-                } else {
-                  toast.info("Open chrome://extensions -> Developer mode ON -> Load unpacked -> select 'das-chrome-extension' folder, then refresh this tab.");
-                }
-              }}
-              className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
-              style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
-              title={
-                chromeBridgeReady
-                  ? "Real Chrome Automation Extension Connected"
-                  : "Click for 30-sec Chrome Extension setup steps"
-              }
-            >
-              <span>⚡</span>
-              <span>{chromeBridgeReady ? "Chrome Live" : "Chrome Bridge"}</span>
-            </button>
             <button
               type="button"
               onClick={() => {
                 if (codeTask) {
                   void codingStudioController.execute({ action: "close" });
                 } else {
-                  void codingStudioController.execute({ action: "open", language: "c" });
+                  void codingStudioController.execute({ action: "open", language: "python" });
                 }
               }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
               style={{ backgroundColor: "#2b2024", borderColor: codeTask ? "#FD0053" : "#2b2024" }}
-              title="Open Multi-Language Live Coding Studio (C, C++, Python, Java, JS, TS, SQL, Go, Rust)"
+              title="Open Multi-Language Online Coding Compiler (Python, C, C++, Java, JS, TS, SQL, Go, Rust)"
             >
               <span>&lt;/&gt;</span>
-              <span>Code</span>
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                if (!gmailConnected) {
-                  const origin =
-                    typeof window !== "undefined"
-                      ? window.location.origin
-                      : "https://pathfinder-client-fzom.vercel.app";
-                  window.location.href = `${API_BASE}/api/auth/google/workspace/start?origin=${encodeURIComponent(origin)}`;
-                  return;
-                }
-                const res = await chromeBridge.openGmailVisualTab({ view: "inbox" });
-                if (res?.ok) {
-                  toast.success("Opened your real Gmail (mail.google.com) directly!");
-                }
-              }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
-              style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
-              title={
-                gmailConnected
-                  ? "Open your REAL Gmail (mail.google.com) directly"
-                  : "Connect Gmail, Contacts & Calendar OAuth in 1 click"
-              }
-            >
-              <span>✉️</span>
-              <span>{gmailConnected ? "Gmail Live" : "Connect Gmail"}</span>
+              <span>Online Compiler</span>
             </button>
           </div>
 

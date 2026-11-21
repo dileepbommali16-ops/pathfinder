@@ -15,7 +15,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, JSONResponse
 
 from backend.models import UserSession, OAuthUrlsResponse
-from backend.database import get_user_profile_by_email_or_username, save_google_workspace_tokens
+from backend.database import get_user_profile_by_email_or_username
 
 logger = logging.getLogger("pathfinder.oauth")
 
@@ -328,12 +328,11 @@ def _error_redirect(frontend_base: str, code: str) -> RedirectResponse:
 # STATE (stateless, signed) AND ONE-TIME CODES
 # -----------------------------------------------------------------------------
 
-def create_oauth_state(provider: str, origin: str, workspace: bool = False) -> str:
+def create_oauth_state(provider: str, origin: str) -> str:
     """Creates a signed, stateless CSRF state (provider, origin, random nonce) with a 10-minute expiry."""
     payload = {
         "p": provider,
         "o": origin,
-        "w": bool(workspace),
         "n": secrets.token_urlsafe(12),
         "exp": int(time.time()) + STATE_EXPIRY_SECONDS,
     }
@@ -344,7 +343,7 @@ def create_oauth_state(provider: str, origin: str, workspace: bool = False) -> s
 
 def verify_and_consume_oauth_state(state: Optional[str], expected_provider: str, consume: bool = True) -> Optional[Dict[str, Any]]:
     """
-    Validates signature, expiry and provider of the signed state. Returns {'provider', 'origin', 'workspace'} or None.
+    Validates signature, expiry and provider of the signed state. Returns {'provider', 'origin'} or None.
     When consume is True the nonce is marked used (best-effort replay protection).
     """
     payload = _verify_payload("state", state)
@@ -358,7 +357,7 @@ def verify_and_consume_oauth_state(state: Optional[str], expected_provider: str,
         if nonce in _used_state_nonces:
             return None
         _used_state_nonces[nonce] = now + STATE_EXPIRY_SECONDS
-    return {"provider": payload.get("p"), "origin": payload.get("o"), "workspace": bool(payload.get("w", False))}
+    return {"provider": payload.get("p"), "origin": payload.get("o")}
 
 
 def create_one_time_oauth_code(session_token: str, is_new_user: bool) -> str:
@@ -507,26 +506,10 @@ def exchange_oauth_code(payload: Dict[str, Any]):
 # GOOGLE OAUTH 2.0 (AUTHORIZATION CODE FLOW)
 # -----------------------------------------------------------------------------
 
-GOOGLE_WORKSPACE_SCOPES = " ".join([
-    "openid",
-    "email",
-    "profile",
-    "https://www.googleapis.com/auth/gmail.readonly",
-    "https://www.googleapis.com/auth/gmail.send",
-    "https://www.googleapis.com/auth/gmail.compose",
-    "https://www.googleapis.com/auth/calendar",
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/contacts.readonly",
-    "https://www.googleapis.com/auth/contacts.other.readonly",
-])
-
 
 @oauth_router.get("/google/start")
-def google_oauth_start(request: Request, origin: Optional[str] = None, workspace: Optional[int] = 0):
-    """
-    Initiates Google OAuth 2.0 authorization code flow.
-    Pass workspace=1 (or use /google/workspace/start) to request Gmail, Calendar, and Sheets scopes.
-    """
+def google_oauth_start(request: Request, origin: Optional[str] = None):
+    """Initiates standard Google OAuth 2.0 Sign-In."""
     timer = _StepTimer("google", "start")
     frontend_base = resolve_frontend_redirect_base(_candidate_origin(request, origin))
     timer.step("frontend_resolved", frontend_base=frontend_base)
@@ -538,8 +521,7 @@ def google_oauth_start(request: Request, origin: Optional[str] = None, workspace
         logger.warning("[Google OAuth] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET")
         return _error_redirect(frontend_base, "google_not_configured")
 
-    is_workspace = bool(workspace)
-    state = create_oauth_state("google", frontend_base, workspace=is_workspace)
+    state = create_oauth_state("google", frontend_base)
     timer.step("state_created")
     backend_base = get_backend_public_url(request)
     redirect_uri = f"{backend_base}/api/auth/google/callback"
@@ -548,22 +530,13 @@ def google_oauth_start(request: Request, origin: Optional[str] = None, workspace
         "client_id": google_client_id,
         "redirect_uri": redirect_uri,
         "response_type": "code",
-        "scope": GOOGLE_WORKSPACE_SCOPES if is_workspace else "openid email profile",
+        "scope": "openid email profile",
         "state": state,
-        "prompt": "consent select_account" if is_workspace else "select_account",
+        "prompt": "select_account",
     }
-    if is_workspace:
-        params["access_type"] = "offline"
-        params["include_granted_scopes"] = "true"
     google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
     timer.step("redirect_built", redirect_uri=redirect_uri)
     return RedirectResponse(url=google_auth_url, status_code=302)
-
-
-@oauth_router.get("/google/workspace/start")
-def google_workspace_oauth_start(request: Request, origin: Optional[str] = None):
-    """Initiates full Google Workspace OAuth (Gmail read/send/compose, Calendar, Sheets)."""
-    return google_oauth_start(request=request, origin=origin, workspace=1)
 
 
 @oauth_router.get("/google/callback")
@@ -628,9 +601,6 @@ async def google_oauth_callback(
 
             token_json = token_resp.json()
             access_token = token_json.get("access_token")
-            refresh_token = token_json.get("refresh_token") or ""
-            expires_in = float(token_json.get("expires_in") or 3500)
-            granted_scope = str(token_json.get("scope") or "")
             if not access_token:
                 logger.error("[Google OAuth] Missing access_token in Google response")
                 return _error_redirect(frontend_base, "google_failed")
@@ -659,28 +629,6 @@ async def google_oauth_callback(
     if not email or not is_verified:
         logger.warning("[Google OAuth] Rejected login: missing or unverified email")
         return _error_redirect(frontend_base, "google_failed")
-
-    # Persist Google Workspace OAuth tokens (Gmail/Calendar/Sheets) whenever granted
-    is_workspace_flow = bool(state_data.get("workspace")) or any(
-        s in granted_scope for s in ("gmail", "calendar", "spreadsheets")
-    )
-    if is_workspace_flow:
-        try:
-            await asyncio.to_thread(
-                save_google_workspace_tokens,
-                email,
-                access_token,
-                refresh_token,
-                time.time() + expires_in,
-                granted_scope,
-            )
-            logger.info(f"[Google OAuth] Persisted Google Workspace tokens for '{email}'.")
-        except Exception as tok_err:
-            logger.warning(f"[Google OAuth] Workspace token persist warning: {tok_err}")
-
-    if state_data.get("workspace"):
-        redirect_url = f"{frontend_base.rstrip('/')}/?workspace_connected=1&workspace_email={urllib.parse.quote(email)}"
-        return RedirectResponse(url=redirect_url, status_code=302)
 
     username = userinfo.get("name") or userinfo.get("given_name") or email.split("@")[0]
     logger.info(f"[Google OAuth] Authenticated user '{username}' as student session")

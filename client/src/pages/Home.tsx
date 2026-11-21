@@ -259,21 +259,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
         }
       }
 
-      // 4. Google Calendar Interview Sync Notification
-      if (toolName === "schedule_google_calendar_interview") {
-        toast.success(
-          `Google Calendar Synced: ${args?.companyName || "Company"} (${args?.roleTitle || "Role"}) booked for ${args?.interviewTime || "upcoming slot"}!`
-        );
-      }
-
-      // 5. Google Sheets TPO Master Tracker Sync Notification
-      if (toolName === "sync_student_to_tpo_google_sheet") {
-        toast.success(
-          `TPO Master Sheet Updated: ${args?.studentName || "Candidate"} (${args?.readinessScore || 78.5}%) logged to Google Sheets!`
-        );
-      }
-
-      // 6. Placement Intelligence Lookup Notification
+      // 4. Placement Intelligence Lookup Notification
       if (toolName === "fetch_placement_intelligence_for_client") {
         toast.info(
           `Analyzing 972 verified placement records for: ${args?.companyOrBranch || "Campus Drives"}...`

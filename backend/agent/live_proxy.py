@@ -15,7 +15,6 @@ from backend.agent.puck_voice import (
     create_gemini_live_config,
     format_audio_packet,
 )
-from backend.google_automation import trigger_google_workspace_sync
 
 router = APIRouter()
 
@@ -133,37 +132,22 @@ CORE AUTONOMOUS CAPABILITIES:
        - ONLY describe what is ACTUALLY visible in the MOST RECENT attached live frame or stream right now (exact current t-shirt/shirt color like pale light green, mint, white, black — NEVER guess or carry over an old blue shirt or past memory!).
        - Whenever you see hand movements, dancing, hand-dancing, waving, head nods, or held objects in the live video frames, call `inspect_live_camera_frame` if you need a fresh verified frame snapshot and react naturally in 1–2 concise sentences!
        - NEVER rely on generic flattery — unlike ChatGPT, Claude, or generic Gemini, always tell the honest truth calmly and directly if someone's answer, code, claim, or styling is wrong or needs improvement.
-3. REAL CHROME PROGRAMIZ & BUILT-IN CODING STUDIO AUTOMATION (C, C++, Python, Java, JS, TS, SQL, Go, Rust, C#, PHP):
-   - Use `coding_studio_control` for ALL voice/live coding tasks on BOTH Phone & Laptop: open the coding studio (`open`), switch any language (`switch_language`), write/edit code (`write_code` with mode `'replace'`, `'append'`, `'insert_lines'`, or `'replace_lines'`), read exact code with line numbers (`read_code`), delete all code, line ranges, or specific text (`delete_code`), execute live (`run_code`), stop execution immediately (`stop_code`), inspect/explain terminal output (`get_output`), or close (`close`).
-   - Also keep `write_and_compile_code` supported for quick one-shot generation, `programiz_compiler` when Boss specifically asks for Programiz in Chrome, and `vscode_control` (`write_file`, `read_file`, `delete_code`, `open_file`, `list_files`) when Boss asks to write/open/edit code in VS Code on his laptop!
+3. BUILT-IN MULTI-LANGUAGE ONLINE CODING COMPILER (C, C++, Python, Java, JS, TS, SQL, Go, Rust, C#, PHP):
+   - Use `coding_studio_control` for ALL voice and live coding practice on BOTH Phone & Laptop: open the compiler studio (`open`), switch any language (`switch_language`), write/edit code (`write_code` with mode `'replace'`, `'append'`, `'insert_lines'`, or `'replace_lines'`), read exact code with line numbers (`read_code`), delete all code, line ranges, or specific text (`delete_code`), execute live (`run_code`), stop execution immediately (`stop_code`), inspect/explain terminal output (`get_output`), or close (`close`).
+   - Also keep `write_and_compile_code` supported for quick one-shot code generation inside the built-in compiler studio.
    - AUTO-FIX COMPILER ERRORS: If execution returns a compile or runtime error in `output` or `stderr`, immediately analyze the exact error line, rewrite clean corrected code using `coding_studio_control(action="write_code", mode="replace", auto_run=True)` until it runs cleanly!
-   - Always explain the code logic, complexity, and the real terminal output clearly.
+   - Always explain the code logic, time/space complexity, and the real terminal output clearly for placement interview prep.
 4. ATS RESUME INTELLIGENCE & PLACEMENT ROADMAP:
    - Provide elite Tier-1 ATS resume reviews calibrated to Google's X-Y-Z formula: "Accomplished [X] as measured by [Y] by doing [Z]".
    - Guide Boss on top capstone projects, certifications (AWS Solutions Architect, GCP Data Engineer), and core subjects (DSA, OS, CN, DBMS, System Design) to guarantee 100% placement success.
-5. REAL CHROME BROWSER & WEB AUTOMATION (LAPTOP BRIDGE + CHROME EXTENSION + MULTI-STEP CHAINS):
-   - Call `chrome_browser_control` for ALL real Chrome actions: `google_search`, `open_url`, `click` (search results, links, buttons by `target`, `index`, or `url`), `type`, `scroll`, `read_page` (read & explain aloud), `list_tabs`, `switch_tab`, `close_tab`, `go_back`, `go_forward`, and `return_to_pathfinder`.
-   - When Boss's Laptop Desktop Bridge is connected, every `chrome_browser_control` call runs directly inside his REAL Chrome window on Windows — even when Boss is speaking from his Phone!
-   - MULTI-STEP EXECUTION MANDATE: NEVER stop halfway! Whenever Boss says things like "open google, search claude code, and click official link" or "search X and open 1st link and explain":
-     1) Call `chrome_browser_control(action="google_search", query=...)` and inspect the returned `results` (each has `index`, `title`, `url`, `host`, `isOfficial`).
-     2) IMMEDIATELY follow up with `chrome_browser_control(action="click", url=..., target=..., index=...)` (or `open_url` with that official URL).
-     3) Read the `title`, `headings`, and `text` returned in the tool response and explain the opened page clearly aloud!
-   - TELUGU / TENGLISH VOICE COMMANDS: Understand naturally: `"kinda unna link nokku"`, `"first link nokku"`, `"official link open chey"`, `"adhi open chesi explain chey"`, `"scroll down chey"`, `"tabs chupinchu"`, `"tab close chey"`, `"back vellu"`, `"pathfinder ki vellu"`.
-   - STRICT ACTION HONESTY: NEVER claim you clicked a link, opened a site, sent an email, edited code, or sent a WhatsApp message unless the actual tool call succeeded!
-6. LINKEDIN PROFILE INTELLIGENCE: When asked about anyone's profile, call `open_linkedin_profile` and summarize their background.
-7. REAL GMAIL (`mail.google.com`), CONTACTS, WORKSPACE & WHATSAPP AUTOMATION (ZERO FAKE COPY):
-   - NEVER use or refer to a fake/copy Gmail drawer! When Boss asks to open Gmail (`"open gmail"`, `"na gmail open chey"`), search Gmail, click/open an email visually, compose, or reply visually, call `gmail_workspace_control` (`open_gmail_tab`, `open_email_visual`, `search_gmail_visual`, `compose_visual`, `reply_email`, `click_gmail`) — when the Laptop Bridge is connected, this directly controls Boss's real `https://mail.google.com/mail/u/0/#inbox` in Chrome; otherwise it opens real `mail.google.com` directly.
-   - Use `lookup_contact`, `list_emails`, `read_email`, `send_email`, `create_draft`, `schedule_calendar`, `log_sheet` for instant Gmail/Contacts API actions alongside real browser control.
-   - Understand Telugu/Tenglish commands naturally: `"na gmail open chey"`, `"first mail open chey"`, `"Priyanka ki mail pettu"`, `"Murali Sir ki mail pettu"`, `"evarki mail pettamante pettu"`, `"reply ivvu"`. If multiple contacts match a name, ask Boss which email to use before sending.
-   - Call `whatsapp_message_control` when asked to send a WhatsApp or quick message (`"msg pettu"`, `"Priyanka ki msg pettu"`, `"whatsapp message send chey"`): pass `action="send_message"`, `contact` (or `phone`), and `message`.
-   - If `needs_auth: true` is returned, clearly tell Boss to click the "Connect Gmail" button in the Pathfinder HUD once to authorize Gmail & Contacts access.
-   - NEVER say "you need to sign into your account in the Chrome window to view your inbox" when `ok: true` or `emails` are returned — confirm that you opened his real Gmail (`mail.google.com`) and tell him his latest inbox messages or confirm the action!
-8. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
-   When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'switch back to pathfinder', immediately call `chrome_browser_control(action="return_to_pathfinder")` (or `return_to_dashboard`) and reply warmly: "Okay Boss, returning to your dashboard."
-9. STRICT PUCK VOICE PERSONA LOCK: Your voice is permanently locked to the male 'Puck' voice. Keep a consistent, warm, energetic male vocal delivery on every turn — never imitate a female voice or switch vocal personas.
-10. Keep voice replies energetic, warm, and conversational without robotic filler.""" + extra_platform_rules
+5. OPEN WEBSITE & LINKEDIN PROFILE INTELLIGENCE:
+   - When asked to open a learning site (LeetCode, GeeksforGeeks, GitHub, YouTube, etc.), call `open_external_website`; when asked about anyone's LinkedIn profile, call `open_linkedin_profile` and summarize their background.
+6. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
+   When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'close compiler', immediately call `return_to_dashboard` and reply warmly: "Okay Boss, returning to your dashboard."
+7. STRICT PUCK VOICE PERSONA LOCK: Your voice is permanently locked to the male 'Puck' voice. Keep a consistent, warm, energetic male vocal delivery on every turn — never imitate a female voice or switch vocal personas.
+8. Keep voice replies energetic, warm, and conversational without robotic filler.""" + extra_platform_rules
 
-# Tools matching AI Studio specs: Function Calling + Google Automation
+# Tools matching AI Studio specs: Pathfinder UI + Online Compiler + Factual/Vision helpers
 DAS_TOOLS = [
     types.Tool(
         function_declarations=[
@@ -247,13 +231,13 @@ DAS_TOOLS = [
             ),
             types.FunctionDeclaration(
                 name="write_and_compile_code",
-                description="Generate complete source code in C, C++, Python, Java, JavaScript, TypeScript, or SQL, display it in the Live Compiler Studio, and explain the logic.",
+                description="Generate complete source code in C, C++, Python, Java, JavaScript, TypeScript, SQL, Go, Rust, C#, or PHP, display it in the built-in Online Compiler Studio, and explain the logic.",
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
                         "language": types.Schema(
                             type="STRING",
-                            description="Programming language: c, cpp, python, java, javascript, typescript, sql"
+                            description="Programming language: c, cpp, python, java, javascript, typescript, sql, go, rust, csharp, php"
                         ),
                         "program_title": types.Schema(
                             type="STRING",
@@ -267,29 +251,8 @@ DAS_TOOLS = [
                             type="STRING",
                             description="Step-by-step logic and complexity explanation"
                         ),
-                        "open_external_tab": types.Schema(
-                            type="BOOLEAN",
-                            description="True if external compiler tab should also be opened"
-                        ),
                     },
                     required=["language", "program_title", "source_code"],
-                ),
-            ),
-            types.FunctionDeclaration(
-                name="run_google_automation",
-                description="Trigger n8n Google Workspace automation for Gmail, Google Calendar, or Google Sheets.",
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "automation_type": types.Schema(
-                            type="STRING",
-                            description="'send_email', 'schedule_calendar', or 'log_sheet'"
-                        ),
-                        "recipient_email": types.Schema(type="STRING"),
-                        "subject": types.Schema(type="STRING"),
-                        "details": types.Schema(type="STRING"),
-                    },
-                    required=["automation_type", "details"],
                 ),
             ),
             types.FunctionDeclaration(
@@ -333,38 +296,8 @@ DAS_TOOLS = [
                 ),
             ),
             types.FunctionDeclaration(
-                name="programiz_compiler",
-                description="Control the REAL Programiz Online Compiler in Google Chrome (https://www.programiz.com/<lang>/online-compiler/): open any language compiler, write/type source code directly into Programiz, click Run, read real terminal output/errors to auto-fix bugs, or remove/clear all code.",
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "action": types.Schema(
-                            type="STRING",
-                            description="One of: 'write_and_run', 'clear', 'read_output', 'open'"
-                        ),
-                        "language": types.Schema(
-                            type="STRING",
-                            description="Language: c, cpp, python, java, javascript, sql, csharp, go, rust, php, html"
-                        ),
-                        "program_title": types.Schema(
-                            type="STRING",
-                            description="Short descriptive program title"
-                        ),
-                        "source_code": types.Schema(
-                            type="STRING",
-                            description="Complete, compilable, zero-error source code to type and run in Programiz"
-                        ),
-                        "logic_explanation": types.Schema(
-                            type="STRING",
-                            description="Concise explanation of logic and complexity"
-                        ),
-                    },
-                    required=["action"],
-                ),
-            ),
-            types.FunctionDeclaration(
                 name="coding_studio_control",
-                description="Full voice & live control over Pathfinder's built-in multi-language Coding Studio (works on BOTH Phone and Laptop): open studio, switch language (C, C++, Python, Java, JS, TS, SQL, Go, Rust, C#, PHP), write/edit/append/insert code, read exact code with line numbers, delete all/lines/text, run live, stop running execution, inspect/explain output, or close studio.",
+                description="Full voice & live control over Pathfinder's built-in multi-language Online Compiler Studio (works on BOTH Phone and Laptop): open studio, switch language (C, C++, Python, Java, JS, TS, SQL, Go, Rust, C#, PHP), write/edit/append/insert code, read exact code with line numbers, delete all/lines/text, run live, stop running execution, inspect/explain output, or close studio.",
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
@@ -415,156 +348,6 @@ DAS_TOOLS = [
                         "logic_explanation": types.Schema(
                             type="STRING",
                             description="Concise explanation of algorithm logic and complexity"
-                        ),
-                    },
-                    required=["action"],
-                ),
-            ),
-            types.FunctionDeclaration(
-                name="vscode_control",
-                description="Write, read, delete lines, list files, and open real code files in Boss's scoped laptop workspace / VS Code via the Laptop Desktop Bridge.",
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "action": types.Schema(
-                            type="STRING",
-                            description="One of: 'write_file', 'read_file', 'delete_code', 'open_file', 'list_files'"
-                        ),
-                        "filename": types.Schema(
-                            type="STRING",
-                            description="Relative filename inside the safe bridge workspace (e.g. 'fibonacci.c', 'main.py')"
-                        ),
-                        "source_code": types.Schema(type="STRING"),
-                        "mode": types.Schema(
-                            type="STRING",
-                            description="'replace' or 'append' for write_file"
-                        ),
-                        "start_line": types.Schema(type="INTEGER"),
-                        "end_line": types.Schema(type="INTEGER"),
-                        "target_text": types.Schema(type="STRING"),
-                        "open_in_vscode": types.Schema(
-                            type="BOOLEAN",
-                            description="True to open the file directly in VS Code on Boss's laptop"
-                        ),
-                    },
-                    required=["action"],
-                ),
-            ),
-            types.FunctionDeclaration(
-                name="chrome_browser_control",
-                description="Full real Google Chrome & cloud web automation (Laptop Desktop Bridge OR Chrome extension OR cloud fallback): search Google, open any URL or official link, click search results/links/buttons (pass url, target text, or 1-based index), type into inputs, scroll pages, read active page to explain it aloud, list/switch/close tabs, navigate back/forward, or return to Pathfinder.",
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "action": types.Schema(
-                            type="STRING",
-                            description="One of: 'google_search', 'open_url', 'click', 'type', 'scroll', 'read_page', 'switch_tab', 'list_tabs', 'close_tab', 'go_back', 'go_forward', 'return_to_pathfinder'"
-                        ),
-                        "query": types.Schema(
-                            type="STRING",
-                            description="Search query for google_search or tab filter for switch_tab"
-                        ),
-                        "url": types.Schema(
-                            type="STRING",
-                            description="Exact https URL for open_url OR exact result URL when clicking a link"
-                        ),
-                        "target": types.Schema(
-                            type="STRING",
-                            description="Visible text/label of link/button/input, or 'official' / 'first' / 'second'"
-                        ),
-                        "domain": types.Schema(
-                            type="STRING",
-                            description="Optional domain filter to pick target tab (e.g. 'google.com', 'anthropic.com')"
-                        ),
-                        "text": types.Schema(
-                            type="STRING",
-                            description="Text to type into an input box"
-                        ),
-                        "submit": types.Schema(
-                            type="BOOLEAN",
-                            description="Press Enter / submit after typing"
-                        ),
-                        "direction": types.Schema(
-                            type="STRING",
-                            description="Scroll direction: 'down', 'up', 'top', 'bottom'"
-                        ),
-                        "index": types.Schema(
-                            type="INTEGER",
-                            description="1-based search result or link index to click (e.g. 1 for first Google result)"
-                        ),
-                    },
-                    required=["action"],
-                ),
-            ),
-            types.FunctionDeclaration(
-                name="gmail_workspace_control",
-                description="Full real Gmail (API + Visual Chrome/Drawer UI), Google Calendar, and Google Sheets automation: list inbox emails, read full email, send real email, save draft, open Gmail inbox/sent/search, click/open a specific email visually, compose/reply in UI, schedule Calendar, or log Sheet.",
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "action": types.Schema(
-                            type="STRING",
-                            description="One of: 'lookup_contact', 'list_emails', 'read_email', 'send_email', 'create_draft', 'open_gmail_tab', 'open_email_visual', 'search_gmail_visual', 'compose_visual', 'reply_email', 'click_gmail', 'schedule_calendar', 'log_sheet'"
-                        ),
-                        "recipient_email": types.Schema(type="STRING"),
-                        "subject": types.Schema(type="STRING"),
-                        "body": types.Schema(type="STRING"),
-                        "query": types.Schema(
-                            type="STRING",
-                            description="Optional Gmail search filter (e.g. 'is:unread', 'from:google', 'interview')"
-                        ),
-                        "message_id": types.Schema(
-                            type="STRING",
-                            description="Gmail message ID returned by list_emails to read full email body"
-                        ),
-                        "thread_id": types.Schema(
-                            type="STRING",
-                            description="Gmail thread ID to open directly on screen"
-                        ),
-                        "target": types.Schema(
-                            type="STRING",
-                            description="Sender name, subject text, or Gmail UI button label ('Compose', 'Sent', 'Inbox', 'Reply')"
-                        ),
-                        "index": types.Schema(
-                            type="INTEGER",
-                            description="1-based row index in Gmail inbox to click/open"
-                        ),
-                        "send_now": types.Schema(
-                            type="BOOLEAN",
-                            description="True to click Send immediately in visual compose/reply"
-                        ),
-                        "max_results": types.Schema(type="INTEGER"),
-                        "company_name": types.Schema(type="STRING"),
-                        "interview_time": types.Schema(type="STRING"),
-                        "view": types.Schema(
-                            type="STRING",
-                            description="For open_gmail_tab: 'inbox', 'sent', 'drafts', or 'starred'"
-                        ),
-                    },
-                    required=["action"],
-                ),
-            ),
-            types.FunctionDeclaration(
-                name="whatsapp_message_control",
-                description="Send a WhatsApp message (direct via WhatsApp Web in Laptop Chrome, or 1-tap launch in Phone/Tablet Messaging Hub) or open WhatsApp.",
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "action": types.Schema(
-                            type="STRING",
-                            description="One of: 'send_message', 'open_whatsapp'"
-                        ),
-                        "contact": types.Schema(
-                            type="STRING",
-                            description="Recipient contact name in WhatsApp"
-                        ),
-                        "phone": types.Schema(
-                            type="STRING",
-                            description="Phone number with country code (e.g. +919876543210)"
-                        ),
-                        "message": types.Schema(
-                            type="STRING",
-                            description="Message text to send"
                         ),
                     },
                     required=["action"],
@@ -926,24 +709,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     ),
                 }
 
-            from backend.desktop_bridge import desktop_bridge_hub
-
-            acct_email = user_email or "dileepbommali16@gmail.com"
-            bridge_active = bool(is_owner and desktop_bridge_hub.is_connected(acct_email))
-
-            if fc_name == "vscode_control":
-                if not bridge_active:
-                    return {
-                        "ok": False,
-                        "bridge_offline": True,
-                        "message": (
-                            "Laptop Bridge is offline right now. Start desktop-agent\\start_bridge.bat on your laptop for VS Code control, "
-                            "or I can run it right now in Pathfinder's built-in Coding Studio!"
-                        ),
-                    }
-                v_res = await desktop_bridge_hub.execute(acct_email, "vscode_control", args, timeout=20.0)
-                return v_res if isinstance(v_res, dict) else {"ok": False, "error": "No response from laptop VS Code bridge."}
-
             if fc_name == "coding_studio_control":
                 call_id = str(call_id_hint or f"code_{turn_id}_{int(time.monotonic() * 1000)}")
                 loop = asyncio.get_running_loop()
@@ -967,8 +732,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 return c_res if isinstance(c_res, dict) else {"ok": True, "result": str(c_res)}
 
             if fc_name in (
-                "programiz_compiler",
-                "chrome_browser_control",
                 "write_and_compile_code",
                 "open_external_website",
             ):
@@ -990,7 +753,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     client_res = {
                         "ok": False,
                         "status": "timeout",
-                        "note": "Chrome tab opened/triggered, awaiting output.",
+                        "note": "Online compiler or website action awaited client output.",
                     }
                 except Exception as wait_err:
                     pending_tool_futures.pop(call_id, None)
@@ -998,36 +761,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                 if not isinstance(client_res, dict):
                     client_res = {"result": str(client_res)}
-
-                # If client browser did not handle via Chrome Extension (e.g. Boss on Phone) and Laptop Bridge is online, run on Laptop Bridge
-                if (
-                    fc_name != "write_and_compile_code"
-                    and client_res.get("bridge") != "chrome_extension"
-                    and bridge_active
-                ):
-                    target_tool = fc_name
-                    target_args = dict(args)
-                    if fc_name == "open_external_website":
-                        target_tool = "chrome_browser_control"
-                        if target_args.get("search_query") and not target_args.get("url"):
-                            target_args = {"action": "google_search", "query": target_args.get("search_query")}
-                        else:
-                            target_args = {
-                                "action": "open_url",
-                                "url": target_args.get("url") or target_args.get("site_name") or "https://www.google.com",
-                            }
-                    b_res = await desktop_bridge_hub.execute(acct_email, target_tool, target_args, timeout=25.0)
-                    if isinstance(b_res, dict) and b_res.get("ok"):
-                        client_res = b_res
-
-                if fc_name == "chrome_browser_control" and websocket.client_state != WebSocketState.DISCONNECTED:
-                    try:
-                        await websocket.send_json({
-                            "type": "automation_status",
-                            "data": {"kind": "web", "action": args.get("action"), **client_res},
-                        })
-                    except Exception:
-                        pass
                 return client_res
 
             if fc_name in (
@@ -1048,252 +781,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     "result": f"Successfully performed {fc_name} on the user screen.",
                 }
 
-            if fc_name == "whatsapp_message_control":
-                if args.get("contact") and not args.get("phone"):
-                    try:
-                        from backend.google_sync_api import contacts_lookup_service
-                        c_lookup = await contacts_lookup_service(acct_email, str(args.get("contact") or ""), max_results=4)
-                        with_phone = [c for c in (c_lookup.get("contacts") or []) if c.get("phone")]
-                        if with_phone:
-                            args["phone"] = with_phone[0]["phone"]
-                    except Exception:
-                        pass
-
-                call_id = str(call_id_hint or f"wa_{turn_id}_{int(time.monotonic() * 1000)}")
-                loop = asyncio.get_running_loop()
-                fut = loop.create_future()
-                pending_tool_futures[call_id] = fut
-                if websocket.client_state != WebSocketState.DISCONNECTED:
-                    await websocket.send_json({
-                        "type": "tool_call",
-                        "call_id": call_id,
-                        "name": "whatsapp_message_control",
-                        "args": args,
-                    })
-                try:
-                    w_res = await asyncio.wait_for(fut, timeout=16.0)
-                except asyncio.TimeoutError:
-                    pending_tool_futures.pop(call_id, None)
-                    w_res = {"ok": False, "status": "timeout", "message": "Opened WhatsApp compose action."}
-                except Exception as wait_err:
-                    pending_tool_futures.pop(call_id, None)
-                    w_res = {"ok": False, "error": str(wait_err)}
-                if not isinstance(w_res, dict):
-                    w_res = {"result": str(w_res)}
-
-                if w_res.get("bridge") != "chrome_extension" and bridge_active:
-                    w_bridge = await desktop_bridge_hub.execute(acct_email, "whatsapp_message_control", args, timeout=25.0)
-                    if isinstance(w_bridge, dict) and w_bridge.get("ok"):
-                        w_res = w_bridge
-
-                if websocket.client_state != WebSocketState.DISCONNECTED:
-                    try:
-                        await websocket.send_json({
-                            "type": "automation_status",
-                            "data": {"kind": "whatsapp", **args, **w_res},
-                        })
-                    except Exception:
-                        pass
-                return w_res
-
-            if fc_name == "gmail_workspace_control":
-                from backend.google_sync_api import (
-                    contacts_lookup_service,
-                    gmail_list_messages_service,
-                    gmail_read_message_service,
-                    gmail_send_message_service,
-                    gmail_create_draft_service,
-                    calendar_create_event_service,
-                    trigger_n8n_webhook_async,
-                )
-
-                g_act = str(args.get("action") or "list_emails").lower().strip()
-                g_res: dict = {"ok": False, "message": f"Unsupported Gmail action: {g_act}"}
-
-                raw_recipient = str(args.get("recipient_email") or "").strip()
-                if g_act in ("compose_visual", "send_email", "create_draft") and raw_recipient and "@" not in raw_recipient:
-                    try:
-                        c_match = await contacts_lookup_service(acct_email, query=raw_recipient, max_results=6)
-                        email_hits = [c for c in (c_match.get("contacts") or []) if c.get("email")]
-                        exact_hits = [
-                            c for c in email_hits if str(c.get("name") or "").strip().lower() == raw_recipient.lower()
-                        ]
-                        chosen = exact_hits[0] if len(exact_hits) == 1 else (email_hits[0] if len(email_hits) == 1 else None)
-                        if chosen and chosen.get("email"):
-                            args["recipient_email"] = chosen["email"]
-                        elif len(email_hits) > 1:
-                            return {
-                                "ok": False,
-                                "ambiguous_contacts": email_hits,
-                                "message": f"Multiple contacts match '{raw_recipient}'. Ask Boss which email address to use.",
-                            }
-                    except Exception:
-                        pass
-
-                async def _dispatch_visual_gmail(v_args: dict) -> dict:
-                    cid = str(call_id_hint or f"gm_{turn_id}_{int(time.monotonic() * 1000)}")
-                    lp = asyncio.get_running_loop()
-                    ft = lp.create_future()
-                    pending_tool_futures[cid] = ft
-                    if websocket.client_state != WebSocketState.DISCONNECTED:
-                        await websocket.send_json({
-                            "type": "tool_call",
-                            "call_id": cid,
-                            "name": "gmail_workspace_control",
-                            "args": v_args,
-                        })
-                    vres: dict = {}
-                    try:
-                        raw_v = await asyncio.wait_for(ft, timeout=12.0)
-                        vres = raw_v if isinstance(raw_v, dict) else {"result": str(raw_v)}
-                    except Exception:
-                        pending_tool_futures.pop(cid, None)
-                        vres = {"ok": True, "message": "Triggered Gmail view."}
-
-                    if vres.get("bridge") != "chrome_extension" and bridge_active:
-                        b_gm = await desktop_bridge_hub.execute(acct_email, "gmail_workspace_control", v_args, timeout=22.0)
-                        if isinstance(b_gm, dict) and b_gm.get("ok"):
-                            return b_gm
-                    return vres
-
-                if g_act == "lookup_contact":
-                    q_name = str(args.get("query") or args.get("target") or args.get("recipient_email") or "").strip()
-                    g_res = await contacts_lookup_service(acct_email, query=q_name, max_results=int(args.get("max_results") or 6))
-                elif g_act == "list_emails":
-                    api_list, vis_open = await asyncio.gather(
-                        gmail_list_messages_service(
-                            acct_email,
-                            query=str(args.get("query") or ""),
-                            max_results=int(args.get("max_results") or 5),
-                        ),
-                        _dispatch_visual_gmail({
-                            "action": "open_gmail_tab",
-                            "view": "inbox",
-                            "query": str(args.get("query") or ""),
-                        }),
-                        return_exceptions=True,
-                    )
-                    g_res = api_list if isinstance(api_list, dict) else {"ok": True}
-                    if isinstance(vis_open, dict):
-                        g_res["opened_real_gmail"] = True
-                        g_res["gmail_url"] = vis_open.get("url", "https://mail.google.com/mail/u/0/#inbox")
-                elif g_act == "read_email":
-                    mid = str(args.get("message_id") or "").strip()
-                    if not mid:
-                        g_res = {"ok": False, "message": "message_id is required; call list_emails first."}
-                    else:
-                        g_res = await gmail_read_message_service(acct_email, mid)
-                        if g_res.get("ok") and g_res.get("threadId"):
-                            await _dispatch_visual_gmail({"action": "open_email_visual", "thread_id": g_res["threadId"]})
-                elif g_act == "send_email":
-                    send_api, vis_sent = await asyncio.gather(
-                        gmail_send_message_service(
-                            user_email=acct_email,
-                            recipient_email=str(args.get("recipient_email") or ""),
-                            subject=str(args.get("subject") or "Message from DAS AI"),
-                            body=str(args.get("body") or args.get("details") or ""),
-                            thread_id=str(args.get("thread_id") or ""),
-                        ),
-                        _dispatch_visual_gmail({"action": "open_gmail_tab", "view": "sent"}),
-                        return_exceptions=True,
-                    )
-                    g_res = send_api if isinstance(send_api, dict) else {"ok": False, "message": "Send failed"}
-                    if isinstance(vis_sent, dict):
-                        g_res["opened_real_gmail"] = True
-                        g_res["gmail_url"] = vis_sent.get("url", "https://mail.google.com/mail/u/0/#sent")
-                elif g_act == "create_draft":
-                    draft_api, _ = await asyncio.gather(
-                        gmail_create_draft_service(
-                            user_email=acct_email,
-                            recipient_email=str(args.get("recipient_email") or ""),
-                            subject=str(args.get("subject") or "Draft from DAS AI"),
-                            body=str(args.get("body") or args.get("details") or ""),
-                        ),
-                        _dispatch_visual_gmail({"action": "open_gmail_tab", "view": "drafts"}),
-                        return_exceptions=True,
-                    )
-                    g_res = draft_api if isinstance(draft_api, dict) else {"ok": False}
-                elif g_act == "schedule_calendar":
-                    g_res = await calendar_create_event_service(
-                        user_email=acct_email,
-                        summary=str(args.get("subject") or args.get("company_name") or "DAS Scheduled Event"),
-                        description=str(args.get("body") or ""),
-                        start_iso=str(args.get("interview_time") or ""),
-                    )
-                elif g_act == "log_sheet":
-                    ok_s = await trigger_n8n_webhook_async("tpo_sheet_log", dict(args))
-                    g_res = {"ok": ok_s, "message": "Logged row to Google Sheets." if ok_s else "Sheets webhook unavailable."}
-                elif g_act in (
-                    "open_gmail_tab",
-                    "open_email_visual",
-                    "search_gmail_visual",
-                    "compose_visual",
-                    "reply_email",
-                    "click_gmail",
-                ):
-                    if g_act in ("open_gmail_tab", "search_gmail_visual"):
-                        v_res, api_res = await asyncio.gather(
-                            _dispatch_visual_gmail(args),
-                            gmail_list_messages_service(
-                                acct_email,
-                                query=str(args.get("query") or ""),
-                                max_results=int(args.get("max_results") or 8),
-                            ),
-                            return_exceptions=True,
-                        )
-                        v_dict = v_res if isinstance(v_res, dict) else {}
-                        a_dict = api_res if isinstance(api_res, dict) else {}
-                        v_dict.pop("needs_chrome_login", None)
-                        g_res = {
-                            **v_dict,
-                            "ok": True,
-                            "emails": a_dict.get("emails") or v_dict.get("visible_emails") or v_dict.get("emails") or [],
-                            "count": a_dict.get("count") or len(v_dict.get("visible_emails") or []),
-                            "needs_auth": a_dict.get("needs_auth", False),
-                            "message": f"Opened your real Gmail ({args.get('view') or 'inbox'}) in Chrome.",
-                        }
-                    else:
-                        g_res = await _dispatch_visual_gmail(args)
-
-                if websocket.client_state != WebSocketState.DISCONNECTED:
-                    try:
-                        await websocket.send_json({
-                            "type": "automation_status",
-                            "data": {"kind": "gmail", "action": g_act, **g_res},
-                        })
-                    except Exception:
-                        pass
-                return g_res
-
-            if fc_name == "run_google_automation":
-                from backend.google_sync_api import gmail_send_message_service, calendar_create_event_service
-                a_type = str(args.get("automation_type") or "sync").lower().strip()
-                acct_email = user_email or "dileepbommali16@gmail.com"
-                if a_type == "send_email" and args.get("recipient_email"):
-                    n8n_res = await gmail_send_message_service(
-                        user_email=acct_email,
-                        recipient_email=str(args.get("recipient_email") or ""),
-                        subject=str(args.get("subject") or "Message from DAS AI"),
-                        body=str(args.get("details") or ""),
-                    )
-                elif a_type == "schedule_calendar":
-                    n8n_res = await calendar_create_event_service(
-                        user_email=acct_email,
-                        summary=str(args.get("subject") or "Interview Schedule"),
-                        description=str(args.get("details") or ""),
-                    )
-                else:
-                    n8n_res = await trigger_google_workspace_sync(
-                        action=a_type,
-                        payload=args,
-                    )
-                if websocket.client_state != WebSocketState.DISCONNECTED:
-                    await websocket.send_json({
-                        "type": "automation_status",
-                        "data": {"kind": "gmail", "action": a_type, **n8n_res},
-                    })
-                return n8n_res
-
             return {"ok": False, "error": f"Unknown tool: {fc_name}"}
 
         async def _run_rest_tool_loop(
@@ -1301,7 +788,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             model_candidates: tuple,
             extra_instruction: str = "",
         ) -> str:
-            """Executes up to 3 tool-calling rounds via Gemini REST so clicks/Gmail/WhatsApp work even in fallback mode."""
+            """Executes up to 3 tool-calling rounds via Gemini REST so UI clicks and Coding Studio work even in fallback mode."""
             sys_prompt = get_das_system_instruction(user_role)
             if extra_instruction:
                 sys_prompt = f"{sys_prompt}\n\n{extra_instruction}"
@@ -1489,7 +976,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         text=(
                             f"Address the speaker strictly as '{hon}'. "
                             f"Listen carefully to the audio (English, Telugu, Tenglish, or Hindi). "
-                            f"If the user asks to search Google, click links, open sites, check/send Gmail, or send WhatsApp messages, ALWAYS invoke the matching tool(s) first and explain the real result concisely. "
+                            f"If the user asks to navigate Pathfinder, practice coding or run programs in the Online Compiler, search Google, or open websites, ALWAYS invoke the matching tool(s) first and explain the real result concisely. "
                             f"{'Camera is ON and a live frame is attached.' if has_live_cam else 'Camera is OFF; never claim to see the user.'} "
                             f"{ctx_note}"
                         )

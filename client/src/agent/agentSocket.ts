@@ -1,5 +1,4 @@
 import { audioEngine, cameraEngine } from "./audioIO";
-import { chromeBridge } from "./chromeBridge";
 import { codingStudioController } from "./codingStudioController";
 import { API_BASE } from "@/lib/apiClient";
 import {
@@ -8,7 +7,6 @@ import {
   openExternalWebsiteOrSearch,
   openLinkedInProfile,
   handleCodeGenerationAndCompiler,
-  triggerGoogleAutomation,
   CodeTaskPayload,
 } from "./toolRunner";
 
@@ -368,10 +366,9 @@ CORE AUTONOMOUS CAPABILITIES:
    - Provide honest Tier-1 ATS resume reviews calibrated to Google's X-Y-Z formula: "Accomplished [X] as measured by [Y] by doing [Z]".
    - Explain clearly what comes after a blueprint problem statement (VS Code / Antigravity / Cursor / Claude Code + picking models, VS Code folder/file layout for LLM + RAG apps, deploying frontend on Vercel/Cloudflare and backend on Render, Image & Video AI tools like Google Imagen/Veo/Flux/Midjourney/Runway/Sora, and ChatGPT vs Gemini AI vs Claude AI).
    - Monitor [Live Screen Context: ...] so you always know who is signed in (Boss ONLY for dileepbommali16@gmail.com, Madam for female accounts, Sir for others), what slide is active, and what card/project is focused.
-5. OPEN ANY WEBSITE & EXPLAIN: When asked to open any website (Google, YouTube, GitHub, LeetCode, or any URL), call 'open_external_website' and explain it clearly.
+5. OPEN ANY WEBSITE & EXPLAIN: When asked to open a learning website (Google, LeetCode, GitHub, YouTube, or any URL), call 'open_external_website' and explain clearly.
 6. LINKEDIN PROFILE INTELLIGENCE: When asked about anyone's profile, call 'open_linkedin_profile' and summarize their background.
-7. GMAIL & WORKSPACE AUTOMATION: When asked to send an email or schedule a calendar, call 'trigger_google_workspace'.
-8. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
+7. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
    When asked to return to dashboard or close compiler, immediately reply warmly ("Okay ${this.roleHonorific}, returning to your dashboard.") and dismiss any open compiler drawers.
 9. Keep voice replies energetic, warm, and conversational without robotic filler.
 10. UNRESTRICTED GENERAL KNOWLEDGE & STRICT ENTITY ACCURACY (CRITICAL MANDATE):
@@ -523,30 +520,8 @@ CORE AUTONOMOUS CAPABILITIES:
                         type: "STRING",
                         description: "Key logic and time/space complexity explanation",
                       },
-                      open_external_tab: {
-                        type: "BOOLEAN",
-                        description: "True if user asked to open external online compiler website",
-                      },
                     },
                     required: ["language", "program_title", "source_code"],
-                  },
-                },
-                {
-                  name: "trigger_google_workspace",
-                  description:
-                    "Send an email via Gmail, schedule a Google Calendar event, or log data to Google Sheets.",
-                  parameters: {
-                    type: "OBJECT",
-                    properties: {
-                      automation_type: {
-                        type: "STRING",
-                        description: "'send_email', 'schedule_calendar', or 'log_sheet'",
-                      },
-                      recipient_email: { type: "STRING" },
-                      subject: { type: "STRING" },
-                      details: { type: "STRING" },
-                    },
-                    required: ["automation_type", "details"],
                   },
                 },
                 {
@@ -786,10 +761,6 @@ CORE AUTONOMOUS CAPABILITIES:
           });
           return;
         }
-        if (data.type === "automation_status" && data.data) {
-          chromeBridge.emitAutomationUpdate(data.data);
-          return;
-        }
         if (data.type === "tool_call" && data.name) {
           this.clearTurnWatchdog();
           this.notifyAgentResponse();
@@ -813,18 +784,6 @@ CORE AUTONOMOUS CAPABILITIES:
           } else if (data.name === "coding_studio_control") {
             const codeRes = await codingStudioController.execute(args);
             sendToolResult(codeRes);
-          } else if (data.name === "programiz_compiler") {
-            const progRes = await chromeBridge.runProgramizCompiler(args);
-            sendToolResult(progRes);
-          } else if (data.name === "chrome_browser_control") {
-            const browserRes = await chromeBridge.runChromeBrowserControl(args);
-            sendToolResult(browserRes);
-          } else if (data.name === "gmail_workspace_control") {
-            const gmRes = await chromeBridge.runGmailVisualAction(args);
-            sendToolResult(gmRes);
-          } else if (data.name === "whatsapp_message_control") {
-            const waRes = await chromeBridge.runWhatsAppAction(args);
-            sendToolResult(waRes);
           } else if (data.name === "open_external_website") {
             const extRes = await openExternalWebsiteOrSearch(args);
             sendToolResult(extRes);
@@ -834,16 +793,10 @@ CORE AUTONOMOUS CAPABILITIES:
           } else if (data.name === "write_and_compile_code") {
             const compRes = await handleCodeGenerationAndCompiler(args, this.savedOnCodeReady);
             sendToolResult(compRes);
-          } else if (
-            data.name === "run_google_automation" ||
-            data.name === "trigger_google_workspace"
-          ) {
-            const gRes = await triggerGoogleAutomation(args);
-            sendToolResult({ ok: true, message: gRes });
           } else if (data.name === "return_to_dashboard") {
             const retMsg = args.message || `Okay ${this.roleHonorific}, returning to your dashboard.`;
             this.savedOnCodeReady?.(null as any);
-            await chromeBridge.runChromeBrowserControl({ action: "return_to_pathfinder" });
+            void codingStudioController.execute({ action: "close" });
             this.savedOnTranscript?.(retMsg);
             if (this.audioChunksInTurn === 0 && !audioEngine.isSpeaking()) {
               this.triggerTextOnlyTts(retMsg);
@@ -946,11 +899,6 @@ CORE AUTONOMOUS CAPABILITIES:
               resultMsg = JSON.stringify(
                 await handleCodeGenerationAndCompiler(args, this.savedOnCodeReady)
               );
-            } else if (
-              fc.name === "trigger_google_workspace" ||
-              fc.name === "run_google_automation"
-            ) {
-              resultMsg = await triggerGoogleAutomation(args);
             } else if (fc.name === "return_to_dashboard") {
               const retMsg = args.message || `Okay ${this.roleHonorific}, returning to your dashboard.`;
               this.savedOnCodeReady?.(null as any);

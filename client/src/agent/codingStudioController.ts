@@ -5,7 +5,6 @@ export interface LanguageSpec {
   id: string;
   label: string;
   extension: string;
-  programizUrl: string;
   starter: string;
 }
 
@@ -14,77 +13,66 @@ export const SUPPORTED_LANGUAGES: LanguageSpec[] = [
     id: "c",
     label: "C (GCC 13)",
     extension: "main.c",
-    programizUrl: "https://www.programiz.com/c-programming/online-compiler/",
     starter: '#include <stdio.h>\n\nint main(void) {\n    printf("Hello Boss\\n");\n    return 0;\n}\n',
   },
   {
     id: "cpp",
     label: "C++ (G++ 13)",
     extension: "main.cpp",
-    programizUrl: "https://www.programiz.com/cpp-programming/online-compiler/",
     starter: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello Boss" << endl;\n    return 0;\n}\n',
   },
   {
     id: "python",
     label: "Python 3.11",
     extension: "main.py",
-    programizUrl: "https://www.programiz.com/python-programming/online-compiler/",
     starter: 'print("Hello Boss")\n',
   },
   {
     id: "java",
     label: "Java 21",
     extension: "Main.java",
-    programizUrl: "https://www.programiz.com/java-programming/online-compiler/",
     starter: 'class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello Boss");\n    }\n}\n',
   },
   {
     id: "javascript",
     label: "JavaScript (V8)",
     extension: "index.js",
-    programizUrl: "https://www.programiz.com/javascript/online-compiler/",
     starter: 'console.log("Hello Boss");\n',
   },
   {
     id: "typescript",
     label: "TypeScript 5.4",
     extension: "index.ts",
-    programizUrl: "https://onecompiler.com/typescript",
     starter: 'const greet = (name: string): string => `Hello ${name}`;\nconsole.log(greet("Boss"));\n',
   },
   {
     id: "sql",
     label: "SQL (SQLite)",
     extension: "query.sql",
-    programizUrl: "https://www.programiz.com/sql/online-compiler/",
     starter: "SELECT 'Hello Boss' AS greeting;\n",
   },
   {
     id: "go",
     label: "Go 1.21",
     extension: "main.go",
-    programizUrl: "https://www.programiz.com/golang/online-compiler/",
     starter: 'package main\nimport "fmt"\nfunc main() {\n    fmt.Println("Hello Boss")\n}\n',
   },
   {
     id: "rust",
     label: "Rust 1.75",
     extension: "main.rs",
-    programizUrl: "https://www.programiz.com/rust/online-compiler/",
     starter: 'fn main() {\n    println!("Hello Boss");\n}\n',
   },
   {
     id: "csharp",
     label: "C# (.NET)",
     extension: "Program.cs",
-    programizUrl: "https://www.programiz.com/csharp-programming/online-compiler/",
     starter: 'using System;\nclass Program {\n    static void Main() => Console.WriteLine("Hello Boss");\n}\n',
   },
   {
     id: "php",
     label: "PHP 8",
     extension: "index.php",
-    programizUrl: "https://www.programiz.com/php/online-compiler/",
     starter: '<?php\necho "Hello Boss\\n";\n',
   },
 ];

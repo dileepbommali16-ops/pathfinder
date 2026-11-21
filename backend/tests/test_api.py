@@ -416,56 +416,6 @@ class TestAPIEndpoints(unittest.TestCase):
         # Immediate ONLINE status must be sent before opening an upstream Live connection
         self.assertLess(lp_src.find('"status": "connected"'), lp_src.find("client.aio.live.connect"))
 
-    def test_chrome_bridge_tools_and_google_workspace_oauth_persistence(self):
-        from backend.agent.live_proxy import DAS_TOOLS
-        from backend.database import save_google_workspace_tokens, get_google_workspace_tokens
-
-        declared = {fn.name for t in DAS_TOOLS for fn in (t.function_declarations or [])}
-        self.assertIn("programiz_compiler", declared)
-        self.assertIn("chrome_browser_control", declared)
-        self.assertIn("gmail_workspace_control", declared)
-
-        test_email = "workspace.test.unit@example.com"
-        save_google_workspace_tokens(
-            email=test_email,
-            access_token="ya29.unit_test_access",
-            refresh_token="1//unit_test_refresh",
-            expires_at=9999999999.0,
-            scope="openid email https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.readonly",
-        )
-        loaded = get_google_workspace_tokens(test_email)
-        self.assertIsNotNone(loaded)
-        self.assertEqual(loaded["access_token"], "ya29.unit_test_access")
-        self.assertEqual(loaded["refresh_token"], "1//unit_test_refresh")
-
-        st = self.client.get(f"/api/google/workspace/status?email={test_email}")
-        self.assertEqual(st.status_code, 200)
-        st_json = st.json()
-        self.assertTrue(st_json["connected"])
-        self.assertTrue(st_json["has_gmail"])
-        self.assertIn("/api/auth/google/workspace/start", st_json["connect_url"])
-
-    def test_cloud_web_ssrf_guard_and_whatsapp_tool_declaration(self):
-        from backend.google_sync_api import _is_safe_public_url, _is_relevant_search_result
-        from backend.agent.live_proxy import DAS_TOOLS
-
-        self.assertFalse(_is_safe_public_url("http://127.0.0.1:8000/secret"))
-        self.assertFalse(_is_safe_public_url("http://localhost/admin"))
-        self.assertFalse(_is_safe_public_url("http://169.254.169.254/latest/meta-data/"))
-        self.assertFalse(_is_safe_public_url("file:///etc/passwd"))
-        self.assertTrue(_is_safe_public_url("https://docs.anthropic.com/en/docs/claude-code"))
-
-        self.assertFalse(_is_relevant_search_result("claude code", "PRUPanel Connect - Prudential Singapore", "https://www.prudential.com.sg/", "healthcare"))
-        self.assertTrue(_is_relevant_search_result("claude code", "Claude Code by Anthropic", "https://claude.com/product/claude-code", "AI coding agent"))
-        self.assertFalse(_is_relevant_search_result("allu arjun", "Home | I am a Young Scientist", "https://youngscientist.sscglobal.com.sg/", "badge"))
-        self.assertTrue(_is_relevant_search_result("allu arjun", "Allu Arjun - Wikipedia", "https://en.wikipedia.org/wiki/Allu_Arjun", "Indian actor"))
-
-        ssrf_resp = self.client.get("/api/google/web/read?url=http://127.0.0.1:8080/internal")
-        self.assertEqual(ssrf_resp.status_code, 400)
-
-        declared = {fn.name for t in DAS_TOOLS for fn in (t.function_declarations or [])}
-        self.assertIn("whatsapp_message_control", declared)
-
     def test_compiler_engine_zero_local_subprocess_and_sqlite_authorizer(self):
         import asyncio
         import inspect
@@ -508,160 +458,26 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIn("sandboxed-only-ok", py_res["output"])
         mock_post.assert_called_once()
 
-    def test_contacts_lookup_gmail_fallback_and_name_resolution(self):
-        import asyncio
-        from unittest.mock import AsyncMock, MagicMock, patch
-        from backend.oauth import GOOGLE_WORKSPACE_SCOPES
-        import backend.google_sync_api as gs
-
-        self.assertIn("https://www.googleapis.com/auth/contacts.readonly", GOOGLE_WORKSPACE_SCOPES)
-
-        def _mk_resp(status_code: int, payload: dict):
-            m = MagicMock()
-            m.status_code = status_code
-            m.json.return_value = payload
-            return m
-
-        async def fake_get(url: str, headers=None, params=None):
-            if "people.googleapis.com" in url:
-                return _mk_resp(403, {"error": {"code": 403, "message": "People API disabled"}})
-            if url.endswith("/messages"):
-                return _mk_resp(200, {"messages": [{"id": "msg_priya_1"}]})
-            if "/messages/msg_priya_1" in url:
-                return _mk_resp(
-                    200,
-                    {
-                        "payload": {
-                            "headers": [
-                                {"name": "From", "value": "Priyanka Bommali <priyankabommali2@gmail.com>"},
-                                {"name": "To", "value": "dileepbommali16@gmail.com"},
-                            ]
-                        }
-                    },
-                )
-            return _mk_resp(404, {})
-
-        with patch.object(gs, "get_valid_google_access_token", AsyncMock(return_value="ya29.fake_token")), \
-             patch("httpx.AsyncClient.get", side_effect=fake_get):
-            res = asyncio.run(gs.contacts_lookup_service("dileepbommali16@gmail.com", "Priyanka"))
-            self.assertTrue(res["ok"])
-            self.assertFalse(res["people_api_enabled"])
-            self.assertEqual(res["count"], 1)
-            self.assertEqual(res["contacts"][0]["email"], "priyankabommali2@gmail.com")
-            self.assertEqual(res["contacts"][0]["source"], "gmail_history")
-
-            direct_email, direct_err = asyncio.run(
-                gs._resolve_recipient_email_if_name("dileepbommali16@gmail.com", "hr@google.com")
-            )
-            self.assertEqual(direct_email, "hr@google.com")
-            self.assertIsNone(direct_err)
-
-            by_name, name_err = asyncio.run(
-                gs._resolve_recipient_email_if_name("dileepbommali16@gmail.com", "Priyanka")
-            )
-            self.assertEqual(by_name, "priyankabommali2@gmail.com")
-            self.assertIsNone(name_err)
-
-        ambig_lookup = {
-            "ok": True,
-            "contacts": [
-                {"name": "Rahul Sharma", "email": "rahul1@example.com"},
-                {"name": "Rahul Verma", "email": "rahul2@example.com"},
-            ],
-        }
-        with patch.object(gs, "contacts_lookup_service", AsyncMock(return_value=ambig_lookup)):
-            amb_email, amb_err = asyncio.run(
-                gs._resolve_recipient_email_if_name("dileepbommali16@gmail.com", "Rahul")
-            )
-            self.assertIsNone(amb_email)
-            self.assertIsNotNone(amb_err)
-            self.assertTrue(amb_err.get("ambiguous"))
-            self.assertEqual(len(amb_err.get("matches", [])), 2)
-
-    def test_desktop_bridge_auth_isolation_and_command_roundtrip(self):
-        import os
-        import py_compile
-        from unittest.mock import patch
-        from backend.desktop_bridge import desktop_bridge_hub
-
-        # Verify desktop-agent/bridge_agent.py compiles with zero syntax errors
-        py_compile.compile("desktop-agent/bridge_agent.py", doraise=True)
-
-        # Initially disconnected and owner-isolated
-        st_visitor = self.client.get("/api/bridge/status?email=visitor@example.com").json()
-        self.assertFalse(st_visitor["connected"])
-        self.assertTrue(st_visitor["owner_only"])
-
-        with patch.dict(os.environ, {"DAS_BRIDGE_TOKEN": "unit_test_secret_token_999"}, clear=False):
-            # 1. Reject bad token on /ws/desktop-bridge
-            with self.client.websocket_connect("/ws/desktop-bridge") as ws_bad:
-                ws_bad.send_json({
-                    "type": "auth",
-                    "token": "wrong_token",
-                    "owner_email": "dileepbommali16@gmail.com",
-                })
-                err_msg = ws_bad.receive_json()
-                self.assertEqual(err_msg.get("type"), "auth_error")
-
-            # 2. Reject non-owner email even with valid token
-            with self.client.websocket_connect("/ws/desktop-bridge") as ws_non_owner:
-                ws_non_owner.send_json({
-                    "type": "auth",
-                    "token": "unit_test_secret_token_999",
-                    "owner_email": "stranger@example.com",
-                })
-                err_msg2 = ws_non_owner.receive_json()
-                self.assertEqual(err_msg2.get("type"), "auth_error")
-
-            # 3. Valid token + Boss email (even comma-separated from root .env) registers, updates status, and disconnects cleanly
-            with self.client.websocket_connect("/ws/desktop-bridge") as ws_ok:
-                ws_ok.send_json({
-                    "type": "auth",
-                    "token": "unit_test_secret_token_999",
-                    "owner_email": "dileepbommali16@gmail.com,dileep@pathfinder.ai",
-                    "host": "dileep-windows-laptop",
-                    "capabilities": ["chrome", "gmail", "vscode"],
-                })
-                ok_msg = ws_ok.receive_json()
-                self.assertEqual(ok_msg.get("type"), "auth_ok")
-
-                ws_ok.send_json({
-                    "type": "heartbeat",
-                    "chrome_ready": True,
-                    "vscode_ready": True,
-                    "active_url": "https://mail.google.com/mail/u/0/#inbox",
-                    "active_title": "Inbox - dileepbommali16@gmail.com",
-                    "tabs_count": 3,
-                })
-                ws_ok.send_json({"type": "ping"})
-                pong = ws_ok.receive_json()
-                self.assertEqual(pong.get("type"), "pong")
-
-                st_owner = self.client.get("/api/bridge/status?email=dileepbommali16@gmail.com").json()
-                self.assertTrue(st_owner["connected"])
-                self.assertTrue(st_owner["chrome_ready"])
-                self.assertEqual(st_owner["tabs_count"], 3)
-                self.assertFalse(desktop_bridge_hub.is_connected("visitor@example.com"))
-
-            st_after = self.client.get("/api/bridge/status?email=dileepbommali16@gmail.com").json()
-            self.assertFalse(st_after["connected"])
-
-    def test_coding_studio_and_vscode_tool_declarations(self):
+    def test_online_compiler_coding_studio_tool_declarations(self):
         from backend.agent.live_proxy import DAS_TOOLS
 
         fn_map = {fn.name: fn for t in DAS_TOOLS for fn in (t.function_declarations or [])}
         self.assertIn("coding_studio_control", fn_map)
-        self.assertIn("vscode_control", fn_map)
-        self.assertIn("chrome_browser_control", fn_map)
-        self.assertIn("gmail_workspace_control", fn_map)
+        self.assertIn("write_and_compile_code", fn_map)
+
+        for removed_tool in (
+            "gmail_workspace_control",
+            "whatsapp_message_control",
+            "chrome_browser_control",
+            "programiz_compiler",
+            "vscode_control",
+            "run_google_automation",
+        ):
+            self.assertNotIn(removed_tool, fn_map)
 
         code_desc = fn_map["coding_studio_control"].parameters.properties["action"].description
         for act in ("open", "switch_language", "write_code", "read_code", "delete_code", "run_code", "stop_code", "get_output", "close"):
             self.assertIn(act, code_desc)
-
-        chrome_desc = fn_map["chrome_browser_control"].parameters.properties["action"].description
-        for act in ("google_search", "click", "type", "read_page", "switch_tab", "close_tab", "go_back", "go_forward"):
-            self.assertIn(act, chrome_desc)
 
 if __name__ == "__main__":
     unittest.main()
