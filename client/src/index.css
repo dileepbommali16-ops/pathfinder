@@ -59,148 +59,148 @@
 
   --bg-base: #000000;
   --bg-card: #000000;
-  --bg-card-subtle: #050606;
-  --bg-card-hover: #050606;
+  --bg-card-subtle: #2B2024;
+  --bg-card-hover: #2B2024;
 
-  --text-primary: #050606;
-  --text-secondary: #050606;
-  --text-muted: #050606;
-  --text-heading: #050606;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-heading: #f8fafc;
 
-  /* Tier 1 & Tier 2 unified to #000000 & #050606 */
-  --accent-wine: #050606;
-  --accent-wine-hover: #050606;
-  --accent-wine-soft: rgba(5, 6, 6, 0.35);
-  --accent-wine-border: #050606;
-  --accent-wine-glow: rgba(5, 6, 6, 0.45);
+  /* Tier 1 & Tier 2 unified to #000000 & #2B2024 */
+  --accent-wine: #2B2024;
+  --accent-wine-hover: #2B2024;
+  --accent-wine-soft: rgba(43, 32, 36, 0.35);
+  --accent-wine-border: #2B2024;
+  --accent-wine-glow: rgba(43, 32, 36, 0.45);
 
-  --accent-violet: #050606;
-  --accent-violet-hover: #050606;
-  --accent-violet-soft: rgba(5, 6, 6, 0.35);
-  --accent-violet-border: #050606;
-  --accent-violet-glow: rgba(5, 6, 6, 0.45);
+  --accent-violet: #2B2024;
+  --accent-violet-hover: #2B2024;
+  --accent-violet-soft: rgba(43, 32, 36, 0.35);
+  --accent-violet-border: #2B2024;
+  --accent-violet-glow: rgba(43, 32, 36, 0.45);
 
-  /* Tier 3: Unified Black #050606 */
-  --accent-mono: #050606;
-  --accent-mono-soft: rgba(5, 6, 6, 0.35);
-  --accent-mono-border: #050606;
-  --accent-mono-glow: rgba(5, 6, 6, 0.35);
+  /* Tier 3: Clean Obsidian + Crisp Platinum White Accents */
+  --accent-mono: #ffffff;
+  --accent-mono-soft: rgba(255, 255, 255, 0.10);
+  --accent-mono-border: rgba(255, 255, 255, 0.20);
+  --accent-mono-glow: rgba(255, 255, 255, 0.15);
 
   /* Section Tone Variations */
-  --accent-readiness: #050606;
-  --accent-readiness-bg: rgba(5, 6, 6, 0.35);
-  --accent-readiness-border: #050606;
+  --accent-readiness: #2B2024;
+  --accent-readiness-bg: rgba(43, 32, 36, 0.35);
+  --accent-readiness-border: #2B2024;
 
-  --accent-roadmap: #050606;
-  --accent-roadmap-bg: rgba(5, 6, 6, 0.35);
-  --accent-roadmap-border: #050606;
+  --accent-roadmap: #2B2024;
+  --accent-roadmap-bg: rgba(43, 32, 36, 0.35);
+  --accent-roadmap-border: #2B2024;
 
-  --accent-coach: #050606;
-  --accent-coach-bg: rgba(5, 6, 6, 0.35);
-  --accent-coach-border: #050606;
+  --accent-coach: #2B2024;
+  --accent-coach-bg: rgba(43, 32, 36, 0.35);
+  --accent-coach-border: #2B2024;
 
-  --accent-projects: #050606;
-  --accent-projects-bg: rgba(5, 6, 6, 0.35);
-  --accent-projects-border: #050606;
+  --accent-projects: #2B2024;
+  --accent-projects-bg: rgba(43, 32, 36, 0.35);
+  --accent-projects-border: #2B2024;
 
-  --accent-cohort: #050606;
-  --accent-cohort-bg: rgba(5, 6, 6, 0.35);
-  --accent-cohort-border: #050606;
+  --accent-cohort: #2B2024;
+  --accent-cohort-bg: rgba(43, 32, 36, 0.35);
+  --accent-cohort-border: #2B2024;
 
-  --accent-resume: #050606;
-  --accent-resume-bg: rgba(5, 6, 6, 0.35);
-  --accent-resume-border: #050606;
+  --accent-resume: #2B2024;
+  --accent-resume-bg: rgba(43, 32, 36, 0.35);
+  --accent-resume-border: #2B2024;
 
-  --accent-interview: #050606;
-  --accent-interview-bg: rgba(5, 6, 6, 0.35);
-  --accent-interview-border: #050606;
+  --accent-interview: #2B2024;
+  --accent-interview-bg: rgba(43, 32, 36, 0.35);
+  --accent-interview-border: #2B2024;
 
   /* Semantic Meaning Colors */
-  --color-success: #050606;
-  --color-warning: #050606;
-  --color-error: #050606;
-  --color-info: #050606;
+  --color-success: #2B2024;
+  --color-warning: #2B2024;
+  --color-error: #2B2024;
+  --color-info: #2B2024;
 
   /* Layout, Card, and Spacing Tokens */
   --card-bg: #000000;
-  --card-border: #050606;
+  --card-border: #2B2024;
   --card-radius: 1.25rem;
   --card-padding: 1.75rem;
   --card-gap: 1.5rem;
 
   --background: #000000;
-  --foreground: #050606;
+  --foreground: #f8fafc;
   --card: #000000;
-  --card-foreground: #050606;
+  --card-foreground: #f8fafc;
   --popover: #000000;
-  --popover-foreground: #050606;
-  --primary: #050606;
-  --primary-foreground: #050606;
-  --secondary: #050606;
-  --secondary-foreground: #050606;
-  --muted: #050606;
-  --muted-foreground: #050606;
-  --accent: #050606;
-  --accent-foreground: #050606;
-  --destructive: #050606;
-  --destructive-foreground: #050606;
-  --border: #050606;
-  --input: #050606;
-  --ring: #050606;
+  --popover-foreground: #f8fafc;
+  --primary: #2B2024;
+  --primary-foreground: #f8fafc;
+  --secondary: #2B2024;
+  --secondary-foreground: #94a3b8;
+  --muted: #2B2024;
+  --muted-foreground: #94a3b8;
+  --accent: #2B2024;
+  --accent-foreground: #f8fafc;
+  --destructive: #2B2024;
+  --destructive-foreground: #f8fafc;
+  --border: #2B2024;
+  --input: #2B2024;
+  --ring: #2B2024;
   --sidebar: #000000;
-  --sidebar-foreground: #050606;
-  --sidebar-accent: #050606;
-  --sidebar-accent-foreground: #050606;
-  --sidebar-border: #050606;
-  --sidebar-ring: #050606;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-accent: #2B2024;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #2B2024;
+  --sidebar-ring: #2B2024;
   --radius: 0.75rem;
 
-  --chart-1: #050606;
-  --chart-2: #050606;
-  --chart-3: #050606;
-  --chart-4: #050606;
-  --chart-5: #050606;
+  --chart-1: #2B2024;
+  --chart-2: #ffffff;
+  --chart-3: #2B2024;
+  --chart-4: #94a3b8;
+  --chart-5: #ffffff;
 }
 
 .dark {
-  --text-primary: #050606;
-  --text-secondary: #050606;
-  --text-muted: #050606;
-  --text-heading: #050606;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-heading: #f8fafc;
 
-  --accent-readiness: #050606;
-  --accent-roadmap: #050606;
-  --accent-coach: #050606;
-  --accent-projects: #050606;
-  --accent-cohort: #050606;
-  --accent-resume: #050606;
-  --accent-interview: #050606;
+  --accent-readiness: #2B2024;
+  --accent-roadmap: #2B2024;
+  --accent-coach: #2B2024;
+  --accent-projects: #2B2024;
+  --accent-cohort: #2B2024;
+  --accent-resume: #2B2024;
+  --accent-interview: #2B2024;
 
-  --color-success: #050606;
-  --color-warning: #050606;
-  --color-error: #050606;
-  --color-info: #050606;
+  --color-success: #2B2024;
+  --color-warning: #2B2024;
+  --color-error: #2B2024;
+  --color-info: #2B2024;
 
   --card-bg: #000000;
-  --card-border: #050606;
+  --card-border: #2B2024;
 
   --background: #000000;
-  --foreground: #050606;
+  --foreground: #f8fafc;
   --card: #000000;
-  --card-foreground: #050606;
+  --card-foreground: #f8fafc;
   --popover: #000000;
-  --popover-foreground: #050606;
-  --secondary: #050606;
-  --secondary-foreground: #050606;
-  --muted: #050606;
-  --muted-foreground: #050606;
-  --accent: #050606;
-  --accent-foreground: #050606;
-  --destructive: #050606;
-  --destructive-foreground: #050606;
-  --border: #050606;
-  --input: #050606;
-  --ring: #050606;
+  --popover-foreground: #f8fafc;
+  --secondary: #2B2024;
+  --secondary-foreground: #94a3b8;
+  --muted: #2B2024;
+  --muted-foreground: #94a3b8;
+  --accent: #2B2024;
+  --accent-foreground: #f8fafc;
+  --destructive: #2B2024;
+  --destructive-foreground: #f8fafc;
+  --border: #2B2024;
+  --input: #2B2024;
+  --ring: #2B2024;
 }
 
 @layer base {
@@ -222,7 +222,7 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: "Space Grotesk", sans-serif;
-    color: #050606;
+    color: #f8fafc;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -386,16 +386,16 @@
 [data-slide-theme="pure-black"] [class*="border-[#7c3aed]"],
 [data-slide-theme="pure-black"] [class*="border-[#161926]"],
 [data-slide-theme="pure-black"] [class*="border-[#9f1239]"] {
-  border-color: #050606 !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
 }
 
 [data-slide-theme="pure-black"] [class*="text-[#7c3aed]"],
 [data-slide-theme="pure-black"] [class*="text-[#a78bfa]"],
 [data-slide-theme="pure-black"] [class*="text-[#9f1239]"] {
-  color: #050606 !important;
+  color: #f8fafc !important;
 }
 
-/* Pure Black (#000000) translucent surfaces for Dashboard Overview */
+/* Pure Black (#000000) translucent surfaces for Dashboard Overview while preserving white elements & graphs */
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#11131c]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#161926]"],
 [data-slide-theme="dashboard-black-plum"] [class*="bg-[#1c2030]"],
@@ -435,19 +435,19 @@
 [data-slide-theme="dashboard-black-plum"] [class*="border-[#9f1239]"],
 [data-slide-theme="dashboard-black-plum"] [class*="border-[#881337]"],
 [data-slide-theme="dashboard-black-plum"] [class*="border-[#34222E]"] {
-  border-color: #050606 !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
 }
 
 [data-slide-theme="dashboard-black-plum"] [class*="text-[#7c3aed]"],
 [data-slide-theme="dashboard-black-plum"] [class*="text-[#9f1239]"],
 [data-slide-theme="dashboard-black-plum"] [class*="text-[#e11d48]"] {
-  color: #050606 !important;
+  color: #f8fafc !important;
 }
 
 .glass-depth-card:hover {
   transform: translateY(-3px) scale(1.004);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.85);
-  border-color: #050606;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.85), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -459,84 +459,130 @@
 }
 
 /* ==========================================================================
-   PATHFINDER DASHBOARD STRICT BLACK PALETTE (#000000 & #050606 ONLY)
+   ENTERPRISE-GRADE TYPOGRAPHY & DESIGN SYSTEM (PATHFINDER DASHBOARD)
+   Scoped to .pathfinder-dashboard to never touch LampLogin/Auth
+   Palette:
+     - Main page titles & primary headings: #f8fafc (Crisp Platinum White)
+     - Tier 1 Accent (Deep Wine Velvet):    #9f1239 / #881337
+     - Tier 2 Accent (Royal Violet Amethyst): #7c3aed / #6d28d9
+     - Tier 3 Accent (Clean Platinum White):  #ffffff / #f1f5f9
+     - Supporting & body text:             #94a3b8 (Refined Silver Grey)
+     - Key metrics & statistics:            #f8fafc (Crisp Platinum White)
    ========================================================================== */
 
 .pathfinder-dashboard {
-  --pf-heading-primary: #050606;
-  --pf-wine-accent: #050606;
-  --pf-violet-accent: #050606;
-  --pf-heading-secondary: #050606;
-  --pf-text-body: #050606;
-  --pf-metric-value: #050606;
+  --pf-heading-primary: #f8fafc;
+  --pf-wine-accent: #9f1239;
+  --pf-violet-accent: #7c3aed;
+  --pf-heading-secondary: #f8fafc;
+  --pf-text-body: #94a3b8;
+  --pf-metric-value: #f8fafc;
 
   font-family: "Outfit", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #050606;
+  color: #94a3b8;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 1. Main page titles and primary headings: #f8fafc */
 .pathfinder-dashboard h1 {
   font-family: "Space Grotesk", "Outfit", sans-serif;
-  color: #050606 !important;
+  color: #f8fafc !important;
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.18;
 }
 
+/* 2. Section headings and subheadings: #f8fafc */
 .pathfinder-dashboard h2,
 .pathfinder-dashboard h3,
 .pathfinder-dashboard h4,
 .pathfinder-dashboard h5,
 .pathfinder-dashboard h6 {
   font-family: "Space Grotesk", "Outfit", sans-serif;
-  color: #050606 !important;
+  color: #f8fafc !important;
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.28;
 }
 
+/* 3. Paragraphs, descriptions, supporting text: #94a3b8 */
 .pathfinder-dashboard p {
-  color: #050606 !important;
+  color: #94a3b8;
   font-weight: 400;
   line-height: 1.65;
 }
 
-.pathfinder-dashboard .ai-highlight-wine,
-.pathfinder-dashboard .ai-highlight-violet {
-  color: #050606 !important;
+/* 4. AI-highlighted words and accents */
+.pathfinder-dashboard .ai-highlight-wine {
+  color: #9f1239 !important;
   font-weight: 600;
 }
 
+.pathfinder-dashboard .ai-highlight-violet {
+  color: #7c3aed !important;
+  font-weight: 600;
+}
+
+/* 5. Utility class color mappings consolidated to SSOT */
 .pathfinder-dashboard .text-slate-100,
 .pathfinder-dashboard .text-slate-200,
-.pathfinder-dashboard .text-white,
+.pathfinder-dashboard .text-white {
+  color: #f8fafc !important;
+}
+
 .pathfinder-dashboard .text-slate-400,
 .pathfinder-dashboard .text-slate-500,
 .pathfinder-dashboard .text-zinc-400,
 .pathfinder-dashboard .text-zinc-500,
 .pathfinder-dashboard .text-gray-400,
 .pathfinder-dashboard .text-gray-500 {
-  color: #050606 !important;
+  color: #94a3b8 !important;
 }
 
-.pathfinder-dashboard .btn-wine,
-.pathfinder-dashboard .btn-wine:hover,
-.pathfinder-dashboard .btn-violet,
-.pathfinder-dashboard .btn-violet:hover,
+/* Wine Button Utility */
+.pathfinder-dashboard .btn-wine {
+  background: linear-gradient(135deg, #9f1239, #881337) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(159, 18, 57, 0.45) !important;
+  box-shadow: 0 4px 20px rgba(159, 18, 57, 0.3) !important;
+}
+
+.pathfinder-dashboard .btn-wine:hover {
+  background: linear-gradient(135deg, #881337, #701a35) !important;
+}
+
+/* Violet Button Utility */
+.pathfinder-dashboard .btn-violet {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(124, 58, 237, 0.45) !important;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3) !important;
+}
+
+.pathfinder-dashboard .btn-violet:hover {
+  background: linear-gradient(135deg, #6d28d9, #5b21b6) !important;
+}
+
+/* Crisp Monochrome Button Utility */
 .pathfinder-dashboard .btn-mono,
-.pathfinder-dashboard .btn-mono *,
+.pathfinder-dashboard .btn-mono * {
+  background: #ffffff !important;
+  color: #0a0b10 !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15) !important;
+}
+
 .pathfinder-dashboard .btn-mono:hover,
 .pathfinder-dashboard .btn-mono:hover * {
-  background: #050606 !important;
-  color: #050606 !important;
-  border: 1px solid #050606 !important;
-  box-shadow: none !important;
+  background: #f1f5f9 !important;
+  color: #0a0b10 !important;
 }
 
+/* Selection highlight */
 .pathfinder-dashboard ::selection {
-  background: #050606;
-  color: #000000;
+  background: rgba(124, 58, 237, 0.35);
+  color: #f8fafc;
 }
 
 /* ==========================================================================
@@ -596,7 +642,7 @@ pre, code {
 
 /* Agent Action Highlight */
 .das-highlight {
-  outline: 2px solid #050606;
+  outline: 2px solid var(--primary, #FF6B4A);
   outline-offset: 4px;
   border-radius: 8px;
   transition: outline 0.2s ease;
@@ -605,7 +651,7 @@ pre, code {
 /* Custom sleek dark scrollbar for DAS HUD transcript panels */
 .das-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #050606 transparent;
+  scrollbar-color: rgba(161, 161, 170, 0.35) transparent;
 }
 .das-scrollbar::-webkit-scrollbar {
   width: 6px;
@@ -615,69 +661,11 @@ pre, code {
   background: transparent;
 }
 .das-scrollbar::-webkit-scrollbar-thumb {
-  background: #050606;
+  background: rgba(161, 161, 170, 0.32);
   border-radius: 9999px;
 }
 .das-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #050606;
+  background: rgba(161, 161, 170, 0.52);
 }
-
-/* ==========================================================================
-   STRICT FULL-WEBSITE STEALTH BLACK LOCK (#000000 & #050606 ONLY)
-   Leaves the 3D Agent Face (#das-singleton-avatar & its WebGL canvas) 100% untouched.
-   ========================================================================== */
-html body *:not(#das-singleton-avatar):not(#das-singleton-avatar *),
-html body .pathfinder-dashboard *:not(#das-singleton-avatar):not(#das-singleton-avatar *) {
-  color: #050606 !important;
-  -webkit-text-fill-color: #050606 !important;
-  border-color: #050606 !important;
-  outline-color: #050606 !important;
-  caret-color: #050606 !important;
-  text-shadow: none !important;
-  background-image: none !important;
-  --tw-ring-color: #050606 !important;
-  --tw-shadow-color: #000000 !important;
-}
-
-html body *:not(#das-singleton-avatar):not(#das-singleton-avatar *)::placeholder {
-  color: #050606 !important;
-  -webkit-text-fill-color: #050606 !important;
-  opacity: 1 !important;
-}
-
-html body svg:not(#das-singleton-avatar *),
-html body svg:not(#das-singleton-avatar *) * {
-  color: #050606 !important;
-  stroke: #050606 !important;
-}
-
-html body svg:not(#das-singleton-avatar *) [fill]:not([fill="none"]):not([fill="transparent"]) {
-  fill: #050606 !important;
-}
-
-html body [class*="bg-"]:not([class*="bg-transparent"]):not([class*="bg-[#000000]"]):not(#das-singleton-avatar):not(#das-singleton-avatar *),
-html body [data-sonner-toast],
-html body [data-sonner-toast] * {
-  background-color: #050606 !important;
-  background-image: none !important;
-  color: #050606 !important;
-  border-color: #050606 !important;
-  box-shadow: none !important;
-}
-
-html body [class*="bg-[#000000]"]:not(#das-singleton-avatar):not(#das-singleton-avatar *) {
-  background-color: #000000 !important;
-}
-
-html body .pathfinder-dashboard main > div [class*="bg-"],
-html body .pathfinder-dashboard section [class*="bg-"] {
-  background-color: rgba(0, 0, 0, 0.36) !important;
-}
-
-html body main,
-html body .pathfinder-dashboard {
-  background-color: transparent !important;
-}
-
 
 

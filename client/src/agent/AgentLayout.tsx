@@ -1359,8 +1359,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
       {/* DAS Live Multi-Language Code & Compiler Studio Drawer */}
       {codeTask && (
-        <div className="fixed top-16 left-2 right-2 sm:left-auto sm:top-20 sm:right-6 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#000000]/95 border border-[#050606] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#050606] pb-2">
+        <div className="fixed top-16 left-2 right-2 sm:left-auto sm:top-20 sm:right-6 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#000000]/95 border border-[#2B2024] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2B2024] pb-2">
             <div className="flex items-center gap-2 min-w-0">
               <select
                 value={normalizeLanguage(codeTask.language)}
@@ -1372,18 +1372,18 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   });
                 }}
                 aria-label="Select Programming Language"
-                className="text-xs font-bold uppercase px-2.5 py-1 rounded-lg bg-[#050606] border border-[#050606] text-[#050606] focus:outline-none cursor-pointer"
+                className="text-xs font-bold uppercase px-2.5 py-1 rounded-lg bg-[#2B2024] border border-[#2B2024] text-white focus:outline-none cursor-pointer"
               >
                 {SUPPORTED_LANGUAGES.map((lang) => (
-                  <option key={lang.id} value={lang.id} className="bg-[#000000] text-[#050606]">
+                  <option key={lang.id} value={lang.id} className="bg-[#000000] text-white">
                     {lang.label}
                   </option>
                 ))}
               </select>
-              <span className="font-bold text-[#050606] text-sm truncate max-w-[200px]">
+              <span className="font-bold text-white text-sm truncate max-w-[200px]">
                 {codeTask.title}
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-[#050606] text-[#050606] font-mono">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-[#2B2024] text-zinc-300 font-mono">
                 {editableCode ? editableCode.split(/\r?\n/).length : 0} lines
               </span>
             </div>
@@ -1396,7 +1396,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                     toast.success("Code copied to clipboard!");
                   } catch {}
                 }}
-                className="px-2.5 py-1 bg-[#050606] hover:brightness-110 border border-[#050606] rounded-lg text-xs text-[#050606] transition cursor-pointer"
+                className="px-2.5 py-1 bg-[#2B2024] hover:brightness-110 border border-[#2B2024] rounded-lg text-xs text-white transition cursor-pointer"
               >
                 Copy
               </button>
@@ -1405,7 +1405,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 onClick={() => {
                   void codingStudioController.execute({ action: "delete_code" });
                 }}
-                className="px-2.5 py-1 bg-[#000000] hover:bg-[#050606] border border-[#050606] rounded-lg text-xs text-[#050606] transition cursor-pointer"
+                className="px-2.5 py-1 bg-[#000000] hover:bg-[#2B2024] border border-[#2B2024] rounded-lg text-xs text-white transition cursor-pointer"
                 title="Clear / Delete All Code"
               >
                 🗑 Clear
@@ -1417,7 +1417,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   setCodeTask(null);
                   setTranscript(`Okay ${getUserRole()}, returned to your dashboard.`);
                 }}
-                className="px-2.5 py-1 bg-[#050606] hover:brightness-110 rounded-lg text-xs text-[#050606] font-bold transition cursor-pointer"
+                className="px-2.5 py-1 bg-[#2B2024] hover:brightness-110 rounded-lg text-xs text-white font-bold transition cursor-pointer"
                 title="Close Compiler Studio"
               >
                 ✕
@@ -1426,8 +1426,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           </div>
 
           {codeTask.explanation && (
-            <div className="bg-[#000000] border border-[#050606] rounded-xl p-3 text-xs text-[#050606] whitespace-pre-wrap max-h-36 overflow-y-auto">
-              <span className="font-bold text-[#050606] block mb-1">💡 Logic, Structure & Walkthrough:</span>
+            <div className="bg-[#000000] border border-[#2B2024] rounded-xl p-3 text-xs text-white whitespace-pre-wrap max-h-36 overflow-y-auto">
+              <span className="font-bold text-white block mb-1">💡 Logic, Structure & Walkthrough:</span>
               {codeTask.explanation}
             </div>
           )}
@@ -1440,7 +1440,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             }}
             rows={10}
             spellCheck={false}
-            className="w-full bg-[#000000] border border-[#050606] rounded-xl p-3 font-mono text-xs text-[#050606] focus:outline-none focus:border-[#050606] selection:bg-[#050606]"
+            className="w-full bg-[#000000] border border-[#2B2024] rounded-xl p-3 font-mono text-xs text-white focus:outline-none focus:border-white/40 selection:bg-[#2B2024]"
           />
 
           <div className="flex items-center gap-2">
@@ -1452,13 +1452,13 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 setStdinInput(e.target.value);
               }}
               placeholder="Optional program input (stdin)..."
-              className="flex-1 bg-[#000000] border border-[#050606] rounded-lg px-3 py-1.5 text-xs text-[#050606] focus:outline-none focus:border-[#050606]"
+              className="flex-1 bg-[#000000] border border-[#2B2024] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-white/40"
             />
             {isRunningCode && (
               <button
                 type="button"
                 onClick={stopCodeLive}
-                className="px-3.5 py-1.5 bg-[#050606] hover:brightness-110 text-[#050606] font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1 border border-[#050606]"
+                className="px-3.5 py-1.5 bg-[#A80139] hover:brightness-110 text-white font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1 border border-[#FD0053]"
               >
                 ⏹ Stop
               </button>
@@ -1469,17 +1469,17 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 void runCodeLive();
               }}
               disabled={isRunningCode}
-              className="px-4 py-1.5 text-[#050606] font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1.5 border shadow-lg hover:brightness-110"
+              className="px-4 py-1.5 text-white font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1.5 border shadow-lg hover:brightness-110"
               style={{
-                backgroundColor: "#050606",
-                borderColor: "#050606",
+                backgroundColor: isRunningCode ? "#2B2024" : "#FD0053",
+                borderColor: "#A80139",
               }}
             >
               {isRunningCode ? "Running..." : "▶ Run Code"}
             </button>
           </div>
 
-          <div className="bg-[#000000] border border-[#050606] rounded-xl p-3 font-mono text-xs text-[#050606] max-h-40 overflow-y-auto whitespace-pre-wrap">
+          <div className="bg-[#000000] border border-[#2B2024] rounded-xl p-3 font-mono text-xs text-white max-h-40 overflow-y-auto whitespace-pre-wrap">
             {compileOutput || "Output terminal ready. Click ▶ Run Code or tell DAS to run."}
           </div>
         </div>
@@ -1497,7 +1497,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           }`}
           style={{
             backgroundColor: "#000000",
-            borderColor: "#050606",
+            borderColor: "#2B2024",
             boxShadow: "0 16px 40px rgba(0, 0, 0, 0.85)",
           }}
         >
@@ -1512,10 +1512,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               }`}
             />
             <div
-              className="absolute top-1.5 left-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-[#050606] border"
-              style={{ backgroundColor: "rgba(0,0,0,0.82)", borderColor: "#050606" }}
+              className="absolute top-1.5 left-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-white border"
+              style={{ backgroundColor: "rgba(0,0,0,0.82)", borderColor: "#2B2024" }}
             >
-              <span className="h-1.5 w-1.5 rounded-full animate-pulse bg-[#050606]" />
+              <span className="h-1.5 w-1.5 rounded-full animate-pulse bg-white" />
               <span>24/7 VISION</span>
             </div>
             <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
@@ -1527,7 +1527,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                       e.currentTarget.blur();
                       setExpandedCamPreview((v) => !v);
                     }}
-                    className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-[#050606] border border-[#050606] cursor-pointer"
+                    className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-white border border-[#2B2024] cursor-pointer"
                     title={expandedCamPreview ? "Compact Camera View" : "Larger Real View"}
                     aria-label={expandedCamPreview ? "Shrink camera preview" : "Expand camera preview"}
                   >
@@ -1539,7 +1539,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                       e.currentTarget.blur();
                       setMirrorCamera((v) => !v);
                     }}
-                    className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-[#050606] border border-[#050606] cursor-pointer"
+                    className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-white border border-[#2B2024] cursor-pointer"
                     title="Mirror / Flip Preview"
                     aria-label="Mirror camera preview"
                   >
@@ -1553,7 +1553,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   e.currentTarget.blur();
                   setMinimizedCamPreview((v) => !v);
                 }}
-                className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-[#050606] border border-[#050606] cursor-pointer"
+                className="px-1.5 py-0.5 rounded bg-[#000000]/80 text-[10px] text-white border border-[#2B2024] cursor-pointer"
                 title={minimizedCamPreview ? "Expand Camera Preview" : "Minimize Camera Preview"}
                 aria-label={minimizedCamPreview ? "Expand camera preview" : "Minimize camera preview"}
               >
@@ -1564,12 +1564,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
           {/* Live Motion & AI Perception Visualizer Strip */}
           {!minimizedCamPreview && (
-            <div className="px-2.5 py-1.5 border-t border-[#050606] bg-[#000000] flex flex-col gap-1">
+            <div className="px-2.5 py-1.5 border-t border-[#2B2024] bg-[#000000] flex flex-col gap-1">
               <div className="flex items-center justify-between text-[10px]">
-                <span className="text-[#050606] font-semibold">
+                <span className="text-white font-semibold">
                   {camMotion.label}
                 </span>
-                <span className="text-[#050606] font-mono">{visionStatusNote}</span>
+                <span className="text-zinc-400 font-mono">{visionStatusNote}</span>
               </div>
               <div className="flex items-end gap-0.5 h-3" aria-label="Live motion visualizer">
                 {[0.25, 0.45, 0.7, 1.0, 0.85, 0.6, 0.4, 0.2].map((w, idx) => {
@@ -1577,7 +1577,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   return (
                     <div
                       key={idx}
-                      className="flex-1 rounded-sm transition-all duration-150 bg-[#050606]"
+                      className={`flex-1 rounded-sm transition-all duration-150 ${
+                        camMotion.activeMotion ? "bg-white" : "bg-[#2B2024]"
+                      }`}
                       style={{ height: `${pct}%` }}
                     />
                   );
@@ -1586,12 +1588,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             </div>
           )}
           {!minimizedCamPreview && videoDevices.length > 1 && (
-            <div className="px-2 py-1.5 border-t border-[#050606] bg-[#000000]">
+            <div className="px-2 py-1.5 border-t border-[#2B2024] bg-[#000000]">
               <select
                 value={selectedCameraId}
                 onChange={(e) => handleCameraDeviceChange(e.target.value)}
                 aria-label="Select Camera"
-                className="w-full rounded bg-[#000000] border border-[#050606] text-[10px] text-[#050606] px-1.5 py-1 focus:outline-none"
+                className="w-full rounded bg-[#000000] border border-[#2B2024] text-[10px] text-white px-1.5 py-1 focus:outline-none"
               >
                 <option value="">Default Camera</option>
                 {videoDevices.map((d) => (
@@ -1611,18 +1613,22 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         className="fixed bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[96%] sm:w-[92%] max-w-3xl rounded-2xl p-2 sm:p-3 shadow-2xl flex flex-col gap-1.5 sm:gap-2 border"
         style={{
           backgroundColor: "#000000",
-          borderColor: "#050606",
+          borderColor: "#2b2024",
           boxShadow: "0 20px 50px rgba(0, 0, 0, 0.92)"
         }}
       >
         {/* Top Status & Role Select Bar */}
         <div className="flex items-center justify-between text-xs px-2">
           <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#050606]" />
-            <span className="font-bold tracking-wider text-[#050606]">DAS AI</span>
             <span
-              className="px-2 py-0.5 rounded text-[10px] font-semibold border text-[#050606]"
-              style={{ backgroundColor: "#050606", borderColor: "#050606" }}
+              className={`h-2.5 w-2.5 rounded-full ${
+                connected ? "bg-white animate-pulse" : "bg-zinc-400"
+              }`}
+            />
+            <span className="font-bold tracking-wider text-white">DAS AI</span>
+            <span
+              className="px-2 py-0.5 rounded text-[10px] font-semibold border text-white"
+              style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
             >
               {connected ? "ONLINE" : "CONNECTING..."}
             </span>
@@ -1637,10 +1643,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                     toast.info("Run desktop-agent\\start_bridge.bat on your laptop to connect Real Chrome, Real Gmail & VS Code.");
                   }
                 }}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-[#050606] transition cursor-pointer hover:brightness-110"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
                 style={{
-                  backgroundColor: "#050606",
-                  borderColor: "#050606",
+                  backgroundColor: "#2b2024",
+                  borderColor: desktopBridgeOnline ? "#FD0053" : "#2b2024",
                 }}
                 title={
                   desktopBridgeOnline
@@ -1650,7 +1656,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               >
                 <span
                   className="h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: "#050606" }}
+                  style={{ backgroundColor: desktopBridgeOnline ? "#FD0053" : "#71717a" }}
                 />
                 <span>{desktopBridgeOnline ? "💻 Bridge Live" : "💻 Bridge Off"}</span>
               </button>
@@ -1665,8 +1671,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   toast.info("Open chrome://extensions -> Developer mode ON -> Load unpacked -> select 'das-chrome-extension' folder, then refresh this tab.");
                 }
               }}
-              className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-[#050606] transition cursor-pointer hover:brightness-110"
-              style={{ backgroundColor: "#050606", borderColor: "#050606" }}
+              className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
+              style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
               title={
                 chromeBridgeReady
                   ? "Real Chrome Automation Extension Connected"
@@ -1685,8 +1691,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   void codingStudioController.execute({ action: "open", language: "c" });
                 }
               }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-[#050606] transition cursor-pointer hover:brightness-110"
-              style={{ backgroundColor: "#050606", borderColor: "#050606" }}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
+              style={{ backgroundColor: "#2b2024", borderColor: codeTask ? "#FD0053" : "#2b2024" }}
               title="Open Multi-Language Live Coding Studio (C, C++, Python, Java, JS, TS, SQL, Go, Rust)"
             >
               <span>&lt;/&gt;</span>
@@ -1708,8 +1714,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   toast.success("Opened your real Gmail (mail.google.com) directly!");
                 }
               }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-[#050606] transition cursor-pointer hover:brightness-110"
-              style={{ backgroundColor: "#050606", borderColor: "#050606" }}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
+              style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
               title={
                 gmailConnected
                   ? "Open your REAL Gmail (mail.google.com) directly"
@@ -1734,10 +1740,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   : (role === "sir" ? "madam" : "sir");
                 handleRoleToggle(nextRole);
               }}
-              className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold transition cursor-pointer border shadow-sm hover:brightness-110 active:scale-95 text-[#050606]"
+              className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold transition cursor-pointer border shadow-sm hover:brightness-110 active:scale-95 text-white"
               style={{
-                backgroundColor: "#050606",
-                borderColor: "#050606",
+                backgroundColor: "#2b2024",
+                borderColor: "#2b2024",
               }}
               title={
                 isOwnerAccount(typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "")
@@ -1752,7 +1758,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   ? "🎩 Sir Mode"
                   : "🌸 Madam Mode"}
               </span>
-              <span className="text-[10px] text-[#050606]">⇄</span>
+              <span className="text-[10px] text-zinc-400">⇄</span>
             </button>
           </div>
         </div>
@@ -1760,8 +1766,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         {/* User Voice / Input Transcript */}
         {userTranscript && (
           <div
-            className="text-xs text-[#050606] rounded-xl px-3 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
-            style={{ backgroundColor: "#050606", borderColor: "#050606" }}
+            className="text-xs text-white rounded-xl px-3 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
+            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           >
             🎤 You: {userTranscript}
           </div>
@@ -1769,8 +1775,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
         {/* Agent Spoken Response Transcript */}
         <div
-          className="text-sm text-[#050606] rounded-xl px-3 py-2 max-h-24 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
-          style={{ backgroundColor: "#050606", borderColor: "#050606" }}
+          className="text-sm text-zinc-100 rounded-xl px-3 py-2 max-h-24 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
+          style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
         >
           🔊 DAS: {transcript}
         </div>
@@ -1779,19 +1785,19 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         {attachedFile && (
           <div
             className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
-            style={{ backgroundColor: "#050606", borderColor: "#050606" }}
+            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           >
             <div className="flex items-center gap-2 truncate">
               <span>{attachedType === "image" ? "🖼️" : attachedType === "video" ? "🎬" : "📄"}</span>
-              <span className="font-semibold text-[#050606] truncate max-w-xs">{attachedFile.name}</span>
-              <span className="text-[10px] text-[#050606]">({(attachedFile.size / 1024).toFixed(0)} KB)</span>
+              <span className="font-semibold text-white truncate max-w-xs">{attachedFile.name}</span>
+              <span className="text-[10px] text-zinc-400">({(attachedFile.size / 1024).toFixed(0)} KB)</span>
             </div>
             <div className="flex items-center gap-2">
               {attachedType === "resume" && (
                 <button
                   type="button"
                   onClick={() => window.dispatchEvent(new CustomEvent("das-navigate", { detail: { tab: "resume" } }))}
-                  className="px-2 py-0.5 bg-[#000000] hover:bg-[#050606] text-[#050606] rounded text-[10px] font-bold border border-[#050606]"
+                  className="px-2 py-0.5 bg-[#000000] hover:bg-[#2b2024] text-white rounded text-[10px] font-bold border border-[#2b2024]"
                 >
                   Open ATS Studio
                 </button>
@@ -1799,7 +1805,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[11px] text-[#050606] hover:text-[#050606]"
+                className="text-[11px] text-zinc-300 hover:text-white"
                 title="Change File"
               >
                 ✏️ Change
@@ -1807,7 +1813,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               <button
                 type="button"
                 onClick={removeAttachment}
-                className="text-xs text-[#050606] hover:text-[#050606] font-bold ml-1"
+                className="text-xs text-white hover:text-zinc-300 font-bold ml-1"
                 title="Remove File"
               >
                 ✕
@@ -1821,22 +1827,22 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <div
             className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
             style={{
-              backgroundColor: "#050606",
-              borderColor: "#050606",
+              backgroundColor: "#2b2024",
+              borderColor: "#2b2024",
             }}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="font-bold text-[#050606] shrink-0">
+              <span className="font-bold text-white shrink-0">
                 {micSilentWarning ? "⚠️ NO MIC SIGNAL" : "🎙️ MIC LIVE"}
               </span>
               <div className="w-24 h-2 rounded-full bg-[#000000] overflow-hidden shrink-0">
                 <div
                   ref={micBarRef}
-                  className="h-full bg-[#050606] transition-[width] duration-75"
+                  className="h-full bg-white transition-[width] duration-75"
                   style={{ width: "4%" }}
                 />
               </div>
-              <span className="text-[10px] text-[#050606] truncate">
+              <span className="text-[10px] text-zinc-300 truncate">
                 {micSilentWarning
                   ? micHealthHint || "Voice faint or muted — raise volume or check earphones/buds (auto-tuning...)"
                   : activeMicLabel || "Capturing 16kHz PCM"}
@@ -1845,7 +1851,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <button
               type="button"
               onClick={toggleMic}
-              className="text-[11px] text-[#050606] hover:text-[#050606] font-bold ml-2 cursor-pointer shrink-0"
+              className="text-[11px] text-white hover:text-zinc-300 font-bold ml-2 cursor-pointer shrink-0"
             >
               Mute
             </button>
@@ -1856,19 +1862,19 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         {cameraActive && (
           <div
             className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
-            style={{ backgroundColor: "#050606", borderColor: "#050606" }}
+            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           >
             <div className="flex items-center gap-2 truncate">
-              <span className="h-2 w-2 rounded-full bg-[#050606] animate-pulse" />
-              <span className="font-bold text-[#050606]">● 24/7 LIVE CAMERA</span>
-              <span className="text-[10px] text-[#050606] truncate">
+              <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+              <span className="font-bold text-white">● 24/7 LIVE CAMERA</span>
+              <span className="text-[10px] text-zinc-300 truncate">
                 (Auto-monitoring face, outfit & multi-objects continuously)
               </span>
             </div>
             <button
               type="button"
               onClick={toggleCamera}
-              className="text-[11px] text-[#050606] hover:text-[#050606] font-bold ml-2 cursor-pointer shrink-0"
+              className="text-[11px] text-white hover:text-zinc-300 font-bold ml-2 cursor-pointer shrink-0"
             >
               Stop Cam
             </button>
@@ -1881,18 +1887,18 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <button
             type="button"
             onClick={toggleMic}
-            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer flex items-center gap-1.5 border text-[#050606] hover:brightness-110 shrink-0"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer flex items-center gap-1.5 border text-white hover:brightness-110 shrink-0"
             style={{
-              backgroundColor: micActive ? "#000000" : "#050606",
-              borderColor: "#050606",
+              backgroundColor: micActive ? "#000000" : "#2b2024",
+              borderColor: "#2b2024",
             }}
             title={micActive ? "Click to Mute Microphone" : "Click to Speak (Supports all Headphones, Earphones & Buds)"}
           >
             {micActive ? (
               <>
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#050606] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#050606]"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
                 </span>
                 <span>Listening...</span>
               </>
@@ -1905,10 +1911,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <button
             type="button"
             onClick={toggleCamera}
-            className="px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-[#050606] hover:brightness-110 shrink-0"
+            className="px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110 shrink-0"
             style={{
-              backgroundColor: cameraActive ? "#050606" : "#000000",
-              borderColor: "#050606",
+              backgroundColor: cameraActive ? "#2b2024" : "#000000",
+              borderColor: "#2b2024",
             }}
             title="Toggle Camera (Live Video Streaming to DAS)"
           >
@@ -1919,8 +1925,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-[#050606] hover:brightness-110 shrink-0"
-            style={{ backgroundColor: "#000000", borderColor: "#050606" }}
+            className="px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110 shrink-0"
+            style={{ backgroundColor: "#000000", borderColor: "#2b2024" }}
             title="Upload Photo, Video, or Resume for Instant Review"
           >
             📎
@@ -1937,8 +1943,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               setInputText(e.target.value);
             }}
             placeholder="Ask DAS: 'Who is your boss?', 'Write QuickSort in C', 'Look at my hands'..."
-            className="min-w-[140px] flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#050606] placeholder-[#050606] focus:outline-none border"
-            style={{ backgroundColor: "#050606", borderColor: "#050606" }}
+            className="min-w-[140px] flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-white placeholder-zinc-400 focus:outline-none border"
+            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           />
 
           {/* Dedicated Edit Option Beside Send */}
@@ -1954,10 +1960,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               inputEl?.focus();
               inputEl?.select();
             }}
-            className="px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow flex items-center gap-1 hover:brightness-110 text-[#050606] shrink-0"
+            className="px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow flex items-center gap-1 hover:brightness-110 text-white shrink-0"
             style={{
               backgroundColor: "#000000",
-              borderColor: "#050606",
+              borderColor: "#2b2024",
             }}
             title="Edit / Recall Previous Query"
           >
@@ -1967,10 +1973,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           {/* Send Button */}
           <button
             type="submit"
-            className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-[#050606] transition cursor-pointer border shadow hover:brightness-110 shrink-0"
+            className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white transition cursor-pointer border shadow hover:brightness-110 shrink-0"
             style={{
-              backgroundColor: "#050606",
-              borderColor: "#050606",
+              backgroundColor: "#2b2024",
+              borderColor: "#2b2024",
             }}
           >
             Send

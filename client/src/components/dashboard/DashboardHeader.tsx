@@ -50,13 +50,13 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string 
 ];
 
 const UNIFIED_BLACK_BROWN_THEME = {
-  activeBg: "bg-[#050606]",
-  text: "text-[#050606] font-semibold",
-  icon: "text-[#050606]",
-  border: "border-[#050606]",
-  glow: "shadow-none",
-  badge: "bg-[#000000] text-[#050606] border-[#050606]",
-  indicator: "from-[#000000] via-[#050606] to-[#000000]"
+  activeBg: "bg-[#2B2024]",
+  text: "text-[#f8fafc] font-semibold",
+  icon: "text-[#f8fafc]",
+  border: "border-[#2B2024]",
+  glow: "shadow-[0_0_16px_rgba(43,32,36,0.75)]",
+  badge: "bg-[#000000] text-[#f8fafc] border-[#2B2024]",
+  indicator: "from-[#000000] via-[#2B2024] to-[#000000]"
 };
 
 const TAB_THEMES: Record<TabId, typeof UNIFIED_BLACK_BROWN_THEME> = {
@@ -87,12 +87,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#050606] bg-[#000000]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.9)]">
+    <header className="sticky top-0 z-50 border-b border-[#2B2024] bg-[#000000]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.9)]">
       {/* Subtle Dual Horizon Accent */}
-      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#050606] to-transparent" />
+      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#A80139]/50 to-transparent" />
 
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        {/* Clickable Website Brand Logo — Styled strictly in #000000 & #050606 */}
+        {/* Clickable Website Brand Logo — Styled strictly in #FD0053 & #A80139 */}
         <button
           type="button"
           onClick={() => {
@@ -102,29 +102,29 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           className="flex items-center gap-3 text-left cursor-pointer group focus:outline-none"
           title="Return to Dashboard Overview"
         >
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#000000] shadow-md ring-1 ring-[#050606] transition-transform group-hover:scale-105">
-            <GraduationCap className="h-5 w-5 text-[#050606] transition-colors group-hover:text-[#050606]" />
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#000000] shadow-md ring-1 ring-[#A80139] transition-transform group-hover:scale-105">
+            <GraduationCap className="h-5 w-5 text-[#FD0053] transition-colors group-hover:text-[#A80139]" />
             <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#050606] opacity-75"></span>
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#050606]"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FD0053] opacity-75"></span>
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#FD0053] shadow-[0_0_8px_#A80139]"></span>
             </span>
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <span id="brand-site-title" className="text-lg font-bold tracking-tight text-[#050606] drop-shadow-sm font-['Space_Grotesk'] group-hover:text-[#050606]">
-                Pathfinder <span className="text-[#050606]">2.0</span>
+              <span id="brand-site-title" className="text-lg font-bold tracking-tight text-[#FD0053] drop-shadow-sm font-['Space_Grotesk'] group-hover:text-[#A80139]">
+                Pathfinder <span className="text-[#A80139]">2.0</span>
               </span>
-              <span className="rounded-md border border-[#050606] bg-[#000000] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#050606] uppercase shadow-sm">
+              <span className="rounded-md border border-[#A80139] bg-[#000000] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#FD0053] uppercase shadow-sm">
                 AI
               </span>
               {userRole === "admin" && (
-                <span className="rounded-md border border-[#050606] bg-[#000000] px-2 py-0.5 text-[10px] font-medium text-[#050606] uppercase tracking-wider">
+                <span className="rounded-md border border-[#A80139] bg-[#000000] px-2 py-0.5 text-[10px] font-medium text-[#FD0053] uppercase tracking-wider">
                   Admin Portal
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#050606] font-medium">Campus Placement &amp; Engineering Intelligence</p>
+            <p className="text-xs text-[#A80139] font-medium">Campus Placement &amp; Engineering Intelligence</p>
           </div>
         </button>
 
@@ -141,23 +141,23 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 type="button"
                 onClick={() => setActiveTab("profile")}
                 title="View & Edit Candidate Profile"
-                className="hidden sm:flex items-center gap-2.5 rounded-full border border-[#050606] bg-[#000000] px-3.5 py-1.5 shadow-sm backdrop-blur-xl hover:bg-[#050606] transition-all cursor-pointer text-left"
+                className="hidden sm:flex items-center gap-2.5 rounded-full border border-[#2B2024] bg-[#000000] px-3.5 py-1.5 shadow-sm backdrop-blur-xl hover:bg-[#2B2024] transition-all cursor-pointer text-left"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold shadow-sm ring-1 bg-[#050606] text-[#050606] ring-[#050606]">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold shadow-sm ring-1 bg-[#2B2024] text-white ring-[#2B2024]">
                   {isBoss ? "👑" : (username ? username.charAt(0).toUpperCase() : "U")}
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 leading-none">
-                    <span className="text-xs font-semibold text-[#050606]">{displayUser}</span>
+                    <span className="text-xs font-semibold text-[#f8fafc]">{displayUser}</span>
                     {isBoss ? (
-                      <span className="text-[9px] font-bold text-[#050606] bg-[#050606] border border-[#050606] px-1 rounded">BOSS</span>
+                      <span className="text-[9px] font-bold text-white bg-[#2B2024] border border-[#2B2024] px-1 rounded">BOSS</span>
                     ) : userRole === "admin" ? (
-                      <span className="text-[9px] font-medium text-[#050606] bg-[#050606] border border-[#050606] px-1 rounded">ADMIN</span>
+                      <span className="text-[9px] font-medium text-white bg-[#2B2024] border border-[#2B2024] px-1 rounded">ADMIN</span>
                     ) : (
-                      <ShieldCheck className="h-3 w-3 text-[#050606]" />
+                      <ShieldCheck className="h-3 w-3 text-[#94a3b8]" />
                     )}
                   </div>
-                  {displayEmail && <span className="text-[10px] text-[#050606] leading-none">{displayEmail}</span>}
+                  {displayEmail && <span className="text-[10px] text-[#94a3b8] leading-none">{displayEmail}</span>}
                 </div>
               </button>
             );
@@ -167,18 +167,18 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-[#050606] bg-[#000000] text-[#050606] hover:bg-[#050606] transition-colors cursor-pointer"
+            className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-[#2B2024] bg-[#000000] text-[#f8fafc] hover:bg-[#2B2024] transition-colors cursor-pointer"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? <X className="h-5 w-5 text-[#050606]" /> : <Menu className="h-5 w-5 text-[#050606]" />}
+            {mobileMenuOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
           </button>
 
           <button
             onClick={onLogout}
             data-agent-id="logout-btn"
             data-agent-danger="true"
-            className="flex items-center gap-1.5 rounded-xl border border-[#050606] bg-[#000000] px-3 py-1.5 text-xs font-medium text-[#050606] transition-all hover:bg-[#050606] hover:text-[#050606] active:scale-95 shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-[#2B2024] bg-[#000000] px-3 py-1.5 text-xs font-medium text-[#94a3b8] transition-all hover:bg-[#2B2024] hover:text-[#f8fafc] active:scale-95 shadow-sm cursor-pointer"
             title="Sign out of Pathfinder"
           >
             <LogOut className="h-3.5 w-3.5" />
@@ -188,7 +188,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       </div>
 
       {/* Navigation Tabs Bar (Desktop and Horizontal Scroll) */}
-      <div className="border-t border-[#050606] bg-[#000000]/95 px-4 sm:px-6">
+      <div className="border-t border-[#2B2024] bg-[#000000]/95 px-4 sm:px-6">
         <div className="mx-auto flex max-w-7xl flex-nowrap items-center gap-1.5 overflow-x-auto py-2.5 scrollbar-none">
           {TABS.map((tab, idx) => {
             const Icon = tab.icon;
@@ -204,16 +204,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
                   isActive
                     ? `${theme.activeBg} ${theme.text} border ${theme.border} ${theme.glow}`
-                    : "bg-[#000000] text-[#050606] hover:bg-[#050606] hover:text-[#050606] border border-transparent"
+                    : "bg-[#000000] text-[#94a3b8] hover:bg-[#2B2024]/60 hover:text-[#f8fafc] border border-transparent"
                 }`}
               >
-                <span className="text-[10px] font-bold tabular-nums text-[#050606]">
+                <span className={`text-[10px] font-bold tabular-nums ${isActive ? "text-white" : "text-white/50"}`}>
                   {idx + 1}.
                 </span>
-                <Icon className={`h-3.5 w-3.5 ${isActive ? theme.icon : "text-[#050606]"}`} />
+                <Icon className={`h-3.5 w-3.5 ${isActive ? theme.icon : "text-[#94a3b8]"}`} />
                 <span>{tab.label}</span>
                 {tab.badge && (
-                  <span className={`rounded border px-1.5 py-0.5 text-[9px] font-medium ${isActive ? theme.badge : "bg-[#050606] text-[#050606] border-[#050606]"}`}>
+                  <span className={`rounded border px-1.5 py-0.5 text-[9px] font-medium ${isActive ? theme.badge : "bg-[#2B2024] text-[#f8fafc] border-[#2B2024]"}`}>
                     {tab.badge}
                   </span>
                 )}
@@ -238,7 +238,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden border-t border-[#050606] bg-[#000000] px-4 py-4 shadow-2xl overflow-hidden"
+            className="md:hidden border-t border-[#2B2024] bg-[#000000] px-4 py-4 shadow-2xl overflow-hidden"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {TABS.map((tab, idx) => {
@@ -253,11 +253,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     className={`flex items-center justify-between rounded-xl p-3 text-left transition-all ${
                       isActive
                         ? `${theme.activeBg} ${theme.text} border ${theme.border}`
-                        : "bg-[#000000] text-[#050606] hover:bg-[#050606] hover:text-[#050606] border border-[#050606]"
+                        : "bg-[#000000] text-[#94a3b8] hover:bg-[#2B2024] hover:text-white border border-[#2B2024]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? "bg-[#000000] text-[#050606]" : "bg-[#050606] text-[#050606]"}`}>
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? "bg-[#000000] text-white" : "bg-[#2B2024] text-[#94a3b8]"}`}>
                         <Icon className="h-4 w-4" />
                       </div>
                       <span className="text-xs font-semibold">
@@ -266,7 +266,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       </span>
                     </div>
                     {tab.badge && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${isActive ? theme.badge : "bg-[#050606] text-[#050606] border-[#050606]"}`}>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${isActive ? theme.badge : "bg-[#2B2024] text-white border-[#2B2024]"}`}>
                         {tab.badge}
                       </span>
                     )}

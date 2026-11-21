@@ -71,7 +71,7 @@ function findByLabel(label: string, pool?: HTMLElement[]): HTMLElement | null {
 
 function flash(el: HTMLElement) {
   const old = el.style.outline;
-  el.style.outline = "3px solid #050606";
+  el.style.outline = "3px solid #FD0053";
   setTimeout(() => (el.style.outline = old), 900);
 }
 
@@ -718,7 +718,7 @@ export function executeWebsiteControl(
       el.scrollIntoView({ behavior: "smooth", block: "center" });
 
       el.style.transition = "all 0.4s ease";
-      el.style.boxShadow = "0 0 28px rgba(5, 6, 6, 0.65)";
+      el.style.boxShadow = "0 0 28px rgba(253, 0, 83, 0.65)";
       setTimeout(() => {
         el.style.boxShadow = "";
       }, 2500);
