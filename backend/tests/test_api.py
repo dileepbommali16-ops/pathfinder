@@ -218,6 +218,21 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertNotIn("inspect_live_camera_frame", tool_names)
         self.assertIn("ZERO SYCOPHANCY", SYSTEM_INSTRUCTION)
 
+    def test_strong_vs_weak_resume_audit_no_index_error(self):
+        strong_resume = (
+            "Dileep Bommali | dileep@example.com | github.com/dileep | linkedin.com/in/dileep\n"
+            "EDUCATION: B.Tech CSE (Data Science), DR RVR NRI DEEMED TO BE UNIVERSITY, CGPA: 8.9/10\n"
+            "SKILLS: Python, Java, C++, FastAPI, React, TypeScript, PostgreSQL, Docker, AWS, CI/CD, PyTest, Git, System Design, DSA\n"
+            "EXPERIENCE: SDE Intern — Accomplished 42% latency reduction as measured by p95 Prometheus metrics by engineering Redis caching & async FastAPI microservices handling 2,400 RPS.\n"
+            "PROJECTS: Pathfinder 2.0 — Built full-stack AI placement intelligence platform serving 972 records with 88% Random Forest accuracy, PostgreSQL, Docker & GitHub Actions CI/CD.\n"
+            "CERTIFICATIONS: AWS Certified Solutions Architect, Azure AZ-900"
+        )
+        r_strong = self.client.post("/api/ai/resume", data={"resume_text": strong_resume})
+        self.assertEqual(r_strong.status_code, 200, r_strong.text)
+        r_weak = self.client.post("/api/ai/resume", data={"resume_text": "Name: Student. Know basic C."})
+        self.assertEqual(r_weak.status_code, 200, r_weak.text)
+        self.assertGreater(r_strong.json()["score"], r_weak.json()["score"] + 25)
+
     def test_no_puck_exposed_in_agent_status(self):
         resp = self.client.get("/agent/status")
         self.assertEqual(resp.status_code, 200)

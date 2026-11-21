@@ -556,6 +556,10 @@ def analyze_resume_deterministically(
         improvements.append("No Recognized Enterprise Certifications: Big-4 firms like Deloitte weight AWS/Azure/GCP/Databricks credentials heavily during campus shortlisting.")
     if not has_testing:
         improvements.append("No Testing / Engineering Discipline Mentioned: Add PyTest/Jest/JUnit automated tests and CI pipeline verification.")
+    if not improvements:
+        improvements.append(
+            "Tailor Flagship Project Bullets to Target JD: Add direct live deployment URLs, open-source PR links, and distributed system trade-offs for Staff/Bar-Raiser rounds."
+        )
 
     if overall < 50:
         verdict = "Shortlist risk HIGH: thin enterprise stack and demo/Streamlit-level projects need major production upgrading before Deloitte or Tier-1 applications."
