@@ -1200,6 +1200,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         <>
       {/* Hidden File Input for Photos, Videos, and Resumes */}
       <input
+        id="das-attachment-file-input"
+        name="dasAttachmentFile"
         ref={fileInputRef}
         type="file"
         onChange={handleFileUpload}
@@ -1213,6 +1215,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2B2024] pb-2">
             <div className="flex items-center gap-2 min-w-0">
               <select
+                id="coding-studio-language"
+                name="codingStudioLanguage"
                 value={normalizeLanguage(codeTask.language)}
                 onChange={(e) => {
                   const nextLang = normalizeLanguage(e.target.value);
@@ -1283,6 +1287,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           )}
 
           <textarea
+            id="coding-studio-editor"
+            name="codingStudioEditor"
+            aria-label="Source Code Editor"
             value={editableCode}
             onChange={(e) => {
               editableCodeRef.current = e.target.value;
@@ -1295,6 +1302,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
           <div className="flex items-center gap-2">
             <input
+              id="coding-studio-stdin"
+              name="codingStudioStdin"
               type="text"
               value={stdinInput}
               onChange={(e) => {

@@ -172,6 +172,8 @@ export const LiveSkillVerifier: React.FC<LiveSkillVerifierProps> = ({
               <GitBranch className="h-4 w-4" />
             </div>
             <input
+              id="github-verifier-input"
+              name="githubVerifierInput"
               type="text"
               value={githubInput}
               onChange={(e) => setGithubInput(e.target.value)}

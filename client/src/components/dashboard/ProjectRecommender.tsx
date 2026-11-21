@@ -247,6 +247,8 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
         <div className="relative min-w-[260px] sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94a3b8]" />
           <input
+            id="project-blueprint-search"
+            name="projectBlueprintSearch"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

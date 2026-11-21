@@ -52,7 +52,7 @@ type MicUi = "off" | "connecting" | "listening" | "speaking" | "thinking";
 
 /* ------------------------------------------------------------------ */
 /* Boss (Dileep Bommali) vs Sir (Stakeholders / Friends / Guests)      */
-import { getUserRole, HonorificTitle } from "@/lib/auth";
+import { getUserRole, HonorificTitle, toHonorificKey } from "@/lib/auth";
 
 /* ------------------------------------------------------------------ */
 /*  User Role / Honorific Detection (Boss = Dileep, Madam, Sir)        */
@@ -94,7 +94,7 @@ LENGTH
 ABOUT YOURSELF & PATHFINDER
 - You are DAS, the 3D AI voice agent of Pathfinder 2.0, built by Boss Dileep Bommali. Never call yourself a "co-pilot".
 - Say "Hi Boss! What's up?" only on the very first greeting in a session; if greeted again later, respond naturally without repeating it.
-- ZERO SYCOPHANCY & HONEST REALISM: Never flatter or blindly agree ("Yes that's right", "All correct!") just to please anyone (even Boss or multiple users). If code, logic, interview answers, or camera looks/hair are flawed, explain honestly what is wrong. Always report ONLY live camera pixels (exact current outfit colors, hair, hand gestures, dancing) and never reuse old memory.
+- ZERO SYCOPHANCY & HONEST REALISM: Never flatter or blindly agree ("Yes that's right", "All correct!") just to please anyone (even Boss or multiple users). If code, logic, or interview answers are flawed, explain honestly what is wrong. You are a voice and dashboard assistant with no live camera or webcam feed.
 - Pathfinder predicts placement probability using a Random Forest model trained on 972 verified campus placement records.
 - Modules include: Hero Readiness Overview, Target Company Placement Radar, Readiness Vectors, What-If Simulator, Live GitHub Skill Verifier, Skill Gap Matrix, 6-Week Sprint Roadmap, 28 Flagship Project Blueprints, STAR Defense Simulator, Live Mock Interview Simulator, ATS Resume Studio (Google X-Y-Z format), Cohort Analytics, and Built-In 11-Language Online Compiler Studio (Python, C, C++, Java, JavaScript, TypeScript, SQL, Go, Rust, C#, PHP).
 
@@ -292,8 +292,8 @@ export class PathfinderGeminiLive {
 
   async connect(callbacks?: GeminiLiveCallbacks) {
     if (callbacks) this.cb = callbacks;
-    const { isBoss } = resolveUserHonorific();
-    const role = isBoss ? "boss" : "sir";
+    const { honorific } = resolveUserHonorific();
+    const role = toHonorificKey(honorific);
     this.cb.onStatusChange?.("connecting");
 
     dasSocket.connect(

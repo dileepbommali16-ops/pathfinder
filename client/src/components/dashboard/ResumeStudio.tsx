@@ -203,6 +203,8 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                 </button>
 
                 <input
+                  id="resume-pdf-upload"
+                  name="resumePdfUpload"
                   ref={fileInputRef}
                   type="file"
                   accept=".pdf"
@@ -221,10 +223,12 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
 
             {/* Text Paste Box */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#94a3b8]">
+              <label htmlFor="resume-raw-text-input" className="text-xs font-semibold text-[#94a3b8]">
                 Or paste full resume text / skills &amp; project bullets
               </label>
               <textarea
+                id="resume-raw-text-input"
+                name="resumeRawText"
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
                 data-agent-id="resume-text-input"

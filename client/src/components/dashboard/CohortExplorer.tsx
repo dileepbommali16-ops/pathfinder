@@ -233,8 +233,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
         {/* 4 Interactive Dropdowns */}
         <div className="relative z-10 mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-[#94a3b8]">Cohort Year</label>
+            <label htmlFor="cohort-filter-year" className="text-[11px] font-semibold text-[#94a3b8]">Cohort Year</label>
             <select
+              id="cohort-filter-year"
+              name="cohortYear"
               value={filters.year}
               onChange={(e) => onFilterChange({ ...filters, year: parseInt(e.target.value, 10) })}
               className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#2B2024]/50 focus:ring-1 focus:ring-[#2B2024]/20"
@@ -248,8 +250,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-[#94a3b8]">Course / Branch</label>
+            <label htmlFor="cohort-filter-branch" className="text-[11px] font-semibold text-[#94a3b8]">Course / Branch</label>
             <select
+              id="cohort-filter-branch"
+              name="cohortBranch"
               value={filters.branch}
               onChange={(e) => onFilterChange({ ...filters, branch: e.target.value })}
               className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#2B2024]/50 focus:ring-1 focus:ring-[#2B2024]/20"
@@ -263,8 +267,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-[#94a3b8]">Gender Filter</label>
+            <label htmlFor="cohort-filter-gender" className="text-[11px] font-semibold text-[#94a3b8]">Gender Filter</label>
             <select
+              id="cohort-filter-gender"
+              name="cohortGender"
               value={filters.gender}
               onChange={(e) => onFilterChange({ ...filters, gender: e.target.value })}
               className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#2B2024]/50 focus:ring-1 focus:ring-[#2B2024]/20"
@@ -276,8 +282,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-[#94a3b8]">Skill Domain</label>
+            <label htmlFor="cohort-filter-skill" className="text-[11px] font-semibold text-[#94a3b8]">Skill Domain</label>
             <select
+              id="cohort-filter-skill"
+              name="cohortSkill"
               value={filters.skill}
               onChange={(e) => onFilterChange({ ...filters, skill: e.target.value })}
               className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#2B2024]/50 focus:ring-1 focus:ring-[#2B2024]/20"

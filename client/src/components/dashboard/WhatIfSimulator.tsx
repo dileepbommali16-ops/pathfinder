@@ -376,6 +376,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 <span className="text-sm font-black text-[#2B2024]">{cgpa.toFixed(1)} / 10.0</span>
               </div>
               <input
+                id="whatif-cgpa-slider"
+                name="whatifCgpa"
                 type="range"
                 min="5.0"
                 max="10.0"
@@ -401,6 +403,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 <span className="text-sm font-black text-[#2B2024]">{codingScore} / 100</span>
               </div>
               <input
+                id="whatif-coding-slider"
+                name="whatifCodingScore"
                 type="range"
                 min="20"
                 max="100"
@@ -426,6 +430,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 <span className="text-sm font-black text-[#2B2024]">{projectsCount} Deployed</span>
               </div>
               <input
+                id="whatif-projects-slider"
+                name="whatifProjectsCount"
                 type="range"
                 min="0"
                 max="6"
@@ -451,6 +457,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 <span className="text-sm font-black text-[#2B2024]">{internships} Completed</span>
               </div>
               <input
+                id="whatif-internships-slider"
+                name="whatifInternships"
                 type="range"
                 min="0"
                 max="4"
@@ -478,6 +486,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
                 </span>
               </div>
               <input
+                id="whatif-backlogs-slider"
+                name="whatifActiveBacklogs"
                 type="range"
                 min="0"
                 max="4"

@@ -594,6 +594,8 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                   </svg>
                 </span>
                 <input
+                  id="login-username-input"
+                  name="username"
                   type="text"
                   placeholder="Username or Student ID"
                   value={username}
@@ -615,6 +617,8 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                   </svg>
                 </span>
                 <input
+                  id="login-email-input"
+                  name="email"
                   type="email"
                   placeholder="Email Address"
                   value={email}

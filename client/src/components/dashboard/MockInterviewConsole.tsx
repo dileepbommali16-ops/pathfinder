@@ -778,6 +778,8 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             </div>
 
             <textarea
+              id="mock-interview-answer"
+              name="mockInterviewAnswer"
               value={userAnswer}
               onChange={(e) => {
                 setUserAnswer(e.target.value);

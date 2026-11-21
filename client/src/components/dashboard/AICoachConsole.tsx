@@ -1317,6 +1317,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
           <div className="relative flex items-center w-full">
             <input
               id="chat-console-input"
+              name="chatConsoleInput"
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}

@@ -136,12 +136,14 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           {/* CGPA Slider */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
-              <span className="font-semibold text-[#f8fafc]">Cumulative CGPA</span>
+              <label htmlFor="eval-cgpa-slider" className="font-semibold text-[#f8fafc]">Cumulative CGPA</label>
               <span className="rounded bg-[#000000] px-2 py-0.5 font-bold text-[#ffffff]">
                 {profile.cgpa.toFixed(1)} / 10.0
               </span>
             </div>
             <input
+              id="eval-cgpa-slider"
+              name="evalCgpa"
               type="range"
               min="4.0"
               max="10.0"
@@ -160,12 +162,14 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           {/* Active Backlogs */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
-              <span className="font-semibold text-[#f8fafc]">Active Academic Backlogs</span>
+              <label htmlFor="eval-backlogs-slider" className="font-semibold text-[#f8fafc]">Active Academic Backlogs</label>
               <span className={`rounded px-2 py-0.5 font-bold ${profile.backlogs === 0 ? "bg-[#000000] text-[#f8fafc]" : "bg-[#2B2024]/20 text-[#2B2024]"}`}>
                 {profile.backlogs} {profile.backlogs === 1 ? "Backlog" : "Backlogs"}
               </span>
             </div>
             <input
+              id="eval-backlogs-slider"
+              name="evalBacklogs"
               type="range"
               min="0"
               max="6"
@@ -184,12 +188,14 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           {/* Internships Completed */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
-              <span className="font-semibold text-[#f8fafc]">Internships Completed</span>
+              <label htmlFor="eval-internships-slider" className="font-semibold text-[#f8fafc]">Internships Completed</label>
               <span className="rounded bg-[#000000] px-2 py-0.5 font-bold text-[#ffffff]">
                 {profile.internships} {profile.internships === 1 ? "Internship" : "Internships"}
               </span>
             </div>
             <input
+              id="eval-internships-slider"
+              name="evalInternships"
               type="range"
               min="0"
               max="4"
@@ -208,12 +214,14 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           {/* Coding & DSA Confidence */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
-              <span className="font-semibold text-[#f8fafc]">DSA & Problem Solving Confidence</span>
+              <label htmlFor="eval-coding-slider" className="font-semibold text-[#f8fafc]">DSA & Problem Solving Confidence</label>
               <span className="rounded bg-[#000000] px-2 py-0.5 font-bold text-[#ffffff]">
                 {profile.coding} / 10
               </span>
             </div>
             <input
+              id="eval-coding-slider"
+              name="evalCoding"
               type="range"
               min="1"
               max="10"
@@ -232,12 +240,14 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           {/* Communication Confidence */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
-              <span className="font-semibold text-[#f8fafc]">Technical Communication Confidence</span>
+              <label htmlFor="eval-communication-slider" className="font-semibold text-[#f8fafc]">Technical Communication Confidence</label>
               <span className="rounded bg-[#000000] px-2 py-0.5 font-bold text-[#ffffff]">
                 {profile.communication} / 10
               </span>
             </div>
             <input
+              id="eval-communication-slider"
+              name="evalCommunication"
               type="range"
               min="1"
               max="10"
@@ -263,11 +273,13 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
 
             {/* Target Role */}
             <div className="space-y-1.5">
-              <label className="flex items-center gap-1.5 text-xs font-semibold text-[#f8fafc]">
+              <label htmlFor="eval-target-role" className="flex items-center gap-1.5 text-xs font-semibold text-[#f8fafc]">
                 <Target className="h-3.5 w-3.5 text-[#ffffff]" />
                 <span>Primary Target Role</span>
               </label>
               <select
+                id="eval-target-role"
+                name="evalTargetRole"
                 value={profile.targetRole}
                 onChange={(e) => onChange({ targetRole: e.target.value })}
                 className="w-full rounded-xl border border-[#000000] bg-[#000000] px-3.5 py-2.5 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#ffffff] focus:ring-1 focus:ring-[#ffffff]/20"
@@ -282,11 +294,13 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
 
             {/* Target Company Tier */}
             <div className="space-y-1.5">
-              <label className="flex items-center gap-1.5 text-xs font-semibold text-[#f8fafc]">
+              <label htmlFor="eval-target-tier" className="flex items-center gap-1.5 text-xs font-semibold text-[#f8fafc]">
                 <Building className="h-3.5 w-3.5 text-[#ffffff]" />
                 <span>Target Company Tier</span>
               </label>
               <select
+                id="eval-target-tier"
+                name="evalTargetTier"
                 value={profile.targetTier}
                 onChange={(e) => onChange({ targetTier: e.target.value })}
                 className="w-full rounded-xl border border-[#000000] bg-[#000000] px-3.5 py-2.5 text-xs font-medium text-[#f8fafc] outline-none transition-all focus:border-[#ffffff] focus:ring-1 focus:ring-[#ffffff]/20"
@@ -302,11 +316,13 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
             {/* Academic Branch & Cohort Year */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#f8fafc]">
+                <label htmlFor="eval-branch" className="flex items-center gap-1.5 text-xs font-semibold text-[#f8fafc]">
                   <GraduationCap className="h-3.5 w-3.5 text-[#ffffff]" />
                   <span>Branch / Stream</span>
                 </label>
                 <select
+                  id="eval-branch"
+                  name="evalBranch"
                   value={profile.branch}
                   onChange={(e) => onChange({ branch: e.target.value })}
                   className="w-full rounded-xl border border-[#000000] bg-[#000000] px-3 py-2.5 text-xs font-medium text-[#f8fafc] outline-none focus:border-[#ffffff] focus:ring-1 focus:ring-[#ffffff]/20"
@@ -320,11 +336,13 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#f8fafc]">
+                <label htmlFor="eval-grad-year" className="flex items-center gap-1.5 text-xs font-semibold text-[#f8fafc]">
                   <Sparkles className="h-3.5 w-3.5 text-white" />
                   <span>Graduation Year</span>
                 </label>
                 <select
+                  id="eval-grad-year"
+                  name="evalGraduationYear"
                   value={profile.graduationYear}
                   onChange={(e) => onChange({ graduationYear: parseInt(e.target.value, 10) })}
                   className="w-full rounded-xl border border-[#000000] bg-[#000000] px-3 py-2.5 text-xs font-medium text-[#f8fafc] outline-none focus:border-white/50 focus:ring-1 focus:ring-white/20"
