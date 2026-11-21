@@ -151,10 +151,12 @@ CORE AUTONOMOUS CAPABILITIES:
    - Guide Boss on top capstone projects, certifications (AWS Solutions Architect, GCP Data Engineer), and core subjects (DSA, OS, CN, DBMS, System Design) to guarantee 100% placement success.
 5. OPEN WEBSITE & LINKEDIN PROFILE INTELLIGENCE:
    - When asked to open a learning site (LeetCode, GeeksforGeeks, GitHub, YouTube, etc.), call `open_external_website`; when asked about anyone's LinkedIn profile, call `open_linkedin_profile` and summarize their background.
-6. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
+6. LIVE PROFILE & CGPA UPDATES:
+   - Whenever the user asks to set, change, or update their CGPA, branch, backlogs, coding rating, communication, internships, or target role (e.g. "set my cgpa to 8.9", "change branch to AIML"), ALWAYS call `update_student_profile(field, value)` immediately and confirm the update warmly — NEVER refuse or tell the user to update it manually.
+7. RETURN TO YOUR DASHBOARD (JARVIS RESPONSE):
    When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'close compiler', immediately call `return_to_dashboard` and reply warmly: "Okay Boss, returning to your dashboard."
-7. STRICT PUCK VOICE PERSONA LOCK: Your voice is permanently locked to the male 'Puck' voice. Keep a consistent, warm, energetic male vocal delivery on every turn — never imitate a female voice or switch vocal personas.
-8. Keep voice replies energetic, warm, and conversational without robotic filler.""" + extra_platform_rules
+8. STRICT PUCK VOICE PERSONA LOCK: Your voice is permanently locked to the male 'Puck' voice. Keep a consistent, warm, energetic male vocal delivery on every turn — never imitate a female voice or switch vocal personas.
+9. Keep voice replies energetic, warm, and conversational without robotic filler.""" + extra_platform_rules
 
 # Tools matching AI Studio specs: Pathfinder UI + Online Compiler + Factual/Vision helpers
 DAS_TOOLS = [
@@ -373,6 +375,24 @@ DAS_TOOLS = [
                             description="Visual focus area: 'outfit_color', 'hairstyle', 'dance_or_hands', 'objects', or 'full_scene'"
                         )
                     },
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="update_student_profile",
+                description="Directly update the user's live Pathfinder profile fields (cgpa, branch, backlogs, coding, communication, internships, targetRole) on the dashboard and recalculate placement readiness. Always call this when the user asks to set, change, or update their CGPA, branch, backlogs, coding rating, or target role.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "field": types.Schema(
+                            type="STRING",
+                            description="Profile field name: 'cgpa', 'branch', 'backlogs', 'coding', 'communication', 'internships', or 'targetRole'",
+                        ),
+                        "value": types.Schema(
+                            type="STRING",
+                            description="New value for the field, e.g. '8.9' or 'AIML'",
+                        ),
+                    },
+                    required=["field", "value"],
                 ),
             ),
         ]
@@ -795,6 +815,25 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 if not isinstance(client_res, dict):
                     client_res = {"result": str(client_res)}
                 return client_res
+
+            if fc_name == "update_student_profile":
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    await websocket.send_json({
+                        "type": "tool_call",
+                        "name": fc_name,
+                        "args": args,
+                    })
+                return {
+                    "status": "executed_on_client",
+                    "ok": True,
+                    "updated": True,
+                    "field": args.get("field"),
+                    "value": args.get("value"),
+                    "result": (
+                        f"Successfully updated {args.get('field')} to {args.get('value')} "
+                        f"in the user's live profile and recalculated placement readiness."
+                    ),
+                }
 
             if fc_name in (
                 "control_website",

@@ -109,6 +109,26 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     setSkillsText((profile.technicalSkills || profile.skills || []).join(", "));
   }, [profile]);
 
+  useEffect(() => {
+    const onHonorificChanged = (ev: Event) => {
+      const detail = (ev as CustomEvent)?.detail || {};
+      const nextRole = detail.role as string | undefined;
+      const nextPref = detail.pref as string | undefined;
+      if (canSelectBossMode || isGuestAccount(resolvedEmail, formData.fullName)) return;
+      const mappedPref: "Auto" | "Madam" | "Sir" =
+        nextPref === "Auto"
+          ? "Auto"
+          : nextRole === "Madam"
+            ? "Madam"
+            : nextRole === "Sir"
+              ? "Sir"
+              : "Auto";
+      setFormData((prev) => ({ ...prev, honorificPref: mappedPref }));
+    };
+    window.addEventListener("das-honorific-changed", onHonorificChanged);
+    return () => window.removeEventListener("das-honorific-changed", onHonorificChanged);
+  }, [canSelectBossMode, resolvedEmail, formData.fullName]);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);

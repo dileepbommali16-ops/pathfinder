@@ -256,7 +256,12 @@ export function setHonorificPreference(role: HonorificTitle | "Auto", email?: st
 
   window.dispatchEvent(
     new CustomEvent("das:honorific-change", {
-      detail: { role: resolved, honorificKey: toHonorificKey(resolved), email: activeEmail, username: activeName },
+      detail: { role: resolved, pref: role, honorificKey: toHonorificKey(resolved), email: activeEmail, username: activeName },
+    })
+  );
+  window.dispatchEvent(
+    new CustomEvent("das-honorific-changed", {
+      detail: { role: resolved, pref: role, honorificKey: toHonorificKey(resolved), email: activeEmail, username: activeName },
     })
   );
   return resolved;

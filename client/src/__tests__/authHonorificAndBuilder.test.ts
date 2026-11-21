@@ -14,6 +14,8 @@ import {
   handleAuthLoginDetected,
 } from "../lib/auth";
 import { getCareerAgentResponse } from "../lib/careerAgent";
+import { SUPPORTED_LANGUAGES } from "../agent/codingStudioController";
+import { tryExecuteClientAutomationIntent } from "../agent/toolRunner";
 import {
   DEFAULT_STUDENT_PROFILE,
   buildFreshOnboardingProfile,
@@ -265,5 +267,20 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(audioSrc).toContain("dance_or_motion");
     expect(socketSrc).toContain("reconnectForAccountSwitch");
     expect(socketSrc).toContain("ZERO SYCOPHANCY");
+  });
+
+  it("removes Boss starter leak from Coding Studio templates and handles live CGPA profile update intent", () => {
+    for (const lang of SUPPORTED_LANGUAGES) {
+      expect(lang.starter).not.toContain("Hello Boss");
+      expect(lang.starter).not.toContain('greet("Boss")');
+    }
+
+    const handled = tryExecuteClientAutomationIntent("set my cgpa to 8.9");
+    expect(handled).toBe(true);
+    const dispatchMock = (window as any).dispatchEvent as ReturnType<typeof vi.fn>;
+    const dispatched = dispatchMock.mock.calls.map((c) => c[0]);
+    const profEvt = dispatched.find((e) => e?.type === "das-update-profile");
+    expect(profEvt).toBeDefined();
+    expect(profEvt.detail).toEqual({ field: "cgpa", value: 8.9 });
   });
 });

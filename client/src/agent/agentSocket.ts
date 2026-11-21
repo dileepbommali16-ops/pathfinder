@@ -787,6 +787,15 @@ CORE AUTONOMOUS CAPABILITIES:
           if (data.name === "control_website" || data.name === "navigate_ui") {
             executeWebsiteControl(args as WebsiteControlArgs, this.savedNavigateFn);
             sendToolResult({ ok: true, navigated: true });
+          } else if (data.name === "update_student_profile") {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent("das-update-profile", {
+                  detail: { field: args.field, value: args.value },
+                })
+              );
+            }
+            sendToolResult({ ok: true, updated: true, field: args.field, value: args.value });
           } else if (data.name === "coding_studio_control") {
             const codeRes = await codingStudioController.execute(args);
             sendToolResult(codeRes);
@@ -895,6 +904,15 @@ CORE AUTONOMOUS CAPABILITIES:
             if (fc.name === "control_website" || fc.name === "navigate_ui") {
               executeWebsiteControl(args as WebsiteControlArgs, this.savedNavigateFn);
               resultMsg = `Navigated website to ${args.route || args.selector}`;
+            } else if (fc.name === "update_student_profile") {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(
+                  new CustomEvent("das-update-profile", {
+                    detail: { field: args.field, value: args.value },
+                  })
+                );
+              }
+              resultMsg = JSON.stringify({ ok: true, updated: true, field: args.field, value: args.value });
             } else if (fc.name === "open_external_website") {
               resultMsg = JSON.stringify(await openExternalWebsiteOrSearch(args));
             } else if (fc.name === "open_linkedin_profile") {

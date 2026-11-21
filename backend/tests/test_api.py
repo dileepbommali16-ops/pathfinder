@@ -504,5 +504,41 @@ class TestAPIEndpoints(unittest.TestCase):
         for act in ("open", "switch_language", "write_code", "read_code", "delete_code", "run_code", "stop_code", "get_output", "close"):
             self.assertIn(act, code_desc)
 
+        self.assertIn("update_student_profile", fn_map)
+        upd_props = fn_map["update_student_profile"].parameters.properties
+        self.assertIn("field", upd_props)
+        self.assertIn("value", upd_props)
+
+    def test_compiler_routing_all_11_languages_and_rust_no_O2(self):
+        import asyncio
+        from unittest.mock import AsyncMock, MagicMock, patch
+        import backend.compiler_engine as ce
+
+        self.assertEqual(ce.GODBOLT_COMPILERS["javascript"], ("v8113", "javascript"))
+        self.assertEqual(ce.GODBOLT_COMPILERS["rust"], ("r1840", "rust"))
+        self.assertEqual(ce.GODBOLT_COMPILERS["csharp"], ("dotnet80csharpcoreclr", "csharp"))
+        self.assertNotIn("go", ce.GODBOLT_COMPILERS)
+        self.assertNotIn("typescript", ce.GODBOLT_COMPILERS)
+        self.assertNotIn("php", ce.GODBOLT_COMPILERS)
+        self.assertEqual(ce.JUDGE0_LANGUAGE_IDS["php"], 68)
+        self.assertEqual(ce.JUDGE0_LANGUAGE_IDS["go"], 60)
+        self.assertEqual(ce.JUDGE0_LANGUAGE_IDS["typescript"], 74)
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "code": 0,
+            "stdout": [{"text": "OK_RUST"}],
+            "stderr": [],
+            "buildResult": {"stderr": []},
+        }
+        mock_post = AsyncMock(return_value=mock_resp)
+        with patch("httpx.AsyncClient.post", mock_post):
+            rust_res = asyncio.run(ce.execute_code_live("rust", 'fn main(){println!("OK_RUST");}'))
+        self.assertTrue(rust_res["success"])
+        self.assertEqual(rust_res["engine"], "godbolt-r1840")
+        sent_payload = mock_post.call_args.kwargs["json"]
+        self.assertEqual(sent_payload["options"]["userArguments"], "")
+
 if __name__ == "__main__":
     unittest.main()

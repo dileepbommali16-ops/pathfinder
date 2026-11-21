@@ -33,19 +33,16 @@ GODBOLT_COMPILERS = {
     "c": ("cg132", "c"),
     "cpp": ("g132", "c++"),
     "c++": ("g132", "c++"),
-    "rust": ("r1750", "rust"),
-    "go": ("g121", "go"),
+    "rust": ("r1840", "rust"),
     "python": ("python311", "python"),
     "py": ("python311", "python"),
     "python3": ("python311", "python"),
     "java": ("java2100", "java"),
-    "csharp": ("dotnet80", "csharp"),
-    "cs": ("dotnet80", "csharp"),
-    "typescript": ("typescript54", "typescript"),
-    "ts": ("typescript54", "typescript"),
-    "javascript": ("v8_12", "javascript"),
-    "js": ("v8_12", "javascript"),
-    "node": ("v8_12", "javascript"),
+    "csharp": ("dotnet80csharpcoreclr", "csharp"),
+    "cs": ("dotnet80csharpcoreclr", "csharp"),
+    "javascript": ("v8113", "javascript"),
+    "js": ("v8113", "javascript"),
+    "node": ("v8113", "javascript"),
 }
 
 PISTON_LANGS = {
@@ -65,6 +62,7 @@ PISTON_LANGS = {
     "go": "go",
     "csharp": "csharp.net",
     "cs": "csharp.net",
+    "php": "php",
 }
 
 JUDGE0_LANGUAGE_IDS = {
@@ -84,6 +82,7 @@ JUDGE0_LANGUAGE_IDS = {
     "go": 60,
     "csharp": 51,
     "cs": 51,
+    "php": 68,
 }
 
 
@@ -178,87 +177,63 @@ async def execute_code_live(
         working_code = re.sub(r"\bpublic\s+class\b", "class", working_code)
 
     # 2. TIER 1 REMOTE SANDBOX: COMPILER EXPLORER (GODBOLT) OFFICIAL API
-    compiler_info = GODBOLT_COMPILERS.get(lang) or ("cg132", "c")
-    compiler_id, godbolt_lang = compiler_info
-    user_args = "-O2" if lang in ("c", "cpp", "c++", "rust") else ""
+    compiler_info = GODBOLT_COMPILERS.get(lang)
+    if compiler_info is not None:
+        compiler_id, godbolt_lang = compiler_info
+        user_args = "-O2" if lang in ("c", "cpp", "c++") else ""
 
-    payload = {
-        "source": working_code,
-        "compiler": compiler_id,
-        "options": {
-            "userArguments": user_args,
-            "executeParameters": {"args": [], "stdin": stdin_str},
-            "compilerOptions": {"executorRequest": True},
-            "filters": {"binary": True, "execute": True},
-        },
-        "lang": godbolt_lang,
-    }
-
-    try:
-        async with httpx.AsyncClient(timeout=max(10.0, float(timeout_sec) + 6.0)) as client:
-            resp = await client.post(
-                f"https://godbolt.org/api/compiler/{compiler_id}/compile",
-                json=payload,
-                headers={"Content-Type": "application/json", "Accept": "application/json"},
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                stdout_lines = [strip_ansi(item.get("text", "")) for item in data.get("stdout", [])]
-                stderr_lines = [strip_ansi(item.get("text", "")) for item in data.get("stderr", [])]
-                build_err_lines = [
-                    strip_ansi(item.get("text", "")) for item in data.get("buildResult", {}).get("stderr", [])
-                ]
-
-                output = "\n".join(stdout_lines).strip()
-                err = "\n".join(stderr_lines + build_err_lines).strip()
-
-                if not output and err:
-                    display = f"Compiler Diagnostics:\n{err}"
-                else:
-                    display = output or "Program executed with no standard output."
-
-                has_build_fail = bool(build_err_lines)
-                exit_code = data.get("code", 0)
-
-                return {
-                    "success": (exit_code == 0 and not has_build_fail),
-                    "output": display,
-                    "stderr": err,
-                    "exit_code": exit_code,
-                    "engine": f"godbolt-{compiler_id}",
-                }
-    except Exception as e:
-        logger.warning(f"Godbolt sandbox notice: {e}. Attempting Piston sandbox...")
-
-    # 3. TIER 2 REMOTE SANDBOX: PISTON CONTAINER API
-    p_lang = PISTON_LANGS.get(lang, "python")
-    try:
-        piston_payload = {
-            "language": p_lang,
-            "version": "*",
-            "files": [{"content": working_code}],
-            "stdin": stdin_str,
+        payload = {
+            "source": working_code,
+            "compiler": compiler_id,
+            "options": {
+                "userArguments": user_args,
+                "executeParameters": {"args": [], "stdin": stdin_str},
+                "compilerOptions": {"executorRequest": True},
+                "filters": {"binary": True, "execute": True},
+            },
+            "lang": godbolt_lang,
         }
-        async with httpx.AsyncClient(timeout=14.0) as client:
-            p_resp = await client.post("https://emkc.org/api/v2/piston/execute", json=piston_payload)
-            if p_resp.status_code == 200:
-                p_data = p_resp.json()
-                run_info = p_data.get("run", {})
-                p_out = strip_ansi(run_info.get("output", "") or run_info.get("stdout", "")).strip()
-                p_err = strip_ansi(run_info.get("stderr", "")).strip()
-                code_val = run_info.get("code", 0)
-                display_msg = p_out if p_out else (p_err or "Program executed with no standard output.")
-                return {
-                    "success": code_val == 0,
-                    "output": display_msg,
-                    "stderr": p_err,
-                    "exit_code": code_val,
-                    "engine": f"piston-{p_lang}",
-                }
-    except Exception as pe:
-        logger.warning(f"Piston sandbox notice: {pe}. Attempting Judge0 CE sandbox...")
 
-    # 4. TIER 3 REMOTE SANDBOX: JUDGE0 CE ISOLATED SANDBOX API
+        try:
+            async with httpx.AsyncClient(timeout=max(10.0, float(timeout_sec) + 6.0)) as client:
+                resp = await client.post(
+                    f"https://godbolt.org/api/compiler/{compiler_id}/compile",
+                    json=payload,
+                    headers={"Content-Type": "application/json", "Accept": "application/json"},
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    stdout_lines = [strip_ansi(item.get("text", "")) for item in data.get("stdout", [])]
+                    stderr_lines = [strip_ansi(item.get("text", "")) for item in data.get("stderr", [])]
+                    build_err_lines = [
+                        strip_ansi(item.get("text", "")) for item in data.get("buildResult", {}).get("stderr", [])
+                    ]
+
+                    output = "\n".join(stdout_lines).strip()
+                    err = "\n".join(stderr_lines + build_err_lines).strip()
+
+                    if "Compiler with ID" in err and "not found" in err:
+                        logger.warning(f"Godbolt compiler unavailable ({compiler_id}): {err}; falling back to Judge0 CE.")
+                    else:
+                        if not output and err:
+                            display = f"Compiler Diagnostics:\n{err}"
+                        else:
+                            display = output or "Program executed with no standard output."
+
+                        has_build_fail = bool(build_err_lines)
+                        exit_code = data.get("code", 0)
+
+                        return {
+                            "success": (exit_code == 0 and not has_build_fail),
+                            "output": display,
+                            "stderr": err,
+                            "exit_code": exit_code,
+                            "engine": f"godbolt-{compiler_id}",
+                        }
+        except Exception as e:
+            logger.warning(f"Godbolt sandbox notice: {e}. Attempting Judge0 CE sandbox...")
+
+    # 3. TIER 2 REMOTE SANDBOX: JUDGE0 CE ISOLATED SANDBOX API
     j0_id = JUDGE0_LANGUAGE_IDS.get(lang)
     if j0_id is not None:
         try:
@@ -288,7 +263,35 @@ async def execute_code_live(
                         "engine": f"judge0-ce-{j0_id}",
                     }
         except Exception as je:
-            logger.error(f"Judge0 sandbox execution failed: {je}")
+            logger.warning(f"Judge0 sandbox notice: {je}. Attempting Piston sandbox...")
+
+    # 4. TIER 3 REMOTE SANDBOX: PISTON CONTAINER API
+    p_lang = PISTON_LANGS.get(lang, "python")
+    try:
+        piston_payload = {
+            "language": p_lang,
+            "version": "*",
+            "files": [{"content": working_code}],
+            "stdin": stdin_str,
+        }
+        async with httpx.AsyncClient(timeout=14.0) as client:
+            p_resp = await client.post("https://emkc.org/api/v2/piston/execute", json=piston_payload)
+            if p_resp.status_code == 200:
+                p_data = p_resp.json()
+                run_info = p_data.get("run", {})
+                p_out = strip_ansi(run_info.get("output", "") or run_info.get("stdout", "")).strip()
+                p_err = strip_ansi(run_info.get("stderr", "")).strip()
+                code_val = run_info.get("code", 0)
+                display_msg = p_out if p_out else (p_err or "Program executed with no standard output.")
+                return {
+                    "success": code_val == 0,
+                    "output": display_msg,
+                    "stderr": p_err,
+                    "exit_code": code_val,
+                    "engine": f"piston-{p_lang}",
+                }
+    except Exception as pe:
+        logger.error(f"Piston sandbox execution failed: {pe}")
 
     return {
         "success": False,

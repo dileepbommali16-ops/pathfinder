@@ -265,6 +265,25 @@ export function tryExecuteClientAutomationIntent(
   }
   const clean = norm(rawQuery);
   if (!clean) return false;
+  const cgpaMatch = clean.match(/\b(?:set|change|update|make)\s+(?:my\s+)?cgpa\s+(?:to|as|=)?\s*(\d+(?:\.\d+)?)\b/);
+  if (cgpaMatch) {
+    const val = Math.min(10, Math.max(0, parseFloat(cgpaMatch[1])));
+    window.dispatchEvent(
+      new CustomEvent("das-update-profile", { detail: { field: "cgpa", value: val } })
+    );
+    return true;
+  }
+  const branchMatch = clean.match(
+    /\b(?:set|change|update|switch)\s+(?:my\s+)?branch\s+(?:to\s+)?(cse|ece|eee|mech|mechanical|civil|it|aiml|csm|csd|iot|other)\b/
+  );
+  if (branchMatch) {
+    const rawBranch = branchMatch[1].toLowerCase();
+    const normalizedBranch = rawBranch === "mech" ? "Mechanical" : rawBranch === "iot" ? "IoT" : rawBranch === "other" ? "Other" : rawBranch.toUpperCase();
+    window.dispatchEvent(
+      new CustomEvent("das-update-profile", { detail: { field: "branch", value: normalizedBranch } })
+    );
+    return true;
+  }
   for (const intent of CLIENT_TAB_INTENTS) {
     if (intent.patterns.some((rx) => rx.test(clean))) {
       if (intent.route === "focus_on_das") {
@@ -368,6 +387,19 @@ export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[]
         name: "read_page",
         description: "Reads visible headings and text of the current page.",
         parameters: { type: Type.OBJECT, properties: {} }
+      },
+      {
+        name: "update_student_profile",
+        description:
+          "Directly updates the student's live Pathfinder profile fields (cgpa, branch, backlogs, coding, communication, internships, targetRole) and recalculates placement readiness.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            field: { type: Type.STRING, description: "Profile field: cgpa, branch, backlogs, coding, communication, internships, or targetRole" },
+            value: { type: Type.STRING, description: "New value, e.g. '8.9' or 'AIML'" }
+          },
+          required: ["field", "value"]
+        }
       }
     ]
   }
@@ -484,6 +516,17 @@ export function runTool(
             behavior: "smooth"
           });
         return { status: "scrolled", ok: true, explain: `Scrolled ${d}` };
+      }
+
+      case "update_student_profile": {
+        const field = String(args.field || "").trim();
+        const value = args.value;
+        if (typeof window !== "undefined" && field && value !== undefined) {
+          window.dispatchEvent(
+            new CustomEvent("das-update-profile", { detail: { field, value } })
+          );
+        }
+        return { status: "updated", ok: true, updated: true, field, value, explain: `Updated ${field} to ${value}` };
       }
 
       case "read_page": {

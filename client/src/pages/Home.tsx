@@ -195,21 +195,54 @@ export default function Home({ initialTab }: HomeProps = {}) {
       const field = e?.detail?.field;
       const value = e?.detail?.value;
       if (!field || value === undefined) return;
+      let displayVal: string | number = String(value);
       setProfile((prev) => {
         const next = { ...prev } as any;
-        if (field === "cgpa") next.cgpa = Number(value);
-        else if (field === "backlogs") next.backlogs = Number(value);
-        else if (field === "coding") next.coding = Number(value);
-        else if (field === "communication") next.communication = Number(value);
-        else if (field === "internships") next.internships = Number(value);
-        else if (field === "branch") next.branch = String(value).toUpperCase();
-        else if (field === "targetRole" || field === "target_role") next.targetRole = String(value);
+        const fKey = String(field).trim();
+        if (fKey === "cgpa") {
+          const clamped = Math.max(0, Math.min(10, Number(value)));
+          if (Number.isNaN(clamped)) return prev;
+          next.cgpa = Number(clamped.toFixed(2));
+          displayVal = next.cgpa;
+        } else if (fKey === "backlogs") {
+          const clamped = Math.max(0, Math.round(Number(value)));
+          if (Number.isNaN(clamped)) return prev;
+          next.backlogs = clamped;
+          displayVal = clamped;
+        } else if (fKey === "coding" || fKey === "communication") {
+          const clamped = Math.max(1, Math.min(10, Math.round(Number(value))));
+          if (Number.isNaN(clamped)) return prev;
+          next[fKey] = clamped;
+          displayVal = clamped;
+        } else if (fKey === "internships") {
+          const clamped = Math.max(0, Math.round(Number(value)));
+          if (Number.isNaN(clamped)) return prev;
+          next.internships = clamped;
+          displayVal = clamped;
+        } else if (fKey === "branch") {
+          next.branch = String(value).toUpperCase();
+          displayVal = next.branch;
+        } else if (fKey === "targetRole" || fKey === "target_role") {
+          next.targetRole = String(value);
+          displayVal = next.targetRole;
+        } else {
+          return prev;
+        }
         try {
           localStorage.setItem("pathfinder_profile_draft", JSON.stringify(next));
         } catch { }
+        queueMicrotask(() => {
+          fallbackPredict(next, null, next.githubVerifiedScore ?? null);
+          toast.success(`Updated ${String(field).toUpperCase()} to ${displayVal}`, {
+            id: "das-profile-update",
+          });
+        });
         return next;
       });
     };
+
+    let lastNavToastTab = "";
+    let lastNavToastAt = 0;
 
     // Handler for toolRunner.ts (pathfinder:agent-action)
     const handleAgentAction = (event: Event) => {
@@ -222,7 +255,12 @@ export default function Home({ initialTab }: HomeProps = {}) {
         setActiveTab(mapped.tab);
         setFocusOnDas(false);
         scrollToElement(mapped.scrollId);
-        toast.info(`Switched to ${mapped.tab.toUpperCase()} module`);
+        const now = Date.now();
+        if (lastNavToastTab !== mapped.tab || now - lastNavToastAt > 2500) {
+          lastNavToastTab = mapped.tab;
+          lastNavToastAt = now;
+          toast.info(`Switched to ${mapped.tab.toUpperCase()} module`, { id: "das-nav-toast" });
+        }
       }
 
       // 2. Automatic Blueprint Open (1 to 23)
@@ -285,22 +323,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
       window.removeEventListener("pathfinder:agent-action", handleAgentAction);
     };
   }, []);
-
-  // Dynamic Document Page Titles based on Active Tab
-  useEffect(() => {
-    const titles: Record<TabId, string> = {
-      overview: "Executive Dashboard · Pathfinder 2.0",
-      interview: "Interview & Project Defense Simulator · Pathfinder 2.0",
-      skills: "6-Week Sprint Roadmap · Pathfinder 2.0",
-      projects: "Flagship Portfolio Blueprints · Pathfinder 2.0",
-      analytics: "Cohort Placement Intelligence · Pathfinder 2.0",
-      resume: "ATS Resume Studio & Scanner · Pathfinder 2.0",
-      branches: "Branch & Degree Analytics · Pathfinder 2.0",
-      profile: "Candidate Profile & SSOT · Pathfinder 2.0",
-      roles: "Target Role Intelligence · Pathfinder 2.0",
-    };
-    document.title = titles[activeTab] || "Pathfinder 2.0 · Autonomous AI Career Intelligence";
-  }, [activeTab]);
 
   // Listen to voice/automation Focus-on-DAS toggles & broadcast live slide context to 24/7 DAS Co-Pilot
   useEffect(() => {
@@ -419,6 +441,35 @@ export default function Home({ initialTab }: HomeProps = {}) {
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [oauthSigningIn, setOauthSigningIn] = useState<boolean>(false);
   const oauthHandledRef = useRef<boolean>(false);
+
+  // Dynamic Document Page Titles & ?tab= URL sync based on Auth & Active Tab
+  useEffect(() => {
+    if (!isAuthenticated) {
+      document.title = "Sign In · Pathfinder 2.0";
+      return;
+    }
+    const titles: Record<TabId, string> = {
+      overview: "Executive Dashboard · Pathfinder 2.0",
+      interview: "Interview & Project Defense Simulator · Pathfinder 2.0",
+      skills: "6-Week Sprint Roadmap · Pathfinder 2.0",
+      projects: "Flagship Portfolio Blueprints · Pathfinder 2.0",
+      analytics: "Cohort Placement Intelligence · Pathfinder 2.0",
+      resume: "ATS Resume Studio & Scanner · Pathfinder 2.0",
+      branches: "Branch & Degree Analytics · Pathfinder 2.0",
+      profile: "Candidate Profile & SSOT · Pathfinder 2.0",
+      roles: "Target Role Intelligence · Pathfinder 2.0",
+    };
+    document.title = titles[activeTab] || "Pathfinder 2.0 · Autonomous AI Career Intelligence";
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("tab") !== activeTab) {
+          url.searchParams.set("tab", activeTab);
+          window.history.replaceState({}, "", `${url.pathname}?${url.searchParams.toString()}`);
+        }
+      } catch { }
+    }
+  }, [activeTab, isAuthenticated]);
 
   // Authentication session expiration listener (401 token revocation)
   useEffect(() => {
@@ -1840,10 +1891,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetchWithTimeout(`${API_BASE}/api/auth/logout`, { method: "POST" }, 2000);
-    } catch { }
+  const handleLogout = () => {
+    void fetchWithTimeout(`${API_BASE}/api/auth/logout`, { method: "POST" }, 2000).catch(() => { });
     localStorage.removeItem("pathfinder_user");
     localStorage.removeItem("pathfinder_token");
     localStorage.removeItem("pathfinder_profile");
@@ -1867,6 +1916,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
     setIsDemoProfile(true);
     setUserRole("student");
     if (typeof window !== "undefined") {
+      try {
+        window.history.replaceState({}, "", "/");
+      } catch { }
+      document.title = "Sign In · Pathfinder 2.0";
       window.dispatchEvent(
         new CustomEvent("pathfinder:auth-change", { detail: { authenticated: false } })
       );
