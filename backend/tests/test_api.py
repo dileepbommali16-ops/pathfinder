@@ -398,6 +398,31 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(r1["pcm_base64"], "AAAA")
         self.assertEqual(r2["pcm_base64"], "AAAA")
 
+    def test_wav_riff_parser_strips_trailing_c2pa_and_stranger_ws_lock(self):
+        import struct
+        import backend.routers.voice_routes as vr
+        from backend.agent.live_proxy import get_das_system_instruction
+
+        pcm_payload = b"\x10\x00\x20\x00" * 120  # 480 bytes clean 16-bit PCM
+        c2pa_payload = b"SynthID C2PA BUZZ DATA" * 10
+        fmt_body = struct.pack("<HHIIHH", 1, 1, 24000, 48000, 2, 16)
+        fmt_chunk = b"fmt " + struct.pack("<I", len(fmt_body)) + fmt_body
+        data_chunk = b"data" + struct.pack("<I", len(pcm_payload)) + pcm_payload
+        c2pa_chunk = b"C2PA" + struct.pack("<I", len(c2pa_payload)) + c2pa_payload
+        riff_body = b"WAVE" + fmt_chunk + data_chunk + c2pa_chunk
+        wav_with_c2pa = b"RIFF" + struct.pack("<I", len(riff_body)) + riff_body
+
+        stripped, sr = vr._strip_wav_header_if_present(wav_with_c2pa)
+        self.assertEqual(sr, 24000)
+        self.assertEqual(stripped, pcm_payload)
+        self.assertNotIn(b"C2PA", stripped)
+        self.assertNotIn(b"SynthID", stripped)
+
+        stranger_prompt = get_das_system_instruction("stranger")
+        self.assertIn("Stranger Mode", stranger_prompt)
+        self.assertIn("Hi stranger, tell your name first!", stranger_prompt)
+        self.assertIn("NEVER call them 'Boss'", stranger_prompt)
+
     def test_on_demand_multiuser_live_proxy_and_wav_fallback(self):
         import inspect
         import backend.agent.live_proxy as lp

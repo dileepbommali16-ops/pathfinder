@@ -91,6 +91,14 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     const ownerRole = handleAuthLoginDetected("dileepbommali16@gmail.com", "Dileep");
     expect(ownerRole).toBe("Boss");
     expect(getUserRole()).toBe("Boss");
+
+    // Switching to Guest after Boss or Madam MUST force Stranger mode and never leak prior session roles
+    localStorage.setItem("das_honorific_override_map", JSON.stringify({ "guest@pathfinder.ai": "Madam" }));
+    const guestAfterGirl = handleAuthLoginDetected("guest@pathfinder.ai", "Guest Student");
+    expect(guestAfterGirl).toBe("Stranger");
+    expect(getUserRole()).toBe("Stranger");
+    expect(setHonorificPreference("Boss")).toBe("Stranger");
+    expect(setHonorificPreference("Madam")).toBe("Stranger");
   });
 
   it("answers builder ecosystem & screen monitor queries offline without Boss leak", () => {
@@ -191,14 +199,14 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(audioSrc).toContain("ttsSpeakSeq");
   });
 
-  it("greets Boss once with 'Hi Boss! What's up?' on first hi, replies 'Boss, I'm here.' on second hi, and avoids co-pilot", () => {
+  it("greets Boss, Madam, Sir, and Stranger with exact 1st and 2nd+ replies and avoids co-pilot", () => {
     handleAuthLoginDetected("dileepbommali16@gmail.com", "Dileep");
     const first = getCareerAgentResponse("hi", [], { branch: "CSE", cgpa: 8.5 }, "Boss");
     expect(first.split("|||")[0]).toBe("Hi Boss! What's up?");
     expect(first.toLowerCase()).not.toContain("co-pilot");
 
     const second = getCareerAgentResponse(
-      "hi",
+      "hi baby",
       [
         { role: "user", content: "hi" },
         { role: "assistant", content: first.split("|||")[0] },
@@ -206,9 +214,39 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
       { branch: "CSE", cgpa: 8.5 },
       "Boss"
     );
-    expect(second.split("|||")[0]).toBe("Boss, I'm here.");
+    expect(second.split("|||")[0]).toBe("Hi Boss, I'm here!");
     expect(second.toLowerCase()).not.toContain("what's up");
     expect(second.toLowerCase()).not.toContain("co-pilot");
+
+    const madamFirst = getCareerAgentResponse("hi", [], { branch: "CSE" }, "Madam");
+    expect(madamFirst.split("|||")[0]).toBe("Hi Madam! What's up?");
+    const madamSecond = getCareerAgentResponse(
+      "hi baby",
+      [{ role: "user", content: "hi" }, { role: "assistant", content: madamFirst.split("|||")[0] }],
+      { branch: "CSE" },
+      "Madam"
+    );
+    expect(madamSecond.split("|||")[0]).toBe("Hi Madam, I'm here!");
+
+    const sirFirst = getCareerAgentResponse("hi", [], { branch: "CSE" }, "Sir");
+    expect(sirFirst.split("|||")[0]).toBe("Hi Sir! What's up?");
+    const sirSecond = getCareerAgentResponse(
+      "hi baby",
+      [{ role: "user", content: "hi" }, { role: "assistant", content: sirFirst.split("|||")[0] }],
+      { branch: "CSE" },
+      "Sir"
+    );
+    expect(sirSecond.split("|||")[0]).toBe("Hi Sir, I'm here!");
+
+    const strangerFirst = getCareerAgentResponse("hi", [], { branch: "CSE" }, "Stranger");
+    expect(strangerFirst.split("|||")[0]).toBe("Hi stranger, tell your name first!");
+    const strangerSecond = getCareerAgentResponse(
+      "hi baby",
+      [{ role: "user", content: "hi" }, { role: "assistant", content: strangerFirst.split("|||")[0] }],
+      { branch: "CSE" },
+      "Stranger"
+    );
+    expect(strangerSecond.split("|||")[0]).toBe("Hi stranger, I'm here — tell me your name first!");
 
     const platformOverview = getCareerAgentResponse("what is pathfinder", [], { branch: "CSE" }, "Boss");
     expect(platformOverview.toLowerCase()).not.toContain("co-pilot");

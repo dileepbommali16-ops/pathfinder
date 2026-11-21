@@ -16,7 +16,7 @@ import { audioEngine, cameraEngine, speaker, MediaDeviceOption, LiveMotionMetric
 import { CodeTaskPayload, tryExecuteClientAutomationIntent } from "./toolRunner";
 import { API_BASE, getSessionId } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
-import { getUserRole, getHonorificKey, setHonorificPreference, isOwnerAccount, HonorificKey } from "@/lib/auth";
+import { getUserRole, getHonorificKey, setHonorificPreference, isOwnerAccount, isGuestAccount, HonorificKey } from "@/lib/auth";
 import { toast } from "sonner";
 
 function getInitialGreeting(roleKey: HonorificKey): string {
@@ -25,20 +25,25 @@ function getInitialGreeting(roleKey: HonorificKey): string {
 }
 
 function isPureHiGreeting(text: string): boolean {
-  return /^\s*(hi+|hello+|hey+|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$/i.test(
+  return /^\s*(hi+|hello+|hey+|namaste|good\s*(?:morning|afternoon|evening)|yo+|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|baby|babe|buddy|dude|man|there|ai|sir|madam))?[\s!.,?]*$/i.test(
     (text || "").trim()
   );
 }
 
 function getExactHiReply(roleKey: HonorificKey, greetCount: number): string {
+  if (roleKey === "stranger") {
+    return greetCount <= 0
+      ? "Hi stranger, tell your name first!"
+      : "Hi stranger, I'm here — tell me your name first!";
+  }
   if (greetCount <= 0) {
-    if (roleKey === "madam") return "Hello Madam, what can I help you with today?";
-    if (roleKey === "sir") return "Hello Sir, what can I help you with today?";
+    if (roleKey === "madam") return "Hi Madam! What's up?";
+    if (roleKey === "sir") return "Hi Sir! What's up?";
     return "Hi Boss! What's up?";
   }
-  if (roleKey === "madam") return "Madam, I'm here.";
-  if (roleKey === "sir") return "Sir, I'm here.";
-  return "Boss, I'm here.";
+  if (roleKey === "madam") return "Hi Madam, I'm here!";
+  if (roleKey === "sir") return "Hi Sir, I'm here!";
+  return "Hi Boss, I'm here!";
 }
 
 export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -161,6 +166,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       const nextKey = explicitKey || getHonorificKey();
       if (forceReset) {
         resetConversationForSessionSwitch(nextKey);
+        void audioEngine.prefetchPuckTts(
+          [getExactHiReply(nextKey, 0), getExactHiReply(nextKey, 1)],
+          API_BASE
+        );
       }
       setRole((prev) => {
         if (forceReset && dasSocket.isConnected) {
@@ -386,9 +395,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     const activeRole = getHonorificKey();
     setRole(activeRole);
     setTranscript((prev) =>
-      prev === "Hello Sir, what can I help you with today?" ||
-      prev === "Hello Madam, what can I help you with today?" ||
-      prev === "Hi Boss! What's up?"
+      prev === "Hi Sir! What's up?" ||
+      prev === "Hi Madam! What's up?" ||
+      prev === "Hi Boss! What's up?" ||
+      prev === "Hi stranger, tell your name first!"
         ? getInitialGreeting(activeRole)
         : prev
     );
@@ -476,11 +486,38 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       { role: "user" as const, content: queryText },
     ].slice(-12);
 
-    // Strict deterministic "Hi" rule: 1st time -> "Hi Boss! What's up?", 2nd+ time -> "Boss, I'm here."
+    // Strict deterministic "Hi" rule across 4 roles (pre-warmed WebSocket Puck first, instant REST Puck fallback)
     if (mode === "chat" && isPureHiGreeting(queryText)) {
       const activeKey = getHonorificKey();
       const exactHi = getExactHiReply(activeKey, hiGreetCountRef.current);
       hiGreetCountRef.current += 1;
+      if (dasSocket.isSocketConnected) {
+        tryExecuteClientAutomationIntent(queryText, navigate);
+        dasSocket.sendTextCommand(queryText);
+        timerId = window.setTimeout(() => {
+          if (
+            settled ||
+            askCoachNonceRef.current !== nonce ||
+            dasSocket.isAgentSpeaking ||
+            audioEngine.isSpeaking()
+          ) {
+            return;
+          }
+          cleanup();
+          chatHistoryRef.current = [
+            ...chatHistoryRef.current,
+            { role: "assistant" as const, content: exactHi },
+          ].slice(-12);
+          setTranscript(exactHi);
+          const ttsAc = new AbortController();
+          restTtsAbortRef.current = ttsAc;
+          void audioEngine.speakTextPuckOrLocal(exactHi, API_BASE, {
+            signal: ttsAc.signal,
+            shouldContinue: () => askCoachNonceRef.current === nonce,
+          });
+        }, 2800);
+        return;
+      }
       cleanup();
       chatHistoryRef.current = [
         ...chatHistoryRef.current,
@@ -531,7 +568,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       tryExecuteClientAutomationIntent(queryText, navigate);
       dasSocket.sendTextCommand(queryText);
     }
-    const fallbackDelayMs = wasSocketReady ? 6000 : 1600;
+    const fallbackDelayMs = wasSocketReady ? 3800 : 1200;
     timerId = window.setTimeout(() => {
       if (
         settled ||
@@ -591,7 +628,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [isAuthenticated]);
 
   // Connect to Gemini Live multimodal agent ONLY when authenticated inside the dashboard
-  // Keep `role` OUT of dependencies so toggling Boss/Sir/Madam never disconnects WS or stops camera!
+  // Keep `role` OUT of dependencies so toggling Sir/Madam never disconnects WS or stops camera!
   useEffect(() => {
     if (!isAuthenticated) {
       dasSocket.setCameraActive(false);
@@ -602,9 +639,14 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    // Wake Render backend proactively for returning sessions that bypass the login screen
+    // Wake Render backend proactively and pre-fetch active role greeting audio silently for 0ms fallback
     fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
     ensureSocketConnected();
+    const activeKey = getHonorificKey();
+    void audioEngine.prefetchPuckTts(
+      [getExactHiReply(activeKey, 0), getExactHiReply(activeKey, 1)],
+      API_BASE
+    );
 
     const prewarmAudio = () => {
       audioEngine.unlockAudio();
@@ -871,10 +913,26 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleRoleToggle = (newRole: UserHonorificRole) => {
     audioEngine.unlockAudio();
     audioEngine.autoSyncOutputDevice();
-    setHonorificPreference(newRole === "boss" ? "Boss" : newRole === "madam" ? "Madam" : "Sir");
-    setRole(newRole);
-    dasSocket.switchRole(newRole);
-    setTranscript(getInitialGreeting(newRole));
+    const mapped =
+      newRole === "boss"
+        ? "Boss"
+        : newRole === "madam"
+          ? "Madam"
+          : newRole === "stranger"
+            ? "Stranger"
+            : "Sir";
+    const resolved = setHonorificPreference(mapped);
+    const resolvedKey: UserHonorificRole =
+      resolved === "Boss"
+        ? "boss"
+        : resolved === "Madam"
+          ? "madam"
+          : resolved === "Stranger"
+            ? "stranger"
+            : "sir";
+    setRole(resolvedKey);
+    dasSocket.switchRole(resolvedKey);
+    setTranscript(getInitialGreeting(resolvedKey));
   };
 
   const handleSendText = (e: React.FormEvent) => {
@@ -1583,38 +1641,59 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Single Unified Role Pill */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.currentTarget.blur();
-                const storedEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "";
-                const canBeBoss = isOwnerAccount(storedEmail);
-                const nextRole: UserHonorificRole = canBeBoss
-                  ? (role === "boss" ? "sir" : role === "sir" ? "madam" : "boss")
-                  : (role === "sir" ? "madam" : "sir");
-                handleRoleToggle(nextRole);
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold transition cursor-pointer border shadow-sm hover:brightness-110 active:scale-95 text-white"
-              style={{
-                backgroundColor: "#2b2024",
-                borderColor: "#2b2024",
-              }}
-              title={
-                isOwnerAccount(typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "")
-                  ? "Click to switch identity mode: Boss Mode / Sir Mode / Madam Mode"
-                  : "Click to switch addressing mode: Sir Mode / Madam Mode"
+            {/* Single Strict 4-Role Identity Pill: Owner=Boss (locked), Guest=Stranger (locked), Signed-in=Madam/Sir */}
+            {(() => {
+              const storedEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "";
+              const storedName = typeof window !== "undefined" ? localStorage.getItem("userName") || "" : "";
+              const canBeBoss = isOwnerAccount(storedEmail);
+              const isGuest = isGuestAccount(storedEmail, storedName);
+
+              if (canBeBoss || role === "boss") {
+                if (canBeBoss) {
+                  return (
+                    <span
+                      className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold border shadow-sm text-white select-none"
+                      style={{ backgroundColor: "#2b2024", borderColor: "#FD0053" }}
+                      title="Creator Account Verified: Boss Mode locked exclusively to dileepbommali16@gmail.com"
+                    >
+                      <span>✨ Boss Mode</span>
+                    </span>
+                  );
+                }
               }
-            >
-              <span>
-                {role === "boss"
-                  ? "✨ Boss Mode"
-                  : role === "sir"
-                  ? "🎩 Sir Mode"
-                  : "🌸 Madam Mode"}
-              </span>
-              <span className="text-[10px] text-zinc-400">⇄</span>
-            </button>
+
+              if (isGuest || role === "stranger") {
+                return (
+                  <span
+                    className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold border shadow-sm text-white select-none"
+                    style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
+                    title="Guest Session: Stranger Mode active — tell DAS your name first"
+                  >
+                    <span>👤 Stranger Mode</span>
+                  </span>
+                );
+              }
+
+              return (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    const nextRole: UserHonorificRole = role === "madam" ? "sir" : "madam";
+                    handleRoleToggle(nextRole);
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold transition cursor-pointer border shadow-sm hover:brightness-110 active:scale-95 text-white"
+                  style={{
+                    backgroundColor: "#2b2024",
+                    borderColor: "#2b2024",
+                  }}
+                  title="Switch addressing mode: Madam Mode / Sir Mode"
+                >
+                  <span>{role === "madam" ? "🌸 Madam Mode" : "🎩 Sir Mode"}</span>
+                  <span className="text-[10px] text-zinc-400">⇄</span>
+                </button>
+              );
+            })()}
           </div>
         </div>
 

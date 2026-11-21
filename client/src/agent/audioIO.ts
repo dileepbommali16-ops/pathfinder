@@ -1122,16 +1122,45 @@ class AudioEngine {
       return null;
     }
 
-    const len = binaryStr.length;
-    const safeLen = len - (len % 2);
-    if (safeLen <= 0) return null;
+    let len = binaryStr.length;
+    if (len <= 0) return null;
 
-    const bytes = new Uint8Array(safeLen);
-    for (let i = 0; i < safeLen; i++) {
+    let bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
       bytes[i] = binaryStr.charCodeAt(i);
     }
 
-    const int16Data = new Int16Array(bytes.buffer, 0, safeLen / 2);
+    // Defensive RIFF/WAVE strip (discards any trailing C2PA/metadata chunk so it can never buzz)
+    if (
+      bytes.length > 44 &&
+      bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+      bytes[8] === 0x57 && bytes[9] === 0x41 && bytes[10] === 0x56 && bytes[11] === 0x45
+    ) {
+      let pos = 12;
+      let sliced: Uint8Array | null = null;
+      while (pos + 8 <= bytes.length) {
+        const cId =
+          String.fromCharCode(bytes[pos], bytes[pos + 1], bytes[pos + 2], bytes[pos + 3]);
+        const cSize =
+          (bytes[pos + 4]) |
+          (bytes[pos + 5] << 8) |
+          (bytes[pos + 6] << 16) |
+          ((bytes[pos + 7] << 24) >>> 0);
+        const bodyStart = pos + 8;
+        const bodyEnd = Math.min(bytes.length, bodyStart + (cSize >>> 0));
+        if (cId === "data") {
+          sliced = bytes.subarray(bodyStart, bodyEnd);
+          break;
+        }
+        pos = bodyStart + (cSize >>> 0) + (cSize % 2);
+      }
+      bytes = sliced || bytes.subarray(44);
+    }
+
+    const safeLen = bytes.length - (bytes.length % 2);
+    if (safeLen <= 0) return null;
+
+    const int16Data = new Int16Array(bytes.buffer, bytes.byteOffset, safeLen / 2);
     const float32Data = new Float32Array(int16Data.length);
     for (let i = 0; i < int16Data.length; i++) {
       float32Data[i] = int16Data[i] / 32768.0;
@@ -1139,7 +1168,36 @@ class AudioEngine {
     return float32Data;
   }
 
-  // Speak text aloud strictly via Gemini Puck TTS (/api/voice/tts) -> WebAudio 24kHz PCM, or Gemini Live Puck WebSocket (NEVER browser SpeechSynthesis)
+  public async prefetchPuckTts(texts: string[], apiBase?: string): Promise<void> {
+    if (typeof window === "undefined") return;
+    const effectiveApiBase =
+      apiBase ||
+      (import.meta as any).env?.VITE_API_BASE_URL ||
+      (import.meta as any).env?.VITE_BACKEND_URL ||
+      "https://pathfinder-backend-sg.onrender.com";
+
+    for (const raw of texts) {
+      const cleaned = raw.trim().slice(0, 680);
+      if (!cleaned || this.prefetchedTtsCache.has(cleaned)) continue;
+      try {
+        const resp = await fetch(`${effectiveApiBase}/api/voice/tts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: cleaned, voice: "Puck" }),
+        });
+        if (!resp.ok) continue;
+        const data = await resp.json();
+        if (data?.status === "ok" && data?.pcm_base64) {
+          this.prefetchedTtsCache.set(cleaned, {
+            pcm_base64: data.pcm_base64,
+            sample_rate: Number(data.sample_rate) || 24000,
+          });
+        }
+      } catch {}
+    }
+  }
+
+  // Speak text aloud strictly via Gemini 3.8 Live Puck TTS (/api/voice/tts first -> buzz-free /api/edge-tts fallback -> Live WS)
   public async speakTextPuckOrLocal(
     rawText: string,
     apiBase?: string,
@@ -1179,7 +1237,7 @@ class AudioEngine {
       if (this.audioCtx && this.audioCtx.state === "suspended") {
         await Promise.race([
           this.audioCtx.resume().catch(() => {}),
-          new Promise<void>((r) => setTimeout(r, 150)),
+          new Promise<void>((r) => setTimeout(r, 300)),
         ]);
       }
       if (this.audioCtx && this.audioCtx.state !== "running") {
@@ -1195,22 +1253,16 @@ class AudioEngine {
       if (playedCached) return true;
     }
 
-    const wsOnline =
-      typeof window !== "undefined" && Boolean((window as any).dasSocket?.isSocketConnected);
     const canUseSameOriginEdge =
       typeof window !== "undefined" &&
       window.location?.protocol?.startsWith("http") &&
       !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname || "");
 
-    const ttsEndpoints = wsOnline
-      ? [
-          { url: `${effectiveApiBase}/api/voice/tts`, timeoutMs: 6500 },
-          ...(canUseSameOriginEdge ? [{ url: "/api/edge-tts", timeoutMs: 9000 }] : []),
-        ]
-      : [
-          ...(canUseSameOriginEdge ? [{ url: "/api/edge-tts", timeoutMs: 9000 }] : []),
-          { url: `${effectiveApiBase}/api/voice/tts`, timeoutMs: 6500 },
-        ];
+    // Always try genuine Gemini 3.8 Live Puck (/api/voice/tts) FIRST so users always hear authentic Puck!
+    const ttsEndpoints = [
+      { url: `${effectiveApiBase}/api/voice/tts`, timeoutMs: 11000 },
+      ...(canUseSameOriginEdge ? [{ url: "/api/edge-tts", timeoutMs: 10000 }] : []),
+    ];
 
     for (const ep of ttsEndpoints) {
       const localAc = new AbortController();
@@ -1243,14 +1295,14 @@ class AudioEngine {
           if (data?.status === "ok" && data?.pcm_base64) {
             const sr = Number(data.sample_rate) || 24000;
             this.prefetchedTtsCache.set(cleaned, { pcm_base64: data.pcm_base64, sample_rate: sr });
-            if (this.prefetchedTtsCache.size > 16) {
+            if (this.prefetchedTtsCache.size > 24) {
               const oldest = this.prefetchedTtsCache.keys().next().value;
               if (oldest !== undefined) this.prefetchedTtsCache.delete(oldest);
             }
             if (this.audioCtx && this.audioCtx.state === "suspended") {
               await Promise.race([
                 this.audioCtx.resume().catch(() => {}),
-                new Promise<void>((r) => setTimeout(r, 150)),
+                new Promise<void>((r) => setTimeout(r, 300)),
               ]);
             }
             if (this.audioCtx && this.audioCtx.state !== "running") {
@@ -1318,7 +1370,7 @@ class AudioEngine {
     if (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted") {
       await Promise.race([
         this.audioCtx.resume().catch(() => {}),
-        new Promise<void>((r) => setTimeout(r, 180)),
+        new Promise<void>((r) => setTimeout(r, 350)),
       ]);
     }
     if (this.audioCtx.state !== "running") {
@@ -1337,11 +1389,13 @@ class AudioEngine {
     } catch {}
 
     const rate = Math.max(8000, sampleRate);
-    const fadeSamples = Math.min(Math.floor(float32Data.length / 4), Math.round(rate * 0.003));
-    for (let i = 0; i < fadeSamples; i++) {
-      const ramp = i / Math.max(1, fadeSamples);
-      float32Data[i] *= ramp;
-      float32Data[float32Data.length - 1 - i] *= ramp;
+    const fadeInSamples = Math.min(Math.floor(float32Data.length / 4), Math.round(rate * 0.005));
+    const fadeOutSamples = Math.min(Math.floor(float32Data.length / 4), Math.round(rate * 0.015));
+    for (let i = 0; i < fadeInSamples; i++) {
+      float32Data[i] *= i / Math.max(1, fadeInSamples);
+    }
+    for (let i = 0; i < fadeOutSamples; i++) {
+      float32Data[float32Data.length - 1 - i] *= i / Math.max(1, fadeOutSamples);
     }
 
     const buffer = this.audioCtx.createBuffer(1, float32Data.length, rate);
@@ -1404,12 +1458,18 @@ class AudioEngine {
   private scheduleFallbackFloatPcm(float32Data: Float32Array, sampleRate = 24000) {
     if (!this.audioCtx || !this.analyser || float32Data.length === 0) return;
     const rate = Math.max(8000, sampleRate);
-    // Apply smooth 3ms edge ramp on the first chunk of a turn to avoid startup clicks
-    if (this.activeSources.length === 0) {
-      const rampSamples = Math.min(float32Data.length >> 2, Math.round(rate * 0.003));
+    const currentTime = this.audioCtx.currentTime;
+    const restartedAfterGap =
+      this.activeSources.length === 0 ||
+      this.nextPlayTime < currentTime - 0.005 ||
+      this.nextPlayTime > currentTime + 60.0;
+
+    if (restartedAfterGap) {
+      const rampSamples = Math.min(float32Data.length >> 2, Math.round(rate * 0.004));
       for (let i = 0; i < rampSamples; i++) {
         float32Data[i] *= i / Math.max(1, rampSamples);
       }
+      this.nextPlayTime = currentTime + (this.activeSources.length === 0 ? 0.08 : 0.03);
     }
 
     const audioBuffer = this.audioCtx.createBuffer(1, float32Data.length, rate);
@@ -1419,10 +1479,6 @@ class AudioEngine {
     source.buffer = audioBuffer;
     source.connect(this.analyser);
 
-    const currentTime = this.audioCtx.currentTime;
-    if (this.nextPlayTime < currentTime - 0.005 || this.nextPlayTime > currentTime + 60.0) {
-      this.nextPlayTime = currentTime + (this.activeSources.length === 0 ? 0.095 : 0.035);
-    }
     const startAt = this.nextPlayTime;
     source.start(startAt);
     this.nextPlayTime = startAt + audioBuffer.duration;
@@ -1437,6 +1493,7 @@ class AudioEngine {
       this.activeSources = this.activeSources.filter((s) => s !== source);
       if (this.activeSources.length === 0) {
         this.activeTurnMode = null;
+        this.playingUntilPerfMs = 0;
       }
       this.notifySpeakingListeners();
     };

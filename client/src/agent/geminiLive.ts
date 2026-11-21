@@ -58,12 +58,12 @@ import { getUserRole, HonorificTitle } from "@/lib/auth";
 /*  User Role / Honorific Detection (Boss = Dileep, Madam, Sir)        */
 /* ------------------------------------------------------------------ */
 function resolveUserHonorific(): { honorific: HonorificTitle; isBoss: boolean } {
-  if (typeof window === "undefined") return { honorific: "Boss", isBoss: true };
+  if (typeof window === "undefined") return { honorific: "Stranger", isBoss: false };
   try {
     const honorific = getUserRole();
     return { honorific, isBoss: honorific === "Boss" };
   } catch { }
-  return { honorific: "Boss", isBoss: true };
+  return { honorific: "Stranger", isBoss: false };
 }
 
 const LANGUAGE_RULE = `LANGUAGE: Always reply in the SAME language the user speaks (Telugu, Hindi, Tamil, English, or a natural mix like Tenglish/Hinglish). If they mix languages, mix the same way. Speak naturally like a real person, never translate word by word.`;
@@ -74,7 +74,9 @@ function getMasterPrompt(): string {
     ? `You are speaking to your creator, Boss Dileep Bommali. Always address him as "Boss" warmly like a close friend.`
     : honorific === "Madam"
       ? `You are speaking to a respected female stakeholder, recruiter, or student. Always address her respectfully and politely as "Madam" (NEVER call her Boss or Sir).`
-      : `You are speaking to a valued stakeholder, guest, or candidate. Address them respectfully and warmly as "Sir".`;
+      : honorific === "Stranger"
+        ? `You are speaking to an unidentified guest visitor. Address them politely as "Stranger" and ask them to tell you their name first until they introduce themselves (NEVER call them Boss).`
+        : `You are speaking to a valued male stakeholder or student. Address him respectfully and warmly as "Sir" (NEVER call him Boss).`;
   return `You are DAS, the friendly 3D AI voice agent of Pathfinder 2.0, created by Boss Dileep Bommali.
 ${roleInstruction}
 

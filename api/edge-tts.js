@@ -20,20 +20,42 @@ function stripWavHeaderToPcm(rawBuf) {
     rawBuf.toString("ascii", 0, 4) === "RIFF" &&
     rawBuf.toString("ascii", 8, 12) === "WAVE"
   ) {
-    const parsedRate = rawBuf.readUInt32LE(24);
-    if (parsedRate >= 8000 && parsedRate <= 96000) {
-      sampleRate = parsedRate;
+    let pos = 12;
+    let foundData = null;
+    while (pos + 8 <= rawBuf.length) {
+      const chunkId = rawBuf.toString("ascii", pos, pos + 4);
+      const chunkSize = rawBuf.readUInt32LE(pos + 4);
+      const bodyStart = pos + 8;
+      const bodyEnd = Math.min(rawBuf.length, bodyStart + chunkSize);
+      if (chunkId === "fmt " && bodyEnd - bodyStart >= 16) {
+        const parsedRate = rawBuf.readUInt32LE(bodyStart + 4);
+        if (parsedRate >= 8000 && parsedRate <= 96000) {
+          sampleRate = parsedRate;
+        }
+      } else if (chunkId === "data") {
+        foundData = rawBuf.subarray(bodyStart, bodyEnd);
+        break;
+      }
+      pos = bodyStart + chunkSize + (chunkSize % 2);
     }
-    const scanLimit = Math.min(rawBuf.length, 256);
-    const dataIdx = rawBuf.subarray(0, scanLimit).indexOf(Buffer.from("data", "ascii"), 12);
-    if (dataIdx !== -1 && dataIdx + 8 < rawBuf.length) {
-      pcm = rawBuf.subarray(dataIdx + 8);
-    } else {
-      pcm = rawBuf.subarray(44);
-    }
+    pcm = foundData || rawBuf.subarray(44);
   }
   const evenLen = pcm.length - (pcm.length % 2);
-  return { pcm: pcm.subarray(0, evenLen), sampleRate };
+  const cleanPcm = Buffer.from(pcm.subarray(0, evenLen));
+  // Smooth 5ms fade-in and 15ms fade-out so playback ends at clean zero with no click or buzz
+  const totalSamples = Math.floor(cleanPcm.length / 2);
+  const fadeInSamples = Math.min(Math.floor(totalSamples / 4), Math.round(sampleRate * 0.005));
+  const fadeOutSamples = Math.min(Math.floor(totalSamples / 4), Math.round(sampleRate * 0.015));
+  for (let i = 0; i < fadeInSamples; i++) {
+    const s = cleanPcm.readInt16LE(i * 2);
+    cleanPcm.writeInt16LE(Math.round(s * (i / Math.max(1, fadeInSamples))), i * 2);
+  }
+  for (let i = 0; i < fadeOutSamples; i++) {
+    const idx = totalSamples - 1 - i;
+    const s = cleanPcm.readInt16LE(idx * 2);
+    cleanPcm.writeInt16LE(Math.round(s * (i / Math.max(1, fadeOutSamples))), idx * 2);
+  }
+  return { pcm: cleanPcm, sampleRate };
 }
 
 export async function OPTIONS() {

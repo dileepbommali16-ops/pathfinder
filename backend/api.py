@@ -122,7 +122,7 @@ from backend.routers.ai_router import ai_router
 from backend.routers.predictions_router import predictions_router
 from backend.routers.export_router import export_router
 from backend.routers.github_router import github_router
-from backend.routers.voice_routes import router as voice_routes
+from backend.routers.voice_routes import router as voice_routes, prewarm_puck_greetings
 from backend.agent.router import agent_router
 
 # Setup application logger
@@ -157,8 +157,18 @@ async def lifespan(app: FastAPI):
             logger.warning(f"Background warm-up warning: {exc}")
 
     warmup_task = asyncio.create_task(asyncio.to_thread(_warm_caches_sync))
+    puck_warmup_task = None
+    if "PYTEST_CURRENT_TEST" not in os.environ:
+        puck_warmup_task = asyncio.create_task(prewarm_puck_greetings())
 
     yield  # Application serves requests immediately without blocking cold start
+
+    if puck_warmup_task and not puck_warmup_task.done():
+        puck_warmup_task.cancel()
+        try:
+            await puck_warmup_task
+        except (asyncio.CancelledError, Exception):
+            pass
 
     if not warmup_task.done():
         warmup_task.cancel()

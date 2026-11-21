@@ -2,12 +2,25 @@
  * auth.ts - Smart Identity Authorization & Honorific Engine (Boss / Madam / Sir)
  */
 
-export type HonorificTitle = "Boss" | "Madam" | "Sir";
-export type HonorificKey = "boss" | "madam" | "sir";
+export type HonorificTitle = "Boss" | "Madam" | "Sir" | "Stranger";
+export type HonorificKey = "boss" | "madam" | "sir" | "stranger";
 
 // ONLY Dileep's verified primary Google account is recognized as Boss (Owner).
 export const OWNER_EMAIL = "dileepbommali16@gmail.com";
 export const OWNER_EMAILS = [OWNER_EMAIL];
+
+export function isGuestAccount(email?: string, username?: string): boolean {
+  const e = (email || "").toLowerCase().trim();
+  const u = (username || "").toLowerCase().trim();
+  if (!e) return true;
+  if (e === "guest@pathfinder.ai" || e.startsWith("guest@") || e.endsWith("@guest.local")) {
+    return true;
+  }
+  if (u === "guest student" || u === "guest" || u === "stranger") {
+    return true;
+  }
+  return false;
+}
 
 // Extensive female given names / tokens across Indian & international accounts
 const FEMALE_NAME_TOKENS = new Set([
@@ -126,22 +139,23 @@ export function inferHonorific(
   username?: string,
   explicitPref?: string
 ): HonorificTitle {
+  if (isOwnerAccount(email, username)) return "Boss";
+  if (isGuestAccount(email, username)) return "Stranger";
   if (explicitPref) {
     const norm = explicitPref.toLowerCase().trim();
-    if (norm === "boss") return "Boss";
     if (norm === "madam" || norm === "mam" || norm === "ma'am") return "Madam";
     if (norm === "sir") return "Sir";
   }
-  if (isOwnerAccount(email, username)) return "Boss";
   if (isFemaleAccount(email, username)) return "Madam";
   return "Sir";
 }
 
 export function toHonorificKey(title: HonorificTitle | string): HonorificKey {
   const lower = (title || "").toLowerCase().trim();
+  if (lower === "boss") return "boss";
   if (lower === "madam" || lower === "mam" || lower === "ma'am") return "madam";
   if (lower === "sir") return "sir";
-  return "boss";
+  return "stranger";
 }
 
 export function getUserRole(email?: string, username?: string): HonorificTitle {
@@ -151,7 +165,7 @@ export function getUserRole(email?: string, username?: string): HonorificTitle {
   if (storedPathfinder) {
     try {
       parsedPf = JSON.parse(storedPathfinder);
-    } catch {}
+    } catch { }
   }
 
   const effectiveEmail =
@@ -166,31 +180,22 @@ export function getUserRole(email?: string, username?: string): HonorificTitle {
       parsedPf?.name ||
       "");
 
-  const ownerVerified = isOwnerAccount(effectiveEmail);
+  if (isOwnerAccount(effectiveEmail)) return "Boss";
+  if (isGuestAccount(effectiveEmail, effectiveName)) return "Stranger";
 
   if (typeof window !== "undefined") {
     const urlParams = new URLSearchParams(window.location.search);
     const urlMode = (urlParams.get("mode") || urlParams.get("role") || "").toLowerCase().trim();
     if (urlMode === "madam") return "Madam";
-    if (urlMode === "sir" || urlParams.get("guest") === "true") return "Sir";
-    if (urlMode === "boss" && ownerVerified) return "Boss";
+    if (urlMode === "sir") return "Sir";
 
     const key = (effectiveEmail || effectiveName || "").toLowerCase().trim();
     const overrideMap = getOverrideMap();
     if (key && overrideMap[key]) {
-      // Never grant stale/manually overridden Boss mode to non-owner accounts
-      if (overrideMap[key] !== "Boss" || ownerVerified) {
+      if (overrideMap[key] === "Madam" || overrideMap[key] === "Sir") {
         return overrideMap[key];
       }
     }
-
-    const storedRole = localStorage.getItem("userRole");
-    if (!effectiveEmail && !effectiveName) {
-      if (storedRole === "Madam") return "Madam";
-      return "Sir"; // Unauthenticated preview defaults strictly to neutral Sir (never Boss)
-    }
-  } else if (!effectiveEmail && !effectiveName) {
-    return "Sir";
   }
 
   return inferHonorific(effectiveEmail, effectiveName);
@@ -202,26 +207,37 @@ export function getHonorificKey(email?: string, username?: string): HonorificKey
 
 export function setHonorificPreference(role: HonorificTitle | "Auto", email?: string): HonorificTitle {
   if (typeof window === "undefined") {
-    return role === "Auto" ? "Sir" : role;
+    return role === "Auto" ? "Stranger" : role;
   }
 
   const activeEmail = email || localStorage.getItem("userEmail") || "";
   const activeName = localStorage.getItem("userName") || "";
   const ownerVerified = isOwnerAccount(activeEmail);
+  const guestVerified = isGuestAccount(activeEmail, activeName);
   const key = (activeEmail || activeName || "").toLowerCase().trim();
   const overrideMap = getOverrideMap();
 
   let resolved: HonorificTitle;
-  if (role === "Auto") {
+  if (ownerVerified) {
+    resolved = "Boss";
+  } else if (guestVerified) {
+    resolved = "Stranger";
     if (key) {
       delete overrideMap[key];
       try {
         localStorage.setItem("das_honorific_override_map", JSON.stringify(overrideMap));
-      } catch {}
+      } catch { }
+    }
+  } else if (role === "Auto") {
+    if (key) {
+      delete overrideMap[key];
+      try {
+        localStorage.setItem("das_honorific_override_map", JSON.stringify(overrideMap));
+      } catch { }
     }
     resolved = inferHonorific(activeEmail, activeName);
-  } else if (role === "Boss" && !ownerVerified) {
-    // Prevent non-owner sessions from switching into Boss mode
+  } else if (role === "Boss" || role === "Stranger") {
+    // Non-owner signed-in accounts can never escalate to Boss
     resolved = inferHonorific(activeEmail, activeName);
   } else {
     resolved = role;
@@ -229,7 +245,7 @@ export function setHonorificPreference(role: HonorificTitle | "Auto", email?: st
       overrideMap[key] = resolved;
       try {
         localStorage.setItem("das_honorific_override_map", JSON.stringify(overrideMap));
-      } catch {}
+      } catch { }
     }
   }
 
@@ -256,29 +272,49 @@ export function handleAuthLoginDetected(
   const prevEmail =
     typeof window !== "undefined" ? (localStorage.getItem("userEmail") || "").trim().toLowerCase() : "";
   const accountChanged = Boolean(effectiveEmail && prevEmail && prevEmail !== effectiveEmail.toLowerCase());
+  const ownerVerified = isOwnerAccount(effectiveEmail);
+  const guestVerified = isGuestAccount(effectiveEmail, effectiveName);
 
-  if (typeof window !== "undefined" && accountChanged) {
+  if (typeof window !== "undefined" && (accountChanged || guestVerified)) {
     localStorage.removeItem("das_honorific_override");
     localStorage.removeItem("das_mode");
     localStorage.removeItem("isOwner");
     localStorage.removeItem("userRole");
+    if (guestVerified) {
+      const overrideMap = getOverrideMap();
+      delete overrideMap["guest@pathfinder.ai"];
+      delete overrideMap["guest student"];
+      try {
+        localStorage.setItem("das_honorific_override_map", JSON.stringify(overrideMap));
+      } catch { }
+    }
   }
 
-  const ownerVerified = isOwnerAccount(effectiveEmail);
   const key = (effectiveEmail || effectiveName).toLowerCase().trim();
   const overrideMap = getOverrideMap();
-  const savedPerAccount = key && !explicitPref ? overrideMap[key] : undefined;
-  const safeSaved = savedPerAccount && (savedPerAccount !== "Boss" || ownerVerified) ? savedPerAccount : undefined;
+  const savedPerAccount = key && !explicitPref && !guestVerified ? overrideMap[key] : undefined;
+  const safeSaved =
+    savedPerAccount && (savedPerAccount === "Madam" || savedPerAccount === "Sir")
+      ? savedPerAccount
+      : undefined;
   const requestedExplicit =
-    explicitPref && explicitPref !== "Auto"
+    !ownerVerified && !guestVerified && explicitPref && explicitPref !== "Auto"
       ? inferHonorific(effectiveEmail, effectiveName, explicitPref)
       : undefined;
   const safeExplicit =
-    requestedExplicit && (requestedExplicit !== "Boss" || ownerVerified) ? requestedExplicit : undefined;
-  const role: HonorificTitle = safeExplicit || safeSaved || inferHonorific(effectiveEmail, effectiveName);
+    requestedExplicit && (requestedExplicit === "Madam" || requestedExplicit === "Sir")
+      ? requestedExplicit
+      : undefined;
+
+  const role: HonorificTitle = ownerVerified
+    ? "Boss"
+    : guestVerified
+      ? "Stranger"
+      : safeExplicit || safeSaved || inferHonorific(effectiveEmail, effectiveName);
 
   if (typeof window !== "undefined") {
     if (effectiveEmail) localStorage.setItem("userEmail", effectiveEmail);
+    else localStorage.removeItem("userEmail");
     if (effectiveName) localStorage.setItem("userName", effectiveName);
     localStorage.setItem("userRole", role);
     localStorage.setItem("isOwner", role === "Boss" ? "true" : "false");
@@ -289,7 +325,7 @@ export function handleAuthLoginDetected(
       overrideMap[key] = role;
       try {
         localStorage.setItem("das_honorific_override_map", JSON.stringify(overrideMap));
-      } catch {}
+      } catch { }
     }
 
     window.dispatchEvent(
@@ -303,7 +339,7 @@ export function handleAuthLoginDetected(
 }
 
 export function initAuthMode(): HonorificTitle {
-  if (typeof window === "undefined") return "Sir";
+  if (typeof window === "undefined") return "Stranger";
 
   const storedEmail = (localStorage.getItem("userEmail") || "").trim();
   const storedName = (localStorage.getItem("userName") || "").trim();
@@ -312,7 +348,7 @@ export function initAuthMode(): HonorificTitle {
   if (pathfinderUserRaw) {
     try {
       parsedUser = JSON.parse(pathfinderUserRaw);
-    } catch {}
+    } catch { }
   }
 
   const email = storedEmail || (parsedUser?.email || "").trim();
@@ -322,12 +358,9 @@ export function initAuthMode(): HonorificTitle {
     return handleAuthLoginDetected(email, username);
   }
 
-  const storedRole = localStorage.getItem("userRole");
-  if (storedRole === "Madam") return "Madam";
-
-  localStorage.setItem("userRole", "Sir");
+  localStorage.setItem("userRole", "Stranger");
   localStorage.setItem("isOwner", "false");
-  localStorage.setItem("das_mode", "SIR");
-  localStorage.setItem("das_honorific_override", "Sir");
-  return "Sir";
+  localStorage.setItem("das_mode", "STRANGER");
+  localStorage.setItem("das_honorific_override", "Stranger");
+  return "Stranger";
 }

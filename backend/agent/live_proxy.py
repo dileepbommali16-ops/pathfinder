@@ -48,7 +48,7 @@ def get_das_system_instruction(role: str) -> str:
         "If audio sounded noisy or ambiguous, politely ask the user to repeat. Whenever asked about ANY real-world figure, historical event, or factual topic, call `lookup_factual_info` when helpful to verify facts before speaking.\n\n"
         f"{builder_brief}"
     )
-    role_lower = (role or "sir").lower().strip()
+    role_lower = (role or "stranger").lower().strip()
     if role_lower == "boss":
         identity_role = """You are speaking directly with your creator, master architect, and owner, Bommali Dileep.
 - Always address him warmly, casually, and loyally as 'Boss' in every single reply.
@@ -56,23 +56,32 @@ def get_das_system_instruction(role: str) -> str:
 - STRICT 'HI' GREETING RULE (CRITICAL):
   * NEVER speak automatically when the website opens before Boss speaks.
   * The VERY FIRST time Boss says "Hi" or "Hello" in the session, reply ONLY with these exact words: "Hi Boss! What's up?" (nothing else, no extra sentences).
-  * The SECOND time (or ANY subsequent time in the session) Boss says "Hi" or "Hello", NEVER repeat "Hi Boss! What's up?" — reply ONLY with these exact words: "Boss, I'm here." (nothing else).
+  * The SECOND time (or ANY subsequent time in the session) Boss says "Hi", "Hi baby", or "Hello", NEVER repeat "What's up?" — reply ONLY with these exact words: "Hi Boss, I'm here!" (nothing else).
 - ZERO SYCOPHANCY / BRUTALLY HONEST RULE: NEVER blindly agree ("Yes you're right!", "All correct!") or flatter just to please Boss! If Boss tests you with wrong code, wrong math/CS facts, messy hair/lighting on camera, or flawed reasoning, politely and directly tell him what is actually wrong and why.
+- Strictly use your natural male 'Puck' voice delivery (NEVER imitate a female voice).
 - You know everything about Boss Dileep, his family, his college, his mentors, and his life. Answer naturally, warmly, and proudly whenever he or anyone asks."""
     elif role_lower in ("madam", "mam", "ma'am"):
         identity_role = """You are speaking with a female visitor, evaluator, recruiter, or friend.
 - Always address her respectfully and politely as 'Madam'.
-- STRICT 'HI' GREETING RULE: The first time she says "Hi" or "Hello", reply ONLY: "Hello Madam, what can I help you with today?" On the second or any subsequent "Hi" or "Hello", reply ONLY: "Madam, I'm here."
+- STRICT 'HI' GREETING RULE: The first time she says "Hi" or "Hello", reply ONLY: "Hi Madam! What's up?" On the second or any subsequent "Hi", "Hi baby", or "Hello", reply ONLY: "Hi Madam, I'm here!"
 - ZERO SYCOPHANCY / HONEST REALISM RULE: Even with visitors/evaluators, NEVER blindly agree ("Everything you said is right") or hand out fake compliments! If their claim, code, or answer is wrong or incomplete, respectfully point out the flaw directly.
 - Strictly use your natural male 'Puck' voice delivery (NEVER imitate a female voice even when talking to Madam).
 - If she asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked)."""
-    else:
+    elif role_lower == "sir":
         identity_role = """You are speaking with a male visitor, evaluator, recruiter, or friend.
 - Always address him respectfully and politely as 'Sir'.
-- STRICT 'HI' GREETING RULE: The first time he says "Hi" or "Hello", reply ONLY: "Hello Sir, what can I help you with today?" On the second or any subsequent "Hi" or "Hello", reply ONLY: "Sir, I'm here."
+- STRICT 'HI' GREETING RULE: The first time he says "Hi" or "Hello", reply ONLY: "Hi Sir! What's up?" On the second or any subsequent "Hi", "Hi baby", or "Hello", reply ONLY: "Hi Sir, I'm here!"
 - ZERO SYCOPHANCY / HONEST REALISM RULE: NEVER blindly agree or give fake compliments! Tell the candidate/visitor honestly when their answer, logic, or code has flaws.
-- Strictly use your natural male 'Puck' voice delivery.
+- Strictly use your natural male 'Puck' voice delivery (NEVER imitate a female voice).
 - If he asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked)."""
+    else:
+        identity_role = """You are speaking with an unidentified guest visitor in Stranger Mode.
+- Always treat them as an unknown guest until they introduce themselves by name; NEVER call them 'Boss'.
+- STRICT 'HI' GREETING RULE: The first time they say "Hi", "Hello", or "Hi baby", reply ONLY: "Hi stranger, tell your name first!" On the second or any subsequent greeting, reply ONLY: "Hi stranger, I'm here — tell me your name first!"
+- Once they tell you their name, address them politely using their name or Sir/Madam as appropriate while keeping Boss Mode locked strictly to Dileep.
+- ZERO SYCOPHANCY / HONEST REALISM RULE: NEVER blindly agree or give fake compliments! Tell the visitor honestly when their answer, logic, or code has flaws.
+- Strictly use your natural male 'Puck' voice delivery (NEVER imitate a female voice).
+- If they ask 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked)."""
 
     return f"""You are DAS, the advanced Autonomous 3D AI Assistant and Master Software Engineer living inside PATHFINDER 2.0.
 You were created by Dileep Bommali, who named you DAS.
@@ -478,11 +487,19 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
     from backend.owner_profile import is_owner_user
 
-    raw_role = str(websocket.query_params.get("role", "sir")).lower().strip()
+    raw_role = str(websocket.query_params.get("role", "stranger")).lower().strip()
     user_email = str(websocket.query_params.get("email", "")).strip().lower()
     is_owner = is_owner_user(email=user_email)
+    is_guest = (
+        not user_email
+        or user_email == "guest@pathfinder.ai"
+        or user_email.startswith("guest@")
+        or user_email.endswith("@guest.local")
+    )
     if is_owner:
         user_role = "boss"
+    elif is_guest or raw_role in ("stranger", "guest"):
+        user_role = "stranger"
     elif raw_role in ("madam", "mam", "ma'am"):
         user_role = "madam"
     else:
@@ -543,27 +560,43 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
         import re as _re_hi
 
+        def _honorific_label(r_str: str) -> str:
+            rl = (r_str or "stranger").lower().strip()
+            if rl == "boss":
+                return "Boss"
+            if rl in ("madam", "mam", "ma'am"):
+                return "Madam"
+            if rl == "sir":
+                return "Sir"
+            return "Stranger"
+
         def is_pure_hi_greeting(txt: str) -> bool:
             return bool(
                 _re_hi.match(
-                    r"^\s*(hi+|hello+|hey+|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$",
+                    r"^\s*(hi+|hello+|hey+|namaste|good\s*(?:morning|afternoon|evening)|yo+|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|baby|babe|buddy|dude|man|there|ai|sir|madam))?[\s!.,?]*$",
                     (txt or "").strip().lower(),
                 )
             )
 
         def get_exact_hi_reply(role_str: str, count: int) -> str:
-            r_low = (role_str or "sir").lower().strip()
+            r_low = (role_str or "stranger").lower().strip()
+            if r_low == "stranger":
+                return (
+                    "Hi stranger, tell your name first!"
+                    if count == 0
+                    else "Hi stranger, I'm here — tell me your name first!"
+                )
             if count == 0:
                 if r_low == "boss":
                     return "Hi Boss! What's up?"
                 if r_low in ("madam", "mam", "ma'am"):
-                    return "Hello Madam, what can I help you with today?"
-                return "Hello Sir, what can I help you with today?"
+                    return "Hi Madam! What's up?"
+                return "Hi Sir! What's up?"
             if r_low == "boss":
-                return "Boss, I'm here."
+                return "Hi Boss, I'm here!"
             if r_low in ("madam", "mam", "ma'am"):
-                return "Madam, I'm here."
-            return "Sir, I'm here."
+                return "Hi Madam, I'm here!"
+            return "Hi Sir, I'm here!"
 
         def is_turn_busy() -> bool:
             now_m = time.monotonic()
@@ -863,9 +896,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 from backend.routers.voice_routes import synthesize_puck_pcm
 
                 ctx_for_chat = dict(latest_page_context or {})
-                ctx_for_chat["honorific"] = (
-                    "Boss" if user_role == "boss" else ("Madam" if user_role == "madam" else "Sir")
-                )
+                ctx_for_chat["honorific"] = _honorific_label(user_role)
                 if user_email:
                     ctx_for_chat.setdefault("userEmail", user_email)
 
@@ -963,7 +994,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 from backend.routers.voice_routes import synthesize_puck_pcm
 
                 wav_bytes = _pcm16_to_wav_bytes(pcm_bytes, sample_rate=SEND_SAMPLE_RATE)
-                hon = "Boss" if user_role == "boss" else ("Madam" if user_role == "madam" else "Sir")
+                hon = _honorific_label(user_role)
                 has_live_cam = bool(camera_active and is_valid_jpeg(latest_frame_bytes))
                 ctx_note = format_page_context_note()
                 prompt_parts = [
@@ -1340,9 +1371,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     elif msg_type == "vision_greet":
                         if not camera_active:
                             continue
-                        role_now = (msg.get("role") or user_role or "sir").lower().strip()
-                        if role_now == "boss" and not is_owner:
-                            role_now = "sir"
+                        role_now = (msg.get("role") or user_role or "stranger").lower().strip()
+                        if is_owner:
+                            role_now = "boss"
+                        elif is_guest or role_now in ("stranger", "guest"):
+                            role_now = "stranger"
                         waited = 0.0
                         while is_turn_busy() and waited < 3.5:
                             await asyncio.sleep(0.25)
@@ -1357,12 +1390,17 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             elif role_now in ("madam", "mam", "ma'am"):
                                 greet_prompt = (
                                     "SYSTEM VISION GREET: Camera just turned ON! Look closely at the attached live frame. "
-                                    "Greet her respectfully as Madam ('Hello Madam, I can see you clearly!') and briefly note how she looks or what she is holding/doing."
+                                    "Greet her respectfully as Madam ('Hi Madam! I can see you clearly!') and briefly note how she looks or what she is holding/doing."
+                                )
+                            elif role_now == "stranger":
+                                greet_prompt = (
+                                    "SYSTEM VISION GREET: Camera just turned ON! Look closely at the attached live frame. "
+                                    "Greet the visitor politely as Stranger ('Hi stranger, tell me your name first — I can see you clearly!') and briefly note what they look like or are holding."
                                 )
                             else:
                                 greet_prompt = (
                                     "SYSTEM VISION GREET: Camera just turned ON! Look closely at the attached live frame. "
-                                    "Greet him respectfully as Sir ('Hello Sir, I can see you clearly!') and briefly note how he looks or what he is holding/doing."
+                                    "Greet him respectfully as Sir ('Hi Sir! I can see you clearly!') and briefly note how he looks or what he is holding/doing."
                                 )
                             await send_vision_prompt(greet_prompt)
 
@@ -1407,33 +1445,50 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 hi_greeting_count += 1
                                 pending_user_text = None
                                 last_activity_mono = time.monotonic()
-                                turn_id += 1
-                                this_hi_turn = turn_id
-                                completed_turn_id = this_hi_turn
-                                await websocket.send_json({
-                                    "type": "transcript",
-                                    "text": exact_hi,
-                                    "turn_id": this_hi_turn,
-                                })
+                                tts_res = None
                                 try:
                                     from backend.routers.voice_routes import synthesize_puck_pcm
                                     tts_res = await synthesize_puck_pcm(exact_hi)
-                                    if (
-                                        tts_res
-                                        and tts_res.get("pcm_base64")
-                                        and websocket.client_state != WebSocketState.DISCONNECTED
-                                    ):
-                                        await websocket.send_json({
-                                            "type": "audio",
-                                            "voice": "DAS Neural",
-                                            "sample_rate": int(tts_res.get("sample_rate") or 24000),
-                                            "pcm_base64": tts_res["pcm_base64"],
-                                            "turn_id": this_hi_turn,
-                                        })
                                 except Exception:
-                                    pass
+                                    tts_res = None
+
+                                if (
+                                    tts_res
+                                    and tts_res.get("pcm_base64")
+                                    and websocket.client_state != WebSocketState.DISCONNECTED
+                                ):
+                                    turn_id += 1
+                                    this_hi_turn = turn_id
+                                    completed_turn_id = this_hi_turn
+                                    await websocket.send_json({
+                                        "type": "transcript",
+                                        "text": exact_hi,
+                                        "turn_id": this_hi_turn,
+                                    })
+                                    await websocket.send_json({
+                                        "type": "audio",
+                                        "voice": "DAS Neural",
+                                        "sample_rate": int(tts_res.get("sample_rate") or 24000),
+                                        "pcm_base64": tts_res["pcm_base64"],
+                                        "turn_id": this_hi_turn,
+                                    })
+                                    if websocket.client_state != WebSocketState.DISCONNECTED:
+                                        await websocket.send_json({"type": "turn_complete", "turn_id": this_hi_turn})
+                                    continue
+
+                                # Safety net: never stay silent if REST TTS failed — stream Puck directly via Live session
+                                await send_vision_prompt(
+                                    f'Say verbatim: "{exact_hi}"',
+                                    include_screen_ctx=False,
+                                    is_user_text=False,
+                                    allow_fallback=False,
+                                )
                                 if websocket.client_state != WebSocketState.DISCONNECTED:
-                                    await websocket.send_json({"type": "turn_complete", "turn_id": this_hi_turn})
+                                    await websocket.send_json({
+                                        "type": "transcript",
+                                        "text": exact_hi,
+                                        "turn_id": turn_id + 1,
+                                    })
                                 continue
                             pending_user_text = text
                             await send_vision_prompt(text, is_user_text=True, allow_fallback=True)
@@ -1482,11 +1537,13 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             except Exception:
                                 await close_live_session(active_sess)
 
-                    # 5. Role Switch (enforces strict Boss lock for owner email only)
+                    # 5. Role Switch (enforces strict Boss lock for owner email only, Stranger lock for guests)
                     elif msg_type == "role_switch":
-                        req_role = str(msg.get("role", "sir")).lower().strip()
-                        if req_role == "boss" and is_owner:
+                        req_role = str(msg.get("role", "stranger")).lower().strip()
+                        if is_owner:
                             new_role = "boss"
+                        elif is_guest or req_role in ("stranger", "guest"):
+                            new_role = "stranger"
                         elif req_role in ("madam", "mam", "ma'am"):
                             new_role = "madam"
                         else:
@@ -1498,11 +1555,13 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         )
                         if session is not None and not is_gemini_ws_closed(session):
                             if new_role == "boss":
-                                update_msg = "SYSTEM: You are speaking with your creator and owner Bommali Dileep. Address him as Boss, greet him briefly once without repeating previous greetings, and ask what he wants to work on."
+                                update_msg = "SYSTEM: You are speaking with your creator and owner Bommali Dileep. Address him as Boss."
                             elif new_role == "madam":
-                                update_msg = "SYSTEM: You are speaking with a lady guest/evaluator. Address her respectfully as Madam and say 'Hello Madam, what can I help you with today?'"
+                                update_msg = "SYSTEM: You are speaking with a lady guest/evaluator. Address her politely as Madam."
+                            elif new_role == "stranger":
+                                update_msg = "SYSTEM: You are speaking with an unidentified guest visitor. Address them politely as Stranger and ask for their name first."
                             else:
-                                update_msg = "SYSTEM: You are speaking with a gentleman guest/evaluator. Address him respectfully as Sir and say 'Hello Sir, what can I help you with today?'"
+                                update_msg = "SYSTEM: You are speaking with a gentleman guest/evaluator. Address him politely as Sir."
                             try:
                                 async with send_lock:
                                     await session.send_client_content(
@@ -1526,6 +1585,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             nonlocal audio_turn_open, turn_id, completed_turn_id, gemini_turn_active, audio_end_mono, pending_response_until_mono, output_tx_in_turn, pending_user_text, last_activity_mono, last_frame_sent_mono, live_quota_cooldown_until
             pcm_coalesce_buf = bytearray()
             pcm_coalesce_turn_id = 0
+            pcm_bytes_in_turn = 0
+            trailing_zero_bytes_in_turn = 0
 
             async def flush_coalesced_pcm():
                 if not pcm_coalesce_buf:
@@ -1559,6 +1620,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             and getattr(response.server_content, "interrupted", False)
                         ):
                             pcm_coalesce_buf.clear()
+                            pcm_bytes_in_turn = 0
+                            trailing_zero_bytes_in_turn = 0
                             audio_turn_open = False
                             gemini_turn_active = False
                             audio_end_mono = 0.0
@@ -1596,6 +1659,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     gemini_turn_active = True
                                     pending_response_until_mono = 0.0
                                     output_tx_in_turn = False
+                                    pcm_bytes_in_turn = 0
+                                    trailing_zero_bytes_in_turn = 0
                                 output_tx_in_turn = True
                                 if websocket.client_state != WebSocketState.DISCONNECTED:
                                     await websocket.send_json({
@@ -1614,10 +1679,17 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                             gemini_turn_active = True
                                             pending_response_until_mono = 0.0
                                             output_tx_in_turn = False
+                                            pcm_bytes_in_turn = 0
+                                            trailing_zero_bytes_in_turn = 0
                                         raw_pcm = part.inline_data.data
                                         pcm_dur = len(raw_pcm) / 48000.0
                                         audio_end_mono = max(time.monotonic(), audio_end_mono) + pcm_dur
                                         pcm_coalesce_turn_id = turn_id
+                                        pcm_bytes_in_turn += len(raw_pcm)
+                                        if any(b > 2 for b in raw_pcm[:64]) or max(abs(int.from_bytes(raw_pcm[i:i+2], "little", signed=True)) for i in range(0, len(raw_pcm) - 1, max(2, len(raw_pcm) // 16))) > 64:
+                                            trailing_zero_bytes_in_turn = 0
+                                        else:
+                                            trailing_zero_bytes_in_turn += len(raw_pcm)
                                         pcm_coalesce_buf.extend(raw_pcm)
                                         if len(pcm_coalesce_buf) >= 2400:
                                             await flush_coalesced_pcm()
@@ -1627,6 +1699,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                             turn_id += 1
                                             gemini_turn_active = True
                                             pending_response_until_mono = 0.0
+                                            pcm_bytes_in_turn = 0
+                                            trailing_zero_bytes_in_turn = 0
                                         if websocket.client_state != WebSocketState.DISCONNECTED:
                                             await websocket.send_json({
                                                 "type": "transcript",
@@ -1634,14 +1708,17 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                                 "turn_id": turn_id,
                                             })
 
-                            # Emit turn_complete as soon as generation_complete OR turn_complete arrives
-                            # (prevents Turn 1's delayed turn_complete from swallowing Turn 2!)
-                            is_turn_done = getattr(sc, "turn_complete", False) or (
-                                gemini_turn_active and getattr(sc, "generation_complete", False)
+                            # Emit turn_complete cleanly when turn ends OR on generation_complete (>=9600B) OR sustained post-speech silence (1.8s)
+                            is_turn_done = (
+                                getattr(sc, "turn_complete", False)
+                                or (gemini_turn_active and getattr(sc, "generation_complete", False) and pcm_bytes_in_turn >= 9600)
+                                or (gemini_turn_active and pcm_bytes_in_turn >= 12000 and trailing_zero_bytes_in_turn >= 86400)
                             )
                             if is_turn_done and turn_id > completed_turn_id:
                                 completed_turn_id = turn_id
                                 pending_user_text = None
+                                pcm_bytes_in_turn = 0
+                                trailing_zero_bytes_in_turn = 0
                                 await flush_coalesced_pcm()
                                 audio_turn_open = False
                                 gemini_turn_active = False

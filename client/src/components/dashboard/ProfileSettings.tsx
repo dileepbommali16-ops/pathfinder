@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
 import { CollegeSelector } from "@/components/common/CollegeSelector";
-import { isOwnerAccount, setHonorificPreference } from "@/lib/auth";
+import { isOwnerAccount, isGuestAccount, setHonorificPreference } from "@/lib/auth";
 
 const YEAR_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year"] as const;
 const YEAR_TO_SEM: Record<string, { sem: number; label: string }> = {
@@ -561,26 +561,36 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
 
             <div className="space-y-1 sm:col-span-2">
               <label className="text-xs font-semibold text-[#94a3b8]">AI Assistant Addressing Mode</label>
-              <select
-                id="settings-honorific-mode"
-                value={safeHonorificPref}
-                onChange={(e) => {
-                  const rawVal = e.target.value as "Auto" | "Madam" | "Sir" | "Boss";
-                  const val = !canSelectBossMode && rawVal === "Boss" ? "Auto" : rawVal;
-                  setFormData({ ...formData, honorificPref: val });
-                  setHonorificPreference(val, resolvedEmail);
-                }}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
-              >
-                <option value="Auto">
-                  {canSelectBossMode
-                    ? "Auto (Smart Name Detection — Madam / Sir / Boss)"
-                    : "Auto (Smart Name Detection — Madam / Sir)"}
-                </option>
-                <option value="Madam">Always address me as Madam</option>
-                <option value="Sir">Always address me as Sir</option>
-                {canSelectBossMode && <option value="Boss">Boss Mode (Creator)</option>}
-              </select>
+              {canSelectBossMode ? (
+                <div
+                  id="settings-honorific-mode"
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs font-semibold text-[#f8fafc]"
+                >
+                  ✨ Boss Mode (Creator — Dileep Bommali Only)
+                </div>
+              ) : isGuestAccount(resolvedEmail, formData.fullName) ? (
+                <div
+                  id="settings-honorific-mode"
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs font-semibold text-[#f8fafc]"
+                >
+                  👤 Stranger Mode (Guest Session — Tell your name to DAS first)
+                </div>
+              ) : (
+                <select
+                  id="settings-honorific-mode"
+                  value={safeHonorificPref}
+                  onChange={(e) => {
+                    const rawVal = e.target.value as "Auto" | "Madam" | "Sir";
+                    setFormData({ ...formData, honorificPref: rawVal });
+                    setHonorificPreference(rawVal, resolvedEmail);
+                  }}
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                >
+                  <option value="Auto">Auto (Smart Name Detection — Madam / Sir)</option>
+                  <option value="Madam">Always address me as Madam</option>
+                  <option value="Sir">Always address me as Sir</option>
+                </select>
+              )}
             </div>
           </div>
         </div>

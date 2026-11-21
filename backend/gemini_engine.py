@@ -238,11 +238,21 @@ def load_pathfinder_guide(max_chars: int = 18000) -> str:
     )[:max_chars]
 
 
+def _is_guest_identity(email: Optional[str] = None, username: Optional[str] = None) -> bool:
+    e = (email or "").strip().lower()
+    u = (username or "").strip().lower()
+    if not e or e == "guest@pathfinder.ai" or e.startswith("guest@") or e.endswith("@guest.local"):
+        return True
+    if u in ("guest student", "guest", "stranger"):
+        return True
+    return False
+
+
 def _resolve_verified_honorific(
     profile: Optional[Any] = None,
     page_context: Optional[Dict[str, Any]] = None,
 ) -> str:
-    """Resolve honorific strictly: ONLY verified primary owner email may receive 'Boss'."""
+    """Resolve honorific strictly: Boss ONLY for owner, Stranger for guests, else Madam/Sir."""
     ctx = page_context if isinstance(page_context, dict) else {}
     p_dict: Dict[str, Any] = {}
     if profile is not None:
@@ -254,10 +264,21 @@ def _resolve_verified_honorific(
             p_dict = getattr(profile, "__dict__", {})
 
     user_email = str(ctx.get("userEmail") or p_dict.get("email") or "").strip().lower()
+    user_name = str(ctx.get("userName") or p_dict.get("full_name") or p_dict.get("username") or "").strip()
     if user_email and is_owner_user(email=user_email):
         return "Boss"
 
     raw_hon = str(ctx.get("honorific") or "").strip().lower()
+    if user_email and _is_guest_identity(user_email, user_name):
+        return "Stranger"
+    if not user_email:
+        if raw_hon in ("madam", "mam", "ma'am", "female"):
+            return "Madam"
+        if raw_hon == "sir":
+            return "Sir"
+        return "Stranger"
+    if raw_hon in ("stranger", "guest"):
+        return "Stranger"
     if raw_hon in ("madam", "mam", "ma'am", "female"):
         return "Madam"
     return "Sir"
@@ -769,17 +790,22 @@ def generate_smart_fallback_reply(
         )
 
     is_greeting_only = bool(
-        re.match(r"^\s*(hi+|hello+|hey+|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$", low_msg)
+        re.match(
+            r"^\s*(hi+|hello+|hey+|namaste|good\s*(?:morning|afternoon|evening)|yo+|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|baby|babe|buddy|dude|man|there|ai|sir|madam))?[\s!.,?]*$",
+            low_msg,
+        )
     )
     if is_greeting_only:
         prior_greeted = bool(history and len(history) > 0)
+        if honorific_fallback == "Stranger":
+            return (
+                "Hi stranger, I'm here — tell me your name first!"
+                if prior_greeted
+                else "Hi stranger, tell your name first!"
+            )
         if prior_greeted:
-            if honorific_fallback == "Boss":
-                return "Boss, I'm here."
-            return f"{honorific_fallback}, I'm here."
-        if honorific_fallback == "Boss":
-            return "Hi Boss! What's up?"
-        return f"Hello {honorific_fallback}, what can I help you with today?"
+            return f"Hi {honorific_fallback}, I'm here!"
+        return f"Hi {honorific_fallback}! What's up?"
 
     return (
         f"👋 **Hello {p_name} ({honorific_fallback})!**\n\n"
@@ -889,6 +915,8 @@ SAVED CANDIDATE PROFILE:
         sys_instruction += "\nADDRESSING RULE: You are speaking with your Creator & Primary Owner (Dileep, dileepbommali16@gmail.com). Always address him warmly and respectfully as 'Boss'."
     elif verified_honorific == "Madam":
         sys_instruction += "\nADDRESSING RULE: You are speaking with a respected female user/candidate. Always address her politely as 'Madam' (NEVER call her Boss)."
+    elif verified_honorific == "Stranger":
+        sys_instruction += "\nADDRESSING RULE: You are speaking with an unidentified guest visitor. Address them politely as 'Stranger' and ask for their name first until they introduce themselves (NEVER call them Boss — ONLY dileepbommali16@gmail.com is Boss)."
     else:
         sys_instruction += "\nADDRESSING RULE: You are speaking with a respected guest/candidate. Always address them respectfully as 'Sir' (NEVER call them Boss — ONLY dileepbommali16@gmail.com is Boss)."
 
@@ -1063,21 +1091,23 @@ def chat_with_mentor(
             return empty_text, {"prep_ms": 0.0, "gemini_call_ms": 0.0, "novelty_ms": 0.0, "model_used": "none"}
         return empty_text
 
-    # Strict deterministic 1st "Hi" -> "Hi Boss! What's up?" vs 2nd+ "Hi" -> "Boss, I'm here."
+    # Strict deterministic 4-role Hi greetings (Boss / Madam / Sir / Stranger)
     if re.match(
-        r"^\s*(hi+|hello+|hey+|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$",
+        r"^\s*(hi+|hello+|hey+|namaste|good\s*(?:morning|afternoon|evening)|yo+|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|baby|babe|buddy|dude|man|there|ai|sir|madam))?[\s!.,?]*$",
         clean_msg.lower(),
     ):
         hon_now = _resolve_verified_honorific(profile, page_context)
         has_prior = bool(history and len(history) > 0)
-        if has_prior:
-            hi_reply = "Boss, I'm here." if hon_now == "Boss" else f"{hon_now}, I'm here."
-        else:
+        if hon_now == "Stranger":
             hi_reply = (
-                "Hi Boss! What's up?"
-                if hon_now == "Boss"
-                else f"Hello {hon_now}, what can I help you with today?"
+                "Hi stranger, I'm here — tell me your name first!"
+                if has_prior
+                else "Hi stranger, tell your name first!"
             )
+        elif has_prior:
+            hi_reply = f"Hi {hon_now}, I'm here!"
+        else:
+            hi_reply = f"Hi {hon_now}! What's up?"
         if return_meta:
             return hi_reply, {"prep_ms": 0.1, "gemini_call_ms": 0.0, "novelty_ms": 0.0, "model_used": "deterministic-hi-rule"}
         return hi_reply

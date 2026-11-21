@@ -742,7 +742,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
     setMessages([
       {
         role: "assistant",
-        content: `Hi ${role}, I'm your Pathfinder AI agent, how can I help you?`,
+        content:
+          role === "Stranger"
+            ? "Hi stranger, tell your name first!"
+            : `Hi ${role}! What's up?`,
       },
     ]);
     if (typeof window !== "undefined") {

@@ -62,13 +62,15 @@ export async function getRelevantContext(query) {
  */
 export async function askDas(userQuery, onChunk) {
   const context = await getRelevantContext(userQuery);
-  const activeRole = typeof window !== "undefined" ? getUserRole() : "Sir";
+  const activeRole = typeof window !== "undefined" ? getUserRole() : "Stranger";
   const honorificRule =
     activeRole === "Boss"
       ? "Boss is Dileep Bommali. Address him warmly as Boss."
       : activeRole === "Madam"
         ? "The user is a respected female visitor/candidate. Always address her politely as Madam (NEVER call her Boss or Sir)."
-        : "The user is a guest/candidate. Always address them respectfully as Sir (NEVER call them Boss).";
+        : activeRole === "Stranger"
+          ? "The user is an unidentified guest visitor. Address them politely as Stranger and ask them to tell their name first until they introduce themselves (NEVER call them Boss)."
+          : "The user is a valued male visitor/candidate. Always address him respectfully as Sir (NEVER call him Boss).";
 
   const systemPrompt = `You are DAS, Pathfinder AI. ${honorificRule}
 Knowledge Base (Top 3 relevant only):
@@ -432,7 +434,9 @@ export const getCareerAgentResponse = (
   const storedEmailNow =
     typeof window !== "undefined" ? (localStorage.getItem("userEmail") || "").toLowerCase().trim() : "";
   const isVerifiedOwner = storedEmailNow === "dileepbommali16@gmail.com";
-  const rawHon = (honorific || (typeof window !== "undefined" ? getUserRole() : "Sir"))
+  const isGuestEmail =
+    !storedEmailNow || storedEmailNow === "guest@pathfinder.ai" || storedEmailNow.startsWith("guest@");
+  const rawHon = (honorific || (typeof window !== "undefined" ? getUserRole() : "Stranger"))
     .toString()
     .toLowerCase()
     .trim();
@@ -441,7 +445,13 @@ export const getCareerAgentResponse = (
       ? "Madam"
       : rawHon === "boss" && isVerifiedOwner
         ? "Boss"
-        : "Sir";
+        : rawHon === "stranger" || rawHon === "guest" || rawHon === "visitor" || (rawHon === "boss" && isGuestEmail)
+          ? "Stranger"
+          : rawHon === "sir"
+            ? "Sir"
+            : isGuestEmail && !honorific
+              ? "Stranger"
+              : "Sir";
 
   // Perform semantic search first (Top 3 results from 28 blueprints + 972 placements)
   const top3Rag = semanticSearchSync(message, profile, 3);
@@ -483,9 +493,15 @@ export const getCareerAgentResponse = (
         `|||👑 **Identity Confirmed:** Dileep Bommali (Boss & Pathfinder 2.0 Creator).`
       );
     }
+    if (title === "Stranger") {
+      return (
+        `You are currently in Stranger mode as a guest visitor — tell me your name first so I know who I'm speaking with!` +
+        `|||👤 **Identity:** Guest Session (Stranger Mode).`
+      );
+    }
     const storedName =
       typeof window !== "undefined" ? localStorage.getItem("userName") || "" : "";
-    const guestLabel = storedName ? `${storedName} (${title})` : `our valued guest, ${title}`;
+    const guestLabel = storedName ? `${storedName} (${title})` : `our valued visitor, ${title}`;
     return (
       `You are currently signed in as ${guestLabel}! How can I help you elevate your placement readiness today?` +
       `|||✨ **Identity:** ${guestLabel}.`
@@ -520,16 +536,28 @@ export const getCareerAgentResponse = (
     return `Boss Mode is locked strictly to Dileep's verified account (dileepbommali16@gmail.com), ${title}. All 3D voice, coding, and placement features remain ready to assist you!|||✨ **Verified Mode Active:** Assisting you respectfully as **${title}**.`;
   }
   if (/\b(call\s*me\s*(?:madam|mam|ma'am)|i\s*am\s*a\s*(?:girl|woman|female|lady))\b/i.test(text)) {
+    if (isGuestEmail) {
+      return `Guest sessions remain in Stranger mode — tell me your name first or sign in with your account!|||👤 **Stranger Mode Active:** Guest session.`;
+    }
     try {
       if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Madam");
     } catch { }
     return `Certainly, Madam! I have switched to Madam mode and will address you respectfully as Madam. How may I assist you with Pathfinder today?|||🌸 **Identity Active:** Addressing you as **Madam**.`;
   }
-  if (/\b(call\s*me\s*sir|guest\s*mode|i\s*am\s*a\s*(guest|visitor|recruiter|student))\b/i.test(text)) {
+  if (/\bcall\s*me\s*sir\b|\bi\s*am\s*a\s*(?:boy|man|male)\b/i.test(text)) {
+    if (isGuestEmail) {
+      return `Guest sessions remain in Stranger mode — tell me your name first or sign in with your account!|||👤 **Stranger Mode Active:** Guest session.`;
+    }
     try {
       if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Sir");
     } catch { }
-    return `Certainly, Sir! I have switched to Guest & Stakeholder mode and will address you as Sir. How may I guide you through Pathfinder today?|||🎩 **Guest Identity Active:** Addressing you as **Sir**.`;
+    return `Understood, Sir! I have switched to Sir mode and will address you as Sir. How may I assist you with Pathfinder today?|||🎩 **Identity Active:** Addressing you as **Sir**.`;
+  }
+  if (/\b(guest\s*mode|i\s*am\s*a\s*(?:guest|visitor|stranger))\b/i.test(text)) {
+    try {
+      if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Stranger");
+    } catch { }
+    return `Stranger mode active! Tell me your name first so I know who I'm speaking with.|||👤 **Stranger Mode Active:** Guest session.`;
   }
 
   // Voice & Audio Feedback Queries
@@ -714,9 +742,9 @@ export const getCareerAgentResponse = (
     }
   }
 
-  // 2. Casual Greetings — Strict 1st time ("Hi Boss! What's up?") vs 2nd+ time ("Boss, I'm here.")
+  // 2. Casual Greetings — Strict 4-role exact rules (Boss / Madam / Sir / Stranger)
   const isGreeting =
-    /^\s*(hi+|hello+|hey+|namaste|good\s*(morning|afternoon|evening)|yo|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$/i.test(
+    /^\s*(hi+|hello+|hey+|namaste|good\s*(?:morning|afternoon|evening)|yo+|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|baby|babe|buddy|dude|man|there|ai|sir|madam))?[\s!.,?]*$/i.test(
       text
     );
   if (isGreeting) {
@@ -728,19 +756,33 @@ export const getCareerAgentResponse = (
           t.includes("whats up") ||
           t.includes("i'm here") ||
           t.includes("im here") ||
+          t.includes("tell your name") ||
           t.includes("how can i assist") ||
           t.includes("ready when you are") ||
           t.includes("right here") ||
           t.includes("what can i help")
       );
+    if (title === "Stranger") {
+      const strangerLine = alreadyGreeted
+        ? "Hi stranger, I'm here — tell me your name first!"
+        : "Hi stranger, tell your name first!";
+      return `${strangerLine}|||👋 **${strangerLine}**`;
+    }
     if (alreadyGreeted) {
-      const shortHere = title === "Boss" ? "Boss, I'm here." : `${title}, I'm here.`;
+      const shortHere =
+        title === "Boss"
+          ? "Hi Boss, I'm here!"
+          : title === "Madam"
+            ? "Hi Madam, I'm here!"
+            : "Hi Sir, I'm here!";
       return `${shortHere}|||👋 **${shortHere}**`;
     }
     const greetingLine =
       title === "Boss"
         ? "Hi Boss! What's up?"
-        : `Hello ${title}, what can I help you with today?`;
+        : title === "Madam"
+          ? "Hi Madam! What's up?"
+          : "Hi Sir! What's up?";
     return `${greetingLine}|||👋 **${greetingLine}**`;
   }
 

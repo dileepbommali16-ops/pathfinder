@@ -13,8 +13,21 @@ function getKeyCandidates() {
 
 function resolveHonorific(pageContext = {}) {
   const email = String(pageContext.userEmail || "").trim().toLowerCase();
-  if (email === OWNER_EMAIL) return "Boss";
+  const userName = String(pageContext.userName || "").trim().toLowerCase();
   const rawHon = String(pageContext.honorific || "").trim().toLowerCase();
+  if (email === OWNER_EMAIL) return "Boss";
+  if (
+    !email ||
+    email === "guest@pathfinder.ai" ||
+    email.startsWith("guest@") ||
+    email.endsWith("@guest.local") ||
+    rawHon === "stranger" ||
+    userName === "guest student" ||
+    userName === "guest" ||
+    userName === "stranger"
+  ) {
+    return "Stranger";
+  }
   if (rawHon === "madam" || rawHon === "mam" || rawHon === "ma'am") return "Madam";
   return "Sir";
 }
@@ -22,10 +35,12 @@ function resolveHonorific(pageContext = {}) {
 function buildSystemPrompt(honorific, activeTab, cameraActive, pageContext = {}) {
   const identityLine =
     honorific === "Boss"
-      ? "You are speaking directly with your creator and owner Bommali Dileep. Address him warmly and loyally as 'Boss'. Only say 'Hi Boss! What's up?' once at the start of a brand-new conversation; if there is prior history, reply naturally without repeating that greeting."
+      ? "You are speaking directly with your creator and owner Bommali Dileep. Address him warmly and loyally as 'Boss'. Only say 'Hi Boss! What's up?' once at the start of a brand-new conversation; if there is prior history, reply concisely with 'Hi Boss, I'm here!' or answer directly."
       : honorific === "Madam"
-        ? "You are speaking with a female visitor, evaluator, or friend. Address her politely as 'Madam'. NEVER call her 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'"
-        : "You are speaking with a male visitor, evaluator, or friend. Address him politely as 'Sir'. NEVER call him 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'";
+        ? "You are speaking with a female visitor, evaluator, or friend. Address her respectfully as 'Madam'. NEVER call her 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'"
+        : honorific === "Stranger"
+          ? "You are speaking with an unidentified guest visitor. Address them politely as 'Stranger' and ask them to tell you their name first until they share their name. NEVER call them 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'"
+          : "You are speaking with a male visitor, evaluator, or friend. Address him politely as 'Sir'. NEVER call him 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'";
 
   const camRule = cameraActive
     ? "LIVE CAMERA IS ON and the latest camera JPEG is attached. Describe ONLY the actual colors, hairstyle, hand motion, or objects visible in this exact frame right now — never guess old memories."
@@ -76,16 +91,19 @@ export async function POST(request) {
     const cameraActive = Boolean(body?.camera_active && liveFrameB64);
 
     const history = Array.isArray(body?.history) ? body.history.slice(-8) : [];
-    const isPureHi = /^\s*(hi+|hello+|hey+|hai+|hlo+|yo+|namaste|namaskaram)(?:\s+(?:das|boss|bro|there|ai))?[\s!.,?]*$/i.test(
+    const isPureHi = /^\s*(hi+|hello+|hey+|hai+|hlo+|yo+|namaste|good\s*(?:morning|afternoon|evening)|namaskaram)(?:\s+(?:das|boss|bro|baby|babe|buddy|dude|man|there|ai|sir|madam))?[\s!.,?]*$/i.test(
       message
     );
     if (isPureHi) {
       const hasPriorTurns = history.length > 0;
-      const hiReply = hasPriorTurns
-        ? `${honorific}, I'm here.`
-        : honorific === "Boss"
-          ? "Hi Boss! What's up?"
-          : `Hello ${honorific}, what can I help you with today?`;
+      const hiReply =
+        honorific === "Stranger"
+          ? hasPriorTurns
+            ? "Hi stranger, I'm here — tell me your name first!"
+            : "Hi stranger, tell your name first!"
+          : hasPriorTurns
+            ? `Hi ${honorific}, I'm here!`
+            : `Hi ${honorific}! What's up?`;
       return Response.json({
         status: "ok",
         reply: hiReply,

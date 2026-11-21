@@ -10,7 +10,7 @@ import {
   CodeTaskPayload,
 } from "./toolRunner";
 
-export type UserHonorificRole = "boss" | "sir" | "madam";
+export type UserHonorificRole = "boss" | "sir" | "madam" | "stranger";
 
 const GOOGLE_LIVE_WS_URL =
   "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
@@ -28,7 +28,7 @@ class DasAgentSocket {
   private isSpeakingTurn = false;
   private awaitingNextTurn = false;
   public isConnected = false;
-  public currentRole: UserHonorificRole = "sir";
+  public currentRole: UserHonorificRole = "stranger";
 
   public get isSocketConnected(): boolean {
     return this.isConnected && this.ws?.readyState === WebSocket.OPEN;
@@ -69,12 +69,12 @@ class DasAgentSocket {
     this.responseObservers.forEach((cb) => {
       try {
         cb();
-      } catch {}
+      } catch { }
     });
   }
 
   // Persistent callback storage for auto-reconnection and multi-turn stability
-  private savedRole: UserHonorificRole = "boss";
+  private savedRole: UserHonorificRole = "stranger";
   private savedOnTranscript?: (text: string) => void;
   private savedOnStatusChange?: (connected: boolean) => void;
   private savedNavigateFn?: (path: string) => void;
@@ -156,7 +156,7 @@ class DasAgentSocket {
         stale.onerror = null;
         stale.onclose = null;
         stale.close();
-      } catch {}
+      } catch { }
     }
   }
 
@@ -196,11 +196,12 @@ class DasAgentSocket {
   private get roleHonorific(): string {
     if (this.savedRole === "madam") return "Madam";
     if (this.savedRole === "sir") return "Sir";
+    if (this.savedRole === "stranger") return "Stranger";
     return "Boss";
   }
 
   public connect(
-    role: UserHonorificRole = "sir",
+    role: UserHonorificRole = "stranger",
     onTranscript?: (text: string) => void,
     onStatusChange?: (connected: boolean) => void,
     navigateFn?: (path: string) => void,
@@ -248,7 +249,7 @@ class DasAgentSocket {
         if (mySeq !== this.connSeq || this.manualClose) return;
         if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
           if (typeof fetch !== "undefined") {
-            fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
+            fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => { });
           }
           this.forceReconnectNow();
         }
@@ -284,22 +285,27 @@ class DasAgentSocket {
         return;
       }
 
-      const roleKey = (this.savedRole || "sir").toLowerCase().trim();
+      const roleKey = (this.savedRole || "stranger").toLowerCase().trim();
       const identityRole =
         roleKey === "boss"
           ? `You are speaking directly with your creator, master architect, and owner, Bommali Dileep.
 - Always address him warmly, casually, and loyally as 'Boss' in every single reply.
 - Never call yourself 'co-pilot' or sound robotic. You are DAS, created by Dileep.
-- Say "Hi Boss! What's up?" ONLY once as the initial session greeting. If Boss says 'Hi' or 'Hello' again later in the same session, NEVER repeat "Hi Boss! What's up?" — acknowledge naturally and ask what Boss wants to tackle next.
+- Say "Hi Boss! What's up?" ONLY once as the initial session greeting. If Boss says 'Hi', 'Hi baby', or 'Hello' again later in the same session, reply concisely with "Hi Boss, I'm here!"
 - You know everything about Boss Dileep, his family, his college, his mentors, and his life. Answer naturally, warmly, and proudly whenever he or anyone asks.`
           : roleKey === "madam"
-          ? `You are speaking with a female visitor, evaluator, recruiter, or friend.
+            ? `You are speaking with a female visitor, evaluator, recruiter, or friend.
 - Always address her respectfully and politely as 'Madam'.
-- When she greets you, reply: "Hello Madam, what can I help you with today?"
+- On her first greeting reply "Hi Madam! What's up?", and on follow-up greetings reply "Hi Madam, I'm here!"
 - If she asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked).`
-          : `You are speaking with a male visitor, evaluator, recruiter, or friend.
+            : roleKey === "stranger"
+              ? `You are speaking with an unidentified guest visitor.
+- Always treat them as an unidentified stranger until they introduce themselves by name; NEVER call them 'Boss'.
+- On their first greeting reply "Hi stranger, tell your name first!", and on follow-up greetings before they give their name reply "Hi stranger, I'm here — tell me your name first!"
+- If they ask 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep."`
+              : `You are speaking with a male visitor, evaluator, recruiter, or friend.
 - Always address him respectfully and politely as 'Sir'.
-- When he greets you, reply: "Hello Sir, what can I help you with today?"
+- On his first greeting reply "Hi Sir! What's up?", and on follow-up greetings reply "Hi Sir, I'm here!"
 - If he asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked).`;
 
       const systemPrompt = `You are DAS, the advanced Autonomous 3D AI Assistant and Master Software Engineer living inside PATHFINDER 2.0.
@@ -617,7 +623,7 @@ CORE AUTONOMOUS CAPABILITIES:
             this.cameraActiveState = camNow;
             try {
               this.ws?.send(JSON.stringify({ type: "camera_state", active: camNow }));
-            } catch {}
+            } catch { }
             if (camNow) {
               const latest = cameraEngine.getLatestFrameBase64();
               if (latest) this.sendVideoFrame(latest);
@@ -757,7 +763,7 @@ CORE AUTONOMOUS CAPABILITIES:
           this.visionObservers.forEach((cb) => {
             try {
               cb(data);
-            } catch {}
+            } catch { }
           });
           return;
         }
@@ -775,7 +781,7 @@ CORE AUTONOMOUS CAPABILITIES:
                   result: typeof result === "object" && result !== null ? result : { result: String(result) },
                 })
               );
-            } catch {}
+            } catch { }
           };
 
           if (data.name === "control_website" || data.name === "navigate_ui") {
@@ -817,7 +823,7 @@ CORE AUTONOMOUS CAPABILITIES:
                 this.audioChunksInTurn = 0;
               }
               this.hasConversationActivity = true;
-          this.lastAudioChunkAt = Date.now();
+              this.lastAudioChunkAt = Date.now();
               this.audioChunksInTurn += 1;
               this.cancelTtsFallback();
               this.clearTurnWatchdog();
@@ -1099,7 +1105,7 @@ CORE AUTONOMOUS CAPABILITIES:
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || this.isDirectGoogle) return;
     try {
       this.ws.send(JSON.stringify({ type: "warmup" }));
-    } catch {}
+    } catch { }
   }
 
   public sendAudioChunk(base64Pcm: string) {
@@ -1222,7 +1228,7 @@ CORE AUTONOMOUS CAPABILITIES:
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected || this.isDirectGoogle) return;
     try {
       this.ws.send(JSON.stringify({ type: "page_context", context }));
-    } catch {}
+    } catch { }
   }
 
   public sendFriendlyAudioHint(issue: string, device: string) {
@@ -1235,7 +1241,7 @@ CORE AUTONOMOUS CAPABILITIES:
     } else {
       try {
         this.ws.send(JSON.stringify({ type: "friendly_audio_hint", issue, device }));
-      } catch {}
+      } catch { }
     }
   }
 
@@ -1268,7 +1274,7 @@ CORE AUTONOMOUS CAPABILITIES:
       } else {
         this.ws.send(JSON.stringify({ type: "speak_verbatim", text: cleaned, mode }));
       }
-    } catch {}
+    } catch { }
   }
 
   public sendTextCommand(text: string) {
@@ -1363,10 +1369,12 @@ CORE AUTONOMOUS CAPABILITIES:
       if (this.isDirectGoogle) {
         this.sendImmediateText(
           role === "boss"
-            ? "You are now speaking with your creator Bommali Dileep. Address him warmly as Boss without repeating previous greetings."
+            ? "You are now speaking with your creator Bommali Dileep. Address him warmly as Boss."
             : role === "madam"
-            ? "You are now speaking with a lady guest. Address her politely as Madam and ask how you can help."
-            : "You are now speaking with a gentleman guest. Address him politely as Sir and ask how you can help."
+              ? "You are now speaking with a lady guest. Address her politely as Madam."
+              : role === "stranger"
+                ? "You are speaking with an unidentified guest visitor. Address them politely as Stranger and ask their name first."
+                : "You are now speaking with a gentleman guest. Address him politely as Sir."
         );
       } else {
         this.ws.send(JSON.stringify({ type: "role_switch", role }));
@@ -1379,7 +1387,7 @@ CORE AUTONOMOUS CAPABILITIES:
     if (this.ws && this.ws.readyState === WebSocket.OPEN && !this.isDirectGoogle) {
       try {
         this.ws.send(JSON.stringify({ type: "camera_state", active }));
-      } catch {}
+      } catch { }
     }
   }
 
