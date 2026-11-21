@@ -17,13 +17,15 @@ export interface CollegeEntry {
 export const VERIFIED_COLLEGES: CollegeEntry[] = [
   {
     id: "nriu-nriit",
-    name: "Dr. RVR NRI University (NRIU) — NRI Institute of Technology",
-    shortName: "NRIU / NRIIT",
-    location: "Pothavarappadu, Via Nunna, Agiripalli Mandal, Eluru District (Vijayawada Region), Andhra Pradesh - 521212",
-    city: "Agiripalli / Vijayawada",
+    name: "DR RVR NRI DEEMED TO BE UNIVERSITY",
+    shortName: "DR RVR NRI DEEMED TO BE UNIVERSITY",
+    location: "Pothavarappadu, Agiripalli, Vijayawada Region, Andhra Pradesh - 521212",
+    city: "Pothavarappadu, Agiripalli",
     state: "Andhra Pradesh",
-    status: "Deemed-to-be University",
+    status: "Deemed to be University",
     aliases: [
+      "DR RVR NRI DEEMED TO BE UNIVERSITY",
+      "Dr. RVR NRI Deemed to be University",
       "NRI",
       "NRI College",
       "NRI Institute of Technology",
@@ -33,6 +35,7 @@ export const VERIFIED_COLLEGES: CollegeEntry[] = [
       "NRI University",
       "Pothavarappadu",
       "Agiripalli",
+      "Adigipalli",
       "Vijayawada",
     ],
   },

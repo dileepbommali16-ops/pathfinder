@@ -1137,15 +1137,14 @@ class AudioEngine {
     } else if (
       this.liveVisemeTimeline &&
       this.audioCtx &&
-      this.liveAudioEndCtxSec > this.liveAudioStartCtxSec
+      this.liveAudioStartCtxSec > 0 &&
+      this.liveTranscriptText.length > 0
     ) {
       const elapsedSec = Math.max(0, this.audioCtx.currentTime - this.liveAudioStartCtxSec);
-      const totalSec = Math.max(
-        this.liveAudioEndCtxSec - this.liveAudioStartCtxSec,
-        this.liveTranscriptText.length * 0.056,
-        0.35
-      );
-      viseme = this.liveVisemeTimeline.sampleAtFraction(Math.min(1, elapsedSec / totalSec));
+      const estTotalSec = Math.max(0.35, this.liveTranscriptText.length * 0.068);
+      if (elapsedSec <= estTotalSec * 1.1) {
+        viseme = this.liveVisemeTimeline.sampleAtFraction(Math.min(1, elapsedSec / estTotalSec));
+      }
     }
 
     return { volume, low, mid, high, zcr, f2Low, f2High, isSpeaking: true, viseme };

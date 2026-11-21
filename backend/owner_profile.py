@@ -20,7 +20,7 @@ OWNER_PROFILE = {
     "education": {
         "degree": "B.Tech 3rd year",
         "branch": "CSE (Data Science)",
-        "college": "NRI Institute of Technology",
+        "college": "DR RVR NRI DEEMED TO BE UNIVERSITY",
         "location": "Pothavarappadu, Agiripalli",
     },
     "hometown": "Gunadala, Vijayawada",
@@ -61,8 +61,8 @@ OWNER_PROFILE = {
     # myself" or similar — written warmly, grounded only in confirmed facts.
     "natural_bio": (
         "Dileep Bommali — goes by Dileep Das — is a 20-year-old B.Tech 3rd year "
-        "student in CSE with a specialization in Data Science at NRI Institute of "
-        "Technology, Pothavarappadu, Agiripalli. He's originally from Gunadala, "
+        "student in CSE with a specialization in Data Science at DR RVR NRI DEEMED TO BE "
+        "UNIVERSITY, located at Pothavarappadu, Agiripalli. He's originally from Gunadala, "
         "Vijayawada, in Andhra Pradesh. Outside academics, music is a big part of "
         "who he is — he's a guitarist first and foremost, and also dances and "
         "sings. He comes from a close family: his mother Bhavani, father Ramana, "
@@ -76,7 +76,8 @@ OWNER_PROFILE = {
 # Safe to share with ANY user, including strangers/stakeholders — no private details.
 OWNER_PUBLIC_BIO = (
     "Dileep Bommali is the creator of Pathfinder, a B.Tech CSE (Data Science) "
-    "student passionate about building AI-powered tools for student placement "
+    "student at DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli, "
+    "passionate about building AI-powered tools for student placement "
     "readiness."
 )
 

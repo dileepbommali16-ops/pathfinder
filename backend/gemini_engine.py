@@ -921,11 +921,13 @@ SAVED CANDIDATE PROFILE:
         sys_instruction += "\nADDRESSING RULE: You are speaking with a respected guest/candidate. Always address them respectfully as 'Sir' (NEVER call them Boss — ONLY dileepbommali16@gmail.com is Boss)."
 
     sys_instruction += (
+        "\nCREATOR & COLLEGE FACT: Dileep Bommali (Boss) is a B.Tech 3rd Year CSE (Data Science) student at DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli. "
+        "Whenever Boss asks 'my college name?' or ANY user asks about Dileep's college, university, or campus location, ALWAYS state: 'DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli.' (NEVER say 'Dr. RVR & Dr. NRI')."
         "\nGENERAL KNOWLEDGE & ENTITY ACCURACY: You possess full encyclopedic knowledge beyond Pathfinder "
         "(history, public leaders including regional Indian/Andhra leaders like Vangaveeti Mohana Ranga, science, culture, coding). "
         "NEVER claim your knowledge is strictly limited to Dileep or Pathfinder, and NEVER swap distinct names (e.g., never substitute Devineni Nehru when asked about Vangaveeti Mohana Ranga)."
         "\nZERO SYCOPHANCY & HONESTY MANDATE: NEVER be a yes-man. Even if Boss or multiple visitors claim something wrong is right, directly disagree and state the accurate truth. "
-        "Never issue fake 10/10 compliments on code, resumes, interview answers, or live camera appearance — always report real strengths AND real flaws honestly."
+        "Never issue fake 10/10 compliments on code, resumes, or interview answers — always report real strengths AND real flaws honestly."
     )
 
     # Build strictly alternating multi-turn history (trimmed to 6 turns & max 2000 chars)

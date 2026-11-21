@@ -100,29 +100,25 @@ export function createHologramScanMaterial(
 
         float sculptedKey = pow(keySculpt, 1.25);
         float shapeWeight = clamp(sculptedKey * 0.68 + fillSculpt * 0.20 + fresnel * 0.42 + rimSculpt * 0.18, 0.0, 1.0);
-        float boost = clamp(0.90 + shapeWeight * 0.62 + sweepPulse * 0.22 + uVoice * 0.14, 0.72, 1.65);
+        float boost = clamp(0.90 + shapeWeight * 0.62 + sweepPulse * 0.22, 0.72, 1.65);
 
         vec3 cyanBody = mix(deepCyan, midCyan, clamp(sculptedKey * 0.76 + fillSculpt * 0.24, 0.0, 1.0));
         cyanBody = mix(cyanBody, crestCyan, clamp(fresnel * 0.60 + sweepPulse * 0.28, 0.0, 1.0));
 
         vec3 col = mix(troughCyan * (0.55 + 0.45 * sculptedKey), cyanBody * boost, scanLine * microGrid);
         col += crestCyan * fresnel * 0.12;
-        ${
-          isTeeth
-            ? "col = mix(col * (0.55 + 0.35 * sculptedKey), vec3(0.32, 0.88, 1.0) * (0.48 + 0.38 * sculptedKey), 0.32);"
-            : ""
-        }
+        ${isTeeth ? "col *= (0.14 + 0.12 * sculptedKey);" : ""}
 
         ${
           isHead
             ? `float cavityMask = clamp(vMouthCavity, 0.0, 1.0);
-               col *= mix(1.0, 0.11, cavityMask);
-               col += crestCyan * clamp(vLipRim, 0.0, 1.0) * (0.15 + uVoice * 0.14);
+               col *= mix(1.0, 0.08, cavityMask);
+               col += crestCyan * clamp(vLipRim, 0.0, 1.0) * 0.14;
                diffuseColor.a = mix(clamp(0.95 + scanLine * 0.05, 0.94, 1.0), 0.99, cavityMask);`
             : isShoulders
             ? "float bustEdge = smoothstep(0.0, 0.90, vBustFade);\ncol *= bustEdge;\ndiffuseColor.a = clamp(0.96 * bustEdge, 0.0, 1.0);"
             : isTeeth
-            ? "diffuseColor.a = 0.94;"
+            ? "diffuseColor.a = 0.88;"
             : "diffuseColor.a = clamp(0.95 + scanLine * 0.05, 0.94, 1.0);"
         }
         outgoingLight = col;
@@ -194,8 +190,8 @@ export function createMoltenRedEyeMaterial(sharedUniforms: HologramUniforms): TH
 
         vec3 eyeCol = mix(deepRuby, rubyMagma, clamp(outerIris * 0.75 + vein * 0.35, 0.0, 1.0));
         eyeCol = mix(eyeCol, crimsonLava, clamp(outerIris * (0.45 + 0.55 * vein), 0.0, 1.0));
-        eyeCol = mix(eyeCol, hotCrimson, irisCore * (0.70 + uVoice * 0.25));
-        eyeCol *= (1.05 + irisCore * 0.35 + uVoice * 0.22);
+        eyeCol = mix(eyeCol, hotCrimson, irisCore * 0.72);
+        eyeCol *= (1.08 + irisCore * 0.35);
         eyeCol *= (1.0 - smoothstep(0.18, 0.72, uBlink));
 
         outgoingLight = eyeCol;

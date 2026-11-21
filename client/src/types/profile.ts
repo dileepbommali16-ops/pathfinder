@@ -183,7 +183,7 @@ export function buildInitialProfileFromStorage(
 
 export const DEFAULT_STUDENT_PROFILE: StudentProfileState = {
   fullName: "Student Candidate",
-  college: "Engineering Institute of Technology",
+  college: "DR RVR NRI DEEMED TO BE UNIVERSITY",
   branch: "CSE",
   course: "B.Tech",
   currentYear: "4th Year",
