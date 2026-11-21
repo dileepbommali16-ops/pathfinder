@@ -1137,7 +1137,7 @@ class AudioEngine {
       bytes[8] === 0x57 && bytes[9] === 0x41 && bytes[10] === 0x56 && bytes[11] === 0x45
     ) {
       let pos = 12;
-      let sliced: Uint8Array | null = null;
+      let sliced: typeof bytes | null = null;
       while (pos + 8 <= bytes.length) {
         const cId =
           String.fromCharCode(bytes[pos], bytes[pos + 1], bytes[pos + 2], bytes[pos + 3]);
