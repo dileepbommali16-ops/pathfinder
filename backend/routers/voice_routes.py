@@ -7,6 +7,7 @@ import logging
 import base64
 import math
 import struct
+import time
 from collections import OrderedDict
 from typing import Any, Dict, Optional
 
@@ -21,6 +22,7 @@ _TTS_PCM_CACHE: "OrderedDict[str, Dict[str, Any]]" = OrderedDict()
 _TTS_INFLIGHT: Dict[str, asyncio.Task] = {}
 _TTS_LIVE_SEM: Optional[asyncio.Semaphore] = None
 _TTS_CONCURRENCY_SEM: Optional[asyncio.Semaphore] = None
+_LIVE_TTS_COOLDOWN_UNTIL: float = 0.0
 
 STANDARD_GREETING_PHRASES = (
     "Hi Boss! What's up?",
@@ -128,7 +130,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
     from backend.agent.puck_voice import get_puck_speech_config
 
     for key in keys:
-        client = genai.Client(http_options={"api_version": "v1beta", "timeout": 8000}, api_key=key)
+        client = genai.Client(http_options={"api_version": "v1beta", "timeout": 6000}, api_key=key)
         for tts_model in ("gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"):
             try:
                 cfg = types.GenerateContentConfig(
@@ -143,7 +145,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                         contents=text,
                         config=cfg,
                     ),
-                    timeout=7.5,
+                    timeout=5.5,
                 )
                 pcm_chunks = bytearray()
                 sample_rate = 24000
@@ -205,70 +207,73 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
     est_max_sec = max(3.5, min(28.0, len(text) / 8.5 + 2.2))
     max_pcm_bytes = int(est_max_sec * 48000)
 
+    global _LIVE_TTS_COOLDOWN_UNTIL
     live_sem = _get_tts_live_sem()
-    if not live_sem.locked():
+    if not live_sem.locked() and time.monotonic() >= _LIVE_TTS_COOLDOWN_UNTIL:
         async with live_sem:
-            for key in keys:
-                client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
-                try:
-                    pcm_buf = bytearray()
+            key = keys[0]
+            client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
+            try:
+                pcm_buf = bytearray()
 
-                    async def _run_live():
-                        speech_seen = False
-                        trailing_silent_bytes = 0
-                        async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
-                            await session.send_client_content(
-                                turns=[
-                                    types.Content(
-                                        role="user",
-                                        parts=[types.Part.from_text(text=f'Say verbatim: "{text}"')],
-                                    )
-                                ],
-                                turn_complete=True,
-                            )
-                            async for resp in session.receive():
-                                sc = resp.server_content
-                                if sc and sc.model_turn and sc.model_turn.parts:
-                                    for part in sc.model_turn.parts:
-                                        if part.inline_data and part.inline_data.data:
-                                            chunk = bytes(part.inline_data.data)
-                                            pcm_buf.extend(chunk)
-                                            c_rms, _ = _chunk_rms_and_peak_int16(chunk)
-                                            if c_rms >= 0.008 or len(pcm_buf) >= 24000:
-                                                speech_seen = True
-                                            if speech_seen:
-                                                if c_rms < 0.0025:
-                                                    trailing_silent_bytes += len(chunk)
-                                                else:
-                                                    trailing_silent_bytes = 0
-                                if sc and (
-                                    (getattr(sc, "turn_complete", False) and len(pcm_buf) >= 9600)
-                                    or (speech_seen and getattr(sc, "generation_complete", False) and len(pcm_buf) >= 12000)
-                                    or (speech_seen and trailing_silent_bytes >= 26400)
-                                    or len(pcm_buf) >= max_pcm_bytes
-                                ):
-                                    break
+                async def _run_live():
+                    speech_seen = False
+                    trailing_silent_bytes = 0
+                    async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
+                        await session.send_client_content(
+                            turns=[
+                                types.Content(
+                                    role="user",
+                                    parts=[types.Part.from_text(text=f'Say verbatim: "{text}"')],
+                                )
+                            ],
+                            turn_complete=True,
+                        )
+                        async for resp in session.receive():
+                            sc = resp.server_content
+                            if sc and sc.model_turn and sc.model_turn.parts:
+                                for part in sc.model_turn.parts:
+                                    if part.inline_data and part.inline_data.data:
+                                        chunk = bytes(part.inline_data.data)
+                                        pcm_buf.extend(chunk)
+                                        c_rms, _ = _chunk_rms_and_peak_int16(chunk)
+                                        if c_rms >= 0.008 or len(pcm_buf) >= 24000:
+                                            speech_seen = True
+                                        if speech_seen:
+                                            if c_rms < 0.0025:
+                                                trailing_silent_bytes += len(chunk)
+                                            else:
+                                                trailing_silent_bytes = 0
+                            if sc and (
+                                (getattr(sc, "turn_complete", False) and len(pcm_buf) >= 9600)
+                                or (speech_seen and getattr(sc, "generation_complete", False) and len(pcm_buf) >= 12000)
+                                or (speech_seen and trailing_silent_bytes >= 26400)
+                                or len(pcm_buf) >= max_pcm_bytes
+                            ):
+                                break
 
-                    await asyncio.wait_for(_run_live(), timeout=5.5)
-                    raw_pcm = bytes(pcm_buf)
-                    _, peak = _chunk_rms_and_peak_int16(raw_pcm)
-                    if len(raw_pcm) >= 9600 and peak >= 250:
-                        polished = _clean_pcm_edges(raw_pcm, 24000)
-                        if polished:
-                            return {
-                                "pcm_base64": base64.b64encode(polished).decode("utf-8"),
-                                "sample_rate": 24000,
-                                "voice": "Puck",
-                            }
-                    logger.warning(
-                        "[Voice TTS Live Puck] %s returned incomplete audio (bytes=%d, peak=%d); falling back to unary Puck TTS",
-                        LIVE_MODEL,
-                        len(raw_pcm),
-                        peak,
-                    )
-                except Exception as exc:
-                    logger.warning("[Voice TTS Live Puck] %s failed: %r; falling back to unary Puck TTS", LIVE_MODEL, exc)
-                    continue
+                await asyncio.wait_for(_run_live(), timeout=4.5)
+                raw_pcm = bytes(pcm_buf)
+                _, peak = _chunk_rms_and_peak_int16(raw_pcm)
+                if len(raw_pcm) >= 9600 and peak >= 250:
+                    polished = _clean_pcm_edges(raw_pcm, 24000)
+                    if polished:
+                        return {
+                            "pcm_base64": base64.b64encode(polished).decode("utf-8"),
+                            "sample_rate": 24000,
+                            "voice": "Puck",
+                        }
+                logger.warning(
+                    "[Voice TTS Live Puck] %s returned incomplete audio (bytes=%d, peak=%d); falling back to unary Puck TTS",
+                    LIVE_MODEL,
+                    len(raw_pcm),
+                    peak,
+                )
+            except Exception as exc:
+                err_s = repr(exc).lower()
+                if any(tok in err_s for tok in ("1011", "exhausted", "quota", "429", "timeout")):
+                    _LIVE_TTS_COOLDOWN_UNTIL = time.monotonic() + 25.0
+                logger.warning("[Voice TTS Live Puck] %s failed: %r; falling back to unary Puck TTS", LIVE_MODEL, exc)
 
     # 2. Fast Unary Gemini 3.8 Puck TTS (used immediately if concurrent Live TTS slots are busy or slow)
     unary_result = await _synthesize_puck_via_38_unary_fallback(text, keys)
@@ -332,7 +337,11 @@ async def synthesize_puck_pcm(text: str) -> Optional[Dict[str, Any]]:
         task = asyncio.create_task(_synthesize_and_cache(cache_key, cleaned))
         _TTS_INFLIGHT[cache_key] = task
 
-    synthesized = await asyncio.shield(task)
+    try:
+        synthesized = await asyncio.wait_for(asyncio.shield(task), timeout=8.5)
+    except asyncio.TimeoutError:
+        logger.warning("[Voice TTS] timed out waiting 8.5s for Puck synthesis")
+        return None
     if synthesized:
         return {"cached": joined_inflight, **synthesized}
     return None

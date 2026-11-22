@@ -591,6 +591,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         active_client_turn_id = 0
         turn_dispatch_seq = 0
         responded_dispatch_seqs: set[int] = set()
+        responded_audio_seqs: set[int] = set()
+        completed_dispatch_seqs: set[int] = set()
         active_turn_task: asyncio.Task | None = None
         active_watchdog_task: asyncio.Task | None = None
         live_output_text_buf: list[str] = []
@@ -847,6 +849,14 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         ) -> str:
             """Executes up to 3 tool-calling rounds via Gemini REST so UI clicks and Coding Studio work even in fallback mode."""
             sys_prompt = get_das_system_instruction(user_role)
+            hon_lbl = _honorific_label(user_role)
+            if hon_lbl == "Boss":
+                hon_rule = "CRITICAL ADDRESSING RULE: You are speaking with Boss (dileepbommali16@gmail.com). Address him warmly as 'Boss'."
+            elif hon_lbl == "Stranger":
+                hon_rule = "CRITICAL ADDRESSING RULE: You are speaking with an unknown visitor, NOT Boss. Strictly address them ONLY as 'Stranger' until they share their name. NEVER call them 'Boss'!"
+            else:
+                hon_rule = f"CRITICAL ADDRESSING RULE: You are speaking with a visitor, NOT Boss Dileep. Strictly address them ONLY as '{hon_lbl}'. NEVER call them 'Boss'!"
+            sys_prompt = f"{sys_prompt}\n\n{hon_rule}"
             if extra_instruction:
                 sys_prompt = f"{sys_prompt}\n\n{extra_instruction}"
             contents = list(initial_contents)
@@ -1226,22 +1236,66 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                 async def _turn_response_watchdog():
                     nonlocal pending_user_text
+                    # Stage A: 5.0s first-token guard
                     try:
-                        await asyncio.sleep(5.5)
+                        await asyncio.sleep(5.0)
                     except asyncio.CancelledError:
                         return
                     if (
-                        this_dispatch_seq in responded_dispatch_seqs
-                        or websocket.client_state == WebSocketState.DISCONNECTED
+                        websocket.client_state == WebSocketState.DISCONNECTED
                         or (req_client_turn_id > 0 and active_client_turn_id > req_client_turn_id)
+                        or this_dispatch_seq in completed_dispatch_seqs
+                    ):
+                        return
+                    if this_dispatch_seq not in responded_dispatch_seqs:
+                        live_logger.warning(
+                            f"[DAS Live Proxy] Upstream Live silent for 5.0s (seq={this_dispatch_seq}); rescuing via REST + Puck fallback."
+                        )
+                        responded_dispatch_seqs.add(this_dispatch_seq)
+                        completed_dispatch_seqs.add(this_dispatch_seq)
+                        pending_user_text = None
+                        await close_live_session(active_sess)
+                        await _deliver_fallback_turn(user_visible_text, client_turn_id=req_client_turn_id)
+                        return
+
+                    # Stage B: 9.5s total completion/audio guard (rescues half-stalled Live turns that emitted text without turn_complete/audio)
+                    try:
+                        await asyncio.sleep(4.5)
+                    except asyncio.CancelledError:
+                        return
+                    if (
+                        websocket.client_state == WebSocketState.DISCONNECTED
+                        or (req_client_turn_id > 0 and active_client_turn_id > req_client_turn_id)
+                        or this_dispatch_seq in completed_dispatch_seqs
+                        or this_dispatch_seq in responded_audio_seqs
                     ):
                         return
                     live_logger.warning(
-                        f"[DAS Live Proxy] Upstream Live silent for 5.5s (seq={this_dispatch_seq}); rescuing via REST + Puck fallback."
+                        f"[DAS Live Proxy] Upstream Live stalled mid-turn for 9.5s without audio/turn_complete (seq={this_dispatch_seq}); rescuing cleanly."
                     )
-                    responded_dispatch_seqs.add(this_dispatch_seq)
+                    partial_txt = "".join(live_output_text_buf).strip()
+                    live_output_text_buf.clear()
+                    completed_dispatch_seqs.add(this_dispatch_seq)
                     pending_user_text = None
                     await close_live_session(active_sess)
+                    if partial_txt and len(partial_txt) >= 12:
+                        from backend.routers.voice_routes import synthesize_puck_pcm
+                        tts_res = await synthesize_puck_pcm(partial_txt)
+                        rescue_turn = max(turn_id, completed_turn_id) + 1
+                        if tts_res and tts_res.get("pcm_base64") and websocket.client_state != WebSocketState.DISCONNECTED:
+                            await _send_chunked_pcm_b64(
+                                websocket,
+                                tts_res["pcm_base64"],
+                                int(tts_res.get("sample_rate") or 24000),
+                                rescue_turn,
+                                client_turn_id=req_client_turn_id,
+                            )
+                        if websocket.client_state != WebSocketState.DISCONNECTED:
+                            tc_pkt = {"type": "turn_complete", "turn_id": rescue_turn}
+                            if req_client_turn_id > 0:
+                                tc_pkt["client_turn_id"] = req_client_turn_id
+                            await websocket.send_json(tc_pkt)
+                        return
                     await _deliver_fallback_turn(user_visible_text, client_turn_id=req_client_turn_id)
 
                 w_task = asyncio.create_task(_turn_response_watchdog())
@@ -1664,6 +1718,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     if part.inline_data and part.inline_data.data:
                                         pending_user_text = None
                                         _mark_dispatch_responded()
+                                        responded_audio_seqs.add(turn_dispatch_seq)
+                                        if len(responded_audio_seqs) > 32:
+                                            min_a = turn_dispatch_seq - 24
+                                            for old_k in [k for k in responded_audio_seqs if k < min_a]:
+                                                responded_audio_seqs.discard(old_k)
                                         if not gemini_turn_active:
                                             turn_id = max(turn_id, completed_turn_id) + 1
                                             gemini_turn_active = True
@@ -1716,6 +1775,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             )
                             if is_turn_done and turn_id > completed_turn_id:
                                 completed_turn_id = turn_id
+                                completed_dispatch_seqs.add(turn_dispatch_seq)
+                                if len(completed_dispatch_seqs) > 32:
+                                    min_c = turn_dispatch_seq - 24
+                                    for old_k in [k for k in completed_dispatch_seqs if k < min_c]:
+                                        completed_dispatch_seqs.discard(old_k)
                                 pending_user_text = None
                                 pcm_bytes_in_turn = 0
                                 trailing_zero_bytes_in_turn = 0
