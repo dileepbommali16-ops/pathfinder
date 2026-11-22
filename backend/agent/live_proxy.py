@@ -716,13 +716,13 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             if reader_to_cancel and not reader_to_cancel.done() and reader_to_cancel is not asyncio.current_task():
                 reader_to_cancel.cancel()
                 try:
-                    await reader_to_cancel
-                except (asyncio.CancelledError, Exception):
+                    await asyncio.wait_for(reader_to_cancel, timeout=1.2)
+                except (asyncio.CancelledError, asyncio.TimeoutError, Exception):
                     pass
             if cm_to_close:
                 try:
-                    await cm_to_close.__aexit__(None, None, None)
-                except Exception:
+                    await asyncio.wait_for(cm_to_close.__aexit__(None, None, None), timeout=1.2)
+                except (asyncio.TimeoutError, Exception):
                     pass
 
         async def _execute_single_tool_call(
@@ -863,7 +863,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             for round_idx in range(3):
                 round_resp = None
                 for api_key in api_keys:
-                    rest_client = genai.Client(http_options={"api_version": "v1beta", "timeout": 14000}, api_key=api_key)
+                    rest_client = genai.Client(http_options={"api_version": "v1beta", "timeout": 12000}, api_key=api_key)
                     for m_name in model_candidates:
                         try:
                             round_resp = await asyncio.wait_for(
@@ -879,7 +879,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                         max_output_tokens=800,
                                     ),
                                 ),
-                                timeout=14.0,
+                                timeout=6.5,
                             )
                             if round_resp:
                                 break
@@ -962,7 +962,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                 reply_text = await _run_rest_tool_loop(
                     hist_contents,
-                    ("gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"),
+                    ("gemini-3.1-flash-lite", "gemini-3-flash-preview"),
                 )
 
                 if not reply_text:
@@ -1133,13 +1133,13 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 if time.monotonic() < live_quota_cooldown_until:
                     return None
 
-                # Clean up any dead upstream handle before opening fresh session
+                # Clean up any dead upstream handle before opening fresh session (bounded 1.2s so hung sockets never stall)
                 if session_cm is not None:
                     stale_cm = session_cm
                     session_cm = None
                     session = None
                     try:
-                        await stale_cm.__aexit__(None, None, None)
+                        await asyncio.wait_for(stale_cm.__aexit__(None, None, None), timeout=1.2)
                     except Exception:
                         pass
 
@@ -1152,7 +1152,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     for model_name in models_to_try:
                         try:
                             cm = client.aio.live.connect(model=model_name, config=config)
-                            new_sess = await asyncio.wait_for(cm.__aenter__(), timeout=8.0)
+                            new_sess = await asyncio.wait_for(cm.__aenter__(), timeout=4.0)
                             session_cm = cm
                             session = new_sess
                             connected_model = model_name
@@ -1168,8 +1168,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 f"[DAS Live Proxy] key#{key_index} model '{model_name}' connect failed: {last_error}"
                             )
                             err_l = last_error.lower()
-                            if "1011" in last_error or "exhausted" in err_l or "quota" in err_l or "429" in last_error:
-                                live_quota_cooldown_until = time.monotonic() + 20.0
+                            if any(tok in err_l for tok in ("1011", "exhausted", "quota", "429", "timeout")):
+                                live_quota_cooldown_until = time.monotonic() + 25.0
                             if "api key not valid" in err_l:
                                 break
                             continue
@@ -1235,10 +1235,10 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     active_watchdog_task.cancel()
 
                 async def _turn_response_watchdog():
-                    nonlocal pending_user_text
-                    # Stage A: 5.0s first-token guard
+                    nonlocal pending_user_text, turn_id, completed_turn_id, gemini_turn_active, pending_response_until_mono, output_tx_in_turn
+                    # Stage A: 4.5s first-token guard
                     try:
-                        await asyncio.sleep(5.0)
+                        await asyncio.sleep(4.5)
                     except asyncio.CancelledError:
                         return
                     if (
@@ -1249,7 +1249,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         return
                     if this_dispatch_seq not in responded_dispatch_seqs:
                         live_logger.warning(
-                            f"[DAS Live Proxy] Upstream Live silent for 5.0s (seq={this_dispatch_seq}); rescuing via REST + Puck fallback."
+                            f"[DAS Live Proxy] Upstream Live silent for 4.5s (seq={this_dispatch_seq}); rescuing via REST + Puck fallback."
                         )
                         responded_dispatch_seqs.add(this_dispatch_seq)
                         completed_dispatch_seqs.add(this_dispatch_seq)
@@ -1258,9 +1258,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         await _deliver_fallback_turn(user_visible_text, client_turn_id=req_client_turn_id)
                         return
 
-                    # Stage B: 9.5s total completion/audio guard (rescues half-stalled Live turns that emitted text without turn_complete/audio)
+                    # Stage B: 8.0s total completion/audio guard (rescues half-stalled Live turns that emitted text without turn_complete/audio)
                     try:
-                        await asyncio.sleep(4.5)
+                        await asyncio.sleep(3.5)
                     except asyncio.CancelledError:
                         return
                     if (
@@ -1271,17 +1271,22 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     ):
                         return
                     live_logger.warning(
-                        f"[DAS Live Proxy] Upstream Live stalled mid-turn for 9.5s without audio/turn_complete (seq={this_dispatch_seq}); rescuing cleanly."
+                        f"[DAS Live Proxy] Upstream Live stalled mid-turn for 8.0s without audio/turn_complete (seq={this_dispatch_seq}); rescuing cleanly."
                     )
                     partial_txt = "".join(live_output_text_buf).strip()
                     live_output_text_buf.clear()
                     completed_dispatch_seqs.add(this_dispatch_seq)
                     pending_user_text = None
+                    gemini_turn_active = False
+                    pending_response_until_mono = 0.0
+                    output_tx_in_turn = False
                     await close_live_session(active_sess)
                     if partial_txt and len(partial_txt) >= 12:
                         from backend.routers.voice_routes import synthesize_puck_pcm
                         tts_res = await synthesize_puck_pcm(partial_txt, prefer_unary=True)
-                        rescue_turn = max(turn_id, completed_turn_id) + 1
+                        turn_id = max(turn_id, completed_turn_id) + 1
+                        rescue_turn = turn_id
+                        completed_turn_id = rescue_turn
                         if tts_res and tts_res.get("pcm_base64") and websocket.client_state != WebSocketState.DISCONNECTED:
                             await _send_chunked_pcm_b64(
                                 websocket,
