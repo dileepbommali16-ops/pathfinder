@@ -109,6 +109,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const hiGreetCountRef = useRef<number>(0);
   const micBusyRef = useRef<boolean>(false);
   const speechRecRef = useRef<any>(null);
+  const lastAgentActivityAtRef = useRef<number>(0);
   const chatHistoryRef = useRef<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const transcriptRef = useRef<string>(transcript);
   const userTranscriptRef = useRef<string>(userTranscript);
@@ -149,12 +150,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     isRunningCodeRef.current = isRunningCode;
   }, [isRunningCode]);
-
-  // File / Media & Resume Upload State
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
-  const [attachedPreview, setAttachedPreview] = useState<string | null>(null);
-  const [attachedType, setAttachedType] = useState<"image" | "video" | "resume" | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Listen for login / logout & honorific changes across Pathfinder
   useEffect(() => {
@@ -645,10 +640,14 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     const prewarmAudio = () => {
       audioEngine.unlockAudio();
     };
+    const unsubAgentActivity = dasSocket.onAgentResponse(() => {
+      lastAgentActivityAtRef.current = Date.now();
+    });
     window.addEventListener("pointerdown", prewarmAudio, { once: true, passive: true });
     window.addEventListener("keydown", prewarmAudio, { once: true, passive: true });
 
     return () => {
+      unsubAgentActivity();
       window.clearTimeout(prefetchTimer);
       window.removeEventListener("pointerdown", prewarmAudio);
       window.removeEventListener("keydown", prewarmAudio);
@@ -665,7 +664,17 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       deviceId: deviceId || undefined,
       rawMode: false,
       shouldSuppressEcho: () => audioEngine.isSpeaking() || dasSocket.isAgentSpeaking,
-      onSpeechIdle: () => dasSocket.sendAudioStreamEnd(),
+      onSpeechStart: () => {
+        if (!dasSocket.isAgentSpeaking && !audioEngine.isSpeaking()) {
+          setTranscript("Hearing you...");
+        }
+      },
+      onSpeechIdle: () => {
+        dasSocket.sendAudioStreamEnd();
+        if (!dasSocket.isAgentSpeaking && !audioEngine.isSpeaking()) {
+          setTranscript("Processing voice...");
+        }
+      },
       onAutoDeviceSwitch: (newDev) => {
         selectedMicIdRef.current = newDev.deviceId;
         activeMicLabelRef.current = newDev.label;
@@ -750,23 +759,26 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         if (finalized) {
           const cleanSpoken = finalized.trim();
+          const spokenAt = Date.now();
           setUserTranscript(cleanSpoken);
           const curCtx =
             (typeof window !== "undefined" && (window as any).__DAS_PAGE_CONTEXT__) || {};
-          if (isPureHiGreeting(cleanSpoken)) {
-            dispatchTurnRef.current(cleanSpoken, curCtx, "chat");
-          } else {
-            const nonceBefore = askCoachNonceRef.current;
-            window.setTimeout(() => {
-              if (
-                askCoachNonceRef.current === nonceBefore &&
-                !dasSocket.isAgentSpeaking &&
-                !audioEngine.isSpeaking()
-              ) {
-                dispatchTurnRef.current(cleanSpoken, curCtx, "chat");
-              }
-            }, 950);
-          }
+          const nonceBefore = askCoachNonceRef.current;
+          const delayMs = !dasSocket.isSocketConnected
+            ? isPureHiGreeting(cleanSpoken)
+              ? 0
+              : 650
+            : 4000;
+          window.setTimeout(() => {
+            if (
+              lastAgentActivityAtRef.current < spokenAt &&
+              askCoachNonceRef.current === nonceBefore &&
+              !dasSocket.isAgentSpeaking &&
+              !audioEngine.isSpeaking()
+            ) {
+              dispatchTurnRef.current(cleanSpoken, curCtx, "chat");
+            }
+          }, delayMs);
         }
       };
       rec.onerror = () => {};
@@ -799,7 +811,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         audioEngine.clearAudioQueue();
         try {
           await beginMicStream(selectedMicIdRef.current);
-          if (!dasSocket.isSocketConnected) {
+          const isMobileBrowser =
+            typeof navigator !== "undefined" &&
+            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+          if (!dasSocket.isSocketConnected || !isMobileBrowser) {
             startParallelSpeechRec();
           }
           setTranscript("Listening... Speak cleanly through headphones, earphones, buds, or laptop mic!");
@@ -851,11 +866,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleSendText = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() && !attachedFile) return;
+    if (!inputText.trim()) return;
 
     audioEngine.notifyTypingActivity(1200);
     audioEngine.unlockAudio();
-    const commandText = inputText.trim() || (attachedFile ? `Look at this attached ${attachedType || "file"}: ${attachedFile.name}` : "");
+    const commandText = inputText.trim();
     setUserTranscript(commandText);
     setTranscript("Thinking & Executing...");
     setInputText("");
@@ -863,50 +878,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     const curCtx =
       (typeof window !== "undefined" && (window as any).__DAS_PAGE_CONTEXT__) || {};
     dispatchTurnWithVoiceFallback(commandText, curCtx, "chat");
-  };
-
-  // Handle Media & Resume File Selection
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setAttachedFile(file);
-    const fileType = file.type;
-    const fileName = file.name.toLowerCase();
-
-    if (fileType.startsWith("image/")) {
-      setAttachedType("image");
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const result = ev.target?.result as string;
-        setAttachedPreview(result);
-      };
-      reader.readAsDataURL(file);
-      toast.success(`Photo attached: ${file.name}. DAS can now inspect it!`);
-    } else if (
-      fileType.startsWith("video/") ||
-      fileName.endsWith(".mp4") ||
-      fileName.endsWith(".webm") ||
-      fileName.endsWith(".mov")
-    ) {
-      setAttachedType("video");
-      const url = URL.createObjectURL(file);
-      setAttachedPreview(url);
-      toast.success(`Video attached: ${file.name}`);
-    } else {
-      // Resume / PDF / DOCX
-      setAttachedType("resume");
-      setAttachedPreview(null);
-      toast.success(`Resume attached: ${file.name}! Opening ATS Resume Studio...`);
-      window.dispatchEvent(new CustomEvent("das-navigate", { detail: { tab: "resume" } }));
-    }
-  };
-
-  const removeAttachment = () => {
-    setAttachedFile(null);
-    setAttachedPreview(null);
-    setAttachedType(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const stopCodeLive = () => {
@@ -1239,17 +1210,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
       {showAgent && (
         <>
-      {/* Hidden File Input for Photos, Videos, and Resumes */}
-      <input
-        id="das-attachment-file-input"
-        name="dasAttachmentFile"
-        ref={fileInputRef}
-        type="file"
-        onChange={handleFileUpload}
-        accept="image/*,video/*,.pdf,.docx,.txt"
-        className="hidden"
-      />
-
       {/* DAS Live Multi-Language Code & Compiler Studio Drawer */}
       {codeTask && (
         <div className="fixed top-16 left-2 right-2 sm:left-auto sm:top-20 sm:right-6 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#000000]/95 border border-[#2B2024] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3">
@@ -1503,47 +1463,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           🔊 DAS: {transcript}
         </div>
 
-        {/* Attached Media / Resume Pill Preview */}
-        {attachedFile && (
-          <div
-            className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
-            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
-          >
-            <div className="flex items-center gap-2 truncate">
-              <span>{attachedType === "image" ? "🖼️" : attachedType === "video" ? "🎬" : "📄"}</span>
-              <span className="font-semibold text-white truncate max-w-xs">{attachedFile.name}</span>
-              <span className="text-[10px] text-zinc-400">({(attachedFile.size / 1024).toFixed(0)} KB)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {attachedType === "resume" && (
-                <button
-                  type="button"
-                  onClick={() => window.dispatchEvent(new CustomEvent("das-navigate", { detail: { tab: "resume" } }))}
-                  className="px-2 py-0.5 bg-[#000000] hover:bg-[#2b2024] text-white rounded text-[10px] font-bold border border-[#2b2024]"
-                >
-                  Open ATS Studio
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-[11px] text-zinc-300 hover:text-white"
-                title="Change File"
-              >
-                ✏️ Change
-              </button>
-              <button
-                type="button"
-                onClick={removeAttachment}
-                className="text-xs text-white hover:text-zinc-300 font-bold ml-1"
-                title="Remove File"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Live Microphone Signal & Warning Bar */}
         {micActive && (
           <div
@@ -1604,17 +1523,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             ) : (
               <span>🎙️ Speak</span>
             )}
-          </button>
-
-          {/* Media / Resume Attachment Button */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110 shrink-0"
-            style={{ backgroundColor: "#000000", borderColor: "#2b2024" }}
-            title="Upload Photo or Resume for Instant Review"
-          >
-            📎
           </button>
 
           {/* Input Text Box */}

@@ -440,6 +440,7 @@ export interface MicCaptureOptions {
   onAutoDeviceSwitch?: (device: MediaDeviceOption) => void;
   onVoiceHealthAlert?: (alert: VoiceHealthAlert) => void;
   shouldSuppressEcho?: () => boolean;
+  onSpeechStart?: () => void;
   onSpeechIdle?: () => void;
 }
 
@@ -850,7 +851,7 @@ class AudioEngine {
             if (!active) {
               const nowP = typeof performance !== "undefined" ? performance.now() : Date.now();
               this.playingUntilPerfMs = nowP + 110;
-              this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, nowP + 520);
+              this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, nowP + 260);
             }
             this.notifySpeakingListeners();
           }
@@ -1447,7 +1448,7 @@ class AudioEngine {
     this.ttsStartPerfMs = nowPerf;
     this.ttsDurationMs = Math.max(120, buffer.duration * 1000);
     this.playingUntilPerfMs = nowPerf + buffer.duration * 1000;
-    this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, this.playingUntilPerfMs + 520);
+    this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, this.playingUntilPerfMs + 260);
     src.onended = () => {
       if (this.wholePcmSource === src) {
         const endNow = typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -1455,7 +1456,7 @@ class AudioEngine {
         this.ttsTimeline = null;
         this.ttsDurationMs = 0;
         this.playingUntilPerfMs = 0;
-        this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, endNow + 480);
+        this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, endNow + 260);
         this.notifySpeakingListeners();
         onEnded?.();
       }
@@ -1525,7 +1526,7 @@ class AudioEngine {
     const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
     const totalRemainingMs = Math.max(0, (this.nextPlayTime - currentTime) * 1000);
     this.playingUntilPerfMs = Math.max(this.playingUntilPerfMs, nowPerf + totalRemainingMs);
-    this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, this.playingUntilPerfMs + 520);
+    this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, this.playingUntilPerfMs + 260);
 
     source.onended = () => {
       this.activeSources = this.activeSources.filter((s) => s !== source);
@@ -1690,21 +1691,21 @@ class AudioEngine {
       this.zeroSignalMs = 0;
     }
 
-    // Bi-directional adaptive ambient noise floor with tight ceiling so normal/soft mics stay unclipped
-    if (rms > 0.0001) {
+    // Bi-directional adaptive ambient noise floor with low ceiling so earphones & phone mics stay unclipped
+    if (rms > 0.00008) {
       if (rms < this.noiseFloor) {
-        this.noiseFloor = Math.max(0.0006, this.noiseFloor * 0.85 + rms * 0.15);
-      } else if (rms < 0.012 && this.gateHoldMs <= 0) {
-        this.noiseFloor = Math.min(0.0045, this.noiseFloor * 0.992 + rms * 0.008);
+        this.noiseFloor = Math.max(0.0004, this.noiseFloor * 0.85 + rms * 0.15);
+      } else if (rms < 0.006 && this.gateHoldMs <= 0) {
+        this.noiseFloor = Math.min(0.0020, this.noiseFloor * 0.992 + rms * 0.008);
       }
     }
-    const speechThreshold = Math.min(0.0065, Math.max(0.0022, this.noiseFloor * 1.65));
+    const speechThreshold = Math.min(0.0032, Math.max(0.0009, this.noiseFloor * 1.45));
     if (rms >= speechThreshold) {
       this.speechOnsetFrames = Math.min(10, this.speechOnsetFrames + 1);
       this.speechFramesInUtterance += 1;
       this.postSpeechSilenceMs = 0;
       if (this.inUtterance || this.speechOnsetFrames >= 1 || rms >= speechThreshold * 1.15) {
-        this.gateHoldMs = 520;
+        this.gateHoldMs = 460;
       }
     } else {
       this.speechOnsetFrames = Math.max(0, this.speechOnsetFrames - 1);
@@ -1716,13 +1717,13 @@ class AudioEngine {
       }
     }
     const gateOpen =
-      this.gateHoldMs > 0 || (this.speechFramesInUtterance >= 2 && this.postSpeechSilenceMs < 850);
+      this.gateHoldMs > 0 || (this.speechFramesInUtterance >= 2 && this.postSpeechSilenceMs < 680);
 
-    // Mild adaptive speech boost ONLY when gate is open (never boost background noise!)
-    if (gateOpen && rms >= speechThreshold && rms < 0.09) {
-      const targetGain = Math.min(2.4, 0.09 / Math.max(rms, 0.008));
-      this.softGain = this.softGain * 0.72 + targetGain * 0.28;
-    } else if (rms >= 0.09) {
+    // Smooth adaptive speech boost so soft earphone/laptop voices reach clear Gemini Live & fallback STT levels
+    if (gateOpen && rms >= speechThreshold && rms < 0.10) {
+      const targetGain = Math.min(3.6, 0.10 / Math.max(rms, 0.005));
+      this.softGain = this.softGain * 0.68 + targetGain * 0.32;
+    } else if (rms >= 0.10) {
       this.softGain = this.softGain * 0.7 + 1.0 * 0.3;
     } else {
       this.softGain = this.softGain * 0.9 + 1.0 * 0.1;
@@ -1798,7 +1799,7 @@ class AudioEngine {
     }
 
     // Hybrid VAD end-of-speech flush on sustained silence so mobile/desktop Gemini Live replies immediately
-    if (this.speechFramesInUtterance >= 2 && this.postSpeechSilenceMs >= 850) {
+    if (this.speechFramesInUtterance >= 2 && this.postSpeechSilenceMs >= 680) {
       this.speechFramesInUtterance = 0;
       this.postSpeechSilenceMs = 0;
       this.gateHoldMs = 0;
@@ -1816,8 +1817,8 @@ class AudioEngine {
       return;
     }
 
-    // Stream 16kHz PCM ONLY during active speech or post-speech tail (never spam idle digital-zero frames that lock audio_turn_open=True!)
-    const pcm16 = downsampleTo16k(filtered, inputSampleRate, gateOpen ? this.softGain : 1.0, gateOpen);
+    // Keep real audio in pre-roll (never digital-zero pre-roll frames!) so word starts are preserved cleanly
+    const pcm16 = downsampleTo16k(filtered, inputSampleRate, Math.max(1.1, this.softGain), true);
     if (pcm16.length === 0) return;
 
     const uint8 = new Uint8Array(pcm16.buffer);
@@ -1829,7 +1830,7 @@ class AudioEngine {
 
     if (!this.inUtterance && !gateOpen) {
       this.preRollChunks.push(b64);
-      if (this.preRollChunks.length > 3) {
+      if (this.preRollChunks.length > 5) {
         this.preRollChunks.shift();
       }
       return;
@@ -1838,6 +1839,7 @@ class AudioEngine {
     if (!this.inUtterance) {
       this.inUtterance = true;
       this.tailSilenceSentMs = 0;
+      options?.onSpeechStart?.();
       for (const pre of this.preRollChunks) {
         onPcmChunk(pre);
       }
@@ -1858,7 +1860,7 @@ class AudioEngine {
     this.softGain = 1.0;
     this.dcPrevX = 0;
     this.dcPrevY = 0;
-    this.noiseFloor = 0.0022;
+    this.noiseFloor = 0.0012;
     this.gateHoldMs = 0;
     this.inUtterance = false;
     this.speechFramesInUtterance = 0;

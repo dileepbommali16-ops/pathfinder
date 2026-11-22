@@ -132,7 +132,7 @@ def login_endpoint(payload: LoginRequest, request: Request):
     if email_norm and email_norm != "candidate@pathfinder.ai":
         try:
             from backend.database import get_user_profile_by_email_or_username
-            existing_db_profile = get_user_profile_by_email_or_username(email_norm)
+            existing_db_profile = get_user_profile_by_email_or_username(email_norm, include_cloud=False)
             if existing_db_profile and existing_db_profile.get("user_id") and str(existing_db_profile.get("user_id")) != "usr_anonymous":
                 stable_user_id = str(existing_db_profile["user_id"])
         except Exception:

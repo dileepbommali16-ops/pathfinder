@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from backend.api import app
 
@@ -264,7 +265,9 @@ class TestAPIEndpoints(unittest.TestCase):
 
         # Returning user login gets identical user_id so saving profile never 403s
         email = "relogin.student@example.com"
-        r1 = self.client.post("/api/auth/login", json={"username": "Student Test", "email": email})
+        with patch("backend.database.cloud_get_profile_by_identifier") as mock_cloud_lookup:
+            r1 = self.client.post("/api/auth/login", json={"username": "Student Test", "email": email})
+            mock_cloud_lookup.assert_not_called()
         self.assertEqual(r1.status_code, 200)
         d1 = r1.json()
         p1 = self.client.post(

@@ -359,8 +359,11 @@ def get_user_profile_by_id(user_id: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def get_user_profile_by_email_or_username(identifier: str) -> Optional[Dict[str, Any]]:
-    """Look up profile by email, username, or full_name (case-insensitive) with Supabase cloud fallback."""
+def get_user_profile_by_email_or_username(
+    identifier: str,
+    include_cloud: bool = True,
+) -> Optional[Dict[str, Any]]:
+    """Look up profile by email, username, or full_name (case-insensitive) with optional Supabase cloud fallback."""
     clean = (identifier or "").strip()
     low = clean.lower()
     with get_db_connection() as conn:
@@ -377,11 +380,12 @@ def get_user_profile_by_email_or_username(identifier: str) -> Optional[Dict[str,
             except Exception:
                 return None
 
-    cloud_prof = cloud_get_profile_by_identifier(clean)
-    if cloud_prof:
-        target_uid = cloud_prof.get("user_id") or clean
-        save_user_profile(target_uid, cloud_prof, sync_cloud=False)
-        return cloud_prof
+    if include_cloud:
+        cloud_prof = cloud_get_profile_by_identifier(clean)
+        if cloud_prof:
+            target_uid = cloud_prof.get("user_id") or clean
+            save_user_profile(target_uid, cloud_prof, sync_cloud=False)
+            return cloud_prof
     return None
 
 

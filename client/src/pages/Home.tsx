@@ -454,6 +454,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [oauthSigningIn, setOauthSigningIn] = useState<boolean>(false);
   const oauthHandledRef = useRef<boolean>(false);
+  const loginSeqRef = useRef<number>(0);
+  const pendingAuthSyncRef = useRef<Promise<void> | null>(null);
 
   // Dynamic Document Page Titles & ?tab= URL sync based on Auth & Active Tab
   useEffect(() => {
@@ -487,6 +489,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
   // Authentication session expiration listener (401 token revocation)
   useEffect(() => {
     const handleRemoteLogout = () => {
+      loginSeqRef.current++;
+      pendingAuthSyncRef.current = null;
       setIsAuthenticated(false);
       setUserRole("student");
     };
@@ -763,14 +767,34 @@ export default function Home({ initialTab }: HomeProps = {}) {
     isNewUser?: boolean;
     bypassOnboarding?: boolean;
   }) => {
+    const seq = ++loginSeqRef.current;
+
+    // Inspect prior session BEFORE overwriting pathfinder_user so OAuth provider/tokens stay intact
+    let prevAuthProvider = "";
+    try {
+      const prevUser = JSON.parse(localStorage.getItem("pathfinder_user") || "{}");
+      if (
+        prevUser?.email &&
+        String(prevUser.email).toLowerCase() === user.email.toLowerCase()
+      ) {
+        prevAuthProvider = String(prevUser.auth_provider || "");
+      }
+    } catch { }
+    const isOAuth =
+      (prevAuthProvider === "google" || prevAuthProvider === "github") &&
+      Boolean(localStorage.getItem("pathfinder_token"));
+
     // 1a. Reset cross-account caches synchronously so a previous student's state never leaks
     setResumeFeedback(null);
     setRoadmap(null);
     setCohortInsight(null);
     localStorage.removeItem("pathfinder_backend_profile");
+    let matchedLocalDraft: Record<string, any> | null = null;
     try {
       const prevDraft = JSON.parse(localStorage.getItem("pathfinder_profile_draft") || "{}");
-      if (!prevDraft?.email || prevDraft.email.toLowerCase() !== user.email.toLowerCase()) {
+      if (prevDraft?.email && prevDraft.email.toLowerCase() === user.email.toLowerCase()) {
+        if (prevDraft?.branch) matchedLocalDraft = prevDraft;
+      } else {
         localStorage.removeItem("pathfinder_profile_draft");
         localStorage.removeItem("pathfinder_onboarding_draft");
       }
@@ -789,17 +813,25 @@ export default function Home({ initialTab }: HomeProps = {}) {
     }
     localStorage.setItem("pathfinder_session_email", user.email.toLowerCase());
 
-    // 1. Immediately persist user session synchronously to eliminate any login delay or double-clicking
+    if (!isOAuth) {
+      // Clear any previous account's bearer token synchronously before background login refresh
+      localStorage.removeItem("pathfinder_token");
+    }
+
+    // 1b. Immediately persist user session synchronously for instant dashboard entry
     const role = handleAuthLoginDetected(user.email, user.username);
-    const userObj = {
+    const userObj: Record<string, any> = {
       username: user.username,
       email: user.email,
       role: role,
       is_new_user: Boolean(user.isNewUser),
     };
+    if (isOAuth && prevAuthProvider) {
+      userObj.auth_provider = prevAuthProvider;
+    }
     localStorage.setItem("pathfinder_user", JSON.stringify(userObj));
 
-    // 2. Stage identity & greeting synchronously; setIsAuthenticated commits together with target profile
+    // 2. Commit identity, greeting, initial profile, and Dashboard visibility synchronously (<50ms)
     setUsername(user.username);
     setEmail(user.email);
     setUserRole(role);
@@ -826,178 +858,28 @@ export default function Home({ initialTab }: HomeProps = {}) {
       );
     }
 
-    // 3. Synchronize server Bearer token BEFORE profile/onboarding calls to eliminate 403 ownership mismatches
-    const storedToken = localStorage.getItem("pathfinder_token");
-    let isOAuth = false;
-    if (storedToken) {
-      try {
-        const u = JSON.parse(localStorage.getItem("pathfinder_user") || "{}");
-        if (u.auth_provider === "google" || u.auth_provider === "github") {
-          isOAuth = true;
-        }
-      } catch { }
-    }
-
-    if (!isOAuth) {
-      // Clear any previous account's bearer token before authenticating this account
-      localStorage.removeItem("pathfinder_token");
-      try {
-        const loginResp = await fetchWithTimeout(
-          `${API_BASE}/api/auth/login`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: user.username, email: user.email }),
-          },
-          4500
-        );
-        if (loginResp.ok) {
-          const authData = await loginResp.json();
-          if (authData.token) {
-            localStorage.setItem("pathfinder_token", authData.token);
-            if (authData.user) {
-              localStorage.setItem(
-                "pathfinder_user",
-                JSON.stringify({
-                  ...authData.user,
-                  honorific: role,
-                  is_new_user: Boolean(user.isNewUser ?? authData.is_new_user),
-                })
-              );
-              const resolved = handleAuthLoginDetected(
-                authData.user.email || user.email,
-                authData.user.username || user.username
-              );
-              setUserRole(resolved);
-            }
-          }
-        }
-      } catch { }
-    }
-
+    let immediateProfile: StudentProfileState;
+    let immediateIsDemo = false;
     if (user.bypassOnboarding) {
-      const demoProfile: StudentProfileState = {
+      immediateProfile = {
         ...DEFAULT_STUDENT_PROFILE,
         email: user.email,
         fullName: user.username,
         onboardingCompleted: true,
         wizardStep: 5,
       };
-      setProfile(demoProfile);
-      setIsDemoProfile(true);
-      setActiveTab("overview");
-      setIsAuthenticated(true);
-      fetchPrediction(demoProfile);
-      return;
-    }
-
-    // Check if this returning email already has a saved profile draft locally
-    let hasLocalMatch = false;
-    try {
-      const savedDraftRaw = localStorage.getItem("pathfinder_profile_draft");
-      if (savedDraftRaw) {
-        const parsedDraft = JSON.parse(savedDraftRaw);
-        if (
-          parsedDraft?.branch &&
-          parsedDraft?.email &&
-          parsedDraft.email.toLowerCase() === user.email.toLowerCase()
-        ) {
-          hasLocalMatch = true;
-          const hydrated: StudentProfileState = {
-            ...DEFAULT_STUDENT_PROFILE,
-            ...parsedDraft,
-            fullName: pickCandidateFullName(parsedDraft.fullName, user.username) || user.username,
-            email: user.email,
-            onboardingCompleted: true,
-          };
-          setProfile(hydrated);
-          setIsDemoProfile(false);
-          setActiveTab("overview");
-          setIsAuthenticated(true);
-          fetchPrediction(hydrated);
-        } else {
-          localStorage.removeItem("pathfinder_profile_draft");
-          localStorage.removeItem("pathfinder_onboarding_draft");
-        }
-      }
-    } catch { }
-
-    try {
-      const resp = await fetchWithTimeout(
-        `${API_BASE}/api/profile?email=${encodeURIComponent(user.email)}`,
-        {},
-        5000
-      );
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data && data.branch) {
-          const restoredCodingProfiles = {
-            ...(data.coding_profiles || {}),
-            github: data.github_url ?? data.coding_profiles?.github ?? "",
-            leetcode: data.leetcode_url ?? data.coding_profiles?.leetcode ?? "",
-            linkedin: data.linkedin_url ?? data.coding_profiles?.linkedin ?? "",
-          };
-          const mappedSkills =
-            Array.isArray(data.technicalSkills) && data.technicalSkills.length > 0
-              ? data.technicalSkills
-              : Array.isArray(data.technical_skills) && data.technical_skills.length > 0
-                ? data.technical_skills
-                : Array.isArray(data.skills) && data.skills.length > 0
-                  ? data.skills
-                  : DEFAULT_STUDENT_PROFILE.technicalSkills;
-          const mappedBacklogs = data.active_backlogs ?? data.activeBacklogs ?? data.backlogs ?? 0;
-          const mappedFullName =
-            pickCandidateFullName(data.fullName ?? data.full_name, user.username) || user.username;
-          const mapped: StudentProfileState = {
-            ...DEFAULT_STUDENT_PROFILE,
-            ...data,
-            email: user.email,
-            onboardingCompleted: true,
-            wizardStep: data.wizard_step ?? data.wizardStep ?? 5,
-            cgpa: data.cgpa ?? 7.8,
-            backlogs: mappedBacklogs,
-            activeBacklogs: mappedBacklogs,
-            internships: data.internships ?? 1,
-            coding: data.coding ?? 7,
-            communication: data.communication ?? 7,
-            projectsCount: data.projects_count ?? data.projectsCount ?? DEFAULT_STUDENT_PROFILE.projectsCount,
-            technicalSkills: mappedSkills,
-            skills: mappedSkills,
-            certifications: Array.isArray(data.certifications)
-              ? data.certifications
-              : DEFAULT_STUDENT_PROFILE.certifications,
-            targetRole: data.target_role || data.targetRole || DEFAULT_STUDENT_PROFILE.targetRole,
-            targetTier: data.target_tier || data.targetTier || DEFAULT_STUDENT_PROFILE.targetTier,
-            branch: data.branch || DEFAULT_STUDENT_PROFILE.branch,
-            graduationYear: data.graduation_year || data.graduationYear || 2026,
-            currentYear: data.current_year || data.currentYear || DEFAULT_STUDENT_PROFILE.currentYear,
-            fullName: mappedFullName,
-            college: data.college || "",
-            course: data.course || "",
-            yearSemester: data.year_semester || data.yearSemester || "",
-            tenthPercentage: data.tenth_percentage ?? data.tenthPercentage ?? 90,
-            twelfthPercentage: data.twelfth_percentage ?? data.twelfthPercentage ?? 88,
-            percentage: data.percentage ?? 74.1,
-            githubUrl: restoredCodingProfiles.github,
-            leetcodeUrl: restoredCodingProfiles.leetcode,
-            codingProfiles: restoredCodingProfiles,
-          };
-          setProfile(mapped);
-          localStorage.setItem("pathfinder_profile_draft", JSON.stringify(mapped));
-          setIsDemoProfile(false);
-          setActiveTab("overview");
-          setIsAuthenticated(true);
-          fetchPrediction(mapped);
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn("Could not retrieve backend profile on login:", err);
-    }
-
-    if (!hasLocalMatch) {
-      // First-time Sign In without saved profile: open 1. Dashboard directly with login identity pre-locked
-      const initialUserProfile: StudentProfileState = {
+      immediateIsDemo = true;
+    } else if (matchedLocalDraft) {
+      immediateProfile = {
+        ...DEFAULT_STUDENT_PROFILE,
+        ...matchedLocalDraft,
+        fullName: pickCandidateFullName(matchedLocalDraft.fullName, user.username) || user.username,
+        email: user.email,
+        onboardingCompleted: true,
+      };
+      immediateIsDemo = false;
+    } else {
+      immediateProfile = {
         ...DEFAULT_STUDENT_PROFILE,
         fullName: pickCandidateFullName(user.username) || user.username,
         email: user.email,
@@ -1006,11 +888,135 @@ export default function Home({ initialTab }: HomeProps = {}) {
         codingProfiles: { github: "", leetcode: "", linkedin: "" },
         onboardingCompleted: true,
       };
-      setProfile(initialUserProfile);
-      setIsDemoProfile(true);
-      setActiveTab("overview");
-      setIsAuthenticated(true);
+      immediateIsDemo = true;
     }
+
+    setProfile(immediateProfile);
+    setIsDemoProfile(immediateIsDemo);
+    setActiveTab("overview");
+    setIsAuthenticated(true);
+    void fetchPrediction(immediateProfile);
+
+    // 3. Synchronize Bearer token + cloud profile in the background without blocking dashboard UI entry
+    const syncTask = (async () => {
+      if (!isOAuth) {
+        try {
+          const loginResp = await fetchWithTimeout(
+            `${API_BASE}/api/auth/login`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: user.username, email: user.email }),
+            },
+            4500
+          );
+          if (loginSeqRef.current !== seq) return;
+          if (loginResp.ok) {
+            const authData = await loginResp.json();
+            if (loginSeqRef.current !== seq) return;
+            if (authData.token) {
+              localStorage.setItem("pathfinder_token", authData.token);
+              if (authData.user) {
+                localStorage.setItem(
+                  "pathfinder_user",
+                  JSON.stringify({
+                    ...authData.user,
+                    honorific: role,
+                    is_new_user: Boolean(user.isNewUser ?? authData.is_new_user),
+                  })
+                );
+                const resolved = handleAuthLoginDetected(
+                  authData.user.email || user.email,
+                  authData.user.username || user.username
+                );
+                setUserRole(resolved);
+              }
+            }
+          }
+        } catch { }
+      }
+
+      if (user.bypassOnboarding || loginSeqRef.current !== seq) return;
+
+      try {
+        const resp = await fetchWithTimeout(
+          `${API_BASE}/api/profile?email=${encodeURIComponent(user.email)}`,
+          {},
+          4500
+        );
+        if (loginSeqRef.current !== seq) return;
+        if (resp.ok) {
+          const data = await resp.json();
+          if (loginSeqRef.current !== seq) return;
+          if (data && data.branch) {
+            const restoredCodingProfiles = {
+              ...(data.coding_profiles || {}),
+              github: data.github_url ?? data.coding_profiles?.github ?? "",
+              leetcode: data.leetcode_url ?? data.coding_profiles?.leetcode ?? "",
+              linkedin: data.linkedin_url ?? data.coding_profiles?.linkedin ?? "",
+            };
+            const mappedSkills =
+              Array.isArray(data.technicalSkills) && data.technicalSkills.length > 0
+                ? data.technicalSkills
+                : Array.isArray(data.technical_skills) && data.technical_skills.length > 0
+                  ? data.technical_skills
+                  : Array.isArray(data.skills) && data.skills.length > 0
+                    ? data.skills
+                    : DEFAULT_STUDENT_PROFILE.technicalSkills;
+            const mappedBacklogs = data.active_backlogs ?? data.activeBacklogs ?? data.backlogs ?? 0;
+            const mappedFullName =
+              pickCandidateFullName(data.fullName ?? data.full_name, user.username) || user.username;
+            const mapped: StudentProfileState = {
+              ...DEFAULT_STUDENT_PROFILE,
+              ...data,
+              email: user.email,
+              onboardingCompleted: true,
+              wizardStep: data.wizard_step ?? data.wizardStep ?? 5,
+              cgpa: data.cgpa ?? 7.8,
+              backlogs: mappedBacklogs,
+              activeBacklogs: mappedBacklogs,
+              internships: data.internships ?? 1,
+              coding: data.coding ?? 7,
+              communication: data.communication ?? 7,
+              projectsCount: data.projects_count ?? data.projectsCount ?? DEFAULT_STUDENT_PROFILE.projectsCount,
+              technicalSkills: mappedSkills,
+              skills: mappedSkills,
+              certifications: Array.isArray(data.certifications)
+                ? data.certifications
+                : DEFAULT_STUDENT_PROFILE.certifications,
+              targetRole: data.target_role || data.targetRole || DEFAULT_STUDENT_PROFILE.targetRole,
+              targetTier: data.target_tier || data.targetTier || DEFAULT_STUDENT_PROFILE.targetTier,
+              branch: data.branch || DEFAULT_STUDENT_PROFILE.branch,
+              graduationYear: data.graduation_year || data.graduationYear || 2026,
+              currentYear: data.current_year || data.currentYear || DEFAULT_STUDENT_PROFILE.currentYear,
+              fullName: mappedFullName,
+              college: data.college || "",
+              course: data.course || "",
+              yearSemester: data.year_semester || data.yearSemester || "",
+              tenthPercentage: data.tenth_percentage ?? data.tenthPercentage ?? 90,
+              twelfthPercentage: data.twelfth_percentage ?? data.twelfthPercentage ?? 88,
+              percentage: data.percentage ?? 74.1,
+              githubUrl: restoredCodingProfiles.github,
+              leetcodeUrl: restoredCodingProfiles.leetcode,
+              codingProfiles: restoredCodingProfiles,
+            };
+            setProfile(mapped);
+            localStorage.setItem("pathfinder_profile_draft", JSON.stringify(mapped));
+            setIsDemoProfile(false);
+            void fetchPrediction(mapped);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not retrieve backend profile on login:", err);
+      }
+    })();
+
+    pendingAuthSyncRef.current = syncTask;
+    void syncTask.finally(() => {
+      if (pendingAuthSyncRef.current === syncTask) {
+        pendingAuthSyncRef.current = null;
+      }
+    });
   };
 
   function markStoredUserOnboardingComplete() {
@@ -1036,6 +1042,12 @@ export default function Home({ initialTab }: HomeProps = {}) {
     markStoredUserOnboardingComplete();
 
     try {
+      if (pendingAuthSyncRef.current) {
+        await Promise.race([
+          pendingAuthSyncRef.current,
+          new Promise<void>((resolve) => setTimeout(resolve, 2000)),
+        ]);
+      }
       const payload = {
         email: profileToSave.email,
         full_name: profileToSave.fullName,
@@ -1904,6 +1916,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
   };
 
   const handleLogout = () => {
+    loginSeqRef.current++;
+    pendingAuthSyncRef.current = null;
     void fetchWithTimeout(`${API_BASE}/api/auth/logout`, { method: "POST" }, 2000).catch(() => { });
     localStorage.removeItem("pathfinder_user");
     localStorage.removeItem("pathfinder_token");

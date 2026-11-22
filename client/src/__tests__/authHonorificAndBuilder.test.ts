@@ -192,6 +192,9 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     const lampLoginSrc = fs.readFileSync(path.join(srcRoot, "components/auth/LampLogin.tsx"), "utf-8");
     const homeSrc = fs.readFileSync(path.join(srcRoot, "pages/Home.tsx"), "utf-8");
     const audioSrc = fs.readFileSync(path.join(srcRoot, "agent/audioIO.ts"), "utf-8");
+    const collegeSelectorSrc = fs.readFileSync(path.join(srcRoot, "components/common/CollegeSelector.tsx"), "utf-8");
+    const collegesSrc = fs.readFileSync(path.join(srcRoot, "data/colleges.ts"), "utf-8");
+    const agentLayoutSrc = fs.readFileSync(path.join(srcRoot, "agent/AgentLayout.tsx"), "utf-8");
 
     expect(lampLoginSrc).not.toContain("Sign Up / New Student");
     expect(lampLoginSrc).not.toContain("Start Onboarding");
@@ -199,6 +202,11 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(homeSrc).not.toContain("buildFreshOnboardingProfile");
     expect(audioSrc).toContain("echoGuardUntilPerfMs");
     expect(audioSrc).toContain("ttsSpeakSeq");
+    expect(collegeSelectorSrc).not.toContain("Real Locations");
+    expect(collegesSrc.match(/id:\s*"/g)?.length || 0).toBeGreaterThanOrEqual(100);
+    expect(collegesSrc.indexOf("nriu-nriit")).toBeLessThan(collegesSrc.indexOf("vrsec-sahe"));
+    expect(agentLayoutSrc).not.toContain("das-attachment-file-input");
+    expect(agentLayoutSrc).not.toContain("📎");
   });
 
   it("greets Boss, Madam, Sir, and Stranger with exact 1st and 2nd+ replies and avoids co-pilot", () => {

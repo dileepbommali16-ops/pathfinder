@@ -153,10 +153,7 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
           <div className="flex items-center justify-between border-b border-white/10 bg-black px-3 py-2 text-[11px] text-slate-400">
             <span className="flex items-center gap-1.5">
               <Search className="h-3 w-3 text-[#2B2024]" />
-              {filteredColleges.length} verified campuses (or type any college name)
-            </span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-white">
-              Real Locations
+              {filteredColleges.length} colleges & universities (or type any name)
             </span>
           </div>
 

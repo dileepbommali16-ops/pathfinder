@@ -60,6 +60,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
   const isDraggingRef = useRef(false);
   const maxDragYRef = useRef(0);
   const startPos = useRef({ x: 0, y: 0 });
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     if (initialError) {
@@ -176,6 +177,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     const cleanUser = username.trim();
     const cleanEmail = email.trim();
 
@@ -183,6 +185,11 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
       setErrorMessage("Please enter your username or email address (or use Guest / Demo Mode below).");
       return;
     }
+
+    submittingRef.current = true;
+    window.setTimeout(() => {
+      submittingRef.current = false;
+    }, 1500);
 
     const finalUser = cleanUser || cleanEmail;
     const finalEmail =

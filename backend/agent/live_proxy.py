@@ -595,6 +595,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         completed_dispatch_seqs: set[int] = set()
         active_turn_task: asyncio.Task | None = None
         active_watchdog_task: asyncio.Task | None = None
+        live_voice_buf = bytearray()
+        voice_turn_seq = 0
+        responded_voice_seqs: set[int] = set()
+        active_voice_watchdog_task: asyncio.Task | None = None
+        warmup_task: asyncio.Task | None = None
         live_output_text_buf: list[str] = []
         last_live_user_text: str | None = None
         gemini_turn_active = False
@@ -1037,14 +1042,43 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             except Exception as fb_err:
                 live_logger.warning(f"[Live Proxy Fallback Turn Notice] {fb_err}")
 
-        async def _deliver_fallback_audio_turn(pcm_bytes: bytes):
+        def _normalize_quiet_pcm16(pcm_bytes: bytes) -> bytes:
+            even = len(pcm_bytes) - (len(pcm_bytes) % 2)
+            if even < 2:
+                return pcm_bytes
+            try:
+                from array import array
+                import sys
+
+                samples = array("h")
+                samples.frombytes(pcm_bytes[:even])
+                if sys.byteorder == "big":
+                    samples.byteswap()
+                peak = max((abs(s) for s in samples), default=0)
+                if 0 < peak < 6000:
+                    gain = min(6.0, 18000.0 / peak)
+                    if gain > 1.15:
+                        for idx, s in enumerate(samples):
+                            scaled = int(s * gain)
+                            samples[idx] = 32767 if scaled > 32767 else (-32768 if scaled < -32768 else scaled)
+                        if sys.byteorder == "big":
+                            samples.byteswap()
+                        return samples.tobytes()
+            except Exception:
+                pass
+            return pcm_bytes
+
+        async def _deliver_fallback_audio_turn(pcm_bytes: bytes, req_voice_seq: int = 0):
             nonlocal turn_id, completed_turn_id, gemini_turn_active, pending_response_until_mono, output_tx_in_turn, last_activity_mono
             if len(pcm_bytes) < 4800 or websocket.client_state == WebSocketState.DISCONNECTED:
+                return
+            if req_voice_seq > 0 and voice_turn_seq > req_voice_seq:
                 return
             try:
                 from backend.routers.voice_routes import synthesize_puck_pcm
 
-                wav_bytes = _pcm16_to_wav_bytes(pcm_bytes, sample_rate=SEND_SAMPLE_RATE)
+                norm_pcm = _normalize_quiet_pcm16(pcm_bytes)
+                wav_bytes = _pcm16_to_wav_bytes(norm_pcm, sample_rate=SEND_SAMPLE_RATE)
                 hon = _honorific_label(user_role)
                 ctx_note = format_page_context_note()
                 prompt_parts = [
@@ -1061,13 +1095,13 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                 reply_text = await _run_rest_tool_loop(
                     [types.Content(role="user", parts=prompt_parts)],
-                    ("gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"),
+                    ("gemini-3.1-flash-lite", "gemini-3-flash-preview", "gemini-flash-latest"),
                 )
 
                 if not reply_text:
                     for api_key in api_keys:
                         audio_client = genai.Client(http_options={"api_version": "v1beta", "timeout": 12000}, api_key=api_key)
-                        for model_name in ("gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"):
+                        for model_name in ("gemini-3.1-flash-lite", "gemini-3-flash-preview", "gemini-flash-latest"):
                             try:
                                 resp = await asyncio.wait_for(
                                     asyncio.to_thread(
@@ -1089,6 +1123,13 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                 if not reply_text or websocket.client_state == WebSocketState.DISCONNECTED:
                     return
+                if req_voice_seq > 0 and voice_turn_seq > req_voice_seq:
+                    return
+
+                fallback_history.append({"role": "user", "content": "[Spoken voice query]"})
+                fallback_history.append({"role": "assistant", "content": reply_text})
+                if len(fallback_history) > 12:
+                    del fallback_history[:-12]
 
                 turn_id = max(turn_id, completed_turn_id) + 1
                 this_turn = turn_id
@@ -1108,6 +1149,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     tts_res
                     and tts_res.get("pcm_base64")
                     and websocket.client_state != WebSocketState.DISCONNECTED
+                    and not (req_voice_seq > 0 and voice_turn_seq > req_voice_seq)
                 ):
                     await _send_chunked_pcm_b64(
                         websocket,
@@ -1119,6 +1161,30 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     await websocket.send_json({"type": "turn_complete", "turn_id": this_turn})
             except Exception as fb_audio_err:
                 live_logger.warning(f"[Live Proxy Fallback Audio Notice] {fb_audio_err}")
+
+        async def _voice_response_watchdog(req_voice_seq: int, captured_pcm: bytes, watched_sess):
+            try:
+                await asyncio.sleep(3.2)
+            except asyncio.CancelledError:
+                return
+            if (
+                websocket.client_state == WebSocketState.DISCONNECTED
+                or voice_turn_seq != req_voice_seq
+                or req_voice_seq in responded_voice_seqs
+                or gemini_turn_active
+                or active_client_turn_id > 0
+            ):
+                return
+            responded_voice_seqs.add(req_voice_seq)
+            if len(responded_voice_seqs) > 32:
+                min_v = req_voice_seq - 24
+                for old_v in [k for k in responded_voice_seqs if k < min_v]:
+                    responded_voice_seqs.discard(old_v)
+            live_logger.warning(
+                f"[DAS Live Proxy] Upstream Live silent 3.2s after audio_stream_end (voice_seq={req_voice_seq}); rescuing captured voice."
+            )
+            await close_live_session(watched_sess)
+            await _deliver_fallback_audio_turn(captured_pcm, req_voice_seq=req_voice_seq)
 
         async def ensure_live_session():
             nonlocal session_cm, session, connected_model, gemini_reader_task, live_quota_cooldown_until, last_activity_mono
@@ -1418,7 +1484,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 await close_live_session(active_sess)
 
         async def receive_from_browser():
-            nonlocal audio_turn_open, latest_page_context, pending_response_until_mono, pending_user_text, user_role, config, last_activity_mono, fallback_audio_active, hi_greeting_count, turn_id, completed_turn_id, active_client_turn_id, active_turn_task
+            nonlocal audio_turn_open, latest_page_context, pending_response_until_mono, pending_user_text, user_role, config, last_activity_mono, fallback_audio_active, hi_greeting_count, turn_id, completed_turn_id, active_client_turn_id, active_turn_task, voice_turn_seq, active_voice_watchdog_task, warmup_task
             try:
                 while True:
                     raw = await websocket.receive_text()
@@ -1446,7 +1512,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             fut.set_result(msg.get("result") or {})
                         continue
 
-                    # 2. Real-time 16kHz Mic PCM chunks from Browser
+                    # 2. Real-time 16kHz Mic PCM chunks from Browser (non-blocking + rolling capture)
                     if msg_type == "audio":
                         pcm_b64 = msg.get("pcm_base64")
                         if pcm_b64:
@@ -1456,14 +1522,22 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     pcm_bytes = pcm_bytes[:-1]
                                 if pcm_bytes:
                                     last_activity_mono = time.monotonic()
+                                    if active_voice_watchdog_task and not active_voice_watchdog_task.done():
+                                        active_voice_watchdog_task.cancel()
                                     if not audio_turn_open:
                                         active_client_turn_id = 0
-                                    active_sess = await ensure_live_session()
+                                    if len(live_voice_buf) < 640_000:
+                                        live_voice_buf.extend(pcm_bytes)
+
+                                    active_sess = session if (session is not None and not is_gemini_ws_closed(session)) else None
                                     if active_sess is None:
-                                        # Multi-user fallback: buffer spoken PCM locally until audio_stream_end
                                         fallback_audio_active = True
                                         if len(fallback_audio_buf) < 800_000:
                                             fallback_audio_buf.extend(pcm_bytes)
+                                        if warmup_task is None or warmup_task.done():
+                                            warmup_task = asyncio.create_task(ensure_live_session())
+                                            fallback_tasks.add(warmup_task)
+                                            warmup_task.add_done_callback(fallback_tasks.discard)
                                         continue
 
                                     audio_turn_open = True
@@ -1487,20 +1561,48 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     elif msg_type == "audio_stream_end":
                         audio_turn_open = False
                         last_activity_mono = time.monotonic()
-                        if fallback_audio_active and len(fallback_audio_buf) > 0:
+                        captured = bytes(live_voice_buf)
+                        if not captured and fallback_audio_buf:
                             captured = bytes(fallback_audio_buf)
-                            fallback_audio_buf.clear()
+                        live_voice_buf.clear()
+                        fallback_audio_buf.clear()
+
+                        if len(captured) < 4800:
                             fallback_audio_active = False
-                            t = asyncio.create_task(_deliver_fallback_audio_turn(captured))
+                            if session is not None and not is_gemini_ws_closed(session):
+                                try:
+                                    async with send_lock:
+                                        await session.send_realtime_input(audio_stream_end=True)
+                                except Exception:
+                                    pass
+                            continue
+
+                        voice_turn_seq += 1
+                        this_voice_seq = voice_turn_seq
+                        active_sess = session if (session is not None and not is_gemini_ws_closed(session)) else None
+                        if fallback_audio_active or active_sess is None:
+                            fallback_audio_active = False
+                            t = asyncio.create_task(_deliver_fallback_audio_turn(captured, req_voice_seq=this_voice_seq))
                             fallback_tasks.add(t)
                             t.add_done_callback(fallback_tasks.discard)
                             continue
-                        if session is not None and not is_gemini_ws_closed(session):
-                            try:
-                                async with send_lock:
-                                    await session.send_realtime_input(audio_stream_end=True)
-                            except Exception:
-                                pass
+
+                        try:
+                            async with send_lock:
+                                await active_sess.send_realtime_input(audio_stream_end=True)
+                        except Exception:
+                            await close_live_session(active_sess)
+                            t = asyncio.create_task(_deliver_fallback_audio_turn(captured, req_voice_seq=this_voice_seq))
+                            fallback_tasks.add(t)
+                            t.add_done_callback(fallback_tasks.discard)
+                            continue
+
+                        if active_voice_watchdog_task and not active_voice_watchdog_task.done():
+                            active_voice_watchdog_task.cancel()
+                        vw_task = asyncio.create_task(_voice_response_watchdog(this_voice_seq, captured, active_sess))
+                        active_voice_watchdog_task = vw_task
+                        fallback_tasks.add(vw_task)
+                        vw_task.add_done_callback(fallback_tasks.discard)
 
                     # 3a-bis. Silent Live UI / Slide Context Sync (Zero interruption to audio)
                     elif msg_type == "page_context":
@@ -1619,6 +1721,15 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     min_old = turn_dispatch_seq - 24
                     for old_k in [k for k in responded_dispatch_seqs if k < min_old]:
                         responded_dispatch_seqs.discard(old_k)
+                if voice_turn_seq > 0:
+                    responded_voice_seqs.add(voice_turn_seq)
+                    if len(responded_voice_seqs) > 32:
+                        min_v = voice_turn_seq - 24
+                        for old_v in [k for k in responded_voice_seqs if k < min_v]:
+                            responded_voice_seqs.discard(old_v)
+                live_voice_buf.clear()
+                if active_voice_watchdog_task and not active_voice_watchdog_task.done():
+                    active_voice_watchdog_task.cancel()
 
             async def flush_coalesced_pcm():
                 if not pcm_coalesce_buf:
