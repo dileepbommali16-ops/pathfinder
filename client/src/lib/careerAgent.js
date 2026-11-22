@@ -674,28 +674,28 @@ export const getCareerAgentResponse = (
     if (/\b(one[\s-]?page\s*resume|1[\s-]?page\s*resume|resume\s*modal)\b/i.test(text)) {
       return `Opening your single-page ATS engineering resume builder right now, ${title}. <!--ACTION: {"type": "OPEN_MODAL", "target": "one_page_resume"}-->`;
     }
-    if (/\b(mock\s*interview|interview|viva)\b/i.test(text)) {
+    if (/\b(live\s*coding|coding\s*arena|viva\s*arena|mock\s*interview|interview|viva)\b/i.test(text)) {
       return (
-        `Launching the AI Mock Interview studio now, ${title}. Get ready for your first technical question.` +
-        `|||🎙️ **AI Mock Interview Opened:** Practice live technical, DSA, and behavioral rounds tailored to **${targetRole}**. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "interview"}-->`
+        `Launching the Live Coding & Viva Arena studio now, ${title}. Get ready to run code and defend your complexity.` +
+        `|||🎙️ **Live Coding & Viva Arena Opened:** Execute 11-language code and practice live technical rounds tailored to **${targetRole}**. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "interview"}-->`
       );
     }
-    if (/\b(6[\s-]?week|roadmap|sprint|study\s*plan|skills)\b/i.test(text)) {
+    if (/\b(6[\s-]?week|roadmap|sprint|study\s*plan)\b/i.test(text)) {
       return (
-        `Sure ${title}, opening your customized 6-week placement sprint roadmap for ${branch}.` +
-        `|||🗺️ **6-Week Sprint Roadmap:** Structured week-by-week DSA, Core CS, and capstone milestones for **${targetRole}**. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "skills"}-->`
+        `Sure ${title}, opening Cohort & Roadmap with your customized 6-week placement sprint plan for ${branch}.` +
+        `|||🗺️ **Cohort & 6-Week Sprint Roadmap:** Structured week-by-week DSA, Core CS, and capstone milestones for **${targetRole}**. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "analytics"}-->`
       );
     }
     if (/\b(project\s*defense|star\s*defense|defense)\b/i.test(text)) {
       return (
-        `Opening the Project Defense & Interview simulator now, ${title}. Let's test your architecture trade-offs.` +
-        `|||🛡️ **Project Defense & Viva Mode:** Practice defending scaling, caching, and database choices. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "defense"}-->`
+        `Opening the Live Coding & Project Defense simulator now, ${title}. Let's test your architecture trade-offs.` +
+        `|||🛡️ **Project Defense & Viva Mode:** Practice defending scaling, caching, and database choices. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "interview"}-->`
       );
     }
-    if (/\b(resume|ats|cv)\b/i.test(text)) {
+    if (/\b(jd\s*tailor|jd\s*matcher|job\s*description|resume|ats|cv)\b/i.test(text)) {
       return (
-        `Opening the ATS Resume Studio and scanner now, ${title}. You can upload your PDF or audit your bullet points here.` +
-        `|||📄 **ATS Resume Studio:** Automated keyword gap detection and Google X-Y-Z impact scoring. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "resume"}-->`
+        `Opening JD & Resume Tailor now, ${title}. You can match any company JD or audit your resume PDF here.` +
+        `|||📄 **JD & ATS Resume Tailor:** Instant company JD skill matching, Google X-Y-Z bullets, and keyword gap detection. <!--ACTION: {"type": "NAVIGATE_TAB", "target": "resume"}-->`
       );
     }
     if (/\b(cohort|analytics|benchmarks?|972)\b/i.test(text)) {
@@ -837,9 +837,24 @@ export const getCareerAgentResponse = (
     );
   }
 
+  // 5b. Explicit Section / Dashboard Card Explanations ("Ask Coach about this")
+  const sectionMatch = String(message || "").match(
+    /explain\s+the\s+['"]([^'"]+)['"]\s+section/i
+  );
+  if (
+    sectionMatch ||
+    /\b(what is this showing|what should i do here|explain this section|how do i crack)\b/i.test(text)
+  ) {
+    const secName = sectionMatch ? sectionMatch[1].trim() : "this Pathfinder section";
+    return (
+      `${title}, the ${secName} section benchmarks your ${branch} profile at ${cgpa} CGPA targeting ${targetRole} against verified placement drives so you can spot bottlenecks immediately. Focus on your lowest scoring lever here first, adjust it, and verify your updated shortlist odds right on screen!` +
+      `|||💡 **${secName} Guide (${title}):** Benchmarks **${branch} · ${cgpa} CGPA** for **${targetRole}**. Start with your highest-leverage gap shown in this card and verify the score lift.`
+    );
+  }
+
   // 6. General-knowledge guard vs Semantic RAG Grounded Answer
   const isCareerOrSiteQuery =
-    /(pathfinder|cgpa|backlog|branch|placement|resume|ats|interview|roadmap|blueprint|project|code|dsa|leetcode|github|skill|salary|package|company|role|rag|llm|vercel|render|antigravity|sar|internship|score)/i.test(
+    /(pathfinder|cgpa|backlog|branch|placement|resume|ats|interview|roadmap|blueprint|project|code|dsa|leetcode|github|skill|salary|package|company|role|rag|llm|vercel|render|antigravity|sar|internship|score|section|simulator|what-if|trajectory|workspace|sync|jd|tailor|arena|viva|cohort|fraud|radar|overview|dashboard|settings|profile)/i.test(
       text
     );
   if (!isCareerOrSiteQuery && /\b(who is|who was|tell me about|what is|history of|explain)\b/i.test(text)) {

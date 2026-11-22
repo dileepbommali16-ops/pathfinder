@@ -321,6 +321,14 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     if (!answerText) return;
 
     audioEngine.unlockAudio();
+    window.dispatchEvent(
+      new CustomEvent("das-interviewer-prompt", {
+        detail: {
+          question: answerText,
+          track: selectedTrack === "defense" ? "defense" : "interview",
+        },
+      })
+    );
     const gen = ++speakGenRef.current;
 
     const cached = ttsCacheRef.current.get(answerText);

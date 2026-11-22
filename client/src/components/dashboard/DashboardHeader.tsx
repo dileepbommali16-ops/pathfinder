@@ -48,13 +48,13 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string 
 ];
 
 const UNIFIED_BLACK_BROWN_THEME = {
-  activeBg: "bg-[#06182c]/80",
+  activeBg: "bg-[#2B2024]",
   text: "text-[#f8fafc] font-semibold",
-  icon: "text-[#00F0FF]",
-  border: "border-[#F23456]/70",
-  glow: "shadow-[0_0_18px_rgba(242,52,86,0.38)]",
-  badge: "bg-[#F23456]/25 text-[#ff8da1] border-[#F23456]/50",
-  indicator: "from-[#00F0FF] via-[#F23456] to-[#00F0FF]"
+  icon: "text-[#f8fafc]",
+  border: "border-[#2B2024]",
+  glow: "shadow-[0_0_16px_rgba(43,32,36,0.75)]",
+  badge: "bg-[#000000] text-[#f8fafc] border-[#2B2024]",
+  indicator: "from-[#000000] via-[#2B2024] to-[#000000]"
 };
 
 const TAB_THEMES: Record<TabId, typeof UNIFIED_BLACK_BROWN_THEME> = {
@@ -199,11 +199,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 data-agent-id={`tab-${tab.id}`}
                 aria-label={tab.label}
                 onClick={() => handleSelectTab(tab.id)}
-                className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? `${theme.activeBg} ${theme.text} border ${theme.border} ${theme.glow}`
-                    : "bg-[#000000] text-[#94a3b8] hover:bg-[#2B2024]/60 hover:text-[#f8fafc] border border-transparent"
-                }`}
+                className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-xs font-semibold transition-all cursor-pointer ${isActive
+                  ? `${theme.activeBg} ${theme.text} border ${theme.border} ${theme.glow}`
+                  : "bg-[#000000] text-[#94a3b8] hover:bg-[#2B2024]/60 hover:text-[#f8fafc] border border-transparent"
+                  }`}
               >
                 <span className={`text-[10px] font-bold tabular-nums ${isActive ? "text-white" : "text-white/50"}`}>
                   {idx + 1}.
@@ -248,11 +247,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     key={`mobile-${tab.id}`}
                     aria-label={tab.label}
                     onClick={() => handleSelectTab(tab.id)}
-                    className={`flex items-center justify-between rounded-xl p-3 text-left transition-all ${
-                      isActive
-                        ? `${theme.activeBg} ${theme.text} border ${theme.border}`
-                        : "bg-[#000000] text-[#94a3b8] hover:bg-[#2B2024] hover:text-white border border-[#2B2024]"
-                    }`}
+                    className={`flex items-center justify-between rounded-xl p-3 text-left transition-all ${isActive
+                      ? `${theme.activeBg} ${theme.text} border ${theme.border}`
+                      : "bg-[#000000] text-[#94a3b8] hover:bg-[#2B2024] hover:text-white border border-[#2B2024]"
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? "bg-[#000000] text-white" : "bg-[#2B2024] text-[#94a3b8]"}`}>

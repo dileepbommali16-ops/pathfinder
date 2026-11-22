@@ -120,19 +120,23 @@ export default function Home({ initialTab }: HomeProps = {}) {
         "action-center": { tab: "overview", scrollId: "career-action-center" },
         action_center: { tab: "overview", scrollId: "career-action-center" },
         "ai-action": { tab: "overview", scrollId: "career-action-center" },
-        missions: { tab: "skills" },
+        missions: { tab: "analytics", scrollId: "sprint-roadmap" },
         roles: { tab: "roles" },
         "role-intelligence": { tab: "roles" },
         "company-radar": { tab: "overview", scrollId: "career-company-radar" },
         "what-if": { tab: "overview", scrollId: "what-if-simulator" },
         whatif: { tab: "overview", scrollId: "what-if-simulator" },
         skills: { tab: "skills" },
-        roadmap: { tab: "skills", scrollId: "roadmap-visualizer" },
+        roadmap: { tab: "analytics", scrollId: "sprint-roadmap" },
         projects: { tab: "projects" },
         blueprints: { tab: "projects" },
         analytics: { tab: "analytics" },
         cohort: { tab: "analytics", scrollId: "cohort-explorer" },
         resume: { tab: "resume" },
+        "jd-tailor": { tab: "resume" },
+        jd: { tab: "resume" },
+        "coding-arena": { tab: "interview" },
+        "live-coding": { tab: "interview" },
         branches: { tab: "branches" },
         defense: { tab: "interview" },
         viva: { tab: "interview" },
@@ -2043,71 +2047,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 transition={{ duration: 0.25 }}
                 className="space-y-10 sm:space-y-14"
               >
-                {/* Center 3D Hologram Agent Showcase Window: Flanks the 3D Cyan Face + Crimson Eyes with clear center lane */}
-                <div className="grid gap-4 lg:grid-cols-12 items-center">
-                  <div className="lg:col-span-4 holo-glass-card rounded-2xl p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
-                        <Sparkles className="h-3 w-3 text-cyan-300" />
-                        <span>Live 3D Neural Agent Active</span>
-                      </span>
-                      <span className="text-[11px] font-bold text-[#ff8da1]">
-                        {profile.branch} · {profile.cgpa.toFixed(1)} CGPA
-                      </span>
-                    </div>
-                    <p className="text-xs font-semibold text-white">
-                      {profile.college || "DR RVR NRI DEEMED TO BE UNIVERSITY"}
-                    </p>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      Speak or type to DAS below to control slides, run 11-language code, tailor company JDs, or update your profile live.
-                    </p>
-                  </div>
-
-                  {/* Open Center Lane: Unobstructed view of the 3D Cyan Face & Red Eyes */}
-                  <div
-                    onClick={() => setFocusOnDas(true)}
-                    title="Click to enter full 3D Hologram Focus Mode"
-                    className="hidden lg:flex lg:col-span-4 min-h-[175px] flex-col items-center justify-end pb-2 rounded-3xl border border-dashed border-cyan-400/20 bg-transparent hover:border-[#F23456]/50 transition cursor-pointer group"
-                  >
-                    <span className="rounded-full border border-cyan-400/35 bg-[#030a16]/75 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200 group-hover:border-[#F23456] group-hover:text-white transition">
-                      ✨ DAS 3D Hologram Core · Click to Focus
-                    </span>
-                  </div>
-
-                  <div className="lg:col-span-4 holo-glass-card rounded-2xl p-4 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">
-                        Hackathon Power Modules
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab("profile")}
-                        className="text-[11px] font-bold text-cyan-200 hover:text-white underline cursor-pointer"
-                      >
-                        Edit 6. Profile / Settings →
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab("resume")}
-                        className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-2.5 text-left hover:border-[#F23456] hover:bg-[#F23456]/15 transition cursor-pointer"
-                      >
-                        <span className="text-[10px] font-bold text-cyan-300 block">2. 1-Click JD Tailor</span>
-                        <span className="text-xs font-bold text-white">Match JD &amp; Resume</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab("interview")}
-                        className="rounded-xl border border-[#F23456]/45 bg-[#F23456]/15 p-2.5 text-left hover:bg-[#F23456]/30 transition cursor-pointer"
-                      >
-                        <span className="text-[10px] font-bold text-[#ff8da1] block">3. Live Coding Arena</span>
-                        <span className="text-xs font-bold text-white">Voice + 11-Lang Viva</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
                 <section
                   id="career-readiness-assessment"
                   data-das-id="hero-metrics"
@@ -2285,10 +2224,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   <SectionHeader
                     title="Workspace Sync & Next Preparation Stages"
                     description="Sync your readiness profile or jump directly into dedicated execution modules without duplicate checklists"
-                    badge="Step 7 · Next Modules"
+                    badge="Next Modules"
                     accent="blue"
                     icon={Zap}
-                    helperLabel="Continue into 3. 6-Week Roadmap, 4. Project Blueprints, 5. ATS Resume Studio, or 6. Interview & Defense"
+                    helperLabel="Continue into 2. JD & Resume Tailor, 3. Live Coding & Viva Arena, 4. Project Blueprints, or 5. Cohort & Roadmap"
                     onAskCoach={handleAskCoach}
                   />
                   <div className="grid gap-6 lg:grid-cols-3">
@@ -2302,10 +2241,16 @@ export default function Home({ initialTab }: HomeProps = {}) {
                     <div className="lg:col-span-2 grid gap-3 sm:grid-cols-2">
                       {[
                         {
-                          tab: "skills" as TabId,
-                          title: "3. 6-Week Roadmap",
-                          desc: "Personalized weekly milestone tracker & Blind 75 sprint targets.",
-                          icon: Compass,
+                          tab: "resume" as TabId,
+                          title: "2. JD & Resume Tailor",
+                          desc: "1-Click company JD match %, keyword gap analysis & ATS resume scoring.",
+                          icon: FileText,
+                        },
+                        {
+                          tab: "interview" as TabId,
+                          title: "3. Live Coding & Viva Arena",
+                          desc: "11-language online compiler with live voice viva & hiring verdicts.",
+                          icon: Mic,
                         },
                         {
                           tab: "projects" as TabId,
@@ -2314,16 +2259,10 @@ export default function Home({ initialTab }: HomeProps = {}) {
                           icon: Lightbulb,
                         },
                         {
-                          tab: "resume" as TabId,
-                          title: "5. ATS Resume Studio",
-                          desc: "Senior hiring manager ATS scoring, missing keywords & impact audit.",
-                          icon: FileText,
-                        },
-                        {
-                          tab: "interview" as TabId,
-                          title: "6. Interview & Defense",
-                          desc: "Live timed technical rounds & project architecture viva defense.",
-                          icon: Mic,
+                          tab: "analytics" as TabId,
+                          title: "5. Cohort & Roadmap",
+                          desc: "972 verified placement benchmarks & personalized 6-week sprint targets.",
+                          icon: TrendingUp,
                         },
                       ].map((stage) => {
                         const StageIcon = stage.icon;
@@ -2371,6 +2310,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   profile={profile}
                   apiBase={API_BASE}
                   customChallenge={arenaCustomChallenge}
+                  onAskCoach={(q) => handleAskCoach(q, "interview", "Live Coding & Voice Viva Arena")}
                 />
                 <SectionHeader
                   title="Company Mock Interview & STAR Project Defense Simulator"
@@ -2519,11 +2459,11 @@ export default function Home({ initialTab }: HomeProps = {}) {
               >
                 <SectionHeader
                   title="Candidate Profile & System Settings"
-                  description="Step 1: Enter your academic marks, coding ratings, and target role (Single Source of Truth synced across all recommendations)"
-                  badge="Step 1 · Input"
+                  description="Manage your academic marks, coding ratings, and target role (Single Source of Truth synced across all predictions)"
+                  badge="6. Profile / Settings"
                   accent="cyan"
                   icon={User}
-                  helperLabel="Saving here recalculates all placement probabilities and opens 2. Dashboard"
+                  helperLabel="Saving here recalculates all placement probabilities and opens 1. Dashboard"
                   onAskCoach={handleAskCoach}
                 />
                 <ProfileSettings
@@ -2555,6 +2495,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
               >
                 <JDCustomTailor
                   profile={profile}
+                  apiBase={API_BASE}
+                  onAskCoach={(q) => handleAskCoach(q, "resume", "1-Click JD to Custom Prep & Resume Tailor")}
                   onAddSkillsToProfile={(newSkills) => {
                     const updatedSkills = Array.from(
                       new Set([...(profile.technicalSkills || []), ...newSkills])

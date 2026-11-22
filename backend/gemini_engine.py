@@ -711,39 +711,27 @@ def generate_smart_fallback_reply(
             "Candidates who achieved packages above 20 LPA had >= 1 production capstone deployment and zero active backlogs."
         )
 
-        # 8b. Active Page / Tab explanation
-    if any(k in low_msg for k in ("explain this page", "explain page", "what is this page", "what does this page do", "tell me about this page", "page overview")):
-        cur_tab = (active_tab or "coach").lower()
-        if "coach" in cur_tab or "voice" in cur_tab or "agent" in cur_tab:
-            return (
-                "🎙️ **DAS AI Voice Coach & 3D Interactive Mentor**\n\n"
-                "You are currently on the **DAS AI Voice Coach** panel! Here is what you can do here:\n"
-                "1. **3D Interactive Avatar**: Reacts to speech in real time with audio-driven lip-sync, breathing idle motion, and mood-reactive eye glow.\n"
-                "2. **Voice & Text Dual Input**: Speak naturally using the microphone in English, Telugu, or Hindi, or type your questions.\n"
-                "3. **Context-Aware Mentorship**: Connected directly to your candidate profile, placement odds, and the 28 flagship project blueprints.\n\n"
-                "Ask me anything—from debugging project code to simulating mock interview rounds!"
-            )
-        elif "dashboard" in cur_tab or "readiness" in cur_tab:
-            return (
-                "📊 **Readiness Command Center**\n\n"
-                "This dashboard evaluates your academic credentials, coding benchmarks, and tier cutoffs to give you a verified placement probability score. Check your critical skill gaps and recommended roadmap sprints below!"
-            )
-        elif "roadmap" in cur_tab:
-            return (
-                "🗺️ **6-Week Accelerated Placement Roadmap**\n\n"
-                "This page provides your structured week-by-week curriculum covering DSA patterns, system design, capstone projects, and interview viva defense."
-            )
-        elif "project" in cur_tab or "blueprint" in cur_tab:
-            return (
-                "🚀 **28 Flagship Production Project Blueprints**\n\n"
-                "Explore complete production architectures with 5-phase build roadmaps, tech stacks, and interview defense cheat sheets."
-            )
-        else:
-            return (
-                f"💡 **Pathfinder Overview**\n\n"
-                f"You are viewing the **{active_tab or 'Career Intelligence'}** section of Pathfinder. "
-                "Here we analyze your placement metrics, identify skill gaps against recruiter benchmarks, and guide you step-by-step to Tier-1 campus offers!"
-            )
+    # 8b. Active Page / Tab / Section ("Ask Coach about this") explanation
+    section_match = re.search(r"explain\s+the\s+['\"]([^'\"]+)['\"]\s+section", clean_msg, flags=re.IGNORECASE)
+    if section_match or any(
+        k in low_msg
+        for k in (
+            "explain this page",
+            "explain this section",
+            "explain page",
+            "what is this page",
+            "what does this page do",
+            "what is this showing",
+            "what should i do here",
+            "tell me about this page",
+            "page overview",
+        )
+    ):
+        sec_title = section_match.group(1).strip() if section_match else (active_tab or "Dashboard")
+        return (
+            f"{honorific_fallback}, the {sec_title} module benchmarks your live profile against verified Tier-1 campus drive cutoffs so you can see exactly what helps or hurts your shortlist odds. "
+            f"Check your lowest metric or missing keyword inside {sec_title}, test an improvement or practice the matching drill, and save or apply it to watch your readiness update immediately!"
+        )
 
     # 8c. Specific Placement & Backlog Guidance
     if any(k in low_msg for k in ("backlog", "google", "tier 1", "faang", "how to prepare for google")):
@@ -781,6 +769,8 @@ def generate_smart_fallback_reply(
             "pathfinder", "cgpa", "backlog", "branch", "placement", "resume", "ats", "interview",
             "roadmap", "blueprint", "project", "code", "dsa", "leetcode", "github", "skill",
             "salary", "package", "company", "role", "rag", "llm", "vercel", "render", "antigravity",
+            "section", "simulator", "what-if", "trajectory", "workspace", "sync", "jd", "tailor",
+            "arena", "viva", "cohort", "fraud", "radar", "overview", "dashboard", "settings", "profile",
         )
     )
     if not is_career_or_site_query and re.search(r"\b(who is|who was|tell me about|what is|explain|history of|about )\b", low_msg):

@@ -95,21 +95,21 @@ function setNativeValue(el: HTMLInputElement | HTMLTextAreaElement, value: strin
 
 const TAB_ALIASES: Record<string, string[]> = {
   overview: ["overview", "dashboard", "home", "readiness", "summary", "action center", "command hub", "next actions"],
-  skills: ["skills", "6-week roadmap", "roadmap", "sprint", "skill gap", "missions", "30-day mission", "mission tracker"],
+  skills: ["skills", "skill gap", "sprint"],
   projects: ["projects", "project", "blueprints", "project blueprints", "capstone"],
-  analytics: ["analytics", "cohort analytics", "cohort", "statistics", "benchmarks"],
-  resume: ["resume", "ats resume studio", "resume studio", "ats", "cv"],
+  analytics: ["cohort & roadmap", "analytics", "cohort analytics", "cohort", "roadmap", "6-week roadmap", "statistics", "benchmarks", "972"],
+  resume: ["jd & resume tailor", "jd tailor", "jd matcher", "jd", "resume", "ats resume studio", "resume studio", "ats", "cv"],
   branches: ["branches", "branches and courses", "department", "courses"],
-  defense: ["interview & defense", "project defense", "defense", "viva"],
-  profile: ["profile", "settings", "candidate profile"],
-  interview: ["interview & defense", "mock interview", "interview", "viva interview", "live interview"],
+  defense: ["live coding & viva arena", "interview & defense", "project defense", "defense", "viva"],
+  profile: ["profile", "settings", "candidate profile", "profile / settings"],
+  interview: ["live coding & viva arena", "live coding", "coding arena", "viva arena", "interview & defense", "mock interview", "interview", "viva interview", "live interview"],
   action: ["action", "action center", "ai action center", "command hub", "next actions"],
   roles: ["roles", "target role", "company radar", "companies"],
-  missions: ["missions", "30-day mission", "mission tracker"],
-  roadmap: ["roadmap", "6-week roadmap", "sprint"],
+  missions: ["cohort & roadmap", "missions", "30-day mission", "mission tracker"],
+  roadmap: ["cohort & roadmap", "roadmap", "6-week roadmap", "sprint"],
   "skill-gap": ["skill gap", "skills"],
   "what-if": ["what-if", "what if", "simulator"],
-  cohort: ["cohort", "analytics"],
+  cohort: ["cohort & roadmap", "cohort", "analytics"],
 };
 
 function goToTab(tabRaw: string, navigate?: (path: string) => void) {
@@ -214,26 +214,25 @@ const CLIENT_TAB_INTENTS: Array<{ route: string; patterns: RegExp[] }> = [
   {
     route: "interview",
     patterns: [
-      /\b(?:open|go\s+to|start|launch|show|switch\s+to)\s+(?:the\s+)?mock\s+interview\b/,
+      /\b(?:open|go\s+to|start|launch|show|switch\s+to)\s+(?:the\s+)?(?:live\s+coding(?:\s*&\s*viva)?(?:\s+arena)?|coding\s+arena|viva\s+arena|mock\s+interview)\b/,
       /\b(?:open|go\s+to|start|show|switch\s+to)\s+(?:the\s+)?(?:project\s+)?defense\b/,
     ],
   },
   {
     route: "resume",
     patterns: [
-      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:ats\s+)?resume(?:\s+studio)?\b/,
+      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:1[\s-]?click\s+)?(?:jd(?:\s*&\s*resume)?(?:\s+tailor|\s+matcher)?|(?:ats\s+)?resume(?:\s+studio|\s+tailor)?)\b/,
     ],
   },
   {
     route: "analytics",
     patterns: [
-      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:cohort\s+)?analytics\b/,
+      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:cohort(?:\s*&\s*roadmap|\s+analytics)?|(?:6-week\s+)?roadmap)\b/,
     ],
   },
   {
     route: "skills",
     patterns: [
-      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:6-week\s+)?roadmap\b/,
       /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?skill\s+gap\b/,
     ],
   },
@@ -624,10 +623,16 @@ export function executeWebsiteControl(
       overview: "overview",
       blueprints: "projects",
       "resume-studio": "resume",
+      "jd-tailor": "resume",
+      "jd-matcher": "resume",
       "mock-interview": "interview",
+      "live-coding": "interview",
+      "coding-arena": "interview",
       skills: "skills",
       projects: "projects",
       analytics: "analytics",
+      "cohort-roadmap": "analytics",
+      roadmap: "analytics",
       resume: "resume",
       branches: "branches",
       defense: "interview",
@@ -635,7 +640,7 @@ export function executeWebsiteControl(
       interview: "interview",
       action: "overview",
       roles: "roles",
-      missions: "skills",
+      missions: "analytics",
     };
     const mappedTab = knownRouteToTab[routeNorm];
     if (mappedTab) {

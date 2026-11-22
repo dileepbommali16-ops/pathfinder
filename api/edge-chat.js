@@ -32,7 +32,7 @@ function resolveHonorific(pageContext = {}) {
   return "Sir";
 }
 
-function buildSystemPrompt(honorific, activeTab, cameraActive, pageContext = {}) {
+function buildSystemPrompt(honorific, activeTab, profile = {}, pageContext = {}) {
   const identityLine =
     honorific === "Boss"
       ? "You are speaking directly with your creator and owner Bommali Dileep. Address him warmly and loyally as 'Boss'. Only say 'Hi Boss! What's up?' once at the start of a brand-new conversation; if there is prior history, reply concisely with 'Hi Boss, I'm here!' or answer directly."
@@ -42,20 +42,25 @@ function buildSystemPrompt(honorific, activeTab, cameraActive, pageContext = {})
           ? "You are speaking with an unidentified guest visitor. Address them politely as 'Stranger' and ask them to tell you their name first until they share their name. NEVER call them 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'"
           : "You are speaking with a male visitor, evaluator, or friend. Address him politely as 'Sir'. NEVER call him 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'";
 
-  const camRule = cameraActive
-    ? "LIVE CAMERA IS ON and the latest camera JPEG is attached. Describe ONLY the actual colors, hairstyle, hand motion, or objects visible in this exact frame right now — never guess old memories."
-    : "CAMERA IS OFF (no image attached). Never pretend or claim to see the user; if asked if you can see them, honestly say your camera is turned off and suggest tapping Cam.";
-
+  const branch = profile?.branch || pageContext?.branch || "CSE";
+  const cgpa = profile?.cgpa ?? pageContext?.cgpa ?? "9.1";
+  const targetRole = profile?.target_role || pageContext?.targetRole || "Software Engineer";
+  const readiness = pageContext?.readinessChance != null ? `Readiness=${pageContext.readinessChance}%` : "";
+  const profileLine = `Active candidate profile: Branch=${branch}, CGPA=${cgpa}, TargetRole=${targetRole}${readiness ? `, ${readiness}` : ""}.`;
+  const tabsLine =
+    "Pathfinder 2.0 has 6 active navigation slides: 1. Dashboard (overview), 2. JD & Resume Tailor (resume), 3. Live Coding & Viva Arena (interview), 4. Project Blueprints (projects), 5. Cohort & Roadmap (analytics), 6. Profile / Settings (profile).";
   const tabNote = activeTab ? `Active Pathfinder slide: ${activeTab}.` : "";
   const cardNote = pageContext.cardContext ? `Focused card: ${pageContext.cardContext}.` : "";
 
   return [
-    "You are DAS, the Autonomous 3D AI Assistant and Career Mentor inside PATHFINDER 2.0, created by Dileep Bommali (B.Tech 3rd Year CSE Data Science at Dr. RVR & Dr. NRI University, age 20, DOB 16/01/2006; mother Bhavani, father Ramana, sister Priyanka; guitarist, fashion model, Allu Arjun fan; mentors T. Navya Chandrika, Dr. Murali Krishna Sir, Chaitanya Madam, Swamy Sir, Phani Sir, Vijay Sir).",
+    "You are DAS, the Autonomous 3D AI Assistant and Career Mentor inside PATHFINDER 2.0, created by Dileep Bommali (B.Tech 3rd Year CSE Data Science at DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli; NEVER say 'Dr. RVR & Dr. NRI'; age 20, DOB 16/01/2006; mother Bhavani, father Ramana, sister Priyanka; guitarist, fashion model, Allu Arjun fan; mentors T. Navya Chandrika, Dr. Murali Krishna Sir, Chaitanya Madam, Swamy Sir, Phani Sir, Vijay Sir).",
     identityLine,
-    "ZERO SYCOPHANCY & HONEST REALISM: NEVER blindly agree ('Yes you're right', 'All correct!') or hand out fake compliments. If code, logic, math, hairstyle, or an answer is wrong or weak, directly and honestly point out the exact flaw and explain why.",
+    "VOICE-ONLY HONESTY: You are a voice and Pathfinder dashboard assistant with no live webcam or camera feed. Never claim or pretend to see through a camera.",
+    "ZERO SYCOPHANCY & HONEST REALISM: NEVER blindly agree ('Yes you're right', 'All correct!') or hand out fake compliments. If code, logic, math, or an answer is wrong or weak, directly and honestly point out the exact flaw and explain why.",
     "UNRESTRICTED GENERAL KNOWLEDGE: You have full world knowledge (history, science, coding, placements, DSA, AI/ML, projects, daily chat). Answer directly and accurately without refusing general questions.",
-    "STYLE: Understand English, Telugu, Tenglish, and Hindi natively, but ALWAYS reply in clear, natural spoken ENGLISH (1-3 concise sentences for casual talk; clear short bullets for plans/code) so your male Puck voice reads it smoothly. Never call yourself co-pilot.",
-    camRule,
+    "STYLE: Understand English, Telugu, Tenglish, and Hindi natively, but ALWAYS reply in clear, natural spoken ENGLISH (1-3 concise sentences for casual talk; clear short bullets for plans/code) so your male Puck voice reads it smoothly. Never output raw markdown separators like '|||' or HTML comments. Never call yourself co-pilot.",
+    tabsLine,
+    profileLine,
     tabNote,
     cardNote,
   ]
@@ -82,13 +87,9 @@ export async function POST(request) {
     }
 
     const pageContext = body?.page_context && typeof body.page_context === "object" ? body.page_context : {};
+    const profile = body?.profile && typeof body.profile === "object" ? body.profile : {};
     const honorific = resolveHonorific(pageContext);
     const activeTab = String(body?.active_tab || pageContext.activeTab || "overview");
-    const liveFrameB64 =
-      typeof body?.live_frame_base64 === "string" && body.live_frame_base64.length > 200
-        ? body.live_frame_base64.replace(/^data:image\/\w+;base64,/, "")
-        : null;
-    const cameraActive = Boolean(body?.camera_active && liveFrameB64);
 
     const history = Array.isArray(body?.history) ? body.history.slice(-8) : [];
     const isPureHi = /^\s*(hi+|hello+|hey+|hai+|hlo+|yo+|namaste|good\s*(?:morning|afternoon|evening)|namaskaram)(?:\s+(?:das|boss|bro|baby|babe|buddy|dude|man|there|ai|sir|madam))?[\s!.,?]*$/i.test(
@@ -123,16 +124,12 @@ export async function POST(request) {
       });
     }
 
-    const userParts = [];
-    if (cameraActive && liveFrameB64) {
-      userParts.push({ inlineData: { mimeType: "image/jpeg", data: liveFrameB64 } });
-    }
-    userParts.push({ text: message });
+    const userParts = [{ text: message }];
     contents.push({ role: "user", parts: userParts });
 
     const preferredModel = (process.env.GEMINI_MODEL || "gemini-3.1-flash-lite").trim();
     const models = [...new Set([preferredModel, "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"])];
-    const systemText = buildSystemPrompt(honorific, activeTab, cameraActive, pageContext);
+    const systemText = buildSystemPrompt(honorific, activeTab, profile, pageContext);
 
     for (const apiKey of keys) {
       for (const model of models) {

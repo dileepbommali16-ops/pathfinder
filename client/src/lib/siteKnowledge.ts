@@ -31,17 +31,17 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
   },
   interview: {
     id: "interview",
-    title: "Interview & Project Defense Simulator",
-    purpose: "Unified technical interview & project defense (viva) simulator with live Gemini AI grading, voice read-aloud, microphone speech-to-text, and drill timer.",
+    title: "3. Live Coding & Viva Arena (Mock Interview & Project Defense)",
+    purpose: "Split-screen 11-language live coding compiler, voice complexity defense, Hiring Committee verdict engine, and Company Mock Interview / STAR Project Defense simulator.",
     widgets: [
+      "Split-Screen Live Coding & Voice Viva Arena: Have 3D DAS read problems aloud, run real code in 11 languages, defend time/space complexity via voice or text, and earn STRONG HIRE / HIRE verdicts.",
       "Track Switcher: Switch seamlessly between Company Hiring Rounds (Razorpay, Google, TCS, Amazon) and Project Defense & Viva (Architecture, Database & Scale, Security, Failure Modes).",
-      "Audio & Timer Controls: Listen to questions aloud via Text-to-Speech, speak answers via microphone, and track response speed.",
-      "Copyable STAR Benchmark Answers: Practice with senior-grade benchmark examples after evaluation.",
+      "Audio & Timer Controls: Listen to questions aloud via Puck TTS, speak answers via microphone, and track response speed.",
       "Multi-Vector AI Scorecard: Overall %, Technical Depth, Communication & Clarity, Problem Solving, Keyword Coverage, and Critical Feedback."
     ],
-    dataSource: "Real-world engineering interview and architecture defense questions graded live by Gemini AI.",
-    howToUse: "Choose Company Rounds or Project Defense & Viva, select a prompt, type or speak your answer, and click 'Evaluate My Answer' for honest AI scoring.",
-    limitations: "Focuses on high-frequency hiring & architecture defense questions; combine with deep project walkthroughs."
+    dataSource: "Real-world engineering coding problems, architecture defense prompts, and 11-language compiler execution graded live by Gemini AI.",
+    howToUse: "Click 'Run Code', explain complexity aloud or in text, and click 'Submit Code + Viva for Verdict', or practice Company Rounds & Project Defense below.",
+    limitations: "Focuses on high-frequency coding, hiring & architecture defense rounds; combine with deep project walkthroughs."
   },
   action: {
     id: "action",
@@ -97,31 +97,30 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
   },
   analytics: {
     id: "analytics",
-    title: "Cohort Analytics & Placement Benchmarks",
-    purpose: "Empirical historical analytics dashboard analyzing placement rates, salary packages, and academic correlations across 9 engineering departments.",
+    title: "5. Cohort & Roadmap (972 Verified Records + 6-Week Sprint)",
+    purpose: "Empirical historical placement analytics across 972 engineering records paired directly with your personalized 6-Week Strategic Placement Roadmap.",
     widgets: [
       "Department Filter & Year Selector (2024, 2025, 2026).",
-      "Placement Distribution Charts: Placed vs Unplaced ratios per branch.",
-      "Salary Package Rankings: Highest and average LPA across departments (CSM/AIML highest at 44.6 LPA, CSE at 44.0 LPA).",
-      "CGPA vs Placement Correlation Scatter: Demonstrates that CGPA >= 7.5 combined with practical internships maximizes clearance probability."
+      "Placement Distribution & Salary Package Rankings: Highest and average LPA across departments (CSM/AIML 44.6 LPA, CSE 44.0 LPA).",
+      "6-Week Strategic Placement Roadmap: Week-by-week interactive sprint deliverables covering DSA patterns, system design, core CS, and mock interviews."
     ],
-    dataSource: "Verified database of 972 historical student placement records (sample-placement-2024-2026.csv and data/placement_records.json).",
-    howToUse: "Compare your branch and CGPA bracket to historical placement cohorts to set realistic package targets and identify benchmark percentiles.",
-    limitations: "Historical cohort trends provide statistical baselines; macroeconomic hiring shifts between academic years may influence drive volumes."
+    dataSource: "Verified database of 972 historical student placement records paired with live personalized roadmap generation.",
+    howToUse: "Compare your branch and CGPA bracket to historical placement cohorts, then execute your 6-week roadmap milestones right below.",
+    limitations: "Historical cohort trends provide statistical baselines; combine benchmark analysis with weekly roadmap execution."
   },
   resume: {
     id: "resume",
-    title: "ATS Resume Studio",
-    purpose: "AI-powered resume evaluation engine that parses candidate CVs, scores them against ATS criteria, and provides line-by-line optimization tips.",
+    title: "2. JD & Resume Tailor (1-Click JD Matcher + ATS Scanner)",
+    purpose: "1-Click Job Description alignment engine that computes exact skill match %, adds missing keywords, generates Google X-Y-Z tailored bullets, exports 1-page ATS resumes, and audits uploaded PDF CVs.",
     widgets: [
-      "PDF Upload & Text Paste Area.",
-      "ATS Score Meter (0-100) with Strengths & Weaknesses breakdown.",
-      "Keyword Gap Matcher: Identifies high-frequency industry keywords missing from the resume.",
-      "Formatting & Layout Diagnostic: Highlights formatting traps (tables, graphics, unselectable fonts) that fail automated scanners."
+      "1-Click Company JD Matcher: Compare Amazon, Deloitte, Google, or custom pasted JDs against your live profile for % match and missing skills.",
+      "Auto-Tailored Google X-Y-Z Resume Copy & 1-Page ATS PDF Export.",
+      "3 Custom Technical Rounds Extracted from JD: One-click launch straight into Live Coding & Viva Arena.",
+      "PDF Upload & ATS Diagnostic Scanner: Identifies formatting traps and keyword gaps."
     ],
-    dataSource: "Gemini structured JSON analysis and regex keyword matching against verified job descriptions for software engineering roles.",
-    howToUse: "Upload your resume in PDF format. Review the keyword gaps and formatting tips. Update your bullet points with measurable impact metrics.",
-    limitations: "ATS scoring evaluates keyword and formatting hygiene; human interviewers will evaluate technical depth and personal communication during rounds."
+    dataSource: "Real-time skill extraction & match computation paired with Gemini structured ATS JSON analysis.",
+    howToUse: "Select or paste a target company JD, click 'Add to My Skills' or 'Hear DAS JD Verdict', export your 1-page tailored resume, or scan your PDF below.",
+    limitations: "ATS scoring evaluates keyword and formatting hygiene; human interviewers evaluate technical depth during live rounds."
   },
   branches: {
     id: "branches",

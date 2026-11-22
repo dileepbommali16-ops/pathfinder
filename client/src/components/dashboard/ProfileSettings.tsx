@@ -187,11 +187,11 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#ffffff]/30 bg-[#ffffff]/10 px-3 py-1 text-xs font-semibold text-[#ffffff]">
               <User className="h-3.5 w-3.5" />
-              <span>Step 1 · Single Source of Truth</span>
+              <span>Candidate Profile · Single Source of Truth</span>
             </div>
             <h1 className="mt-2 text-2xl font-black text-[#f8fafc]">Profile &amp; Candidate Settings</h1>
             <p className="mt-1 text-xs text-[#94a3b8]">
-              Step 1: Enter your real academic marks, backlogs, skills, and target role. Click Save below to recalculate and open 2. Dashboard.
+              Update your real academic marks, backlogs, skills, and target role. Click Save below to recalculate and open 1. Dashboard.
             </p>
           </div>
 
@@ -230,24 +230,24 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-cyan-200 block">
+              <span className="text-xs font-semibold text-[#94a3b8] block">
                 Verified Login Identity (Auto-Synced from Sign-In)
               </span>
               <div
                 id="settings-verified-identity"
-                className="flex items-center justify-between rounded-xl border border-cyan-400/30 bg-[#030a16]/70 px-3.5 py-2.5 text-xs text-[#f8fafc]"
+                className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc]"
               >
                 <div className="truncate">
-                  <span className="font-bold text-white">
+                  <span className="font-bold text-[#f8fafc]">
                     {canSelectBossMode
                       ? "👑 Bommali Dileep (Boss)"
                       : formData.fullName || "Signed-In Candidate"}
                   </span>
                   {resolvedEmail && (
-                    <span className="ml-2 text-[11px] text-cyan-300">· {resolvedEmail}</span>
+                    <span className="ml-2 text-[11px] text-[#94a3b8]">· {resolvedEmail}</span>
                   )}
                 </div>
-                <span className="shrink-0 rounded-md border border-cyan-400/35 bg-cyan-500/15 px-2 py-0.5 text-[10px] font-bold text-cyan-200">
+                <span className="shrink-0 rounded-md border border-[#2B2024] bg-[#2B2024] px-2 py-0.5 text-[10px] font-bold text-[#f8fafc]">
                   Locked from Login
                 </span>
               </div>

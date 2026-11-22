@@ -66,6 +66,7 @@ export const ARENA_CHALLENGES: ArenaChallenge[] = [
 interface LiveCodingInterviewArenaProps {
   profile: StudentProfileState;
   apiBase: string;
+  onAskCoach?: (query: string) => void;
   customChallenge?: {
     company: string;
     role: string;
@@ -78,6 +79,7 @@ interface LiveCodingInterviewArenaProps {
 export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> = ({
   profile,
   apiBase,
+  onAskCoach,
   customChallenge,
 }) => {
   const [selectedId, setSelectedId] = useState<string>(ARENA_CHALLENGES[0].id);
@@ -139,10 +141,15 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
   };
 
   const handleSpeakQuestionAloud = () => {
-    audioEngine.speakTextPuckOrLocal(
-      `${company} ${role} Technical Coding Round. ${question}`,
-      apiBase
+    const speechText = `${company} ${role} Technical Coding Round. ${question}`;
+    audioEngine.unlockAudio();
+    audioEngine.clearAudioQueue();
+    window.dispatchEvent(
+      new CustomEvent("das-interviewer-prompt", {
+        detail: { question: speechText, track: "arena" },
+      })
     );
+    void audioEngine.speakTextPuckOrLocal(speechText, apiBase);
   };
 
   const handleToggleVoiceViva = () => {
@@ -204,9 +211,8 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
         currentOut = res.out;
       }
 
-      const combinedCandidateAnswer = `${explanation.trim()}\n\nSubmitted ${language.toUpperCase()} Code:\n${code.trim()}\n\nLive Compiler Output (${
-        currentOk ? "SUCCESS" : "ERROR"
-      }):\n${currentOut}`;
+      const combinedCandidateAnswer = `${explanation.trim()}\n\nSubmitted ${language.toUpperCase()} Code:\n${code.trim()}\n\nLive Compiler Output (${currentOk ? "SUCCESS" : "ERROR"
+        }):\n${currentOut}`;
 
       const resp = await fetch(`${apiBase}/api/ai/evaluate-interview`, {
         method: "POST",
@@ -257,10 +263,15 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
       };
       setVerdictResult(resultObj);
 
-      audioEngine.speakTextPuckOrLocal(
-        `Hiring Committee Verdict for ${company}: ${decision}, with an overall score of ${finalScore} out of 100. ${verdictText}`,
-        apiBase
+      const verdictSpeech = `Hiring Committee Verdict for ${company}: ${decision}, with an overall score of ${finalScore} out of 100. ${verdictText}`;
+      audioEngine.unlockAudio();
+      audioEngine.clearAudioQueue();
+      window.dispatchEvent(
+        new CustomEvent("das-interviewer-prompt", {
+          detail: { question: verdictSpeech, track: "verdict" },
+        })
       );
+      void audioEngine.speakTextPuckOrLocal(verdictSpeech, apiBase);
     } catch (err: any) {
       toast.error(`Evaluation error: ${err?.message || "Unable to grade right now"}`);
     } finally {
@@ -269,30 +280,47 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
   };
 
   return (
-    <div className="holo-glass-card rounded-3xl p-6 sm:p-8 space-y-6">
+    <div className="glass-depth-card rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 space-y-6">
       {/* Arena Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-cyan-400/20 pb-5">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-white/[0.08] pb-5">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/45 bg-cyan-500/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-cyan-200">
-            <Sparkles className="h-3.5 w-3.5 text-cyan-300" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#2B2024] bg-[#2B2024] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#f8fafc]">
+            <Sparkles className="h-3.5 w-3.5 text-[#f8fafc]" />
             <span>Live AI Coding &amp; Voice Viva Arena · 11 Languages + DAS Hologram</span>
           </div>
-          <h2 className="mt-2 text-xl sm:text-2xl font-black text-white">
+          <h2 className="mt-2 text-xl sm:text-2xl font-black text-[#f8fafc]">
             Split-Screen Technical Coding &amp; Voice Defense Arena
           </h2>
-          <p className="mt-1 text-xs sm:text-sm text-slate-300">
+          <p className="mt-1 text-xs sm:text-sm text-[#94a3b8]">
             Have DAS read the problem aloud, execute real code in 11 languages, and defend your time/space complexity via voice or text for a real Hiring Committee Verdict.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleSpeakQuestionAloud}
-          className="inline-flex items-center gap-2 rounded-xl border border-[#F23456]/60 bg-[#F23456]/25 px-4 py-2.5 text-xs font-bold text-white shadow-[0_0_20px_rgba(242,52,86,0.35)] hover:bg-[#F23456]/45 transition cursor-pointer"
-        >
-          <Volume2 className="h-4 w-4 text-white" />
-          <span>🔊 Have 3D DAS Agent Ask Problem Aloud</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {onAskCoach && (
+            <button
+              type="button"
+              onClick={() =>
+                onAskCoach(
+                  `For the coding challenge '${question}' (${company} ${role}), give me a concise intuition hint on the optimal algorithm and what time/space complexity trade-offs interviewers look for — without spoiling all the code.`
+                )
+              }
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3 py-2.5 text-xs font-semibold text-[#f8fafc] hover:bg-[#2B2024] transition cursor-pointer"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-[#f8fafc]" />
+              <span>Ask Coach about this</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSpeakQuestionAloud}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-[#2B2024] px-4 py-2.5 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 transition cursor-pointer"
+          >
+            <Volume2 className="h-4 w-4 text-[#f8fafc]" />
+            <span>🔊 Have 3D DAS Agent Ask Problem Aloud</span>
+          </button>
+        </div>
       </div>
 
       {/* Challenge Selector Pills */}
@@ -304,11 +332,10 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               key={ch.id}
               type="button"
               onClick={() => handleSelectChallenge(ch)}
-              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                active
-                  ? "border border-cyan-300 bg-cyan-500/25 text-white shadow-[0_0_16px_rgba(0,240,255,0.3)]"
-                  : "border border-cyan-400/20 bg-[#030a16]/60 text-slate-300 hover:border-cyan-400/50 hover:text-white"
-              }`}
+              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${active
+                ? "border border-white/25 bg-[#2B2024] text-[#f8fafc] shadow-sm"
+                : "border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-white/20 hover:text-[#f8fafc]"
+                }`}
             >
               {ch.company} · {ch.title}
             </button>
@@ -316,27 +343,27 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
         })}
       </div>
 
-      {/* Split Screen Grid: Left Viva & Problem | Center Translucent Window for 3D Face | Right Live Code Compiler */}
+      {/* Split Screen Grid: Left Viva & Problem | Right Live Code Compiler */}
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Left 5 cols: Problem Prompt + Spoken/Typed Complexity Viva */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-2xl border border-cyan-400/25 bg-[#030a16]/60 p-4 space-y-2.5">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="rounded-lg border border-[#F23456]/50 bg-[#F23456]/20 px-2.5 py-0.5 text-[11px] font-bold text-[#ff8da1]">
+              <span className="rounded-lg border border-white/15 bg-[#2B2024] px-2.5 py-0.5 text-[11px] font-bold text-[#f8fafc]">
                 {company} · {role}
               </span>
-              <span className="text-[11px] font-semibold text-cyan-300">
+              <span className="text-[11px] font-semibold text-[#94a3b8]">
                 Stage 1: Problem &amp; Complexity Viva
               </span>
             </div>
-            <p className="text-xs sm:text-sm font-semibold text-white leading-relaxed">
+            <p className="text-xs sm:text-sm font-semibold text-[#f8fafc] leading-relaxed">
               {question}
             </p>
             <div className="flex flex-wrap gap-1.5 pt-1">
               {expectedKeywords.map((kw) => (
                 <span
                   key={kw}
-                  className="rounded-md border border-cyan-400/25 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-200"
+                  className="rounded-md border border-white/15 bg-[#000000] px-2 py-0.5 text-[10px] font-semibold text-[#94a3b8]"
                 >
                   Target Concept: {kw}
                 </span>
@@ -345,22 +372,21 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
           </div>
 
           {/* Voice / Text Explanation Box */}
-          <div className="rounded-2xl border border-cyan-400/25 bg-[#030a16]/60 p-4 space-y-3">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-3">
             <div className="flex items-center justify-between">
               <label
                 htmlFor="arena-viva-explanation"
-                className="text-xs font-bold text-cyan-200"
+                className="text-xs font-bold text-[#f8fafc]"
               >
                 Your Complexity &amp; Architecture Explanation (Voice or Text)
               </label>
               <button
                 type="button"
                 onClick={handleToggleVoiceViva}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition cursor-pointer ${
-                  isListeningVoice
-                    ? "border border-[#F23456] bg-[#F23456] text-white animate-pulse"
-                    : "border border-cyan-400/35 bg-cyan-500/15 text-cyan-200 hover:bg-cyan-500/25"
-                }`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition cursor-pointer ${isListeningVoice
+                  ? "border border-white/40 bg-[#2B2024] text-[#f8fafc] animate-pulse"
+                  : "border border-white/15 bg-[#2B2024] text-[#f8fafc] hover:brightness-110"
+                  }`}
               >
                 {isListeningVoice ? (
                   <>
@@ -383,58 +409,57 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               value={explanation}
               onChange={(e) => setExplanation(e.target.value)}
               placeholder="Explain your approach, time complexity O(...), space complexity O(...), and edge cases..."
-              className="w-full rounded-xl border border-cyan-400/25 bg-black/50 p-3 text-xs text-white outline-none focus:border-cyan-300 leading-relaxed"
+              className="w-full rounded-xl border border-white/[0.08] bg-[#000000] p-3 text-xs text-[#f8fafc] outline-none focus:border-white/35 leading-relaxed"
             />
           </div>
 
           {/* Live Hiring Committee Verdict Card */}
           {verdictResult && (
-            <div className="rounded-2xl border border-cyan-400/40 bg-[#030a16]/80 p-4 space-y-3 shadow-[0_0_25px_rgba(0,240,255,0.15)]">
+            <div className="rounded-2xl border border-white/15 bg-[#000000] p-4 space-y-3 shadow-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-4 w-4 text-amber-400" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-cyan-200">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
                     Live Hiring Verdict
                   </span>
                 </div>
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-black border ${
-                    verdictResult.decision === "STRONG HIRE" || verdictResult.decision === "HIRE"
-                      ? "border-emerald-400 bg-emerald-500/25 text-emerald-200"
-                      : "border-[#F23456] bg-[#F23456]/25 text-[#ff8da1]"
-                  }`}
+                  className={`rounded-full px-3 py-1 text-xs font-black border ${verdictResult.decision === "STRONG HIRE" || verdictResult.decision === "HIRE"
+                    ? "border-emerald-400/60 bg-emerald-500/20 text-emerald-200"
+                    : "border-white/20 bg-[#2B2024] text-[#f8fafc]"
+                    }`}
                 >
                   {verdictResult.decision} · {verdictResult.overallScore}/100
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl border border-cyan-400/20 bg-black/40 p-2.5">
-                  <span className="text-[10px] text-slate-400 block">Compiled Code Score</span>
-                  <span className="text-base font-black text-cyan-300">
+                <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-2.5">
+                  <span className="text-[10px] text-[#94a3b8] block">Compiled Code Score</span>
+                  <span className="text-base font-black text-[#f8fafc]">
                     {verdictResult.codeScore}/100
                   </span>
                 </div>
-                <div className="rounded-xl border border-cyan-400/20 bg-black/40 p-2.5">
-                  <span className="text-[10px] text-slate-400 block">Viva Explanation Score</span>
-                  <span className="text-base font-black text-white">
+                <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-2.5">
+                  <span className="text-[10px] text-[#94a3b8] block">Viva Explanation Score</span>
+                  <span className="text-base font-black text-[#f8fafc]">
                     {verdictResult.vivaScore}/100
                   </span>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-200 leading-relaxed">{verdictResult.verdictText}</p>
+              <p className="text-xs text-[#94a3b8] leading-relaxed">{verdictResult.verdictText}</p>
             </div>
           )}
         </div>
 
         {/* Right 7 cols: Built-In 11-Language Live Code Editor & Compiler Terminal */}
         <div className="lg:col-span-7 space-y-3">
-          <div className="rounded-2xl border border-cyan-400/25 bg-[#030a16]/65 p-4 space-y-3">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Code2 className="h-4 w-4 text-cyan-300" />
-                <label htmlFor="arena-language-select" className="text-xs font-bold text-white">
+                <Code2 className="h-4 w-4 text-[#f8fafc]" />
+                <label htmlFor="arena-language-select" className="text-xs font-bold text-[#f8fafc]">
                   Stage 2: Live 11-Language Compiler
                 </label>
                 <select
@@ -447,10 +472,10 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                     const found = SUPPORTED_LANGUAGES.find((l) => l.id === nextLang);
                     if (found) setCode(found.starter);
                   }}
-                  className="rounded-lg border border-cyan-400/35 bg-[#030a16] px-2.5 py-1 text-xs font-bold uppercase text-cyan-200 outline-none cursor-pointer"
+                  className="rounded-lg border border-white/15 bg-[#000000] px-2.5 py-1 text-xs font-bold uppercase text-[#f8fafc] outline-none cursor-pointer"
                 >
                   {SUPPORTED_LANGUAGES.map((l) => (
-                    <option key={l.id} value={l.id} className="bg-[#030a16] text-white">
+                    <option key={l.id} value={l.id} className="bg-[#000000] text-[#f8fafc]">
                       {l.label}
                     </option>
                   ))}
@@ -462,7 +487,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   type="button"
                   disabled={isCompiling}
                   onClick={() => void runCodeOnBackend()}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-400/45 bg-cyan-500/20 px-3.5 py-1.5 text-xs font-bold text-cyan-100 hover:bg-cyan-500/35 disabled:opacity-50 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3.5 py-1.5 text-xs font-bold text-[#f8fafc] hover:bg-[#2B2024] disabled:opacity-50 transition cursor-pointer"
                 >
                   {isCompiling ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -476,7 +501,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   type="button"
                   disabled={isEvaluating || isCompiling}
                   onClick={() => void handleEvaluateCodingAndViva()}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#F23456] bg-[#F23456]/30 px-4 py-1.5 text-xs font-bold text-white shadow-[0_0_18px_rgba(242,52,86,0.4)] hover:bg-[#F23456]/50 disabled:opacity-50 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-[#2B2024] px-4 py-1.5 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 disabled:opacity-50 transition cursor-pointer"
                 >
                   {isEvaluating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -496,21 +521,20 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               spellCheck={false}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="w-full rounded-xl border border-cyan-400/25 bg-black/60 p-3.5 font-mono text-xs text-cyan-100 outline-none focus:border-cyan-300 leading-relaxed"
+              className="w-full rounded-xl border border-white/[0.08] bg-[#000000] p-3.5 font-mono text-xs text-[#f8fafc] outline-none focus:border-white/35 leading-relaxed"
             />
 
             {/* Live Execution Output Terminal */}
-            <div className="rounded-xl border border-cyan-400/20 bg-black/70 p-3 space-y-1.5">
+            <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3 space-y-1.5">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="font-bold text-cyan-300 flex items-center gap-1.5">
+                <span className="font-bold text-[#f8fafc] flex items-center gap-1.5">
                   <Terminal className="h-3.5 w-3.5" />
                   <span>Live Execution Terminal Output</span>
                 </span>
                 {compileSuccess !== null && (
                   <span
-                    className={`inline-flex items-center gap-1 font-bold ${
-                      compileSuccess ? "text-emerald-300" : "text-[#ff8da1]"
-                    }`}
+                    className={`inline-flex items-center gap-1 font-bold ${compileSuccess ? "text-emerald-300" : "text-amber-300"
+                      }`}
                   >
                     {compileSuccess ? (
                       <>
@@ -526,7 +550,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   </span>
                 )}
               </div>
-              <pre className="text-xs font-mono text-slate-200 whitespace-pre-wrap max-h-32 overflow-y-auto">
+              <pre className="text-xs font-mono text-[#94a3b8] whitespace-pre-wrap max-h-32 overflow-y-auto">
                 {compilerOutput || "Click 'Run Code' or 'Submit Code + Viva for Verdict' to execute live..."}
               </pre>
             </div>

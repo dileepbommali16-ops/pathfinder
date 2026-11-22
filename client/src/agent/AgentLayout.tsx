@@ -30,6 +30,34 @@ function isPureHiGreeting(text: string): boolean {
   );
 }
 
+function cleanHudReplyText(raw: string): string {
+  if (!raw) return "";
+  if (typeof window !== "undefined") {
+    const actionRegex = /<!--\s*ACTION:\s*(\{[\s\S]*?\})\s*-->/g;
+    let m: RegExpExecArray | null = null;
+    while ((m = actionRegex.exec(raw)) !== null) {
+      try {
+        const parsed = JSON.parse(m[1]);
+        if (parsed?.type === "NAVIGATE_TAB" && parsed?.target) {
+          window.dispatchEvent(new CustomEvent("das-navigate", { detail: { tab: parsed.target } }));
+        } else if (parsed?.type === "HIGHLIGHT_PROJECT" && parsed?.target) {
+          window.dispatchEvent(new CustomEvent("das-highlight-project", { detail: { target: parsed.target } }));
+        } else if (parsed?.type === "OPEN_MODAL" && parsed?.target === "one_page_resume") {
+          window.dispatchEvent(new CustomEvent("das-open-resume-builder"));
+        }
+      } catch {
+        // Ignore malformed action tag
+      }
+    }
+  }
+  return raw
+    .split("|||")[0]
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/[*_`~#>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function getExactHiReply(roleKey: HonorificKey, greetCount: number): string {
   if (roleKey === "stranger") {
     return greetCount <= 0
@@ -276,19 +304,19 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           ? localStorage.getItem("pathfinder_profile_draft") ||
             localStorage.getItem("pathfinder_profile")
           : null;
-      parsedProfile = profileJson ? JSON.parse(profileJson) : {};
+      const parsedProfile = profileJson ? JSON.parse(profileJson) : {};
       const payload = {
         message: query,
         history: priorHistory,
         profile: {
-          cgpa: parsedProfile.cgpa ?? 7.8,
-          backlogs: parsedProfile.backlogs ?? parsedProfile.activeBacklogs ?? 0,
-          internships: parsedProfile.internships ?? 1,
-          communication: parsedProfile.communication ?? 6,
-          coding: parsedProfile.coding ?? 6,
-          target_role: parsedProfile.targetRole ?? "Software Engineer",
+          cgpa: ctx.cgpa ?? parsedProfile.cgpa ?? 7.8,
+          backlogs: ctx.backlogs ?? parsedProfile.backlogs ?? parsedProfile.activeBacklogs ?? 0,
+          internships: ctx.internships ?? parsedProfile.internships ?? 1,
+          communication: ctx.communicationRating ?? parsedProfile.communication ?? 6,
+          coding: ctx.codingConfidence ?? parsedProfile.coding ?? 6,
+          target_role: ctx.targetRole ?? parsedProfile.targetRole ?? "Software Engineer",
           target_tier: parsedProfile.targetTier ?? "Product",
-          branch: parsedProfile.branch ?? "CSE",
+          branch: ctx.candidateBranch ?? ctx.branch ?? parsedProfile.branch ?? "CSE",
         },
         active_tab: ctx.activeTab || "overview",
         page_context: {
@@ -333,12 +361,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const endpoints = dasSocket.isSocketConnected
         ? [
-            { url: `${API_BASE}/api/chat`, timeoutMs: 6500 },
-            ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 7500 }] : []),
+            { url: `${API_BASE}/api/chat`, timeoutMs: 12000 },
+            ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 11000 }] : []),
           ]
         : [
-            ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 7500 }] : []),
-            { url: `${API_BASE}/api/chat`, timeoutMs: 6500 },
+            ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 11000 }] : []),
+            { url: `${API_BASE}/api/chat`, timeoutMs: 12000 },
           ];
 
       for (const ep of endpoints) {
@@ -494,23 +522,24 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const deliverRestReply = async () => {
       const replyText = await requestRestCoachReply(queryText, ctx, priorHistory);
+      const cleanReply = cleanHudReplyText(replyText);
       if (
         !settled &&
         askCoachNonceRef.current === nonce &&
-        replyText &&
+        cleanReply &&
         !dasSocket.isAgentSpeaking &&
         !audioEngine.isSpeaking()
       ) {
         cleanup();
         chatHistoryRef.current = [
           ...chatHistoryRef.current,
-          { role: "assistant" as const, content: replyText },
+          { role: "assistant" as const, content: cleanReply },
         ].slice(-12);
-        setTranscript(replyText);
+        setTranscript(cleanReply);
         restTtsAbortRef.current?.abort();
         const ttsAc = new AbortController();
         restTtsAbortRef.current = ttsAc;
-        void audioEngine.speakTextPuckOrLocal(replyText, API_BASE, {
+        void audioEngine.speakTextPuckOrLocal(cleanReply, API_BASE, {
           signal: ttsAc.signal,
           shouldContinue: () =>
             askCoachNonceRef.current === nonce &&
@@ -527,7 +556,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       tryExecuteClientAutomationIntent(queryText, navigate);
       dasSocket.sendTextCommand(queryText);
     }
-    const fallbackDelayMs = wasSocketReady ? 3800 : 1200;
+    const fallbackDelayMs = wasSocketReady ? 7500 : 1800;
     timerId = window.setTimeout(() => {
       if (
         settled ||
@@ -569,7 +598,23 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       const detail = (e as CustomEvent)?.detail || {};
       const question = typeof detail.question === "string" ? detail.question.trim() : "";
       if (!question) return;
-      const trackLabel = detail.track === "defense" ? "Project Defense Prompt" : "Interviewer Question";
+      askCoachUnbindRef.current?.();
+      askCoachUnbindRef.current = null;
+      restTtsAbortRef.current?.abort();
+      restTtsAbortRef.current = null;
+      askCoachNonceRef.current += 1;
+
+      const track = String(detail.track || "").toLowerCase();
+      const trackLabel =
+        track === "defense"
+          ? "Project Defense Prompt"
+          : track === "jd"
+            ? "JD Match Verdict"
+            : track === "arena"
+              ? "Live Coding Arena"
+              : track === "verdict"
+                ? "Hiring Committee Verdict"
+                : "Interviewer Prompt";
       setUserTranscript(`🎤 ${trackLabel}`);
       setTranscript(question);
     };
