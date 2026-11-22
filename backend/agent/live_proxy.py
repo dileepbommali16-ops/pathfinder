@@ -423,9 +423,9 @@ async def _lookup_factual_info_async(query: str) -> dict:
     except Exception as wiki_err:
         live_logger.debug(f"[Factual Lookup] Wikipedia lookup skipped: {wiki_err}")
 
-    # 2. Fallback to Gemini + Google Search grounding (capped at 5s so replies stay snappy)
+    # 2. Fallback to Gemini + Google Search grounding (SDK requires deadline >= 10000ms)
     for key in get_gemini_key_candidates():
-        client = genai.Client(http_options={"api_version": "v1beta", "timeout": 5500}, api_key=key)
+        client = genai.Client(http_options={"api_version": "v1beta", "timeout": 12000}, api_key=key)
         for fallback_model in ("gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"):
             try:
                 resp = await asyncio.wait_for(
@@ -1014,7 +1014,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     tx_pkt["client_turn_id"] = client_turn_id
                 await websocket.send_json(tx_pkt)
 
-                tts_res = await synthesize_puck_pcm(reply_text)
+                tts_res = await synthesize_puck_pcm(reply_text, prefer_unary=True)
                 if (
                     tts_res
                     and tts_res.get("pcm_base64")
@@ -1103,7 +1103,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     "text": reply_text,
                     "turn_id": this_turn,
                 })
-                tts_res = await synthesize_puck_pcm(reply_text)
+                tts_res = await synthesize_puck_pcm(reply_text, prefer_unary=True)
                 if (
                     tts_res
                     and tts_res.get("pcm_base64")
@@ -1280,7 +1280,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     await close_live_session(active_sess)
                     if partial_txt and len(partial_txt) >= 12:
                         from backend.routers.voice_routes import synthesize_puck_pcm
-                        tts_res = await synthesize_puck_pcm(partial_txt)
+                        tts_res = await synthesize_puck_pcm(partial_txt, prefer_unary=True)
                         rescue_turn = max(turn_id, completed_turn_id) + 1
                         if tts_res and tts_res.get("pcm_base64") and websocket.client_state != WebSocketState.DISCONNECTED:
                             await _send_chunked_pcm_b64(

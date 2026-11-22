@@ -130,7 +130,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
     from backend.agent.puck_voice import get_puck_speech_config
 
     for key in keys:
-        client = genai.Client(http_options={"api_version": "v1beta", "timeout": 6000}, api_key=key)
+        client = genai.Client(http_options={"api_version": "v1beta", "timeout": 12000}, api_key=key)
         for tts_model in ("gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"):
             try:
                 cfg = types.GenerateContentConfig(
@@ -145,7 +145,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                         contents=text,
                         config=cfg,
                     ),
-                    timeout=5.5,
+                    timeout=8.0,
                 )
                 pcm_chunks = bytearray()
                 sample_rate = 24000
@@ -252,7 +252,7 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                             ):
                                 break
 
-                await asyncio.wait_for(_run_live(), timeout=4.5)
+                await asyncio.wait_for(_run_live(), timeout=3.8)
                 raw_pcm = bytes(pcm_buf)
                 _, peak = _chunk_rms_and_peak_int16(raw_pcm)
                 if len(raw_pcm) >= 9600 and peak >= 250:
@@ -263,6 +263,7 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                             "sample_rate": 24000,
                             "voice": "Puck",
                         }
+                _LIVE_TTS_COOLDOWN_UNTIL = time.monotonic() + 25.0
                 logger.warning(
                     "[Voice TTS Live Puck] %s returned incomplete audio (bytes=%d, peak=%d); falling back to unary Puck TTS",
                     LIVE_MODEL,
@@ -307,13 +308,17 @@ def _store_tts_cache(cache_key: str, synthesized: Dict[str, Any]) -> None:
         _TTS_PCM_CACHE.popitem(last=False)
 
 
-async def _synthesize_and_cache(cache_key: str, text: str) -> Optional[Dict[str, Any]]:
+async def _synthesize_and_cache(cache_key: str, text: str, prefer_unary: bool = False) -> Optional[Dict[str, Any]]:
     try:
         async with _get_tts_semaphore():
             if cache_key in _TTS_PCM_CACHE:
                 _TTS_PCM_CACHE.move_to_end(cache_key)
                 return _TTS_PCM_CACHE[cache_key]
-            synthesized = await _synthesize_puck_via_38_live_unlocked(text)
+            if prefer_unary:
+                from backend.config.key_resolver import get_gemini_key_candidates
+                synthesized = await _synthesize_puck_via_38_unary_fallback(text, get_gemini_key_candidates())
+            else:
+                synthesized = await _synthesize_puck_via_38_live_unlocked(text)
             if synthesized:
                 _store_tts_cache(cache_key, synthesized)
             return synthesized
@@ -321,7 +326,7 @@ async def _synthesize_and_cache(cache_key: str, text: str) -> Optional[Dict[str,
         _TTS_INFLIGHT.pop(cache_key, None)
 
 
-async def synthesize_puck_pcm(text: str) -> Optional[Dict[str, Any]]:
+async def synthesize_puck_pcm(text: str, prefer_unary: bool = False) -> Optional[Dict[str, Any]]:
     """Shared cached/inflight-deduplicated 24kHz Puck PCM synthesis helper for REST TTS and WebSocket fallback."""
     cleaned = (text or "").strip()[:900]
     if not cleaned:
@@ -334,13 +339,13 @@ async def synthesize_puck_pcm(text: str) -> Optional[Dict[str, Any]]:
     task = _TTS_INFLIGHT.get(cache_key)
     joined_inflight = task is not None and not task.done()
     if not joined_inflight:
-        task = asyncio.create_task(_synthesize_and_cache(cache_key, cleaned))
+        task = asyncio.create_task(_synthesize_and_cache(cache_key, cleaned, prefer_unary=prefer_unary))
         _TTS_INFLIGHT[cache_key] = task
 
     try:
-        synthesized = await asyncio.wait_for(asyncio.shield(task), timeout=8.5)
+        synthesized = await asyncio.wait_for(asyncio.shield(task), timeout=11.0)
     except asyncio.TimeoutError:
-        logger.warning("[Voice TTS] timed out waiting 8.5s for Puck synthesis")
+        logger.warning("[Voice TTS] timed out waiting 11.0s for Puck synthesis")
         return None
     if synthesized:
         return {"cached": joined_inflight, **synthesized}
