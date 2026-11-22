@@ -61,16 +61,16 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
           onClose();
         }
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto cursor-pointer"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto cursor-pointer print:static print:p-0 print:bg-white"
     >
       {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-4xl rounded-3xl border border-white/10 bg-[#000000] shadow-[0_16px_64px_rgba(0,0,0,0.85)] overflow-hidden my-8 cursor-default"
+        className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl border border-white/10 bg-[#000000] shadow-[0_16px_64px_rgba(0,0,0,0.85)] overflow-hidden my-auto cursor-default print:max-h-none print:my-0 print:border-0 print:shadow-none"
       >
         
-        {/* Top Controls Bar (Sticky, Hidden during Print) */}
-        <div className="print:hidden sticky top-0 z-40 flex items-center justify-between border-b border-white/[0.08] bg-[#000000]/95 backdrop-blur-xl px-4 sm:px-6 py-3.5 shadow-md">
+        {/* Top Controls Bar (Pinned, Hidden during Print) */}
+        <div className="print:hidden shrink-0 z-40 flex items-center justify-between border-b border-white/[0.08] bg-[#000000]/95 backdrop-blur-xl px-4 sm:px-6 py-3.5 shadow-md">
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
@@ -107,7 +107,7 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
         </div>
 
         {/* Resume Sheet Preview (Prints as clean white page) */}
-        <div className="p-4 sm:p-8 flex justify-center bg-black/60">
+        <div className="overflow-y-auto flex-1 p-4 sm:p-8 flex justify-center items-start bg-black/60 print:overflow-visible print:p-0 print:bg-white">
           <div
             id="printable-ats-resume"
             className="w-full max-w-[800px] bg-white text-zinc-900 p-8 sm:p-12 shadow-2xl rounded-sm font-sans text-xs leading-relaxed print:shadow-none print:p-0 print:m-0 print:w-full"
