@@ -358,11 +358,11 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
       const valleyClose =
         activeSpeech && localSyllableAvg.current > 0.085 && fastEnv.current < localSyllableAvg.current * 0.68
           ? THREE.MathUtils.clamp(
-              (localSyllableAvg.current * 0.68 - fastEnv.current) /
-                Math.max(0.065, localSyllableAvg.current * 0.50),
-              0,
-              0.75
-            )
+            (localSyllableAvg.current * 0.68 - fastEnv.current) /
+            Math.max(0.065, localSyllableAvg.current * 0.50),
+            0,
+            0.75
+          )
           : 0;
 
       const roundW = activeSpeech
