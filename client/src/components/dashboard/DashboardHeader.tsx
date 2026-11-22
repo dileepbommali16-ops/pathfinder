@@ -39,24 +39,22 @@ interface DashboardHeaderProps {
 }
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string }[] = [
-  { id: "profile", label: "Profile / Settings", icon: User, badge: "Input" },
-  { id: "overview", label: "Dashboard", icon: Target },
-  { id: "skills", label: "6-Week Roadmap", icon: Compass, badge: "Sprint" },
-  { id: "projects", label: "Project Blueprints", icon: Lightbulb },
-  { id: "resume", label: "ATS Resume Studio", icon: FileText },
-  { id: "interview", label: "Interview & Defense", icon: Mic, badge: "Live" },
-  { id: "analytics", label: "Cohort Analytics", icon: TrendingUp, badge: "972" },
-  { id: "branches", label: "Branches and Courses", icon: GraduationCap, badge: "Dept" },
+  { id: "overview", label: "Dashboard", icon: Target, badge: "Live" },
+  { id: "resume", label: "JD & Resume Tailor", icon: FileText, badge: "1-Click JD" },
+  { id: "interview", label: "Live Coding & Viva Arena", icon: Mic, badge: "11-Lang AI" },
+  { id: "projects", label: "Project Blueprints", icon: Lightbulb, badge: "28" },
+  { id: "analytics", label: "Cohort & Roadmap", icon: TrendingUp, badge: "972" },
+  { id: "profile", label: "Profile / Settings", icon: User },
 ];
 
 const UNIFIED_BLACK_BROWN_THEME = {
-  activeBg: "bg-[#2B2024]",
+  activeBg: "bg-[#06182c]/80",
   text: "text-[#f8fafc] font-semibold",
-  icon: "text-[#f8fafc]",
-  border: "border-[#2B2024]",
-  glow: "shadow-[0_0_16px_rgba(43,32,36,0.75)]",
-  badge: "bg-[#000000] text-[#f8fafc] border-[#2B2024]",
-  indicator: "from-[#000000] via-[#2B2024] to-[#000000]"
+  icon: "text-[#00F0FF]",
+  border: "border-[#F23456]/70",
+  glow: "shadow-[0_0_18px_rgba(242,52,86,0.38)]",
+  badge: "bg-[#F23456]/25 text-[#ff8da1] border-[#F23456]/50",
+  indicator: "from-[#00F0FF] via-[#F23456] to-[#00F0FF]"
 };
 
 const TAB_THEMES: Record<TabId, typeof UNIFIED_BLACK_BROWN_THEME> = {

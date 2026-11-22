@@ -230,15 +230,27 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <label htmlFor="settings-full-name" className="text-xs font-semibold text-[#94a3b8]">Candidate Full Name</label>
-              <input
-                type="text"
-                id="settings-full-name"
-                name="fullName"
-                value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
-              />
+              <span className="text-xs font-semibold text-cyan-200 block">
+                Verified Login Identity (Auto-Synced from Sign-In)
+              </span>
+              <div
+                id="settings-verified-identity"
+                className="flex items-center justify-between rounded-xl border border-cyan-400/30 bg-[#030a16]/70 px-3.5 py-2.5 text-xs text-[#f8fafc]"
+              >
+                <div className="truncate">
+                  <span className="font-bold text-white">
+                    {canSelectBossMode
+                      ? "👑 Bommali Dileep (Boss)"
+                      : formData.fullName || "Signed-In Candidate"}
+                  </span>
+                  {resolvedEmail && (
+                    <span className="ml-2 text-[11px] text-cyan-300">· {resolvedEmail}</span>
+                  )}
+                </div>
+                <span className="shrink-0 rounded-md border border-cyan-400/35 bg-cyan-500/15 px-2 py-0.5 text-[10px] font-bold text-cyan-200">
+                  Locked from Login
+                </span>
+              </div>
             </div>
 
             <div className="space-y-1">

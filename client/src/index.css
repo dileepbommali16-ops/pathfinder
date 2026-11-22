@@ -289,21 +289,28 @@
 }
 
 /* Performant Layered 3D Depth & Elevation Tokens (60fps, WCAG AA contrast) */
-.glass-depth-card {
-  background: rgba(6, 6, 8, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+.glass-depth-card,
+.holo-glass-card {
+  background: rgba(3, 10, 22, 0.42) !important;
+  border: 1px solid rgba(0, 240, 255, 0.22) !important;
+  box-shadow: 0 10px 32px -10px rgba(0, 0, 0, 0.72), 0 0 20px rgba(0, 240, 255, 0.05), inset 0 1px 0 0 rgba(0, 240, 255, 0.12);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease;
   will-change: transform;
 }
 
-/* Soft translucent obsidian card surface on dashboard slides & header pills so zero navy #11131c remains */
+.holo-glass-card:hover {
+  border-color: rgba(242, 52, 86, 0.48) !important;
+  box-shadow: 0 14px 36px -10px rgba(0, 0, 0, 0.8), 0 0 24px rgba(242, 52, 86, 0.14), inset 0 1px 0 0 rgba(0, 240, 255, 0.18);
+}
+
+/* Smoked Hologram Glass Card Surfaces across ALL slides so 3D Cyan Face + Red Eyes highlight crisply */
 .pathfinder-dashboard header [class*="bg-[#11131c]"],
 .pathfinder-dashboard header [class*="bg-[#161926]"],
-.pathfinder-dashboard header [class*="bg-[#0a0b10]"] {
-  background-color: rgba(0, 0, 0, 0.72) !important;
+.pathfinder-dashboard header [class*="bg-[#0a0b10]"],
+.pathfinder-dashboard header [class*="bg-[#000000]"] {
+  background-color: rgba(3, 10, 22, 0.58) !important;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -315,10 +322,27 @@
 .pathfinder-dashboard main > div [class*="bg-[#0a0b10]"],
 .pathfinder-dashboard main > div [class*="bg-[#0F172A]"],
 .pathfinder-dashboard main > div [class*="bg-[#0f172a]"],
-.pathfinder-dashboard main > div [class*="bg-[#060608]"] {
-  background-color: rgba(0, 0, 0, 0.42) !important;
-  backdrop-filter: blur(2px) !important;
-  -webkit-backdrop-filter: blur(2px) !important;
+.pathfinder-dashboard main > div [class*="bg-[#060608]"],
+.pathfinder-dashboard main > div [class*="bg-black"] {
+  background-color: rgba(3, 10, 22, 0.42) !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+}
+
+.pathfinder-dashboard main > div [class*="bg-[#2B2024]"] {
+  background-color: rgba(8, 24, 44, 0.52) !important;
+}
+
+.pathfinder-dashboard main > div [class*="border-[#2B2024]"],
+.pathfinder-dashboard main > div [class*="border-white"],
+.pathfinder-dashboard main > div [class*="border-[#000000]"],
+.pathfinder-dashboard header [class*="border-[#2B2024]"] {
+  border-color: rgba(0, 240, 255, 0.22) !important;
+}
+
+.pathfinder-dashboard main > div [class*="rounded-3xl"]:hover,
+.pathfinder-dashboard main > div [class*="rounded-2xl"]:hover {
+  border-color: rgba(242, 52, 86, 0.45) !important;
 }
 
 .pathfinder-dashboard main .backdrop-blur-2xl:not(.fixed),

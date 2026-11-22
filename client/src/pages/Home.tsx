@@ -22,6 +22,8 @@ import { LiveSkillVerifier } from "@/components/dashboard/LiveSkillVerifier";
 import { OnePageResumeModal } from "@/components/dashboard/OnePageResumeModal";
 import { CompanyPlacementRadar } from "@/components/dashboard/CompanyPlacementRadar";
 import { MockInterviewConsole } from "@/components/dashboard/MockInterviewConsole";
+import { JDCustomTailor } from "@/components/dashboard/JDCustomTailor";
+import { LiveCodingInterviewArena } from "@/components/dashboard/LiveCodingInterviewArena";
 import {
   StudentProfileState,
   DEFAULT_STUDENT_PROFILE,
@@ -91,7 +93,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       if (t === "missions") return "skills";
       if (t === "action") return "overview";
     }
-    return "profile";
+    return "overview";
   });
 
   const [focusOnDas, setFocusOnDas] = useState(false);
@@ -366,6 +368,13 @@ export default function Home({ initialTab }: HomeProps = {}) {
   });
 
   const [showOnePageResume, setShowOnePageResume] = useState<boolean>(false);
+  const [arenaCustomChallenge, setArenaCustomChallenge] = useState<{
+    company: string;
+    role: string;
+    question: string;
+    starterCode: string;
+    expectedKeywords: string[];
+  } | null>(null);
   const [interviewCompany, setInterviewCompany] = useState<string>("Razorpay / Fintech");
   const [interviewRole, setInterviewRole] = useState<string>("Full Stack Engineer");
   const [interviewMode, setInterviewMode] = useState<"company" | "defense">(() => {
@@ -872,7 +881,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       };
       setProfile(demoProfile);
       setIsDemoProfile(true);
-      setActiveTab("profile");
+      setActiveTab("overview");
       setIsAuthenticated(true);
       fetchPrediction(demoProfile);
       return;
@@ -899,7 +908,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
           };
           setProfile(hydrated);
           setIsDemoProfile(false);
-          setActiveTab("profile");
+          setActiveTab("overview");
           setIsAuthenticated(true);
           fetchPrediction(hydrated);
         } else {
@@ -983,7 +992,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
     }
 
     if (!hasLocalMatch) {
-      // First-time Sign In without saved profile: open 1. Profile / Settings first
+      // First-time Sign In without saved profile: open 1. Dashboard directly with login identity pre-locked
       const initialUserProfile: StudentProfileState = {
         ...DEFAULT_STUDENT_PROFILE,
         fullName: pickCandidateFullName(user.username) || user.username,
@@ -995,9 +1004,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
       };
       setProfile(initialUserProfile);
       setIsDemoProfile(true);
-      setActiveTab("profile");
+      setActiveTab("overview");
       setIsAuthenticated(true);
-      toast.info("Step 1: Confirm your academic details below and click Save to build your Dashboard.");
     }
   };
 
@@ -2033,59 +2041,72 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-16"
+                className="space-y-10 sm:space-y-14"
               >
+                {/* Center 3D Hologram Agent Showcase Window: Flanks the 3D Cyan Face + Crimson Eyes with clear center lane */}
+                <div className="grid gap-4 lg:grid-cols-12 items-center">
+                  <div className="lg:col-span-4 holo-glass-card rounded-2xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
+                        <Sparkles className="h-3 w-3 text-cyan-300" />
+                        <span>Live 3D Neural Agent Active</span>
+                      </span>
+                      <span className="text-[11px] font-bold text-[#ff8da1]">
+                        {profile.branch} · {profile.cgpa.toFixed(1)} CGPA
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-white">
+                      {profile.college || "DR RVR NRI DEEMED TO BE UNIVERSITY"}
+                    </p>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      Speak or type to DAS below to control slides, run 11-language code, tailor company JDs, or update your profile live.
+                    </p>
+                  </div>
 
-                {isDemoProfile ? (
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#2B2024] bg-[#000000] p-5 backdrop-blur-md shadow-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#2B2024] text-white">
-                        <User className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-[#f8fafc]">
-                          Viewing Sample Profile ({profile.branch}, {profile.cgpa} CGPA)
-                        </p>
-                        <p className="text-xs text-[#94a3b8]">
-                          Enter and save your real details in 1. Profile / Settings to personalize all scores and recommendations below.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("profile")}
-                      className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-[#2B2024] hover:brightness-110 border border-[#2B2024] px-3.5 py-2 text-xs font-semibold text-white transition-colors shadow-sm cursor-pointer"
-                    >
-                      <span>Edit 1. Profile / Settings</span>
-                      <ArrowRight className="h-3 w-3" />
-                    </button>
+                  {/* Open Center Lane: Unobstructed view of the 3D Cyan Face & Red Eyes */}
+                  <div
+                    onClick={() => setFocusOnDas(true)}
+                    title="Click to enter full 3D Hologram Focus Mode"
+                    className="hidden lg:flex lg:col-span-4 min-h-[175px] flex-col items-center justify-end pb-2 rounded-3xl border border-dashed border-cyan-400/20 bg-transparent hover:border-[#F23456]/50 transition cursor-pointer group"
+                  >
+                    <span className="rounded-full border border-cyan-400/35 bg-[#030a16]/75 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200 group-hover:border-[#F23456] group-hover:text-white transition">
+                      ✨ DAS 3D Hologram Core · Click to Focus
+                    </span>
                   </div>
-                ) : isProfilePartiallyIncomplete && (
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#2B2024] bg-[#000000] p-5 backdrop-blur-md shadow-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#2B2024] text-white">
-                        <Sparkles className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-[#f8fafc]">
-                          Profile Acceleration Available
-                        </p>
-                        <p className="text-xs text-[#94a3b8]">
-                          Add your GitHub / LeetCode profiles or certifications in 1. Profile / Settings
-                          to elevate your career readiness score by up to +12%.
-                        </p>
-                      </div>
+
+                  <div className="lg:col-span-4 holo-glass-card rounded-2xl p-4 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">
+                        Hackathon Power Modules
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("profile")}
+                        className="text-[11px] font-bold text-cyan-200 hover:text-white underline cursor-pointer"
+                      >
+                        Edit 6. Profile / Settings →
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("profile")}
-                      className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-[#2B2024] hover:brightness-110 border border-[#2B2024] px-3.5 py-2 text-xs font-semibold text-white transition-colors shadow-sm cursor-pointer"
-                    >
-                      <span>Complete Profile</span>
-                      <ArrowRight className="h-3 w-3" />
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("resume")}
+                        className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-2.5 text-left hover:border-[#F23456] hover:bg-[#F23456]/15 transition cursor-pointer"
+                      >
+                        <span className="text-[10px] font-bold text-cyan-300 block">2. 1-Click JD Tailor</span>
+                        <span className="text-xs font-bold text-white">Match JD &amp; Resume</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("interview")}
+                        className="rounded-xl border border-[#F23456]/45 bg-[#F23456]/15 p-2.5 text-left hover:bg-[#F23456]/30 transition cursor-pointer"
+                      >
+                        <span className="text-[10px] font-bold text-[#ff8da1] block">3. Live Coding Arena</span>
+                        <span className="text-xs font-bold text-white">Voice + 11-Lang Viva</span>
+                      </button>
+                    </div>
                   </div>
-                )}
+                </div>
 
                 <section
                   id="career-readiness-assessment"
@@ -2335,7 +2356,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
               </motion.div>
             )}
 
-            {/* TAB: INTERVIEW */}
+            {/* TAB: INTERVIEW (3. Live Coding & Viva Arena) */}
             {activeTab === "interview" && (
               <motion.div
                 key="interview"
@@ -2346,8 +2367,13 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 transition={{ duration: 0.25 }}
                 className="space-y-12 sm:space-y-16"
               >
+                <LiveCodingInterviewArena
+                  profile={profile}
+                  apiBase={API_BASE}
+                  customChallenge={arenaCustomChallenge}
+                />
                 <SectionHeader
-                  title="Interview & Project Defense Simulator"
+                  title="Company Mock Interview & STAR Project Defense Simulator"
                   description="Practice timed company hiring rounds or defend your project architecture trade-offs with live AI grading and voice"
                   badge="Live Audio & Grading"
                   accent="accent"
@@ -2435,7 +2461,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
               </motion.div>
             )}
 
-            {/* TAB 5: ANALYTICS */}
+            {/* TAB 5: ANALYTICS (Cohort Analytics + 6-Week Roadmap + Branch Trends) */}
             {activeTab === "analytics" && (
               <motion.div
                 key="analytics"
@@ -2448,12 +2474,12 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 className="space-y-12 sm:space-y-16"
               >
                 <SectionHeader
-                  title="Cohort Placement Analytics & Benchmarks"
-                  description="Authoritative campus placement records across 972 engineering candidates"
+                  title="Cohort Placement Analytics & 6-Week Sprint Roadmap"
+                  description="Authoritative campus placement records across 972 engineering candidates paired with your weekly preparation milestones"
                   badge="972 Records"
                   accent="blue"
                   icon={TrendingUp}
-                  helperLabel="Filter by branch, year, package, and package tier"
+                  helperLabel="Filter by branch, year, package, and track your 6-week roadmap"
                   onAskCoach={handleAskCoach}
                 />
                 <CohortExplorer
@@ -2469,6 +2495,13 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   onDownloadCSV={handleDownloadCSV}
                   onDownloadPDF={handleDownloadPDF}
                 />
+                <div id="sprint-roadmap">
+                  <RoadmapVisualizer
+                    roadmap={roadmap}
+                    isLoading={isRoadmapLoading}
+                    onRegenerate={fetchRoadmap}
+                  />
+                </div>
               </motion.div>
             )}
 
@@ -2509,7 +2542,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
               </motion.div>
             )}
 
-            {/* RESUME STUDIO */}
+            {/* RESUME STUDIO (2. JD & Resume Tailor) */}
             {activeTab === "resume" && (
               <motion.div
                 key="resume"
@@ -2520,6 +2553,24 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 transition={{ duration: 0.25 }}
                 className="space-y-12 sm:space-y-16"
               >
+                <JDCustomTailor
+                  profile={profile}
+                  onAddSkillsToProfile={(newSkills) => {
+                    const updatedSkills = Array.from(
+                      new Set([...(profile.technicalSkills || []), ...newSkills])
+                    );
+                    const merged = { ...profile, technicalSkills: updatedSkills, skills: updatedSkills };
+                    setProfile(merged);
+                    handleSaveProfile(merged);
+                    fetchPrediction(merged);
+                  }}
+                  onOpenOnePageResume={() => setShowOnePageResume(true)}
+                  onLaunchInCodingArena={(challenge) => {
+                    setArenaCustomChallenge(challenge);
+                    setActiveTab("interview");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                />
                 <SectionHeader
                   title="ATS Resume Studio & Diagnostic Scanner"
                   description="Upload and scan your PDF resume against recruiter screening standards and Google X-Y-Z formula"
