@@ -1559,6 +1559,9 @@ class AudioEngine {
     if (nowPerf < this.playingUntilPerfMs + 90) {
       return true;
     }
+    if (this.activeSources.length === 0 && !this.wholePcmSource && !this.workletPlaying && this.pendingWorkletChunks.length === 0) {
+      this.playingUntilPerfMs = 0;
+    }
     if (!this.audioCtx) return false;
     if (this.audioCtx.currentTime > this.nextPlayTime + 0.12) {
       this.activeSources = [];
@@ -1813,7 +1816,7 @@ class AudioEngine {
       return;
     }
 
-    // Stream continuous 16kHz PCM whenever mic is live & not echo-suppressed so Gemini Live neural VAD handles speech & silence cleanly
+    // Stream 16kHz PCM ONLY during active speech or post-speech tail (never spam idle digital-zero frames that lock audio_turn_open=True!)
     const pcm16 = downsampleTo16k(filtered, inputSampleRate, gateOpen ? this.softGain : 1.0, gateOpen);
     if (pcm16.length === 0) return;
 
@@ -1823,6 +1826,14 @@ class AudioEngine {
       binary += String.fromCharCode(uint8[i]);
     }
     const b64 = window.btoa(binary);
+
+    if (!this.inUtterance && !gateOpen) {
+      this.preRollChunks.push(b64);
+      if (this.preRollChunks.length > 3) {
+        this.preRollChunks.shift();
+      }
+      return;
+    }
 
     if (!this.inUtterance) {
       this.inUtterance = true;

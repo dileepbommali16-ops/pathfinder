@@ -397,7 +397,7 @@ async def _lookup_factual_info_async(query: str) -> dict:
 
     # 1. Try Wikipedia search + summary (fast ~250ms, exact entity matching, zero quota usage)
     try:
-        async with httpx.AsyncClient(timeout=4.5, headers={"User-Agent": "PathfinderDAS/2.0"}) as client:
+        async with httpx.AsyncClient(timeout=2.2, headers={"User-Agent": "PathfinderDAS/2.0"}) as client:
             search_resp = await client.get(
                 "https://en.wikipedia.org/w/api.php",
                 params={"action": "query", "list": "search", "srsearch": clean_q, "srlimit": 2, "format": "json"},
@@ -423,20 +423,23 @@ async def _lookup_factual_info_async(query: str) -> dict:
     except Exception as wiki_err:
         live_logger.debug(f"[Factual Lookup] Wikipedia lookup skipped: {wiki_err}")
 
-    # 2. Fallback to Gemini + Google Search grounding
+    # 2. Fallback to Gemini + Google Search grounding (capped at 5s so replies stay snappy)
     for key in get_gemini_key_candidates():
-        client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
+        client = genai.Client(http_options={"api_version": "v1beta", "timeout": 5500}, api_key=key)
         for fallback_model in ("gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"):
             try:
-                resp = await asyncio.to_thread(
-                    client.models.generate_content,
-                    model=fallback_model,
-                    contents=f"Give a concise, factual 2-3 sentence encyclopedic summary of exactly: {clean_q}. Do not confuse with similar names.",
-                    config=types.GenerateContentConfig(
-                        tools=[types.Tool(google_search=types.GoogleSearch())],
-                        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
-                        temperature=0.1,
+                resp = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        client.models.generate_content,
+                        model=fallback_model,
+                        contents=f"Give a concise, factual 2-3 sentence encyclopedic summary of exactly: {clean_q}. Do not confuse with similar names.",
+                        config=types.GenerateContentConfig(
+                            tools=[types.Tool(google_search=types.GoogleSearch())],
+                            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+                            temperature=0.1,
+                        ),
                     ),
+                    timeout=5.0,
                 )
                 txt = (getattr(resp, "text", None) or "").strip()
                 if txt:
@@ -445,6 +448,49 @@ async def _lookup_factual_info_async(query: str) -> dict:
                 live_logger.debug(f"[Factual Lookup] Gemini search fallback ({fallback_model}) skipped: {g_err}")
 
     return {"status": "unavailable", "entity": clean_q, "summary": f"Answer '{clean_q}' directly using verified encyclopedic knowledge without substituting another person."}
+
+
+_WS_PCM_CHUNK_BYTES = 24000  # 0.5s of 24kHz 16-bit mono PCM (~32KB base64 per WS frame)
+
+
+async def _send_chunked_pcm_b64(
+    websocket: WebSocket,
+    pcm_b64: str,
+    sample_rate: int,
+    turn_id: int,
+    client_turn_id: int = 0,
+) -> int:
+    """Streams base64 PCM across bounded WebSocket frames so large replies never hit 1009 Message Too Big."""
+    if not pcm_b64 or websocket.client_state == WebSocketState.DISCONNECTED:
+        return 0
+    try:
+        raw_bytes = base64.b64decode(pcm_b64)
+    except Exception:
+        return 0
+    even_len = len(raw_bytes) - (len(raw_bytes) % 2)
+    if even_len <= 0:
+        return 0
+    raw_bytes = raw_bytes[:even_len]
+    sent_chunks = 0
+    for offset in range(0, even_len, _WS_PCM_CHUNK_BYTES):
+        if websocket.client_state == WebSocketState.DISCONNECTED:
+            break
+        chunk = raw_bytes[offset : offset + _WS_PCM_CHUNK_BYTES]
+        chunk_even = len(chunk) - (len(chunk) % 2)
+        if chunk_even <= 0:
+            continue
+        payload = {
+            "type": "audio",
+            "voice": "DAS Neural",
+            "sample_rate": int(sample_rate or 24000),
+            "pcm_base64": base64.b64encode(chunk[:chunk_even]).decode("utf-8"),
+            "turn_id": turn_id,
+        }
+        if client_turn_id > 0:
+            payload["client_turn_id"] = client_turn_id
+        await websocket.send_json(payload)
+        sent_chunks += 1
+    return sent_chunks
 
 
 def _pcm16_to_wav_bytes(pcm_bytes: bytes, sample_rate: int = 16000) -> bytes:
@@ -542,6 +588,13 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         audio_turn_open = False
         turn_id = 0
         completed_turn_id = 0
+        active_client_turn_id = 0
+        turn_dispatch_seq = 0
+        responded_dispatch_seqs: set[int] = set()
+        active_turn_task: asyncio.Task | None = None
+        active_watchdog_task: asyncio.Task | None = None
+        live_output_text_buf: list[str] = []
+        last_live_user_text: str | None = None
         gemini_turn_active = False
         audio_end_mono = 0.0
         pending_response_until_mono = 0.0
@@ -856,14 +909,16 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 break
             return ""
 
-        async def _deliver_fallback_turn(user_text: str):
+        async def _deliver_fallback_turn(user_text: str, client_turn_id: int = 0):
             nonlocal pending_user_text, turn_id, completed_turn_id, gemini_turn_active, pending_response_until_mono, output_tx_in_turn, last_activity_mono
             clean_u = (user_text or "").strip()
             pending_user_text = None
             if not clean_u or websocket.client_state == WebSocketState.DISCONNECTED:
                 return
+            if client_turn_id > 0 and active_client_turn_id > client_turn_id:
+                return
             try:
-                from backend.gemini_engine import chat_with_mentor
+                from backend.gemini_engine import chat_with_mentor, generate_smart_fallback_reply
                 from backend.routers.voice_routes import synthesize_puck_pcm
 
                 ctx_for_chat = dict(latest_page_context or {})
@@ -874,11 +929,24 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 prior_hist = list(fallback_history[-8:])
                 ctx_note = format_page_context_note()
                 hist_contents = []
+                # Ensure alternating user -> model pairs (never starting with model or merging same roles unsafely)
+                sanitized_pairs: list[tuple[str, str]] = []
                 for h_item in prior_hist[-6:]:
                     h_role = "model" if h_item.get("role") == "assistant" else "user"
                     h_txt = (h_item.get("content") or "").strip()
-                    if h_txt:
-                        hist_contents.append(types.Content(role=h_role, parts=[types.Part.from_text(text=h_txt)]))
+                    if not h_txt:
+                        continue
+                    if not sanitized_pairs and h_role == "model":
+                        continue
+                    if sanitized_pairs and sanitized_pairs[-1][0] == h_role:
+                        prev_r, prev_t = sanitized_pairs[-1]
+                        sanitized_pairs[-1] = (prev_r, f"{prev_t}\n{h_txt}")
+                    else:
+                        sanitized_pairs.append((h_role, h_txt))
+                if sanitized_pairs and sanitized_pairs[-1][0] == "user":
+                    sanitized_pairs.append(("model", "Understood."))
+                for h_role, h_txt in sanitized_pairs:
+                    hist_contents.append(types.Content(role=h_role, parts=[types.Part.from_text(text=h_txt)]))
                 user_parts = [types.Part.from_text(text=f"{ctx_note}\n{clean_u}".strip())]
                 hist_contents.append(types.Content(role="user", parts=user_parts))
 
@@ -890,18 +958,28 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 if not reply_text:
                     reply_raw = await asyncio.to_thread(
                         chat_with_mentor,
-                        clean_u,
-                        None,
-                        prior_hist,
-                        ctx_for_chat.get("activeTab"),
-                        ctx_for_chat,
-                        False,
-                        None,
-                        False,
+                        message=clean_u,
+                        history=prior_hist,
+                        profile=None,
+                        active_tab=ctx_for_chat.get("activeTab"),
+                        page_context=ctx_for_chat,
+                        return_meta=False,
+                    )
+                    reply_text = (reply_raw or "").split("|||")[0].strip()
+
+                if not reply_text:
+                    reply_raw = generate_smart_fallback_reply(
+                        message=clean_u,
+                        history=prior_hist,
+                        profile=None,
+                        active_tab=ctx_for_chat.get("activeTab"),
+                        page_context=ctx_for_chat,
                     )
                     reply_text = (reply_raw or "").split("|||")[0].strip()
 
                 if not reply_text or websocket.client_state == WebSocketState.DISCONNECTED:
+                    return
+                if client_turn_id > 0 and active_client_turn_id > client_turn_id:
                     return
 
                 fallback_history.append({"role": "user", "content": clean_u})
@@ -909,7 +987,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 if len(fallback_history) > 12:
                     del fallback_history[:-12]
 
-                turn_id += 1
+                turn_id = max(turn_id, completed_turn_id) + 1
                 this_turn = turn_id
                 completed_turn_id = this_turn
                 gemini_turn_active = False
@@ -917,28 +995,35 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 output_tx_in_turn = False
                 last_activity_mono = time.monotonic()
 
-                await websocket.send_json({
+                tx_pkt = {
                     "type": "transcript",
                     "text": reply_text,
                     "turn_id": this_turn,
-                })
+                }
+                if client_turn_id > 0:
+                    tx_pkt["client_turn_id"] = client_turn_id
+                await websocket.send_json(tx_pkt)
 
                 tts_res = await synthesize_puck_pcm(reply_text)
                 if (
                     tts_res
                     and tts_res.get("pcm_base64")
                     and websocket.client_state != WebSocketState.DISCONNECTED
+                    and not (client_turn_id > 0 and active_client_turn_id > client_turn_id)
                 ):
-                    await websocket.send_json({
-                        "type": "audio",
-                        "voice": "DAS Neural",
-                        "sample_rate": int(tts_res.get("sample_rate") or 24000),
-                        "pcm_base64": tts_res["pcm_base64"],
-                        "turn_id": this_turn,
-                    })
+                    await _send_chunked_pcm_b64(
+                        websocket,
+                        tts_res["pcm_base64"],
+                        int(tts_res.get("sample_rate") or 24000),
+                        this_turn,
+                        client_turn_id=client_turn_id,
+                    )
 
                 if websocket.client_state != WebSocketState.DISCONNECTED:
-                    await websocket.send_json({"type": "turn_complete", "turn_id": this_turn})
+                    tc_pkt = {"type": "turn_complete", "turn_id": this_turn}
+                    if client_turn_id > 0:
+                        tc_pkt["client_turn_id"] = client_turn_id
+                    await websocket.send_json(tc_pkt)
             except Exception as fb_err:
                 live_logger.warning(f"[Live Proxy Fallback Turn Notice] {fb_err}")
 
@@ -995,7 +1080,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 if not reply_text or websocket.client_state == WebSocketState.DISCONNECTED:
                     return
 
-                turn_id += 1
+                turn_id = max(turn_id, completed_turn_id) + 1
                 this_turn = turn_id
                 completed_turn_id = this_turn
                 gemini_turn_active = False
@@ -1014,13 +1099,12 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     and tts_res.get("pcm_base64")
                     and websocket.client_state != WebSocketState.DISCONNECTED
                 ):
-                    await websocket.send_json({
-                        "type": "audio",
-                        "voice": "DAS Neural",
-                        "sample_rate": int(tts_res.get("sample_rate") or 24000),
-                        "pcm_base64": tts_res["pcm_base64"],
-                        "turn_id": this_turn,
-                    })
+                    await _send_chunked_pcm_b64(
+                        websocket,
+                        tts_res["pcm_base64"],
+                        int(tts_res.get("sample_rate") or 24000),
+                        this_turn,
+                    )
                 if websocket.client_state != WebSocketState.DISCONNECTED:
                     await websocket.send_json({"type": "turn_complete", "turn_id": this_turn})
             except Exception as fb_audio_err:
@@ -1089,13 +1173,22 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             include_screen_ctx: bool = True,
             is_user_text: bool = False,
             allow_fallback: bool = True,
+            req_client_turn_id: int = 0,
         ):
-            nonlocal audio_turn_open, pending_response_until_mono, pending_user_text, last_activity_mono
+            nonlocal audio_turn_open, pending_response_until_mono, pending_user_text, last_activity_mono, turn_dispatch_seq, last_live_user_text, active_watchdog_task
             last_activity_mono = time.monotonic()
+            user_visible_text = pending_user_text if (is_user_text and pending_user_text) else prompt_text
+            if is_user_text:
+                last_live_user_text = user_visible_text
+            turn_dispatch_seq += 1
+            this_dispatch_seq = turn_dispatch_seq
+
             active_sess = await ensure_live_session()
             if active_sess is None:
                 if allow_fallback:
-                    await _deliver_fallback_turn(pending_user_text if is_user_text and pending_user_text else prompt_text)
+                    pending_user_text = None
+                    responded_dispatch_seqs.add(this_dispatch_seq)
+                    await _deliver_fallback_turn(user_visible_text, client_turn_id=req_client_turn_id)
                 return
 
             final_text = prompt_text
@@ -1121,12 +1214,152 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 live_logger.warning(f"[DAS Live Proxy] send_client_content failed: {send_err}")
                 await close_live_session(active_sess)
                 if allow_fallback:
-                    await _deliver_fallback_turn(pending_user_text if is_user_text and pending_user_text else prompt_text)
+                    pending_user_text = None
+                    responded_dispatch_seqs.add(this_dispatch_seq)
+                    await _deliver_fallback_turn(user_visible_text, client_turn_id=req_client_turn_id)
                     return
                 raise send_err
 
+            if is_user_text and allow_fallback:
+                if active_watchdog_task and not active_watchdog_task.done():
+                    active_watchdog_task.cancel()
+
+                async def _turn_response_watchdog():
+                    nonlocal pending_user_text
+                    try:
+                        await asyncio.sleep(5.5)
+                    except asyncio.CancelledError:
+                        return
+                    if (
+                        this_dispatch_seq in responded_dispatch_seqs
+                        or websocket.client_state == WebSocketState.DISCONNECTED
+                        or (req_client_turn_id > 0 and active_client_turn_id > req_client_turn_id)
+                    ):
+                        return
+                    live_logger.warning(
+                        f"[DAS Live Proxy] Upstream Live silent for 5.5s (seq={this_dispatch_seq}); rescuing via REST + Puck fallback."
+                    )
+                    responded_dispatch_seqs.add(this_dispatch_seq)
+                    pending_user_text = None
+                    await close_live_session(active_sess)
+                    await _deliver_fallback_turn(user_visible_text, client_turn_id=req_client_turn_id)
+
+                w_task = asyncio.create_task(_turn_response_watchdog())
+                active_watchdog_task = w_task
+                fallback_tasks.add(w_task)
+                w_task.add_done_callback(fallback_tasks.discard)
+
+        async def _handle_hi_turn(req_client_turn_id: int):
+            nonlocal pending_user_text, hi_greeting_count, last_activity_mono, turn_id, completed_turn_id
+            exact_hi = get_exact_hi_reply(user_role, hi_greeting_count)
+            hi_greeting_count += 1
+            pending_user_text = None
+            last_activity_mono = time.monotonic()
+
+            if (
+                req_client_turn_id > 0 and active_client_turn_id > req_client_turn_id
+            ) or websocket.client_state == WebSocketState.DISCONNECTED:
+                return
+
+            turn_id = max(turn_id, completed_turn_id) + 1
+            this_hi_turn = turn_id
+            completed_turn_id = this_hi_turn
+
+            tx_pkt = {
+                "type": "transcript",
+                "text": exact_hi,
+                "turn_id": this_hi_turn,
+            }
+            if req_client_turn_id > 0:
+                tx_pkt["client_turn_id"] = req_client_turn_id
+            await websocket.send_json(tx_pkt)
+
+            # Warm upstream Live session in background during Hi greeting so Turn 2 responds in ~500ms
+            if session is None or is_gemini_ws_closed(session):
+                t_w = asyncio.create_task(ensure_live_session())
+                fallback_tasks.add(t_w)
+                t_w.add_done_callback(fallback_tasks.discard)
+
+            tts_res = None
+            try:
+                from backend.routers.voice_routes import synthesize_puck_pcm
+                tts_res = await synthesize_puck_pcm(exact_hi)
+            except Exception:
+                tts_res = None
+
+            if (
+                req_client_turn_id > 0 and active_client_turn_id > req_client_turn_id
+            ) or websocket.client_state == WebSocketState.DISCONNECTED:
+                return
+
+            if tts_res and tts_res.get("pcm_base64"):
+                await _send_chunked_pcm_b64(
+                    websocket,
+                    tts_res["pcm_base64"],
+                    int(tts_res.get("sample_rate") or 24000),
+                    this_hi_turn,
+                    client_turn_id=req_client_turn_id,
+                )
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    tc_pkt = {"type": "turn_complete", "turn_id": this_hi_turn}
+                    if req_client_turn_id > 0:
+                        tc_pkt["client_turn_id"] = req_client_turn_id
+                    await websocket.send_json(tc_pkt)
+                return
+
+            # Safety net: if REST TTS failed, stream Puck directly via Live session
+            await send_vision_prompt(
+                f'Say verbatim: "{exact_hi}"',
+                include_screen_ctx=False,
+                is_user_text=False,
+                allow_fallback=False,
+                req_client_turn_id=req_client_turn_id,
+            )
+
+        async def _handle_speak_verbatim(v_text: str):
+            nonlocal audio_turn_open, pending_response_until_mono, last_activity_mono, turn_id, completed_turn_id
+            last_activity_mono = time.monotonic()
+            active_sess = await ensure_live_session()
+            if active_sess is None:
+                from backend.routers.voice_routes import synthesize_puck_pcm
+                tts_res = await synthesize_puck_pcm(v_text)
+                if tts_res and tts_res.get("pcm_base64") and websocket.client_state != WebSocketState.DISCONNECTED:
+                    turn_id = max(turn_id, completed_turn_id) + 1
+                    completed_turn_id = turn_id
+                    await _send_chunked_pcm_b64(
+                        websocket,
+                        tts_res["pcm_base64"],
+                        int(tts_res.get("sample_rate") or 24000),
+                        turn_id,
+                    )
+                    if websocket.client_state != WebSocketState.DISCONNECTED:
+                        await websocket.send_json({"type": "turn_complete", "turn_id": turn_id})
+                return
+
+            read_prompt = (
+                "[CAMERA: OFF — READ ALOUD VERBATIM ONLY; DO NOT GREET OR CLAIM TO SEE BOSS]\n"
+                "Read the exact sentence below aloud naturally as the technical interviewer asking the candidate. "
+                "Do NOT answer the question, explain concepts, give hints, mention any camera, or add intro/outro commentary:\n"
+                f"\"{v_text}\""
+            )
+            try:
+                async with send_lock:
+                    if audio_turn_open:
+                        audio_turn_open = False
+                        try:
+                            await active_sess.send_realtime_input(audio_stream_end=True)
+                        except Exception:
+                            pass
+                    pending_response_until_mono = time.monotonic() + 3.0
+                    await active_sess.send_client_content(
+                        turns=[types.Content(parts=[types.Part.from_text(text=read_prompt)], role="user")],
+                        turn_complete=True,
+                    )
+            except Exception:
+                await close_live_session(active_sess)
+
         async def receive_from_browser():
-            nonlocal audio_turn_open, latest_page_context, pending_response_until_mono, pending_user_text, user_role, config, last_activity_mono, fallback_audio_active, hi_greeting_count, turn_id, completed_turn_id
+            nonlocal audio_turn_open, latest_page_context, pending_response_until_mono, pending_user_text, user_role, config, last_activity_mono, fallback_audio_active, hi_greeting_count, turn_id, completed_turn_id, active_client_turn_id, active_turn_task
             try:
                 while True:
                     raw = await websocket.receive_text()
@@ -1138,7 +1371,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         await websocket.send_json({"type": "pong"})
                         continue
 
-                    # 1a. Proactive Warmup when user clicks Speak
+                    # 1a. Proactive Warmup when user clicks Speak or focuses chat input
                     if msg_type == "warmup":
                         last_activity_mono = time.monotonic()
                         t_w = asyncio.create_task(ensure_live_session())
@@ -1164,6 +1397,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     pcm_bytes = pcm_bytes[:-1]
                                 if pcm_bytes:
                                     last_activity_mono = time.monotonic()
+                                    if not audio_turn_open:
+                                        active_client_turn_id = 0
                                     active_sess = await ensure_live_session()
                                     if active_sess is None:
                                         # Multi-user fallback: buffer spoken PCM locally until audio_stream_end
@@ -1225,108 +1460,46 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 "so their voice isn't coming through clearly right now. Speaking warmly using the active honorific (Boss, Madam, or Sir), "
                                 "kindly let them know their voice is too faint or muted to hear properly, and suggest increasing the volume or checking their earphone/buds condition and connection in 1-2 natural sentences."
                             )
-                            await send_vision_prompt(hint_prompt, include_screen_ctx=False)
+                            t_h = asyncio.create_task(send_vision_prompt(hint_prompt, include_screen_ctx=False))
+                            fallback_tasks.add(t_h)
+                            t_h.add_done_callback(fallback_tasks.discard)
 
-                    # 4. Text Input from HUD
+                    # 4. Text Input from HUD (dispatched as non-blocking task so ping & tool_result never stall)
                     elif msg_type == "text":
                         text = (msg.get("text") or "").strip()
                         if text:
+                            try:
+                                req_client_turn_id = int(msg.get("client_turn_id") or 0)
+                            except Exception:
+                                req_client_turn_id = 0
+                            active_client_turn_id = req_client_turn_id
+                            if active_turn_task and not active_turn_task.done():
+                                active_turn_task.cancel()
+                            if active_watchdog_task and not active_watchdog_task.done():
+                                active_watchdog_task.cancel()
                             if is_pure_hi_greeting(text):
-                                exact_hi = get_exact_hi_reply(user_role, hi_greeting_count)
-                                hi_greeting_count += 1
-                                pending_user_text = None
-                                last_activity_mono = time.monotonic()
-                                tts_res = None
-                                try:
-                                    from backend.routers.voice_routes import synthesize_puck_pcm
-                                    tts_res = await synthesize_puck_pcm(exact_hi)
-                                except Exception:
-                                    tts_res = None
-
-                                if (
-                                    tts_res
-                                    and tts_res.get("pcm_base64")
-                                    and websocket.client_state != WebSocketState.DISCONNECTED
-                                ):
-                                    turn_id += 1
-                                    this_hi_turn = turn_id
-                                    completed_turn_id = this_hi_turn
-                                    await websocket.send_json({
-                                        "type": "transcript",
-                                        "text": exact_hi,
-                                        "turn_id": this_hi_turn,
-                                    })
-                                    await websocket.send_json({
-                                        "type": "audio",
-                                        "voice": "DAS Neural",
-                                        "sample_rate": int(tts_res.get("sample_rate") or 24000),
-                                        "pcm_base64": tts_res["pcm_base64"],
-                                        "turn_id": this_hi_turn,
-                                    })
-                                    if websocket.client_state != WebSocketState.DISCONNECTED:
-                                        await websocket.send_json({"type": "turn_complete", "turn_id": this_hi_turn})
-                                    continue
-
-                                # Safety net: never stay silent if REST TTS failed — stream Puck directly via Live session
-                                await send_vision_prompt(
-                                    f'Say verbatim: "{exact_hi}"',
-                                    include_screen_ctx=False,
-                                    is_user_text=False,
-                                    allow_fallback=False,
+                                t_turn = asyncio.create_task(_handle_hi_turn(req_client_turn_id))
+                            else:
+                                pending_user_text = text
+                                t_turn = asyncio.create_task(
+                                    send_vision_prompt(
+                                        text,
+                                        is_user_text=True,
+                                        allow_fallback=True,
+                                        req_client_turn_id=req_client_turn_id,
+                                    )
                                 )
-                                if websocket.client_state != WebSocketState.DISCONNECTED:
-                                    await websocket.send_json({
-                                        "type": "transcript",
-                                        "text": exact_hi,
-                                        "turn_id": turn_id + 1,
-                                    })
-                                continue
-                            pending_user_text = text
-                            await send_vision_prompt(text, is_user_text=True, allow_fallback=True)
+                            active_turn_task = t_turn
+                            fallback_tasks.add(t_turn)
+                            t_turn.add_done_callback(fallback_tasks.discard)
 
                     # 4b. Verbatim Interviewer Read-Aloud (strictly never answers or explains)
                     elif msg_type == "speak_verbatim":
                         v_text = (msg.get("text") or "").strip()
                         if v_text:
-                            last_activity_mono = time.monotonic()
-                            active_sess = await ensure_live_session()
-                            if active_sess is None:
-                                from backend.routers.voice_routes import synthesize_puck_pcm
-                                tts_res = await synthesize_puck_pcm(v_text)
-                                if tts_res and tts_res.get("pcm_base64") and websocket.client_state != WebSocketState.DISCONNECTED:
-                                    turn_id += 1
-                                    completed_turn_id = turn_id
-                                    await websocket.send_json({
-                                        "type": "audio",
-                                        "voice": "DAS Neural",
-                                        "sample_rate": int(tts_res.get("sample_rate") or 24000),
-                                        "pcm_base64": tts_res["pcm_base64"],
-                                        "turn_id": turn_id,
-                                    })
-                                    await websocket.send_json({"type": "turn_complete", "turn_id": turn_id})
-                                continue
-
-                            read_prompt = (
-                                "[CAMERA: OFF — READ ALOUD VERBATIM ONLY; DO NOT GREET OR CLAIM TO SEE BOSS]\n"
-                                "Read the exact sentence below aloud naturally as the technical interviewer asking the candidate. "
-                                "Do NOT answer the question, explain concepts, give hints, mention any camera, or add intro/outro commentary:\n"
-                                f"\"{v_text}\""
-                            )
-                            try:
-                                async with send_lock:
-                                    if audio_turn_open:
-                                        audio_turn_open = False
-                                        try:
-                                            await active_sess.send_realtime_input(audio_stream_end=True)
-                                        except Exception:
-                                            pass
-                                    pending_response_until_mono = time.monotonic() + 3.0
-                                    await active_sess.send_client_content(
-                                        turns=[types.Content(parts=[types.Part.from_text(text=read_prompt)], role="user")],
-                                        turn_complete=True,
-                                    )
-                            except Exception:
-                                await close_live_session(active_sess)
+                            t_v = asyncio.create_task(_handle_speak_verbatim(v_text))
+                            fallback_tasks.add(t_v)
+                            t_v.add_done_callback(fallback_tasks.discard)
 
                     # 5. Role Switch (enforces strict Boss lock for owner email only, Stranger lock for guests)
                     elif msg_type == "role_switch":
@@ -1373,11 +1546,20 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 live_logger.warning(f"[Browser Receive Notice] {b_err}")
 
         async def receive_from_gemini(active_sess):
-            nonlocal audio_turn_open, turn_id, completed_turn_id, gemini_turn_active, audio_end_mono, pending_response_until_mono, output_tx_in_turn, pending_user_text, last_activity_mono, live_quota_cooldown_until
+            nonlocal audio_turn_open, turn_id, completed_turn_id, gemini_turn_active, audio_end_mono, pending_response_until_mono, output_tx_in_turn, pending_user_text, last_activity_mono, live_quota_cooldown_until, last_live_user_text
             pcm_coalesce_buf = bytearray()
             pcm_coalesce_turn_id = 0
+            pcm_coalesce_client_turn_id = 0
+            turn_client_id = 0
             pcm_bytes_in_turn = 0
             trailing_zero_bytes_in_turn = 0
+
+            def _mark_dispatch_responded():
+                responded_dispatch_seqs.add(turn_dispatch_seq)
+                if len(responded_dispatch_seqs) > 32:
+                    min_old = turn_dispatch_seq - 24
+                    for old_k in [k for k in responded_dispatch_seqs if k < min_old]:
+                        responded_dispatch_seqs.discard(old_k)
 
             async def flush_coalesced_pcm():
                 if not pcm_coalesce_buf:
@@ -1386,6 +1568,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 if even_len > 0 and websocket.client_state != WebSocketState.DISCONNECTED:
                     pkt = format_audio_packet(bytes(pcm_coalesce_buf[:even_len]))
                     pkt["turn_id"] = pcm_coalesce_turn_id
+                    if pcm_coalesce_client_turn_id > 0:
+                        pkt["client_turn_id"] = pcm_coalesce_client_turn_id
                     await websocket.send_json(pkt)
                 del pcm_coalesce_buf[:even_len]
 
@@ -1405,11 +1589,14 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             await close_live_session(active_sess)
                             return
 
-                        # Check for interruption
+                        # Check for genuine mid-turn interruption (ignore idle turn-boundary interrupted flags!)
                         if (
                             response.server_content
                             and getattr(response.server_content, "interrupted", False)
                         ):
+                            was_active_turn = gemini_turn_active
+                            intr_turn_id = turn_id
+                            intr_client_id = turn_client_id
                             pcm_coalesce_buf.clear()
                             pcm_bytes_in_turn = 0
                             trailing_zero_bytes_in_turn = 0
@@ -1418,8 +1605,12 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             audio_end_mono = 0.0
                             pending_response_until_mono = 0.0
                             output_tx_in_turn = False
-                            if websocket.client_state != WebSocketState.DISCONNECTED:
-                                await websocket.send_json({"type": "interrupted", "turn_id": turn_id})
+                            live_output_text_buf.clear()
+                            if was_active_turn and websocket.client_state != WebSocketState.DISCONNECTED:
+                                intr_pkt = {"type": "interrupted", "turn_id": intr_turn_id}
+                                if intr_client_id > 0:
+                                    intr_pkt["client_turn_id"] = intr_client_id
+                                await websocket.send_json(intr_pkt)
 
                         # Transcription events
                         if response.server_content:
@@ -1445,37 +1636,48 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             output_tx = getattr(sc, "output_transcription", None)
                             if output_tx and getattr(output_tx, "text", None):
                                 pending_user_text = None
+                                _mark_dispatch_responded()
                                 if not gemini_turn_active:
-                                    turn_id += 1
+                                    turn_id = max(turn_id, completed_turn_id) + 1
                                     gemini_turn_active = True
+                                    turn_client_id = active_client_turn_id
                                     pending_response_until_mono = 0.0
                                     output_tx_in_turn = False
                                     pcm_bytes_in_turn = 0
                                     trailing_zero_bytes_in_turn = 0
+                                    live_output_text_buf.clear()
                                 output_tx_in_turn = True
+                                live_output_text_buf.append(output_tx.text)
                                 if websocket.client_state != WebSocketState.DISCONNECTED:
-                                    await websocket.send_json({
+                                    tx_pkt = {
                                         "type": "transcript",
                                         "text": output_tx.text,
                                         "turn_id": turn_id,
-                                    })
+                                    }
+                                    if turn_client_id > 0:
+                                        tx_pkt["client_turn_id"] = turn_client_id
+                                    await websocket.send_json(tx_pkt)
 
                             # Audio and Model Turn - ONLY single audio stream with turn_id to eliminate overlap
                             if sc.model_turn and sc.model_turn.parts:
                                 for part in sc.model_turn.parts:
                                     if part.inline_data and part.inline_data.data:
                                         pending_user_text = None
+                                        _mark_dispatch_responded()
                                         if not gemini_turn_active:
-                                            turn_id += 1
+                                            turn_id = max(turn_id, completed_turn_id) + 1
                                             gemini_turn_active = True
+                                            turn_client_id = active_client_turn_id
                                             pending_response_until_mono = 0.0
                                             output_tx_in_turn = False
                                             pcm_bytes_in_turn = 0
                                             trailing_zero_bytes_in_turn = 0
+                                            live_output_text_buf.clear()
                                         raw_pcm = part.inline_data.data
                                         pcm_dur = len(raw_pcm) / 48000.0
                                         audio_end_mono = max(time.monotonic(), audio_end_mono) + pcm_dur
                                         pcm_coalesce_turn_id = turn_id
+                                        pcm_coalesce_client_turn_id = turn_client_id
                                         pcm_bytes_in_turn += len(raw_pcm)
                                         if any(b > 2 for b in raw_pcm[:64]) or max(abs(int.from_bytes(raw_pcm[i:i+2], "little", signed=True)) for i in range(0, len(raw_pcm) - 1, max(2, len(raw_pcm) // 16))) > 64:
                                             trailing_zero_bytes_in_turn = 0
@@ -1486,18 +1688,25 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                             await flush_coalesced_pcm()
                                     if part.text and not output_tx_in_turn and not getattr(part, "thought", False):
                                         pending_user_text = None
+                                        _mark_dispatch_responded()
                                         if not gemini_turn_active:
-                                            turn_id += 1
+                                            turn_id = max(turn_id, completed_turn_id) + 1
                                             gemini_turn_active = True
+                                            turn_client_id = active_client_turn_id
                                             pending_response_until_mono = 0.0
                                             pcm_bytes_in_turn = 0
                                             trailing_zero_bytes_in_turn = 0
+                                            live_output_text_buf.clear()
+                                        live_output_text_buf.append(part.text)
                                         if websocket.client_state != WebSocketState.DISCONNECTED:
-                                            await websocket.send_json({
+                                            tx_pkt = {
                                                 "type": "transcript",
                                                 "text": part.text,
                                                 "turn_id": turn_id,
-                                            })
+                                            }
+                                            if turn_client_id > 0:
+                                                tx_pkt["client_turn_id"] = turn_client_id
+                                            await websocket.send_json(tx_pkt)
 
                             # Emit turn_complete cleanly when turn ends OR on generation_complete (>=9600B) OR sustained post-speech silence (1.8s)
                             is_turn_done = (
@@ -1511,16 +1720,28 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 pcm_bytes_in_turn = 0
                                 trailing_zero_bytes_in_turn = 0
                                 await flush_coalesced_pcm()
+                                combined_live_reply = "".join(live_output_text_buf).strip()
+                                live_output_text_buf.clear()
+                                if last_live_user_text and combined_live_reply:
+                                    fallback_history.append({"role": "user", "content": last_live_user_text})
+                                    fallback_history.append({"role": "assistant", "content": combined_live_reply})
+                                    if len(fallback_history) > 12:
+                                        del fallback_history[:-12]
+                                    last_live_user_text = None
                                 audio_turn_open = False
                                 gemini_turn_active = False
                                 pending_response_until_mono = 0.0
                                 output_tx_in_turn = False
                                 if websocket.client_state != WebSocketState.DISCONNECTED:
-                                    await websocket.send_json({"type": "turn_complete", "turn_id": turn_id})
+                                    tc_pkt = {"type": "turn_complete", "turn_id": turn_id}
+                                    if turn_client_id > 0:
+                                        tc_pkt["client_turn_id"] = turn_client_id
+                                    await websocket.send_json(tc_pkt)
 
                         # Handle Function Calling inside active session.receive() stream
                         if response.tool_call:
                             pending_user_text = None
+                            _mark_dispatch_responded()
                             function_responses = []
                             for fc in response.tool_call.function_calls:
                                 exec_res = await _execute_single_tool_call(
@@ -1560,7 +1781,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     await close_live_session(active_sess)
                 if pending_user_text and websocket.client_state != WebSocketState.DISCONNECTED:
                     text_to_rescue = pending_user_text
-                    t = asyncio.create_task(_deliver_fallback_turn(text_to_rescue))
+                    pending_user_text = None
+                    _mark_dispatch_responded()
+                    t = asyncio.create_task(
+                        _deliver_fallback_turn(text_to_rescue, client_turn_id=active_client_turn_id)
+                    )
                     fallback_tasks.add(t)
                     t.add_done_callback(fallback_tasks.discard)
 

@@ -128,7 +128,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
     from backend.agent.puck_voice import get_puck_speech_config
 
     for key in keys:
-        client = genai.Client(http_options={"api_version": "v1beta", "timeout": 15000}, api_key=key)
+        client = genai.Client(http_options={"api_version": "v1beta", "timeout": 8000}, api_key=key)
         for tts_model in ("gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"):
             try:
                 cfg = types.GenerateContentConfig(
@@ -143,7 +143,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                         contents=text,
                         config=cfg,
                     ),
-                    timeout=14.0,
+                    timeout=7.5,
                 )
                 pcm_chunks = bytearray()
                 sample_rate = 24000
@@ -205,10 +205,11 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
     est_max_sec = max(3.5, min(28.0, len(text) / 8.5 + 2.2))
     max_pcm_bytes = int(est_max_sec * 48000)
 
-    async with _get_tts_live_sem():
-        for key in keys:
-            client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
-            for attempt in range(2):
+    live_sem = _get_tts_live_sem()
+    if not live_sem.locked():
+        async with live_sem:
+            for key in keys:
+                client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
                 try:
                     pcm_buf = bytearray()
 
@@ -248,7 +249,7 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                                 ):
                                     break
 
-                    await asyncio.wait_for(_run_live(), timeout=9.0)
+                    await asyncio.wait_for(_run_live(), timeout=5.5)
                     raw_pcm = bytes(pcm_buf)
                     _, peak = _chunk_rms_and_peak_int16(raw_pcm)
                     if len(raw_pcm) >= 9600 and peak >= 250:
@@ -260,17 +261,16 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                                 "voice": "Puck",
                             }
                     logger.warning(
-                        "[Voice TTS Live Puck] %s attempt=%d returned incomplete audio (bytes=%d, peak=%d); retrying",
+                        "[Voice TTS Live Puck] %s returned incomplete audio (bytes=%d, peak=%d); falling back to unary Puck TTS",
                         LIVE_MODEL,
-                        attempt + 1,
                         len(raw_pcm),
                         peak,
                     )
                 except Exception as exc:
-                    logger.warning("[Voice TTS Live Puck] %s attempt=%d failed: %r", LIVE_MODEL, attempt + 1, exc)
+                    logger.warning("[Voice TTS Live Puck] %s failed: %r; falling back to unary Puck TTS", LIVE_MODEL, exc)
                     continue
 
-    # 2. Fallback: unary Gemini 3.8 Puck TTS if concurrent Live sessions hit resource exhaustion
+    # 2. Fast Unary Gemini 3.8 Puck TTS (used immediately if concurrent Live TTS slots are busy or slow)
     unary_result = await _synthesize_puck_via_38_unary_fallback(text, keys)
     if unary_result:
         return unary_result

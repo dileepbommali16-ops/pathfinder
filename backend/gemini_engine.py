@@ -261,7 +261,8 @@ def _resolve_verified_honorific(
         elif isinstance(profile, dict):
             p_dict = profile
         else:
-            p_dict = getattr(profile, "__dict__", {})
+            raw_dict = getattr(profile, "__dict__", {})
+            p_dict = raw_dict if isinstance(raw_dict, dict) else {}
 
     user_email = str(ctx.get("userEmail") or p_dict.get("email") or "").strip().lower()
     user_name = str(ctx.get("userName") or p_dict.get("full_name") or p_dict.get("username") or "").strip()
@@ -759,7 +760,8 @@ def generate_smart_fallback_reply(
     p_name = "Candidate"
     p_branch = "Engineering"
     if profile:
-        p_dict = profile.model_dump() if hasattr(profile, "model_dump") else (profile if isinstance(profile, dict) else profile.__dict__)
+        raw_p = profile.model_dump() if hasattr(profile, "model_dump") else (profile if isinstance(profile, dict) else getattr(profile, "__dict__", {}))
+        p_dict = raw_p if isinstance(raw_p, dict) else {}
         p_name = p_dict.get("full_name") or p_dict.get("username") or p_dict.get("name") or "Candidate"
         p_branch = p_dict.get("branch") or "Engineering"
 
@@ -816,7 +818,8 @@ def prepare_chat_context(
     clean_msg = message.strip() if message else ""
     profile_ctx = ""
     if profile:
-        p_dict = profile.model_dump() if hasattr(profile, "model_dump") else (profile if isinstance(profile, dict) else profile.__dict__)
+        raw_p = profile.model_dump() if hasattr(profile, "model_dump") else (profile if isinstance(profile, dict) else getattr(profile, "__dict__", {}))
+        p_dict = raw_p if isinstance(raw_p, dict) else {}
         cgpa = p_dict.get("cgpa", 7.8)
         backlogs = p_dict.get("backlogs", 0)
         internships = p_dict.get("internships", 1)

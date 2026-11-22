@@ -172,7 +172,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
                 }
                 const uvScale = uvMax > 2.0 ? 4096.0 : 1.0;
                 const cavityMask = new Float32Array(posAttr.count);
-                const lipUv = new Float32Array(posAttr.count * 3);
+                const lipRim = new Float32Array(posAttr.count);
                 for (let i = 0; i < posAttr.count; i++) {
                   worldVert.fromBufferAttribute(posAttr, i).applyMatrix4(mesh.matrixWorld);
                   const uNorm = uvAttr ? uvAttr.getX(i) / uvScale : 1.0;
@@ -186,20 +186,20 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
                     worldVert.z < teethMaxZ + 0.01;
                   if (inDeepCavity) {
                     cavityMask[i] = THREE.MathUtils.clamp((teethMaxZ + 0.015 - worldVert.z) / 0.065, 0.3, 1.0);
-                  }
-                  const outerFrontMask =
+                  } else if (
                     !inInnerUvIsland &&
-                    Math.abs(worldVert.x) < 0.22 &&
-                    worldVert.y > -0.27 &&
-                    worldVert.y < -0.02
-                      ? THREE.MathUtils.smoothstep(worldVert.z, 0.35, 0.39)
-                      : 0.0;
-                  lipUv[i * 3] = uNorm;
-                  lipUv[i * 3 + 1] = vNorm;
-                  lipUv[i * 3 + 2] = outerFrontMask;
+                    Math.abs(worldVert.x) < 0.135 &&
+                    worldVert.y > teethMinY - 0.06 &&
+                    worldVert.y < teethMaxY + 0.06 &&
+                    worldVert.z >= teethMaxZ - 0.015
+                  ) {
+                    lipRim[i] =
+                      Math.exp(-Math.pow((worldVert.y - teethMidY) / 0.042, 2)) *
+                      Math.exp(-Math.pow(worldVert.x / 0.125, 2));
+                  }
                 }
                 mesh.geometry.setAttribute("aMouthCavity", new THREE.BufferAttribute(cavityMask, 1));
-                mesh.geometry.setAttribute("aLipUv", new THREE.BufferAttribute(lipUv, 3));
+                mesh.geometry.setAttribute("aLipRim", new THREE.BufferAttribute(lipRim, 1));
               }
               mesh.material = materials.headMat;
               if (mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
@@ -372,10 +372,10 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
         ? THREE.MathUtils.clamp((spreadBias * 0.52 + dMid * 4.0 + isSibilant * 0.28) * (1 - roundW * 0.65), 0, 0.62)
         : 0;
 
-      // Natural sculpted resting mouth pose when silent (closed without squishing lips flat)
-      const restClose = 0.06;
-      const restPress = 0.02;
-      const restSmile = 0.08;
+      // Natural sealed resting mouth pose when silent (smoothly blended via speechBlend so chin never jerks)
+      const restClose = 0.22;
+      const restPress = 0.12;
+      const restSmile = 0.06;
 
       let spJaw = 0;
       let spClose = 0;

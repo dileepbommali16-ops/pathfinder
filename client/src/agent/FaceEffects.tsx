@@ -41,7 +41,7 @@ export function createHologramScanMaterial(
         "#include <common>",
         `#include <common>
          varying vec3 vHoloWorldPos;
-         ${isHead ? "attribute float aMouthCavity;\nattribute vec3 aLipUv;\nvarying float vMouthCavity;\nvarying vec3 vLipUv;" : ""}
+         ${isHead ? "attribute float aMouthCavity;\nattribute float aLipRim;\nvarying float vMouthCavity;\nvarying float vLipRim;" : ""}
          ${isTeeth ? "attribute float aLowerTooth;\nuniform float uJawOpen;" : ""}
          ${isShoulders ? "attribute float aBustFade;\nvarying float vBustFade;" : ""}`
       )
@@ -59,7 +59,7 @@ export function createHologramScanMaterial(
              : ""
          }
          vHoloWorldPos = holoWorld4.xyz;
-         ${isHead ? "vMouthCavity = aMouthCavity;\nvLipUv = aLipUv;" : ""}
+         ${isHead ? "vMouthCavity = aMouthCavity;\nvLipRim = aLipRim;" : ""}
          ${isShoulders ? "vBustFade = aBustFade;" : ""}`
       );
 
@@ -70,7 +70,7 @@ export function createHologramScanMaterial(
          uniform float uTime;
          uniform float uVoice;
          varying vec3 vHoloWorldPos;
-         ${isHead ? "varying float vMouthCavity;\nvarying vec3 vLipUv;" : ""}
+         ${isHead ? "varying float vMouthCavity;\nvarying float vLipRim;" : ""}
          ${isShoulders ? "varying float vBustFade;" : ""}`
       )
       .replace(
@@ -112,44 +112,9 @@ export function createHologramScanMaterial(
         ${
           isHead
             ? `float cavityMask = clamp(vMouthCavity, 0.0, 1.0);
-               float lipZone = smoothstep(0.35, 0.85, vLipUv.z);
-               float uN = vLipUv.x;
-               float vN = vLipUv.y;
-               float du = abs(uN - 0.504);
-               float tU = clamp(du / 0.054, 0.0, 1.0);
-               float hEnv = clamp(1.0 - tU * tU, 0.0, 1.0);
-
-               // Exact upper & lower lip parting edges + Cupid's bow & lower lip borders
-               float vUpSeam = 0.815 + 0.012 * (tU * tU);
-               float vLoSeam = 0.844 - 0.017 * (tU * tU);
-               float cupidPeak = 0.0022 * exp(-pow((du - 0.011) / 0.009, 2.0));
-               float vUpOuter = vUpSeam - (0.0135 * pow(hEnv, 0.72) + cupidPeak * hEnv);
-               float vLoOuter = vLoSeam + 0.0195 * pow(hEnv, 0.65);
-
-               // 1. Razor-sharp dark mouth parting line + natural mouth corners
-               float inBetween = step(vUpSeam, vN) * step(vN, vLoSeam);
-               float seamUp = exp(-pow(max(0.0, vUpSeam - vN) / 0.0034, 2.0)) * step(vN, vUpSeam + 0.001);
-               float seamLo = exp(-pow(max(0.0, vN - vLoSeam) / 0.0036, 2.0)) * step(vLoSeam - 0.001, vN);
-               float cornerPinch = exp(-pow((du - 0.049) / 0.0075, 2.0)) * exp(-pow((vN - 0.826) / 0.0055, 2.0)) * 0.88;
-               float lipSeam = clamp(max(max(inBetween, max(seamUp, seamLo)) * pow(hEnv, 0.35), cornerPinch), 0.0, 1.0) * lipZone;
-
-               // 2. Sculpted upper lip plane (subtly deeper cyan) + Cupid's bow crest highlight
-               float upperLipBody = smoothstep(vUpOuter - 0.003, vUpOuter + 0.003, vN) * smoothstep(vUpSeam + 0.001, vUpSeam - 0.002, vN) * pow(hEnv, 0.55) * lipZone;
-               float upperVermilionRim = exp(-pow((vN - vUpOuter) / 0.0026, 2.0)) * pow(hEnv, 0.65) * lipZone;
-
-               // 3. Plump lower lip scanline catchlight + natural under-lip mentolabial shadow groove
-               float lowerLipBody = smoothstep(vLoSeam - 0.001, vLoSeam + 0.004, vN) * smoothstep(vLoOuter + 0.003, vLoOuter - 0.004, vN) * pow(hEnv, 0.60) * lipZone;
-               float lowerCatchlight = exp(-pow((vN - (vLoSeam + 0.0085)) / 0.0055, 2.0)) * pow(hEnv, 0.75) * lipZone;
-               float underLipCrease = exp(-pow((vN - (vLoOuter + 0.011)) / 0.0075, 2.0)) * exp(-pow(du / 0.036, 2.0)) * lipZone;
-
-               col *= mix(1.0, 0.70, upperLipBody);
-               col *= mix(1.0, 0.42, underLipCrease);
-               col += crestCyan * upperVermilionRim * (0.26 * scanLine + 0.04);
-               col += crestCyan * lowerCatchlight * (0.38 * scanLine + 0.05);
-               col += midCyan * lowerLipBody * 0.14 * scanLine;
-               col *= mix(1.0, 0.05, lipSeam);
                col *= mix(1.0, 0.08, cavityMask);
-               diffuseColor.a = mix(clamp(0.95 + scanLine * 0.05, 0.94, 1.0), 0.99, max(cavityMask, lipSeam * 0.5));`
+               col += crestCyan * clamp(vLipRim, 0.0, 1.0) * 0.14;
+               diffuseColor.a = mix(clamp(0.95 + scanLine * 0.05, 0.94, 1.0), 0.99, cavityMask);`
             : isShoulders
             ? "float bustEdge = smoothstep(0.0, 0.90, vBustFade);\ncol *= bustEdge;\ndiffuseColor.a = clamp(0.96 * bustEdge, 0.0, 1.0);"
             : isTeeth

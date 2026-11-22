@@ -304,7 +304,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           ? localStorage.getItem("pathfinder_profile_draft") ||
             localStorage.getItem("pathfinder_profile")
           : null;
-      const parsedProfile = profileJson ? JSON.parse(profileJson) : {};
+      parsedProfile = profileJson ? JSON.parse(profileJson) : {};
       const payload = {
         message: query,
         history: priorHistory,
@@ -359,15 +359,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         window.location?.protocol?.startsWith("http") &&
         !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname || "");
 
-      const endpoints = dasSocket.isSocketConnected
-        ? [
-            { url: `${API_BASE}/api/chat`, timeoutMs: 12000 },
-            ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 11000 }] : []),
-          ]
-        : [
-            ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 11000 }] : []),
-            { url: `${API_BASE}/api/chat`, timeoutMs: 12000 },
-          ];
+      const endpoints = [
+        ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 9000 }] : []),
+        { url: `${API_BASE}/api/chat`, timeoutMs: 11000 },
+      ];
 
       for (const ep of endpoints) {
         const reply = await tryChatEndpoint(ep.url, ep.timeoutMs);
@@ -526,9 +521,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       if (
         !settled &&
         askCoachNonceRef.current === nonce &&
-        cleanReply &&
-        !dasSocket.isAgentSpeaking &&
-        !audioEngine.isSpeaking()
+        cleanReply
       ) {
         cleanup();
         chatHistoryRef.current = [
@@ -542,9 +535,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         void audioEngine.speakTextPuckOrLocal(cleanReply, API_BASE, {
           signal: ttsAc.signal,
           shouldContinue: () =>
-            askCoachNonceRef.current === nonce &&
-            !dasSocket.isAgentSpeaking &&
-            !audioEngine.isSpeaking(),
+            askCoachNonceRef.current === nonce && !settled,
         });
       }
     };
@@ -556,13 +547,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       tryExecuteClientAutomationIntent(queryText, navigate);
       dasSocket.sendTextCommand(queryText);
     }
-    const fallbackDelayMs = wasSocketReady ? 7500 : 1800;
+    const fallbackDelayMs = wasSocketReady ? 6200 : 1600;
     timerId = window.setTimeout(() => {
       if (
         settled ||
         askCoachNonceRef.current !== nonce ||
-        dasSocket.isAgentSpeaking ||
-        audioEngine.isSpeaking()
+        dasSocket.isAgentSpeaking
       ) {
         return;
       }
@@ -641,14 +631,16 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    // Wake Render backend proactively and pre-fetch active role greeting audio silently for 0ms fallback
+    // Wake Render backend proactively, warm Live upstream session if tab is visible, and pre-fetch primary Hi greeting lazily
     fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
     ensureSocketConnected();
+    if (typeof document === "undefined" || document.visibilityState === "visible") {
+      dasSocket.warmup();
+    }
     const activeKey = getHonorificKey();
-    void audioEngine.prefetchPuckTts(
-      [getExactHiReply(activeKey, 0), getExactHiReply(activeKey, 1)],
-      API_BASE
-    );
+    const prefetchTimer = window.setTimeout(() => {
+      void audioEngine.prefetchPuckTts([getExactHiReply(activeKey, 0)], API_BASE);
+    }, 1500);
 
     const prewarmAudio = () => {
       audioEngine.unlockAudio();
@@ -657,6 +649,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     window.addEventListener("keydown", prewarmAudio, { once: true, passive: true });
 
     return () => {
+      window.clearTimeout(prefetchTimer);
       window.removeEventListener("pointerdown", prewarmAudio);
       window.removeEventListener("keydown", prewarmAudio);
       dasSocket.disconnect();
@@ -806,7 +799,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         audioEngine.clearAudioQueue();
         try {
           await beginMicStream(selectedMicIdRef.current);
-          startParallelSpeechRec();
+          if (!dasSocket.isSocketConnected) {
+            startParallelSpeechRec();
+          }
           setTranscript("Listening... Speak cleanly through headphones, earphones, buds, or laptop mic!");
         } catch {
           stopParallelSpeechRec();
@@ -1628,8 +1623,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             name="dasCommand"
             type="text"
             value={inputText}
+            onFocus={() => dasSocket.warmup()}
             onChange={(e) => {
               audioEngine.notifyTypingActivity(850);
+              dasSocket.warmup();
               setInputText(e.target.value);
             }}
             placeholder="Ask DAS: 'Who is your boss?', 'Write QuickSort in C', 'Set my CGPA to 8.9'..."

@@ -222,6 +222,65 @@ class TestConcurrencyAndRoleSecurity(unittest.TestCase):
         self.assertNotIn("What's up", repeat_hi)
         self.assertNotIn("co-pilot", repeat_hi.lower())
 
+    def test_multi_turn_fallback_history_and_chunked_pcm_frames(self):
+        import asyncio
+        import base64
+        from starlette.websockets import WebSocketState
+        from backend.gemini_engine import prepare_chat_context
+        from backend.agent.live_proxy import _send_chunked_pcm_b64, _WS_PCM_CHUNK_BYTES
+
+        # Non-dict / list profile must never raise AttributeError on Turn 3+ fallback
+        invalid_profile = [{"unexpected": "list"}]
+        self.assertEqual(
+            _resolve_verified_honorific(profile=invalid_profile, page_context={"honorific": "Sir", "userEmail": "friend@test.com"}),
+            "Sir",
+        )
+        sys_prompt, contents, _, clean_msg, _ = prepare_chat_context(
+            message="What is binary search?",
+            history=[
+                {"role": "user", "content": "Hi"},
+                {"role": "assistant", "content": "Hi Sir! What's up?"},
+                {"role": "user", "content": "My college name?"},
+                {"role": "assistant", "content": "DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli."},
+            ],
+            profile=invalid_profile,  # type: ignore[arg-type]
+            active_tab="overview",
+            page_context={"honorific": "Sir", "userEmail": "friend@test.com"},
+        )
+        self.assertIn("DR RVR NRI DEEMED TO BE UNIVERSITY", sys_prompt)
+        self.assertEqual(clean_msg, "What is binary search?")
+        self.assertGreaterEqual(len(contents), 5)
+
+        fallback_invalid_profile = generate_smart_fallback_reply(
+            message="Give one placement tip",
+            history=[{"role": "user", "content": "hi"}],
+            profile=invalid_profile,  # type: ignore[arg-type]
+            page_context={"honorific": "Madam", "userEmail": "friend2@test.com"},
+        )
+        self.assertTrue(bool(fallback_invalid_profile.strip()))
+
+        # Large >1MB PCM payload must be split cleanly into bounded WebSocket frames (<100KB)
+        class _DummyWS:
+            client_state = WebSocketState.CONNECTED
+
+            def __init__(self):
+                self.frames = []
+
+            async def send_json(self, data):
+                self.frames.append(data)
+
+        dummy_ws = _DummyWS()
+        large_pcm = b"\x01\x02" * (_WS_PCM_CHUNK_BYTES * 3)  # ~144KB raw -> multiple chunks
+        large_b64 = base64.b64encode(large_pcm).decode("utf-8")
+        chunks = asyncio.run(_send_chunked_pcm_b64(dummy_ws, large_b64, 24000, turn_id=3, client_turn_id=5))
+        self.assertGreaterEqual(chunks, 3)
+        self.assertEqual(len(dummy_ws.frames), chunks)
+        for frame in dummy_ws.frames:
+            self.assertEqual(frame["type"], "audio")
+            self.assertEqual(frame["turn_id"], 3)
+            self.assertEqual(frame["client_turn_id"], 5)
+            self.assertLessEqual(len(frame["pcm_base64"]), 40000)
+
 
 if __name__ == "__main__":
     unittest.main()

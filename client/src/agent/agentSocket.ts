@@ -96,6 +96,10 @@ class DasAgentSocket {
   private latestPageContext: Record<string, any> | null = null;
   private hasConversationActivity = false;
   private muteUntilNextSend = false;
+  private clientTurnSeq = 0;
+  private activeClientTurnId = 0;
+  private lastWarmupAt = 0;
+  private pendingWarmup = false;
 
   public muteActiveTurn() {
     this.muteUntilNextSend = true;
@@ -618,13 +622,21 @@ CORE AUTONOMOUS CAPABILITIES:
             if (ctxNow) {
               this.sendPageContext(ctxNow);
             }
+            if (this.pendingWarmup) {
+              this.pendingWarmup = false;
+              this.warmup();
+            }
             this.flushPendingMessages();
             return;
           }
         }
 
+        const cTurnId = typeof data.client_turn_id === "number" ? data.client_turn_id : 0;
+        const isStaleClientTurn =
+          cTurnId > 0 && this.activeClientTurnId > 0 && cTurnId < this.activeClientTurnId;
+
         if (data.type === "audio" && data.pcm_base64) {
-          if (this.muteUntilNextSend) {
+          if (this.muteUntilNextSend || isStaleClientTurn) {
             return;
           }
           const tId = typeof data.turn_id === "number" ? data.turn_id : null;
@@ -662,7 +674,7 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "transcript" && data.text) {
-          if (this.muteUntilNextSend) {
+          if (this.muteUntilNextSend || isStaleClientTurn) {
             return;
           }
           const tId = typeof data.turn_id === "number" ? data.turn_id : null;
@@ -688,6 +700,9 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "turn_complete") {
+          if (isStaleClientTurn) {
+            return;
+          }
           if (this.muteUntilNextSend) {
             this.muteUntilNextSend = false;
             this.activeAudioTurnId = null;
@@ -724,6 +739,7 @@ CORE AUTONOMOUS CAPABILITIES:
 
         if (data.type === "user_transcript" && data.text) {
           this.muteUntilNextSend = false;
+          this.interruptedTurnIds.clear();
           this.hasConversationActivity = true;
           if (!this.isSpeakingTurn && this.audioChunksInTurn === 0) {
             this.awaitingNextTurn = true;
@@ -733,18 +749,22 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "interrupted") {
+          if (isStaleClientTurn) {
+            return;
+          }
           const tId = typeof data.turn_id === "number" ? data.turn_id : null;
-          if (tId !== null) {
+          if (tId !== null && tId === this.activeAudioTurnId) {
             this.interruptedTurnIds.add(tId);
             if (this.interruptedTurnIds.size > 40) {
               const first = this.interruptedTurnIds.values().next().value;
               if (first !== undefined) this.interruptedTurnIds.delete(first);
             }
           }
+          const wasSpeaking = this.isSpeakingTurn;
           this.activeAudioTurnId = null;
           this.audioChunksInTurn = 0;
           this.cancelTtsFallback();
-          if (!this.currentAgentTranscript && !this.isSpeakingTurn && Date.now() - this.lastTextSentAt < 700) {
+          if (!wasSpeaking || (!this.currentAgentTranscript && Date.now() - this.lastTextSentAt < 700)) {
             audioEngine.clearAudioQueue();
             return;
           }
@@ -1133,13 +1153,22 @@ CORE AUTONOMOUS CAPABILITIES:
   }
 
   public warmup() {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || this.isDirectGoogle) return;
+    if (this.isDirectGoogle) return;
+    const now = Date.now();
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) {
+      this.pendingWarmup = true;
+      return;
+    }
+    if (now - this.lastWarmupAt < 20000) return;
+    this.lastWarmupAt = now;
+    this.pendingWarmup = false;
     try {
       this.ws.send(JSON.stringify({ type: "warmup" }));
     } catch { }
   }
 
   public sendAudioChunk(base64Pcm: string) {
+    this.activeClientTurnId = 0;
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isConnected) {
       if (this.preConnectAudioQueue.length >= 6) {
         this.preConnectAudioQueue.shift();
@@ -1234,6 +1263,8 @@ CORE AUTONOMOUS CAPABILITIES:
   public sendTextCommand(text: string) {
     if (!text.trim()) return;
     this.muteUntilNextSend = false;
+    this.interruptedTurnIds.clear();
+    this.activeClientTurnId = ++this.clientTurnSeq;
     this.cancelTtsFallback();
     this.audioChunksInTurn = 0;
     this.currentAgentTranscript = "";
@@ -1300,7 +1331,7 @@ CORE AUTONOMOUS CAPABILITIES:
           })
         );
       } else {
-        this.ws.send(JSON.stringify({ type: "text", text }));
+        this.ws.send(JSON.stringify({ type: "text", text, client_turn_id: this.activeClientTurnId }));
       }
     } catch {
       this.pendingTexts.push(text);
