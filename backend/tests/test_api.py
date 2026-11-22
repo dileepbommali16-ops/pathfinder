@@ -549,5 +549,41 @@ class TestAPIEndpoints(unittest.TestCase):
         sent_payload = mock_post.call_args.kwargs["json"]
         self.assertEqual(sent_payload["options"]["userArguments"], "")
 
+    def test_voice_tts_skips_unary_when_429_and_falls_back_to_live_puck(self):
+        import asyncio
+        import time
+        from unittest.mock import patch
+        import backend.routers.voice_routes as vr
+
+        class QuotaErr(Exception):
+            pass
+
+        vr._TTS_PCM_CACHE.clear()
+        vr._TTS_INFLIGHT.clear()
+        vr._UNARY_TTS_COOLDOWN_UNTIL = 0.0
+        vr._LIVE_TTS_COOLDOWN_UNTIL = 0.0
+
+        async def fail_unary_429(text: str, keys: list):
+            vr._UNARY_TTS_COOLDOWN_UNTIL = time.monotonic() + 1800.0
+            return None
+
+        live_calls = 0
+
+        async def fake_live(text: str):
+            nonlocal live_calls
+            live_calls += 1
+            return {"pcm_base64": "BBBB", "sample_rate": 24000, "voice": "Puck"}
+
+        async def _run():
+            with patch.object(vr, "_synthesize_puck_via_38_unary_fallback", side_effect=fail_unary_429), \
+                 patch.object(vr, "_synthesize_puck_via_38_live_unlocked", side_effect=fake_live):
+                return await vr.synthesize_puck_pcm("Fallback test utterance", prefer_unary=True)
+
+        res = asyncio.run(_run())
+        self.assertIsNotNone(res)
+        self.assertEqual(res["pcm_base64"], "BBBB")
+        self.assertEqual(live_calls, 1)
+        vr._UNARY_TTS_COOLDOWN_UNTIL = 0.0
+
 if __name__ == "__main__":
     unittest.main()

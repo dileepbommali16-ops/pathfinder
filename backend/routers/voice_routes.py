@@ -23,6 +23,7 @@ _TTS_INFLIGHT: Dict[str, asyncio.Task] = {}
 _TTS_LIVE_SEM: Optional[asyncio.Semaphore] = None
 _TTS_CONCURRENCY_SEM: Optional[asyncio.Semaphore] = None
 _LIVE_TTS_COOLDOWN_UNTIL: float = 0.0
+_UNARY_TTS_COOLDOWN_UNTIL: float = 0.0
 
 STANDARD_GREETING_PHRASES = (
     "Hi Boss! What's up?",
@@ -39,14 +40,14 @@ STANDARD_GREETING_PHRASES = (
 def _get_tts_live_sem() -> asyncio.Semaphore:
     global _TTS_LIVE_SEM
     if _TTS_LIVE_SEM is None:
-        _TTS_LIVE_SEM = asyncio.Semaphore(4)
+        _TTS_LIVE_SEM = asyncio.Semaphore(6)
     return _TTS_LIVE_SEM
 
 
 def _get_tts_semaphore() -> asyncio.Semaphore:
     global _TTS_CONCURRENCY_SEM
     if _TTS_CONCURRENCY_SEM is None:
-        _TTS_CONCURRENCY_SEM = asyncio.Semaphore(6)
+        _TTS_CONCURRENCY_SEM = asyncio.Semaphore(8)
     return _TTS_CONCURRENCY_SEM
 
 
@@ -124,13 +125,18 @@ def _strip_wav_header_if_present(raw_bytes: bytes) -> tuple[bytes, int]:
 
 
 async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optional[Dict[str, Any]]:
-    """Fallback unary Gemini 3.8 TTS using Puck voice when concurrent Live sessions are busy."""
+    """Fallback unary Gemini 3.8 TTS using Puck voice when Live TTS is unavailable (respects 429 cooldown)."""
+    global _UNARY_TTS_COOLDOWN_UNTIL
+    if time.monotonic() < _UNARY_TTS_COOLDOWN_UNTIL:
+        return None
+
     from google import genai
     from google.genai import types
     from backend.agent.puck_voice import get_puck_speech_config
 
     for key in keys:
         client = genai.Client(http_options={"api_version": "v1beta", "timeout": 12000}, api_key=key)
+        quota_hit = False
         for tts_model in ("gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"):
             try:
                 cfg = types.GenerateContentConfig(
@@ -171,8 +177,15 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                             "voice": "Puck",
                         }
             except Exception as exc:
+                err_l = repr(exc).lower()
                 logger.warning("[Voice TTS Unary %s] failed: %r", tts_model, exc)
+                if "429" in err_l or "resource_exhausted" in err_l or "quota" in err_l:
+                    _UNARY_TTS_COOLDOWN_UNTIL = time.monotonic() + 1800.0
+                    quota_hit = True
+                    break
                 continue
+        if quota_hit:
+            break
     return None
 
 
@@ -209,74 +222,78 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
 
     global _LIVE_TTS_COOLDOWN_UNTIL
     live_sem = _get_tts_live_sem()
-    if not live_sem.locked() and time.monotonic() >= _LIVE_TTS_COOLDOWN_UNTIL:
+    if time.monotonic() >= _LIVE_TTS_COOLDOWN_UNTIL:
         async with live_sem:
-            key = keys[0]
-            client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
-            try:
-                pcm_buf = bytearray()
+            key_candidates = keys[:2] if len(keys) > 1 else [keys[0], keys[0]]
+            for attempt_idx, key in enumerate(key_candidates):
+                client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
+                try:
+                    pcm_buf = bytearray()
 
-                async def _run_live():
-                    speech_seen = False
-                    trailing_silent_bytes = 0
-                    async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
-                        await session.send_client_content(
-                            turns=[
-                                types.Content(
-                                    role="user",
-                                    parts=[types.Part.from_text(text=f'Say verbatim: "{text}"')],
-                                )
-                            ],
-                            turn_complete=True,
-                        )
-                        async for resp in session.receive():
-                            sc = resp.server_content
-                            if sc and sc.model_turn and sc.model_turn.parts:
-                                for part in sc.model_turn.parts:
-                                    if part.inline_data and part.inline_data.data:
-                                        chunk = bytes(part.inline_data.data)
-                                        pcm_buf.extend(chunk)
-                                        c_rms, _ = _chunk_rms_and_peak_int16(chunk)
-                                        if c_rms >= 0.008 or len(pcm_buf) >= 24000:
-                                            speech_seen = True
-                                        if speech_seen:
-                                            if c_rms < 0.0025:
-                                                trailing_silent_bytes += len(chunk)
-                                            else:
-                                                trailing_silent_bytes = 0
-                            if sc and (
-                                (getattr(sc, "turn_complete", False) and len(pcm_buf) >= 9600)
-                                or (speech_seen and getattr(sc, "generation_complete", False) and len(pcm_buf) >= 12000)
-                                or (speech_seen and trailing_silent_bytes >= 26400)
-                                or len(pcm_buf) >= max_pcm_bytes
-                            ):
-                                break
+                    async def _run_live():
+                        speech_seen = False
+                        trailing_silent_bytes = 0
+                        async with client.aio.live.connect(model=LIVE_MODEL, config=cfg) as session:
+                            await session.send_client_content(
+                                turns=[
+                                    types.Content(
+                                        role="user",
+                                        parts=[types.Part.from_text(text=f'Say verbatim: "{text}"')],
+                                    )
+                                ],
+                                turn_complete=True,
+                            )
+                            async for resp in session.receive():
+                                sc = resp.server_content
+                                if sc and sc.model_turn and sc.model_turn.parts:
+                                    for part in sc.model_turn.parts:
+                                        if part.inline_data and part.inline_data.data:
+                                            chunk = bytes(part.inline_data.data)
+                                            pcm_buf.extend(chunk)
+                                            c_rms, _ = _chunk_rms_and_peak_int16(chunk)
+                                            if c_rms >= 0.008 or len(pcm_buf) >= 24000:
+                                                speech_seen = True
+                                            if speech_seen:
+                                                if c_rms < 0.0025:
+                                                    trailing_silent_bytes += len(chunk)
+                                                else:
+                                                    trailing_silent_bytes = 0
+                                if sc and (
+                                    (getattr(sc, "turn_complete", False) and len(pcm_buf) >= 4800)
+                                    or (speech_seen and getattr(sc, "generation_complete", False) and len(pcm_buf) >= 9600)
+                                    or (speech_seen and trailing_silent_bytes >= 26400)
+                                    or len(pcm_buf) >= max_pcm_bytes
+                                ):
+                                    break
 
-                await asyncio.wait_for(_run_live(), timeout=3.8)
-                raw_pcm = bytes(pcm_buf)
-                _, peak = _chunk_rms_and_peak_int16(raw_pcm)
-                if len(raw_pcm) >= 9600 and peak >= 250:
-                    polished = _clean_pcm_edges(raw_pcm, 24000)
-                    if polished:
-                        return {
-                            "pcm_base64": base64.b64encode(polished).decode("utf-8"),
-                            "sample_rate": 24000,
-                            "voice": "Puck",
-                        }
-                _LIVE_TTS_COOLDOWN_UNTIL = time.monotonic() + 25.0
-                logger.warning(
-                    "[Voice TTS Live Puck] %s returned incomplete audio (bytes=%d, peak=%d); falling back to unary Puck TTS",
-                    LIVE_MODEL,
-                    len(raw_pcm),
-                    peak,
-                )
-            except Exception as exc:
-                err_s = repr(exc).lower()
-                if any(tok in err_s for tok in ("1011", "exhausted", "quota", "429", "timeout")):
-                    _LIVE_TTS_COOLDOWN_UNTIL = time.monotonic() + 25.0
-                logger.warning("[Voice TTS Live Puck] %s failed: %r; falling back to unary Puck TTS", LIVE_MODEL, exc)
+                    await asyncio.wait_for(_run_live(), timeout=8.0)
+                    raw_pcm = bytes(pcm_buf)
+                    _, peak = _chunk_rms_and_peak_int16(raw_pcm)
+                    if len(raw_pcm) >= 4800 and peak >= 200:
+                        polished = _clean_pcm_edges(raw_pcm, 24000)
+                        if polished:
+                            return {
+                                "pcm_base64": base64.b64encode(polished).decode("utf-8"),
+                                "sample_rate": 24000,
+                                "voice": "Puck",
+                            }
+                    logger.warning(
+                        "[Voice TTS Live Puck] %s attempt#%d returned incomplete audio (bytes=%d, peak=%d)",
+                        LIVE_MODEL,
+                        attempt_idx + 1,
+                        len(raw_pcm),
+                        peak,
+                    )
+                except Exception as exc:
+                    err_s = repr(exc).lower()
+                    logger.warning("[Voice TTS Live Puck] %s attempt#%d failed: %r", LIVE_MODEL, attempt_idx + 1, exc)
+                    if any(tok in err_s for tok in ("1011", "exhausted", "quota", "429")):
+                        _LIVE_TTS_COOLDOWN_UNTIL = time.monotonic() + 10.0
+                        break
+                    if "api key not valid" in err_s:
+                        continue
 
-    # 2. Fast Unary Gemini 3.8 Puck TTS (used immediately if concurrent Live TTS slots are busy or slow)
+    # 2. Secondary fallback to unary Puck TTS only if Live attempts did not yield audio
     unary_result = await _synthesize_puck_via_38_unary_fallback(text, keys)
     if unary_result:
         return unary_result
@@ -314,10 +331,11 @@ async def _synthesize_and_cache(cache_key: str, text: str, prefer_unary: bool = 
             if cache_key in _TTS_PCM_CACHE:
                 _TTS_PCM_CACHE.move_to_end(cache_key)
                 return _TTS_PCM_CACHE[cache_key]
+            synthesized: Optional[Dict[str, Any]] = None
             if prefer_unary:
                 from backend.config.key_resolver import get_gemini_key_candidates
                 synthesized = await _synthesize_puck_via_38_unary_fallback(text, get_gemini_key_candidates())
-            else:
+            if not synthesized:
                 synthesized = await _synthesize_puck_via_38_live_unlocked(text)
             if synthesized:
                 _store_tts_cache(cache_key, synthesized)
@@ -343,9 +361,9 @@ async def synthesize_puck_pcm(text: str, prefer_unary: bool = False) -> Optional
         _TTS_INFLIGHT[cache_key] = task
 
     try:
-        synthesized = await asyncio.wait_for(asyncio.shield(task), timeout=11.0)
+        synthesized = await asyncio.wait_for(asyncio.shield(task), timeout=13.5)
     except asyncio.TimeoutError:
-        logger.warning("[Voice TTS] timed out waiting 11.0s for Puck synthesis")
+        logger.warning("[Voice TTS] timed out waiting 13.5s for Puck synthesis")
         return None
     if synthesized:
         return {"cached": joined_inflight, **synthesized}

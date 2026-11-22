@@ -279,6 +279,8 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(layoutSrc).not.toContain("📷 Cam");
     expect(socketSrc).toContain("reconnectForAccountSwitch");
     expect(socketSrc).toContain("ZERO SYCOPHANCY");
+    expect(socketSrc).toContain("audioRescueTimer");
+    expect(audioSrc).toContain("pendingResumeChunks");
   });
 
   it("removes Boss starter leak from Coding Studio templates and handles live CGPA profile update intent", () => {

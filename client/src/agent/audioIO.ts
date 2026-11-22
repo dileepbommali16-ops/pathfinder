@@ -755,6 +755,7 @@ class AudioEngine {
   private prefetchedTtsCache: Map<string, { pcm_base64: string; sample_rate: number }> = new Map();
   private speechFramesInUtterance: number = 0;
   private postSpeechSilenceMs: number = 0;
+  private pendingResumeChunks: Array<{ pcm: Float32Array; rate: number }> = [];
 
   constructor() {
     this.bindGlobalUnlock();
@@ -766,9 +767,16 @@ class AudioEngine {
     const resumeExisting = () => {
       if (!this.audioCtx || this.audioCtx.state !== "running") {
         this.unlockAudio();
+      } else {
+        this.flushPendingResumeChunks();
       }
       if (this.micCtx && (this.micCtx.state === "suspended" || (this.micCtx.state as string) === "interrupted")) {
         this.micCtx.resume().catch(() => {});
+      }
+      const queuedSpeech = this.pendingUnlockSpeech;
+      if (queuedSpeech) {
+        this.pendingUnlockSpeech = null;
+        void this.speakTextPuckOrLocal(queuedSpeech.text, queuedSpeech.apiBase);
       }
     };
     window.addEventListener("pointerdown", resumeExisting, { passive: true });
@@ -925,14 +933,24 @@ class AudioEngine {
         (this.audioCtx as any).setSinkId(this.selectedSpeakerId).catch(() => {});
       }
       this.audioCtx.onstatechange = () => {
-        if (this.audioCtx && (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted")) {
+        if (!this.audioCtx) return;
+        if (this.audioCtx.state === "running") {
+          this.flushPendingResumeChunks();
+          const queuedSpeech = this.pendingUnlockSpeech;
+          if (queuedSpeech) {
+            this.pendingUnlockSpeech = null;
+            void this.speakTextPuckOrLocal(queuedSpeech.text, queuedSpeech.apiBase);
+          }
+        } else if (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted") {
           this.audioCtx.resume().catch(() => {});
         }
       };
       this.bindAutoDeviceChange();
     }
     if (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted") {
-      this.audioCtx.resume().catch(() => {});
+      this.audioCtx.resume().then(() => {
+        this.flushPendingResumeChunks();
+      }).catch(() => {});
     }
   }
 
@@ -969,9 +987,14 @@ class AudioEngine {
     try {
       this.initContext();
       if (!this.audioCtx || !this.masterGain) return;
-      if (this.audioCtx.state === "running") return;
+      if (this.audioCtx.state === "running") {
+        this.flushPendingResumeChunks();
+        return;
+      }
       if (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted") {
-        this.audioCtx.resume().catch(() => {});
+        this.audioCtx.resume().then(() => {
+          this.flushPendingResumeChunks();
+        }).catch(() => {});
       }
       const silentBuf = this.audioCtx.createBuffer(1, 1, this.audioCtx.sampleRate || 24000);
       const src = this.audioCtx.createBufferSource();
@@ -1466,13 +1489,22 @@ class AudioEngine {
     return true;
   }
 
+  private flushPendingResumeChunks() {
+    if (!this.audioCtx || this.audioCtx.state !== "running" || this.pendingResumeChunks.length === 0) {
+      return;
+    }
+    const queued = this.pendingResumeChunks.splice(0);
+    for (const item of queued) {
+      this.activeTurnMode = "fallback";
+      this.scheduleFallbackFloatPcm(item.pcm, item.rate);
+    }
+    this.notifySpeakingListeners();
+  }
+
   // Play incoming 24kHz 16-bit PCM base64 audio via gapless AudioBufferSourceNode scheduling (reliable across Desktop, iOS & Android)
   public playPcmChunk(base64Pcm: string, sampleRate = 24000) {
     this.initContext();
     if (!this.audioCtx || !this.analyser) return;
-    if (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted") {
-      this.audioCtx.resume().catch(() => {});
-    }
     // Single-voice mutual exclusion: stop legacy Speaker, full-clip TTS, & browser TTS so 2 voices NEVER overlap
     if (this.wholePcmSource || !this.activeTurnMode) {
       this.stopWholePcmPlayback();
@@ -1487,6 +1519,18 @@ class AudioEngine {
     const float32Data = this.decodeBase64Pcm16(base64Pcm);
     if (!float32Data) return;
 
+    if (this.audioCtx.state === "suspended" || (this.audioCtx.state as string) === "interrupted") {
+      if (this.pendingResumeChunks.length < 120) {
+        this.pendingResumeChunks.push({ pcm: float32Data, rate: sampleRate });
+      }
+      this.audioCtx.resume().then(() => {
+        this.flushPendingResumeChunks();
+      }).catch(() => {});
+      this.notifySpeakingListeners();
+      return;
+    }
+
+    this.flushPendingResumeChunks();
     this.activeTurnMode = "fallback";
     this.scheduleFallbackFloatPcm(float32Data, sampleRate);
     this.notifySpeakingListeners();
@@ -1577,6 +1621,7 @@ class AudioEngine {
     this.activeTurnMode = null;
     this.workletPlaying = false;
     this.pendingWorkletChunks = [];
+    this.pendingResumeChunks = [];
     this.pendingDrain = false;
     const prevWhole = this.wholePcmSource;
     this.wholePcmSource = null;

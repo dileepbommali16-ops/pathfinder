@@ -100,12 +100,21 @@ class DasAgentSocket {
   private activeClientTurnId = 0;
   private lastWarmupAt = 0;
   private pendingWarmup = false;
+  private audioRescueTimer: number | null = null;
+
+  private clearAudioRescueTimer() {
+    if (this.audioRescueTimer !== null) {
+      window.clearTimeout(this.audioRescueTimer);
+      this.audioRescueTimer = null;
+    }
+  }
 
   public muteActiveTurn() {
     this.muteUntilNextSend = true;
     if (this.activeAudioTurnId !== null) {
       this.interruptedTurnIds.add(this.activeAudioTurnId);
     }
+    this.clearAudioRescueTimer();
     this.cancelTtsFallback();
     this.clearTurnWatchdog();
     this.isSpeakingTurn = false;
@@ -300,21 +309,21 @@ class DasAgentSocket {
           ? `You are speaking directly with your creator, master architect, and owner, Bommali Dileep.
 - Always address him warmly, casually, and loyally as 'Boss' in every single reply.
 - Never call yourself 'co-pilot' or sound robotic. You are DAS, created by Dileep.
-- Say "Hi Boss! What's up?" ONLY once as the initial session greeting. If Boss says 'Hi', 'Hi baby', or 'Hello' again later in the same session, reply concisely with "Hi Boss, I'm here!"
+- ONLY when Boss sends a pure standalone greeting ("Hi", "Hello", "Hey", "Hi baby") with NO question attached: say "Hi Boss! What's up?" once, and "Hi Boss, I'm here!" on subsequent standalone greetings. If Boss asks a question alongside "hi" (e.g. "hi who i am", "hi what is my college"), ALWAYS answer his actual question warmly and accurately!
 - You know everything about Boss Dileep, his family, his college, his mentors, and his life. Answer naturally, warmly, and proudly whenever he or anyone asks.`
           : roleKey === "madam"
             ? `You are speaking with a female visitor, evaluator, recruiter, or friend.
 - Always address her respectfully and politely as 'Madam'.
-- On her first greeting reply "Hi Madam! What's up?", and on follow-up greetings reply "Hi Madam, I'm here!"
+- ONLY on a pure standalone greeting ("Hi", "Hello", "Hi baby") reply "Hi Madam! What's up?" (first) or "Hi Madam, I'm here!" (subsequent). If she asks a question after "hi", answer her question directly.
 - If she asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked).`
             : roleKey === "stranger"
               ? `You are speaking with an unidentified guest visitor.
 - Always treat them as an unidentified stranger until they introduce themselves by name; NEVER call them 'Boss'.
-- On their first greeting reply "Hi stranger, tell your name first!", and on follow-up greetings before they give their name reply "Hi stranger, I'm here — tell me your name first!"
+- ONLY on a pure standalone greeting ("Hi", "Hello", "Hi baby") reply "Hi stranger, tell your name first!" (first) or "Hi stranger, I'm here — tell me your name first!" (subsequent). If they ask a question after "hi", answer naturally.
 - If they ask 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep."`
               : `You are speaking with a male visitor, evaluator, recruiter, or friend.
 - Always address him respectfully and politely as 'Sir'.
-- On his first greeting reply "Hi Sir! What's up?", and on follow-up greetings reply "Hi Sir, I'm here!"
+- ONLY on a pure standalone greeting ("Hi", "Hello", "Hi baby") reply "Hi Sir! What's up?" (first) or "Hi Sir, I'm here!" (subsequent). If he asks a question after "hi", answer his question directly.
 - If he asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked).`;
 
       const systemPrompt = `You are DAS, the advanced Autonomous 3D AI Assistant and Master Software Engineer living inside PATHFINDER 2.0.
@@ -660,6 +669,7 @@ CORE AUTONOMOUS CAPABILITIES:
           this.hasConversationActivity = true;
           this.lastAudioChunkAt = Date.now();
           this.audioChunksInTurn += 1;
+          this.clearAudioRescueTimer();
           this.cancelTtsFallback();
           this.clearTurnWatchdog();
           this.notifyAgentResponse();
@@ -696,6 +706,25 @@ CORE AUTONOMOUS CAPABILITIES:
           this.currentAgentTranscript += data.text;
           audioEngine.updateLiveTranscript(this.currentAgentTranscript);
           this.savedOnTranscript?.(this.currentAgentTranscript);
+          if (this.audioChunksInTurn === 0 && !audioEngine.isSpeaking()) {
+            this.clearAudioRescueTimer();
+            const expectedTurnId = tId;
+            this.audioRescueTimer = window.setTimeout(() => {
+              this.audioRescueTimer = null;
+              if (
+                this.audioChunksInTurn === 0 &&
+                !this.isSpeakingTurn &&
+                !audioEngine.isSpeaking() &&
+                (expectedTurnId === null || this.activeAudioTurnId === null || this.activeAudioTurnId === expectedTurnId)
+              ) {
+                const rescueTxt = this.currentAgentTranscript.trim();
+                if (rescueTxt) {
+                  this.awaitingNextTurn = true;
+                  this.triggerTextOnlyTts(rescueTxt);
+                }
+              }
+            }, 2400);
+          }
           return;
         }
 
@@ -709,6 +738,7 @@ CORE AUTONOMOUS CAPABILITIES:
             this.audioChunksInTurn = 0;
             this.isSpeakingTurn = false;
             this.awaitingNextTurn = true;
+            this.clearAudioRescueTimer();
             this.clearTurnWatchdog();
             return;
           }
@@ -726,6 +756,7 @@ CORE AUTONOMOUS CAPABILITIES:
           const hadAudio = this.audioChunksInTurn > 0;
           const completedText = this.currentAgentTranscript.trim();
           this.audioChunksInTurn = 0;
+          this.clearAudioRescueTimer();
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
@@ -752,6 +783,7 @@ CORE AUTONOMOUS CAPABILITIES:
           if (isStaleClientTurn) {
             return;
           }
+          this.clearAudioRescueTimer();
           const tId = typeof data.turn_id === "number" ? data.turn_id : null;
           if (tId !== null && tId === this.activeAudioTurnId) {
             this.interruptedTurnIds.add(tId);
@@ -1129,6 +1161,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.activeAudioTurnId = null;
     this.audioChunksInTurn = 0;
     this.awaitingNextTurn = true;
+    this.clearAudioRescueTimer();
     this.savedOnStatusChange?.(false);
     if (this.renderPingTimer) {
       window.clearInterval(this.renderPingTimer);
@@ -1265,6 +1298,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.muteUntilNextSend = false;
     this.interruptedTurnIds.clear();
     this.activeClientTurnId = ++this.clientTurnSeq;
+    this.clearAudioRescueTimer();
     this.cancelTtsFallback();
     this.audioChunksInTurn = 0;
     this.currentAgentTranscript = "";
@@ -1364,6 +1398,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.savedRole = role;
     this.hasConversationActivity = false;
     this.pendingTexts = [];
+    this.clearAudioRescueTimer();
     this.cancelTtsFallback();
     this.clearTurnWatchdog();
     if (this.manualClose || !this.savedOnTranscript) return;
@@ -1375,6 +1410,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.connSeq++;
     this.activeAudioTurnId = null;
     this.audioChunksInTurn = 0;
+    this.clearAudioRescueTimer();
     this.cancelTtsFallback();
     this.clearTurnWatchdog();
     this.closeExistingSocketOnly();
