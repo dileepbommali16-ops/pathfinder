@@ -95,6 +95,21 @@ class DasAgentSocket {
   private lastTurnCompletedAt = 0;
   private latestPageContext: Record<string, any> | null = null;
   private hasConversationActivity = false;
+  private muteUntilNextSend = false;
+
+  public muteActiveTurn() {
+    this.muteUntilNextSend = true;
+    if (this.activeAudioTurnId !== null) {
+      this.interruptedTurnIds.add(this.activeAudioTurnId);
+    }
+    this.cancelTtsFallback();
+    this.clearTurnWatchdog();
+    this.isSpeakingTurn = false;
+    this.awaitingNextTurn = true;
+    this.currentAgentTranscript = "";
+    this.audioChunksInTurn = 0;
+    audioEngine.clearAudioQueue();
+  }
 
   private cancelTtsFallback() {
     if (this.ttsFallbackAbort) {
@@ -609,6 +624,9 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "audio" && data.pcm_base64) {
+          if (this.muteUntilNextSend) {
+            return;
+          }
           const tId = typeof data.turn_id === "number" ? data.turn_id : null;
           if (tId !== null && this.interruptedTurnIds.has(tId)) {
             return;
@@ -644,6 +662,9 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "transcript" && data.text) {
+          if (this.muteUntilNextSend) {
+            return;
+          }
           const tId = typeof data.turn_id === "number" ? data.turn_id : null;
           if (tId !== null && this.interruptedTurnIds.has(tId)) {
             return;
@@ -667,6 +688,15 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "turn_complete") {
+          if (this.muteUntilNextSend) {
+            this.muteUntilNextSend = false;
+            this.activeAudioTurnId = null;
+            this.audioChunksInTurn = 0;
+            this.isSpeakingTurn = false;
+            this.awaitingNextTurn = true;
+            this.clearTurnWatchdog();
+            return;
+          }
           audioEngine.flushAudioPlayer();
           this.lastTurnCompletedAt = Date.now();
           this.activeAudioTurnId = null;
@@ -693,6 +723,7 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.type === "user_transcript" && data.text) {
+          this.muteUntilNextSend = false;
           this.hasConversationActivity = true;
           if (!this.isSpeakingTurn && this.audioChunksInTurn === 0) {
             this.awaitingNextTurn = true;
@@ -795,6 +826,7 @@ CORE AUTONOMOUS CAPABILITIES:
         // 4. Direct Google AI Studio Audio & Text Stream
         const parts = data.serverContent?.modelTurn?.parts;
         if (parts && Array.isArray(parts)) {
+          if (this.muteUntilNextSend) return;
           for (const part of parts) {
             if (part.inlineData?.data) {
               if (this.awaitingNextTurn) {
@@ -837,6 +869,14 @@ CORE AUTONOMOUS CAPABILITIES:
         }
 
         if (data.serverContent?.turnComplete) {
+          if (this.muteUntilNextSend) {
+            this.muteUntilNextSend = false;
+            this.isSpeakingTurn = false;
+            this.awaitingNextTurn = true;
+            this.audioChunksInTurn = 0;
+            this.clearTurnWatchdog();
+            return;
+          }
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
           this.awaitingNextTurn = true;
@@ -1169,6 +1209,7 @@ CORE AUTONOMOUS CAPABILITIES:
   public speakVerbatim(text: string, mode = "coach_read") {
     const cleaned = text.trim();
     if (!cleaned) return;
+    this.muteUntilNextSend = false;
     this.cancelTtsFallback();
     this.audioChunksInTurn = 0;
     this.currentAgentTranscript = "";
@@ -1192,6 +1233,7 @@ CORE AUTONOMOUS CAPABILITIES:
 
   public sendTextCommand(text: string) {
     if (!text.trim()) return;
+    this.muteUntilNextSend = false;
     this.cancelTtsFallback();
     this.audioChunksInTurn = 0;
     this.currentAgentTranscript = "";

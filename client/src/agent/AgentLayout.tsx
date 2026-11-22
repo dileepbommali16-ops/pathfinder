@@ -598,6 +598,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       const detail = (e as CustomEvent)?.detail || {};
       const question = typeof detail.question === "string" ? detail.question.trim() : "";
       if (!question) return;
+      dasSocket.muteActiveTurn();
       askCoachUnbindRef.current?.();
       askCoachUnbindRef.current = null;
       restTtsAbortRef.current?.abort();
@@ -615,7 +616,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               : track === "verdict"
                 ? "Hiring Committee Verdict"
                 : "Interviewer Prompt";
-      setUserTranscript(`🎤 ${trackLabel}`);
+      setUserTranscript(trackLabel);
       setTranscript(question);
     };
 

@@ -67,10 +67,24 @@ function findByLabel(label: string, pool?: HTMLElement[]): HTMLElement | null {
   return best;
 }
 
+const flashTimers = new WeakMap<HTMLElement, number>();
+
 function flash(el: HTMLElement) {
-  const old = el.style.outline;
+  if (el.dataset.dasOrigOutline === undefined) {
+    el.dataset.dasOrigOutline = el.style.outline || "";
+  }
+  const existingTimer = flashTimers.get(el);
+  if (existingTimer !== undefined) {
+    window.clearTimeout(existingTimer);
+  }
   el.style.outline = "3px solid #FD0053";
-  setTimeout(() => (el.style.outline = old), 900);
+  const tid = window.setTimeout(() => {
+    const orig = el.dataset.dasOrigOutline ?? "";
+    delete el.dataset.dasOrigOutline;
+    flashTimers.delete(el);
+    el.style.outline = orig;
+  }, 900);
+  flashTimers.set(el, tid);
 }
 
 function realClick(el: HTMLElement) {

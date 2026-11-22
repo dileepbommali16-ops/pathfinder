@@ -318,7 +318,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
             className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-[#2B2024] px-4 py-2.5 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 transition cursor-pointer"
           >
             <Volume2 className="h-4 w-4 text-[#f8fafc]" />
-            <span>🔊 Have 3D DAS Agent Ask Problem Aloud</span>
+            <span>Have 3D DAS Agent Ask Problem Aloud</span>
           </button>
         </div>
       </div>
