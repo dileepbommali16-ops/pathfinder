@@ -585,5 +585,121 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(live_calls, 1)
         vr._UNARY_TTS_COOLDOWN_UNTIL = 0.0
 
+    def test_multi_key_rotation_and_cooldown_priority(self):
+        import os
+        from backend.config import key_resolver as kr
+
+        kr.clear_gemini_key_cooldowns()
+        try:
+            with patch.dict(
+                os.environ,
+                {
+                    "GEMINI_API_KEY": "AIzaPrimaryTestKey01",
+                    "GEMINI_API_KEY_FALLBACK": "AIzaBackupTestKey02, AIzaBackupTestKey03",
+                },
+                clear=False,
+            ):
+                candidates = kr.get_gemini_key_candidates()
+                self.assertIn("AIzaPrimaryTestKey01", candidates)
+                self.assertIn("AIzaBackupTestKey02", candidates)
+                self.assertIn("AIzaBackupTestKey03", candidates)
+                self.assertEqual(candidates[:3], ["AIzaPrimaryTestKey01", "AIzaBackupTestKey02", "AIzaBackupTestKey03"])
+
+                kr.mark_gemini_key_rate_limited("AIzaPrimaryTestKey01", 600.0)
+                rotated = kr.get_gemini_key_candidates()
+                self.assertEqual(rotated[0], "AIzaBackupTestKey02")
+                self.assertEqual(kr.get_active_gemini_key(), "AIzaBackupTestKey02")
+                self.assertEqual(rotated[-1], "AIzaPrimaryTestKey01")
+
+                kr.clear_gemini_key_cooldowns()
+                restored = kr.get_gemini_key_candidates()
+                self.assertEqual(restored[0], "AIzaPrimaryTestKey01")
+        finally:
+            kr.clear_gemini_key_cooldowns()
+
+    def test_health_reports_keys_count_without_secrets_and_supports_head(self):
+        head_resp = self.client.head("/api/health")
+        self.assertEqual(head_resp.status_code, 200)
+
+        get_resp = self.client.get("/api/health")
+        self.assertEqual(get_resp.status_code, 200)
+        data = get_resp.json()
+        self.assertGreaterEqual(data.get("gemini", {}).get("keys_configured", 0), 1)
+        serialized = get_resp.text
+        self.assertNotIn("AIza", serialized)
+        self.assertNotIn("AQ.", serialized)
+
+    def test_live_puck_tts_runs_at_zero_cooldown_and_rotates_on_429(self):
+        import asyncio
+        import os
+        import struct
+        from types import SimpleNamespace
+        from google import genai
+        from backend.config import key_resolver as kr
+        import backend.routers.voice_routes as vr
+
+        kr.clear_gemini_key_cooldowns()
+        vr._LIVE_TTS_COOLDOWN_UNTIL = 0.0
+        vr._TTS_LIVE_SEM = None
+        attempted_keys = []
+        valid_pcm = struct.pack("<" + "h" * 2400, *([1500, -1500] * 1200))
+
+        class _FakeSession:
+            async def send_client_content(self, **kwargs):
+                return None
+
+            async def receive(self):
+                part = SimpleNamespace(inline_data=SimpleNamespace(data=valid_pcm))
+                sc = SimpleNamespace(
+                    model_turn=SimpleNamespace(parts=[part]),
+                    turn_complete=True,
+                    generation_complete=True,
+                )
+                yield SimpleNamespace(server_content=sc)
+
+        class _FakeConnectCM:
+            def __init__(self, api_key: str):
+                self._api_key = api_key
+
+            async def __aenter__(self):
+                if self._api_key == "AIzaFailKey1":
+                    raise Exception("429 RESOURCE_EXHAUSTED")
+                return _FakeSession()
+
+            async def __aexit__(self, exc_type, exc, tb):
+                return False
+
+        def fake_genai_client(*, http_options=None, api_key=""):
+            attempted_keys.append(api_key)
+            return SimpleNamespace(
+                aio=SimpleNamespace(
+                    live=SimpleNamespace(connect=lambda model=None, config=None: _FakeConnectCM(api_key))
+                )
+            )
+
+        try:
+            with patch.dict(
+                os.environ,
+                {
+                    "GEMINI_API_KEY": "AIzaFailKey1",
+                    "GEMINI_API_KEY_FALLBACK": "AIzaGoodKey2",
+                },
+                clear=False,
+            ), patch.object(genai, "Client", side_effect=fake_genai_client):
+                res = asyncio.run(vr._synthesize_puck_via_38_live_unlocked("Rotation check"))
+                self.assertIsNotNone(res)
+                self.assertEqual(res.get("voice"), "Puck")
+                self.assertTrue(bool(res.get("pcm_base64")))
+                self.assertEqual(attempted_keys, ["AIzaFailKey1", "AIzaGoodKey2"])
+
+                rotated = kr.get_gemini_key_candidates()
+                self.assertIn("AIzaGoodKey2", rotated)
+                self.assertIn("AIzaFailKey1", rotated)
+                self.assertGreater(rotated.index("AIzaFailKey1"), rotated.index("AIzaGoodKey2"))
+        finally:
+            kr.clear_gemini_key_cooldowns()
+            vr._LIVE_TTS_COOLDOWN_UNTIL = 0.0
+            vr._TTS_LIVE_SEM = None
+
 if __name__ == "__main__":
     unittest.main()

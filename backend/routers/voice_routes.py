@@ -125,7 +125,7 @@ def _strip_wav_header_if_present(raw_bytes: bytes) -> tuple[bytes, int]:
 
 
 async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optional[Dict[str, Any]]:
-    """Fallback unary Gemini 3.8 TTS using Puck voice when Live TTS is unavailable (respects 429 cooldown)."""
+    """Fallback unary Gemini 3.8 TTS using Puck voice when Live TTS is unavailable (respects per-key 429 cooldown)."""
     global _UNARY_TTS_COOLDOWN_UNTIL
     if time.monotonic() < _UNARY_TTS_COOLDOWN_UNTIL:
         return None
@@ -133,10 +133,11 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
     from google import genai
     from google.genai import types
     from backend.agent.puck_voice import get_puck_speech_config
+    from backend.config.key_resolver import mark_gemini_key_rate_limited
 
+    quota_hit_keys = 0
     for key in keys:
         client = genai.Client(http_options={"api_version": "v1beta", "timeout": 12000}, api_key=key)
-        quota_hit = False
         for tts_model in ("gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"):
             try:
                 cfg = types.GenerateContentConfig(
@@ -180,12 +181,13 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                 err_l = repr(exc).lower()
                 logger.warning("[Voice TTS Unary %s] failed: %r", tts_model, exc)
                 if "429" in err_l or "resource_exhausted" in err_l or "quota" in err_l:
-                    _UNARY_TTS_COOLDOWN_UNTIL = time.monotonic() + 1800.0
-                    quota_hit = True
+                    mark_gemini_key_rate_limited(key, 1800.0)
+                    quota_hit_keys += 1
                     break
                 continue
-        if quota_hit:
-            break
+
+    if keys and quota_hit_keys >= len(keys):
+        _UNARY_TTS_COOLDOWN_UNTIL = time.monotonic() + 1800.0
     return None
 
 
@@ -193,7 +195,7 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
     """Synthesize clean verbatim 24kHz PCM speech via genuine gemini-3.8-live Puck voice first."""
     from google import genai
     from google.genai import types
-    from backend.config.key_resolver import get_gemini_key_candidates
+    from backend.config.key_resolver import get_gemini_key_candidates, mark_gemini_key_rate_limited
     from backend.agent.puck_voice import LIVE_MODEL, get_puck_speech_config
 
     keys = get_gemini_key_candidates()
@@ -222,9 +224,10 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
 
     global _LIVE_TTS_COOLDOWN_UNTIL
     live_sem = _get_tts_live_sem()
-    if time.monotonic() >= _LIVE_TTS_COOLDOWN_UNTIL:
+    if time.monotonic() < _LIVE_TTS_COOLDOWN_UNTIL:
         async with live_sem:
-            key_candidates = keys[:2] if len(keys) > 1 else [keys[0], keys[0]]
+            key_candidates = list(keys) if len(keys) > 1 else [keys[0], keys[0]]
+            quota_hits = 0
             for attempt_idx, key in enumerate(key_candidates):
                 client = genai.Client(http_options={"api_version": "v1beta"}, api_key=key)
                 try:
@@ -288,10 +291,13 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                     err_s = repr(exc).lower()
                     logger.warning("[Voice TTS Live Puck] %s attempt#%d failed: %r", LIVE_MODEL, attempt_idx + 1, exc)
                     if any(tok in err_s for tok in ("1011", "exhausted", "quota", "429")):
-                        _LIVE_TTS_COOLDOWN_UNTIL = time.monotonic() + 10.0
-                        break
+                        mark_gemini_key_rate_limited(key, 600.0)
+                        quota_hits += 1
+                        continue
                     if "api key not valid" in err_s:
                         continue
+            if quota_hits >= len(key_candidates):
+                _LIVE_TTS_COOLDOWN_UNTIL = time.monotonic() + 10.0
 
     # 2. Secondary fallback to unary Puck TTS only if Live attempts did not yield audio
     unary_result = await _synthesize_puck_via_38_unary_fallback(text, keys)

@@ -386,7 +386,7 @@ DAS_TOOLS = [
 import httpx
 import logging
 from urllib.parse import quote
-from backend.config.key_resolver import get_gemini_key_candidates
+from backend.config.key_resolver import get_gemini_key_candidates, mark_gemini_key_rate_limited
 
 live_logger = logging.getLogger("pathfinder.live_proxy")
 
@@ -447,7 +447,11 @@ async def _lookup_factual_info_async(query: str) -> dict:
                 if txt:
                     return {"status": "ok", "source": "google_search", "entity": clean_q, "summary": txt[:900]}
             except Exception as g_err:
+                err_l = repr(g_err).lower()
                 live_logger.debug(f"[Factual Lookup] Gemini search fallback ({fallback_model}) skipped: {g_err}")
+                if any(tok in err_l for tok in ("429", "resource_exhausted", "quota")):
+                    mark_gemini_key_rate_limited(key, 600.0)
+                    break
 
     return {"status": "unavailable", "entity": clean_q, "summary": f"Answer '{clean_q}' directly using verified encyclopedic knowledge without substituting another person."}
 
@@ -869,7 +873,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             contents = list(initial_contents)
             for round_idx in range(3):
                 round_resp = None
-                for api_key in api_keys:
+                for api_key in get_gemini_key_candidates():
                     rest_client = genai.Client(http_options={"api_version": "v1beta", "timeout": 12000}, api_key=api_key)
                     for m_name in model_candidates:
                         try:
@@ -891,7 +895,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             if round_resp:
                                 break
                         except Exception as loop_err:
+                            err_l = repr(loop_err).lower()
                             live_logger.debug(f"[REST Tool Loop {m_name} r={round_idx}] skipped: {loop_err}")
+                            if any(tok in err_l for tok in ("429", "resource_exhausted", "quota")):
+                                mark_gemini_key_rate_limited(api_key, 600.0)
+                                break
                     if round_resp:
                         break
 
@@ -1101,8 +1109,9 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 )
 
                 if not reply_text:
-                    for api_key in api_keys:
+                    for api_key in get_gemini_key_candidates():
                         audio_client = genai.Client(http_options={"api_version": "v1beta", "timeout": 12000}, api_key=api_key)
+                        hit_quota = False
                         for model_name in ("gemini-3.1-flash-lite", "gemini-3-flash-preview", "gemini-flash-latest"):
                             try:
                                 resp = await asyncio.wait_for(
@@ -1119,9 +1128,16 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                     reply_text = candidate_txt
                                     break
                             except Exception as audio_err:
+                                err_l = repr(audio_err).lower()
                                 live_logger.debug(f"[Fallback Audio {model_name}] skipped: {audio_err}")
+                                if any(tok in err_l for tok in ("429", "resource_exhausted", "quota")):
+                                    mark_gemini_key_rate_limited(api_key, 600.0)
+                                    hit_quota = True
+                                    break
                         if reply_text:
                             break
+                        if hit_quota:
+                            continue
 
                 if not reply_text or websocket.client_state == WebSocketState.DISCONNECTED:
                     return
@@ -1212,11 +1228,14 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         pass
 
                 last_error = ""
-                for key_index, api_key in enumerate(api_keys):
+                current_keys = get_gemini_key_candidates()
+                quota_or_timeout_keys = 0
+                for key_index, api_key in enumerate(current_keys):
                     client = genai.Client(
                         http_options={"api_version": "v1beta"},
                         api_key=api_key,
                     )
+                    key_exhausted_or_timed_out = False
                     for model_name in models_to_try:
                         try:
                             cm = client.aio.live.connect(model=model_name, config=config)
@@ -1224,6 +1243,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             session_cm = cm
                             session = new_sess
                             connected_model = model_name
+                            live_quota_cooldown_until = 0.0
                             last_activity_mono = time.monotonic()
                             gemini_reader_task = asyncio.create_task(receive_from_gemini(new_sess))
                             live_logger.info(
@@ -1236,11 +1256,19 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 f"[DAS Live Proxy] key#{key_index} model '{model_name}' connect failed: {last_error}"
                             )
                             err_l = last_error.lower()
-                            if any(tok in err_l for tok in ("1011", "exhausted", "quota", "429", "timeout")):
-                                live_quota_cooldown_until = time.monotonic() + 25.0
+                            if any(tok in err_l for tok in ("1011", "exhausted", "quota", "429")):
+                                mark_gemini_key_rate_limited(api_key, 600.0)
+                                key_exhausted_or_timed_out = True
+                                break
+                            if "timeout" in err_l:
+                                key_exhausted_or_timed_out = True
                             if "api key not valid" in err_l:
                                 break
                             continue
+                    if key_exhausted_or_timed_out:
+                        quota_or_timeout_keys += 1
+                if current_keys and quota_or_timeout_keys >= len(current_keys):
+                    live_quota_cooldown_until = time.monotonic() + 25.0
                 live_logger.warning(
                     f"[DAS Live Proxy] Upstream Live unavailable ({last_error[:140]}); using instant REST + 3.8 Puck fallback."
                 )

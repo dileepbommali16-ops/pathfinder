@@ -16,6 +16,7 @@ from backend.reliability import gemini_circuit_breaker
 from backend.database import DB_PATH, get_db_connection
 from backend.supabase_store import is_cloud_db_configured
 from backend.data_service import get_placement_df
+from backend.config.key_resolver import get_gemini_key_candidates
 from backend.gemini_engine import get_last_gemini_diagnostic, get_gemini_models
 
 health_router = APIRouter(tags=["Health & System Diagnostics"])
@@ -43,7 +44,8 @@ def full_health_check():
     dataset_ok = dataset_records > 0
 
     gemini_key = settings.gemini_api_key or ""
-    gemini_configured = bool(gemini_key and len(gemini_key) > 5)
+    key_candidates = get_gemini_key_candidates()
+    gemini_configured = bool((gemini_key and len(gemini_key) > 5) or key_candidates)
 
     sqlite_ok = DB_PATH.exists()
     cloud_db_ok = is_cloud_db_configured()
@@ -89,6 +91,7 @@ def full_health_check():
         "gemini": {
             "status": "ready" if gemini_configured else "fallback_active",
             "configured": gemini_configured,
+            "keys_configured": len(key_candidates),
             "model": settings.gemini_model,
             "circuit_breaker": gemini_circuit_breaker.get_status(),
             "diagnostic": get_last_gemini_diagnostic()

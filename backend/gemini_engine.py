@@ -49,7 +49,11 @@ except ImportError:
     genai = None
     types = None
 
-from backend.config.key_resolver import get_active_gemini_key
+from backend.config.key_resolver import (
+    get_active_gemini_key,
+    get_gemini_key_candidates,
+    mark_gemini_key_rate_limited,
+)
 GEMINI_API_KEY = get_active_gemini_key()
 
 # Cache validated models list
@@ -122,9 +126,19 @@ def get_last_gemini_diagnostic() -> Dict[str, Any]:
     return _last_gemini_diagnostic
 
 
-def _resolve_gemini_api_key() -> str:
+def _resolve_gemini_api_keys() -> List[str]:
     raw_env_key = os.getenv("GEMINI_API_KEY")
-    return get_active_gemini_key() if raw_env_key is None else raw_env_key.strip()
+    if raw_env_key is not None and not raw_env_key.strip():
+        return []
+    candidates = get_gemini_key_candidates()
+    if raw_env_key and raw_env_key.strip() and raw_env_key.strip() not in candidates:
+        return [raw_env_key.strip()] + candidates
+    return candidates
+
+
+def _resolve_gemini_api_key() -> str:
+    keys = _resolve_gemini_api_keys()
+    return keys[0] if keys else ""
 
 
 def get_gemini_models() -> List[str]:
@@ -181,14 +195,17 @@ if (
 ):
     GEMINI_MODELS.append(_env_startup_model)
 _client = None
+_client_key: Optional[str] = None
 
 
 def get_gemini_client():
-    global _client
-    if _client is not None:
-        return _client
+    global _client, _client_key
     key = _resolve_gemini_api_key()
-    if key and genai:
+    if not key:
+        return None
+    if _client is not None and _client_key == key:
+        return _client
+    if genai:
         try:
             http_opts_kwargs: Dict[str, Any] = {
                 "timeout": 12000,
@@ -200,6 +217,7 @@ def get_gemini_client():
                 api_key=key,
                 http_options=types.HttpOptions(**http_opts_kwargs),
             )
+            _client_key = key
             return _client
         except Exception as exc:
             logger.warning(f"[Gemini Engine] Client init warning: {exc}")
@@ -1076,8 +1094,7 @@ def chat_with_mentor(
     with token-budgeted knowledge, candidate profile grounding, live optional camera frames, and tool iteration caps.
     """
     t_start = time.perf_counter()
-    raw_env_key = os.getenv("GEMINI_API_KEY")
-    api_key = get_active_gemini_key() if raw_env_key is None else raw_env_key.strip()
+    api_keys = _resolve_gemini_api_keys()
     clean_msg = message.strip() if message else ""
 
     if not clean_msg:
@@ -1132,12 +1149,13 @@ def chat_with_mentor(
             "and distinct sentence patterns. Do not repeat previous points.]"
         )
         try:
-            if api_key:
+            active_k = _resolve_gemini_api_key()
+            if active_k:
                 fresh_reply = call_gemini_rest(
                     model=model_used,
                     contents=contents,
                     sys_instruction=steered_instruction,
-                    api_key=api_key,
+                    api_key=active_k,
                     temperature=0.9,
                     max_output_tokens=600,
                     include_thinking=False,
@@ -1156,77 +1174,100 @@ def chat_with_mentor(
 
     # Execute with low-latency attempts across primary Gemini models (12s budget across up to 4 models)
     models_to_try = list(get_gemini_models())[:4]
-    if api_key:
+    if api_keys:
         for model in models_to_try:
-            remaining = 12.0 - (time.perf_counter() - t_start)
-            if remaining <= 0.5:
-                logger.info("[Gemini Engine] Time budget reached (12.0s), switching to intelligent fallback.")
-                break
+            tried_keys_for_model: set[str] = set()
+            while True:
+                remaining = 12.0 - (time.perf_counter() - t_start)
+                if remaining <= 0.5:
+                    logger.info("[Gemini Engine] Time budget reached (12.0s), switching to intelligent fallback.")
+                    break
+                cur_key = next((k for k in _resolve_gemini_api_keys() if k not in tried_keys_for_model), "")
+                if not cur_key:
+                    break
+                tried_keys_for_model.add(cur_key)
 
-            t_call_start = time.perf_counter()
-            try:
-                reply = call_gemini_rest(
-                    model=model,
-                    contents=contents,
-                    sys_instruction=sys_instruction,
-                    api_key=api_key,
-                    temperature=0.85,
-                    max_output_tokens=600,
-                    include_thinking=False,
-                    timeout_sec=min(5.5, remaining)
-                )
-                call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
-                attempts_log.append({"model": model, "duration_ms": call_duration, "status": "ok" if reply else "empty"})
-                if reply and reply.strip():
-                    promote_gemini_model(model)
-                    global _last_gemini_diagnostic
-                    _last_gemini_diagnostic = {"status": "success", "model": model, "duration_ms": call_duration}
-                    model_used = model
-                    gemini_call_ms = call_duration
-
-                    t_nov_start = time.perf_counter()
-                    final_reply = evaluate_and_enforce_novelty(reply.strip(), model)
-                    novelty_ms = round((time.perf_counter() - t_nov_start) * 1000, 2)
-
-                    meta = {
-                        "prep_ms": prep_ms,
-                        "gemini_call_ms": gemini_call_ms,
-                        "novelty_ms": novelty_ms,
-                        "model_used": model_used,
-                        "attempts": attempts_log,
-                        "status": "success"
-                    }
-                    if return_meta:
-                        return final_reply, meta
-                    return final_reply
-            except urllib.error.HTTPError as http_err:
-                call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
-                err_body = ""
+                t_call_start = time.perf_counter()
                 try:
-                    err_body = http_err.read().decode("utf-8", errors="replace")
-                except Exception:
-                    pass
-                sanitized_body = re.sub(r"key=[a-zA-Z0-9_\-]+", "key=[REDACTED]", err_body[:300])
-                attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"HTTP {http_err.code}"})
-                logger.warning(
-                    f"[Gemini Engine] Model '{model}' HTTP {http_err.code} ({http_err.reason}) in {call_duration}ms: {sanitized_body}."
-                )
-                if http_err.code in (400, 404):
-                    evict_gemini_model(model)
-                elif http_err.code == 429:
-                    logger.warning(f"[Gemini Engine] Model '{model}' rate-limited (HTTP 429). Deprioritizing and trying next model.")
+                    reply = call_gemini_rest(
+                        model=model,
+                        contents=contents,
+                        sys_instruction=sys_instruction,
+                        api_key=cur_key,
+                        temperature=0.85,
+                        max_output_tokens=600,
+                        include_thinking=False,
+                        timeout_sec=min(5.5, remaining)
+                    )
+                    call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
+                    attempts_log.append({"model": model, "duration_ms": call_duration, "status": "ok" if reply else "empty"})
+                    if reply and reply.strip():
+                        promote_gemini_model(model)
+                        global _last_gemini_diagnostic
+                        _last_gemini_diagnostic = {"status": "success", "model": model, "duration_ms": call_duration}
+                        model_used = model
+                        gemini_call_ms = call_duration
+
+                        t_nov_start = time.perf_counter()
+                        final_reply = evaluate_and_enforce_novelty(reply.strip(), model)
+                        novelty_ms = round((time.perf_counter() - t_nov_start) * 1000, 2)
+
+                        meta = {
+                            "prep_ms": prep_ms,
+                            "gemini_call_ms": gemini_call_ms,
+                            "novelty_ms": novelty_ms,
+                            "model_used": model_used,
+                            "attempts": attempts_log,
+                            "status": "success"
+                        }
+                        if return_meta:
+                            return final_reply, meta
+                        return final_reply
+                    break
+                except urllib.error.HTTPError as http_err:
+                    call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
+                    err_body = ""
+                    try:
+                        err_body = http_err.read().decode("utf-8", errors="replace")
+                    except Exception:
+                        pass
+                    sanitized_body = re.sub(r"key=[a-zA-Z0-9_\-]+", "key=[REDACTED]", err_body[:300])
+                    attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"HTTP {http_err.code}"})
+                    logger.warning(
+                        f"[Gemini Engine] Model '{model}' HTTP {http_err.code} ({http_err.reason}) in {call_duration}ms: {sanitized_body}."
+                    )
+                    if http_err.code in (400, 404):
+                        evict_gemini_model(model)
+                        break
+                    elif http_err.code == 429:
+                        mark_gemini_key_rate_limited(cur_key, 600.0)
+                        has_more_keys = any(k not in tried_keys_for_model for k in _resolve_gemini_api_keys())
+                        if has_more_keys and (12.0 - (time.perf_counter() - t_start)) > 0.5:
+                            logger.warning(f"[Gemini Engine] Model '{model}' rate-limited (HTTP 429). Rotating to backup key.")
+                            continue
+                        logger.warning(f"[Gemini Engine] Model '{model}' rate-limited (HTTP 429). Deprioritizing and trying next model.")
+                        deprioritize_gemini_model(model)
+                        break
+                    elif http_err.code == 503:
+                        deprioritize_gemini_model(model)
+                        break
+                    break
+                except Exception as exc:
+                    call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
+                    attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"Exception {type(exc).__name__}"})
+                    logger.warning(
+                        f"[Gemini Engine] Model '{model}' exception in {call_duration}ms: {exc}."
+                    )
+                    err_low = str(exc).lower()
+                    if "429" in err_low or "resource_exhausted" in err_low or "quota" in err_low:
+                        mark_gemini_key_rate_limited(cur_key, 600.0)
+                        has_more_keys = any(k not in tried_keys_for_model for k in _resolve_gemini_api_keys())
+                        if has_more_keys and (12.0 - (time.perf_counter() - t_start)) > 0.5:
+                            continue
                     deprioritize_gemini_model(model)
-                elif http_err.code == 503:
-                    deprioritize_gemini_model(model)
-                continue
-            except Exception as exc:
-                call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
-                attempts_log.append({"model": model, "duration_ms": call_duration, "status": f"Exception {type(exc).__name__}"})
-                logger.warning(
-                    f"[Gemini Engine] Model '{model}' exception in {call_duration}ms: {exc}."
-                )
-                deprioritize_gemini_model(model)
-                continue
+                    break
+            if (12.0 - (time.perf_counter() - t_start)) <= 0.5:
+                break
 
     # All Gemini models unavailable - serve rich grounded domain knowledge engine
     logger.warning("[Gemini Engine] Gemini models unavailable. Serving domain knowledge fallback.")
@@ -1338,14 +1379,17 @@ def _format_json_schema_prompt(prompt: str, schema: Type[BaseModel]) -> str:
     )
 
 
-def _handle_gemini_error(model: str, exc: Exception, stage: str) -> str:
+def _handle_gemini_error(model: str, exc: Exception, stage: str, api_key: Optional[str] = None) -> str:
     err_str = str(exc)
     err_low = err_str.lower()
+    is_quota = "429" in err_low or "resource_exhausted" in err_low or "quota" in err_low
+    if is_quota and api_key:
+        mark_gemini_key_rate_limited(api_key, 600.0)
     if "deadline" not in err_low and (
         "404" in err_low or "not found" in err_low or "no longer available" in err_low
     ):
         evict_gemini_model(model)
-    elif "503" in err_low or "429" in err_low or "timeout" in err_low or "504" in err_low:
+    elif "503" in err_low or is_quota or "timeout" in err_low or "504" in err_low:
         deprioritize_gemini_model(model)
     logger.warning(f"{stage} '{model}' failed: {exc}")
     return f"{model}: {err_str}"
@@ -1353,32 +1397,46 @@ def _handle_gemini_error(model: str, exc: Exception, stage: str) -> str:
 
 def generate_structured_ai(prompt: str, schema: Type[BaseModel], pdf_bytes: Optional[bytes] = None) -> BaseModel:
     t_deadline = time.perf_counter() + 9.5
-    api_key = _resolve_gemini_api_key()
+    api_keys = _resolve_gemini_api_keys()
     json_prompt = _format_json_schema_prompt(prompt, schema)
 
-    if api_key and pdf_bytes is None:
+    if api_keys and pdf_bytes is None:
         for model in _refresh_candidate_models(3):
-            remaining = t_deadline - time.perf_counter()
-            if remaining <= 0.8:
-                break
-            try:
-                text = call_gemini_rest(
-                    model=model,
-                    contents=[{"role": "user", "parts": [{"text": json_prompt}]}],
-                    sys_instruction="Return ONLY valid raw JSON matching the requested schema.",
-                    api_key=api_key,
-                    temperature=0.25,
-                    max_output_tokens=1400,
-                    include_thinking=False,
-                    timeout_sec=min(4.8, remaining),
-                    response_mime_type="application/json",
-                )
-                raw_dict = _extract_json_object(text or "")
-                if raw_dict is not None:
-                    promote_gemini_model(model)
-                    return schema.model_validate(raw_dict)
-            except Exception as exc:
-                _handle_gemini_error(model, exc, "[Structured AI] REST")
+            tried_keys: set[str] = set()
+            while True:
+                remaining = t_deadline - time.perf_counter()
+                if remaining <= 0.8:
+                    break
+                cur_key = next((k for k in _resolve_gemini_api_keys() if k not in tried_keys), "")
+                if not cur_key:
+                    break
+                tried_keys.add(cur_key)
+                try:
+                    text = call_gemini_rest(
+                        model=model,
+                        contents=[{"role": "user", "parts": [{"text": json_prompt}]}],
+                        sys_instruction="Return ONLY valid raw JSON matching the requested schema.",
+                        api_key=cur_key,
+                        temperature=0.25,
+                        max_output_tokens=1400,
+                        include_thinking=False,
+                        timeout_sec=min(4.8, remaining),
+                        response_mime_type="application/json",
+                    )
+                    raw_dict = _extract_json_object(text or "")
+                    if raw_dict is not None:
+                        promote_gemini_model(model)
+                        return schema.model_validate(raw_dict)
+                    break
+                except Exception as exc:
+                    err_low = str(exc).lower()
+                    is_quota = "429" in err_low or "resource_exhausted" in err_low or "quota" in err_low
+                    if is_quota:
+                        mark_gemini_key_rate_limited(cur_key, 600.0)
+                        if any(k not in tried_keys for k in _resolve_gemini_api_keys()):
+                            continue
+                    _handle_gemini_error(model, exc, "[Structured AI] REST", api_key=cur_key)
+                    break
 
     client = get_gemini_client()
     if client and genai and types and time.perf_counter() < t_deadline:
@@ -1406,7 +1464,7 @@ def generate_structured_ai(prompt: str, schema: Type[BaseModel], pdf_bytes: Opti
                     promote_gemini_model(model)
                     return schema.model_validate(raw_dict)
             except Exception as exc:
-                _handle_gemini_error(model, exc, "[Structured AI] SDK")
+                _handle_gemini_error(model, exc, "[Structured AI] SDK", api_key=_resolve_gemini_api_key())
 
     return local_structured_fallback(schema)
 
@@ -1443,8 +1501,8 @@ def generate_strict_json_evaluation(
     Uses low-latency REST JSON mode first (~2s) to avoid server-side schema-grammar stalls,
     with SDK fallback for multimodal PDF bytes. Never returns synthetic fallback responses.
     """
-    api_key = _resolve_gemini_api_key()
-    if not api_key:
+    api_keys = _resolve_gemini_api_keys()
+    if not api_keys:
         return None, None, "GEMINI_API_KEY not configured"
 
     t_deadline = time.perf_counter() + 9.5
@@ -1454,29 +1512,44 @@ def generate_strict_json_evaluation(
     # 1. Fast REST JSON-mode path (bypasses 11s+ server-side response_schema grammar compilation stalls)
     if pdf_bytes is None:
         for model in _refresh_candidate_models(3):
-            remaining = t_deadline - time.perf_counter()
-            if remaining <= 0.8:
-                last_error = f"{last_error}; strict evaluation deadline reached"
-                break
-            try:
-                text = call_gemini_rest(
-                    model=model,
-                    contents=[{"role": "user", "parts": [{"text": json_prompt}]}],
-                    sys_instruction=system_instruction,
-                    api_key=api_key,
-                    temperature=0.15,
-                    max_output_tokens=1200,
-                    include_thinking=False,
-                    timeout_sec=min(4.8, remaining),
-                    response_mime_type="application/json",
-                )
-                raw_dict = _extract_json_object(text or "")
-                if raw_dict is not None:
-                    promote_gemini_model(model)
-                    return schema.model_validate(raw_dict), model, None
-                last_error = f"{model}: unparseable JSON"
-            except Exception as exc:
-                last_error = _handle_gemini_error(model, exc, "[Strict Evaluation] REST")
+            tried_keys: set[str] = set()
+            while True:
+                remaining = t_deadline - time.perf_counter()
+                if remaining <= 0.8:
+                    last_error = f"{last_error}; strict evaluation deadline reached"
+                    break
+                cur_key = next((k for k in _resolve_gemini_api_keys() if k not in tried_keys), "")
+                if not cur_key:
+                    break
+                tried_keys.add(cur_key)
+                try:
+                    text = call_gemini_rest(
+                        model=model,
+                        contents=[{"role": "user", "parts": [{"text": json_prompt}]}],
+                        sys_instruction=system_instruction,
+                        api_key=cur_key,
+                        temperature=0.15,
+                        max_output_tokens=1200,
+                        include_thinking=False,
+                        timeout_sec=min(4.8, remaining),
+                        response_mime_type="application/json",
+                    )
+                    raw_dict = _extract_json_object(text or "")
+                    if raw_dict is not None:
+                        promote_gemini_model(model)
+                        return schema.model_validate(raw_dict), model, None
+                    last_error = f"{model}: unparseable JSON"
+                    break
+                except Exception as exc:
+                    err_low = str(exc).lower()
+                    is_quota = "429" in err_low or "resource_exhausted" in err_low or "quota" in err_low
+                    if is_quota:
+                        mark_gemini_key_rate_limited(cur_key, 600.0)
+                        if any(k not in tried_keys for k in _resolve_gemini_api_keys()):
+                            last_error = f"{model}: {exc}"
+                            continue
+                    last_error = _handle_gemini_error(model, exc, "[Strict Evaluation] REST", api_key=cur_key)
+                    break
 
     # 2. SDK path (required for binary PDF bytes or secondary retry if budget remains)
     client = get_gemini_client()
@@ -1508,7 +1581,7 @@ def generate_strict_json_evaluation(
                     return schema.model_validate(raw_dict), model, None
                 last_error = f"{model}: empty structured output"
             except Exception as exc:
-                last_error = _handle_gemini_error(model, exc, "[Strict Evaluation] SDK")
+                last_error = _handle_gemini_error(model, exc, "[Strict Evaluation] SDK", api_key=_resolve_gemini_api_key())
 
     return None, None, last_error
 
