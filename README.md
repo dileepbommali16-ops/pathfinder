@@ -67,16 +67,88 @@ flowchart TB
 
 ---
 
-## Project Overview
+## Project Structure
 
 ```text
 pathfinder-main/
-├── client/        # React + TypeScript frontend SPA, 3D voice interface, and studio modules
-├── backend/       # FastAPI routers, ML predictor, code execution dispatcher, and AI services
-├── api/           # Serverless edge fallback handlers
-├── data/          # Calibrated placement benchmark dataset and engineering catalogs
-├── supabase/      # Vector database schema and RPC migrations
-└── .github/       # Automated CI test and repository workflows
+├── client/                              # Frontend SPA (React 19 + TypeScript + Vite)
+│   ├── index.html                       # Application HTML shell & metadata
+│   ├── public/
+│   │   ├── models/                      # 3D avatar mesh asset (facecap.glb)
+│   │   └── worklets/                    # Web AudioWorklet mic capture & PCM playback processors
+│   └── src/
+│       ├── App.tsx                      # Root router & global application providers
+│       ├── main.tsx                     # React DOM bootstrap entry point
+│       ├── agent/                       # Real-time 3D WebGL avatar, WebSocket voice bridge, viseme lip-sync & tool controllers
+│       ├── audio/                       # Client audio playback & session queue manager
+│       ├── auth/                        # Session state & auth event listeners
+│       ├── components/
+│       │   ├── auth/                    # Interactive login UI (LampLogin)
+│       │   ├── common/                  # Shared UI inputs (searchable CollegeSelector)
+│       │   ├── dashboard/               # Core workspaces: HeroMetrics, WhatIfSimulator, JDCustomTailor,
+│       │   │                            # ResumeStudio, OnePageResumeModal, LiveCodingInterviewArena,
+│       │   │                            # ProjectRecommender, CohortExplorer, RoadmapVisualizer, ProfileSettings
+│       │   └── ui/                      # Reusable notification & tooltip primitives
+│       ├── contexts/                    # Theme & shared UI context providers
+│       ├── data/                        # Campus directory (134 colleges & universities) & 28 blueprint catalog
+│       ├── hooks/                       # Active screen context & UI state hooks
+│       ├── lib/                         # API client, auth helpers, interview evaluator & site knowledge
+│       ├── pages/                       # Top-level views (Home, AtsResumeStudio, BlueprintDetail, MockInterview)
+│       ├── types/                       # Shared TypeScript profile & domain interfaces
+│       └── __tests__/                   # Frontend unit tests (Vitest)
+│
+├── backend/                             # Backend API & AI/ML Services (Python 3.11 + FastAPI)
+│   ├── api.py                           # FastAPI entry point, CORS/security middleware & router mounts
+│   ├── routers/                         # Modular REST & WebSocket routers
+│   │   ├── auth_router.py               # Authentication & session token endpoints
+│   │   ├── profile_router.py            # Candidate profile persistence & SSOT sync
+│   │   ├── predictions_router.py        # ML placement probability & skill-gap endpoints
+│   │   ├── analytics_router.py          # Cohort analytics & NAAC/NIRF reporting endpoints
+│   │   ├── ai_router.py                 # Resume auditing, interview scoring & coding execution routes
+│   │   ├── voice_routes.py              # Voice synthesis & real-time audio routes
+│   │   ├── export_router.py             # CSV & structured PDF report exports
+│   │   ├── github_router.py             # GitHub portfolio analysis integration
+│   │   └── health_router.py             # Service readiness & health diagnostics
+│   ├── agent/                           # Real-time multimodal voice proxy & session router
+│   ├── config/                          # Environment settings & runtime configuration
+│   ├── models/                          # Pydantic v2 request/response schemas
+│   ├── repositories/                    # Data access layer for user profiles
+│   ├── ml_engine.py                     # Calibrated Random Forest placement prediction pipeline
+│   ├── analytics_engine.py              # Cohort filtering & statistical aggregation engine
+│   ├── compiler_engine.py               # Isolated multi-language code execution dispatcher (11 languages)
+│   ├── resume_auditor.py                # Recruiter-grade ATS scoring & critique engine
+│   ├── pdf_engine.py                    # Resume PDF parsing & report generation
+│   ├── database.py                      # Relational persistence layer (SQLite WAL / PostgreSQL)
+│   ├── security.py                      # JWT signing, password hashing & OWASP request hardening
+│   ├── oauth.py                         # OAuth provider verification helpers
+│   ├── cache.py                         # In-memory response caching utilities
+│   ├── reliability.py                   # Retry, timeout & circuit-breaker guards
+│   └── tests/                           # Backend unit, API & concurrency tests (Pytest)
+│
+├── api/                                 # Serverless edge fallback handlers (chat & voice)
+├── data/                                # Placement benchmark dataset (972 records) & JSON catalogs
+│   ├── placement_records.csv            # Historical campus placement cohort dataset
+│   ├── branches.json                    # Engineering branch metadata
+│   ├── projects.json                    # Curated engineering project blueprints
+│   ├── roles.json                       # Target engineering role definitions
+│   └── skills.json                      # Technical skill taxonomy
+├── supabase/
+│   └── migrations/                      # Vector database schema & semantic search RPC migrations
+├── scripts/
+│   └── build-client.js                  # Production frontend build & artifact sync script
+├── .github/
+│   └── workflows/                       # Automated CI checks & repository maintenance workflows
+├── Dockerfile                           # Container build definition for backend deployment
+├── package.json                         # Workspace scripts & frontend dependencies
+├── requirements.txt                     # Python backend dependencies
+├── vite.config.ts                       # Vite bundler & path alias configuration
+├── vitest.config.ts                     # Frontend test runner configuration
+├── tsconfig.json                        # TypeScript compiler configuration
+├── vercel.json                          # Frontend & serverless routing configuration
+├── render.yaml                          # Backend infrastructure blueprint
+├── .env.example                         # Environment variable template (no secrets)
+├── DESIGN.md                            # Visual design system specification
+└── LICENSE                              # MIT License
 ```
 
 ---
