@@ -125,7 +125,7 @@ def _strip_wav_header_if_present(raw_bytes: bytes) -> tuple[bytes, int]:
 
 
 async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optional[Dict[str, Any]]:
-    """Fallback unary Gemini 3.8 TTS using Puck voice when Live TTS is unavailable (respects per-key 429 cooldown)."""
+    """Fallback unary Gemini 3.8 TTS using Puck voice when Live TTS is unavailable (isolated unary 429 cooldown)."""
     global _UNARY_TTS_COOLDOWN_UNTIL
     if time.monotonic() < _UNARY_TTS_COOLDOWN_UNTIL:
         return None
@@ -133,7 +133,6 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
     from google import genai
     from google.genai import types
     from backend.agent.puck_voice import get_puck_speech_config
-    from backend.config.key_resolver import mark_gemini_key_rate_limited
 
     quota_hit_keys = 0
     for key in keys:
@@ -179,11 +178,12 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                         }
             except Exception as exc:
                 err_l = repr(exc).lower()
-                logger.warning("[Voice TTS Unary %s] failed: %r", tts_model, exc)
-                if "429" in err_l or "resource_exhausted" in err_l or "quota" in err_l:
-                    mark_gemini_key_rate_limited(key, 1800.0)
+                is_quota = "429" in err_l or "resource_exhausted" in err_l or "quota" in err_l
+                if is_quota:
+                    logger.info("[Voice TTS Unary %s] quota failover triggered: %r", tts_model, exc)
                     quota_hit_keys += 1
                     break
+                logger.warning("[Voice TTS Unary %s] failed: %r", tts_model, exc)
                 continue
 
     if keys and quota_hit_keys >= len(keys):
@@ -224,7 +224,7 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
 
     global _LIVE_TTS_COOLDOWN_UNTIL
     live_sem = _get_tts_live_sem()
-    if time.monotonic() < _LIVE_TTS_COOLDOWN_UNTIL:
+    if time.monotonic() >= _LIVE_TTS_COOLDOWN_UNTIL:
         async with live_sem:
             key_candidates = list(keys) if len(keys) > 1 else [keys[0], keys[0]]
             quota_hits = 0

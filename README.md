@@ -1,199 +1,200 @@
-# Pathfinder 2.0 · Autonomous AI Placement Flight Controller & Career Operating System
+# Pathfinder 2.0 — AI Placement Predictor & Live 3D Voice Career Agent
 
-> **India's premier AI-powered career operating system for engineering candidates. Built to bridge the critical gap between academic curriculum and high-paying Tier-1 campus recruitment through predictive data science, production architectures, and an autonomous 3D cybernetic voice co-pilot.**
+Pathfinder 2.0 is a full-stack campus placement readiness platform that combines a calibrated Random Forest ML predictor, a real-time 3D WebGL voice assistant (**DAS**) over Gemini Multimodal Live, a 1-page ATS resume auditor, and a sandboxed 11-language live coding & viva arena.
 
-[![Live Platform](https://img.shields.io/badge/🚀_Live_Demo-Vercel_Edge-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://pathfinder-client-fzom.vercel.app/)
-[![Backend Engine](https://img.shields.io/badge/⚙️_FastAPI_Backend-Render_Cloud-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://pathfinder-backend-sg.onrender.com)
-[![Voice AI Engine](https://img.shields.io/badge/🎙️_Gemini_Live-Puck_Voice_24kHz-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://pathfinder-client-fzom.vercel.app/)
-[![ML Accuracy](https://img.shields.io/badge/📈_Model_Accuracy-88%25_Random_Forest-success?style=for-the-badge)](https://pathfinder-client-fzom.vercel.app/)
-[![Workflow Automation](https://img.shields.io/badge/⚡_Automation-n8n_Cloud-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)](https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync)
-[![License: MIT](https://img.shields.io/badge/License-MIT-white?style=for-the-badge)](LICENSE)
+- **Live Web App (Vercel):** [https://pathfinder-client-fzom.vercel.app](https://pathfinder-client-fzom.vercel.app/)
+- **Backend API & Health (Render):** [https://pathfinder-backend-sg.onrender.com/api/health](https://pathfinder-backend-sg.onrender.com/api/health)
+- **License:** [MIT](LICENSE)
 
 ---
 
-### 🌟 Experience the Live Platform
-👉 **[Launch Pathfinder 2.0 Live Platform](https://pathfinder-client-fzom.vercel.app/)**  
-*(⚡ Instant Access — Explore the live AI co-pilot, placement predictor, and interactive studios instantly!)*
+## Problem Statement
+
+Engineering students preparing for campus placements face four recurring bottlenecks:
+
+1. **ATS Resume Rejections:** Resumes get filtered out before human review because impact is not quantified or formatting breaks multi-column parsers.
+2. **Surface-Level Portfolio Projects:** Tutorial clones do not prepare candidates for architecture, concurrency, caching, or trade-off questions during technical viva rounds.
+3. **Lack of Realistic Benchmarking:** Students apply without an objective view of how their CGPA, backlogs, coding score, and internships stack up against real placement cohorts.
+4. **Disconnected Practice Tools:** Coding compilers, AI mentors, project guides, and interview evaluators usually live in separate tools rather than one cohesive workflow.
 
 ---
 
-## 🎯 Why We Built Pathfinder 2.0 (The Problem)
+## Solution Overview
 
-Every year, millions of engineering students graduate, yet **over 80% struggle to crack high-paying Tier-1 campus recruitment drives**. The real-world hiring bottlenecks are undeniable:
+Pathfinder 2.0 unifies placement analytics, resume tailoring, coding execution, and voice-driven mentorship in a single web workspace:
 
-1. **The ATS Black Hole**: More than 75% of student resumes are screened out by algorithmic Applicant Tracking Systems before a human recruiter ever sees them due to unquantified bullets and improper single-column formatting.
-2. **The "Toy Project" Trap**: Most student portfolios feature trivial, copy-pasted tutorial projects. Candidates fail technical viva rounds when asked about distributed systems, concurrency, caching, and failovers.
-3. **No Realistic Benchmarking**: Students apply blindly to companies without knowing their objective placement odds, branch-specific cutoffs, or peer competitiveness.
-4. **Lack of Viva Defense Practice**: Memorizing algorithms is not enough. Candidates lack a safe, real-time environment to articulate technical architectural trade-offs under pressure.
-
-**Pathfinder 2.0 was created to eliminate this crisis completely.**
-
----
-
-## 💡 What Is Pathfinder 2.0 (Core Capabilities)
-
-Pathfinder 2.0 is a complete, unified **AI Career Operating System** designed to transform engineering students into interview-ready, high-caliber software engineers:
-
-- **Predictive Placement Flight Controller**: An 88% precision Machine Learning engine calibrated against 972 verified campus recruitment outcomes, calculating instant placement odds, expected CTC brackets, and personalized preparation roadmaps.
-- **DAS 3D Autonomous Cybernetic Co-Pilot**: An autonomous 3D wireframe head rendered in Three.js WebGL at 60 FPS, powered by Google's **Gemini Multimodal Live WebSocket** with the **Puck** neural voice for fluid, low-latency speech, real-time procedural eye blinking, frequency-based lip-sync, and hands-free browser control.
-- **Production-Grade Flagship Blueprints**: A curated library of 28 real-world system architectures (Distributed Task Queues, Enterprise Vector RAG, High-Throughput Stream Processing, Real-Time CRDT Canvases) with architectural blueprints and resume-ready Google X-Y-Z bullet points.
-- **Technical Defense & Mock Interview Console**: Interactive viva defense simulators challenging students with realistic architecture trade-offs tailored to target roles (SDE-1, AI Engineer, Data Scientist, Full-Stack).
-- **1-Page Google X-Y-Z ATS Resume Studio**: Automated diagnostic scanner auditing resumes against Google's proven impact formula with single-click PDF export.
-- **Automated Institutional Sync**: Autonomous synchronization with Google Sheets for college placement cell records and Google Calendar for interview scheduling via n8n cloud workflows.
+- **ML Placement Readiness Engine:** Random Forest classifier trained on 972 campus placement records to compute placement probability, role fit, salary benchmarks, and interactive what-if simulations.
+- **DAS 3D Live Voice Assistant:** Interactive 3D wireframe head built with Three.js / WebGL featuring 60 FPS procedural blinking, FFT audio lip-sync, 24kHz male Puck speech via Gemini Multimodal Live (`gemini-3.8-live`), and voice/text website navigation.
+- **1-Click JD Tailor & ATS Resume Studio:** Compares a candidate's resume against target job descriptions, highlights missing keywords, rewrites bullets in Google X-Y-Z format, and exports a single-page PDF.
+- **11-Language Sandboxed Coding & Viva Arena:** Live editor and isolated remote execution (`Python`, `C`, `C++`, `Java`, `JavaScript`, `TypeScript`, `SQL`, `Rust`, `Go`, `C#`, `PHP`) paired with strict AI complexity & interview grading.
+- **28 Engineering Blueprints & 6-Week Roadmaps:** Step-by-step system architectures paired with cohort statistics and personalized weekly preparation plans.
 
 ---
 
-## 🚀 Core Value Proposition
+## Student Impact
 
-| What Students Need | How Pathfinder 2.0 Delivers | Student Outcome |
+| Student Need | Pathfinder 2.0 Capability | Practical Benefit |
 | :--- | :--- | :--- |
-| **Objective Placement Odds** | Random Forest ML trained on 972 real campus records | Know your realistic chances and cutoffs before applying blindly. |
-| **Industry-Grade Projects** | 28 production architectures replacing generic tutorial clones | Stand out in interviews with real system design depth. |
-| **Hands-Free AI Mentorship** | DAS 3D co-pilot powered by Gemini Live & Puck voice | Practice technical viva, get advice, and navigate hands-free. |
-| **ATS-Proof Resume** | Google X-Y-Z formula scanner & single-page builder | Pass automated recruiter screening filters with zero formatting drop-off. |
-| **Campus Drive Preparation** | 6-week customized roadmap based on skill gaps | Targeted preparation focused only on high-impact weaknesses. |
+| **Objective Placement Odds** | Random Forest model calibrated on 972 records | Spot weak levers (CGPA, backlogs, DSA) early with What-If simulations. |
+| **ATS-Ready Resumes** | JD keyword gap audit + 1-page PDF generator | Fix recruiter filter drops with concrete X-Y-Z metrics. |
+| **Real Coding & Viva Prep** | Isolated 11-language execution + AI interviewer | Practice compiling code and defending complexity aloud. |
+| **Portfolio Depth** | 28 production system blueprints | Build and explain distributed, RAG, and backend systems confidently. |
 
 ---
 
-## 🛠️ Technology Stack
-
-### Frontend Client
-- **Framework**: React 19, TypeScript, Vite
-- **Routing**: React Router v7 (`BrowserRouter`, `Routes`, `Route`)
-- **Styling & UI**: Tailwind CSS, Lucide Icons, Glassmorphism design tokens
-- **3D Graphics & Animation**: Three.js, `@react-three/fiber`, `@react-three/drei`
-- **Audio Processing**: Web Audio API, AnalyserNode (60 FPS FFT mouth & jaw lip-sync)
-
-### Artificial Intelligence & Voice Brain
-- **Live Voice Engine**: **Google Gemini Multimodal Live API (`gemini-3.8-live`)** via WebSocket
-- **Voice Persona**: **Puck** neural voice (24kHz 16-bit PCM streaming)
-- **Tool Calling**: Autonomous browser DOM navigation (`navigate_ui`) & Google Workspace dispatch (`run_google_automation`)
-- **Semantic Retrieval (RAG)**: Supabase PostgreSQL + `pgvector`
-
-### Backend & Machine Learning
-- **API Framework**: FastAPI, Python 3.11, Uvicorn ASGI
-- **Predictive ML Model**: Scikit-Learn (Random Forest Classifier trained on 972 verified student records, 88% accuracy)
-- **Data Serialization**: Pydantic v2
-- **HTTP Client**: HTTPX (Asynchronous, non-blocking requests)
-- **Keep-Alive**: Uvicorn WebSocket ping interval & timeout keep-alive for persistent streaming
-
-### Cloud Automation & Institutional Sync
-- **Workflow Automation**: **n8n Cloud** (`https://dileepdas.app.n8n.cloud/webhook/pathfinder-google-sync`)
-- **Institutional Ledgers**: Google Sheets API v4 (TPO Placement records)
-- **Schedule Management**: Google Calendar API v3 (Technical viva reminders)
-- **Notification Services**: Gmail API (Automated readiness summary dispatches)
-
----
-
-## 🏗️ Full-Stack System Architecture
+## Full-Stack Architecture
 
 ```mermaid
 flowchart TB
-    subgraph Client["Frontend Client (React 19 & Three.js WebGL)"]
-        Mic["Microphone Input (16kHz PCM Mono)"]
-        Avatar3D["DAS 3D Wireframe Face (60 FPS Lip-Sync & Blinking)"]
-        AgentLayout["AgentLayout & Bottom HUD Bar"]
-        ToolRunner["Autonomous Browser Tool Runner"]
-        AudioEngine["Web Audio FFT Analyser & PCM Player"]
+    subgraph Client["Frontend (Vercel — React 19 + Three.js WebGL)"]
+        UI["Dashboard Slides & Coding Studio"]
+        Avatar["3D Wireframe Face (FFT Lip-Sync & Blink)"]
+        WSClient["Voice & Chat WebSocket Client"]
+        EdgeAPI["Vercel Edge Functions (/api/edge-chat, /api/edge-tts)"]
     end
 
-    subgraph Backend["FastAPI Backend (Python 3.11 ASGI)"]
-        WSGateway["Live WebSocket Gateway (/agent/ws)"]
-        PuckVoice["Puck Voice Configuration & 24kHz PCM Encoder"]
-        MLEngine["Random Forest ML Predictor (88% Accuracy)"]
-        HealthRouter["System Health & Diagnostics (/health)"]
-        CompilerAPI["In-App Multi-Language Compiler Engine (/api/compile)"]
-        GoogleAuto["Google Workspace Automation Dispatcher"]
+    subgraph Backend["FastAPI Backend (Render — Python 3.11 + Uvicorn)"]
+        LiveProxy["Gemini Live WS Proxy (/agent/ws) & Multi-Key Rotation"]
+        ML["Random Forest Predictor (Scikit-Learn)"]
+        Compiler["Sandboxed Code Runner (/api/compile)"]
+        AuthDB["Auth & Persistence (SQLite WAL + Supabase pgvector)"]
+        VoiceTTS["24kHz Puck TTS Fallback (/api/voice/tts)"]
     end
 
-    subgraph GoogleAI["Google Gemini AI Cloud"]
-        GeminiLive["Gemini Multimodal Live API (Puck Neural Voice)"]
+    subgraph External["Cloud AI, Compilers & Reliability"]
+        Gemini["Google Gemini Live & REST Models (Multi-Project Keys)"]
+        Sandboxes["Isolated Sandboxes (SQLite / Godbolt / Judge0 / Piston)"]
+        KeepAlive["UptimeRobot + GitHub Actions (5-Min /api/health Ping)"]
     end
 
-    subgraph Automation["n8n Cloud Orchestration"]
-        N8N["n8n Webhook (/webhook/pathfinder-google-sync)"]
-        Gmail["Gmail API (Readiness Reports)"]
-        GCal["Google Calendar (Viva Scheduling)"]
-        GSheets["Google Sheets (TPO Master Ledger)"]
-    end
-
-    Mic --> AgentLayout
-    AgentLayout <-->|"WebSocket Stream (25s Heartbeat)"| WSGateway
-    WSGateway <-->|"Bidirectional PCM Audio & Tools"| GeminiLive
-    GeminiLive -->|"24kHz PCM Chunks"| PuckVoice
-    PuckVoice -->|"Audio Payloads"| AudioEngine
-    AudioEngine -->|"Frequency Energy FFT"| Avatar3D
-    WSGateway -->|"UI Navigation Tools"| ToolRunner
-    WSGateway -->|"Code Compilation"| CompilerAPI
-    WSGateway -->|"Automation Tools"| GoogleAuto
-    GoogleAuto -->|"HTTPS POST Webhook"| N8N
-    N8N --> Gmail
-    N8N --> GCal
-    N8N --> GSheets
+    UI --> Avatar
+    UI <--> WSClient
+    WSClient <-->|"Bidirectional Audio & Tool Calls"| LiveProxy
+    UI -->|"REST / Edge Fallback"| EdgeAPI
+    LiveProxy <--> Gemini
+    VoiceTTS --> Gemini
+    EdgeAPI --> Gemini
+    UI --> ML
+    UI --> Compiler
+    Compiler --> Sandboxes
+    AuthDB --> LiveProxy
+    KeepAlive -->|"Every 5m GET/HEAD"| Backend
 ```
 
 ---
 
-## 📂 Repository Structure & Module Architecture
+## Technology Stack
+
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, React Router v7, Three.js / `@react-three/fiber` / `@react-three/drei`, Recharts, Web Audio API (`AudioWorklet` + `AnalyserNode`).
+- **Backend & ML:** Python 3.11, FastAPI, Uvicorn ASGI, Pydantic v2, Scikit-Learn (Random Forest), ReportLab / PyPDF, HTTPX, SQLite WAL.
+- **AI & Voice:** Google Gemini Multimodal Live API (`gemini-3.8-live`) with locked `Puck` 24kHz PCM voice, Gemini Flash REST models (`gemini-3.1-flash-lite` / `gemini-3-flash-preview`), Supabase PostgreSQL + `pgvector` semantic RAG, multi-key 429 cooldown rotation (`GEMINI_API_KEY_FALLBACK`).
+- **Code Execution Sandboxes:** Hardened in-memory SQLite (for SQL), Compiler Explorer (Godbolt), Judge0 CE, and Piston APIs — zero host-side arbitrary code execution.
+- **Hosting & Reliability:** Vercel (Frontend + Edge Functions), Render Singapore (FastAPI WebSocket & REST backend), UptimeRobot + GitHub Actions 5-minute keep-alive pings.
+
+---
+
+## Project Structure
 
 ```text
-pathfinder/
-├── client/                               # Frontend Client (React 19 + TypeScript + Vite)
-│   ├── src/
-│   │   ├── agent/                        # Autonomous DAS 3D AI Assistant
-│   │   │   ├── AgentLayout.tsx           # Floating HUD, Role Controls & Compiler Studio
-│   │   │   ├── Avatar3D.tsx              # Three.js 60 FPS WebGL Holographic Face
-│   │   │   ├── WireframeFace.tsx         # Procedural Blinking & Real-time Lip-Sync
-│   │   │   ├── agentSocket.ts            # Persistent Gemini Live Multimodal WebSocket
-│   │   │   ├── audioIO.ts                # 24kHz Web Audio Engine & Camera Capture
-│   │   │   └── toolRunner.ts             # DOM Navigation & Multi-Language Compiler
-│   │   ├── components/                   # UI Glassmorphism & Interactive Consoles
-│   │   ├── pages/                        # Placement Radar, Blueprints, ATS Studio
-│   │   └── lib/                          # API Client & Secure Session Management
-│   └── package.json
-│
-├── backend/                              # FastAPI Backend (Python 3.11 + Uvicorn)
-│   ├── agent/                            # Gemini Multimodal Live Gateway
-│   │   ├── live_proxy.py                 # Persistent WebSocket Proxy & Tools Router
-│   │   ├── persona.py                    # Deep Context, Role Memory & Prompt Engineering
-│   │   └── puck_voice.py                 # Neural Puck 24kHz Audio Config
-│   ├── routers/                          # Modular API Routers (Auth, ML, Voice, Webhook)
-│   ├── ml_engine.py                      # 88% Precision Random Forest Placement Model
-│   ├── gemini_engine.py                  # Generative AI Coaching & Architecture Analysis
-│   └── api.py                            # Lifespan, CORS, Rate Limiting & Health Probes
-│
-├── data/                                 # 972 Verified Campus Placement Records & Blueprints
-└── requirements.txt                      # Production Python Dependencies
+pathfinder-main/
+├── api/                          # Vercel Serverless/Edge fallbacks (edge-chat.js, edge-tts.js)
+├── backend/                      # FastAPI + ML + Gemini Live backend (Python 3.11)
+│   ├── agent/                    # WebSocket proxy, Puck voice config, agent router & prompt
+│   ├── config/                   # Settings & multi-key Gemini cooldown resolver
+│   ├── knowledge/                # Platform reference documentation
+│   ├── models/                   # Pydantic request/response schemas
+│   ├── prompts/                  # Structured coaching prompts
+│   ├── repositories/             # User profile repository layer
+│   ├── routers/                  # Modular REST routers (auth, ai, analytics, ml, voice, health, github, export)
+│   ├── tests/                    # Pytest integration, ML, concurrency & failover suite
+│   ├── api.py                    # FastAPI app entrypoint & middleware
+│   ├── compiler_engine.py        # 11-language remote sandbox compiler dispatcher
+│   ├── gemini_engine.py          # Multi-key Gemini REST/SDK chat & strict JSON evaluation
+│   ├── ml_engine.py              # Random Forest training & inference engine
+│   └── supabase_rag.py           # 384-dim semantic embedding & pgvector retrieval
+├── client/                       # React 19 + TypeScript + Vite SPA
+│   ├── public/                   # 3D GLB model, Web Audio worklets & static assets
+│   └── src/
+│       ├── agent/                # Avatar3D, WireframeFace, agentSocket, audioIO, toolRunner, AgentLayout
+│       ├── components/           # Dashboard cards, coding arena, resume studio, auth UI
+│       ├── data/                 # Campus directory & 28 flagship project blueprints
+│       ├── pages/                # Home, AtsResumeStudio, BlueprintDetail, MockInterview
+│       └── __tests__/            # Vitest unit suites
+├── data/                         # Verified campus cohort dataset (972 records) & JSON catalogs
+├── supabase/migrations/          # pgvector schema migration
+├── .github/workflows/            # CI tests & 5-minute Render keep-alive workflow
+├── render.yaml                   # Render backend blueprint configuration
+├── vercel.json                   # Vercel SPA routing & CSP headers
+├── package.json                  # Frontend dependencies & scripts
+└── requirements.txt              # Backend Python dependencies
 ```
 
 ---
 
-## 📊 Machine Learning Model: 88% Accuracy Validation
+## ML Validation Summary
 
-The placement readiness predictor is powered by a **Random Forest Classifier** trained and validated against **972 verified campus recruitment outcomes** across CSE, AIML, ECE, EEE, Mechanical, Civil, and IT departments.
+Trained and validated on 972 verified student placement records across engineering branches:
 
-| Metric | Cross-Validation (5-Fold Mean) | Held-Out Test Set (20% Split) |
+| Metric | Cross-Validation (5-Fold) | Held-Out Test Split (20%) |
 | :--- | :---: | :---: |
-| **Accuracy** | **88.2% ± 1.8%** | **88.0%** |
-| **Precision** | **89.1%** | **88.7%** |
-| **Recall** | **87.4%** | **87.1%** |
-| **F1-Score** | **88.2%** | **87.9%** |
-| **ROC-AUC** | **0.923** | **0.919** |
+| Accuracy | 88.2% | 88.0% |
+| Precision | 89.1% | 88.7% |
+| Recall | 87.4% | 87.1% |
+| F1-Score | 88.2% | 87.9% |
+| ROC-AUC | 0.923 | 0.919 |
 
 ---
 
-## 📜 License
+## Local Setup & Environment Variables
 
-This project is open-source and distributed under the **[MIT License](LICENSE)**.
+### 1. Backend Setup
+
+```bash
+python -m venv .venv
+# Windows: .venv\Scripts\activate  |  macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn backend.api:app --host 0.0.0.0 --port 8000 --ws auto
+```
+
+### 2. Frontend Setup
+
+```bash
+pnpm install
+pnpm dev
+```
+
+### 3. Required Environment Variables
+
+Configure these in your local `.env` / `backend/.env` (never commit real secrets) and in Render / Vercel project settings:
+
+| Variable | Where | Purpose |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEY` | Render & Vercel | Primary Google AI Studio API key |
+| `GEMINI_API_KEY_FALLBACK` | Render & Vercel | Comma-separated backup Gemini keys for automatic `429` failover |
+| `JWT_SECRET` | Render | Secret key for signing user session tokens |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Render & Vercel | Cloud persistence and pgvector knowledge retrieval |
+| `VITE_API_BASE_URL`, `VITE_BACKEND_URL`, `VITE_WS_URL` | Vercel | Public Render HTTPS and WebSocket backend endpoints |
+
+See [.env.example](.env.example) for the full configuration template.
 
 ---
 
-## 👑 Developed & Architected By
+## Verification & Tests
 
-### **DILEEP BOMMALI**
-**B.Tech 3rd Year, CSE (Data Science)**  
-**Dr. RVR NRI Deemed to be University**, Pothavarappadu, Agiripalli  
+```bash
+# Backend test suite (API, ML, concurrency, multi-key failover)
+python -m pytest -q
 
-- **GitHub**: [@dileepbommali16-ops](https://github.com/dileepbommali16-ops)  
-- **Email**: [dileepbommali16@gmail.com](mailto:dileepbommali16@gmail.com)  
-- **Live Platform**: [Launch Pathfinder 2.0](https://pathfinder-client-fzom.vercel.app/)
+# Frontend unit tests
+npx vitest run
+
+# TypeScript typecheck & production bundle
+npx tsc --noEmit
+pnpm run build:vercel
+```
+
+---
+
+## Author & License
+
+Built by **Bommali Dileep** · [GitHub](https://github.com/dileepbommali16-ops) · Released under the [MIT License](LICENSE).

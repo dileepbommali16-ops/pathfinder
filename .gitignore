@@ -156,3 +156,4 @@ output.wav
 htmlcov/
 *.pkl
 model.pkl
+.vercel/

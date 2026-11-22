@@ -1,12 +1,41 @@
+const keyCooldownUntil = new Map();
+
+function markKeyRateLimited(apiKey, cooldownMs = 600000) {
+  if (!apiKey) return;
+  const until = Date.now() + cooldownMs;
+  if (until > (keyCooldownUntil.get(apiKey) || 0)) {
+    keyCooldownUntil.set(apiKey, until);
+  }
+}
+
 function getKeyCandidates() {
-  const raw = [
+  const seen = new Set();
+  for (const rawEnv of [
     process.env.GEMINI_API_KEY,
     process.env.GOOGLE_API_KEY,
     process.env.GEMINI_API_KEY_FALLBACK,
-  ]
-    .map((k) => (k || "").trim())
-    .filter(Boolean);
-  return [...new Set(raw)];
+    process.env.GEMINI_API_KEYS,
+  ]) {
+    if (!rawEnv) continue;
+    for (const part of String(rawEnv).split(/[,;\r\n]+/)) {
+      const cleaned = part.trim();
+      if (cleaned) seen.add(cleaned);
+    }
+  }
+  const now = Date.now();
+  const healthy = [];
+  const cooled = [];
+  for (const k of seen) {
+    const until = keyCooldownUntil.get(k) || 0;
+    if (until <= now) {
+      keyCooldownUntil.delete(k);
+      healthy.push(k);
+    } else {
+      cooled.push({ k, until });
+    }
+  }
+  cooled.sort((a, b) => a.until - b.until);
+  return [...healthy, ...cooled.map((x) => x.k)];
 }
 
 function stripWavHeaderToPcm(rawBuf) {
@@ -102,7 +131,12 @@ export async function POST(request) {
           });
           if (!resp.ok) {
             const errTxt = await resp.text().catch(() => "");
-            console.error(`[edge-tts] ${model} HTTP ${resp.status}: ${errTxt.slice(0, 160)}`);
+            if (resp.status === 429) {
+              markKeyRateLimited(apiKey, 600000);
+              console.warn(`[edge-tts] ${model} HTTP 429 quota failover (${errTxt.slice(0, 100)})`);
+              break;
+            }
+            console.warn(`[edge-tts] ${model} HTTP ${resp.status}: ${errTxt.slice(0, 160)}`);
             if (resp.status === 400 && /api key not valid/i.test(errTxt)) break;
             continue;
           }
@@ -139,7 +173,7 @@ export async function POST(request) {
             });
           }
         } catch (err) {
-          console.error(`[edge-tts] ${model} exception:`, err?.message || err);
+          console.warn(`[edge-tts] ${model} retry notice:`, err?.message || err);
         }
       }
     }

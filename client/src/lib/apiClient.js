@@ -122,7 +122,7 @@ async function handleAutonomousEdgeRequest(urlStr, options = {}) {
   }
 
   if (pathname.endsWith("/api/health")) {
-    return createJsonResponse({ status: "healthy", mode: "edge-autonomous", engine: "jarvis-lpu" }, 200);
+    return createJsonResponse({ status: "healthy", mode: "edge-autonomous", engine: "das-edge" }, 200);
   }
 
   if (pathname.endsWith("/api/data/skills")) {

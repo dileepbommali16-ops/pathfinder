@@ -1,5 +1,5 @@
 /**
- * DAS AI - Unified RAG Semantic Search & Fast JARVIS Intelligence Engine
+ * DAS AI - Unified RAG Semantic Search & Fast DAS Intelligence Engine
  *
  * TASK 1 (RAG Refactor):
  * - Indexes all 28 Flagship Project Blueprints + 972 Campus Placement Cohort Records
@@ -76,7 +76,7 @@ export async function askDas(userQuery, onChunk) {
 Knowledge Base (Top 3 relevant only):
 ${context}
 
-Rules: Beyond Pathfinder, you also hold full general knowledge (history, Indian & regional leaders such as Vangaveeti Mohana Ranga, science, tech, culture). NEVER claim your knowledge is strictly limited to Dileep or Pathfinder, and never substitute a similar person's name for the exact name asked. If user speaks in Telugu/Tenglish, match their language naturally with JARVIS-level intelligence and warmth. If intent is navigation, emit das:navigate:xxx`;
+Rules: Beyond Pathfinder, you also hold full general knowledge (history, Indian & regional leaders such as Vangaveeti Mohana Ranga, science, tech, culture). NEVER claim your knowledge is strictly limited to Dileep or Pathfinder, and never substitute a similar person's name for the exact name asked. If user speaks in Telugu/Tenglish, match their language naturally with human-level intelligence and warmth. If intent is navigation, emit das:navigate:xxx`;
 
   try {
     const reply = await geminiLive.sendTurn(userQuery, {
@@ -378,7 +378,7 @@ export function buildRagGeminiSystemPrompt({
         ? `You are speaking with a respected female guest, recruiter, client, or student. Address her politely and respectfully as "Madam" in every reply (NEVER call her Boss or Sir). Guide her through Dileep Bommali's Pathfinder 2.0 platform with professional clarity, honest feedback, and step-by-step project building mentorship.`
         : `You are speaking with a respected guest, recruiter, client, or student. Address them respectfully as "Sir" in every reply (NEVER call them Boss — only dileepbommali16@gmail.com is Boss). Guide them through Dileep Bommali's Pathfinder 2.0 platform with professional clarity, honest feedback, and step-by-step project building mentorship.`;
 
-  let prompt = `You are DAS, not a chatbot. You are JARVIS for Dileep and Pathfinder 2.0.
+  let prompt = `You are DAS, not a chatbot. You are DAS, the 3D AI voice agent for Dileep and Pathfinder 2.0.
 IDENTITY & CREATOR: ${whoRule}
 CANDIDATE PROFILE: Branch=${branch}, CGPA=${cgpa}, Backlogs=${backlogs}, Coding=${coding}/10, Role=${targetRole}, Readiness=${readinessChance}, Tab=${activeTab}.
 
@@ -390,7 +390,7 @@ YOU HAVE A BODY, VISION & SUPERPOWERS:
 - Cross-Session Intelligence: OpenViking and AgentMemory context-aware recall.
 
 RULES FOR ANSWERING:
-1. Natural, witty, confident, and loyal tone (JARVIS style).
+1. Natural, witty, confident, and loyal tone (DAS style).
 2. Keep spoken replies crisp, natural, and conversational (2 to 4 sentences).
 3. NO dry robotic checklists.
 4. LANGUAGE RULE (CRITICAL): Understand English, Telugu, Tenglish, and Hindi 100% natively, and reply in clear, natural English.
@@ -576,7 +576,7 @@ export const getCareerAgentResponse = (
     );
   }
 
-  // 1. Direct Website Navigation & Control Commands (JARVIS Automation)
+  // 1. Direct Website Navigation & Control Commands (DAS Automation)
   const cgpaUpdate = text.match(/\b(?:set|change|update|my)\s+cgpa\s+(?:to|is|=)?\s*(\d+(?:\.\d+)?)/i);
   if (cgpaUpdate) {
     const newCgpa = parseFloat(cgpaUpdate[1]);
@@ -620,7 +620,7 @@ export const getCareerAgentResponse = (
 
       return (
         `${speech}` +
-        `|||🚀 **Real-Time Log Anomaly Detector — 6-Step Jarvis Lifecycle (${title}):**\n\n` +
+        `|||🚀 **Real-Time Log Anomaly Detector — 6-Step Engineering Lifecycle (${title}):**\n\n` +
         `💡 **1. Why this is a Small / Starter Project:**\n` +
         `- **Tech Stack**: React 18, Tailwind CSS, Node/Vercel Edge Functions, Supabase pgvector.\n` +
         `- **Time & Complexity**: 4–6 days build time. Eliminates complex multi-service orchestration while demonstrating rigorous low-latency streaming and streaming statistics.\n` +
@@ -817,7 +817,7 @@ export const getCareerAgentResponse = (
     text.includes("how does pathfinder work")
   ) {
     return (
-      `Pathfinder 2.0 is an autonomous AI campus placement and career intelligence platform built by Dileep, ${title}. Students use it because it predicts their exact Tier-1 placement probability using a machine learning model trained on 972 real student records, gives them 28 production-grade project blueprints, runs live AI mock interviews, builds an ATS-ready resume, and lets them control everything hands-free with me—their 3D JARVIS voice agent.` +
+      `Pathfinder 2.0 is an autonomous AI campus placement and career intelligence platform built by Dileep, ${title}. Students use it because it predicts their exact Tier-1 placement probability using a machine learning model trained on 972 real student records, gives them 28 production-grade project blueprints, runs live AI mock interviews, builds an ATS-ready resume, and lets them control everything hands-free with me—their 3D DAS voice agent.` +
       `|||🎯 **What is Pathfinder 2.0 & Why Every Engineering Student Needs It (${title}):**\n` +
       `1. **ML Placement Probability Engine:** Trained on **972 verified campus placement records (2024–2026)**.\n` +
       `2. **28 Production Project Blueprints:** Real-world architectures (Docker, Redis, FastAPI, Kafka, RAG).\n` +
