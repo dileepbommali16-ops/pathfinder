@@ -49,15 +49,14 @@ export function createHologramScanMaterial(
         "#include <project_vertex>",
         `#include <project_vertex>
          vec4 holoWorld4 = modelMatrix * vec4(transformed, 1.0);
-         ${
-           isTeeth
-             ? `float jawDrop = clamp(uJawOpen, 0.0, 1.0) * aLowerTooth;
+         ${isTeeth
+          ? `float jawDrop = clamp(uJawOpen, 0.0, 1.0) * aLowerTooth;
                 holoWorld4.y -= jawDrop * 0.195;
                 holoWorld4.z -= jawDrop * 0.080;
                 mvPosition = viewMatrix * holoWorld4;
                 gl_Position = projectionMatrix * mvPosition;`
-             : ""
-         }
+          : ""
+        }
          vHoloWorldPos = holoWorld4.xyz;
          ${isHead ? "vMouthCavity = aMouthCavity;\nvLipRim = aLipRim;" : ""}
          ${isShoulders ? "vBustFade = aBustFade;" : ""}`
@@ -109,17 +108,16 @@ export function createHologramScanMaterial(
         col += crestCyan * fresnel * 0.12;
         ${isTeeth ? "col *= (0.14 + 0.12 * sculptedKey);" : ""}
 
-        ${
-          isHead
-            ? `float cavityMask = clamp(vMouthCavity, 0.0, 1.0);
+        ${isHead
+          ? `float cavityMask = clamp(vMouthCavity, 0.0, 1.0);
                col *= mix(1.0, 0.08, cavityMask);
                col += crestCyan * clamp(vLipRim, 0.0, 1.0) * 0.14;
                diffuseColor.a = mix(clamp(0.95 + scanLine * 0.05, 0.94, 1.0), 0.99, cavityMask);`
-            : isShoulders
+          : isShoulders
             ? "float bustEdge = smoothstep(0.0, 0.90, vBustFade);\ncol *= bustEdge;\ndiffuseColor.a = clamp(0.96 * bustEdge, 0.0, 1.0);"
             : isTeeth
-            ? "diffuseColor.a = 0.88;"
-            : "diffuseColor.a = clamp(0.95 + scanLine * 0.05, 0.94, 1.0);"
+              ? "diffuseColor.a = 0.88;"
+              : "diffuseColor.a = clamp(0.95 + scanLine * 0.05, 0.94, 1.0);"
         }
         outgoingLight = col;
         #include <opaque_fragment>`
