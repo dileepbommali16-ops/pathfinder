@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Printer,
@@ -54,14 +55,14 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
   const githubUrl = profile.codingProfiles?.github || "https://github.com/candidate";
   const leetcodeUrl = profile.codingProfiles?.leetcode || "https://leetcode.com/candidate";
 
-  return (
+  const modalContent = (
     <div
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
         }
       }}
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto cursor-pointer print:static print:p-0 print:bg-white"
+      className="fixed inset-0 z-[120] flex items-start justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto cursor-pointer print:static print:p-0 print:bg-white"
     >
       {/* Modal Container */}
       <div
@@ -241,8 +242,8 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
           </div>
         </div>
 
-        {/* Bottom Controls Bar (Hidden during Print) */}
-        <div className="print:hidden sticky bottom-0 z-40 flex items-center justify-between border-t border-white/[0.08] bg-[#000000]/95 backdrop-blur-xl px-6 py-3.5 shadow-lg">
+        {/* Bottom Controls Bar (Pinned, Hidden during Print) */}
+        <div className="print:hidden shrink-0 z-40 flex items-center justify-between border-t border-white/[0.08] bg-[#000000]/95 backdrop-blur-xl px-6 py-3.5 shadow-lg">
           <button
             onClick={onClose}
             className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white hover:bg-white/20 hover:border-white/40 transition-all cursor-pointer active:scale-95 shadow-sm"
@@ -262,4 +263,6 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };
