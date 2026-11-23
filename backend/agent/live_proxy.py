@@ -147,14 +147,12 @@ CORE AUTONOMOUS CAPABILITIES:
 4. ATS RESUME INTELLIGENCE & PLACEMENT ROADMAP:
    - Provide elite Tier-1 ATS resume reviews calibrated to Google's X-Y-Z formula: "Accomplished [X] as measured by [Y] by doing [Z]".
    - Guide Boss on top capstone projects, certifications (AWS Solutions Architect, GCP Data Engineer), and core subjects (DSA, OS, CN, DBMS, System Design) to guarantee 100% placement success.
-5. OPEN WEBSITE & LINKEDIN PROFILE INTELLIGENCE:
-   - When asked to open a learning site (LeetCode, GeeksforGeeks, GitHub, YouTube, etc.), call `open_external_website`; when asked about anyone's LinkedIn profile, call `open_linkedin_profile` and summarize their background.
-6. LIVE PROFILE & CGPA UPDATES:
+5. LIVE PROFILE & CGPA UPDATES:
    - Whenever the user asks to set, change, or update their CGPA, branch, backlogs, coding rating, communication, internships, or target role (e.g. "set my cgpa to 8.9", "change branch to AIML"), ALWAYS call `update_student_profile(field, value)` immediately and confirm the update warmly — NEVER refuse or tell the user to update it manually.
-7. RETURN TO YOUR DASHBOARD (DIRECT RESPONSE):
+6. RETURN TO YOUR DASHBOARD (DIRECT RESPONSE):
    When Boss says 'return to your dashboard DAS', 'dashboard ki vellu', or 'close compiler', immediately call `return_to_dashboard` and reply warmly: "Okay Boss, returning to your dashboard."
-8. STRICT PUCK VOICE PERSONA LOCK: Your voice is permanently locked to the male 'Puck' voice. Keep a consistent, warm, energetic male vocal delivery on every turn — never imitate a female voice or switch vocal personas.
-9. Keep voice replies energetic, warm, and conversational without robotic filler.""" + extra_platform_rules
+7. STRICT PUCK VOICE PERSONA LOCK: Your voice is permanently locked to the male 'Puck' voice. Keep a consistent, warm, energetic male vocal delivery on every turn — never imitate a female voice or switch vocal personas.
+8. Keep voice replies energetic, warm, and conversational without robotic filler.""" + extra_platform_rules
 
 # Tools matching AI Studio specs: Pathfinder UI + Online Compiler + Factual/Vision helpers
 DAS_TOOLS = [
@@ -193,49 +191,6 @@ DAS_TOOLS = [
                         "selector": types.Schema(type="STRING"),
                     },
                     required=["route"],
-                ),
-            ),
-            types.FunctionDeclaration(
-                name="open_external_website",
-                description="Open any external website URL or Google search query in a new browser tab.",
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "url": types.Schema(
-                            type="STRING",
-                            description="Full URL if known (e.g. https://github.com)"
-                        ),
-                        "search_query": types.Schema(
-                            type="STRING",
-                            description="Google search query if exact URL is not provided"
-                        ),
-                        "site_name": types.Schema(
-                            type="STRING",
-                            description="Name of the website"
-                        ),
-                    },
-                ),
-            ),
-            types.FunctionDeclaration(
-                name="open_linkedin_profile",
-                description="Search and open a person's LinkedIn profile in a new browser tab and explain their role and background.",
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "person_name": types.Schema(
-                            type="STRING",
-                            description="Full name of the person"
-                        ),
-                        "company_or_role": types.Schema(
-                            type="STRING",
-                            description="Optional company or role keyword"
-                        ),
-                        "direct_url": types.Schema(
-                            type="STRING",
-                            description="Direct LinkedIn profile URL if known"
-                        ),
-                    },
-                    required=["person_name"],
                 ),
             ),
             types.FunctionDeclaration(
@@ -783,10 +738,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     c_res = {"ok": False, "error": str(wait_err)}
                 return c_res if isinstance(c_res, dict) else {"ok": True, "result": str(c_res)}
 
-            if fc_name in (
-                "write_and_compile_code",
-                "open_external_website",
-            ):
+            if fc_name == "write_and_compile_code":
                 call_id = str(call_id_hint or f"tc_{turn_id}_{int(time.monotonic() * 1000)}")
                 loop = asyncio.get_running_loop()
                 fut: asyncio.Future = loop.create_future()
@@ -805,7 +757,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     client_res = {
                         "ok": False,
                         "status": "timeout",
-                        "note": "Online compiler or website action awaited client output.",
+                        "note": "Online compiler action awaited client output.",
                     }
                 except Exception as wait_err:
                     pending_tool_futures.pop(call_id, None)
@@ -837,7 +789,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             if fc_name in (
                 "control_website",
                 "navigate_ui",
-                "open_linkedin_profile",
                 "return_to_dashboard",
             ):
                 if websocket.client_state != WebSocketState.DISCONNECTED:

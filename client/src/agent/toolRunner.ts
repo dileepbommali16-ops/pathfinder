@@ -1,7 +1,6 @@
 // client/src/agent/toolRunner.ts
 import { Type, FunctionDeclaration } from "@google/genai";
 import { codingStudioController } from "./codingStudioController";
-import { toast } from "sonner";
 
 export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking" | "interrupted";
 
@@ -11,8 +10,6 @@ export interface ToolCallPayload {
   args?: Record<string, any>;
   arguments?: Record<string, any>;
 }
-
-let activeExternalWindow: Window | null = null;
 
 /* ------------------------------------------------------------------ */
 /* DOM Helpers (Click, Type, Scroll, Read Page)                        */
@@ -147,74 +144,6 @@ function goToTab(tabRaw: string, navigate?: (path: string) => void) {
   return { status: "navigated", ok: true, navigated: true, explain: `Switched to ${tab}` };
 }
 
-/* ------------------------------------------------------------------ */
-/* Clean External Window Control (NO Right-Side Clutter Box!)          */
-/* ------------------------------------------------------------------ */
-export function showGoogleSearchOverlay(_query: string, _summaryText?: string) {
-  // Intentionally disabled right-side box so the website stays 100% clean and visible!
-  if (typeof document !== "undefined") {
-    document.getElementById("das-google-live-overlay")?.remove();
-  }
-}
-
-export function closeGoogleAndReturnToPage() {
-  if (activeExternalWindow && !activeExternalWindow.closed) {
-    try {
-      activeExternalWindow.close();
-    } catch { }
-  }
-  activeExternalWindow = null;
-  if (typeof document !== "undefined") {
-    document.getElementById("das-google-live-overlay")?.remove();
-  }
-  if (typeof window !== "undefined") window.focus();
-  try {
-    toast.success("Returned back to your Pathfinder dashboard!");
-  } catch { }
-}
-
-function openExternal(url: string): boolean {
-  if (typeof window === "undefined") return false;
-  activeExternalWindow = window.open(url, "_blank");
-  return !!activeExternalWindow;
-}
-
-const SITE_MAP: Record<string, { url: string; name: string }> = {
-  google: { url: "https://www.google.com", name: "Google" },
-  youtube: { url: "https://www.youtube.com", name: "YouTube" },
-  linkedin: { url: "https://www.linkedin.com", name: "LinkedIn" },
-  gmail: { url: "https://mail.google.com", name: "Gmail" },
-  github: { url: "https://github.com", name: "GitHub" }
-};
-
-export function tryInstantBrowserCommand(rawInput: string): {
-  handled: boolean;
-  isSearchQuery?: boolean;
-  searchQuery?: string;
-  actionSummary?: string;
-} {
-  const text = rawInput.toLowerCase().trim();
-
-  if (
-    text.includes("return back") ||
-    text.includes("back to your page") ||
-    text.includes("back to ur page") ||
-    text.includes("back to page") ||
-    text.includes("back to pathfinder") ||
-    text.includes("close google") ||
-    text === "go back"
-  ) {
-    closeGoogleAndReturnToPage();
-    return {
-      handled: true,
-      actionSummary: "closed Google and returned right back to your Pathfinder page",
-    };
-  }
-
-  // All search, open-google, and link-click commands route cleanly through DAS tools.
-  return { handled: false };
-}
-
 const CLIENT_TAB_INTENTS: Array<{ route: string; patterns: RegExp[] }> = [
   { route: "focus_on_das", patterns: [/\bfocus\s+on\s+das\b/, /\bhide\s+dashboard\b/] },
   { route: "show_dashboard", patterns: [/\bshow\s+(?:the\s+)?dashboard\b/, /\bexit\s+focus\b/] },
@@ -272,10 +201,6 @@ export function tryExecuteClientAutomationIntent(
   rawQuery: string,
   navigateFn?: (path: string) => void
 ): boolean {
-  const instant = tryInstantBrowserCommand(rawQuery);
-  if (instant.handled) {
-    return true;
-  }
   const clean = norm(rawQuery);
   if (!clean) return false;
   const cgpaMatch = clean.match(/\b(?:set|change|update|make)\s+(?:my\s+)?cgpa\s+(?:to|as|=)?\s*(\d+(?:\.\d+)?)\b/);
@@ -313,29 +238,11 @@ export function tryExecuteClientAutomationIntent(
 }
 
 /* ------------------------------------------------------------------ */
-/* Tool Declarations (Website Control + Google Search + Online Compiler) */
+/* Tool Declarations (Website Control + Online Compiler + Profile)    */
 /* ------------------------------------------------------------------ */
 export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[] = [
   {
     functionDeclarations: [
-      {
-        name: "open_external_website_or_google_search",
-        description:
-          "Searches anything on Google or opens an external site (Google, YouTube, LinkedIn, Gmail, GitHub).",
-        parameters: {
-          type: Type.OBJECT,
-          properties: {
-            siteOrUrl: { type: Type.STRING, description: "Site name or URL" },
-            searchQuery: { type: Type.STRING, description: "Search query for Google" }
-          },
-          required: ["siteOrUrl"]
-        }
-      },
-      {
-        name: "return_to_pathfinder_page",
-        description: "Closes the opened Google tab and returns to the Pathfinder page.",
-        parameters: { type: Type.OBJECT, properties: {} }
-      },
       {
         name: "navigate_dashboard_tab",
         description: "Switches the active tab inside the Pathfinder dashboard.",
@@ -425,43 +332,6 @@ export function runTool(
 ): { status: string; navigated?: boolean; explain?: string;[key: string]: any } {
   try {
     switch (name) {
-      case "return_to_pathfinder_page":
-        closeGoogleAndReturnToPage();
-        return {
-          status: "returned_to_pathfinder",
-          ok: true,
-          navigated: true,
-          explain: "Returned back to Pathfinder dashboard"
-        };
-
-      case "open_external_website_or_google_search": {
-        const q = String(args.searchQuery || "").trim();
-        const site = norm(String(args.siteOrUrl || ""));
-        let opened = false;
-        let label = q;
-
-        if (q) {
-          opened = openExternal(`https://www.google.com/search?q=${encodeURIComponent(q)}`);
-        } else if (SITE_MAP[site]) {
-          opened = openExternal(SITE_MAP[site].url);
-          label = SITE_MAP[site].name;
-        } else if (/^https?:\/\//i.test(String(args.siteOrUrl || ""))) {
-          opened = openExternal(String(args.siteOrUrl));
-          label = String(args.siteOrUrl);
-        } else {
-          label = String(args.siteOrUrl || "");
-          opened = openExternal(`https://www.google.com/search?q=${encodeURIComponent(label)}`);
-        }
-        toast.success(`Opened: ${label}`);
-        return {
-          status: "searched_google",
-          ok: true,
-          query: label,
-          popupBlocked: !opened,
-          explain: `Opened ${label}`
-        };
-      }
-
       case "navigate_dashboard_tab":
         return goToTab(String(args.tabName || ""), navigate);
 
@@ -735,7 +605,7 @@ export function snapshot(): Record<string, any> {
 }
 
 /* ------------------------------------------------------------------ */
-/* Autonomous Browser, Multi-Language Online Compiler & LinkedIn Tools */
+/* Built-In Multi-Language Online Compiler Tool                       */
 /* ------------------------------------------------------------------ */
 
 export interface CodeTaskPayload {
@@ -746,49 +616,7 @@ export interface CodeTaskPayload {
   compilerUrl?: string;
 }
 
-// 1. External Website / Google Search Opener
-export async function openExternalWebsiteOrSearch(args: {
-  url?: string;
-  search_query?: string;
-  site_name?: string;
-}): Promise<Record<string, any>> {
-  let targetUrl = args.url || "";
-  if (args.search_query && !targetUrl) {
-    targetUrl = `https://www.google.com/search?q=${encodeURIComponent(args.search_query)}`;
-  } else if (targetUrl && !targetUrl.startsWith("http")) {
-    targetUrl = `https://${targetUrl}`;
-  }
-
-  if (targetUrl) {
-    if (typeof window !== "undefined" && typeof window.open === "function") {
-      try {
-        activeExternalWindow = window.open(targetUrl, "_blank", "noopener,noreferrer");
-      } catch {}
-    }
-    return { ok: true, url: targetUrl, message: `Opened ${args.site_name || targetUrl}.` };
-  }
-  return { ok: false, message: "No URL provided." };
-}
-
-// 2. LinkedIn Profile Opener & Search
-export function openLinkedInProfile(args: {
-  person_name: string;
-  company_or_role?: string;
-  direct_url?: string;
-}): string {
-  const query = `${args.person_name} ${args.company_or_role || ""}`.trim();
-  const targetUrl =
-    args.direct_url && args.direct_url.startsWith("http")
-      ? args.direct_url
-      : `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(
-          query
-        )}`;
-
-  window.open(targetUrl, "_blank", "noopener,noreferrer");
-  return `Opened LinkedIn profile for ${args.person_name}.`;
-}
-
-// 3. Built-In Multi-Language Live Online Compiler Studio
+// Built-In Multi-Language Live Online Compiler Studio
 export async function handleCodeGenerationAndCompiler(
   args: {
     action?: string;

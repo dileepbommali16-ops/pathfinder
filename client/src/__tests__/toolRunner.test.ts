@@ -1,25 +1,31 @@
 import { describe, it, expect } from "vitest";
-import { tryInstantBrowserCommand, runTool } from "../agent/toolRunner";
+import {
+  PATHFINDER_TOOLS,
+  tryExecuteClientAutomationIntent,
+  runTool,
+} from "../agent/toolRunner";
 
-describe("toolRunner & instant browser commands", () => {
-  it("should recognize return back to page commands", () => {
-    const res = tryInstantBrowserCommand("return back to your page");
-    expect(res.handled).toBe(true);
-    expect(res.actionSummary?.toLowerCase()).toContain("returned");
-    expect(res.actionSummary?.toLowerCase()).toContain("pathfinder");
+describe("toolRunner & internal DAS automations", () => {
+  it("excludes external website/Google/LinkedIn tools while keeping internal tools", () => {
+    const names = PATHFINDER_TOOLS.flatMap((t) => t.functionDeclarations.map((d) => d.name));
+    expect(names).not.toContain("open_external_website_or_google_search");
+    expect(names).not.toContain("return_to_pathfinder_page");
+    expect(names).toContain("navigate_dashboard_tab");
+    expect(names).toContain("update_student_profile");
+    expect(names).toContain("click_element");
+    expect(names).toContain("read_page");
   });
 
-  it("delegates Google search and Gmail commands to DAS AI tools instead of blocking popups with window.open", () => {
-    const searchRes = tryInstantBrowserCommand("search NRI Institute of Technology on Google");
-    expect(searchRes.handled).toBe(false);
-
-    const gmailRes = tryInstantBrowserCommand("open gmail");
-    expect(gmailRes.handled).toBe(false);
+  it("handles internal tab/profile commands and ignores external site commands", () => {
+    expect(tryExecuteClientAutomationIntent("open live coding arena")).toBe(true);
+    expect(tryExecuteClientAutomationIntent("set my cgpa to 8.9")).toBe(true);
+    expect(tryExecuteClientAutomationIntent("open gmail")).toBe(false);
+    expect(tryExecuteClientAutomationIntent("open youtube")).toBe(false);
   });
 
-  it("should run return_to_pathfinder_page tool cleanly", () => {
-    const res = runTool("return_to_pathfinder_page", {});
-    expect(res.status).toBe("returned_to_pathfinder");
+  it("should navigate dashboard tabs cleanly", () => {
+    const res = runTool("navigate_dashboard_tab", { tabName: "interview" });
+    expect(res.status).toBe("navigated");
     expect(res.navigated).toBe(true);
   });
 });

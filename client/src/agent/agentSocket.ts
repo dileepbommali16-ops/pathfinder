@@ -4,8 +4,6 @@ import { API_BASE } from "@/lib/apiClient";
 import {
   executeWebsiteControl,
   WebsiteControlArgs,
-  openExternalWebsiteOrSearch,
-  openLinkedInProfile,
   handleCodeGenerationAndCompiler,
   CodeTaskPayload,
 } from "./toolRunner";
@@ -386,16 +384,14 @@ CORE AUTONOMOUS CAPABILITIES:
    - Provide honest Tier-1 ATS resume reviews calibrated to Google's X-Y-Z formula: "Accomplished [X] as measured by [Y] by doing [Z]".
    - Explain clearly what comes after a blueprint problem statement (VS Code / Antigravity / Cursor / Claude Code + picking models, VS Code folder/file layout for LLM + RAG apps, deploying frontend on Vercel/Cloudflare and backend on Render, Image & Video AI tools like Google Imagen/Veo/Flux/Midjourney/Runway/Sora, and ChatGPT vs Gemini AI vs Claude AI).
    - Monitor [Live Screen Context: ...] so you always know who is signed in (Boss ONLY for dileepbommali16@gmail.com, Madam for female accounts, Sir for others), what slide is active, and what card/project is focused.
-5. OPEN ANY WEBSITE & EXPLAIN: When asked to open a learning website (Google, LeetCode, GitHub, YouTube, or any URL), call 'open_external_website' and explain clearly.
-6. LINKEDIN PROFILE INTELLIGENCE: When asked about anyone's profile, call 'open_linkedin_profile' and summarize their background.
-7. RETURN TO YOUR DASHBOARD (DIRECT RESPONSE):
+5. RETURN TO YOUR DASHBOARD (DIRECT RESPONSE):
    When asked to return to dashboard or close compiler, immediately reply warmly ("Okay ${this.roleHonorific}, returning to your dashboard.") and dismiss any open compiler drawers.
-9. Keep voice replies energetic, warm, and conversational without robotic filler.
-10. UNRESTRICTED GENERAL KNOWLEDGE & STRICT ENTITY ACCURACY (CRITICAL MANDATE):
+6. Keep voice replies energetic, warm, and conversational without robotic filler.
+7. UNRESTRICTED GENERAL KNOWLEDGE & STRICT ENTITY ACCURACY (CRITICAL MANDATE):
     - You possess FULL encyclopedic general knowledge (world & Indian history, Andhra Pradesh public leaders & figures, science, culture, cinema, coding, career prep).
     - NEVER say "My knowledge is strictly limited to my creator, Dileep, and the PATHFINDER 2.0 platform" or refuse general-world questions!
     - Pay strict attention to exact person/entity names: NEVER swap or confuse distinct names (for example, do NOT substitute Devineni Nehru when asked about Vangaveeti Mohana Ranga). Answer accurately or ask politely if audio was unclear.
-11. STRICT PUCK VOICE LOCK (ALL ACCOUNTS): Always speak strictly in your locked male 'Puck' voice whether speaking to Boss, Sir, or Madam — never imitate a female voice or switch voice personas.`;
+8. STRICT PUCK VOICE LOCK (ALL ACCOUNTS): Always speak strictly in your locked male 'Puck' voice whether speaking to Boss, Sir, or Madam — never imitate a female voice or switch voice personas.`;
 
       const configuredModel =
         import.meta.env.VITE_GEMINI_LIVE_MODEL?.trim() || "";
@@ -437,51 +433,6 @@ CORE AUTONOMOUS CAPABILITIES:
                       selector: { type: "STRING" },
                     },
                     required: ["action"],
-                  },
-                },
-                {
-                  name: "open_external_website",
-                  description:
-                    "Open any external website URL or Google search query in a new browser tab.",
-                  parameters: {
-                    type: "OBJECT",
-                    properties: {
-                      url: {
-                        type: "STRING",
-                        description: "Full https URL if known (e.g. https://github.com)",
-                      },
-                      search_query: {
-                        type: "STRING",
-                        description: "Google search query if exact URL is not specified",
-                      },
-                      site_name: {
-                        type: "STRING",
-                        description: "Name of the website being opened",
-                      },
-                    },
-                  },
-                },
-                {
-                  name: "open_linkedin_profile",
-                  description:
-                    "Search and open a person's LinkedIn profile in a new browser tab.",
-                  parameters: {
-                    type: "OBJECT",
-                    properties: {
-                      person_name: {
-                        type: "STRING",
-                        description: "Full name of the person",
-                      },
-                      company_or_role: {
-                        type: "STRING",
-                        description: "Optional company, college, or role keywords",
-                      },
-                      direct_url: {
-                        type: "STRING",
-                        description: "Direct LinkedIn URL if known",
-                      },
-                    },
-                    required: ["person_name"],
                   },
                 },
                 {
@@ -854,12 +805,6 @@ CORE AUTONOMOUS CAPABILITIES:
           } else if (data.name === "coding_studio_control") {
             const codeRes = await codingStudioController.execute(args);
             sendToolResult(codeRes);
-          } else if (data.name === "open_external_website") {
-            const extRes = await openExternalWebsiteOrSearch(args);
-            sendToolResult(extRes);
-          } else if (data.name === "open_linkedin_profile") {
-            const liRes = openLinkedInProfile(args);
-            sendToolResult({ ok: true, message: liRes });
           } else if (data.name === "write_and_compile_code") {
             const compRes = await handleCodeGenerationAndCompiler(args, this.savedOnCodeReady);
             sendToolResult(compRes);
@@ -980,10 +925,6 @@ CORE AUTONOMOUS CAPABILITIES:
                 );
               }
               resultMsg = JSON.stringify({ ok: true, updated: true, field: args.field, value: args.value });
-            } else if (fc.name === "open_external_website") {
-              resultMsg = JSON.stringify(await openExternalWebsiteOrSearch(args));
-            } else if (fc.name === "open_linkedin_profile") {
-              resultMsg = openLinkedInProfile(args);
             } else if (fc.name === "coding_studio_control") {
               resultMsg = JSON.stringify(await codingStudioController.execute(args));
             } else if (fc.name === "write_and_compile_code") {

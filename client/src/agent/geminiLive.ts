@@ -6,7 +6,6 @@ import { dasSocket } from "./agentSocket";
 import {
   PATHFINDER_TOOLS,
   executeWebsiteTool,
-  tryInstantBrowserCommand,
   type VoicePipelineStage
 } from "./toolRunner";
 
@@ -102,15 +101,14 @@ UNRESTRICTED GENERAL KNOWLEDGE & ENTITY ACCURACY
 - Beyond Pathfinder and your creator Dileep Bommali, you ALSO hold complete world knowledge (history, Indian & regional leaders such as Vangaveeti Mohana Ranga, science, cinema, sports, coding, general questions).
 - NEVER say your knowledge is strictly limited to Dileep or PATHFINDER 2.0, and NEVER confuse or substitute a similar person's name for the exact name asked (e.g., never substitute Devineni Nehru for Vangaveeti Mohana Ranga).
 
-CONTROLLING THE WEBSITE & GOOGLE
+CONTROLLING THE WEBSITE
 - Switch tabs -> navigate_dashboard_tab.
 - Open blueprint 1-28 -> open_blueprint.
 - Click any button/tab -> click_element (or call list_clickables if unsure).
 - Type into inputs -> type_text.
 - Scroll -> scroll_page.
 - Explain current screen -> read_page.
-- Search Google or open external sites (Google, YouTube, LinkedIn, GitHub) -> open_external_website_or_google_search, then explain the summary aloud to ${honorific}.
-- Close Google and come back -> return_to_pathfinder_page, and confirm "Okay ${honorific}, we are back on your Pathfinder page!"`;
+- Update profile fields (CGPA, branch, backlogs, target role) -> update_student_profile.`;
 }
 
 export class PathfinderGeminiLive {
@@ -138,8 +136,7 @@ export class PathfinderGeminiLive {
 
   constructor() {
     if (typeof window !== "undefined") {
-      // Clean up any legacy overlay or rogue buttons
-      document.getElementById("das-google-live-overlay")?.remove();
+      // Clean up any legacy floating mic button
       document.getElementById("das-handsfree-voice-btn")?.remove();
     }
   }
@@ -460,12 +457,6 @@ export class PathfinderGeminiLive {
   }
 
   private async runOneTool(name: string, args: Record<string, any>) {
-    if (name === "open_external_website_or_google_search") {
-      const query = String(args.searchQuery || args.siteOrUrl || "").trim();
-      const summary = query ? await this.searchSummary(query) : "";
-      const result = await executeWebsiteTool(name, args);
-      return { ...result, summary };
-    }
     return executeWebsiteTool(name, args);
   }
 
@@ -476,21 +467,6 @@ export class PathfinderGeminiLive {
       return new GoogleGenAI({ apiKey: key });
     } catch {
       return null;
-    }
-  }
-
-  private async searchSummary(query: string): Promise<string> {
-    try {
-      const client = this.textClient();
-      if (!client) return "";
-      const r: any = await client.models.generateContent({
-        model: TEXT_MODEL,
-        contents: `Give a clear, accurate, friendly summary (3 to 4 sentences) about: ${query}`,
-        config: { tools: [{ googleSearch: {} }], temperature: 0.3, maxOutputTokens: 300 }
-      });
-      return r.text?.trim() || "";
-    } catch {
-      return "";
     }
   }
 
@@ -533,25 +509,13 @@ export class PathfinderGeminiLive {
 
     this.stopPlayback();
 
-
-    // 2. 0ms Instant Browser Command (Open Google / Search / Return Back to Page)
-    const instant = tryInstantBrowserCommand(trimmed);
-    if (instant.handled && !instant.isSearchQuery) {
-      const reply = `Okay ${honorific}! I've ${instant.actionSummary}.`;
-      emit(reply);
-      if (shouldSpeak) await this.speakAloud(reply);
-      return reply;
-    }
-
-    // 3. Smart Response + Tool Execution
+    // Smart Response + Tool Execution
     options?.onStageChange?.("thinking");
     let replyText = "";
     try {
       await this.resolveSessionKey();
 
-      const queryPrompt = instant.isSearchQuery
-        ? `The user ${honorific} asked you to search Google for: "${instant.searchQuery}". Give a clear, friendly 3-sentence summary about "${instant.searchQuery}". Address them as ${honorific}.`
-        : trimmed;
+      const queryPrompt = trimmed;
 
       let generated = false;
 
@@ -574,13 +538,13 @@ export class PathfinderGeminiLive {
               contents: queryPrompt,
               config: {
                 systemInstruction: getMasterPrompt(),
-                tools: instant.isSearchQuery ? [{ googleSearch: {} }] : PATHFINDER_TOOLS,
+                tools: PATHFINDER_TOOLS,
                 temperature: 0.4,
                 maxOutputTokens: 350
               }
             });
 
-            if (!instant.isSearchQuery && response.functionCalls?.length) {
+            if (response.functionCalls?.length) {
               for (const call of response.functionCalls) {
                 options?.onToolCall?.(call.name || "", call.args || {});
                 await executeWebsiteTool(call.name || "", (call.args as Record<string, any>) || {});

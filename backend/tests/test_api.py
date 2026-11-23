@@ -761,5 +761,22 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIn("Big O of n squared", norm)
         self.assertEqual(norm.count("Big O of log n"), 1)
 
+    def test_das_tools_keep_factual_lookup_and_compiler_without_external_tab_tools(self):
+        from backend.agent.live_proxy import DAS_TOOLS
+
+        declared = {
+            fn.name
+            for tool in DAS_TOOLS
+            for fn in (tool.function_declarations or [])
+        }
+        self.assertIn("lookup_factual_info", declared)
+        self.assertIn("coding_studio_control", declared)
+        self.assertIn("write_and_compile_code", declared)
+        self.assertIn("control_website", declared)
+        self.assertIn("update_student_profile", declared)
+        self.assertIn("return_to_dashboard", declared)
+        self.assertNotIn("open_external_website", declared)
+        self.assertNotIn("open_linkedin_profile", declared)
+
 if __name__ == "__main__":
     unittest.main()
