@@ -23,12 +23,12 @@ Pathfinder 2.0 solves these bottlenecks through six integrated workspaces:
 
 | Workspace | Core Capability | Student Outcome |
 | :--- | :--- | :--- |
-| **1. Readiness Dashboard & Simulator** | Interactive ML placement probability card, 6-axis readiness breakdown, company radar benchmarks, and real-time What-If trajectory sliders. | Understand exact placement odds and test how closing gaps boosts shortlist chances. |
+| **1. Readiness Dashboard** | Streamlined 3-section command center: ML placement probability score, Target Role Skill Gap Analysis, and Target Company Placement Radar. | Understand exact placement odds, role-specific cutoffs, and company eligibility at a glance. |
 | **2. 1-Click JD Tailor & ATS Studio** | Compares a student profile and resume against company job descriptions, highlights missing skills/keywords, and builds a 1-page printable ATS PDF. | Submit role-aligned, quantified resumes engineered to pass recruiter screening. |
-| **3. Live Coding & Technical Viva Arena** | Browser-based 11-language compiler (`Python`, `C`, `C++`, `Java`, `JavaScript`, `TypeScript`, `SQL`, `Rust`, `Go`, `C#`, `PHP`) paired with company-style mock interviews and STAR project defense grading. | Practice writing compilable code and defending algorithmic complexity aloud. |
+| **3. Live Coding & Technical Viva Arena** | Browser-based 11-language compiler (`Python`, `C`, `C++`, `Java`, `JavaScript`, `TypeScript`, `SQL`, `Rust`, `Go`, `C#`, `PHP`) across 5 company tracks (15 built-in problems + on-demand AI Problem Generator), `Show Correct Program` walkthroughs, and strict execution-verified verdicts paired with Company Mock Interview & STAR Project Defense. | Practice real coding, inspect optimal solutions, and receive honest hiring verdicts aloud. |
 | **4. 28 Engineering Project Blueprints** | Curated system design architectures across CS, AI/ML, Cloud, Data, and Embedded tracks with domain filters and implementation guides. | Replace weak starter apps with interview-ready production architectures. |
 | **5. Cohort Intelligence & 6-Week Roadmap** | Historical branch/skill placement distributions across 972 campus records paired with a personalized 6-week preparation sprint plan. | Benchmark against placed peers and execute a focused weekly study schedule. |
-| **6. DAS — 3D Voice Career Assistant** | Interactive WebGL 3D holographic agent supporting real-time voice and text interaction, concept explanations, coding studio automation, and hands-free slide control. | Receive instant technical mentoring and control platform workflows seamlessly. |
+| **6. DAS — 3D Voice Career Assistant** | Interactive WebGL 3D holographic mentor with a compact collapsible HUD, real-time multilingual voice/text interaction, voice-controlled Online Compiler Studio, profile/slide automation, and grounded factual knowledge lookup. | Receive instant technical mentoring and control platform workflows seamlessly. |
 
 ---
 
@@ -85,9 +85,10 @@ pathfinder-main/
 │       ├── components/
 │       │   ├── auth/                    # Interactive login UI (LampLogin)
 │       │   ├── common/                  # Shared UI inputs (searchable CollegeSelector)
-│       │   ├── dashboard/               # Core workspaces: HeroMetrics, WhatIfSimulator, JDCustomTailor,
-│       │   │                            # ResumeStudio, OnePageResumeModal, LiveCodingInterviewArena,
-│       │   │                            # ProjectRecommender, CohortExplorer, RoadmapVisualizer, ProfileSettings
+│       │   ├── dashboard/               # Core workspaces: HeroMetrics, SkillGapSection, CompanyPlacementRadar,
+│       │   │                            # JDCustomTailor, ResumeStudio, OnePageResumeModal, LiveCodingInterviewArena,
+│       │   │                            # MockInterviewConsole, ProjectRecommender, CohortExplorer, RoadmapVisualizer,
+│       │   │                            # ProfileSettings (34+ roles across 8 engineering branches) & footer/header UI
 │       │   └── ui/                      # Reusable notification & tooltip primitives
 │       ├── contexts/                    # Theme & shared UI context providers
 │       ├── data/                        # Campus directory (134 colleges & universities) & 28 blueprint catalog
