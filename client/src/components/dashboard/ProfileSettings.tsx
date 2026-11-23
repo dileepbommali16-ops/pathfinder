@@ -59,20 +59,96 @@ const BRANCHES = [
   "Other"
 ];
 
-const ROLES = [
-  "Software Development Engineer (SDE)",
-  "Data Scientist / ML Engineer",
-  "Cloud & DevOps Engineer",
-  "QA & Automation Engineer",
-  "Full-Stack Web Developer",
-  "Product / Systems Analyst"
+const ROLE_GROUPS: Array<{ label: string; roles: string[] }> = [
+  {
+    label: "Software, Web & Cloud (CSE / IT)",
+    roles: [
+      "Software Development Engineer (SDE)",
+      "Full-Stack Web Developer",
+      "Backend / Distributed Systems Engineer",
+      "Frontend / UI Engineer",
+      "Mobile App Developer (Android / iOS / Flutter)",
+      "Cloud & DevOps Engineer",
+      "Site Reliability Engineer (SRE)",
+      "QA & Automation Engineer",
+    ],
+  },
+  {
+    label: "AI, ML & Data (AIML / CSM / CSD / Data Science)",
+    roles: [
+      "Data Scientist / ML Engineer",
+      "Generative AI / LLM Engineer",
+      "Data Engineer & Analytics",
+      "Business Intelligence / Data Analyst",
+      "Computer Vision / NLP Engineer",
+    ],
+  },
+  {
+    label: "Cybersecurity & Networking",
+    roles: [
+      "Cybersecurity / SOC Analyst",
+      "Cloud Security & Penetration Tester",
+      "Network & Telecom Engineer",
+    ],
+  },
+  {
+    label: "Electronics, VLSI & Embedded (ECE / IoT)",
+    roles: [
+      "Embedded Systems & Firmware Engineer",
+      "VLSI / RTL Design & Verification Engineer",
+      "IoT & Edge Hardware Engineer",
+      "Signal Processing & RF Engineer",
+    ],
+  },
+  {
+    label: "Electrical, Power & EV (EEE)",
+    roles: [
+      "Electrical Design & Power Systems Engineer",
+      "EV Powertrain & BMS Engineer",
+      "PLC / SCADA & Industrial Automation Engineer",
+      "Control Systems Engineer",
+    ],
+  },
+  {
+    label: "Mechanical, Robotics & Manufacturing (Mechanical)",
+    roles: [
+      "Mechanical Design / CAD & CAE Engineer",
+      "Robotics & Mechatronics Engineer",
+      "Automotive / Thermal & R&D Engineer",
+      "Production, Supply Chain & Operations Engineer",
+    ],
+  },
+  {
+    label: "Civil, Structural & Infrastructure (Civil)",
+    roles: [
+      "Structural & Civil Design Engineer",
+      "BIM / Construction Planning Engineer",
+      "Site / Geotechnical & Transportation Engineer",
+    ],
+  },
+  {
+    label: "Product, Consulting & Management",
+    roles: [
+      "Product / Systems Analyst",
+      "Technology Consulting Analyst",
+      "Associate Product Manager (APM)",
+    ],
+  },
 ];
+
+const ALL_KNOWN_ROLES = new Set(ROLE_GROUPS.flatMap((g) => g.roles));
 
 const TIERS = [
   "Product Companies / Tier-1 MNCs",
+  "FAANG / MAANG & Big-Tech Product",
   "High-Growth Tech Startups",
   "Global Capability Centers (GCC)",
-  "Service MNCs / Consultancies"
+  "Core Electronics / Semiconductor / VLSI MNCs",
+  "Core Mechanical / Automotive / EV & Aerospace",
+  "Core Infrastructure / Construction / EPC Firms",
+  "PSUs / GATE / Govt R&D (ISRO, DRDO, BHEL, NTPC)",
+  "Big-4 Consulting & Fintech",
+  "Service MNCs / Consultancies",
 ];
 
 export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
@@ -599,8 +675,17 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
                 className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
               >
-                {ROLES.map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                {formData.targetRole && !ALL_KNOWN_ROLES.has(formData.targetRole) && (
+                  <option value={formData.targetRole}>{formData.targetRole}</option>
+                )}
+                {ROLE_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label} className="bg-[#000000] text-[#94a3b8]">
+                    {group.roles.map((r) => (
+                      <option key={r} value={r} className="bg-[#000000] text-[#f8fafc]">
+                        {r}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>

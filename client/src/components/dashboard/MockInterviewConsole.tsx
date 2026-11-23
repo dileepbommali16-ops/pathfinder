@@ -46,13 +46,13 @@ interface QuestionItem {
   company: string;
   role: string;
   roundType:
-    | "Technical & Algorithms"
-    | "System Architecture"
-    | "Behavioral (STAR)"
-    | "Project Architecture"
-    | "Database & Scale"
-    | "Security & Auth"
-    | "Failure & Recovery";
+  | "Technical & Algorithms"
+  | "System Architecture"
+  | "Behavioral (STAR)"
+  | "Project Architecture"
+  | "Database & Scale"
+  | "Security & Auth"
+  | "Failure & Recovery";
   difficulty: "Medium" | "Hard" | "Core Essential";
   question: string;
   contextHint: string;
@@ -267,38 +267,6 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     };
   }, []);
 
-  // Silently pre-warm Render /api/voice/tts for the visible question's Agent answer so "See Answer from Agent" plays cleanly
-  useEffect(() => {
-    const answerText = currentQ?.benchmarkAnswer?.trim();
-    if (!answerText || ttsCacheRef.current.has(answerText)) return;
-    const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      try {
-        const resp = await fetch(`${API_BASE}/api/voice/tts`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({ text: answerText, voice: "Puck" }),
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data?.status === "ok" && data.pcm_base64) {
-            ttsCacheRef.current.set(answerText, {
-              pcm: data.pcm_base64,
-              rate: Number(data.sample_rate) || 24000,
-            });
-          }
-        }
-      } catch {
-        // Silent background warmup; on-click handler handles playback/fallback
-      }
-    }, 350);
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [currentQ?.benchmarkAnswer]);
-
   const resetState = () => {
     setUserAnswer("");
     setShowAgentAnswer(false);
@@ -402,7 +370,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
         window.speechSynthesis.cancel();
-      } catch {}
+      } catch { }
     }
     setIsSpeaking(false);
   };
@@ -463,7 +431,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     if (speechRecognitionRef.current) {
       try {
         speechRecognitionRef.current.stop();
-      } catch {}
+      } catch { }
       speechRecognitionRef.current = null;
     }
     setIsRecording(false);
@@ -576,11 +544,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             setSelectedQuestionIndex(0);
             resetState();
           }}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
-            selectedTrack === "company"
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${selectedTrack === "company"
               ? "border border-[#ffffff] bg-[#ffffff] text-[#000000] shadow-sm"
               : "border border-white/10 bg-[#000000] text-[#94a3b8] hover:text-[#f8fafc]"
-          }`}
+            }`}
         >
           <Briefcase className="h-3.5 w-3.5" />
           <span>Company Rounds (4)</span>
@@ -593,11 +560,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             setSelectedQuestionIndex(0);
             resetState();
           }}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
-            selectedTrack === "defense"
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${selectedTrack === "defense"
               ? "border border-[#ffffff] bg-[#ffffff] text-[#000000] shadow-sm"
               : "border border-white/10 bg-[#000000] text-[#94a3b8] hover:text-[#f8fafc]"
-          }`}
+            }`}
         >
           <ShieldAlert className="h-3.5 w-3.5" />
           <span>Project Defense &amp; Viva (4)</span>
@@ -614,11 +580,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               setSelectedQuestionIndex(idx);
               resetState();
             }}
-            className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all cursor-pointer ${
-              selectedQuestionIndex === idx
+            className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all cursor-pointer ${selectedQuestionIndex === idx
                 ? "border border-[#2B2024] bg-[#2B2024] text-white font-bold shadow-[0_0_15px_rgba(124,58,237,0.3)]"
                 : "border border-[rgba(255,255,255,0.08)] bg-[#000000]/50 text-[#94a3b8] hover:border-[#ffffff]/50 hover:text-[#f8fafc]"
-            }`}
+              }`}
           >
             <span className="font-semibold">
               {selectedTrack === "defense" ? q.roundType : q.company.split("/")[0]}
@@ -718,15 +683,14 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               type="button"
               onClick={handleSeeAgentAnswer}
               data-agent-id="see-agent-answer-btn"
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
-                isSpeaking
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${isSpeaking
                   ? "border border-[#2B2024] bg-[#2B2024] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.4)]"
                   : isLoadingVoice
-                  ? "border border-[#2B2024]/50 bg-[#000000] text-[#f8fafc]"
-                  : showAgentAnswer
-                  ? "border border-[#2B2024] bg-[#000000] text-[#f8fafc] hover:bg-[#000000]"
-                  : "border border-[rgba(255,255,255,0.08)] bg-[#000000] text-[#94a3b8] hover:bg-[#000000] hover:text-[#f8fafc]"
-              }`}
+                    ? "border border-[#2B2024]/50 bg-[#000000] text-[#f8fafc]"
+                    : showAgentAnswer
+                      ? "border border-[#2B2024] bg-[#000000] text-[#f8fafc] hover:bg-[#000000]"
+                      : "border border-[rgba(255,255,255,0.08)] bg-[#000000] text-[#94a3b8] hover:bg-[#000000] hover:text-[#f8fafc]"
+                }`}
             >
               {isLoadingVoice ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -739,8 +703,8 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 {isLoadingVoice
                   ? "Loading Agent Answer..."
                   : isSpeaking
-                  ? "Stop Agent Answer"
-                  : "See Answer from Agent"}
+                    ? "Stop Agent Answer"
+                    : "See Answer from Agent"}
               </span>
             </button>
 
@@ -773,11 +737,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 <button
                   type="button"
                   onClick={handleToggleRecord}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
-                    isRecording
+                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${isRecording
                       ? "border border-[#2B2024] bg-[#2B2024] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.5)]"
                       : "border border-[rgba(255,255,255,0.08)] bg-[#000000] text-[#94a3b8] hover:text-[#f8fafc]"
-                  }`}
+                    }`}
                 >
                   {isRecording ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
                   <span>{isRecording ? "Listening..." : "Speak Answer"}</span>
@@ -838,22 +801,20 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[rgba(255,255,255,0.08)]">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border bg-[#000000] shadow-[0_0_20px_rgba(255,255,255,0.15)] ${
-                        evaluationResult.overallScore >= 70
+                      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border bg-[#000000] shadow-[0_0_20px_rgba(255,255,255,0.15)] ${evaluationResult.overallScore >= 70
                           ? "border-[#2B2024]"
                           : evaluationResult.overallScore >= 40
-                          ? "border-[#2B2024]"
-                          : "border-[#2B2024]"
-                      }`}
+                            ? "border-[#2B2024]"
+                            : "border-[#2B2024]"
+                        }`}
                     >
                       <span
-                        className={`text-xl font-bold font-mono ${
-                          evaluationResult.overallScore >= 70
+                        className={`text-xl font-bold font-mono ${evaluationResult.overallScore >= 70
                             ? "text-[#f8fafc]"
                             : evaluationResult.overallScore >= 40
-                            ? "text-[#f8fafc]"
-                            : "text-[#f8fafc]"
-                        }`}
+                              ? "text-[#f8fafc]"
+                              : "text-[#f8fafc]"
+                          }`}
                       >
                         {evaluationResult.overallScore}%
                       </span>

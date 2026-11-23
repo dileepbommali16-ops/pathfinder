@@ -6,6 +6,7 @@ import asyncio
 import logging
 import base64
 import math
+import re
 import struct
 import time
 from collections import OrderedDict
@@ -191,12 +192,41 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
     return None
 
 
+def _normalize_tts_text(raw_text: str) -> str:
+    """Converts symbols and Big-O notation into clean spoken English and collapses consecutive repeats."""
+    txt = (raw_text or "").split("|||")[0].strip()
+    if not txt:
+        return ""
+    # Replace complexity / math notations before removing brackets so neural TTS never stutters on symbols
+    txt = re.sub(r"O\(\s*n\s*(?:\*|\s+)?log\s*n\s*\)", "Big O of n log n", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"O\(\s*log\s*n\s*\)", "Big O of log n", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"O\(\s*n\s*(?:²|\^2)\s*\)", "Big O of n squared", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"O\(\s*n\s*\*\s*k\s*\)", "Big O of n times k", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"O\(\s*m\s*\+\s*n\s*\)", "Big O of m plus n", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"O\(\s*n\s*\)", "Big O of n", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"O\(\s*1\s*\)", "Big O of 1", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"O\(\s*k\s*\)", "Big O of k", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"\[([^\[\]]{1,40})\]", r"\1", txt)
+    txt = re.sub(r"[*_#`>|~]", " ", txt)
+    txt = re.sub(r"\s+", " ", txt).strip()
+    # Collapse consecutive duplicated words/short phrases (e.g., "Big O of log n Big O of log n")
+    txt = re.sub(r"\b(\w+(?:\s+\w+){0,4})(?:\s+\1\b)+", r"\1", txt, flags=re.IGNORECASE)
+    if len(txt) > 420:
+        cutoff = txt.rfind(".", 0, 420)
+        txt = txt[: cutoff + 1].strip() if cutoff >= 120 else txt[:420].strip()
+    return txt
+
+
 async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str, Any]]:
     """Synthesize clean verbatim 24kHz PCM speech via genuine gemini-3.8-live Puck voice first."""
     from google import genai
     from google.genai import types
     from backend.config.key_resolver import get_gemini_key_candidates, mark_gemini_key_rate_limited
     from backend.agent.puck_voice import LIVE_MODEL, get_puck_speech_config
+
+    text = _normalize_tts_text(text)
+    if not text:
+        return None
 
     keys = get_gemini_key_candidates()
     if not keys:
@@ -210,13 +240,13 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                 types.Part.from_text(
                     text=(
                         "You are a verbatim voice narrator permanently locked to the lively male Puck voice. "
-                        "Whenever given quoted text, speak ONLY those exact words aloud clearly and naturally. "
-                        "Never add extra words, commentary, or follow-up."
+                        "Read the quoted text aloud ONCE cleanly from start to finish in smooth natural cadence. "
+                        "Never repeat any phrase, symbol, or clause, and never add extra commentary."
                     )
                 )
             ]
         ),
-        temperature=0.1,
+        temperature=0.3,
     )
 
     est_max_sec = max(3.5, min(28.0, len(text) / 8.5 + 2.2))
@@ -269,7 +299,7 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                                 ):
                                     break
 
-                    await asyncio.wait_for(_run_live(), timeout=8.0)
+                    await asyncio.wait_for(_run_live(), timeout=11.0)
                     raw_pcm = bytes(pcm_buf)
                     _, peak = _chunk_rms_and_peak_int16(raw_pcm)
                     if len(raw_pcm) >= 4800 and peak >= 200:
@@ -352,7 +382,7 @@ async def _synthesize_and_cache(cache_key: str, text: str, prefer_unary: bool = 
 
 async def synthesize_puck_pcm(text: str, prefer_unary: bool = False) -> Optional[Dict[str, Any]]:
     """Shared cached/inflight-deduplicated 24kHz Puck PCM synthesis helper for REST TTS and WebSocket fallback."""
-    cleaned = (text or "").strip()[:900]
+    cleaned = _normalize_tts_text(text)
     if not cleaned:
         return None
     cache_key = f"Puck:3.8-live:{cleaned}"

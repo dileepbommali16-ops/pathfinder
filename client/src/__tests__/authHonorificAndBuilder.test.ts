@@ -297,4 +297,20 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(profEvt).toBeDefined();
     expect(profEvt.detail).toEqual({ field: "cgpa", value: 8.9 });
   });
+
+  it("responds warmly to natural compliments without resetting to a greeting", () => {
+    handleAuthLoginDetected("dileepbommali16@gmail.com", "Dileep");
+    const praiseReply = getCareerAgentResponse("good", [], { branch: "CSE", cgpa: 8.5 }, "Boss");
+    const spoken = praiseReply.split("|||")[0];
+    expect(spoken).toContain("Boss");
+    expect(spoken).not.toBe("Hi Boss! What's up?");
+    expect(spoken.toLowerCase()).not.toContain("what's up");
+
+    const arenaSrc = fs.readFileSync(
+      path.resolve(__dirname, "../components/dashboard/LiveCodingInterviewArena.tsx"),
+      "utf-8"
+    );
+    expect(arenaSrc.match(/starterPython:/g)?.length || 0).toBeGreaterThanOrEqual(15);
+    expect(arenaSrc.match(/solutionPython:/g)?.length || 0).toBeGreaterThanOrEqual(15);
+  });
 });

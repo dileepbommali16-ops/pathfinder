@@ -357,3 +357,65 @@ class InterviewEvaluationResult(BaseModel):
     is_non_answer: bool = False
 
 
+class CodingArenaEvaluationRequest(BaseModel):
+    """Honest code + viva submission payload for Live Coding & Viva Arena."""
+
+    company: Optional[str] = Field("Amazon", max_length=120)
+    role: Optional[str] = Field("SDE-1", max_length=120)
+    title: Optional[str] = Field("", max_length=200)
+    question: str = Field(..., min_length=5, max_length=2500)
+    language: Optional[str] = Field("python", max_length=40)
+    candidate_code: str = Field(default="", max_length=20000)
+    starter_code: Optional[str] = Field("", max_length=20000)
+    viva_explanation: str = Field(default="", max_length=6000)
+    compile_success: bool = False
+    compiler_output: str = Field(default="", max_length=8000)
+    expected_output: Optional[str] = Field("", max_length=2000)
+    output_matched: bool = False
+    expected_keywords: List[str] = Field(default_factory=list)
+    reference_solution: Optional[str] = Field("", max_length=20000)
+
+
+class CodingArenaEvaluationResult(BaseModel):
+    """Real zero-fake Hiring Committee Verdict for Live Coding & Viva Arena."""
+
+    overall_score: int = Field(..., ge=0, le=100)
+    code_score: int = Field(..., ge=0, le=100)
+    viva_score: int = Field(..., ge=0, le=100)
+    decision: str
+    verdict_text: str
+    code_feedback: str
+    viva_feedback: str
+    matched_keywords: List[str] = Field(default_factory=list)
+    missing_keywords: List[str] = Field(default_factory=list)
+    evaluation_source: str = "DAS AI Hiring Committee"
+
+
+class GenerateCodingProblemRequest(BaseModel):
+    """Request payload for endless company/role coding challenge generation."""
+
+    company: Optional[str] = Field("Amazon", max_length=120)
+    role: Optional[str] = Field("SDE-1", max_length=120)
+    difficulty: Optional[str] = Field("Medium", max_length=64)
+    existing_titles: List[str] = Field(default_factory=list)
+
+
+class GeneratedCodingProblem(BaseModel):
+    """Generated or curated self-contained coding + complexity viva problem."""
+
+    id: str
+    company: str
+    role: str
+    title: str
+    difficulty: str = "Medium"
+    question: str
+    spoken_prompt: str
+    sample_input: str
+    expected_output: str
+    expected_output_tokens: List[str] = Field(default_factory=list)
+    starter_python: str
+    solution_python: str
+    complexity_explanation: str
+    expected_keywords: List[str] = Field(default_factory=list)
+
+

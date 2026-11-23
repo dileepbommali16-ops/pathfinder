@@ -3,10 +3,6 @@ import { motion } from "framer-motion";
 import { getUserRole } from "@/lib/auth";
 import {
   Sparkles,
-  Award,
-  BookOpen,
-  Code2,
-  Briefcase,
   ArrowUpRight,
   CheckCircle2,
   AlertTriangle
@@ -17,11 +13,11 @@ interface HeroMetricsProps {
   chance: number | null;
   label: string;
   tone: "strong" | "steady" | "focus";
-  cgpa: number;
-  backlogs: number;
-  internships: number;
-  coding: number;
-  communication: number;
+  cgpa?: number;
+  backlogs?: number;
+  internships?: number;
+  coding?: number;
+  communication?: number;
   onNavigateTab: (tab: any) => void;
   onAskCoach?: (query: string, originTab?: string, cardContext?: string) => void;
 }
@@ -31,11 +27,6 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
   chance,
   label,
   tone,
-  cgpa,
-  backlogs,
-  internships,
-  coding,
-  communication,
   onNavigateTab,
   onAskCoach,
 }) => {
@@ -113,7 +104,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
-                onClick={() => onNavigateTab("skills")}
+                onClick={() => onNavigateTab("analytics")}
                 className="inline-flex items-center gap-2 rounded-xl border border-[#2B2024] bg-[#2B2024] hover:bg-[#000000] px-4 py-2.5 text-xs font-bold text-[#f8fafc] shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 <span>View 6-Week Roadmap & Plan</span>
@@ -237,109 +228,6 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             )}
           </div>
         </div>
-      </div>
-
-      {/* 4 Core Parameter KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-        {/* CGPA */}
-        <motion.div
-          whileHover={{ y: -3 }}
-          transition={{ duration: 0.2 }}
-          className="rounded-2xl border border-[#2B2024] bg-[#000000] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl transition-all hover:bg-[#000000]"
-        >
-          <div className="flex items-center justify-between text-[#94a3b8]">
-            <span className="text-xs font-semibold">Cumulative CGPA</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2B2024] text-[#f8fafc] border border-[#2B2024]">
-              <BookOpen className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-1.5">
-            <span className="text-3xl font-bold text-[#f8fafc] font-['Space_Grotesk']">{cgpa.toFixed(1)}</span>
-            <span className="text-xs text-[#94a3b8] font-medium">/ 10.0</span>
-          </div>
-          <div className="mt-3 text-xs text-[#94a3b8]">
-            {cgpa >= 7.5 ? (
-              <span className="text-[#f8fafc] font-medium">✓ Satisfies Tier-1 criteria</span>
-            ) : (
-              <span className="text-[#94a3b8] font-medium">⚠ Target ≥ 7.0 cutoff</span>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Backlogs */}
-        <motion.div
-          whileHover={{ y: -3 }}
-          transition={{ duration: 0.2 }}
-          className="rounded-2xl border border-[#2B2024] bg-[#000000] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl transition-all hover:bg-[#000000]"
-        >
-          <div className="flex items-center justify-between text-[#94a3b8]">
-            <span className="text-xs font-semibold">Active Backlogs</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2B2024] text-[#f8fafc] border border-[#2B2024]">
-              <Award className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-[#f8fafc] font-['Space_Grotesk']">{backlogs}</span>
-            <span className="text-xs text-[#94a3b8]">Active</span>
-          </div>
-          <div className="mt-2 text-[11px]">
-            {backlogs === 0 ? (
-              <span className="text-[#f8fafc] font-medium">✓ 100% Eligible for drives</span>
-            ) : (
-              <span className="text-[#94a3b8] font-medium">Clear before campus drives</span>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Internships */}
-        <motion.div
-          whileHover={{ y: -3 }}
-          transition={{ duration: 0.2 }}
-          className="rounded-2xl border border-[#2B2024] bg-[#000000] p-5 shadow-[0_8px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl transition-all hover:bg-[#000000]"
-        >
-          <div className="flex items-center justify-between text-[#94a3b8]">
-            <span className="text-xs font-semibold">Internships Completed</span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#2B2024] text-[#f8fafc] border border-[#2B2024]">
-              <Briefcase className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-[#f8fafc] font-['Space_Grotesk']">{internships}</span>
-            <span className="text-xs text-[#94a3b8]">completed</span>
-          </div>
-          <div className="mt-2 text-[11px] text-[#94a3b8]">
-            {internships >= 1 ? (
-              <span className="text-[#f8fafc] font-medium">✓ Practical work validated</span>
-            ) : (
-              <span className="text-[#94a3b8]">Target 1 practical project</span>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Coding & DSA */}
-        <motion.div
-          whileHover={{ y: -3 }}
-          transition={{ duration: 0.2 }}
-          className="rounded-2xl border border-[#2B2024] bg-[#000000] p-5 shadow-[0_8px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl transition-all hover:bg-[#000000]"
-        >
-          <div className="flex items-center justify-between text-[#94a3b8]">
-            <span className="text-xs font-semibold">DSA & Problem Solving</span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#2B2024] text-[#f8fafc] border border-[#2B2024]">
-              <Code2 className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-[#f8fafc] font-['Space_Grotesk']">{coding}</span>
-            <span className="text-xs text-[#94a3b8]">/ 10</span>
-          </div>
-          <div className="mt-2 text-[11px] text-[#94a3b8]">
-            {coding >= 7 ? (
-              <span className="text-[#f8fafc] font-medium">✓ High-frequency patterns</span>
-            ) : (
-              <span className="text-[#94a3b8] font-medium">Review Blind 75 list</span>
-            )}
-          </div>
-        </motion.div>
       </div>
     </div>
   );

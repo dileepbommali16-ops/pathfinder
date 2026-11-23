@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Code2,
   Play,
@@ -11,57 +11,411 @@ import {
   Volume2,
   Trophy,
   Terminal,
+  ChevronRight,
+  ChevronLeft,
+  Eye,
+  EyeOff,
+  Copy,
+  RotateCcw,
+  Plus,
 } from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
 import { SUPPORTED_LANGUAGES, normalizeLanguage } from "@/agent/codingStudioController";
 import { audioEngine, startListening } from "@/agent/audioIO";
 import { toast } from "sonner";
 
+export type ArenaTrackId = "Amazon" | "Google" | "Deloitte" | "Microsoft" | "Core / Systems";
+
 export interface ArenaChallenge {
   id: string;
+  track: ArenaTrackId;
   company: string;
   role: string;
   title: string;
+  difficulty: string;
   question: string;
+  spokenPrompt: string;
+  sampleInput: string;
+  expectedOutput: string;
+  expectedOutputTokens: string[];
   starterPython: string;
+  solutionPython: string;
+  complexityExplanation: string;
   expectedKeywords: string[];
 }
 
+export const ARENA_TRACKS: Array<{ id: ArenaTrackId; label: string; roleHint: string }> = [
+  { id: "Amazon", label: "Amazon (SDE-1)", roleHint: "SDE-1" },
+  { id: "Google", label: "Google (SWE)", roleHint: "SWE University Grad" },
+  { id: "Deloitte", label: "Deloitte (Data & Tech)", roleHint: "Technology Consulting Analyst" },
+  { id: "Microsoft", label: "Microsoft (Systems & DSA)", roleHint: "Software Engineer" },
+  { id: "Core / Systems", label: "Core / Systems", roleHint: "Systems & Embedded Engineer" },
+];
+
 export const ARENA_CHALLENGES: ArenaChallenge[] = [
+  // --- AMAZON (3) ---
   {
-    id: "binary-search-first",
+    id: "amzn-1-binary-search",
+    track: "Amazon",
     company: "Amazon",
     role: "SDE-1",
-    title: "1. Binary Search First Occurrence & Complexity Viva",
+    title: "1. Binary Search First Occurrence",
+    difficulty: "Medium",
     question:
-      "Write a function that finds the first index of a target order ID in a sorted array in O(log n) time, run it on [10, 20, 20, 20, 30, 40] for target 20, and explain why its time complexity is O(log n) and space complexity is O(1).",
+      "Write first_occurrence(arr, target) to find the earliest index of target=20 in a sorted array in O(log n) time and O(1) space, then explain why searching continues left on match.",
+    spokenPrompt:
+      "Amazon SDE-1 Coding Round. Find the first index of target 20 in a sorted array in Big O of log n time and Big O of 1 space, and explain how the left boundary moves.",
+    sampleInput: "arr = [10, 20, 20, 20, 30, 40], target = 20",
+    expectedOutput: "First index of 20: 1",
+    expectedOutputTokens: ["1"],
     starterPython:
-      'def first_occurrence(arr, target):\n    lo, hi, ans = 0, len(arr) - 1, -1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if arr[mid] == target:\n            ans = mid\n            hi = mid - 1  # continue searching left half\n        elif arr[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return ans\n\nprint("First index of 20:", first_occurrence([10, 20, 20, 20, 30, 40], 20))',
+      'def first_occurrence(arr, target):\n    # TODO: write your binary search solution here\n    pass\n\nprint("First index of 20:", first_occurrence([10, 20, 20, 20, 30, 40], 20))',
+    solutionPython:
+      'def first_occurrence(arr, target):\n    lo, hi, ans = 0, len(arr) - 1, -1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if arr[mid] == target:\n            ans = mid\n            hi = mid - 1\n        elif arr[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return ans\n\nprint("First index of 20:", first_occurrence([10, 20, 20, 20, 30, 40], 20))',
+    complexityExplanation:
+      "Time: O(log n) because each comparison halves the sorted search interval. Space: O(1) iterative pointers. Recording mid and tightening hi = mid - 1 locates the leftmost match.",
     expectedKeywords: ["O(log n)", "O(1)", "binary search", "sorted", "mid", "left"],
   },
   {
-    id: "two-sum-optimal",
-    company: "Google",
-    role: "SWE University Grad",
-    title: "2. O(n) Hash Map Two-Sum vs O(n²) Brute Force",
+    id: "amzn-2-valid-parentheses",
+    track: "Amazon",
+    company: "Amazon",
+    role: "SDE-1",
+    title: "2. Valid Parentheses Stack Validator",
+    difficulty: "Easy-Medium",
     question:
-      "Implement an O(n) Two-Sum solution using a hash map for nums=[2, 7, 11, 15] and target=9, execute the code, and explain the time-space trade-off between O(n) hash lookup and O(n²) nested loops.",
+      "Write is_valid_brackets(s) to check whether parentheses (), [], {} are balanced and properly nested using a stack in O(n) time, and explain stack space complexity.",
+    spokenPrompt:
+      "Amazon SDE-1 Coding Round. Validate balanced parentheses, square brackets, and curly braces in Big O of n time using a stack.",
+    sampleInput: '"({[]})" and "([)]"',
+    expectedOutput: "True False",
+    expectedOutputTokens: ["True False"],
     starterPython:
-      'def two_sum(nums, target):\n    seen = {}\n    for i, x in enumerate(nums):\n        complement = target - x\n        if complement in seen:\n            return [seen[complement], i]\n        seen[x] = i\n    return []\n\nprint("Two-Sum indices:", two_sum([2, 7, 11, 15], 9))',
-    expectedKeywords: ["O(n)", "hash map", "dictionary", "complement", "trade-off", "space"],
+      'def is_valid_brackets(s):\n    # TODO: validate balanced brackets using a stack\n    pass\n\nprint(is_valid_brackets("({[]})"), is_valid_brackets("([)]"))',
+    solutionPython:
+      'def is_valid_brackets(s):\n    pairs = {")": "(", "]": "[", "}": "{"}\n    stack = []\n    for ch in s:\n        if ch in "([{":\n            stack.append(ch)\n        else:\n            if not stack or stack.pop() != pairs.get(ch):\n                return False\n    return len(stack) == 0\n\nprint(is_valid_brackets("({[]})"), is_valid_brackets("([)]"))',
+    complexityExplanation:
+      "Time: O(n) single pass pushing/popping each bracket at most once. Space: O(n) worst-case stack depth when all characters are opening brackets.",
+    expectedKeywords: ["stack", "O(n)", "LIFO", "mapping", "empty check"],
   },
   {
-    id: "deloitte-sql-dept",
+    id: "amzn-3-kadane",
+    track: "Amazon",
+    company: "Amazon",
+    role: "SDE-1",
+    title: "3. Maximum Subarray Sum (Kadane)",
+    difficulty: "Medium",
+    question:
+      "Implement max_subarray_sum(nums) using Kadane's algorithm in O(n) time and O(1) space on [-2, 1, -3, 4, -1, 2, 1, -5, 4], and explain the local-vs-global recurrence.",
+    spokenPrompt:
+      "Amazon SDE-1 Coding Round. Compute maximum contiguous subarray sum in Big O of n time and Big O of 1 space using Kadane's algorithm.",
+    sampleInput: "nums = [-2, 1, -3, 4, -1, 2, 1, -5, 4]",
+    expectedOutput: "6",
+    expectedOutputTokens: ["6"],
+    starterPython:
+      "def max_subarray_sum(nums):\n    # TODO: implement Kadane's O(n) algorithm\n    pass\n\nprint(max_subarray_sum([-2, 1, -3, 4, -1, 2, 1, -5, 4]))",
+    solutionPython:
+      "def max_subarray_sum(nums):\n    curr = best = nums[0]\n    for x in nums[1:]:\n        curr = max(x, curr + x)\n        best = max(best, curr)\n    return best\n\nprint(max_subarray_sum([-2, 1, -3, 4, -1, 2, 1, -5, 4]))",
+    complexityExplanation:
+      "Time: O(n) single pass deciding at each index whether to extend the running subarray or restart at x. Space: O(1) constant variables.",
+    expectedKeywords: ["Kadane", "O(n)", "O(1)", "dynamic programming", "contiguous"],
+  },
+
+  // --- GOOGLE (3) ---
+  {
+    id: "goog-1-two-sum",
+    track: "Google",
+    company: "Google",
+    role: "SWE University Grad",
+    title: "1. Hash Map Two-Sum",
+    difficulty: "Medium",
+    question:
+      "Implement two_sum(nums, target) in O(n) time for nums=[2, 7, 11, 15], target=9, and defend the time-space trade-off versus O(n^2) brute force or sorting.",
+    spokenPrompt:
+      "Google SWE Round. Return the pair of indices summing to target in Big O of n time using a hash map and explain the time space trade-off.",
+    sampleInput: "nums = [2, 7, 11, 15], target = 9",
+    expectedOutput: "[0, 1]",
+    expectedOutputTokens: ["[0, 1]"],
+    starterPython:
+      "def two_sum(nums, target):\n    # TODO: use a hash map to achieve O(n) lookup\n    pass\n\nprint(two_sum([2, 7, 11, 15], 9))",
+    solutionPython:
+      "def two_sum(nums, target):\n    seen = {}\n    for i, x in enumerate(nums):\n        comp = target - x\n        if comp in seen:\n            return [seen[comp], i]\n        seen[x] = i\n    return []\n\nprint(two_sum([2, 7, 11, 15], 9))",
+    complexityExplanation:
+      "Time: O(n) average-case dictionary lookup per element vs O(n^2) nested loops. Space: O(n) hash table storing index mappings.",
+    expectedKeywords: ["O(n)", "hash map", "complement", "trade-off", "space"],
+  },
+  {
+    id: "goog-2-longest-substring",
+    track: "Google",
+    company: "Google",
+    role: "SWE University Grad",
+    title: "2. Longest Substring Without Repeats",
+    difficulty: "Medium",
+    question:
+      "Write length_of_longest_substring(s) returning the max length of a substring with unique characters in O(n) time on 'abcabcbb', and explain why left never moves backward.",
+    spokenPrompt:
+      "Google SWE Round. Find the longest substring without repeating characters in Big O of n time using a sliding window.",
+    sampleInput: "s = 'abcabcbb'",
+    expectedOutput: "3",
+    expectedOutputTokens: ["3"],
+    starterPython:
+      "def length_of_longest_substring(s):\n    # TODO: write O(n) sliding window solution\n    pass\n\nprint(length_of_longest_substring('abcabcbb'))",
+    solutionPython:
+      "def length_of_longest_substring(s):\n    last_seen = {}\n    left = 0\n    best = 0\n    for right, ch in enumerate(s):\n        if ch in last_seen and last_seen[ch] >= left:\n            left = last_seen[ch] + 1\n        last_seen[ch] = right\n        best = max(best, right - left + 1)\n    return best\n\nprint(length_of_longest_substring('abcabcbb'))",
+    complexityExplanation:
+      "Time: O(n) single pass because left = max(left, prev + 1) jumps directly past stale duplicates. Space: O(min(n, k)) for character positions.",
+    expectedKeywords: ["sliding window", "O(n)", "hash map", "two pointer", "invariant"],
+  },
+  {
+    id: "goog-3-merge-intervals",
+    track: "Google",
+    company: "Google",
+    role: "SWE University Grad",
+    title: "3. Merge Overlapping Intervals",
+    difficulty: "Medium",
+    question:
+      "Write merge_intervals(intervals) sorting and merging all overlapping pairs on [[1,3],[2,6],[8,10],[15,18]], and analyze sorting bottleneck complexity.",
+    spokenPrompt:
+      "Google SWE Round. Merge overlapping time intervals efficiently and explain why sorting dominates at Big O of n log n time.",
+    sampleInput: "intervals = [[1, 3], [2, 6], [8, 10], [15, 18]]",
+    expectedOutput: "[[1, 6], [8, 10], [15, 18]]",
+    expectedOutputTokens: ["[[1, 6], [8, 10], [15, 18]]"],
+    starterPython:
+      "def merge_intervals(intervals):\n    # TODO: sort by start and merge overlapping intervals\n    pass\n\nprint(merge_intervals([[1, 3], [2, 6], [8, 10], [15, 18]]))",
+    solutionPython:
+      "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    intervals.sort(key=lambda iv: iv[0])\n    merged = [intervals[0][:]]\n    for start, end in intervals[1:]:\n        if start <= merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], end)\n        else:\n            merged.append([start, end])\n    return merged\n\nprint(merge_intervals([[1, 3], [2, 6], [8, 10], [15, 18]]))",
+    complexityExplanation:
+      "Time: O(n log n) due to initial start-time sort followed by an O(n) greedy scan. Space: O(n) output storage.",
+    expectedKeywords: ["O(n log n)", "sort", "greedy", "overlap", "interval"],
+  },
+
+  // --- DELOITTE (3) ---
+  {
+    id: "del-1-dept-avg",
+    track: "Deloitte",
     company: "Deloitte",
     role: "Technology Consulting Analyst",
-    title: "3. Department Package Aggregation & Indexing Defense",
+    title: "1. Department Average Package Sort",
+    difficulty: "Medium",
     question:
-      "Compute the average placement package per department from a dataset, print them sorted highest-first, and explain how composite B-Tree indexing speeds up GROUP BY queries in PostgreSQL.",
+      "Aggregate average salary per department sorted descending from placements data, and explain how composite B-Tree indexes speed up SQL GROUP BY aggregations.",
+    spokenPrompt:
+      "Deloitte Consulting Round. Compute department average salary sorted highest first and explain how B-Tree indexing optimizes group by queries.",
+    sampleInput: '[("CSE", 16.0), ("CSE", 14.0), ("AIML", 22.0), ("AIML", 18.0), ("ECE", 9.0)]',
+    expectedOutput: "AIML: 20.0 LPA | CSE: 15.0 LPA | ECE: 9.0 LPA",
+    expectedOutputTokens: ["AIML: 20.0", "CSE: 15.0"],
     starterPython:
-      'from collections import defaultdict\n\nplacements = [("CSE", 16.0), ("CSE", 14.0), ("AIML", 22.0), ("AIML", 18.0), ("ECE", 9.0)]\ndept_map = defaultdict(list)\nfor dept, pkg in placements:\n    dept_map[dept].append(pkg)\n\nfor dept, pkgs in sorted(dept_map.items(), key=lambda item: -sum(item[1])/len(item[1])):\n    print(f"{dept}: Avg {sum(pkgs)/len(pkgs):.1f} LPA ({len(pkgs)} offers)")',
-    expectedKeywords: ["GROUP BY", "B-Tree", "index", "O(n log n)", "aggregation", "PostgreSQL"],
+      'from collections import defaultdict\n\ndef print_dept_averages(records):\n    # TODO: group packages by department and print sorted highest average first\n    pass\n\nprint_dept_averages([("CSE", 16.0), ("CSE", 14.0), ("AIML", 22.0), ("AIML", 18.0), ("ECE", 9.0)])',
+    solutionPython:
+      'from collections import defaultdict\n\ndef print_dept_averages(records):\n    dept_map = defaultdict(list)\n    for dept, pkg in records:\n        dept_map[dept].append(pkg)\n    ranked = sorted(dept_map.items(), key=lambda kv: -sum(kv[1]) / len(kv[1]))\n    for dept, pkgs in ranked:\n        print(f"{dept}: {sum(pkgs)/len(pkgs):.1f} LPA")\n\nprint_dept_averages([("CSE", 16.0), ("CSE", 14.0), ("AIML", 22.0), ("AIML", 18.0), ("ECE", 9.0)])',
+    complexityExplanation:
+      "Time: O(n + k log k) where k is number of departments. In PostgreSQL, indexing GROUP BY + ORDER BY columns turns full table sorts into ordered index scans.",
+    expectedKeywords: ["GROUP BY", "B-Tree", "index", "aggregation", "O(n log n)", "PostgreSQL"],
+  },
+  {
+    id: "del-2-top-k-dept",
+    track: "Deloitte",
+    company: "Deloitte",
+    role: "Technology Consulting Analyst",
+    title: "2. Top-2 Offers per Branch Partition",
+    difficulty: "Medium",
+    question:
+      "Group offers by branch and print the top 2 highest packages for each branch sorted alphabetically by branch, comparing this to SQL DENSE_RANK / ROW_NUMBER window functions.",
+    spokenPrompt:
+      "Deloitte Consulting Round. Print the top 2 highest packages per engineering branch and explain how SQL window functions partition this cleanly.",
+    sampleInput: '[("CSE", 12.0), ("CSE", 24.0), ("CSE", 18.0), ("ECE", 9.0), ("ECE", 11.5)]',
+    expectedOutput: "CSE: [24.0, 18.0] | ECE: [11.5, 9.0]",
+    expectedOutputTokens: ["24.0", "18.0", "11.5"],
+    starterPython:
+      'from collections import defaultdict\n\ndef top_two_per_branch(records):\n    # TODO: compute top 2 packages per branch\n    pass\n\ntop_two_per_branch([("CSE", 12.0), ("CSE", 24.0), ("CSE", 18.0), ("ECE", 9.0), ("ECE", 11.5)])',
+    solutionPython:
+      'from collections import defaultdict\n\ndef top_two_per_branch(records):\n    groups = defaultdict(list)\n    for branch, pkg in records:\n        groups[branch].append(pkg)\n    for branch in sorted(groups):\n        top2 = sorted(groups[branch], reverse=True)[:2]\n        print(f"{branch}: {top2}")\n\ntop_two_per_branch([("CSE", 12.0), ("CSE", 24.0), ("CSE", 18.0), ("ECE", 9.0), ("ECE", 11.5)])',
+    complexityExplanation:
+      "Time: O(n log n) or O(n) using bounded heap of size 2 per partition. In SQL this maps directly to ROW_NUMBER() OVER (PARTITION BY branch ORDER BY pkg DESC).",
+    expectedKeywords: ["PARTITION BY", "window function", "heap", "O(n log n)", "sorting"],
+  },
+  {
+    id: "del-3-dedup-emails",
+    track: "Deloitte",
+    company: "Deloitte",
+    role: "Technology Consulting Analyst",
+    title: "3. Deduplicate Candidate Emails",
+    difficulty: "Easy-Medium",
+    question:
+      "Count case-insensitive unique student email records while handling leading/trailing whitespace in O(n) time, and discuss UNIQUE indexes & idempotency in data pipelines.",
+    spokenPrompt:
+      "Deloitte Consulting Round. Deduplicate student email strings ignoring case and spaces in Big O of n time and explain database uniqueness constraints.",
+    sampleInput: '["Asha@Edu.in", " asha@edu.in ", "Raj@Edu.in", "RAJ@edu.in", "Kiran@Edu.in"]',
+    expectedOutput: "3",
+    expectedOutputTokens: ["3"],
+    starterPython:
+      'def count_unique_emails(emails):\n    # TODO: normalize and count unique emails in O(n)\n    pass\n\nprint(count_unique_emails(["Asha@Edu.in", " asha@edu.in ", "Raj@Edu.in", "RAJ@edu.in", "Kiran@Edu.in"]))',
+    solutionPython:
+      'def count_unique_emails(emails):\n    seen = set()\n    for raw in emails:\n        norm = raw.strip().lower()\n        if norm:\n            seen.add(norm)\n    return len(seen)\n\nprint(count_unique_emails(["Asha@Edu.in", " asha@edu.in ", "Raj@Edu.in", "RAJ@edu.in", "Kiran@Edu.in"]))',
+    complexityExplanation:
+      "Time: O(n * L) across n normalized emails using O(1) hash set insertions. Space: O(n). In Postgres, LOWER(email) unique indexes prevent duplicate ingestion.",
+    expectedKeywords: ["hash set", "O(n)", "unique constraint", "idempotency", "normalization"],
+  },
+
+  // --- MICROSOFT (3) ---
+  {
+    id: "msft-1-rotate-array",
+    track: "Microsoft",
+    company: "Microsoft",
+    role: "Software Engineer",
+    title: "1. Rotate Array Right In-Place",
+    difficulty: "Medium",
+    question:
+      "Rotate nums = [1, 2, 3, 4, 5, 6, 7] right by k = 3 steps in-place with O(1) extra memory and explain the three-reversal proof.",
+    spokenPrompt:
+      "Microsoft SWE Round. Rotate an array right by k steps in place using Big O of 1 space and explain why three reversals work.",
+    sampleInput: "nums = [1, 2, 3, 4, 5, 6, 7], k = 3",
+    expectedOutput: "[5, 6, 7, 1, 2, 3, 4]",
+    expectedOutputTokens: ["[5, 6, 7, 1, 2, 3, 4]"],
+    starterPython:
+      "def rotate_right(nums, k):\n    # TODO: rotate array in-place in O(n) time and O(1) space\n    pass\n\narr = [1, 2, 3, 4, 5, 6, 7]\nrotate_right(arr, 3)\nprint(arr)",
+    solutionPython:
+      "def rotate_right(nums, k):\n    n = len(nums)\n    if n == 0:\n        return\n    k %= n\n    def rev(l, r):\n        while l < r:\n            nums[l], nums[r] = nums[r], nums[l]\n            l += 1\n            r -= 1\n    rev(0, n - 1)\n    rev(0, k - 1)\n    rev(k, n - 1)\n\narr = [1, 2, 3, 4, 5, 6, 7]\nrotate_right(arr, 3)\nprint(arr)",
+    complexityExplanation:
+      "Time: O(n) with three linear two-pointer swaps. Space: O(1) auxiliary memory, avoiding slice allocations of size n.",
+    expectedKeywords: ["O(n)", "O(1)", "in-place", "reversal", "modulo"],
+  },
+  {
+    id: "msft-2-group-anagrams",
+    track: "Microsoft",
+    company: "Microsoft",
+    role: "Software Engineer",
+    title: "2. Group Anagrams Cluster Count",
+    difficulty: "Medium",
+    question:
+      'Group ["eat", "tea", "tan", "ate", "nat", "bat"] into anagram buckets and print the total number of distinct groups, comparing sorted-key vs 26-char frequency tuple complexity.',
+    spokenPrompt:
+      "Microsoft SWE Round. Group anagram strings into distinct buckets and compare sorted key versus character frequency tuple time complexity.",
+    sampleInput: 'words = ["eat", "tea", "tan", "ate", "nat", "bat"]',
+    expectedOutput: "3",
+    expectedOutputTokens: ["3"],
+    starterPython:
+      'def count_anagram_groups(words):\n    # TODO: bucket words by canonical signature and return group count\n    pass\n\nprint(count_anagram_groups(["eat", "tea", "tan", "ate", "nat", "bat"]))',
+    solutionPython:
+      'from collections import defaultdict\n\ndef count_anagram_groups(words):\n    buckets = defaultdict(list)\n    for w in words:\n        key = tuple(sorted(w))\n        buckets[key].append(w)\n    return len(buckets)\n\nprint(count_anagram_groups(["eat", "tea", "tan", "ate", "nat", "bat"]))',
+    complexityExplanation:
+      "Time: O(N * K log K) with sorted tuples or O(N * K) using a 26-element count tuple signature. Space: O(N * K).",
+    expectedKeywords: ["hash map", "canonical key", "O(N * K)", "anagram", "sorting"],
+  },
+  {
+    id: "msft-3-lru-cache",
+    track: "Microsoft",
+    company: "Microsoft",
+    role: "Software Engineer",
+    title: "3. O(1) LRU Cache Operations",
+    difficulty: "Hard",
+    question:
+      "Implement a capacity-2 LRUCache supporting O(1) get(key) and put(key, val), execute put(1,1), put(2,2), get(1), put(3,3), get(2), and explain why HashMap + Doubly Linked List gives O(1).",
+    spokenPrompt:
+      "Microsoft SWE Round. Implement an LRU cache with Big O of 1 get and put operations and explain how a hash map pairs with eviction order.",
+    sampleInput: "capacity=2: put(1,1), put(2,2), get(1), put(3,3), get(2)",
+    expectedOutput: "1 -1",
+    expectedOutputTokens: ["1 -1"],
+    starterPython:
+      "from collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity):\n        # TODO: initialize cache state\n        pass\n    def get(self, key):\n        pass\n    def put(self, key, value):\n        pass\n\ncache = LRUCache(2)\ncache.put(1, 1); cache.put(2, 2)\nr1 = cache.get(1)\ncache.put(3, 3)\nr2 = cache.get(2)\nprint(r1, r2)",
+    solutionPython:
+      "from collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity):\n        self.cap = capacity\n        self.od = OrderedDict()\n    def get(self, key):\n        if key not in self.od:\n            return -1\n        self.od.move_to_end(key)\n        return self.od[key]\n    def put(self, key, value):\n        if key in self.od:\n            self.od.move_to_end(key)\n        self.od[key] = value\n        if len(self.od) > self.cap:\n            self.od.popitem(last=False)\n\ncache = LRUCache(2)\ncache.put(1, 1); cache.put(2, 2)\nr1 = cache.get(1)\ncache.put(3, 3)\nr2 = cache.get(2)\nprint(r1, r2)",
+    complexityExplanation:
+      "Time: O(1) for both get and put because a HashMap locates nodes in O(1) while a Doubly Linked List / OrderedDict relinks recency in O(1). Space: O(capacity).",
+    expectedKeywords: ["O(1)", "hash map", "doubly linked list", "eviction", "recency"],
+  },
+
+  // --- CORE / SYSTEMS (3) ---
+  {
+    id: "sys-1-bit-ops",
+    track: "Core / Systems",
+    company: "Core / Systems",
+    role: "Systems & Embedded Engineer",
+    title: "1. Bitwise Set Bits & Power-of-Two Check",
+    difficulty: "Easy-Medium",
+    question:
+      "Write count_bits(n) using Kernighan's trick and is_power_of_two(p) in O(1) bitwise operations, run on n=11 and p=16, and explain n & (n - 1).",
+    spokenPrompt:
+      "Core Systems Round. Count set bits and check power of two using constant time bitwise operations, and explain what n bitwise and n minus 1 clears.",
+    sampleInput: "n = 11, p = 16",
+    expectedOutput: "3 True",
+    expectedOutputTokens: ["3 True"],
+    starterPython:
+      "def count_bits(n):\n    # TODO: use bitwise ops\n    pass\n\ndef is_power_of_two(p):\n    # TODO: check power of two in O(1)\n    pass\n\nprint(count_bits(11), is_power_of_two(16))",
+    solutionPython:
+      "def count_bits(n):\n    cnt = 0\n    while n > 0:\n        n &= (n - 1)\n        cnt += 1\n    return cnt\n\ndef is_power_of_two(p):\n    return p > 0 and (p & (p - 1)) == 0\n\nprint(count_bits(11), is_power_of_two(16))",
+    complexityExplanation:
+      "n & (n - 1) zeroes the lowest set bit. count_bits runs in O(k) bit transitions (at most O(log n)) with O(1) space; is_power_of_two is strictly O(1).",
+    expectedKeywords: ["bitwise", "O(1)", "set bits", "power of two", "lowest bit"],
+  },
+  {
+    id: "sys-2-moving-avg",
+    track: "Core / Systems",
+    company: "Core / Systems",
+    role: "Systems & Embedded Engineer",
+    title: "2. Sensor Sliding Window Moving Average",
+    difficulty: "Medium",
+    question:
+      "Compute rolling window averages of size k=2 over telemetry stream [10, 20, 30, 40] in O(n) time instead of O(n*k), and relate this to edge firmware ring buffers.",
+    spokenPrompt:
+      "Core Systems Round. Compute a sliding window moving average over sensor telemetry in Big O of n time instead of Big O of n times k.",
+    sampleInput: "readings = [10, 20, 30, 40], k = 2",
+    expectedOutput: "[15.0, 25.0, 35.0]",
+    expectedOutputTokens: ["15.0", "25.0", "35.0"],
+    starterPython:
+      "def moving_average(readings, k):\n    # TODO: maintain running window sum in O(n)\n    pass\n\nprint(moving_average([10, 20, 30, 40], 2))",
+    solutionPython:
+      "def moving_average(readings, k):\n    if k <= 0 or k > len(readings):\n        return []\n    win = sum(readings[:k])\n    res = [win / k]\n    for i in range(k, len(readings)):\n        win += readings[i] - readings[i - k]\n        res.append(win / k)\n    return res\n\nprint(moving_average([10, 20, 30, 40], 2))",
+    complexityExplanation:
+      "Time: O(n) by adding incoming sample and subtracting outgoing sample in O(1) per tick. Space: O(1) extra state with a circular ring buffer.",
+    expectedKeywords: ["sliding window", "O(n)", "ring buffer", "telemetry", "O(1)"],
+  },
+  {
+    id: "sys-3-token-bucket",
+    track: "Core / Systems",
+    company: "Core / Systems",
+    role: "Systems & Embedded Engineer",
+    title: "3. Token Bucket Rate Limiter Simulation",
+    difficulty: "Medium",
+    question:
+      "Simulate a Token Bucket (capacity=2, initial=2, rate=1/sec) over request timestamps [0, 0, 0], printing ALLOW or DENY for each request, and compare token bucket vs fixed window.",
+    spokenPrompt:
+      "Core Systems Round. Implement a token bucket rate limiter simulation and explain why token bucket handles bursts smoothly.",
+    sampleInput: "capacity=2, rate=1/s, request timestamps=[0, 0, 0]",
+    expectedOutput: "ALLOW ALLOW DENY",
+    expectedOutputTokens: ["ALLOW ALLOW DENY"],
+    starterPython:
+      "def simulate_rate_limiter(timestamps, capacity=2, rate=1.0):\n    # TODO: refill tokens based on elapsed time and return decisions\n    pass\n\nprint(' '.join(simulate_rate_limiter([0, 0, 0])))",
+    solutionPython:
+      "def simulate_rate_limiter(timestamps, capacity=2, rate=1.0):\n    tokens = float(capacity)\n    last_t = timestamps[0] if timestamps else 0\n    out = []\n    for t in timestamps:\n        tokens = min(float(capacity), tokens + max(0, t - last_t) * rate)\n        last_t = t\n        if tokens >= 1.0:\n            tokens -= 1.0\n            out.append('ALLOW')\n        else:\n            out.append('DENY')\n    return out\n\nprint(' '.join(simulate_rate_limiter([0, 0, 0])))",
+    complexityExplanation:
+      "Time: O(1) per request decision storing just tokens and timestamp. Space: O(1) per client key vs storing full timestamp queues in sliding logs.",
+    expectedKeywords: ["token bucket", "O(1)", "burst", "rate limiting", "refill"],
   },
 ];
+
+function stripCodeForCheck(src: string): string {
+  return (src || "")
+    .replace(/#.*$/gm, "")
+    .replace(/\/\/.*$/gm, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\s+/g, "");
+}
+
+function isStarterOrBlank(candidate: string, starter: string, genericStarter?: string): boolean {
+  const cNorm = stripCodeForCheck(candidate);
+  if (!cNorm) return true;
+  if (starter && cNorm === stripCodeForCheck(starter)) return true;
+  if (genericStarter && cNorm === stripCodeForCheck(genericStarter)) return true;
+  return false;
+}
+
+function verifyExpectedOutput(actualOutput: string, expectedTokens: string[]): boolean {
+  const cleanOut = (actualOutput || "").trim();
+  if (!cleanOut || /no standard output|no output|unavailable|error/i.test(cleanOut)) return false;
+  if (!expectedTokens.length) return cleanOut.length > 0;
+  return expectedTokens.every((tok) => cleanOut.includes(tok));
+}
 
 interface LiveCodingInterviewArenaProps {
   profile: StudentProfileState;
@@ -77,27 +431,24 @@ interface LiveCodingInterviewArenaProps {
 }
 
 export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> = ({
-  profile,
   apiBase,
   onAskCoach,
   customChallenge,
 }) => {
+  const [challenges, setChallenges] = useState<ArenaChallenge[]>(ARENA_CHALLENGES);
+  const [activeTrack, setActiveTrack] = useState<ArenaTrackId>("Amazon");
   const [selectedId, setSelectedId] = useState<string>(ARENA_CHALLENGES[0].id);
-  const [company, setCompany] = useState<string>(ARENA_CHALLENGES[0].company);
-  const [role, setRole] = useState<string>(ARENA_CHALLENGES[0].role);
-  const [question, setQuestion] = useState<string>(ARENA_CHALLENGES[0].question);
-  const [expectedKeywords, setExpectedKeywords] = useState<string[]>(
-    ARENA_CHALLENGES[0].expectedKeywords
-  );
   const [language, setLanguage] = useState<string>("python");
   const [code, setCode] = useState<string>(ARENA_CHALLENGES[0].starterPython);
   const [compilerOutput, setCompilerOutput] = useState<string>("");
-  const [compileSuccess, setCompileSuccess] = useState<boolean | null>(null);
+  const [runStatus, setRunStatus] = useState<"idle" | "empty" | "error" | "wrong_output" | "passed">("idle");
   const [isCompiling, setIsCompiling] = useState<boolean>(false);
+  const [isGeneratingProblem, setIsGeneratingProblem] = useState<boolean>(false);
+  const [showCorrectProgram, setShowCorrectProgram] = useState<boolean>(false);
+  const [solvedIds, setSolvedIds] = useState<string[]>([]);
 
-  const [explanation, setExplanation] = useState<string>(
-    "We divide the sorted search space in half on every iteration by comparing the middle element with the target, achieving O(log n) time complexity and O(1) auxiliary space."
-  );
+  // NEVER pre-fill candidate viva answers (zero-fake policy)
+  const [explanation, setExplanation] = useState<string>("");
   const [isListeningVoice, setIsListeningVoice] = useState<boolean>(false);
   const [stopListenerFn, setStopListenerFn] = useState<(() => void) | null>(null);
 
@@ -106,50 +457,141 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
     overallScore: number;
     codeScore: number;
     vivaScore: number;
-    decision: "STRONG HIRE" | "HIRE" | "LEANING NO HIRE" | "NO HIRE";
+    decision: string;
     verdictText: string;
+    codeFeedback: string;
+    vivaFeedback: string;
     matchedKeywords: string[];
     missingKeywords: string[];
   } | null>(null);
 
-  useEffect(() => {
-    if (customChallenge) {
-      setSelectedId("custom");
-      setCompany(customChallenge.company);
-      setRole(customChallenge.role);
-      setQuestion(customChallenge.question);
-      setLanguage("python");
-      setCode(customChallenge.starterCode);
-      setExpectedKeywords(customChallenge.expectedKeywords);
-      setCompilerOutput("");
-      setCompileSuccess(null);
-      setVerdictResult(null);
-    }
-  }, [customChallenge]);
+  const trackChallenges = useMemo(
+    () => challenges.filter((c) => c.track === activeTrack),
+    [challenges, activeTrack]
+  );
 
-  const handleSelectChallenge = (ch: ArenaChallenge) => {
+  const activeChallenge = useMemo(() => {
+    return (
+      challenges.find((c) => c.id === selectedId) ||
+      trackChallenges[0] ||
+      challenges[0]
+    );
+  }, [challenges, selectedId, trackChallenges]);
+
+  const activeIndexInTrack = useMemo(() => {
+    const idx = trackChallenges.findIndex((c) => c.id === activeChallenge.id);
+    return idx >= 0 ? idx : 0;
+  }, [trackChallenges, activeChallenge.id]);
+
+  const resetForChallenge = (ch: ArenaChallenge) => {
+    setActiveTrack(ch.track);
     setSelectedId(ch.id);
-    setCompany(ch.company);
-    setRole(ch.role);
-    setQuestion(ch.question);
     setLanguage("python");
     setCode(ch.starterPython);
-    setExpectedKeywords(ch.expectedKeywords);
+    setExplanation("");
     setCompilerOutput("");
-    setCompileSuccess(null);
+    setRunStatus("idle");
+    setShowCorrectProgram(false);
     setVerdictResult(null);
   };
 
+  useEffect(() => {
+    if (customChallenge) {
+      const customId = `custom-${Date.now()}`;
+      const matchedTrack =
+        ARENA_TRACKS.find((t) =>
+          customChallenge.company.toLowerCase().includes(t.id.toLowerCase())
+        )?.id || "Amazon";
+      const customObj: ArenaChallenge = {
+        id: customId,
+        track: matchedTrack,
+        company: customChallenge.company || matchedTrack,
+        role: customChallenge.role || "SWE",
+        title: `Custom: ${customChallenge.company} Round`,
+        difficulty: "Medium",
+        question: customChallenge.question,
+        spokenPrompt: customChallenge.question,
+        sampleInput: "Run with provided test input or custom print assertions",
+        expectedOutput: "Valid compiled output satisfying prompt requirements",
+        expectedOutputTokens: [],
+        starterPython: customChallenge.starterCode || "# Write your Python solution here\n",
+        solutionPython: customChallenge.starterCode || "# Write your optimal Python solution\n",
+        complexityExplanation: "Explain optimal Time and Space complexity alongside edge cases.",
+        expectedKeywords: customChallenge.expectedKeywords || ["O(n)", "complexity"],
+      };
+      setChallenges((prev) => [...prev.filter((c) => !c.id.startsWith("custom-")), customObj]);
+      resetForChallenge(customObj);
+    }
+  }, [customChallenge]);
+
+  const handleSelectTrack = (track: ArenaTrackId) => {
+    setActiveTrack(track);
+    const firstInTrack = challenges.find((c) => c.track === track);
+    if (firstInTrack) resetForChallenge(firstInTrack);
+  };
+
+  const handleStepChallenge = (delta: number) => {
+    if (trackChallenges.length === 0) return;
+    const nextIdx = (activeIndexInTrack + delta + trackChallenges.length) % trackChallenges.length;
+    resetForChallenge(trackChallenges[nextIdx]);
+  };
+
+  const handleGenerateFreshProblem = async () => {
+    setIsGeneratingProblem(true);
+    try {
+      const trackInfo = ARENA_TRACKS.find((t) => t.id === activeTrack) || ARENA_TRACKS[0];
+      const resp = await fetch(`${apiBase}/api/ai/generate-coding-problem`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company: activeTrack,
+          role: trackInfo.roleHint,
+          difficulty: "Medium",
+          existing_titles: challenges.map((c) => c.title),
+        }),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      const newNum = trackChallenges.length + 1;
+      const newProblem: ArenaChallenge = {
+        id: data.id || `gen-${activeTrack.toLowerCase()}-${Date.now()}`,
+        track: activeTrack,
+        company: activeTrack,
+        role: data.role || trackInfo.roleHint,
+        title: `${newNum}. ${data.title}`,
+        difficulty: data.difficulty || "Medium",
+        question: data.question,
+        spokenPrompt: data.spoken_prompt || data.question,
+        sampleInput: data.sample_input || "See test case inside starter code",
+        expectedOutput: data.expected_output || "",
+        expectedOutputTokens: Array.isArray(data.expected_output_tokens)
+          ? data.expected_output_tokens
+          : [],
+        starterPython: data.starter_python,
+        solutionPython: data.solution_python,
+        complexityExplanation: data.complexity_explanation || "Discuss optimal Time and Space complexity.",
+        expectedKeywords: Array.isArray(data.expected_keywords) ? data.expected_keywords : ["O(n)"],
+      };
+      setChallenges((prev) => [...prev, newProblem]);
+      resetForChallenge(newProblem);
+      toast.success(`New ${activeTrack} challenge generated!`);
+    } catch (err: any) {
+      toast.error(`Could not generate new challenge: ${err?.message || "Please retry."}`);
+    } finally {
+      setIsGeneratingProblem(false);
+    }
+  };
+
   const handleSpeakQuestionAloud = () => {
-    const speechText = `${company} ${role} Technical Coding Round. ${question}`;
+    const cleanPrompt = (activeChallenge.spokenPrompt || activeChallenge.question).trim();
     audioEngine.unlockAudio();
     audioEngine.clearAudioQueue();
     window.dispatchEvent(
       new CustomEvent("das-interviewer-prompt", {
-        detail: { question: speechText, track: "arena" },
+        detail: { question: cleanPrompt, track: "arena" },
       })
     );
-    void audioEngine.speakTextPuckOrLocal(speechText, apiBase);
+    void audioEngine.speakTextPuckOrLocal(cleanPrompt, apiBase);
   };
 
   const handleToggleVoiceViva = () => {
@@ -176,7 +618,27 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
     }
   };
 
-  const runCodeOnBackend = async (): Promise<{ ok: boolean; out: string }> => {
+  const runCodeOnBackend = async (): Promise<{
+    compileOk: boolean;
+    outputMatched: boolean;
+    out: string;
+    isBlankOrStarter: boolean;
+  }> => {
+    const langSpec = SUPPORTED_LANGUAGES.find((l) => l.id === language);
+    const blankCheck = isStarterOrBlank(
+      code,
+      language === "python" ? activeChallenge.starterPython : "",
+      langSpec?.starter
+    );
+
+    if (blankCheck) {
+      const msg =
+        "No solution implemented yet — write your logic inside the editor before executing tests.";
+      setCompilerOutput(msg);
+      setRunStatus("empty");
+      return { compileOk: false, outputMatched: false, out: msg, isBlankOrStarter: true };
+    }
+
     setIsCompiling(true);
     try {
       const resp = await fetch(`${apiBase}/api/compile`, {
@@ -186,15 +648,38 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
       });
       const data = await resp.json();
       const out = String(data.output || data.stderr || data.error || "").trim();
-      const ok = Boolean(resp.ok && data.success);
-      setCompilerOutput(out || (ok ? "Program executed with 0 output." : "Execution failed."));
-      setCompileSuccess(ok);
-      return { ok, out };
+      const compileOk = Boolean(resp.ok && data.success);
+
+      if (!compileOk) {
+        setCompilerOutput(out || "Compile or runtime error occurred.");
+        setRunStatus("error");
+        return { compileOk: false, outputMatched: false, out, isBlankOrStarter: false };
+      }
+
+      const enforcePythonTokens = language === "python" && activeChallenge.expectedOutputTokens.length > 0;
+      const outputMatched = enforcePythonTokens
+        ? verifyExpectedOutput(out, activeChallenge.expectedOutputTokens)
+        : Boolean(out && !/no standard output|no output/i.test(out));
+
+      if (outputMatched) {
+        setCompilerOutput(out || "Executed cleanly.");
+        setRunStatus("passed");
+        setSolvedIds((prev) => (prev.includes(activeChallenge.id) ? prev : [...prev, activeChallenge.id]));
+      } else {
+        setCompilerOutput(
+          out
+            ? `Output mismatch:\nExpected: ${activeChallenge.expectedOutput}\nActual:   ${out}`
+            : `No standard output produced.\nExpected: ${activeChallenge.expectedOutput}`
+        );
+        setRunStatus("wrong_output");
+      }
+
+      return { compileOk, outputMatched, out, isBlankOrStarter: false };
     } catch (err: any) {
       const msg = `Compiler network error: ${err?.message || "Failed"}`;
       setCompilerOutput(msg);
-      setCompileSuccess(false);
-      return { ok: false, out: msg };
+      setRunStatus("error");
+      return { compileOk: false, outputMatched: false, out: msg, isBlankOrStarter: false };
     } finally {
       setIsCompiling(false);
     }
@@ -203,67 +688,48 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
   const handleEvaluateCodingAndViva = async () => {
     setIsEvaluating(true);
     try {
-      let currentOk = compileSuccess;
-      let currentOut = compilerOutput;
-      if (currentOk === null || !currentOut) {
-        const res = await runCodeOnBackend();
-        currentOk = res.ok;
-        currentOut = res.out;
-      }
+      const runRes = await runCodeOnBackend();
 
-      const combinedCandidateAnswer = `${explanation.trim()}\n\nSubmitted ${language.toUpperCase()} Code:\n${code.trim()}\n\nLive Compiler Output (${currentOk ? "SUCCESS" : "ERROR"
-        }):\n${currentOut}`;
-
-      const resp = await fetch(`${apiBase}/api/ai/evaluate-interview`, {
+      const resp = await fetch(`${apiBase}/api/ai/evaluate-coding-arena`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          company,
-          role,
-          round_type: "Live Coding & Viva Arena",
-          difficulty: "Medium-Hard",
-          question,
-          ideal_keywords: expectedKeywords,
-          candidate_answer: explanation.trim() ? combinedCandidateAnswer : "",
+          company: activeChallenge.company,
+          role: activeChallenge.role,
+          title: activeChallenge.title,
+          question: activeChallenge.question,
+          language,
+          candidate_code: code,
+          starter_code:
+            language === "python"
+              ? activeChallenge.starterPython
+              : SUPPORTED_LANGUAGES.find((l) => l.id === language)?.starter || "",
+          viva_explanation: explanation.trim(),
+          compile_success: runRes.compileOk,
+          compiler_output: runRes.out,
+          expected_output: activeChallenge.expectedOutput,
+          output_matched: runRes.outputMatched,
+          expected_keywords: activeChallenge.expectedKeywords,
+          reference_solution: activeChallenge.solutionPython,
         }),
       });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
 
-      const vivaScore = Number(data?.overall_score ?? 0);
-      const hasRealCode = code.trim().length > 25;
-      const codeScore = currentOk && hasRealCode ? 92 : hasRealCode ? 35 : 0;
-      const finalScore =
-        data?.is_non_answer || !explanation.trim()
-          ? Math.round(codeScore * 0.4)
-          : Math.round(codeScore * 0.45 + vivaScore * 0.55);
-
-      const decision: "STRONG HIRE" | "HIRE" | "LEANING NO HIRE" | "NO HIRE" =
-        finalScore >= 80
-          ? "STRONG HIRE"
-          : finalScore >= 62
-            ? "HIRE"
-            : finalScore >= 40
-              ? "LEANING NO HIRE"
-              : "NO HIRE";
-
-      const verdictText =
-        data?.coach_verdict ||
-        (currentOk
-          ? `Your ${language} solution compiled cleanly and produced valid output.`
-          : `Your ${language} code had compile/runtime issues that need fixing.`);
-
       const resultObj = {
-        overallScore: finalScore,
-        codeScore,
-        vivaScore,
-        decision,
-        verdictText,
-        matchedKeywords: data?.matched_keywords || [],
-        missingKeywords: data?.missing_keywords || [],
+        overallScore: Number(data.overall_score ?? 0),
+        codeScore: Number(data.code_score ?? 0),
+        vivaScore: Number(data.viva_score ?? 0),
+        decision: String(data.decision || "NO HIRE"),
+        verdictText: String(data.verdict_text || ""),
+        codeFeedback: String(data.code_feedback || ""),
+        vivaFeedback: String(data.viva_feedback || ""),
+        matchedKeywords: Array.isArray(data.matched_keywords) ? data.matched_keywords : [],
+        missingKeywords: Array.isArray(data.missing_keywords) ? data.missing_keywords : [],
       };
       setVerdictResult(resultObj);
 
-      const verdictSpeech = `Hiring Committee Verdict for ${company}: ${decision}, with an overall score of ${finalScore} out of 100. ${verdictText}`;
+      const verdictSpeech = `Hiring Verdict for ${activeChallenge.company}: ${resultObj.decision}, score ${resultObj.overallScore} out of 100. ${resultObj.verdictText}`;
       audioEngine.unlockAudio();
       audioEngine.clearAudioQueue();
       window.dispatchEvent(
@@ -280,105 +746,179 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
   };
 
   return (
-    <div className="glass-depth-card rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 space-y-6">
+    <div className="glass-depth-card rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 space-y-5">
       {/* Arena Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-white/[0.08] pb-5">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-white/[0.08] pb-4">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-[#2B2024] bg-[#2B2024] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#f8fafc]">
             <Sparkles className="h-3.5 w-3.5 text-[#f8fafc]" />
-            <span>Live AI Coding &amp; Voice Viva Arena · 11 Languages + DAS Hologram</span>
+            <span>Live AI Coding &amp; Voice Viva Arena · Endless Training &amp; Honest Grading</span>
           </div>
           <h2 className="mt-2 text-xl sm:text-2xl font-black text-[#f8fafc]">
             Split-Screen Technical Coding &amp; Voice Defense Arena
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-[#94a3b8]">
-            Have DAS read the problem aloud, execute real code in 11 languages, and defend your time/space complexity via voice or text for a real Hiring Committee Verdict.
+            Solve real interview problems across company tracks, verify actual outputs, inspect optimal reference solutions, or generate fresh challenges anytime.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           {onAskCoach && (
             <button
               type="button"
               onClick={() =>
                 onAskCoach(
-                  `For the coding challenge '${question}' (${company} ${role}), give me a concise intuition hint on the optimal algorithm and what time/space complexity trade-offs interviewers look for — without spoiling all the code.`
+                  `For the coding challenge '${activeChallenge.question}' (${activeChallenge.company} ${activeChallenge.role}), give me a concise intuition hint on the optimal approach without spoiling all code.`
                 )
               }
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3 py-2.5 text-xs font-semibold text-[#f8fafc] hover:bg-[#2B2024] transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3 py-2 text-xs font-semibold text-[#f8fafc] hover:bg-[#2B2024] transition cursor-pointer"
             >
               <Sparkles className="h-3.5 w-3.5 text-[#f8fafc]" />
-              <span>Ask Coach about this</span>
+              <span>Ask Coach Hint</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={handleSpeakQuestionAloud}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-[#2B2024] px-4 py-2.5 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 transition cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-[#2B2024] px-3.5 py-2 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 transition cursor-pointer"
           >
             <Volume2 className="h-4 w-4 text-[#f8fafc]" />
-            <span>Have 3D DAS Agent Ask Problem Aloud</span>
+            <span>Have DAS Ask Aloud</span>
           </button>
         </div>
       </div>
 
-      {/* Challenge Selector Pills */}
-      <div className="flex flex-wrap items-center gap-2">
-        {ARENA_CHALLENGES.map((ch) => {
-          const active = ch.id === selectedId;
-          return (
+      {/* Company Track Tabs + Challenge Switcher + Endless AI Generator */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {ARENA_TRACKS.map((trk) => {
+              const active = trk.id === activeTrack;
+              return (
+                <button
+                  key={trk.id}
+                  type="button"
+                  onClick={() => handleSelectTrack(trk.id)}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${active
+                    ? "border border-white/30 bg-[#2B2024] text-[#f8fafc] shadow-sm"
+                    : "border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-white/20 hover:text-[#f8fafc]"
+                    }`}
+                >
+                  {trk.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-1.5">
             <button
-              key={ch.id}
               type="button"
-              onClick={() => handleSelectChallenge(ch)}
-              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${active
-                ? "border border-white/25 bg-[#2B2024] text-[#f8fafc] shadow-sm"
-                : "border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-white/20 hover:text-[#f8fafc]"
-                }`}
+              onClick={() => handleStepChallenge(-1)}
+              className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#000000] px-2.5 py-1.5 text-xs font-semibold text-[#f8fafc] hover:bg-[#2B2024] transition cursor-pointer"
+              title="Previous challenge in track"
             >
-              {ch.company} · {ch.title}
+              <ChevronLeft className="h-3.5 w-3.5" />
+              <span>Prev</span>
             </button>
-          );
-        })}
+            <button
+              type="button"
+              onClick={() => handleStepChallenge(1)}
+              className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#2B2024] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
+              title="Move to next challenge in this track"
+            >
+              <span>Next Problem</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              disabled={isGeneratingProblem}
+              onClick={() => void handleGenerateFreshProblem()}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#A80139]/60 bg-[#000000] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:bg-[#2B2024] disabled:opacity-50 transition cursor-pointer"
+              title="Generate an infinite new AI coding challenge for this track"
+            >
+              {isGeneratingProblem ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Plus className="h-3.5 w-3.5" />
+              )}
+              <span>{isGeneratingProblem ? "Generating..." : "New AI Problem"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Problem Pills Inside Active Track */}
+        <div className="flex flex-wrap items-center gap-2">
+          {trackChallenges.map((ch) => {
+            const active = ch.id === activeChallenge.id;
+            const isSolved = solvedIds.includes(ch.id);
+            return (
+              <button
+                key={ch.id}
+                type="button"
+                onClick={() => resetForChallenge(ch)}
+                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${active
+                  ? "border border-white/30 bg-[#2B2024] text-[#f8fafc] shadow-sm"
+                  : "border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-white/20 hover:text-[#f8fafc]"
+                  }`}
+              >
+                {isSolved && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />}
+                <span>{ch.title}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Split Screen Grid: Left Viva & Problem | Right Live Code Compiler */}
       <div className="grid gap-6 lg:grid-cols-12">
-        {/* Left 5 cols: Problem Prompt + Spoken/Typed Complexity Viva */}
+        {/* Left 5 cols: Problem Prompt + Expected Output + Viva */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-2.5">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="rounded-lg border border-white/15 bg-[#2B2024] px-2.5 py-0.5 text-[11px] font-bold text-[#f8fafc]">
-                {company} · {role}
+                {activeChallenge.company} · {activeChallenge.role}
               </span>
               <span className="text-[11px] font-semibold text-[#94a3b8]">
-                Stage 1: Problem &amp; Complexity Viva
+                {activeChallenge.difficulty}
               </span>
             </div>
             <p className="text-xs sm:text-sm font-semibold text-[#f8fafc] leading-relaxed">
-              {question}
+              {activeChallenge.question}
             </p>
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {expectedKeywords.map((kw) => (
+
+            {/* Sample Input & Expected Output */}
+            <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-2.5 space-y-1 text-[11px] font-mono">
+              <div className="text-[#94a3b8]">
+                <span className="font-bold text-[#f8fafc]">Sample Input: </span>
+                {activeChallenge.sampleInput}
+              </div>
+              <div className="text-[#94a3b8]">
+                <span className="font-bold text-[#f8fafc]">Expected Output: </span>
+                {activeChallenge.expectedOutput}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5">
+              {activeChallenge.expectedKeywords.map((kw) => (
                 <span
                   key={kw}
                   className="rounded-md border border-white/15 bg-[#000000] px-2 py-0.5 text-[10px] font-semibold text-[#94a3b8]"
                 >
-                  Target Concept: {kw}
+                  Target: {kw}
                 </span>
               ))}
             </div>
           </div>
 
           {/* Voice / Text Explanation Box */}
-          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-3">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-2.5">
             <div className="flex items-center justify-between">
               <label
                 htmlFor="arena-viva-explanation"
                 className="text-xs font-bold text-[#f8fafc]"
               >
-                Your Complexity &amp; Architecture Explanation (Voice or Text)
+                Your Complexity &amp; Approach Explanation (Required for Full Score)
               </label>
               <button
                 type="button"
@@ -396,7 +936,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                 ) : (
                   <>
                     <Mic className="h-3.5 w-3.5" />
-                    <span>Speak Explanation</span>
+                    <span>Speak</span>
                   </>
                 )}
               </button>
@@ -405,18 +945,18 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
             <textarea
               id="arena-viva-explanation"
               name="arenaVivaExplanation"
-              rows={4}
+              rows={3}
               value={explanation}
               onChange={(e) => setExplanation(e.target.value)}
-              placeholder="Explain your approach, time complexity O(...), space complexity O(...), and edge cases..."
+              placeholder="Explain your algorithm, time complexity O(...), space complexity O(...), and edge cases in your own words..."
               className="w-full rounded-xl border border-white/[0.08] bg-[#000000] p-3 text-xs text-[#f8fafc] outline-none focus:border-white/35 leading-relaxed"
             />
           </div>
 
-          {/* Live Hiring Committee Verdict Card */}
+          {/* Honest Live Hiring Committee Verdict Card */}
           {verdictResult && (
             <div className="rounded-2xl border border-white/15 bg-[#000000] p-4 space-y-3 shadow-lg">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-4 w-4 text-amber-400" />
                   <span className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
@@ -426,7 +966,9 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-black border ${verdictResult.decision === "STRONG HIRE" || verdictResult.decision === "HIRE"
                     ? "border-emerald-400/60 bg-emerald-500/20 text-emerald-200"
-                    : "border-white/20 bg-[#2B2024] text-[#f8fafc]"
+                    : verdictResult.decision === "LEANING NO HIRE"
+                      ? "border-amber-400/50 bg-amber-500/15 text-amber-200"
+                      : "border-rose-400/50 bg-rose-500/15 text-rose-200"
                     }`}
                 >
                   {verdictResult.decision} · {verdictResult.overallScore}/100
@@ -435,7 +977,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-2.5">
-                  <span className="text-[10px] text-[#94a3b8] block">Compiled Code Score</span>
+                  <span className="text-[10px] text-[#94a3b8] block">Verified Code Score</span>
                   <span className="text-base font-black text-[#f8fafc]">
                     {verdictResult.codeScore}/100
                   </span>
@@ -448,19 +990,49 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                 </div>
               </div>
 
-              <p className="text-xs text-[#94a3b8] leading-relaxed">{verdictResult.verdictText}</p>
+              <div className="space-y-1.5 text-xs text-[#94a3b8] leading-relaxed">
+                <p className="text-[#f8fafc] font-medium">{verdictResult.verdictText}</p>
+                {verdictResult.codeFeedback && (
+                  <p>
+                    <strong className="text-[#f8fafc]">Code Review:</strong> {verdictResult.codeFeedback}
+                  </p>
+                )}
+                {verdictResult.vivaFeedback && (
+                  <p>
+                    <strong className="text-[#f8fafc]">Viva Review:</strong> {verdictResult.vivaFeedback}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowCorrectProgram(true)}
+                  className="text-xs font-bold text-[#f8fafc] underline hover:opacity-80 cursor-pointer"
+                >
+                  Compare with Optimal Program
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleStepChallenge(1)}
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#2B2024] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
+                >
+                  <span>Next Problem</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Right 7 cols: Built-In 11-Language Live Code Editor & Compiler Terminal */}
+        {/* Right 7 cols: Built-In 11-Language Live Code Editor + Optimal Reference Toggle */}
         <div className="lg:col-span-7 space-y-3">
           <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Code2 className="h-4 w-4 text-[#f8fafc]" />
                 <label htmlFor="arena-language-select" className="text-xs font-bold text-[#f8fafc]">
-                  Stage 2: Live 11-Language Compiler
+                  Stage 2: 11-Lang Compiler
                 </label>
                 <select
                   id="arena-language-select"
@@ -469,8 +1041,14 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   onChange={(e) => {
                     const nextLang = normalizeLanguage(e.target.value);
                     setLanguage(nextLang);
-                    const found = SUPPORTED_LANGUAGES.find((l) => l.id === nextLang);
-                    if (found) setCode(found.starter);
+                    if (nextLang === "python") {
+                      setCode(activeChallenge.starterPython);
+                    } else {
+                      const found = SUPPORTED_LANGUAGES.find((l) => l.id === nextLang);
+                      if (found) setCode(found.starter);
+                    }
+                    setCompilerOutput("");
+                    setRunStatus("idle");
                   }}
                   className="rounded-lg border border-white/15 bg-[#000000] px-2.5 py-1 text-xs font-bold uppercase text-[#f8fafc] outline-none cursor-pointer"
                 >
@@ -482,12 +1060,36 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                 </select>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowCorrectProgram((prev) => !prev)}
+                  className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#000000] px-3 py-1.5 text-xs font-semibold text-[#f8fafc] hover:bg-[#2B2024] transition cursor-pointer"
+                >
+                  {showCorrectProgram ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  <span>{showCorrectProgram ? "Hide Solution" : "Show Correct Program"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLanguage("python");
+                    setCode(activeChallenge.starterPython);
+                    setCompilerOutput("");
+                    setRunStatus("idle");
+                  }}
+                  className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#000000] px-2.5 py-1.5 text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] transition cursor-pointer"
+                  title="Reset editor back to starter skeleton"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Reset</span>
+                </button>
+
                 <button
                   type="button"
                   disabled={isCompiling}
                   onClick={() => void runCodeOnBackend()}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3.5 py-1.5 text-xs font-bold text-[#f8fafc] hover:bg-[#2B2024] disabled:opacity-50 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:bg-[#2B2024] disabled:opacity-50 transition cursor-pointer"
                 >
                   {isCompiling ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -501,7 +1103,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   type="button"
                   disabled={isEvaluating || isCompiling}
                   onClick={() => void handleEvaluateCodingAndViva()}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-[#2B2024] px-4 py-1.5 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 disabled:opacity-50 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-[#2B2024] px-3.5 py-1.5 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 disabled:opacity-50 transition cursor-pointer"
                 >
                   {isEvaluating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -524,34 +1126,85 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               className="w-full rounded-xl border border-white/[0.08] bg-[#000000] p-3.5 font-mono text-xs text-[#f8fafc] outline-none focus:border-white/35 leading-relaxed"
             />
 
-            {/* Live Execution Output Terminal */}
+            {/* Collapsible Optimal Reference Program Panel */}
+            {showCorrectProgram && (
+              <div className="rounded-xl border border-white/20 bg-[#000000] p-3.5 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-[#f8fafc]">
+                    Optimal Reference Program (Python 3.11)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          navigator.clipboard.writeText(activeChallenge.solutionPython);
+                          toast.success("Reference program copied!");
+                        } catch { }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-[#000000] px-2.5 py-1 text-[11px] font-semibold text-[#f8fafc] hover:bg-[#2B2024] transition cursor-pointer"
+                    >
+                      <Copy className="h-3 w-3" />
+                      <span>Copy</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLanguage("python");
+                        setCode(activeChallenge.solutionPython);
+                        setCompilerOutput("");
+                        setRunStatus("idle");
+                        toast.info("Loaded optimal reference program — click Run Code to test!");
+                      }}
+                      className="rounded-lg bg-[#2B2024] px-2.5 py-1 text-[11px] font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
+                    >
+                      Load into Editor
+                    </button>
+                  </div>
+                </div>
+                <pre className="rounded-lg border border-white/[0.08] bg-[#000000] p-3 text-xs font-mono text-[#f8fafc] overflow-x-auto leading-relaxed">
+                  {activeChallenge.solutionPython}
+                </pre>
+                <p className="text-[11px] text-[#94a3b8] leading-relaxed">
+                  <strong className="text-[#f8fafc]">Complexity Walkthrough:</strong> {activeChallenge.complexityExplanation}
+                </p>
+              </div>
+            )}
+
+            {/* Honest Live Execution Output Terminal */}
             <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3 space-y-1.5">
               <div className="flex items-center justify-between text-[11px]">
                 <span className="font-bold text-[#f8fafc] flex items-center gap-1.5">
                   <Terminal className="h-3.5 w-3.5" />
                   <span>Live Execution Terminal Output</span>
                 </span>
-                {compileSuccess !== null && (
-                  <span
-                    className={`inline-flex items-center gap-1 font-bold ${compileSuccess ? "text-emerald-300" : "text-amber-300"
-                      }`}
-                  >
-                    {compileSuccess ? (
-                      <>
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        <span>Compiled &amp; Executed Cleanly</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="h-3.5 w-3.5" />
-                        <span>Compile / Runtime Error</span>
-                      </>
-                    )}
+                {runStatus === "passed" && (
+                  <span className="inline-flex items-center gap-1 font-bold text-emerald-300">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Sample Checks Passed</span>
+                  </span>
+                )}
+                {runStatus === "wrong_output" && (
+                  <span className="inline-flex items-center gap-1 font-bold text-amber-300">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <span>Wrong / Missing Output</span>
+                  </span>
+                )}
+                {runStatus === "empty" && (
+                  <span className="inline-flex items-center gap-1 font-bold text-rose-300">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <span>No Solution Code Written</span>
+                  </span>
+                )}
+                {runStatus === "error" && (
+                  <span className="inline-flex items-center gap-1 font-bold text-rose-300">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <span>Compile / Runtime Error</span>
                   </span>
                 )}
               </div>
               <pre className="text-xs font-mono text-[#94a3b8] whitespace-pre-wrap max-h-32 overflow-y-auto">
-                {compilerOutput || "Click 'Run Code' or 'Submit Code + Viva for Verdict' to execute live..."}
+                {compilerOutput || "Write your solution and click 'Run Code' or 'Submit Code + Viva for Verdict' to test."}
               </pre>
             </div>
           </div>

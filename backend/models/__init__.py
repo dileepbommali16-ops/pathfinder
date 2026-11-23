@@ -28,6 +28,10 @@ from backend.models.schemas import (
     DefenseEvaluationResult,
     InterviewEvaluationRequest,
     InterviewEvaluationResult,
+    CodingArenaEvaluationRequest,
+    CodingArenaEvaluationResult,
+    GenerateCodingProblemRequest,
+    GeneratedCodingProblem,
 )
 
 __all__ = [
@@ -55,4 +59,8 @@ __all__ = [
     "DefenseEvaluationResult",
     "InterviewEvaluationRequest",
     "InterviewEvaluationResult",
+    "CodingArenaEvaluationRequest",
+    "CodingArenaEvaluationResult",
+    "GenerateCodingProblemRequest",
+    "GeneratedCodingProblem",
 ]

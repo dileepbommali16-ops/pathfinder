@@ -89,7 +89,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       {/* Subtle Dual Horizon Accent */}
       <div className="pointer-events-none absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#A80139]/50 to-transparent" />
 
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-3 sm:px-6">
         {/* Clickable Website Brand Logo — Styled strictly in #FD0053 & #A80139 */}
         <button
           type="button"
@@ -187,7 +187,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
       {/* Navigation Tabs Bar (Desktop and Horizontal Scroll) */}
       <div className="border-t border-[#2B2024] bg-[#000000]/95 px-4 sm:px-6">
-        <div className="mx-auto flex max-w-7xl flex-nowrap items-center gap-1.5 overflow-x-auto py-2.5 scrollbar-none">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-nowrap items-center justify-between gap-2 overflow-x-auto py-2.5 scrollbar-none">
           {TABS.map((tab, idx) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -199,7 +199,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 data-agent-id={`tab-${tab.id}`}
                 aria-label={tab.label}
                 onClick={() => handleSelectTab(tab.id)}
-                className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-xs font-semibold transition-all cursor-pointer ${isActive
+                className={`relative flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 xl:px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${isActive
                   ? `${theme.activeBg} ${theme.text} border ${theme.border} ${theme.glow}`
                   : "bg-[#000000] text-[#94a3b8] hover:bg-[#2B2024]/60 hover:text-[#f8fafc] border border-transparent"
                   }`}

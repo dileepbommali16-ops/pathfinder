@@ -701,5 +701,65 @@ class TestAPIEndpoints(unittest.TestCase):
             vr._LIVE_TTS_COOLDOWN_UNTIL = 0.0
             vr._TTS_LIVE_SEM = None
 
+    def test_coding_arena_zero_score_on_blank_and_caps_wrong_output(self):
+        starter = (
+            "def first_occurrence(arr, target):\n"
+            "    # TODO: write solution\n"
+            "    pass\n"
+            "print(first_occurrence([10, 20, 20], 20))\n"
+        )
+        blank_payload = {
+            "company": "Amazon",
+            "role": "SDE-1",
+            "title": "Binary Search First Occurrence",
+            "question": "Find the first occurrence of target in a sorted array in O(log n) time.",
+            "language": "python",
+            "candidate_code": starter,
+            "starter_code": starter,
+            "viva_explanation": "",
+            "compile_success": False,
+            "compiler_output": "",
+            "expected_output": "1",
+            "output_matched": False,
+            "expected_keywords": ["O(log n)", "O(1)"],
+        }
+        blank_resp = self.client.post("/api/ai/evaluate-coding-arena", json=blank_payload)
+        self.assertEqual(blank_resp.status_code, 200, blank_resp.text)
+        blank_data = blank_resp.json()
+        self.assertEqual(blank_data["overall_score"], 0)
+        self.assertEqual(blank_data["code_score"], 0)
+        self.assertEqual(blank_data["viva_score"], 0)
+        self.assertEqual(blank_data["decision"], "NO HIRE")
+
+        wrong_payload = {
+            "company": "Amazon",
+            "role": "SDE-1",
+            "title": "Binary Search First Occurrence",
+            "question": "Find the first occurrence of target in a sorted array in O(log n) time.",
+            "language": "python",
+            "candidate_code": "def first_occurrence(arr, target):\n    return 99\nprint(first_occurrence([10, 20], 20))\n",
+            "starter_code": starter,
+            "viva_explanation": "We scan half the sorted array with binary search taking O(log n) time and O(1) space.",
+            "compile_success": True,
+            "compiler_output": "99",
+            "expected_output": "1",
+            "output_matched": False,
+            "expected_keywords": ["O(log n)", "O(1)", "binary search"],
+        }
+        wrong_resp = self.client.post("/api/ai/evaluate-coding-arena", json=wrong_payload)
+        self.assertEqual(wrong_resp.status_code, 200, wrong_resp.text)
+        wrong_data = wrong_resp.json()
+        self.assertLessEqual(wrong_data["code_score"], 40)
+        self.assertNotIn(wrong_data["decision"], ("HIRE", "STRONG HIRE"))
+
+    def test_normalize_tts_text_expands_big_o_and_collapses_repeats(self):
+        from backend.routers.voice_routes import _normalize_tts_text
+
+        norm = _normalize_tts_text("Explain O(log n) O(log n) with O(1) and O(n²).")
+        self.assertIn("Big O of log n", norm)
+        self.assertIn("Big O of 1", norm)
+        self.assertIn("Big O of n squared", norm)
+        self.assertEqual(norm.count("Big O of log n"), 1)
+
 if __name__ == "__main__":
     unittest.main()

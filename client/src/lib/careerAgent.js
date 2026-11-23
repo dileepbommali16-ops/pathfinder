@@ -786,6 +786,21 @@ export const getCareerAgentResponse = (
     return `${greetingLine}|||👋 **${greetingLine}**`;
   }
 
+  // 2b. Natural Compliment & Appreciation Response (never reset to "Hi Boss! What's up?" on praise)
+  const isCompliment =
+    /^\s*(good|nice|awesome|super|superb|great|excellent|well\s*done|good\s*job|great\s*job|great\s*answer|nice\s*answer|love\s*it|proud\s*of\s*you|thanks|thank\s*you|thx|ty|baga\s*chepthunnav|bhaga\s*chepthunnav|baaga\s*cheppav|super\s*ra|good\s*(?:one|work)|you\s*(?:answer|explain)\s*(?:well|good|great|nicely)|(?:good|nice|great)\s*(?:boss|das|bro|baby))[\s!.,🙏❤️🔥👏✨]*$/i.test(
+      text
+    );
+  if (isCompliment) {
+    const complimentReplies = [
+      `Appreciate that, ${title}! Always got your back — want to tackle the next coding challenge, mock viva, or check something else?`,
+      `Thanks a lot, ${title}! Glad that landed well. What should we jump into next?`,
+      `Means a lot, ${title}! Happy to keep things sharp and fast — tell me your next move!`,
+    ];
+    const picked = complimentReplies[history.length % complimentReplies.length];
+    return `${picked}|||🙌 **${picked}**`;
+  }
+
   // 3a. Specific RAG Projects Query (e.g. "Pathfinder lo RAG projects enti?", "what are the rag projects", "rag blueprints")
   if (/\b(rag|retrieval\s*augmented)\b/i.test(text)) {
     return (

@@ -25,6 +25,10 @@ from backend.models import (
     DefenseEvaluationResult,
     InterviewEvaluationRequest,
     InterviewEvaluationResult,
+    CodingArenaEvaluationRequest,
+    CodingArenaEvaluationResult,
+    GenerateCodingProblemRequest,
+    GeneratedCodingProblem,
 )
 from backend.security import (
     rate_limiter,
@@ -768,3 +772,349 @@ async def evaluate_interview_endpoint(request_body: InterviewEvaluationRequest, 
 
     logger.warning(f"[Interview Eval] Gemini unavailable ({err_reason}); using strict offline rubric.")
     return _score_interview_offline(request_body)
+
+
+def _strip_code_noise(source: str) -> str:
+    """Strips Python/JS/C-style comments, docstrings, and whitespace to detect blank/starter-only code."""
+    s = source or ""
+    s = re.sub(r'""".*?"""', "", s, flags=re.DOTALL)
+    s = re.sub(r"'''.*?'''", "", s, flags=re.DOTALL)
+    s = re.sub(r"/\*.*?\*/", "", s, flags=re.DOTALL)
+    lines = []
+    for ln in s.splitlines():
+        ln = re.sub(r"#.*$", "", ln)
+        ln = re.sub(r"//.*$", "", ln)
+        stripped = ln.strip()
+        if stripped:
+            lines.append(stripped)
+    return "\n".join(lines)
+
+
+def _is_code_blank_or_skeleton(candidate_code: str, starter_code: str) -> Tuple[bool, str]:
+    cleaned_cand = _strip_code_noise(candidate_code)
+    if not cleaned_cand:
+        return True, "No executable solution code was written."
+    cleaned_starter = _strip_code_noise(starter_code)
+    if cleaned_starter and cleaned_cand == cleaned_starter:
+        return True, "Code editor still contains only the unchanged starter skeleton. Implement the algorithm before submitting."
+    meaningful = [
+        ln for ln in cleaned_cand.splitlines()
+        if not ln.startswith("def ")
+        and not ln.startswith("print(")
+        and ln not in ("pass", "return", "return None", "return []", "return -1", "return 0")
+    ]
+    if len(meaningful) == 0:
+        return True, "Function body has no algorithmic implementation (only placeholder/pass statements)."
+    return False, ""
+
+
+def _score_coding_arena_offline(
+    req: CodingArenaEvaluationRequest,
+    blank_code: bool,
+    code_reason: str,
+    non_viva: bool,
+    viva_reason: str,
+) -> CodingArenaEvaluationResult:
+    if blank_code:
+        code_score = 0
+        code_feedback = code_reason
+    elif not req.compile_success:
+        code_score = 18
+        code_feedback = (
+            f"Code failed to compile or threw a runtime error: {(req.compiler_output or '')[:180]}"
+        )
+    elif not req.output_matched:
+        code_score = 32
+        actual = (req.compiler_output or "").strip() or "no standard output"
+        exp = (req.expected_output or "").strip() or "expected test output"
+        code_feedback = f"Program executed without matching expected output (Expected: {exp} | Actual: {actual[:140]})."
+    else:
+        code_score = 88
+        code_feedback = "Solution compiled cleanly and matched all sample test outputs."
+
+    keywords = req.expected_keywords or []
+    if non_viva:
+        viva_score = 0
+        matched_kw: List[str] = []
+        missing_kw = list(keywords)
+        viva_feedback = viva_reason or "No complexity or architecture explanation was submitted."
+    else:
+        matched_kw, missing_kw = _match_keywords(req.viva_explanation, keywords)
+        words = re.findall(r"[a-zA-Z0-9]+", req.viva_explanation or "")
+        kw_ratio = len(matched_kw) / max(1, len(keywords))
+        depth_ratio = min(1.0, len(words) / 40.0)
+        has_complexity = bool(re.search(r"O\(|complexity|time|space|linear|logarithmic", req.viva_explanation or "", re.IGNORECASE))
+        viva_score = _clamp_score(kw_ratio * 65.0 + depth_ratio * 20.0 + (15.0 if has_complexity else 0.0))
+        viva_feedback = (
+            f"Covered {len(matched_kw)}/{max(1, len(keywords))} target complexity/design concepts."
+            + (f" Missing: {', '.join(missing_kw[:3])}." if missing_kw else "")
+        )
+
+    overall = _clamp_score(code_score * 0.55 + viva_score * 0.45)
+    if overall >= 82 and code_score >= 75 and req.compile_success and req.output_matched and not non_viva:
+        decision = "STRONG HIRE"
+    elif overall >= 65 and code_score >= 60 and req.compile_success and req.output_matched:
+        decision = "HIRE"
+    elif overall >= 40:
+        decision = "LEANING NO HIRE"
+    else:
+        decision = "NO HIRE"
+
+    verdict_text = f"{code_feedback} {viva_feedback}".strip()
+    return CodingArenaEvaluationResult(
+        overall_score=overall,
+        code_score=code_score,
+        viva_score=viva_score,
+        decision=decision,
+        verdict_text=verdict_text,
+        code_feedback=code_feedback,
+        viva_feedback=viva_feedback,
+        matched_keywords=matched_kw,
+        missing_keywords=missing_kw,
+        evaluation_source="Strict Sandbox Rubric",
+    )
+
+
+@ai_router.post("/api/ai/evaluate-coding-arena", response_model=CodingArenaEvaluationResult)
+async def evaluate_coding_arena_endpoint(request_body: CodingArenaEvaluationRequest, request: Request):
+    """
+    Zero-fake evaluation for Live Coding & Viva Arena.
+    Enforces hard deterministic 0-score gates on empty/unchanged code and empty/skip viva answers,
+    caps uncompiled or wrong-output submissions, and inspects actual code + stdout with Gemini.
+    """
+    client_ip = get_client_ip(request)
+    session_key = get_session_or_client_key(request)
+    allowed, _ = rate_limiter.check(f"arena_eval:{session_key}", max_requests=45, window_seconds=60)
+    ip_burst_ok, _ = rate_limiter.check(f"arena_eval_burst:{client_ip}", max_requests=450, window_seconds=60)
+    if not allowed or not ip_burst_ok:
+        raise HTTPException(status_code=429, detail="Coding arena evaluation rate limit reached. Please wait 60 seconds.")
+
+    clean_viva = sanitize_user_input(request_body.viva_explanation, max_length=6000)
+    blank_code, code_reason = _is_code_blank_or_skeleton(request_body.candidate_code, request_body.starter_code or "")
+    non_viva, viva_reason = _assess_answer_substance(clean_viva)
+
+    if blank_code and non_viva:
+        return CodingArenaEvaluationResult(
+            overall_score=0,
+            code_score=0,
+            viva_score=0,
+            decision="NO HIRE",
+            verdict_text="No solution code or viva explanation was submitted. Write your implementation, run tests cleanly, and explain its time and space complexity.",
+            code_feedback=code_reason,
+            viva_feedback=viva_reason or "No viva explanation provided.",
+            matched_keywords=[],
+            missing_keywords=list(request_body.expected_keywords or []),
+            evaluation_source="Honest Sandbox Gate",
+        )
+
+    sys_instruction = (
+        "You are a ruthless, strictly honest Staff Engineer evaluating a live coding + complexity viva submission. "
+        "NEVER fabricate praise or award passing points for missing code, compile errors, wrong output, or hardcoded print cheats. "
+        "Inspect the candidate's actual code logic against optimal complexity requirements, compiler output vs expected output, "
+        "and whether their viva accurately explains time and space complexity."
+    )
+    prompt = (
+        f"Company: {request_body.company} | Role: {request_body.role} | Language: {request_body.language}\n"
+        f"Problem: {request_body.question}\n"
+        f"Expected Sample Output: {request_body.expected_output or 'N/A'}\n"
+        f"Expected Viva Concepts: {', '.join(request_body.expected_keywords or [])}\n\n"
+        f"Compile Success: {request_body.compile_success} | Output Matched Expected: {request_body.output_matched}\n"
+        f"Actual Terminal Output:\n\"\"\"\n{(request_body.compiler_output or 'none')[:2000]}\n\"\"\"\n\n"
+        f"Candidate Code Blank/Unchanged: {blank_code} ({code_reason or 'implemented'})\n"
+        f"Candidate Code:\n\"\"\"\n{(request_body.candidate_code or '')[:6000]}\n\"\"\"\n\n"
+        f"Viva Explanation Non-Answer: {non_viva} ({viva_reason or 'provided'})\n"
+        f"Candidate Viva Explanation:\n\"\"\"\n{clean_viva or '(empty)'}\n\"\"\"\n\n"
+        "Return strict JSON matching CodingArenaEvaluationResult:\n"
+        "- code_score (0..100): MUST be 0 if blank/unchanged, <=25 if compile/runtime failed, <=40 if output did not match or hardcoded print cheat.\n"
+        "- viva_score (0..100): MUST be 0 if non-answer/empty; otherwise grade complexity accuracy cleanly.\n"
+        "- overall_score (0..100), decision ('STRONG HIRE' | 'HIRE' | 'LEANING NO HIRE' | 'NO HIRE'), "
+        "verdict_text (1-2 direct honest sentences), code_feedback (specific observation on candidate code/output), "
+        "viva_feedback (specific observation on explanation/complexity), matched_keywords, missing_keywords."
+    )
+
+    ai_budget_manager.consume(session_key)
+    ai_res, _model_used, err_reason = await asyncio.to_thread(
+        generate_strict_json_evaluation,
+        prompt=prompt,
+        schema=CodingArenaEvaluationResult,
+        system_instruction=sys_instruction,
+    )
+    if ai_res is not None:
+        raw_code_score = _clamp_score(ai_res.code_score)
+        raw_viva_score = _clamp_score(ai_res.viva_score)
+
+        # Enforce hard unbreakable server guardrails regardless of AI leniency
+        if blank_code:
+            code_score = 0
+        elif not request_body.compile_success:
+            code_score = min(raw_code_score, 25)
+        elif not request_body.output_matched:
+            code_score = min(raw_code_score, 40)
+        else:
+            code_score = raw_code_score
+
+        viva_score = 0 if non_viva else raw_viva_score
+        overall = _clamp_score(code_score * 0.55 + viva_score * 0.45)
+
+        if overall >= 82 and code_score >= 75 and request_body.compile_success and request_body.output_matched and not blank_code and not non_viva:
+            decision = "STRONG HIRE"
+        elif overall >= 65 and code_score >= 60 and request_body.compile_success and request_body.output_matched and not blank_code:
+            decision = "HIRE"
+        elif overall >= 40:
+            decision = "LEANING NO HIRE"
+        else:
+            decision = "NO HIRE"
+
+        return CodingArenaEvaluationResult(
+            overall_score=overall,
+            code_score=code_score,
+            viva_score=viva_score,
+            decision=decision,
+            verdict_text=(ai_res.verdict_text or "").strip() or "Evaluated against live execution and complexity rubric.",
+            code_feedback=(code_reason if blank_code else (ai_res.code_feedback or "").strip()) or "Checked code execution output.",
+            viva_feedback=(viva_reason if non_viva else (ai_res.viva_feedback or "").strip()) or "Checked complexity explanation.",
+            matched_keywords=[] if non_viva else [m.strip() for m in (ai_res.matched_keywords or []) if m and m.strip()],
+            missing_keywords=list(request_body.expected_keywords or []) if non_viva else [m.strip() for m in (ai_res.missing_keywords or []) if m and m.strip()],
+            evaluation_source="DAS AI + Live Sandbox Verification",
+        )
+
+    logger.warning(f"[Coding Arena Eval] Gemini unavailable ({err_reason}); using strict sandbox rubric.")
+    return _score_coding_arena_offline(request_body, blank_code, code_reason, non_viva, viva_reason or "")
+
+
+_CURATED_DYNAMIC_BACKUP_POOL = [
+    {
+        "title": "Longest Substring Without Repeating Characters",
+        "difficulty": "Medium",
+        "question": "Write a function length_of_longest_substring(s) returning the length of the longest substring without duplicate characters in O(n) time, test on 'abcabcbb', and explain your sliding window invariant.",
+        "spoken_prompt": "Solve longest substring without repeating characters in Big O of n time using a sliding window and explain its invariant.",
+        "sample_input": "s = 'abcabcbb'",
+        "expected_output": "3",
+        "expected_output_tokens": ["3"],
+        "starter_python": "def length_of_longest_substring(s):\n    # TODO: write your sliding window solution here\n    pass\n\nprint(length_of_longest_substring('abcabcbb'))",
+        "solution_python": "def length_of_longest_substring(s):\n    last_seen = {}\n    left = 0\n    best = 0\n    for right, ch in enumerate(s):\n        if ch in last_seen and last_seen[ch] >= left:\n            left = last_seen[ch] + 1\n        last_seen[ch] = right\n        best = max(best, right - left + 1)\n    return best\n\nprint(length_of_longest_substring('abcabcbb'))",
+        "complexity_explanation": "Time: O(n) because left and right pointers each advance at most n steps. Space: O(min(n, alphabet)) for the index map.",
+        "expected_keywords": ["sliding window", "O(n)", "hash map", "left pointer", "O(1)"],
+    },
+    {
+        "title": "Subarray Sum Equals K Prefix Hash",
+        "difficulty": "Medium",
+        "question": "Write subarray_sum(nums, k) returning the count of contiguous subarrays summing to k in O(n) time, run on nums=[1, 1, 1] and k=2, and explain why prefix sum hashing avoids O(n^2) loops.",
+        "spoken_prompt": "Count contiguous subarrays summing to k in Big O of n time using prefix sums and explain the space trade-off.",
+        "sample_input": "nums = [1, 1, 1], k = 2",
+        "expected_output": "2",
+        "expected_output_tokens": ["2"],
+        "starter_python": "def subarray_sum(nums, k):\n    # TODO: implement prefix sum hashmap solution\n    pass\n\nprint(subarray_sum([1, 1, 1], 2))",
+        "solution_python": "def subarray_sum(nums, k):\n    counts = {0: 1}\n    prefix = 0\n    ans = 0\n    for x in nums:\n        prefix += x\n        ans += counts.get(prefix - k, 0)\n        counts[prefix] = counts.get(prefix, 0) + 1\n    return ans\n\nprint(subarray_sum([1, 1, 1], 2))",
+        "complexity_explanation": "Time: O(n) single pass with O(1) dictionary lookups. Space: O(n) to store prefix sum frequencies.",
+        "expected_keywords": ["prefix sum", "hash map", "O(n)", "complement"],
+    },
+    {
+        "title": "Top-K Frequent Elements Bucket Sort",
+        "difficulty": "Medium",
+        "question": "Return the k=2 most frequent integers from [1, 1, 1, 2, 2, 3] in linear or O(n log k) time and explain bucket vs heap complexity trade-offs.",
+        "spoken_prompt": "Find the top k frequent elements in linear time and compare bucket sort versus min-heap complexity.",
+        "sample_input": "nums = [1, 1, 1, 2, 2, 3], k = 2",
+        "expected_output": "[1, 2]",
+        "expected_output_tokens": ["1", "2"],
+        "starter_python": "def top_k_frequent(nums, k):\n    # TODO: compute frequencies and return top k elements\n    pass\n\nprint(top_k_frequent([1, 1, 1, 2, 2, 3], 2))",
+        "solution_python": "def top_k_frequent(nums, k):\n    freq = {}\n    for x in nums:\n        freq[x] = freq.get(x, 0) + 1\n    buckets = [[] for _ in range(len(nums) + 1)]\n    for val, c in freq.items():\n        buckets[c].append(val)\n    res = []\n    for c in range(len(buckets) - 1, 0, -1):\n        for val in buckets[c]:\n            res.append(val)\n            if len(res) == k:\n                return res\n    return res\n\nprint(top_k_frequent([1, 1, 1, 2, 2, 3], 2))",
+        "complexity_explanation": "Time: O(n) via frequency bucket sort instead of O(n log n) sorting. Space: O(n) for frequency table and buckets.",
+        "expected_keywords": ["bucket sort", "hash map", "O(n)", "heap"],
+    },
+]
+
+
+@ai_router.post("/api/ai/generate-coding-problem", response_model=GeneratedCodingProblem)
+async def generate_coding_problem_endpoint(request_body: GenerateCodingProblemRequest, request: Request):
+    """Generates a fresh unseen Python coding + complexity viva problem tailored to company and role."""
+    client_ip = get_client_ip(request)
+    session_key = get_session_or_client_key(request)
+    allowed, _ = rate_limiter.check(f"gen_problem:{session_key}", max_requests=25, window_seconds=60)
+    ip_burst_ok, _ = rate_limiter.check(f"gen_problem_burst:{client_ip}", max_requests=250, window_seconds=60)
+    if not allowed or not ip_burst_ok:
+        raise HTTPException(status_code=429, detail="Problem generator rate limit reached. Please wait 60 seconds.")
+
+    company = sanitize_user_input(request_body.company or "Amazon", max_length=80) or "Amazon"
+    role = sanitize_user_input(request_body.role or "SDE-1", max_length=80) or "SDE-1"
+    difficulty = sanitize_user_input(request_body.difficulty or "Medium", max_length=40) or "Medium"
+    avoid_list = [t.strip() for t in (request_body.existing_titles or []) if t and t.strip()][:25]
+
+    sys_instruction = (
+        "You design self-contained, deterministic Python coding interview challenges with complexity viva follow-ups. "
+        "The starter_python MUST leave `# TODO:` inside the function body (never pre-solved!) plus a concrete `print(...)` test call. "
+        "The solution_python MUST be 100% valid standalone Python 3.11 with standard library imports only, executing deterministically to print expected_output. "
+        "spoken_prompt MUST write complexity in plain spoken English like 'Big O of n' (NEVER raw brackets or O(n) symbols)."
+    )
+    prompt = (
+        f"Company: {company} | Role: {role} | Difficulty: {difficulty}\n"
+        f"Avoid repeating these existing titles: {', '.join(avoid_list) or 'None'}\n\n"
+        "Create ONE fresh algorithmic or systems/data coding problem returning strict JSON matching GeneratedCodingProblem:\n"
+        "- id: short unique slug like 'ai-gen-...'\n"
+        "- company, role, title, difficulty, question (2 concise sentences)\n"
+        "- spoken_prompt: clean 1-2 spoken sentences with no parentheses or square brackets\n"
+        "- sample_input: readable single-line sample input\n"
+        "- expected_output: exact stdout line(s) printed by solution_python\n"
+        "- expected_output_tokens: 1-3 exact substrings that must appear in stdout to pass\n"
+        "- starter_python: function signature with `# TODO: write your solution here` and `pass`, plus the exact `print(...)` test call\n"
+        "- solution_python: complete working optimal Python 3.11 solution printing expected_output\n"
+        "- complexity_explanation: concise optimal Time & Space complexity breakdown\n"
+        "- expected_keywords: 4-6 key algorithm/complexity terms expected in candidate viva."
+    )
+
+    ai_budget_manager.consume(session_key)
+    ai_prob, _, _ = await asyncio.to_thread(
+        generate_strict_json_evaluation,
+        prompt=prompt,
+        schema=GeneratedCodingProblem,
+        system_instruction=sys_instruction,
+    )
+    if (
+        ai_prob is not None
+        and ai_prob.question.strip()
+        and ai_prob.starter_python.strip()
+        and ai_prob.solution_python.strip()
+        and ai_prob.expected_output.strip()
+        and ai_prob.solution_python.strip() != ai_prob.starter_python.strip()
+    ):
+        tokens = [t.strip() for t in (ai_prob.expected_output_tokens or []) if t and t.strip()]
+        if not tokens:
+            tokens = [ai_prob.expected_output.strip().splitlines()[0].strip()]
+        return GeneratedCodingProblem(
+            id=ai_prob.id.strip() or f"ai-gen-{abs(hash(ai_prob.title)) % 100000}",
+            company=company,
+            role=role,
+            title=ai_prob.title.strip(),
+            difficulty=ai_prob.difficulty.strip() or difficulty,
+            question=ai_prob.question.strip(),
+            spoken_prompt=(ai_prob.spoken_prompt or ai_prob.question).strip(),
+            sample_input=ai_prob.sample_input.strip(),
+            expected_output=ai_prob.expected_output.strip(),
+            expected_output_tokens=tokens,
+            starter_python=ai_prob.starter_python.strip(),
+            solution_python=ai_prob.solution_python.strip(),
+            complexity_explanation=ai_prob.complexity_explanation.strip(),
+            expected_keywords=[k.strip() for k in (ai_prob.expected_keywords or []) if k and k.strip()] or ["O(n)", "O(1)"],
+        )
+
+    avoid_lower = {t.lower() for t in avoid_list}
+    pick = next(
+        (b for b in _CURATED_DYNAMIC_BACKUP_POOL if b["title"].lower() not in avoid_lower),
+        _CURATED_DYNAMIC_BACKUP_POOL[len(avoid_list) % len(_CURATED_DYNAMIC_BACKUP_POOL)],
+    )
+    return GeneratedCodingProblem(
+        id=f"gen-{len(avoid_list) + 1}",
+        company=company,
+        role=role,
+        title=pick["title"],
+        difficulty=pick["difficulty"],
+        question=pick["question"],
+        spoken_prompt=pick["spoken_prompt"],
+        sample_input=pick["sample_input"],
+        expected_output=pick["expected_output"],
+        expected_output_tokens=pick["expected_output_tokens"],
+        starter_python=pick["starter_python"],
+        solution_python=pick["solution_python"],
+        complexity_explanation=pick["complexity_explanation"],
+        expected_keywords=pick["expected_keywords"],
+    )

@@ -10,15 +10,11 @@ import { CohortExplorer, CohortAnalyticsData } from "@/components/dashboard/Coho
 import { ResumeStudio, ResumeFeedbackData } from "@/components/dashboard/ResumeStudio";
 import { LampLogin } from "@/components/auth/LampLogin";
 import { Ambient3DBackground } from "@/components/dashboard/Ambient3DBackground";
-import { GoogleAutomationCard } from "@/components/dashboard/AIActionCenter";
 import { ProjectRecommender } from "@/components/dashboard/ProjectRecommender";
-import { CareerDigitalTwin } from "@/components/dashboard/CareerDigitalTwin";
-import { WhatIfSimulator } from "@/components/dashboard/WhatIfSimulator";
 import { RoleIntelligence } from "@/components/dashboard/RoleIntelligence";
 import { BranchIntelligence } from "@/components/dashboard/BranchIntelligence";
 import { SkillIntelligence } from "@/components/dashboard/SkillIntelligence";
 import { ProfileSettings } from "@/components/dashboard/ProfileSettings";
-import { LiveSkillVerifier } from "@/components/dashboard/LiveSkillVerifier";
 import { OnePageResumeModal } from "@/components/dashboard/OnePageResumeModal";
 import { CompanyPlacementRadar } from "@/components/dashboard/CompanyPlacementRadar";
 import { MockInterviewConsole } from "@/components/dashboard/MockInterviewConsole";
@@ -40,13 +36,11 @@ import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
-  Zap,
   Compass,
   Lightbulb,
   TrendingUp,
   FileText,
   GraduationCap,
-  ShieldCheck,
   User,
   Target,
   Loader2,
@@ -2050,7 +2044,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             }`}
         >
           <AnimatePresence mode="wait" initial={false}>
-            {/* TAB 1: OVERVIEW */}
+            {/* TAB 1: OVERVIEW (Top 3 Core Sections Only — Clean & Decluttered) */}
             {activeTab === "overview" && (
               <motion.div
                 key="overview"
@@ -2069,7 +2063,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   <SectionHeader
                     title="Campus Placement Readiness Overview"
                     description="Real-time placement probability and primary eligibility benchmark"
-                    badge="Step 1 · Class of 2026"
+                    badge="1 of 3 · Readiness"
                     accent="cyan"
                     icon={Target}
                     helperLabel="Calculated via Random Forest model trained on 972 student records"
@@ -2080,32 +2074,8 @@ export default function Home({ initialTab }: HomeProps = {}) {
                     chance={prediction.chance}
                     label={prediction.label}
                     tone={prediction.tone}
-                    cgpa={profile.cgpa}
-                    backlogs={profile.backlogs}
-                    internships={profile.internships}
-                    coding={profile.coding}
-                    communication={profile.communication}
                     onNavigateTab={setActiveTab}
                     onAskCoach={handleAskCoach}
-                  />
-                </section>
-
-                <section id="career-digital-twin" data-das-id="career-twin" className="space-y-4">
-                  <SectionHeader
-                    title="Candidate Readiness Vectors"
-                    description="Transparent multi-dimensional evaluation of your academic standing, practical coding, and communication confidence"
-                    badge="Step 2 · Breakdown"
-                    accent="purple"
-                    icon={Zap}
-                    helperLabel="5 vectors calibrated against Tier-1 campus drive cutoffs"
-                    onAskCoach={handleAskCoach}
-                  />
-                  <CareerDigitalTwin
-                    profile={profile}
-                    predictionChance={prediction.chance}
-                    predictionTone={prediction.tone}
-                    onNavigateTab={setActiveTab}
-                    atsScore={resumeFeedback?.score ?? null}
                   />
                 </section>
 
@@ -2113,7 +2083,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   <SectionHeader
                     title="Target Role Skill Gap Analysis"
                     description="Direct alignment of your competencies against hiring cutoffs for your chosen domain"
-                    badge="Step 3 · Skill Gaps"
+                    badge="2 of 3 · Skill Gaps"
                     accent="amber"
                     icon={Sparkles}
                     onAskCoach={handleAskCoach}
@@ -2133,7 +2103,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                   <SectionHeader
                     title="Target Company Placement Radar"
                     description="Real-time hiring compatibility score mapped against historical campus drive cutoffs and technical rubrics"
-                    badge="Step 4 · Companies"
+                    badge="3 of 3 · Company Radar"
                     accent="accent"
                     icon={Building2}
                     helperLabel="Evaluates eligibility for Google, Razorpay, Amazon, and TCS Digital"
@@ -2146,164 +2116,6 @@ export default function Home({ initialTab }: HomeProps = {}) {
                       onLaunchMockInterview={handleLaunchMockInterview}
                       onAskCoach={handleAskCoach}
                     />
-                  </div>
-                </section>
-
-                <section
-                  id="career-live-skill-verifier"
-                  data-das-id="live-verifier"
-                  className="space-y-4"
-                >
-                  <SectionHeader
-                    title="Live Technical Footprint & Fraud Shield"
-                    description="Audit real-time GitHub repositories, programming languages, and cryptographic authenticity badge"
-                    badge="Step 5 · GitHub Check"
-                    accent="cyan"
-                    icon={ShieldCheck}
-                    helperLabel="Validates original code authorship and syncs verified technologies"
-                    onAskCoach={handleAskCoach}
-                  />
-                  <LiveSkillVerifier
-                    currentProfile={profile}
-                    onAuditComplete={(score, audited) => {
-                      const nextGithub =
-                        audited.repoUrl ||
-                        (audited.username ? `https://github.com/${audited.username}` : profile.githubUrl || "");
-                      const merged: StudentProfileState = {
-                        ...profile,
-                        githubVerifiedScore: score,
-                        githubUrl: nextGithub || profile.githubUrl,
-                        codingProfiles: {
-                          ...(profile.codingProfiles || {}),
-                          github: nextGithub || profile.codingProfiles?.github,
-                        },
-                      };
-                      setProfile(merged);
-                      localStorage.setItem("pathfinder_profile_draft", JSON.stringify(merged));
-                      fetchPrediction(merged, { githubScore: score });
-                    }}
-                    onApplyVerifiedSkills={(skills, stats) => {
-                      const updatedSkills = Array.from(
-                        new Set([...(profile.technicalSkills || []), ...skills])
-                      );
-                      const verifiedUrl = stats?.targetUrl || profile.githubUrl;
-                      const merged: StudentProfileState = {
-                        ...profile,
-                        technicalSkills: updatedSkills,
-                        skills: updatedSkills,
-                        githubUrl: verifiedUrl,
-                        githubVerifiedScore: stats?.authenticityScore ?? profile.githubVerifiedScore,
-                        codingProfiles: {
-                          ...(profile.codingProfiles || {}),
-                          github: verifiedUrl || profile.codingProfiles?.github,
-                        },
-                      };
-                      setProfile(merged);
-                      handleSaveProfile(merged);
-                      fetchPrediction(merged, {
-                        githubScore: stats?.authenticityScore ?? merged.githubVerifiedScore ?? null,
-                      });
-                    }}
-                  />
-                </section>
-
-                <section
-                  id="career-trajectory-simulator"
-                  data-das-id="whatif-simulator"
-                  className="space-y-4"
-                >
-                  <SectionHeader
-                    title="What-If? Career Trajectory Simulator"
-                    description="Simulate the immediate placement probability boost of boosting CGPA, clearing backlogs, or shipping an internship"
-                    badge="Step 6 · Simulator"
-                    accent="rose"
-                    icon={TrendingUp}
-                    helperLabel="Interactive sliders instantly re-simulate placement probability"
-                    onAskCoach={handleAskCoach}
-                  />
-                  <div id="what-if-simulator">
-                    <WhatIfSimulator
-                      currentProfile={profile}
-                      currentScore={prediction.chance}
-                      onApplySimulatedProfile={(updated) => {
-                        const merged = { ...profile, ...updated };
-                        setProfile(merged);
-                        fetchPrediction(merged);
-                      }}
-                    />
-                  </div>
-                </section>
-
-                <section id="career-action-center" data-das-id="action-center" className="space-y-4">
-                  <SectionHeader
-                    title="Workspace Sync & Next Preparation Stages"
-                    description="Sync your readiness profile or jump directly into dedicated execution modules without duplicate checklists"
-                    badge="Next Modules"
-                    accent="blue"
-                    icon={Zap}
-                    helperLabel="Continue into 2. JD & Resume Tailor, 3. Live Coding & Viva Arena, 4. Project Blueprints, or 5. Cohort & Roadmap"
-                    onAskCoach={handleAskCoach}
-                  />
-                  <div className="grid gap-6 lg:grid-cols-3">
-                    <div className="lg:col-span-1">
-                      <GoogleAutomationCard
-                        profile={profile}
-                        prediction={prediction}
-                        apiBase={API_BASE}
-                      />
-                    </div>
-                    <div className="lg:col-span-2 grid gap-3 sm:grid-cols-2">
-                      {[
-                        {
-                          tab: "resume" as TabId,
-                          title: "2. JD & Resume Tailor",
-                          desc: "1-Click company JD match %, keyword gap analysis & ATS resume scoring.",
-                          icon: FileText,
-                        },
-                        {
-                          tab: "interview" as TabId,
-                          title: "3. Live Coding & Viva Arena",
-                          desc: "11-language online compiler with live voice viva & hiring verdicts.",
-                          icon: Mic,
-                        },
-                        {
-                          tab: "projects" as TabId,
-                          title: "4. Project Blueprints",
-                          desc: "28 production architectures & codebase specs to replace weak mini-apps.",
-                          icon: Lightbulb,
-                        },
-                        {
-                          tab: "analytics" as TabId,
-                          title: "5. Cohort & Roadmap",
-                          desc: "972 verified placement benchmarks & personalized 6-week sprint targets.",
-                          icon: TrendingUp,
-                        },
-                      ].map((stage) => {
-                        const StageIcon = stage.icon;
-                        return (
-                          <button
-                            key={stage.tab}
-                            type="button"
-                            onClick={() => {
-                              setActiveTab(stage.tab);
-                              window.scrollTo({ top: 0, behavior: "smooth" });
-                            }}
-                            className="group flex flex-col justify-between rounded-2xl border border-[#2B2024] bg-[#000000] p-4 text-left transition-all hover:bg-[#2B2024] active:scale-[0.99] cursor-pointer"
-                          >
-                            <div>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-xs font-bold text-[#f8fafc]">
-                                  <StageIcon className="h-4 w-4 text-white" />
-                                  <span>{stage.title}</span>
-                                </div>
-                                <ArrowRight className="h-3.5 w-3.5 text-[#94a3b8] transition-transform group-hover:translate-x-1 group-hover:text-white" />
-                              </div>
-                              <p className="mt-2 text-xs text-[#94a3b8] leading-relaxed">{stage.desc}</p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
                   </div>
                 </section>
               </motion.div>

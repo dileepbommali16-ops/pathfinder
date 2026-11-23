@@ -94,7 +94,21 @@ export async function OPTIONS() {
 export async function POST(request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const text = String(body?.text || "").trim().slice(0, 800);
+    const rawText = String(body?.text || "").trim();
+    const text = rawText
+      .replace(/O\(\s*n\s*(?:\*|\s+)?log\s*n\s*\)/gi, "Big O of n log n")
+      .replace(/O\(\s*log\s*n\s*\)/gi, "Big O of log n")
+      .replace(/O\(\s*n\s*(?:²|\^2)\s*\)/gi, "Big O of n squared")
+      .replace(/O\(\s*n\s*\*\s*k\s*\)/gi, "Big O of n times k")
+      .replace(/O\(\s*m\s*\+\s*n\s*\)/gi, "Big O of m plus n")
+      .replace(/O\(\s*n\s*\)/gi, "Big O of n")
+      .replace(/O\(\s*1\s*\)/gi, "Big O of 1")
+      .replace(/O\(\s*k\s*\)/gi, "Big O of k")
+      .replace(/\[([^\[\]]{1,40})\]/g, "$1")
+      .replace(/\s+/g, " ")
+      .replace(/\b(\w+(?:\s+\w+){0,4})(?:\s+\1\b)+/gi, "$1")
+      .trim()
+      .slice(0, 420);
     if (!text) {
       return Response.json({ status: "error", detail: "Text is required." }, { status: 400 });
     }

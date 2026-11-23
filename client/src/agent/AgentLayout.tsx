@@ -88,6 +88,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [connected, setConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
+  const [hudCollapsed, setHudCollapsed] = useState(false);
   const [role, setRole] = useState<UserHonorificRole>(() => getHonorificKey());
   const [inputText, setInputText] = useState("");
   const [transcript, setTranscript] = useState(() => getInitialGreeting(getHonorificKey()));
@@ -565,6 +566,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       const query = typeof detail.query === "string" ? detail.query.trim() : "";
       if (!query) return;
 
+      setHudCollapsed(false);
       setUserTranscript(query);
       setTranscript("Thinking & analyzing with DAS Coach...");
 
@@ -583,6 +585,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       const detail = (e as CustomEvent)?.detail || {};
       const question = typeof detail.question === "string" ? detail.question.trim() : "";
       if (!question) return;
+      setHudCollapsed(false);
       dasSocket.muteActiveTurn();
       askCoachUnbindRef.current?.();
       askCoachUnbindRef.current = null;
@@ -605,11 +608,20 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       setTranscript(question);
     };
 
+    const onToggleFocusHud = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      if (detail?.focus === true) {
+        setHudCollapsed(false);
+      }
+    };
+
     window.addEventListener("das-ask-coach", onAskCoach);
     window.addEventListener("das-interviewer-prompt", onInterviewerPrompt);
+    window.addEventListener("das-toggle-focus", onToggleFocusHud);
     return () => {
       window.removeEventListener("das-ask-coach", onAskCoach);
       window.removeEventListener("das-interviewer-prompt", onInterviewerPrompt);
+      window.removeEventListener("das-toggle-focus", onToggleFocusHud);
       askCoachUnbindRef.current?.();
       askCoachUnbindRef.current = null;
       restTtsAbortRef.current?.abort();
@@ -1206,7 +1218,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {showAgent && <Avatar3D />}
 
       {/* Main Dashboard Content */}
-      <main className={showAgent ? "relative z-10 pb-56 sm:pb-44 bg-transparent" : "relative min-h-screen bg-transparent"}>{children}</main>
+      <main className={showAgent ? (hudCollapsed ? "relative z-10 pb-16 bg-transparent" : "relative z-10 pb-36 sm:pb-32 bg-transparent") : "relative min-h-screen bg-transparent"}>{children}</main>
 
       {showAgent && (
         <>
@@ -1345,27 +1357,71 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         </div>
       )}
 
-      {/* Bottom Center DAS HUD — Responsive across Phone, Tablet, Laptop & MacBook */}
+      {/* Bottom Center DAS HUD — Compact, Collapsible & Responsive */}
+      {hudCollapsed ? (
+        <div
+          id="das-hud-collapsed-pill"
+          className="fixed bottom-2.5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-2xl"
+          style={{
+            backgroundColor: "#000000",
+            borderColor: "#2b2024",
+            boxShadow: "0 12px 32px rgba(0, 0, 0, 0.9)",
+          }}
+        >
+          <span
+            className={`h-2 w-2 rounded-full ${
+              connected ? "bg-white animate-pulse" : "bg-zinc-400"
+            }`}
+          />
+          <button
+            type="button"
+            onClick={() => setHudCollapsed(false)}
+            aria-label="Open DAS AI panel"
+            title="Show DAS AI bar"
+            className="text-xs font-bold tracking-wide text-white hover:brightness-110 transition cursor-pointer flex items-center gap-1.5 px-1"
+          >
+            <span>▲ DAS AI</span>
+            {micActive && (
+              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-[#2b2024] text-white animate-pulse">
+                Listening
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={toggleMic}
+            aria-label={micActive ? "Mute microphone" : "Speak to DAS"}
+            title={micActive ? "Mute mic" : "Speak to DAS"}
+            className="h-6 w-6 rounded-full flex items-center justify-center text-xs border text-white hover:brightness-110 transition cursor-pointer"
+            style={{
+              backgroundColor: micActive ? "#000000" : "#2b2024",
+              borderColor: "#2b2024",
+            }}
+          >
+            {micActive ? "⏹" : "🎙️"}
+          </button>
+        </div>
+      ) : (
       <div
         id="das-bottom-hud"
-        className="fixed bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[96%] sm:w-[92%] max-w-3xl rounded-2xl p-2 sm:p-3 shadow-2xl flex flex-col gap-1.5 sm:gap-2 border"
+        className="fixed bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] sm:w-[86%] max-w-xl rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-2xl flex flex-col gap-1 sm:gap-1.5 border"
         style={{
           backgroundColor: "#000000",
           borderColor: "#2b2024",
-          boxShadow: "0 20px 50px rgba(0, 0, 0, 0.92)"
+          boxShadow: "0 16px 40px rgba(0, 0, 0, 0.92)"
         }}
       >
         {/* Top Status & Role Select Bar */}
-        <div className="flex items-center justify-between text-xs px-2">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between text-[11px] px-1">
+          <div className="flex items-center gap-1.5">
             <span
-              className={`h-2.5 w-2.5 rounded-full ${
+              className={`h-2 w-2 rounded-full ${
                 connected ? "bg-white animate-pulse" : "bg-zinc-400"
               }`}
             />
             <span className="font-bold tracking-wider text-white">DAS AI</span>
             <span
-              className="px-2 py-0.5 rounded text-[10px] font-semibold border text-white"
+              className="px-1.5 py-0.5 rounded text-[9px] font-semibold border text-white"
               style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
             >
               {connected ? "ONLINE" : "CONNECTING..."}
@@ -1379,7 +1435,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   void codingStudioController.execute({ action: "open", language: "python" });
                 }
               }}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
               style={{ backgroundColor: "#2b2024", borderColor: codeTask ? "#FD0053" : "#2b2024" }}
               title="Open Multi-Language Online Coding Compiler (Python, C, C++, Java, JS, TS, SQL, Go, Rust)"
             >
@@ -1388,7 +1444,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {/* Single Strict 4-Role Identity Pill: Owner=Boss (locked), Guest=Stranger (locked), Signed-in=Madam/Sir */}
             {(() => {
               const storedEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "";
@@ -1400,7 +1456,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 if (canBeBoss) {
                   return (
                     <span
-                      className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold border shadow-sm text-white select-none"
+                      className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-sm text-white select-none"
                       style={{ backgroundColor: "#2b2024", borderColor: "#FD0053" }}
                       title="Creator Account Verified: Boss Mode locked exclusively to dileepbommali16@gmail.com"
                     >
@@ -1413,7 +1469,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               if (isGuest || role === "stranger") {
                 return (
                   <span
-                    className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold border shadow-sm text-white select-none"
+                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-sm text-white select-none"
                     style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
                     title="Guest Session: Stranger Mode active — tell DAS your name first"
                   >
@@ -1430,7 +1486,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                     const nextRole: UserHonorificRole = role === "madam" ? "sir" : "madam";
                     handleRoleToggle(nextRole);
                   }}
-                  className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold transition cursor-pointer border shadow-sm hover:brightness-110 active:scale-95 text-white"
+                  className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold transition cursor-pointer border shadow-sm hover:brightness-110 active:scale-95 text-white"
                   style={{
                     backgroundColor: "#2b2024",
                     borderColor: "#2b2024",
@@ -1438,17 +1494,27 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   title="Switch addressing mode: Madam Mode / Sir Mode"
                 >
                   <span>{role === "madam" ? "🌸 Madam Mode" : "🎩 Sir Mode"}</span>
-                  <span className="text-[10px] text-zinc-400">⇄</span>
+                  <span className="text-[9px] text-zinc-400">⇄</span>
                 </button>
               );
             })()}
+            <button
+              type="button"
+              onClick={() => setHudCollapsed(true)}
+              aria-label="Hide DAS panel"
+              title="Minimize DAS panel to bottom bar"
+              className="px-2 py-0.5 rounded-full text-[10px] font-bold border text-zinc-200 hover:text-white hover:brightness-110 transition cursor-pointer"
+              style={{ backgroundColor: "#000000", borderColor: "#2b2024" }}
+            >
+              ▼ Hide
+            </button>
           </div>
         </div>
 
         {/* User Voice / Input Transcript */}
         {userTranscript && (
           <div
-            className="text-xs text-white rounded-xl px-3 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
+            className="text-[11px] text-white rounded-lg px-2.5 py-1 max-h-12 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
             style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           >
             🎤 You: {userTranscript}
@@ -1457,7 +1523,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
         {/* Agent Spoken Response Transcript */}
         <div
-          className="text-sm text-zinc-100 rounded-xl px-3 py-2 max-h-24 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
+          className="text-xs text-zinc-100 rounded-lg px-2.5 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
           style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
         >
           🔊 DAS: {transcript}
@@ -1466,17 +1532,17 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         {/* Live Microphone Signal & Warning Bar */}
         {micActive && (
           <div
-            className="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs border"
+            className="flex items-center justify-between px-2.5 py-1 rounded-lg text-[11px] border"
             style={{
               backgroundColor: "#2b2024",
               borderColor: "#2b2024",
             }}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               <span className="font-bold text-white shrink-0">
                 {micSilentWarning ? "⚠️ NO MIC SIGNAL" : "🎙️ MIC LIVE"}
               </span>
-              <div className="w-24 h-2 rounded-full bg-[#000000] overflow-hidden shrink-0">
+              <div className="w-20 h-1.5 rounded-full bg-[#000000] overflow-hidden shrink-0">
                 <div
                   ref={micBarRef}
                   className="h-full bg-white transition-[width] duration-75"
@@ -1492,7 +1558,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <button
               type="button"
               onClick={toggleMic}
-              className="text-[11px] text-white hover:text-zinc-300 font-bold ml-2 cursor-pointer shrink-0"
+              className="text-[10px] text-white hover:text-zinc-300 font-bold ml-2 cursor-pointer shrink-0"
             >
               Mute
             </button>
@@ -1500,12 +1566,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         )}
 
         {/* Command & Control Bar */}
-        <form onSubmit={handleSendText} className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2">
+        <form onSubmit={handleSendText} className="flex flex-wrap sm:flex-nowrap items-center gap-1 sm:gap-1.5">
           {/* Hands-free Voice Speak / Mute Button */}
           <button
             type="button"
             onClick={toggleMic}
-            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer flex items-center gap-1.5 border text-white hover:brightness-110 shrink-0"
+            className="px-2.5 sm:px-3 py-1.5 rounded-lg font-bold text-[11px] sm:text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110 shrink-0"
             style={{
               backgroundColor: micActive ? "#000000" : "#2b2024",
               borderColor: "#2b2024",
@@ -1514,9 +1580,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           >
             {micActive ? (
               <>
-                <span className="relative flex h-2.5 w-2.5">
+                <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                 </span>
                 <span>Listening...</span>
               </>
@@ -1538,7 +1604,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               setInputText(e.target.value);
             }}
             placeholder="Ask DAS: 'Who is your boss?', 'Write QuickSort in C', 'Set my CGPA to 8.9'..."
-            className="min-w-[140px] flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-white placeholder-zinc-400 focus:outline-none border"
+            className="min-w-[120px] flex-1 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs text-white placeholder-zinc-400 focus:outline-none border"
             style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
           />
 
@@ -1555,7 +1621,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               inputEl?.focus();
               inputEl?.select();
             }}
-            className="px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow flex items-center gap-1 hover:brightness-110 text-white shrink-0"
+            className="px-2 sm:px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer border shadow flex items-center gap-1 hover:brightness-110 text-white shrink-0"
             style={{
               backgroundColor: "#000000",
               borderColor: "#2b2024",
@@ -1568,7 +1634,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           {/* Send Button */}
           <button
             type="submit"
-            className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white transition cursor-pointer border shadow hover:brightness-110 shrink-0"
+            className="px-3 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold text-white transition cursor-pointer border shadow hover:brightness-110 shrink-0"
             style={{
               backgroundColor: "#2b2024",
               borderColor: "#2b2024",
@@ -1578,6 +1644,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           </button>
         </form>
       </div>
+      )}
         </>
       )}
     </div>
