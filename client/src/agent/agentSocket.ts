@@ -87,6 +87,7 @@ class DasAgentSocket {
   private healthListenersAttached = false;
   private connSeq = 0;
   private activeAudioTurnId: number | null = null;
+  private activeTranscriptTurnId: number | null = null;
   private audioChunksInTurn = 0;
   private ttsFallbackAbort: AbortController | null = null;
   private interruptedTurnIds: Set<number> = new Set();
@@ -117,6 +118,7 @@ class DasAgentSocket {
     this.clearTurnWatchdog();
     this.isSpeakingTurn = false;
     this.awaitingNextTurn = true;
+    this.activeTranscriptTurnId = null;
     this.currentAgentTranscript = "";
     this.audioChunksInTurn = 0;
     audioEngine.clearAudioQueue();
@@ -566,6 +568,7 @@ CORE AUTONOMOUS CAPABILITIES:
           if (data.status === "connected") {
             this.isConnected = true;
             this.activeAudioTurnId = null;
+            this.activeTranscriptTurnId = null;
             this.audioChunksInTurn = 0;
             this.interruptedTurnIds.clear();
             this.savedOnStatusChange?.(true);
@@ -610,8 +613,10 @@ CORE AUTONOMOUS CAPABILITIES:
             this.audioChunksInTurn = 0;
           }
           if (this.awaitingNextTurn) {
-            this.currentAgentTranscript = "";
-            audioEngine.updateLiveTranscript("");
+            if (tId === null || tId !== this.activeTranscriptTurnId) {
+              this.currentAgentTranscript = "";
+              audioEngine.updateLiveTranscript("");
+            }
             this.awaitingNextTurn = false;
             this.audioChunksInTurn = 0;
           }
@@ -643,6 +648,9 @@ CORE AUTONOMOUS CAPABILITIES:
           if (tId !== null && this.interruptedTurnIds.has(tId)) {
             return;
           }
+          if (tId !== null) {
+            this.activeTranscriptTurnId = tId;
+          }
           this.hasConversationActivity = true;
           this.clearTurnWatchdog();
           this.notifyAgentResponse();
@@ -671,11 +679,10 @@ CORE AUTONOMOUS CAPABILITIES:
               ) {
                 const rescueTxt = this.currentAgentTranscript.trim();
                 if (rescueTxt) {
-                  this.awaitingNextTurn = true;
                   this.triggerTextOnlyTts(rescueTxt);
                 }
               }
-            }, 2400);
+            }, 5500);
           }
           return;
         }
@@ -697,6 +704,7 @@ CORE AUTONOMOUS CAPABILITIES:
           audioEngine.flushAudioPlayer();
           this.lastTurnCompletedAt = Date.now();
           this.activeAudioTurnId = null;
+          this.activeTranscriptTurnId = null;
           if (
             !this.currentAgentTranscript &&
             this.audioChunksInTurn === 0 &&
@@ -1216,6 +1224,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.muteUntilNextSend = false;
     this.cancelTtsFallback();
     this.audioChunksInTurn = 0;
+    this.activeTranscriptTurnId = null;
     this.currentAgentTranscript = "";
     this.isSpeakingTurn = false;
     this.awaitingNextTurn = false;
@@ -1243,6 +1252,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.clearAudioRescueTimer();
     this.cancelTtsFallback();
     this.audioChunksInTurn = 0;
+    this.activeTranscriptTurnId = null;
     this.currentAgentTranscript = "";
     this.isSpeakingTurn = false;
     this.awaitingNextTurn = false;
