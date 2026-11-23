@@ -42,7 +42,14 @@ function labelOf(el: HTMLElement): string {
 }
 
 function allClickables(): HTMLElement[] {
+  if (typeof document === "undefined") return [];
   return Array.from(document.querySelectorAll<HTMLElement>(CLICKABLE)).filter(isVisible);
+}
+
+function emitCustomEvent(name: string, detail?: Record<string, any>) {
+  if (typeof window !== "undefined" && typeof CustomEvent !== "undefined") {
+    window.dispatchEvent(new CustomEvent(name, detail ? { detail } : undefined));
+  }
 }
 
 function findByLabel(label: string, pool?: HTMLElement[]): HTMLElement | null {
@@ -125,11 +132,10 @@ const TAB_ALIASES: Record<string, string[]> = {
 
 function goToTab(tabRaw: string, navigate?: (path: string) => void) {
   const tab = norm(tabRaw).replace(/\s+/g, "-");
-  window.dispatchEvent(
-    new CustomEvent("pathfinder:agent-action", {
-      detail: { toolName: "navigate_dashboard_tab", args: { tabName: tab } }
-    })
-  );
+  emitCustomEvent("pathfinder:agent-action", {
+    toolName: "navigate_dashboard_tab",
+    args: { tabName: tab }
+  });
 
   if (navigate) navigate(`/?tab=${encodeURIComponent(tab)}`);
 
@@ -206,9 +212,7 @@ export function tryExecuteClientAutomationIntent(
   const cgpaMatch = clean.match(/\b(?:set|change|update|make)\s+(?:my\s+)?cgpa\s+(?:to|as|=)?\s*(\d+(?:\.\d+)?)\b/);
   if (cgpaMatch) {
     const val = Math.min(10, Math.max(0, parseFloat(cgpaMatch[1])));
-    window.dispatchEvent(
-      new CustomEvent("das-update-profile", { detail: { field: "cgpa", value: val } })
-    );
+    emitCustomEvent("das-update-profile", { field: "cgpa", value: val });
     return true;
   }
   const branchMatch = clean.match(
@@ -217,9 +221,7 @@ export function tryExecuteClientAutomationIntent(
   if (branchMatch) {
     const rawBranch = branchMatch[1].toLowerCase();
     const normalizedBranch = rawBranch === "mech" ? "Mechanical" : rawBranch === "iot" ? "IoT" : rawBranch === "other" ? "Other" : rawBranch.toUpperCase();
-    window.dispatchEvent(
-      new CustomEvent("das-update-profile", { detail: { field: "branch", value: normalizedBranch } })
-    );
+    emitCustomEvent("das-update-profile", { field: "branch", value: normalizedBranch });
     return true;
   }
   for (const intent of CLIENT_TAB_INTENTS) {
@@ -492,11 +494,11 @@ export function executeWebsiteControl(
 
   // 0. Focus on DAS / Show Dashboard automation
   if (act === "focus_das" || routeNorm === "focus_on_das" || routeNorm === "focus-on-das") {
-    window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: true } }));
+    emitCustomEvent("das-toggle-focus", { focus: true });
     return;
   }
   if (act === "show_dashboard" || routeNorm === "show_dashboard" || routeNorm === "show-dashboard") {
-    window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: false } }));
+    emitCustomEvent("das-toggle-focus", { focus: false });
     return;
   }
 
@@ -528,17 +530,17 @@ export function executeWebsiteControl(
     };
     const mappedTab = knownRouteToTab[routeNorm];
     if (mappedTab) {
-      window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: false } }));
+      emitCustomEvent("das-toggle-focus", { focus: false });
       goToTab(mappedTab, navigateFn);
     } else if (rawRoute.startsWith("/")) {
       if (navigateFn) {
         navigateFn(rawRoute);
-      } else {
+      } else if (typeof window !== "undefined") {
         window.history.pushState({}, "", rawRoute);
         window.dispatchEvent(new PopStateEvent("popstate"));
       }
     } else {
-      window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: false } }));
+      emitCustomEvent("das-toggle-focus", { focus: false });
       goToTab(rawRoute, navigateFn);
     }
   }
