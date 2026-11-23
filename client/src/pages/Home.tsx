@@ -2014,7 +2014,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       {/* Main Container */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 pt-8 pb-56 sm:px-6 lg:pt-10 sm:pb-64">
         {focusOnDas ? (
-          <div className="flex items-center justify-center pb-4 animate-in fade-in duration-300">
+          <div className="flex items-center justify-end pb-6 animate-in fade-in duration-300">
             <button
               type="button"
               onClick={() => setFocusOnDas(false)}

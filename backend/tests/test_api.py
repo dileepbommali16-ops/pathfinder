@@ -778,5 +778,30 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertNotIn("open_external_website", declared)
         self.assertNotIn("open_linkedin_profile", declared)
 
+    def test_self_identity_query_with_hi_prefix(self):
+        from backend.gemini_engine import chat_with_mentor
+        from backend.models.schemas import StudentProfile
+
+        boss_profile = StudentProfile(name="Bommali Dileep", branch="CSD", cgpa=8.5, coding_rating=8)
+        boss_reply = chat_with_mentor(
+            message="hi who i m",
+            history=[],
+            profile=boss_profile,
+            active_tab="overview",
+            page_context={"userEmail": "dileepbommali16@gmail.com", "honorific": "Boss"},
+        )
+        self.assertIn("Bommali Dileep", boss_reply)
+        self.assertNotIn("What's up", boss_reply)
+
+        guest_profile = StudentProfile(name="Guest", branch="CSE", cgpa=7.5, coding_rating=5)
+        stranger_reply = chat_with_mentor(
+            message="hi who i m",
+            history=[],
+            profile=guest_profile,
+            active_tab="overview",
+            page_context={"userEmail": "guest@pathfinder.ai", "honorific": "Stranger"},
+        )
+        self.assertIn("Stranger Mode", stranger_reply)
+
 if __name__ == "__main__":
     unittest.main()

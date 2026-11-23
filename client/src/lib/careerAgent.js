@@ -786,7 +786,22 @@ export const getCareerAgentResponse = (
     return `${greetingLine}|||👋 **${greetingLine}**`;
   }
 
-  // 2b. Natural Compliment & Appreciation Response (never reset to "Hi Boss! What's up?" on praise)
+  // 2b. Self-identity queries ("hi who i m", "who am i", "what is my name", "nenu evaru")
+  const isSelfIdentity =
+    /^\s*(?:(?:hi+|hello+|hey+|hai+|hlo+|yo+|namaste)\s*(?:das|boss|bro|baby|babe|ai)?\s*[,!.-]*\s*)?(?:who\s+(?:am\s+i|i\s+am|i\s*m|im)|what(?:'s|\s+is)\s+my\s+name|do\s+you\s+know\s+(?:who\s+i\s+(?:am|m)|me)|nenu\s+evaru)[\s!.,?]*$/i.test(
+      text
+    );
+  if (isSelfIdentity) {
+    const idReply =
+      title === "Boss"
+        ? "You're Boss — Bommali Dileep, my creator and the architect of Pathfinder 2.0!"
+        : title === "Stranger"
+          ? "You're in Stranger Mode right now — tell me your name first so I know who I'm speaking with!"
+          : `You're signed in as ${title} on Pathfinder 2.0! How can I help you today?`;
+    return `${idReply}|||👤 **${idReply}**`;
+  }
+
+  // 2c. Natural Compliment & Appreciation Response (never reset to "Hi Boss! What's up?" on praise)
   const isCompliment =
     /^\s*(good|nice|awesome|super|superb|great|excellent|well\s*done|good\s*job|great\s*job|great\s*answer|nice\s*answer|love\s*it|proud\s*of\s*you|thanks|thank\s*you|thx|ty|baga\s*chepthunnav|bhaga\s*chepthunnav|baaga\s*cheppav|super\s*ra|good\s*(?:one|work)|you\s*(?:answer|explain)\s*(?:well|good|great|nicely)|(?:good|nice|great)\s*(?:boss|das|bro|baby))[\s!.,🙏❤️🔥👏✨]*$/i.test(
       text

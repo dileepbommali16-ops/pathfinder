@@ -59,7 +59,7 @@ def get_das_system_instruction(role: str) -> str:
   * ONLY when Boss sends a pure standalone greeting ("Hi", "Hello", "Hey", "Hi baby") with NO question or request attached (and NEVER on compliments like "good", "nice", "awesome", or acknowledgments):
     - First time in the session: reply ONLY with "Hi Boss! What's up?"
     - Second or any subsequent standalone greeting in the session: reply ONLY with "Hi Boss, I'm here!"
-  * CRITICAL EXCEPTION: If Boss combines a greeting with a real question or request (e.g., "hi who i am", "hi who am I", "hi what is my college", "hello explain python"), NEVER reply with only a canned greeting — answer his actual question directly, warmly, and accurately (and if asked "who i am" / "who am I", tell him clearly he is Boss Dileep / Bommali Dileep!).
+  * CRITICAL EXCEPTION: If Boss combines a greeting with a real question or request (e.g., "hi who i m", "hi who i am", "hi who am I", "hi what is my college", "hello explain python"), NEVER reply with only a canned greeting — answer his actual question directly, warmly, and accurately (and if asked "who i m" / "who i am" / "who am I", tell him clearly he is Boss — Bommali Dileep!).
 - ZERO SYCOPHANCY / BRUTALLY HONEST RULE: NEVER blindly agree ("Yes you're right!", "All correct!") or flatter just to please Boss! If Boss tests you with wrong code, wrong math/CS facts, messy hair/lighting on camera, or flawed reasoning, politely and directly tell him what is actually wrong and why.
 - Strictly use your natural male 'Puck' voice delivery (NEVER imitate a female voice).
 - You know everything about Boss Dileep, his family, his college, his mentors, and his life. Answer naturally, warmly, and proudly whenever he or anyone asks.
@@ -596,6 +596,24 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     (txt or "").strip().lower(),
                 )
             )
+
+        def is_self_identity_query(txt: str) -> bool:
+            return bool(
+                _re_hi.match(
+                    r"^\s*(?:(?:hi+|hello+|hey+|hai+|hlo+|yo+|namaste)\s*(?:das|boss|bro|baby|babe|ai)?\s*[,!.-]*\s*)?(?:who\s+(?:am\s+i|i\s+am|i\s*m|im)|what(?:'s|\s+is)\s+my\s+name|do\s+you\s+know\s+(?:who\s+i\s+(?:am|m)|me)|nenu\s+evaru)[\s!.,?]*$",
+                    (txt or "").strip().lower(),
+                )
+            )
+
+        def get_self_identity_reply(role_str: str) -> str:
+            r_low = (role_str or "stranger").lower().strip()
+            if r_low == "boss":
+                return "You're Boss — Bommali Dileep, my creator and the architect of Pathfinder 2.0!"
+            if r_low in ("madam", "mam", "ma'am"):
+                return "You're signed in as Madam — welcome to Pathfinder 2.0! How can I help you today?"
+            if r_low == "sir":
+                return "You're signed in as Sir — welcome to Pathfinder 2.0! How can I help you today?"
+            return "You're in Stranger Mode right now — tell me your name first so I know who I'm speaking with!"
 
         def get_exact_hi_reply(role_str: str, count: int) -> str:
             r_low = (role_str or "stranger").lower().strip()
@@ -1359,10 +1377,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 fallback_tasks.add(w_task)
                 w_task.add_done_callback(fallback_tasks.discard)
 
-        async def _handle_hi_turn(req_client_turn_id: int):
-            nonlocal pending_user_text, hi_greeting_count, last_activity_mono, turn_id, completed_turn_id
-            exact_hi = get_exact_hi_reply(user_role, hi_greeting_count)
-            hi_greeting_count += 1
+        async def _send_instant_spoken_reply(reply_text: str, req_client_turn_id: int):
+            nonlocal pending_user_text, last_activity_mono, turn_id, completed_turn_id
             pending_user_text = None
             last_activity_mono = time.monotonic()
 
@@ -1372,19 +1388,19 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 return
 
             turn_id = max(turn_id, completed_turn_id) + 1
-            this_hi_turn = turn_id
-            completed_turn_id = this_hi_turn
+            this_turn = turn_id
+            completed_turn_id = this_turn
 
             tx_pkt = {
                 "type": "transcript",
-                "text": exact_hi,
-                "turn_id": this_hi_turn,
+                "text": reply_text,
+                "turn_id": this_turn,
             }
             if req_client_turn_id > 0:
                 tx_pkt["client_turn_id"] = req_client_turn_id
             await websocket.send_json(tx_pkt)
 
-            # Warm upstream Live session in background during Hi greeting so Turn 2 responds in ~500ms
+            # Warm upstream Live session in background so subsequent turns respond in ~500ms
             if session is None or is_gemini_ws_closed(session):
                 t_w = asyncio.create_task(ensure_live_session())
                 fallback_tasks.add(t_w)
@@ -1393,7 +1409,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             tts_res = None
             try:
                 from backend.routers.voice_routes import synthesize_puck_pcm
-                tts_res = await synthesize_puck_pcm(exact_hi)
+                tts_res = await synthesize_puck_pcm(reply_text)
             except Exception:
                 tts_res = None
 
@@ -1407,11 +1423,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     websocket,
                     tts_res["pcm_base64"],
                     int(tts_res.get("sample_rate") or 24000),
-                    this_hi_turn,
+                    this_turn,
                     client_turn_id=req_client_turn_id,
                 )
                 if websocket.client_state != WebSocketState.DISCONNECTED:
-                    tc_pkt = {"type": "turn_complete", "turn_id": this_hi_turn}
+                    tc_pkt = {"type": "turn_complete", "turn_id": this_turn}
                     if req_client_turn_id > 0:
                         tc_pkt["client_turn_id"] = req_client_turn_id
                     await websocket.send_json(tc_pkt)
@@ -1419,12 +1435,21 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
             # Safety net: if REST TTS failed, stream Puck directly via Live session
             await send_vision_prompt(
-                f'Say verbatim: "{exact_hi}"',
+                f'Say verbatim: "{reply_text}"',
                 include_screen_ctx=False,
                 is_user_text=False,
                 allow_fallback=False,
                 req_client_turn_id=req_client_turn_id,
             )
+
+        async def _handle_hi_turn(req_client_turn_id: int):
+            nonlocal hi_greeting_count
+            exact_hi = get_exact_hi_reply(user_role, hi_greeting_count)
+            hi_greeting_count += 1
+            await _send_instant_spoken_reply(exact_hi, req_client_turn_id)
+
+        async def _handle_identity_turn(req_client_turn_id: int):
+            await _send_instant_spoken_reply(get_self_identity_reply(user_role), req_client_turn_id)
 
         async def _handle_speak_verbatim(v_text: str):
             nonlocal audio_turn_open, pending_response_until_mono, last_activity_mono, turn_id, completed_turn_id
@@ -1625,6 +1650,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 active_watchdog_task.cancel()
                             if is_pure_hi_greeting(text):
                                 t_turn = asyncio.create_task(_handle_hi_turn(req_client_turn_id))
+                            elif is_self_identity_query(text):
+                                t_turn = asyncio.create_task(_handle_identity_turn(req_client_turn_id))
                             else:
                                 pending_user_text = text
                                 t_turn = asyncio.create_task(

@@ -1566,7 +1566,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         )}
 
         {/* Command & Control Bar */}
-        <form onSubmit={handleSendText} className="flex flex-wrap sm:flex-nowrap items-center gap-1 sm:gap-1.5">
+        <form onSubmit={handleSendText} autoComplete="off" className="flex flex-wrap sm:flex-nowrap items-center gap-1 sm:gap-1.5">
           {/* Hands-free Voice Speak / Mute Button */}
           <button
             type="button"
@@ -1596,6 +1596,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             id="das-command-input"
             name="dasCommand"
             type="text"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
             value={inputText}
             onFocus={() => dasSocket.warmup()}
             onChange={(e) => {

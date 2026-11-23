@@ -143,6 +143,28 @@ export async function POST(request) {
       });
     }
 
+    const isSelfIdentity = /^\s*(?:(?:hi+|hello+|hey+|hai+|hlo+|yo+|namaste)\s*(?:das|boss|bro|baby|babe|ai)?\s*[,!.-]*\s*)?(?:who\s+(?:am\s+i|i\s+am|i\s*m|im)|what(?:'s|\s+is)\s+my\s+name|do\s+you\s+know\s+(?:who\s+i\s+(?:am|m)|me)|nenu\s+evaru)[\s!.,?]*$/i.test(
+      message
+    );
+    if (isSelfIdentity) {
+      const candName = String(profile?.name || pageContext?.userName || "").trim();
+      const idReply =
+        honorific === "Boss"
+          ? "You're Boss — Bommali Dileep, my creator and the architect of Pathfinder 2.0!"
+          : honorific === "Stranger"
+            ? "You're in Stranger Mode right now — tell me your name first so I know who I'm speaking with!"
+            : candName && candName.toLowerCase() !== "student"
+              ? `You're ${candName}, signed in as ${honorific} on Pathfinder 2.0!`
+              : `You're signed in as ${honorific} on Pathfinder 2.0! How can I help you today?`;
+      return Response.json({
+        status: "ok",
+        reply: idReply,
+        model: "deterministic-identity-rule",
+        honorific,
+        provider: "vercel-fluid-gemini",
+      });
+    }
+
     const contents = [];
     for (const turn of history) {
       const txt = String(turn?.content || "").trim();

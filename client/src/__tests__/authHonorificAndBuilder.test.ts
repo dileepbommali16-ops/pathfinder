@@ -313,4 +313,12 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(arenaSrc.match(/starterPython:/g)?.length || 0).toBeGreaterThanOrEqual(15);
     expect(arenaSrc.match(/solutionPython:/g)?.length || 0).toBeGreaterThanOrEqual(15);
   });
+
+  it("answers 'hi who i m' with Boss identity instead of falling back to Hi Boss greeting", () => {
+    handleAuthLoginDetected("dileepbommali16@gmail.com", "Dileep");
+    const idReply = getCareerAgentResponse("hi who i m", [], { branch: "CSD", cgpa: 8.5 }, "Boss");
+    const spoken = idReply.split("|||")[0];
+    expect(spoken).toContain("Bommali Dileep");
+    expect(spoken).not.toContain("What's up");
+  });
 });

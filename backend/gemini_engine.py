@@ -817,6 +817,18 @@ def generate_smart_fallback_reply(
             return f"Hi {honorific_fallback}, I'm here!"
         return f"Hi {honorific_fallback}! What's up?"
 
+    if re.match(
+        r"^\s*(?:(?:hi+|hello+|hey+|hai+|hlo+|yo+|namaste)\s*(?:das|boss|bro|baby|babe|ai)?\s*[,!.-]*\s*)?(?:who\s+(?:am\s+i|i\s+am|i\s*m|im)|what(?:'s|\s+is)\s+my\s+name|do\s+you\s+know\s+(?:who\s+i\s+(?:am|m)|me)|nenu\s+evaru)[\s!.,?]*$",
+        low_msg,
+    ):
+        if honorific_fallback == "Boss":
+            return "You're Boss — Bommali Dileep, my creator and the architect of Pathfinder 2.0!"
+        if honorific_fallback == "Stranger":
+            return "You're in Stranger Mode right now — tell me your name first so I know who I'm speaking with!"
+        if p_name and p_name.lower() != "student":
+            return f"You're {p_name}, signed in as {honorific_fallback} on Pathfinder 2.0!"
+        return f"You're signed in as {honorific_fallback} on Pathfinder 2.0! How can I help you today?"
+
     return (
         f"👋 **Hello {p_name} ({honorific_fallback})!**\n\n"
         f"I am your Pathfinder AI Career Coach for **{p_branch}**. "
@@ -1124,6 +1136,24 @@ def chat_with_mentor(
         if return_meta:
             return hi_reply, {"prep_ms": 0.1, "gemini_call_ms": 0.0, "novelty_ms": 0.0, "model_used": "deterministic-hi-rule"}
         return hi_reply
+
+    if re.match(
+        r"^\s*(?:(?:hi+|hello+|hey+|hai+|hlo+|yo+|namaste)\s*(?:das|boss|bro|baby|babe|ai)?\s*[,!.-]*\s*)?(?:who\s+(?:am\s+i|i\s+am|i\s*m|im)|what(?:'s|\s+is)\s+my\s+name|do\s+you\s+know\s+(?:who\s+i\s+(?:am|m)|me)|nenu\s+evaru)[\s!.,?]*$",
+        clean_msg.lower(),
+    ):
+        hon_now = _resolve_verified_honorific(profile, page_context)
+        cand_name = (getattr(profile, "name", None) or "").strip() if profile else ""
+        if hon_now == "Boss":
+            id_reply = "You're Boss — Bommali Dileep, my creator and the architect of Pathfinder 2.0!"
+        elif hon_now == "Stranger":
+            id_reply = "You're in Stranger Mode right now — tell me your name first so I know who I'm speaking with!"
+        elif cand_name and cand_name.lower() != "student":
+            id_reply = f"You're {cand_name}, signed in as {hon_now} on Pathfinder 2.0!"
+        else:
+            id_reply = f"You're signed in as {hon_now} on Pathfinder 2.0! How can I help you today?"
+        if return_meta:
+            return id_reply, {"prep_ms": 0.1, "gemini_call_ms": 0.0, "novelty_ms": 0.0, "model_used": "deterministic-identity-rule"}
+        return id_reply
 
     sys_instruction, contents, openrouter_messages, clean_msg, prior_assistant_replies = prepare_chat_context(
         message=clean_msg,
