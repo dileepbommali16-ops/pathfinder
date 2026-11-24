@@ -4,7 +4,7 @@ interface PathfinderLogoProps {
   size?: number;
   className?: string;
   showPulse?: boolean;
-  variant?: "brand" | "monochrome";
+  variant?: "brand" | "monochrome" | "studio";
 }
 
 /**
@@ -22,6 +22,7 @@ export const PathfinderLogo: React.FC<PathfinderLogoProps> = ({
   const arcId = `pf-arc-${uid}`;
   const needleId = `pf-needle-${uid}`;
   const isMonochrome = variant === "monochrome";
+  const isStudio = variant === "studio";
 
   return (
     <span
@@ -38,11 +39,17 @@ export const PathfinderLogo: React.FC<PathfinderLogoProps> = ({
       >
         <defs>
           <linearGradient id={frameBgId} x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#14161b" />
-            <stop offset="100%" stopColor="#07080a" />
+            <stop offset="0%" stopColor={isStudio ? "#151B2E" : "#14161b"} />
+            <stop offset="100%" stopColor={isStudio ? "#0B0F1A" : "#07080a"} />
           </linearGradient>
           <linearGradient id={arcId} x1="8" y1="32" x2="32" y2="8" gradientUnits="userSpaceOnUse">
-            {isMonochrome ? (
+            {isStudio ? (
+              <>
+                <stop offset="0%" stopColor="#6366F1" />
+                <stop offset="55%" stopColor="#38BDF8" />
+                <stop offset="100%" stopColor="#F8FAFC" />
+              </>
+            ) : isMonochrome ? (
               <>
                 <stop offset="0%" stopColor="#64748B" />
                 <stop offset="55%" stopColor="#CBD5E1" />
@@ -70,7 +77,7 @@ export const PathfinderLogo: React.FC<PathfinderLogoProps> = ({
           height="38"
           rx="10"
           fill={`url(#${frameBgId})`}
-          stroke="rgba(255,255,255,0.14)"
+          stroke={isStudio ? "rgba(129,140,248,0.28)" : "rgba(255,255,255,0.14)"}
           strokeWidth="1.25"
         />
 
@@ -81,7 +88,7 @@ export const PathfinderLogo: React.FC<PathfinderLogoProps> = ({
           r="12"
           stroke={`url(#${arcId})`}
           strokeWidth="1.4"
-          strokeOpacity="0.45"
+          strokeOpacity={isStudio ? "0.75" : "0.45"}
           strokeDasharray="44 14"
         />
 
@@ -89,20 +96,25 @@ export const PathfinderLogo: React.FC<PathfinderLogoProps> = ({
         <path
           d="M12.5 27.5L17.4 16.9L27.5 12.5L22.6 23.1L12.5 27.5Z"
           fill={`url(#${needleId})`}
-          fillOpacity="0.95"
+          fillOpacity="0.96"
         />
 
         {/* Inner precision cutout */}
         <path
           d="M17.2 22.8L20 20L22.8 17.2L19.1 18.6L17.2 22.8Z"
-          fill="#08090c"
+          fill={isStudio ? "#0B0F1A" : "#08090c"}
         />
 
         {/* Beacon target node */}
-        <circle cx="27.5" cy="12.5" r="2.2" fill={isMonochrome ? "#F7F8F8" : "#FD0053"} />
+        <circle
+          cx="27.5"
+          cy="12.5"
+          r="2.2"
+          fill={isStudio ? "#38BDF8" : isMonochrome ? "#F7F8F8" : "#FD0053"}
+        />
       </svg>
 
-      {showPulse && !isMonochrome && (
+      {showPulse && !isMonochrome && !isStudio && (
         <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FD0053] opacity-70" />
           <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#FD0053] ring-2 ring-[#07080a]" />
