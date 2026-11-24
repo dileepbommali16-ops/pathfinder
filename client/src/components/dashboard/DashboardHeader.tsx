@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { isOwnerAccount } from "@/lib/auth";
+import { PathfinderLogo } from "@/components/common/PathfinderLogo";
 import {
   Target,
   Compass,
@@ -10,7 +11,6 @@ import {
   Sparkles,
   ShieldCheck,
   User,
-  GraduationCap,
   Lightbulb,
   Zap,
   Mic,
@@ -100,13 +100,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           className="flex items-center gap-3 text-left cursor-pointer group focus:outline-none"
           title="Return to Dashboard Overview"
         >
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#000000] shadow-md ring-1 ring-[#A80139] transition-transform group-hover:scale-105">
-            <GraduationCap className="h-5 w-5 text-[#FD0053] transition-colors group-hover:text-[#A80139]" />
-            <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FD0053] opacity-75"></span>
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#FD0053] shadow-[0_0_8px_#A80139]"></span>
-            </span>
-          </div>
+          <PathfinderLogo
+            size={40}
+            showPulse
+            className="transition-transform group-hover:scale-105"
+          />
 
           <div>
             <div className="flex items-center gap-2">

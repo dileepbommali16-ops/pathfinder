@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Info } from "lucide-react";
 
 interface SectionHeaderProps {
   title: string;
@@ -66,8 +66,9 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
         {(action || helperLabel || onAskCoach) && (
           <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
             {helperLabel && (
-              <span className="text-[11px] font-medium text-[#94a3b8] bg-[#000000] border border-white/15 px-2.5 py-1 rounded-lg">
-                ℹ️ {helperLabel}
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#94a3b8] bg-[#08090c] border border-white/10 px-2.5 py-1 rounded-full">
+                <Info className="h-3 w-3 text-[#8a8f98]" />
+                {helperLabel}
               </span>
             )}
             {onAskCoach && (

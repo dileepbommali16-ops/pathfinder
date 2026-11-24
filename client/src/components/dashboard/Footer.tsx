@@ -1,6 +1,6 @@
 import React, { useState } from "react";
+import { PathfinderLogo } from "@/components/common/PathfinderLogo";
 import {
-  GraduationCap,
   ShieldCheck,
   Phone,
   Mail,
@@ -44,11 +44,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
           {/* Column 1: Brand & Positioning */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#000000] ring-1 ring-[#A80139]">
-                <GraduationCap className="h-5 w-5 text-[#FD0053]" />
-              </div>
-              <span className="text-lg font-bold tracking-tight text-[#FD0053] font-['Space_Grotesk']">
-                Pathfinder <span className="text-[#A80139]">2.0</span>
+              <PathfinderLogo size={36} className="transition-transform hover:scale-105" />
+              <span className="text-lg font-bold tracking-tight text-[#F7F8F8] font-['Space_Grotesk']">
+                Pathfinder <span className="text-[#FD0053]">2.0</span>
               </span>
             </div>
             <p className="text-xs leading-relaxed text-[#94a3b8]">
