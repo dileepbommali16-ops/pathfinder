@@ -221,7 +221,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                 </span>
               </div>
               <span className="rounded bg-white/[0.06] px-2 py-0.5 font-medium text-[#93C5FD]">
-                0:48 HD
+                0:55 HD
               </span>
             </div>
 
@@ -247,7 +247,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError }) =
                   className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#4F46E5]/90 px-4 py-2 text-xs font-medium text-white shadow-lg backdrop-blur-md transition-colors hover:bg-[#6366F1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
                 >
                   <Play className="h-3 w-3 fill-current" />
-                  <span>Play Full Film with Puck Voice · 0:48</span>
+                  <span>Play Full Film with Puck Voice · 0:55</span>
                 </button>
               </div>
             </div>
