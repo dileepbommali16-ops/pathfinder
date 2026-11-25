@@ -159,7 +159,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
         )}
 
         <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#0B0B0E]/90 px-3 py-1 font-mono text-[11px] text-[#A1A1AA]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
           <span>System Operational</span>
         </div>
       </header>

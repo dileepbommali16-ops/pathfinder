@@ -41,7 +41,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
               offers, pairing scikit-learn probability models with live 3D voice coaching.
             </p>
             <div className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-[#0D0D11] px-3 py-1.5 font-mono text-[11px] text-[#D4D4D8]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#D4D4D8]" />
               <span>All 7 subsystems operational</span>
             </div>
           </div>

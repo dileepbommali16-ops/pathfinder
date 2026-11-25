@@ -838,7 +838,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               >
                 <span>{ch.title}</span>
                 {isSolved && (
-                  <span className="rounded border border-white/[0.12] bg-black/50 px-1.5 py-0.5 font-mono text-[9px] text-[#10B981]">
+                  <span className="rounded border border-white/[0.12] bg-black/50 px-1.5 py-0.5 font-mono text-[9px] text-[#FAFAFA]">
                     PASSED
                   </span>
                 )}
@@ -1132,7 +1132,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   Live Execution Output
                 </span>
                 {runStatus === "passed" && (
-                  <span className="font-mono text-[#10B981]">Sample Checks Passed</span>
+                  <span className="font-mono text-[#FAFAFA]">Sample Checks Passed</span>
                 )}
                 {runStatus === "wrong_output" && (
                   <span className="font-mono text-[#D4D4D8]">Wrong / Missing Output</span>

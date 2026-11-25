@@ -49,12 +49,24 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
     };
   }, [apiBase]);
 
+  const hasMetrics =
+    breakdown &&
+    (breakdown.academics !== undefined ||
+      breakdown.coding_dsa !== undefined ||
+      breakdown.communication !== undefined);
+
   const dimensions = [
-    { label: "Academics & CGPA cutoff", score: breakdown.academics ?? 75 },
-    { label: "DSA & problem solving", score: breakdown.coding_dsa ?? 70 },
-    { label: "Technical communication & STAR", score: breakdown.communication ?? 70 },
-    { label: "Practical internships & projects", score: breakdown.experience ?? 35 },
-    { label: "Drive eligibility & clearance", score: breakdown.eligibility ?? 100 },
+    { label: "Academics & CGPA cutoff", score: hasMetrics ? breakdown.academics ?? null : null },
+    { label: "DSA & problem solving", score: hasMetrics ? breakdown.coding_dsa ?? null : null },
+    {
+      label: "Technical communication & STAR",
+      score: hasMetrics ? breakdown.communication ?? null : null,
+    },
+    {
+      label: "Practical internships & projects",
+      score: hasMetrics ? breakdown.experience ?? null : null,
+    },
+    { label: "Drive eligibility & clearance", score: hasMetrics ? breakdown.eligibility ?? null : null },
   ];
 
   return (
@@ -75,13 +87,14 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
 
         <div className="mt-7 space-y-6">
           {dimensions.map((dim) => {
-            const pct = Math.max(5, Math.min(100, dim.score));
+            const hasScore = dim.score !== null && dim.score !== undefined;
+            const pct = hasScore ? Math.max(5, Math.min(100, dim.score as number)) : 0;
             return (
               <div key={dim.label} className="space-y-2.5">
                 <div className="flex justify-between text-xs">
                   <span className="font-medium text-[#E4E4E7]">{dim.label}</span>
                   <span className="font-mono font-semibold text-[#FAFAFA] tabular-nums">
-                    {dim.score.toFixed(0)}%
+                    {hasScore ? `${(dim.score as number).toFixed(0)}%` : "—"}
                   </span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
@@ -124,17 +137,23 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
             Competitive strengths
           </h3>
           <div className="mt-5 space-y-3">
-            {strengths.map((str, idx) => (
-              <div
-                key={idx}
-                className="pf-subpanel flex items-start gap-3.5 rounded-xl p-4 text-xs leading-relaxed text-[#E4E4E7]"
-              >
-                <span className="mt-0.5 font-mono text-[11px] text-[#71717A] tabular-nums">
-                  {String(idx + 1).padStart(2, "0")}
-                </span>
-                <span>{str}</span>
+            {strengths.length > 0 ? (
+              strengths.map((str, idx) => (
+                <div
+                  key={idx}
+                  className="pf-subpanel flex items-start gap-3.5 rounded-xl p-4 text-xs leading-relaxed text-[#E4E4E7]"
+                >
+                  <span className="mt-0.5 font-mono text-[11px] text-[#71717A] tabular-nums">
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
+                  <span>{str}</span>
+                </div>
+              ))
+            ) : (
+              <div className="pf-subpanel rounded-xl p-4 text-xs leading-relaxed text-[#A1A1AA]">
+                Complete your CGPA, branch, and skills in Profile &amp; Settings to surface personalized strengths.
               </div>
-            ))}
+            )}
           </div>
         </SpotlightSurface>
 

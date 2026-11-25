@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { StudentProfileState } from "@/types/profile";
 import { CollegeSelector } from "@/components/common/CollegeSelector";
-import { isOwnerAccount, isGuestAccount, setHonorificPreference } from "@/lib/auth";
+import { isOwnerAccount, isGuestAccount } from "@/lib/auth";
 
 const YEAR_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year"] as const;
 const YEAR_TO_SEM: Record<string, { sem: number; label: string }> = {
@@ -14,10 +14,12 @@ const YEAR_TO_SEM: Record<string, { sem: number; label: string }> = {
 
 function normalizeYearOption(raw?: string | number): string {
   const s = String(raw || "").trim().toLowerCase();
+  if (!s) return "";
   if (s.includes("1")) return "1st Year";
   if (s.includes("2")) return "2nd Year";
   if (s.includes("4")) return "4th Year";
-  return "3rd Year";
+  if (s.includes("3")) return "3rd Year";
+  return "";
 }
 
 interface ProfileSettingsProps {
@@ -156,10 +158,6 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     formData.email ||
     (typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "");
   const canSelectBossMode = isOwnerAccount(resolvedEmail);
-  const safeHonorificPref =
-    !canSelectBossMode && formData.honorificPref === "Boss"
-      ? "Auto"
-      : formData.honorificPref || "Auto";
 
   useEffect(() => {
     setFormData({
@@ -169,28 +167,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     setSkillsText((profile.technicalSkills || profile.skills || []).join(", "));
   }, [profile]);
 
-  useEffect(() => {
-    const onHonorificChanged = (ev: Event) => {
-      const detail = (ev as CustomEvent)?.detail || {};
-      const nextRole = detail.role as string | undefined;
-      const nextPref = detail.pref as string | undefined;
-      if (canSelectBossMode || isGuestAccount(resolvedEmail, formData.fullName)) return;
-      const mappedPref: "Auto" | "Madam" | "Sir" =
-        nextPref === "Auto"
-          ? "Auto"
-          : nextRole === "Madam"
-            ? "Madam"
-            : nextRole === "Sir"
-              ? "Sir"
-              : "Auto";
-      setFormData((prev) => ({ ...prev, honorificPref: mappedPref }));
-    };
-    window.addEventListener("das-honorific-changed", onHonorificChanged);
-    return () => window.removeEventListener("das-honorific-changed", onHonorificChanged);
-  }, [canSelectBossMode, resolvedEmail, formData.fullName]);
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!String(formData.branch || "").trim() || !(Number(formData.cgpa) > 0)) {
+      setSuccessMsg("Please select your branch and enter your current CGPA (> 0) to calculate predictions.");
+      return;
+    }
     setIsSaving(true);
     setSuccessMsg(null);
     try {
@@ -204,12 +186,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       const cleanLinkedin = (formData.codingProfiles?.linkedin ?? "").trim();
       const normalizedYear = normalizeYearOption(formData.currentYear);
       const semMeta = YEAR_TO_SEM[normalizedYear] || YEAR_TO_SEM["3rd Year"];
-      if (formData.honorificPref) {
-        setHonorificPreference(safeHonorificPref, resolvedEmail);
-      }
       const updated: StudentProfileState = {
         ...formData,
-        honorificPref: safeHonorificPref,
         currentYear: normalizedYear,
         currentSemester: formData.currentSemester || semMeta.sem,
         yearSemester: semMeta.label,
@@ -295,17 +273,25 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 <div className="truncate">
                   <span className="font-semibold text-[#FAFAFA]">
                     {canSelectBossMode
-                      ? "Bommali Dileep (Boss)"
-                      : formData.fullName || "Signed-In Candidate"}
+                      ? "Bommali Dileep"
+                      : isGuestAccount(resolvedEmail, formData.fullName)
+                        ? "Guest Session"
+                        : formData.fullName || "Signed-In Candidate"}
                   </span>
                   {resolvedEmail && (
                     <span className="ml-2 font-mono text-[11px] text-[#71717A]">
-                      {resolvedEmail}
+                      {isGuestAccount(resolvedEmail, formData.fullName)
+                        ? "Local Workspace"
+                        : resolvedEmail}
                     </span>
                   )}
                 </div>
                 <span className="shrink-0 rounded-md border border-white/[0.1] bg-[#16161C] px-2.5 py-0.5 font-mono text-[10px] text-[#D4D4D8]">
-                  Synced
+                  {isGuestAccount(resolvedEmail, formData.fullName)
+                    ? formData.cgpa > 0 && formData.branch
+                      ? "Configured"
+                      : "Unconfigured"
+                    : "Synced"}
                 </span>
               </div>
             </div>
@@ -339,6 +325,9 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
                 className="pf-input h-11 w-full rounded-xl px-4 text-xs text-[#FAFAFA]"
               >
+                <option value="" className="bg-[#09090B]">
+                  Select branch...
+                </option>
                 {BRANCHES.map((b) => (
                   <option key={b} value={b} className="bg-[#09090B]">
                     {b}
@@ -371,16 +360,19 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   value={normalizeYearOption(formData.currentYear)}
                   onChange={(e) => {
                     const yr = e.target.value;
-                    const semMeta = YEAR_TO_SEM[yr] || YEAR_TO_SEM["3rd Year"];
+                    const semMeta = YEAR_TO_SEM[yr];
                     setFormData({
                       ...formData,
                       currentYear: yr,
-                      currentSemester: semMeta.sem,
-                      yearSemester: semMeta.label,
+                      currentSemester: semMeta ? semMeta.sem : "",
+                      yearSemester: semMeta ? semMeta.label : "",
                     });
                   }}
                   className="pf-input h-11 rounded-xl px-4 text-xs text-[#FAFAFA]"
                 >
+                  <option value="" className="bg-[#09090B]">
+                    Select year...
+                  </option>
                   {YEAR_OPTIONS.map((yr) => (
                     <option key={yr} value={yr} className="bg-[#09090B]">
                       {yr}
@@ -415,7 +407,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 step="0.05"
                 min="0"
                 max="10"
-                value={formData.cgpa}
+                value={formData.cgpa > 0 ? formData.cgpa : ""}
+                placeholder="e.g. 8.2"
                 onChange={(e) => {
                   const val = parseFloat(e.target.value);
                   const cgpa = isNaN(val) ? 0 : val;
@@ -442,7 +435,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 id="settings-converted-percentage"
                 name="convertedPercentage"
                 disabled
-                value={(formData.cgpa * (formData.cgpaFormulaMultiplier || 9.5)).toFixed(1)}
+                placeholder="—"
+                value={
+                  formData.cgpa > 0
+                    ? (formData.cgpa * (formData.cgpaFormulaMultiplier || 9.5)).toFixed(1)
+                    : ""
+                }
                 className="pf-input h-11 w-full rounded-xl px-4 font-mono text-xs font-semibold text-[#FAFAFA] tabular-nums"
               />
             </div>
@@ -488,7 +486,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 min="0"
                 max="100"
                 step="0.1"
-                value={formData.tenthPercentage}
+                placeholder="e.g. 86.5"
+                value={formData.tenthPercentage > 0 ? formData.tenthPercentage : ""}
                 onChange={(e) =>
                   setFormData({ ...formData, tenthPercentage: parseFloat(e.target.value) || 0 })
                 }
@@ -510,7 +509,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 min="0"
                 max="100"
                 step="0.1"
-                value={formData.twelfthPercentage}
+                placeholder="e.g. 83.2"
+                value={formData.twelfthPercentage > 0 ? formData.twelfthPercentage : ""}
                 onChange={(e) =>
                   setFormData({ ...formData, twelfthPercentage: parseFloat(e.target.value) || 0 })
                 }
@@ -604,7 +604,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 type="range"
                 id="settings-coding"
                 name="coding"
-                min="1"
+                min="0"
                 max="10"
                 value={formData.coding}
                 onChange={(e) =>
@@ -627,7 +627,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 type="range"
                 id="settings-communication"
                 name="communication"
-                min="1"
+                min="0"
                 max="10"
                 value={formData.communication}
                 onChange={(e) =>
@@ -797,58 +797,6 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div className="space-y-2 sm:col-span-2">
-              {canSelectBossMode || isGuestAccount(resolvedEmail, formData.fullName) ? (
-                <span className="block text-xs font-medium text-[#D4D4D8]">
-                  AI Assistant Addressing Mode
-                </span>
-              ) : (
-                <label
-                  htmlFor="settings-honorific-mode"
-                  className="block text-xs font-medium text-[#D4D4D8]"
-                >
-                  AI Assistant Addressing Mode
-                </label>
-              )}
-              {canSelectBossMode ? (
-                <div
-                  id="settings-honorific-mode"
-                  className="pf-input flex h-11 w-full items-center rounded-xl px-4 text-xs font-medium text-[#FAFAFA]"
-                >
-                  Boss Mode (Creator — Dileep Bommali)
-                </div>
-              ) : isGuestAccount(resolvedEmail, formData.fullName) ? (
-                <div
-                  id="settings-honorific-mode"
-                  className="pf-input flex h-11 w-full items-center rounded-xl px-4 text-xs font-medium text-[#D4D4D8]"
-                >
-                  Stranger Mode (Guest Session — Share your name with DAS first)
-                </div>
-              ) : (
-                <select
-                  id="settings-honorific-mode"
-                  name="honorificPref"
-                  value={safeHonorificPref}
-                  onChange={(e) => {
-                    const rawVal = e.target.value as "Auto" | "Madam" | "Sir";
-                    setFormData({ ...formData, honorificPref: rawVal });
-                    setHonorificPreference(rawVal, resolvedEmail);
-                  }}
-                  className="pf-input h-11 w-full rounded-xl px-4 text-xs text-[#FAFAFA]"
-                >
-                  <option value="Auto" className="bg-[#09090B]">
-                    Auto (Smart Name Detection — Madam / Sir)
-                  </option>
-                  <option value="Madam" className="bg-[#09090B]">
-                    Always address me as Madam
-                  </option>
-                  <option value="Sir" className="bg-[#09090B]">
-                    Always address me as Sir
-                  </option>
-                </select>
-              )}
             </div>
           </div>
         </div>

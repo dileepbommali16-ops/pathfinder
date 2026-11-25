@@ -106,7 +106,7 @@
   --chart-2: #a1a1aa;
   --chart-3: #71717a;
   --chart-4: #52525b;
-  --chart-5: #10b981;
+  --chart-5: #d4d4d8;
 }
 
 @layer base {
@@ -296,12 +296,12 @@
 /* Keep translucent obsidian card surfaces across dashboard tabs so 3D Face Agent (#das-singleton-avatar at z-[1]) shines cleanly behind */
 .pathfinder-dashboard section [class*="bg-[#11131c]"],
 .pathfinder-dashboard section [class*="bg-[#000000]"],
-.pathfinder-dashboard main > div [class*="bg-[#000000]"],
-.pathfinder-dashboard main > div [class*="bg-[#11131c]"],
-.pathfinder-dashboard main > div [class*="bg-[#0a0b10]"],
-.pathfinder-dashboard main > div [class*="bg-[#0F172A]"],
-.pathfinder-dashboard main > div [class*="bg-[#0f172a]"],
-.pathfinder-dashboard main > div [class*="bg-[#060608]"] {
+.pathfinder-dashboard main>div [class*="bg-[#000000]"],
+.pathfinder-dashboard main>div [class*="bg-[#11131c]"],
+.pathfinder-dashboard main>div [class*="bg-[#0a0b10]"],
+.pathfinder-dashboard main>div [class*="bg-[#0F172A]"],
+.pathfinder-dashboard main>div [class*="bg-[#0f172a]"],
+.pathfinder-dashboard main>div [class*="bg-[#060608]"] {
   background-color: rgba(9, 9, 11, 0.56) !important;
   backdrop-filter: blur(2px) !important;
   -webkit-backdrop-filter: blur(2px) !important;
@@ -314,13 +314,15 @@
   -webkit-backdrop-filter: blur(2px) !important;
 }
 
-@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+@media (max-width: 1024px),
+(hover: none) and (pointer: coarse) {
+
   .pathfinder-dashboard section [class*="bg-[#11131c]"],
-  .pathfinder-dashboard main > div [class*="bg-[#11131c]"],
-  .pathfinder-dashboard main > div [class*="bg-[#0a0b10]"],
-  .pathfinder-dashboard main > div [class*="bg-[#0F172A]"],
-  .pathfinder-dashboard main > div [class*="bg-[#0f172a]"],
-  .pathfinder-dashboard main > div [class*="bg-[#060608]"] {
+  .pathfinder-dashboard main>div [class*="bg-[#11131c]"],
+  .pathfinder-dashboard main>div [class*="bg-[#0a0b10]"],
+  .pathfinder-dashboard main>div [class*="bg-[#0F172A]"],
+  .pathfinder-dashboard main>div [class*="bg-[#0f172a]"],
+  .pathfinder-dashboard main>div [class*="bg-[#060608]"] {
     background-color: rgba(9, 9, 11, 0.78) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
@@ -347,6 +349,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .glass-depth-card,
   .pf-titanium-card {
     transition: none !important;
@@ -491,17 +494,21 @@ code {
   scrollbar-width: thin;
   scrollbar-color: rgba(161, 161, 170, 0.35) transparent;
 }
+
 .das-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 .das-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .das-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(161, 161, 170, 0.32);
   border-radius: 9999px;
 }
+
 .das-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(161, 161, 170, 0.52);
 }

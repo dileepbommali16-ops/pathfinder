@@ -24,17 +24,22 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
   onNavigateTab,
   onAskCoach,
 }) => {
-  const displayChance = chance !== null ? chance : 74.0;
-  const clampedChance = Math.max(0, Math.min(100, displayChance));
+  const isConfigured = chance !== null && chance !== undefined;
+  const clampedChance = isConfigured ? Math.max(0, Math.min(100, chance)) : 0;
 
-  const resolvedUser = (() => {
-    const emailNow =
-      typeof window !== "undefined" ? localStorage.getItem("userEmail") || undefined : undefined;
-    const activeRole = getUserRole(emailNow, username);
-    if (activeRole === "Boss") return "Boss";
-    if (username && !username.toLowerCase().includes("guest")) return username;
-    return activeRole;
-  })();
+  const emailNow =
+    typeof window !== "undefined" ? localStorage.getItem("userEmail") || undefined : undefined;
+  const activeRole = getUserRole(emailNow, username);
+  const isGuest =
+    !username ||
+    username.toLowerCase().includes("guest") ||
+    activeRole === "Stranger";
+  const resolvedUser =
+    activeRole === "Boss"
+      ? "Boss"
+      : username && !username.toLowerCase().includes("guest")
+        ? username
+        : activeRole;
 
   return (
     <SpotlightSurface className="rounded-2xl p-8 sm:p-12">
@@ -43,10 +48,10 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
         <div className="space-y-6 lg:col-span-7">
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center rounded-md border border-white/[0.12] bg-[#141419] px-3 py-1 text-xs font-medium text-[#FAFAFA]">
-              {label}
+              {isConfigured ? label : "Awaiting Profile Input"}
             </span>
             <span className="inline-flex items-center gap-2 rounded-md border border-white/[0.08] bg-[#0D0D11] px-3 py-1 font-mono text-[11px] text-[#A1A1AA] tabular-nums">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
               <span>Random Forest · 972 records</span>
             </span>
           </div>
@@ -55,7 +60,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             className="text-3xl font-semibold tracking-[-0.035em] text-[#FAFAFA] sm:text-5xl"
             style={{ textWrap: "balance" }}
           >
-            Welcome back, {resolvedUser}
+            {isGuest ? "Welcome to Pathfinder" : `Welcome back, ${resolvedUser}`}
           </h1>
 
           <p
@@ -110,9 +115,15 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
 
             <div className="my-7 flex items-baseline justify-between gap-4">
               <span className="font-mono text-5xl font-semibold tracking-[-0.04em] text-[#FAFAFA] sm:text-6xl">
-                <AnimatedMetric value={clampedChance} decimals={1} suffix="%" />
+                {isConfigured ? (
+                  <AnimatedMetric value={clampedChance} decimals={1} suffix="%" />
+                ) : (
+                  <span className="tabular-nums">— %</span>
+                )}
               </span>
-              <span className="font-mono text-xs text-[#A1A1AA]">{label}</span>
+              <span className="font-mono text-xs text-[#A1A1AA]">
+                {isConfigured ? label : "Awaiting Profile Input"}
+              </span>
             </div>
 
             <div className="space-y-3">
@@ -131,19 +142,29 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
               </div>
             </div>
 
-            {onAskCoach && (
+            {isConfigured ? (
+              onAskCoach && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onAskCoach(
+                      "I don't understand this score, what does it mean?",
+                      "overview",
+                      `Readiness Probability Score: ${clampedChance.toFixed(1)}% (${label})`
+                    )
+                  }
+                  className="pf-btn-secondary mt-6 flex h-11 w-full items-center justify-center rounded-xl px-4 text-xs font-medium active:scale-[0.98]"
+                >
+                  Ask DAS to break down this score
+                </button>
+              )
+            ) : (
               <button
                 type="button"
-                onClick={() =>
-                  onAskCoach(
-                    "I don't understand this score, what does it mean?",
-                    "overview",
-                    `Readiness Probability Score: ${clampedChance.toFixed(1)}% (${label})`
-                  )
-                }
+                onClick={() => onNavigateTab("profile")}
                 className="pf-btn-secondary mt-6 flex h-11 w-full items-center justify-center rounded-xl px-4 text-xs font-medium active:scale-[0.98]"
               >
-                Ask DAS to break down this score
+                Complete Profile in Settings to Compute
               </button>
             )}
           </div>

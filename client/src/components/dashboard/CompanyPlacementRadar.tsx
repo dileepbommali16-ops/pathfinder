@@ -4,7 +4,7 @@ import { SpotlightSurface } from "@/components/ui/TitaniumPrimitives";
 
 interface CompanyPlacementRadarProps {
   profile: StudentProfileState;
-  predictionChance: number;
+  predictionChance: number | null;
   onLaunchMockInterview?: (companyName: string, roleTitle: string) => void;
   onAskCoach?: (query: string) => void;
 }
@@ -113,15 +113,18 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("razorpay");
   const [filterCategory, setFilterCategory] = useState<string>("All");
 
-  const studentCgpa = Number(profile.cgpa) || 7.5;
+  const hasConfiguredProfile =
+    Number(profile.cgpa) > 0 && Boolean(String(profile.branch || "").trim());
+  const studentCgpa = Number(profile.cgpa) || 0;
   const studentBacklogs = Number(profile.backlogs ?? profile.activeBacklogs ?? 0);
-  const rawCoding = Number(profile.coding ?? 5);
+  const rawCoding = Number(profile.coding ?? 0);
   const studentCodingPct = rawCoding <= 10 ? rawCoding * 10 : Math.min(100, rawCoding);
   const studentInternships = Number(profile.internships) || 0;
   const hasGithubProof = Boolean((profile.githubUrl || profile.codingProfiles?.github || "").trim());
   const hasLeetcodeProof = Boolean((profile.leetcodeUrl || profile.codingProfiles?.leetcode || "").trim());
 
-  const calculateCompatibility = (comp: CompanyBenchmark) => {
+  const calculateCompatibility = (comp: CompanyBenchmark): number | null => {
+    if (!hasConfiguredProfile) return null;
     let score = 38;
 
     if (studentCgpa >= comp.minCgpa) {
@@ -148,12 +151,13 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
     else score -= 6;
     if (hasLeetcodeProof) score += 3;
 
-    score += (predictionChance / 100) * 10;
+    score += ((predictionChance ?? 0) / 100) * 10;
 
     return Math.max(15, Math.min(91, Math.round(score)));
   };
 
-  const getStatusLabel = (score: number, comp: CompanyBenchmark) => {
+  const getStatusLabel = (score: number | null, comp: CompanyBenchmark) => {
+    if (score === null) return "Awaiting Profile Input";
     if (studentBacklogs > comp.maxBacklogs) return "Backlog clearance needed";
     if (studentCgpa < comp.minCgpa) return `CGPA gap (<${comp.minCgpa})`;
     if (score >= 80) return "High match · Ready for drives";
@@ -240,7 +244,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
 
                   <div className="shrink-0 text-right">
                     <div className="font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
-                      {compScore}%
+                      {compScore !== null ? `${compScore}%` : "—"}
                     </div>
                     <div className="text-[10px] text-[#71717A]">Readiness</div>
                   </div>
@@ -282,14 +286,14 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                 <span className="text-xs text-[#A1A1AA]">Match Probability</span>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
-                    {selectedScore}%
+                    {selectedScore !== null ? `${selectedScore}%` : "—"}
                   </span>
                   <span className="text-xs text-[#71717A]">Score</span>
                 </div>
                 <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
                   <div
                     className="h-full rounded-full bg-[#FAFAFA] transition-[width] duration-500"
-                    style={{ width: `${selectedScore}%` }}
+                    style={{ width: `${selectedScore ?? 0}%` }}
                   />
                 </div>
               </div>
@@ -307,7 +311,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                 <div className="mt-2 flex items-center gap-2 font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
                   <span>{selectedCompany.minCgpa}+ CGPA</span>
                   <span className="text-[11px] font-normal text-[#A1A1AA]">
-                    (You: {studentCgpa})
+                    (You: {studentCgpa > 0 ? studentCgpa : "Not set"})
                   </span>
                 </div>
                 <div className="mt-2 text-[11px] text-[#71717A]">
@@ -385,7 +389,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   type="button"
                   onClick={() =>
                     onAskCoach(
-                      `How do I crack ${selectedCompany.name} campus drive with my profile (CGPA: ${studentCgpa}, Backlogs: ${studentBacklogs})? Give me a 4-week preparation strategy.`
+                      `How do I crack ${selectedCompany.name} campus drive with my profile (CGPA: ${studentCgpa > 0 ? studentCgpa : "not set yet"}, Backlogs: ${studentBacklogs})? Give me a 4-week preparation strategy.`
                     )
                   }
                   className="pf-btn-secondary inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-xs font-medium sm:w-auto cursor-pointer"

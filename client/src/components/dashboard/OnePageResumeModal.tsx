@@ -46,7 +46,7 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
   const email = profile.email || "candidate@pathfinder.ai";
   const branch = profile.branch || "Computer Science & Engineering";
   const college = profile.college || "Institute of Technology";
-  const cgpa = profile.cgpa ? profile.cgpa.toFixed(1) : "8.2";
+  const cgpa = profile.cgpa && profile.cgpa > 0 ? profile.cgpa.toFixed(1) : "—";
   const gradYear = profile.graduationYear || 2026;
   const skills = profile.technicalSkills?.length
     ? profile.technicalSkills
@@ -69,7 +69,7 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-xl border border-white/10 bg-[#000000] shadow-[0_16px_64px_rgba(0,0,0,0.85)] overflow-hidden my-auto cursor-default print:max-h-none print:my-0 print:border-0 print:shadow-none"
       >
-        
+
         {/* Top Controls Bar (Pinned, Hidden during Print) */}
         <div className="print:hidden shrink-0 z-40 flex items-center justify-between border-b border-white/[0.08] bg-[#000000]/95 backdrop-blur-xl px-4 sm:px-6 py-3.5 shadow-md">
           <div className="flex items-center gap-3">

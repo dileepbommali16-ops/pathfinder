@@ -142,14 +142,18 @@ export function buildInitialProfileFromStorage(
       if (parsedDraft && typeof parsedDraft === "object") {
         const draftEmailLower = String(parsedDraft.email || "").trim().toLowerCase();
         if (!storedEmailLower || !draftEmailLower || storedEmailLower === draftEmailLower) {
+          const baseTemplate =
+            storedEmailLower === "guest@pathfinder.ai" || draftEmailLower === "guest@pathfinder.ai"
+              ? EMPTY_GUEST_PROFILE
+              : DEFAULT_STUDENT_PROFILE;
           return {
-            ...DEFAULT_STUDENT_PROFILE,
+            ...baseTemplate,
             ...parsedDraft,
             onboardingCompleted: true,
-            email: parsedDraft.email || storedEmail || DEFAULT_STUDENT_PROFILE.email,
+            email: parsedDraft.email || storedEmail || baseTemplate.email,
             fullName:
               pickCandidateFullName(parsedDraft.fullName, storedName) ||
-              DEFAULT_STUDENT_PROFILE.fullName,
+              baseTemplate.fullName,
           };
         }
       }
@@ -159,9 +163,9 @@ export function buildInitialProfileFromStorage(
   if (storedEmail || storedName) {
     if (storedEmailLower === "guest@pathfinder.ai") {
       return {
-        ...DEFAULT_STUDENT_PROFILE,
+        ...EMPTY_GUEST_PROFILE,
         email: storedEmail,
-        fullName: "Guest Student",
+        fullName: "Guest",
         onboardingCompleted: true,
       };
     }
@@ -181,9 +185,65 @@ export function buildInitialProfileFromStorage(
   return DEFAULT_STUDENT_PROFILE;
 }
 
+export function isProfileUnconfigured(
+  profile: Partial<StudentProfileState> | null | undefined
+): boolean {
+  if (!profile) return true;
+  const cgpa = Number(profile.cgpa || 0);
+  const branch = String(profile.branch || "").trim();
+  return !(cgpa > 0) || !branch;
+}
+
+export const EMPTY_GUEST_PROFILE: StudentProfileState = {
+  fullName: "Guest",
+  email: "guest@pathfinder.ai",
+  college: "",
+  branch: "",
+  course: "B.Tech",
+  currentYear: "",
+  currentSemester: "",
+  yearSemester: "",
+  tenthPercentage: 0,
+  twelfthPercentage: 0,
+  cgpa: 0,
+  percentage: 0,
+  cgpaFormulaMultiplier: 9.5,
+  semesterCgpas: [],
+  activeBacklogs: 0,
+  historyBacklogs: 0,
+  historyOfBacklogs: 0,
+  backlogs: 0,
+  technicalSkills: [],
+  skills: [],
+  tools: [],
+  programmingLanguages: [],
+  languages: [],
+  projectsCount: 0,
+  internships: 0,
+  certifications: [],
+  codingProfiles: {
+    github: "",
+    leetcode: "",
+    linkedin: "",
+  },
+  githubUrl: "",
+  leetcodeUrl: "",
+  coding: 0,
+  communication: 0,
+  targetRole: "",
+  targetDomain: "",
+  preferredLocation: "",
+  expectedPackage: "",
+  preferredCompanyType: "",
+  targetTier: "",
+  graduationYear: 2026,
+  onboardingCompleted: true,
+  wizardStep: 5,
+};
+
 export const DEFAULT_STUDENT_PROFILE: StudentProfileState = {
   fullName: "Student Candidate",
-  college: "DR RVR NRI DEEMED TO BE UNIVERSITY",
+  college: "",
   branch: "CSE",
   course: "B.Tech",
   currentYear: "4th Year",
@@ -208,11 +268,11 @@ export const DEFAULT_STUDENT_PROFILE: StudentProfileState = {
   internships: 1,
   certifications: ["AWS Certified Cloud Practitioner", "HackerRank Problem Solving (Gold)"],
   codingProfiles: {
-    github: "https://github.com/candidate-demo",
-    leetcode: "https://leetcode.com/candidate-demo",
+    github: "",
+    leetcode: "",
   },
-  githubUrl: "https://github.com/candidate-demo",
-  leetcodeUrl: "https://leetcode.com/candidate-demo",
+  githubUrl: "",
+  leetcodeUrl: "",
   coding: 7,
   communication: 7,
   targetRole: "Software Development Engineer (SDE)",

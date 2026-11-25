@@ -24,6 +24,8 @@ import { LiveCodingInterviewArena } from "@/components/dashboard/LiveCodingInter
 import {
   StudentProfileState,
   DEFAULT_STUDENT_PROFILE,
+  EMPTY_GUEST_PROFILE,
+  isProfileUnconfigured,
   pickCandidateFullName,
   buildInitialProfileFromStorage,
 } from "@/types/profile";
@@ -284,7 +286,8 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       if (toolName === "update_readiness_score" && typeof args?.scoreDelta === "number") {
         const delta = Number(args.scoreDelta);
         setPrediction((prev) => {
-          const nextChance = Math.min(99, Math.max(10, Number((prev.chance + delta).toFixed(1))));
+          const baseChance = prev.chance ?? 50;
+          const nextChance = Math.min(99, Math.max(10, Number((baseChance + delta).toFixed(1))));
           return {
             ...prev,
             chance: nextChance,
@@ -721,32 +724,54 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
   }, []);
 
   // 1. Prediction State
-  const [prediction, setPrediction] = useState<{
-    chance: number;
+  const UNCONFIGURED_PREDICTION: {
+    chance: number | null;
     label: string;
     tone: "strong" | "steady" | "focus";
     strengths: string[];
     priorities: string[];
     breakdown: Record<string, number>;
-  }>({
-    chance: 78.5,
-    label: "Strong Candidate Profile",
-    tone: "strong",
-    strengths: [
-      "High Academic Distinction (CGPA 7.8/10)",
-      "Clean Academic Record (0 Active Backlogs)",
-      "Practical Engineering Exposure (1 Internship)",
-      "Core Problem Solving Foundation (7/10)",
+  } = {
+    chance: null,
+    label: "Awaiting Profile Input",
+    tone: "focus",
+    strengths: [],
+    priorities: [
+      "Open Slide 06 Profile & Settings to enter your CGPA, branch, and skills to compute placement readiness.",
     ],
-    priorities: ["Target Blind 75 DSA patterns to elevate screening clearance rate"],
-    breakdown: {
-      academics: 78.0,
-      coding_dsa: 70.0,
-      communication: 70.0,
-      experience: 35.0,
-      eligibility: 100.0,
-    },
-  });
+    breakdown: {},
+  };
+
+  const [prediction, setPrediction] = useState<{
+    chance: number | null;
+    label: string;
+    tone: "strong" | "steady" | "focus";
+    strengths: string[];
+    priorities: string[];
+    breakdown: Record<string, number>;
+  }>(() =>
+    isProfileUnconfigured(buildInitialProfileFromStorage())
+      ? UNCONFIGURED_PREDICTION
+      : {
+          chance: 78.5,
+          label: "Strong Candidate Profile",
+          tone: "strong",
+          strengths: [
+            "High Academic Distinction (CGPA 7.8/10)",
+            "Clean Academic Record (0 Active Backlogs)",
+            "Practical Engineering Exposure (1 Internship)",
+            "Core Problem Solving Foundation (7/10)",
+          ],
+          priorities: ["Target Blind 75 DSA patterns to elevate screening clearance rate"],
+          breakdown: {
+            academics: 78.0,
+            coding_dsa: 70.0,
+            communication: 70.0,
+            experience: 35.0,
+            eligibility: 100.0,
+          },
+        }
+  );
   const [isCalculating, setIsCalculating] = useState(false);
 
   // Continuously broadcast active slide & user profile context to the persistent 24/7 DAS Co-Pilot
@@ -930,9 +955,9 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     let immediateIsDemo = false;
     if (user.bypassOnboarding) {
       immediateProfile = {
-        ...DEFAULT_STUDENT_PROFILE,
+        ...EMPTY_GUEST_PROFILE,
         email: user.email,
-        fullName: user.username,
+        fullName: "Guest",
         onboardingCompleted: true,
         wizardStep: 5,
       };
@@ -1196,6 +1221,11 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     p: StudentProfileState,
     overrides?: { atsScore?: number | null; githubScore?: number | null }
   ) => {
+    if (isProfileUnconfigured(p)) {
+      setPrediction(UNCONFIGURED_PREDICTION);
+      setIsCalculating(false);
+      return;
+    }
     setIsCalculating(true);
     try {
       const githubUrl = (p.githubUrl ?? p.codingProfiles?.github ?? "").trim();
@@ -1514,7 +1544,8 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         honorific: getUserRole(),
         userName: username,
         userEmail: email,
-        placementReadinessChance: `${prediction.chance}%`,
+        placementReadinessChance:
+          prediction.chance !== null ? `${prediction.chance}%` : "Unconfigured",
         placementReadinessLabel: prediction.label,
         candidateBranch: profile.branch,
         targetRole: profile.targetRole,
@@ -1541,7 +1572,8 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           profile: chatPayload.profile,
           honorific: getUserRole(),
           activeTab: effectiveTab,
-          readinessChance: `${prediction.chance}%`,
+          readinessChance:
+            prediction.chance !== null ? `${prediction.chance}%` : "Unconfigured",
         });
 
         let hasAppendedLivePlaceholder = false;
@@ -1796,7 +1828,8 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
             honorific: getUserRole(),
             userName: username,
             userEmail: email,
-            placementReadinessChance: `${prediction.chance}%`,
+            placementReadinessChance:
+          prediction.chance !== null ? `${prediction.chance}%` : "Unconfigured",
             placementReadinessLabel: prediction.label,
             candidateBranch: profile.branch,
             targetRole: profile.targetRole,

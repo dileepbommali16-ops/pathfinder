@@ -195,7 +195,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs font-medium text-[#D4D4D8]">{weekTitle}</span>
                   {isDone && (
-                    <span className="rounded border border-white/[0.12] bg-black/50 px-1.5 py-0.5 font-mono text-[9px] text-[#10B981]">
+                    <span className="rounded border border-white/[0.12] bg-black/50 px-1.5 py-0.5 font-mono text-[9px] text-[#FAFAFA]">
                       Completed
                     </span>
                   )}

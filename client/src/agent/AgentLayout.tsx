@@ -18,6 +18,24 @@ import { API_BASE, getSessionId } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
 import { getUserRole, getHonorificKey, setHonorificPreference, isOwnerAccount, isGuestAccount, HonorificKey } from "@/lib/auth";
 import { toast } from "sonner";
+import {
+  AudioLines,
+  Volume2,
+  User,
+  Mic,
+  PenLine,
+  SendHorizontal,
+  Code2,
+  ChevronDown,
+  ChevronUp,
+  Play,
+  Square,
+  Trash2,
+  Copy,
+  X,
+  AlertCircle,
+  Terminal,
+} from "lucide-react";
 
 function getInitialGreeting(roleKey: HonorificKey): string {
   void roleKey;
@@ -1224,8 +1242,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         <>
       {/* DAS Live Multi-Language Code & Compiler Studio Drawer */}
       {codeTask && (
-        <div className="fixed top-16 left-2 right-2 sm:left-auto sm:top-20 sm:right-6 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#000000]/95 border border-[#2B2024] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2B2024] pb-2">
+        <div className="fixed top-16 left-2 right-2 sm:left-auto sm:top-20 sm:right-6 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#09090B]/95 backdrop-blur-md border border-white/[0.12] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-2.5">
             <div className="flex items-center gap-2 min-w-0">
               <select
                 id="coding-studio-language"
@@ -1239,18 +1257,18 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   });
                 }}
                 aria-label="Select Programming Language"
-                className="text-xs font-bold uppercase px-2.5 py-1 rounded-lg bg-[#2B2024] border border-[#2B2024] text-white focus:outline-none cursor-pointer"
+                className="text-xs font-mono font-semibold uppercase px-2.5 py-1 rounded-lg bg-[#141419] border border-white/[0.12] text-[#FAFAFA] focus:outline-none cursor-pointer"
               >
                 {SUPPORTED_LANGUAGES.map((lang) => (
-                  <option key={lang.id} value={lang.id} className="bg-[#000000] text-white">
+                  <option key={lang.id} value={lang.id} className="bg-[#09090B] text-[#FAFAFA]">
                     {lang.label}
                   </option>
                 ))}
               </select>
-              <span className="font-bold text-white text-sm truncate max-w-[200px]">
+              <span className="font-semibold text-[#FAFAFA] text-sm truncate max-w-[200px]">
                 {codeTask.title}
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-[#2B2024] text-zinc-300 font-mono">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-[#141419] border border-white/[0.08] text-[#A1A1AA] font-mono tabular-nums">
                 {editableCode ? editableCode.split(/\r?\n/).length : 0} lines
               </span>
             </div>
@@ -1263,19 +1281,21 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                     toast.success("Code copied to clipboard!");
                   } catch {}
                 }}
-                className="px-2.5 py-1 bg-[#2B2024] hover:brightness-110 border border-[#2B2024] rounded-lg text-xs text-white transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#141419] hover:bg-[#1E1E26] border border-white/[0.12] rounded-lg text-xs text-[#FAFAFA] transition cursor-pointer"
               >
-                Copy
+                <Copy className="h-3 w-3 text-[#A1A1AA]" />
+                <span>Copy</span>
               </button>
               <button
                 type="button"
                 onClick={() => {
                   void codingStudioController.execute({ action: "delete_code" });
                 }}
-                className="px-2.5 py-1 bg-[#000000] hover:bg-[#2B2024] border border-[#2B2024] rounded-lg text-xs text-white transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#141419] hover:bg-[#1E1E26] border border-white/[0.12] rounded-lg text-xs text-[#FAFAFA] transition cursor-pointer"
                 title="Clear / Delete All Code"
               >
-                🗑 Clear
+                <Trash2 className="h-3 w-3 text-[#A1A1AA]" />
+                <span>Clear</span>
               </button>
               <button
                 type="button"
@@ -1284,18 +1304,21 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   setCodeTask(null);
                   setTranscript(`Okay ${getUserRole()}, returned to your dashboard.`);
                 }}
-                className="px-2.5 py-1 bg-[#2B2024] hover:brightness-110 rounded-lg text-xs text-white font-bold transition cursor-pointer"
+                className="inline-flex items-center justify-center p-1.5 bg-[#141419] hover:bg-[#1E1E26] border border-white/[0.12] rounded-lg text-xs text-[#FAFAFA] transition cursor-pointer"
                 title="Close Compiler Studio"
               >
-                ✕
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
 
           {codeTask.explanation && (
-            <div className="bg-[#000000] border border-[#2B2024] rounded-xl p-3 text-xs text-white whitespace-pre-wrap max-h-36 overflow-y-auto">
-              <span className="font-bold text-white block mb-1">💡 Logic, Structure & Walkthrough:</span>
-              {codeTask.explanation}
+            <div className="bg-[#0D0D11] border border-white/[0.08] rounded-xl p-3 text-xs text-[#E4E4E7] whitespace-pre-wrap max-h-36 overflow-y-auto">
+              <span className="font-semibold text-[#FAFAFA] inline-flex items-center gap-1.5 mb-1">
+                <Terminal className="h-3.5 w-3.5 text-[#A1A1AA]" />
+                <span>Logic, Structure & Walkthrough:</span>
+              </span>
+              <div className="leading-relaxed text-[#A1A1AA]">{codeTask.explanation}</div>
             </div>
           )}
 
@@ -1310,7 +1333,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             }}
             rows={10}
             spellCheck={false}
-            className="w-full bg-[#000000] border border-[#2B2024] rounded-xl p-3 font-mono text-xs text-white focus:outline-none focus:border-white/40 selection:bg-[#2B2024]"
+            className="w-full bg-[#0D0D11] border border-white/[0.1] rounded-xl p-3 font-mono text-xs text-[#FAFAFA] focus:outline-none focus:border-white/30 selection:bg-white/20"
           />
 
           <div className="flex items-center gap-2">
@@ -1324,15 +1347,16 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 setStdinInput(e.target.value);
               }}
               placeholder="Optional program input (stdin)..."
-              className="flex-1 bg-[#000000] border border-[#2B2024] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-white/40"
+              className="flex-1 bg-[#0D0D11] border border-white/[0.1] rounded-lg px-3 py-1.5 text-xs text-[#FAFAFA] placeholder-[#71717A] focus:outline-none focus:border-white/30"
             />
             {isRunningCode && (
               <button
                 type="button"
                 onClick={stopCodeLive}
-                className="px-3.5 py-1.5 bg-[#A80139] hover:brightness-110 text-white font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1 border border-[#FD0053]"
+                className="px-3.5 py-1.5 bg-[#27272A] hover:bg-[#3F3F46] text-[#FAFAFA] font-semibold rounded-lg text-xs transition cursor-pointer flex items-center gap-1.5 border border-white/[0.18]"
               >
-                ⏹ Stop
+                <Square className="h-3 w-3 fill-current" />
+                <span>Stop</span>
               </button>
             )}
             <button
@@ -1341,18 +1365,19 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 void runCodeLive();
               }}
               disabled={isRunningCode}
-              className="px-4 py-1.5 text-white font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1.5 border shadow-lg hover:brightness-110"
-              style={{
-                backgroundColor: isRunningCode ? "#2B2024" : "#FD0053",
-                borderColor: "#A80139",
-              }}
+              className={`px-4 py-1.5 font-semibold rounded-lg text-xs transition cursor-pointer flex items-center gap-1.5 border ${
+                isRunningCode
+                  ? "bg-[#18181D] border-white/[0.1] text-[#A1A1AA] cursor-not-allowed"
+                  : "bg-[#FAFAFA] hover:bg-white border-white text-[#09090B]"
+              }`}
             >
-              {isRunningCode ? "Running..." : "▶ Run Code"}
+              <Play className="h-3 w-3 fill-current" />
+              <span>{isRunningCode ? "Running..." : "Run Code"}</span>
             </button>
           </div>
 
-          <div className="bg-[#000000] border border-[#2B2024] rounded-xl p-3 font-mono text-xs text-white max-h-40 overflow-y-auto whitespace-pre-wrap">
-            {compileOutput || "Output terminal ready. Click ▶ Run Code or tell DAS to run."}
+          <div className="bg-[#0D0D11] border border-white/[0.08] rounded-xl p-3 font-mono text-xs text-[#D4D4D8] max-h-40 overflow-y-auto whitespace-pre-wrap">
+            {compileOutput || "Output terminal ready. Click Run Code or tell DAS to run."}
           </div>
         </div>
       )}
@@ -1361,16 +1386,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {hudCollapsed ? (
         <div
           id="das-hud-collapsed-pill"
-          className="fixed bottom-2.5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-2xl"
-          style={{
-            backgroundColor: "#000000",
-            borderColor: "#2b2024",
-            boxShadow: "0 12px 32px rgba(0, 0, 0, 0.9)",
-          }}
+          className="fixed bottom-2.5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-[#09090B]/95 backdrop-blur-md px-3 py-1.5 shadow-2xl"
         >
           <span
             className={`h-2 w-2 rounded-full ${
-              connected ? "bg-white animate-pulse" : "bg-zinc-400"
+              connected ? "bg-[#FAFAFA] animate-pulse" : "bg-[#71717A]"
             }`}
           />
           <button
@@ -1378,11 +1398,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             onClick={() => setHudCollapsed(false)}
             aria-label="Open DAS AI panel"
             title="Show DAS AI bar"
-            className="text-xs font-bold tracking-wide text-white hover:brightness-110 transition cursor-pointer flex items-center gap-1.5 px-1"
+            className="text-xs font-semibold tracking-wide text-[#FAFAFA] hover:text-white transition cursor-pointer flex items-center gap-1.5 px-1"
           >
-            <span>▲ DAS AI</span>
+            <ChevronUp className="h-3.5 w-3.5 text-[#A1A1AA]" />
+            <span>DAS AI</span>
             {micActive && (
-              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-[#2b2024] text-white animate-pulse">
+              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-white/[0.08] border border-white/[0.12] text-[#FAFAFA] animate-pulse">
                 Listening
               </span>
             )}
@@ -1392,38 +1413,34 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             onClick={toggleMic}
             aria-label={micActive ? "Mute microphone" : "Speak to DAS"}
             title={micActive ? "Mute mic" : "Speak to DAS"}
-            className="h-6 w-6 rounded-full flex items-center justify-center text-xs border text-white hover:brightness-110 transition cursor-pointer"
-            style={{
-              backgroundColor: micActive ? "#000000" : "#2b2024",
-              borderColor: "#2b2024",
-            }}
+            className={`h-6 w-6 rounded-full flex items-center justify-center border transition cursor-pointer ${
+              micActive
+                ? "bg-[#FAFAFA] border-white text-[#09090B]"
+                : "bg-[#141419] border-white/[0.12] text-[#FAFAFA] hover:bg-[#1E1E26]"
+            }`}
           >
-            {micActive ? "⏹" : "🎙️"}
+            {micActive ? (
+              <Square className="h-2.5 w-2.5 fill-current" />
+            ) : (
+              <Mic className="h-3.5 w-3.5" />
+            )}
           </button>
         </div>
       ) : (
       <div
         id="das-bottom-hud"
-        className="fixed bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] sm:w-[86%] max-w-xl rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-2xl flex flex-col gap-1 sm:gap-1.5 border"
-        style={{
-          backgroundColor: "#000000",
-          borderColor: "#2b2024",
-          boxShadow: "0 16px 40px rgba(0, 0, 0, 0.92)"
-        }}
+        className="fixed bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] sm:w-[86%] max-w-xl rounded-2xl px-2.5 py-2 sm:px-3.5 sm:py-2.5 shadow-2xl flex flex-col gap-1.5 border border-white/[0.12] bg-[#09090B]/95 backdrop-blur-md"
       >
-        {/* Top Status & Role Select Bar */}
-        <div className="flex items-center justify-between text-[11px] px-1">
+        {/* Top Status & Controls Bar */}
+        <div className="flex items-center justify-between text-[11px] px-0.5">
           <div className="flex items-center gap-1.5">
             <span
               className={`h-2 w-2 rounded-full ${
-                connected ? "bg-white animate-pulse" : "bg-zinc-400"
+                connected ? "bg-[#FAFAFA] animate-pulse" : "bg-[#71717A]"
               }`}
             />
-            <span className="font-bold tracking-wider text-white">DAS AI</span>
-            <span
-              className="px-1.5 py-0.5 rounded text-[9px] font-semibold border text-white"
-              style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
-            >
+            <span className="font-semibold tracking-wider text-[#FAFAFA]">DAS AI</span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium border border-white/[0.1] bg-[#141419] text-[#D4D4D8]">
               {connected ? "ONLINE" : "CONNECTING..."}
             </span>
             <button
@@ -1435,121 +1452,71 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   void codingStudioController.execute({ action: "open", language: "python" });
                 }
               }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border text-white transition cursor-pointer hover:brightness-110"
-              style={{ backgroundColor: "#2b2024", borderColor: codeTask ? "#FD0053" : "#2b2024" }}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-medium border transition cursor-pointer ${
+                codeTask
+                  ? "bg-[#1E1E26] border-white/[0.32] text-[#FAFAFA]"
+                  : "bg-[#141419] border-white/[0.1] text-[#D4D4D8] hover:border-white/[0.2] hover:text-[#FAFAFA]"
+              }`}
               title="Open Multi-Language Online Coding Compiler (Python, C, C++, Java, JS, TS, SQL, Go, Rust)"
             >
-              <span>&lt;/&gt;</span>
+              <Code2 className="h-3 w-3 text-[#A1A1AA]" />
               <span>Online Compiler</span>
             </button>
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Single Strict 4-Role Identity Pill: Owner=Boss (locked), Guest=Stranger (locked), Signed-in=Madam/Sir */}
-            {(() => {
-              const storedEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "";
-              const storedName = typeof window !== "undefined" ? localStorage.getItem("userName") || "" : "";
-              const canBeBoss = isOwnerAccount(storedEmail);
-              const isGuest = isGuestAccount(storedEmail, storedName);
-
-              if (canBeBoss || role === "boss") {
-                if (canBeBoss) {
-                  return (
-                    <span
-                      className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-sm text-white select-none"
-                      style={{ backgroundColor: "#2b2024", borderColor: "#FD0053" }}
-                      title="Creator Account Verified: Boss Mode locked exclusively to dileepbommali16@gmail.com"
-                    >
-                      <span>✨ Boss Mode</span>
-                    </span>
-                  );
-                }
-              }
-
-              if (isGuest || role === "stranger") {
-                return (
-                  <span
-                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-sm text-white select-none"
-                    style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
-                    title="Guest Session: Stranger Mode active — tell DAS your name first"
-                  >
-                    <span>👤 Stranger Mode</span>
-                  </span>
-                );
-              }
-
-              return (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.currentTarget.blur();
-                    const nextRole: UserHonorificRole = role === "madam" ? "sir" : "madam";
-                    handleRoleToggle(nextRole);
-                  }}
-                  className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold transition cursor-pointer border shadow-sm hover:brightness-110 active:scale-95 text-white"
-                  style={{
-                    backgroundColor: "#2b2024",
-                    borderColor: "#2b2024",
-                  }}
-                  title="Switch addressing mode: Madam Mode / Sir Mode"
-                >
-                  <span>{role === "madam" ? "🌸 Madam Mode" : "🎩 Sir Mode"}</span>
-                  <span className="text-[9px] text-zinc-400">⇄</span>
-                </button>
-              );
-            })()}
             <button
               type="button"
               onClick={() => setHudCollapsed(true)}
               aria-label="Hide DAS panel"
               title="Minimize DAS panel to bottom bar"
-              className="px-2 py-0.5 rounded-full text-[10px] font-bold border text-zinc-200 hover:text-white hover:brightness-110 transition cursor-pointer"
-              style={{ backgroundColor: "#000000", borderColor: "#2b2024" }}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border border-white/[0.1] bg-[#141419] text-[#D4D4D8] hover:text-[#FAFAFA] hover:border-white/[0.2] transition cursor-pointer"
             >
-              ▼ Hide
+              <ChevronDown className="h-3 w-3 text-[#A1A1AA]" />
+              <span>Hide</span>
             </button>
           </div>
         </div>
 
         {/* User Voice / Input Transcript */}
         {userTranscript && (
-          <div
-            className="text-[11px] text-white rounded-lg px-2.5 py-1 max-h-12 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
-            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
-          >
-            🎤 You: {userTranscript}
+          <div className="flex items-start gap-2 text-[11px] text-[#FAFAFA] rounded-xl px-2.5 py-1.5 max-h-12 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border border-white/[0.08] bg-[#121216]">
+            <User className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[#A1A1AA]" />
+            <span>You: {userTranscript}</span>
           </div>
         )}
 
         {/* Agent Spoken Response Transcript */}
-        <div
-          className="text-xs text-zinc-100 rounded-lg px-2.5 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border"
-          style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
-        >
-          🔊 DAS: {transcript}
+        <div className="flex items-start gap-2 text-xs text-[#E4E4E7] rounded-xl px-2.5 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border border-white/[0.08] bg-[#121216]">
+          <Volume2 className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[#A1A1AA]" />
+          <span>DAS: {transcript}</span>
         </div>
 
         {/* Live Microphone Signal & Warning Bar */}
         {micActive && (
-          <div
-            className="flex items-center justify-between px-2.5 py-1 rounded-lg text-[11px] border"
-            style={{
-              backgroundColor: "#2b2024",
-              borderColor: "#2b2024",
-            }}
-          >
+          <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-[11px] border border-white/[0.08] bg-[#121216]">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="font-bold text-white shrink-0">
-                {micSilentWarning ? "⚠️ NO MIC SIGNAL" : "🎙️ MIC LIVE"}
+              <span className="inline-flex items-center gap-1.5 font-semibold text-[#FAFAFA] shrink-0">
+                {micSilentWarning ? (
+                  <>
+                    <AlertCircle className="h-3.5 w-3.5 text-[#D4D4D8]" />
+                    <span>NO MIC SIGNAL</span>
+                  </>
+                ) : (
+                  <>
+                    <AudioLines className="h-3.5 w-3.5 text-[#FAFAFA]" />
+                    <span>MIC LIVE</span>
+                  </>
+                )}
               </span>
-              <div className="w-20 h-1.5 rounded-full bg-[#000000] overflow-hidden shrink-0">
+              <div className="w-20 h-1.5 rounded-full bg-black/60 overflow-hidden shrink-0">
                 <div
                   ref={micBarRef}
-                  className="h-full bg-white transition-[width] duration-75"
+                  className="h-full bg-[#FAFAFA] transition-[width] duration-75"
                   style={{ width: "4%" }}
                 />
               </div>
-              <span className="text-[10px] text-zinc-300 truncate">
+              <span className="text-[10px] text-[#A1A1AA] truncate">
                 {micSilentWarning
                   ? micHealthHint || "Voice faint or muted — raise volume or check earphones/buds (auto-tuning...)"
                   : activeMicLabel || "Capturing 16kHz PCM"}
@@ -1558,7 +1525,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <button
               type="button"
               onClick={toggleMic}
-              className="text-[10px] text-white hover:text-zinc-300 font-bold ml-2 cursor-pointer shrink-0"
+              className="text-[10px] text-[#FAFAFA] hover:text-[#D4D4D8] font-semibold ml-2 cursor-pointer shrink-0"
             >
               Mute
             </button>
@@ -1566,28 +1533,31 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         )}
 
         {/* Command & Control Bar */}
-        <form onSubmit={handleSendText} autoComplete="off" className="flex flex-wrap sm:flex-nowrap items-center gap-1 sm:gap-1.5">
+        <form onSubmit={handleSendText} autoComplete="off" className="flex flex-wrap sm:flex-nowrap items-center gap-1.5">
           {/* Hands-free Voice Speak / Mute Button */}
           <button
             type="button"
             onClick={toggleMic}
-            className="px-2.5 sm:px-3 py-1.5 rounded-lg font-bold text-[11px] sm:text-xs transition cursor-pointer flex items-center gap-1 border text-white hover:brightness-110 shrink-0"
-            style={{
-              backgroundColor: micActive ? "#000000" : "#2b2024",
-              borderColor: "#2b2024",
-            }}
+            className={`px-2.5 sm:px-3 py-1.5 rounded-xl font-medium text-[11px] sm:text-xs transition cursor-pointer flex items-center gap-1.5 border shrink-0 ${
+              micActive
+                ? "bg-[#1C1C24] border-white/[0.28] text-[#FAFAFA]"
+                : "bg-[#141419] border-white/[0.12] text-[#FAFAFA] hover:bg-[#1E1E26]"
+            }`}
             title={micActive ? "Click to Mute Microphone" : "Click to Speak (Supports all Headphones, Earphones & Buds)"}
           >
             {micActive ? (
               <>
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FAFAFA] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FAFAFA]"></span>
                 </span>
                 <span>Listening...</span>
               </>
             ) : (
-              <span>🎙️ Speak</span>
+              <>
+                <Mic className="h-3.5 w-3.5 text-[#D4D4D8]" />
+                <span>Speak</span>
+              </>
             )}
           </button>
 
@@ -1607,8 +1577,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               setInputText(e.target.value);
             }}
             placeholder="Ask DAS: 'Who is your boss?', 'Write QuickSort in C', 'Set my CGPA to 8.9'..."
-            className="min-w-[120px] flex-1 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs text-white placeholder-zinc-400 focus:outline-none border"
-            style={{ backgroundColor: "#2b2024", borderColor: "#2b2024" }}
+            className="min-w-[120px] flex-1 rounded-xl px-3 py-1.5 text-xs text-[#FAFAFA] placeholder-[#71717A] focus:outline-none border border-white/[0.1] bg-[#121216] focus:border-white/[0.28]"
           />
 
           {/* Dedicated Edit Option Beside Send */}
@@ -1616,7 +1585,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             type="button"
             onClick={() => {
               if (userTranscript) {
-                const cleaned = userTranscript.replace(/^🎤 You:\s*/i, "").trim();
+                const cleaned = userTranscript.replace(/^(?:🎤\s*)?You:\s*/i, "").trim();
                 setInputText(cleaned);
                 toast.info("Previous command loaded for editing!");
               }
@@ -1624,26 +1593,20 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               inputEl?.focus();
               inputEl?.select();
             }}
-            className="px-2 sm:px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer border shadow flex items-center gap-1 hover:brightness-110 text-white shrink-0"
-            style={{
-              backgroundColor: "#000000",
-              borderColor: "#2b2024",
-            }}
+            className="px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition cursor-pointer border border-white/[0.12] bg-[#141419] hover:bg-[#1E1E26] flex items-center gap-1.5 text-[#FAFAFA] shrink-0"
             title="Edit / Recall Previous Query"
           >
-            ✏️ Edit
+            <PenLine className="h-3 w-3 text-[#D4D4D8]" />
+            <span>Edit</span>
           </button>
 
           {/* Send Button */}
           <button
             type="submit"
-            className="px-3 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold text-white transition cursor-pointer border shadow hover:brightness-110 shrink-0"
-            style={{
-              backgroundColor: "#2b2024",
-              borderColor: "#2b2024",
-            }}
+            className="px-3 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold text-[#09090B] bg-[#FAFAFA] hover:bg-white transition cursor-pointer inline-flex items-center gap-1.5 shrink-0"
           >
-            Send
+            <span>Send</span>
+            <SendHorizontal className="h-3 w-3" />
           </button>
         </form>
       </div>

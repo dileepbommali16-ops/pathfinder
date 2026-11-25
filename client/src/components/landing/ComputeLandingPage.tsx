@@ -187,7 +187,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             className="max-w-4xl"
           >
             <div className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.1] bg-[#0D0D11]/90 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-[#D4D4D8]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
               <span>Pathfinder 2.0 · Campus Placement Intelligence</span>
             </div>
 
@@ -387,7 +387,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 <div className="pf-subpanel rounded-xl p-5 sm:p-6">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-2 font-mono text-[11px] text-[#FAFAFA]">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
                       DAS Audio Stream
                     </span>
                     <span className="font-mono text-[10px] text-[#71717A]">24kHz PCM</span>
@@ -475,7 +475,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 <div className="pf-subpanel overflow-hidden rounded-xl">
                   <div className="flex items-center justify-between border-b border-white/[0.06] bg-black/50 px-4 py-2.5 font-mono text-[11px] text-[#A1A1AA]">
                     <span>solution.py · Python 3.11</span>
-                    <span className="text-[#10B981]">PASSED · 12ms · HIRE</span>
+                    <span className="text-[#FAFAFA]">PASSED · 12ms · HIRE</span>
                   </div>
                   <pre className="overflow-x-auto p-5 font-mono text-xs leading-[1.65] text-[#D4D4D8]">
                     {`def first_occurrence(arr, target):

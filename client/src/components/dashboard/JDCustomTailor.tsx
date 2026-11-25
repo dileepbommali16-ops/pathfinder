@@ -261,8 +261,8 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
       Math.max(18, Math.min(98, skillRatio * 68 + cgpaBonus + projBonus - backlogPenalty))
     );
 
-    const tailoredSummary = `Results-driven ${profile.branch || "CSE"} undergraduate at ${profile.college || "DR RVR NRI DEEMED TO BE UNIVERSITY"
-      } (CGPA: ${profile.cgpa.toFixed(1)}/10) targeting ${customRole} at ${customCompany}. Proven hands-on execution across ${matched.slice(0, 6).join(", ") || "Python, SQL, React, and REST APIs"
+    const tailoredSummary = `Results-driven ${profile.branch || "Engineering"} undergraduate at ${profile.college || "your university"
+      } (${profile.cgpa > 0 ? `CGPA: ${profile.cgpa.toFixed(1)}/10` : "Academic profile pending"}) targeting ${customRole} at ${customCompany}. Proven hands-on execution across ${matched.slice(0, 6).join(", ") || "Python, SQL, React, and REST APIs"
       } with ${profile.projectsCount || 2} production-grade capstones and measurable latency and reliability outcomes.`;
 
     const tailoredBullet = `Accomplished a 42% p95 response latency reduction for ${customCompany}-grade workloads as measured by automated benchmark telemetry by architecting a modular ${matched.slice(0, 3).join(" + ") || "FastAPI + PostgreSQL + React"

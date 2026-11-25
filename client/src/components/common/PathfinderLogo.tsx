@@ -83,11 +83,7 @@ export const PathfinderLogo: React.FC<PathfinderLogoProps> = ({
         <circle cx="29.5" cy="10.5" r="1.65" fill="#FAFAFA" />
       </svg>
 
-      {showPulse && (
-        <span className="absolute -bottom-0.5 -right-0.5 flex h-2 w-2">
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10B981] ring-2 ring-[#09090B]" />
-        </span>
-      )}
+      {showPulse ? null : null}
     </span>
   );
 };
