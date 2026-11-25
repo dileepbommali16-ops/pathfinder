@@ -1,15 +1,4 @@
 import React, { useState } from "react";
-import {
-  Compass,
-  CheckCircle,
-  Circle,
-  Sparkles,
-  ArrowRight,
-  RotateCw,
-  Calendar,
-  Layers,
-  CheckSquare
-} from "lucide-react";
 
 export interface RoadmapData {
   headline: string;
@@ -28,7 +17,7 @@ const DEFAULT_ROADMAP: RoadmapData = {
   skill_gaps: [
     "Pattern-based DSA consistency (Blind 75)",
     "Flagship full-stack project with measurable metrics",
-    "STAR framework behavioral articulation"
+    "STAR framework behavioral articulation",
   ],
   weekly_actions: [
     "Week 1: Solve 15 high-frequency Array, String & HashMap problems. Log every suboptimal time complexity.",
@@ -36,8 +25,8 @@ const DEFAULT_ROADMAP: RoadmapData = {
     "Week 3: Build and deploy a flagship portfolio project with OpenAPI docs, authentication, and live deployed demo.",
     "Week 4: Review Core CS subjects: OS (processes, threads, deadlocks), DBMS (indexing, ACID, normalization), and Networks (TCP/IP).",
     "Week 5: Complete 3 timed mock coding rounds on HackerRank/LeetCode and prepare 4 STAR behavioral stories.",
-    "Week 6: Tailor ATS resume to target company job descriptions and request alumni referrals."
-  ]
+    "Week 6: Tailor ATS resume to target company job descriptions and request alumni referrals.",
+  ],
 };
 
 export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
@@ -80,7 +69,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
   const persistCompleted = (next: Record<number, boolean>) => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(next));
-    } catch { }
+    } catch {}
   };
 
   const toggleWeek = (index: number) => {
@@ -97,76 +86,74 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
   };
 
   const completedCount = Object.values(completedWeeks).filter(Boolean).length;
-  const progressPercent = Math.round((completedCount / (currentRoadmap.weekly_actions.length || 6)) * 100);
+  const progressPercent = Math.round(
+    (completedCount / (currentRoadmap.weekly_actions.length || 6)) * 100
+  );
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
-      {/* Subtle background ambient mesh */}
-      <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#18181B]/[0.08] blur-3xl" />
-
+    <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px] sm:p-8">
       {/* Title & Action Bar */}
-      <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-[#1F1F23] pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#141418] text-[#D4D4D8] border border-[#242429]">
-              <Compass className="h-4 w-4" />
-            </div>
-            <h2 className="text-xl font-bold tracking-tight text-[#f8fafc]">AI-Generated 6-Week Roadmap</h2>
-            <span className="rounded-md border border-[#242429] bg-[#141418] px-2 py-0.5 text-[10px] font-semibold text-[#D4D4D8] uppercase shadow-[0_0_10px_rgba(0,0,0,0)]">
-              AI Powered
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h2
+              className="text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-2xl"
+              style={{ textWrap: "balance" }}
+            >
+              6-Week Strategic Placement Roadmap
+            </h2>
+            <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
+              Sprint Tracker
             </span>
           </div>
-          <p className="mt-1 text-xs text-[#94a3b8]">
-            {currentRoadmap.headline}
-          </p>
+          <p className="mt-1.5 text-xs text-[#A1A1AA] sm:text-sm">{currentRoadmap.headline}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
           {completedCount > 0 && (
             <button
               type="button"
               onClick={resetProgress}
-              className="rounded-xl border border-white/[0.12] bg-[#000000] px-3 py-2.5 text-xs font-semibold text-[#94a3b8] transition-all hover:border-white/30 hover:text-white cursor-pointer"
+              className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#101014] px-3.5 text-xs font-medium text-[#A1A1AA] transition-colors duration-150 hover:border-[#3F3F46] hover:text-[#FAFAFA] cursor-pointer"
             >
-              Reset Progress
+              Reset progress
             </button>
           )}
           <button
             type="button"
             onClick={onRegenerate}
             disabled={isLoading}
-            className="flex items-center gap-2 rounded-xl border border-[#242429] bg-[#141418] px-4 py-2.5 text-xs font-bold text-[#D4D4D8] shadow-[0_0_15px_rgba(0,0,0,0)] transition-all hover:bg-[#27272A] active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#141418] px-4 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#1C1C22] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
           >
-            <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-            <span>{isLoading ? "Regenerating Roadmap..." : "Regenerate Roadmap"}</span>
+            {isLoading ? "Regenerating Roadmap..." : "Regenerate Roadmap"}
           </button>
         </div>
       </div>
 
       {/* Progress & Skill Gaps Banner */}
-      <div className="relative z-10 mt-6 grid gap-4 sm:grid-cols-2">
-        {/* Milestone Completion Progress */}
-        <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4.5 backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
-          <div className="flex justify-between text-xs font-semibold">
-            <span className="text-[#94a3b8]">Roadmap Milestone Progress</span>
-            <span className="text-[#D4D4D8] font-bold">{completedCount} of {currentRoadmap.weekly_actions.length} Completed ({progressPercent}%)</span>
+      <div className="mt-6 grid gap-6 sm:grid-cols-2">
+        <div className="rounded-xl border border-[#222226] bg-[#101014] p-5">
+          <div className="flex justify-between text-xs font-medium">
+            <span className="text-[#A1A1AA]">Milestone Progress</span>
+            <span className="font-mono text-[#FAFAFA] tabular-nums">
+              {completedCount} of {currentRoadmap.weekly_actions.length} ({progressPercent}%)
+            </span>
           </div>
-          <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]">
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-sm bg-[#18181B]">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#18181B] via-[#18181B] to-[#27272A] shadow-[0_0_10px_rgba(0,0,0,0)] transition-all duration-500"
+              className="h-full bg-[#FAFAFA] transition-[width] duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
 
-        {/* Highlighted Skill Gaps */}
-        <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4.5 backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
-          <span className="text-xs font-semibold text-[#94a3b8]">Target Skill Gaps to Close:</span>
-          <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="rounded-xl border border-[#222226] bg-[#101014] p-5">
+          <span className="text-xs font-medium text-[#A1A1AA]">Target Skill Gaps to Close</span>
+          <div className="mt-3 flex flex-wrap gap-2">
             {currentRoadmap.skill_gaps.map((gap, i) => (
               <span
                 key={i}
-                className="rounded-md border border-white/[0.08] bg-[#000000] px-2 py-0.5 text-[11px] font-medium text-[#f8fafc] shadow-[0_0_8px_rgba(0,0,0,0)]"
+                className="rounded-md border border-[#27272A] bg-[#0B0B0E] px-2.5 py-1 text-[11px] font-medium text-[#FAFAFA]"
               >
                 {gap}
               </span>
@@ -176,12 +163,13 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
       </div>
 
       {/* 6-Week Interactive Timeline */}
-      <div className="relative z-10 mt-8 space-y-4">
+      <div className="mt-7 space-y-3.5">
         {currentRoadmap.weekly_actions.map((action, index) => {
           const isDone = !!completedWeeks[index];
           const parts = action.split(":");
           const weekTitle = parts.length > 1 ? parts[0].trim() : `Week ${index + 1}`;
           const weekDescription = parts.length > 1 ? parts.slice(1).join(":").trim() : action;
+          const idxLabel = String(index + 1).padStart(2, "0");
 
           return (
             <button
@@ -189,34 +177,36 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
               type="button"
               onClick={() => toggleWeek(index)}
               aria-pressed={isDone}
-              className={`group w-full text-left flex cursor-pointer items-start gap-4 rounded-2xl border p-4.5 transition-all sm:p-5 ${isDone
-                ? "border-[#242429] bg-[#141418] text-[#f8fafc] shadow-[0_4px_20px_rgba(0,0,0,0)]"
-                : "border-white/[0.08] bg-[#000000] text-[#f8fafc] hover:border-[#3F3F46] hover:bg-[#000000] hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
-                }`}
+              className={`flex w-full cursor-pointer items-start gap-4 rounded-xl border p-4 text-left transition-colors duration-150 sm:p-5 ${
+                isDone
+                  ? "border-[#3F3F46] bg-[#14141A] text-[#FAFAFA]"
+                  : "border-[#222226] bg-[#101014] text-[#FAFAFA] hover:border-[#3F3F46] hover:bg-[#141418]"
+              }`}
             >
-              {/* Checkbox Visual Indicator */}
               <span
-                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all ${isDone
-                  ? "border-[#242429] bg-[#18181B] text-white"
-                  : "border-white/[0.08] bg-[#000000] text-transparent group-hover:border-[#3F3F46]"
-                  }`}
+                className={`mt-0.5 flex h-6 w-8 shrink-0 items-center justify-center rounded border font-mono text-[10px] font-medium tabular-nums ${
+                  isDone
+                    ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
+                    : "border-[#27272A] bg-[#0B0B0E] text-[#71717A]"
+                }`}
               >
-                <CheckCircle className="h-4 w-4" />
+                {isDone ? "DONE" : idxLabel}
               </span>
 
-              {/* Week Content */}
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#D4D4D8]">
-                    {weekTitle}
-                  </span>
+                  <span className="font-mono text-xs font-medium text-[#D4D4D8]">{weekTitle}</span>
                   {isDone && (
-                    <span className="rounded bg-[#141418] px-1.5 py-0.5 text-[9px] font-bold text-[#D4D4D8]">
+                    <span className="rounded border border-[#27272A] bg-[#0B0B0E] px-1.5 py-0.5 font-mono text-[9px] text-[#A1A1AA]">
                       Completed
                     </span>
                   )}
                 </div>
-                <p className={`mt-1 text-xs sm:text-sm leading-relaxed ${isDone ? "line-through text-[#94a3b8]" : "text-[#f8fafc]"}`}>
+                <p
+                  className={`mt-1.5 text-xs leading-relaxed sm:text-sm ${
+                    isDone ? "line-through text-[#71717A]" : "text-[#E4E4E7]"
+                  }`}
+                >
                   {weekDescription}
                 </p>
               </div>

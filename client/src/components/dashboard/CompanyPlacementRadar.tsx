@@ -1,19 +1,4 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  Building2,
-  CheckCircle2,
-  AlertCircle,
-  TrendingUp,
-  ArrowRight,
-  Sparkles,
-  Zap,
-  Target,
-  Award,
-  ChevronRight,
-  ExternalLink,
-  ShieldCheck
-} from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
 
 interface CompanyPlacementRadarProps {
@@ -49,7 +34,7 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["Data Structures & Algorithms", "System Design", "Operating Systems", "Clean Code"],
     recommendedProjects: ["Distributed Key-Value Store", "Real-Time Collaborative Engine"],
     interviewRounds: ["Online Coding (2 DSA Hard)", "System Design Round", "Googliness & Leadership"],
-    hiringStatus: "Active Campus Drives"
+    hiringStatus: "Active Campus Drives",
   },
   {
     id: "razorpay",
@@ -62,7 +47,7 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["React / TypeScript", "Microservices (Go / Node / Python)", "Idempotency & Payments", "SQL & Redis"],
     recommendedProjects: ["Event-Driven Payment Gateway", "Idempotent Financial Ledger"],
     interviewRounds: ["Machine Coding Round (2.5 hrs)", "System Architecture Round", "Bar Raiser Culture Fit"],
-    hiringStatus: "Active Campus Drives"
+    hiringStatus: "Active Campus Drives",
   },
   {
     id: "amazon",
@@ -75,7 +60,7 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["Trees & Graphs", "Dynamic Programming", "AWS / Docker", "Leadership Principles (STAR)"],
     recommendedProjects: ["Cloud Resource Autoscaler", "High-Throughput Messaging Queue"],
     interviewRounds: ["Online Assessment (Debugging + 2 DSA)", "2 Technical Problem Solving", "Bar Raiser Interview"],
-    hiringStatus: "Upcoming Q4"
+    hiringStatus: "Upcoming Q4",
   },
   {
     id: "tcs_digital",
@@ -88,7 +73,7 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["Java / Python", "Object-Oriented Programming", "DBMS & SQL", "Aptitude & Speed"],
     recommendedProjects: ["Full-Stack Student Management System", "Automated Query Optimization"],
     interviewRounds: ["NQT Digital Advanced Coding", "Technical Interview (Core CS)", "HR & Managerial"],
-    hiringStatus: "Active Campus Drives"
+    hiringStatus: "Active Campus Drives",
   },
   {
     id: "swiggy",
@@ -101,7 +86,7 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["Full Stack Architecture", "REST & GraphQL", "Kafka / Message Queues", "State Management"],
     recommendedProjects: ["Geo-Distributed Tracking API", "Low-Latency Order Engine"],
     interviewRounds: ["Live Machine Coding", "DSA Problem Solving", "Engineering Manager Round"],
-    hiringStatus: "Rolling Openings"
+    hiringStatus: "Rolling Openings",
   },
   {
     id: "salesforce",
@@ -114,15 +99,15 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["Cloud Architecture", "Database Internals", "Security & Auth", "API Design"],
     recommendedProjects: ["Multi-Tenant RBAC Authorization API", "Enterprise Audit Log Pipeline"],
     interviewRounds: ["HackerRank Coding", "System Design & OOP", "Values & Culture"],
-    hiringStatus: "Upcoming Q4"
-  }
+    hiringStatus: "Upcoming Q4",
+  },
 ];
 
 export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
   profile,
   predictionChance,
   onLaunchMockInterview,
-  onAskCoach
+  onAskCoach,
 }) => {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("razorpay");
   const [filterCategory, setFilterCategory] = useState<string>("All");
@@ -135,7 +120,6 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
   const hasGithubProof = Boolean((profile.githubUrl || profile.codingProfiles?.github || "").trim());
   const hasLeetcodeProof = Boolean((profile.leetcodeUrl || profile.codingProfiles?.leetcode || "").trim());
 
-  // Dynamic calibrated compatibility calculation (Senior Hiring Manager rubric)
   const calculateCompatibility = (comp: CompanyBenchmark) => {
     let score = 38;
 
@@ -154,7 +138,6 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
 
     score += (studentCodingPct / 100) * 16;
 
-    // Cap unverified self-reported internships cleanly
     const effectiveInternships = Math.min(studentInternships, hasGithubProof ? 3 : 2);
     if (effectiveInternships > 0) {
       score += effectiveInternships * (hasGithubProof ? 4 : 2.5);
@@ -169,33 +152,11 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
     return Math.max(15, Math.min(91, Math.round(score)));
   };
 
-  const getStatusBadge = (score: number, comp: CompanyBenchmark) => {
-    if (studentBacklogs > comp.maxBacklogs) {
-      return {
-        label: "Backlog Clearance Needed",
-        color: "border-[#242429] bg-[#141418] text-[#f8fafc]",
-        icon: AlertCircle
-      };
-    }
-    if (studentCgpa < comp.minCgpa) {
-      return {
-        label: `CGPA Gap (<${comp.minCgpa})`,
-        color: "border-[#242429] bg-[#141418] text-[#f8fafc]",
-        icon: AlertCircle
-      };
-    }
-    if (score >= 80) {
-      return {
-        label: "High Match · Ready for Drives",
-        color: "border-[#242429] bg-[#141418] text-[#f8fafc] shadow-[0_0_12px_rgba(0,0,0,0)]",
-        icon: CheckCircle2
-      };
-    }
-    return {
-      label: "Competitive · Interview Polish Needed",
-      color: "border-[#242429] bg-[#141418] text-[#f8fafc]",
-      icon: Sparkles
-    };
+  const getStatusLabel = (score: number, comp: CompanyBenchmark) => {
+    if (studentBacklogs > comp.maxBacklogs) return "Backlog clearance needed";
+    if (studentCgpa < comp.minCgpa) return `CGPA gap (<${comp.minCgpa})`;
+    if (score >= 80) return "High match · Ready for drives";
+    return "Competitive · Practice recommended";
   };
 
   const filteredBenchmarks = BENCHMARKS.filter(
@@ -204,47 +165,31 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
 
   const selectedCompany = BENCHMARKS.find((b) => b.id === selectedCompanyId) || BENCHMARKS[0];
   const selectedScore = calculateCompatibility(selectedCompany);
-  const selectedStatus = getStatusBadge(selectedScore, selectedCompany);
+  const selectedStatusLabel = getStatusLabel(selectedScore, selectedCompany);
 
   return (
-    <div className="relative rounded-xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.65)] overflow-hidden">
-      {/* Subtle Royal Violet Ambient Glow */}
-      <div className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#141418] blur-[140px]" />
-      <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[#141418] blur-[140px]" />
-
-      {/* Top Banner Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#242429] bg-[#141418] text-[#f8fafc] shadow-[0_0_12px_rgba(0,0,0,0)]">
-              <Building2 className="h-4 w-4" />
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#94a3b8]">
-              Industry Placement Benchmark
-            </span>
-            <span className="rounded-full border border-[#242429] bg-[#141418] px-2.5 py-0.5 text-[11px] font-medium text-[#f8fafc] shadow-sm">
-              Live Hiring Matrix
-            </span>
-          </div>
-          <h3 className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-[#f8fafc]">
-            Target Company Placement Radar
-          </h3>
-          <p className="mt-1 text-xs sm:text-sm text-[#94a3b8] max-w-2xl leading-relaxed">
-            Real-time hiring compatibility score mapped against historical drive cutoffs, interview rounds, and skill rubrics for Tier-1 engineering recruits.
-          </p>
+    <div className="rounded-2xl border border-[#242429] bg-[#09090B]/64 p-6 backdrop-blur-[2px] sm:p-8">
+      {/* Compact Filter Bar (No Duplicate Section Heading) */}
+      <div className="flex flex-col justify-between gap-4 border-b border-[#1F1F23] pb-5 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-2.5">
+          <span className="font-mono text-xs font-medium text-[#A1A1AA]">
+            Target Recruiter Benchmarks
+          </span>
+          <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8] tabular-nums">
+            {filteredBenchmarks.length} firms
+          </span>
         </div>
 
-        {/* Category Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
           {["All", "Tier-1 MAANG", "Fintech Unicorn", "Premier Campus Drive"].map((cat) => (
             <button
               key={cat}
               type="button"
               onClick={() => setFilterCategory(cat)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${
+              className={`h-9 shrink-0 rounded-lg border px-3.5 text-xs font-medium transition-colors duration-150 ${
                 filterCategory === cat
-                  ? "border border-[#242429] bg-[#18181B] text-[#f8fafc] font-bold shadow-[0_0_15px_rgba(0,0,0,0)]"
-                  : "border border-white/[0.08] bg-[#000000]/60 text-[#94a3b8] hover:border-[#3F3F46] hover:text-[#f8fafc]"
+                  ? "border-[#FAFAFA]/40 bg-[#18181E] text-[#FAFAFA]"
+                  : "border-[#222226] bg-[#101014] text-[#A1A1AA] hover:border-[#3F3F46] hover:text-[#FAFAFA]"
               }`}
             >
               {cat}
@@ -254,142 +199,137 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
       </div>
 
       {/* Grid Layout: Left Cards & Right Detailed Radar */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
         {/* Left Column: Company Cards */}
-        <div className="lg:col-span-5 space-y-3">
-          <div className="flex items-center justify-between text-xs font-medium text-[#94a3b8] px-1">
+        <div className="space-y-3 lg:col-span-5">
+          <div className="flex items-center justify-between px-1 font-mono text-[11px] text-[#71717A]">
             <span>Target Recruiter</span>
-            <span>Match Probability</span>
+            <span>Match</span>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {filteredBenchmarks.map((comp) => {
               const compScore = calculateCompatibility(comp);
               const isSelected = comp.id === selectedCompanyId;
 
               return (
-                <motion.div
+                <button
                   key={comp.id}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
+                  type="button"
                   onClick={() => setSelectedCompanyId(comp.id)}
-                  className={`group relative flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition-all duration-200 ${
+                  className={`flex w-full cursor-pointer items-center justify-between rounded-xl border p-4 text-left transition-colors duration-150 ${
                     isSelected
-                      ? "border-[#242429] bg-gradient-to-r from-[#000000] to-[#000000] shadow-[0_8px_25px_rgba(0,0,0,0)] ring-1 ring-[#27272A]"
-                      : "border-white/[0.08] bg-[#000000]/40 hover:border-[#3F3F46] hover:bg-[#000000]"
+                      ? "border-[#FAFAFA]/45 bg-[#18181E]"
+                      : "border-[#222226] bg-[#101014]/90 hover:border-[#3F3F46] hover:bg-[#14141A]"
                   }`}
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#242429] bg-[#000000] font-mono text-xs font-bold text-[#f8fafc] shadow-sm">
+                    <div className="flex h-10 w-12 shrink-0 items-center justify-center rounded-lg border border-[#27272A] bg-[#0B0B0E] font-mono text-[11px] font-semibold text-[#FAFAFA] tabular-nums">
                       {comp.logoText}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[#f8fafc] group-hover:text-white transition-colors">
-                          {comp.name}
+                      <div className="text-sm font-semibold text-[#FAFAFA]">{comp.name}</div>
+                      <div className="mt-0.5 flex items-center gap-2 text-xs text-[#A1A1AA]">
+                        <span className="font-mono text-[#D4D4D8] tabular-nums">
+                          {comp.packageRange}
                         </span>
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-2 text-xs text-[#94a3b8]">
-                        <span className="font-semibold text-[#f8fafc]">{comp.packageRange}</span>
-                        <span>•</span>
-                        <span>Min {comp.minCgpa} CGPA</span>
+                        <span className="text-[#52525B]">·</span>
+                        <span className="font-mono tabular-nums">Min {comp.minCgpa} CGPA</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Score Pill */}
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <div className="text-base font-bold font-mono text-[#f8fafc]">
-                        {compScore}%
-                      </div>
-                      <div className="text-[10px] text-[#94a3b8]">Readiness</div>
+                  <div className="text-right">
+                    <div className="font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
+                      {compScore}%
                     </div>
-                    <ChevronRight className={`h-4 w-4 transition-transform ${isSelected ? "text-[#f8fafc] translate-x-0.5" : "text-[#94a3b8]"}`} />
+                    <div className="text-[10px] text-[#71717A]">Readiness</div>
                   </div>
-                </motion.div>
+                </button>
               );
             })}
           </div>
         </div>
 
         {/* Right Column: Deep Dive Benchmark Diagnostic */}
-        <div className="lg:col-span-7 rounded-2xl border border-white/[0.08] bg-[#000000]/60 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+        <div className="flex flex-col justify-between rounded-xl border border-[#222226] bg-[#0D0D11]/92 p-6 sm:p-7 lg:col-span-7">
           <div>
-            {/* Header info */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-white/[0.08]">
+            <div className="flex flex-col justify-between gap-3 border-b border-[#1F1F23] pb-5 sm:flex-row sm:items-center">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-md border border-[#242429] bg-[#141418] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#f8fafc]">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded border border-[#27272A] bg-[#141418] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8]">
                     {selectedCompany.category}
                   </span>
-                  <span className="text-xs text-[#94a3b8]">
-                    Drive Status: <strong className="text-[#f8fafc]">{selectedCompany.hiringStatus}</strong>
+                  <span className="text-xs text-[#A1A1AA]">
+                    Drive Status:{" "}
+                    <strong className="font-medium text-[#FAFAFA]">
+                      {selectedCompany.hiringStatus}
+                    </strong>
                   </span>
                 </div>
-                <h4 className="mt-1 text-2xl font-bold text-[#f8fafc]">
+                <h3 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
                   {selectedCompany.name}
-                </h4>
+                </h3>
               </div>
 
-              {/* Status Pill */}
-              <div className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold ${selectedStatus.color}`}>
-                <selectedStatus.icon className="h-4 w-4" />
-                <span>{selectedStatus.label}</span>
-              </div>
+              <span className="inline-flex h-8 shrink-0 items-center rounded-lg border border-[#27272A] bg-[#141418] px-3 text-xs font-medium text-[#FAFAFA]">
+                {selectedStatusLabel}
+              </span>
             </div>
 
             {/* Score & Progress Metric */}
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3.5">
-                <span className="text-xs text-[#94a3b8]">Match Probability</span>
-                <div className="mt-1 text-2xl font-bold font-mono text-[#f8fafc] flex items-baseline gap-1">
-                  <span>{selectedScore}%</span>
-                  <span className="text-xs text-[#94a3b8] font-normal">Score</span>
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-[#222226] bg-[#101014] p-4">
+                <span className="text-xs text-[#A1A1AA]">Match Probability</span>
+                <div className="mt-1.5 flex items-baseline gap-1.5">
+                  <span className="font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
+                    {selectedScore}%
+                  </span>
+                  <span className="text-xs text-[#71717A]">Score</span>
                 </div>
-                <div className="mt-2 h-1.5 w-full rounded-full bg-[#000000] overflow-hidden">
+                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-sm bg-[#18181B]">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#18181B] via-[#18181B] to-[#27272A] shadow-[0_0_10px_rgba(0,0,0,0)] transition-all duration-500"
+                    className="h-full bg-[#FAFAFA] transition-[width] duration-500"
                     style={{ width: `${selectedScore}%` }}
                   />
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3.5">
-                <span className="text-xs text-[#94a3b8]">Package Compensation</span>
-                <div className="mt-1 text-lg font-bold font-mono text-[#f8fafc]">
+              <div className="rounded-xl border border-[#222226] bg-[#101014] p-4">
+                <span className="text-xs text-[#A1A1AA]">Package Compensation</span>
+                <div className="mt-1.5 font-mono text-lg font-semibold text-[#FAFAFA] tabular-nums">
                   {selectedCompany.packageRange}
                 </div>
-                <div className="mt-1 text-[11px] text-[#94a3b8]">
-                  Fixed Base + Stock Grants
-                </div>
+                <div className="mt-1.5 text-[11px] text-[#71717A]">Fixed Base + Stock Grants</div>
               </div>
 
-              <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3.5">
-                <span className="text-xs text-[#94a3b8]">Academic Cutoff</span>
-                <div className="mt-1 text-base font-semibold text-[#f8fafc] flex items-center gap-2">
-                  <span>≥ {selectedCompany.minCgpa} CGPA</span>
-                  <span className="text-[11px] font-medium text-[#94a3b8]">
+              <div className="rounded-xl border border-[#222226] bg-[#101014] p-4">
+                <span className="text-xs text-[#A1A1AA]">Academic Cutoff</span>
+                <div className="mt-1.5 flex items-center gap-2 font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
+                  <span>{selectedCompany.minCgpa}+ CGPA</span>
+                  <span className="text-[11px] font-normal text-[#A1A1AA]">
                     (You: {studentCgpa})
                   </span>
                 </div>
-                <div className="mt-1 text-[11px] text-[#94a3b8]">
-                  {studentBacklogs === 0 ? "0 Backlogs Cleared" : `${studentBacklogs} Active Backlog(s)`}
+                <div className="mt-1.5 text-[11px] text-[#71717A]">
+                  {studentBacklogs === 0
+                    ? "0 Backlogs Cleared"
+                    : `${studentBacklogs} Active Backlog(s)`}
                 </div>
               </div>
             </div>
 
             {/* Core Interview Evaluation Focus */}
-            <div className="mt-5 space-y-4">
+            <div className="mt-6 space-y-5">
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#f8fafc]">
-                  Core Evaluation Topics & Skills
+                <span className="text-xs font-medium text-[#D4D4D8]">
+                  Core Evaluation Topics &amp; Skills
                 </span>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2.5 flex flex-wrap gap-2">
                   {selectedCompany.requiredSkills.map((skill, idx) => (
                     <span
                       key={idx}
-                      className="rounded-lg border border-white/[0.08] bg-[#000000] px-2.5 py-1 text-xs font-medium text-[#f8fafc] shadow-sm"
+                      className="rounded-md border border-[#222226] bg-[#101014] px-2.5 py-1 text-xs font-medium text-[#FAFAFA]"
                     >
                       {skill}
                     </span>
@@ -398,36 +338,35 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
               </div>
 
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#f8fafc]">
+                <span className="text-xs font-medium text-[#D4D4D8]">
                   Standard Interview Pipeline
                 </span>
-                <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="mt-2.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {selectedCompany.interviewRounds.map((rnd, idx) => (
                     <div
                       key={idx}
-                      className="rounded-xl border border-white/[0.08] bg-[#000000] p-2.5 text-xs text-[#94a3b8]"
+                      className="rounded-xl border border-[#222226] bg-[#101014] p-3 text-xs text-[#A1A1AA]"
                     >
-                      <span className="text-[10px] font-bold uppercase text-white/80">
-                        Round {idx + 1}
+                      <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                        Round {String(idx + 1).padStart(2, "0")}
                       </span>
-                      <p className="mt-0.5 font-medium text-[#f8fafc]">{rnd}</p>
+                      <p className="mt-1 font-medium text-[#FAFAFA]">{rnd}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#f8fafc]">
-                  Resume Differentiating Projects (High Shortlist Rate)
+                <span className="text-xs font-medium text-[#D4D4D8]">
+                  Resume Differentiating Projects
                 </span>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2.5 flex flex-wrap gap-2">
                   {selectedCompany.recommendedProjects.map((proj, idx) => (
                     <span
                       key={idx}
-                      className="flex items-center gap-1.5 rounded-lg border border-[#242429] bg-[#000000] px-2.5 py-1 text-xs font-medium text-[#f8fafc] shadow-sm"
+                      className="rounded-md border border-[#27272A] bg-[#101014] px-2.5 py-1 text-xs font-medium text-[#FAFAFA]"
                     >
-                      <Sparkles className="h-3 w-3 text-white/80" />
-                      <span>{proj}</span>
+                      {proj}
                     </span>
                   ))}
                 </div>
@@ -436,12 +375,12 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
           </div>
 
           {/* Action Footer */}
-          <div className="mt-6 pt-5 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3">
-            <span className="text-xs text-[#94a3b8] text-center sm:text-left">
-              Simulate {selectedCompany.name}'s real technical questions directly with AI mentor.
+          <div className="mt-7 flex flex-col items-center justify-between gap-3 border-t border-[#1F1F23] pt-5 sm:flex-row">
+            <span className="text-center text-xs text-[#A1A1AA] sm:text-left">
+              Simulate {selectedCompany.name}'s technical questions with your AI mentor.
             </span>
 
-            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            <div className="flex w-full items-center gap-2.5 sm:w-auto">
               {onAskCoach && (
                 <button
                   type="button"
@@ -450,7 +389,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                       `How do I crack ${selectedCompany.name} campus drive with my profile (CGPA: ${studentCgpa}, Backlogs: ${studentBacklogs})? Give me a 4-week preparation strategy.`
                     )
                   }
-                  className="w-full sm:w-auto rounded-xl border border-white/[0.08] bg-[#000000] hover:bg-[#27272A] px-3.5 py-2 text-xs font-semibold text-[#f8fafc] transition-colors cursor-pointer"
+                  className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-[#27272A] bg-[#101014] px-4 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] sm:w-auto cursor-pointer"
                 >
                   Ask Coach Strategy
                 </button>
@@ -462,11 +401,9 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   onClick={() =>
                     onLaunchMockInterview(selectedCompany.name, selectedCompany.requiredSkills[0])
                   }
-                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl border border-[#242429] bg-gradient-to-r from-[#18181B] to-[#27272A] hover:from-[#27272A] hover:to-[#27272A] px-4 py-2 text-xs font-bold text-[#f8fafc] shadow-[0_4px_20px_rgba(0,0,0,0)] transition-all active:scale-95 cursor-pointer"
+                  className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-[#FAFAFA] px-4 text-xs font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] sm:w-auto cursor-pointer"
                 >
-                  <Zap className="h-3.5 w-3.5 text-[#f8fafc]" />
-                  <span>Start Mock Interview</span>
-                  <ArrowRight className="h-3 w-3 text-[#f8fafc]" />
+                  Start Mock Interview
                 </button>
               )}
             </div>

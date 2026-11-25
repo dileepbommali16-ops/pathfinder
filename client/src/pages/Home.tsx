@@ -2114,16 +2114,15 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       )}
 
       {/* Main Container */}
-      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-8 pb-56 sm:px-6 lg:pt-10 sm:pb-64">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-8 pb-56 sm:px-8 lg:pt-10 sm:pb-64">
         {focusOnDas ? (
           <div className="flex items-center justify-end pb-6 animate-in fade-in duration-300">
             <button
               type="button"
               onClick={() => setFocusOnDas(false)}
-              className="px-4 py-2 rounded-full border border-[#242429] bg-[#000000]/90 hover:bg-[#27272A] text-xs font-semibold text-white backdrop-blur-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
+              className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#0C0C10]/90 px-4 text-xs font-medium text-[#FAFAFA] backdrop-blur-xl transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#16161C] active:scale-[0.98] cursor-pointer"
             >
-              <LayoutDashboard className="w-3.5 h-3.5 text-white" />
-              <span>Show Dashboard</span>
+              Show Dashboard
             </button>
           </div>
         ) : (
@@ -2134,15 +2133,14 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 setFocusOnDas(true);
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className="px-3.5 py-1.5 rounded-full border border-[#242429] bg-[#000000]/85 hover:bg-[#27272A] text-xs font-semibold text-white backdrop-blur-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+              className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#0C0C10]/90 px-4 text-xs font-medium text-[#FAFAFA] backdrop-blur-xl transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#16161C] active:scale-[0.98] cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-              <span>Focus on DAS</span>
+              Focus on DAS
             </button>
           </div>
         )}
         <div
-          className={`transition-all duration-300 ${focusOnDas ? "hidden" : "opacity-100 pointer-events-auto"
+          className={`transition-opacity duration-300 ${focusOnDas ? "hidden" : "opacity-100 pointer-events-auto"
             }`}
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -2155,19 +2153,18 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-10 sm:space-y-14"
+                className="space-y-14 sm:space-y-16"
               >
                 <section
                   id="career-readiness-assessment"
                   data-das-id="hero-metrics"
-                  className="space-y-4"
+                  className="space-y-6"
                 >
                   <SectionHeader
                     title="Campus Placement Readiness Overview"
                     description="Real-time placement probability and primary eligibility benchmark"
                     badge="1 of 3 · Readiness"
                     accent="cyan"
-                    icon={Target}
                     helperLabel="Calculated via Random Forest model trained on 972 student records"
                     onAskCoach={handleAskCoach}
                   />
@@ -2181,13 +2178,12 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                   />
                 </section>
 
-                <section id="career-skill-gap" data-das-id="skill-gap" className="space-y-4">
+                <section id="career-skill-gap" data-das-id="skill-gap" className="space-y-6">
                   <SectionHeader
                     title="Target Role Skill Gap Analysis"
                     description="Direct alignment of your competencies against hiring cutoffs for your chosen domain"
                     badge="2 of 3 · Skill Gaps"
                     accent="amber"
-                    icon={Sparkles}
                     onAskCoach={handleAskCoach}
                   />
                   <div id="skill-gap-matrix">
@@ -2201,13 +2197,12 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                   </div>
                 </section>
 
-                <section id="career-company-radar" data-das-id="company-radar" className="space-y-4">
+                <section id="career-company-radar" data-das-id="company-radar" className="space-y-6">
                   <SectionHeader
                     title="Target Company Placement Radar"
                     description="Real-time hiring compatibility score mapped against historical campus drive cutoffs and technical rubrics"
                     badge="3 of 3 · Company Radar"
                     accent="accent"
-                    icon={Building2}
                     helperLabel="Evaluates eligibility for Google, Razorpay, Amazon, and TCS Digital"
                     onAskCoach={handleAskCoach}
                   />
@@ -2232,7 +2227,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-16"
+                className="space-y-12 sm:space-y-14"
               >
                 <LiveCodingInterviewArena
                   profile={profile}
@@ -2245,7 +2240,6 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                   description="Practice timed company hiring rounds or defend your project architecture trade-offs with live AI grading and voice"
                   badge="Live Audio & Grading"
                   accent="accent"
-                  icon={Mic}
                   helperLabel="Switch between Company Rounds and Project Defense (Viva) tracks"
                   onAskCoach={handleAskCoach}
                 />
@@ -2270,17 +2264,8 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-16"
+                className="space-y-12 sm:space-y-14"
               >
-                <SectionHeader
-                  title="6-Week Strategic Placement Roadmap"
-                  description="Custom weekly milestone plan designed to eliminate skill bottlenecks before drive season"
-                  badge="Sprint Tracker"
-                  accent="purple"
-                  icon={Compass}
-                  helperLabel="Milestones auto-adapt as you update skills and role"
-                  onAskCoach={handleAskCoach}
-                />
                 <div id="sprint-roadmap">
                   <RoadmapVisualizer
                     roadmap={roadmap}
@@ -2308,17 +2293,8 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-16"
+                className="space-y-12 sm:space-y-14"
               >
-                <SectionHeader
-                  title="Branch Intelligence & Course Trends"
-                  description="Comparative placement rates, top-tier recruiters, and course relevance across engineering departments"
-                  badge="9 Departments"
-                  accent="blue"
-                  icon={GraduationCap}
-                  helperLabel="Verified campus records for 2024-2026 batches"
-                  onAskCoach={handleAskCoach}
-                />
                 <BranchIntelligence
                   apiBase={API_BASE}
                   selectedYear={profile.graduationYear || 2026}
@@ -2339,17 +2315,8 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-16"
+                className="space-y-12 sm:space-y-14"
               >
-                <SectionHeader
-                  title="Cohort Placement Analytics & 6-Week Sprint Roadmap"
-                  description="Authoritative campus placement records across 972 engineering candidates paired with your weekly preparation milestones"
-                  badge="972 Records"
-                  accent="blue"
-                  icon={TrendingUp}
-                  helperLabel="Filter by branch, year, package, and track your 6-week roadmap"
-                  onAskCoach={handleAskCoach}
-                />
                 <CohortExplorer
                   analytics={cohortAnalytics}
                   filters={cohortFilters}
@@ -2383,17 +2350,8 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-16"
+                className="space-y-12 sm:space-y-14"
               >
-                <SectionHeader
-                  title="Candidate Profile & System Settings"
-                  description="Manage your academic marks, coding ratings, and target role (Single Source of Truth synced across all predictions)"
-                  badge="6. Profile / Settings"
-                  accent="cyan"
-                  icon={User}
-                  helperLabel="Saving here recalculates all placement probabilities and opens 1. Dashboard"
-                  onAskCoach={handleAskCoach}
-                />
                 <ProfileSettings
                   profile={profile}
                   onSaveProfile={handleSaveProfile}
@@ -2419,7 +2377,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-16"
+                className="space-y-12 sm:space-y-14"
               >
                 <JDCustomTailor
                   profile={profile}
@@ -2440,15 +2398,6 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                     setActiveTab("interview");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                />
-                <SectionHeader
-                  title="ATS Resume Studio & Diagnostic Scanner"
-                  description="Upload and scan your PDF resume against recruiter screening standards and Google X-Y-Z formula"
-                  badge="ATS Scanner"
-                  accent="rose"
-                  icon={FileText}
-                  helperLabel="Single-column ATS compliance and keyword gap detection"
-                  onAskCoach={handleAskCoach}
                 />
                 <ResumeStudio
                   feedback={resumeFeedback}
@@ -2477,17 +2426,8 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-16"
+                className="space-y-12 sm:space-y-14"
               >
-                <SectionHeader
-                  title="Flagship Project Blueprints & Portfolio"
-                  description="Production-grade project architectures mapped to recruiter rubrics and technical defense rounds"
-                  badge="Portfolio Blueprints"
-                  accent="amber"
-                  icon={Lightbulb}
-                  helperLabel="Includes live architecture specs and STAR storytelling defense points"
-                  onAskCoach={handleAskCoach}
-                />
                 <ProjectRecommender
                   targetRole={profile.targetRole}
                   onAskCoach={handleAskCoach}

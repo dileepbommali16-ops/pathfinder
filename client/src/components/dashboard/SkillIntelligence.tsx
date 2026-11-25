@@ -1,20 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import {
-  Code2,
-  TrendingUp,
-  Sparkles,
-  Award,
-  Zap,
-  CheckCircle2,
-  AlertCircle,
-  ArrowRight,
-  Bot,
-  Layers,
-  ChevronRight,
-  BookOpen,
-  Filter
-} from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -23,7 +7,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  Cell
+  Cell,
 } from "recharts";
 import { FALLBACK_SKILLS_DATA } from "@/lib/fallbackData";
 
@@ -64,30 +48,27 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
   selectedYear,
   selectedBranch,
   onAskCoach,
-  onNavigateTab,
 }) => {
   const [skillAnalytics, setSkillAnalytics] = useState<SkillMetric[]>(
     (FALLBACK_SKILLS_DATA.skillAnalytics || []) as unknown as SkillMetric[]
   );
-  const [benchmarks, setBenchmarks] = useState<CanonicalBenchmark[]>(
-    (FALLBACK_SKILLS_DATA.canonicalBenchmarks || []) as unknown as CanonicalBenchmark[]
+  const [baselineRate, setBaselineRate] = useState<number>(
+    FALLBACK_SKILLS_DATA.baselinePlacementRate || 75.0
   );
-  const [baselineRate, setBaselineRate] = useState<number>(FALLBACK_SKILLS_DATA.baselinePlacementRate || 75.0);
   const [selectedSkillName, setSelectedSkillName] = useState<string>("AIML");
   const [mySkills, setMySkills] = useState<string[]>(["Python", "SQL"]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
     const fetchSkills = async () => {
-      setIsLoading(true);
       try {
-        const resp = await fetch(`${apiBase}/api/data/skills?year=${selectedYear}&branch=${selectedBranch}`);
+        const resp = await fetch(
+          `${apiBase}/api/data/skills?year=${selectedYear}&branch=${selectedBranch}`
+        );
         if (resp.ok) {
           const data = await resp.json();
           if (isMounted) {
             setSkillAnalytics(data.skillAnalytics || []);
-            setBenchmarks(data.canonicalBenchmarks || []);
             setBaselineRate(data.baselinePlacementRate || 75.0);
             if (data.skillAnalytics && data.skillAnalytics.length > 0) {
               setSelectedSkillName(data.skillAnalytics[0].skill);
@@ -96,8 +77,6 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
         }
       } catch (err) {
         console.warn("Skill analytics API warning:", err);
-      } finally {
-        if (isMounted) setIsLoading(false);
       }
     };
     fetchSkills();
@@ -106,7 +85,8 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
     };
   }, [apiBase, selectedYear, selectedBranch]);
 
-  const activeMetric = skillAnalytics.find((s) => s.skill === selectedSkillName) || skillAnalytics[0];
+  const activeMetric =
+    skillAnalytics.find((s) => s.skill === selectedSkillName) || skillAnalytics[0];
 
   const toggleSkill = (skill: string) => {
     setMySkills((prev) =>
@@ -114,101 +94,141 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
     );
   };
 
-  // High priority gap skills from benchmarks that user hasn't checked
-  const missingBenchmarks = benchmarks.filter(
-    (b) => !mySkills.some((s) => b.name.toLowerCase().includes(s.toLowerCase()))
-  );
-
   return (
     <div className="space-y-8">
       {/* Top Banner */}
-      <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#18181B]/[0.06] blur-3xl" />
-
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#141418] text-[#D4D4D8] border border-[#242429] shadow-inner">
-              <Zap className="h-6 w-6" />
+      <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px] sm:p-8">
+        <div className="flex flex-col justify-between gap-4 border-b border-[#1F1F23] pb-5 md:flex-row md:items-center">
+          <div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-2xl">
+                Skill Intelligence &amp; Impact Matrix
+              </h2>
+              <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
+                972 Records
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold tracking-tight text-[#f8fafc]">Skill Intelligence & Impact Matrix</h2>
-                <span className="rounded-md border border-[#242429] bg-[#141418] px-2 py-0.5 text-[10px] font-semibold text-[#D4D4D8]">
-                  Live Cohort Correlation • 972 Records
-                </span>
-              </div>
-              <p className="text-xs text-[#94a3b8]">
-                Verified correlation between technical skills, campus placement rate, and salary multipliers
-              </p>
-            </div>
+            <p className="mt-1.5 text-xs text-[#A1A1AA] sm:text-sm">
+              Verified correlation between technical skills, campus placement rate, and salary
+              multipliers
+            </p>
           </div>
 
           <button
-            onClick={() => onAskCoach("Which specific high-yield skills will give me the biggest placement probability boost right now?")}
-            className="flex items-center gap-2 rounded-xl border border-[#242429] bg-[#141418] px-4 py-2 text-xs font-semibold text-[#D4D4D8] transition-all hover:bg-[#27272A] active:scale-95 shadow-sm"
+            type="button"
+            onClick={() =>
+              onAskCoach(
+                "Which specific high-yield skills will give me the biggest placement probability boost right now?"
+              )
+            }
+            className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#141418] px-4 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] cursor-pointer"
           >
-            <Bot className="h-4 w-4" />
-            <span>Consult Coach on Skills</span>
+            Ask DAS on Skills
           </button>
         </div>
 
         {/* Skill Category Cards */}
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {skillAnalytics.slice(0, 4).map((s) => (
-            <div
+            <button
               key={s.skill}
+              type="button"
               onClick={() => setSelectedSkillName(s.skill)}
-              className={`cursor-pointer rounded-2xl border p-4 transition-all ${
-                selectedSkillName === s.skill
-                  ? "border-[#242429] bg-[#141418] shadow-[0_0_16px_rgba(0,0,0,0)]"
-                  : "border-white/[0.08] bg-[#000000] hover:border-[#3F3F46]"
-              }`}
+              className={`cursor-pointer rounded-xl border p-4 text-left transition-colors ${selectedSkillName === s.skill
+                ? "border-[#FAFAFA]/45 bg-[#18181E]"
+                : "border-[#222226] bg-[#101014] hover:border-[#3F3F46]"
+                }`}
             >
-              <span className="text-[11px] font-semibold text-[#94a3b8] block truncate">{s.skill}</span>
-              <div className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-[#f8fafc]">{s.placementRate}%</span>
-                <span className={`text-[10px] font-bold ${s.rateDeltaVsAverage >= 0 ? "text-[#D4D4D8]" : "text-[#D4D4D8]"}`}>
-                  {s.rateDeltaVsAverage >= 0 ? `+${s.rateDeltaVsAverage}%` : `${s.rateDeltaVsAverage}%`}
+              <span className="block truncate text-[11px] font-medium text-[#A1A1AA]">
+                {s.skill}
+              </span>
+              <div className="mt-1.5 flex items-baseline gap-2">
+                <span className="font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
+                  {s.placementRate}%
+                </span>
+                <span className="font-mono text-[10px] text-[#D4D4D8] tabular-nums">
+                  {s.rateDeltaVsAverage >= 0
+                    ? `+${s.rateDeltaVsAverage}%`
+                    : `${s.rateDeltaVsAverage}%`}
                 </span>
               </div>
-              <span className="mt-1 text-[10px] text-[#94a3b8] block">{s.totalCandidates} candidates</span>
-            </div>
+              <span className="mt-1 block font-mono text-[10px] text-[#71717A] tabular-nums">
+                {s.totalCandidates} candidates
+              </span>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Main Grid: Visual Chart + Deep Breakdown */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left 2 Cols: Interactive Recharts Skill Matrix + Self Gap Assessment */}
+      {/* Main Grid */}
+      <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
         <div className="space-y-6 lg:col-span-2">
-          {/* Skill Performance Chart */}
-          <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
+          <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px]">
             <div className="flex items-center justify-between pb-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-[#D4D4D8]" />
-                <h3 className="text-sm font-bold text-[#f8fafc]">Placement Clearance Rate by Technical Skill</h3>
-              </div>
-              <span className="text-xs text-[#94a3b8]">Baseline Average: {baselineRate}%</span>
+              <h3 className="text-sm font-semibold text-[#FAFAFA]">
+                Placement Clearance Rate by Technical Skill
+              </h3>
+              <span className="font-mono text-xs text-[#A1A1AA] tabular-nums">
+                Baseline: {baselineRate}%
+              </span>
             </div>
 
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={skillAnalytics} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" opacity={0.5} vertical={false} />
-                  <XAxis dataKey="skill" stroke="#94a3b8" tick={{ fontSize: 10, fill: "#94a3b8" }} interval={0} angle={-12} textAnchor="end" height={45} />
-                  <YAxis stroke="#94a3b8" domain={[40, 100]} tick={{ fontSize: 11, fill: "#94a3b8" }} unit="%" />
+                <BarChart
+                  data={skillAnalytics}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1F1F23" vertical={false} />
+                  <XAxis
+                    dataKey="skill"
+                    stroke="#71717A"
+                    tick={{ fontSize: 10, fill: "#A1A1AA" }}
+                    interval={0}
+                    angle={-12}
+                    textAnchor="end"
+                    height={45}
+                  />
+                  <YAxis
+                    stroke="#71717A"
+                    domain={[40, 100]}
+                    tick={{ fontSize: 11, fill: "#A1A1AA" }}
+                    unit="%"
+                  />
                   <Tooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const item = payload[0].payload as SkillMetric;
                         return (
-                          <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3 shadow-xl backdrop-blur-xl text-xs text-[#f8fafc]">
-                            <span className="font-bold text-[#f8fafc]">{item.skill}</span>
-                            <div className="mt-1 space-y-0.5 text-[#94a3b8]">
-                              <div>Placement Rate: <strong className="text-[#D4D4D8]">{item.placementRate}%</strong></div>
-                              <div>Boost over baseline: <strong className="text-[#D4D4D8]">{item.rateDeltaVsAverage >= 0 ? `+${item.rateDeltaVsAverage}%` : `${item.rateDeltaVsAverage}%`}</strong></div>
-                              <div>Evaluated Candidates: <strong className="text-[#f8fafc]">{item.totalCandidates}</strong></div>
-                              <div>Avg Coding Benchmark: <strong className="text-[#94a3b8]">{item.avgCodingScore}/10</strong></div>
+                          <div className="rounded-xl border border-[#27272A] bg-[#09090B] p-3 text-xs text-[#FAFAFA] shadow-xl">
+                            <span className="font-semibold">{item.skill}</span>
+                            <div className="mt-1 space-y-0.5 text-[#A1A1AA]">
+                              <div>
+                                Placement Rate:{" "}
+                                <strong className="font-mono text-[#FAFAFA]">
+                                  {item.placementRate}%
+                                </strong>
+                              </div>
+                              <div>
+                                Delta:{" "}
+                                <strong className="font-mono text-[#FAFAFA]">
+                                  {item.rateDeltaVsAverage >= 0
+                                    ? `+${item.rateDeltaVsAverage}%`
+                                    : `${item.rateDeltaVsAverage}%`}
+                                </strong>
+                              </div>
+                              <div>
+                                Candidates:{" "}
+                                <strong className="font-mono text-[#FAFAFA]">
+                                  {item.totalCandidates}
+                                </strong>
+                              </div>
+                              <div>
+                                Coding Benchmark:{" "}
+                                <strong className="font-mono text-[#FAFAFA]">
+                                  {item.avgCodingScore}/10
+                                </strong>
+                              </div>
                             </div>
                           </div>
                         );
@@ -216,11 +236,17 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
                       return null;
                     }}
                   />
-                  <Bar dataKey="placementRate" radius={[8, 8, 0, 0]}>
+                  <Bar dataKey="placementRate" radius={[6, 6, 0, 0]}>
                     {skillAnalytics.map((entry) => (
                       <Cell
                         key={entry.skill}
-                        fill={entry.skill === selectedSkillName ? "#FAFAFA" : entry.placementRate >= 80 ? "#A1A1AA" : "#3F3F46"}
+                        fill={
+                          entry.skill === selectedSkillName
+                            ? "#FAFAFA"
+                            : entry.placementRate >= 80
+                              ? "#A1A1AA"
+                              : "#3F3F46"
+                        }
                       />
                     ))}
                   </Bar>
@@ -229,35 +255,44 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
             </div>
           </div>
 
-          {/* Interactive Skill Gap Checklist & Ramp-Up Plan */}
-          <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
-              <div className="flex items-center gap-2">
-                <Code2 className="h-4 w-4 text-[#D4D4D8]" />
-                <h3 className="text-sm font-bold text-[#f8fafc]">Interactive Skill Inventory & Gap Diagnosis</h3>
-              </div>
-              <span className="text-xs text-[#94a3b8]">{mySkills.length} selected</span>
+          <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px]">
+            <div className="flex items-center justify-between border-b border-[#1F1F23] pb-4">
+              <h3 className="text-sm font-semibold text-[#FAFAFA]">
+                Interactive Skill Inventory
+              </h3>
+              <span className="font-mono text-xs text-[#A1A1AA] tabular-nums">
+                {mySkills.length} selected
+              </span>
             </div>
 
-            <p className="mt-3 text-xs text-[#94a3b8]">
-              Check the skills you currently possess to dynamically reveal your high-yield placement bottlenecks:
+            <p className="mt-3 text-xs text-[#A1A1AA]">
+              Select the skills you possess to compare against cohort clearance trends:
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              {["Python", "Java", "SQL", "DSA", "AIML", "Docker", "System Design", "React", "C++"].map((sk) => {
+              {[
+                "Python",
+                "Java",
+                "SQL",
+                "DSA",
+                "AIML",
+                "Docker",
+                "System Design",
+                "React",
+                "C++",
+              ].map((sk) => {
                 const checked = mySkills.includes(sk);
                 return (
                   <button
                     key={sk}
+                    type="button"
                     onClick={() => toggleSkill(sk)}
-                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
-                      checked
-                        ? "border-[#242429] bg-[#141418] text-[#D4D4D8] shadow-[0_0_10px_rgba(0,0,0,0)]"
-                        : "border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-[#3F3F46] hover:text-[#f8fafc]"
-                    }`}
+                    className={`h-9 rounded-lg border px-3.5 text-xs font-medium transition-colors cursor-pointer ${checked
+                      ? "border-[#FAFAFA]/45 bg-[#18181E] text-[#FAFAFA]"
+                      : "border-[#222226] bg-[#101014] text-[#A1A1AA] hover:border-[#3F3F46] hover:text-[#FAFAFA]"
+                      }`}
                   >
-                    <CheckCircle2 className={`h-3.5 w-3.5 ${checked ? "text-[#D4D4D8]" : "text-neutral-600"}`} />
-                    <span>{sk}</span>
+                    {sk}
                   </button>
                 );
               })}
@@ -265,57 +300,76 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
           </div>
         </div>
 
-        {/* Right Column: Deep-Dive Card into Selected Skill */}
+        {/* Right Column */}
         <div className="space-y-6">
           {activeMetric && (
-            <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
-              <div className="flex items-center gap-2 pb-4 border-b border-white/[0.08]">
-                <Award className="h-5 w-5 text-[#D4D4D8]" />
-                <h3 className="text-sm font-bold text-[#f8fafc]">Skill Benchmark Focus</h3>
-              </div>
+            <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px]">
+              <h3 className="border-b border-[#1F1F23] pb-3.5 text-sm font-semibold text-[#FAFAFA]">
+                Skill Benchmark Focus
+              </h3>
 
               <div className="mt-4">
-                <span className="text-lg font-bold text-[#f8fafc] block">{activeMetric.skill}</span>
-                <span className="text-xs text-[#94a3b8] mt-0.5 block">Evaluated across verified college drives</span>
+                <span className="block text-lg font-semibold text-[#FAFAFA]">
+                  {activeMetric.skill}
+                </span>
+                <span className="mt-0.5 block text-xs text-[#A1A1AA]">
+                  Evaluated across verified campus drives
+                </span>
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3">
-                    <span className="text-[10px] text-[#94a3b8] block">Placement Rate</span>
-                    <span className="text-xl font-bold text-[#D4D4D8] mt-0.5 block">{activeMetric.placementRate}%</span>
+                  <div className="rounded-xl border border-[#222226] bg-[#101014] p-3.5">
+                    <span className="block text-[10px] text-[#71717A]">Placement Rate</span>
+                    <span className="mt-1 block font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
+                      {activeMetric.placementRate}%
+                    </span>
                   </div>
-                  <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3">
-                    <span className="text-[10px] text-[#94a3b8] block">Delta vs Baseline</span>
-                    <span className="text-xl font-bold text-[#D4D4D8] mt-0.5 block">
-                      {activeMetric.rateDeltaVsAverage >= 0 ? `+${activeMetric.rateDeltaVsAverage}%` : `${activeMetric.rateDeltaVsAverage}%`}
+                  <div className="rounded-xl border border-[#222226] bg-[#101014] p-3.5">
+                    <span className="block text-[10px] text-[#71717A]">Delta vs Baseline</span>
+                    <span className="mt-1 block font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
+                      {activeMetric.rateDeltaVsAverage >= 0
+                        ? `+${activeMetric.rateDeltaVsAverage}%`
+                        : `${activeMetric.rateDeltaVsAverage}%`}
                     </span>
                   </div>
                 </div>
 
                 <div className="mt-4 space-y-2 text-xs">
-                  <div className="flex justify-between py-1.5 border-b border-white/[0.08]">
-                    <span className="text-[#94a3b8]">Average CGPA</span>
-                    <span className="font-semibold text-[#f8fafc]">{activeMetric.avgCgpa}</span>
+                  <div className="flex justify-between border-b border-[#1F1F23] py-2">
+                    <span className="text-[#A1A1AA]">Average CGPA</span>
+                    <span className="font-mono font-medium text-[#FAFAFA] tabular-nums">
+                      {activeMetric.avgCgpa}
+                    </span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-white/[0.08]">
-                    <span className="text-[#94a3b8]">Average Coding Score</span>
-                    <span className="font-semibold text-[#f8fafc]">{activeMetric.avgCodingScore} / 10</span>
+                  <div className="flex justify-between border-b border-[#1F1F23] py-2">
+                    <span className="text-[#A1A1AA]">Average Coding Score</span>
+                    <span className="font-mono font-medium text-[#FAFAFA] tabular-nums">
+                      {activeMetric.avgCodingScore} / 10
+                    </span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-white/[0.08]">
-                    <span className="text-[#94a3b8]">Average Communication</span>
-                    <span className="font-semibold text-[#f8fafc]">{activeMetric.avgCommunicationScore} / 10</span>
+                  <div className="flex justify-between border-b border-[#1F1F23] py-2">
+                    <span className="text-[#A1A1AA]">Average Communication</span>
+                    <span className="font-mono font-medium text-[#FAFAFA] tabular-nums">
+                      {activeMetric.avgCommunicationScore} / 10
+                    </span>
                   </div>
-                  <div className="flex justify-between py-1.5">
-                    <span className="text-[#94a3b8]">Total Tested Students</span>
-                    <span className="font-semibold text-[#f8fafc]">{activeMetric.totalCandidates}</span>
+                  <div className="flex justify-between py-2">
+                    <span className="text-[#A1A1AA]">Total Tested Students</span>
+                    <span className="font-mono font-medium text-[#FAFAFA] tabular-nums">
+                      {activeMetric.totalCandidates}
+                    </span>
                   </div>
                 </div>
 
                 <button
-                  onClick={() => onAskCoach(`How do I prepare and master ${activeMetric.skill} for campus recruitment in 4 weeks?`)}
-                  className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl border border-[#242429] bg-[#141418] py-2.5 text-xs font-semibold text-[#D4D4D8] transition-all hover:bg-[#27272A] active:scale-95 shadow-sm cursor-pointer"
+                  type="button"
+                  onClick={() =>
+                    onAskCoach(
+                      `How do I prepare and master ${activeMetric.skill} for campus recruitment in 4 weeks?`
+                    )
+                  }
+                  className="mt-5 inline-flex h-10 w-full items-center justify-center rounded-lg border border-[#27272A] bg-[#141418] text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] cursor-pointer"
                 >
-                  <Bot className="h-4 w-4" />
-                  <span>Build {activeMetric.skill} Sprint</span>
+                  Build {activeMetric.skill} Sprint
                 </button>
               </div>
             </div>

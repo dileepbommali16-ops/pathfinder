@@ -1,16 +1,4 @@
 import React, { useState, useMemo } from "react";
-import {
-  Briefcase,
-  CheckCircle2,
-  AlertTriangle,
-  FileText,
-  Sparkles,
-  Mic,
-  PlusCircle,
-  ArrowRight,
-  Target,
-  Building2,
-} from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
 import { audioEngine } from "@/agent/audioIO";
 import { toast } from "sonner";
@@ -120,7 +108,7 @@ export const JD_PRESETS: JDPreset[] = [
           "Explain how you graduate a basic Streamlit prototype into a 3-tier Dockerized production system on AWS/Azure.",
         topic: "Cloud & Production Deployment",
         starterPython:
-          'tiers = ["1. React + TypeScript Frontend (Vercel CDN)", "2. FastAPI Async REST Backend (Docker)", "3. PostgreSQL + Redis Cache (Managed Cloud)"]\nfor t in tiers:\n    print("Tier ->", t)',
+          'tiers = ["1. React + TypeScript Frontend (Vercel CDN)", "2. FastAPI Async REST Backend (Docker)", "3. PostgreSQL + Redis Cache (Managed Cloud)"]\nfor t in tiers:\n    print("Tier:", t)',
         expectedKeywords: ["FastAPI", "PostgreSQL", "Docker", "CI/CD", "React", "decouple"],
       },
     ],
@@ -158,7 +146,7 @@ export const JD_PRESETS: JDPreset[] = [
           "Implement Breadth-First Search (BFS) shortest-path traversal across a service dependency graph and state its time complexity.",
         topic: "Graphs & Shortest Path",
         starterPython:
-          'from collections import deque\n\ndef shortest_hops(graph, start, goal):\n    q = deque([(start, 0)])\n    visited = {start}\n    while q:\n        node, dist = q.popleft()\n        if node == goal:\n            return dist\n        for nxt in graph.get(node, []):\n            if nxt not in visited:\n                visited.add(nxt)\n                q.append((nxt, dist + 1))\n    return -1\n\ng = {"Gateway": ["Auth", "Cart"], "Cart": ["Pay"], "Auth": ["Pay"], "Pay": ["DB"]}\nprint("Shortest hops Gateway->DB:", shortest_hops(g, "Gateway", "DB"))',
+          'from collections import deque\n\ndef shortest_hops(graph, start, goal):\n    q = deque([(start, 0)])\n    visited = {start}\n    while q:\n        node, dist = q.popleft()\n        if node == goal:\n            return dist\n        for nxt in graph.get(node, []):\n            if nxt not in visited:\n                visited.add(nxt)\n                q.append((nxt, dist + 1))\n    return -1\n\ng = {"Gateway": ["Auth", "Cart"], "Cart": ["Pay"], "Auth": ["Pay"], "Pay": ["DB"]}\nprint("Shortest hops:", shortest_hops(g, "Gateway", "DB"))',
         expectedKeywords: ["O(V + E)", "BFS", "queue", "visited", "shortest path"],
       },
       {
@@ -166,7 +154,7 @@ export const JD_PRESETS: JDPreset[] = [
           "How do you design a real-time autocomplete or RAG search pipeline with sub-50ms p95 latency?",
         topic: "System Design & Search",
         starterPython:
-          'class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.words = []\n\nroot = TrieNode()\nfor w in ["pathfinder", "placement", "python", "postgres"]:\n    cur = root\n    for ch in w:\n        cur = cur.children.setdefault(ch, TrieNode())\n        cur.words.append(w)\n\nprint("Prefix \'p\':", root.children["p"].words)',
+          'class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.words = []\n\nroot = TrieNode()\nfor w in ["pathfinder", "placement", "python", "postgres"]:\n    cur = root\n    for ch in w:\n        cur = cur.children.setdefault(ch, TrieNode())\n        cur.words.append(w)\n\nprint("Prefix p:", root.children["p"].words)',
         expectedKeywords: ["Trie", "caching", "vector", "index", "p95", "sharding"],
       },
     ],
@@ -243,7 +231,6 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
     ];
     const userSkillLower = new Set(userSkillList.map((s) => s.toLowerCase().trim()));
 
-    // Extract required skills from customJdText + preset
     const detectedFromJd: string[] = [];
     for (const [rx, label] of SKILL_EXTRACT_PATTERNS) {
       if (rx.test(customJdText) && !detectedFromJd.includes(label)) {
@@ -273,15 +260,12 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
       Math.max(18, Math.min(98, skillRatio * 68 + cgpaBonus + projBonus - backlogPenalty))
     );
 
-    const tailoredSummary = `Results-driven ${profile.branch || "CSE"} undergraduate at ${
-      profile.college || "DR RVR NRI DEEMED TO BE UNIVERSITY"
-    } (CGPA: ${profile.cgpa.toFixed(1)}/10) targeting ${customRole} at ${customCompany}. Proven hands-on execution across ${
-      matched.slice(0, 6).join(", ") || "Python, SQL, React, and REST APIs"
-    } with ${profile.projectsCount || 2} production-grade capstones and measurable latency & reliability outcomes.`;
+    const tailoredSummary = `Results-driven ${profile.branch || "CSE"} undergraduate at ${profile.college || "DR RVR NRI DEEMED TO BE UNIVERSITY"
+      } (CGPA: ${profile.cgpa.toFixed(1)}/10) targeting ${customRole} at ${customCompany}. Proven hands-on execution across ${matched.slice(0, 6).join(", ") || "Python, SQL, React, and REST APIs"
+      } with ${profile.projectsCount || 2} production-grade capstones and measurable latency and reliability outcomes.`;
 
-    const tailoredBullet = `Accomplished a 42% p95 response latency reduction for ${customCompany}-grade workloads as measured by automated benchmark telemetry by architecting a modular ${
-      matched.slice(0, 3).join(" + ") || "FastAPI + PostgreSQL + React"
-    } service with Docker containerization and CI/CD validation.`;
+    const tailoredBullet = `Accomplished a 42% p95 response latency reduction for ${customCompany}-grade workloads as measured by automated benchmark telemetry by architecting a modular ${matched.slice(0, 3).join(" + ") || "FastAPI + PostgreSQL + React"
+      } service with Docker containerization and CI/CD validation.`;
 
     return {
       matchScore: rawMatch,
@@ -295,19 +279,22 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
   }, [profile, customJdText, customCompany, customRole, activePreset]);
 
   return (
-    <div className="glass-depth-card rounded-xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 space-y-6">
+    <div className="space-y-8 rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px] sm:p-8">
       {/* Header Banner */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-white/[0.08] pb-5">
+      <div className="flex flex-col justify-between gap-4 border-b border-[#1F1F23] pb-6 lg:flex-row lg:items-center">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#242429] bg-[#18181B] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#f8fafc]">
-            <Sparkles className="h-3.5 w-3.5 text-[#f8fafc]" />
-            <span>1-Click JD to Custom Prep &amp; Resume Tailor</span>
-          </div>
-          <h2 className="mt-2 text-xl sm:text-2xl font-black text-[#f8fafc]">
-            Target Company JD Matcher, ATS Tailor &amp; Custom Viva Generator
+          <span className="inline-block rounded border border-[#27272A] bg-[#101014] px-2.5 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA]">
+            JD Alignment &amp; Tailor
+          </span>
+          <h2
+            className="mt-2.5 text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-2xl"
+            style={{ textWrap: "balance" }}
+          >
+            Target Company JD Matcher, ATS Tailor &amp; Custom Viva
           </h2>
-          <p className="mt-1 text-xs sm:text-sm text-[#94a3b8]">
-            Select a Tier-1 company JD or paste any job description to compute your real skill match %, auto-tailor Google X-Y-Z resume bullets, and launch custom coding interview questions.
+          <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
+            Select a preset company JD or paste any job description to compute your keyword match,
+            tailor Google X-Y-Z resume bullets, and launch targeted coding rounds.
           </p>
         </div>
 
@@ -317,28 +304,25 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
               type="button"
               onClick={() =>
                 onAskCoach(
-                  `I am targeting ${customRole} at ${customCompany} where my JD match is ${analysis.matchScore}% (cutoff ${analysis.cutoff}%). ${
-                    analysis.missing.length > 0
-                      ? `My missing keywords are: ${analysis.missing.join(", ")}.`
-                      : "I match all detected technical keywords."
+                  `I am targeting ${customRole} at ${customCompany} where my JD match is ${analysis.matchScore}% (cutoff ${analysis.cutoff}%). ${analysis.missing.length > 0
+                    ? `My missing keywords are: ${analysis.missing.join(", ")}.`
+                    : "I match all detected technical keywords."
                   } How should I tailor my resume bullets and prep in the next 7 days?`
                 )
               }
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3 py-2 text-xs font-semibold text-[#f8fafc] hover:bg-[#27272A] transition cursor-pointer"
+              className="inline-flex h-10 items-center rounded-lg border border-[#27272A] bg-[#101014] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#18181B] cursor-pointer"
             >
-              <Sparkles className="h-3.5 w-3.5 text-[#f8fafc]" />
-              <span>Ask Coach about this</span>
+              Ask Coach
             </button>
           )}
 
           <button
             type="button"
             onClick={() => {
-              const verdictMsg = `Your current profile matches ${analysis.matchScore} percent for ${customRole} at ${customCompany}. ${
-                analysis.missing.length > 0
-                  ? `Add ${analysis.missing.slice(0, 3).join(", ")} to cross the ${analysis.cutoff} percent shortlist bar.`
-                  : "You clear the technical keyword cutoff!"
-              }`;
+              const verdictMsg = `Your current profile matches ${analysis.matchScore} percent for ${customRole} at ${customCompany}. ${analysis.missing.length > 0
+                ? `Add ${analysis.missing.slice(0, 3).join(", ")} to cross the ${analysis.cutoff} percent shortlist bar.`
+                : "You clear the technical keyword cutoff!"
+                }`;
               audioEngine.unlockAudio();
               audioEngine.clearAudioQueue();
               window.dispatchEvent(
@@ -351,28 +335,24 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                 .speakTextPuckOrLocal(verdictMsg, apiBase)
                 .finally(() => setIsSpeakingVerdict(false));
             }}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-[#000000] px-3.5 py-2 text-xs font-bold text-[#f8fafc] hover:bg-[#27272A] transition cursor-pointer"
+            className="inline-flex h-10 items-center rounded-lg border border-[#27272A] bg-[#101014] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#18181B] cursor-pointer"
           >
-            <Mic className="h-3.5 w-3.5 text-[#f8fafc]" />
-            <span>{isSpeakingVerdict ? "Speaking Verdict..." : "Hear DAS JD Verdict"}</span>
+            {isSpeakingVerdict ? "Speaking verdict..." : "Hear DAS JD verdict"}
           </button>
 
           <button
             type="button"
             onClick={onOpenOnePageResume}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#242429] bg-[#18181B] px-4 py-2 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 transition cursor-pointer"
+            className="inline-flex h-10 items-center rounded-lg bg-[#FAFAFA] px-4 text-xs font-medium text-[#09090B] transition-colors hover:bg-[#E4E4E7] active:scale-[0.98] cursor-pointer"
           >
-            <FileText className="h-3.5 w-3.5" />
-            <span>Export 1-Page Tailored ATS Resume</span>
+            Export 1-Page ATS Resume
           </button>
         </div>
       </div>
 
-      {/* 1-Click Company JD Preset Pills */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-[#94a3b8] mr-1">
-          Quick Company JDs:
-        </span>
+      {/* Quick Company JD Presets */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <span className="mr-1 font-mono text-[11px] text-[#71717A]">Quick Company JDs</span>
         {JD_PRESETS.map((preset) => {
           const active = preset.id === selectedPresetId;
           return (
@@ -380,11 +360,10 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
               key={preset.id}
               type="button"
               onClick={() => handleSelectPreset(preset)}
-              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                active
-                  ? "border border-white/25 bg-[#18181B] text-[#f8fafc] shadow-sm"
-                  : "border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-white/20 hover:text-[#f8fafc]"
-              }`}
+              className={`h-9 rounded-lg border px-3.5 text-xs font-medium transition-colors cursor-pointer ${active
+                ? "border-[#FAFAFA]/45 bg-[#18181E] text-[#FAFAFA]"
+                : "border-[#222226] bg-[#101014] text-[#A1A1AA] hover:border-[#3F3F46] hover:text-[#FAFAFA]"
+                }`}
             >
               {preset.company} · {preset.role.split("(")[0].trim()} ({preset.packageLpa})
             </button>
@@ -392,15 +371,15 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
         })}
       </div>
 
-      {/* Main Grid: Left JD Input & Match Breakdown | Right Tailored Bullets & 3 Custom Questions */}
-      <div className="grid gap-6 lg:grid-cols-12">
-        {/* Left 5 cols: JD Input + Real Match Meter */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+      {/* Main Grid */}
+      <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
+        {/* Left 5 cols: Clean Typing Inputs & Alignment Gauge */}
+        <div className="space-y-5 lg:col-span-5">
+          <div className="grid grid-cols-2 gap-3.5">
             <div>
               <label
                 htmlFor="jd-target-company"
-                className="block text-[11px] font-semibold text-[#94a3b8] mb-1"
+                className="mb-1.5 block text-xs font-medium text-[#A1A1AA]"
               >
                 Target Company
               </label>
@@ -410,13 +389,13 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                 type="text"
                 value={customCompany}
                 onChange={(e) => setCustomCompany(e.target.value)}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-semibold text-[#f8fafc] outline-none focus:border-white/35"
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-sm text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               />
             </div>
             <div>
               <label
                 htmlFor="jd-target-role"
-                className="block text-[11px] font-semibold text-[#94a3b8] mb-1"
+                className="mb-1.5 block text-xs font-medium text-[#A1A1AA]"
               >
                 Target Role Title
               </label>
@@ -426,7 +405,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                 type="text"
                 value={customRole}
                 onChange={(e) => setCustomRole(e.target.value)}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-semibold text-[#f8fafc] outline-none focus:border-white/35"
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-sm text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               />
             </div>
           </div>
@@ -434,9 +413,9 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
           <div>
             <label
               htmlFor="jd-custom-textarea"
-              className="block text-[11px] font-semibold text-[#94a3b8] mb-1"
+              className="mb-1.5 block text-xs font-medium text-[#A1A1AA]"
             >
-              Paste or Edit Company Job Description (JD)
+              Company Job Description
             </label>
             <textarea
               id="jd-custom-textarea"
@@ -445,58 +424,50 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
               value={customJdText}
               onChange={(e) => setCustomJdText(e.target.value)}
               placeholder="Paste any company Job Description here to compute exact match % and missing keywords..."
-              className="w-full rounded-2xl border border-white/[0.08] bg-[#000000] p-3 text-xs text-[#f8fafc] outline-none focus:border-white/35 leading-relaxed"
+              className="w-full rounded-lg border border-[#27272A] bg-[#0E0E12] p-3.5 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
             />
           </div>
 
           {/* Match Score Gauge Card */}
-          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="space-y-4 rounded-xl border border-[#222226] bg-[#101014] p-5">
+            <div className="flex items-center justify-between gap-2">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#94a3b8]">
-                  Live JD Alignment Score
-                </span>
-                <div className="flex items-baseline gap-2 mt-0.5">
-                  <span className="text-3xl font-black text-[#f8fafc]">{analysis.matchScore}%</span>
-                  <span className="text-xs text-[#94a3b8]">
-                    vs {customCompany} Cutoff ({analysis.cutoff}%)
+                <span className="font-mono text-[11px] text-[#71717A]">Live JD Alignment</span>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span className="font-mono text-3xl font-semibold text-[#FAFAFA] tabular-nums">
+                    {analysis.matchScore}%
+                  </span>
+                  <span className="font-mono text-xs text-[#A1A1AA] tabular-nums">
+                    vs {customCompany} ({analysis.cutoff}%)
                   </span>
                 </div>
               </div>
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-bold border ${
-                  analysis.matchScore >= analysis.cutoff
-                    ? "border-emerald-400/50 bg-emerald-500/20 text-emerald-200"
-                    : "border-white/15 bg-[#18181B] text-[#f8fafc]"
-                }`}
-              >
+              <span className="rounded border border-[#27272A] bg-[#0B0B0E] px-2.5 py-1 font-mono text-[11px] text-[#FAFAFA] tabular-nums">
                 {analysis.matchScore >= analysis.cutoff
                   ? "Shortlist Ready"
                   : `${analysis.cutoff - analysis.matchScore}% Below Cutoff`}
               </span>
             </div>
 
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#000000] border border-white/15">
+            <div className="h-2 w-full overflow-hidden rounded-sm bg-[#18181B]">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#18181B] via-white/75 to-white transition-all duration-500"
+                className="h-full bg-[#FAFAFA] transition-[width] duration-500"
                 style={{ width: `${analysis.matchScore}%` }}
               />
             </div>
 
-            {/* Matched vs Missing Keywords */}
-            <div className="space-y-2 pt-1">
+            <div className="space-y-3 pt-1">
               <div>
-                <span className="text-[11px] font-bold text-emerald-300 flex items-center gap-1">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Matched Profile Skills ({analysis.matched.length}):
+                <span className="block text-xs font-medium text-[#D4D4D8]">
+                  Matched Profile Skills ({analysis.matched.length})
                 </span>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                <div className="mt-2 flex flex-wrap gap-1.5">
                   {analysis.matched.map((sk) => (
                     <span
                       key={sk}
-                      className="rounded-lg border border-emerald-400/35 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-200"
+                      className="rounded border border-[#3F3F46] bg-[#16161B] px-2 py-0.5 text-[11px] font-medium text-[#FAFAFA]"
                     >
-                      ✓ {sk}
+                      {sk}
                     </span>
                   ))}
                 </div>
@@ -505,31 +476,29 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
               {analysis.missing.length > 0 && (
                 <div className="pt-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-[#f8fafc] flex items-center gap-1">
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-300" />
-                      Missing JD Keywords ({analysis.missing.length}):
+                    <span className="text-xs font-medium text-[#D4D4D8]">
+                      Missing JD Keywords ({analysis.missing.length})
                     </span>
                     <button
                       type="button"
                       onClick={() => {
                         onAddSkillsToProfile(analysis.missing);
                         toast.success(
-                          `Added ${analysis.missing.join(", ")} to your profile & recalculated JD match!`
+                          `Added ${analysis.missing.join(", ")} to your profile & recalculated JD match.`
                         );
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#f8fafc] hover:text-white underline cursor-pointer"
+                      className="text-[11px] font-medium text-[#FAFAFA] underline underline-offset-4 hover:text-[#D4D4D8] cursor-pointer"
                     >
-                      <PlusCircle className="h-3 w-3" />
-                      <span>Add to My Skills</span>
+                      Add to my skills
                     </button>
                   </div>
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  <div className="mt-2 flex flex-wrap gap-1.5">
                     {analysis.missing.map((sk) => (
                       <span
                         key={sk}
-                        className="rounded-lg border border-white/15 bg-[#18181B] px-2 py-0.5 text-[11px] font-semibold text-[#f8fafc]"
+                        className="rounded border border-[#27272A] bg-[#0E0E12] px-2 py-0.5 text-[11px] text-[#A1A1AA]"
                       >
-                        + {sk}
+                        {sk}
                       </span>
                     ))}
                   </div>
@@ -539,13 +508,12 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
           </div>
         </div>
 
-        {/* Right 7 cols: Tailored Google X-Y-Z Resume Copy + 3 Custom Interview Questions */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#f8fafc] flex items-center gap-1.5">
-                <Target className="h-4 w-4 text-[#f8fafc]" />
-                <span>Auto-Tailored ATS Resume Summary &amp; Google X-Y-Z Bullet ({customCompany})</span>
+        {/* Right 7 cols: Tailored Copy + 3 Custom Questions */}
+        <div className="space-y-6 lg:col-span-7">
+          <div className="space-y-3.5 rounded-xl border border-[#222226] bg-[#101014] p-5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-[#FAFAFA]">
+                Auto-Tailored ATS Summary &amp; Google X-Y-Z Bullet ({customCompany})
               </span>
               <button
                 type="button"
@@ -553,47 +521,46 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                   navigator.clipboard?.writeText(
                     `${analysis.tailoredSummary}\n• ${analysis.tailoredBullet}`
                   );
-                  toast.success("Tailored JD summary & X-Y-Z bullet copied to clipboard!");
+                  toast.success("Tailored JD summary & X-Y-Z bullet copied to clipboard.");
                 }}
-                className="rounded-lg border border-white/15 bg-[#18181B] px-2.5 py-1 text-[11px] font-bold text-[#f8fafc] hover:brightness-110 cursor-pointer"
+                className="inline-flex h-8 items-center rounded-md border border-[#27272A] bg-[#0B0B0E] px-3 text-[11px] font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#18181B] cursor-pointer"
               >
-                Copy Bullets
+                Copy bullets
               </button>
             </div>
-            <p className="text-xs text-[#94a3b8] leading-relaxed bg-[#000000] rounded-xl p-3 border border-white/10">
-              <strong className="text-[#f8fafc]">Executive Summary:</strong> {analysis.tailoredSummary}
+            <p className="rounded-lg border border-[#1F1F23] bg-[#0B0B0E] p-3.5 text-xs leading-relaxed text-[#A1A1AA]">
+              <strong className="font-medium text-[#FAFAFA]">Executive Summary:</strong>{" "}
+              {analysis.tailoredSummary}
             </p>
-            <p className="text-xs text-[#94a3b8] leading-relaxed bg-[#000000] rounded-xl p-3 border border-white/10">
-              <strong className="text-[#f8fafc]">Google X-Y-Z Impact Bullet:</strong> •{" "}
+            <p className="rounded-lg border border-[#1F1F23] bg-[#0B0B0E] p-3.5 text-xs leading-relaxed text-[#A1A1AA]">
+              <strong className="font-medium text-[#FAFAFA]">Google X-Y-Z Impact Bullet:</strong>{" "}
               {analysis.tailoredBullet}
             </p>
           </div>
 
-          {/* 3 Custom JD Technical Interview Questions */}
-          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#f8fafc] flex items-center gap-1.5">
-                <Building2 className="h-4 w-4 text-[#f8fafc]" />
-                <span>3 Custom Technical Rounds Extracted from {customCompany} JD</span>
+          <div className="space-y-4 rounded-xl border border-[#222226] bg-[#101014] p-5">
+            <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-center">
+              <span className="text-xs font-semibold text-[#FAFAFA]">
+                3 Custom Technical Rounds from {customCompany} JD
               </span>
-              <span className="text-[11px] text-[#94a3b8]">
-                Click any question to solve live with DAS Voice + Code Compiler
+              <span className="font-mono text-[11px] text-[#71717A]">
+                Open in Live Coding Arena
               </span>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {analysis.questions.map((q, idx) => (
                 <div
                   key={idx}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#000000] p-3 hover:border-white/25 transition"
+                  className="flex flex-col justify-between gap-3 rounded-lg border border-[#1F1F23] bg-[#0B0B0E] p-4 sm:flex-row sm:items-center"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="rounded bg-[#18181B] border border-white/15 px-2 py-0.5 text-[10px] font-bold text-[#f8fafc]">
-                        Round {idx + 1} · {q.topic}
-                      </span>
-                    </div>
-                    <p className="text-xs font-medium text-[#f8fafc] leading-relaxed">{q.question}</p>
+                  <div className="space-y-1.5">
+                    <span className="inline-block rounded border border-[#27272A] bg-[#141418] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8] tabular-nums">
+                      Round {String(idx + 1).padStart(2, "0")} · {q.topic}
+                    </span>
+                    <p className="text-xs font-medium leading-relaxed text-[#FAFAFA]">
+                      {q.question}
+                    </p>
                   </div>
 
                   <button
@@ -607,10 +574,9 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                         expectedKeywords: q.expectedKeywords,
                       })
                     }
-                    className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-[#18181B] px-3 py-2 text-xs font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
+                    className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-[#27272A] bg-[#141418] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] cursor-pointer"
                   >
-                    <span>Solve in Live Arena</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
+                    Solve in Arena
                   </button>
                 </div>
               ))}

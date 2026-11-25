@@ -1,24 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  Code2,
-  Play,
-  Mic,
-  MicOff,
-  Sparkles,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  Volume2,
-  Trophy,
-  Terminal,
-  ChevronRight,
-  ChevronLeft,
-  Eye,
-  EyeOff,
-  Copy,
-  RotateCcw,
-  Plus,
-} from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
 import { SUPPORTED_LANGUAGES, normalizeLanguage } from "@/agent/codingStudioController";
 import { audioEngine, startListening } from "@/agent/audioIO";
@@ -746,23 +726,23 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
   };
 
   return (
-    <div className="glass-depth-card rounded-xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 space-y-5">
+    <div className="space-y-6 rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px] sm:p-8">
       {/* Arena Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-white/[0.08] pb-4">
+      <div className="flex flex-col justify-between gap-4 border-b border-[#1F1F23] pb-5 lg:flex-row lg:items-center">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#242429] bg-[#18181B] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#f8fafc]">
-            <Sparkles className="h-3.5 w-3.5 text-[#f8fafc]" />
-            <span>Live AI Coding &amp; Voice Viva Arena · Endless Training &amp; Honest Grading</span>
-          </div>
-          <h2 className="mt-2 text-xl sm:text-2xl font-black text-[#f8fafc]">
-            Split-Screen Technical Coding &amp; Voice Defense Arena
+          <span className="inline-block rounded border border-[#27272A] bg-[#101014] px-2.5 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA]">
+            Live Coding &amp; Viva Arena
+          </span>
+          <h2 className="mt-2.5 text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-2xl">
+            Technical Coding &amp; Voice Defense Arena
           </h2>
-          <p className="mt-1 text-xs sm:text-sm text-[#94a3b8]">
-            Solve real interview problems across company tracks, verify actual outputs, inspect optimal reference solutions, or generate fresh challenges anytime.
+          <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
+            Solve real interview problems across company tracks, execute code across 11 runtimes,
+            or generate fresh challenges.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           {onAskCoach && (
             <button
               type="button"
@@ -771,28 +751,26 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   `For the coding challenge '${activeChallenge.question}' (${activeChallenge.company} ${activeChallenge.role}), give me a concise intuition hint on the optimal approach without spoiling all code.`
                 )
               }
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3 py-2 text-xs font-semibold text-[#f8fafc] hover:bg-[#27272A] transition cursor-pointer"
+              className="inline-flex h-10 items-center rounded-lg border border-[#27272A] bg-[#101014] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#18181B] cursor-pointer"
             >
-              <Sparkles className="h-3.5 w-3.5 text-[#f8fafc]" />
-              <span>Ask Coach Hint</span>
+              Ask Coach Hint
             </button>
           )}
 
           <button
             type="button"
             onClick={handleSpeakQuestionAloud}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-[#18181B] px-3.5 py-2 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 transition cursor-pointer"
+            className="inline-flex h-10 items-center rounded-lg border border-[#27272A] bg-[#141418] px-4 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] cursor-pointer"
           >
-            <Volume2 className="h-4 w-4 text-[#f8fafc]" />
-            <span>Have DAS Ask Aloud</span>
+            Have DAS Ask Aloud
           </button>
         </div>
       </div>
 
-      {/* Company Track Tabs + Challenge Switcher + Endless AI Generator */}
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-1.5">
+      {/* Company Track Tabs + Challenge Switcher */}
+      <div className="space-y-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {ARENA_TRACKS.map((trk) => {
               const active = trk.id === activeTrack;
               return (
@@ -800,10 +778,11 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   key={trk.id}
                   type="button"
                   onClick={() => handleSelectTrack(trk.id)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${active
-                    ? "border border-white/30 bg-[#18181B] text-[#f8fafc] shadow-sm"
-                    : "border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-white/20 hover:text-[#f8fafc]"
-                    }`}
+                  className={`h-9 rounded-lg border px-3.5 text-xs font-medium transition-colors cursor-pointer ${
+                    active
+                      ? "border-[#FAFAFA]/45 bg-[#18181E] text-[#FAFAFA]"
+                      : "border-[#222226] bg-[#101014] text-[#A1A1AA] hover:border-[#3F3F46] hover:text-[#FAFAFA]"
+                  }`}
                 >
                   {trk.label}
                 </button>
@@ -811,38 +790,31 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
             })}
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => handleStepChallenge(-1)}
-              className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#000000] px-2.5 py-1.5 text-xs font-semibold text-[#f8fafc] hover:bg-[#27272A] transition cursor-pointer"
+              className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#101014] px-3 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#18181B] cursor-pointer"
               title="Previous challenge in track"
             >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              <span>Prev</span>
+              Prev
             </button>
             <button
               type="button"
               onClick={() => handleStepChallenge(1)}
-              className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#18181B] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
+              className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#141418] px-3 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] cursor-pointer"
               title="Move to next challenge in this track"
             >
-              <span>Next Problem</span>
-              <ChevronRight className="h-3.5 w-3.5" />
+              Next Problem
             </button>
             <button
               type="button"
               disabled={isGeneratingProblem}
               onClick={() => void handleGenerateFreshProblem()}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#3F3F46] bg-[#000000] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:bg-[#27272A] disabled:opacity-50 transition cursor-pointer"
+              className="inline-flex h-9 items-center rounded-lg border border-[#3F3F46] bg-[#101014] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors hover:bg-[#1C1C22] disabled:opacity-50 cursor-pointer"
               title="Generate an infinite new AI coding challenge for this track"
             >
-              {isGeneratingProblem ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Plus className="h-3.5 w-3.5" />
-              )}
-              <span>{isGeneratingProblem ? "Generating..." : "New AI Problem"}</span>
+              {isGeneratingProblem ? "Generating..." : "New AI Problem"}
             </button>
           </div>
         </div>
@@ -857,44 +829,48 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                 key={ch.id}
                 type="button"
                 onClick={() => resetForChallenge(ch)}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${active
-                  ? "border border-white/30 bg-[#18181B] text-[#f8fafc] shadow-sm"
-                  : "border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-white/20 hover:text-[#f8fafc]"
-                  }`}
+                className={`inline-flex h-8 items-center gap-2 rounded-lg border px-3 text-xs font-medium transition-colors cursor-pointer ${
+                  active
+                    ? "border-[#FAFAFA]/45 bg-[#18181E] text-[#FAFAFA]"
+                    : "border-[#222226] bg-[#101014] text-[#A1A1AA] hover:border-[#3F3F46] hover:text-[#FAFAFA]"
+                }`}
               >
-                {isSolved && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />}
                 <span>{ch.title}</span>
+                {isSolved && (
+                  <span className="rounded border border-[#27272A] bg-[#0B0B0E] px-1.5 py-0.2 font-mono text-[9px] text-[#D4D4D8]">
+                    PASSED
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Split Screen Grid: Left Viva & Problem | Right Live Code Compiler */}
-      <div className="grid gap-6 lg:grid-cols-12">
-        {/* Left 5 cols: Problem Prompt + Expected Output + Viva */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-3">
+      {/* Split Screen Grid */}
+      <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
+        {/* Left 5 cols: Problem + Clean Viva Box */}
+        <div className="space-y-5 lg:col-span-5">
+          <div className="space-y-3.5 rounded-xl border border-[#222226] bg-[#101014] p-5">
             <div className="flex items-center justify-between">
-              <span className="rounded-lg border border-white/15 bg-[#18181B] px-2.5 py-0.5 text-[11px] font-bold text-[#f8fafc]">
+              <span className="rounded border border-[#27272A] bg-[#0B0B0E] px-2.5 py-0.5 font-mono text-[11px] font-medium text-[#FAFAFA]">
                 {activeChallenge.company} · {activeChallenge.role}
               </span>
-              <span className="text-[11px] font-semibold text-[#94a3b8]">
+              <span className="font-mono text-[11px] text-[#A1A1AA]">
                 {activeChallenge.difficulty}
               </span>
             </div>
-            <p className="text-xs sm:text-sm font-semibold text-[#f8fafc] leading-relaxed">
+            <p className="text-xs font-medium leading-relaxed text-[#FAFAFA] sm:text-sm">
               {activeChallenge.question}
             </p>
 
-            {/* Sample Input & Expected Output */}
-            <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-2.5 space-y-1 text-[11px] font-mono">
-              <div className="text-[#94a3b8]">
-                <span className="font-bold text-[#f8fafc]">Sample Input: </span>
+            <div className="space-y-1.5 rounded-lg border border-[#1F1F23] bg-[#0B0B0E] p-3 font-mono text-[11px]">
+              <div className="text-[#A1A1AA]">
+                <span className="font-semibold text-[#FAFAFA]">Sample Input: </span>
                 {activeChallenge.sampleInput}
               </div>
-              <div className="text-[#94a3b8]">
-                <span className="font-bold text-[#f8fafc]">Expected Output: </span>
+              <div className="text-[#A1A1AA]">
+                <span className="font-semibold text-[#FAFAFA]">Expected Output: </span>
                 {activeChallenge.expectedOutput}
               </div>
             </div>
@@ -903,42 +879,33 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               {activeChallenge.expectedKeywords.map((kw) => (
                 <span
                   key={kw}
-                  className="rounded-md border border-white/15 bg-[#000000] px-2 py-0.5 text-[10px] font-semibold text-[#94a3b8]"
+                  className="rounded border border-[#27272A] bg-[#0B0B0E] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA]"
                 >
-                  Target: {kw}
+                  {kw}
                 </span>
               ))}
             </div>
           </div>
 
-          {/* Voice / Text Explanation Box */}
-          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-2.5">
-            <div className="flex items-center justify-between">
+          {/* Clean Text / Voice Viva Box */}
+          <div className="space-y-3 rounded-xl border border-[#222226] bg-[#101014] p-5">
+            <div className="flex items-center justify-between gap-2">
               <label
                 htmlFor="arena-viva-explanation"
-                className="text-xs font-bold text-[#f8fafc]"
+                className="text-xs font-medium text-[#FAFAFA]"
               >
-                Your Complexity &amp; Approach Explanation (Required for Full Score)
+                Complexity &amp; Approach Explanation
               </label>
               <button
                 type="button"
                 onClick={handleToggleVoiceViva}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition cursor-pointer ${isListeningVoice
-                  ? "border border-white/40 bg-[#18181B] text-[#f8fafc] animate-pulse"
-                  : "border border-white/15 bg-[#18181B] text-[#f8fafc] hover:brightness-110"
-                  }`}
+                className={`inline-flex h-8 items-center rounded-md border px-3 text-[11px] font-medium transition-colors cursor-pointer ${
+                  isListeningVoice
+                    ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
+                    : "border-[#27272A] bg-[#0B0B0E] text-[#FAFAFA] hover:border-[#3F3F46] hover:bg-[#18181B]"
+                }`}
               >
-                {isListeningVoice ? (
-                  <>
-                    <MicOff className="h-3.5 w-3.5" />
-                    <span>Stop Mic</span>
-                  </>
-                ) : (
-                  <>
-                    <Mic className="h-3.5 w-3.5" />
-                    <span>Speak</span>
-                  </>
-                )}
+                {isListeningVoice ? "Stop Mic" : "Speak"}
               </button>
             </div>
 
@@ -949,57 +916,49 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               value={explanation}
               onChange={(e) => setExplanation(e.target.value)}
               placeholder="Explain your algorithm, time complexity O(...), space complexity O(...), and edge cases in your own words..."
-              className="w-full rounded-xl border border-white/[0.08] bg-[#000000] p-3 text-xs text-[#f8fafc] outline-none focus:border-white/35 leading-relaxed"
+              className="w-full rounded-lg border border-[#27272A] bg-[#0C0C10] p-3.5 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
             />
           </div>
 
-          {/* Honest Live Hiring Committee Verdict Card */}
+          {/* Verdict Card */}
           {verdictResult && (
-            <div className="rounded-2xl border border-white/15 bg-[#000000] p-4 space-y-3 shadow-lg">
+            <div className="space-y-3.5 rounded-xl border border-[#27272A] bg-[#101014] p-5">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-amber-400" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Live Hiring Verdict
-                  </span>
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-black border ${verdictResult.decision === "STRONG HIRE" || verdictResult.decision === "HIRE"
-                    ? "border-emerald-400/60 bg-emerald-500/20 text-emerald-200"
-                    : verdictResult.decision === "LEANING NO HIRE"
-                      ? "border-amber-400/50 bg-amber-500/15 text-amber-200"
-                      : "border-rose-400/50 bg-rose-500/15 text-rose-200"
-                    }`}
-                >
+                <span className="font-mono text-xs font-semibold text-[#FAFAFA]">
+                  Live Hiring Verdict
+                </span>
+                <span className="rounded border border-[#3F3F46] bg-[#141418] px-3 py-1 font-mono text-xs font-semibold text-[#FAFAFA] tabular-nums">
                   {verdictResult.decision} · {verdictResult.overallScore}/100
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-2.5">
-                  <span className="text-[10px] text-[#94a3b8] block">Verified Code Score</span>
-                  <span className="text-base font-black text-[#f8fafc]">
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="rounded-lg border border-[#1F1F23] bg-[#0B0B0E] p-3">
+                  <span className="block text-[10px] text-[#A1A1AA]">Verified Code Score</span>
+                  <span className="font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
                     {verdictResult.codeScore}/100
                   </span>
                 </div>
-                <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-2.5">
-                  <span className="text-[10px] text-[#94a3b8] block">Viva Explanation Score</span>
-                  <span className="text-base font-black text-[#f8fafc]">
+                <div className="rounded-lg border border-[#1F1F23] bg-[#0B0B0E] p-3">
+                  <span className="block text-[10px] text-[#A1A1AA]">Viva Explanation Score</span>
+                  <span className="font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
                     {verdictResult.vivaScore}/100
                   </span>
                 </div>
               </div>
 
-              <div className="space-y-1.5 text-xs text-[#94a3b8] leading-relaxed">
-                <p className="text-[#f8fafc] font-medium">{verdictResult.verdictText}</p>
+              <div className="space-y-1.5 text-xs leading-relaxed text-[#A1A1AA]">
+                <p className="font-medium text-[#FAFAFA]">{verdictResult.verdictText}</p>
                 {verdictResult.codeFeedback && (
                   <p>
-                    <strong className="text-[#f8fafc]">Code Review:</strong> {verdictResult.codeFeedback}
+                    <strong className="text-[#D4D4D8]">Code Review:</strong>{" "}
+                    {verdictResult.codeFeedback}
                   </p>
                 )}
                 {verdictResult.vivaFeedback && (
                   <p>
-                    <strong className="text-[#f8fafc]">Viva Review:</strong> {verdictResult.vivaFeedback}
+                    <strong className="text-[#D4D4D8]">Viva Review:</strong>{" "}
+                    {verdictResult.vivaFeedback}
                   </p>
                 )}
               </div>
@@ -1008,31 +967,32 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                 <button
                   type="button"
                   onClick={() => setShowCorrectProgram(true)}
-                  className="text-xs font-bold text-[#f8fafc] underline hover:opacity-80 cursor-pointer"
+                  className="text-xs font-medium text-[#FAFAFA] underline underline-offset-4 hover:text-[#D4D4D8] cursor-pointer"
                 >
-                  Compare with Optimal Program
+                  Compare with optimal program
                 </button>
                 <button
                   type="button"
                   onClick={() => handleStepChallenge(1)}
-                  className="inline-flex items-center gap-1 rounded-lg bg-[#18181B] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
+                  className="inline-flex h-8 items-center rounded-md border border-[#27272A] bg-[#141418] px-3 text-xs font-medium text-[#FAFAFA] hover:border-[#3F3F46] cursor-pointer"
                 >
-                  <span>Next Problem</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
+                  Next Problem
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Right 7 cols: Built-In 11-Language Live Code Editor + Optimal Reference Toggle */}
-        <div className="lg:col-span-7 space-y-3">
-          <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Code2 className="h-4 w-4 text-[#f8fafc]" />
-                <label htmlFor="arena-language-select" className="text-xs font-bold text-[#f8fafc]">
-                  Stage 2: 11-Lang Compiler
+        {/* Right 7 cols: Clean 11-Language Editor */}
+        <div className="space-y-4 lg:col-span-7">
+          <div className="space-y-4 rounded-xl border border-[#222226] bg-[#101014] p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5">
+                <label
+                  htmlFor="arena-language-select"
+                  className="text-xs font-medium text-[#FAFAFA]"
+                >
+                  11-Language Compiler
                 </label>
                 <select
                   id="arena-language-select"
@@ -1050,24 +1010,23 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                     setCompilerOutput("");
                     setRunStatus("idle");
                   }}
-                  className="rounded-lg border border-white/15 bg-[#000000] px-2.5 py-1 text-xs font-bold uppercase text-[#f8fafc] outline-none cursor-pointer"
+                  className="h-8 rounded-md border border-[#27272A] bg-[#0C0C10] px-2.5 font-mono text-xs text-[#FAFAFA] outline-none cursor-pointer"
                 >
                   {SUPPORTED_LANGUAGES.map((l) => (
-                    <option key={l.id} value={l.id} className="bg-[#000000] text-[#f8fafc]">
+                    <option key={l.id} value={l.id} className="bg-[#09090B] text-[#FAFAFA]">
                       {l.label}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setShowCorrectProgram((prev) => !prev)}
-                  className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#000000] px-3 py-1.5 text-xs font-semibold text-[#f8fafc] hover:bg-[#27272A] transition cursor-pointer"
+                  className="inline-flex h-8 items-center rounded-md border border-[#27272A] bg-[#0B0B0E] px-3 text-xs font-medium text-[#D4D4D8] transition-colors hover:border-[#3F3F46] hover:text-[#FAFAFA] cursor-pointer"
                 >
-                  {showCorrectProgram ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                  <span>{showCorrectProgram ? "Hide Solution" : "Show Correct Program"}</span>
+                  {showCorrectProgram ? "Hide Solution" : "Show Solution"}
                 </button>
 
                 <button
@@ -1078,39 +1037,28 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                     setCompilerOutput("");
                     setRunStatus("idle");
                   }}
-                  className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#000000] px-2.5 py-1.5 text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] transition cursor-pointer"
+                  className="inline-flex h-8 items-center rounded-md border border-[#27272A] bg-[#0B0B0E] px-3 text-xs font-medium text-[#A1A1AA] transition-colors hover:border-[#3F3F46] hover:text-[#FAFAFA] cursor-pointer"
                   title="Reset editor back to starter skeleton"
                 >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  <span>Reset</span>
+                  Reset
                 </button>
 
                 <button
                   type="button"
                   disabled={isCompiling}
                   onClick={() => void runCodeOnBackend()}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:bg-[#27272A] disabled:opacity-50 transition cursor-pointer"
+                  className="inline-flex h-8 items-center rounded-md border border-[#27272A] bg-[#141418] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] disabled:opacity-50 cursor-pointer"
                 >
-                  {isCompiling ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Play className="h-3.5 w-3.5" />
-                  )}
-                  <span>{isCompiling ? "Running..." : "Run Code"}</span>
+                  {isCompiling ? "Running..." : "Run Code"}
                 </button>
 
                 <button
                   type="button"
                   disabled={isEvaluating || isCompiling}
                   onClick={() => void handleEvaluateCodingAndViva()}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-[#18181B] px-3.5 py-1.5 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 disabled:opacity-50 transition cursor-pointer"
+                  className="inline-flex h-8 items-center rounded-md bg-[#FAFAFA] px-3.5 text-xs font-medium text-[#09090B] transition-colors hover:bg-[#E4E4E7] disabled:opacity-50 cursor-pointer"
                 >
-                  {isEvaluating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                  <span>{isEvaluating ? "Grading..." : "Submit Code + Viva for Verdict"}</span>
+                  {isEvaluating ? "Grading..." : "Submit Code & Viva"}
                 </button>
               </div>
             </div>
@@ -1119,18 +1067,17 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               id="arena-code-editor"
               name="arenaCodeEditor"
               aria-label="Arena Source Code Editor"
-              rows={10}
+              rows={11}
               spellCheck={false}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="w-full rounded-xl border border-white/[0.08] bg-[#000000] p-3.5 font-mono text-xs text-[#f8fafc] outline-none focus:border-white/35 leading-relaxed"
+              className="w-full rounded-lg border border-[#27272A] bg-[#0C0C10] p-4 font-mono text-xs leading-relaxed text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
             />
 
-            {/* Collapsible Optimal Reference Program Panel */}
             {showCorrectProgram && (
-              <div className="rounded-xl border border-white/20 bg-[#000000] p-3.5 space-y-2.5">
+              <div className="space-y-3 rounded-lg border border-[#27272A] bg-[#0B0B0E] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-[#f8fafc]">
+                  <span className="text-xs font-semibold text-[#FAFAFA]">
                     Optimal Reference Program (Python 3.11)
                   </span>
                   <div className="flex items-center gap-2">
@@ -1139,13 +1086,12 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                       onClick={() => {
                         try {
                           navigator.clipboard.writeText(activeChallenge.solutionPython);
-                          toast.success("Reference program copied!");
-                        } catch { }
+                          toast.success("Reference program copied.");
+                        } catch {}
                       }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-[#000000] px-2.5 py-1 text-[11px] font-semibold text-[#f8fafc] hover:bg-[#27272A] transition cursor-pointer"
+                      className="inline-flex h-7 items-center rounded border border-[#27272A] bg-[#141418] px-2.5 text-[11px] font-medium text-[#FAFAFA] hover:border-[#3F3F46] cursor-pointer"
                     >
-                      <Copy className="h-3 w-3" />
-                      <span>Copy</span>
+                      Copy
                     </button>
                     <button
                       type="button"
@@ -1154,57 +1100,46 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                         setCode(activeChallenge.solutionPython);
                         setCompilerOutput("");
                         setRunStatus("idle");
-                        toast.info("Loaded optimal reference program — click Run Code to test!");
+                        toast.info("Loaded optimal reference program — click Run Code to test.");
                       }}
-                      className="rounded-lg bg-[#18181B] px-2.5 py-1 text-[11px] font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
+                      className="inline-flex h-7 items-center rounded bg-[#FAFAFA] px-2.5 text-[11px] font-medium text-[#09090B] hover:bg-[#E4E4E7] cursor-pointer"
                     >
-                      Load into Editor
+                      Load into editor
                     </button>
                   </div>
                 </div>
-                <pre className="rounded-lg border border-white/[0.08] bg-[#000000] p-3 text-xs font-mono text-[#f8fafc] overflow-x-auto leading-relaxed">
+                <pre className="overflow-x-auto rounded border border-[#1F1F23] bg-[#09090B] p-3 font-mono text-xs leading-relaxed text-[#FAFAFA]">
                   {activeChallenge.solutionPython}
                 </pre>
-                <p className="text-[11px] text-[#94a3b8] leading-relaxed">
-                  <strong className="text-[#f8fafc]">Complexity Walkthrough:</strong> {activeChallenge.complexityExplanation}
+                <p className="text-[11px] leading-relaxed text-[#A1A1AA]">
+                  <strong className="font-medium text-[#FAFAFA]">Complexity Walkthrough:</strong>{" "}
+                  {activeChallenge.complexityExplanation}
                 </p>
               </div>
             )}
 
-            {/* Honest Live Execution Output Terminal */}
-            <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3 space-y-1.5">
+            {/* Execution Output Terminal */}
+            <div className="space-y-1.5 rounded-lg border border-[#1F1F23] bg-[#0B0B0E] p-3.5">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="font-bold text-[#f8fafc] flex items-center gap-1.5">
-                  <Terminal className="h-3.5 w-3.5" />
-                  <span>Live Execution Terminal Output</span>
+                <span className="font-mono font-medium text-[#FAFAFA]">
+                  Live Execution Output
                 </span>
                 {runStatus === "passed" && (
-                  <span className="inline-flex items-center gap-1 font-bold text-emerald-300">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>Sample Checks Passed</span>
-                  </span>
+                  <span className="font-mono text-[#10B981]">Sample Checks Passed</span>
                 )}
                 {runStatus === "wrong_output" && (
-                  <span className="inline-flex items-center gap-1 font-bold text-amber-300">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    <span>Wrong / Missing Output</span>
-                  </span>
+                  <span className="font-mono text-[#D4D4D8]">Wrong / Missing Output</span>
                 )}
                 {runStatus === "empty" && (
-                  <span className="inline-flex items-center gap-1 font-bold text-rose-300">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    <span>No Solution Code Written</span>
-                  </span>
+                  <span className="font-mono text-[#A1A1AA]">No Solution Written</span>
                 )}
                 {runStatus === "error" && (
-                  <span className="inline-flex items-center gap-1 font-bold text-rose-300">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    <span>Compile / Runtime Error</span>
-                  </span>
+                  <span className="font-mono text-[#D4D4D8]">Compile / Runtime Error</span>
                 )}
               </div>
-              <pre className="text-xs font-mono text-[#94a3b8] whitespace-pre-wrap max-h-32 overflow-y-auto">
-                {compilerOutput || "Write your solution and click 'Run Code' or 'Submit Code + Viva for Verdict' to test."}
+              <pre className="max-h-32 overflow-y-auto whitespace-pre-wrap font-mono text-xs text-[#A1A1AA]">
+                {compilerOutput ||
+                  "Write your solution and click 'Run Code' or 'Submit Code & Viva' to test."}
               </pre>
             </div>
           </div>

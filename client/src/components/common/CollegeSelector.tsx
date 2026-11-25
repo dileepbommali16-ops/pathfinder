@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Building, ChevronDown, MapPin, Search, X } from "lucide-react";
 import {
   VERIFIED_COLLEGES,
   formatCollegeWithLocation,
@@ -27,10 +26,7 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setOpen(false);
         setQuery("");
       }
@@ -81,9 +77,6 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
   return (
     <div ref={containerRef} className="relative w-full">
       <div className="relative flex items-center">
-        {isOnboarding && (
-          <Building className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-        )}
         <input
           type="text"
           id={id}
@@ -105,12 +98,12 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
           }}
           className={
             isOnboarding
-              ? "w-full rounded-2xl border border-white/15 bg-black py-3 pl-10 pr-16 text-sm text-white placeholder-zinc-500 outline-none transition-all focus:border-white focus:ring-2 focus:ring-white/15"
-              : "w-full rounded-xl border border-white/[0.12] bg-black px-3.5 py-2.5 pr-14 text-xs text-white placeholder-slate-500 outline-none transition-colors focus:border-white"
+              ? "w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 py-2.5 pr-20 text-sm text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
+              : "w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 py-2.5 pr-20 text-xs text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
           }
         />
 
-        <div className="absolute right-2.5 flex items-center gap-1">
+        <div className="absolute right-2 flex items-center gap-1.5">
           {value && (
             <button
               type="button"
@@ -120,49 +113,42 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
                 setQuery("");
                 setOpen(true);
               }}
-              className="rounded-md p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded px-2 py-1 text-[11px] font-medium text-[#A1A1AA] transition-colors hover:bg-[#18181B] hover:text-[#FAFAFA]"
             >
-              <X className="h-3.5 w-3.5" />
+              Clear
             </button>
           )}
           <button
             type="button"
             aria-label="Toggle verified colleges list"
             onClick={() => setOpen((prev) => !prev)}
-            className="rounded-md p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+            className="rounded px-2 py-1 font-mono text-[10px] text-[#A1A1AA] transition-colors hover:bg-[#18181B] hover:text-[#FAFAFA]"
           >
-            <ChevronDown
-              className={`h-4 w-4 transition-transform ${open ? "rotate-180 text-white" : ""}`}
-            />
+            {open ? "Close" : "List"}
           </button>
         </div>
       </div>
 
       {matchedCollege && !open && (
-        <div className="mt-1.5 flex items-center gap-1.5 px-1 text-[11px] text-slate-300">
-          <MapPin className="h-3 w-3 shrink-0 text-[#D4D4D8]" />
+        <div className="mt-1.5 flex items-center justify-between gap-2 px-1 text-[11px] text-[#A1A1AA]">
           <span className="truncate">{matchedCollege.location}</span>
-          <span className="ml-auto shrink-0 rounded-full border border-white/15 bg-black px-2 py-0.5 text-[10px] font-semibold text-white">
+          <span className="shrink-0 rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8]">
             {matchedCollege.status}
           </span>
         </div>
       )}
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-[70] mt-1.5 overflow-hidden rounded-xl border border-white/20 bg-black shadow-2xl shadow-black/90">
-          <div className="flex items-center justify-between border-b border-white/10 bg-black px-3 py-2 text-[11px] text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <Search className="h-3 w-3 text-[#D4D4D8]" />
-              {filteredColleges.length} colleges & universities (or type any name)
-            </span>
+        <div className="absolute left-0 right-0 top-full z-[70] mt-1.5 overflow-hidden rounded-xl border border-[#27272A] bg-[#0C0C0E] shadow-2xl">
+          <div className="flex items-center justify-between border-b border-[#1F1F23] bg-[#0C0C0E] px-3.5 py-2 font-mono text-[11px] text-[#71717A] tabular-nums">
+            <span>{filteredColleges.length} colleges &amp; universities (or type any name)</span>
           </div>
 
-          <div className="max-h-64 overflow-y-auto divide-y divide-white/[0.07] bg-black">
+          <div className="max-h-64 divide-y divide-[#1F1F23] overflow-y-auto bg-[#0C0C0E]">
             {filteredColleges.length > 0 ? (
               filteredColleges.map((entry) => {
                 const isSelected =
-                  formatCollegeWithLocation(entry).toLowerCase() ===
-                  value.trim().toLowerCase() ||
+                  formatCollegeWithLocation(entry).toLowerCase() === value.trim().toLowerCase() ||
                   entry.name.toLowerCase() === value.trim().toLowerCase();
 
                 return (
@@ -173,30 +159,28 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
                       e.preventDefault();
                       handleSelect(entry);
                     }}
-                    className={`flex w-full flex-col gap-1 px-3.5 py-2.5 text-left transition-colors ${isSelected
-                        ? "bg-white/[0.10] text-white"
-                        : "bg-black text-slate-100 hover:bg-white/[0.06]"
-                      }`}
+                    className={`flex w-full flex-col gap-1 px-3.5 py-2.5 text-left transition-colors ${
+                      isSelected
+                        ? "bg-[#18181E] text-[#FAFAFA]"
+                        : "bg-[#0C0C0E] text-[#E4E4E7] hover:bg-[#141418]"
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-xs font-semibold text-white leading-snug">
+                      <span className="text-xs font-medium leading-snug text-[#FAFAFA]">
                         {entry.name}
                       </span>
-                      <span className="shrink-0 rounded-full border border-white/15 bg-black px-2 py-0.5 text-[10px] font-medium text-slate-200">
+                      <span className="shrink-0 rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8]">
                         {entry.status}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                      <MapPin className="h-3 w-3 shrink-0 text-[#D4D4D8]" />
-                      <span className="truncate">{entry.location}</span>
-                    </div>
+                    <div className="truncate text-[11px] text-[#A1A1AA]">{entry.location}</div>
                   </button>
                 );
               })
             ) : (
-              <div className="px-4 py-3 text-xs text-slate-400">
-                No match in curated list — press Enter or keep typing to save{" "}
-                <span className="font-semibold text-white">"{query}"</span>.
+              <div className="px-4 py-3 text-xs text-[#A1A1AA]">
+                No match in curated list — keep typing to save{" "}
+                <span className="font-semibold text-[#FAFAFA]">"{query}"</span>.
               </div>
             )}
           </div>

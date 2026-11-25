@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Play, Volume2, X } from "lucide-react";
 import { API_BASE } from "@/lib/apiClient";
 import { PathfinderLogo } from "@/components/common/PathfinderLogo";
 
@@ -52,7 +51,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
 
   // Wake the cloud backend early while the visitor explores the landing page
   useEffect(() => {
-    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
+    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -61,7 +60,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
     if (video) {
       video.currentTime = 0;
       video.muted = false;
-      video.play().catch(() => {});
+      video.play().catch(() => { });
     }
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -74,8 +73,8 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
 
   return (
     <div className="min-h-dvh w-full overflow-x-clip bg-[#09090B] text-[#FAFAFA] antialiased selection:bg-[#FAFAFA] selection:text-[#09090B]">
-      {/* Sticky Architectural Navbar */}
-      <header className="sticky top-0 z-40 border-b border-[#1F1F23] bg-[#09090B]/90 backdrop-blur-md">
+      {/* Sticky Architectural Navbar — Single Sign in CTA */}
+      <header className="sticky top-0 z-40 border-b border-[#1F1F23] bg-[#09090B]/92 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-10">
           <a
             href="#top"
@@ -92,7 +91,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
 
           <nav
             aria-label="Primary landing navigation"
-            className="hidden items-center gap-7 text-[13px] text-[#A1A1AA] md:flex"
+            className="hidden items-center gap-8 text-[13px] text-[#A1A1AA] md:flex"
           >
             <a
               href="#walkthrough"
@@ -101,73 +100,62 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               Product tour
             </a>
             <a
-              href="#capabilities"
-              className="inline-flex min-h-10 items-center transition-colors duration-150 hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
-            >
-              Capabilities
-            </a>
-            <a
               href="#benchmarks"
               className="inline-flex min-h-10 items-center transition-colors duration-150 hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
             >
               Benchmarks
             </a>
+            <a
+              href="#capabilities"
+              className="inline-flex min-h-10 items-center transition-colors duration-150 hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+            >
+              Capabilities
+            </a>
           </nav>
 
-          <div className="flex items-center gap-2.5">
-            <button
-              id="nav-sign-in"
-              type="button"
-              onClick={onNavigateLogin}
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-[#27272A] bg-[#111113] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:text-[13px]"
-            >
-              Sign in
-            </button>
-            <button
-              id="nav-get-started"
-              type="button"
-              onClick={onNavigateLogin}
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FAFAFA] px-4 text-xs font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:text-[13px]"
-            >
-              Get started
-            </button>
-          </div>
+          <button
+            id="nav-sign-in"
+            type="button"
+            onClick={onNavigateLogin}
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-[#27272A] bg-[#141418] px-4 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#1C1C22] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:text-[13px]"
+          >
+            Sign in
+          </button>
         </div>
       </header>
 
       {/* Main Architectural Frame */}
       <main id="top" className="mx-auto max-w-6xl lg:border-x lg:border-[#18181B]">
-        {/* Hero Section */}
-        <section className="px-6 pt-14 pb-12 sm:px-10 sm:pt-20 sm:pb-14">
+        {/* Hero Section — Single Primary & Single Guest CTA */}
+        <section className="px-6 pt-16 pb-14 sm:px-10 sm:pt-24 sm:pb-16">
           <div className="inline-flex items-center gap-2 rounded-md border border-[#1F1F23] bg-[#0E0E11] px-2.5 py-1 text-xs text-[#A1A1AA]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
             <span>Random Forest ML + Live 3D Voice Agent</span>
           </div>
 
           <h1
-            className="mt-5 max-w-3xl text-3xl font-semibold leading-[1.08] tracking-[-0.035em] text-[#FAFAFA] sm:text-5xl"
+            className="mt-6 max-w-3xl text-3xl font-semibold leading-[1.08] tracking-[-0.035em] text-[#FAFAFA] sm:text-5xl"
             style={{ textWrap: "balance" }}
           >
             Placement readiness measured in real engineering signals.
           </h1>
 
           <p
-            className="mt-4 max-w-[56ch] text-[15px] leading-[1.6] text-[#A1A1AA] sm:text-base"
+            className="mt-5 max-w-[56ch] text-[15px] leading-[1.65] text-[#A1A1AA] sm:text-base"
             style={{ textWrap: "pretty" }}
           >
             Benchmark your profile against 972 verified campus offers, ship code in 11 compiler
             runtimes, and rehearse technical rounds with DAS — our live 3D voice interviewer.
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div className="mt-8 flex flex-wrap items-center gap-3.5">
             <button
               id="hero-get-started"
               type="button"
               onClick={onNavigateLogin}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#FAFAFA] px-5 text-sm font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+              className="inline-flex h-11 items-center justify-center rounded-lg bg-[#FAFAFA] px-5 text-sm font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
             >
-              <span>Get started</span>
-              <ArrowRight className="h-4 w-4" />
+              Get started
             </button>
             <button
               id="btn-landing-guest"
@@ -175,7 +163,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               onClick={onGuestLogin}
               className="inline-flex h-11 items-center justify-center rounded-lg border border-[#27272A] bg-[#111113] px-5 text-sm font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
             >
-              Try guest workspace
+              Explore as guest
             </button>
           </div>
         </section>
@@ -183,7 +171,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
         {/* Product Walkthrough Stage */}
         <section
           id="walkthrough"
-          className="border-t border-[#1F1F23] px-6 py-10 sm:px-10 sm:py-12"
+          className="border-t border-[#1F1F23] px-6 py-14 sm:px-10 sm:py-16"
         >
           <div
             onClick={() => setShowDemoModal(true)}
@@ -211,9 +199,9 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 muted
                 loop
                 playsInline
-                className="aspect-[16/9] w-full object-cover opacity-90 transition-opacity duration-200 group-hover:opacity-100"
+                className="aspect-[16/9] w-full object-cover opacity-95 transition-opacity duration-200 group-hover:opacity-100"
               />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
               <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-3 sm:bottom-4 sm:left-4 sm:right-4">
                 <button
                   id="btn-watch-launch-film"
@@ -222,13 +210,12 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                     e.stopPropagation();
                     setShowDemoModal(true);
                   }}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/20 bg-black/75 px-4 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 hover:bg-black/90 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:text-sm"
+                  className="inline-flex h-10 items-center justify-center rounded-lg border border-white/20 bg-black/80 px-4 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 hover:bg-black/95 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:text-sm"
                 >
-                  <Play className="h-3.5 w-3.5 fill-current" />
-                  <span>Watch walkthrough with sound</span>
+                  Watch 55s walkthrough
                 </button>
-                <span className="hidden rounded-md border border-white/15 bg-black/70 px-2.5 py-1 font-mono text-[11px] text-[#D4D4D8] tabular-nums sm:inline-block">
-                  00:55 · Interactive preview
+                <span className="hidden rounded-md border border-white/15 bg-black/75 px-2.5 py-1 font-mono text-[11px] text-[#D4D4D8] tabular-nums sm:inline-block">
+                  Audio enabled on click
                 </span>
               </div>
             </div>
@@ -242,7 +229,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
           className="grid grid-cols-2 divide-y divide-[#1F1F23] border-y border-[#1F1F23] bg-[#0B0B0E] sm:divide-x lg:grid-cols-4 lg:divide-y-0"
         >
           {BENCHMARKS.map((item) => (
-            <div key={item.index} className="px-6 py-6 sm:px-8">
+            <div key={item.index} className="px-6 py-8 sm:px-8 sm:py-10">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-mono text-2xl font-semibold tracking-tight text-[#FAFAFA] tabular-nums sm:text-3xl">
                   {item.value}
@@ -251,7 +238,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   {item.index}
                 </span>
               </div>
-              <p className="mt-1.5 text-[13px] text-[#A1A1AA]">{item.label}</p>
+              <p className="mt-2 text-[13px] text-[#A1A1AA]">{item.label}</p>
             </div>
           ))}
         </section>
@@ -262,7 +249,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
           className="grid gap-px border-b border-[#1F1F23] bg-[#1F1F23] sm:grid-cols-2"
         >
           {CAPABILITIES.map((cap) => (
-            <div key={cap.index} className="bg-[#09090B] p-6 sm:p-8">
+            <div key={cap.index} className="bg-[#09090B] p-8 sm:p-10">
               <div className="font-mono text-xs text-[#71717A] tabular-nums">{cap.index}</div>
               <h2
                 className="mt-3 text-lg font-semibold tracking-[-0.02em] text-[#FAFAFA]"
@@ -271,7 +258,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 {cap.title}
               </h2>
               <p
-                className="mt-2 max-w-[48ch] text-sm leading-[1.6] text-[#A1A1AA]"
+                className="mt-2.5 max-w-[48ch] text-sm leading-[1.65] text-[#A1A1AA]"
                 style={{ textWrap: "pretty" }}
               >
                 {cap.description}
@@ -279,65 +266,18 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             </div>
           ))}
         </section>
-
-        {/* Bottom Closing Band */}
-        <section className="px-6 py-12 sm:px-10">
-          <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-            <div>
-              <h2
-                className="text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-2xl"
-                style={{ textWrap: "balance" }}
-              >
-                Ready to measure your placement readiness?
-              </h2>
-              <p className="mt-1.5 text-sm text-[#A1A1AA]">
-                Open your calibrated readiness model or rehearse live with DAS.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={onNavigateLogin}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#FAFAFA] px-4 text-sm font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
-              >
-                <span>Sign in to Pathfinder</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={onGuestLogin}
-                className="inline-flex h-10 items-center justify-center rounded-lg border border-[#27272A] bg-[#111113] px-4 text-sm font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
-              >
-                Continue as guest
-              </button>
-            </div>
-          </div>
-        </section>
       </main>
 
-      {/* Minimal Footer */}
+      {/* Minimal Footer — Zero Duplicate CTAs */}
       <footer className="border-t border-[#1F1F23]">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-6 text-xs text-[#71717A] sm:flex-row sm:px-10">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 text-xs text-[#71717A] sm:flex-row sm:px-10">
           <div className="flex items-center gap-2.5 text-[#A1A1AA]">
             <PathfinderLogo size={20} variant="monochrome" />
             <span>Pathfinder 2.0</span>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onNavigateLogin}
-              className="inline-flex min-h-10 items-center rounded-md px-3 text-xs text-[#A1A1AA] transition-colors duration-150 hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
-            >
-              Sign in
-            </button>
-            <button
-              type="button"
-              onClick={onGuestLogin}
-              className="inline-flex min-h-10 items-center rounded-md px-3 text-xs text-[#A1A1AA] transition-colors duration-150 hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
-            >
-              Guest workspace
-            </button>
-          </div>
+          <p className="text-center font-mono text-[11px] text-[#71717A] sm:text-right">
+            Random Forest ML · Gemini Live 3D Voice · 11-Language Compiler
+          </p>
         </div>
       </footer>
 
@@ -365,8 +305,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   <span className="text-sm font-medium text-[#FAFAFA]">
                     Pathfinder 2.0 — Product Walkthrough
                   </span>
-                  <span className="hidden items-center gap-1.5 rounded border border-[#27272A] bg-[#111113] px-2 py-0.5 font-mono text-[11px] text-[#A1A1AA] sm:inline-flex">
-                    <Volume2 className="h-3 w-3" />
+                  <span className="hidden rounded border border-[#27272A] bg-[#111113] px-2 py-0.5 font-mono text-[11px] text-[#A1A1AA] sm:inline-block">
                     Puck Voice
                   </span>
                 </div>
@@ -374,9 +313,9 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   type="button"
                   aria-label="Close video preview"
                   onClick={() => setShowDemoModal(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-md text-[#A1A1AA] transition-colors duration-150 hover:bg-[#18181B] hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+                  className="inline-flex h-9 items-center justify-center rounded-md border border-[#27272A] bg-[#111113] px-3 text-xs font-medium text-[#D4D4D8] transition-colors duration-150 hover:bg-[#18181B] hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
                 >
-                  <X className="h-4 w-4" />
+                  Close
                 </button>
               </div>
               <div className="aspect-video w-full bg-black">

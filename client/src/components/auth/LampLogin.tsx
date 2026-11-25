@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { API_BASE, fetchWithTimeout } from "@/lib/apiClient";
 import { PathfinderLogo } from "@/components/common/PathfinderLogo";
 
@@ -130,10 +129,9 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
             id="btn-back-landing"
             type="button"
             onClick={onBack}
-            className="inline-flex h-10 items-center gap-2 rounded-lg px-2.5 text-xs font-medium text-[#A1A1AA] transition-colors duration-150 hover:bg-[#141418] hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+            className="inline-flex h-10 items-center rounded-lg px-3 text-xs font-medium text-[#A1A1AA] transition-colors duration-150 hover:bg-[#141418] hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to home</span>
+            Back to home
           </button>
         ) : (
           <div />
@@ -156,7 +154,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
             >
               Sign in to Pathfinder
             </h1>
-            <p className="mt-1 text-[13px] text-[#A1A1AA]" style={{ textWrap: "pretty" }}>
+            <p className="mt-1.5 text-[13px] text-[#A1A1AA]" style={{ textWrap: "pretty" }}>
               Continue with Google or GitHub, or enter your campus email.
             </p>
           </div>
@@ -180,7 +178,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
             </div>
           )}
 
-          {/* OAuth Providers — Official Icons on Flat Monochrome Surfaces */}
+          {/* OAuth Providers — Official Brand Marks */}
           <div className="mt-6 grid grid-cols-2 gap-3">
             <button
               id="btn-oauth-google"
@@ -271,18 +269,15 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
               />
             </div>
 
-            {/* Single Primary CTA */}
             <button
               id="btn-auth-submit"
               type="submit"
-              className="mt-1 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#FAFAFA] px-4 text-sm font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+              className="mt-1 inline-flex h-10 w-full items-center justify-center rounded-lg bg-[#FAFAFA] px-4 text-sm font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
             >
-              <span>Sign in</span>
-              <ArrowRight className="h-3.5 w-3.5" />
+              Sign in
             </button>
           </form>
 
-          {/* Quiet Secondary Entry */}
           <div className="mt-5 flex items-center justify-between border-t border-[#1F1F23] pt-4 text-xs text-[#71717A]">
             <span>Just exploring?</span>
             <button
@@ -295,10 +290,9 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
                   bypassOnboarding: true,
                 })
               }
-              className="inline-flex min-h-10 items-center gap-1 font-medium text-[#D4D4D8] underline decoration-[#3F3F46] underline-offset-4 transition-colors duration-150 hover:text-[#FAFAFA] hover:decoration-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+              className="inline-flex min-h-10 items-center font-medium text-[#D4D4D8] underline decoration-[#3F3F46] underline-offset-4 transition-colors duration-150 hover:text-[#FAFAFA] hover:decoration-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
             >
-              <span>Continue as guest</span>
-              <ArrowRight className="h-3 w-3" />
+              Continue as guest
             </button>
           </div>
         </motion.div>

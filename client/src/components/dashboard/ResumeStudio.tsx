@@ -1,22 +1,4 @@
 import React, { useEffect, useState } from "react";
-import {
-  FileText,
-  UploadCloud,
-  CheckCircle2,
-  AlertTriangle,
-  Sparkles,
-  Download,
-  Key,
-  LayoutTemplate,
-  Loader2,
-  FileCheck,
-  Building,
-  Award,
-  Wrench,
-  ShieldAlert,
-  ArrowRight,
-  Target,
-} from "lucide-react";
 
 export interface ResumeScoreBreakdown {
   impact: number;
@@ -104,8 +86,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSelectedFile(file);
+      setSelectedFile(e.target.files[0]);
     }
   };
 
@@ -116,10 +97,9 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
   const handleSyncToProfile = () => {
     if (!feedback || !onApplyResumeSkills) return;
     const syncPool = Array.from(
-      new Set([
-        ...(feedback.missing_skills || []),
-        ...(feedback.ats_keywords || []),
-      ].filter(Boolean))
+      new Set(
+        [...(feedback.missing_skills || []), ...(feedback.ats_keywords || [])].filter(Boolean)
+      )
     ).slice(0, 12);
     if (syncPool.length === 0) return;
     onApplyResumeSkills(syncPool);
@@ -131,569 +111,479 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
   const activeCompanyMatch =
     companyMatches.find((c) => c.company === selectedCompanyName) || companyMatches[0] || null;
 
-  const scoreTone =
-    !feedback
-      ? "border-white/20 text-[#f8fafc]"
-      : feedback.score >= 76
-      ? "border-[#242429] text-[#f8fafc]"
-      : feedback.score >= 55
-      ? "border-[#242429] text-[#f8fafc]"
-      : "border-[#242429] text-[#f8fafc]";
-
-  const tierTone =
-    !feedback
-      ? "border-white/15 bg-[#000000] text-[#94a3b8]"
-      : feedback.score >= 76
-      ? "border-[#242429] bg-[#18181B] text-[#f8fafc]"
-      : feedback.score >= 55
-      ? "border-[#242429] bg-[#18181B] text-[#f8fafc]"
-      : "border-[#242429] bg-[#18181B] text-[#f8fafc]";
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Upload & Input Section */}
-      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
-        <div className="relative z-10">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-[#000000] text-[#f8fafc] shadow-sm">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-bold tracking-tight text-[#f8fafc]">
-                    Senior Enterprise &amp; Deloitte ATS Audit Studio
-                  </h2>
-                  <span className="rounded-full border border-[#242429] bg-[#000000] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Uninflated Hiring Manager Review
-                  </span>
-                </div>
-                <p className="text-xs text-[#94a3b8]">
-                  Upload your PDF resume or paste project bullets for an honest Senior Deloitte / Big-Tech screening audit: missing enterprise skills, certifications, beyond-Streamlit project upgrades, and Google X-Y-Z rewrites.
-                </p>
-              </div>
-            </div>
+      <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px] sm:p-8">
+        <div className="border-b border-[#1F1F23] pb-5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h2 className="text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-2xl">
+              ATS Resume Studio &amp; Diagnostic Scanner
+            </h2>
+            <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
+              Uninflated Review
+            </span>
           </div>
+          <p className="mt-1.5 max-w-3xl text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
+            Upload your PDF resume or paste project bullets for an uninflated screening audit:
+            missing enterprise skills, certifications, project upgrades, and Google X-Y-Z rewrites.
+          </p>
+        </div>
 
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            {/* PDF File Drag/Upload Area */}
-            <div className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/15 bg-[#000000] p-6 text-center transition-all duration-300 hover:border-white/35">
-              <label className="flex w-full cursor-pointer flex-col items-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/15 bg-[#000000] text-[#f8fafc] transition-transform group-hover:scale-110">
-                  <UploadCloud className="h-6 w-6" />
-                </div>
-                <span className="mt-3 text-xs font-bold text-[#f8fafc]">
-                  {selectedFile ? selectedFile.name : "Click to browse or drop PDF resume"}
-                </span>
-                <span className="mt-1 text-[11px] text-[#94a3b8]">
-                  PDF format · Selectable text · Up to 50MB
-                </span>
+        <div className="mt-6 grid gap-6 md:grid-cols-2 lg:gap-8">
+          {/* Clean PDF Dropzone (Zero Icons) */}
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#2E2E36] bg-[#0E0E12] p-6 text-center transition-colors hover:border-[#52525B]">
+            <label className="flex w-full cursor-pointer flex-col items-center">
+              <span className="text-xs font-medium text-[#FAFAFA]">
+                {selectedFile ? selectedFile.name : "Drop PDF resume here or browse"}
+              </span>
+              <span className="mt-1 font-mono text-[11px] text-[#71717A]">
+                PDF format · Selectable text · Up to 50MB
+              </span>
 
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    fileInputRef.current?.click();
-                  }}
-                  className="my-3 inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-[#000000] px-5 py-2.5 text-xs font-bold text-[#f8fafc] shadow-md transition-all hover:bg-[#000000] hover:border-white/45 hover:scale-105 active:scale-95 cursor-pointer"
-                >
-                  <UploadCloud className="h-4 w-4" />
-                  <span>Select PDF Resume</span>
-                </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+                className="mt-4 inline-flex h-10 items-center justify-center rounded-lg border border-[#27272A] bg-[#141418] px-4 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] active:scale-[0.98] cursor-pointer"
+              >
+                Select PDF Resume
+              </button>
 
-                <input
-                  id="resume-pdf-upload"
-                  name="resumePdfUpload"
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </label>
-
-              {selectedFile && (
-                <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-white/20 bg-[#000000] px-3 py-1 text-[11px] font-medium text-[#f8fafc] shadow-sm">
-                  <FileCheck className="h-3.5 w-3.5" />
-                  <span>Ready for Senior Hiring Manager Scan</span>
-                </div>
-              )}
-            </div>
-
-            {/* Text Paste Box */}
-            <div className="space-y-2">
-              <label htmlFor="resume-raw-text-input" className="text-xs font-semibold text-[#94a3b8]">
-                Or paste full resume text / skills &amp; project bullets
-              </label>
-              <textarea
-                id="resume-raw-text-input"
-                name="resumeRawText"
-                value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
-                data-agent-id="resume-text-input"
-                placeholder="Paste your resume text (Education, Skills, Projects, Certifications, Experience) here..."
-                rows={6}
-                className="w-full rounded-2xl border border-white/10 bg-[#000000] p-3.5 text-xs text-[#f8fafc] outline-none transition-all placeholder:text-[#94a3b8]/60 focus:border-white/35 focus:ring-1 focus:ring-white/15"
+              <input
+                id="resume-pdf-upload"
+                name="resumePdfUpload"
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf"
+                onChange={handleFileChange}
+                className="hidden"
               />
-            </div>
+            </label>
+
+            {selectedFile && (
+              <div className="mt-3 rounded border border-[#27272A] bg-[#141418] px-3 py-1 font-mono text-[11px] text-[#D4D4D8]">
+                Ready for Hiring Manager Scan
+              </div>
+            )}
           </div>
 
-          <div className="mt-6 flex justify-end">
-            <button
-              onClick={handleTriggerAnalysis}
-              data-agent-id="analyze-resume-btn"
-              disabled={isLoading || (!selectedFile && !rawText.trim())}
-              className="flex items-center gap-2 rounded-xl border border-white/25 bg-[#000000] px-6 py-3 text-xs font-bold text-[#f8fafc] shadow-md transition-all hover:bg-[#000000] hover:border-white/45 active:scale-95 disabled:opacity-50 cursor-pointer"
+          {/* Clean Text Paste Box */}
+          <div className="space-y-2">
+            <label
+              htmlFor="resume-raw-text-input"
+              className="block text-xs font-medium text-[#A1A1AA]"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Running Senior Deloitte &amp; Big-Tech Audit...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  <span>Generate Tailored ATS Feedback</span>
-                </>
-              )}
-            </button>
+              Or paste resume text / skills &amp; project bullets
+            </label>
+            <textarea
+              id="resume-raw-text-input"
+              name="resumeRawText"
+              value={rawText}
+              onChange={(e) => setRawText(e.target.value)}
+              data-agent-id="resume-text-input"
+              placeholder="Paste your resume text (Education, Skills, Projects, Certifications, Experience) here..."
+              rows={6}
+              className="w-full rounded-lg border border-[#27272A] bg-[#0E0E12] p-3.5 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
+            />
           </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={handleTriggerAnalysis}
+            data-agent-id="analyze-resume-btn"
+            disabled={isLoading || (!selectedFile && !rawText.trim())}
+            className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FAFAFA] px-5 text-xs font-medium text-[#09090B] transition-colors hover:bg-[#E4E4E7] active:scale-[0.98] disabled:opacity-45 cursor-pointer"
+          >
+            {isLoading ? "Running Hiring Manager Audit..." : "Generate Tailored ATS Feedback"}
+          </button>
         </div>
       </div>
 
-      {/* Empty Pre-Upload State — Never Fake Scores! */}
+      {/* Empty Pre-Upload State */}
       {!feedback && (
         <div
           data-agent-id="resume-awaiting-scan"
-          className="rounded-xl border border-white/10 bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.85)]"
+          className="rounded-2xl border border-[#222226] bg-[#09090B]/62 p-6 backdrop-blur-[2px] sm:p-8"
         >
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#242429] bg-[#000000] text-[#f8fafc]">
-              <Target className="h-6 w-6" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-bold text-[#f8fafc]">
-                  Awaiting Your Resume — Zero-Fluff Senior Hiring Manager Audit
-                </h3>
-                <span className="rounded-full border border-white/15 bg-[#000000] px-2.5 py-0.5 text-[10px] font-semibold text-[#94a3b8]">
-                  No Mock Scores Shown Until You Scan
-                </span>
-              </div>
-              <p className="text-xs text-[#94a3b8] leading-relaxed">
-                Upload your actual PDF or paste your resume above. You will receive an uninflated score (0-100) benchmarked against Deloitte Technology Consulting, Amazon, Google, Microsoft, TCS Digital / Infosys, and AI Startups — including exact missing enterprise skills, high-ROI certifications, concrete project upgrades beyond basic Streamlit notebooks, and Google X-Y-Z bullet rewrites.
-              </p>
-            </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h3 className="text-sm font-semibold text-[#FAFAFA]">
+              Awaiting Your Resume — Zero-Fluff Senior Hiring Manager Audit
+            </h3>
+            <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
+              No mock scores shown until scan
+            </span>
           </div>
+          <p className="mt-2 max-w-3xl text-xs leading-relaxed text-[#A1A1AA]">
+            Upload your actual PDF or paste your resume above to receive an uninflated score (0-100)
+            benchmarked against Deloitte, Amazon, Google, Microsoft, TCS Digital, and AI startups —
+            including missing enterprise skills, certifications, and Google X-Y-Z bullet rewrites.
+          </p>
         </div>
       )}
 
-      {/* Authentic Diagnostic Results */}
+      {/* Diagnostic Results */}
       {feedback && (
         <div
           data-agent-id="resume-audit-results"
-          className="relative overflow-hidden rounded-xl border border-white/10 bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
+          className="space-y-8 rounded-2xl border border-[#242429] bg-[#09090B]/70 p-6 backdrop-blur-[2px] sm:p-8"
         >
-          <div className="relative z-10 space-y-6">
-            {/* Top Score & Action Row */}
-            <div className="flex flex-col gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-4">
-                <div
-                  data-agent-id="resume-score-dial"
-                  className={`flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border bg-[#000000] shadow-sm ${scoreTone}`}
-                >
-                  <span className="text-2xl font-black leading-none">{feedback.score}</span>
-                  <span className="mt-0.5 text-[9px] font-semibold text-[#94a3b8]">/100</span>
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#94a3b8]">
-                      ATS Baseline Match
-                    </span>
-                    <span
-                      data-agent-id="resume-tier-badge"
-                      className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${tierTone}`}
-                    >
-                      {feedback.recruiter_readiness_tier ||
-                        (feedback.score >= 76
-                          ? "Tier-1 Interview Ready"
-                          : feedback.score >= 55
-                          ? "Developing / Needs Stronger Stack"
-                          : "Major Overhaul Needed")}
-                    </span>
-                    {feedback.evaluation_source && (
-                      <span className="rounded-full border border-white/10 bg-[#000000] px-2.5 py-0.5 text-[10px] font-medium text-[#94a3b8]">
-                        {feedback.evaluation_source}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-sm font-semibold text-[#f8fafc] leading-snug">
-                    {feedback.verdict}
-                  </h3>
-                </div>
+          {/* Top Score & Action Row */}
+          <div className="flex flex-col justify-between gap-4 border-b border-[#1F1F23] pb-6 sm:flex-row sm:items-center">
+            <div className="flex items-start gap-4">
+              <div
+                data-agent-id="resume-score-dial"
+                className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl border border-[#27272A] bg-[#101014]"
+              >
+                <span className="font-mono text-2xl font-semibold leading-none text-[#FAFAFA] tabular-nums">
+                  {feedback.score}
+                </span>
+                <span className="mt-1 font-mono text-[9px] text-[#71717A] tabular-nums">/100</span>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
-                {onApplyResumeSkills && (
-                  <button
-                    type="button"
-                    onClick={handleSyncToProfile}
-                    className="flex items-center gap-2 rounded-xl border border-white/25 bg-[#000000] px-4 py-2.5 text-xs font-bold text-[#f8fafc] transition-all hover:bg-[#000000] hover:border-white/45 active:scale-95 shadow-sm cursor-pointer"
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-[11px] text-[#A1A1AA]">ATS Baseline Match</span>
+                  <span
+                    data-agent-id="resume-tier-badge"
+                    className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 text-[10px] font-medium text-[#FAFAFA]"
                   >
-                    {applied ? (
-                      <>
-                        <CheckCircle2 className="h-3.5 w-3.5 stroke-[3]" />
-                        <span>Skills Synced to Profile!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-3.5 w-3.5" />
-                        <span>Sync Missing Skills to Profile</span>
-                      </>
-                    )}
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={onDownloadFeedbackPDF}
-                  data-agent-id="download-resume-pdf-btn"
-                  className="flex items-center gap-2 rounded-xl border border-white/15 bg-[#000000] px-4 py-2.5 text-xs font-semibold text-[#f8fafc] transition-all hover:bg-[#000000] hover:border-white/30 cursor-pointer"
-                >
-                  <Download className="h-3.5 w-3.5 text-[#f8fafc]" />
-                  <span>Download Feedback PDF</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Candid Senior Deloitte / Hiring Manager Critique + 5-Axis Breakdown */}
-            <div className="grid gap-6 lg:grid-cols-5">
-              <div className="lg:col-span-3 rounded-2xl border border-white/15 bg-[#000000] p-5 space-y-3">
-                <div className="flex items-center gap-2 text-[#f8fafc]">
-                  <ShieldAlert className="h-4 w-4" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Senior Deloitte &amp; Big-Tech Manager Critique
-                  </h4>
-                </div>
-                <p
-                  data-agent-id="manager-critique-text"
-                  className="text-xs text-[#e2e8f0] leading-relaxed"
-                >
-                  {feedback.manager_critique || feedback.verdict}
-                </p>
-
-                <div className="pt-2 border-t border-white/10 space-y-2">
-                  <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                    <span className="font-semibold text-[#94a3b8]">Detected Stack:</span>
-                    {(feedback.detected_skills && feedback.detected_skills.length > 0
-                      ? feedback.detected_skills
-                      : ["None / Thin Core Stack"]
-                    ).map((sk, idx) => (
-                      <span
-                        key={idx}
-                        className="rounded-md border border-white/10 bg-[#000000] px-2 py-0.5 font-medium text-[#f8fafc]"
-                      >
-                        {sk}
-                      </span>
-                    ))}
-                  </div>
-                  {feedback.detected_projects && feedback.detected_projects.length > 0 && (
-                    <div className="text-[11px] text-[#94a3b8]">
-                      <span className="font-semibold text-[#cbd5e1]">Detected Projects: </span>
-                      {feedback.detected_projects.join(" · ")}
-                    </div>
+                    {feedback.recruiter_readiness_tier ||
+                      (feedback.score >= 76
+                        ? "Tier-1 Interview Ready"
+                        : feedback.score >= 55
+                        ? "Developing / Needs Stronger Stack"
+                        : "Major Overhaul Needed")}
+                  </span>
+                  {feedback.evaluation_source && (
+                    <span className="rounded border border-[#222226] bg-[#0C0C0E] px-2 py-0.5 font-mono text-[10px] text-[#71717A]">
+                      {feedback.evaluation_source}
+                    </span>
                   )}
                 </div>
+                <h3 className="text-sm font-medium leading-snug text-[#FAFAFA]">
+                  {feedback.verdict}
+                </h3>
               </div>
+            </div>
 
-              {feedback.breakdown && (
-                <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-[#000000] p-5 space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Rubric Breakdown
-                  </h4>
-                  <div className="space-y-2.5">
-                    {SCORE_BAR_LABELS.map(({ key, label }) => {
-                      const val = feedback.breakdown?.[key] ?? 0;
-                      const barColor =
-                        val >= 75 ? "bg-[#18181B]" : val >= 50 ? "bg-[#18181B]" : "bg-[#18181B]";
-                      return (
-                        <div key={key} className="space-y-1">
-                          <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-[#94a3b8]">{label}</span>
-                            <span className="font-bold text-[#f8fafc]">{val}/100</span>
-                          </div>
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-                              style={{ width: `${Math.max(4, Math.min(100, val))}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+            <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+              {onApplyResumeSkills && (
+                <button
+                  type="button"
+                  onClick={handleSyncToProfile}
+                  className="inline-flex h-10 items-center rounded-lg border border-[#27272A] bg-[#141418] px-4 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] active:scale-[0.98] cursor-pointer"
+                >
+                  {applied ? "Skills synced to profile" : "Sync missing skills to profile"}
+                </button>
               )}
+
+              <button
+                type="button"
+                onClick={onDownloadFeedbackPDF}
+                data-agent-id="download-resume-pdf-btn"
+                className="inline-flex h-10 items-center rounded-lg bg-[#FAFAFA] px-4 text-xs font-medium text-[#09090B] transition-colors hover:bg-[#E4E4E7] cursor-pointer"
+              >
+                Download Feedback PDF
+              </button>
             </div>
+          </div>
 
-            {/* Company Target ATS Benchmarker (Deloitte + Big Tech + Startups) */}
-            {companyMatches.length > 0 && activeCompanyMatch && (
-              <div className="rounded-2xl border border-white/10 bg-[#000000] p-5 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-[#f8fafc]" />
-                    <span className="text-xs font-bold text-[#f8fafc]">
-                      Target Recruiter ATS Match Index:
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {companyMatches.map((cm) => (
-                      <button
-                        key={cm.company}
-                        type="button"
-                        onClick={() => setSelectedCompanyName(cm.company)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
-                          activeCompanyMatch.company === cm.company
-                            ? "border border-white/40 bg-[#000000] text-white shadow-sm"
-                            : "border border-white/10 bg-[#000000] text-[#94a3b8] hover:text-white"
-                        }`}
-                      >
-                        {cm.company} ({cm.match_score}%)
-                      </button>
-                    ))}
-                  </div>
-                </div>
+          {/* Critique + Rubric Breakdown */}
+          <div className="grid gap-6 lg:grid-cols-5 lg:gap-8">
+            <div className="space-y-4 rounded-xl border border-[#222226] bg-[#101014] p-6 lg:col-span-3">
+              <h4 className="text-xs font-semibold text-[#FAFAFA]">
+                Senior Deloitte &amp; Big-Tech Manager Critique
+              </h4>
+              <p
+                data-agent-id="manager-critique-text"
+                className="text-xs leading-relaxed text-[#D4D4D8]"
+              >
+                {feedback.manager_critique || feedback.verdict}
+              </p>
 
-                <div className="grid gap-3 border-t border-white/10 pt-3 md:grid-cols-2">
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[#94a3b8]">Recruiter Cutoff:</span>
-                      <span className="font-bold text-[#f8fafc]">
-                        {activeCompanyMatch.cutoff_score}/100
-                      </span>
-                      <span className="text-[#94a3b8]">· Your Resume Match:</span>
-                      <span
-                        data-agent-id="company-match-score"
-                        className={`font-black ${
-                          activeCompanyMatch.match_score >= activeCompanyMatch.cutoff_score
-                            ? "text-[#f8fafc]"
-                            : activeCompanyMatch.match_score >= 45
-                            ? "text-[#f8fafc]"
-                            : "text-[#f8fafc]"
-                        }`}
-                      >
-                        {activeCompanyMatch.match_score}%
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-[#cbd5e1]">{activeCompanyMatch.verdict}</p>
-                  </div>
-
-                  <div className="space-y-2 text-[11px]">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[#f8fafc] font-semibold">Matched:</span>
-                      {activeCompanyMatch.matched_keywords.length > 0 ? (
-                        activeCompanyMatch.matched_keywords.map((k, i) => (
-                          <span
-                            key={i}
-                            className="rounded border border-[#242429] bg-[#18181B] px-1.5 py-0.5 text-[#f8fafc]"
-                          >
-                            {k}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-[#94a3b8]">None matched yet</span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[#f8fafc] font-semibold">
-                        Missing for {activeCompanyMatch.company}:
-                      </span>
-                      {activeCompanyMatch.missing_keywords.length > 0 ? (
-                        activeCompanyMatch.missing_keywords.map((k, i) => (
-                          <span
-                            key={i}
-                            className="rounded border border-[#242429] bg-[#18181B] px-1.5 py-0.5 text-[#f8fafc]"
-                          >
-                            {k}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-[#f8fafc]">All core keywords covered</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Critical Improvements & Missing Enterprise Skills */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/15 bg-[#000000] p-5">
-                <div className="flex items-center gap-2 text-[#f8fafc]">
-                  <AlertTriangle className="h-4 w-4" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Critical Hiring Blockers &amp; Improvements
-                  </h4>
-                </div>
-                <ul data-agent-id="critical-improvements-list" className="mt-3 space-y-2">
-                  {(feedback.improvements || []).map((imp, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-[#f8fafc] leading-relaxed">
-                      <span className="text-[#f8fafc] font-bold">•</span>
-                      <span>{imp}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="rounded-2xl border border-white/15 bg-[#000000] p-5">
-                <div className="flex items-center gap-2 text-[#f8fafc]">
-                  <Key className="h-4 w-4" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Missing Enterprise Skills (Add to Resume)
-                  </h4>
-                </div>
-                <div data-agent-id="missing-skills-list" className="mt-3 flex flex-wrap gap-2">
-                  {(feedback.missing_skills || []).map((sk, i) => (
+              <div className="space-y-2 border-t border-[#1F1F23] pt-3">
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span className="font-medium text-[#A1A1AA]">Detected Stack:</span>
+                  {(feedback.detected_skills && feedback.detected_skills.length > 0
+                    ? feedback.detected_skills
+                    : ["None / Thin Core Stack"]
+                  ).map((sk, idx) => (
                     <span
-                      key={i}
-                      className="rounded-lg border border-[#242429] bg-[#000000] px-2.5 py-1 text-xs font-medium text-[#f8fafc]"
-                    >
-                      + {sk}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Recommended Certifications & Beyond-Streamlit Project Upgrades */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-[#000000] p-5">
-                <div className="flex items-center gap-2 text-[#f8fafc]">
-                  <Award className="h-4 w-4" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Recommended Certifications (Deloitte &amp; Tier-1)
-                  </h4>
-                </div>
-                <ul data-agent-id="recommended-certifications-list" className="mt-3 space-y-2">
-                  {(feedback.recommended_certifications || []).map((cert, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-[#e2e8f0] leading-relaxed">
-                      <span className="text-[#f8fafc] font-bold">•</span>
-                      <span>{cert}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-[#000000] p-5">
-                <div className="flex items-center gap-2 text-[#f8fafc]">
-                  <Wrench className="h-4 w-4" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Project Upgrade Blueprint (Beyond Basic Streamlit)
-                  </h4>
-                </div>
-                <ul data-agent-id="project-upgrade-list" className="mt-3 space-y-2">
-                  {(feedback.project_upgrade_plan || feedback.project_suggestions || []).map((up, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-[#e2e8f0] leading-relaxed">
-                      <span className="text-[#f8fafc] font-bold">•</span>
-                      <span>{up}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Google X-Y-Z Bullet Rewrites */}
-            {feedback.rewritten_bullets && feedback.rewritten_bullets.length > 0 && (
-              <div className="rounded-2xl border border-white/10 bg-[#000000] p-5 space-y-3">
-                <div className="flex items-center gap-2 text-[#f8fafc]">
-                  <Sparkles className="h-4 w-4" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Google X-Y-Z Resume Bullet Upgrades (Before vs After)
-                  </h4>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {feedback.rewritten_bullets.map((item, idx) => (
-                    <div
                       key={idx}
-                      className="rounded-xl border border-white/10 bg-[#000000] p-3.5 space-y-2 text-xs"
+                      className="rounded border border-[#27272A] bg-[#0B0B0E] px-2 py-0.5 font-medium text-[#FAFAFA]"
                     >
-                      <div className="text-[#94a3b8]">
-                        <span className="font-bold text-[#f8fafc]">Before: </span>
-                        {item.before}
-                      </div>
-                      <div className="flex items-start gap-1.5 text-[#f8fafc]">
-                        <ArrowRight className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#f8fafc]" />
-                        <span>
-                          <span className="font-bold text-[#f8fafc]">After: </span>
-                          {item.after}
-                        </span>
-                      </div>
-                      {item.reason && (
-                        <div className="text-[11px] text-[#94a3b8] border-t border-white/5 pt-1.5">
-                          Why it works: {item.reason}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Strengths, ATS Keywords, & Formatting Guidelines */}
-            <div className="grid gap-6 md:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-[#000000] p-5">
-                <div className="flex items-center gap-2 text-[#f8fafc]">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Candidate Strengths
-                  </h4>
-                </div>
-                <ul data-agent-id="candidate-strengths-list" className="mt-3 space-y-2">
-                  {(feedback.strengths || []).map((str, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-[#e2e8f0] leading-relaxed">
-                      <span className="text-[#f8fafc] font-bold">•</span>
-                      <span>{str}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-[#000000] p-5">
-                <div className="flex items-center gap-2 text-[#94a3b8]">
-                  <Key className="h-4 w-4 text-[#f8fafc]" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Recommended ATS Keywords
-                  </h4>
-                </div>
-                <div data-agent-id="ats-keywords-list" className="mt-3 flex flex-wrap gap-2">
-                  {(feedback.ats_keywords || []).map((kw, i) => (
-                    <span
-                      key={i}
-                      className="rounded-lg border border-white/10 bg-[#000000] px-2.5 py-1 text-xs font-medium text-[#f8fafc] shadow-sm"
-                    >
-                      +{kw}
+                      {sk}
                     </span>
                   ))}
                 </div>
+                {feedback.detected_projects && feedback.detected_projects.length > 0 && (
+                  <div className="text-[11px] text-[#A1A1AA]">
+                    <span className="font-medium text-[#D4D4D8]">Detected Projects: </span>
+                    {feedback.detected_projects.join(" · ")}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {feedback.breakdown && (
+              <div className="space-y-4 rounded-xl border border-[#222226] bg-[#101014] p-6 lg:col-span-2">
+                <h4 className="text-xs font-semibold text-[#FAFAFA]">Rubric Breakdown</h4>
+                <div className="space-y-3">
+                  {SCORE_BAR_LABELS.map(({ key, label }) => {
+                    const val = feedback.breakdown?.[key] ?? 0;
+                    return (
+                      <div key={key} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-[#A1A1AA]">{label}</span>
+                          <span className="font-mono font-medium text-[#FAFAFA] tabular-nums">
+                            {val}/100
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-sm bg-[#18181B]">
+                          <div
+                            className="h-full bg-[#FAFAFA] transition-[width] duration-500"
+                            style={{ width: `${Math.max(4, Math.min(100, val))}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Company Target ATS Benchmarker */}
+          {companyMatches.length > 0 && activeCompanyMatch && (
+            <div className="space-y-4 rounded-xl border border-[#222226] bg-[#101014] p-6">
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <span className="text-xs font-semibold text-[#FAFAFA]">
+                  Target Recruiter ATS Match Index
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {companyMatches.map((cm) => (
+                    <button
+                      key={cm.company}
+                      type="button"
+                      onClick={() => setSelectedCompanyName(cm.company)}
+                      className={`h-8 rounded-lg border px-3 text-xs font-medium transition-colors cursor-pointer ${
+                        activeCompanyMatch.company === cm.company
+                          ? "border-[#FAFAFA]/45 bg-[#18181E] text-[#FAFAFA]"
+                          : "border-[#222226] bg-[#0B0B0E] text-[#A1A1AA] hover:border-[#3F3F46] hover:text-[#FAFAFA]"
+                      }`}
+                    >
+                      {cm.company} ({cm.match_score}%)
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-[#000000] p-5">
-                <div className="flex items-center gap-2 text-[#94a3b8]">
-                  <LayoutTemplate className="h-4 w-4 text-[#f8fafc]" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-                    Structural &amp; Formatting Guidelines
-                  </h4>
+              <div className="grid gap-4 border-t border-[#1F1F23] pt-4 md:grid-cols-2">
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[#A1A1AA]">Recruiter Cutoff:</span>
+                    <span className="font-mono font-semibold text-[#FAFAFA] tabular-nums">
+                      {activeCompanyMatch.cutoff_score}/100
+                    </span>
+                    <span className="text-[#71717A]">·</span>
+                    <span className="text-[#A1A1AA]">Your Resume Match:</span>
+                    <span
+                      data-agent-id="company-match-score"
+                      className="font-mono font-semibold text-[#FAFAFA] tabular-nums"
+                    >
+                      {activeCompanyMatch.match_score}%
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#D4D4D8]">{activeCompanyMatch.verdict}</p>
                 </div>
-                <ul data-agent-id="formatting-guidelines-list" className="mt-3 space-y-2">
-                  {(feedback.formatting_tips || []).map((tip, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-[#94a3b8] leading-relaxed">
-                      <span className="text-[#f8fafc] font-bold">•</span>
-                      <span>{tip}</span>
-                    </li>
-                  ))}
-                </ul>
+
+                <div className="space-y-2 text-[11px]">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="font-medium text-[#FAFAFA]">Matched:</span>
+                    {activeCompanyMatch.matched_keywords.length > 0 ? (
+                      activeCompanyMatch.matched_keywords.map((k, i) => (
+                        <span
+                          key={i}
+                          className="rounded border border-[#3F3F46] bg-[#141418] px-2 py-0.5 text-[#FAFAFA]"
+                        >
+                          {k}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[#71717A]">None matched yet</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="font-medium text-[#FAFAFA]">
+                      Missing for {activeCompanyMatch.company}:
+                    </span>
+                    {activeCompanyMatch.missing_keywords.length > 0 ? (
+                      activeCompanyMatch.missing_keywords.map((k, i) => (
+                        <span
+                          key={i}
+                          className="rounded border border-[#27272A] bg-[#0B0B0E] px-2 py-0.5 text-[#A1A1AA]"
+                        >
+                          {k}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[#D4D4D8]">All core keywords covered</span>
+                    )}
+                  </div>
+                </div>
               </div>
+            </div>
+          )}
+
+          {/* Critical Improvements & Missing Enterprise Skills */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-xl border border-[#222226] bg-[#101014] p-6">
+              <h4 className="text-xs font-semibold text-[#FAFAFA]">
+                Critical Hiring Blockers &amp; Improvements
+              </h4>
+              <ul data-agent-id="critical-improvements-list" className="mt-3.5 space-y-2.5">
+                {(feedback.improvements || []).map((imp, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed text-[#E4E4E7]">
+                    <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span>{imp}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-xl border border-[#222226] bg-[#101014] p-6">
+              <h4 className="text-xs font-semibold text-[#FAFAFA]">
+                Missing Enterprise Skills (Add to Resume)
+              </h4>
+              <div data-agent-id="missing-skills-list" className="mt-3.5 flex flex-wrap gap-2">
+                {(feedback.missing_skills || []).map((sk, i) => (
+                  <span
+                    key={i}
+                    className="rounded border border-[#27272A] bg-[#0B0B0E] px-2.5 py-1 text-xs font-medium text-[#D4D4D8]"
+                  >
+                    {sk}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Recommended Certifications & Project Upgrades */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-xl border border-[#222226] bg-[#101014] p-6">
+              <h4 className="text-xs font-semibold text-[#FAFAFA]">
+                Recommended Certifications (Deloitte &amp; Tier-1)
+              </h4>
+              <ul data-agent-id="recommended-certifications-list" className="mt-3.5 space-y-2.5">
+                {(feedback.recommended_certifications || []).map((cert, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed text-[#D4D4D8]">
+                    <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span>{cert}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-xl border border-[#222226] bg-[#101014] p-6">
+              <h4 className="text-xs font-semibold text-[#FAFAFA]">
+                Project Upgrade Blueprint
+              </h4>
+              <ul data-agent-id="project-upgrade-list" className="mt-3.5 space-y-2.5">
+                {(feedback.project_upgrade_plan || feedback.project_suggestions || []).map((up, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed text-[#D4D4D8]">
+                    <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span>{up}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Google X-Y-Z Bullet Rewrites */}
+          {feedback.rewritten_bullets && feedback.rewritten_bullets.length > 0 && (
+            <div className="space-y-4 rounded-xl border border-[#222226] bg-[#101014] p-6">
+              <h4 className="text-xs font-semibold text-[#FAFAFA]">
+                Google X-Y-Z Resume Bullet Upgrades (Before vs After)
+              </h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                {feedback.rewritten_bullets.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="space-y-2 rounded-lg border border-[#1F1F23] bg-[#0B0B0E] p-4 text-xs"
+                  >
+                    <div className="text-[#A1A1AA]">
+                      <span className="font-medium text-[#FAFAFA]">Before: </span>
+                      {item.before}
+                    </div>
+                    <div className="text-[#FAFAFA]">
+                      <span className="font-medium">After: </span>
+                      {item.after}
+                    </div>
+                    {item.reason && (
+                      <div className="border-t border-[#1F1F23] pt-2 text-[11px] text-[#71717A]">
+                        Why it works: {item.reason}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Strengths, ATS Keywords & Formatting */}
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="rounded-xl border border-[#222226] bg-[#101014] p-6">
+              <h4 className="text-xs font-semibold text-[#FAFAFA]">Candidate Strengths</h4>
+              <ul data-agent-id="candidate-strengths-list" className="mt-3.5 space-y-2.5">
+                {(feedback.strengths || []).map((str, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed text-[#D4D4D8]">
+                    <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span>{str}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-xl border border-[#222226] bg-[#101014] p-6">
+              <h4 className="text-xs font-semibold text-[#FAFAFA]">Recommended ATS Keywords</h4>
+              <div data-agent-id="ats-keywords-list" className="mt-3.5 flex flex-wrap gap-2">
+                {(feedback.ats_keywords || []).map((kw, i) => (
+                  <span
+                    key={i}
+                    className="rounded border border-[#27272A] bg-[#0B0B0E] px-2.5 py-1 text-xs font-medium text-[#FAFAFA]"
+                  >
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[#222226] bg-[#101014] p-6">
+              <h4 className="text-xs font-semibold text-[#FAFAFA]">
+                Structural &amp; Formatting Guidelines
+              </h4>
+              <ul data-agent-id="formatting-guidelines-list" className="mt-3.5 space-y-2.5">
+                {(feedback.formatting_tips || []).map((tip, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed text-[#A1A1AA]">
+                    <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span>{tip}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>

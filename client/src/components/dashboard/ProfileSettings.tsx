@@ -1,20 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  User,
-  GraduationCap,
-  BookOpen,
-  Code,
-  Target,
-  CheckCircle2,
-  Save,
-  RotateCcw,
-  Sparkles,
-  RefreshCw,
-  Check,
-  AlertCircle,
-  ArrowRight
-} from "lucide-react";
 import { StudentProfileState } from "@/types/profile";
 import { CollegeSelector } from "@/components/common/CollegeSelector";
 import { isOwnerAccount, isGuestAccount, setHonorificPreference } from "@/lib/auth";
@@ -56,7 +41,7 @@ const BRANCHES = [
   "Cyber Security",
   "IoT",
   "Data Science",
-  "Other"
+  "Other",
 ];
 
 const ROLE_GROUPS: Array<{ label: string; roles: string[] }> = [
@@ -156,7 +141,6 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   onSaveProfile,
   onResetToDefaults,
   onGoToDashboard,
-  apiBase
 }) => {
   const [formData, setFormData] = useState<StudentProfileState>({
     ...profile,
@@ -244,7 +228,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         onboardingCompleted: true,
       };
       await onSaveProfile(updated);
-      setSuccessMsg("Profile saved! Recalculating your Dashboard recommendations...");
+      setSuccessMsg("Profile saved. Recalculating dashboard predictions...");
       if (onGoToDashboard) {
         setTimeout(() => onGoToDashboard(), 350);
       } else {
@@ -256,81 +240,83 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   };
 
   return (
-    <div className="relative mx-auto max-w-4xl space-y-6">
-      {/* Header */}
-      <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-2xl backdrop-blur-2xl">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="mx-auto max-w-4xl space-y-6">
+      <form
+        onSubmit={handleSave}
+        className="space-y-8 rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px] sm:p-8"
+      >
+        {/* Single Clean Profile Header */}
+        <div className="flex flex-col justify-between gap-4 border-b border-[#1F1F23] pb-6 sm:flex-row sm:items-center">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#ffffff]/30 bg-[#ffffff]/10 px-3 py-1 text-xs font-semibold text-[#ffffff]">
-              <User className="h-3.5 w-3.5" />
-              <span>Candidate Profile · Single Source of Truth</span>
-            </div>
-            <h1 className="mt-2 text-2xl font-black text-[#f8fafc]">Profile &amp; Candidate Settings</h1>
-            <p className="mt-1 text-xs text-[#94a3b8]">
-              Update your real academic marks, backlogs, skills, and target role. Click Save below to recalculate and open 1. Dashboard.
+            <span className="inline-block rounded border border-[#27272A] bg-[#101014] px-2.5 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA]">
+              Candidate SSOT
+            </span>
+            <h1 className="mt-2.5 text-2xl font-semibold tracking-[-0.025em] text-[#FAFAFA]">
+              Profile &amp; Candidate Settings
+            </h1>
+            <p className="mt-1.5 text-xs text-[#A1A1AA] sm:text-sm">
+              Update your verified academic marks, backlogs, coding profiles, skills, and target
+              role.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onResetToDefaults}
-              className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/5 transition-all active:scale-95"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span>Reset Defaults</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onResetToDefaults}
+            className="inline-flex h-9 items-center self-start rounded-lg border border-[#27272A] bg-[#101014] px-3.5 text-xs font-medium text-[#A1A1AA] transition-colors hover:border-[#3F3F46] hover:text-[#FAFAFA] sm:self-auto cursor-pointer"
+          >
+            Reset defaults
+          </button>
         </div>
 
         {successMsg && (
           <motion.div
-            initial={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 flex items-center gap-2 rounded-2xl border border-[#ffffff]/30 bg-[#ffffff]/10 p-3 text-xs font-semibold text-[#f8fafc]"
+            className="rounded-lg border border-[#3F3F46] bg-[#141418] p-3.5 text-xs font-medium text-[#FAFAFA]"
           >
-            <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-[#ffffff]" />
-            <span>{successMsg}</span>
+            {successMsg}
           </motion.div>
         )}
-      </div>
 
-      {/* Main Settings Form */}
-      <form onSubmit={handleSave} className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
         {/* Section 1: Identity & College */}
         <div className="space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-[#ffffff] flex items-center gap-2">
-            <GraduationCap className="h-4 w-4" />
-            <span>Academic Identity</span>
-          </h3>
+          <h3 className="text-sm font-semibold text-[#FAFAFA]">Academic Identity</h3>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-[#94a3b8] block">
-                Verified Login Identity (Auto-Synced from Sign-In)
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <span className="block text-xs font-medium text-[#A1A1AA]">
+                Verified Login Identity
               </span>
               <div
                 id="settings-verified-identity"
-                className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc]"
+                className="flex h-10 items-center justify-between rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA]"
               >
                 <div className="truncate">
-                  <span className="font-bold text-[#f8fafc]">
+                  <span className="font-semibold text-[#FAFAFA]">
                     {canSelectBossMode
-                      ? "👑 Bommali Dileep (Boss)"
+                      ? "Bommali Dileep (Boss)"
                       : formData.fullName || "Signed-In Candidate"}
                   </span>
                   {resolvedEmail && (
-                    <span className="ml-2 text-[11px] text-[#94a3b8]">· {resolvedEmail}</span>
+                    <span className="ml-2 font-mono text-[11px] text-[#71717A]">
+                      {resolvedEmail}
+                    </span>
                   )}
                 </div>
-                <span className="shrink-0 rounded-md border border-[#242429] bg-[#18181B] px-2 py-0.5 text-[10px] font-bold text-[#f8fafc]">
-                  Locked from Login
+                <span className="shrink-0 rounded border border-[#27272A] bg-[#141418] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8]">
+                  Synced
                 </span>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="settings-college" className="text-xs font-semibold text-[#94a3b8]">College / Institute</label>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-college"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                College / Institute
+              </label>
               <CollegeSelector
                 id="settings-college"
                 variant="settings"
@@ -339,31 +325,43 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               />
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="settings-branch" className="text-xs font-semibold text-[#94a3b8]">Branch / Department</label>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-branch"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                Branch / Department
+              </label>
               <select
                 id="settings-branch"
                 name="branch"
                 value={formData.branch}
                 onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               >
                 {BRANCHES.map((b) => (
-                  <option key={b} value={b}>{b}</option>
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
                 ))}
               </select>
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="settings-course" className="text-xs font-semibold text-[#94a3b8]">Course &amp; Year</label>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-course"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                Course &amp; Year
+              </label>
+              <div className="grid grid-cols-2 gap-2.5">
                 <input
                   type="text"
                   id="settings-course"
                   name="course"
                   value={formData.course}
                   onChange={(e) => setFormData({ ...formData, course: e.target.value })}
-                  className="rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                  className="h-10 rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
                   placeholder="e.g. B.Tech"
                 />
                 <select
@@ -381,10 +379,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                       yearSemester: semMeta.label,
                     });
                   }}
-                  className="rounded-xl border border-white/[0.08] bg-[#000000] px-3 py-2 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                  className="h-10 rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
                 >
                   {YEAR_OPTIONS.map((yr) => (
-                    <option key={yr} value={yr}>{yr}</option>
+                    <option key={yr} value={yr}>
+                      {yr}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -393,17 +393,20 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         </div>
 
         {/* Section 2: Academics & Formula */}
-        <div className="space-y-4 pt-4 border-t border-white/[0.08]">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-[#ffffff] flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            <span>Academic Performance & Live Conversion</span>
+        <div className="space-y-4 border-t border-[#1F1F23] pt-6">
+          <h3 className="text-sm font-semibold text-[#FAFAFA]">
+            Academic Performance &amp; Live Conversion
           </h3>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-1">
-              <div className="flex justify-between items-center text-xs">
-                <label htmlFor="settings-cgpa" className="font-semibold text-[#94a3b8]">Current CGPA (0 - 10)</label>
-                <span className="font-bold text-[#ffffff]">{formData.cgpa.toFixed(2)}</span>
+          <div className="grid gap-5 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <label htmlFor="settings-cgpa" className="font-medium text-[#A1A1AA]">
+                  Current CGPA (0 - 10)
+                </label>
+                <span className="font-mono font-semibold text-[#FAFAFA] tabular-nums">
+                  {formData.cgpa.toFixed(2)}
+                </span>
               </div>
               <input
                 type="number"
@@ -420,27 +423,37 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   setFormData({
                     ...formData,
                     cgpa,
-                    percentage: Math.round(cgpa * mult * 10) / 10
+                    percentage: Math.round(cgpa * mult * 10) / 10,
                   });
                 }}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               />
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="settings-converted-percentage" className="text-xs font-semibold text-[#94a3b8]">Live Converted Percentage</label>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-converted-percentage"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                Converted Percentage
+              </label>
               <input
                 type="number"
                 id="settings-converted-percentage"
                 name="convertedPercentage"
                 disabled
                 value={(formData.cgpa * (formData.cgpaFormulaMultiplier || 9.5)).toFixed(1)}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs font-bold text-[#f8fafc] outline-none"
+                className="h-10 w-full rounded-lg border border-[#222226] bg-[#101014] px-3.5 font-mono text-xs font-semibold text-[#FAFAFA] outline-none tabular-nums"
               />
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="settings-formula" className="text-xs font-semibold text-[#94a3b8]">Conversion Multiplier</label>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-formula"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                Conversion Multiplier
+              </label>
               <select
                 id="settings-formula"
                 name="cgpaFormulaMultiplier"
@@ -450,10 +463,10 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   setFormData({
                     ...formData,
                     cgpaFormulaMultiplier: mult,
-                    percentage: Math.round(formData.cgpa * mult * 10) / 10
+                    percentage: Math.round(formData.cgpa * mult * 10) / 10,
                   });
                 }}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               >
                 <option value={9.5}>AICTE / Standard (× 9.5)</option>
                 <option value={10.0}>Direct Scale (× 10.0)</option>
@@ -461,8 +474,13 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               </select>
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="settings-tenth" className="text-xs font-semibold text-[#94a3b8]">10th Percentage (%)</label>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-tenth"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                10th Percentage (%)
+              </label>
               <input
                 type="number"
                 id="settings-tenth"
@@ -471,13 +489,20 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 max="100"
                 step="0.1"
                 value={formData.tenthPercentage}
-                onChange={(e) => setFormData({ ...formData, tenthPercentage: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                onChange={(e) =>
+                  setFormData({ ...formData, tenthPercentage: parseFloat(e.target.value) || 0 })
+                }
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               />
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="settings-twelfth" className="text-xs font-semibold text-[#94a3b8]">12th / Diploma (%)</label>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-twelfth"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                12th / Diploma (%)
+              </label>
               <input
                 type="number"
                 id="settings-twelfth"
@@ -486,13 +511,20 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 max="100"
                 step="0.1"
                 value={formData.twelfthPercentage}
-                onChange={(e) => setFormData({ ...formData, twelfthPercentage: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                onChange={(e) =>
+                  setFormData({ ...formData, twelfthPercentage: parseFloat(e.target.value) || 0 })
+                }
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               />
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="settings-backlogs" className="text-xs font-semibold text-[#94a3b8]">Active Standing Backlogs</label>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-backlogs"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                Active Standing Backlogs
+              </label>
               <input
                 type="number"
                 id="settings-backlogs"
@@ -504,22 +536,26 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   const val = parseInt(e.target.value, 10) || 0;
                   setFormData({ ...formData, activeBacklogs: val, backlogs: val });
                 }}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               />
             </div>
           </div>
         </div>
 
         {/* Section 3: Skills & Ratings */}
-        <div className="space-y-4 pt-4 border-t border-white/[0.08]">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-[#ffffff] flex items-center gap-2">
-            <Code className="h-4 w-4" />
-            <span>Skills, Projects & Self-Assessments</span>
+        <div className="space-y-4 border-t border-[#1F1F23] pt-6">
+          <h3 className="text-sm font-semibold text-[#FAFAFA]">
+            Skills, Projects &amp; Self-Assessments
           </h3>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <label htmlFor="settings-projects-count" className="text-xs font-semibold text-[#94a3b8]">Flagship Projects Count</label>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-projects-count"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                Flagship Projects Count
+              </label>
               <input
                 type="number"
                 id="settings-projects-count"
@@ -527,13 +563,20 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 min="0"
                 max="20"
                 value={formData.projectsCount}
-                onChange={(e) => setFormData({ ...formData, projectsCount: parseInt(e.target.value, 10) || 0 })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                onChange={(e) =>
+                  setFormData({ ...formData, projectsCount: parseInt(e.target.value, 10) || 0 })
+                }
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               />
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="settings-internships" className="text-xs font-semibold text-[#94a3b8]">Verified Internships Count</label>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-internships"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                Verified Internships Count
+              </label>
               <input
                 type="number"
                 id="settings-internships"
@@ -541,15 +584,21 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 min="0"
                 max="10"
                 value={formData.internships}
-                onChange={(e) => setFormData({ ...formData, internships: parseInt(e.target.value, 10) || 0 })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                onChange={(e) =>
+                  setFormData({ ...formData, internships: parseInt(e.target.value, 10) || 0 })
+                }
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               />
             </div>
 
-            <div className="space-y-1">
-              <div className="flex justify-between items-center text-xs">
-                <label htmlFor="settings-coding" className="font-semibold text-[#94a3b8]">Coding &amp; DSA Confidence</label>
-                <span className="font-bold text-[#ffffff]">{formData.coding} / 10</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <label htmlFor="settings-coding" className="font-medium text-[#A1A1AA]">
+                  Coding &amp; DSA Confidence
+                </label>
+                <span className="font-mono font-semibold text-[#FAFAFA] tabular-nums">
+                  {formData.coding} / 10
+                </span>
               </div>
               <input
                 type="range"
@@ -558,15 +607,21 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 min="1"
                 max="10"
                 value={formData.coding}
-                onChange={(e) => setFormData({ ...formData, coding: parseInt(e.target.value, 10) })}
-                className="w-full accent-[#ffffff]"
+                onChange={(e) =>
+                  setFormData({ ...formData, coding: parseInt(e.target.value, 10) })
+                }
+                className="w-full accent-[#FAFAFA]"
               />
             </div>
 
-            <div className="space-y-1">
-              <div className="flex justify-between items-center text-xs">
-                <label htmlFor="settings-communication" className="font-semibold text-[#94a3b8]">Communication &amp; Interview Confidence</label>
-                <span className="font-bold text-[#ffffff]">{formData.communication} / 10</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <label htmlFor="settings-communication" className="font-medium text-[#A1A1AA]">
+                  Communication &amp; Interview Confidence
+                </label>
+                <span className="font-mono font-semibold text-[#FAFAFA] tabular-nums">
+                  {formData.communication} / 10
+                </span>
               </div>
               <input
                 type="range"
@@ -575,13 +630,18 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 min="1"
                 max="10"
                 value={formData.communication}
-                onChange={(e) => setFormData({ ...formData, communication: parseInt(e.target.value, 10) })}
-                className="w-full accent-[#ffffff]"
+                onChange={(e) =>
+                  setFormData({ ...formData, communication: parseInt(e.target.value, 10) })
+                }
+                className="w-full accent-[#FAFAFA]"
               />
             </div>
 
-            <div className="space-y-1 sm:col-span-2">
-              <label htmlFor="settings-technical-skills" className="text-xs font-semibold text-[#94a3b8]">
+            <div className="space-y-1.5 sm:col-span-2">
+              <label
+                htmlFor="settings-technical-skills"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
                 Technical Skills (comma-separated)
               </label>
               <input
@@ -591,13 +651,18 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 value={skillsText}
                 onChange={(e) => setSkillsText(e.target.value)}
                 placeholder="e.g. Python, JavaScript, React, SQL, Data Structures"
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
               />
             </div>
 
-            <div className="sm:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label htmlFor="settings-github-url" className="text-xs font-semibold text-[#94a3b8]">GitHub Profile URL</label>
+            <div className="grid grid-cols-1 gap-4 sm:col-span-2 md:grid-cols-3">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="settings-github-url"
+                  className="block text-xs font-medium text-[#A1A1AA]"
+                >
+                  GitHub Profile URL
+                </label>
                 <input
                   type="url"
                   id="settings-github-url"
@@ -612,12 +677,17 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     });
                   }}
                   placeholder="https://github.com/your-username"
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                  className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label htmlFor="settings-leetcode-url" className="text-xs font-semibold text-[#94a3b8]">LeetCode Profile URL</label>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="settings-leetcode-url"
+                  className="block text-xs font-medium text-[#A1A1AA]"
+                >
+                  LeetCode Profile URL
+                </label>
                 <input
                   type="url"
                   id="settings-leetcode-url"
@@ -632,12 +702,17 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     });
                   }}
                   placeholder="https://leetcode.com/your-username"
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                  className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label htmlFor="settings-linkedin-url" className="text-xs font-semibold text-[#94a3b8]">LinkedIn Profile URL</label>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="settings-linkedin-url"
+                  className="block text-xs font-medium text-[#A1A1AA]"
+                >
+                  LinkedIn Profile URL
+                </label>
                 <input
                   type="url"
                   id="settings-linkedin-url"
@@ -651,37 +726,43 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     });
                   }}
                   placeholder="https://linkedin.com/in/your-username"
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                  className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Section 4: Target Career Role */}
-        <div className="space-y-4 pt-4 border-t border-white/[0.08]">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-[#ffffff] flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            <span>Target Role &amp; Preferences</span>
-          </h3>
+        {/* Section 4: Target Role & Preferences */}
+        <div className="space-y-4 border-t border-[#1F1F23] pt-6">
+          <h3 className="text-sm font-semibold text-[#FAFAFA]">Target Role &amp; Preferences</h3>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <label htmlFor="settings-target-role" className="text-xs font-semibold text-[#94a3b8]">Target Role</label>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-target-role"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                Target Role
+              </label>
               <select
                 id="settings-target-role"
                 name="targetRole"
                 value={formData.targetRole}
                 onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               >
                 {formData.targetRole && !ALL_KNOWN_ROLES.has(formData.targetRole) && (
                   <option value={formData.targetRole}>{formData.targetRole}</option>
                 )}
                 {ROLE_GROUPS.map((group) => (
-                  <optgroup key={group.label} label={group.label} className="bg-[#000000] text-[#94a3b8]">
+                  <optgroup
+                    key={group.label}
+                    label={group.label}
+                    className="bg-[#09090B] text-[#A1A1AA]"
+                  >
                     {group.roles.map((r) => (
-                      <option key={r} value={r} className="bg-[#000000] text-[#f8fafc]">
+                      <option key={r} value={r} className="bg-[#09090B] text-[#FAFAFA]">
                         {r}
                       </option>
                     ))}
@@ -690,42 +771,60 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               </select>
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="settings-target-tier" className="text-xs font-semibold text-[#94a3b8]">Target Company Tier</label>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="settings-target-tier"
+                className="block text-xs font-medium text-[#A1A1AA]"
+              >
+                Target Company Tier
+              </label>
               <select
                 id="settings-target-tier"
                 name="targetTier"
                 value={formData.targetTier}
-                onChange={(e) => setFormData({ ...formData, targetTier: e.target.value, preferredCompanyType: e.target.value })}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    targetTier: e.target.value,
+                    preferredCompanyType: e.target.value,
+                  })
+                }
+                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
               >
                 {TIERS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
                 ))}
               </select>
             </div>
 
-            <div className="space-y-1 sm:col-span-2">
+            <div className="space-y-1.5 sm:col-span-2">
               {canSelectBossMode || isGuestAccount(resolvedEmail, formData.fullName) ? (
-                <span className="block text-xs font-semibold text-[#94a3b8]">AI Assistant Addressing Mode</span>
+                <span className="block text-xs font-medium text-[#A1A1AA]">
+                  AI Assistant Addressing Mode
+                </span>
               ) : (
-                <label htmlFor="settings-honorific-mode" className="block text-xs font-semibold text-[#94a3b8]">
+                <label
+                  htmlFor="settings-honorific-mode"
+                  className="block text-xs font-medium text-[#A1A1AA]"
+                >
                   AI Assistant Addressing Mode
                 </label>
               )}
               {canSelectBossMode ? (
                 <div
                   id="settings-honorific-mode"
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs font-semibold text-[#f8fafc]"
+                  className="flex h-10 w-full items-center rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs font-medium text-[#FAFAFA]"
                 >
-                  ✨ Boss Mode (Creator — Dileep Bommali Only)
+                  Boss Mode (Creator — Dileep Bommali)
                 </div>
               ) : isGuestAccount(resolvedEmail, formData.fullName) ? (
                 <div
                   id="settings-honorific-mode"
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs font-semibold text-[#f8fafc]"
+                  className="flex h-10 w-full items-center rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs font-medium text-[#D4D4D8]"
                 >
-                  👤 Stranger Mode (Guest Session — Tell your name to DAS first)
+                  Stranger Mode (Guest Session — Share your name with DAS first)
                 </div>
               ) : (
                 <select
@@ -737,7 +836,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     setFormData({ ...formData, honorificPref: rawVal });
                     setHonorificPreference(rawVal, resolvedEmail);
                   }}
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#000000] px-3.5 py-2.5 text-xs text-[#f8fafc] outline-none focus:border-[#ffffff]"
+                  className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-xs text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
                 >
                   <option value="Auto">Auto (Smart Name Detection — Madam / Sir)</option>
                   <option value="Madam">Always address me as Madam</option>
@@ -748,36 +847,24 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           </div>
         </div>
 
-        {/* Save CTA Button */}
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-white/[0.08]">
+        {/* Save CTA */}
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-[#1F1F23] pt-6">
           {onGoToDashboard && (
             <button
               type="button"
               onClick={onGoToDashboard}
-              className="flex items-center gap-1.5 rounded-2xl border border-white/[0.08] bg-[#000000] px-4 py-3 text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/5 transition-all cursor-pointer"
+              className="inline-flex h-10 items-center rounded-lg border border-[#27272A] bg-[#101014] px-4 text-xs font-medium text-[#A1A1AA] transition-colors hover:border-[#3F3F46] hover:text-[#FAFAFA] cursor-pointer"
             >
-              <span>Skip to 2. Dashboard</span>
-              <ArrowRight className="h-3.5 w-3.5" />
+              Back to Overview
             </button>
           )}
           <button
             type="submit"
             id="btn-save-settings"
             disabled={isSaving}
-            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#18181B] to-[#27272A] hover:from-[#27272A] hover:to-[#27272A] px-6 py-3 text-xs font-bold text-white shadow-xl shadow-[#ffffff]/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="inline-flex h-10 items-center rounded-lg bg-[#FAFAFA] px-5 text-xs font-medium text-[#09090B] transition-colors hover:bg-[#E4E4E7] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
           >
-            {isSaving ? (
-              <>
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>Saving &amp; Recalculating...</span>
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                <span>{onGoToDashboard ? "Save Profile & Open 2. Dashboard" : "Save Profile Changes"}</span>
-                {onGoToDashboard && <ArrowRight className="h-4 w-4" />}
-              </>
-            )}
+            {isSaving ? "Saving & Recalculating..." : "Save Profile & Recalculate"}
           </button>
         </div>
       </form>

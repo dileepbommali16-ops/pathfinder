@@ -1,7 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { getUserRole } from "@/lib/auth";
-import { Sparkles, ArrowUpRight, CheckCircle2, AlertTriangle } from "lucide-react";
 
 interface HeroMetricsProps {
   username: string;
@@ -21,13 +20,11 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
   username,
   chance,
   label,
-  tone,
   onNavigateTab,
   onAskCoach,
 }) => {
   const displayChance = chance !== null ? chance : 74.0;
   const clampedChance = Math.max(0, Math.min(100, displayChance));
-  const ToneIcon = tone === "strong" ? CheckCircle2 : AlertTriangle;
 
   const resolvedUser = (() => {
     const emailNow =
@@ -39,38 +36,42 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
   })();
 
   return (
-    <div className="rounded-xl border border-[#222226] bg-[#09090B]/56 p-6 backdrop-blur-[2px] sm:p-8">
-      <div className="grid items-center gap-8 lg:grid-cols-12">
-        {/* Left: Candidate Positioning & Primary Actions */}
-        <div className="space-y-4 lg:col-span-7">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-[#27272A] bg-[#111114] px-2.5 py-1 text-xs font-medium text-[#FAFAFA]">
-              <ToneIcon className="h-3.5 w-3.5 text-[#A1A1AA]" />
-              <span>{label}</span>
+    <div className="rounded-2xl border border-[#242429] bg-[#09090B]/62 p-7 backdrop-blur-[2px] sm:p-9">
+      <div className="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
+        {/* Left: Candidate Positioning & Clean Text Actions */}
+        <div className="space-y-5 lg:col-span-7">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="inline-flex items-center rounded-md border border-[#27272A] bg-[#101014] px-2.5 py-1 text-xs font-medium text-[#FAFAFA]">
+              {label}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-[#1F1F23] bg-[#0C0C0E] px-2.5 py-1 font-mono text-[11px] text-[#A1A1AA] tabular-nums">
+            <span className="inline-flex items-center gap-2 rounded-md border border-[#1F1F23] bg-[#0C0C0E] px-2.5 py-1 font-mono text-[11px] text-[#A1A1AA] tabular-nums">
               <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
               <span>Random Forest · 972 records</span>
             </span>
           </div>
 
-          <h1 className="text-2xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-4xl">
+          <h1
+            className="text-2xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-4xl"
+            style={{ textWrap: "balance" }}
+          >
             Welcome back, {resolvedUser}
           </h1>
 
-          <p className="max-w-[58ch] text-sm leading-relaxed text-[#A1A1AA]">
+          <p
+            className="max-w-[58ch] text-sm leading-relaxed text-[#A1A1AA]"
+            style={{ textWrap: "pretty" }}
+          >
             Your placement workspace synthesizes historical campus drive cutoffs, Random Forest
             offer modeling, and live 3D voice coaching with DAS into one execution view.
           </p>
 
-          <div className="flex flex-wrap items-center gap-2.5 pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               type="button"
               onClick={() => onNavigateTab("analytics")}
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#FAFAFA] px-4 text-xs font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FAFAFA] px-4 text-xs font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
             >
-              <span>Open 6-week roadmap</span>
-              <ArrowUpRight className="h-3.5 w-3.5" />
+              Open 6-week roadmap
             </button>
 
             <button
@@ -80,35 +81,33 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
                 window.scrollTo({ top: 0, behavior: "smooth" });
                 setTimeout(() => document.getElementById("das-command-input")?.focus(), 180);
               }}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#27272A] bg-[#0C0C0E] px-4 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-[#27272A] bg-[#101014] px-4 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
             >
-              <Sparkles className="h-3.5 w-3.5 text-[#A1A1AA]" />
-              <span>Talk to 3D voice coach</span>
+              Talk to 3D voice coach
             </button>
 
             <button
               type="button"
               onClick={() => onNavigateTab("resume")}
               title="Instant ATS Resume Audit & Sync"
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#27272A] bg-[#0C0C0E] px-4 text-xs font-medium text-[#D4D4D8] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] hover:text-[#FAFAFA] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-[#27272A] bg-[#101014] px-4 text-xs font-medium text-[#D4D4D8] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] hover:text-[#FAFAFA] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
             >
-              <span>ATS resume sync</span>
-              <ArrowUpRight className="h-3.5 w-3.5 text-[#71717A]" />
+              ATS resume sync
             </button>
           </div>
         </div>
 
-        {/* Right: COMPUTE Precision Telemetry Panel (Concentric 12px outer -> 8px inner) */}
+        {/* Right: Precision Telemetry Panel */}
         <div className="lg:col-span-5">
-          <div className="rounded-lg border border-[#222226] bg-[#0A0A0D]/82 p-5">
-            <div className="flex items-center justify-between border-b border-[#1F1F23] pb-3">
+          <div className="rounded-xl border border-[#222226] bg-[#0B0B0F]/90 p-6">
+            <div className="flex items-center justify-between border-b border-[#1F1F23] pb-3.5">
               <span className="text-xs font-medium text-[#D4D4D8]">Placement probability</span>
               <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
                 120 estimators
               </span>
             </div>
 
-            <div className="my-5 flex items-baseline justify-between gap-4">
+            <div className="my-6 flex items-baseline justify-between gap-4">
               <motion.span
                 className="font-mono text-4xl font-semibold tracking-[-0.03em] text-[#FAFAFA] tabular-nums sm:text-5xl"
                 initial={{ opacity: 0, y: 4 }}
@@ -120,8 +119,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
               <span className="font-mono text-xs text-[#A1A1AA]">{label}</span>
             </div>
 
-            {/* Segmented Precision Telemetry Bar */}
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="h-2 w-full overflow-hidden rounded-sm bg-[#18181B]">
                 <motion.div
                   className="h-full bg-[#FAFAFA]"
@@ -147,10 +145,9 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
                     `Readiness Probability Score: ${clampedChance.toFixed(1)}% (${label})`
                   )
                 }
-                className="mt-4 flex h-9 w-full items-center justify-center gap-1.5 rounded-md border border-[#27272A] bg-[#111114] px-3 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+                className="mt-5 flex h-10 w-full items-center justify-center rounded-lg border border-[#27272A] bg-[#141418] px-3 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#1C1C22] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
               >
-                <Sparkles className="h-3 w-3 shrink-0 text-[#A1A1AA]" />
-                <span>Ask DAS to break down this score</span>
+                Ask DAS to break down this score
               </button>
             )}
           </div>

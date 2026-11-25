@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { PathfinderLogo } from "@/components/common/PathfinderLogo";
-import { Phone, Mail, MapPin, ArrowUp } from "lucide-react";
 import { TabId } from "./DashboardHeader";
 import { ComplianceModal } from "./ComplianceModals";
 
@@ -23,13 +22,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
   };
 
   return (
-    <footer className="relative z-10 mt-20 border-t border-[#1F1F23] bg-[#000000]/90 text-[#A1A1AA]">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 lg:gap-10">
+    <footer className="relative z-10 mt-24 border-t border-[#1F1F23] bg-[#000000]/92 text-[#A1A1AA]">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-8">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
           {/* Column 1: Brand & System Status */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <PathfinderLogo size={30} variant="monochrome" />
+              <PathfinderLogo size={28} variant="monochrome" />
               <span className="text-base font-semibold tracking-[-0.02em] text-[#FAFAFA]">
                 Pathfinder
               </span>
@@ -49,8 +48,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
 
           {/* Column 2: Core Modules */}
           <div>
-            <h3 className="mb-3 text-xs font-semibold text-[#FAFAFA]">Core modules</h3>
-            <ul className="space-y-2 text-xs">
+            <h3 className="mb-3.5 text-xs font-semibold text-[#FAFAFA]">Core modules</h3>
+            <ul className="space-y-2.5 text-xs">
               <li>
                 <button
                   type="button"
@@ -70,12 +69,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                     onNavigateTab("interview");
                     scrollToTop();
                   }}
-                  className="flex items-center gap-1.5 text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+                  className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
                 >
-                  <span>Coding &amp; viva arena</span>
-                  <span className="rounded border border-[#27272A] bg-[#111113] px-1 font-mono text-[9px] text-[#D4D4D8]">
-                    LIVE
-                  </span>
+                  Coding &amp; viva arena
                 </button>
               </li>
               <li>
@@ -121,10 +117,10 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
             </ul>
           </div>
 
-          {/* Column 3: Institutional Analytics */}
+          {/* Column 3: Institutional Data */}
           <div>
-            <h3 className="mb-3 text-xs font-semibold text-[#FAFAFA]">Institutional data</h3>
-            <ul className="space-y-2 text-xs">
+            <h3 className="mb-3.5 text-xs font-semibold text-[#FAFAFA]">Institutional data</h3>
+            <ul className="space-y-2.5 text-xs">
               <li>
                 <button
                   type="button"
@@ -185,36 +181,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
             <div className="space-y-2 pt-1 text-xs">
               <a
                 href="mailto:support@pathfinder-ai.io?subject=Pathfinder%20Placement%20Inquiry"
-                className="flex items-center gap-2.5 text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+                className="block font-mono text-[11px] text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded border border-[#27272A] bg-[#0C0C0E] text-[#FAFAFA]">
-                  <Mail className="h-3.5 w-3.5" />
-                </div>
-                <span className="font-mono text-[11px]">support@pathfinder-ai.io</span>
+                support@pathfinder-ai.io
               </a>
-
-              <a
-                href="tel:+918000000000"
-                className="flex items-center gap-2.5 text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
-              >
-                <div className="flex h-6 w-6 items-center justify-center rounded border border-[#27272A] bg-[#0C0C0E] text-[#FAFAFA]">
-                  <Phone className="h-3.5 w-3.5" />
-                </div>
-                <span className="font-mono text-[11px] tabular-nums">+91 80000 00000</span>
-              </a>
-
-              <div className="flex items-center gap-2.5 text-[#71717A]">
-                <div className="flex h-6 w-6 items-center justify-center rounded border border-[#1F1F23] bg-[#0C0C0E] text-[#A1A1AA]">
-                  <MapPin className="h-3.5 w-3.5" />
-                </div>
-                <span>Hyderabad · India</span>
-              </div>
+              <p className="text-[#71717A]">Hyderabad, India</p>
             </div>
           </div>
         </div>
 
         {/* Bottom Legal Bar */}
-        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-[#1F1F23] pt-6 text-xs text-[#71717A] sm:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-[#1F1F23] pt-6 text-xs text-[#71717A] sm:flex-row">
           <p>© {currentYear} Pathfinder 2.0 Career Intelligence. All rights reserved.</p>
           <div className="flex items-center gap-5">
             <button
@@ -234,10 +211,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
             <button
               type="button"
               onClick={scrollToTop}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#242429] bg-[#0C0C0E] px-2.5 text-xs text-[#D4D4D8] transition-colors hover:border-[#3F3F46] hover:text-[#FAFAFA]"
+              className="inline-flex h-8 items-center rounded-md border border-[#242429] bg-[#0C0C0E] px-3 text-xs text-[#D4D4D8] transition-colors hover:border-[#3F3F46] hover:text-[#FAFAFA]"
             >
-              <span>Top</span>
-              <ArrowUp className="h-3 w-3" />
+              Back to top
             </button>
           </div>
         </div>
