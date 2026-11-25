@@ -781,11 +781,10 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   key={trk.id}
                   type="button"
                   onClick={() => handleSelectTrack(trk.id)}
-                  className={`h-9 rounded-lg border px-4 text-xs font-medium transition-colors cursor-pointer ${
-                    active
-                      ? "border-white/[0.28] bg-[#18181F] text-[#FAFAFA]"
-                      : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
-                  }`}
+                  className={`h-9 rounded-lg border px-4 text-xs font-medium transition-colors cursor-pointer ${active
+                    ? "border-white/[0.28] bg-[#18181F] text-[#FAFAFA]"
+                    : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
+                    }`}
                 >
                   {trk.label}
                 </button>
@@ -832,11 +831,10 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                 key={ch.id}
                 type="button"
                 onClick={() => resetForChallenge(ch)}
-                className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3.5 text-xs font-medium transition-colors cursor-pointer ${
-                  active
-                    ? "border-white/[0.28] bg-[#18181F] text-[#FAFAFA]"
-                    : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
-                }`}
+                className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3.5 text-xs font-medium transition-colors cursor-pointer ${active
+                  ? "border-white/[0.28] bg-[#18181F] text-[#FAFAFA]"
+                  : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
+                  }`}
               >
                 <span>{ch.title}</span>
                 {isSolved && (
@@ -902,11 +900,10 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               <button
                 type="button"
                 onClick={handleToggleVoiceViva}
-                className={`inline-flex h-8 items-center rounded-lg border px-3 text-[11px] font-medium transition-colors cursor-pointer ${
-                  isListeningVoice
-                    ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
-                    : "pf-btn-secondary"
-                }`}
+                className={`inline-flex h-8 items-center rounded-lg border px-3 text-[11px] font-medium transition-colors cursor-pointer ${isListeningVoice
+                  ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
+                  : "pf-btn-secondary"
+                  }`}
               >
                 {isListeningVoice ? "Stop Mic" : "Speak"}
               </button>
@@ -1097,7 +1094,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                         try {
                           navigator.clipboard.writeText(activeChallenge.solutionPython);
                           toast.success("Reference program copied.");
-                        } catch {}
+                        } catch { }
                       }}
                       className="pf-btn-secondary inline-flex h-8 items-center rounded-lg px-3 text-[11px] font-medium cursor-pointer"
                     >

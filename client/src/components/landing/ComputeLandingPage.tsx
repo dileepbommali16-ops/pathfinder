@@ -92,7 +92,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
 
   // Wake the cloud backend early while the visitor explores the landing page
   useEffect(() => {
-    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
+    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -101,7 +101,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
     if (video) {
       video.currentTime = 0;
       video.muted = false;
-      video.play().catch(() => {});
+      video.play().catch(() => { });
     }
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -478,7 +478,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                     <span className="text-[#10B981]">PASSED · 12ms · HIRE</span>
                   </div>
                   <pre className="overflow-x-auto p-5 font-mono text-xs leading-[1.65] text-[#D4D4D8]">
-{`def first_occurrence(arr, target):
+                    {`def first_occurrence(arr, target):
     lo, hi, ans = 0, len(arr) - 1, -1
     while lo <= hi:
         mid = (lo + hi) // 2
@@ -518,11 +518,10 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   key={slide.id}
                   type="button"
                   onClick={() => setPreviewSlideId(slide.id)}
-                  className={`flex flex-col items-start rounded-xl border p-4 text-left transition-colors duration-150 ${
-                    isSelected
-                      ? "border-white/[0.28] bg-[#16161C] text-[#FAFAFA]"
-                      : "border-white/[0.07] bg-[#0B0B0E] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
-                  }`}
+                  className={`flex flex-col items-start rounded-xl border p-4 text-left transition-colors duration-150 ${isSelected
+                    ? "border-white/[0.28] bg-[#16161C] text-[#FAFAFA]"
+                    : "border-white/[0.07] bg-[#0B0B0E] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
+                    }`}
                 >
                   <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
                     {slide.index}
