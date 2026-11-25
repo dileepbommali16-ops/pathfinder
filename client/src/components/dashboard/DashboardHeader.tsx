@@ -4,18 +4,15 @@ import { isOwnerAccount } from "@/lib/auth";
 import { PathfinderLogo } from "@/components/common/PathfinderLogo";
 import {
   Target,
-  Compass,
   TrendingUp,
   FileText,
   LogOut,
-  Sparkles,
   ShieldCheck,
   User,
   Lightbulb,
-  Zap,
   Mic,
   Menu,
-  X
+  X,
 } from "lucide-react";
 
 export type TabId =
@@ -39,35 +36,13 @@ interface DashboardHeaderProps {
 }
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; badge?: string }[] = [
-  { id: "overview", label: "Dashboard", icon: Target, badge: "Live" },
-  { id: "resume", label: "JD & Resume Tailor", icon: FileText, badge: "1-Click JD" },
-  { id: "interview", label: "Live Coding & Viva Arena", icon: Mic, badge: "11-Lang AI" },
+  { id: "overview", label: "Overview", icon: Target, badge: "LIVE" },
+  { id: "resume", label: "JD & Resume Lab", icon: FileText, badge: "ATS" },
+  { id: "interview", label: "Coding & Viva Arena", icon: Mic, badge: "11-Lang" },
   { id: "projects", label: "Project Blueprints", icon: Lightbulb, badge: "28" },
   { id: "analytics", label: "Cohort & Roadmap", icon: TrendingUp, badge: "972" },
-  { id: "profile", label: "Profile / Settings", icon: User },
+  { id: "profile", label: "Profile & Settings", icon: User },
 ];
-
-const UNIFIED_BLACK_BROWN_THEME = {
-  activeBg: "bg-[#2B2024]",
-  text: "text-[#f8fafc] font-semibold",
-  icon: "text-[#f8fafc]",
-  border: "border-[#2B2024]",
-  glow: "shadow-[0_0_16px_rgba(43,32,36,0.75)]",
-  badge: "bg-[#000000] text-[#f8fafc] border-[#2B2024]",
-  indicator: "from-[#000000] via-[#2B2024] to-[#000000]"
-};
-
-const TAB_THEMES: Record<TabId, typeof UNIFIED_BLACK_BROWN_THEME> = {
-  overview: UNIFIED_BLACK_BROWN_THEME,
-  interview: UNIFIED_BLACK_BROWN_THEME,
-  skills: UNIFIED_BLACK_BROWN_THEME,
-  projects: UNIFIED_BLACK_BROWN_THEME,
-  analytics: UNIFIED_BLACK_BROWN_THEME,
-  resume: UNIFIED_BLACK_BROWN_THEME,
-  branches: UNIFIED_BLACK_BROWN_THEME,
-  profile: UNIFIED_BLACK_BROWN_THEME,
-  roles: UNIFIED_BLACK_BROWN_THEME,
-};
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   activeTab,
@@ -84,183 +59,204 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     setMobileMenuOpen(false);
   };
 
+  const isBoss = isOwnerAccount(email);
+  const displayUser = isBoss ? "Dileep" : username || "Student";
+  const displayEmail = isBoss ? "dileepbommali16@gmail.com" : email;
+  const activeTabMeta = TABS.find((t) => t.id === activeTab);
+
   return (
-    <header className="sticky top-0 z-50 border-b border-[#2B2024] bg-[#000000]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.9)]">
-      {/* Subtle Dual Horizon Accent */}
-      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#A80139]/50 to-transparent" />
-
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-3 sm:px-6">
-        {/* Clickable Website Brand Logo — Styled strictly in #FD0053 & #A80139 */}
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("overview");
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          className="flex items-center gap-3 text-left cursor-pointer group focus:outline-none"
-          title="Return to Dashboard Overview"
-        >
-          <PathfinderLogo
-            size={40}
-            showPulse
-            className="transition-transform group-hover:scale-105"
-          />
-
-          <div>
+    <header className="sticky top-0 z-50 border-b border-[#1F1F23] bg-[#000000]/92 backdrop-blur-md">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
+        {/* Left: Architectural Brand & Breadcrumb */}
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("overview");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="group flex items-center gap-2.5 rounded-md text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+            title="Return to Overview"
+          >
+            <PathfinderLogo size={30} showPulse />
             <div className="flex items-center gap-2">
-              <span id="brand-site-title" className="text-lg font-bold tracking-tight text-[#FD0053] drop-shadow-sm font-['Space_Grotesk'] group-hover:text-[#A80139]">
-                Pathfinder <span className="text-[#A80139]">2.0</span>
+              <span
+                id="brand-site-title"
+                className="text-[15px] font-semibold tracking-[-0.02em] text-[#FAFAFA]"
+              >
+                Pathfinder
               </span>
-              <span className="rounded-md border border-[#A80139] bg-[#000000] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#FD0053] uppercase shadow-sm">
-                AI
+              <span className="rounded border border-[#27272A] bg-[#111113] px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA] tabular-nums">
+                2.0
               </span>
-              {userRole === "admin" && (
-                <span className="rounded-md border border-[#A80139] bg-[#000000] px-2 py-0.5 text-[10px] font-medium text-[#FD0053] uppercase tracking-wider">
-                  Admin Portal
+            </div>
+          </button>
+
+          <span className="hidden text-[#27272A] sm:inline" aria-hidden="true">
+            /
+          </span>
+
+          <span className="hidden truncate text-xs font-medium text-[#A1A1AA] sm:inline">
+            {activeTabMeta?.label || "Workspace"}
+          </span>
+
+          {userRole === "admin" && (
+            <span className="hidden rounded border border-[#27272A] bg-[#141418] px-2 py-0.5 font-mono text-[10px] font-medium text-[#D4D4D8] md:inline-block">
+              Admin
+            </span>
+          )}
+        </div>
+
+        {/* Right: Candidate Identity, Mobile Menu & Sign Out */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("profile")}
+            title="View & edit candidate profile"
+            className="hidden h-9 items-center gap-2.5 rounded-lg border border-[#242429] bg-[#0C0C0E] px-3 text-left transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#141418] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:flex"
+          >
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-[#18181B] font-mono text-[10px] font-semibold text-[#FAFAFA] ring-1 ring-[#27272A]">
+              {displayUser.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex items-center gap-2 leading-none">
+              <span className="text-xs font-medium text-[#FAFAFA]">{displayUser}</span>
+              {isBoss ? (
+                <span className="rounded border border-[#3F3F46] bg-[#18181B] px-1.5 py-0.5 font-mono text-[9px] font-medium text-[#FAFAFA]">
+                  OWNER
+                </span>
+              ) : userRole === "admin" ? (
+                <span className="rounded border border-[#3F3F46] bg-[#18181B] px-1.5 py-0.5 font-mono text-[9px] font-medium text-[#D4D4D8]">
+                  ADMIN
+                </span>
+              ) : (
+                <ShieldCheck className="h-3 w-3 text-[#71717A]" />
+              )}
+              {displayEmail && (
+                <span className="hidden font-mono text-[10px] text-[#71717A] lg:inline">
+                  {displayEmail}
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#A80139] font-medium">Campus Placement &amp; Engineering Intelligence</p>
-          </div>
-        </button>
+          </button>
 
-        {/* User Identity, Mobile Hamburger & Logout */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          {(() => {
-            const isBoss = isOwnerAccount(email);
-
-            const displayUser = isBoss ? "Dileep (Boss)" : (username || "Student");
-            const displayEmail = isBoss ? "dileepbommali16@gmail.com" : email;
-
-            return (
-              <button
-                type="button"
-                onClick={() => setActiveTab("profile")}
-                title="View & Edit Candidate Profile"
-                className="hidden sm:flex items-center gap-2.5 rounded-full border border-[#2B2024] bg-[#000000] px-3.5 py-1.5 shadow-sm backdrop-blur-xl hover:bg-[#2B2024] transition-all cursor-pointer text-left"
-              >
-                <div className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold shadow-sm ring-1 bg-[#2B2024] text-white ring-[#2B2024]">
-                  {isBoss ? "👑" : (username ? username.charAt(0).toUpperCase() : "U")}
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 leading-none">
-                    <span className="text-xs font-semibold text-[#f8fafc]">{displayUser}</span>
-                    {isBoss ? (
-                      <span className="text-[9px] font-bold text-white bg-[#2B2024] border border-[#2B2024] px-1 rounded">BOSS</span>
-                    ) : userRole === "admin" ? (
-                      <span className="text-[9px] font-medium text-white bg-[#2B2024] border border-[#2B2024] px-1 rounded">ADMIN</span>
-                    ) : (
-                      <ShieldCheck className="h-3 w-3 text-[#94a3b8]" />
-                    )}
-                  </div>
-                  {displayEmail && <span className="text-[10px] text-[#94a3b8] leading-none">{displayEmail}</span>}
-                </div>
-              </button>
-            );
-          })()}
-
-          {/* Photo 3 - Item 3: Mobile Hamburger Menu Toggle */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-[#2B2024] bg-[#000000] text-[#f8fafc] hover:bg-[#2B2024] transition-colors cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#242429] bg-[#0C0C0E] text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#141418] md:hidden"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
+            {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
 
           <button
             onClick={onLogout}
             data-agent-id="logout-btn"
             data-agent-danger="true"
-            className="flex items-center gap-1.5 rounded-xl border border-[#2B2024] bg-[#000000] px-3 py-1.5 text-xs font-medium text-[#94a3b8] transition-all hover:bg-[#2B2024] hover:text-[#f8fafc] active:scale-95 shadow-sm cursor-pointer"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#242429] bg-[#0C0C0E] px-3 text-xs font-medium text-[#A1A1AA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#141418] hover:text-[#FAFAFA] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
             title="Sign out of Pathfinder"
           >
             <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden xs:inline">Logout</span>
+            <span className="hidden xs:inline">Sign out</span>
           </button>
         </div>
       </div>
 
-      {/* Navigation Tabs Bar (Desktop and Horizontal Scroll) */}
-      <div className="border-t border-[#2B2024] bg-[#000000]/95 px-4 sm:px-6">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-nowrap items-center justify-between gap-2 overflow-x-auto py-2.5 scrollbar-none">
+      {/* Secondary Navigation Rail (COMPUTE Numbered Tabs) */}
+      <div className="border-t border-[#18181B] bg-[#000000]/92 px-4 sm:px-6">
+        <nav
+          aria-label="Primary workspace navigation"
+          className="mx-auto flex w-full max-w-[1440px] flex-nowrap items-center gap-1.5 overflow-x-auto py-2 scrollbar-none"
+        >
           {TABS.map((tab, idx) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            const theme = TAB_THEMES[tab.id] || UNIFIED_BLACK_BROWN_THEME;
+            const indexLabel = String(idx + 1).padStart(2, "0");
             return (
               <button
                 key={tab.id}
                 id={`tab-${tab.id}`}
                 data-agent-id={`tab-${tab.id}`}
                 aria-label={tab.label}
+                aria-current={isActive ? "page" : undefined}
                 onClick={() => handleSelectTab(tab.id)}
-                className={`relative flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 xl:px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${isActive
-                  ? `${theme.activeBg} ${theme.text} border ${theme.border} ${theme.glow}`
-                  : "bg-[#000000] text-[#94a3b8] hover:bg-[#2B2024]/60 hover:text-[#f8fafc] border border-transparent"
-                  }`}
+                className={`relative flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] ${
+                  isActive
+                    ? "border border-[#2E2E34] bg-[#16161A] text-[#FAFAFA]"
+                    : "border border-transparent text-[#A1A1AA] hover:bg-[#111114] hover:text-[#FAFAFA]"
+                }`}
               >
-                <span className={`text-[10px] font-bold tabular-nums ${isActive ? "text-white" : "text-white/50"}`}>
-                  {idx + 1}.
+                <span
+                  className={`font-mono text-[10px] tabular-nums ${
+                    isActive ? "text-[#A1A1AA]" : "text-[#52525B]"
+                  }`}
+                >
+                  {indexLabel}
                 </span>
-                <Icon className={`h-3.5 w-3.5 ${isActive ? theme.icon : "text-[#94a3b8]"}`} />
+                <Icon className={`h-3.5 w-3.5 ${isActive ? "text-[#FAFAFA]" : "text-[#71717A]"}`} />
                 <span>{tab.label}</span>
                 {tab.badge && (
-                  <span className={`rounded border px-1.5 py-0.5 text-[9px] font-medium ${isActive ? theme.badge : "bg-[#2B2024] text-[#f8fafc] border-[#2B2024]"}`}>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.2 font-mono text-[9px] tabular-nums ${
+                      isActive
+                        ? "border-[#3F3F46] bg-[#0C0C0E] text-[#FAFAFA]"
+                        : "border-[#222226] bg-[#0C0C0E] text-[#71717A]"
+                    }`}
+                  >
+                    {tab.badge === "LIVE" && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+                    )}
                     {tab.badge}
                   </span>
                 )}
                 {isActive && (
                   <motion.div
                     layoutId="activeTabIndicator"
-                    className={`absolute inset-x-2 -bottom-2 h-[2px] rounded-full bg-gradient-to-r ${theme.indicator}`}
-                    transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    className="absolute inset-x-2 -bottom-[9px] h-[1.5px] bg-[#FAFAFA]"
+                    transition={{ type: "spring", stiffness: 460, damping: 34 }}
                   />
                 )}
               </button>
             );
           })}
-        </div>
+        </nav>
       </div>
 
-      {/* Photo 3 - Item 3: Mobile Menu Drawer Modal */}
+      {/* Mobile Navigation Drawer */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden border-t border-[#2B2024] bg-[#000000] px-4 py-4 shadow-2xl overflow-hidden"
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden border-t border-[#1F1F23] bg-[#09090B] px-4 py-3 md:hidden"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
               {TABS.map((tab, idx) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
-                const theme = TAB_THEMES[tab.id] || UNIFIED_BLACK_BROWN_THEME;
+                const indexLabel = String(idx + 1).padStart(2, "0");
                 return (
                   <button
                     key={`mobile-${tab.id}`}
                     aria-label={tab.label}
                     onClick={() => handleSelectTab(tab.id)}
-                    className={`flex items-center justify-between rounded-xl p-3 text-left transition-all ${isActive
-                      ? `${theme.activeBg} ${theme.text} border ${theme.border}`
-                      : "bg-[#000000] text-[#94a3b8] hover:bg-[#2B2024] hover:text-white border border-[#2B2024]"
-                      }`}
+                    className={`flex min-h-11 items-center justify-between rounded-lg border px-3 py-2 text-left transition-colors ${
+                      isActive
+                        ? "border-[#3F3F46] bg-[#16161A] text-[#FAFAFA]"
+                        : "border-[#1F1F23] bg-[#0C0C0E] text-[#A1A1AA] hover:border-[#2E2E34] hover:text-[#FAFAFA]"
+                    }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? "bg-[#000000] text-white" : "bg-[#2B2024] text-[#94a3b8]"}`}>
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <span className="text-xs font-semibold">
-                        <span className="mr-1.5 opacity-60">{idx + 1}.</span>
-                        {tab.label}
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                        {indexLabel}
                       </span>
+                      <Icon className="h-4 w-4 text-[#D4D4D8]" />
+                      <span className="text-xs font-medium">{tab.label}</span>
                     </div>
                     {tab.badge && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${isActive ? theme.badge : "bg-[#2B2024] text-white border-[#2B2024]"}`}>
+                      <span className="rounded border border-[#27272A] bg-[#09090B] px-1.5 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
                         {tab.badge}
                       </span>
                     )}
@@ -274,4 +270,3 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     </header>
   );
 };
-

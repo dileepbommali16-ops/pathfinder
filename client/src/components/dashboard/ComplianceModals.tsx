@@ -12,7 +12,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 shadow-2xl text-[#f8fafc]">
+      <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 shadow-2xl text-[#f8fafc]">
         {/* Close Button */}
         <button
           type="button"
@@ -25,11 +25,11 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
         {type === "privacy" ? (
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2B2024]/15 text-[#2B2024] ring-1 ring-[#2B2024]/40">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#141418] text-[#D4D4D8] ring-1 ring-[#27272A]">
                 <Lock className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold font-['Space_Grotesk'] text-[#f8fafc]">
+                <h2 className="text-xl font-bold text-[#f8fafc]">
                   Data Privacy Policy
                 </h2>
                 <p className="text-xs text-[#94a3b8]">Effective Date: October 2026 · Standard Enterprise Governance</p>
@@ -81,11 +81,11 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
         ) : (
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2B2024]/15 text-[#2B2024] ring-1 ring-[#2B2024]/40">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#141418] text-[#D4D4D8] ring-1 ring-[#27272A]">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold font-['Space_Grotesk'] text-[#f8fafc]">
+                <h2 className="text-xl font-bold text-[#f8fafc]">
                   Terms of Service & Usage
                 </h2>
                 <p className="text-xs text-[#94a3b8]">Effective Date: October 2026 · Academic & Recruiter Evaluation</p>
@@ -95,7 +95,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
             <div className="space-y-4 text-xs text-[#94a3b8] leading-relaxed">
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#f8fafc] flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4 text-[#2B2024]" />
+                  <AlertCircle className="w-4 h-4 text-[#D4D4D8]" />
                   1. Placement Prediction Disclaimer
                 </h3>
                 <p>
@@ -105,7 +105,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
 
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#f8fafc] flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4 text-[#2B2024]" />
+                  <AlertCircle className="w-4 h-4 text-[#D4D4D8]" />
                   2. Project Blueprint IP & Educational Licensing
                 </h3>
                 <p>
@@ -115,7 +115,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
 
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#f8fafc] flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4 text-[#2B2024]" />
+                  <AlertCircle className="w-4 h-4 text-[#D4D4D8]" />
                   3. Acceptable Use & Automated Scraping
                 </h3>
                 <p>

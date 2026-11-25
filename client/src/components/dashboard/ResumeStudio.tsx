@@ -135,24 +135,24 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
     !feedback
       ? "border-white/20 text-[#f8fafc]"
       : feedback.score >= 76
-      ? "border-[#2B2024] text-[#f8fafc]"
+      ? "border-[#242429] text-[#f8fafc]"
       : feedback.score >= 55
-      ? "border-[#2B2024] text-[#f8fafc]"
-      : "border-[#2B2024] text-[#f8fafc]";
+      ? "border-[#242429] text-[#f8fafc]"
+      : "border-[#242429] text-[#f8fafc]";
 
   const tierTone =
     !feedback
       ? "border-white/15 bg-[#000000] text-[#94a3b8]"
       : feedback.score >= 76
-      ? "border-[#2B2024] bg-[#2B2024] text-[#f8fafc]"
+      ? "border-[#242429] bg-[#18181B] text-[#f8fafc]"
       : feedback.score >= 55
-      ? "border-[#2B2024] bg-[#2B2024] text-[#f8fafc]"
-      : "border-[#2B2024] bg-[#2B2024] text-[#f8fafc]";
+      ? "border-[#242429] bg-[#18181B] text-[#f8fafc]"
+      : "border-[#242429] bg-[#18181B] text-[#f8fafc]";
 
   return (
     <div className="space-y-6">
       {/* Upload & Input Section */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
         <div className="relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -164,7 +164,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                   <h2 className="text-lg font-bold tracking-tight text-[#f8fafc]">
                     Senior Enterprise &amp; Deloitte ATS Audit Studio
                   </h2>
-                  <span className="rounded-full border border-[#2B2024] bg-[#000000] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#f8fafc]">
+                  <span className="rounded-full border border-[#242429] bg-[#000000] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#f8fafc]">
                     Uninflated Hiring Manager Review
                   </span>
                 </div>
@@ -266,10 +266,10 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
       {!feedback && (
         <div
           data-agent-id="resume-awaiting-scan"
-          className="rounded-3xl border border-white/10 bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.85)]"
+          className="rounded-xl border border-white/10 bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.85)]"
         >
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#2B2024] bg-[#000000] text-[#f8fafc]">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#242429] bg-[#000000] text-[#f8fafc]">
               <Target className="h-6 w-6" />
             </div>
             <div className="space-y-2">
@@ -293,7 +293,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
       {feedback && (
         <div
           data-agent-id="resume-audit-results"
-          className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
+          className="relative overflow-hidden rounded-xl border border-white/10 bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
         >
           <div className="relative z-10 space-y-6">
             {/* Top Score & Action Row */}
@@ -416,7 +416,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                     {SCORE_BAR_LABELS.map(({ key, label }) => {
                       const val = feedback.breakdown?.[key] ?? 0;
                       const barColor =
-                        val >= 75 ? "bg-[#2B2024]" : val >= 50 ? "bg-[#2B2024]" : "bg-[#2B2024]";
+                        val >= 75 ? "bg-[#18181B]" : val >= 50 ? "bg-[#18181B]" : "bg-[#18181B]";
                       return (
                         <div key={key} className="space-y-1">
                           <div className="flex items-center justify-between text-[11px]">
@@ -496,7 +496,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                         activeCompanyMatch.matched_keywords.map((k, i) => (
                           <span
                             key={i}
-                            className="rounded border border-[#2B2024] bg-[#2B2024] px-1.5 py-0.5 text-[#f8fafc]"
+                            className="rounded border border-[#242429] bg-[#18181B] px-1.5 py-0.5 text-[#f8fafc]"
                           >
                             {k}
                           </span>
@@ -513,7 +513,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                         activeCompanyMatch.missing_keywords.map((k, i) => (
                           <span
                             key={i}
-                            className="rounded border border-[#2B2024] bg-[#2B2024] px-1.5 py-0.5 text-[#f8fafc]"
+                            className="rounded border border-[#242429] bg-[#18181B] px-1.5 py-0.5 text-[#f8fafc]"
                           >
                             {k}
                           </span>
@@ -557,7 +557,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                   {(feedback.missing_skills || []).map((sk, i) => (
                     <span
                       key={i}
-                      className="rounded-lg border border-[#2B2024] bg-[#000000] px-2.5 py-1 text-xs font-medium text-[#f8fafc]"
+                      className="rounded-lg border border-[#242429] bg-[#000000] px-2.5 py-1 text-xs font-medium text-[#f8fafc]"
                     >
                       + {sk}
                     </span>

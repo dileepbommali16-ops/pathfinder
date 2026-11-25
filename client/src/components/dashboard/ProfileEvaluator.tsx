@@ -85,7 +85,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-[#000000] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
+    <div className="relative overflow-hidden rounded-xl border border-[#000000] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
       {/* Subtle background ambient mesh */}
       <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#ffffff]/[0.05] blur-3xl" />
 
@@ -119,7 +119,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           </button>
           <button
             onClick={() => applyPreset("starter")}
-            className="rounded-lg border border-[#2B2024]/30 bg-[#2B2024]/10 px-2.5 py-1 text-[11px] font-semibold text-[#2B2024] shadow-[0_0_10px_rgba(159, 18, 57,0.15)] hover:bg-[#2B2024]/20 transition-all active:scale-95"
+            className="rounded-lg border border-[#242429] bg-[#141418] px-2.5 py-1 text-[11px] font-semibold text-[#D4D4D8] hover:bg-[#27272A] transition-all active:scale-95"
           >
             Needs Support
           </button>
@@ -163,7 +163,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
               <label htmlFor="eval-backlogs-slider" className="font-semibold text-[#f8fafc]">Active Academic Backlogs</label>
-              <span className={`rounded px-2 py-0.5 font-bold ${profile.backlogs === 0 ? "bg-[#000000] text-[#f8fafc]" : "bg-[#2B2024]/20 text-[#2B2024]"}`}>
+              <span className={`rounded px-2 py-0.5 font-bold ${profile.backlogs === 0 ? "bg-[#000000] text-[#f8fafc]" : "bg-[#141418] text-[#D4D4D8]"}`}>
                 {profile.backlogs} {profile.backlogs === 1 ? "Backlog" : "Backlogs"}
               </span>
             </div>
@@ -362,7 +362,7 @@ export const ProfileEvaluator: React.FC<ProfileEvaluatorProps> = ({
             <button
               onClick={onCalculate}
               disabled={isCalculating}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2B2024] px-5 py-3 text-xs font-bold text-white shadow-[0_0_25px_rgba(124,58,237,0.3)] transition-all hover:bg-[#2B2024] active:scale-95 disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#18181B] px-5 py-3 text-xs font-bold text-white shadow-[0_0_25px_rgba(0,0,0,0)] transition-all hover:bg-[#27272A] active:scale-95 disabled:opacity-50"
             >
               <Zap className="h-4 w-4" />
               <span>{isCalculating ? "Evaluating with ML..." : "⚡ Calculate Placement Probability"}</span>

@@ -1959,7 +1959,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
   // 1. LANDING & AUTH SCREEN
   if (oauthSigningIn && !isAuthenticated) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-transparent font-['Outfit',sans-serif] text-[#f8fafc]">
+      <div className="flex min-h-screen w-full items-center justify-center bg-transparent text-[#f8fafc]">
         <p className="animate-pulse text-sm font-medium tracking-wide">Signing you in...</p>
       </div>
     );
@@ -1972,7 +1972,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
   return (
     <div className="pathfinder-dashboard relative min-h-screen bg-transparent text-[#f8fafc] selection:bg-[#ffffff]/35 selection:text-[#f8fafc] font-sans overflow-x-hidden">
       {isGlobalServerWakingUp && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[#2B2024] bg-[#000000]/95 px-4 py-2 text-xs font-medium text-[#f8fafc] shadow-[0_4px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-[#242429] bg-[#000000]/95 px-4 py-2 text-xs font-medium text-[#f8fafc] shadow-[0_4px_24px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
           <Loader2 className="h-3.5 w-3.5 animate-spin text-[#ffffff]" />
           <span>Waking up the server, this can take up to a minute...</span>
         </div>
@@ -1997,7 +1997,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       />
 
       {isServerWakingUp && (
-        <div className="relative z-40 border-b border-[#2B2024] bg-[#000000] px-4 py-2 text-center text-xs font-medium text-[#f8fafc] backdrop-blur-md">
+        <div className="relative z-40 border-b border-[#242429] bg-[#000000] px-4 py-2 text-center text-xs font-medium text-[#f8fafc] backdrop-blur-md">
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
@@ -2018,7 +2018,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
             <button
               type="button"
               onClick={() => setFocusOnDas(false)}
-              className="px-4 py-2 rounded-full border border-[#2B2024] bg-[#000000]/90 hover:bg-[#2B2024] text-xs font-semibold text-white backdrop-blur-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
+              className="px-4 py-2 rounded-full border border-[#242429] bg-[#000000]/90 hover:bg-[#27272A] text-xs font-semibold text-white backdrop-blur-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-white" />
               <span>Show Dashboard</span>
@@ -2032,7 +2032,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
                 setFocusOnDas(true);
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className="px-3.5 py-1.5 rounded-full border border-[#2B2024] bg-[#000000]/85 hover:bg-[#2B2024] text-xs font-semibold text-white backdrop-blur-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+              className="px-3.5 py-1.5 rounded-full border border-[#242429] bg-[#000000]/85 hover:bg-[#27272A] text-xs font-semibold text-white backdrop-blur-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
             >
               <Sparkles className="w-3.5 h-3.5 text-white" />
               <span>Focus on DAS</span>

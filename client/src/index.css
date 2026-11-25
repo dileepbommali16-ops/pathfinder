@@ -4,6 +4,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -42,165 +44,69 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-:root {
-  /* ==========================================================================
-     SINGLE SOURCE OF TRUTH (SSOT): LUXURY SAAS 3-TIER SYSTEM
-     - 2 Slides: Black + Deep Wine Velvet (#9f1239 / #881337)
-     - 2 Slides: Black + Royal Violet Amethyst (#7c3aed / #6d28d9)
-     - 2 Slides: Black + Crisp Obsidian & Platinum White (#ffffff / #f8fafc)
-     - Canvas Background: Deep Obsidian Nocturne (#0a0b10)
-     - Card / Panel: Frosted Obsidian Glass (#11131c)
-     - Card Subtle: Lighter Obsidian Module (#161926)
-     - Primary Text / Headings: Crisp Platinum White (#f8fafc)
-     - Secondary / Muted Text: Refined Silver Grey (#94a3b8)
-     - Subtle Metadata: Slate Metadata (#64748b)
-     - Borders: rgba(255, 255, 255, 0.08)
-     ========================================================================== */
-
-  --bg-base: #000000;
-  --bg-card: #000000;
-  --bg-card-subtle: #2B2024;
-  --bg-card-hover: #2B2024;
-
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-heading: #f8fafc;
-
-  /* Tier 1 & Tier 2 unified to #000000 & #2B2024 */
-  --accent-wine: #2B2024;
-  --accent-wine-hover: #2B2024;
-  --accent-wine-soft: rgba(43, 32, 36, 0.35);
-  --accent-wine-border: #2B2024;
-  --accent-wine-glow: rgba(43, 32, 36, 0.45);
-
-  --accent-violet: #2B2024;
-  --accent-violet-hover: #2B2024;
-  --accent-violet-soft: rgba(43, 32, 36, 0.35);
-  --accent-violet-border: #2B2024;
-  --accent-violet-glow: rgba(43, 32, 36, 0.45);
-
-  /* Tier 3: Clean Obsidian + Crisp Platinum White Accents */
-  --accent-mono: #ffffff;
-  --accent-mono-soft: rgba(255, 255, 255, 0.10);
-  --accent-mono-border: rgba(255, 255, 255, 0.20);
-  --accent-mono-glow: rgba(255, 255, 255, 0.15);
-
-  /* Section Tone Variations */
-  --accent-readiness: #2B2024;
-  --accent-readiness-bg: rgba(43, 32, 36, 0.35);
-  --accent-readiness-border: #2B2024;
-
-  --accent-roadmap: #2B2024;
-  --accent-roadmap-bg: rgba(43, 32, 36, 0.35);
-  --accent-roadmap-border: #2B2024;
-
-  --accent-coach: #2B2024;
-  --accent-coach-bg: rgba(43, 32, 36, 0.35);
-  --accent-coach-border: #2B2024;
-
-  --accent-projects: #2B2024;
-  --accent-projects-bg: rgba(43, 32, 36, 0.35);
-  --accent-projects-border: #2B2024;
-
-  --accent-cohort: #2B2024;
-  --accent-cohort-bg: rgba(43, 32, 36, 0.35);
-  --accent-cohort-border: #2B2024;
-
-  --accent-resume: #2B2024;
-  --accent-resume-bg: rgba(43, 32, 36, 0.35);
-  --accent-resume-border: #2B2024;
-
-  --accent-interview: #2B2024;
-  --accent-interview-bg: rgba(43, 32, 36, 0.35);
-  --accent-interview-border: #2B2024;
-
-  /* Semantic Meaning Colors */
-  --color-success: #2B2024;
-  --color-warning: #2B2024;
-  --color-error: #2B2024;
-  --color-info: #2B2024;
-
-  /* Layout, Card, and Spacing Tokens */
-  --card-bg: #000000;
-  --card-border: #2B2024;
-  --card-radius: 1.25rem;
-  --card-padding: 1.75rem;
-  --card-gap: 1.5rem;
-
-  --background: #000000;
-  --foreground: #f8fafc;
-  --card: #000000;
-  --card-foreground: #f8fafc;
-  --popover: #000000;
-  --popover-foreground: #f8fafc;
-  --primary: #2B2024;
-  --primary-foreground: #f8fafc;
-  --secondary: #2B2024;
-  --secondary-foreground: #94a3b8;
-  --muted: #2B2024;
-  --muted-foreground: #94a3b8;
-  --accent: #2B2024;
-  --accent-foreground: #f8fafc;
-  --destructive: #2B2024;
-  --destructive-foreground: #f8fafc;
-  --border: #2B2024;
-  --input: #2B2024;
-  --ring: #2B2024;
-  --sidebar: #000000;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-accent: #2B2024;
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: #2B2024;
-  --sidebar-ring: #2B2024;
-  --radius: 0.75rem;
-
-  --chart-1: #2B2024;
-  --chart-2: #ffffff;
-  --chart-3: #2B2024;
-  --chart-4: #94a3b8;
-  --chart-5: #ffffff;
-}
-
+:root,
 .dark {
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-heading: #f8fafc;
+  /* ==========================================================================
+     PATHFINDER 2.0 — COMPUTE ACHROMATIC OBSIDIAN DESIGN SYSTEM
+     Pure #000000 / #09090B matte engineering surfaces, crisp #1F1F23 / #27272A
+     1px hairlines, #FAFAFA foreground & primary actions, Geist + Geist Mono.
+     Zero purple, zero pink, zero muddy plum-brown, zero decorative gradients.
+     ========================================================================== */
+  --bg-base: #000000;
+  --bg-card: #09090b;
+  --bg-card-subtle: #141418;
+  --bg-card-hover: #18181b;
 
-  --accent-readiness: #2B2024;
-  --accent-roadmap: #2B2024;
-  --accent-coach: #2B2024;
-  --accent-projects: #2B2024;
-  --accent-cohort: #2B2024;
-  --accent-resume: #2B2024;
-  --accent-interview: #2B2024;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --text-heading: #fafafa;
 
-  --color-success: #2B2024;
-  --color-warning: #2B2024;
-  --color-error: #2B2024;
-  --color-info: #2B2024;
+  --accent-mono: #fafafa;
+  --accent-mono-soft: rgba(250, 250, 250, 0.08);
+  --accent-mono-border: #27272a;
+  --accent-mono-glow: transparent;
 
-  --card-bg: #000000;
-  --card-border: #2B2024;
+  --card-bg: #09090b;
+  --card-border: #222226;
+  --card-radius: 0.75rem;
+  --card-padding: 1.5rem;
+  --card-gap: 1.25rem;
 
   --background: #000000;
-  --foreground: #f8fafc;
-  --card: #000000;
-  --card-foreground: #f8fafc;
-  --popover: #000000;
-  --popover-foreground: #f8fafc;
-  --secondary: #2B2024;
-  --secondary-foreground: #94a3b8;
-  --muted: #2B2024;
-  --muted-foreground: #94a3b8;
-  --accent: #2B2024;
-  --accent-foreground: #f8fafc;
-  --destructive: #2B2024;
-  --destructive-foreground: #f8fafc;
-  --border: #2B2024;
-  --input: #2B2024;
-  --ring: #2B2024;
+  --foreground: #fafafa;
+  --card: #09090b;
+  --card-foreground: #fafafa;
+  --popover: #09090b;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #09090b;
+  --secondary: #18181b;
+  --secondary-foreground: #d4d4d8;
+  --muted: #141418;
+  --muted-foreground: #a1a1aa;
+  --accent: #18181b;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: #222226;
+  --input: #27272a;
+  --ring: #a1a1aa;
+  --sidebar: #000000;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #fafafa;
+  --sidebar-primary-foreground: #09090b;
+  --sidebar-accent: #18181b;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #1f1f23;
+  --sidebar-ring: #a1a1aa;
+  --radius: 0.5rem;
+
+  --chart-1: #fafafa;
+  --chart-2: #a1a1aa;
+  --chart-3: #71717a;
+  --chart-4: #52525b;
+  --chart-5: #10b981;
 }
 
 @layer base {
@@ -208,22 +114,41 @@
     border-color: var(--border);
     outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
   }
-  html, body {
-    overflow-x: hidden;
-    max-width: 100vw;
-    --background: #000000;
-    --card: #060608;
-    --bg-base: #000000;
-    --bg-card: #060608;
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: dark;
+  }
+
+  html,
+  body {
+    overflow-x: clip;
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
     background-color: #000000;
     color: var(--foreground);
-    font-family: "Outfit", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #000000;
+    font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: "Space Grotesk", sans-serif;
-    color: #f8fafc;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #fafafa;
+    text-wrap: balance;
   }
+
+  p {
+    text-wrap: pretty;
+  }
+
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
@@ -234,6 +159,11 @@
   input[type="checkbox"]:not(:disabled),
   input[type="radio"]:not(:disabled) {
     cursor: pointer;
+  }
+
+  ::selection {
+    background: #fafafa;
+    color: #09090b;
   }
 }
 
@@ -267,11 +197,11 @@
   }
 }
 
-/* Subtle Copper/Charcoal Ambient horizon */
+/* Subtle horizon mask for 3D backdrop */
 .pathfinder-arc-layer {
-  opacity: 0.18;
-  -webkit-mask-image: linear-gradient(to top, #141318 0%, rgba(20, 19, 24, 0.72) 42%, transparent 100%);
-  mask-image: linear-gradient(to top, #141318 0%, rgba(20, 19, 24, 0.72) 42%, transparent 100%);
+  opacity: 0.16;
+  -webkit-mask-image: linear-gradient(to top, #09090b 0%, rgba(9, 9, 11, 0.7) 42%, transparent 100%);
+  mask-image: linear-gradient(to top, #09090b 0%, rgba(9, 9, 11, 0.7) 42%, transparent 100%);
 }
 
 .pathfinder-arc-layer .data-pixel-arc {
@@ -288,27 +218,25 @@
   mix-blend-mode: screen;
 }
 
-/* Performant Layered 3D Depth & Elevation Tokens (60fps, WCAG AA contrast) */
+/* Precision Architectural Panel (1px hairline, subtle hover border, 60fps) */
 .glass-depth-card,
 .holo-glass-card {
-  background: rgba(6, 6, 8, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease;
-  will-change: transform;
+  background: rgba(9, 9, 11, 0.62);
+  border: 1px solid #222226;
+  box-shadow: none;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition-property: transform, border-color, background-color;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Soft translucent obsidian card surface on dashboard slides & header pills so zero navy #11131c remains */
-.pathfinder-dashboard header [class*="bg-[#11131c]"],
-.pathfinder-dashboard header [class*="bg-[#161926]"],
-.pathfinder-dashboard header [class*="bg-[#0a0b10]"] {
-  background-color: rgba(0, 0, 0, 0.72) !important;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+.glass-depth-card:hover {
+  transform: translateY(-2px);
+  border-color: #3f3f46;
 }
 
+/* Keep translucent obsidian card surfaces across dashboard tabs so 3D Face Agent (#das-singleton-avatar at z-[1]) shines cleanly behind */
 .pathfinder-dashboard section [class*="bg-[#11131c]"],
 .pathfinder-dashboard section [class*="bg-[#000000]"],
 .pathfinder-dashboard main > div [class*="bg-[#000000]"],
@@ -317,7 +245,7 @@
 .pathfinder-dashboard main > div [class*="bg-[#0F172A]"],
 .pathfinder-dashboard main > div [class*="bg-[#0f172a]"],
 .pathfinder-dashboard main > div [class*="bg-[#060608]"] {
-  background-color: rgba(0, 0, 0, 0.42) !important;
+  background-color: rgba(9, 9, 11, 0.56) !important;
   backdrop-filter: blur(2px) !important;
   -webkit-backdrop-filter: blur(2px) !important;
 }
@@ -329,7 +257,6 @@
   -webkit-backdrop-filter: blur(2px) !important;
 }
 
-/* Mobile, Tablet & Touch-Device Smoothness: eliminate multi-layer WebGL framebuffer blur readbacks while keeping dark translucent glass */
 @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   .pathfinder-dashboard section [class*="bg-[#11131c]"],
   .pathfinder-dashboard main > div [class*="bg-[#11131c]"],
@@ -337,7 +264,7 @@
   .pathfinder-dashboard main > div [class*="bg-[#0F172A]"],
   .pathfinder-dashboard main > div [class*="bg-[#0f172a]"],
   .pathfinder-dashboard main > div [class*="bg-[#060608]"] {
-    background-color: rgba(4, 6, 10, 0.72) !important;
+    background-color: rgba(9, 9, 11, 0.78) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -349,7 +276,6 @@
   .glass-depth-card {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    will-change: auto !important;
   }
 
   .glass-depth-card:hover {
@@ -357,179 +283,57 @@
   }
 }
 
-/* Pure Black (#000000) translucent glass across Project Defense, ATS Resume Studio, and Project Blueprints */
-[data-slide-theme="pure-black"] [class*="bg-[#11131c]"],
-[data-slide-theme="pure-black"] [class*="bg-[#161926]"],
-[data-slide-theme="pure-black"] [class*="bg-[#1c2030]"],
-[data-slide-theme="pure-black"] [class*="bg-[#0a0b10]"],
-[data-slide-theme="pure-black"] [class*="bg-[#0F172A]"],
-[data-slide-theme="pure-black"] [class*="bg-[#0f172a]"],
-[data-slide-theme="pure-black"] [class*="bg-[#060608]"] {
-  background-color: rgba(0, 0, 0, 0.36) !important;
-  background-image: none !important;
-  backdrop-filter: blur(2px) !important;
-  -webkit-backdrop-filter: blur(2px) !important;
-}
-
-[data-slide-theme="pure-black"] [class*="bg-[#000000]"] {
-  background-color: rgba(0, 0, 0, 0.56) !important;
-  background-image: none !important;
-}
-
-[data-slide-theme="pure-black"] [class*="bg-[#7c3aed]"],
-[data-slide-theme="pure-black"] [class*="bg-[#6d28d9]"],
-[data-slide-theme="pure-black"] [class*="bg-[#9f1239]"],
-[data-slide-theme="pure-black"] [class*="bg-[#881337]"] {
-  background-color: rgba(0, 0, 0, 0.64) !important;
-  background-image: none !important;
-}
-
-[data-slide-theme="pure-black"] [class*="border-[#7c3aed]"],
-[data-slide-theme="pure-black"] [class*="border-[#161926]"],
-[data-slide-theme="pure-black"] [class*="border-[#9f1239]"] {
-  border-color: rgba(255, 255, 255, 0.14) !important;
-}
-
-[data-slide-theme="pure-black"] [class*="text-[#7c3aed]"],
-[data-slide-theme="pure-black"] [class*="text-[#a78bfa]"],
-[data-slide-theme="pure-black"] [class*="text-[#9f1239]"] {
-  color: #f8fafc !important;
-}
-
-/* Pure Black (#000000) translucent surfaces for Dashboard Overview while preserving white elements & graphs */
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#11131c]"],
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#161926]"],
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#1c2030]"],
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#0a0b10]"],
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#060608]"] {
-  background-color: rgba(0, 0, 0, 0.36) !important;
-  backdrop-filter: blur(2px) !important;
-  -webkit-backdrop-filter: blur(2px) !important;
-}
-
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#7c3aed]"],
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#6d28d9]"],
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#8b5cf6]"],
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#9f1239]"],
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#881337]"],
-[data-slide-theme="dashboard-black-plum"] [class*="bg-[#34222E]"] {
-  background-color: rgba(0, 0, 0, 0.65) !important;
-  background-image: none !important;
-}
-
-[data-slide-theme="dashboard-black-plum"] [class*="from-[#7c3aed]"],
-[data-slide-theme="dashboard-black-plum"] [class*="from-[#6d28d9]"],
-[data-slide-theme="dashboard-black-plum"] [class*="from-[#9f1239]"],
-[data-slide-theme="dashboard-black-plum"] [class*="from-[#881337]"] {
-  --tw-gradient-from: rgba(0, 0, 0, 0.5) !important;
-}
-
-[data-slide-theme="dashboard-black-plum"] [class*="via-[#7c3aed]"],
-[data-slide-theme="dashboard-black-plum"] [class*="to-[#8b5cf6]"],
-[data-slide-theme="dashboard-black-plum"] [class*="to-[#7c3aed]"],
-[data-slide-theme="dashboard-black-plum"] [class*="to-[#9f1239]"] {
-  --tw-gradient-to: rgba(0, 0, 0, 0.5) !important;
-}
-
-[data-slide-theme="dashboard-black-plum"] [class*="border-[#7c3aed]"],
-[data-slide-theme="dashboard-black-plum"] [class*="border-[#161926]"],
-[data-slide-theme="dashboard-black-plum"] [class*="border-[#9f1239]"],
-[data-slide-theme="dashboard-black-plum"] [class*="border-[#881337]"],
-[data-slide-theme="dashboard-black-plum"] [class*="border-[#34222E]"] {
-  border-color: rgba(255, 255, 255, 0.14) !important;
-}
-
-[data-slide-theme="dashboard-black-plum"] [class*="text-[#7c3aed]"],
-[data-slide-theme="dashboard-black-plum"] [class*="text-[#9f1239]"],
-[data-slide-theme="dashboard-black-plum"] [class*="text-[#e11d48]"] {
-  color: #f8fafc !important;
-}
-
-.glass-depth-card:hover {
-  transform: translateY(-3px) scale(1.004);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.85), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.18);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .glass-depth-card {
     transition: none !important;
     transform: none !important;
-    will-change: auto !important;
   }
 }
 
-/* ==========================================================================
-   ENTERPRISE-GRADE TYPOGRAPHY & DESIGN SYSTEM (PATHFINDER DASHBOARD)
-   Scoped to .pathfinder-dashboard to never touch LampLogin/Auth
-   Palette:
-     - Main page titles & primary headings: #f8fafc (Crisp Platinum White)
-     - Tier 1 Accent (Deep Wine Velvet):    #9f1239 / #881337
-     - Tier 2 Accent (Royal Violet Amethyst): #7c3aed / #6d28d9
-     - Tier 3 Accent (Clean Platinum White):  #ffffff / #f1f5f9
-     - Supporting & body text:             #94a3b8 (Refined Silver Grey)
-     - Key metrics & statistics:            #f8fafc (Crisp Platinum White)
-   ========================================================================== */
-
+/* Scoped Dashboard Typography & Neutralized Legacy Accent Utilities */
 .pathfinder-dashboard {
-  --pf-heading-primary: #f8fafc;
-  --pf-wine-accent: #9f1239;
-  --pf-violet-accent: #7c3aed;
-  --pf-heading-secondary: #f8fafc;
-  --pf-text-body: #94a3b8;
-  --pf-metric-value: #f8fafc;
-
-  font-family: "Outfit", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #94a3b8;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #a1a1aa;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 1. Main page titles and primary headings: #f8fafc */
 .pathfinder-dashboard h1 {
-  font-family: "Space Grotesk", "Outfit", sans-serif;
-  color: #f8fafc !important;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.18;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #fafafa !important;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
-/* 2. Section headings and subheadings: #f8fafc */
 .pathfinder-dashboard h2,
 .pathfinder-dashboard h3,
 .pathfinder-dashboard h4,
 .pathfinder-dashboard h5,
 .pathfinder-dashboard h6 {
-  font-family: "Space Grotesk", "Outfit", sans-serif;
-  color: #f8fafc !important;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #fafafa !important;
   font-weight: 600;
-  letter-spacing: -0.015em;
-  line-height: 1.28;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
-/* 3. Paragraphs, descriptions, supporting text: #94a3b8 */
 .pathfinder-dashboard p {
-  color: #94a3b8;
+  color: #a1a1aa;
   font-weight: 400;
-  line-height: 1.65;
+  line-height: 1.6;
 }
 
-/* 4. AI-highlighted words and accents */
-.pathfinder-dashboard .ai-highlight-wine {
-  color: #9f1239 !important;
-  font-weight: 600;
-}
-
+.pathfinder-dashboard .ai-highlight-wine,
 .pathfinder-dashboard .ai-highlight-violet {
-  color: #7c3aed !important;
+  color: #fafafa !important;
   font-weight: 600;
 }
 
-/* 5. Utility class color mappings consolidated to SSOT */
 .pathfinder-dashboard .text-slate-100,
 .pathfinder-dashboard .text-slate-200,
 .pathfinder-dashboard .text-white {
-  color: #f8fafc !important;
+  color: #fafafa !important;
 }
 
 .pathfinder-dashboard .text-slate-400,
@@ -538,57 +342,38 @@
 .pathfinder-dashboard .text-zinc-500,
 .pathfinder-dashboard .text-gray-400,
 .pathfinder-dashboard .text-gray-500 {
-  color: #94a3b8 !important;
+  color: #a1a1aa !important;
 }
 
-/* Wine Button Utility */
-.pathfinder-dashboard .btn-wine {
-  background: linear-gradient(135deg, #9f1239, #881337) !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(159, 18, 57, 0.45) !important;
-  box-shadow: 0 4px 20px rgba(159, 18, 57, 0.3) !important;
-}
-
-.pathfinder-dashboard .btn-wine:hover {
-  background: linear-gradient(135deg, #881337, #701a35) !important;
-}
-
-/* Violet Button Utility */
+.pathfinder-dashboard .btn-wine,
 .pathfinder-dashboard .btn-violet {
-  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(124, 58, 237, 0.45) !important;
-  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3) !important;
+  background: #18181b !important;
+  color: #fafafa !important;
+  border: 1px solid #27272a !important;
+  box-shadow: none !important;
 }
 
+.pathfinder-dashboard .btn-wine:hover,
 .pathfinder-dashboard .btn-violet:hover {
-  background: linear-gradient(135deg, #6d28d9, #5b21b6) !important;
+  background: #27272a !important;
+  border-color: #3f3f46 !important;
 }
 
-/* Crisp Monochrome Button Utility */
 .pathfinder-dashboard .btn-mono,
 .pathfinder-dashboard .btn-mono * {
-  background: #ffffff !important;
-  color: #0a0b10 !important;
-  border: 1px solid rgba(255, 255, 255, 0.8) !important;
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15) !important;
+  background: #fafafa !important;
+  color: #09090b !important;
+  border: 1px solid #fafafa !important;
+  box-shadow: none !important;
 }
 
 .pathfinder-dashboard .btn-mono:hover,
 .pathfinder-dashboard .btn-mono:hover * {
-  background: #f1f5f9 !important;
-  color: #0a0b10 !important;
+  background: #e4e4e7 !important;
+  color: #09090b !important;
 }
 
-/* Selection highlight */
-.pathfinder-dashboard ::selection {
-  background: rgba(124, 58, 237, 0.35);
-  color: #f8fafc;
-}
-
-/* ==========================================================================
-   KILL VERCEL TOOLBAR, FEEDBACK WIDGETS & INP DEBUG OVERLAYS
-   ========================================================================== */
+/* Kill Vercel Toolbar & Debug Overlays */
 #vercel-toolbar,
 vercel-toolbar,
 vercel-live-feedback,
@@ -616,37 +401,25 @@ div:has(> button[data-testid="indicator"]) {
   z-index: -99999 !important;
 }
 
-/* ==========================================================================
-   PHOTO 3: ZERO HORIZONTAL SCROLL & RESPONSIVE VIEWPORT OPTIMIZATIONS
-   ========================================================================== */
-html,
-body {
-  overflow-x: hidden !important;
-  max-width: 100vw !important;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-/* Responsive code and pre blocks */
-pre, code {
+pre,
+code {
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   max-width: 100%;
   overflow-x: auto;
 }
 
 /* Agent Action Highlight */
 .das-highlight {
-  outline: 2px solid var(--primary, #FF6B4A);
+  outline: 2px solid #fafafa;
   outline-offset: 4px;
   border-radius: 8px;
-  transition: outline 0.2s ease;
+  transition: outline-color 0.2s ease;
 }
 
 /* Custom sleek dark scrollbar for DAS HUD transcript panels */
@@ -668,5 +441,3 @@ pre, code {
 .das-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(161, 161, 170, 0.52);
 }
-
-

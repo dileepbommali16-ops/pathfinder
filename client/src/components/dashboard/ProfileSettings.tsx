@@ -258,7 +258,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   return (
     <div className="relative mx-auto max-w-4xl space-y-6">
       {/* Header */}
-      <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-2xl backdrop-blur-2xl">
+      <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-2xl backdrop-blur-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#ffffff]/30 bg-[#ffffff]/10 px-3 py-1 text-xs font-semibold text-[#ffffff]">
@@ -296,7 +296,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       </div>
 
       {/* Main Settings Form */}
-      <form onSubmit={handleSave} className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
+      <form onSubmit={handleSave} className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
         {/* Section 1: Identity & College */}
         <div className="space-y-4">
           <h3 className="text-sm font-bold uppercase tracking-wider text-[#ffffff] flex items-center gap-2">
@@ -323,7 +323,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     <span className="ml-2 text-[11px] text-[#94a3b8]">· {resolvedEmail}</span>
                   )}
                 </div>
-                <span className="shrink-0 rounded-md border border-[#2B2024] bg-[#2B2024] px-2 py-0.5 text-[10px] font-bold text-[#f8fafc]">
+                <span className="shrink-0 rounded-md border border-[#242429] bg-[#18181B] px-2 py-0.5 text-[10px] font-bold text-[#f8fafc]">
                   Locked from Login
                 </span>
               </div>
@@ -764,7 +764,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             type="submit"
             id="btn-save-settings"
             disabled={isSaving}
-            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#2B2024] to-[#2B2024] hover:from-[#2B2024] hover:to-[#2B2024] px-6 py-3 text-xs font-bold text-white shadow-xl shadow-[#ffffff]/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#18181B] to-[#27272A] hover:from-[#27272A] hover:to-[#27272A] px-6 py-3 text-xs font-bold text-white shadow-xl shadow-[#ffffff]/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {isSaving ? (
               <>

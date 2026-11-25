@@ -168,7 +168,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
   return (
     <div className="space-y-6">
       {/* Hero Header — Strictly #000000 and #000000 */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#000000] p-6 shadow-2xl backdrop-blur-2xl sm:p-8">
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#000000] p-6 shadow-2xl backdrop-blur-2xl sm:p-8">
         <div className="relative z-10 max-w-3xl space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-[#000000] px-3 py-1 text-xs font-semibold text-[#f8fafc]">
@@ -260,7 +260,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
 
       {/* Projects Grid */}
       {filteredProjects.length === 0 ? (
-        <div className="rounded-3xl border border-white/10 bg-[#000000] p-12 text-center">
+        <div className="rounded-xl border border-white/10 bg-[#000000] p-12 text-center">
           <p className="text-sm font-semibold text-[#94a3b8]">No project blueprints matched your filter or search criteria.</p>
           <button
             type="button"
@@ -323,7 +323,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                 data-difficulty={proj.difficulty}
                 onMouseEnter={notifyActiveProject}
                 onClick={notifyActiveProject}
-                className={`flex flex-col justify-between rounded-3xl border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all duration-500 ${
+                className={`flex flex-col justify-between rounded-xl border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all duration-500 ${
                   isHighlighted
                     ? "border-white ring-4 ring-white/50 scale-[1.03] bg-[#000000] z-20"
                     : "border-white/10 bg-[#000000] hover:border-white/25 hover:bg-[#000000]"

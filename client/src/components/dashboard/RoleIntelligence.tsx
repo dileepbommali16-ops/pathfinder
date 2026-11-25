@@ -291,12 +291,12 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
   return (
     <div className="space-y-8">
       {/* Top Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
-        <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-[#2B2024]/10 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+        <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-[#141418] blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#2B2024]/30 bg-[#2B2024]/10 text-[#2B2024] shadow-[0_0_20px_rgba(124, 58, 237,0.2)]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#242429] bg-[#141418] text-[#D4D4D8] shadow-[0_0_20px_rgba(0,0,0,0)]">
               <Target className="h-6 w-6" />
             </div>
             <div>
@@ -304,7 +304,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
                 <h2 className="text-xl font-black tracking-tight text-[#f8fafc] sm:text-2xl">
                   Target Role Intelligence Matrix
                 </h2>
-                <span className="rounded-full border border-[#2B2024]/30 bg-[#2B2024]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#2B2024]">
+                <span className="rounded-full border border-[#242429] bg-[#141418] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#D4D4D8]">
                   Career Path Simulator
                 </span>
               </div>
@@ -316,7 +316,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
 
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-[#94a3b8]">Current Target:</span>
-            <span className="rounded-xl border border-[#2B2024]/30 bg-[#2B2024]/10 px-3 py-1 text-xs font-bold text-[#2B2024]">
+            <span className="rounded-xl border border-[#242429] bg-[#141418] px-3 py-1 text-xs font-bold text-[#D4D4D8]">
               {currentProfile.targetRole}
             </span>
           </div>
@@ -333,12 +333,12 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
                 onClick={() => setSelectedRoleId(r.id)}
                 className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                   isSelected
-                    ? "border border-[#2B2024]/40 bg-[#2B2024]/20 text-white shadow-md ring-1 ring-[#2B2024]/30"
-                    : "border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-[#2B2024]/30 hover:text-white"
+                    ? "border border-[#242429] bg-[#141418] text-white shadow-md ring-1 ring-[#27272A]"
+                    : "border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-[#3F3F46] hover:text-white"
                 }`}
               >
                 <span>{r.title}</span>
-                <span className="rounded-md px-1.5 py-0.5 text-[10px] font-black bg-[#2B2024]/20 text-[#2B2024]">
+                <span className="rounded-md px-1.5 py-0.5 text-[10px] font-black bg-[#141418] text-[#D4D4D8]">
                   {r.alignment ?? 0}% Match
                 </span>
               </button>
@@ -352,10 +352,10 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
         {/* Left 2 Cols: Skills & Gaps Breakdown */}
         <div className="space-y-6 lg:col-span-2">
           {/* Role Alignment Summary Card */}
-          <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 backdrop-blur-2xl">
+          <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 backdrop-blur-2xl">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.08] pb-5">
               <div>
-                <span className="rounded-md border border-[#2B2024]/30 bg-[#2B2024]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#2B2024]">
+                <span className="rounded-md border border-[#242429] bg-[#141418] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#D4D4D8]">
                   {activeRole.tier}
                 </span>
                 <h3 className="mt-1.5 text-lg font-bold text-[#f8fafc]">{activeRole.title}</h3>
@@ -364,20 +364,20 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] block">Candidate Alignment</span>
-                  <span className="text-2xl font-black text-[#2B2024]">{activeRole.alignment}%</span>
+                  <span className="text-2xl font-black text-[#D4D4D8]">{activeRole.alignment}%</span>
                 </div>
 
                 {!isCurrentTarget ? (
                   <button
                     type="button"
                     onClick={() => handleSelectRole(activeRole)}
-                    className="flex items-center gap-1.5 rounded-xl bg-[#2B2024] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2B2024] active:bg-[#2B2024] transition-colors shadow-lg"
+                    className="flex items-center gap-1.5 rounded-xl bg-[#18181B] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#27272A] active:bg-[#27272A] transition-colors shadow-lg"
                   >
                     <Check className="h-4 w-4" />
                     <span>Set as My Target Role</span>
                   </button>
                 ) : (
-                  <span className="flex items-center gap-1.5 rounded-xl border border-[#2B2024]/30 bg-[#2B2024]/10 px-3 py-2 text-xs font-bold text-[#2B2024]">
+                  <span className="flex items-center gap-1.5 rounded-xl border border-[#242429] bg-[#141418] px-3 py-2 text-xs font-bold text-[#D4D4D8]">
                     <CheckCircle2 className="h-4 w-4" />
                     <span>Active Target Role</span>
                   </span>
@@ -389,7 +389,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {/* Existing Skills */}
               <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4">
-                <div className="flex items-center gap-2 text-[#2B2024]">
+                <div className="flex items-center gap-2 text-[#D4D4D8]">
                   <CheckCircle2 className="h-4 w-4" />
                   <h4 className="text-xs font-bold uppercase tracking-wider">Your Existing Foundations</h4>
                 </div>
@@ -406,8 +406,8 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
               </div>
 
               {/* Missing Skills */}
-              <div className="rounded-2xl border border-[#2B2024]/40 bg-[#000000] p-4">
-                <div className="flex items-center gap-2 text-[#2B2024]">
+              <div className="rounded-2xl border border-[#242429] bg-[#000000] p-4">
+                <div className="flex items-center gap-2 text-[#D4D4D8]">
                   <AlertTriangle className="h-4 w-4" />
                   <h4 className="text-xs font-bold uppercase tracking-wider">High-Priority Skill Gaps</h4>
                 </div>
@@ -415,7 +415,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
                   {activeRole.missingSkills.map((sk, idx) => (
                     <span
                       key={idx}
-                      className="rounded-lg border border-[#2B2024]/40 bg-[#2B2024]/10 px-2.5 py-1 text-xs font-medium text-[#2B2024]"
+                      className="rounded-lg border border-[#242429] bg-[#141418] px-2.5 py-1 text-xs font-medium text-[#D4D4D8]"
                     >
                       {sk}
                     </span>
@@ -432,7 +432,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {activeRole.pathStages.map((stage, i) => (
                   <div key={i} className="rounded-xl border border-white/[0.08] bg-[#000000] p-3">
-                    <span className="text-xs font-bold text-[#2B2024] block">{stage.step}</span>
+                    <span className="text-xs font-bold text-[#D4D4D8] block">{stage.step}</span>
                     <p className="mt-1 text-xs text-[#94a3b8] leading-relaxed">{stage.detail}</p>
                   </div>
                 ))}
@@ -441,16 +441,16 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
           </div>
 
           {/* Recommended Flagship Project Anchor */}
-          <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 backdrop-blur-2xl">
+          <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 backdrop-blur-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-[#2B2024]" />
+                <Lightbulb className="h-5 w-5 text-[#D4D4D8]" />
                 <h4 className="text-sm font-bold text-[#f8fafc]">Recommended Flagship Project for this Role</h4>
               </div>
               <button
                 type="button"
                 onClick={() => onNavigateTab("projects")}
-                className="text-xs font-bold text-[#2B2024] hover:text-[#2B2024] transition-colors"
+                className="text-xs font-bold text-[#D4D4D8] hover:text-[#FAFAFA] transition-colors"
               >
                 View Full Blueprints →
               </button>
@@ -480,8 +480,8 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
         {/* Right 1 Col: Interview & Resume Directives */}
         <div className="space-y-6">
           {/* Key Interview Topics */}
-          <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 backdrop-blur-2xl">
-            <div className="flex items-center gap-2 text-[#2B2024] border-b border-white/[0.08] pb-3">
+          <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 backdrop-blur-2xl">
+            <div className="flex items-center gap-2 text-[#D4D4D8] border-b border-white/[0.08] pb-3">
               <Mic className="h-4 w-4" />
               <h4 className="text-xs font-bold uppercase tracking-wider">Top Interview Topics</h4>
             </div>
@@ -489,7 +489,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
             <ul className="mt-4 space-y-2.5">
               {activeRole.interviewTopics.map((topic, i) => (
                 <li key={i} className="flex items-start gap-2 text-xs text-[#f8fafc]">
-                  <span className="text-[#2B2024] font-bold">•</span>
+                  <span className="text-[#D4D4D8] font-bold">•</span>
                   <span>{topic}</span>
                 </li>
               ))}
@@ -505,15 +505,15 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
                   onNavigateTab("interview");
                 }
               }}
-              className="mt-5 w-full rounded-xl border border-[#2B2024]/30 bg-[#2B2024]/10 py-2.5 text-center text-xs font-bold text-[#2B2024] hover:bg-[#2B2024]/20 transition-all"
+              className="mt-5 w-full rounded-xl border border-[#242429] bg-[#141418] py-2.5 text-center text-xs font-bold text-[#D4D4D8] hover:bg-[#27272A] transition-all"
             >
               Start Practice Round with AI Coach →
             </button>
           </div>
 
           {/* Resume Strategy */}
-          <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 backdrop-blur-2xl">
-            <div className="flex items-center gap-2 text-[#2B2024] border-b border-white/[0.08] pb-3">
+          <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 backdrop-blur-2xl">
+            <div className="flex items-center gap-2 text-[#D4D4D8] border-b border-white/[0.08] pb-3">
               <FileText className="h-4 w-4" />
               <h4 className="text-xs font-bold uppercase tracking-wider">Resume Alignment Strategy</h4>
             </div>
@@ -525,7 +525,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
             <button
               type="button"
               onClick={() => onNavigateTab("resume")}
-              className="mt-5 w-full rounded-xl border border-[#2B2024]/30 bg-[#2B2024]/10 py-2.5 text-center text-xs font-bold text-[#2B2024] hover:bg-[#2B2024]/20 transition-all"
+              className="mt-5 w-full rounded-xl border border-[#242429] bg-[#141418] py-2.5 text-center text-xs font-bold text-[#D4D4D8] hover:bg-[#27272A] transition-all"
             >
               Audit ATS Resume →
             </button>

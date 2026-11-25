@@ -67,7 +67,7 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
       {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl border border-white/10 bg-[#000000] shadow-[0_16px_64px_rgba(0,0,0,0.85)] overflow-hidden my-auto cursor-default print:max-h-none print:my-0 print:border-0 print:shadow-none"
+        className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-xl border border-white/10 bg-[#000000] shadow-[0_16px_64px_rgba(0,0,0,0.85)] overflow-hidden my-auto cursor-default print:max-h-none print:my-0 print:border-0 print:shadow-none"
       >
         
         {/* Top Controls Bar (Pinned, Hidden during Print) */}

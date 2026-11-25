@@ -1,18 +1,6 @@
 import React, { useState } from "react";
 import { PathfinderLogo } from "@/components/common/PathfinderLogo";
-import {
-  ShieldCheck,
-  Phone,
-  Mail,
-  MapPin,
-  ExternalLink,
-  Github,
-  Sparkles,
-  Bot,
-  FileText,
-  Target,
-  ArrowUp
-} from "lucide-react";
+import { Phone, Mail, MapPin, ArrowUp } from "lucide-react";
 import { TabId } from "./DashboardHeader";
 import { ComplianceModal } from "./ComplianceModals";
 
@@ -35,52 +23,59 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
   };
 
   return (
-    <footer className="mt-20 border-t border-white/[0.08] bg-[#000000] text-[#94a3b8] transition-colors relative z-10">
-      {/* Top Ambient Horizon Gradient */}
-      <div className="pointer-events-none absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#2B2024] to-transparent" />
-
+    <footer className="relative z-10 mt-20 border-t border-[#1F1F23] bg-[#000000]/90 text-[#A1A1AA]">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Column 1: Brand & Positioning */}
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 lg:gap-10">
+          {/* Column 1: Brand & System Status */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <PathfinderLogo size={36} className="transition-transform hover:scale-105" />
-              <span className="text-lg font-bold tracking-tight text-[#F7F8F8] font-['Space_Grotesk']">
-                Pathfinder <span className="text-[#FD0053]">2.0</span>
+            <div className="flex items-center gap-2.5">
+              <PathfinderLogo size={30} variant="monochrome" />
+              <span className="text-base font-semibold tracking-[-0.02em] text-[#FAFAFA]">
+                Pathfinder
+              </span>
+              <span className="rounded border border-[#27272A] bg-[#111113] px-1.5 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
+                2.0
               </span>
             </div>
-            <p className="text-xs leading-relaxed text-[#94a3b8]">
-              Autonomous full-stack AI career intelligence platform benchmarked on 972 verified campus records. Calibrates student profiles, tutors production architectures, and prepares engineering candidates for Tier-1 recruitment filters.
+            <p className="text-xs leading-relaxed text-[#A1A1AA]">
+              Full-stack engineering placement intelligence calibrated on 972 verified campus
+              offers, pairing scikit-learn probability models with live 3D voice coaching.
             </p>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#2B2024] bg-[#2B2024] px-3 py-1 text-[11px] font-medium text-white">
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-              <span>All 7 Engineering Pillars Operational</span>
+            <div className="inline-flex items-center gap-2 rounded-md border border-[#1F1F23] bg-[#0C0C0E] px-2.5 py-1 font-mono text-[11px] text-[#D4D4D8]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+              <span>All 7 subsystems operational</span>
             </div>
           </div>
 
-          {/* Column 2: Platform Modules */}
+          {/* Column 2: Core Modules */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc] mb-3">
-              Core Intelligence
-            </h3>
+            <h3 className="mb-3 text-xs font-semibold text-[#FAFAFA]">Core modules</h3>
             <ul className="space-y-2 text-xs">
               <li>
                 <button
                   type="button"
-                  onClick={() => { onNavigateTab("overview"); scrollToTop(); }}
-                  className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
+                  onClick={() => {
+                    onNavigateTab("overview");
+                    scrollToTop();
+                  }}
+                  className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
                 >
-                  Executive Readiness Dashboard
+                  Readiness overview
                 </button>
               </li>
               <li>
                 <button
                   type="button"
-                  onClick={() => { onNavigateTab("interview"); scrollToTop(); }}
-                  className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                  onClick={() => {
+                    onNavigateTab("interview");
+                    scrollToTop();
+                  }}
+                  className="flex items-center gap-1.5 text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
                 >
-                  <span>Interview &amp; Project Defense Simulator</span>
-                  <span className="text-[9px] bg-[#2B2024] text-[#f8fafc] border border-[#2B2024] px-1 rounded">Live</span>
+                  <span>Coding &amp; viva arena</span>
+                  <span className="rounded border border-[#27272A] bg-[#111113] px-1 font-mono text-[9px] text-[#D4D4D8]">
+                    LIVE
+                  </span>
                 </button>
               </li>
               <li>
@@ -88,183 +83,166 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                   type="button"
                   onClick={() => {
                     onNavigateTab("overview");
-                    window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: true } }));
+                    window.dispatchEvent(
+                      new CustomEvent("das-toggle-focus", { detail: { focus: true } })
+                    );
                     scrollToTop();
                     setTimeout(() => document.getElementById("das-command-input")?.focus(), 180);
                   }}
-                  className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
+                  className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
                 >
-                  DAS AI Voice Coach (EN / TE / HI)
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => { onNavigateTab("projects"); scrollToTop(); }}
-                  className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
-                >
-                  28 Production Project Blueprints
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => { onNavigateTab("resume"); scrollToTop(); }}
-                  className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
-                >
-                  ATS Resume Studio & Scanner
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 3: Institutional Analytics & Governance */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc] mb-3">
-              Institutional Intelligence
-            </h3>
-            <ul className="space-y-2 text-xs">
-              <li>
-                <button
-                  type="button"
-                  onClick={() => { onNavigateTab("analytics"); scrollToTop(); }}
-                  className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
-                >
-                  972 Placement Cohort Explorer
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => { onNavigateTab("branches"); scrollToTop(); }}
-                  className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
-                >
-                  Branch Placement Cutoffs & Stats
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => { onNavigateTab("skills"); scrollToTop(); }}
-                  className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
-                >
-                  6-Week Career Sprint Roadmap
+                  DAS 3D voice coach (EN / TE / HI)
                 </button>
               </li>
               <li>
                 <button
                   type="button"
                   onClick={() => {
-                    onNavigateTab("overview");
-                    setTimeout(() => {
-                      document.getElementById("career-action-center")?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    }, 180);
+                    onNavigateTab("projects");
+                    scrollToTop();
                   }}
-                  className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
+                  className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
                 >
-                  Readiness Command Center
+                  28 system blueprints
                 </button>
               </li>
               <li>
                 <button
                   type="button"
-                  onClick={() => { onNavigateTab("profile"); scrollToTop(); }}
-                  className="hover:text-[#f8fafc] transition-colors cursor-pointer text-left"
+                  onClick={() => {
+                    onNavigateTab("resume");
+                    scrollToTop();
+                  }}
+                  className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
                 >
-                  Single Source of Truth Profile
+                  JD &amp; ATS resume lab
                 </button>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Contact & Support (Clickable Phone & Email) */}
+          {/* Column 3: Institutional Analytics */}
+          <div>
+            <h3 className="mb-3 text-xs font-semibold text-[#FAFAFA]">Institutional data</h3>
+            <ul className="space-y-2 text-xs">
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onNavigateTab("analytics");
+                    scrollToTop();
+                  }}
+                  className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+                >
+                  972 cohort explorer
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onNavigateTab("branches");
+                    scrollToTop();
+                  }}
+                  className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+                >
+                  Department cutoffs &amp; stats
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onNavigateTab("skills");
+                    scrollToTop();
+                  }}
+                  className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+                >
+                  6-week execution roadmap
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onNavigateTab("profile");
+                    scrollToTop();
+                  }}
+                  className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+                >
+                  Candidate profile settings
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4: Placement Desk */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#f8fafc]">
-              Placement Desk & Support
-            </h3>
-            <p className="text-xs text-[#94a3b8]">
-              Have questions regarding placement data or AI coach benchmarking? Connect directly:
+            <h3 className="text-xs font-semibold text-[#FAFAFA]">Placement desk</h3>
+            <p className="text-xs text-[#A1A1AA]">
+              Questions on cohort benchmarks or institutional setup:
             </p>
             <div className="space-y-2 pt-1 text-xs">
-              {/* Photo 3 - Item 19: Clickable Email */}
               <a
                 href="mailto:support@pathfinder-ai.io?subject=Pathfinder%20Placement%20Inquiry"
-                className="flex items-center gap-2.5 text-[#94a3b8] hover:text-[#f8fafc] transition-colors group cursor-pointer"
-                title="Send an email to Pathfinder Support"
+                className="flex items-center gap-2.5 text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2B2024] text-white group-hover:brightness-110 transition-colors">
+                <div className="flex h-6 w-6 items-center justify-center rounded border border-[#27272A] bg-[#0C0C0E] text-[#FAFAFA]">
                   <Mail className="h-3.5 w-3.5" />
                 </div>
-                <span>support@pathfinder-ai.io</span>
+                <span className="font-mono text-[11px]">support@pathfinder-ai.io</span>
               </a>
 
-              {/* Photo 3 - Item 18: Clickable Phone Number */}
               <a
-                href="tel:+918000123456"
-                className="flex items-center gap-2.5 text-[#94a3b8] hover:text-[#f8fafc] transition-colors group cursor-pointer"
-                title="Call Placement Office Helpline"
+                href="tel:+918000000000"
+                className="flex items-center gap-2.5 text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2B2024] text-white group-hover:brightness-110 transition-colors">
+                <div className="flex h-6 w-6 items-center justify-center rounded border border-[#27272A] bg-[#0C0C0E] text-[#FAFAFA]">
                   <Phone className="h-3.5 w-3.5" />
                 </div>
-                <span>+91 (800) 012-3456 (Placement Helpline)</span>
+                <span className="font-mono text-[11px] tabular-nums">+91 80000 00000</span>
               </a>
 
-              <div className="flex items-center gap-2.5 text-[#94a3b8] pt-1">
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#2B2024] text-[#94a3b8]">
+              <div className="flex items-center gap-2.5 text-[#71717A]">
+                <div className="flex h-6 w-6 items-center justify-center rounded border border-[#1F1F23] bg-[#0C0C0E] text-[#A1A1AA]">
                   <MapPin className="h-3.5 w-3.5" />
                 </div>
-                <span>National Engineering Campus, Academic Block</span>
+                <span>Hyderabad · India</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom Bar: Copyright & Compliance */}
-        <div className="mt-12 pt-6 border-t border-[#2B2024] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748b]">
-          {/* Dynamic Copyright Year & Open Source */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span>© {currentYear} Pathfinder 2.0. All rights reserved.</span>
-            <span className="hidden sm:inline">•</span>
-            <span className="text-[#94a3b8]">MIT License Open Verification</span>
-            <span className="hidden sm:inline">•</span>
+        {/* Bottom Legal Bar */}
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-[#1F1F23] pt-6 text-xs text-[#71717A] sm:flex-row">
+          <p>© {currentYear} Pathfinder 2.0 Career Intelligence. All rights reserved.</p>
+          <div className="flex items-center gap-5">
             <button
               type="button"
               onClick={() => openCompliance("privacy")}
-              className="text-[#94a3b8] hover:text-[#f8fafc] underline-offset-4 hover:underline transition-colors cursor-pointer"
+              className="transition-colors hover:text-[#FAFAFA]"
             >
-              Privacy Policy
+              Privacy policy
             </button>
-            <span className="hidden sm:inline">•</span>
             <button
               type="button"
               onClick={() => openCompliance("terms")}
-              className="text-[#94a3b8] hover:text-[#f8fafc] underline-offset-4 hover:underline transition-colors cursor-pointer"
+              className="transition-colors hover:text-[#FAFAFA]"
             >
-              Terms of Service
+              Terms of service
             </button>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="inline-flex items-center gap-1.5 text-white">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              <span>OWASP 19-Point Hardened</span>
-            </span>
-
             <button
               type="button"
               onClick={scrollToTop}
-              className="flex items-center gap-1.5 rounded-lg border border-[#2B2024] bg-[#000000] px-2.5 py-1 text-xs text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#2B2024] transition-colors cursor-pointer"
-              title="Back to top"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#242429] bg-[#0C0C0E] px-2.5 text-xs text-[#D4D4D8] transition-colors hover:border-[#3F3F46] hover:text-[#FAFAFA]"
             >
-              <ArrowUp className="h-3.5 w-3.5" />
               <span>Top</span>
+              <ArrowUp className="h-3 w-3" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Enterprise Compliance & Governance Modal */}
       <ComplianceModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

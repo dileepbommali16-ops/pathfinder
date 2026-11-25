@@ -36,7 +36,7 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex items-center justify-center min-h-screen p-8 bg-[#000000] text-[#f8fafc]">
-          <div className="flex flex-col items-center w-full max-w-2xl p-8 rounded-3xl border border-white/[0.08] bg-[#000000] shadow-2xl">
+          <div className="flex flex-col items-center w-full max-w-2xl p-8 rounded-xl border border-white/[0.08] bg-[#000000] shadow-2xl">
             <AlertTriangle
               size={48}
               className="text-[#ffffff] mb-6 flex-shrink-0"
@@ -57,8 +57,8 @@ class ErrorBoundary extends Component<Props, State> {
               }}
               className={cn(
                 "flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-xs",
-                "bg-[#2B2024] text-white hover:bg-[#2B2024]",
-                "hover:bg-[#2B2024] active:scale-95 cursor-pointer shadow-[0_0_20px_rgba(255, 255, 255,0.3)] transition-all"
+                "bg-[#18181B] text-white hover:bg-[#27272A]",
+                "hover:bg-[#27272A] active:scale-95 cursor-pointer shadow-[0_0_20px_rgba(255, 255, 255,0.3)] transition-all"
               )}
             >
               <RotateCcw size={16} />

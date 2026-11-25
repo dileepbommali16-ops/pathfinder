@@ -485,10 +485,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
   };
 
   return (
-    <div className="relative rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-6 sm:p-8 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+    <div className="relative rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#000000] p-6 sm:p-8 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.5)] overflow-hidden">
       {/* Subtle Warm Copper & Rust Ambient Glow */}
       <div className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#ffffff]/10 blur-[140px]" />
-      <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[#2B2024]/10 blur-[140px]" />
+      <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[#141418] blur-[140px]" />
 
       {/* Header bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[rgba(255,255,255,0.08)]">
@@ -504,7 +504,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               AI Voice &amp; Live Grading
             </span>
           </div>
-          <h3 className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-[#f8fafc] font-['Space_Grotesk']">
+          <h3 className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-[#f8fafc]">
             {selectedTrack === "defense"
               ? "Project Architecture & Viva Defense"
               : "Company Hiring Rounds & Technical Drill"}
@@ -581,7 +581,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               resetState();
             }}
             className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all cursor-pointer ${selectedQuestionIndex === idx
-                ? "border border-[#2B2024] bg-[#2B2024] text-white font-bold shadow-[0_0_15px_rgba(124,58,237,0.3)]"
+                ? "border border-[#242429] bg-[#18181B] text-white font-bold shadow-[0_0_15px_rgba(0,0,0,0)]"
                 : "border border-[rgba(255,255,255,0.08)] bg-[#000000]/50 text-[#94a3b8] hover:border-[#ffffff]/50 hover:text-[#f8fafc]"
               }`}
           >
@@ -655,7 +655,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             {showAgentAnswer && (
               <div
                 data-agent-id="agent-model-answer-panel"
-                className="mt-4 rounded-xl border border-[#2B2024] bg-[#000000] p-3.5"
+                className="mt-4 rounded-xl border border-[#242429] bg-[#000000] p-3.5"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-[#f8fafc]">
@@ -684,11 +684,11 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               onClick={handleSeeAgentAnswer}
               data-agent-id="see-agent-answer-btn"
               className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${isSpeaking
-                  ? "border border-[#2B2024] bg-[#2B2024] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.4)]"
+                  ? "border border-[#242429] bg-[#18181B] text-[#f8fafc] animate-pulse"
                   : isLoadingVoice
-                    ? "border border-[#2B2024]/50 bg-[#000000] text-[#f8fafc]"
+                    ? "border border-[#242429] bg-[#000000] text-[#f8fafc]"
                     : showAgentAnswer
-                      ? "border border-[#2B2024] bg-[#000000] text-[#f8fafc] hover:bg-[#000000]"
+                      ? "border border-[#242429] bg-[#000000] text-[#f8fafc] hover:bg-[#000000]"
                       : "border border-[rgba(255,255,255,0.08)] bg-[#000000] text-[#94a3b8] hover:bg-[#000000] hover:text-[#f8fafc]"
                 }`}
             >
@@ -738,7 +738,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                   type="button"
                   onClick={handleToggleRecord}
                   className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${isRecording
-                      ? "border border-[#2B2024] bg-[#2B2024] text-[#f8fafc] animate-pulse shadow-[0_0_15px_rgba(159,18,57,0.5)]"
+                      ? "border border-[#242429] bg-[#18181B] text-[#f8fafc] animate-pulse"
                       : "border border-[rgba(255,255,255,0.08)] bg-[#000000] text-[#94a3b8] hover:text-[#f8fafc]"
                     }`}
                 >
@@ -802,10 +802,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                   <div className="flex items-center gap-3">
                     <div
                       className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border bg-[#000000] shadow-[0_0_20px_rgba(255,255,255,0.15)] ${evaluationResult.overallScore >= 70
-                          ? "border-[#2B2024]"
+                          ? "border-[#242429]"
                           : evaluationResult.overallScore >= 40
-                            ? "border-[#2B2024]"
-                            : "border-[#2B2024]"
+                            ? "border-[#242429]"
+                            : "border-[#242429]"
                         }`}
                     >
                       <span
@@ -821,7 +821,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                     </div>
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-bold text-[#f8fafc] font-['Space_Grotesk']">
+                        <span className="text-sm font-bold text-[#f8fafc]">
                           AI Interview Scorecard
                         </span>
                         <span className="rounded-md border border-[#ffffff]/30 bg-[#ffffff]/10 px-2 py-0.5 text-[10px] font-semibold text-[#ffffff] shadow-sm">

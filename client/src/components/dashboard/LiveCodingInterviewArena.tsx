@@ -746,11 +746,11 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
   };
 
   return (
-    <div className="glass-depth-card rounded-3xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 space-y-5">
+    <div className="glass-depth-card rounded-xl border border-white/[0.08] bg-[#000000] p-6 sm:p-8 space-y-5">
       {/* Arena Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-white/[0.08] pb-4">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#2B2024] bg-[#2B2024] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#f8fafc]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#242429] bg-[#18181B] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#f8fafc]">
             <Sparkles className="h-3.5 w-3.5 text-[#f8fafc]" />
             <span>Live AI Coding &amp; Voice Viva Arena · Endless Training &amp; Honest Grading</span>
           </div>
@@ -771,7 +771,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   `For the coding challenge '${activeChallenge.question}' (${activeChallenge.company} ${activeChallenge.role}), give me a concise intuition hint on the optimal approach without spoiling all code.`
                 )
               }
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3 py-2 text-xs font-semibold text-[#f8fafc] hover:bg-[#2B2024] transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3 py-2 text-xs font-semibold text-[#f8fafc] hover:bg-[#27272A] transition cursor-pointer"
             >
               <Sparkles className="h-3.5 w-3.5 text-[#f8fafc]" />
               <span>Ask Coach Hint</span>
@@ -781,7 +781,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
           <button
             type="button"
             onClick={handleSpeakQuestionAloud}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-[#2B2024] px-3.5 py-2 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 transition cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-[#18181B] px-3.5 py-2 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 transition cursor-pointer"
           >
             <Volume2 className="h-4 w-4 text-[#f8fafc]" />
             <span>Have DAS Ask Aloud</span>
@@ -801,7 +801,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   type="button"
                   onClick={() => handleSelectTrack(trk.id)}
                   className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${active
-                    ? "border border-white/30 bg-[#2B2024] text-[#f8fafc] shadow-sm"
+                    ? "border border-white/30 bg-[#18181B] text-[#f8fafc] shadow-sm"
                     : "border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-white/20 hover:text-[#f8fafc]"
                     }`}
                 >
@@ -815,7 +815,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
             <button
               type="button"
               onClick={() => handleStepChallenge(-1)}
-              className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#000000] px-2.5 py-1.5 text-xs font-semibold text-[#f8fafc] hover:bg-[#2B2024] transition cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#000000] px-2.5 py-1.5 text-xs font-semibold text-[#f8fafc] hover:bg-[#27272A] transition cursor-pointer"
               title="Previous challenge in track"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
@@ -824,7 +824,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
             <button
               type="button"
               onClick={() => handleStepChallenge(1)}
-              className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#2B2024] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#18181B] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
               title="Move to next challenge in this track"
             >
               <span>Next Problem</span>
@@ -834,7 +834,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               type="button"
               disabled={isGeneratingProblem}
               onClick={() => void handleGenerateFreshProblem()}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#A80139]/60 bg-[#000000] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:bg-[#2B2024] disabled:opacity-50 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#3F3F46] bg-[#000000] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:bg-[#27272A] disabled:opacity-50 transition cursor-pointer"
               title="Generate an infinite new AI coding challenge for this track"
             >
               {isGeneratingProblem ? (
@@ -858,7 +858,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                 type="button"
                 onClick={() => resetForChallenge(ch)}
                 className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${active
-                  ? "border border-white/30 bg-[#2B2024] text-[#f8fafc] shadow-sm"
+                  ? "border border-white/30 bg-[#18181B] text-[#f8fafc] shadow-sm"
                   : "border border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-white/20 hover:text-[#f8fafc]"
                   }`}
               >
@@ -876,7 +876,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
         <div className="lg:col-span-5 space-y-4">
           <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="rounded-lg border border-white/15 bg-[#2B2024] px-2.5 py-0.5 text-[11px] font-bold text-[#f8fafc]">
+              <span className="rounded-lg border border-white/15 bg-[#18181B] px-2.5 py-0.5 text-[11px] font-bold text-[#f8fafc]">
                 {activeChallenge.company} · {activeChallenge.role}
               </span>
               <span className="text-[11px] font-semibold text-[#94a3b8]">
@@ -924,8 +924,8 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                 type="button"
                 onClick={handleToggleVoiceViva}
                 className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition cursor-pointer ${isListeningVoice
-                  ? "border border-white/40 bg-[#2B2024] text-[#f8fafc] animate-pulse"
-                  : "border border-white/15 bg-[#2B2024] text-[#f8fafc] hover:brightness-110"
+                  ? "border border-white/40 bg-[#18181B] text-[#f8fafc] animate-pulse"
+                  : "border border-white/15 bg-[#18181B] text-[#f8fafc] hover:brightness-110"
                   }`}
               >
                 {isListeningVoice ? (
@@ -1015,7 +1015,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                 <button
                   type="button"
                   onClick={() => handleStepChallenge(1)}
-                  className="inline-flex items-center gap-1 rounded-lg bg-[#2B2024] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#18181B] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
                 >
                   <span>Next Problem</span>
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -1064,7 +1064,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                 <button
                   type="button"
                   onClick={() => setShowCorrectProgram((prev) => !prev)}
-                  className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#000000] px-3 py-1.5 text-xs font-semibold text-[#f8fafc] hover:bg-[#2B2024] transition cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-[#000000] px-3 py-1.5 text-xs font-semibold text-[#f8fafc] hover:bg-[#27272A] transition cursor-pointer"
                 >
                   {showCorrectProgram ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                   <span>{showCorrectProgram ? "Hide Solution" : "Show Correct Program"}</span>
@@ -1089,7 +1089,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   type="button"
                   disabled={isCompiling}
                   onClick={() => void runCodeOnBackend()}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:bg-[#2B2024] disabled:opacity-50 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#000000] px-3 py-1.5 text-xs font-bold text-[#f8fafc] hover:bg-[#27272A] disabled:opacity-50 transition cursor-pointer"
                 >
                   {isCompiling ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1103,7 +1103,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   type="button"
                   disabled={isEvaluating || isCompiling}
                   onClick={() => void handleEvaluateCodingAndViva()}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-[#2B2024] px-3.5 py-1.5 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 disabled:opacity-50 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-[#18181B] px-3.5 py-1.5 text-xs font-bold text-[#f8fafc] shadow-sm hover:brightness-110 disabled:opacity-50 transition cursor-pointer"
                 >
                   {isEvaluating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1142,7 +1142,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                           toast.success("Reference program copied!");
                         } catch { }
                       }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-[#000000] px-2.5 py-1 text-[11px] font-semibold text-[#f8fafc] hover:bg-[#2B2024] transition cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-[#000000] px-2.5 py-1 text-[11px] font-semibold text-[#f8fafc] hover:bg-[#27272A] transition cursor-pointer"
                     >
                       <Copy className="h-3 w-3" />
                       <span>Copy</span>
@@ -1156,7 +1156,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                         setRunStatus("idle");
                         toast.info("Loaded optimal reference program — click Run Code to test!");
                       }}
-                      className="rounded-lg bg-[#2B2024] px-2.5 py-1 text-[11px] font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
+                      className="rounded-lg bg-[#18181B] px-2.5 py-1 text-[11px] font-bold text-[#f8fafc] hover:brightness-110 transition cursor-pointer"
                     >
                       Load into Editor
                     </button>

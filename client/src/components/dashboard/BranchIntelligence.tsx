@@ -62,15 +62,15 @@ interface BranchIntelligenceProps {
 }
 
 const BRANCH_COLORS: Record<string, string> = {
-  CSE: "#2B2024",
-  AIML: "#2B2024",
-  CSD: "#94a3b8",
-  CSM: "#94a3b8",
-  IT: "#2B2024",
-  ECE: "#2B2024",
-  EEE: "#94a3b8",
-  MECH: "#94a3b8",
-  CIVIL: "#64748b",
+  CSE: "#FAFAFA",
+  AIML: "#E4E4E7",
+  CSD: "#D4D4D8",
+  CSM: "#D4D4D8",
+  IT: "#A1A1AA",
+  ECE: "#A1A1AA",
+  EEE: "#71717A",
+  MECH: "#71717A",
+  CIVIL: "#52525B",
 };
 
 export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
@@ -122,13 +122,13 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
   return (
     <div className="space-y-8">
       {/* Top Banner & Branch Pills */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
+      <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
         <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/[0.04] blur-3xl" />
         
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white border border-white/20 shadow-inner">
-              <GraduationCap className="h-6 w-6 text-[#2B2024]" />
+              <GraduationCap className="h-6 w-6 text-[#D4D4D8]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -146,9 +146,9 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
           {/* Quick ask button */}
           <button
             onClick={() => onAskCoach(`What are the placement cutoffs, top companies, and roadmaps for ${activeCode} students?`)}
-            className="flex items-center gap-2 rounded-xl border border-[#2B2024]/30 bg-[#2B2024]/10 px-4 py-2 text-xs font-semibold text-[#f8fafc] transition-all hover:bg-[#2B2024]/20 hover:border-[#2B2024] active:scale-95 shadow-sm cursor-pointer"
+            className="flex items-center gap-2 rounded-xl border border-[#242429] bg-[#141418] px-4 py-2 text-xs font-semibold text-[#f8fafc] transition-all hover:bg-[#27272A] hover:border-[#3F3F46] active:scale-95 shadow-sm cursor-pointer"
           >
-            <Bot className="h-4 w-4 text-[#2B2024]" />
+            <Bot className="h-4 w-4 text-[#D4D4D8]" />
             <span>Consult Coach on {activeCode}</span>
           </button>
         </div>
@@ -157,14 +157,14 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
         <div className="mt-6 flex flex-wrap gap-2.5">
           {branches.map((b) => {
             const isSelected = b.code === activeCode;
-            const color = BRANCH_COLORS[b.code] || "#2B2024";
+            const color = BRANCH_COLORS[b.code] || "#27272A";
             return (
               <button
                 key={b.code}
                 onClick={() => setActiveCode(b.code)}
                 className={`group relative flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all cursor-pointer ${
                   isSelected
-                    ? "border-[#2B2024] bg-[#2B2024]/10 text-[#f8fafc] shadow-[0_0_16px_rgba(159, 18, 57,0.2)]"
+                    ? "border-[#242429] bg-[#141418] text-[#f8fafc]"
                     : "border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-white/20 hover:text-[#f8fafc]"
                 }`}
               >
@@ -174,7 +174,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                 />
                 <span className="font-bold">{b.code}</span>
                 <span className="hidden sm:inline text-[11px] text-[#94a3b8]">({b.name.split(" ")[0]})</span>
-                <span className="rounded bg-black/40 px-1.5 py-0.5 text-[10px] font-medium text-[#2B2024]">
+                <span className="rounded bg-black/40 px-1.5 py-0.5 text-[10px] font-medium text-[#D4D4D8]">
                   {b.placementRate}%
                 </span>
               </button>
@@ -193,11 +193,11 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                 <span className="text-[11px] font-medium text-[#94a3b8]">Placement Rate</span>
                 <div className="mt-1 flex items-baseline gap-1.5">
                   <span className="text-2xl font-black text-[#f8fafc]">{activeBranch.placementRate}%</span>
-                  <span className="text-[10px] font-medium text-[#2B2024]">cleared</span>
+                  <span className="text-[10px] font-medium text-[#D4D4D8]">cleared</span>
                 </div>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/40">
                   <div
-                    className="h-full rounded-full bg-[#2B2024]"
+                    className="h-full rounded-full bg-[#18181B]"
                     style={{ width: `${activeBranch.placementRate}%` }}
                   />
                 </div>
@@ -224,7 +224,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
               <div className="rounded-2xl border border-white/[0.08] bg-[#000000] p-4 backdrop-blur-xl">
                 <span className="text-[11px] font-medium text-[#94a3b8]">Peak Package</span>
                 <div className="mt-1 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-black text-[#2B2024]">
+                  <span className="text-2xl font-black text-[#D4D4D8]">
                     {activeBranch.highestPackage ? `${activeBranch.highestPackage} LPA` : "—"}
                   </span>
                 </div>
@@ -237,12 +237,12 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                   <span className="text-2xl font-black text-[#f8fafc]">{activeBranch.totalStudents}</span>
                   <span className="text-[10px] text-[#94a3b8]">records</span>
                 </div>
-                <span className="mt-2 block text-[10px] text-[#2B2024]">{activeBranch.placedCount} placed offers</span>
+                <span className="mt-2 block text-[10px] text-[#D4D4D8]">{activeBranch.placedCount} placed offers</span>
               </div>
             </div>
 
             {/* Department Strategy & Transition Bridge */}
-            <div className="relative overflow-hidden rounded-3xl border border-[#000000] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
+            <div className="relative overflow-hidden rounded-xl border border-[#000000] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
               <div className="flex items-center justify-between border-b border-[#000000] pb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white border border-white/20">
@@ -300,7 +300,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
             </div>
 
             {/* Department Comparison Chart */}
-            <div className="relative overflow-hidden rounded-3xl border border-[#000000] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
+            <div className="relative overflow-hidden rounded-xl border border-[#000000] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
               <div className="flex items-center justify-between pb-4">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-white" />
@@ -350,7 +350,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
           {/* Right Column: Key Cutoffs & Top Skills */}
           <div className="space-y-6">
             {/* Cutoff Requirements Card */}
-            <div className="rounded-3xl border border-[#000000] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
+            <div className="rounded-xl border border-[#000000] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
               <div className="flex items-center gap-2.5 pb-4 border-b border-[#000000]">
                 <ShieldCheck className="h-5 w-5 text-white" />
                 <h3 className="text-sm font-bold text-[#f8fafc]">Tier-1 Screening Rules</h3>
@@ -381,7 +381,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
             </div>
 
             {/* In-Demand Skills for this branch */}
-            <div className="rounded-3xl border border-[#000000] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
+            <div className="rounded-xl border border-[#000000] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
               <div className="flex items-center justify-between pb-4 border-b border-[#000000]">
                 <div className="flex items-center gap-2">
                   <Award className="h-4 w-4 text-white" />
@@ -401,7 +401,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                     </div>
                     <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#000000]">
                       <div
-                        className="h-full rounded-full bg-[#2B2024]"
+                        className="h-full rounded-full bg-[#18181B]"
                         style={{ width: `${s.placement_rate}%` }}
                       />
                     </div>

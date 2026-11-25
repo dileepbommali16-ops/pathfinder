@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Info } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 interface SectionHeaderProps {
   title: string;
@@ -12,82 +12,66 @@ interface SectionHeaderProps {
   onAskCoach?: (query: string) => void;
 }
 
-const MONOCHROME_HEADER_STYLE = {
-  badge: "border-white/15 bg-[#000000] text-[#f8fafc] shadow-sm",
-  icon: "bg-[#000000] text-[#f8fafc] border-white/15",
-  titleTint: "text-[#f8fafc]",
-  line: "from-white/15 via-[#000000] to-transparent",
-};
-
-const ACCENT_STYLES = {
-  emerald: MONOCHROME_HEADER_STYLE,
-  purple: MONOCHROME_HEADER_STYLE,
-  cyan: MONOCHROME_HEADER_STYLE,
-  amber: MONOCHROME_HEADER_STYLE,
-  blue: MONOCHROME_HEADER_STYLE,
-  rose: MONOCHROME_HEADER_STYLE,
-  accent: MONOCHROME_HEADER_STYLE,
-};
-
 export const SectionHeader: React.FC<SectionHeaderProps> = ({
   title,
   description,
   badge,
-  accent = "accent",
   icon: Icon,
   helperLabel,
   action,
   onAskCoach,
 }) => {
-  const styles = ACCENT_STYLES[accent] || ACCENT_STYLES.accent;
-
   return (
-    <div className="mb-6 sm:mb-8 pb-3 border-b border-[rgba(255,255,255,0.08)]">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-3">
+    <div className="mb-6 border-b border-[#1F1F23] pb-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3 sm:items-center">
           {Icon && (
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${styles.icon}`}>
-              <Icon className="h-5 w-5 text-[#ffffff]" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#242429] bg-[#0C0C0E]">
+              <Icon className="h-4 w-4 text-[#FAFAFA]" />
             </div>
           )}
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
-              <h2 className={`text-lg sm:text-xl font-semibold tracking-tight ${styles.titleTint}`}>{title}</h2>
+              <h2 className="text-lg font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-xl">
+                {title}
+              </h2>
               {badge && (
-                <span className={`rounded-md border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${styles.badge}`}>
+                <span className="rounded border border-[#27272A] bg-[#111114] px-2 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA] tabular-nums">
                   {badge}
                 </span>
               )}
             </div>
-            <p className="mt-0.5 text-xs sm:text-sm text-[#94a3b8] leading-relaxed">{description}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
+              {description}
+            </p>
           </div>
         </div>
 
         {(action || helperLabel || onAskCoach) && (
-          <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
             {helperLabel && (
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#94a3b8] bg-[#08090c] border border-white/10 px-2.5 py-1 rounded-full">
-                <Info className="h-3 w-3 text-[#8a8f98]" />
+              <span className="inline-flex items-center rounded-md border border-[#1F1F23] bg-[#0C0C0E] px-2.5 py-1 font-mono text-[11px] text-[#71717A]">
                 {helperLabel}
               </span>
             )}
             {onAskCoach && (
               <button
                 type="button"
-                onClick={() => onAskCoach(`Can you explain the '${title}' section? What is this showing and what should I do here?`)}
-                className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-[#000000] px-2.5 py-1 text-[11px] font-semibold text-[#f8fafc] hover:bg-[#000000] hover:border-white/30 transition-all active:scale-95 shadow-sm cursor-pointer"
+                onClick={() =>
+                  onAskCoach(
+                    `Can you explain the '${title}' section? What is this showing and what should I do here?`
+                  )
+                }
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#27272A] bg-[#0C0C0E] px-2.5 text-[11px] font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
               >
-                <Sparkles className="h-3 w-3 text-[#ffffff]" />
-                <span>Ask Coach about this</span>
+                <Sparkles className="h-3 w-3 text-[#A1A1AA]" />
+                <span>Ask DAS</span>
               </button>
             )}
             {action}
           </div>
         )}
       </div>
-
-      {/* Subtle Section Accent Underline */}
-      <div className={`mt-3 h-[1px] w-full bg-gradient-to-r ${styles.line}`} />
     </div>
   );
 };

@@ -122,18 +122,18 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
   return (
     <div className="space-y-8">
       {/* Top Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#2B2024]/[0.06] blur-3xl" />
+      <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#18181B]/[0.06] blur-3xl" />
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#2B2024]/10 text-[#2B2024] border border-[#2B2024]/30 shadow-inner">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#141418] text-[#D4D4D8] border border-[#242429] shadow-inner">
               <Zap className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold tracking-tight text-[#f8fafc]">Skill Intelligence & Impact Matrix</h2>
-                <span className="rounded-md border border-[#2B2024]/30 bg-[#2B2024]/10 px-2 py-0.5 text-[10px] font-semibold text-[#2B2024]">
+                <span className="rounded-md border border-[#242429] bg-[#141418] px-2 py-0.5 text-[10px] font-semibold text-[#D4D4D8]">
                   Live Cohort Correlation • 972 Records
                 </span>
               </div>
@@ -145,7 +145,7 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
 
           <button
             onClick={() => onAskCoach("Which specific high-yield skills will give me the biggest placement probability boost right now?")}
-            className="flex items-center gap-2 rounded-xl border border-[#2B2024]/40 bg-[#2B2024]/10 px-4 py-2 text-xs font-semibold text-[#2B2024] transition-all hover:bg-[#2B2024]/20 active:scale-95 shadow-sm"
+            className="flex items-center gap-2 rounded-xl border border-[#242429] bg-[#141418] px-4 py-2 text-xs font-semibold text-[#D4D4D8] transition-all hover:bg-[#27272A] active:scale-95 shadow-sm"
           >
             <Bot className="h-4 w-4" />
             <span>Consult Coach on Skills</span>
@@ -160,14 +160,14 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
               onClick={() => setSelectedSkillName(s.skill)}
               className={`cursor-pointer rounded-2xl border p-4 transition-all ${
                 selectedSkillName === s.skill
-                  ? "border-[#2B2024]/50 bg-[#2B2024]/15 shadow-[0_0_16px_rgba(124, 58, 237,0.2)]"
-                  : "border-white/[0.08] bg-[#000000] hover:border-[#2B2024]/30"
+                  ? "border-[#242429] bg-[#141418] shadow-[0_0_16px_rgba(0,0,0,0)]"
+                  : "border-white/[0.08] bg-[#000000] hover:border-[#3F3F46]"
               }`}
             >
               <span className="text-[11px] font-semibold text-[#94a3b8] block truncate">{s.skill}</span>
               <div className="mt-1 flex items-baseline gap-1.5">
                 <span className="text-2xl font-black text-[#f8fafc]">{s.placementRate}%</span>
-                <span className={`text-[10px] font-bold ${s.rateDeltaVsAverage >= 0 ? "text-[#2B2024]" : "text-[#2B2024]"}`}>
+                <span className={`text-[10px] font-bold ${s.rateDeltaVsAverage >= 0 ? "text-[#D4D4D8]" : "text-[#D4D4D8]"}`}>
                   {s.rateDeltaVsAverage >= 0 ? `+${s.rateDeltaVsAverage}%` : `${s.rateDeltaVsAverage}%`}
                 </span>
               </div>
@@ -182,10 +182,10 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
         {/* Left 2 Cols: Interactive Recharts Skill Matrix + Self Gap Assessment */}
         <div className="space-y-6 lg:col-span-2">
           {/* Skill Performance Chart */}
-          <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
+          <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
             <div className="flex items-center justify-between pb-4">
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-[#2B2024]" />
+                <TrendingUp className="h-4 w-4 text-[#D4D4D8]" />
                 <h3 className="text-sm font-bold text-[#f8fafc]">Placement Clearance Rate by Technical Skill</h3>
               </div>
               <span className="text-xs text-[#94a3b8]">Baseline Average: {baselineRate}%</span>
@@ -205,8 +205,8 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
                           <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3 shadow-xl backdrop-blur-xl text-xs text-[#f8fafc]">
                             <span className="font-bold text-[#f8fafc]">{item.skill}</span>
                             <div className="mt-1 space-y-0.5 text-[#94a3b8]">
-                              <div>Placement Rate: <strong className="text-[#2B2024]">{item.placementRate}%</strong></div>
-                              <div>Boost over baseline: <strong className="text-[#2B2024]">{item.rateDeltaVsAverage >= 0 ? `+${item.rateDeltaVsAverage}%` : `${item.rateDeltaVsAverage}%`}</strong></div>
+                              <div>Placement Rate: <strong className="text-[#D4D4D8]">{item.placementRate}%</strong></div>
+                              <div>Boost over baseline: <strong className="text-[#D4D4D8]">{item.rateDeltaVsAverage >= 0 ? `+${item.rateDeltaVsAverage}%` : `${item.rateDeltaVsAverage}%`}</strong></div>
                               <div>Evaluated Candidates: <strong className="text-[#f8fafc]">{item.totalCandidates}</strong></div>
                               <div>Avg Coding Benchmark: <strong className="text-[#94a3b8]">{item.avgCodingScore}/10</strong></div>
                             </div>
@@ -220,7 +220,7 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
                     {skillAnalytics.map((entry) => (
                       <Cell
                         key={entry.skill}
-                        fill={entry.skill === selectedSkillName ? "#2B2024" : entry.placementRate >= 80 ? "#2B2024" : "rgba(255,255,255,0.08)"}
+                        fill={entry.skill === selectedSkillName ? "#FAFAFA" : entry.placementRate >= 80 ? "#A1A1AA" : "#3F3F46"}
                       />
                     ))}
                   </Bar>
@@ -230,10 +230,10 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
           </div>
 
           {/* Interactive Skill Gap Checklist & Ramp-Up Plan */}
-          <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
+          <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
               <div className="flex items-center gap-2">
-                <Code2 className="h-4 w-4 text-[#2B2024]" />
+                <Code2 className="h-4 w-4 text-[#D4D4D8]" />
                 <h3 className="text-sm font-bold text-[#f8fafc]">Interactive Skill Inventory & Gap Diagnosis</h3>
               </div>
               <span className="text-xs text-[#94a3b8]">{mySkills.length} selected</span>
@@ -252,11 +252,11 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
                     onClick={() => toggleSkill(sk)}
                     className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
                       checked
-                        ? "border-[#2B2024]/50 bg-[#2B2024]/20 text-[#2B2024] shadow-[0_0_10px_rgba(124, 58, 237,0.2)]"
-                        : "border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-[#2B2024]/30 hover:text-[#f8fafc]"
+                        ? "border-[#242429] bg-[#141418] text-[#D4D4D8] shadow-[0_0_10px_rgba(0,0,0,0)]"
+                        : "border-white/[0.08] bg-[#000000] text-[#94a3b8] hover:border-[#3F3F46] hover:text-[#f8fafc]"
                     }`}
                   >
-                    <CheckCircle2 className={`h-3.5 w-3.5 ${checked ? "text-[#2B2024]" : "text-neutral-600"}`} />
+                    <CheckCircle2 className={`h-3.5 w-3.5 ${checked ? "text-[#D4D4D8]" : "text-neutral-600"}`} />
                     <span>{sk}</span>
                   </button>
                 );
@@ -268,9 +268,9 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
         {/* Right Column: Deep-Dive Card into Selected Skill */}
         <div className="space-y-6">
           {activeMetric && (
-            <div className="rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
+            <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-6 shadow-lg backdrop-blur-2xl">
               <div className="flex items-center gap-2 pb-4 border-b border-white/[0.08]">
-                <Award className="h-5 w-5 text-[#2B2024]" />
+                <Award className="h-5 w-5 text-[#D4D4D8]" />
                 <h3 className="text-sm font-bold text-[#f8fafc]">Skill Benchmark Focus</h3>
               </div>
 
@@ -281,11 +281,11 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3">
                     <span className="text-[10px] text-[#94a3b8] block">Placement Rate</span>
-                    <span className="text-xl font-bold text-[#2B2024] mt-0.5 block">{activeMetric.placementRate}%</span>
+                    <span className="text-xl font-bold text-[#D4D4D8] mt-0.5 block">{activeMetric.placementRate}%</span>
                   </div>
                   <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3">
                     <span className="text-[10px] text-[#94a3b8] block">Delta vs Baseline</span>
-                    <span className="text-xl font-bold text-[#2B2024] mt-0.5 block">
+                    <span className="text-xl font-bold text-[#D4D4D8] mt-0.5 block">
                       {activeMetric.rateDeltaVsAverage >= 0 ? `+${activeMetric.rateDeltaVsAverage}%` : `${activeMetric.rateDeltaVsAverage}%`}
                     </span>
                   </div>
@@ -312,7 +312,7 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
 
                 <button
                   onClick={() => onAskCoach(`How do I prepare and master ${activeMetric.skill} for campus recruitment in 4 weeks?`)}
-                  className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl border border-[#2B2024]/40 bg-[#2B2024]/10 py-2.5 text-xs font-semibold text-[#2B2024] transition-all hover:bg-[#2B2024]/20 active:scale-95 shadow-sm cursor-pointer"
+                  className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl border border-[#242429] bg-[#141418] py-2.5 text-xs font-semibold text-[#D4D4D8] transition-all hover:bg-[#27272A] active:scale-95 shadow-sm cursor-pointer"
                 >
                   <Bot className="h-4 w-4" />
                   <span>Build {activeMetric.skill} Sprint</span>

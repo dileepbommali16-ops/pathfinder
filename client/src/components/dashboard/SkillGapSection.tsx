@@ -1,5 +1,11 @@
 import React from "react";
-import { TrendingUp, CheckCircle2, AlertCircle, ShieldAlert, Sparkles, ArrowRight } from "lucide-react";
+import {
+  TrendingUp,
+  CheckCircle2,
+  AlertCircle,
+  ShieldAlert,
+  ArrowRight,
+} from "lucide-react";
 
 interface SkillGapSectionProps {
   breakdown: {
@@ -50,105 +56,124 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
   }, [apiBase]);
 
   const dimensions = [
-    { label: "Academics & CGPA Cutoff", score: breakdown.academics || 75, color: "from-[#2B2024] to-[#2B2024]" },
-    { label: "DSA & Problem Solving", score: breakdown.coding_dsa || 70, color: "from-[#2B2024] to-[#94a3b8]" },
-    { label: "Technical Communication & STAR", score: breakdown.communication || 70, color: "from-[#94a3b8] to-[#f8fafc]" },
-    { label: "Practical Internships & Projects", score: breakdown.experience || 35, color: "from-[#2B2024] to-[#2B2024]" },
-    { label: "Drive Eligibility & Clearance", score: breakdown.eligibility || 100, color: "from-[#2B2024] to-[#2B2024]" },
+    { label: "Academics & CGPA cutoff", score: breakdown.academics ?? 75 },
+    { label: "DSA & problem solving", score: breakdown.coding_dsa ?? 70 },
+    { label: "Technical communication & STAR", score: breakdown.communication ?? 70 },
+    { label: "Practical internships & projects", score: breakdown.experience ?? 35 },
+    { label: "Drive eligibility & clearance", score: breakdown.eligibility ?? 100 },
   ];
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      {/* Left: Dimension Health & Skill-Gap Breakdown */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-7">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#2B2024]/10 text-[#2B2024] border border-[#2B2024]/20">
-              <TrendingUp className="h-4 w-4 text-[#2B2024]" />
+      {/* Left: 5-Dimension Competency Telemetry */}
+      <div className="rounded-xl border border-[#222226] bg-[#09090B]/58 p-6 backdrop-blur-[2px]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#27272A] bg-[#0C0C0E]">
+              <TrendingUp className="h-4 w-4 text-[#FAFAFA]" />
             </div>
-            <h3 className="text-lg font-bold text-[#f8fafc]">Skill Strength & Gap Analysis</h3>
+            <h3 className="text-base font-semibold tracking-[-0.015em] text-[#FAFAFA]">
+              Competency dimensions
+            </h3>
           </div>
-          <span className="rounded-md border border-white/[0.08] bg-[#000000] px-2 py-0.5 text-[10px] font-semibold text-[#94a3b8]">
-            5 Dimensions
+          <span className="rounded border border-[#27272A] bg-[#111114] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
+            05 axes
           </span>
         </div>
-        <p className="mt-1 text-xs text-[#94a3b8]">
-          Evaluated relative to tier-1 campus recruitment expectations and benchmarks
+        <p className="mt-1.5 text-xs text-[#A1A1AA]">
+          Evaluated relative to verified campus hiring thresholds.
         </p>
 
-        {/* Dimension Health Bars */}
         <div className="mt-5 space-y-4">
-          {dimensions.map((dim) => (
-            <div key={dim.label} className="space-y-1.5">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-[#94a3b8]">{dim.label}</span>
-                <span className="text-[#f8fafc]">{dim.score.toFixed(0)}%</span>
+          {dimensions.map((dim) => {
+            const pct = Math.max(5, Math.min(100, dim.score));
+            return (
+              <div key={dim.label} className="space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="font-medium text-[#D4D4D8]">{dim.label}</span>
+                  <span className="font-mono font-medium text-[#FAFAFA] tabular-nums">
+                    {dim.score.toFixed(0)}%
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-sm bg-[#18181B]">
+                  <div
+                    className="h-full bg-[#FAFAFA] transition-[width] duration-500 ease-out"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.08]">
-                <div
-                  className={`h-full rounded-full bg-gradient-to-r ${dim.color} shadow-[0_0_8px_rgba(124, 58, 237,0.3)]`}
-                  style={{ width: `${Math.max(5, Math.min(100, dim.score))}%` }}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Recommended High-Yield Target Skills */}
-        <div className="mt-6 border-t border-white/[0.08] pt-5">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
-            High-Yield Recommended Skills:
+        {/* High-Yield Skills */}
+        <div className="mt-6 border-t border-[#1F1F23] pt-5">
+          <span className="block text-xs font-medium text-[#A1A1AA]">
+            Recommended focus topics
           </span>
           <div className="mt-2.5 flex flex-wrap gap-2">
             {skillsList.map((skill) => (
               <button
                 key={skill.name}
-                onClick={() => onAskCoach(`How should I prepare ${skill.name} for upcoming campus placement tests?`)}
-                className="group flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-[#000000] px-2.5 py-1.5 text-xs text-[#f8fafc] transition-all hover:border-[#2B2024]/40 hover:bg-[#2B2024]/10 hover:text-[#f8fafc] hover:shadow-[0_0_12px_rgba(124, 58, 237,0.18)] active:scale-95"
+                type="button"
+                onClick={() =>
+                  onAskCoach(`How should I prepare ${skill.name} for upcoming campus placement tests?`)
+                }
+                className="group inline-flex h-8 items-center gap-1.5 rounded-md border border-[#27272A] bg-[#0C0C0E] px-2.5 text-xs text-[#D4D4D8] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] hover:text-[#FAFAFA] active:scale-[0.98]"
               >
                 <span>{skill.name}</span>
-                <ArrowRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100 text-[#2B2024]" />
+                <ArrowRight className="h-3 w-3 text-[#71717A] transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[#FAFAFA]" />
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Right: Strengths & Placement Blocker Cards */}
+      {/* Right: Strengths & Priority Actions */}
       <div className="space-y-6">
-        {/* Identified Strengths */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl ring-1 ring-white/5">
-          <div className="flex items-center gap-2 text-[#2B2024]">
-            <CheckCircle2 className="h-5 w-5 text-[#2B2024]" />
-            <h3 className="text-base font-bold text-[#f8fafc]">Identified Competitive Strengths</h3>
+        <div className="rounded-xl border border-[#222226] bg-[#09090B]/58 p-6 backdrop-blur-[2px]">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-[#FAFAFA]" />
+            <h3 className="text-base font-semibold tracking-[-0.015em] text-[#FAFAFA]">
+              Competitive strengths
+            </h3>
           </div>
-          <div className="mt-3.5 space-y-2.5">
+          <div className="mt-3.5 space-y-2">
             {strengths.map((str, idx) => (
-              <div key={idx} className="flex items-start gap-2.5 rounded-xl border border-white/[0.08] bg-[#000000] p-3 text-xs text-[#f8fafc]">
-                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#2B2024]" />
+              <div
+                key={idx}
+                className="flex items-start gap-2.5 rounded-lg border border-[#1F1F23] bg-[#0C0C0E] p-3 text-xs leading-relaxed text-[#E4E4E7]"
+              >
+                <span className="mt-0.5 font-mono text-[10px] text-[#71717A] tabular-nums">
+                  {String(idx + 1).padStart(2, "0")}
+                </span>
                 <span>{str}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Critical Action Items / Priorities */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#000000] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl ring-1 ring-white/5">
-          <div className="flex items-center gap-2 text-[#2B2024]">
-            <ShieldAlert className="h-5 w-5 text-[#2B2024]" />
-            <h3 className="text-base font-bold text-[#f8fafc]">Priority Placement Actions</h3>
+        <div className="rounded-xl border border-[#222226] bg-[#09090B]/58 p-6 backdrop-blur-[2px]">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-[#FAFAFA]" />
+            <h3 className="text-base font-semibold tracking-[-0.015em] text-[#FAFAFA]">
+              Priority placement actions
+            </h3>
           </div>
-          <div className="mt-3.5 space-y-2.5">
+          <div className="mt-3.5 space-y-2">
             {priorities.length > 0 ? (
               priorities.map((prio, idx) => (
-                <div key={idx} className="flex items-start gap-2.5 rounded-xl border border-white/[0.08] bg-[#000000] p-3 text-xs text-[#f8fafc]">
-                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#2B2024]" />
+                <div
+                  key={idx}
+                  className="flex items-start gap-2.5 rounded-lg border border-[#1F1F23] bg-[#0C0C0E] p-3 text-xs leading-relaxed text-[#E4E4E7]"
+                >
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#A1A1AA]" />
                   <span>{prio}</span>
                 </div>
               ))
             ) : (
-              <div className="rounded-xl border border-white/[0.08] bg-[#000000] p-3 text-xs text-[#94a3b8]">
-                Upload a resume in 5. ATS Resume Studio and verify your GitHub repository in Fraud Shield to unlock granular recruiter critique items.
+              <div className="rounded-lg border border-[#1F1F23] bg-[#0C0C0E] p-3 text-xs leading-relaxed text-[#A1A1AA]">
+                Upload a resume in JD &amp; Resume Lab to unlock targeted recruiter remediation steps.
               </div>
             )}
           </div>
