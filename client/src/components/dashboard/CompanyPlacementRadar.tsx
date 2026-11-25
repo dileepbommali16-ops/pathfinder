@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { StudentProfileState } from "@/types/profile";
+import { SpotlightSurface } from "@/components/ui/TitaniumPrimitives";
 
 interface CompanyPlacementRadarProps {
   profile: StudentProfileState;
@@ -168,29 +169,28 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
   const selectedStatusLabel = getStatusLabel(selectedScore, selectedCompany);
 
   return (
-    <div className="rounded-2xl border border-[#242429] bg-[#09090B]/64 p-6 backdrop-blur-[2px] sm:p-8">
-      {/* Compact Filter Bar (No Duplicate Section Heading) */}
-      <div className="flex flex-col justify-between gap-4 border-b border-[#1F1F23] pb-5 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-2.5">
+    <SpotlightSurface className="rounded-2xl p-8 sm:p-10">
+      {/* Compact Filter Bar */}
+      <div className="flex flex-col justify-between gap-4 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-3">
           <span className="font-mono text-xs font-medium text-[#A1A1AA]">
             Target Recruiter Benchmarks
           </span>
-          <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8] tabular-nums">
+          <span className="rounded-md border border-white/[0.1] bg-[#121216] px-2.5 py-0.5 font-mono text-[10px] text-[#D4D4D8] tabular-nums">
             {filteredBenchmarks.length} firms
           </span>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        <div className="flex items-center gap-2.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
           {["All", "Tier-1 MAANG", "Fintech Unicorn", "Premier Campus Drive"].map((cat) => (
             <button
               key={cat}
               type="button"
               onClick={() => setFilterCategory(cat)}
-              className={`h-9 shrink-0 rounded-lg border px-3.5 text-xs font-medium transition-colors duration-150 ${
-                filterCategory === cat
-                  ? "border-[#FAFAFA]/40 bg-[#18181E] text-[#FAFAFA]"
-                  : "border-[#222226] bg-[#101014] text-[#A1A1AA] hover:border-[#3F3F46] hover:text-[#FAFAFA]"
-              }`}
+              className={`h-9 shrink-0 rounded-lg border px-4 text-xs font-medium transition-colors duration-150 ${filterCategory === cat
+                ? "border-white/[0.28] bg-[#18181E] text-[#FAFAFA]"
+                : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
+                }`}
             >
               {cat}
             </button>
@@ -198,16 +198,16 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
         </div>
       </div>
 
-      {/* Grid Layout: Left Cards & Right Detailed Radar */}
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
-        {/* Left Column: Company Cards */}
-        <div className="space-y-3 lg:col-span-5">
+      {/* Spacious 12-Col Grid */}
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
+        {/* Left 5 cols: Recruiter Selector List */}
+        <div className="space-y-3.5 lg:col-span-5">
           <div className="flex items-center justify-between px-1 font-mono text-[11px] text-[#71717A]">
             <span>Target Recruiter</span>
             <span>Match</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {filteredBenchmarks.map((comp) => {
               const compScore = calculateCompatibility(comp);
               const isSelected = comp.id === selectedCompanyId;
@@ -217,19 +217,18 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   key={comp.id}
                   type="button"
                   onClick={() => setSelectedCompanyId(comp.id)}
-                  className={`flex w-full cursor-pointer items-center justify-between rounded-xl border p-4 text-left transition-colors duration-150 ${
-                    isSelected
-                      ? "border-[#FAFAFA]/45 bg-[#18181E]"
-                      : "border-[#222226] bg-[#101014]/90 hover:border-[#3F3F46] hover:bg-[#14141A]"
-                  }`}
+                  className={`flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border p-4.5 text-left transition-colors duration-150 ${isSelected
+                    ? "border-white/[0.28] bg-[#18181F] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                    : "border-white/[0.07] bg-[#0E0E12]/90 hover:border-white/[0.16] hover:bg-[#131319]"
+                    }`}
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex h-10 w-12 shrink-0 items-center justify-center rounded-lg border border-[#27272A] bg-[#0B0B0E] font-mono text-[11px] font-semibold text-[#FAFAFA] tabular-nums">
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <div className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg border border-white/[0.1] bg-[#08080A] font-mono text-[11px] font-semibold text-[#FAFAFA] tabular-nums">
                       {comp.logoText}
                     </div>
-                    <div>
-                      <div className="text-sm font-semibold text-[#FAFAFA]">{comp.name}</div>
-                      <div className="mt-0.5 flex items-center gap-2 text-xs text-[#A1A1AA]">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-[#FAFAFA]">{comp.name}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#A1A1AA]">
                         <span className="font-mono text-[#D4D4D8] tabular-nums">
                           {comp.packageRange}
                         </span>
@@ -239,7 +238,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="shrink-0 text-right">
                     <div className="font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
                       {compScore}%
                     </div>
@@ -251,13 +250,13 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
           </div>
         </div>
 
-        {/* Right Column: Deep Dive Benchmark Diagnostic */}
-        <div className="flex flex-col justify-between rounded-xl border border-[#222226] bg-[#0D0D11]/92 p-6 sm:p-7 lg:col-span-7">
+        {/* Right 7 cols: Deep Dive Benchmark Diagnostic */}
+        <div className="pf-subpanel flex flex-col justify-between rounded-2xl p-7 sm:p-9 lg:col-span-7">
           <div>
-            <div className="flex flex-col justify-between gap-3 border-b border-[#1F1F23] pb-5 sm:flex-row sm:items-center">
+            <div className="flex flex-col justify-between gap-3 border-b border-white/[0.07] pb-6 sm:flex-row sm:items-center">
               <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded border border-[#27272A] bg-[#141418] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8]">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="rounded-md border border-white/[0.1] bg-[#141418] px-2.5 py-0.5 font-mono text-[10px] text-[#D4D4D8]">
                     {selectedCompany.category}
                   </span>
                   <span className="text-xs text-[#A1A1AA]">
@@ -267,51 +266,51 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                     </strong>
                   </span>
                 </div>
-                <h3 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
+                <h3 className="mt-2.5 text-2xl font-semibold tracking-[-0.025em] text-[#FAFAFA]">
                   {selectedCompany.name}
                 </h3>
               </div>
 
-              <span className="inline-flex h-8 shrink-0 items-center rounded-lg border border-[#27272A] bg-[#141418] px-3 text-xs font-medium text-[#FAFAFA]">
+              <span className="inline-flex h-9 shrink-0 items-center rounded-lg border border-white/[0.1] bg-[#141418] px-3.5 text-xs font-medium text-[#FAFAFA]">
                 {selectedStatusLabel}
               </span>
             </div>
 
-            {/* Score & Progress Metric */}
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-[#222226] bg-[#101014] p-4">
+            {/* Score & Progress Metric Tiles */}
+            <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-3">
+              <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
                 <span className="text-xs text-[#A1A1AA]">Match Probability</span>
-                <div className="mt-1.5 flex items-baseline gap-1.5">
+                <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                     {selectedScore}%
                   </span>
                   <span className="text-xs text-[#71717A]">Score</span>
                 </div>
-                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-sm bg-[#18181B]">
+                <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
                   <div
-                    className="h-full bg-[#FAFAFA] transition-[width] duration-500"
+                    className="h-full rounded-full bg-[#FAFAFA] transition-[width] duration-500"
                     style={{ width: `${selectedScore}%` }}
                   />
                 </div>
               </div>
 
-              <div className="rounded-xl border border-[#222226] bg-[#101014] p-4">
+              <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
                 <span className="text-xs text-[#A1A1AA]">Package Compensation</span>
-                <div className="mt-1.5 font-mono text-lg font-semibold text-[#FAFAFA] tabular-nums">
+                <div className="mt-2 font-mono text-lg font-semibold text-[#FAFAFA] tabular-nums">
                   {selectedCompany.packageRange}
                 </div>
-                <div className="mt-1.5 text-[11px] text-[#71717A]">Fixed Base + Stock Grants</div>
+                <div className="mt-2 text-[11px] text-[#71717A]">Fixed Base + Stock Grants</div>
               </div>
 
-              <div className="rounded-xl border border-[#222226] bg-[#101014] p-4">
+              <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
                 <span className="text-xs text-[#A1A1AA]">Academic Cutoff</span>
-                <div className="mt-1.5 flex items-center gap-2 font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
+                <div className="mt-2 flex items-center gap-2 font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
                   <span>{selectedCompany.minCgpa}+ CGPA</span>
                   <span className="text-[11px] font-normal text-[#A1A1AA]">
                     (You: {studentCgpa})
                   </span>
                 </div>
-                <div className="mt-1.5 text-[11px] text-[#71717A]">
+                <div className="mt-2 text-[11px] text-[#71717A]">
                   {studentBacklogs === 0
                     ? "0 Backlogs Cleared"
                     : `${studentBacklogs} Active Backlog(s)`}
@@ -320,16 +319,16 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
             </div>
 
             {/* Core Interview Evaluation Focus */}
-            <div className="mt-6 space-y-5">
+            <div className="mt-7 space-y-6">
               <div>
                 <span className="text-xs font-medium text-[#D4D4D8]">
                   Core Evaluation Topics &amp; Skills
                 </span>
-                <div className="mt-2.5 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {selectedCompany.requiredSkills.map((skill, idx) => (
                     <span
                       key={idx}
-                      className="rounded-md border border-[#222226] bg-[#101014] px-2.5 py-1 text-xs font-medium text-[#FAFAFA]"
+                      className="rounded-md border border-white/[0.08] bg-black/45 px-3 py-1.5 text-xs font-medium text-[#FAFAFA]"
                     >
                       {skill}
                     </span>
@@ -341,16 +340,16 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                 <span className="text-xs font-medium text-[#D4D4D8]">
                   Standard Interview Pipeline
                 </span>
-                <div className="mt-2.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
                   {selectedCompany.interviewRounds.map((rnd, idx) => (
                     <div
                       key={idx}
-                      className="rounded-xl border border-[#222226] bg-[#101014] p-3 text-xs text-[#A1A1AA]"
+                      className="rounded-xl border border-white/[0.07] bg-black/45 p-4 text-xs text-[#A1A1AA]"
                     >
                       <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
                         Round {String(idx + 1).padStart(2, "0")}
                       </span>
-                      <p className="mt-1 font-medium text-[#FAFAFA]">{rnd}</p>
+                      <p className="mt-1.5 font-medium text-[#FAFAFA]">{rnd}</p>
                     </div>
                   ))}
                 </div>
@@ -360,11 +359,11 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                 <span className="text-xs font-medium text-[#D4D4D8]">
                   Resume Differentiating Projects
                 </span>
-                <div className="mt-2.5 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {selectedCompany.recommendedProjects.map((proj, idx) => (
                     <span
                       key={idx}
-                      className="rounded-md border border-[#27272A] bg-[#101014] px-2.5 py-1 text-xs font-medium text-[#FAFAFA]"
+                      className="rounded-md border border-white/[0.1] bg-black/45 px-3 py-1.5 text-xs font-medium text-[#FAFAFA]"
                     >
                       {proj}
                     </span>
@@ -374,13 +373,13 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
             </div>
           </div>
 
-          {/* Action Footer */}
-          <div className="mt-7 flex flex-col items-center justify-between gap-3 border-t border-[#1F1F23] pt-5 sm:flex-row">
+          {/* Spacious Action Footer */}
+          <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 sm:flex-row">
             <span className="text-center text-xs text-[#A1A1AA] sm:text-left">
               Simulate {selectedCompany.name}'s technical questions with your AI mentor.
             </span>
 
-            <div className="flex w-full items-center gap-2.5 sm:w-auto">
+            <div className="flex w-full items-center gap-3 sm:w-auto">
               {onAskCoach && (
                 <button
                   type="button"
@@ -389,7 +388,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                       `How do I crack ${selectedCompany.name} campus drive with my profile (CGPA: ${studentCgpa}, Backlogs: ${studentBacklogs})? Give me a 4-week preparation strategy.`
                     )
                   }
-                  className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-[#27272A] bg-[#101014] px-4 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] sm:w-auto cursor-pointer"
+                  className="pf-btn-secondary inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-xs font-medium sm:w-auto cursor-pointer"
                 >
                   Ask Coach Strategy
                 </button>
@@ -401,7 +400,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   onClick={() =>
                     onLaunchMockInterview(selectedCompany.name, selectedCompany.requiredSkills[0])
                   }
-                  className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-[#FAFAFA] px-4 text-xs font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] sm:w-auto cursor-pointer"
+                  className="pf-btn-primary inline-flex h-11 w-full items-center justify-center rounded-xl px-5 text-xs font-medium active:scale-[0.98] sm:w-auto cursor-pointer"
                 >
                   Start Mock Interview
                 </button>
@@ -410,6 +409,6 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </SpotlightSurface>
   );
 };

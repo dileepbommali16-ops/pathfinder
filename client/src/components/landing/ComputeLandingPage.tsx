@@ -2,56 +2,97 @@ import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { API_BASE } from "@/lib/apiClient";
 import { PathfinderLogo } from "@/components/common/PathfinderLogo";
+import {
+  AnimatedMetric,
+  ShaderBackdrop,
+  SpotlightSurface,
+  WORKSPACE_SLIDES,
+} from "@/components/ui/TitaniumPrimitives";
 
 export interface ComputeLandingPageProps {
   onNavigateLogin: () => void;
   onGuestLogin: () => void;
 }
 
-const BENCHMARKS = [
-  { index: "01", value: "972", label: "Verified campus offers" },
-  { index: "02", value: "11", label: "Compiler runtimes" },
-  { index: "03", value: "28", label: "System architecture blueprints" },
-  { index: "04", value: "6 wk", label: "Calibrated sprint roadmap" },
-];
+const SLIDE_PREVIEWS: Record<
+  string,
+  { eyebrow: string; metric: string; metricLabel: string; points: string[] }
+> = {
+  overview: {
+    eyebrow: "Slide 01 · Predictive Engine",
+    metric: "91.9%",
+    metricLabel: "Random Forest offer confidence",
+    points: [
+      "Calibrated probability benchmark against 972 campus records",
+      "5-axis competency telemetry across academics, DSA, projects & STAR",
+      "Live eligibility radar across Google, Razorpay, Amazon & TCS Digital",
+    ],
+  },
+  resume: {
+    eyebrow: "Slide 02 · JD & ATS Lab",
+    metric: "89 / 100",
+    metricLabel: "Tailored hiring manager match",
+    points: [
+      "Instant job-description keyword parser against your skill ledger",
+      "Automated Google X-Y-Z metric bullet synthesis for 1-page ATS PDFs",
+      "Uninflated senior manager rubric scan without fake inflation",
+    ],
+  },
+  interview: {
+    eyebrow: "Slide 03 · 11-Runtime Arena",
+    metric: "11 Langs",
+    metricLabel: "Sandboxed execution & voice defense",
+    points: [
+      "Execute timed company problems in Python, C++, Rust, Go, Java & TypeScript",
+      "Speak complexity trade-offs and system reasoning aloud to DAS",
+      "Combined code-accuracy + viva rubric scoring with optimal reference code",
+    ],
+  },
+  projects: {
+    eyebrow: "Slide 04 · Engineering Catalog",
+    metric: "28 Stacks",
+    metricLabel: "Software RAG & Embedded blueprints",
+    points: [
+      "20 production software & GenAI RAG pipelines plus 8 hardware/IoT systems",
+      "End-to-end architecture diagrams, tech stack rationale & X-Y-Z resume bullets",
+      "Direct 1-click architecture defense walkthrough with DAS AI",
+    ],
+  },
+  analytics: {
+    eyebrow: "Slide 05 · Institutional Telemetry",
+    metric: "972 Rows",
+    metricLabel: "Verified cohort & NAAC 5.2 tracker",
+    points: [
+      "Slice placement conversion across graduating year, branch, domain & CGPA band",
+      "TPO compliance export mode with CSV/PDF accreditation tables",
+      "Interactive 6-week placement sprint roadmap persisted per candidate",
+    ],
+  },
+  profile: {
+    eyebrow: "Slide 06 · Candidate Single Source of Truth",
+    metric: "Live Sync",
+    metricLabel: "Real-time prediction recalibration",
+    points: [
+      "Edit verified CGPA, conversion scale, active backlogs, internships & links",
+      "Role tracks mapped across Software, AI/ML, Embedded VLSI, EV, Robotics & Civil",
+      "Saving immediately re-computes offer odds across every workspace slide",
+    ],
+  },
+};
 
-const CAPABILITIES = [
-  {
-    index: "01",
-    title: "Placement probability engine",
-    description:
-      "Random Forest model calibrated on 972 real engineering placement records, branch cutoffs, CGPA thresholds, and backlog gates.",
-  },
-  {
-    index: "02",
-    title: "Live 3D voice interviewer (DAS)",
-    description:
-      "Real-time WebSocket technical and behavioral interviews, STAR architecture defense, and hands-free coaching.",
-  },
-  {
-    index: "03",
-    title: "11-language compiler arena",
-    description:
-      "Timed coding assessments in C, C++, Java, Python, TypeScript, Go, Rust, C#, Kotlin, PHP, and Ruby with complexity feedback.",
-  },
-  {
-    index: "04",
-    title: "ATS resume diagnostics & verification",
-    description:
-      "Single-column ATS parsing, job-description keyword gap analysis, and live GitHub repository verification.",
-  },
-];
+const VOICE_BAR_HEIGHTS = [24, 46, 72, 92, 64, 38, 84, 98, 58, 76, 42, 28];
 
 export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
   onNavigateLogin,
   onGuestLogin,
 }) => {
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [previewSlideId, setPreviewSlideId] = useState<string>(WORKSPACE_SLIDES[0].id);
   const modalVideoRef = useRef<HTMLVideoElement | null>(null);
 
   // Wake the cloud backend early while the visitor explores the landing page
   useEffect(() => {
-    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => { });
+    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -60,7 +101,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
     if (video) {
       video.currentTime = 0;
       video.muted = false;
-      video.play().catch(() => { });
+      video.play().catch(() => {});
     }
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -71,45 +112,57 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [showDemoModal]);
 
+  const activeSlide =
+    WORKSPACE_SLIDES.find((s) => s.id === previewSlideId) || WORKSPACE_SLIDES[0];
+  const activeSlideDetail = SLIDE_PREVIEWS[activeSlide.id] || SLIDE_PREVIEWS.overview;
+
   return (
-    <div className="min-h-dvh w-full overflow-x-clip bg-[#09090B] text-[#FAFAFA] antialiased selection:bg-[#FAFAFA] selection:text-[#09090B]">
-      {/* Sticky Architectural Navbar — Single Sign in CTA */}
-      <header className="sticky top-0 z-40 border-b border-[#1F1F23] bg-[#09090B]/92 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-10">
+    <div className="relative min-h-dvh w-full overflow-x-clip bg-[#050507] text-[#FAFAFA] antialiased selection:bg-[#FAFAFA] selection:text-[#09090B]">
+      <ShaderBackdrop />
+
+      {/* Floating Titanium Header — Single Sign in CTA */}
+      <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#050507]/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-10">
           <a
             href="#top"
-            className="inline-flex min-h-10 items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+            className="inline-flex min-h-10 items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
           >
-            <PathfinderLogo size={28} variant="monochrome" />
-            <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#FAFAFA]">
+            <PathfinderLogo size={30} variant="monochrome" />
+            <span className="text-[15px] font-semibold tracking-[-0.025em] text-[#FAFAFA]">
               Pathfinder
             </span>
-            <span className="rounded border border-[#27272A] bg-[#111113] px-1.5 py-0.5 font-mono text-[11px] font-medium text-[#A1A1AA] tabular-nums">
+            <span className="rounded-md border border-white/[0.1] bg-[#111115] px-2 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA] tabular-nums">
               2.0
             </span>
           </a>
 
           <nav
             aria-label="Primary landing navigation"
-            className="hidden items-center gap-8 text-[13px] text-[#A1A1AA] md:flex"
+            className="hidden items-center gap-9 text-[13px] font-medium text-[#A1A1AA] md:flex"
           >
             <a
               href="#walkthrough"
-              className="inline-flex min-h-10 items-center transition-colors duration-150 hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+              className="inline-flex min-h-10 items-center transition-colors duration-150 hover:text-[#FAFAFA]"
             >
-              Product tour
-            </a>
-            <a
-              href="#benchmarks"
-              className="inline-flex min-h-10 items-center transition-colors duration-150 hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
-            >
-              Benchmarks
+              Walkthrough
             </a>
             <a
               href="#capabilities"
-              className="inline-flex min-h-10 items-center transition-colors duration-150 hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+              className="inline-flex min-h-10 items-center transition-colors duration-150 hover:text-[#FAFAFA]"
             >
-              Capabilities
+              Architecture
+            </a>
+            <a
+              href="#workspaces"
+              className="inline-flex min-h-10 items-center transition-colors duration-150 hover:text-[#FAFAFA]"
+            >
+              6 Workspaces
+            </a>
+            <a
+              href="#benchmarks"
+              className="inline-flex min-h-10 items-center transition-colors duration-150 hover:text-[#FAFAFA]"
+            >
+              Benchmarks
             </a>
           </nav>
 
@@ -117,62 +170,66 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             id="nav-sign-in"
             type="button"
             onClick={onNavigateLogin}
-            className="inline-flex h-10 items-center justify-center rounded-lg border border-[#27272A] bg-[#141418] px-4 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#1C1C22] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:text-[13px]"
+            className="pf-btn-secondary inline-flex h-10 items-center justify-center rounded-lg px-4 text-xs font-medium active:scale-[0.98] sm:text-[13px]"
           >
             Sign in
           </button>
         </div>
       </header>
 
-      {/* Main Architectural Frame */}
-      <main id="top" className="mx-auto max-w-6xl lg:border-x lg:border-[#18181B]">
-        {/* Hero Section — Single Primary & Single Guest CTA */}
-        <section className="px-6 pt-16 pb-14 sm:px-10 sm:pt-24 sm:pb-16">
-          <div className="inline-flex items-center gap-2 rounded-md border border-[#1F1F23] bg-[#0E0E11] px-2.5 py-1 text-xs text-[#A1A1AA]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
-            <span>Random Forest ML + Live 3D Voice Agent</span>
-          </div>
-
-          <h1
-            className="mt-6 max-w-3xl text-3xl font-semibold leading-[1.08] tracking-[-0.035em] text-[#FAFAFA] sm:text-5xl"
-            style={{ textWrap: "balance" }}
+      <main id="top" className="relative z-10 mx-auto max-w-7xl px-5 sm:px-10">
+        {/* Hero Stage — Spacious Editorial Scale & Exact 1 Get started CTA */}
+        <section className="pt-20 pb-16 sm:pt-28 sm:pb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-4xl"
           >
-            Placement readiness measured in real engineering signals.
-          </h1>
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.1] bg-[#0D0D11]/90 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-[#D4D4D8]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+              <span>Pathfinder 2.0 · Campus Placement Intelligence</span>
+            </div>
 
-          <p
-            className="mt-5 max-w-[56ch] text-[15px] leading-[1.65] text-[#A1A1AA] sm:text-base"
-            style={{ textWrap: "pretty" }}
-          >
-            Benchmark your profile against 972 verified campus offers, ship code in 11 compiler
-            runtimes, and rehearse technical rounds with DAS — our live 3D voice interviewer.
-          </p>
+            <h1
+              className="mt-7 text-4xl font-semibold leading-[1.04] tracking-[-0.04em] text-[#FAFAFA] sm:text-6xl lg:text-[64px]"
+              style={{ textWrap: "balance" }}
+            >
+              Placement readiness, engineered from verified signals.
+            </h1>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3.5">
-            <button
-              id="hero-get-started"
-              type="button"
-              onClick={onNavigateLogin}
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-[#FAFAFA] px-5 text-sm font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+            <p
+              className="mt-6 max-w-2xl text-base leading-[1.7] text-[#A1A1AA] sm:text-lg"
+              style={{ textWrap: "pretty" }}
             >
-              Get started
-            </button>
-            <button
-              id="btn-landing-guest"
-              type="button"
-              onClick={onGuestLogin}
-              className="inline-flex h-11 items-center justify-center rounded-lg border border-[#27272A] bg-[#111113] px-5 text-sm font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
-            >
-              Explore as guest
-            </button>
-          </div>
+              Calibrate your offer probability against 972 verified campus drives, write and execute
+              solutions across 11 compiler runtimes, and defend system trade-offs aloud with DAS —
+              your live 3D holographic voice mentor.
+            </p>
+
+            <div className="mt-10 flex flex-wrap items-center gap-4">
+              <button
+                id="hero-get-started"
+                type="button"
+                onClick={onNavigateLogin}
+                className="pf-btn-primary inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-medium active:scale-[0.98]"
+              >
+                Get started
+              </button>
+              <button
+                id="btn-landing-guest"
+                type="button"
+                onClick={onGuestLogin}
+                className="pf-btn-secondary inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-medium active:scale-[0.98]"
+              >
+                Explore as guest
+              </button>
+            </div>
+          </motion.div>
         </section>
 
-        {/* Product Walkthrough Stage */}
-        <section
-          id="walkthrough"
-          className="border-t border-[#1F1F23] px-6 py-14 sm:px-10 sm:py-16"
-        >
+        {/* Studio Hardware Video Stage */}
+        <section id="walkthrough" className="pb-24 sm:pb-32">
           <div
             onClick={() => setShowDemoModal(true)}
             role="button"
@@ -184,14 +241,26 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               }
             }}
             aria-label="Open Pathfinder 2.0 55-second product walkthrough with sound"
-            className="group cursor-pointer rounded-xl border border-[#222226] bg-[#0C0C0E] p-1.5 transition-colors duration-200 hover:border-[#3F3F46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:p-2"
+            className="pf-titanium-card group cursor-pointer rounded-2xl p-2 sm:p-3"
           >
-            <div className="flex items-center justify-between px-2.5 py-1.5 font-mono text-[11px] text-[#71717A]">
-              <span className="text-[#A1A1AA]">pathfinder-2.0-walkthrough</span>
-              <span className="tabular-nums">00:55 · 1080p · Puck Voice</span>
+            {/* Machined window titlebar */}
+            <div className="flex items-center justify-between gap-4 px-3 py-2.5 sm:px-4">
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-white/[0.16]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-white/[0.08]" />
+              </div>
+
+              <div className="hidden rounded-md border border-white/[0.08] bg-[#070709] px-3 py-1 font-mono text-[11px] text-[#A1A1AA] sm:block">
+                pathfinder-client-fzom.vercel.app
+              </div>
+
+              <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
+                00:55 · 1080p · Puck Voice
+              </span>
             </div>
 
-            <div className="relative overflow-hidden rounded-lg bg-[#050506] outline-1 -outline-offset-1 outline-white/10">
+            <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-black">
               <video
                 src="/demo/pathfinder-launch.mp4"
                 poster="/og-image.png"
@@ -201,8 +270,8 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 playsInline
                 className="aspect-[16/9] w-full object-cover opacity-95 transition-opacity duration-200 group-hover:opacity-100"
               />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-3 sm:bottom-4 sm:left-4 sm:right-4">
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3 sm:bottom-6 sm:left-6 sm:right-6">
                 <button
                   id="btn-watch-launch-film"
                   type="button"
@@ -210,73 +279,353 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                     e.stopPropagation();
                     setShowDemoModal(true);
                   }}
-                  className="inline-flex h-10 items-center justify-center rounded-lg border border-white/20 bg-black/80 px-4 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 hover:bg-black/95 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:text-sm"
+                  className="inline-flex h-10 items-center justify-center rounded-lg border border-white/25 bg-black/85 px-4 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 hover:bg-black active:scale-[0.98] sm:text-sm"
                 >
                   Watch 55s walkthrough
                 </button>
-                <span className="hidden rounded-md border border-white/15 bg-black/75 px-2.5 py-1 font-mono text-[11px] text-[#D4D4D8] tabular-nums sm:inline-block">
-                  Audio enabled on click
+                <span className="hidden rounded-md border border-white/15 bg-black/80 px-3 py-1.5 font-mono text-[11px] text-[#D4D4D8] tabular-nums sm:inline-block">
+                  Click anywhere to open with sound
                 </span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Verified Telemetry Ledger */}
-        <section
-          id="benchmarks"
-          aria-label="Verified platform benchmarks"
-          className="grid grid-cols-2 divide-y divide-[#1F1F23] border-y border-[#1F1F23] bg-[#0B0B0E] sm:divide-x lg:grid-cols-4 lg:divide-y-0"
-        >
-          {BENCHMARKS.map((item) => (
-            <div key={item.index} className="px-6 py-8 sm:px-8 sm:py-10">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="font-mono text-2xl font-semibold tracking-tight text-[#FAFAFA] tabular-nums sm:text-3xl">
-                  {item.value}
-                </span>
-                <span className="font-mono text-[11px] text-[#52525B] tabular-nums">
-                  {item.index}
-                </span>
+        {/* Asymmetric 12-Column Linear Bento Grid */}
+        <section id="capabilities" className="border-t border-white/[0.07] py-24 sm:py-32">
+          <div className="mb-12 max-w-2xl">
+            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#71717A]">
+              Core Architecture
+            </span>
+            <h2
+              className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-4xl"
+              style={{ textWrap: "balance" }}
+            >
+              Built like an internal engineering workbench, not a static form.
+            </h2>
+            <p className="mt-3 text-sm leading-[1.7] text-[#A1A1AA] sm:text-base">
+              Every module shares one verified candidate state so code runs, resume audits, and
+              hiring predictions stay continuously synchronized.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
+            {/* Bento 1 (7 cols): Random Forest Readiness */}
+            <SpotlightSurface className="rounded-2xl p-8 sm:p-10 lg:col-span-7">
+              <div className="flex h-full flex-col justify-between gap-8">
+                <div>
+                  <div className="flex items-center justify-between font-mono text-[11px] text-[#71717A]">
+                    <span>01 · PLACEMENT PROBABILITY ENGINE</span>
+                    <span>120 ESTIMATORS</span>
+                  </div>
+                  <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
+                    Random Forest prediction across real cutoffs
+                  </h3>
+                  <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-[#A1A1AA]">
+                    Evaluates CGPA multipliers, branch history, standing backlogs, internships, and
+                    DSA readiness against 972 audited placement outcomes.
+                  </p>
+                </div>
+
+                {/* Live UI Preview Micro-Widget */}
+                <div className="pf-subpanel rounded-xl p-5 sm:p-6">
+                  <div className="flex items-baseline justify-between gap-4 border-b border-white/[0.06] pb-4">
+                    <div>
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-[#71717A]">
+                        Calibrated Probability
+                      </span>
+                      <div className="mt-1 font-mono text-3xl font-semibold text-[#FAFAFA] tabular-nums">
+                        91.9%
+                      </div>
+                    </div>
+                    <span className="rounded-md border border-white/[0.1] bg-[#16161C] px-2.5 py-1 font-mono text-[11px] text-[#E4E4E7]">
+                      Tier-1 Shortlist Ready
+                    </span>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {[
+                      { name: "Academics & Cutoff", pct: 78 },
+                      { name: "DSA & Problem Solving", pct: 84 },
+                      { name: "Production Projects", pct: 90 },
+                    ].map((axis) => (
+                      <div key={axis.name} className="space-y-1.5">
+                        <div className="flex justify-between font-mono text-[11px] text-[#A1A1AA]">
+                          <span>{axis.name}</span>
+                          <span className="text-[#FAFAFA] tabular-nums">{axis.pct}%</span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
+                          <div
+                            className="h-full rounded-full bg-[#FAFAFA]"
+                            style={{ width: `${axis.pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <p className="mt-2 text-[13px] text-[#A1A1AA]">{item.label}</p>
-            </div>
-          ))}
+            </SpotlightSurface>
+
+            {/* Bento 2 (5 cols): Live 3D Voice Mentor */}
+            <SpotlightSurface className="rounded-2xl p-8 sm:p-10 lg:col-span-5">
+              <div className="flex h-full flex-col justify-between gap-8">
+                <div>
+                  <div className="flex items-center justify-between font-mono text-[11px] text-[#71717A]">
+                    <span>02 · LIVE 3D VOICE MENTOR</span>
+                    <span>EN / TE / HI</span>
+                  </div>
+                  <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
+                    Full-duplex coaching with DAS
+                  </h3>
+                  <p className="mt-2.5 text-sm leading-relaxed text-[#A1A1AA]">
+                    Rehearse technical explanations and architecture defense aloud with real-time
+                    Puck neural speech and 3D lip-sync feedback.
+                  </p>
+                </div>
+
+                {/* Voice Waveform Micro-Widget */}
+                <div className="pf-subpanel rounded-xl p-5 sm:p-6">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-2 font-mono text-[11px] text-[#FAFAFA]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+                      DAS Audio Stream
+                    </span>
+                    <span className="font-mono text-[10px] text-[#71717A]">24kHz PCM</span>
+                  </div>
+                  <div className="my-6 flex h-16 items-end justify-between gap-2 px-1">
+                    {VOICE_BAR_HEIGHTS.map((h, i) => (
+                      <span
+                        key={i}
+                        className="w-full rounded-full bg-gradient-to-t from-[#52525B] to-[#FAFAFA]"
+                        style={{ height: `${h}%` }}
+                      />
+                    ))}
+                  </div>
+                  <div className="rounded-lg border border-white/[0.06] bg-black/50 px-3.5 py-2.5 font-mono text-[11px] text-[#A1A1AA]">
+                    "Walk me through your idempotency strategy at 3,000 RPS."
+                  </div>
+                </div>
+              </div>
+            </SpotlightSurface>
+
+            {/* Bento 3 (5 cols): JD & ATS Diff Lab */}
+            <SpotlightSurface className="rounded-2xl p-8 sm:p-10 lg:col-span-5">
+              <div className="flex h-full flex-col justify-between gap-8">
+                <div>
+                  <div className="flex items-center justify-between font-mono text-[11px] text-[#71717A]">
+                    <span>03 · JD &amp; ATS DIFF LAB</span>
+                    <span>GOOGLE X-Y-Z</span>
+                  </div>
+                  <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
+                    Zero-fluff recruiter audit
+                  </h3>
+                  <p className="mt-2.5 text-sm leading-relaxed text-[#A1A1AA]">
+                    Paste any job description or upload a PDF resume to surface exact keyword gaps
+                    and generate quantified impact rewrites.
+                  </p>
+                </div>
+
+                {/* ATS Before / After Preview */}
+                <div className="pf-subpanel space-y-3 rounded-xl p-5 sm:p-6">
+                  <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-black/40 px-3.5 py-2.5">
+                    <span className="font-mono text-xs text-[#71717A]">Baseline match</span>
+                    <span className="font-mono text-sm font-semibold text-[#A1A1AA] tabular-nums">
+                      54%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border border-white/[0.14] bg-[#16161C] px-3.5 py-2.5">
+                    <span className="font-mono text-xs text-[#FAFAFA]">After X-Y-Z Sync</span>
+                    <span className="font-mono text-sm font-semibold text-[#FAFAFA] tabular-nums">
+                      89% Ready
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pt-1 font-mono text-[10px] text-[#D4D4D8]">
+                    <span className="rounded border border-white/[0.08] bg-black/50 px-2 py-1">
+                      FastAPI
+                    </span>
+                    <span className="rounded border border-white/[0.08] bg-black/50 px-2 py-1">
+                      Redis TTL
+                    </span>
+                    <span className="rounded border border-white/[0.08] bg-black/50 px-2 py-1">
+                      Docker
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </SpotlightSurface>
+
+            {/* Bento 4 (7 cols): 11-Runtime Coding & Viva Arena */}
+            <SpotlightSurface className="rounded-2xl p-8 sm:p-10 lg:col-span-7">
+              <div className="flex h-full flex-col justify-between gap-8">
+                <div>
+                  <div className="flex items-center justify-between font-mono text-[11px] text-[#71717A]">
+                    <span>04 · 11-LANGUAGE COMPILER ARENA</span>
+                    <span>EXECUTION VERIFIED</span>
+                  </div>
+                  <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
+                    Real code execution paired with oral defense
+                  </h3>
+                  <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-[#A1A1AA]">
+                    Solve Amazon, Google, Microsoft, and Deloitte company tracks across 11
+                    languages while proving time and space complexity in your own words.
+                  </p>
+                </div>
+
+                {/* Clean Monospace Terminal Preview */}
+                <div className="pf-subpanel overflow-hidden rounded-xl">
+                  <div className="flex items-center justify-between border-b border-white/[0.06] bg-black/50 px-4 py-2.5 font-mono text-[11px] text-[#A1A1AA]">
+                    <span>solution.py · Python 3.11</span>
+                    <span className="text-[#10B981]">PASSED · 12ms · HIRE</span>
+                  </div>
+                  <pre className="overflow-x-auto p-5 font-mono text-xs leading-[1.65] text-[#D4D4D8]">
+{`def first_occurrence(arr, target):
+    lo, hi, ans = 0, len(arr) - 1, -1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if arr[mid] == target: ans, hi = mid, mid - 1`}
+                  </pre>
+                </div>
+              </div>
+            </SpotlightSurface>
+          </div>
         </section>
 
-        {/* Core Capabilities 2x2 Hairline Grid */}
-        <section
-          id="capabilities"
-          className="grid gap-px border-b border-[#1F1F23] bg-[#1F1F23] sm:grid-cols-2"
-        >
-          {CAPABILITIES.map((cap) => (
-            <div key={cap.index} className="bg-[#09090B] p-8 sm:p-10">
-              <div className="font-mono text-xs text-[#71717A] tabular-nums">{cap.index}</div>
+        {/* Interactive 6-Slide Workspace Previewer */}
+        <section id="workspaces" className="border-t border-white/[0.07] py-24 sm:py-32">
+          <div className="mb-10 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+            <div>
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#71717A]">
+                6 Integrated Slides
+              </span>
               <h2
-                className="mt-3 text-lg font-semibold tracking-[-0.02em] text-[#FAFAFA]"
+                className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-4xl"
                 style={{ textWrap: "balance" }}
               >
-                {cap.title}
+                Six spacious workspaces inside one studio.
               </h2>
-              <p
-                className="mt-2.5 max-w-[48ch] text-sm leading-[1.65] text-[#A1A1AA]"
-                style={{ textWrap: "pretty" }}
-              >
-                {cap.description}
-              </p>
             </div>
-          ))}
+            <p className="max-w-md text-sm leading-relaxed text-[#A1A1AA]">
+              Switch effortlessly across every phase of placement prep without losing context or
+              crowding the screen.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
+            {WORKSPACE_SLIDES.map((slide) => {
+              const isSelected = slide.id === activeSlide.id;
+              return (
+                <button
+                  key={slide.id}
+                  type="button"
+                  onClick={() => setPreviewSlideId(slide.id)}
+                  className={`flex flex-col items-start rounded-xl border p-4 text-left transition-colors duration-150 ${
+                    isSelected
+                      ? "border-white/[0.28] bg-[#16161C] text-[#FAFAFA]"
+                      : "border-white/[0.07] bg-[#0B0B0E] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
+                  }`}
+                >
+                  <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
+                    {slide.index}
+                  </span>
+                  <span className="mt-1.5 text-xs font-semibold sm:text-[13px]">
+                    {slide.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <SpotlightSurface className="mt-6 rounded-2xl p-8 sm:p-12">
+            <div className="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
+              <div className="space-y-4 lg:col-span-7">
+                <span className="font-mono text-xs uppercase tracking-[0.12em] text-[#A1A1AA]">
+                  {activeSlideDetail.eyebrow}
+                </span>
+                <h3 className="text-2xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-3xl">
+                  {activeSlide.label}
+                </h3>
+                <p className="text-sm leading-relaxed text-[#A1A1AA] sm:text-base">
+                  {activeSlide.subtitle}
+                </p>
+                <ul className="space-y-3 pt-2">
+                  {activeSlideDetail.points.map((pt, idx) => (
+                    <li
+                      key={pt}
+                      className="flex items-start gap-3 text-xs leading-relaxed text-[#E4E4E7] sm:text-sm"
+                    >
+                      <span className="mt-0.5 font-mono text-[11px] text-[#71717A] tabular-nums">
+                        {String(idx + 1).padStart(2, "0")}
+                      </span>
+                      <span>{pt}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="lg:col-span-5">
+                <div className="pf-subpanel rounded-2xl p-7 sm:p-8">
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-[#71717A]">
+                    Slide Focus Signal
+                  </span>
+                  <div className="mt-3 font-mono text-4xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-5xl">
+                    {activeSlideDetail.metric}
+                  </div>
+                  <p className="mt-2 text-xs text-[#A1A1AA] sm:text-sm">
+                    {activeSlideDetail.metricLabel}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </SpotlightSurface>
+        </section>
+
+        {/* Verified Benchmarks Strip */}
+        <section id="benchmarks" className="border-t border-white/[0.07] py-20 sm:py-24">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+            <SpotlightSurface className="rounded-2xl p-7">
+              <span className="font-mono text-[11px] text-[#71717A]">01 · DATASET</span>
+              <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
+                <AnimatedMetric value={972} />
+              </div>
+              <p className="mt-2 text-sm text-[#A1A1AA]">Verified campus offers calibrated</p>
+            </SpotlightSurface>
+
+            <SpotlightSurface className="rounded-2xl p-7">
+              <span className="font-mono text-[11px] text-[#71717A]">02 · RUNTIMES</span>
+              <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
+                <AnimatedMetric value={11} />
+              </div>
+              <p className="mt-2 text-sm text-[#A1A1AA]">Sandboxed execution languages</p>
+            </SpotlightSurface>
+
+            <SpotlightSurface className="rounded-2xl p-7">
+              <span className="font-mono text-[11px] text-[#71717A]">03 · ARCHITECTURES</span>
+              <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
+                <AnimatedMetric value={28} />
+              </div>
+              <p className="mt-2 text-sm text-[#A1A1AA]">Software &amp; hardware blueprints</p>
+            </SpotlightSurface>
+
+            <SpotlightSurface className="rounded-2xl p-7">
+              <span className="font-mono text-[11px] text-[#71717A]">04 · SPRINT CADENCE</span>
+              <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
+                <AnimatedMetric value={6} suffix=" wk" />
+              </div>
+              <p className="mt-2 text-sm text-[#A1A1AA]">Tracked placement sprint roadmap</p>
+            </SpotlightSurface>
+          </div>
         </section>
       </main>
 
-      {/* Minimal Footer — Zero Duplicate CTAs */}
-      <footer className="border-t border-[#1F1F23]">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 text-xs text-[#71717A] sm:flex-row sm:px-10">
-          <div className="flex items-center gap-2.5 text-[#A1A1AA]">
-            <PathfinderLogo size={20} variant="monochrome" />
-            <span>Pathfinder 2.0</span>
+      {/* Spacious Minimal Footer — Zero Duplicate CTAs */}
+      <footer className="border-t border-white/[0.07]">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-14 text-xs text-[#71717A] sm:flex-row sm:px-10">
+          <div className="flex items-center gap-3 text-[#D4D4D8]">
+            <PathfinderLogo size={22} variant="monochrome" />
+            <span className="font-medium text-[#FAFAFA]">Pathfinder 2.0</span>
           </div>
           <p className="text-center font-mono text-[11px] text-[#71717A] sm:text-right">
-            Random Forest ML · Gemini Live 3D Voice · 11-Language Compiler
+            Random Forest ML · Live 3D Voice Coach · 11-Language Compiler
           </p>
         </div>
       </footer>
@@ -288,7 +637,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/88 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"
             onClick={() => setShowDemoModal(false)}
           >
             <motion.div
@@ -297,15 +646,15 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               exit={{ opacity: 0, scale: 0.97, y: 8 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-4xl overflow-hidden rounded-xl border border-[#27272A] bg-[#09090B] shadow-2xl"
+              className="pf-titanium-card relative w-full max-w-5xl overflow-hidden rounded-2xl"
             >
-              <div className="flex items-center justify-between border-b border-[#1F1F23] px-4 py-3">
-                <div className="flex items-center gap-2.5">
-                  <PathfinderLogo size={22} variant="monochrome" />
+              <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-3.5">
+                <div className="flex items-center gap-3">
+                  <PathfinderLogo size={24} variant="monochrome" />
                   <span className="text-sm font-medium text-[#FAFAFA]">
                     Pathfinder 2.0 — Product Walkthrough
                   </span>
-                  <span className="hidden rounded border border-[#27272A] bg-[#111113] px-2 py-0.5 font-mono text-[11px] text-[#A1A1AA] sm:inline-block">
+                  <span className="hidden rounded border border-white/[0.1] bg-[#141418] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA] sm:inline-block">
                     Puck Voice
                   </span>
                 </div>
@@ -313,7 +662,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   type="button"
                   aria-label="Close video preview"
                   onClick={() => setShowDemoModal(false)}
-                  className="inline-flex h-9 items-center justify-center rounded-md border border-[#27272A] bg-[#111113] px-3 text-xs font-medium text-[#D4D4D8] transition-colors duration-150 hover:bg-[#18181B] hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+                  className="pf-btn-secondary inline-flex h-9 items-center justify-center rounded-lg px-3.5 text-xs font-medium"
                 >
                   Close
                 </button>

@@ -1,7 +1,23 @@
-<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="1" y="1" width="38" height="38" rx="10" fill="#0C0C0E" stroke="#27272A" stroke-width="1.25" />
-  <circle cx="20" cy="20" r="12" stroke="#52525B" stroke-width="1.4" stroke-dasharray="44 14" />
-  <path d="M12.5 27.5L17.4 16.9L27.5 12.5L22.6 23.1L12.5 27.5Z" fill="#FAFAFA" />
-  <path d="M17.2 22.8L20 20L22.8 17.2L19.1 18.6L17.2 22.8Z" fill="#09090B" />
-  <circle cx="27.5" cy="12.5" r="2.2" fill="#10B981" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+  <defs>
+    <linearGradient id="pf-housing" x1="20" y1="1" x2="20" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#16161B" />
+      <stop offset="100%" stop-color="#09090C" />
+    </linearGradient>
+    <linearGradient id="pf-rim" x1="20" y1="1" x2="20" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#52525B" />
+      <stop offset="45%" stop-color="#27272A" />
+      <stop offset="100%" stop-color="#18181D" />
+    </linearGradient>
+    <linearGradient id="pf-mid" x1="16" y1="22" x2="30" y2="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#71717A" />
+      <stop offset="100%" stop-color="#D4D4D8" />
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#pf-housing)" stroke="url(#pf-rim)" stroke-width="1.2" />
+  <path d="M9 2.2H31" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="1" stroke-linecap="round" />
+  <path d="M11.5 11.5L16.2 9.5V28.5L11.5 30.5V11.5Z" fill="#D4D4D8" />
+  <path d="M16.2 9.5L29.5 13.8L24.8 18.6L16.2 15.8V9.5Z" fill="#FAFAFA" />
+  <path d="M29.5 13.8V19.6L20.4 23.2L16.2 21.4L24.8 18.6L29.5 13.8Z" fill="url(#pf-mid)" />
+  <circle cx="29.5" cy="10.5" r="1.65" fill="#FAFAFA" />
 </svg>

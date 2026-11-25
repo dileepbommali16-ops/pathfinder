@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { isOwnerAccount } from "@/lib/auth";
 import { PathfinderLogo } from "@/components/common/PathfinderLogo";
+import { WORKSPACE_SLIDES } from "@/components/ui/TitaniumPrimitives";
 
 export type TabId =
   | "overview"
@@ -23,14 +24,10 @@ interface DashboardHeaderProps {
   userRole?: string;
 }
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: "overview", label: "Overview" },
-  { id: "resume", label: "JD & Resume Lab" },
-  { id: "interview", label: "Coding & Viva Arena" },
-  { id: "projects", label: "Project Blueprints" },
-  { id: "analytics", label: "Cohort & Roadmap" },
-  { id: "profile", label: "Profile & Settings" },
-];
+const TABS: { id: TabId; label: string }[] = WORKSPACE_SLIDES.map((s) => ({
+  id: s.id as TabId,
+  label: s.label,
+}));
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   activeTab,
@@ -50,12 +47,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const isBoss = isOwnerAccount(email);
   const displayUser = isBoss ? "Dileep" : username || "Student";
   const displayEmail = isBoss ? "dileepbommali16@gmail.com" : email;
-  const activeTabMeta = TABS.find((t) => t.id === activeTab);
+  const activeIndex = Math.max(0, TABS.findIndex((t) => t.id === activeTab));
+  const activeTabMeta = TABS[activeIndex];
+  const slideBadge = `Slide ${String(activeIndex + 1).padStart(2, "0")} / 06`;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#1F1F23] bg-[#000000]/92 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-3 sm:px-8">
-        {/* Left: Brand & Active Route Breadcrumb */}
+    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#050507]/88 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-5 sm:px-10">
+        {/* Left: Brand & Active Slide Breadcrumb */}
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -63,62 +62,66 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               setActiveTab("overview");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="flex min-h-10 items-center gap-2.5 rounded-md text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+            className="flex min-h-10 items-center gap-3 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
             title="Return to Overview"
           >
-            <PathfinderLogo size={28} showPulse />
+            <PathfinderLogo size={30} showPulse />
             <div className="flex items-center gap-2">
               <span
                 id="brand-site-title"
-                className="text-[15px] font-semibold tracking-[-0.02em] text-[#FAFAFA]"
+                className="text-[15px] font-semibold tracking-[-0.025em] text-[#FAFAFA]"
               >
                 Pathfinder
               </span>
-              <span className="rounded border border-[#27272A] bg-[#111113] px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA] tabular-nums">
+              <span className="rounded-md border border-white/[0.1] bg-[#121216] px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA] tabular-nums">
                 2.0
               </span>
             </div>
           </button>
 
-          <span className="hidden text-[#27272A] sm:inline" aria-hidden="true">
+          <span className="hidden text-white/[0.16] sm:inline" aria-hidden="true">
             /
           </span>
 
-          <span className="hidden truncate text-xs font-medium text-[#A1A1AA] sm:inline">
+          <span className="hidden truncate text-xs font-medium text-[#D4D4D8] sm:inline">
             {activeTabMeta?.label || "Workspace"}
           </span>
 
+          <span className="hidden rounded-md border border-white/[0.08] bg-[#0F0F13] px-2 py-0.5 font-mono text-[10px] text-[#71717A] tabular-nums md:inline-block">
+            {slideBadge}
+          </span>
+
           {userRole === "admin" && (
-            <span className="hidden rounded border border-[#27272A] bg-[#141418] px-2 py-0.5 font-mono text-[10px] font-medium text-[#D4D4D8] md:inline-block">
+            <span className="hidden rounded-md border border-white/[0.12] bg-[#141418] px-2 py-0.5 font-mono text-[10px] font-medium text-[#D4D4D8] md:inline-block">
               Admin
             </span>
           )}
         </div>
 
         {/* Right: Candidate Identity & Sign Out */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setActiveTab("profile")}
             title="View & edit candidate profile"
-            className="hidden h-9 items-center gap-2.5 rounded-lg border border-[#242429] bg-[#0C0C0E] px-3 text-left transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#141418] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:flex"
+            className="pf-btn-secondary hidden h-10 items-center gap-2.5 rounded-lg px-3.5 text-left sm:flex"
           >
-            <span className="flex h-5 w-5 items-center justify-center rounded bg-[#18181B] font-mono text-[10px] font-semibold text-[#FAFAFA] ring-1 ring-[#27272A]">
+            <span className="flex h-5 w-5 items-center justify-center rounded bg-white/[0.08] font-mono text-[10px] font-semibold text-[#FAFAFA]">
               {displayUser.charAt(0).toUpperCase()}
             </span>
             <div className="flex items-center gap-2 leading-none">
               <span className="text-xs font-medium text-[#FAFAFA]">{displayUser}</span>
               {isBoss ? (
-                <span className="rounded border border-[#3F3F46] bg-[#18181B] px-1.5 py-0.5 font-mono text-[9px] font-medium text-[#FAFAFA]">
+                <span className="rounded border border-white/[0.16] bg-[#1C1C22] px-1.5 py-0.5 font-mono text-[9px] font-medium text-[#FAFAFA]">
                   OWNER
                 </span>
               ) : userRole === "admin" ? (
-                <span className="rounded border border-[#3F3F46] bg-[#18181B] px-1.5 py-0.5 font-mono text-[9px] font-medium text-[#D4D4D8]">
+                <span className="rounded border border-white/[0.14] bg-[#18181D] px-1.5 py-0.5 font-mono text-[9px] font-medium text-[#D4D4D8]">
                   ADMIN
                 </span>
               ) : null}
               {displayEmail && (
-                <span className="hidden font-mono text-[10px] text-[#71717A] lg:inline">
+                <span className="hidden font-mono text-[10px] text-[#71717A] xl:inline">
                   {displayEmail}
                 </span>
               )}
@@ -128,7 +131,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-[#242429] bg-[#0C0C0E] px-3 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#141418] md:hidden"
+            className="pf-btn-secondary inline-flex h-10 items-center justify-center rounded-lg px-3.5 text-xs font-medium md:hidden"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
@@ -139,7 +142,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             onClick={onLogout}
             data-agent-id="logout-btn"
             data-agent-danger="true"
-            className="inline-flex h-9 items-center rounded-lg border border-[#242429] bg-[#0C0C0E] px-3 text-xs font-medium text-[#A1A1AA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#141418] hover:text-[#FAFAFA] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+            className="pf-btn-secondary inline-flex h-10 items-center rounded-lg px-3.5 text-xs font-medium text-[#D4D4D8] hover:text-[#FAFAFA] active:scale-[0.98]"
             title="Sign out of Pathfinder"
           >
             Sign out
@@ -147,11 +150,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </div>
       </div>
 
-      {/* Secondary Navigation Rail (Numbered Monochrome Tabs — Zero Icons) */}
-      <div className="border-t border-[#18181B] bg-[#000000]/92 px-4 sm:px-8">
+      {/* Spacious 6-Slide Segmented Navigation Dock — Zero Icons */}
+      <div className="border-t border-white/[0.06] bg-black/75 px-5 py-2.5 sm:px-10">
         <nav
           aria-label="Primary workspace navigation"
-          className="mx-auto flex w-full max-w-[1440px] flex-nowrap items-center gap-2 overflow-x-auto py-2.5 scrollbar-none"
+          className="mx-auto flex w-full max-w-[1400px] items-center gap-2 overflow-x-auto scrollbar-none lg:grid lg:grid-cols-6"
         >
           {TABS.map((tab, idx) => {
             const isActive = activeTab === tab.id;
@@ -164,16 +167,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 aria-label={tab.label}
                 aria-current={isActive ? "page" : undefined}
                 onClick={() => handleSelectTab(tab.id)}
-                className={`relative flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3.5 text-xs font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] ${
-                  isActive
-                    ? "border border-[#2E2E34] bg-[#141418] text-[#FAFAFA]"
-                    : "border border-transparent text-[#A1A1AA] hover:bg-[#101014] hover:text-[#FAFAFA]"
-                }`}
+                className={`relative flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3.5 text-xs font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] ${isActive
+                    ? "border border-white/[0.16] bg-[#141419] text-[#FAFAFA] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                    : "border border-transparent text-[#A1A1AA] hover:bg-white/[0.04] hover:text-[#FAFAFA]"
+                  }`}
               >
                 <span
-                  className={`font-mono text-[11px] tabular-nums ${
-                    isActive ? "text-[#D4D4D8]" : "text-[#52525B]"
-                  }`}
+                  className={`font-mono text-[11px] tabular-nums ${isActive ? "text-[#FAFAFA]" : "text-[#52525B]"
+                    }`}
                 >
                   {indexLabel}
                 </span>
@@ -181,7 +182,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 {isActive && (
                   <motion.div
                     layoutId="activeTabIndicator"
-                    className="absolute inset-x-2 -bottom-[11px] h-[1.5px] bg-[#FAFAFA]"
+                    className="absolute inset-x-3 -bottom-[11px] h-[2px] rounded-full bg-[#FAFAFA]"
                     transition={{ type: "spring", stiffness: 460, damping: 34 }}
                   />
                 )}
@@ -199,9 +200,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-t border-[#1F1F23] bg-[#09090B] px-4 py-3 md:hidden"
+            className="overflow-hidden border-t border-white/[0.08] bg-[#09090B] px-5 py-4 md:hidden"
           >
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {TABS.map((tab, idx) => {
                 const isActive = activeTab === tab.id;
                 const indexLabel = String(idx + 1).padStart(2, "0");
@@ -210,11 +211,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     key={`mobile-${tab.id}`}
                     aria-label={tab.label}
                     onClick={() => handleSelectTab(tab.id)}
-                    className={`flex min-h-11 items-center gap-2.5 rounded-lg border px-3.5 py-2 text-left transition-colors ${
-                      isActive
-                        ? "border-[#3F3F46] bg-[#16161A] text-[#FAFAFA]"
-                        : "border-[#1F1F23] bg-[#0C0C0E] text-[#A1A1AA] hover:border-[#2E2E34] hover:text-[#FAFAFA]"
-                    }`}
+                    className={`flex min-h-11 items-center gap-3 rounded-xl border px-4 py-2.5 text-left transition-colors ${isActive
+                        ? "border-white/[0.22] bg-[#16161C] text-[#FAFAFA]"
+                        : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.15] hover:text-[#FAFAFA]"
+                      }`}
                   >
                     <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
                       {indexLabel}

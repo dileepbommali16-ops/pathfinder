@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { StudentProfileState } from "@/types/profile";
 import { audioEngine } from "@/agent/audioIO";
 import { toast } from "sonner";
+import { SpotlightSurface } from "@/components/ui/TitaniumPrimitives";
 
 export interface JDPreset {
   id: string;
@@ -279,26 +280,26 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
   }, [profile, customJdText, customCompany, customRole, activePreset]);
 
   return (
-    <div className="space-y-8 rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px] sm:p-8">
+    <SpotlightSurface className="space-y-9 rounded-2xl p-8 sm:p-10">
       {/* Header Banner */}
-      <div className="flex flex-col justify-between gap-4 border-b border-[#1F1F23] pb-6 lg:flex-row lg:items-center">
+      <div className="flex flex-col justify-between gap-5 border-b border-white/[0.08] pb-7 lg:flex-row lg:items-center">
         <div>
-          <span className="inline-block rounded border border-[#27272A] bg-[#101014] px-2.5 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA]">
+          <span className="inline-block rounded-md border border-white/[0.1] bg-[#141418] px-2.5 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA]">
             JD Alignment &amp; Tailor
           </span>
           <h2
-            className="mt-2.5 text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-2xl"
+            className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-[28px]"
             style={{ textWrap: "balance" }}
           >
             Target Company JD Matcher, ATS Tailor &amp; Custom Viva
           </h2>
-          <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
+          <p className="mt-2 max-w-2xl text-xs leading-[1.65] text-[#A1A1AA] sm:text-sm">
             Select a preset company JD or paste any job description to compute your keyword match,
             tailor Google X-Y-Z resume bullets, and launch targeted coding rounds.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-3">
           {onAskCoach && (
             <button
               type="button"
@@ -310,7 +311,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                   } How should I tailor my resume bullets and prep in the next 7 days?`
                 )
               }
-              className="inline-flex h-10 items-center rounded-lg border border-[#27272A] bg-[#101014] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#18181B] cursor-pointer"
+              className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium cursor-pointer"
             >
               Ask Coach
             </button>
@@ -335,7 +336,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                 .speakTextPuckOrLocal(verdictMsg, apiBase)
                 .finally(() => setIsSpeakingVerdict(false));
             }}
-            className="inline-flex h-10 items-center rounded-lg border border-[#27272A] bg-[#101014] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#18181B] cursor-pointer"
+            className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium cursor-pointer"
           >
             {isSpeakingVerdict ? "Speaking verdict..." : "Hear DAS JD verdict"}
           </button>
@@ -343,7 +344,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
           <button
             type="button"
             onClick={onOpenOnePageResume}
-            className="inline-flex h-10 items-center rounded-lg bg-[#FAFAFA] px-4 text-xs font-medium text-[#09090B] transition-colors hover:bg-[#E4E4E7] active:scale-[0.98] cursor-pointer"
+            className="pf-btn-primary inline-flex h-10 items-center rounded-xl px-5 text-xs font-medium active:scale-[0.98] cursor-pointer"
           >
             Export 1-Page ATS Resume
           </button>
@@ -351,7 +352,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
       </div>
 
       {/* Quick Company JD Presets */}
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-3">
         <span className="mr-1 font-mono text-[11px] text-[#71717A]">Quick Company JDs</span>
         {JD_PRESETS.map((preset) => {
           const active = preset.id === selectedPresetId;
@@ -360,9 +361,9 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
               key={preset.id}
               type="button"
               onClick={() => handleSelectPreset(preset)}
-              className={`h-9 rounded-lg border px-3.5 text-xs font-medium transition-colors cursor-pointer ${active
-                ? "border-[#FAFAFA]/45 bg-[#18181E] text-[#FAFAFA]"
-                : "border-[#222226] bg-[#101014] text-[#A1A1AA] hover:border-[#3F3F46] hover:text-[#FAFAFA]"
+              className={`h-9 rounded-lg border px-4 text-xs font-medium transition-colors cursor-pointer ${active
+                ? "border-white/[0.28] bg-[#18181F] text-[#FAFAFA]"
+                : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
                 }`}
             >
               {preset.company} · {preset.role.split("(")[0].trim()} ({preset.packageLpa})
@@ -371,15 +372,15 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
         })}
       </div>
 
-      {/* Main Grid */}
-      <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
-        {/* Left 5 cols: Clean Typing Inputs & Alignment Gauge */}
-        <div className="space-y-5 lg:col-span-5">
-          <div className="grid grid-cols-2 gap-3.5">
+      {/* Main Grid — Stacked Inputs So Long Role Titles Never Clip */}
+      <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
+        {/* Left 5 cols: Stacked Clean Typing Inputs & Alignment Gauge */}
+        <div className="space-y-6 lg:col-span-5">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label
                 htmlFor="jd-target-company"
-                className="mb-1.5 block text-xs font-medium text-[#A1A1AA]"
+                className="mb-2 block text-xs font-medium text-[#D4D4D8]"
               >
                 Target Company
               </label>
@@ -389,13 +390,13 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                 type="text"
                 value={customCompany}
                 onChange={(e) => setCustomCompany(e.target.value)}
-                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-sm text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
+                className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA]"
               />
             </div>
             <div>
               <label
                 htmlFor="jd-target-role"
-                className="mb-1.5 block text-xs font-medium text-[#A1A1AA]"
+                className="mb-2 block text-xs font-medium text-[#D4D4D8]"
               >
                 Target Role Title
               </label>
@@ -405,7 +406,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                 type="text"
                 value={customRole}
                 onChange={(e) => setCustomRole(e.target.value)}
-                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 text-sm text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
+                className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA]"
               />
             </div>
           </div>
@@ -413,23 +414,23 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
           <div>
             <label
               htmlFor="jd-custom-textarea"
-              className="mb-1.5 block text-xs font-medium text-[#A1A1AA]"
+              className="mb-2 block text-xs font-medium text-[#D4D4D8]"
             >
               Company Job Description
             </label>
             <textarea
               id="jd-custom-textarea"
               name="jdCustomText"
-              rows={4}
+              rows={5}
               value={customJdText}
               onChange={(e) => setCustomJdText(e.target.value)}
               placeholder="Paste any company Job Description here to compute exact match % and missing keywords..."
-              className="w-full rounded-lg border border-[#27272A] bg-[#0E0E12] p-3.5 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
+              className="pf-input w-full rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B]"
             />
           </div>
 
           {/* Match Score Gauge Card */}
-          <div className="space-y-4 rounded-xl border border-[#222226] bg-[#101014] p-5">
+          <div className="pf-subpanel space-y-5 rounded-2xl p-6">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <span className="font-mono text-[11px] text-[#71717A]">Live JD Alignment</span>
@@ -442,30 +443,30 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                   </span>
                 </div>
               </div>
-              <span className="rounded border border-[#27272A] bg-[#0B0B0E] px-2.5 py-1 font-mono text-[11px] text-[#FAFAFA] tabular-nums">
+              <span className="rounded-md border border-white/[0.1] bg-black/50 px-3 py-1 font-mono text-[11px] text-[#FAFAFA] tabular-nums">
                 {analysis.matchScore >= analysis.cutoff
                   ? "Shortlist Ready"
                   : `${analysis.cutoff - analysis.matchScore}% Below Cutoff`}
               </span>
             </div>
 
-            <div className="h-2 w-full overflow-hidden rounded-sm bg-[#18181B]">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
               <div
-                className="h-full bg-[#FAFAFA] transition-[width] duration-500"
+                className="h-full rounded-full bg-gradient-to-r from-[#A1A1AA] to-[#FAFAFA] transition-[width] duration-500"
                 style={{ width: `${analysis.matchScore}%` }}
               />
             </div>
 
-            <div className="space-y-3 pt-1">
+            <div className="space-y-4 pt-1">
               <div>
                 <span className="block text-xs font-medium text-[#D4D4D8]">
                   Matched Profile Skills ({analysis.matched.length})
                 </span>
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="mt-2.5 flex flex-wrap gap-2">
                   {analysis.matched.map((sk) => (
                     <span
                       key={sk}
-                      className="rounded border border-[#3F3F46] bg-[#16161B] px-2 py-0.5 text-[11px] font-medium text-[#FAFAFA]"
+                      className="rounded-md border border-white/[0.12] bg-[#16161C] px-2.5 py-1 text-[11px] font-medium text-[#FAFAFA]"
                     >
                       {sk}
                     </span>
@@ -492,11 +493,11 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                       Add to my skills
                     </button>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                  <div className="mt-2.5 flex flex-wrap gap-2">
                     {analysis.missing.map((sk) => (
                       <span
                         key={sk}
-                        className="rounded border border-[#27272A] bg-[#0E0E12] px-2 py-0.5 text-[11px] text-[#A1A1AA]"
+                        className="rounded-md border border-white/[0.08] bg-black/50 px-2.5 py-1 text-[11px] text-[#A1A1AA]"
                       >
                         {sk}
                       </span>
@@ -509,10 +510,10 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
         </div>
 
         {/* Right 7 cols: Tailored Copy + 3 Custom Questions */}
-        <div className="space-y-6 lg:col-span-7">
-          <div className="space-y-3.5 rounded-xl border border-[#222226] bg-[#101014] p-5">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-[#FAFAFA]">
+        <div className="space-y-7 lg:col-span-7">
+          <div className="pf-subpanel space-y-4 rounded-2xl p-6 sm:p-7">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold text-[#FAFAFA] sm:text-sm">
                 Auto-Tailored ATS Summary &amp; Google X-Y-Z Bullet ({customCompany})
               </span>
               <button
@@ -523,24 +524,24 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                   );
                   toast.success("Tailored JD summary & X-Y-Z bullet copied to clipboard.");
                 }}
-                className="inline-flex h-8 items-center rounded-md border border-[#27272A] bg-[#0B0B0E] px-3 text-[11px] font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#18181B] cursor-pointer"
+                className="pf-btn-secondary inline-flex h-8 shrink-0 items-center rounded-lg px-3 text-[11px] font-medium cursor-pointer"
               >
                 Copy bullets
               </button>
             </div>
-            <p className="rounded-lg border border-[#1F1F23] bg-[#0B0B0E] p-3.5 text-xs leading-relaxed text-[#A1A1AA]">
+            <p className="rounded-xl border border-white/[0.07] bg-black/45 p-4 text-xs leading-relaxed text-[#A1A1AA]">
               <strong className="font-medium text-[#FAFAFA]">Executive Summary:</strong>{" "}
               {analysis.tailoredSummary}
             </p>
-            <p className="rounded-lg border border-[#1F1F23] bg-[#0B0B0E] p-3.5 text-xs leading-relaxed text-[#A1A1AA]">
+            <p className="rounded-xl border border-white/[0.07] bg-black/45 p-4 text-xs leading-relaxed text-[#A1A1AA]">
               <strong className="font-medium text-[#FAFAFA]">Google X-Y-Z Impact Bullet:</strong>{" "}
               {analysis.tailoredBullet}
             </p>
           </div>
 
-          <div className="space-y-4 rounded-xl border border-[#222226] bg-[#101014] p-5">
+          <div className="pf-subpanel space-y-5 rounded-2xl p-6 sm:p-7">
             <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-center">
-              <span className="text-xs font-semibold text-[#FAFAFA]">
+              <span className="text-xs font-semibold text-[#FAFAFA] sm:text-sm">
                 3 Custom Technical Rounds from {customCompany} JD
               </span>
               <span className="font-mono text-[11px] text-[#71717A]">
@@ -548,14 +549,14 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
               </span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {analysis.questions.map((q, idx) => (
                 <div
                   key={idx}
-                  className="flex flex-col justify-between gap-3 rounded-lg border border-[#1F1F23] bg-[#0B0B0E] p-4 sm:flex-row sm:items-center"
+                  className="flex flex-col justify-between gap-4 rounded-xl border border-white/[0.07] bg-black/45 p-4.5 sm:flex-row sm:items-center"
                 >
-                  <div className="space-y-1.5">
-                    <span className="inline-block rounded border border-[#27272A] bg-[#141418] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8] tabular-nums">
+                  <div className="space-y-2">
+                    <span className="inline-block rounded-md border border-white/[0.08] bg-[#141418] px-2.5 py-0.5 font-mono text-[10px] text-[#D4D4D8] tabular-nums">
                       Round {String(idx + 1).padStart(2, "0")} · {q.topic}
                     </span>
                     <p className="text-xs font-medium leading-relaxed text-[#FAFAFA]">
@@ -574,7 +575,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                         expectedKeywords: q.expectedKeywords,
                       })
                     }
-                    className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-[#27272A] bg-[#141418] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] cursor-pointer"
+                    className="pf-btn-secondary inline-flex h-10 shrink-0 items-center justify-center rounded-xl px-4 text-xs font-medium cursor-pointer"
                   >
                     Solve in Arena
                   </button>
@@ -584,6 +585,6 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </SpotlightSurface>
   );
 };

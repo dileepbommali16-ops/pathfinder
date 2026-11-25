@@ -1,4 +1,5 @@
 import React from "react";
+import { SpotlightSurface } from "@/components/ui/TitaniumPrimitives";
 
 interface SkillGapSectionProps {
   breakdown: {
@@ -57,35 +58,35 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
   ];
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
-      {/* Left: 5-Dimension Competency Telemetry */}
-      <div className="rounded-2xl border border-[#242429] bg-[#09090B]/62 p-6 backdrop-blur-[2px] sm:p-8">
+    <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
+      {/* Left 6 cols: 5-Dimension Competency Telemetry */}
+      <SpotlightSurface className="rounded-2xl p-8 sm:p-10 lg:col-span-6">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-base font-semibold tracking-[-0.015em] text-[#FAFAFA]">
+          <h3 className="text-lg font-semibold tracking-[-0.02em] text-[#FAFAFA]">
             Competency dimensions
           </h3>
-          <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
+          <span className="rounded-md border border-white/[0.1] bg-[#121216] px-2.5 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
             05 axes
           </span>
         </div>
-        <p className="mt-1.5 text-xs text-[#A1A1AA]">
+        <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA]">
           Evaluated relative to verified campus hiring thresholds.
         </p>
 
-        <div className="mt-6 space-y-5">
+        <div className="mt-7 space-y-6">
           {dimensions.map((dim) => {
             const pct = Math.max(5, Math.min(100, dim.score));
             return (
-              <div key={dim.label} className="space-y-2">
+              <div key={dim.label} className="space-y-2.5">
                 <div className="flex justify-between text-xs">
-                  <span className="font-medium text-[#D4D4D8]">{dim.label}</span>
-                  <span className="font-mono font-medium text-[#FAFAFA] tabular-nums">
+                  <span className="font-medium text-[#E4E4E7]">{dim.label}</span>
+                  <span className="font-mono font-semibold text-[#FAFAFA] tabular-nums">
                     {dim.score.toFixed(0)}%
                   </span>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-sm bg-[#18181B]">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
                   <div
-                    className="h-full bg-[#FAFAFA] transition-[width] duration-500 ease-out"
+                    className="h-full rounded-full bg-gradient-to-r from-[#71717A] to-[#FAFAFA] transition-[width] duration-500 ease-out"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -94,12 +95,12 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
           })}
         </div>
 
-        {/* High-Yield Focus Topics — Symbol-Free */}
-        <div className="mt-7 border-t border-[#1F1F23] pt-5">
-          <span className="block text-xs font-medium text-[#A1A1AA]">
+        {/* High-Yield Focus Topics — Spacious Pills */}
+        <div className="mt-8 border-t border-white/[0.07] pt-6">
+          <span className="block font-mono text-[11px] uppercase tracking-wider text-[#71717A]">
             Recommended focus topics
           </span>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3.5 flex flex-wrap gap-2.5">
             {skillsList.map((skill) => (
               <button
                 key={skill.name}
@@ -107,60 +108,60 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
                 onClick={() =>
                   onAskCoach(`How should I prepare ${skill.name} for upcoming campus placement tests?`)
                 }
-                className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#101014] px-3 text-xs text-[#D4D4D8] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] hover:text-[#FAFAFA] active:scale-[0.98]"
+                className="pf-btn-secondary inline-flex h-9 items-center rounded-lg px-3.5 text-xs text-[#D4D4D8] hover:text-[#FAFAFA] active:scale-[0.98]"
               >
                 {skill.name}
               </button>
             ))}
           </div>
         </div>
-      </div>
+      </SpotlightSurface>
 
-      {/* Right: Numbered Strengths & Priority Actions */}
-      <div className="space-y-6 lg:space-y-8">
-        <div className="rounded-2xl border border-[#242429] bg-[#09090B]/62 p-6 backdrop-blur-[2px] sm:p-8">
-          <h3 className="text-base font-semibold tracking-[-0.015em] text-[#FAFAFA]">
+      {/* Right 6 cols: Spacious Numbered Strengths & Priority Actions */}
+      <div className="space-y-8 lg:col-span-6">
+        <SpotlightSurface className="rounded-2xl p-8 sm:p-9">
+          <h3 className="text-lg font-semibold tracking-[-0.02em] text-[#FAFAFA]">
             Competitive strengths
           </h3>
-          <div className="mt-4 space-y-2.5">
+          <div className="mt-5 space-y-3">
             {strengths.map((str, idx) => (
               <div
                 key={idx}
-                className="flex items-start gap-3 rounded-lg border border-[#222226] bg-[#101014] p-3.5 text-xs leading-relaxed text-[#E4E4E7]"
+                className="pf-subpanel flex items-start gap-3.5 rounded-xl p-4 text-xs leading-relaxed text-[#E4E4E7]"
               >
-                <span className="mt-0.5 font-mono text-[10px] text-[#71717A] tabular-nums">
+                <span className="mt-0.5 font-mono text-[11px] text-[#71717A] tabular-nums">
                   {String(idx + 1).padStart(2, "0")}
                 </span>
                 <span>{str}</span>
               </div>
             ))}
           </div>
-        </div>
+        </SpotlightSurface>
 
-        <div className="rounded-2xl border border-[#242429] bg-[#09090B]/62 p-6 backdrop-blur-[2px] sm:p-8">
-          <h3 className="text-base font-semibold tracking-[-0.015em] text-[#FAFAFA]">
+        <SpotlightSurface className="rounded-2xl p-8 sm:p-9">
+          <h3 className="text-lg font-semibold tracking-[-0.02em] text-[#FAFAFA]">
             Priority placement actions
           </h3>
-          <div className="mt-4 space-y-2.5">
+          <div className="mt-5 space-y-3">
             {priorities.length > 0 ? (
               priorities.map((prio, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3 rounded-lg border border-[#222226] bg-[#101014] p-3.5 text-xs leading-relaxed text-[#E4E4E7]"
+                  className="pf-subpanel flex items-start gap-3.5 rounded-xl p-4 text-xs leading-relaxed text-[#E4E4E7]"
                 >
-                  <span className="mt-0.5 font-mono text-[10px] text-[#71717A] tabular-nums">
+                  <span className="mt-0.5 font-mono text-[11px] text-[#71717A] tabular-nums">
                     {String(idx + 1).padStart(2, "0")}
                   </span>
                   <span>{prio}</span>
                 </div>
               ))
             ) : (
-              <div className="rounded-lg border border-[#222226] bg-[#101014] p-3.5 text-xs leading-relaxed text-[#A1A1AA]">
+              <div className="pf-subpanel rounded-xl p-4 text-xs leading-relaxed text-[#A1A1AA]">
                 Upload a resume in JD &amp; Resume Lab to unlock targeted recruiter remediation steps.
               </div>
             )}
           </div>
-        </div>
+        </SpotlightSurface>
       </div>
     </div>
   );

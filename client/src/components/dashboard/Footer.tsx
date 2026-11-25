@@ -22,17 +22,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
   };
 
   return (
-    <footer className="relative z-10 mt-24 border-t border-[#1F1F23] bg-[#000000]/92 text-[#A1A1AA]">
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-8">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
+    <footer className="relative z-10 mt-28 border-t border-white/[0.08] bg-black/90 text-[#A1A1AA]">
+      <div className="mx-auto max-w-[1400px] px-5 py-16 sm:px-10">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
           {/* Column 1: Brand & System Status */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2.5">
-              <PathfinderLogo size={28} variant="monochrome" />
-              <span className="text-base font-semibold tracking-[-0.02em] text-[#FAFAFA]">
+            <div className="flex items-center gap-3">
+              <PathfinderLogo size={30} variant="monochrome" />
+              <span className="text-base font-semibold tracking-[-0.025em] text-[#FAFAFA]">
                 Pathfinder
               </span>
-              <span className="rounded border border-[#27272A] bg-[#111113] px-1.5 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
+              <span className="rounded border border-white/[0.1] bg-[#121216] px-1.5 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
                 2.0
               </span>
             </div>
@@ -40,7 +40,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
               Full-stack engineering placement intelligence calibrated on 972 verified campus
               offers, pairing scikit-learn probability models with live 3D voice coaching.
             </p>
-            <div className="inline-flex items-center gap-2 rounded-md border border-[#1F1F23] bg-[#0C0C0E] px-2.5 py-1 font-mono text-[11px] text-[#D4D4D8]">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-[#0D0D11] px-3 py-1.5 font-mono text-[11px] text-[#D4D4D8]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
               <span>All 7 subsystems operational</span>
             </div>
@@ -48,8 +48,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
 
           {/* Column 2: Core Modules */}
           <div>
-            <h3 className="mb-3.5 text-xs font-semibold text-[#FAFAFA]">Core modules</h3>
-            <ul className="space-y-2.5 text-xs">
+            <h3 className="mb-4 text-xs font-semibold text-[#FAFAFA]">Core modules</h3>
+            <ul className="space-y-3 text-xs">
               <li>
                 <button
                   type="button"
@@ -119,8 +119,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
 
           {/* Column 3: Institutional Data */}
           <div>
-            <h3 className="mb-3.5 text-xs font-semibold text-[#FAFAFA]">Institutional data</h3>
-            <ul className="space-y-2.5 text-xs">
+            <h3 className="mb-4 text-xs font-semibold text-[#FAFAFA]">Institutional data</h3>
+            <ul className="space-y-3 text-xs">
               <li>
                 <button
                   type="button"
@@ -191,7 +191,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
         </div>
 
         {/* Bottom Legal Bar */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-[#1F1F23] pt-6 text-xs text-[#71717A] sm:flex-row">
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 text-xs text-[#71717A] sm:flex-row">
           <p>© {currentYear} Pathfinder 2.0 Career Intelligence. All rights reserved.</p>
           <div className="flex items-center gap-5">
             <button
@@ -211,7 +211,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
             <button
               type="button"
               onClick={scrollToTop}
-              className="inline-flex h-8 items-center rounded-md border border-[#242429] bg-[#0C0C0E] px-3 text-xs text-[#D4D4D8] transition-colors hover:border-[#3F3F46] hover:text-[#FAFAFA]"
+              className="pf-btn-secondary inline-flex h-8 items-center rounded-lg px-3.5 text-xs text-[#D4D4D8] hover:text-[#FAFAFA]"
             >
               Back to top
             </button>

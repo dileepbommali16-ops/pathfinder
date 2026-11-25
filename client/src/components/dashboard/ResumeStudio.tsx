@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { SpotlightSurface } from "@/components/ui/TitaniumPrimitives";
 
 export interface ResumeScoreBreakdown {
   impact: number;
@@ -112,32 +113,35 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
     companyMatches.find((c) => c.company === selectedCompanyName) || companyMatches[0] || null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Upload & Input Section */}
-      <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px] sm:p-8">
-        <div className="border-b border-[#1F1F23] pb-5">
+      <SpotlightSurface className="rounded-2xl p-8 sm:p-10">
+        <div className="border-b border-white/[0.08] pb-6">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h2 className="text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-2xl">
-              ATS Resume Studio &amp; Diagnostic Scanner
-            </h2>
-            <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
+            <span className="rounded-md border border-white/[0.1] bg-[#141418] px-2.5 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
               Uninflated Review
             </span>
           </div>
-          <p className="mt-1.5 max-w-3xl text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
+          <h2
+            className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-[28px]"
+            style={{ textWrap: "balance" }}
+          >
+            ATS Resume Studio &amp; Diagnostic Scanner
+          </h2>
+          <p className="mt-2 max-w-3xl text-xs leading-[1.65] text-[#A1A1AA] sm:text-sm">
             Upload your PDF resume or paste project bullets for an uninflated screening audit:
             missing enterprise skills, certifications, project upgrades, and Google X-Y-Z rewrites.
           </p>
         </div>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-2 lg:gap-8">
+        <div className="mt-7 grid gap-8 md:grid-cols-2 lg:gap-10">
           {/* Clean PDF Dropzone (Zero Icons) */}
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#2E2E36] bg-[#0E0E12] p-6 text-center transition-colors hover:border-[#52525B]">
+          <div className="pf-subpanel flex min-h-[210px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/[0.18] p-8 text-center transition-colors hover:border-white/[0.34]">
             <label className="flex w-full cursor-pointer flex-col items-center">
-              <span className="text-xs font-medium text-[#FAFAFA]">
+              <span className="text-sm font-medium text-[#FAFAFA]">
                 {selectedFile ? selectedFile.name : "Drop PDF resume here or browse"}
               </span>
-              <span className="mt-1 font-mono text-[11px] text-[#71717A]">
+              <span className="mt-1.5 font-mono text-[11px] text-[#71717A]">
                 PDF format · Selectable text · Up to 50MB
               </span>
 
@@ -148,7 +152,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                   e.stopPropagation();
                   fileInputRef.current?.click();
                 }}
-                className="mt-4 inline-flex h-10 items-center justify-center rounded-lg border border-[#27272A] bg-[#141418] px-4 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] active:scale-[0.98] cursor-pointer"
+                className="pf-btn-secondary mt-5 inline-flex h-10 items-center justify-center rounded-xl px-5 text-xs font-medium active:scale-[0.98] cursor-pointer"
               >
                 Select PDF Resume
               </button>
@@ -165,17 +169,17 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
             </label>
 
             {selectedFile && (
-              <div className="mt-3 rounded border border-[#27272A] bg-[#141418] px-3 py-1 font-mono text-[11px] text-[#D4D4D8]">
+              <div className="mt-4 rounded-md border border-white/[0.1] bg-[#141418] px-3 py-1 font-mono text-[11px] text-[#D4D4D8]">
                 Ready for Hiring Manager Scan
               </div>
             )}
           </div>
 
           {/* Clean Text Paste Box */}
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <label
               htmlFor="resume-raw-text-input"
-              className="block text-xs font-medium text-[#A1A1AA]"
+              className="block text-xs font-medium text-[#D4D4D8]"
             >
               Or paste resume text / skills &amp; project bullets
             </label>
@@ -186,39 +190,39 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               onChange={(e) => setRawText(e.target.value)}
               data-agent-id="resume-text-input"
               placeholder="Paste your resume text (Education, Skills, Projects, Certifications, Experience) here..."
-              rows={6}
-              className="w-full rounded-lg border border-[#27272A] bg-[#0E0E12] p-3.5 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
+              rows={7}
+              className="pf-input w-full rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B]"
             />
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-7 flex justify-end">
           <button
             onClick={handleTriggerAnalysis}
             data-agent-id="analyze-resume-btn"
             disabled={isLoading || (!selectedFile && !rawText.trim())}
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FAFAFA] px-5 text-xs font-medium text-[#09090B] transition-colors hover:bg-[#E4E4E7] active:scale-[0.98] disabled:opacity-45 cursor-pointer"
+            className="pf-btn-primary inline-flex h-11 items-center justify-center rounded-xl px-6 text-xs font-medium active:scale-[0.98] disabled:opacity-45 cursor-pointer"
           >
             {isLoading ? "Running Hiring Manager Audit..." : "Generate Tailored ATS Feedback"}
           </button>
         </div>
-      </div>
+      </SpotlightSurface>
 
       {/* Empty Pre-Upload State */}
       {!feedback && (
         <div
           data-agent-id="resume-awaiting-scan"
-          className="rounded-2xl border border-[#222226] bg-[#09090B]/62 p-6 backdrop-blur-[2px] sm:p-8"
+          className="pf-titanium-card rounded-2xl p-8 sm:p-10"
         >
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h3 className="text-sm font-semibold text-[#FAFAFA]">
+          <div className="flex flex-wrap items-center gap-3">
+            <h3 className="text-sm font-semibold text-[#FAFAFA] sm:text-base">
               Awaiting Your Resume — Zero-Fluff Senior Hiring Manager Audit
             </h3>
-            <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
+            <span className="rounded-md border border-white/[0.1] bg-[#121216] px-2.5 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
               No mock scores shown until scan
             </span>
           </div>
-          <p className="mt-2 max-w-3xl text-xs leading-relaxed text-[#A1A1AA]">
+          <p className="mt-2.5 max-w-3xl text-xs leading-[1.65] text-[#A1A1AA] sm:text-sm">
             Upload your actual PDF or paste your resume above to receive an uninflated score (0-100)
             benchmarked against Deloitte, Amazon, Google, Microsoft, TCS Digital, and AI startups —
             including missing enterprise skills, certifications, and Google X-Y-Z bullet rewrites.
@@ -230,7 +234,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
       {feedback && (
         <div
           data-agent-id="resume-audit-results"
-          className="space-y-8 rounded-2xl border border-[#242429] bg-[#09090B]/70 p-6 backdrop-blur-[2px] sm:p-8"
+          className="pf-titanium-card space-y-9 rounded-2xl p-8 sm:p-10"
         >
           {/* Top Score & Action Row */}
           <div className="flex flex-col justify-between gap-4 border-b border-[#1F1F23] pb-6 sm:flex-row sm:items-center">
@@ -255,8 +259,8 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                       (feedback.score >= 76
                         ? "Tier-1 Interview Ready"
                         : feedback.score >= 55
-                        ? "Developing / Needs Stronger Stack"
-                        : "Major Overhaul Needed")}
+                          ? "Developing / Needs Stronger Stack"
+                          : "Major Overhaul Needed")}
                   </span>
                   {feedback.evaluation_source && (
                     <span className="rounded border border-[#222226] bg-[#0C0C0E] px-2 py-0.5 font-mono text-[10px] text-[#71717A]">
@@ -370,11 +374,10 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                       key={cm.company}
                       type="button"
                       onClick={() => setSelectedCompanyName(cm.company)}
-                      className={`h-8 rounded-lg border px-3 text-xs font-medium transition-colors cursor-pointer ${
-                        activeCompanyMatch.company === cm.company
-                          ? "border-[#FAFAFA]/45 bg-[#18181E] text-[#FAFAFA]"
-                          : "border-[#222226] bg-[#0B0B0E] text-[#A1A1AA] hover:border-[#3F3F46] hover:text-[#FAFAFA]"
-                      }`}
+                      className={`h-8 rounded-lg border px-3 text-xs font-medium transition-colors cursor-pointer ${activeCompanyMatch.company === cm.company
+                        ? "border-[#FAFAFA]/45 bg-[#18181E] text-[#FAFAFA]"
+                        : "border-[#222226] bg-[#0B0B0E] text-[#A1A1AA] hover:border-[#3F3F46] hover:text-[#FAFAFA]"
+                        }`}
                     >
                       {cm.company} ({cm.match_score}%)
                     </button>

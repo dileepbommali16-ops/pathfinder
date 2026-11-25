@@ -69,7 +69,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
   const persistCompleted = (next: Record<number, boolean>) => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(next));
-    } catch {}
+    } catch { }
   };
 
   const toggleWeek = (index: number) => {
@@ -91,30 +91,30 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
   );
 
   return (
-    <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px] sm:p-8">
+    <div className="pf-titanium-card rounded-2xl p-8 sm:p-10">
       {/* Title & Action Bar */}
-      <div className="flex flex-col gap-4 border-b border-[#1F1F23] pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-5 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-3">
             <h2
-              className="text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-2xl"
+              className="text-2xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-[28px]"
               style={{ textWrap: "balance" }}
             >
               6-Week Strategic Placement Roadmap
             </h2>
-            <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
+            <span className="rounded-md border border-white/[0.1] bg-[#141418] px-2.5 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
               Sprint Tracker
             </span>
           </div>
-          <p className="mt-1.5 text-xs text-[#A1A1AA] sm:text-sm">{currentRoadmap.headline}</p>
+          <p className="mt-2 text-xs text-[#A1A1AA] sm:text-sm">{currentRoadmap.headline}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
           {completedCount > 0 && (
             <button
               type="button"
               onClick={resetProgress}
-              className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#101014] px-3.5 text-xs font-medium text-[#A1A1AA] transition-colors duration-150 hover:border-[#3F3F46] hover:text-[#FAFAFA] cursor-pointer"
+              className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium text-[#A1A1AA] hover:text-[#FAFAFA] cursor-pointer"
             >
               Reset progress
             </button>
@@ -123,7 +123,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
             type="button"
             onClick={onRegenerate}
             disabled={isLoading}
-            className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#141418] px-4 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#1C1C22] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+            className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium active:scale-[0.98] disabled:opacity-50 cursor-pointer"
           >
             {isLoading ? "Regenerating Roadmap..." : "Regenerate Roadmap"}
           </button>
@@ -131,29 +131,29 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
       </div>
 
       {/* Progress & Skill Gaps Banner */}
-      <div className="mt-6 grid gap-6 sm:grid-cols-2">
-        <div className="rounded-xl border border-[#222226] bg-[#101014] p-5">
+      <div className="mt-7 grid gap-6 sm:grid-cols-2 lg:gap-8">
+        <div className="pf-subpanel rounded-2xl p-6">
           <div className="flex justify-between text-xs font-medium">
             <span className="text-[#A1A1AA]">Milestone Progress</span>
             <span className="font-mono text-[#FAFAFA] tabular-nums">
               {completedCount} of {currentRoadmap.weekly_actions.length} ({progressPercent}%)
             </span>
           </div>
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-sm bg-[#18181B]">
+          <div className="mt-3.5 h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
             <div
-              className="h-full bg-[#FAFAFA] transition-[width] duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-[#A1A1AA] to-[#FAFAFA] transition-[width] duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
 
-        <div className="rounded-xl border border-[#222226] bg-[#101014] p-5">
+        <div className="pf-subpanel rounded-2xl p-6">
           <span className="text-xs font-medium text-[#A1A1AA]">Target Skill Gaps to Close</span>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3.5 flex flex-wrap gap-2">
             {currentRoadmap.skill_gaps.map((gap, i) => (
               <span
                 key={i}
-                className="rounded-md border border-[#27272A] bg-[#0B0B0E] px-2.5 py-1 text-[11px] font-medium text-[#FAFAFA]"
+                className="rounded-md border border-white/[0.08] bg-black/50 px-3 py-1 text-[11px] font-medium text-[#FAFAFA]"
               >
                 {gap}
               </span>
@@ -162,8 +162,8 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
         </div>
       </div>
 
-      {/* 6-Week Interactive Timeline */}
-      <div className="mt-7 space-y-3.5">
+      {/* 6-Week Spacious 2-Column Sprint Timeline */}
+      <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
         {currentRoadmap.weekly_actions.map((action, index) => {
           const isDone = !!completedWeeks[index];
           const parts = action.split(":");
@@ -177,18 +177,16 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
               type="button"
               onClick={() => toggleWeek(index)}
               aria-pressed={isDone}
-              className={`flex w-full cursor-pointer items-start gap-4 rounded-xl border p-4 text-left transition-colors duration-150 sm:p-5 ${
-                isDone
-                  ? "border-[#3F3F46] bg-[#14141A] text-[#FAFAFA]"
-                  : "border-[#222226] bg-[#101014] text-[#FAFAFA] hover:border-[#3F3F46] hover:bg-[#141418]"
-              }`}
+              className={`flex w-full cursor-pointer items-start gap-4 rounded-2xl border p-5 text-left transition-colors duration-150 sm:p-6 ${isDone
+                ? "border-white/[0.26] bg-[#16161D] text-[#FAFAFA]"
+                : "border-white/[0.07] bg-[#0D0D11]/90 text-[#FAFAFA] hover:border-white/[0.16] hover:bg-[#131319]"
+                }`}
             >
               <span
-                className={`mt-0.5 flex h-6 w-8 shrink-0 items-center justify-center rounded border font-mono text-[10px] font-medium tabular-nums ${
-                  isDone
-                    ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
-                    : "border-[#27272A] bg-[#0B0B0E] text-[#71717A]"
-                }`}
+                className={`mt-0.5 flex h-7 w-9 shrink-0 items-center justify-center rounded-md border font-mono text-[10px] font-medium tabular-nums ${isDone
+                  ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
+                  : "border-white/[0.1] bg-black/50 text-[#71717A]"
+                  }`}
               >
                 {isDone ? "DONE" : idxLabel}
               </span>
@@ -197,15 +195,14 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs font-medium text-[#D4D4D8]">{weekTitle}</span>
                   {isDone && (
-                    <span className="rounded border border-[#27272A] bg-[#0B0B0E] px-1.5 py-0.5 font-mono text-[9px] text-[#A1A1AA]">
+                    <span className="rounded border border-white/[0.12] bg-black/50 px-1.5 py-0.5 font-mono text-[9px] text-[#10B981]">
                       Completed
                     </span>
                   )}
                 </div>
                 <p
-                  className={`mt-1.5 text-xs leading-relaxed sm:text-sm ${
-                    isDone ? "line-through text-[#71717A]" : "text-[#E4E4E7]"
-                  }`}
+                  className={`mt-2 text-xs leading-[1.65] sm:text-sm ${isDone ? "line-through text-[#71717A]" : "text-[#E4E4E7]"
+                    }`}
                 >
                   {weekDescription}
                 </p>

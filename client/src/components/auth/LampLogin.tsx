@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { API_BASE, fetchWithTimeout } from "@/lib/apiClient";
 import { PathfinderLogo } from "@/components/common/PathfinderLogo";
+import { ShaderBackdrop, SpotlightSurface } from "@/components/ui/TitaniumPrimitives";
 
 interface LampLoginProps {
   onLogin: (user: {
@@ -13,6 +14,24 @@ interface LampLoginProps {
   initialError?: string | null;
   onBack?: () => void;
 }
+
+const STUDIO_HIGHLIGHTS = [
+  {
+    index: "01",
+    title: "972 Audited Campus Outcomes",
+    detail: "Instant Random Forest placement odds across CGPA, skills, and drive cutoffs.",
+  },
+  {
+    index: "02",
+    title: "Live 3D Voice Mentor (DAS)",
+    detail: "Speak naturally in English, Telugu, or Hindi with full-duplex Puck voice.",
+  },
+  {
+    index: "03",
+    title: "11 Compiler Runtimes + ATS Lab",
+    detail: "Test DSA rounds, parse PDF resumes, and export tailored 1-page profiles.",
+  },
+];
 
 export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onBack }) => {
   const [username, setUsername] = useState("");
@@ -121,185 +140,235 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
   };
 
   return (
-    <div className="flex min-h-dvh w-full flex-col justify-between overflow-x-clip bg-[#09090B] px-4 py-6 text-[#FAFAFA] antialiased selection:bg-[#FAFAFA] selection:text-[#09090B] sm:px-8">
-      {/* Top Bar */}
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between">
+    <div className="relative flex min-h-dvh w-full flex-col justify-between overflow-x-clip bg-[#050507] px-5 py-6 text-[#FAFAFA] antialiased selection:bg-[#FAFAFA] selection:text-[#09090B] sm:px-10">
+      <ShaderBackdrop />
+
+      {/* Top Navigation Chrome */}
+      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between">
         {onBack ? (
           <button
             id="btn-back-landing"
             type="button"
             onClick={onBack}
-            className="inline-flex h-10 items-center rounded-lg px-3 text-xs font-medium text-[#A1A1AA] transition-colors duration-150 hover:bg-[#141418] hover:text-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+            className="pf-btn-secondary inline-flex h-10 items-center rounded-lg px-4 text-xs font-medium text-[#D4D4D8] hover:text-[#FAFAFA]"
           >
             Back to home
           </button>
         ) : (
           <div />
         )}
+
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#0B0B0E]/90 px-3 py-1 font-mono text-[11px] text-[#A1A1AA]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+          <span>System Operational</span>
+        </div>
       </header>
 
-      {/* Pure Auth Flows Centered Card */}
-      <main className="mx-auto my-8 w-full max-w-[400px]">
+      {/* Spacious Two-Column Titanium Studio Auth Layout (Zero Videos) */}
+      <main className="relative z-10 mx-auto my-auto grid w-full max-w-5xl items-center gap-12 py-10 lg:grid-cols-12 lg:gap-16">
+        {/* Left Pitch Column (Desktop) */}
+        <div className="hidden flex-col space-y-8 lg:col-span-6 lg:flex">
+          <div className="flex items-center gap-3.5">
+            <PathfinderLogo size={42} variant="monochrome" />
+            <div>
+              <span className="block text-base font-semibold tracking-[-0.02em] text-[#FAFAFA]">
+                Pathfinder 2.0
+              </span>
+              <span className="font-mono text-[11px] text-[#71717A]">
+                COMPUTE STUDIO WORKSPACE
+              </span>
+            </div>
+          </div>
+
+          <h2
+            className="text-3xl font-semibold leading-[1.12] tracking-[-0.035em] text-[#FAFAFA] xl:text-4xl"
+            style={{ textWrap: "balance" }}
+          >
+            From campus preparation to verified engineering offers.
+          </h2>
+
+          <div className="space-y-4">
+            {STUDIO_HIGHLIGHTS.map((item) => (
+              <div
+                key={item.index}
+                className="pf-subpanel flex items-start gap-4 rounded-xl p-4 sm:p-5"
+              >
+                <span className="mt-0.5 font-mono text-xs text-[#71717A] tabular-nums">
+                  {item.index}
+                </span>
+                <div>
+                  <div className="text-sm font-medium text-[#FAFAFA]">{item.title}</div>
+                  <p className="mt-1 text-xs leading-relaxed text-[#A1A1AA]">{item.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Auth Card */}
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-2xl border border-[#1F1F23] bg-[#0C0C0F] p-6 shadow-[0_24px_64px_rgba(0,0,0,0.65)] sm:p-8"
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          className="mx-auto w-full max-w-[440px] lg:col-span-6"
         >
-          <div>
-            <PathfinderLogo size={32} variant="monochrome" />
-            <h1
-              className="mt-4 text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA]"
-              style={{ textWrap: "balance" }}
-            >
-              Sign in to Pathfinder
-            </h1>
-            <p className="mt-1.5 text-[13px] text-[#A1A1AA]" style={{ textWrap: "pretty" }}>
-              Continue with Google or GitHub, or enter your campus email.
-            </p>
-          </div>
-
-          {errorMessage && (
-            <div
-              role="alert"
-              className="mt-5 rounded-lg border border-[#3F3F46] bg-[#141418] px-3.5 py-2.5 text-xs leading-relaxed text-[#FAFAFA]"
-            >
-              {errorMessage}
-            </div>
-          )}
-
-          {socialError && (
-            <div
-              role="status"
-              aria-live="polite"
-              className="mt-5 rounded-lg border border-[#27272A] bg-[#111113] px-3.5 py-2.5 font-mono text-xs text-[#D4D4D8]"
-            >
-              {socialError}
-            </div>
-          )}
-
-          {/* OAuth Providers — Official Brand Marks */}
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <button
-              id="btn-oauth-google"
-              type="button"
-              disabled={socialLoading !== null}
-              onClick={() => handleSocialLogin("google")}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#27272A] bg-[#141418] px-3 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#1A1A20] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] disabled:opacity-50"
-            >
-              <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              <span>{socialLoading === "google" ? "Redirecting..." : "Google"}</span>
-            </button>
-
-            <button
-              id="btn-oauth-github"
-              type="button"
-              disabled={socialLoading !== null}
-              onClick={() => handleSocialLogin("github")}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#27272A] bg-[#141418] px-3 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#1A1A20] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] disabled:opacity-50"
-            >
-              <svg
-                className="h-4 w-4 shrink-0 fill-current text-[#FAFAFA]"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.58.23 2.75.11 3.04.74.8 1.19 1.83 1.19 3.08 0 4.41-2.7 5.39-5.26 5.67.41.36.78 1.07.78 2.15v3.19c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z" />
-              </svg>
-              <span>{socialLoading === "github" ? "Redirecting..." : "GitHub"}</span>
-            </button>
-          </div>
-
-          <div className="my-5 flex items-center gap-3">
-            <div className="h-px flex-1 bg-[#1F1F23]" />
-            <span className="text-xs text-[#71717A]">or continue with email</span>
-            <div className="h-px flex-1 bg-[#1F1F23]" />
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <SpotlightSurface className="rounded-2xl p-7 sm:p-10">
             <div>
-              <label
-                htmlFor="login-username-input"
-                className="mb-1.5 block text-xs font-medium text-[#D4D4D8]"
+              <div className="lg:hidden">
+                <PathfinderLogo size={36} variant="monochrome" />
+              </div>
+              <h1
+                className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-[#FAFAFA] lg:mt-0"
+                style={{ textWrap: "balance" }}
               >
-                Full name
-              </label>
-              <input
-                id="login-username-input"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Dileep Bommali"
-                autoComplete="name"
-                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#09090B] px-3 text-sm text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors duration-150 focus:border-[#A1A1AA] focus:ring-2 focus:ring-white/10"
-              />
+                Sign in to Pathfinder
+              </h1>
+              <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
+                Continue with Google or GitHub, or enter your campus email.
+              </p>
             </div>
 
-            <div>
-              <label
-                htmlFor="login-email-input"
-                className="mb-1.5 block text-xs font-medium text-[#D4D4D8]"
+            {errorMessage && (
+              <div
+                role="alert"
+                className="mt-5 rounded-xl border border-white/[0.14] bg-[#14141A] px-4 py-3 text-xs leading-relaxed text-[#FAFAFA]"
               >
-                Campus or work email
-              </label>
-              <input
-                id="login-email-input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@university.edu"
-                autoComplete="email"
-                className="h-10 w-full rounded-lg border border-[#27272A] bg-[#09090B] px-3 text-sm text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors duration-150 focus:border-[#A1A1AA] focus:ring-2 focus:ring-white/10"
-              />
+                {errorMessage}
+              </div>
+            )}
+
+            {socialError && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mt-5 rounded-xl border border-white/[0.1] bg-[#101014] px-4 py-3 font-mono text-xs text-[#D4D4D8]"
+              >
+                {socialError}
+              </div>
+            )}
+
+            {/* Official OAuth Providers */}
+            <div className="mt-7 grid grid-cols-2 gap-3.5">
+              <button
+                id="btn-oauth-google"
+                type="button"
+                disabled={socialLoading !== null}
+                onClick={() => handleSocialLogin("google")}
+                className="pf-btn-secondary inline-flex h-11 items-center justify-center gap-2.5 rounded-xl px-3.5 text-xs font-medium active:scale-[0.98] disabled:opacity-50"
+              >
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+                <span>{socialLoading === "google" ? "Redirecting..." : "Google"}</span>
+              </button>
+
+              <button
+                id="btn-oauth-github"
+                type="button"
+                disabled={socialLoading !== null}
+                onClick={() => handleSocialLogin("github")}
+                className="pf-btn-secondary inline-flex h-11 items-center justify-center gap-2.5 rounded-xl px-3.5 text-xs font-medium active:scale-[0.98] disabled:opacity-50"
+              >
+                <svg
+                  className="h-4 w-4 shrink-0 fill-current text-[#FAFAFA]"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.58.23 2.75.11 3.04.74.8 1.19 1.83 1.19 3.08 0 4.41-2.7 5.39-5.26 5.67.41.36.78 1.07.78 2.15v3.19c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z" />
+                </svg>
+                <span>{socialLoading === "github" ? "Redirecting..." : "GitHub"}</span>
+              </button>
             </div>
 
-            <button
-              id="btn-auth-submit"
-              type="submit"
-              className="mt-1 inline-flex h-10 w-full items-center justify-center rounded-lg bg-[#FAFAFA] px-4 text-sm font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
-            >
-              Sign in
-            </button>
-          </form>
+            <div className="my-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-white/[0.08]" />
+              <span className="font-mono text-[11px] text-[#71717A]">or continue with email</span>
+              <div className="h-px flex-1 bg-white/[0.08]" />
+            </div>
 
-          <div className="mt-5 flex items-center justify-between border-t border-[#1F1F23] pt-4 text-xs text-[#71717A]">
-            <span>Just exploring?</span>
-            <button
-              id="btn-demo-guest"
-              type="button"
-              onClick={() =>
-                onLogin({
-                  username: "Guest Student",
-                  email: "guest@pathfinder.ai",
-                  bypassOnboarding: true,
-                })
-              }
-              className="inline-flex min-h-10 items-center font-medium text-[#D4D4D8] underline decoration-[#3F3F46] underline-offset-4 transition-colors duration-150 hover:text-[#FAFAFA] hover:decoration-[#FAFAFA] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
-            >
-              Continue as guest
-            </button>
-          </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="login-username-input"
+                  className="mb-1.5 block text-xs font-medium text-[#D4D4D8]"
+                >
+                  Full name
+                </label>
+                <input
+                  id="login-username-input"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Dileep Bommali"
+                  autoComplete="name"
+                  className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#52525B]"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="login-email-input"
+                  className="mb-1.5 block text-xs font-medium text-[#D4D4D8]"
+                >
+                  Campus or work email
+                </label>
+                <input
+                  id="login-email-input"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="student@university.edu"
+                  autoComplete="email"
+                  className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#52525B]"
+                />
+              </div>
+
+              <button
+                id="btn-auth-submit"
+                type="submit"
+                className="pf-btn-primary mt-2 inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-medium active:scale-[0.98]"
+              >
+                Sign in
+              </button>
+            </form>
+
+            <div className="mt-6 flex items-center justify-between border-t border-white/[0.08] pt-5 text-xs text-[#71717A]">
+              <span>Just exploring?</span>
+              <button
+                id="btn-demo-guest"
+                type="button"
+                onClick={() =>
+                  onLogin({
+                    username: "Guest Student",
+                    email: "guest@pathfinder.ai",
+                    bypassOnboarding: true,
+                  })
+                }
+                className="inline-flex min-h-10 items-center font-medium text-[#E4E4E7] underline decoration-[#52525B] underline-offset-4 transition-colors duration-150 hover:text-[#FAFAFA] hover:decoration-[#FAFAFA]"
+              >
+                Continue as guest
+              </button>
+            </div>
+          </SpotlightSurface>
         </motion.div>
       </main>
 
-      {/* Bottom Minimal Caption */}
-      <footer className="text-center text-[11px] text-[#52525B]">
+      <footer className="relative z-10 text-center font-mono text-[11px] text-[#52525B]">
         Pathfinder 2.0 · Autonomous Placement Intelligence
       </footer>
     </div>

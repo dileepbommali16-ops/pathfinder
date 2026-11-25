@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { getUserRole } from "@/lib/auth";
+import { AnimatedMetric, SpotlightSurface } from "@/components/ui/TitaniumPrimitives";
 
 interface HeroMetricsProps {
   username: string;
@@ -36,40 +37,40 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
   })();
 
   return (
-    <div className="rounded-2xl border border-[#242429] bg-[#09090B]/62 p-7 backdrop-blur-[2px] sm:p-9">
-      <div className="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
-        {/* Left: Candidate Positioning & Clean Text Actions */}
-        <div className="space-y-5 lg:col-span-7">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="inline-flex items-center rounded-md border border-[#27272A] bg-[#101014] px-2.5 py-1 text-xs font-medium text-[#FAFAFA]">
+    <SpotlightSurface className="rounded-2xl p-8 sm:p-12">
+      <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-14">
+        {/* Left: Candidate Positioning & Spacious Actions */}
+        <div className="space-y-6 lg:col-span-7">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center rounded-md border border-white/[0.12] bg-[#141419] px-3 py-1 text-xs font-medium text-[#FAFAFA]">
               {label}
             </span>
-            <span className="inline-flex items-center gap-2 rounded-md border border-[#1F1F23] bg-[#0C0C0E] px-2.5 py-1 font-mono text-[11px] text-[#A1A1AA] tabular-nums">
+            <span className="inline-flex items-center gap-2 rounded-md border border-white/[0.08] bg-[#0D0D11] px-3 py-1 font-mono text-[11px] text-[#A1A1AA] tabular-nums">
               <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
               <span>Random Forest · 972 records</span>
             </span>
           </div>
 
           <h1
-            className="text-2xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-4xl"
+            className="text-3xl font-semibold tracking-[-0.035em] text-[#FAFAFA] sm:text-5xl"
             style={{ textWrap: "balance" }}
           >
             Welcome back, {resolvedUser}
           </h1>
 
           <p
-            className="max-w-[58ch] text-sm leading-relaxed text-[#A1A1AA]"
+            className="max-w-[58ch] text-sm leading-[1.7] text-[#A1A1AA] sm:text-base"
             style={{ textWrap: "pretty" }}
           >
             Your placement workspace synthesizes historical campus drive cutoffs, Random Forest
-            offer modeling, and live 3D voice coaching with DAS into one execution view.
+            offer modeling, and live 3D voice coaching with DAS into one spacious execution hub.
           </p>
 
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-3.5 pt-2">
             <button
               type="button"
               onClick={() => onNavigateTab("analytics")}
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FAFAFA] px-4 text-xs font-medium text-[#09090B] transition-colors duration-150 hover:bg-[#E4E4E7] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+              className="pf-btn-primary inline-flex h-11 items-center justify-center rounded-xl px-5 text-xs font-medium active:scale-[0.98]"
             >
               Open 6-week roadmap
             </button>
@@ -81,7 +82,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
                 window.scrollTo({ top: 0, behavior: "smooth" });
                 setTimeout(() => document.getElementById("das-command-input")?.focus(), 180);
               }}
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-[#27272A] bg-[#101014] px-4 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+              className="pf-btn-secondary inline-flex h-11 items-center justify-center rounded-xl px-5 text-xs font-medium active:scale-[0.98]"
             >
               Talk to 3D voice coach
             </button>
@@ -90,39 +91,34 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
               type="button"
               onClick={() => onNavigateTab("resume")}
               title="Instant ATS Resume Audit & Sync"
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-[#27272A] bg-[#101014] px-4 text-xs font-medium text-[#D4D4D8] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] hover:text-[#FAFAFA] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+              className="pf-btn-secondary inline-flex h-11 items-center justify-center rounded-xl px-5 text-xs font-medium text-[#D4D4D8] hover:text-[#FAFAFA] active:scale-[0.98]"
             >
               ATS resume sync
             </button>
           </div>
         </div>
 
-        {/* Right: Precision Telemetry Panel */}
+        {/* Right: Machined Telemetry Subpanel */}
         <div className="lg:col-span-5">
-          <div className="rounded-xl border border-[#222226] bg-[#0B0B0F]/90 p-6">
-            <div className="flex items-center justify-between border-b border-[#1F1F23] pb-3.5">
+          <div className="pf-subpanel rounded-2xl p-7 sm:p-8">
+            <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
               <span className="text-xs font-medium text-[#D4D4D8]">Placement probability</span>
               <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
                 120 estimators
               </span>
             </div>
 
-            <div className="my-6 flex items-baseline justify-between gap-4">
-              <motion.span
-                className="font-mono text-4xl font-semibold tracking-[-0.03em] text-[#FAFAFA] tabular-nums sm:text-5xl"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              >
-                {clampedChance.toFixed(1)}%
-              </motion.span>
+            <div className="my-7 flex items-baseline justify-between gap-4">
+              <span className="font-mono text-5xl font-semibold tracking-[-0.04em] text-[#FAFAFA] sm:text-6xl">
+                <AnimatedMetric value={clampedChance} decimals={1} suffix="%" />
+              </span>
               <span className="font-mono text-xs text-[#A1A1AA]">{label}</span>
             </div>
 
-            <div className="space-y-2.5">
-              <div className="h-2 w-full overflow-hidden rounded-sm bg-[#18181B]">
+            <div className="space-y-3">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
                 <motion.div
-                  className="h-full bg-[#FAFAFA]"
+                  className="h-full rounded-full bg-gradient-to-r from-[#A1A1AA] to-[#FAFAFA]"
                   initial={{ width: 0 }}
                   animate={{ width: `${clampedChance}%` }}
                   transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -145,7 +141,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
                     `Readiness Probability Score: ${clampedChance.toFixed(1)}% (${label})`
                   )
                 }
-                className="mt-5 flex h-10 w-full items-center justify-center rounded-lg border border-[#27272A] bg-[#141418] px-3 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#1C1C22] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+                className="pf-btn-secondary mt-6 flex h-11 w-full items-center justify-center rounded-xl px-4 text-xs font-medium active:scale-[0.98]"
               >
                 Ask DAS to break down this score
               </button>
@@ -153,6 +149,6 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </SpotlightSurface>
   );
 };

@@ -147,34 +147,34 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Top Controls & Filters */}
-      <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px] sm:p-8">
-        <div className="flex flex-col justify-between gap-4 border-b border-[#1F1F23] pb-5 sm:flex-row sm:items-center">
+      <div className="pf-titanium-card rounded-2xl p-8 sm:p-10">
+        <div className="flex flex-col justify-between gap-5 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center">
           <div>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h2 className="text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-2xl">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-[28px]">
                 {viewMode === "explorer"
                   ? "Cohort Analytics & Placement Records"
                   : "TPO Institutional Command Center"}
               </h2>
-              <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
+              <span className="rounded-md border border-white/[0.1] bg-[#141418] px-2.5 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
                 {viewMode === "explorer" ? "972 Records" : "NAAC / NIRF Mode"}
               </span>
             </div>
-            <p className="mt-1.5 text-xs text-[#A1A1AA] sm:text-sm">
+            <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
               {viewMode === "explorer"
                 ? "Interactive cohort distributions calibrated across 9 engineering branches"
                 : "Institutional compliance, at-risk early warning interventions, and NIRF accreditation audits"}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center rounded-lg border border-[#27272A] bg-[#0E0E12] p-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center rounded-xl border border-white/[0.1] bg-black/50 p-1">
               <button
                 type="button"
                 onClick={() => setViewMode("explorer")}
-                className={`h-8 rounded-md px-3 text-xs font-medium transition-colors cursor-pointer ${
+                className={`h-8 rounded-lg px-3.5 text-xs font-medium transition-colors cursor-pointer ${
                   viewMode === "explorer"
                     ? "bg-[#FAFAFA] text-[#09090B]"
                     : "text-[#A1A1AA] hover:text-[#FAFAFA]"
@@ -185,7 +185,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               <button
                 type="button"
                 onClick={() => setViewMode("tpo")}
-                className={`h-8 rounded-md px-3 text-xs font-medium transition-colors cursor-pointer ${
+                className={`h-8 rounded-lg px-3.5 text-xs font-medium transition-colors cursor-pointer ${
                   viewMode === "tpo"
                     ? "bg-[#FAFAFA] text-[#09090B]"
                     : "text-[#A1A1AA] hover:text-[#FAFAFA]"
@@ -199,7 +199,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               <button
                 type="button"
                 onClick={handlePrintReport}
-                className="inline-flex h-10 items-center rounded-lg bg-[#FAFAFA] px-4 text-xs font-medium text-[#09090B] transition-colors hover:bg-[#E4E4E7] cursor-pointer"
+                className="pf-btn-primary inline-flex h-10 items-center rounded-xl px-5 text-xs font-medium cursor-pointer"
               >
                 Print NAAC Report
               </button>
@@ -208,7 +208,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <button
                   type="button"
                   onClick={onDownloadCSV}
-                  className="inline-flex h-10 items-center rounded-lg border border-[#27272A] bg-[#101014] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#18181B] cursor-pointer"
+                  className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium cursor-pointer"
                 >
                   Export CSV
                 </button>
@@ -216,7 +216,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <button
                   type="button"
                   onClick={onDownloadPDF}
-                  className="inline-flex h-10 items-center rounded-lg bg-[#FAFAFA] px-4 text-xs font-medium text-[#09090B] transition-colors hover:bg-[#E4E4E7] cursor-pointer"
+                  className="pf-btn-primary inline-flex h-10 items-center rounded-xl px-5 text-xs font-medium cursor-pointer"
                 >
                   Download PDF
                 </button>
@@ -225,10 +225,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
         </div>
 
-        {/* 4 Interactive Dropdowns */}
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="space-y-1.5">
-            <label htmlFor="cohort-filter-year" className="block text-xs font-medium text-[#A1A1AA]">
+        {/* 4 Spacious Interactive Dropdowns */}
+        <div className="mt-7 grid grid-cols-2 gap-5 sm:grid-cols-4">
+          <div className="space-y-2">
+            <label htmlFor="cohort-filter-year" className="block text-xs font-medium text-[#D4D4D8]">
               Cohort Year
             </label>
             <select
@@ -236,20 +236,20 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               name="cohortYear"
               value={filters.year}
               onChange={(e) => onFilterChange({ ...filters, year: parseInt(e.target.value, 10) })}
-              className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3 text-xs font-medium text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
+              className="pf-input h-11 w-full rounded-xl px-3.5 text-xs font-medium text-[#FAFAFA]"
             >
               {years.map((y) => (
-                <option key={y} value={y}>
+                <option key={y} value={y} className="bg-[#09090B]">
                   Class of {y}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label
               htmlFor="cohort-filter-branch"
-              className="block text-xs font-medium text-[#A1A1AA]"
+              className="block text-xs font-medium text-[#D4D4D8]"
             >
               Course / Branch
             </label>
@@ -258,20 +258,20 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               name="cohortBranch"
               value={filters.branch}
               onChange={(e) => onFilterChange({ ...filters, branch: e.target.value })}
-              className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3 text-xs font-medium text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
+              className="pf-input h-11 w-full rounded-xl px-3.5 text-xs font-medium text-[#FAFAFA]"
             >
               {branches.map((b) => (
-                <option key={b} value={b}>
+                <option key={b} value={b} className="bg-[#09090B]">
                   {b}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label
               htmlFor="cohort-filter-gender"
-              className="block text-xs font-medium text-[#A1A1AA]"
+              className="block text-xs font-medium text-[#D4D4D8]"
             >
               Gender Filter
             </label>
@@ -280,18 +280,18 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               name="cohortGender"
               value={filters.gender}
               onChange={(e) => onFilterChange({ ...filters, gender: e.target.value })}
-              className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3 text-xs font-medium text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
+              className="pf-input h-11 w-full rounded-xl px-3.5 text-xs font-medium text-[#FAFAFA]"
             >
-              <option value="All">All Genders</option>
-              <option value="Male">Male Candidates</option>
-              <option value="Female">Female Candidates</option>
+              <option value="All" className="bg-[#09090B]">All Genders</option>
+              <option value="Male" className="bg-[#09090B]">Male Candidates</option>
+              <option value="Female" className="bg-[#09090B]">Female Candidates</option>
             </select>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label
               htmlFor="cohort-filter-skill"
-              className="block text-xs font-medium text-[#A1A1AA]"
+              className="block text-xs font-medium text-[#D4D4D8]"
             >
               Skill Domain
             </label>
@@ -300,10 +300,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               name="cohortSkill"
               value={filters.skill}
               onChange={(e) => onFilterChange({ ...filters, skill: e.target.value })}
-              className="h-10 w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3 text-xs font-medium text-[#FAFAFA] outline-none transition-colors focus:border-[#A1A1AA]"
+              className="pf-input h-11 w-full rounded-xl px-3.5 text-xs font-medium text-[#FAFAFA]"
             >
               {skills.map((s) => (
-                <option key={s} value={s}>
+                <option key={s} value={s} className="bg-[#09090B]">
                   {s}
                 </option>
               ))}
@@ -312,45 +312,45 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
         </div>
 
         {/* 6 Key Macro Metrics Cards */}
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
+        <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-6">
+          <div className="pf-subpanel rounded-xl p-5 text-center">
             <span className="font-mono text-[10px] text-[#71717A]">Total Audited</span>
-            <p className="mt-1.5 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
+            <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.total_records ?? "—"}
             </p>
           </div>
 
-          <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
+          <div className="pf-subpanel rounded-xl p-5 text-center">
             <span className="font-mono text-[10px] text-[#71717A]">Placement Rate</span>
-            <p className="mt-1.5 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
+            <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.placement_rate ? `${analytics.placement_rate.toFixed(1)}%` : "—"}
             </p>
           </div>
 
-          <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
+          <div className="pf-subpanel rounded-xl p-5 text-center">
             <span className="font-mono text-[10px] text-[#71717A]">Avg CGPA</span>
-            <p className="mt-1.5 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
+            <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.avg_cgpa ? analytics.avg_cgpa.toFixed(2) : "—"}
             </p>
           </div>
 
-          <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
+          <div className="pf-subpanel rounded-xl p-5 text-center">
             <span className="font-mono text-[10px] text-[#71717A]">Coding Index</span>
-            <p className="mt-1.5 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
+            <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.avg_coding_score ? `${analytics.avg_coding_score.toFixed(1)}/10` : "—"}
             </p>
           </div>
 
-          <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
+          <div className="pf-subpanel rounded-xl p-5 text-center">
             <span className="font-mono text-[10px] text-[#71717A]">Average CTC</span>
-            <p className="mt-1.5 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
+            <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.avg_package ? `${analytics.avg_package.toFixed(1)} LPA` : "—"}
             </p>
           </div>
 
-          <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
+          <div className="pf-subpanel rounded-xl p-5 text-center">
             <span className="font-mono text-[10px] text-[#71717A]">Highest Package</span>
-            <p className="mt-1.5 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
+            <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.highest_package ? `${analytics.highest_package.toFixed(1)} LPA` : "—"}
             </p>
           </div>
@@ -494,7 +494,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
       ) : (
         <>
           {/* AI Cohort Intelligence */}
-          <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px]">
+          <div className="pf-titanium-card rounded-2xl p-7 sm:p-8">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <span className="text-sm font-semibold text-[#FAFAFA]">AI Cohort Intelligence</span>
 
@@ -502,14 +502,14 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 type="button"
                 onClick={onSummarizeAI}
                 disabled={isSummarizing}
-                className="inline-flex h-9 items-center self-start rounded-lg border border-[#27272A] bg-[#141418] px-4 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] sm:self-auto cursor-pointer"
+                className="pf-btn-secondary inline-flex h-10 items-center self-start rounded-xl px-4 text-xs font-medium sm:self-auto cursor-pointer"
               >
                 {isSummarizing ? "Synthesizing signals..." : "Summarize with DAS AI"}
               </button>
             </div>
 
             {aiInsight && (
-              <div className="mt-4 space-y-3 rounded-xl border border-[#222226] bg-[#101014] p-5">
+              <div className="pf-subpanel mt-5 space-y-3 rounded-xl p-5">
                 <h4 className="text-sm font-semibold text-[#FAFAFA]">{aiInsight.headline}</h4>
                 <p className="text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
                   {aiInsight.summary}
@@ -518,7 +518,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                   {aiInsight.actions.map((act, i) => (
                     <span
                       key={i}
-                      className="rounded border border-[#27272A] bg-[#0B0B0E] px-2.5 py-1 text-[11px] text-[#FAFAFA]"
+                      className="rounded-md border border-white/[0.1] bg-black/50 px-2.5 py-1 text-[11px] text-[#FAFAFA]"
                     >
                       {act}
                     </span>
@@ -529,15 +529,15 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
 
           {/* Interactive Charts Grid */}
-          <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
-            <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px]">
-              <h3 className="text-sm font-semibold text-[#FAFAFA]">
+          <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
+            <div className="pf-titanium-card rounded-2xl p-7 sm:p-8">
+              <h3 className="text-base font-semibold text-[#FAFAFA]">
                 Branch Placement Distribution
               </h3>
-              <p className="mt-1 text-xs text-[#A1A1AA]">
+              <p className="mt-1.5 text-xs text-[#A1A1AA]">
                 Placement conversion rate (%) across engineering departments
               </p>
-              <div className="mt-5 h-64 w-full">
+              <div className="mt-6 h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.branch_distribution || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1F1F23" vertical={false} />
@@ -558,14 +558,14 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px]">
-              <h3 className="text-sm font-semibold text-[#FAFAFA]">
+            <div className="pf-titanium-card rounded-2xl p-7 sm:p-8">
+              <h3 className="text-base font-semibold text-[#FAFAFA]">
                 Skill Domain Conversion Rates
               </h3>
-              <p className="mt-1 text-xs text-[#A1A1AA]">
+              <p className="mt-1.5 text-xs text-[#A1A1AA]">
                 Success rate (%) based on primary student programming domain
               </p>
-              <div className="mt-5 h-64 w-full">
+              <div className="mt-6 h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.skill_distribution || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1F1F23" vertical={false} />
@@ -588,7 +588,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           </div>
 
           {/* Filtered Records Table */}
-          <div className="overflow-hidden rounded-2xl border border-[#242429] bg-[#09090B]/68 backdrop-blur-[2px]">
+          <div className="pf-titanium-card overflow-hidden rounded-2xl">
             <div className="flex items-center justify-between border-b border-[#1F1F23] p-6">
               <div>
                 <h3 className="text-sm font-semibold text-[#FAFAFA]">Audited Student Records</h3>

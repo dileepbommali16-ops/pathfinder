@@ -52,6 +52,7 @@ import {
 import { getApiBase, API_BASE, fetchWithTimeout, api, getSessionId } from "@/lib/apiClient";
 import { getTabKnowledge } from "@/lib/siteKnowledge";
 import { Footer } from "@/components/dashboard/Footer";
+import { SlideTransitionBar, WORKSPACE_SLIDES } from "@/components/ui/TitaniumPrimitives";
 import { toast } from "sonner";
 
 export interface HomeProps {
@@ -2114,26 +2115,43 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       )}
 
       {/* Main Container */}
-      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-8 pb-56 sm:px-8 lg:pt-10 sm:pb-64">
+      <main className="relative z-10 mx-auto max-w-[1400px] px-5 pt-10 pb-64 sm:px-10 lg:pt-12">
         {focusOnDas ? (
-          <div className="flex items-center justify-end pb-6 animate-in fade-in duration-300">
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-8 animate-in fade-in duration-300">
+            <span className="font-mono text-xs text-[#A1A1AA]">
+              DAS 3D VOICE MENTOR · FOCUS MODE
+            </span>
             <button
               type="button"
               onClick={() => setFocusOnDas(false)}
-              className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#0C0C10]/90 px-4 text-xs font-medium text-[#FAFAFA] backdrop-blur-xl transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#16161C] active:scale-[0.98] cursor-pointer"
+              className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium active:scale-[0.98] cursor-pointer"
             >
               Show Dashboard
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-end pb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-8">
+            <div className="flex items-center gap-2.5 font-mono text-[11px] text-[#71717A]">
+              {(() => {
+                const idx = WORKSPACE_SLIDES.findIndex((s) => s.id === activeTab);
+                if (idx === -1) return <span>PATHFINDER WORKSPACE</span>;
+                const slide = WORKSPACE_SLIDES[idx];
+                return (
+                  <>
+                    <span className="text-[#D4D4D8]">SLIDE {slide.index} / 06</span>
+                    <span>·</span>
+                    <span className="uppercase">{slide.label}</span>
+                  </>
+                );
+              })()}
+            </div>
             <button
               type="button"
               onClick={() => {
                 setFocusOnDas(true);
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#0C0C10]/90 px-4 text-xs font-medium text-[#FAFAFA] backdrop-blur-xl transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#16161C] active:scale-[0.98] cursor-pointer"
+              className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium active:scale-[0.98] cursor-pointer"
             >
               Focus on DAS
             </button>
@@ -2153,7 +2171,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-14 sm:space-y-16"
+                className="space-y-16 sm:space-y-20"
               >
                 <section
                   id="career-readiness-assessment"
@@ -2227,7 +2245,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-14"
+                className="space-y-16 sm:space-y-20"
               >
                 <LiveCodingInterviewArena
                   profile={profile}
@@ -2264,7 +2282,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-14"
+                className="space-y-16 sm:space-y-20"
               >
                 <div id="sprint-roadmap">
                   <RoadmapVisualizer
@@ -2293,7 +2311,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-14"
+                className="space-y-16 sm:space-y-20"
               >
                 <BranchIntelligence
                   apiBase={API_BASE}
@@ -2315,7 +2333,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-14"
+                className="space-y-16 sm:space-y-20"
               >
                 <CohortExplorer
                   analytics={cohortAnalytics}
@@ -2350,7 +2368,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-14"
+                className="space-y-16 sm:space-y-20"
               >
                 <ProfileSettings
                   profile={profile}
@@ -2377,7 +2395,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-14"
+                className="space-y-16 sm:space-y-20"
               >
                 <JDCustomTailor
                   profile={profile}
@@ -2426,7 +2444,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-12 sm:space-y-14"
+                className="space-y-16 sm:space-y-20"
               >
                 <ProjectRecommender
                   targetRole={profile.targetRole}
@@ -2465,6 +2483,11 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           onClose={() => setShowOnePageResume(false)}
           profile={profile}
         />
+
+        {/* 6-Slide Workspace Switcher Pager */}
+        {!focusOnDas && WORKSPACE_SLIDES.some((s) => s.id === activeTab) && (
+          <SlideTransitionBar activeSlideId={activeTab} onSelectSlide={setActiveTab} />
+        )}
 
         {/* Global Footer */}
         {!focusOnDas && <Footer onNavigateTab={setActiveTab} />}

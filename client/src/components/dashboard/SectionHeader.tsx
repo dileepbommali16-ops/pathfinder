@@ -20,24 +20,24 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
   onAskCoach,
 }) => {
   return (
-    <div className="mb-6 border-b border-[#222226] pb-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-8 border-b border-white/[0.08] pb-6">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h2
-              className="text-xl font-semibold tracking-[-0.025em] text-[#FAFAFA] sm:text-2xl"
-              style={{ textWrap: "balance" }}
-            >
-              {title}
-            </h2>
+          <div className="flex flex-wrap items-center gap-3">
             {badge && (
-              <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA] tabular-nums">
+              <span className="rounded-md border border-white/[0.1] bg-[#121216] px-2.5 py-0.5 font-mono text-[10px] font-medium text-[#A1A1AA] tabular-nums">
                 {badge}
               </span>
             )}
           </div>
+          <h2
+            className="mt-2.5 text-2xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-[28px]"
+            style={{ textWrap: "balance" }}
+          >
+            {title}
+          </h2>
           <p
-            className="mt-1.5 max-w-2xl text-xs leading-relaxed text-[#A1A1AA] sm:text-sm"
+            className="mt-2 max-w-2xl text-xs leading-[1.65] text-[#A1A1AA] sm:text-sm"
             style={{ textWrap: "pretty" }}
           >
             {description}
@@ -45,9 +45,9 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
         </div>
 
         {(action || helperLabel || onAskCoach) && (
-          <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
             {helperLabel && (
-              <span className="inline-flex h-9 items-center rounded-lg border border-[#1F1F23] bg-[#0C0C0E] px-3 font-mono text-[11px] text-[#71717A]">
+              <span className="inline-flex h-10 items-center rounded-lg border border-white/[0.07] bg-[#0D0D11]/90 px-3.5 font-mono text-[11px] text-[#71717A]">
                 {helperLabel}
               </span>
             )}
@@ -59,7 +59,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
                     `Can you explain the '${title}' section? What is this showing and what should I do here?`
                   )
                 }
-                className="inline-flex h-9 items-center rounded-lg border border-[#27272A] bg-[#101014] px-3.5 text-xs font-medium text-[#FAFAFA] transition-colors duration-150 hover:border-[#3F3F46] hover:bg-[#18181B] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA]"
+                className="pf-btn-secondary inline-flex h-10 items-center rounded-lg px-4 text-xs font-medium active:scale-[0.98]"
               >
                 Ask DAS
               </button>

@@ -218,12 +218,69 @@
   mix-blend-mode: screen;
 }
 
-/* Precision Architectural Panel (1px hairline, subtle hover border, 60fps) */
+/* Precision Titanium Surfaces (Linear / Resend style: subtle top rim, translucent backdrop, 60fps) */
+.pf-titanium-card {
+  background: linear-gradient(180deg, rgba(19, 19, 24, 0.72) 0%, rgba(10, 10, 14, 0.66) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.09), 0 24px 48px -24px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  transition-property: border-color, background-color, transform;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pf-titanium-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.pf-subpanel {
+  background: rgba(14, 14, 18, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.pf-input {
+  background: rgba(9, 9, 12, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.55);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.pf-input:focus {
+  border-color: rgba(250, 250, 250, 0.48);
+  box-shadow: 0 0 0 3px rgba(250, 250, 250, 0.07);
+  outline: none;
+}
+
+.pf-btn-primary {
+  background: linear-gradient(180deg, #ffffff 0%, #e4e4e7 100%);
+  color: #09090b;
+  border: 1px solid #ffffff;
+  box-shadow: inset 0 1px 0 #ffffff, 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.pf-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ffffff 0%, #d4d4d8 100%);
+}
+
+.pf-btn-secondary {
+  background: linear-gradient(180deg, #18181e 0%, #111115 100%);
+  color: #fafafa;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.pf-btn-secondary:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: linear-gradient(180deg, #202028 0%, #15151b 100%);
+}
+
 .glass-depth-card,
 .holo-glass-card {
-  background: rgba(9, 9, 11, 0.62);
-  border: 1px solid #222226;
-  box-shadow: none;
+  background: rgba(9, 9, 11, 0.64);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   transition-property: transform, border-color, background-color;
@@ -273,18 +330,25 @@
   .pathfinder-dashboard main .backdrop-blur-xl:not(.fixed),
   .pathfinder-dashboard main .backdrop-blur-lg:not(.fixed),
   .pathfinder-dashboard main .backdrop-blur-md:not(.fixed),
-  .glass-depth-card {
+  .glass-depth-card,
+  .pf-titanium-card {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
 
-  .glass-depth-card:hover {
+  .pf-titanium-card {
+    background: linear-gradient(180deg, rgba(19, 19, 24, 0.86) 0%, rgba(10, 10, 14, 0.82) 100%);
+  }
+
+  .glass-depth-card:hover,
+  .pf-titanium-card:hover {
     transform: none !important;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glass-depth-card {
+  .glass-depth-card,
+  .pf-titanium-card {
     transition: none !important;
     transform: none !important;
   }
