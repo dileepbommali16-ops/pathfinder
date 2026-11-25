@@ -16,7 +16,7 @@ import { audioEngine, speaker } from "./audioIO";
 import { CodeTaskPayload, tryExecuteClientAutomationIntent } from "./toolRunner";
 import { API_BASE, getSessionId } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
-import { getUserRole, getHonorificKey, setHonorificPreference, isOwnerAccount, isGuestAccount, HonorificKey } from "@/lib/auth";
+import { getUserRole, getHonorificKey, HonorificKey } from "@/lib/auth";
 import { toast } from "sonner";
 import {
   AudioLines,
@@ -107,7 +107,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [connected, setConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
   const [hudCollapsed, setHudCollapsed] = useState(false);
-  const [role, setRole] = useState<UserHonorificRole>(() => getHonorificKey());
+  const [, setRole] = useState<UserHonorificRole>(() => getHonorificKey());
   const [inputText, setInputText] = useState("");
   const [transcript, setTranscript] = useState(() => getInitialGreeting(getHonorificKey()));
   const [userTranscript, setUserTranscript] = useState("");
@@ -867,31 +867,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     } finally {
       micBusyRef.current = false;
     }
-  };
-
-  const handleRoleToggle = (newRole: UserHonorificRole) => {
-    audioEngine.unlockAudio();
-    audioEngine.autoSyncOutputDevice();
-    const mapped =
-      newRole === "boss"
-        ? "Boss"
-        : newRole === "madam"
-          ? "Madam"
-          : newRole === "stranger"
-            ? "Stranger"
-            : "Sir";
-    const resolved = setHonorificPreference(mapped);
-    const resolvedKey: UserHonorificRole =
-      resolved === "Boss"
-        ? "boss"
-        : resolved === "Madam"
-          ? "madam"
-          : resolved === "Stranger"
-            ? "stranger"
-            : "sir";
-    setRole(resolvedKey);
-    dasSocket.switchRole(resolvedKey);
-    setTranscript(getInitialGreeting(resolvedKey));
   };
 
   const handleSendText = (e: React.FormEvent) => {

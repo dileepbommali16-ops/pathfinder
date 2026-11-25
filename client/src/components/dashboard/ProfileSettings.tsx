@@ -153,6 +153,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const resolvedEmail =
     formData.email ||
@@ -170,11 +171,13 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!String(formData.branch || "").trim() || !(Number(formData.cgpa) > 0)) {
-      setSuccessMsg("Please select your branch and enter your current CGPA (> 0) to calculate predictions.");
+      setSuccessMsg(null);
+      setErrorMsg("Please select your branch and enter your current CGPA (> 0) to calculate predictions.");
       return;
     }
     setIsSaving(true);
     setSuccessMsg(null);
+    setErrorMsg(null);
     try {
       const mult = formData.cgpaFormulaMultiplier || 9.5;
       const parsedSkills = skillsText
@@ -185,14 +188,15 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       const cleanLeetcode = (formData.leetcodeUrl ?? formData.codingProfiles?.leetcode ?? "").trim();
       const cleanLinkedin = (formData.codingProfiles?.linkedin ?? "").trim();
       const normalizedYear = normalizeYearOption(formData.currentYear);
-      const semMeta = YEAR_TO_SEM[normalizedYear] || YEAR_TO_SEM["3rd Year"];
+      const semMeta = normalizedYear ? YEAR_TO_SEM[normalizedYear] : undefined;
       const updated: StudentProfileState = {
         ...formData,
         currentYear: normalizedYear,
-        currentSemester: formData.currentSemester || semMeta.sem,
-        yearSemester: semMeta.label,
+        currentSemester: formData.currentSemester || (semMeta ? semMeta.sem : ""),
+        yearSemester: semMeta ? semMeta.label : "",
         githubUrl: cleanGithub,
         leetcodeUrl: cleanLeetcode,
+        linkedinUrl: cleanLinkedin,
         technicalSkills: parsedSkills,
         skills: parsedSkills,
         codingProfiles: {
@@ -246,6 +250,17 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             Reset defaults
           </button>
         </div>
+
+        {errorMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            role="alert"
+            className="rounded-xl border border-[#F87171]/40 bg-[#1F1215] p-4 text-xs font-medium text-[#FCA5A5]"
+          >
+            {errorMsg}
+          </motion.div>
+        )}
 
         {successMsg && (
           <motion.div

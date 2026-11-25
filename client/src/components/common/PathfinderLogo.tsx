@@ -14,7 +14,7 @@ interface PathfinderLogoProps {
 export const PathfinderLogo: React.FC<PathfinderLogoProps> = ({
   size = 40,
   className = "",
-  showPulse = false,
+  showPulse: _showPulse = false,
 }) => {
   const uid = useId().replace(/:/g, "");
   const housingId = `pf-housing-${uid}`;
@@ -82,8 +82,6 @@ export const PathfinderLogo: React.FC<PathfinderLogoProps> = ({
         {/* North-east precision vector apex dot */}
         <circle cx="29.5" cy="10.5" r="1.65" fill="#FAFAFA" />
       </svg>
-
-      {showPulse ? null : null}
     </span>
   );
 };

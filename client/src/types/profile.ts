@@ -40,6 +40,7 @@ export interface StudentProfileState {
   codingProfiles: CodingProfiles;
   githubUrl?: string; // direct alias
   leetcodeUrl?: string; // direct alias
+  linkedinUrl?: string; // direct alias
   coding: number;
   communication: number;
 
@@ -86,7 +87,7 @@ export interface ReadinessAuditData {
 /** Returns true when a name is blank or a generic placeholder such as "Student Candidate". */
 export function isPlaceholderCandidateName(val?: string | null): boolean {
   const s = (val || "").trim();
-  return !s || /^(student candidate|guest student|student|new student|candidate)$/i.test(s);
+  return !s || /^(student candidate|guest student|guest|stranger|student|new student|candidate)$/i.test(s);
 }
 
 /** Prefers a concrete candidate name over generic template placeholders. */
@@ -228,6 +229,7 @@ export const EMPTY_GUEST_PROFILE: StudentProfileState = {
   },
   githubUrl: "",
   leetcodeUrl: "",
+  linkedinUrl: "",
   coding: 0,
   communication: 0,
   targetRole: "",
@@ -270,9 +272,11 @@ export const DEFAULT_STUDENT_PROFILE: StudentProfileState = {
   codingProfiles: {
     github: "",
     leetcode: "",
+    linkedin: "",
   },
   githubUrl: "",
   leetcodeUrl: "",
+  linkedinUrl: "",
   coding: 7,
   communication: 7,
   targetRole: "Software Development Engineer (SDE)",

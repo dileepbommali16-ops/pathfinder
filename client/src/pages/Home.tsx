@@ -750,7 +750,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     priorities: string[];
     breakdown: Record<string, number>;
   }>(() =>
-    isProfileUnconfigured(buildInitialProfileFromStorage())
+    isProfileUnconfigured(profile)
       ? UNCONFIGURED_PREDICTION
       : {
           chance: 78.5,
@@ -1829,7 +1829,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
             userName: username,
             userEmail: email,
             placementReadinessChance:
-          prediction.chance !== null ? `${prediction.chance}%` : "Unconfigured",
+              prediction.chance !== null ? `${prediction.chance}%` : "Unconfigured",
             placementReadinessLabel: prediction.label,
             candidateBranch: profile.branch,
             targetRole: profile.targetRole,
@@ -2049,6 +2049,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     setRoadmap(null);
     setCohortInsight(null);
     setProfile(DEFAULT_STUDENT_PROFILE);
+    setPrediction(UNCONFIGURED_PREDICTION);
     setIsDemoProfile(true);
     setUserRole("student");
     if (typeof window !== "undefined") {
@@ -2407,6 +2408,19 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                   profile={profile}
                   onSaveProfile={handleSaveProfile}
                   onResetToDefaults={() => {
+                    const isGuestSession =
+                      (email || profile.email || "").toLowerCase() === "guest@pathfinder.ai";
+                    if (isGuestSession) {
+                      const cleanGuest = {
+                        ...EMPTY_GUEST_PROFILE,
+                        email: email || "guest@pathfinder.ai",
+                      };
+                      setProfile(cleanGuest);
+                      localStorage.setItem("pathfinder_profile_draft", JSON.stringify(cleanGuest));
+                      setPrediction(UNCONFIGURED_PREDICTION);
+                      toast.info("Guest workspace reset to unconfigured state.");
+                      return;
+                    }
                     setProfile(DEFAULT_STUDENT_PROFILE);
                     handleSaveProfile(DEFAULT_STUDENT_PROFILE);
                   }}

@@ -18,6 +18,8 @@ import { SUPPORTED_LANGUAGES } from "../agent/codingStudioController";
 import { tryExecuteClientAutomationIntent } from "../agent/toolRunner";
 import {
   DEFAULT_STUDENT_PROFILE,
+  EMPTY_GUEST_PROFILE,
+  isProfileUnconfigured,
   buildFreshOnboardingProfile,
   buildInitialProfileFromStorage,
   isPlaceholderCandidateName,
@@ -320,5 +322,32 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     const spoken = idReply.split("|||")[0];
     expect(spoken).toContain("Bommali Dileep");
     expect(spoken).not.toContain("What's up");
+  });
+
+  it("treats Guest and Stranger as placeholder names and keeps unconfigured Guest profiles empty", () => {
+    expect(isPlaceholderCandidateName("Guest")).toBe(true);
+    expect(isPlaceholderCandidateName("Stranger")).toBe(true);
+    expect(pickCandidateFullName("Guest", "Priyanka")).toBe("Priyanka");
+
+    const guestProfile = buildInitialProfileFromStorage(
+      null,
+      JSON.stringify({ email: "guest@pathfinder.ai", username: "Guest Student" })
+    );
+    expect(guestProfile.cgpa).toBe(0);
+    expect(guestProfile.branch).toBe("");
+    expect(guestProfile.linkedinUrl).toBe("");
+    expect(isProfileUnconfigured(guestProfile)).toBe(true);
+    expect(isProfileUnconfigured(EMPTY_GUEST_PROFILE)).toBe(true);
+  });
+
+  it("keeps visible mode badges, Addressing Mode UI, and dead handleRoleToggle out of AgentLayout and ProfileSettings", () => {
+    const srcRoot = path.resolve(__dirname, "..");
+    const layoutSrc = fs.readFileSync(path.join(srcRoot, "agent/AgentLayout.tsx"), "utf-8");
+    const settingsSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/ProfileSettings.tsx"), "utf-8");
+
+    for (const banned of ["Stranger Mode", "Madam Mode", "Sir Mode", "Boss Mode", "handleRoleToggle"]) {
+      expect(layoutSrc).not.toContain(banned);
+    }
+    expect(settingsSrc).not.toContain("Addressing Mode");
   });
 });
