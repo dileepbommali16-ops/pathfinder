@@ -20,6 +20,8 @@ export default function App() {
             <AgentLayout>
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Home initialAuthView="login" />} />
+                <Route path="/signin" element={<Home initialAuthView="login" />} />
                 <Route path="/dashboard" element={<Home />} />
                 <Route path="/blueprints" element={<BlueprintDetail />} />
                 <Route path="/resume-studio" element={<AtsResumeStudio />} />

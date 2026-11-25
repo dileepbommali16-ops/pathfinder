@@ -9,6 +9,7 @@ import { useScreenWatcher } from "@/hooks/useScreenWatcher";
 import { CohortExplorer, CohortAnalyticsData } from "@/components/dashboard/CohortExplorer";
 import { ResumeStudio, ResumeFeedbackData } from "@/components/dashboard/ResumeStudio";
 import { LampLogin } from "@/components/auth/LampLogin";
+import { ComputeLandingPage } from "@/components/landing/ComputeLandingPage";
 import { Ambient3DBackground } from "@/components/dashboard/Ambient3DBackground";
 import { ProjectRecommender } from "@/components/dashboard/ProjectRecommender";
 import { RoleIntelligence } from "@/components/dashboard/RoleIntelligence";
@@ -55,9 +56,10 @@ import { toast } from "sonner";
 
 export interface HomeProps {
   initialTab?: TabId;
+  initialAuthView?: "landing" | "login";
 }
 
-export default function Home({ initialTab }: HomeProps = {}) {
+export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
   const [activeTab, setActiveTab] = useState<TabId>(() => {
     if (initialTab) return initialTab;
     if (typeof window !== "undefined") {
@@ -447,14 +449,84 @@ export default function Home({ initialTab }: HomeProps = {}) {
   const [isServerWakingUp, setIsServerWakingUp] = useState<boolean>(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [oauthSigningIn, setOauthSigningIn] = useState<boolean>(false);
+  const [authView, setAuthView] = useState<"landing" | "login">(() => {
+    if (initialAuthView) return initialAuthView;
+    if (typeof window === "undefined") return "landing";
+    const pathname = window.location.pathname.toLowerCase();
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash || "";
+    if (
+      pathname === "/login" ||
+      pathname === "/signin" ||
+      params.get("auth") === "login" ||
+      params.get("oauth_error") ||
+      hash.includes("oauth_error=")
+    ) {
+      return "login";
+    }
+    return "landing";
+  });
   const oauthHandledRef = useRef<boolean>(false);
   const loginSeqRef = useRef<number>(0);
   const pendingAuthSyncRef = useRef<Promise<void> | null>(null);
 
+  useEffect(() => {
+    if (initialAuthView) {
+      setAuthView(initialAuthView);
+    }
+  }, [initialAuthView]);
+
+  useEffect(() => {
+    if (oauthError && !isAuthenticated) {
+      setAuthView("login");
+    }
+  }, [oauthError, isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated || typeof window === "undefined") return;
+    const handlePopState = () => {
+      const pathname = window.location.pathname.toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      if (pathname === "/login" || pathname === "/signin" || params.get("auth") === "login") {
+        setAuthView("login");
+      } else {
+        setAuthView("landing");
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isAuthenticated]);
+
+  const openLoginView = () => {
+    setAuthView("login");
+    if (typeof window !== "undefined") {
+      try {
+        const pathname = window.location.pathname.toLowerCase();
+        if (pathname !== "/login" && pathname !== "/signin") {
+          window.history.pushState({ authView: "login" }, "", "/login");
+        }
+      } catch { }
+    }
+  };
+
+  const openLandingView = () => {
+    setAuthView("landing");
+    if (typeof window !== "undefined") {
+      try {
+        if (window.location.pathname !== "/" || window.location.search) {
+          window.history.pushState({ authView: "landing" }, "", "/");
+        }
+      } catch { }
+    }
+  };
+
   // Dynamic Document Page Titles & ?tab= URL sync based on Auth & Active Tab
   useEffect(() => {
     if (!isAuthenticated) {
-      document.title = "Sign In · Pathfinder 2.0";
+      document.title =
+        authView === "login"
+          ? "Sign In · Pathfinder 2.0"
+          : "Pathfinder 2.0 · Autonomous AI Career Intelligence";
       return;
     }
     const titles: Record<TabId, string> = {
@@ -478,7 +550,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
         }
       } catch { }
     }
-  }, [activeTab, isAuthenticated]);
+  }, [activeTab, isAuthenticated, authView]);
 
   // Authentication session expiration listener (401 token revocation)
   useEffect(() => {
@@ -486,6 +558,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       loginSeqRef.current++;
       pendingAuthSyncRef.current = null;
       setIsAuthenticated(false);
+      setAuthView("landing");
       setUserRole("student");
     };
     window.addEventListener("pathfinder_logout", handleRemoteLogout);
@@ -888,6 +961,14 @@ export default function Home({ initialTab }: HomeProps = {}) {
     setProfile(immediateProfile);
     setIsDemoProfile(immediateIsDemo);
     setActiveTab("overview");
+    if (typeof window !== "undefined") {
+      try {
+        const pathname = window.location.pathname.toLowerCase();
+        if (pathname === "/login" || pathname === "/signin") {
+          window.history.replaceState({}, "", "/?tab=overview");
+        }
+      } catch { }
+    }
     setIsAuthenticated(true);
     void fetchPrediction(immediateProfile);
 
@@ -1928,6 +2009,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
     localStorage.removeItem("das_mode");
     localStorage.removeItem("das_honorific_override");
     setIsAuthenticated(false);
+    setAuthView("landing");
     setActiveTab("profile");
     setResumeFeedback(null);
     setRoadmap(null);
@@ -1939,7 +2021,7 @@ export default function Home({ initialTab }: HomeProps = {}) {
       try {
         window.history.replaceState({}, "", "/");
       } catch { }
-      document.title = "Sign In · Pathfinder 2.0";
+      document.title = "Pathfinder 2.0 · Autonomous AI Career Intelligence";
       window.dispatchEvent(
         new CustomEvent("pathfinder:auth-change", { detail: { authenticated: false } })
       );
@@ -1965,7 +2047,27 @@ export default function Home({ initialTab }: HomeProps = {}) {
     );
   }
   if (!isAuthenticated) {
-    return <LampLogin onLogin={handleLogin} initialError={oauthError} />;
+    if (authView === "login") {
+      return (
+        <LampLogin
+          onLogin={handleLogin}
+          initialError={oauthError}
+          onBack={openLandingView}
+        />
+      );
+    }
+    return (
+      <ComputeLandingPage
+        onNavigateLogin={openLoginView}
+        onGuestLogin={() =>
+          handleLogin({
+            username: "Guest Student",
+            email: "guest@pathfinder.ai",
+            bypassOnboarding: true,
+          })
+        }
+      />
+    );
   }
 
   // 2. MAIN DASHBOARD & PLATFORM NAVIGATION
