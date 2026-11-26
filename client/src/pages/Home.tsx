@@ -1942,7 +1942,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         gender: f.gender,
         skill: f.skill,
       });
-      const resp = await fetchWithTimeout(`${API_BASE}/api/analytics?${q.toString()}`, {}, 6000);
+      const resp = await fetchWithTimeout(`${API_BASE}/api/analytics?${q.toString()}`, {}, 18000);
       if (resp.ok) {
         const data = await resp.json();
         setCohortAnalytics(data);
@@ -1964,7 +1964,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       const resp = await fetchWithTimeout(
         `${API_BASE}/api/ai/cohort-insight?${q.toString()}`,
         { method: "POST" },
-        10000
+        25000
       );
       if (resp.ok) {
         const data = await resp.json();

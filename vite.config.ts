@@ -24,12 +24,18 @@ export default defineConfig({
         target: "https://pathfinder-backend-sg.onrender.com",
         changeOrigin: true,
         secure: true,
+        headers: {
+          Origin: "https://pathfinder-client-fzom.vercel.app",
+        },
       },
       "/agent/ws": {
         target: "wss://pathfinder-backend-sg.onrender.com",
         ws: true,
         changeOrigin: true,
         secure: true,
+        headers: {
+          Origin: "https://pathfinder-client-fzom.vercel.app",
+        },
       },
     },
   },

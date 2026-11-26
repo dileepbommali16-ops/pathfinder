@@ -428,6 +428,8 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(homeSrc).toContain("duration: 0.12");
     expect(homeSrc).not.toContain("duration: 0.25");
     expect(indexCssSrc).toContain("--text-muted: #8a8a92");
+    const apiClientSrc = fs.readFileSync(path.join(srcRoot, "lib/apiClient.js"), "utf-8");
+    expect(apiClientSrc).toContain('host === "localhost" || host === "127.0.0.1"');
   });
 
   it("keeps visible mode badges, Addressing Mode UI, and dead handleRoleToggle out of AgentLayout and ProfileSettings", () => {
