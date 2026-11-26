@@ -37,8 +37,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
               </span>
             </div>
             <p className="text-xs leading-relaxed text-[#A1A1AA]">
-              Full-stack engineering placement intelligence calibrated on a 972-record placement
-              dataset, pairing scikit-learn probability models with live 3D voice coaching.
+              Full-stack engineering placement intelligence calibrated on a 972-record public
+              placement dataset (Hugging Face), pairing scikit-learn probability models with live
+              3D voice coaching.
             </p>
           </div>
 
@@ -113,9 +114,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
             </ul>
           </div>
 
-          {/* Column 3: Institutional Data */}
+          {/* Column 3: Dataset */}
           <div>
-            <h3 className="mb-4 text-xs font-semibold text-[#FAFAFA]">Institutional data</h3>
+            <h3 className="mb-4 text-xs font-semibold text-[#FAFAFA]">Dataset</h3>
             <ul className="space-y-3 text-xs">
               <li>
                 <button
@@ -126,7 +127,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                   }}
                   className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
                 >
-                  972 cohort explorer
+                  Placement dataset analytics
                 </button>
               </li>
               <li>
@@ -168,24 +169,34 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
             </ul>
           </div>
 
-          {/* Column 4: Platform Info */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-[#FAFAFA]">Workspace</h3>
+          {/* Column 4: Dataset Credit & Attribution */}
+          <div className="space-y-3" data-dataset-credit="huggingface">
+            <h3 className="text-xs font-semibold text-[#FAFAFA]">Dataset Credit</h3>
             <p className="text-xs leading-relaxed text-[#A1A1AA]">
-              Pathfinder 2.0 · Placement Readiness &amp; Live Voice Interview Workbench.
+              Predictions and analytics are powered by a 972-record public placement dataset
+              (Hugging Face), not private institutional records.
             </p>
             <div className="space-y-2 pt-1 text-xs">
-              <p className="text-[#8A8A92]">Hyderabad, India</p>
-              <button
-                type="button"
-                onClick={() => {
-                  onNavigateTab("profile");
-                  scrollToTop();
-                }}
-                className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+              <a
+                href="https://huggingface.co/datasets"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-mono text-[11px] text-[#D4D4D8] underline decoration-white/25 underline-offset-4 transition-colors hover:text-[#FAFAFA]"
               >
-                Open profile settings
-              </button>
+                Hugging Face Public Placement Dataset ↗
+              </a>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onNavigateTab("profile");
+                    scrollToTop();
+                  }}
+                  className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+                >
+                  Open profile settings
+                </button>
+              </div>
             </div>
           </div>
         </div>

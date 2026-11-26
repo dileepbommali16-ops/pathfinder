@@ -381,7 +381,19 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(homeSrc).toContain("Demo Profile (Sample)");
     expect(homeSrc).toContain("Clear &amp; enter my details");
     const heroMetricsSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/HeroMetrics.tsx"), "utf-8");
+    const norm = (s: string) => s.replace(/\s+/g, " ");
     expect(heroMetricsSrc).toContain('data-das-hero-zone="overview"');
+    expect(norm(heroMetricsSrc)).toContain("972-record public placement dataset (Hugging Face)");
+    expect(norm(footerSrc)).toContain("972-record public placement dataset (Hugging Face)");
+    expect(footerSrc).toContain('data-dataset-credit="huggingface"');
+    expect(footerSrc).not.toContain("Institutional data");
+    expect(footerSrc).not.toContain("Hyderabad, India");
+    expect(norm(landingSrc)).toContain("972-record public placement dataset (Hugging Face)");
+    const cohortExplorerSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/CohortExplorer.tsx"), "utf-8");
+    expect(norm(cohortExplorerSrc)).toContain("972-record public placement dataset (Hugging Face)");
+    expect(cohortExplorerSrc).not.toContain("TPO Institutional Command Center");
+    expect(cohortExplorerSrc).not.toContain("NAAC 5.2.1");
+    expect(cohortExplorerSrc).not.toContain("Class of {y}");
   });
 
   it("keeps visible mode badges, Addressing Mode UI, and dead handleRoleToggle out of AgentLayout and ProfileSettings", () => {

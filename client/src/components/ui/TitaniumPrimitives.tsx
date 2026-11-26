@@ -175,8 +175,8 @@ export const WORKSPACE_SLIDES: WorkspaceSlideItem[] = [
   {
     id: "analytics",
     index: "05",
-    label: "Cohort & Roadmap",
-    subtitle: "972-record placement dataset & 6-week sprint plan",
+    label: "Dataset & Roadmap",
+    subtitle: "972-record public placement dataset (Hugging Face) & 6-week sprint plan",
   },
   {
     id: "profile",

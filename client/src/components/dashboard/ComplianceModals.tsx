@@ -63,8 +63,8 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
                   3. Benchmark Data Disclosure
                 </h3>
                 <p>
-                  This platform uses a 972-record placement dataset across 9 engineering departments
-                  with anonymized student identifiers.
+                  This platform uses a 972-record public placement dataset (Hugging Face) across 9
+                  engineering departments with anonymized student identifiers.
                 </p>
               </section>
 

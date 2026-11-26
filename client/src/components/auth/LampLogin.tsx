@@ -18,8 +18,8 @@ interface LampLoginProps {
 const STUDIO_HIGHLIGHTS = [
   {
     index: "01",
-    title: "972-Record Placement Dataset",
-    detail: "Instant Random Forest placement odds across CGPA, skills, and drive cutoffs.",
+    title: "972-Record Public Placement Dataset (Hugging Face)",
+    detail: "Instant Random Forest placement odds across CGPA, skills, and dataset benchmarks.",
   },
   {
     index: "02",
@@ -179,7 +179,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
             className="text-3xl font-semibold leading-[1.12] tracking-[-0.035em] text-[#FAFAFA] xl:text-4xl"
             style={{ textWrap: "balance" }}
           >
-            From campus preparation to engineering offers.
+            From structured preparation to engineering offers.
           </h2>
 
           <div className="space-y-4">
@@ -219,7 +219,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
                 Sign in to Pathfinder
               </h1>
               <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
-                Continue with Google or GitHub, or enter your campus email.
+                Continue with Google or GitHub, or enter your name and email.
               </p>
             </div>
 

@@ -332,7 +332,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       // 4. Placement Intelligence Lookup Notification
       if (toolName === "fetch_placement_intelligence_for_client") {
         toast.info(
-          `Analyzing 972-record placement dataset for: ${args?.companyOrBranch || "Campus Drives"}...`
+          `Analyzing 972-record public placement dataset (Hugging Face) for: ${args?.companyOrBranch || "Placement Analytics"}...`
         );
       }
     };
@@ -2363,11 +2363,11 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 >
                   {dasLayoutMode === "docked" && (
                     <SectionHeader
-                      title="Campus Placement Readiness Overview"
+                      title="Placement Readiness Overview"
                       description="Real-time placement probability and primary eligibility benchmark"
                       badge="1 of 3 · Readiness"
                       accent="cyan"
-                      helperLabel="Calculated via Random Forest model trained on 972-record placement dataset"
+                      helperLabel="Calculated via Random Forest model trained on 972-record public placement dataset (Hugging Face)"
                     />
                   )}
                   <HeroMetrics

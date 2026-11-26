@@ -155,24 +155,24 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-[28px]">
                 {viewMode === "explorer"
-                  ? "Cohort Analytics & Placement Records"
-                  : "TPO Institutional Command Center"}
+                  ? "Placement Dataset Analytics"
+                  : "Placement Dataset Report Format"}
               </h2>
               <span className="rounded-md border border-white/[0.1] bg-[#141418] px-2.5 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
                 {viewMode === "explorer"
                   ? analytics?.total_records != null
-                    ? `${analytics.total_records.toLocaleString()} Records`
+                    ? `${analytics.total_records.toLocaleString()} Filtered · 972 Total`
                     : "Loading Records"
-                  : "TPO Reporting View"}
+                  : "Report Format"}
               </span>
             </div>
             <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
               {viewMode === "explorer"
-                ? `Interactive cohort distributions across ${
+                ? `Based on a 972-record public placement dataset (Hugging Face) across ${
                     analytics?.branch_distribution?.length ||
                     branches.filter((b) => b !== "All").length
                   } engineering branches`
-                : "Institutional placement summaries, department rollups, and at-risk CSV exports"}
+                : "Structured summary tables, branch rollups, and CSV exports from the 972-record public placement dataset (Hugging Face)"}
             </p>
           </div>
 
@@ -187,7 +187,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                     : "text-[#A1A1AA] hover:text-[#FAFAFA]"
                 }`}
               >
-                Cohort Data
+                Dataset Explorer
               </button>
               <button
                 type="button"
@@ -198,7 +198,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                     : "text-[#A1A1AA] hover:text-[#FAFAFA]"
                 }`}
               >
-                TPO Summary
+                Report Format
               </button>
             </div>
 
@@ -236,7 +236,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
         <div className="mt-7 grid grid-cols-2 gap-5 sm:grid-cols-4">
           <div className="space-y-2">
             <label htmlFor="cohort-filter-year" className="block text-xs font-medium text-[#D4D4D8]">
-              Cohort Year
+              Dataset Year
             </label>
             <select
               id="cohort-filter-year"
@@ -245,9 +245,12 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               onChange={(e) => onFilterChange({ ...filters, year: parseInt(e.target.value, 10) })}
               className="pf-input h-11 w-full rounded-xl px-3.5 text-xs font-medium text-[#FAFAFA]"
             >
+              <option value={0} className="bg-[#09090B]">
+                All Years (972 records)
+              </option>
               {years.map((y) => (
                 <option key={y} value={y} className="bg-[#09090B]">
-                  Class of {y}
+                  Year {y}
                 </option>
               ))}
             </select>
@@ -403,25 +406,26 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <div className="flex flex-col justify-between gap-2 border-b border-[#1F1F23] pb-4 sm:flex-row sm:items-center">
               <div>
                 <h3 className="text-base font-semibold text-[#FAFAFA]">
-                  Department Placement Summary (NAAC 5.2.1 Format)
+                  Department Placement Summary (Report Format)
                 </h3>
                 <p className="text-xs text-[#A1A1AA]">
-                  Filtered cohort placement rollup for graduating class {filters.year}
+                  Filtered rollup from the 972-record public placement dataset (Hugging Face) ·{" "}
+                  {filters.year === 0 ? "All Years" : `Year ${filters.year}`}
                 </p>
               </div>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-4">
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
-                <span className="font-mono text-[10px] text-[#71717A]">Outgoing Batch</span>
+                <span className="font-mono text-[10px] text-[#71717A]">Dataset Slice</span>
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {records.length}
                 </div>
-                <span className="text-[11px] text-[#A1A1AA]">Filtered Candidates</span>
+                <span className="text-[11px] text-[#A1A1AA]">Filtered Records</span>
               </div>
 
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
-                <span className="font-mono text-[10px] text-[#71717A]">Campus Placements</span>
+                <span className="font-mono text-[10px] text-[#71717A]">Placed Records</span>
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {placedStudents}
                 </div>
@@ -435,7 +439,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {analytics?.median_package ? `₹${analytics.median_package} LPA` : "—"}
                 </div>
-                <span className="text-[11px] text-[#A1A1AA]">Filtered Cohort Median</span>
+                <span className="text-[11px] text-[#A1A1AA]">Filtered Dataset Median</span>
               </div>
 
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
@@ -491,10 +495,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
         </div>
       ) : (
         <>
-          {/* AI Cohort Intelligence */}
+          {/* AI Dataset Intelligence */}
           <div className="pf-titanium-card rounded-2xl p-7 sm:p-8">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <span className="text-sm font-semibold text-[#FAFAFA]">AI Cohort Intelligence</span>
+              <span className="text-sm font-semibold text-[#FAFAFA]">AI Dataset Intelligence</span>
 
               <button
                 type="button"
@@ -589,10 +593,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           <div className="pf-titanium-card overflow-hidden rounded-2xl">
             <div className="flex items-center justify-between border-b border-[#1F1F23] p-6">
               <div>
-                <h3 className="text-sm font-semibold text-[#FAFAFA]">Filtered Student Records</h3>
+                <h3 className="text-sm font-semibold text-[#FAFAFA]">Filtered Dataset Records</h3>
                 <p className="mt-0.5 text-xs text-[#A1A1AA]">
-                  Showing {records.length} matching candidate profiles from {filters.branch} (
-                  {filters.year})
+                  Showing {records.length} matching records from {filters.branch} (
+                  {filters.year === 0 ? "All Years" : `Year ${filters.year}`})
                 </p>
               </div>
             </div>
@@ -601,8 +605,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-[#1F1F23] bg-[#0C0C0E] font-mono text-[11px] text-[#71717A]">
                   <tr>
-                    <th className="px-6 py-3 font-medium">Candidate ID</th>
-                    <th className="px-6 py-3 font-medium">Class Year</th>
+                    <th className="px-6 py-3 font-medium">Record ID</th>
+                    <th className="px-6 py-3 font-medium">Dataset Year</th>
                     <th className="px-6 py-3 font-medium">Branch</th>
                     <th className="px-6 py-3 font-medium">Gender</th>
                     <th className="px-6 py-3 font-medium">Skill Focus</th>

@@ -23,7 +23,7 @@ const SLIDE_PREVIEWS: Record<
     metric: "120 Trees",
     metricLabel: "Random Forest estimators · 5 readiness axes",
     points: [
-      "Calibrated probability benchmark against 972 campus records",
+      "Calibrated probability benchmark against a 972-record public placement dataset (Hugging Face)",
       "5-axis competency telemetry across academics, DSA, projects & STAR",
       "Reference cutoff benchmarks across Google, Razorpay, Amazon & TCS Digital",
     ],
@@ -59,12 +59,12 @@ const SLIDE_PREVIEWS: Record<
     ],
   },
   analytics: {
-    eyebrow: "Slide 05 · Institutional Telemetry",
+    eyebrow: "Slide 05 · Public Dataset Analytics",
     metric: "972 Rows",
-    metricLabel: "Cohort distributions & report exports",
+    metricLabel: "Public Hugging Face dataset & report exports",
     points: [
-      "Slice placement conversion across graduating year, branch, domain & CGPA band",
-      "TPO summary export mode with CSV/PDF tables",
+      "Slice placement conversion across dataset year, branch, domain & CGPA band",
+      "Report format view with CSV/PDF export tables",
       "Interactive 6-week placement sprint roadmap persisted per candidate",
     ],
   },
@@ -188,7 +188,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
           >
             <div className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.1] bg-[#0D0D11]/90 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-[#D4D4D8]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
-              <span>Pathfinder 2.0 · Campus Placement Intelligence</span>
+              <span>Pathfinder 2.0 · Placement Intelligence Workbench</span>
             </div>
 
             <h1
@@ -202,9 +202,9 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               className="mt-6 max-w-2xl text-base leading-[1.7] text-[#A1A1AA] sm:text-lg"
               style={{ textWrap: "pretty" }}
             >
-              Estimate your offer probability against a 972-record placement dataset, write and
-              execute solutions across 11 compiler runtimes, and defend system trade-offs aloud
-              with DAS — your live 3D holographic voice mentor.
+              Estimate your offer probability against a 972-record public placement dataset
+              (Hugging Face), write and execute solutions across 11 compiler runtimes, and defend
+              system trade-offs aloud with DAS — your live 3D holographic voice mentor.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-4">
@@ -305,11 +305,11 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                     <span>120 ESTIMATORS</span>
                   </div>
                   <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
-                    Random Forest prediction across real cutoffs
+                    Random Forest prediction on public placement data
                   </h3>
                   <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-[#A1A1AA]">
                     Evaluates CGPA multipliers, branch history, standing backlogs, internships, and
-                    DSA readiness against a 972-record placement dataset.
+                    DSA readiness against a 972-record public placement dataset (Hugging Face).
                   </p>
                 </div>
 
@@ -575,7 +575,9 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
                 <AnimatedMetric value={972} />
               </div>
-              <p className="mt-2 text-sm text-[#A1A1AA]">Records in placement dataset</p>
+              <p className="mt-2 text-sm text-[#A1A1AA]">
+                Records in public placement dataset (Hugging Face)
+              </p>
             </SpotlightSurface>
 
             <SpotlightSurface className="rounded-2xl p-7">
@@ -613,7 +615,16 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             <span className="font-medium text-[#FAFAFA]">Pathfinder 2.0</span>
           </div>
           <p className="text-center font-mono text-[11px] text-[#71717A] sm:text-right">
-            Random Forest ML · Live 3D Voice Coach · 11-Language Compiler
+            Random Forest ML ·{" "}
+            <a
+              href="https://huggingface.co/datasets"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#A1A1AA] underline decoration-white/20 underline-offset-4 hover:text-[#FAFAFA]"
+            >
+              972-Record Public Placement Dataset (Hugging Face)
+            </a>{" "}
+            · Live 3D Voice Coach
           </p>
         </div>
       </footer>
