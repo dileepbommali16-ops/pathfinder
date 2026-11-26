@@ -23,8 +23,8 @@ export function createHologramScanMaterial(
   const isShoulders = Boolean(options?.isShoulders);
 
   const mat = new THREE.MeshPhongMaterial({
-    color: new THREE.Color("#5BC0DE"),
-    emissive: new THREE.Color("#005577"),
+    color: new THREE.Color("#F5F3EF"),
+    emissive: new THREE.Color("#3D3B38"),
     transparent: true,
     depthWrite: true,
     side: THREE.FrontSide,
@@ -91,11 +91,11 @@ export function createHologramScanMaterial(
         float microGrid = 0.88 + 0.12 * sin(vHoloWorldPos.x * 480.0 + vHoloWorldPos.z * 165.0);
         float sweepPulse = pow(0.5 + 0.5 * sin(vHoloWorldPos.y * 4.8 + uTime * 1.9), 6.0);
 
-        // True linear RGB palette calibrated for Three.js r186 SRGB output (#006D8F -> #5BC0DE -> #00F0FF)
-        vec3 troughCyan = vec3(0.001, 0.036, 0.068);
-        vec3 deepCyan   = vec3(0.004, 0.210, 0.375);
-        vec3 midCyan    = vec3(0.055, 0.540, 0.760);
-        vec3 crestCyan  = vec3(0.085, 0.840, 1.000);
+        // True linear RGB palette calibrated for Three.js r186 SRGB output (off-white / silver #F5F3EF)
+        vec3 troughCyan = vec3(0.030, 0.029, 0.028);
+        vec3 deepCyan   = vec3(0.165, 0.162, 0.156);
+        vec3 midCyan    = vec3(0.515, 0.506, 0.490);
+        vec3 crestCyan  = vec3(0.916, 0.899, 0.867);
 
         float sculptedKey = pow(keySculpt, 1.25);
         float shapeWeight = clamp(sculptedKey * 0.68 + fillSculpt * 0.20 + fresnel * 0.42 + rimSculpt * 0.18, 0.0, 1.0);
@@ -134,8 +134,8 @@ export function createHologramScanMaterial(
  */
 export function createMoltenRedEyeMaterial(sharedUniforms: HologramUniforms): THREE.MeshPhongMaterial {
   const mat = new THREE.MeshPhongMaterial({
-    color: new THREE.Color("#F23456"),
-    emissive: new THREE.Color("#A80139"),
+    color: new THREE.Color("#E5322D"),
+    emissive: new THREE.Color("#7A1412"),
     transparent: false,
     depthWrite: true,
     toneMapped: false,
@@ -180,11 +180,11 @@ export function createMoltenRedEyeMaterial(sharedUniforms: HologramUniforms): TH
                     + cos(vEyeWorldPos.y * 105.0 - uTime * 3.6 + sin(vEyeWorldPos.x * 95.0 + uTime * 2.8));
         float vein = 0.5 + 0.5 * sin(swirl * 1.5 + uTime * 2.6);
 
-        // True linear RGB equivalents of #A80139 and #F23456 -> blazing ruby/crimson red with zero pastel blowout
-        vec3 deepRuby    = vec3(0.220, 0.000, 0.020);
-        vec3 rubyMagma   = vec3(0.400, 0.000, 0.041); // #A80139 linear
-        vec3 crimsonLava = vec3(0.892, 0.034, 0.093); // #F23456 linear
-        vec3 hotCrimson  = vec3(1.280, 0.045, 0.115); // Pure blazing neon crimson core
+        // True linear RGB equivalents of #E5322D -> blazing vermilion-crimson red matching UI accent
+        vec3 deepRuby    = vec3(0.180, 0.004, 0.003);
+        vec3 rubyMagma   = vec3(0.390, 0.011, 0.009);
+        vec3 crimsonLava = vec3(0.789, 0.027, 0.022); // #E5322D linear
+        vec3 hotCrimson  = vec3(1.180, 0.045, 0.036); // Blazing #E5322D core
 
         vec3 eyeCol = mix(deepRuby, rubyMagma, clamp(outerIris * 0.75 + vein * 0.35, 0.0, 1.0));
         eyeCol = mix(eyeCol, crimsonLava, clamp(outerIris * (0.45 + 0.55 * vein), 0.0, 1.0));
