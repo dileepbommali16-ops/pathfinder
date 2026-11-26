@@ -192,52 +192,52 @@ const PLACEMENT_COHORT_VECTORS_RAW = [
     branch: "CSE / AIML",
     skill_category: "AIML & Python",
     content:
-      "[Synthetic Dataset Slice (216/972 records) - CSE & AIML]: Highest Package 44.6 LPA (AIML) & 44.0 LPA (CSE) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Reference target: 0 backlogs, 7.5+ CGPA, 1+ RAG/System Design project.",
+      "[Synthetic Dataset Slice (216/972 records; 108 CSE + 108 AIML)]: CSE 63.0% placed (avg 22.4 LPA, max 44.0 LPA) & AIML 56.5% placed (avg 21.0 LPA, max 44.6 LPA) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Reference focus: 0 backlogs, 7.5+ CGPA, 1+ RAG/System Design project.",
   },
   {
     id: "placement_cohort_cse_java_sde",
     doc_type: "placement_cohort",
-    title: "CSE & IT Software Engineering Synthetic Records (198/972 Records - Java & DSA)",
+    title: "CSE & IT Software Engineering Synthetic Records (216/972 Records - Java & DSA)",
     branch: "CSE / IT",
     skill_category: "Java & Backend Systems",
     content:
-      "[Synthetic Dataset Slice (198/972 records) - CSE & IT SDE]: CSE peak 44.0 LPA and IT peak 31.4 LPA in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Reference focus: Blind 75 DSA + Distributed Systems / Microservices.",
+      "[Synthetic Dataset Slice (216/972 records; 108 CSE + 108 IT)]: CSE 63.0% placed (avg 22.4 LPA, max 44.0 LPA) & IT 50.0% placed (avg 20.0 LPA, max 31.4 LPA) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Reference focus: Blind 75 DSA + Distributed Systems / Microservices.",
   },
   {
     id: "placement_cohort_csm_csd_data",
     doc_type: "placement_cohort",
-    title: "CSM & CSD Data Science Synthetic Records (162/972 Records - SQL & Analytics)",
-    branch: "CSM / CSD / CSE",
+    title: "CSM & CSD Data Science Synthetic Records (216/972 Records - SQL & Analytics)",
+    branch: "CSM / CSD",
     skill_category: "SQL & Data Visualization",
     content:
-      "[Synthetic Dataset Slice (162/972 records) - CSM & CSD]: Overall dataset peak package 44.9 LPA (CSM) and 40.9 LPA (CSD) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Top skills: SQL window functions, Kafka stream pipelines, DuckDB, Python.",
+      "[Synthetic Dataset Slice (216/972 records; 108 CSM + 108 CSD)]: CSM 55.6% placed (avg 21.4 LPA, max 44.9 LPA — overall dataset peak) & CSD 43.5% placed (avg 22.4 LPA, max 40.9 LPA) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Top skills: SQL window functions, Kafka stream pipelines, DuckDB, Python.",
   },
   {
     id: "placement_cohort_ece_embedded",
     doc_type: "placement_cohort",
-    title: "ECE Embedded, VLSI & IoT Placement Records (144/972 Students)",
+    title: "ECE Embedded, VLSI & IoT Synthetic Records (108/972 Records)",
     branch: "ECE",
     skill_category: "Embedded C, VLSI & IoT",
     content:
-      "[Placement Cohort (144/972 records) - ECE]: Placement Rate 76.2%, Avg CGPA 7.88, Avg Coding 7.8/10, Avg Package 12.6 LPA, Highest Package 28.4 LPA (Qualcomm, Texas Instruments, Intel, Bosch). Hybrid ECE+Python candidates clear both Core & IT Product drives.",
+      "[Synthetic Dataset Slice (108/972 records) - ECE]: 44.4% placed (48/108), Avg Placed Package 9.5 LPA, Highest Package 15.8 LPA in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Hybrid ECE + Python candidates target both Core & Software roles.",
   },
   {
     id: "placement_cohort_eee_smartgrid",
     doc_type: "placement_cohort",
-    title: "EEE Power Electronics & EV Telemetry Placement Records (96/972 Students)",
+    title: "EEE Power Electronics & EV Telemetry Synthetic Records (108/972 Records)",
     branch: "EEE",
     skill_category: "Smart Grid, BMS & Embedded C",
     content:
-      "[Placement Cohort (96/972 records) - EEE]: Placement Rate 72.9%, Avg CGPA 7.75, Avg Package 10.8 LPA, Highest Package 22.0 LPA (ABB, Siemens, Schneider Electric, Ather Energy). Adding Python + IoT MQTT telemetry boosts placement odds by +24%.",
+      "[Synthetic Dataset Slice (108/972 records) - EEE]: 25.9% placed (28/108), Avg Placed Package 15.0 LPA, Highest Package 23.7 LPA in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Pairing Embedded C with Python + IoT MQTT telemetry broadens eligible tracks.",
   },
   {
     id: "placement_cohort_mech_civil",
     doc_type: "placement_cohort",
-    title: "Mechanical & Civil Digital Twin Placement Records (156/972 Students)",
+    title: "Mechanical & Civil Synthetic Records (216/972 Records)",
     branch: "MECH / CIVIL",
     skill_category: "CAD/FEA, Robotics & BIM Digital Twins",
     content:
-      "[Placement Cohort (156/972 records) - MECH & CIVIL]: Placement Rate 71.4%, Avg CGPA 7.68, Avg Package 9.6 LPA, Highest Package 19.5 LPA (L&T, Tata Motors, Mahindra, Autodesk, Airbus). Candidates combining CAD/BIM with Python automation see 2.1x interview callbacks.",
+      "[Synthetic Dataset Slice (216/972 records; 108 MECH + 108 CIVIL)]: MECH 23.1% placed (avg 7.3 LPA, max 12.0 LPA) & CIVIL 20.4% placed (avg 6.9 LPA, max 11.8 LPA) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Combining CAD/BIM with Python automation expands technical options.",
   },
   {
     id: "placement_cohort_cutoffs_972",

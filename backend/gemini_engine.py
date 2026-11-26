@@ -248,7 +248,7 @@ def load_pathfinder_guide(max_chars: int = 18000) -> str:
             logger.warning(f"Error reading pathfinder_guide.md: {e}")
     return (
         "• Platform: Pathfinder 2.0 is an AI Placement Flight Controller grounded in a 972-record synthetic placement dataset, augmented from a 215-record public baseline (88% cross-validation accuracy on the synthetic dataset).\n"
-        "• Machine Learning: Random Forest algorithm trained on the 972-record synthetic placement dataset, augmented from a 215-record public baseline.\n"
+        "• Machine Learning: Random Forest algorithm trained on the 972-record synthetic placement dataset, augmented from the 215-record public baseline (Placement_Data_Full_Class.csv).\n"
         "• Core Modules: Onboarding Wizard, Placement readiness prediction, 28 production blueprints, 6-week roadmaps, ATS resume studio, technical interview viva, real-time voice mentor.\n"
         "• Benchmarks (Synthetic Dataset): Highest package 44.9 LPA (CSM), 44.6 LPA (AIML), & 44.0 LPA (CSE); 2026 slice avg placed CTC 18.0 LPA & 50.9% placement rate (42.5% across all 972 records).\n"
         "• Strategy: Mass IT Services focus on speed/aptitude/basic OOPs; Tier-1 Product Companies focus on DSA O(N log N), system design, and deployed production projects.\n\n"

@@ -404,6 +404,17 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(careerAgentSrc).toContain(SYNTHETIC_PHRASE);
     expect(careerAgentSrc).not.toContain("972 real student records");
     expect(careerAgentSrc).not.toContain("972 verified");
+    for (const staleSlice of ["198/972", "162/972", "144/972", "96/972", "156/972", "28.4 LPA", "22.0 LPA", "19.5 LPA"]) {
+      expect(careerAgentSrc).not.toContain(staleSlice);
+    }
+    expect(careerAgentSrc).toContain("15.8 LPA");
+    expect(careerAgentSrc).toContain("23.7 LPA");
+    expect(careerAgentSrc).toContain("12.0 LPA");
+    expect(careerAgentSrc).toContain("11.8 LPA");
+    expect(footerSrc).toContain("Placement_Data_Full_Class.csv");
+    const radarBenchSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/CompanyPlacementRadar.tsx"), "utf-8");
+    expect(radarBenchSrc).toContain("Illustrative reference ranges, not dataset values");
+    expect(radarBenchSrc).toContain("Match Score Estimate");
     expect(complianceSrc).toContain("88% cross-validation accuracy on the synthetic dataset");
   });
 

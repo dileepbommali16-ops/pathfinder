@@ -178,7 +178,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
             </p>
             <div className="space-y-2 pt-1 text-xs">
               <p className="font-mono text-[11px] text-[#D4D4D8]">
-                Baseline: 215-record public placement dataset (source URL &amp; license credit pending)
+                Baseline: Placement_Data_Full_Class.csv (215 records · URL &amp; license: TODO)
               </p>
               <div>
                 <button
