@@ -2240,22 +2240,13 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
 
       {/* Main Container (reserves right stage width only in docked mode on xl: 1280px+) */}
       <main
-        className={`relative z-10 mx-auto px-5 pb-24 sm:px-8 transition-[padding] duration-200 ${dasLayoutMode === "background" && activeTab === "overview"
-          ? "pt-3 lg:pt-4"
-          : "pt-8 lg:pt-10"
-          } ${dasLayoutMode === "docked" && isStageDockedOpen && !focusOnDas
-            ? "max-w-[1680px] xl:pr-[396px] 2xl:pr-[436px]"
-            : "max-w-[1400px] sm:px-10"
+        className={`relative z-10 mx-auto px-5 pt-8 pb-24 sm:px-8 lg:pt-10 transition-[padding] duration-200 ${dasLayoutMode === "docked" && isStageDockedOpen && !focusOnDas
+          ? "max-w-[1680px] xl:pr-[396px] 2xl:pr-[436px]"
+          : "max-w-[1400px] sm:px-10"
           }`}
       >
         {!focusOnDas && (
-          <div
-            className={
-              dasLayoutMode === "background" && activeTab === "overview"
-                ? "space-y-2.5 pb-3"
-                : "space-y-4 pb-7"
-            }
-          >
+          <div className="space-y-4 pb-7">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-2.5 font-mono text-[11px] text-[#8A8A92]">
                 {(() => {
@@ -2286,12 +2277,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
             </div>
 
             {isDemoProfile && !isProfileUnconfigured(profile) && (
-              <div
-                className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.1] bg-[#0D0D12]/95 px-3.5 py-2.5 text-xs ${dasLayoutMode === "background" && activeTab === "overview"
-                  ? "lg:max-w-[440px] xl:max-w-[530px]"
-                  : ""
-                  }`}
-              >
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.1] bg-[#0D0D12]/95 px-4 py-3 text-xs">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-md border border-white/[0.16] bg-[#16161E] px-2.5 py-0.5 font-mono text-[10px] font-semibold text-[#FAFAFA]">
                     Demo Profile (Sample)
@@ -2312,12 +2298,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
             )}
 
             {isProfileUnconfigured(profile) && (
-              <div
-                className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.1] bg-[#0D0D12]/95 px-3.5 py-2.5 text-xs ${dasLayoutMode === "background" && activeTab === "overview"
-                  ? "lg:max-w-[440px] xl:max-w-[530px]"
-                  : ""
-                  }`}
-              >
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.1] bg-[#0D0D12]/95 px-4 py-3 text-xs">
                 <span className="text-[#A1A1AA]">
                   Profile unconfigured — enter your CGPA &amp; branch in Profile Settings or load
                   sample data to preview predictions.
@@ -2356,17 +2337,15 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 <section
                   id="career-readiness-assessment"
                   data-das-id="hero-metrics"
-                  className={dasLayoutMode === "background" ? "space-y-4" : "space-y-6"}
+                  className="space-y-6"
                 >
-                  {dasLayoutMode === "docked" && (
-                    <SectionHeader
-                      title="Placement Readiness Overview"
-                      description="Real-time placement probability and primary eligibility benchmark"
-                      badge="1 of 3 · Readiness"
-                      accent="cyan"
-                      helperLabel="Calculated via Random Forest model trained on 972-record synthetic placement dataset, augmented from a 215-record public baseline"
-                    />
-                  )}
+                  <SectionHeader
+                    title="Placement Readiness Overview"
+                    description="Real-time placement probability and primary eligibility benchmark"
+                    badge="1 of 3 · Readiness"
+                    accent="cyan"
+                    helperLabel="Calculated via Random Forest model trained on 972-record synthetic placement dataset, augmented from a 215-record public baseline"
+                  />
                   <HeroMetrics
                     username={username}
                     chance={prediction.chance}

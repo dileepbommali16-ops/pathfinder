@@ -88,8 +88,8 @@ export const Avatar3D: React.FC<Avatar3DProps> = React.memo(({
         style={{ width: "100%", height: "100%", pointerEvents: "none" }}
       >
         <ambientLight intensity={1.8} />
-        <pointLight position={[4, 4, 5]} intensity={3.2} color="#F5F3EF" />
-        <pointLight position={[-4, -2, 4]} intensity={2.4} color="#F5F3EF" />
+        <pointLight position={[4, 4, 5]} intensity={3.2} color="#5BC0DE" />
+        <pointLight position={[-4, -2, 4]} intensity={2.4} color="#5BC0DE" />
         <React.Suspense fallback={null}>
           <WireframeFace />
         </React.Suspense>
