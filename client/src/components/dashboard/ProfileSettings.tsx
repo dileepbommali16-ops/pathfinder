@@ -293,7 +293,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                         : formData.fullName || "Signed-In Candidate"}
                   </span>
                   {resolvedEmail && (
-                    <span className="ml-2 font-mono text-[11px] text-[#71717A]">
+                    <span className="ml-2 font-mono text-[11px] text-[#8A8A92]">
                       {isGuestAccount(resolvedEmail, formData.fullName)
                         ? "Local Workspace"
                         : resolvedEmail}
@@ -665,7 +665,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 value={skillsText}
                 onChange={(e) => setSkillsText(e.target.value)}
                 placeholder="e.g. Python, JavaScript, React, SQL, Data Structures"
-                className="pf-input h-11 w-full rounded-xl px-4 text-xs text-[#FAFAFA] placeholder-[#52525B]"
+                className="pf-input h-11 w-full rounded-xl px-4 text-xs text-[#FAFAFA] placeholder-[#8A8A92]"
               />
             </div>
 
@@ -691,7 +691,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     });
                   }}
                   placeholder="https://github.com/your-username"
-                  className="pf-input h-11 w-full rounded-xl px-4 text-xs text-[#FAFAFA] placeholder-[#52525B]"
+                  className="pf-input h-11 w-full rounded-xl px-4 text-xs text-[#FAFAFA] placeholder-[#8A8A92]"
                 />
               </div>
 
@@ -716,7 +716,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     });
                   }}
                   placeholder="https://leetcode.com/your-username"
-                  className="pf-input h-11 w-full rounded-xl px-4 text-xs text-[#FAFAFA] placeholder-[#52525B]"
+                  className="pf-input h-11 w-full rounded-xl px-4 text-xs text-[#FAFAFA] placeholder-[#8A8A92]"
                 />
               </div>
 
@@ -740,7 +740,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     });
                   }}
                   placeholder="https://linkedin.com/in/your-username"
-                  className="pf-input h-11 w-full rounded-xl px-4 text-xs text-[#FAFAFA] placeholder-[#52525B]"
+                  className="pf-input h-11 w-full rounded-xl px-4 text-xs text-[#FAFAFA] placeholder-[#8A8A92]"
                 />
               </div>
             </div>

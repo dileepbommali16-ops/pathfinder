@@ -229,7 +229,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
           <div className="pf-subpanel rounded-2xl p-7 sm:p-8">
             <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
               <span className="text-xs font-medium text-[#D4D4D8]">Placement probability</span>
-              <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
+              <span className="font-mono text-[11px] text-[#8A8A92] tabular-nums">
                 120 estimators
               </span>
             </div>
@@ -256,7 +256,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
                   transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 />
               </div>
-              <div className="flex justify-between font-mono text-[10px] text-[#71717A] tabular-nums">
+              <div className="flex justify-between font-mono text-[10px] text-[#8A8A92] tabular-nums">
                 <span>0%</span>
                 <span>Tier-1 threshold · 75%</span>
                 <span>100%</span>

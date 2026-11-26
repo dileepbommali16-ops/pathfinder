@@ -215,7 +215,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <button
                   type="button"
                   onClick={onDownloadCSV}
-                  className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium cursor-pointer"
+                  className="inline-flex h-10 items-center rounded-xl border border-white/[0.12] bg-transparent px-4 text-xs font-medium text-[#D4D4D8] transition-colors hover:border-white/[0.24] hover:bg-white/[0.05] hover:text-[#FAFAFA] cursor-pointer"
                 >
                   Export CSV
                 </button>
@@ -324,42 +324,42 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
         {/* 6 Key Macro Metrics Cards */}
         <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 2xl:grid-cols-6">
           <div className="pf-subpanel rounded-xl p-5 text-center min-w-0">
-            <span className="font-mono text-[10px] text-[#71717A]">Total Records</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Total Records</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.total_records ?? "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Placement Rate</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Placement Rate</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.placement_rate ? `${analytics.placement_rate.toFixed(1)}%` : "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Avg CGPA</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Avg CGPA</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.avg_cgpa ? analytics.avg_cgpa.toFixed(2) : "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Coding Index</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Coding Index</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.avg_coding_score ? `${analytics.avg_coding_score.toFixed(1)}/10` : "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Average CTC</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Average CTC</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.avg_package ? `${analytics.avg_package.toFixed(1)} LPA` : "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Highest Package</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Highest Package</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.highest_package ? `${analytics.highest_package.toFixed(1)} LPA` : "—"}
             </p>
@@ -418,7 +418,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
             <div className="mt-6 grid gap-4 sm:grid-cols-4">
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
-                <span className="font-mono text-[10px] text-[#71717A]">Dataset Slice</span>
+                <span className="font-mono text-[10px] text-[#8A8A92]">Dataset Slice</span>
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {records.length}
                 </div>
@@ -426,7 +426,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               </div>
 
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
-                <span className="font-mono text-[10px] text-[#71717A]">Placed Records</span>
+                <span className="font-mono text-[10px] text-[#8A8A92]">Placed Records</span>
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {placedStudents}
                 </div>
@@ -436,7 +436,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               </div>
 
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
-                <span className="font-mono text-[10px] text-[#71717A]">Median CTC</span>
+                <span className="font-mono text-[10px] text-[#8A8A92]">Median CTC</span>
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {analytics?.median_package ? `₹${analytics.median_package} LPA` : "—"}
                 </div>
@@ -444,7 +444,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               </div>
 
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
-                <span className="font-mono text-[10px] text-[#71717A]">Intervention Queue</span>
+                <span className="font-mono text-[10px] text-[#8A8A92]">Intervention Queue</span>
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {atRiskStudents.length}
                 </div>
@@ -454,7 +454,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
             <div className="mt-6 overflow-x-auto rounded-xl border border-[#222226]">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-[#1F1F23] bg-[#0C0C0E] font-mono text-[11px] text-[#71717A]">
+                <thead className="border-b border-[#1F1F23] bg-[#0C0C0E] font-mono text-[11px] text-[#8A8A92]">
                   <tr>
                     <th className="px-5 py-3 font-medium">Engineering Program</th>
                     <th className="px-5 py-3 font-medium">Total Registered</th>
@@ -544,8 +544,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.branch_distribution || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1F1F23" vertical={false} />
-                    <XAxis dataKey="branch" stroke="#71717A" fontSize={11} />
-                    <YAxis stroke="#71717A" fontSize={11} domain={[0, 100]} />
+                    <XAxis dataKey="branch" stroke="#8A8A92" fontSize={11} />
+                    <YAxis stroke="#8A8A92" fontSize={11} domain={[0, 100]} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "#09090B",
@@ -572,8 +572,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.skill_distribution || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1F1F23" vertical={false} />
-                    <XAxis dataKey="skill" stroke="#71717A" fontSize={11} />
-                    <YAxis stroke="#71717A" fontSize={11} domain={[0, 100]} />
+                    <XAxis dataKey="skill" stroke="#8A8A92" fontSize={11} />
+                    <YAxis stroke="#8A8A92" fontSize={11} domain={[0, 100]} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "#09090B",
@@ -604,7 +604,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-[#1F1F23] bg-[#0C0C0E] font-mono text-[11px] text-[#71717A]">
+                <thead className="border-b border-[#1F1F23] bg-[#0C0C0E] font-mono text-[11px] text-[#8A8A92]">
                   <tr>
                     <th className="px-6 py-3 font-medium">Record ID</th>
                     <th className="px-6 py-3 font-medium">Dataset Year</th>

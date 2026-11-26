@@ -133,7 +133,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                 }`}
               >
                 <span className="font-semibold">{b.code}</span>
-                <span className="hidden text-[11px] text-[#71717A] sm:inline">
+                <span className="hidden text-[11px] text-[#8A8A92] sm:inline">
                   ({b.name.split(" ")[0]})
                 </span>
                 <span className="rounded bg-[#0B0B0E] px-1.5 py-0.5 font-mono text-[10px] text-[#D4D4D8] tabular-nums">
@@ -172,9 +172,9 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                   <span className="font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                     {activeBranch.avgCgpa}
                   </span>
-                  <span className="font-mono text-[10px] text-[#71717A]">/10</span>
+                  <span className="font-mono text-[10px] text-[#8A8A92]">/10</span>
                 </div>
-                <span className="mt-2 block text-[10px] text-[#71717A]">
+                <span className="mt-2 block text-[10px] text-[#8A8A92]">
                   Tier-1: {activeBranch.keyCutoffs?.tier1EligibleCgpa || 7.5}+
                 </span>
               </div>
@@ -185,9 +185,9 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                   <span className="font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                     {activeBranch.avgCodingScore}
                   </span>
-                  <span className="font-mono text-[10px] text-[#71717A]">/10</span>
+                  <span className="font-mono text-[10px] text-[#8A8A92]">/10</span>
                 </div>
-                <span className="mt-2 block text-[10px] text-[#71717A]">Screening index</span>
+                <span className="mt-2 block text-[10px] text-[#8A8A92]">Screening index</span>
               </div>
 
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4">
@@ -195,7 +195,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                 <div className="mt-1.5 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
                   {activeBranch.highestPackage ? `${activeBranch.highestPackage} LPA` : "—"}
                 </div>
-                <span className="mt-2 block text-[10px] text-[#71717A]">Highest offer</span>
+                <span className="mt-2 block text-[10px] text-[#8A8A92]">Highest offer</span>
               </div>
 
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4">
@@ -203,7 +203,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                 <div className="mt-1.5 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {activeBranch.totalStudents}
                 </div>
-                <span className="mt-2 block text-[10px] text-[#71717A]">
+                <span className="mt-2 block text-[10px] text-[#8A8A92]">
                   {activeBranch.placedCount} placed
                 </span>
               </div>
@@ -280,11 +280,11 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
                     <CartesianGrid strokeDasharray="3 3" stroke="#1F1F23" vertical={false} />
                     <XAxis
                       dataKey="code"
-                      stroke="#71717A"
+                      stroke="#8A8A92"
                       tick={{ fontSize: 11, fill: "#A1A1AA" }}
                     />
                     <YAxis
-                      stroke="#71717A"
+                      stroke="#8A8A92"
                       domain={[0, 100]}
                       tick={{ fontSize: 11, fill: "#A1A1AA" }}
                       unit="%"
@@ -368,7 +368,7 @@ export const BranchIntelligence: React.FC<BranchIntelligenceProps> = ({
             <div className="rounded-2xl border border-[#242429] bg-[#09090B]/68 p-6 backdrop-blur-[2px]">
               <div className="flex items-center justify-between border-b border-[#1F1F23] pb-3.5">
                 <h3 className="text-sm font-semibold text-[#FAFAFA]">Highest Yield Skills</h3>
-                <span className="font-mono text-[10px] text-[#71717A]">{activeBranch.code}</span>
+                <span className="font-mono text-[10px] text-[#8A8A92]">{activeBranch.code}</span>
               </div>
 
               <div className="mt-4 space-y-3">

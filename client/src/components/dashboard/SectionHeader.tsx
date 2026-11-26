@@ -47,7 +47,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
         {(action || helperLabel || onAskCoach) && (
           <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
             {helperLabel && (
-              <span className="inline-flex h-10 items-center rounded-lg border border-white/[0.07] bg-[#0D0D11]/90 px-3.5 font-mono text-[11px] text-[#71717A]">
+              <span className="inline-flex h-10 items-center rounded-lg border border-white/[0.07] bg-[#0D0D11]/90 px-3.5 font-mono text-[11px] text-[#8A8A92]">
                 {helperLabel}
               </span>
             )}

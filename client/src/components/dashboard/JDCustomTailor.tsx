@@ -375,7 +375,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
 
       {/* Quick Company JD Presets */}
       <div className="flex flex-wrap items-center gap-3">
-        <span className="mr-1 font-mono text-[11px] text-[#71717A]">Quick Company JDs</span>
+        <span className="mr-1 font-mono text-[11px] text-[#8A8A92]">Quick Company JDs</span>
         {JD_PRESETS.map((preset) => {
           const active = preset.id === selectedPresetId;
           return (
@@ -447,7 +447,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
               value={customJdText}
               onChange={(e) => setCustomJdText(e.target.value)}
               placeholder="Paste any company Job Description here to compute exact match % and missing keywords..."
-              className="pf-input w-full rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B]"
+              className="pf-input w-full rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#8A8A92]"
             />
           </div>
 
@@ -455,7 +455,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
           <div className="pf-subpanel space-y-5 rounded-2xl p-6">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <span className="font-mono text-[11px] text-[#71717A]">Live JD Alignment</span>
+                <span className="font-mono text-[11px] text-[#8A8A92]">Live JD Alignment</span>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="font-mono text-3xl font-semibold text-[#FAFAFA] tabular-nums">
                     {analysis.matchScore !== null ? `${analysis.matchScore}%` : "—"}
@@ -501,7 +501,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                       </span>
                     ))
                   ) : (
-                    <span className="text-[11px] text-[#71717A]">
+                    <span className="text-[11px] text-[#8A8A92]">
                       {!analysis.hasJd
                         ? "Enter a job description above to detect matching skills."
                         : "No matching profile skills yet — add skills in Profile Settings or below."}
@@ -553,7 +553,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                 <span className="block text-xs font-semibold text-[#FAFAFA] sm:text-sm">
                   ATS Summary &amp; Google X-Y-Z Bullet Template ({customCompany || "Target"})
                 </span>
-                <span className="mt-0.5 block text-[11px] text-[#71717A]">
+                <span className="mt-0.5 block text-[11px] text-[#8A8A92]">
                   Replace bracketed [placeholders] with your own measured metrics before copying.
                 </span>
               </div>
@@ -585,7 +585,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
               <span className="text-xs font-semibold text-[#FAFAFA] sm:text-sm">
                 3 Custom Technical Rounds from {customCompany} JD
               </span>
-              <span className="font-mono text-[11px] text-[#71717A]">
+              <span className="font-mono text-[11px] text-[#8A8A92]">
                 Open in Live Coding Arena
               </span>
             </div>

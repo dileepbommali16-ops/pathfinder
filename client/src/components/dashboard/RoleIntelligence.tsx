@@ -471,7 +471,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
 
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <span className="block font-mono text-[10px] text-[#71717A]">Alignment</span>
+                  <span className="block font-mono text-[10px] text-[#8A8A92]">Alignment</span>
                   <span className="font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                     {activeRole.alignment}%
                   </span>
@@ -562,7 +562,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
               </p>
 
               <div className="mt-3.5 flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-[#71717A]">Tech Stack:</span>
+                <span className="text-[11px] text-[#8A8A92]">Tech Stack:</span>
                 {activeRole.recommendedProject.tech.map((t, idx) => (
                   <span
                     key={idx}
@@ -586,7 +586,7 @@ export const RoleIntelligence: React.FC<RoleIntelligenceProps> = ({
             <ul className="mt-4 space-y-2.5">
               {activeRole.interviewTopics.map((topic, i) => (
                 <li key={i} className="flex items-start gap-2.5 text-xs text-[#D4D4D8]">
-                  <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                  <span className="font-mono text-[10px] text-[#8A8A92] tabular-nums">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span>{topic}</span>

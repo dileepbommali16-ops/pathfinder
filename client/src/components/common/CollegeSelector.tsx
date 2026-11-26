@@ -98,8 +98,8 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
           }}
           className={
             isOnboarding
-              ? "w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 py-2.5 pr-20 text-sm text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
-              : "w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 py-2.5 pr-20 text-xs text-[#FAFAFA] placeholder-[#52525B] outline-none transition-colors focus:border-[#A1A1AA]"
+              ? "w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 py-2.5 pr-20 text-sm text-[#FAFAFA] placeholder-[#8A8A92] outline-none transition-colors focus:border-[#A1A1AA]"
+              : "w-full rounded-lg border border-[#27272A] bg-[#0E0E12] px-3.5 py-2.5 pr-20 text-xs text-[#FAFAFA] placeholder-[#8A8A92] outline-none transition-colors focus:border-[#A1A1AA]"
           }
         />
 
@@ -140,7 +140,7 @@ export const CollegeSelector: React.FC<CollegeSelectorProps> = ({
 
       {open && (
         <div className="absolute left-0 right-0 top-full z-[70] mt-1.5 overflow-hidden rounded-xl border border-[#27272A] bg-[#0C0C0E] shadow-2xl">
-          <div className="flex items-center justify-between border-b border-[#1F1F23] bg-[#0C0C0E] px-3.5 py-2 font-mono text-[11px] text-[#71717A] tabular-nums">
+          <div className="flex items-center justify-between border-b border-[#1F1F23] bg-[#0C0C0E] px-3.5 py-2 font-mono text-[11px] text-[#8A8A92] tabular-nums">
             <span>{filteredColleges.length} colleges &amp; universities (or type any name)</span>
           </div>
 

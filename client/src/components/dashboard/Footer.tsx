@@ -197,7 +197,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
         </div>
 
         {/* Bottom Legal Bar */}
-        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 text-xs text-[#71717A] sm:flex-row">
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 text-xs text-[#8A8A92] sm:flex-row">
           <p>© {currentYear} Pathfinder 2.0 Career Intelligence. All rights reserved.</p>
           <div className="flex items-center gap-5">
             <button

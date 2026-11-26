@@ -87,7 +87,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             {activeTabMeta?.label || "Workspace"}
           </span>
 
-          <span className="hidden rounded-md border border-white/[0.08] bg-[#0F0F13] px-2 py-0.5 font-mono text-[10px] text-[#71717A] tabular-nums md:inline-block">
+          <span className="hidden rounded-md border border-white/[0.08] bg-[#0F0F13] px-2 py-0.5 font-mono text-[10px] text-[#8A8A92] tabular-nums md:inline-block">
             {slideBadge}
           </span>
 
@@ -121,7 +121,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 </span>
               ) : null}
               {displayEmail && (
-                <span className="hidden font-mono text-[10px] text-[#71717A] xl:inline">
+                <span className="hidden font-mono text-[10px] text-[#8A8A92] xl:inline">
                   {displayEmail}
                 </span>
               )}
@@ -173,7 +173,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   }`}
               >
                 <span
-                  className={`font-mono text-[11px] tabular-nums ${isActive ? "text-[#FAFAFA]" : "text-[#52525B]"
+                  className={`font-mono text-[11px] tabular-nums ${isActive ? "text-[#FAFAFA]" : "text-[#8A8A92]"
                     }`}
                 >
                   {indexLabel}
@@ -216,7 +216,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                         : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.15] hover:text-[#FAFAFA]"
                       }`}
                   >
-                    <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
+                    <span className="font-mono text-[11px] text-[#8A8A92] tabular-nums">
                       {indexLabel}
                     </span>
                     <span className="text-xs font-medium">{tab.label}</span>

@@ -2350,7 +2350,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.12 }}
                 className="space-y-16 sm:space-y-20"
               >
                 <section
@@ -2424,12 +2424,12 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.12 }}
                 className="space-y-8"
               >
                 <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/[0.08] bg-[#0B0B0F]/85 p-4 sm:flex-row sm:items-center sm:px-6">
                   <div>
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-[#71717A]">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-[#8A8A92]">
                       Interview Simulator Workspace
                     </span>
                     <p className="mt-0.5 text-xs text-[#A1A1AA]">
@@ -2498,7 +2498,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.12 }}
                 className="space-y-16 sm:space-y-20"
               >
                 <div id="skills-sprint-roadmap">
@@ -2527,7 +2527,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.12 }}
                 className="space-y-16 sm:space-y-20"
               >
                 <BranchIntelligence
@@ -2549,7 +2549,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.12 }}
                 className="space-y-16 sm:space-y-20"
               >
                 <CohortExplorer
@@ -2584,7 +2584,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.12 }}
                 className="space-y-16 sm:space-y-20"
               >
                 <ProfileSettings
@@ -2624,7 +2624,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.12 }}
                 className="space-y-16 sm:space-y-20"
               >
                 <JDCustomTailor
@@ -2674,7 +2674,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.12 }}
                 className="space-y-16 sm:space-y-20"
               >
                 <ProjectRecommender
@@ -2693,7 +2693,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.12 }}
               >
                 <RoleIntelligence
                   currentProfile={profile}

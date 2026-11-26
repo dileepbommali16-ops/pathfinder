@@ -188,7 +188,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
                 key={item.index}
                 className="pf-subpanel flex items-start gap-4 rounded-xl p-4 sm:p-5"
               >
-                <span className="mt-0.5 font-mono text-xs text-[#71717A] tabular-nums">
+                <span className="mt-0.5 font-mono text-xs text-[#8A8A92] tabular-nums">
                   {item.index}
                 </span>
                 <div>
@@ -292,7 +292,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
 
             <div className="my-6 flex items-center gap-3">
               <div className="h-px flex-1 bg-white/[0.08]" />
-              <span className="font-mono text-[11px] text-[#71717A]">or continue with email</span>
+              <span className="font-mono text-[11px] text-[#8A8A92]">or continue with email</span>
               <div className="h-px flex-1 bg-white/[0.08]" />
             </div>
 
@@ -365,7 +365,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
         </motion.div>
       </main>
 
-      <footer className="relative z-10 text-center font-mono text-[11px] text-[#52525B]">
+      <footer className="relative z-10 text-center font-mono text-[11px] text-[#8A8A92]">
         Pathfinder 2.0 · Autonomous Placement Intelligence
       </footer>
     </div>

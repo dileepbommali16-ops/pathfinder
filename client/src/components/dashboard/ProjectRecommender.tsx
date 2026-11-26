@@ -217,7 +217,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter by title, branch, tech, or domain..."
-              className="pf-input h-10 w-full rounded-xl px-4 text-xs text-[#FAFAFA] placeholder-[#52525B]"
+              className="pf-input h-10 w-full rounded-xl px-4 text-xs text-[#FAFAFA] placeholder-[#8A8A92]"
             />
           </div>
         </div>
@@ -359,7 +359,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
 
                   {/* Features */}
                   <div className="space-y-2 pt-1">
-                    <span className="block font-mono text-[10px] text-[#71717A]">
+                    <span className="block font-mono text-[10px] text-[#8A8A92]">
                       Key Implementation Features
                     </span>
                     <ul className="space-y-1.5">
@@ -368,7 +368,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                           key={idx}
                           className="flex items-start gap-2 text-xs leading-snug text-[#D4D4D8]"
                         >
-                          <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                          <span className="font-mono text-[10px] text-[#8A8A92] tabular-nums">
                             {String(idx + 1).padStart(2, "0")}
                           </span>
                           <span>{feat}</span>

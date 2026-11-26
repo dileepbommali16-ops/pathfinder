@@ -1460,7 +1460,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 setStdinInput(e.target.value);
               }}
               placeholder="Optional program input (stdin)..."
-              className="flex-1 bg-[#0D0D11] border border-white/[0.1] rounded-lg px-3 py-1.5 text-xs text-[#FAFAFA] placeholder-[#71717A] focus:outline-none focus:border-white/30"
+              className="flex-1 bg-[#0D0D11] border border-white/[0.1] rounded-lg px-3 py-1.5 text-xs text-[#FAFAFA] placeholder-[#8A8A92] focus:outline-none focus:border-white/30"
             />
             {isRunningCode && (
               <button
@@ -1516,8 +1516,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             data-das-layout="background"
             data-hero-stage={isOverviewHeroActive ? "overview-open" : "ambient"}
             data-state={isSpeaking ? "speaking" : micActive ? "listening" : "idle"}
-            className={`fixed inset-0 pointer-events-none transition-[opacity,transform] duration-500 ease-out ${bgFaceTransformClass} ${
+            className={`fixed inset-0 pointer-events-none transition-[opacity,transform,box-shadow] duration-500 ease-out ${bgFaceTransformClass} ${
               focusMode ? "z-40 opacity-100" : `z-[1] ${bgFaceOpacityClass}`
+            } ${
+              isSpeaking
+                ? "ring-1 ring-inset ring-[#E5322D]/50 shadow-[inset_0_0_84px_rgba(229,50,45,0.16)]"
+                : ""
             }`}
           >
             <Avatar3D
@@ -1534,11 +1538,19 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           {hudCollapsed && !focusMode ? (
             <div
               id="das-hud-collapsed-pill"
-              className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 rounded-full border border-white/[0.14] bg-[#09090B]/95 backdrop-blur-md px-3.5 py-1.5 shadow-2xl"
+              className={`fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 rounded-full border bg-[#09090B]/95 backdrop-blur-md px-3.5 py-1.5 transition-all duration-200 ${
+                isSpeaking
+                  ? "border-[#E5322D] shadow-[0_0_24px_rgba(229,50,45,0.28)]"
+                  : "border-white/[0.14] shadow-2xl"
+              }`}
             >
               <span
                 className={`h-2 w-2 rounded-full ${
-                  connected ? "bg-[#FAFAFA] animate-pulse" : "bg-[#71717A]"
+                  isSpeaking
+                    ? "bg-[#E5322D] animate-pulse"
+                    : connected
+                      ? "bg-[#FAFAFA] animate-pulse"
+                      : "bg-[#8A8A92]"
                 }`}
               />
               <button
@@ -1551,7 +1563,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 <ChevronUp className="h-3.5 w-3.5 text-[#A1A1AA]" />
                 <span>DAS AI</span>
                 {isSpeaking && (
-                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-white/[0.1] border border-white/[0.18] text-[#FAFAFA]">
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-[#E5322D]/15 border border-[#E5322D]/60 text-[#FAFAFA]">
                     Speaking
                   </span>
                 )}
@@ -1591,19 +1603,31 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <div
               id="das-bottom-hud"
               data-state={isSpeaking ? "speaking" : micActive ? "listening" : "idle"}
-              className={`fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-[94%] sm:w-[84%] max-w-lg rounded-2xl border bg-[#09090B]/95 backdrop-blur-md px-3 py-1.5 shadow-2xl flex flex-col gap-1 transition-colors duration-200 ${
-                isSpeaking ? "border-white/[0.28]" : "border-white/[0.12]"
+              className={`fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-[94%] sm:w-[84%] max-w-lg rounded-2xl border bg-[#09090B]/95 backdrop-blur-md px-3 py-1.5 flex flex-col gap-1 transition-all duration-200 ${
+                isSpeaking
+                  ? "border-[#E5322D] shadow-[0_0_28px_rgba(229,50,45,0.30)]"
+                  : "border-white/[0.12] shadow-2xl"
               }`}
             >
               <div className="flex items-center justify-between text-[11px] px-0.5">
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`h-2 w-2 rounded-full ${
-                      connected ? "bg-[#FAFAFA] animate-pulse" : "bg-[#71717A]"
+                      isSpeaking
+                        ? "bg-[#E5322D] animate-pulse"
+                        : connected
+                          ? "bg-[#FAFAFA] animate-pulse"
+                          : "bg-[#8A8A92]"
                     }`}
                   />
                   <span className="font-semibold tracking-wider text-[#FAFAFA]">DAS AI</span>
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium border border-white/[0.1] bg-[#141419] text-[#D4D4D8]">
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-medium border ${
+                      isSpeaking
+                        ? "border-[#E5322D]/65 bg-[#E5322D]/15 text-[#FAFAFA]"
+                        : "border-white/[0.1] bg-[#141419] text-[#D4D4D8]"
+                    }`}
+                  >
                     {isSpeaking ? "SPEAKING" : connected ? "ONLINE" : "CONNECTING"}
                   </span>
                   <button
@@ -1805,10 +1829,19 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {/* Full-Height Docked DAS Stage (xl: 1280px+ sticky right stage, <xl collapsible drawer, Focus Mode centered) */}
       <aside
         aria-label="DAS 3D Voice Mentor Stage"
+        data-state={isSpeaking ? "speaking" : micActive ? "listening" : "idle"}
         className={`das-stage flex flex-col overflow-hidden rounded-2xl border bg-[#07070A] transition-all duration-200 ${
           focusMode
-            ? "fixed inset-x-3 sm:inset-x-[6vw] lg:inset-x-[10vw] top-[76px] bottom-4 z-50 border-white/[0.18] shadow-[0_32px_96px_rgba(0,0,0,0.92)]"
-            : `fixed top-[124px] right-4 bottom-4 w-[min(380px,calc(100vw-24px))] xl:w-[360px] 2xl:w-[400px] border-white/[0.1] shadow-[0_24px_64px_rgba(0,0,0,0.78)] ${
+            ? `fixed inset-x-3 sm:inset-x-[6vw] lg:inset-x-[10vw] top-[76px] bottom-4 z-50 ${
+                isSpeaking
+                  ? "border-[#E5322D] shadow-[0_0_48px_rgba(229,50,45,0.32)]"
+                  : "border-white/[0.18] shadow-[0_32px_96px_rgba(0,0,0,0.92)]"
+              }`
+            : `fixed top-[124px] right-4 bottom-4 w-[min(380px,calc(100vw-24px))] xl:w-[360px] 2xl:w-[400px] ${
+                isSpeaking
+                  ? "border-[#E5322D] shadow-[0_0_32px_rgba(229,50,45,0.30)]"
+                  : "border-white/[0.1] shadow-[0_24px_64px_rgba(0,0,0,0.78)]"
+              } ${
                 hudCollapsed
                   ? "z-40 translate-x-[calc(100%+32px)] opacity-0 pointer-events-none"
                   : "z-40 xl:z-30 translate-x-0 opacity-100 pointer-events-auto"
@@ -1820,12 +1853,22 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <div className="flex min-w-0 items-center gap-1.5">
             <span
               className={`h-2 w-2 shrink-0 rounded-full ${
-                connected ? "bg-[#FAFAFA] animate-pulse" : "bg-[#71717A]"
+                isSpeaking
+                  ? "bg-[#E5322D] animate-pulse"
+                  : connected
+                    ? "bg-[#FAFAFA] animate-pulse"
+                    : "bg-[#8A8A92]"
               }`}
             />
             <span className="font-semibold tracking-wider text-[#FAFAFA]">DAS AI</span>
-            <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[9px] font-mono font-medium border border-white/[0.1] bg-[#141419] text-[#D4D4D8]">
-              {connected ? "ONLINE" : "CONNECTING"}
+            <span
+              className={`hidden sm:inline-block px-1.5 py-0.5 rounded text-[9px] font-mono font-medium border ${
+                isSpeaking
+                  ? "border-[#E5322D]/65 bg-[#E5322D]/15 text-[#FAFAFA]"
+                  : "border-white/[0.1] bg-[#141419] text-[#D4D4D8]"
+              }`}
+            >
+              {isSpeaking ? "SPEAKING" : connected ? "ONLINE" : "CONNECTING"}
             </span>
             <button
               type="button"
@@ -2050,7 +2093,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         >
           <span
             className={`h-2 w-2 rounded-full ${
-              connected ? "bg-[#FAFAFA] animate-pulse" : "bg-[#71717A]"
+              connected ? "bg-[#FAFAFA] animate-pulse" : "bg-[#8A8A92]"
             }`}
           />
           <button

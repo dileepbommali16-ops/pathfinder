@@ -416,6 +416,18 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(radarBenchSrc).toContain("Illustrative reference ranges, not dataset values");
     expect(radarBenchSrc).toContain("Match Score Estimate");
     expect(complianceSrc).toContain("88% cross-validation accuracy on the synthetic dataset");
+    const faceEffectsSrc = fs.readFileSync(path.join(srcRoot, "agent/FaceEffects.tsx"), "utf-8");
+    const avatarSrc = fs.readFileSync(path.join(srcRoot, "agent/Avatar3D.tsx"), "utf-8");
+    const indexCssSrc = fs.readFileSync(path.join(srcRoot, "index.css"), "utf-8");
+    expect(faceEffectsSrc).toContain("#F5F3EF");
+    expect(faceEffectsSrc).toContain("#E5322D");
+    expect(faceEffectsSrc).not.toContain('new THREE.Color("#5BC0DE")');
+    expect(avatarSrc).toContain('color="#F5F3EF"');
+    expect(avatarSrc).not.toContain('color="#5BC0DE"');
+    expect(layoutSrc).toContain("border-[#E5322D]");
+    expect(homeSrc).toContain("duration: 0.12");
+    expect(homeSrc).not.toContain("duration: 0.25");
+    expect(indexCssSrc).toContain("--text-muted: #8a8a92");
   });
 
   it("keeps visible mode badges, Addressing Mode UI, and dead handleRoleToggle out of AgentLayout and ProfileSettings", () => {

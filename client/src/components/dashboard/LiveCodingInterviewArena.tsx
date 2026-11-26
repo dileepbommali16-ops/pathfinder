@@ -916,7 +916,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               value={explanation}
               onChange={(e) => setExplanation(e.target.value)}
               placeholder="Explain your algorithm, time complexity O(...), space complexity O(...), and edge cases in your own words..."
-              className="pf-input w-full rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B]"
+              className="pf-input w-full rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#8A8A92]"
             />
           </div>
 
@@ -1065,7 +1065,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
 
             {/* Clean IDE Code Container */}
             <div className="overflow-hidden rounded-xl border border-white/[0.1] bg-[#08080B]">
-              <div className="flex items-center justify-between border-b border-white/[0.06] bg-[#0E0E13] px-4 py-2 font-mono text-[11px] text-[#71717A]">
+              <div className="flex items-center justify-between border-b border-white/[0.06] bg-[#0E0E13] px-4 py-2 font-mono text-[11px] text-[#8A8A92]">
                 <span className="text-[#D4D4D8]">solution.{language === "python" ? "py" : language}</span>
                 <span>Sandbox Execution Ready</span>
               </div>
@@ -1109,7 +1109,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                         setRunStatus("idle");
                         toast.info("Loaded optimal reference program — click Run Code to test.");
                       }}
-                      className="pf-btn-primary inline-flex h-8 items-center rounded-lg px-3 text-[11px] font-medium cursor-pointer"
+                      className="pf-btn-secondary inline-flex h-8 items-center rounded-lg px-3 text-[11px] font-medium cursor-pointer"
                     >
                       Load into editor
                     </button>
