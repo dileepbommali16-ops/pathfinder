@@ -247,10 +247,10 @@ def load_pathfinder_guide(max_chars: int = 18000) -> str:
         except Exception as e:
             logger.warning(f"Error reading pathfinder_guide.md: {e}")
     return (
-        "• Platform: Pathfinder 2.0 is an AI Placement Flight Controller grounded in 972 verified student records (88% model accuracy).\n"
-        "• Machine Learning: Random Forest algorithm trained on Placement_Data_Full_Class.csv.\n"
+        "• Platform: Pathfinder 2.0 is an AI Placement Flight Controller grounded in a 972-record synthetic placement dataset, augmented from a 215-record public baseline (88% cross-validation accuracy on the synthetic dataset).\n"
+        "• Machine Learning: Random Forest algorithm trained on the 972-record synthetic placement dataset, augmented from a 215-record public baseline.\n"
         "• Core Modules: Onboarding Wizard, Placement readiness prediction, 28 production blueprints, 6-week roadmaps, ATS resume studio, technical interview viva, real-time voice mentor.\n"
-        "• Benchmarks: Highest package 44.6 LPA (CSM/AIML) & 44.0 LPA (CSE); Circuit branch avg 7.8 LPA; 79.4% overall placement rate.\n"
+        "• Benchmarks (Synthetic Dataset): Highest package 44.9 LPA (CSM), 44.6 LPA (AIML), & 44.0 LPA (CSE); 2026 slice avg placed CTC 18.0 LPA & 50.9% placement rate (42.5% across all 972 records).\n"
         "• Strategy: Mass IT Services focus on speed/aptitude/basic OOPs; Tier-1 Product Companies focus on DSA O(N log N), system design, and deployed production projects.\n\n"
         f"{builder_guide}"
     )[:max_chars]
@@ -602,8 +602,8 @@ def generate_smart_fallback_reply(
         if is_telugu:
             return (
                 "🎯 **Pathfinder ante enti simple ga cheppala bro?**\n\n"
-                "Pathfinder ni mana engineering campus placements ki oka **'Smart GPS / Flight Controller'** la anukovachu! 🚀\n\n"
-                "1. **Placement Readiness Probability**: Nee CGPA, coding score, backlogs inka communication ivvagane, 972 మంది students real placement data meedha train aina AI model (88% accuracy) nee placement chance ni predict chestundi.\n"
+                "Pathfinder ni mana engineering placement prep ki oka **'Smart GPS / Flight Controller'** la anukovachu! 🚀\n\n"
+                "1. **Placement Readiness Probability**: Nee CGPA, coding score, backlogs inka communication ivvagane, 972-record synthetic placement dataset (augmented from a 215-record public baseline) meedha train aina AI model (88% cross-validation accuracy on the synthetic dataset) nee placement chance ni estimate chestundi.\n"
                 "2. **Skill Gap Analysis**: Top product companies (Amazon, Microsoft, Google, etc.) recruit chese standards tho nee skills compare chesi em taggayo cheptundi.\n"
                 "3. **28 Production Project Blueprints**: Resume lo pettadaniki high-impact full-stack, AI, hardware inka cloud system architectures step-by-step build plans istundi.\n"
                 "4. **AI Coach & Mock Interviews**: Technical viva inka HR rounds ki real-time lo mock interview questions adigi feedback istundi!\n\n"
@@ -612,9 +612,9 @@ def generate_smart_fallback_reply(
         else:
             return (
                 "🎯 **Pathfinder in Simple Terms**\n\n"
-                "Think of Pathfinder as your personal **'Placement Flight Controller & GPS'** for engineering campus recruitment! 🚀\n\n"
+                "Think of Pathfinder as your personal **'Placement Flight Controller & GPS'** for engineering placement preparation! 🚀\n\n"
                 "Here is how it powers your placement preparation:\n"
-                "- **Placement Prediction**: Input your CGPA, coding confidence, backlogs, and internships to receive an instant, accurate placement probability (trained on 972 verified student placement records with 88% accuracy).\n"
+                "- **Placement Prediction**: Input your CGPA, coding confidence, backlogs, and internships to receive an instant placement probability estimate (trained on a 972-record synthetic placement dataset, augmented from a 215-record public baseline, with 88% cross-validation accuracy on the synthetic dataset).\n"
                 "- **Skill Gap Identification**: Detects exact gaps between your current skill set and hiring benchmarks for top MNCs and product companies.\n"
                 "- **28 Flagship Industry Project Blueprints**: Provides complete end-to-end architectures, component stacks, 5-phase build roadmaps, and technical interview defense talking points for your resume.\n"
                 "- **Interactive AI Coach**: 24/7 technical mentorship, mock interviews, and personalized 6-week study roadmaps.\n\n"
@@ -719,15 +719,14 @@ def generate_smart_fallback_reply(
             "Ready to begin Week 1? Ask me for the top 5 must-solve problems!"
         )
 
-    # 8. Highest package & Verified Cohort Statistics
+    # 8. Highest package & Synthetic Dataset Statistics
     if any(k in low_msg for k in ("highest package", "highest salary", "max package", "highest lpa")):
         return (
-            "📊 **Authoritative Pathfinder Placement Statistics (Verified 972 Records):**\n\n"
-            "- **Highest Package Overall**: **44.6 LPA** (Achieved by CSM - Computer Science & Machine Learning, and AIML departments).\n"
-            "- **Second Highest**: **44.0 LPA** (Computer Science & Engineering - CSE).\n"
-            "- **Average Package Across Circuit Branches**: **7.8 LPA**.\n"
-            "- **Overall Placement Clearance Rate**: **79.4%** across all 9 engineering branches.\n\n"
-            "Candidates who achieved packages above 20 LPA had >= 1 production capstone deployment and zero active backlogs."
+            "📊 **Pathfinder Placement Statistics (972-Record Synthetic Placement Dataset, Augmented from a 215-Record Public Baseline):**\n\n"
+            "- **Highest Package Overall**: **44.9 LPA** (CSM - Computer Science & Machine Learning), followed by **44.6 LPA** (AIML) and **44.0 LPA** (CSE).\n"
+            "- **2026 Dataset Slice (324 records)**: **50.9%** placement rate, **18.0 LPA** average placed CTC, **7.78** average CGPA.\n"
+            "- **All 972 Synthetic Records (2024–2026)**: **42.5%** overall placement rate across all 9 engineering branches.\n\n"
+            "In this synthetic dataset, higher packages correlate strongly with strong coding scores, internships, and zero active backlogs."
         )
 
     # 8b. Active Page / Tab / Section ("Ask Coach about this") explanation
@@ -748,7 +747,7 @@ def generate_smart_fallback_reply(
     ):
         sec_title = section_match.group(1).strip() if section_match else (active_tab or "Dashboard")
         return (
-            f"{honorific_fallback}, the {sec_title} module benchmarks your live profile against verified Tier-1 campus drive cutoffs so you can see exactly what helps or hurts your shortlist odds. "
+            f"{honorific_fallback}, the {sec_title} module benchmarks your live profile against reference Tier-1 hiring cutoffs and our 972-record synthetic placement dataset so you can see exactly what helps or hurts your shortlist odds. "
             f"Check your lowest metric or missing keyword inside {sec_title}, test an improvement or practice the matching drill, and save or apply it to watch your readiness update immediately!"
         )
 
@@ -879,7 +878,7 @@ SAVED CANDIDATE PROFILE:
                 tool_iterations += 1
                 if hp_stats:
                     tool_grounding += (
-                        f"\nVERIFIED PLATFORM DATA (Highest Package): "
+                        f"\nSYNTHETIC DATASET DATA (Highest Package): "
                         f"Top branch is {hp_stats.get('top_branch_name')} ({hp_stats.get('top_branch_code')}) "
                         f"with {hp_stats.get('highest_package_lpa')} LPA."
                     )
@@ -902,16 +901,16 @@ SAVED CANDIDATE PROFILE:
                 tool_iterations += 1
                 if stats.get("total_records"):
                     tool_grounding += (
-                        f"\nVERIFIED PLATFORM DATA ({b_code}): "
+                        f"\nSYNTHETIC DATASET DATA ({b_code}): "
                         f"Placed = {stats.get('placed_count')}/{stats.get('total_records')} "
                         f"({stats.get('placement_rate_pct')}%), Avg CGPA = {stats.get('avg_cgpa')}, "
-                        f"Highest = {stats.get('highest_package_lpa', 44.6)} LPA."
+                        f"Highest = {stats.get('highest_package_lpa', 44.9)} LPA."
                     )
             except Exception:
                 pass
 
     if tool_grounding:
-        profile_ctx += f"\nAUTHORITATIVE PATHFINDER PLATFORM DATA:\n{tool_grounding}\n"
+        profile_ctx += f"\nPATHFINDER SYNTHETIC DATASET DATA:\n{tool_grounding}\n"
 
     # Ground with specific project details if referenced
     project_detail_ctx = get_detailed_project_context(clean_msg, history=history, page_context=page_context)
@@ -1325,7 +1324,7 @@ def chat_with_mentor(
 def local_structured_fallback(schema: Type[BaseModel]) -> BaseModel:
     if schema is Roadmap:
         return Roadmap(
-            headline="6-Week Strategic Campus Placement Acceleration Roadmap",
+            headline="6-Week Strategic Placement Acceleration Roadmap",
             skill_gaps=["Pattern-based DSA consistency", "System design & API portfolio project", "STAR interview storytelling"],
             weekly_actions=[
                 "Week 1: Solve 15 high-frequency Array, String & HashMap problems. Log every suboptimal time complexity.",
