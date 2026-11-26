@@ -18,8 +18,8 @@ interface LampLoginProps {
 const STUDIO_HIGHLIGHTS = [
   {
     index: "01",
-    title: "972-Record Public Placement Dataset (Hugging Face)",
-    detail: "Instant Random Forest placement odds across CGPA, skills, and dataset benchmarks.",
+    title: "972-Record Synthetic Placement Dataset",
+    detail: "Random Forest odds trained on a 972-record synthetic placement dataset, augmented from a 215-record public baseline.",
   },
   {
     index: "02",

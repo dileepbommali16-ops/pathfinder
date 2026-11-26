@@ -37,9 +37,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
               </span>
             </div>
             <p className="text-xs leading-relaxed text-[#A1A1AA]">
-              Full-stack engineering placement intelligence calibrated on a 972-record public
-              placement dataset (Hugging Face), pairing scikit-learn probability models with live
-              3D voice coaching.
+              Full-stack engineering placement intelligence calibrated on a 972-record synthetic
+              placement dataset, augmented from a 215-record public baseline, pairing scikit-learn
+              probability models with live 3D voice coaching.
             </p>
           </div>
 
@@ -170,21 +170,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
           </div>
 
           {/* Column 4: Dataset Credit & Attribution */}
-          <div className="space-y-3" data-dataset-credit="huggingface">
+          <div className="space-y-3" data-dataset-credit="public-baseline-215">
             <h3 className="text-xs font-semibold text-[#FAFAFA]">Dataset Credit</h3>
             <p className="text-xs leading-relaxed text-[#A1A1AA]">
-              Predictions and analytics are powered by a 972-record public placement dataset
-              (Hugging Face), not private institutional records.
+              Uses a 972-record synthetic placement dataset, augmented from a 215-record public
+              baseline (not private college records).
             </p>
             <div className="space-y-2 pt-1 text-xs">
-              <a
-                href="https://huggingface.co/datasets"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 font-mono text-[11px] text-[#D4D4D8] underline decoration-white/25 underline-offset-4 transition-colors hover:text-[#FAFAFA]"
-              >
-                Hugging Face Public Placement Dataset ↗
-              </a>
+              <p className="font-mono text-[11px] text-[#D4D4D8]">
+                Baseline: 215-record public placement dataset (source URL &amp; license credit pending)
+              </p>
               <div>
                 <button
                   type="button"

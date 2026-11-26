@@ -23,7 +23,7 @@ const SLIDE_PREVIEWS: Record<
     metric: "120 Trees",
     metricLabel: "Random Forest estimators · 5 readiness axes",
     points: [
-      "Calibrated probability benchmark against a 972-record public placement dataset (Hugging Face)",
+      "Calibrated probability benchmark against a 972-record synthetic placement dataset, augmented from a 215-record public baseline",
       "5-axis competency telemetry across academics, DSA, projects & STAR",
       "Reference cutoff benchmarks across Google, Razorpay, Amazon & TCS Digital",
     ],
@@ -59,9 +59,9 @@ const SLIDE_PREVIEWS: Record<
     ],
   },
   analytics: {
-    eyebrow: "Slide 05 · Public Dataset Analytics",
+    eyebrow: "Slide 05 · Synthetic Dataset Analytics",
     metric: "972 Rows",
-    metricLabel: "Public Hugging Face dataset & report exports",
+    metricLabel: "Synthetic dataset (215-record public baseline) & exports",
     points: [
       "Slice placement conversion across dataset year, branch, domain & CGPA band",
       "Report format view with CSV/PDF export tables",
@@ -202,9 +202,10 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               className="mt-6 max-w-2xl text-base leading-[1.7] text-[#A1A1AA] sm:text-lg"
               style={{ textWrap: "pretty" }}
             >
-              Estimate your offer probability against a 972-record public placement dataset
-              (Hugging Face), write and execute solutions across 11 compiler runtimes, and defend
-              system trade-offs aloud with DAS — your live 3D holographic voice mentor.
+              Estimate your offer probability against a 972-record synthetic placement dataset,
+              augmented from a 215-record public baseline, write and execute solutions across 11
+              compiler runtimes, and defend system trade-offs aloud with DAS — your live 3D
+              holographic voice mentor.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-4">
@@ -305,11 +306,12 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                     <span>120 ESTIMATORS</span>
                   </div>
                   <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
-                    Random Forest prediction on public placement data
+                    Random Forest prediction on synthetic placement data
                   </h3>
                   <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-[#A1A1AA]">
                     Evaluates CGPA multipliers, branch history, standing backlogs, internships, and
-                    DSA readiness against a 972-record public placement dataset (Hugging Face).
+                    DSA readiness against a 972-record synthetic placement dataset, augmented from a
+                    215-record public baseline.
                   </p>
                 </div>
 
@@ -576,7 +578,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 <AnimatedMetric value={972} />
               </div>
               <p className="mt-2 text-sm text-[#A1A1AA]">
-                Records in public placement dataset (Hugging Face)
+                Synthetic placement records (215-record public baseline)
               </p>
             </SpotlightSurface>
 
@@ -615,16 +617,8 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             <span className="font-medium text-[#FAFAFA]">Pathfinder 2.0</span>
           </div>
           <p className="text-center font-mono text-[11px] text-[#71717A] sm:text-right">
-            Random Forest ML ·{" "}
-            <a
-              href="https://huggingface.co/datasets"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#A1A1AA] underline decoration-white/20 underline-offset-4 hover:text-[#FAFAFA]"
-            >
-              972-Record Public Placement Dataset (Hugging Face)
-            </a>{" "}
-            · Live 3D Voice Coach
+            Random Forest ML · 972-Record Synthetic Dataset (215-Record Public Baseline) · Live 3D
+            Voice Coach
           </p>
         </div>
       </footer>

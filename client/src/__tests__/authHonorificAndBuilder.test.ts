@@ -382,18 +382,29 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(homeSrc).toContain("Clear &amp; enter my details");
     const heroMetricsSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/HeroMetrics.tsx"), "utf-8");
     const norm = (s: string) => s.replace(/\s+/g, " ");
+    const SYNTHETIC_PHRASE = "972-record synthetic placement dataset, augmented from a 215-record public baseline";
     expect(heroMetricsSrc).toContain('data-das-hero-zone="overview"');
-    expect(norm(heroMetricsSrc)).toContain("972-record public placement dataset (Hugging Face)");
-    expect(norm(footerSrc)).toContain("972-record public placement dataset (Hugging Face)");
-    expect(footerSrc).toContain('data-dataset-credit="huggingface"');
+    expect(norm(heroMetricsSrc)).toContain(SYNTHETIC_PHRASE);
+    expect(norm(footerSrc)).toContain(SYNTHETIC_PHRASE);
+    expect(footerSrc).toContain('data-dataset-credit="public-baseline-215"');
     expect(footerSrc).not.toContain("Institutional data");
     expect(footerSrc).not.toContain("Hyderabad, India");
-    expect(norm(landingSrc)).toContain("972-record public placement dataset (Hugging Face)");
+    expect(footerSrc).not.toContain("Hugging Face");
+    expect(norm(landingSrc)).toContain(SYNTHETIC_PHRASE);
     const cohortExplorerSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/CohortExplorer.tsx"), "utf-8");
-    expect(norm(cohortExplorerSrc)).toContain("972-record public placement dataset (Hugging Face)");
+    expect(norm(cohortExplorerSrc)).toContain(SYNTHETIC_PHRASE);
     expect(cohortExplorerSrc).not.toContain("TPO Institutional Command Center");
     expect(cohortExplorerSrc).not.toContain("NAAC 5.2.1");
     expect(cohortExplorerSrc).not.toContain("Class of {y}");
+    const geminiLiveSrc = fs.readFileSync(path.join(srcRoot, "agent/geminiLive.ts"), "utf-8");
+    const careerAgentSrc = fs.readFileSync(path.join(srcRoot, "lib/careerAgent.js"), "utf-8");
+    const complianceSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/ComplianceModals.tsx"), "utf-8");
+    expect(geminiLiveSrc).toContain(SYNTHETIC_PHRASE);
+    expect(geminiLiveSrc).not.toContain("972 verified");
+    expect(careerAgentSrc).toContain(SYNTHETIC_PHRASE);
+    expect(careerAgentSrc).not.toContain("972 real student records");
+    expect(careerAgentSrc).not.toContain("972 verified");
+    expect(complianceSrc).toContain("88% cross-validation accuracy on the synthetic dataset");
   });
 
   it("keeps visible mode badges, Addressing Mode UI, and dead handleRoleToggle out of AgentLayout and ProfileSettings", () => {

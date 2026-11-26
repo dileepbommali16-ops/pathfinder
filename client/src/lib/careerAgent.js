@@ -2,7 +2,7 @@
  * DAS AI - Unified RAG Semantic Search & Fast DAS Intelligence Engine
  *
  * TASK 1 (RAG Refactor):
- * - Indexes all 28 Flagship Project Blueprints + 972 Campus Placement Cohort Records
+ * - Indexes all 28 Flagship Project Blueprints + 972-Record Synthetic Placement Dataset (augmented from a 215-record public baseline)
  *   into 384-dimensional L2-normalized semantic vectors compatible with Supabase pgvector
  *   (`pathfinder_knowledge_embeddings` / `match_pathfinder_knowledge` RPC).
  * - Performs semantic search FIRST and injects ONLY the Top 3 results into the Gemini Live prompt.
@@ -181,36 +181,36 @@ export function estimatePromptTokens(text = "") {
 }
 
 /**
- * Verified 972 Campus Placement Cohort Records (2024–2026) aggregated into
+ * 972-record synthetic placement dataset, augmented from a 215-record public baseline (2024–2026), aggregated into
  * high-density semantic placement chunks across all branches & skill categories.
  */
 const PLACEMENT_COHORT_VECTORS_RAW = [
   {
     id: "placement_cohort_cse_aiml",
     doc_type: "placement_cohort",
-    title: "CSE & AIML Placement Records (216/972 Students - AI/ML & Python)",
+    title: "CSE & AIML Synthetic Placement Records (216/972 Records - AI/ML & Python)",
     branch: "CSE / AIML",
     skill_category: "AIML & Python",
     content:
-      "[Placement Cohort (216/972 records) - CSE & AIML]: Placement Rate 86.4%, Avg CGPA 8.32, Avg Coding 8.9/10, Avg Package 19.8 LPA, Highest Package 42.5 LPA (Amazon, Microsoft, Google, Atlassian). Key requirement: 0 backlogs, 7.5+ CGPA, 1+ RAG/System Design project.",
+      "[Synthetic Dataset Slice (216/972 records) - CSE & AIML]: Highest Package 44.6 LPA (AIML) & 44.0 LPA (CSE) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Reference target: 0 backlogs, 7.5+ CGPA, 1+ RAG/System Design project.",
   },
   {
     id: "placement_cohort_cse_java_sde",
     doc_type: "placement_cohort",
-    title: "CSE & IT Software Engineering Placement Records (198/972 Students - Java & DSA)",
+    title: "CSE & IT Software Engineering Synthetic Records (198/972 Records - Java & DSA)",
     branch: "CSE / IT",
     skill_category: "Java & Backend Systems",
     content:
-      "[Placement Cohort (198/972 records) - CSE & IT SDE]: Placement Rate 83.8%, Avg CGPA 8.05, Avg Coding 8.7/10, Avg Package 16.4 LPA, Highest Package 38.8 LPA (Oracle, Razorpay, JP Morgan, Walmart). Key filter: Blind 75 DSA + Distributed Systems / Microservices.",
+      "[Synthetic Dataset Slice (198/972 records) - CSE & IT SDE]: CSE peak 44.0 LPA and IT peak 31.4 LPA in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Reference focus: Blind 75 DSA + Distributed Systems / Microservices.",
   },
   {
     id: "placement_cohort_csm_csd_data",
     doc_type: "placement_cohort",
-    title: "CSM & CSD Data Science Placement Records (162/972 Students - SQL & Analytics)",
+    title: "CSM & CSD Data Science Synthetic Records (162/972 Records - SQL & Analytics)",
     branch: "CSM / CSD / CSE",
     skill_category: "SQL & Data Visualization",
     content:
-      "[Placement Cohort (162/972 records) - Data Science & SQL]: Placement Rate 79.6%, Avg CGPA 7.94, Avg Coding 8.2/10, Avg Package 14.2 LPA, Highest Package 33.5 LPA. Top skills: SQL window functions, Kafka stream pipelines, DuckDB, Python.",
+      "[Synthetic Dataset Slice (162/972 records) - CSM & CSD]: Overall dataset peak package 44.9 LPA (CSM) and 40.9 LPA (CSD) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Top skills: SQL window functions, Kafka stream pipelines, DuckDB, Python.",
   },
   {
     id: "placement_cohort_ece_embedded",
@@ -242,11 +242,11 @@ const PLACEMENT_COHORT_VECTORS_RAW = [
   {
     id: "placement_cohort_cutoffs_972",
     doc_type: "placement_cohort",
-    title: "Overall 972 Student Placement Cutoff & Backlog Sensitivity Matrix (2024-2026)",
+    title: "Overall 972-Record Synthetic Placement Cutoff & Backlog Matrix (2024-2026)",
     branch: "ALL",
     skill_category: "Cutoffs & Eligibility",
     content:
-      "[Global 972 Placement Benchmark (2024-2026)]: Random Forest ML Accuracy 88.1%. Tier-1 Product MNC cutoff: 7.5+ CGPA & 0 active backlogs (avg 18.5-42.5 LPA). Tier-2 Product/Digital cutoff: 6.5+ CGPA & <=1 backlog (avg 7.5-14.0 LPA). Every +1 internship lifts placement probability by +14.8%.",
+      "[972-Record Synthetic Placement Dataset (augmented from a 215-record public baseline)]: Random Forest ML achieves 88% cross-validation accuracy on the synthetic dataset; overall dataset highest package is 44.9 LPA (CSM), followed by 44.6 LPA (AIML) and 44.0 LPA (CSE). Reference cutoffs: Tier-1 7.5+ CGPA & 0 backlogs; Tier-2 6.5+ CGPA & <=1 backlog.",
   },
 ];
 
@@ -700,8 +700,8 @@ export const getCareerAgentResponse = (
     }
     if (/\b(cohort|analytics|benchmarks?|972)\b/i.test(text)) {
       return (
-        `Opening Cohort Placement Analytics across all 972 verified engineering records, ${title}.` +
-        `|||📊 **Top 3 Semantic Cohort Matches:**\n${top3Markdown} <!--ACTION: {"type": "NAVIGATE_TAB", "target": "analytics"}-->`
+        `Opening Placement Dataset Analytics across the 972-record synthetic placement dataset, augmented from a 215-record public baseline, ${title}.` +
+        `|||📊 **Top 3 Semantic Dataset Matches:**\n${top3Markdown} <!--ACTION: {"type": "NAVIGATE_TAB", "target": "analytics"}-->`
       );
     }
     if (/\b(readiness|action\s*center|command)\b/i.test(text)) {
@@ -847,9 +847,9 @@ export const getCareerAgentResponse = (
     text.includes("how does pathfinder work")
   ) {
     return (
-      `Pathfinder 2.0 is an autonomous AI campus placement and career intelligence platform built by Dileep, ${title}. Students use it because it predicts their exact Tier-1 placement probability using a machine learning model trained on 972 real student records, gives them 28 production-grade project blueprints, runs live AI mock interviews, builds an ATS-ready resume, and lets them control everything hands-free with me—their 3D DAS voice agent.` +
+      `Pathfinder 2.0 is an autonomous AI placement readiness and career intelligence platform built by Dileep, ${title}. Students use it because it estimates placement probability using a machine learning model (88% cross-validation accuracy on the synthetic dataset) trained on a 972-record synthetic placement dataset, augmented from a 215-record public baseline, gives them 28 production-grade project blueprints, runs live AI mock interviews, builds an ATS-ready resume, and lets them control everything hands-free with me—their 3D DAS voice agent.` +
       `|||🎯 **What is Pathfinder 2.0 & Why Every Engineering Student Needs It (${title}):**\n` +
-      `1. **ML Placement Probability Engine:** Trained on **972 verified campus placement records (2024–2026)**.\n` +
+      `1. **ML Placement Probability Engine:** Trained on a **972-record synthetic placement dataset, augmented from a 215-record public baseline** (88% cross-validation accuracy on the synthetic dataset).\n` +
       `2. **28 Production Project Blueprints:** Real-world architectures (Docker, Redis, FastAPI, Kafka, RAG).\n` +
       `3. **Top 3 Semantic RAG Context Retrieved:**\n${top3Markdown}`
     );
@@ -862,8 +862,8 @@ export const getCareerAgentResponse = (
     );
   if (isTelugu) {
     return (
-      `Absolutely, ${title}! Based on your ${branch} profile and ${cgpa} CGPA, solving two core DSA patterns daily and deploying one production blueprint from our catalog will put you in prime position for top campus offers.` +
-      `|||🚀 **Campus Placement Acceleration Plan (${title}):**\n${top3Markdown}`
+      `Absolutely, ${title}! Based on your ${branch} profile and ${cgpa} CGPA, solving two core DSA patterns daily and deploying one production blueprint from our catalog will put you in prime position for top engineering offers.` +
+      `|||🚀 **Placement Acceleration Plan (${title}):**\n${top3Markdown}`
     );
   }
 
@@ -877,8 +877,8 @@ export const getCareerAgentResponse = (
   ) {
     const secName = sectionMatch ? sectionMatch[1].trim() : "this Pathfinder section";
     return (
-      `${title}, the ${secName} section benchmarks your ${branch} profile at ${cgpa} CGPA targeting ${targetRole} against verified placement drives so you can spot bottlenecks immediately. Focus on your lowest scoring lever here first, adjust it, and verify your updated shortlist odds right on screen!` +
-      `|||💡 **${secName} Guide (${title}):** Benchmarks **${branch} · ${cgpa} CGPA** for **${targetRole}**. Start with your highest-leverage gap shown in this card and verify the score lift.`
+      `${title}, the ${secName} section benchmarks your ${branch} profile at ${cgpa} CGPA targeting ${targetRole} against reference placement cutoffs and our 972-record synthetic placement dataset so you can spot bottlenecks immediately. Focus on your lowest scoring lever here first, adjust it, and check your updated shortlist odds right on screen!` +
+      `|||💡 **${secName} Guide (${title}):** Benchmarks **${branch} · ${cgpa} CGPA** for **${targetRole}**. Start with your highest-leverage gap shown in this card and check the score lift.`
     );
   }
 
@@ -890,13 +890,13 @@ export const getCareerAgentResponse = (
   if (!isCareerOrSiteQuery && /\b(who is|who was|tell me about|what is|history of|explain)\b/i.test(text)) {
     return (
       `I couldn't reach the live knowledge server just now, ${title}, so I won't guess or redirect you to unrelated project blueprints for "${String(message || "").slice(0, 80)}". Reconnect briefly and ask again for an accurate real-world answer!` +
-      `|||🌐 **Live Knowledge Lookup Reconnecting (${title}):** General-world questions are fully supported alongside Pathfinder — please resend once reconnected so I can fetch verified facts without guessing.`
+      `|||🌐 **Live Knowledge Lookup Reconnecting (${title}):** General-world questions are fully supported alongside Pathfinder — please resend once reconnected so I can fetch accurate facts without guessing.`
     );
   }
 
   const primaryMatch = top3Rag[0];
   return (
-    `Based on my semantic search across our 28 blueprints and 972 placement records for ${branch} at ${cgpa} CGPA, ${title}, ${primaryMatch ? primaryMatch.title : "focusing on DSA and a deployed system project"} is your highest-leverage move right now. I've displayed the top 3 matched insights on screen!` +
+    `Based on my semantic search across our 28 blueprints and 972-record synthetic placement dataset for ${branch} at ${cgpa} CGPA, ${title}, ${primaryMatch ? primaryMatch.title : "focusing on DSA and a deployed system project"} is your highest-leverage move right now. I've displayed the top 3 matched insights on screen!` +
     `|||🧠 **Top 3 Semantic RAG Matches (${branch} • ${cgpa} CGPA):**\n${top3Markdown}`
   );
 };

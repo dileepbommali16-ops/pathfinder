@@ -57,7 +57,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             </span>
             <span className="inline-flex items-center gap-2 rounded-md border border-white/[0.08] bg-[#0D0D11]/95 px-2.5 py-1 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
               <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
-              <span>Random Forest · 972-record public placement dataset (Hugging Face)</span>
+              <span>Random Forest · 972-record synthetic dataset</span>
             </span>
           </div>
 
@@ -73,8 +73,9 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
               className="max-w-[50ch] text-xs leading-[1.6] text-[#A1A1AA] sm:text-sm"
               style={{ textWrap: "pretty" }}
             >
-              Random Forest readiness modeling trained on a 972-record public placement dataset
-              (Hugging Face), paired with live 3D voice coaching from DAS.
+              Random Forest readiness modeling trained on a 972-record synthetic placement dataset,
+              augmented from a 215-record public baseline, paired with live 3D voice coaching from
+              DAS.
             </p>
           </div>
 
@@ -183,7 +184,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             </span>
             <span className="inline-flex items-center gap-2 rounded-md border border-white/[0.08] bg-[#0D0D11] px-3 py-1 font-mono text-[11px] text-[#A1A1AA] tabular-nums">
               <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
-              <span>Random Forest · 972-record public placement dataset (Hugging Face)</span>
+              <span>Random Forest · 972-record synthetic dataset</span>
             </span>
           </div>
 
@@ -198,9 +199,9 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             className="max-w-[58ch] text-sm leading-[1.7] text-[#A1A1AA] sm:text-base"
             style={{ textWrap: "pretty" }}
           >
-            Your placement workspace synthesizes a 972-record public placement dataset (Hugging
-            Face), Random Forest offer modeling, and live 3D voice coaching with DAS into one
-            spacious execution hub.
+            Your placement workspace synthesizes a 972-record synthetic placement dataset,
+            augmented from a 215-record public baseline, Random Forest offer modeling, and live 3D
+            voice coaching with DAS into one spacious execution hub.
           </p>
 
           <div className="flex flex-wrap items-center gap-3.5 pt-2">

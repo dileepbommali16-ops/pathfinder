@@ -168,11 +168,11 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             </div>
             <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
               {viewMode === "explorer"
-                ? `Based on a 972-record public placement dataset (Hugging Face) across ${
+                ? `Based on a 972-record synthetic placement dataset, augmented from a 215-record public baseline, across ${
                     analytics?.branch_distribution?.length ||
                     branches.filter((b) => b !== "All").length
                   } engineering branches`
-                : "Structured summary tables, branch rollups, and CSV exports from the 972-record public placement dataset (Hugging Face)"}
+                : "Structured summary tables, branch rollups, and CSV exports from the 972-record synthetic placement dataset, augmented from a 215-record public baseline"}
             </p>
           </div>
 
@@ -409,7 +409,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                   Department Placement Summary (Report Format)
                 </h3>
                 <p className="text-xs text-[#A1A1AA]">
-                  Filtered rollup from the 972-record public placement dataset (Hugging Face) ·{" "}
+                  Filtered rollup from the 972-record synthetic placement dataset, augmented from a
+                  215-record public baseline ·{" "}
                   {filters.year === 0 ? "All Years" : `Year ${filters.year}`}
                 </p>
               </div>
