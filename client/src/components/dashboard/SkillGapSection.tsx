@@ -72,7 +72,7 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
   return (
     <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
       {/* Left 6 cols: 5-Dimension Competency Telemetry */}
-      <SpotlightSurface className="rounded-2xl p-8 sm:p-10 lg:col-span-6">
+      <SpotlightSurface className="min-w-0 rounded-2xl p-8 sm:p-10 lg:col-span-6">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-lg font-semibold tracking-[-0.02em] text-[#FAFAFA]">
             Competency dimensions
@@ -141,7 +141,7 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
       </SpotlightSurface>
 
       {/* Right 6 cols: Spacious Numbered Strengths & Priority Actions */}
-      <div className="space-y-8 lg:col-span-6">
+      <div className="min-w-0 space-y-8 lg:col-span-6">
         <SpotlightSurface className="rounded-2xl p-8 sm:p-9">
           <h3 className="text-lg font-semibold tracking-[-0.02em] text-[#FAFAFA]">
             Competitive strengths

@@ -237,8 +237,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               Profile &amp; Candidate Settings
             </h1>
             <p className="mt-2 text-xs text-[#A1A1AA] sm:text-sm">
-              Update your verified academic marks, backlogs, coding profiles, skills, and target
-              role.
+              Update your academic marks, backlogs, coding profiles, skills, and target role.
             </p>
           </div>
 
@@ -279,7 +278,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
               <span className="block text-xs font-medium text-[#D4D4D8]">
-                Verified Login Identity
+                Signed-In Identity
               </span>
               <div
                 id="settings-verified-identity"
@@ -590,7 +589,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 htmlFor="settings-internships"
                 className="block text-xs font-medium text-[#D4D4D8]"
               >
-                Verified Internships Count
+                Internships Count
               </label>
               <input
                 type="number"

@@ -294,7 +294,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
         ? `hands-on experience in ${matched.slice(0, 6).join(", ")}`
         : userSkillList.length > 0
           ? `experience in ${userSkillList.slice(0, 5).join(", ")}`
-          : "preparation aligned with [Add Verified Skills]";
+          : "preparation aligned with [Add Your Skills]";
     const projectsCount = Math.max(0, Number(profile.projectsCount) || 0);
     const projectsClause =
       projectsCount > 0
@@ -397,7 +397,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
       {/* Main Grid — Stacked Inputs So Long Role Titles Never Clip */}
       <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
         {/* Left 5 cols: Stacked Clean Typing Inputs & Alignment Gauge */}
-        <div className="space-y-6 lg:col-span-5">
+        <div className="min-w-0 space-y-6 lg:col-span-5">
           <div className="grid grid-cols-1 gap-4">
             <div>
               <label
@@ -546,7 +546,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
         </div>
 
         {/* Right 7 cols: Tailored Copy + 3 Custom Questions */}
-        <div className="space-y-7 lg:col-span-7">
+        <div className="min-w-0 space-y-7 lg:col-span-7">
           <div className="pf-subpanel space-y-4 rounded-2xl p-6 sm:p-7">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -554,7 +554,7 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                   ATS Summary &amp; Google X-Y-Z Bullet Template ({customCompany || "Target"})
                 </span>
                 <span className="mt-0.5 block text-[11px] text-[#71717A]">
-                  Replace bracketed [placeholders] with your own verified metrics before copying.
+                  Replace bracketed [placeholders] with your own measured metrics before copying.
                 </span>
               </div>
               <button

@@ -176,13 +176,13 @@ export const WORKSPACE_SLIDES: WorkspaceSlideItem[] = [
     id: "analytics",
     index: "05",
     label: "Cohort & Roadmap",
-    subtitle: "972 verified campus benchmarks & 6-week sprint plan",
+    subtitle: "972-record placement dataset & 6-week sprint plan",
   },
   {
     id: "profile",
     index: "06",
     label: "Profile & Settings",
-    subtitle: "Verified academic scores, skills & target company calibration",
+    subtitle: "Academic scores, skills & target company calibration",
   },
 ];
 
@@ -243,9 +243,8 @@ export const SlideTransitionBar: React.FC<SlideTransitionBarProps> = ({
                 type="button"
                 aria-label={`Go to slide ${s.index}: ${s.label}`}
                 onClick={() => jump(s.id)}
-                className={`h-2 rounded-full transition-all duration-200 ${
-                  active ? "w-7 bg-[#FAFAFA]" : "w-2 bg-[#3F3F46] hover:bg-[#71717A]"
-                }`}
+                className={`h-2 rounded-full transition-all duration-200 ${active ? "w-7 bg-[#FAFAFA]" : "w-2 bg-[#3F3F46] hover:bg-[#71717A]"
+                  }`}
               />
             );
           })}

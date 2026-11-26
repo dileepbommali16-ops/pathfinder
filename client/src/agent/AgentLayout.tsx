@@ -106,7 +106,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [connected, setConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
-  const [hudCollapsed, setHudCollapsed] = useState(false);
+  const [hudCollapsed, setHudCollapsed] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth < 1280 : false
+  );
+  const [focusMode, setFocusMode] = useState(false);
+  const userToggledStageRef = useRef(false);
   const [, setRole] = useState<UserHonorificRole>(() => getHonorificKey());
   const [inputText, setInputText] = useState("");
   const [transcript, setTranscript] = useState(() => getInitialGreeting(getHonorificKey()));
@@ -628,8 +632,15 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const onToggleFocusHud = (e: Event) => {
       const detail = (e as CustomEvent)?.detail;
-      if (detail?.focus === true) {
-        setHudCollapsed(false);
+      if (typeof detail?.focus === "boolean") {
+        setFocusMode(detail.focus);
+        if (detail.focus) setHudCollapsed(false);
+      } else {
+        setFocusMode((prev) => {
+          const next = !prev;
+          if (next) setHudCollapsed(false);
+          return next;
+        });
       }
     };
 
@@ -1205,19 +1216,54 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const hasUser = typeof window !== "undefined" && Boolean(localStorage.getItem("pathfinder_user"));
   const showAgent = isAuthenticated || hasUser;
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => {
+      if (!userToggledStageRef.current) {
+        setHudCollapsed(window.innerWidth < 1280);
+      }
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    if (!focusMode) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setFocusMode(false);
+        window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: false } }));
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [focusMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const dockedOpen = showAgent && !hudCollapsed && !focusMode;
+    document.documentElement.dataset.dasStage = dockedOpen ? "open" : "collapsed";
+    window.dispatchEvent(
+      new CustomEvent("das-stage-layout", { detail: { dockedOpen, focusMode } })
+    );
+  }, [showAgent, hudCollapsed, focusMode]);
+
   return (
     <div className={showAgent ? "relative min-h-screen bg-transparent text-white overflow-x-hidden" : "relative min-h-screen bg-transparent"}>
-      {/* Background 3D Robot Face */}
-      {showAgent && <Avatar3D />}
-
       {/* Route Viewport Container (each page renders its own semantic main landmark) */}
-      <div className={showAgent ? (hudCollapsed ? "relative z-10 pb-16 bg-transparent" : "relative z-10 pb-36 sm:pb-32 bg-transparent") : "relative min-h-screen bg-transparent"}>{children}</div>
+      <div className="relative z-10 min-h-screen bg-transparent">{children}</div>
 
       {showAgent && (
         <>
       {/* DAS Live Multi-Language Code & Compiler Studio Drawer */}
       {codeTask && (
-        <div className="fixed top-16 left-2 right-2 sm:left-auto sm:top-20 sm:right-6 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#09090B]/95 backdrop-blur-md border border-white/[0.12] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3">
+        <div
+          className={`fixed top-16 left-2 right-2 sm:left-auto sm:top-20 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#09090B]/95 backdrop-blur-md border border-white/[0.12] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3 ${
+            !hudCollapsed && !focusMode
+              ? "sm:right-6 xl:right-[384px] 2xl:right-[424px]"
+              : "sm:right-6"
+          }`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-2.5">
             <div className="flex items-center gap-2 min-w-0">
               <select
@@ -1357,11 +1403,263 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         </div>
       )}
 
-      {/* Bottom Center DAS HUD — Compact, Collapsible & Responsive */}
-      {hudCollapsed ? (
+      {/* Focus Mode Dimmed Backdrop */}
+      {focusMode && (
+        <div
+          onClick={() => {
+            setFocusMode(false);
+            window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: false } }));
+          }}
+          className="fixed inset-0 z-40 bg-black/82 backdrop-blur-sm"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Full-Height Docked DAS Stage (xl: 1280px+ sticky right stage, <xl collapsible drawer, Focus Mode centered) */}
+      <aside
+        aria-label="DAS 3D Voice Mentor Stage"
+        className={`das-stage flex flex-col overflow-hidden rounded-2xl border bg-[#07070A] transition-all duration-200 ${
+          focusMode
+            ? "fixed inset-x-3 sm:inset-x-[6vw] lg:inset-x-[10vw] top-[76px] bottom-4 z-50 border-white/[0.18] shadow-[0_32px_96px_rgba(0,0,0,0.92)]"
+            : `fixed top-[124px] right-4 bottom-4 w-[min(380px,calc(100vw-24px))] xl:w-[360px] 2xl:w-[400px] border-white/[0.1] shadow-[0_24px_64px_rgba(0,0,0,0.78)] ${
+                hudCollapsed
+                  ? "z-40 translate-x-[calc(100%+32px)] opacity-0 pointer-events-none"
+                  : "z-40 xl:z-30 translate-x-0 opacity-100 pointer-events-auto"
+              }`
+        }`}
+      >
+        {/* Top Stage Controls Bar */}
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/[0.08] bg-[#0B0B10] px-3 py-2 text-[11px]">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full ${
+                connected ? "bg-[#FAFAFA] animate-pulse" : "bg-[#71717A]"
+              }`}
+            />
+            <span className="font-semibold tracking-wider text-[#FAFAFA]">DAS AI</span>
+            <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[9px] font-mono font-medium border border-white/[0.1] bg-[#141419] text-[#D4D4D8]">
+              {connected ? "ONLINE" : "CONNECTING"}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (codeTask) {
+                  void codingStudioController.execute({ action: "close" });
+                } else {
+                  void codingStudioController.execute({ action: "open", language: "python" });
+                }
+              }}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border transition cursor-pointer ${
+                codeTask
+                  ? "bg-[#1E1E26] border-white/[0.32] text-[#FAFAFA]"
+                  : "bg-[#141419] border-white/[0.1] text-[#D4D4D8] hover:border-white/[0.2] hover:text-[#FAFAFA]"
+              }`}
+              title="Open DAS Voice-Controlled Code Scratchpad (11 languages)"
+            >
+              <Code2 className="h-3 w-3 text-[#A1A1AA]" />
+              <span>Code</span>
+            </button>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                const next = !focusMode;
+                setFocusMode(next);
+                if (next) setHudCollapsed(false);
+                window.dispatchEvent(
+                  new CustomEvent("das-toggle-focus", { detail: { focus: next } })
+                );
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium border border-white/[0.12] bg-[#141419] text-[#FAFAFA] hover:border-white/[0.28] transition cursor-pointer"
+              title={focusMode ? "Exit Focus Mode (Esc)" : "Expand DAS 3D Stage"}
+            >
+              <span>{focusMode ? "Exit Focus (Esc)" : "Focus"}</span>
+            </button>
+
+            {!focusMode && (
+              <button
+                type="button"
+                onClick={() => {
+                  userToggledStageRef.current = true;
+                  setHudCollapsed(true);
+                }}
+                aria-label="Hide DAS stage"
+                title="Collapse DAS stage"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border border-white/[0.1] bg-[#141419] text-[#D4D4D8] hover:text-[#FAFAFA] hover:border-white/[0.2] transition cursor-pointer"
+              >
+                <ChevronDown className="h-3 w-3 text-[#A1A1AA]" />
+                <span>Hide</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Dedicated 3D Face Viewport (Singleton Canvas — Never Unmounted) */}
+        <div className="relative flex-1 min-h-[240px] w-full overflow-hidden bg-[radial-gradient(ellipse_at_50%_38%,rgba(30,30,38,0.55)_0%,rgba(6,6,9,0.98)_75%)]">
+          <Avatar3D
+            style={{
+              position: "relative",
+              inset: "auto",
+              width: "100%",
+              height: "100%",
+              zIndex: 1,
+            }}
+          />
+
+          {focusMode && transcript && (
+            <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10 flex justify-center">
+              <div className="max-w-2xl rounded-xl border border-white/[0.14] bg-black/80 px-4 py-2.5 text-center text-xs sm:text-sm leading-relaxed text-[#FAFAFA] backdrop-blur-md shadow-lg">
+                {transcript}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Docked Chat, Transcripts & Voice Command Bar */}
+        <div
+          id="das-bottom-hud"
+          className="shrink-0 border-t border-white/[0.08] bg-[#09090D] px-3 py-2.5 flex flex-col gap-1.5"
+        >
+          {/* User Voice / Input Transcript */}
+          {userTranscript && (
+            <div className="flex items-start gap-2 text-[11px] text-[#FAFAFA] rounded-xl px-2.5 py-1.5 max-h-12 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border border-white/[0.08] bg-[#121216]">
+              <User className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[#A1A1AA]" />
+              <span>You: {userTranscript}</span>
+            </div>
+          )}
+
+          {/* Agent Spoken Response Transcript */}
+          {!focusMode && (
+            <div className="flex items-start gap-2 text-xs text-[#E4E4E7] rounded-xl px-2.5 py-1.5 max-h-20 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border border-white/[0.08] bg-[#121216]">
+              <Volume2 className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[#A1A1AA]" />
+              <span>DAS: {transcript}</span>
+            </div>
+          )}
+
+          {/* Live Microphone Signal & Warning Bar */}
+          {micActive && (
+            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-[11px] border border-white/[0.08] bg-[#121216]">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="inline-flex items-center gap-1.5 font-semibold text-[#FAFAFA] shrink-0">
+                  {micSilentWarning ? (
+                    <>
+                      <AlertCircle className="h-3.5 w-3.5 text-[#D4D4D8]" />
+                      <span>NO MIC SIGNAL</span>
+                    </>
+                  ) : (
+                    <>
+                      <AudioLines className="h-3.5 w-3.5 text-[#FAFAFA]" />
+                      <span>MIC LIVE</span>
+                    </>
+                  )}
+                </span>
+                <div className="w-16 h-1.5 rounded-full bg-black/60 overflow-hidden shrink-0">
+                  <div
+                    ref={micBarRef}
+                    className="h-full bg-[#FAFAFA] transition-[width] duration-75"
+                    style={{ width: "4%" }}
+                  />
+                </div>
+                <span className="text-[10px] text-[#A1A1AA] truncate">
+                  {micSilentWarning
+                    ? micHealthHint || "Voice faint or muted — raise volume or check earphones"
+                    : activeMicLabel || "Capturing 16kHz PCM"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={toggleMic}
+                className="text-[10px] text-[#FAFAFA] hover:text-[#D4D4D8] font-semibold ml-2 cursor-pointer shrink-0"
+              >
+                Mute
+              </button>
+            </div>
+          )}
+
+          {/* Command & Control Bar */}
+          <form onSubmit={handleSendText} autoComplete="off" className="flex flex-wrap sm:flex-nowrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={toggleMic}
+              className={`px-2.5 py-1.5 rounded-xl font-medium text-[11px] transition cursor-pointer flex items-center gap-1.5 border shrink-0 ${
+                micActive
+                  ? "bg-[#1C1C24] border-white/[0.28] text-[#FAFAFA]"
+                  : "bg-[#141419] border-white/[0.12] text-[#FAFAFA] hover:bg-[#1E1E26]"
+              }`}
+              title={micActive ? "Click to Mute Microphone" : "Click to Speak"}
+            >
+              {micActive ? (
+                <>
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FAFAFA] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FAFAFA]"></span>
+                  </span>
+                  <span>Listening...</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="h-3.5 w-3.5 text-[#D4D4D8]" />
+                  <span>Speak</span>
+                </>
+              )}
+            </button>
+
+            <input
+              id="das-command-input"
+              name="dasCommand"
+              type="text"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              value={inputText}
+              onFocus={() => dasSocket.warmup()}
+              onChange={(e) => {
+                audioEngine.notifyTypingActivity(850);
+                dasSocket.warmup();
+                setInputText(e.target.value);
+              }}
+              placeholder="Ask DAS anything..."
+              className="min-w-[100px] flex-1 rounded-xl px-2.5 py-1.5 text-xs text-[#FAFAFA] placeholder-[#8A8A92] focus:outline-none border border-white/[0.1] bg-[#121216] focus:border-white/[0.28]"
+            />
+
+            <button
+              type="button"
+              onClick={() => {
+                if (userTranscript) {
+                  const cleaned = userTranscript.replace(/^(?:🎤\s*)?You:\s*/i, "").trim();
+                  setInputText(cleaned);
+                  toast.info("Previous command loaded for editing!");
+                }
+                const inputEl = document.getElementById("das-command-input") as HTMLInputElement;
+                inputEl?.focus();
+                inputEl?.select();
+              }}
+              aria-label="Edit previous command"
+              className="px-2 py-1.5 rounded-xl text-[11px] font-medium transition cursor-pointer border border-white/[0.12] bg-[#141419] hover:bg-[#1E1E26] flex items-center gap-1 text-[#FAFAFA] shrink-0"
+              title="Edit / Recall Previous Query"
+            >
+              <PenLine className="h-3 w-3 text-[#D4D4D8]" />
+            </button>
+
+            <button
+              type="submit"
+              aria-label="Send message to DAS"
+              className="px-3 py-1.5 rounded-xl text-[11px] font-semibold text-[#09090B] bg-[#FAFAFA] hover:bg-white transition cursor-pointer inline-flex items-center gap-1 shrink-0"
+            >
+              <span>Send</span>
+              <SendHorizontal className="h-3 w-3" />
+            </button>
+          </form>
+        </div>
+      </aside>
+
+      {/* Collapsed Bottom-Right Toggle Pill (never overlaps center code output) */}
+      {hudCollapsed && !focusMode && (
         <div
           id="das-hud-collapsed-pill"
-          className="fixed bottom-2.5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-[#09090B]/95 backdrop-blur-md px-3 py-1.5 shadow-2xl"
+          className="fixed bottom-4 right-4 z-40 flex items-center gap-1.5 rounded-full border border-white/[0.14] bg-[#09090B]/95 backdrop-blur-md px-3.5 py-1.5 shadow-2xl"
         >
           <span
             className={`h-2 w-2 rounded-full ${
@@ -1370,9 +1668,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           />
           <button
             type="button"
-            onClick={() => setHudCollapsed(false)}
-            aria-label="Open DAS AI panel"
-            title="Show DAS AI bar"
+            onClick={() => {
+              userToggledStageRef.current = true;
+              setHudCollapsed(false);
+            }}
+            aria-label="Open DAS AI stage"
+            title="Show DAS 3D Stage"
             className="text-xs font-semibold tracking-wide text-[#FAFAFA] hover:text-white transition cursor-pointer flex items-center gap-1.5 px-1"
           >
             <ChevronUp className="h-3.5 w-3.5 text-[#A1A1AA]" />
@@ -1401,190 +1702,6 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             )}
           </button>
         </div>
-      ) : (
-      <div
-        id="das-bottom-hud"
-        className="fixed bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] sm:w-[86%] max-w-xl rounded-2xl px-2.5 py-2 sm:px-3.5 sm:py-2.5 shadow-2xl flex flex-col gap-1.5 border border-white/[0.12] bg-[#09090B]/95 backdrop-blur-md"
-      >
-        {/* Top Status & Controls Bar */}
-        <div className="flex items-center justify-between text-[11px] px-0.5">
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                connected ? "bg-[#FAFAFA] animate-pulse" : "bg-[#71717A]"
-              }`}
-            />
-            <span className="font-semibold tracking-wider text-[#FAFAFA]">DAS AI</span>
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium border border-white/[0.1] bg-[#141419] text-[#D4D4D8]">
-              {connected ? "ONLINE" : "CONNECTING..."}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                if (codeTask) {
-                  void codingStudioController.execute({ action: "close" });
-                } else {
-                  void codingStudioController.execute({ action: "open", language: "python" });
-                }
-              }}
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-medium border transition cursor-pointer ${
-                codeTask
-                  ? "bg-[#1E1E26] border-white/[0.32] text-[#FAFAFA]"
-                  : "bg-[#141419] border-white/[0.1] text-[#D4D4D8] hover:border-white/[0.2] hover:text-[#FAFAFA]"
-              }`}
-              title="Open DAS Voice-Controlled Code Scratchpad (11 languages)"
-            >
-              <Code2 className="h-3 w-3 text-[#A1A1AA]" />
-              <span>Code Scratchpad</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setHudCollapsed(true)}
-              aria-label="Hide DAS panel"
-              title="Minimize DAS panel to bottom bar"
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border border-white/[0.1] bg-[#141419] text-[#D4D4D8] hover:text-[#FAFAFA] hover:border-white/[0.2] transition cursor-pointer"
-            >
-              <ChevronDown className="h-3 w-3 text-[#A1A1AA]" />
-              <span>Hide</span>
-            </button>
-          </div>
-        </div>
-
-        {/* User Voice / Input Transcript */}
-        {userTranscript && (
-          <div className="flex items-start gap-2 text-[11px] text-[#FAFAFA] rounded-xl px-2.5 py-1.5 max-h-12 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border border-white/[0.08] bg-[#121216]">
-            <User className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[#A1A1AA]" />
-            <span>You: {userTranscript}</span>
-          </div>
-        )}
-
-        {/* Agent Spoken Response Transcript */}
-        <div className="flex items-start gap-2 text-xs text-[#E4E4E7] rounded-xl px-2.5 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border border-white/[0.08] bg-[#121216]">
-          <Volume2 className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[#A1A1AA]" />
-          <span>DAS: {transcript}</span>
-        </div>
-
-        {/* Live Microphone Signal & Warning Bar */}
-        {micActive && (
-          <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-[11px] border border-white/[0.08] bg-[#121216]">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="inline-flex items-center gap-1.5 font-semibold text-[#FAFAFA] shrink-0">
-                {micSilentWarning ? (
-                  <>
-                    <AlertCircle className="h-3.5 w-3.5 text-[#D4D4D8]" />
-                    <span>NO MIC SIGNAL</span>
-                  </>
-                ) : (
-                  <>
-                    <AudioLines className="h-3.5 w-3.5 text-[#FAFAFA]" />
-                    <span>MIC LIVE</span>
-                  </>
-                )}
-              </span>
-              <div className="w-20 h-1.5 rounded-full bg-black/60 overflow-hidden shrink-0">
-                <div
-                  ref={micBarRef}
-                  className="h-full bg-[#FAFAFA] transition-[width] duration-75"
-                  style={{ width: "4%" }}
-                />
-              </div>
-              <span className="text-[10px] text-[#A1A1AA] truncate">
-                {micSilentWarning
-                  ? micHealthHint || "Voice faint or muted — raise volume or check earphones/buds (auto-tuning...)"
-                  : activeMicLabel || "Capturing 16kHz PCM"}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={toggleMic}
-              className="text-[10px] text-[#FAFAFA] hover:text-[#D4D4D8] font-semibold ml-2 cursor-pointer shrink-0"
-            >
-              Mute
-            </button>
-          </div>
-        )}
-
-        {/* Command & Control Bar */}
-        <form onSubmit={handleSendText} autoComplete="off" className="flex flex-wrap sm:flex-nowrap items-center gap-1.5">
-          {/* Hands-free Voice Speak / Mute Button */}
-          <button
-            type="button"
-            onClick={toggleMic}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-xl font-medium text-[11px] sm:text-xs transition cursor-pointer flex items-center gap-1.5 border shrink-0 ${
-              micActive
-                ? "bg-[#1C1C24] border-white/[0.28] text-[#FAFAFA]"
-                : "bg-[#141419] border-white/[0.12] text-[#FAFAFA] hover:bg-[#1E1E26]"
-            }`}
-            title={micActive ? "Click to Mute Microphone" : "Click to Speak (Supports all Headphones, Earphones & Buds)"}
-          >
-            {micActive ? (
-              <>
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FAFAFA] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FAFAFA]"></span>
-                </span>
-                <span>Listening...</span>
-              </>
-            ) : (
-              <>
-                <Mic className="h-3.5 w-3.5 text-[#D4D4D8]" />
-                <span>Speak</span>
-              </>
-            )}
-          </button>
-
-          {/* Input Text Box */}
-          <input
-            id="das-command-input"
-            name="dasCommand"
-            type="text"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            value={inputText}
-            onFocus={() => dasSocket.warmup()}
-            onChange={(e) => {
-              audioEngine.notifyTypingActivity(850);
-              dasSocket.warmup();
-              setInputText(e.target.value);
-            }}
-            placeholder="Ask DAS: 'Who is your boss?', 'Write QuickSort in C', 'Set my CGPA to 8.9'..."
-            className="min-w-[120px] flex-1 rounded-xl px-3 py-1.5 text-xs text-[#FAFAFA] placeholder-[#71717A] focus:outline-none border border-white/[0.1] bg-[#121216] focus:border-white/[0.28]"
-          />
-
-          {/* Dedicated Edit Option Beside Send */}
-          <button
-            type="button"
-            onClick={() => {
-              if (userTranscript) {
-                const cleaned = userTranscript.replace(/^(?:🎤\s*)?You:\s*/i, "").trim();
-                setInputText(cleaned);
-                toast.info("Previous command loaded for editing!");
-              }
-              const inputEl = document.getElementById("das-command-input") as HTMLInputElement;
-              inputEl?.focus();
-              inputEl?.select();
-            }}
-            className="px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition cursor-pointer border border-white/[0.12] bg-[#141419] hover:bg-[#1E1E26] flex items-center gap-1.5 text-[#FAFAFA] shrink-0"
-            title="Edit / Recall Previous Query"
-          >
-            <PenLine className="h-3 w-3 text-[#D4D4D8]" />
-            <span>Edit</span>
-          </button>
-
-          {/* Send Button */}
-          <button
-            type="submit"
-            className="px-3 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold text-[#09090B] bg-[#FAFAFA] hover:bg-white transition cursor-pointer inline-flex items-center gap-1.5 shrink-0"
-          >
-            <span>Send</span>
-            <SendHorizontal className="h-3 w-3" />
-          </button>
-        </form>
-      </div>
       )}
         </>
       )}

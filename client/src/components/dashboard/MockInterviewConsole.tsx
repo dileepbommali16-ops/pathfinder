@@ -557,7 +557,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
       {/* Main Interview Stage */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
         {/* Left Column: Question Prompt Card */}
-        <div className="pf-subpanel flex flex-col justify-between rounded-2xl p-6 sm:p-7 lg:col-span-5">
+        <div className="pf-subpanel flex min-w-0 flex-col justify-between rounded-2xl p-6 sm:p-7 lg:col-span-5">
           <div>
             <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.07] pb-4">
               <span className="rounded-md border border-white/[0.1] bg-black/50 px-2.5 py-0.5 font-mono text-[10px] font-medium text-[#FAFAFA]">
@@ -656,7 +656,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
         </div>
 
         {/* Right Column: Clean Answer Workspace */}
-        <div className="flex flex-col justify-between space-y-6 lg:col-span-7">
+        <div className="flex min-w-0 flex-col justify-between space-y-6 lg:col-span-7">
           <div className="pf-subpanel rounded-2xl p-6 sm:p-7">
             <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
               <span className="text-xs font-medium text-[#D4D4D8]">Your Response Workspace</span>

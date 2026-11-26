@@ -851,7 +851,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
       {/* Spacious Split-Screen Grid */}
       <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
         {/* Left 5 cols: Problem + Clean Viva Box */}
-        <div className="space-y-6 lg:col-span-5">
+        <div className="min-w-0 space-y-6 lg:col-span-5">
           <div className="pf-subpanel space-y-4 rounded-2xl p-6 sm:p-7">
             <div className="flex items-center justify-between">
               <span className="rounded-md border border-white/[0.1] bg-black/50 px-2.5 py-0.5 font-mono text-[11px] font-medium text-[#FAFAFA]">
@@ -934,7 +934,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
 
               <div className="grid grid-cols-2 gap-3.5 text-xs">
                 <div className="rounded-xl border border-white/[0.07] bg-black/45 p-3.5">
-                  <span className="block text-[10px] text-[#A1A1AA]">Verified Code Score</span>
+                  <span className="block text-[10px] text-[#A1A1AA]">Code Execution Score</span>
                   <span className="mt-1 block font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
                     {verdictResult.codeScore}/100
                   </span>
@@ -984,7 +984,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
         </div>
 
         {/* Right 7 cols: Machined 11-Language IDE Sandbox */}
-        <div className="space-y-5 lg:col-span-7">
+        <div className="min-w-0 space-y-5 lg:col-span-7">
           <div className="pf-subpanel space-y-5 rounded-2xl p-6 sm:p-7">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] pb-4">
               <div className="flex items-center gap-3">

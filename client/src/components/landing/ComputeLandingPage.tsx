@@ -61,10 +61,10 @@ const SLIDE_PREVIEWS: Record<
   analytics: {
     eyebrow: "Slide 05 · Institutional Telemetry",
     metric: "972 Rows",
-    metricLabel: "Verified cohort & NAAC 5.2 tracker",
+    metricLabel: "Cohort distributions & report exports",
     points: [
       "Slice placement conversion across graduating year, branch, domain & CGPA band",
-      "TPO compliance export mode with CSV/PDF accreditation tables",
+      "TPO summary export mode with CSV/PDF tables",
       "Interactive 6-week placement sprint roadmap persisted per candidate",
     ],
   },
@@ -73,7 +73,7 @@ const SLIDE_PREVIEWS: Record<
     metric: "Live Sync",
     metricLabel: "Real-time prediction recalibration",
     points: [
-      "Edit verified CGPA, conversion scale, active backlogs, internships & links",
+      "Edit your CGPA, conversion scale, active backlogs, internships & links",
       "Role tracks mapped across Software, AI/ML, Embedded VLSI, EV, Robotics & Civil",
       "Saving immediately re-computes offer odds across every workspace slide",
     ],
@@ -195,16 +195,16 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               className="mt-7 text-4xl font-semibold leading-[1.04] tracking-[-0.04em] text-[#FAFAFA] sm:text-6xl lg:text-[64px]"
               style={{ textWrap: "balance" }}
             >
-              Placement readiness, engineered from verified signals.
+              Placement readiness, engineered from structured signals.
             </h1>
 
             <p
               className="mt-6 max-w-2xl text-base leading-[1.7] text-[#A1A1AA] sm:text-lg"
               style={{ textWrap: "pretty" }}
             >
-              Calibrate your offer probability against 972 verified campus drives, write and execute
-              solutions across 11 compiler runtimes, and defend system trade-offs aloud with DAS —
-              your live 3D holographic voice mentor.
+              Estimate your offer probability against a 972-record placement dataset, write and
+              execute solutions across 11 compiler runtimes, and defend system trade-offs aloud
+              with DAS — your live 3D holographic voice mentor.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-4">
@@ -290,7 +290,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               Built like an internal engineering workbench, not a static form.
             </h2>
             <p className="mt-3 text-sm leading-[1.7] text-[#A1A1AA] sm:text-base">
-              Every module shares one verified candidate state so code runs, resume audits, and
+              Every module shares one live candidate state so code runs, resume audits, and
               hiring predictions stay continuously synchronized.
             </p>
           </div>
@@ -309,7 +309,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   </h3>
                   <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-[#A1A1AA]">
                     Evaluates CGPA multipliers, branch history, standing backlogs, internships, and
-                    DSA readiness against 972 audited placement outcomes.
+                    DSA readiness against a 972-record placement dataset.
                   </p>
                 </div>
 
@@ -449,7 +449,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 <div>
                   <div className="flex items-center justify-between font-mono text-[11px] text-[#71717A]">
                     <span>04 · 11-LANGUAGE COMPILER ARENA</span>
-                    <span>EXECUTION VERIFIED</span>
+                    <span>SANDBOX EXECUTION</span>
                   </div>
                   <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
                     Real code execution paired with oral defense
@@ -567,7 +567,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
           </SpotlightSurface>
         </section>
 
-        {/* Verified Benchmarks Strip */}
+        {/* Dataset & Platform Benchmarks Strip */}
         <section id="benchmarks" className="border-t border-white/[0.07] py-20 sm:py-24">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <SpotlightSurface className="rounded-2xl p-7">
@@ -575,7 +575,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
                 <AnimatedMetric value={972} />
               </div>
-              <p className="mt-2 text-sm text-[#A1A1AA]">Verified campus offers calibrated</p>
+              <p className="mt-2 text-sm text-[#A1A1AA]">Records in placement dataset</p>
             </SpotlightSurface>
 
             <SpotlightSurface className="rounded-2xl p-7">

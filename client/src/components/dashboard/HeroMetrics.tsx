@@ -52,7 +52,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             </span>
             <span className="inline-flex items-center gap-2 rounded-md border border-white/[0.08] bg-[#0D0D11] px-3 py-1 font-mono text-[11px] text-[#A1A1AA] tabular-nums">
               <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
-              <span>Random Forest · 972 records</span>
+              <span>Random Forest · 972-record dataset</span>
             </span>
           </div>
 

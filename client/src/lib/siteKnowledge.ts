@@ -52,7 +52,7 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
       "Action Card Deck: Prioritized interventions categorized by High/Medium Impact (e.g., Blind 75 LeetCode sprints, STAR interview stories, Resume keyword alignment).",
       "What-If Simulator: Fine-grained slider experiment to calculate expected ROI on time investments."
     ],
-    dataSource: "Generated dynamically by evaluating the candidate's profile against the verified benchmark cutoffs of top-tier hiring companies.",
+    dataSource: "Generated dynamically by evaluating the candidate's profile against reference benchmark cutoffs for top-tier hiring companies.",
     howToUse: "Focus on the top 2 'High Impact' actions first. Complete the recommended tasks to systematically eliminate eligibility barriers.",
     limitations: "Recommendations prioritize general campus drive criteria and should be tailored if targeting niche research or specialized domains."
   },
@@ -78,7 +78,7 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
       "Quick Action Chips: Pre-populated prompts ('Start Mock Interview', 'Find My Skill Gaps', 'Review My Resume', 'Suggest Flagship Project', 'Placement Preparation Plan').",
       "Controls: Stop Generation, Regenerate, Clear Chat, and Server Wake-up notification indicator."
     ],
-    dataSource: "Direct live inference from Google Gemini models with full site knowledge injection, candidate profile grounding, and verified platform statistics.",
+    dataSource: "Direct live inference from Google Gemini models with full site knowledge injection, candidate profile grounding, and 972-record dataset statistics.",
     howToUse: "Ask anything! Whether you want technical system design explanations, mock behavioral questions, emotional encouragement, or explanations of specific charts on the website.",
     limitations: "The AI mentor provides guidance and educational mentorship; it does not grade official university coursework or guarantee job placement."
   },
@@ -91,20 +91,20 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
       "Blueprint Modal: Complete system architecture diagram, tech stack recommendations, database schemas, step-by-step build order, and interview defense talking points.",
       "'Discuss Architecture with AI Coach' Button: Hands off the project context directly to the coach for custom technical discussion."
     ],
-    dataSource: "data/projects.json containing verified engineering specifications used by successful alumni hires.",
+    dataSource: "data/projects.json containing reference engineering specifications.",
     howToUse: "Select a flagship project aligned with your target role. Read the architecture pattern, implement the suggested stack, and deploy with a live demo URL.",
     limitations: "Students should write original code and understand the implementation deeply rather than cloning boilerplate templates."
   },
   analytics: {
     id: "analytics",
-    title: "5. Cohort & Roadmap (972 Verified Records + 6-Week Sprint)",
-    purpose: "Empirical historical placement analytics across 972 engineering records paired directly with your personalized 6-Week Strategic Placement Roadmap.",
+    title: "5. Cohort & Roadmap (972-Record Dataset + 6-Week Sprint)",
+    purpose: "Historical placement analytics across a 972-record placement dataset paired directly with your personalized 6-Week Strategic Placement Roadmap.",
     widgets: [
       "Department Filter & Year Selector (2024, 2025, 2026).",
       "Placement Distribution & Salary Package Rankings: Highest and average LPA across departments (CSM/AIML 44.6 LPA, CSE 44.0 LPA).",
       "6-Week Strategic Placement Roadmap: Week-by-week interactive sprint deliverables covering DSA patterns, system design, core CS, and mock interviews."
     ],
-    dataSource: "Verified database of 972 historical student placement records paired with live personalized roadmap generation.",
+    dataSource: "972-record placement dataset paired with live personalized roadmap generation.",
     howToUse: "Compare your branch and CGPA bracket to historical placement cohorts, then execute your 6-week roadmap milestones right below.",
     limitations: "Historical cohort trends provide statistical baselines; combine benchmark analysis with weekly roadmap execution."
   },
@@ -131,7 +131,7 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
       "Core Subjects Checklist (OS, DBMS, Networks, Microprocessors, CAD, Power Systems).",
       "Top Tech Hiring Recruiters by Branch."
     ],
-    dataSource: "Derived from data/branches.json and verified cohort placement records.",
+    dataSource: "Derived from data/branches.json and the 972-record placement dataset.",
     howToUse: "Find your department to discover core academic subjects most frequently tested during campus technical rounds.",
     limitations: "Non-circuital branches (MECH, CIVIL) should focus on core departmental opportunities or follow the IT transition roadmap if targeting software roles."
   },

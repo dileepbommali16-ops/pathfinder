@@ -18,6 +18,7 @@ import { SUPPORTED_LANGUAGES } from "../agent/codingStudioController";
 import { tryExecuteClientAutomationIntent } from "../agent/toolRunner";
 import {
   DEFAULT_STUDENT_PROFILE,
+  DEMO_GUEST_PROFILE,
   EMPTY_GUEST_PROFILE,
   isProfileUnconfigured,
   buildFreshOnboardingProfile,
@@ -325,20 +326,54 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(spoken).not.toContain("What's up");
   });
 
-  it("treats Guest and Stranger as placeholder names and keeps unconfigured Guest profiles empty", () => {
+  it("treats Guest and Stranger as placeholder names and preloads Demo Guest Profile cleanly while preserving cleared state", () => {
     expect(isPlaceholderCandidateName("Guest")).toBe(true);
     expect(isPlaceholderCandidateName("Stranger")).toBe(true);
     expect(pickCandidateFullName("Guest", "Priyanka")).toBe("Priyanka");
 
-    const guestProfile = buildInitialProfileFromStorage(
+    const demoGuestProfile = buildInitialProfileFromStorage(
       null,
       JSON.stringify({ email: "guest@pathfinder.ai", username: "Guest Student" })
     );
-    expect(guestProfile.cgpa).toBe(0);
-    expect(guestProfile.branch).toBe("");
-    expect(guestProfile.linkedinUrl).toBe("");
-    expect(isProfileUnconfigured(guestProfile)).toBe(true);
+    expect(demoGuestProfile.cgpa).toBe(DEMO_GUEST_PROFILE.cgpa);
+    expect(demoGuestProfile.branch).toBe("CSE");
+    expect(isProfileUnconfigured(demoGuestProfile)).toBe(false);
+
+    const clearedGuestProfile = buildInitialProfileFromStorage(
+      JSON.stringify(EMPTY_GUEST_PROFILE),
+      JSON.stringify({ email: "guest@pathfinder.ai", username: "Guest Student" })
+    );
+    expect(clearedGuestProfile.cgpa).toBe(0);
+    expect(clearedGuestProfile.branch).toBe("");
+    expect(clearedGuestProfile.linkedinUrl).toBe("");
+    expect(isProfileUnconfigured(clearedGuestProfile)).toBe(true);
     expect(isProfileUnconfigured(EMPTY_GUEST_PROFILE)).toBe(true);
+  });
+
+  it("enforces P0 docked DAS stage, honest claims, and clean Footer/LampLogin copy", () => {
+    const srcRoot = path.resolve(__dirname, "..");
+    const footerSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/Footer.tsx"), "utf-8");
+    const loginSrc = fs.readFileSync(path.join(srcRoot, "components/auth/LampLogin.tsx"), "utf-8");
+    const landingSrc = fs.readFileSync(path.join(srcRoot, "components/landing/ComputeLandingPage.tsx"), "utf-8");
+    const layoutSrc = fs.readFileSync(path.join(srcRoot, "agent/AgentLayout.tsx"), "utf-8");
+    const homeSrc = fs.readFileSync(path.join(srcRoot, "pages/Home.tsx"), "utf-8");
+
+    expect(footerSrc).not.toContain("All 7 subsystems operational");
+    expect(footerSrc).not.toContain("support@pathfinder-ai.io");
+    expect(footerSrc.toLowerCase()).not.toContain("verified");
+
+    expect(loginSrc).not.toContain("Dileep Bommali");
+    expect(loginSrc).not.toContain("Audited");
+    expect(loginSrc).not.toContain("System Operational");
+    expect(loginSrc).toContain("Your full name");
+
+    expect(landingSrc.toLowerCase()).not.toContain("verified");
+    expect(landingSrc.toLowerCase()).not.toContain("audited");
+
+    expect(layoutSrc).toContain("das-stage");
+    expect(layoutSrc).toContain("xl:w-[360px]");
+    expect(homeSrc).toContain("Demo Profile (Sample)");
+    expect(homeSrc).toContain("Clear &amp; enter my details");
   });
 
   it("keeps visible mode badges, Addressing Mode UI, and dead handleRoleToggle out of AgentLayout and ProfileSettings", () => {

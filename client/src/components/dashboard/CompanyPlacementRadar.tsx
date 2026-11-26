@@ -205,7 +205,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
       {/* Spacious 12-Col Grid */}
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
         {/* Left 5 cols: Recruiter Selector List */}
-        <div className="space-y-3.5 lg:col-span-5">
+        <div className="min-w-0 space-y-3.5 lg:col-span-5">
           <div className="flex items-center justify-between px-1 font-mono text-[11px] text-[#71717A]">
             <span>Target Recruiter</span>
             <span>Match</span>
@@ -255,7 +255,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
         </div>
 
         {/* Right 7 cols: Deep Dive Benchmark Diagnostic */}
-        <div className="pf-subpanel flex flex-col justify-between rounded-2xl p-7 sm:p-9 lg:col-span-7">
+        <div className="pf-subpanel flex min-w-0 flex-col justify-between rounded-2xl p-6 sm:p-8 lg:col-span-7">
           <div>
             <div className="flex flex-col justify-between gap-3 border-b border-white/[0.07] pb-6 sm:flex-row sm:items-center">
               <div>
@@ -281,8 +281,8 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
             </div>
 
             {/* Score & Progress Metric Tiles */}
-            <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-3">
-              <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
+            <div className="mt-7 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+              <div className="min-w-0 rounded-xl border border-white/[0.07] bg-black/45 p-4">
                 <span className="text-xs text-[#A1A1AA]">Estimated Profile Fit</span>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
@@ -298,7 +298,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
+              <div className="min-w-0 rounded-xl border border-white/[0.07] bg-black/45 p-4">
                 <span className="text-xs text-[#A1A1AA]">Reference CTC Band</span>
                 <div className="mt-2 font-mono text-lg font-semibold text-[#FAFAFA] tabular-nums">
                   {selectedCompany.packageRange}
@@ -306,7 +306,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                 <div className="mt-2 text-[11px] text-[#71717A]">Industry Reference Range</div>
               </div>
 
-              <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
+              <div className="min-w-0 rounded-xl border border-white/[0.07] bg-black/45 p-4">
                 <span className="text-xs text-[#A1A1AA]">Reference CGPA Cutoff</span>
                 <div className="mt-2 flex items-center gap-2 font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
                   <span>{selectedCompany.minCgpa}+ CGPA</span>

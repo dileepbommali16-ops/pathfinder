@@ -198,7 +198,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                     : "text-[#A1A1AA] hover:text-[#FAFAFA]"
                 }`}
               >
-                TPO &amp; NAAC 5.2
+                TPO Summary
               </button>
             </div>
 
@@ -208,7 +208,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 onClick={handlePrintReport}
                 className="pf-btn-primary inline-flex h-10 items-center rounded-xl px-5 text-xs font-medium cursor-pointer"
               >
-                Print NAAC Report
+                Print Summary Report
               </button>
             ) : (
               <>
@@ -319,9 +319,9 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
         </div>
 
         {/* 6 Key Macro Metrics Cards */}
-        <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-6">
-          <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Total Audited</span>
+        <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 2xl:grid-cols-6">
+          <div className="pf-subpanel rounded-xl p-5 text-center min-w-0">
+            <span className="font-mono text-[10px] text-[#71717A]">Total Records</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.total_records ?? "—"}
             </p>
@@ -528,7 +528,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
           {/* Interactive Charts Grid */}
           <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
-            <div className="pf-titanium-card rounded-2xl p-7 sm:p-8">
+            <div className="pf-titanium-card min-w-0 rounded-2xl p-7 sm:p-8">
               <h3 className="text-base font-semibold text-[#FAFAFA]">
                 Branch Placement Distribution
               </h3>
@@ -556,7 +556,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               </div>
             </div>
 
-            <div className="pf-titanium-card rounded-2xl p-7 sm:p-8">
+            <div className="pf-titanium-card min-w-0 rounded-2xl p-7 sm:p-8">
               <h3 className="text-base font-semibold text-[#FAFAFA]">
                 Skill Domain Conversion Rates
               </h3>
@@ -589,7 +589,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           <div className="pf-titanium-card overflow-hidden rounded-2xl">
             <div className="flex items-center justify-between border-b border-[#1F1F23] p-6">
               <div>
-                <h3 className="text-sm font-semibold text-[#FAFAFA]">Audited Student Records</h3>
+                <h3 className="text-sm font-semibold text-[#FAFAFA]">Filtered Student Records</h3>
                 <p className="mt-0.5 text-xs text-[#A1A1AA]">
                   Showing {records.length} matching candidate profiles from {filters.branch} (
                   {filters.year})

@@ -24,6 +24,7 @@ import { LiveCodingInterviewArena } from "@/components/dashboard/LiveCodingInter
 import {
   StudentProfileState,
   DEFAULT_STUDENT_PROFILE,
+  DEMO_GUEST_PROFILE,
   EMPTY_GUEST_PROFILE,
   isProfileUnconfigured,
   pickCandidateFullName,
@@ -96,6 +97,9 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
   });
 
   const [focusOnDas, setFocusOnDas] = useState(false);
+  const [isStageDockedOpen, setIsStageDockedOpen] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 1280 : true
+  );
   const { getScreenPayload } = useScreenWatcher(activeTab);
 
   useEffect(() => {
@@ -310,7 +314,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       // 4. Placement Intelligence Lookup Notification
       if (toolName === "fetch_placement_intelligence_for_client") {
         toast.info(
-          `Analyzing 972 verified placement records for: ${args?.companyOrBranch || "Campus Drives"}...`
+          `Analyzing 972-record placement dataset for: ${args?.companyOrBranch || "Campus Drives"}...`
         );
       }
     };
@@ -334,7 +338,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     };
   }, []);
 
-  // Listen to voice/automation Focus-on-DAS toggles & broadcast live slide context to 24/7 DAS Co-Pilot
+  // Listen to voice/automation Focus-on-DAS & Docked Stage layout events
   useEffect(() => {
     const onToggleFocus = (ev: Event) => {
       const detail = (ev as CustomEvent)?.detail;
@@ -344,8 +348,21 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         setFocusOnDas((prev) => !prev);
       }
     };
+    const onStageLayout = (ev: Event) => {
+      const detail = (ev as CustomEvent)?.detail;
+      if (typeof detail?.dockedOpen === "boolean") {
+        setIsStageDockedOpen(detail.dockedOpen);
+      }
+      if (typeof detail?.focusMode === "boolean") {
+        setFocusOnDas(detail.focusMode);
+      }
+    };
     window.addEventListener("das-toggle-focus", onToggleFocus);
-    return () => window.removeEventListener("das-toggle-focus", onToggleFocus);
+    window.addEventListener("das-stage-layout", onStageLayout);
+    return () => {
+      window.removeEventListener("das-toggle-focus", onToggleFocus);
+      window.removeEventListener("das-stage-layout", onStageLayout);
+    };
   }, []);
 
   const [profile, setProfile] = useState<StudentProfileState>(() => {
@@ -364,7 +381,10 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       const saved = localStorage.getItem("pathfinder_profile_draft");
       if (saved) {
         const parsed = JSON.parse(saved);
-        return (parsed?.email || "").toLowerCase() === "guest@pathfinder.ai";
+        return (
+          (parsed?.email || "").toLowerCase() === "guest@pathfinder.ai" &&
+          !isProfileUnconfigured(parsed)
+        );
       }
       const userRaw = localStorage.getItem("pathfinder_user");
       if (!userRaw) return true;
@@ -765,24 +785,24 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     isProfileUnconfigured(profile)
       ? UNCONFIGURED_PREDICTION
       : {
-          chance: 78.5,
-          label: "Strong Candidate Profile",
-          tone: "strong",
-          strengths: [
-            "High Academic Distinction (CGPA 7.8/10)",
-            "Clean Academic Record (0 Active Backlogs)",
-            "Practical Engineering Exposure (1 Internship)",
-            "Core Problem Solving Foundation (7/10)",
-          ],
-          priorities: ["Target Blind 75 DSA patterns to elevate screening clearance rate"],
-          breakdown: {
-            academics: 78.0,
-            coding_dsa: 70.0,
-            communication: 70.0,
-            experience: 35.0,
-            eligibility: 100.0,
-          },
-        }
+        chance: 78.5,
+        label: "Strong Candidate Profile",
+        tone: "strong",
+        strengths: [
+          "High Academic Distinction (CGPA 7.8/10)",
+          "Clean Academic Record (0 Active Backlogs)",
+          "Practical Engineering Exposure (1 Internship)",
+          "Core Problem Solving Foundation (7/10)",
+        ],
+        priorities: ["Target Blind 75 DSA patterns to elevate screening clearance rate"],
+        breakdown: {
+          academics: 78.0,
+          coding_dsa: 70.0,
+          communication: 70.0,
+          experience: 35.0,
+          eligibility: 100.0,
+        },
+      }
   );
   const [isCalculating, setIsCalculating] = useState(false);
 
@@ -967,13 +987,15 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     let immediateIsDemo = false;
     if (user.bypassOnboarding) {
       immediateProfile = {
-        ...EMPTY_GUEST_PROFILE,
+        ...DEMO_GUEST_PROFILE,
         email: user.email,
-        fullName: "Guest",
         onboardingCompleted: true,
         wizardStep: 5,
       };
       immediateIsDemo = true;
+      try {
+        localStorage.setItem("pathfinder_profile_draft", JSON.stringify(immediateProfile));
+      } catch { }
     } else if (matchedLocalDraft) {
       immediateProfile = {
         ...DEFAULT_STUDENT_PROFILE,
@@ -1358,7 +1380,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       chance >= 76
         ? "Strong Candidate Profile"
         : chance >= 56
-          ? "Solid Foundation · Needs Verified Proof"
+          ? "Solid Foundation · Add Code Proof"
           : "Needs Focus & Acceleration";
 
     const strengths: string[] = [
@@ -1391,7 +1413,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     }
     if (typeof atsScore !== "number") {
       priorities.push(
-        "No verified ATS resume scan yet — upload your resume in 5. ATS Resume Studio to benchmark core keywords (SQL, Docker, Cloud, REST)."
+        "No ATS resume scan yet — upload your resume in 2. JD & Resume Lab to benchmark core keywords (SQL, Docker, Cloud, REST)."
       );
     }
     if (certs.length === 0) {
@@ -2085,6 +2107,38 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       !profile.certifications ||
       profile.certifications.length === 0);
 
+  const handleClearDemoProfile = () => {
+    const cleanGuest = {
+      ...EMPTY_GUEST_PROFILE,
+      email: email || "guest@pathfinder.ai",
+    };
+    setProfile(cleanGuest);
+    try {
+      localStorage.setItem("pathfinder_profile_draft", JSON.stringify(cleanGuest));
+    } catch { }
+    setIsDemoProfile(false);
+    setPrediction(UNCONFIGURED_PREDICTION);
+    setActiveTab("profile");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast.info("Cleared sample data — enter your own academic details below.");
+  };
+
+  const handleLoadDemoProfile = () => {
+    const sampleGuest = {
+      ...DEMO_GUEST_PROFILE,
+      email: email || "guest@pathfinder.ai",
+      onboardingCompleted: true,
+      wizardStep: 5,
+    };
+    setProfile(sampleGuest);
+    try {
+      localStorage.setItem("pathfinder_profile_draft", JSON.stringify(sampleGuest));
+    } catch { }
+    setIsDemoProfile(true);
+    void fetchPrediction(sampleGuest);
+    toast.success("Loaded Demo Profile (Sample).");
+  };
+
   // 1. LANDING & AUTH SCREEN
   if (oauthSigningIn && !isAuthenticated) {
     return (
@@ -2160,51 +2214,86 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         </div>
       )}
 
-      {/* Main Container */}
-      <main className="relative z-10 mx-auto max-w-[1400px] px-5 pt-10 pb-64 sm:px-10 lg:pt-12">
-        {focusOnDas ? (
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-8 animate-in fade-in duration-300">
-            <span className="font-mono text-xs text-[#A1A1AA]">
-              DAS 3D VOICE MENTOR · FOCUS MODE
-            </span>
-            <button
-              type="button"
-              onClick={() => setFocusOnDas(false)}
-              className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium active:scale-[0.98] cursor-pointer"
-            >
-              Show Dashboard
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-8">
-            <div className="flex items-center gap-2.5 font-mono text-[11px] text-[#71717A]">
-              {(() => {
-                const idx = WORKSPACE_SLIDES.findIndex((s) => s.id === activeTab);
-                if (idx === -1) return <span>PATHFINDER WORKSPACE</span>;
-                const slide = WORKSPACE_SLIDES[idx];
-                return (
-                  <>
-                    <span className="text-[#D4D4D8]">SLIDE {slide.index} / 06</span>
-                    <span>·</span>
-                    <span className="uppercase">{slide.label}</span>
-                  </>
-                );
-              })()}
+      {/* Main Container (reserves right stage width on xl: 1280px+ so content never overlaps DAS) */}
+      <main
+        className={`relative z-10 mx-auto px-5 pt-8 pb-20 sm:px-8 lg:pt-10 transition-[padding] duration-200 ${isStageDockedOpen && !focusOnDas
+          ? "max-w-[1680px] xl:pr-[396px] 2xl:pr-[436px]"
+          : "max-w-[1400px] sm:px-10"
+          }`}
+      >
+        {!focusOnDas && (
+          <div className="space-y-4 pb-7">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2.5 font-mono text-[11px] text-[#8A8A92]">
+                {(() => {
+                  const idx = WORKSPACE_SLIDES.findIndex((s) => s.id === activeTab);
+                  if (idx === -1) return <span>PATHFINDER WORKSPACE</span>;
+                  const slide = WORKSPACE_SLIDES[idx];
+                  return (
+                    <>
+                      <span className="text-[#D4D4D8]">SLIDE {slide.index} / 06</span>
+                      <span>·</span>
+                      <span className="uppercase">{slide.label}</span>
+                    </>
+                  );
+                })()}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent("das-toggle-focus", { detail: { focus: true } })
+                  );
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium active:scale-[0.98] cursor-pointer"
+              >
+                Focus on DAS
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setFocusOnDas(true);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium active:scale-[0.98] cursor-pointer"
-            >
-              Focus on DAS
-            </button>
+
+            {isDemoProfile && !isProfileUnconfigured(profile) && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.1] bg-[#0D0D12] px-4 py-3 text-xs">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="rounded-md border border-white/[0.16] bg-[#16161E] px-2.5 py-0.5 font-mono text-[10px] font-semibold text-[#FAFAFA]">
+                    Demo Profile (Sample)
+                  </span>
+                  <span className="text-[#A1A1AA]">
+                    Viewing pre-loaded sample data across predictions, JD matching &amp; coding
+                    rounds.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClearDemoProfile}
+                  className="pf-btn-secondary inline-flex h-8 shrink-0 items-center rounded-lg px-3 text-xs font-medium cursor-pointer"
+                >
+                  Clear &amp; enter my details
+                </button>
+              </div>
+            )}
+
+            {isProfileUnconfigured(profile) && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.1] bg-[#0D0D12] px-4 py-3 text-xs">
+                <span className="text-[#A1A1AA]">
+                  Profile unconfigured — enter your CGPA &amp; branch in Profile Settings or load
+                  sample data to preview predictions.
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLoadDemoProfile}
+                  className="pf-btn-secondary inline-flex h-8 shrink-0 items-center rounded-lg px-3 text-xs font-medium cursor-pointer"
+                >
+                  Load Demo Profile
+                </button>
+              </div>
+            )}
           </div>
         )}
         <div
-          className={`transition-opacity duration-300 ${focusOnDas ? "hidden" : "opacity-100 pointer-events-auto"
+          className={`transition-all duration-200 ${focusOnDas
+            ? "opacity-[0.12] blur-[2px] pointer-events-none select-none"
+            : "opacity-100 pointer-events-auto"
             }`}
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -2229,7 +2318,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                     description="Real-time placement probability and primary eligibility benchmark"
                     badge="1 of 3 · Readiness"
                     accent="cyan"
-                    helperLabel="Calculated via Random Forest model trained on 972 student records"
+                    helperLabel="Calculated via Random Forest model trained on 972-record placement dataset"
                   />
                   <HeroMetrics
                     username={username}
@@ -2310,11 +2399,10 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                       role="tab"
                       aria-selected={interviewWorkspace === "coding"}
                       onClick={() => setInterviewWorkspace("coding")}
-                      className={`h-9 rounded-lg px-4 text-xs font-medium transition-colors cursor-pointer ${
-                        interviewWorkspace === "coding"
-                          ? "bg-[#FAFAFA] text-[#09090B]"
-                          : "text-[#A1A1AA] hover:text-[#FAFAFA]"
-                      }`}
+                      className={`h-9 rounded-lg px-4 text-xs font-medium transition-colors cursor-pointer ${interviewWorkspace === "coding"
+                        ? "bg-[#FAFAFA] text-[#09090B]"
+                        : "text-[#A1A1AA] hover:text-[#FAFAFA]"
+                        }`}
                     >
                       Live Coding &amp; Viva
                     </button>
@@ -2323,11 +2411,10 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                       role="tab"
                       aria-selected={interviewWorkspace === "mock"}
                       onClick={() => setInterviewWorkspace("mock")}
-                      className={`h-9 rounded-lg px-4 text-xs font-medium transition-colors cursor-pointer ${
-                        interviewWorkspace === "mock"
-                          ? "bg-[#FAFAFA] text-[#09090B]"
-                          : "text-[#A1A1AA] hover:text-[#FAFAFA]"
-                      }`}
+                      className={`h-9 rounded-lg px-4 text-xs font-medium transition-colors cursor-pointer ${interviewWorkspace === "mock"
+                        ? "bg-[#FAFAFA] text-[#09090B]"
+                        : "text-[#A1A1AA] hover:text-[#FAFAFA]"
+                        }`}
                     >
                       Company &amp; Project Defense
                     </button>

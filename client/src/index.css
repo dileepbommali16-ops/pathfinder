@@ -293,7 +293,7 @@
   border-color: #3f3f46;
 }
 
-/* Keep translucent obsidian card surfaces across dashboard tabs so 3D Face Agent (#das-singleton-avatar at z-[1]) shines cleanly behind */
+/* Matte obsidian card surfaces across dashboard tabs with dedicated right-hand DAS stage */
 .pathfinder-dashboard section [class*="bg-[#11131c]"],
 .pathfinder-dashboard section [class*="bg-[#000000]"],
 .pathfinder-dashboard main>div [class*="bg-[#000000]"],
@@ -302,7 +302,7 @@
 .pathfinder-dashboard main>div [class*="bg-[#0F172A]"],
 .pathfinder-dashboard main>div [class*="bg-[#0f172a]"],
 .pathfinder-dashboard main>div [class*="bg-[#060608]"] {
-  background-color: rgba(9, 9, 11, 0.56) !important;
+  background-color: rgba(9, 9, 11, 0.92) !important;
   backdrop-filter: blur(2px) !important;
   -webkit-backdrop-filter: blur(2px) !important;
 }

@@ -18,7 +18,7 @@ interface LampLoginProps {
 const STUDIO_HIGHLIGHTS = [
   {
     index: "01",
-    title: "972 Audited Campus Outcomes",
+    title: "972-Record Placement Dataset",
     detail: "Instant Random Forest placement odds across CGPA, skills, and drive cutoffs.",
   },
   {
@@ -157,11 +157,6 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
         ) : (
           <div />
         )}
-
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#0B0B0E]/90 px-3 py-1 font-mono text-[11px] text-[#A1A1AA]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
-          <span>System Operational</span>
-        </div>
       </header>
 
       {/* Spacious Two-Column Titanium Studio Auth Layout (Zero Videos) */}
@@ -174,7 +169,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
               <span className="block text-base font-semibold tracking-[-0.02em] text-[#FAFAFA]">
                 Pathfinder 2.0
               </span>
-              <span className="font-mono text-[11px] text-[#71717A]">
+              <span className="font-mono text-[11px] text-[#8A8A92]">
                 COMPUTE STUDIO WORKSPACE
               </span>
             </div>
@@ -184,7 +179,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
             className="text-3xl font-semibold leading-[1.12] tracking-[-0.035em] text-[#FAFAFA] xl:text-4xl"
             style={{ textWrap: "balance" }}
           >
-            From campus preparation to verified engineering offers.
+            From campus preparation to engineering offers.
           </h2>
 
           <div className="space-y-4">
@@ -314,9 +309,9 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Dileep Bommali"
+                  placeholder="Your full name"
                   autoComplete="name"
-                  className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#52525B]"
+                  className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#8A8A92]"
                 />
               </div>
 
@@ -334,7 +329,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="student@university.edu"
                   autoComplete="email"
-                  className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#52525B]"
+                  className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#8A8A92]"
                 />
               </div>
 
@@ -347,8 +342,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
               </button>
             </form>
 
-            <div className="mt-6 flex items-center justify-between border-t border-white/[0.08] pt-5 text-xs text-[#71717A]">
-              <span>Just exploring?</span>
+            <div className="mt-6 space-y-2.5 border-t border-white/[0.08] pt-5">
               <button
                 id="btn-demo-guest"
                 type="button"
@@ -359,10 +353,13 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
                     bypassOnboarding: true,
                   })
                 }
-                className="inline-flex min-h-10 items-center font-medium text-[#E4E4E7] underline decoration-[#52525B] underline-offset-4 transition-colors duration-150 hover:text-[#FAFAFA] hover:decoration-[#FAFAFA]"
+                className="pf-btn-secondary inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-xs font-medium active:scale-[0.98] cursor-pointer"
               >
-                Continue as guest
+                Explore Interactive Demo (Guest)
               </button>
+              <p className="text-center text-[11px] text-[#8A8A92]">
+                No sign-up needed — loads a clearly labeled sample profile
+              </p>
             </div>
           </SpotlightSurface>
         </motion.div>

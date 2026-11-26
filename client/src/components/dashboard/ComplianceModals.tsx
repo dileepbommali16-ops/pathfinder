@@ -63,7 +63,8 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
                   3. Benchmark Data Disclosure
                 </h3>
                 <p>
-                  The historical benchmark database comprises 972 verified campus recruitment outcomes across 9 engineering departments. All candidate names and identifiers have been fully anonymized in compliance with DPDP and FERPA privacy regulations.
+                  This platform uses a 972-record placement dataset across 9 engineering departments
+                  with anonymized student identifiers.
                 </p>
               </section>
 

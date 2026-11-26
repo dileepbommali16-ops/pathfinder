@@ -109,8 +109,8 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
               </span>
             </div>
             <p className="mt-1.5 text-xs text-[#A1A1AA] sm:text-sm">
-              Verified correlation between technical skills, campus placement rate, and salary
-              multipliers
+              Observed correlation in the 972-record placement dataset between technical skills,
+              placement rate, and package ranges
             </p>
           </div>
 
@@ -313,7 +313,7 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
                   {activeMetric.skill}
                 </span>
                 <span className="mt-0.5 block text-xs text-[#A1A1AA]">
-                  Evaluated across verified campus drives
+                  Computed from the 972-record placement dataset
                 </span>
 
                 <div className="mt-4 grid grid-cols-2 gap-3">

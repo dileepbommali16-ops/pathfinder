@@ -37,13 +37,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
               </span>
             </div>
             <p className="text-xs leading-relaxed text-[#A1A1AA]">
-              Full-stack engineering placement intelligence calibrated on 972 verified campus
-              offers, pairing scikit-learn probability models with live 3D voice coaching.
+              Full-stack engineering placement intelligence calibrated on a 972-record placement
+              dataset, pairing scikit-learn probability models with live 3D voice coaching.
             </p>
-            <div className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-[#0D0D11] px-3 py-1.5 font-mono text-[11px] text-[#D4D4D8]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#D4D4D8]" />
-              <span>All 7 subsystems operational</span>
-            </div>
           </div>
 
           {/* Column 2: Core Modules */}
@@ -172,20 +168,24 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
             </ul>
           </div>
 
-          {/* Column 4: Placement Desk */}
+          {/* Column 4: Platform Info */}
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-[#FAFAFA]">Placement desk</h3>
-            <p className="text-xs text-[#A1A1AA]">
-              Questions on cohort benchmarks or institutional setup:
+            <h3 className="text-xs font-semibold text-[#FAFAFA]">Workspace</h3>
+            <p className="text-xs leading-relaxed text-[#A1A1AA]">
+              Pathfinder 2.0 · Placement Readiness &amp; Live Voice Interview Workbench.
             </p>
             <div className="space-y-2 pt-1 text-xs">
-              <a
-                href="mailto:support@pathfinder-ai.io?subject=Pathfinder%20Placement%20Inquiry"
-                className="block font-mono text-[11px] text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+              <p className="text-[#8A8A92]">Hyderabad, India</p>
+              <button
+                type="button"
+                onClick={() => {
+                  onNavigateTab("profile");
+                  scrollToTop();
+                }}
+                className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
               >
-                support@pathfinder-ai.io
-              </a>
-              <p className="text-[#71717A]">Hyderabad, India</p>
+                Open profile settings
+              </button>
             </div>
           </div>
         </div>
