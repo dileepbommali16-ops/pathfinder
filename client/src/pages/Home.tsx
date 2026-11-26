@@ -55,6 +55,7 @@ import {
 import { getApiBase, API_BASE, fetchWithTimeout, api, getSessionId } from "@/lib/apiClient";
 import { getTabKnowledge } from "@/lib/siteKnowledge";
 import { Footer } from "@/components/dashboard/Footer";
+import { DAS_LAYOUT, DasLayoutMode } from "@/agent/AgentLayout";
 import { SlideTransitionBar, WORKSPACE_SLIDES } from "@/components/ui/TitaniumPrimitives";
 import { toast } from "sonner";
 
@@ -97,9 +98,26 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
   });
 
   const [focusOnDas, setFocusOnDas] = useState(false);
-  const [isStageDockedOpen, setIsStageDockedOpen] = useState<boolean>(() =>
-    typeof window !== "undefined" ? window.innerWidth >= 1280 : true
-  );
+  const [dasLayoutMode, setDasLayoutMode] = useState<DasLayoutMode>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const param = new URLSearchParams(window.location.search).get("dasLayout");
+        if (param === "docked" || param === "background") return param;
+      } catch { }
+    }
+    return DAS_LAYOUT;
+  });
+  const [isDasSpeaking, setIsDasSpeaking] = useState(false);
+  const [isStageDockedOpen, setIsStageDockedOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return DAS_LAYOUT === "docked";
+    try {
+      const param = new URLSearchParams(window.location.search).get("dasLayout");
+      const mode = param === "docked" || param === "background" ? param : DAS_LAYOUT;
+      return mode === "docked" && window.innerWidth >= 1280;
+    } catch {
+      return DAS_LAYOUT === "docked" && window.innerWidth >= 1280;
+    }
+  });
   const { getScreenPayload } = useScreenWatcher(activeTab);
 
   useEffect(() => {
@@ -355,6 +373,12 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       }
       if (typeof detail?.focusMode === "boolean") {
         setFocusOnDas(detail.focusMode);
+      }
+      if (typeof detail?.isSpeaking === "boolean") {
+        setIsDasSpeaking(detail.isSpeaking);
+      }
+      if (detail?.layoutMode === "background" || detail?.layoutMode === "docked") {
+        setDasLayoutMode(detail.layoutMode);
       }
     };
     window.addEventListener("das-toggle-focus", onToggleFocus);
@@ -2214,9 +2238,9 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         </div>
       )}
 
-      {/* Main Container (reserves right stage width on xl: 1280px+ so content never overlaps DAS) */}
+      {/* Main Container (reserves right stage width only in docked mode on xl: 1280px+) */}
       <main
-        className={`relative z-10 mx-auto px-5 pt-8 pb-20 sm:px-8 lg:pt-10 transition-[padding] duration-200 ${isStageDockedOpen && !focusOnDas
+        className={`relative z-10 mx-auto px-5 pt-8 pb-24 sm:px-8 lg:pt-10 transition-[padding] duration-200 ${dasLayoutMode === "docked" && isStageDockedOpen && !focusOnDas
           ? "max-w-[1680px] xl:pr-[396px] 2xl:pr-[436px]"
           : "max-w-[1400px] sm:px-10"
           }`}
@@ -2291,9 +2315,11 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           </div>
         )}
         <div
-          className={`transition-all duration-200 ${focusOnDas
+          className={`transition-all duration-300 ${focusOnDas
             ? "opacity-[0.12] blur-[2px] pointer-events-none select-none"
-            : "opacity-100 pointer-events-auto"
+            : dasLayoutMode === "background" && isDasSpeaking
+              ? "opacity-70 pointer-events-auto"
+              : "opacity-100 pointer-events-auto"
             }`}
         >
           <AnimatePresence mode="wait" initial={false}>

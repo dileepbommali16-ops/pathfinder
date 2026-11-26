@@ -372,6 +372,10 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
 
     expect(layoutSrc).toContain("das-stage");
     expect(layoutSrc).toContain("xl:w-[360px]");
+    expect(layoutSrc).toContain('export const DAS_LAYOUT: DasLayoutMode = "background"');
+    expect(layoutSrc).toContain("onSpeakingStateChange");
+    expect(layoutSrc).toContain("opacity-35");
+    expect(homeSrc).toContain("opacity-70");
     expect(homeSrc).toContain("Demo Profile (Sample)");
     expect(homeSrc).toContain("Clear &amp; enter my details");
   });

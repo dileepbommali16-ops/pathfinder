@@ -92,8 +92,21 @@ function getExactHiReply(roleKey: HonorificKey, greetCount: number): string {
   return "Hi Boss, I'm here!";
 }
 
+export type DasLayoutMode = "background" | "docked";
+export const DAS_LAYOUT: DasLayoutMode = "background";
+
+function resolveInitialDasLayout(): DasLayoutMode {
+  if (typeof window === "undefined") return DAS_LAYOUT;
+  try {
+    const param = new URLSearchParams(window.location.search).get("dasLayout");
+    if (param === "docked" || param === "background") return param;
+  } catch { }
+  return DAS_LAYOUT;
+}
+
 export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
+  const [activeLayout] = useState<DasLayoutMode>(resolveInitialDasLayout);
 
   // Authentication State: Check if user is logged into the main dashboard
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -106,9 +119,19 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [connected, setConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
-  const [hudCollapsed, setHudCollapsed] = useState<boolean>(() =>
-    typeof window !== "undefined" ? window.innerWidth < 1280 : false
-  );
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return (window as any).__DAS_PAGE_CONTEXT__?.activeTab || "overview";
+    }
+    return "overview";
+  });
+  const [hudCollapsed, setHudCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    if (resolveInitialDasLayout() === "docked") return window.innerWidth < 1280;
+    const initialTab = (window as any).__DAS_PAGE_CONTEXT__?.activeTab || "overview";
+    return initialTab === "interview";
+  });
   const [focusMode, setFocusMode] = useState(false);
   const userToggledStageRef = useRef(false);
   const [, setRole] = useState<UserHonorificRole>(() => getHonorificKey());
@@ -285,6 +308,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     const onPageContext = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail && typeof detail === "object") {
+        if (typeof detail.activeTab === "string") {
+          setActiveTab(detail.activeTab);
+        }
         dasSocket.sendPageContext(detail);
       }
     };
@@ -1217,7 +1243,20 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const showAgent = isAuthenticated || hasUser;
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    return audioEngine.onSpeakingStateChange((speaking) => {
+      setIsSpeaking(speaking);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (activeLayout !== "background") return;
+    if (activeTab === "interview" && !focusMode) {
+      setHudCollapsed(true);
+    }
+  }, [activeLayout, activeTab, focusMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || activeLayout !== "docked") return;
     const onResize = () => {
       if (!userToggledStageRef.current) {
         setHudCollapsed(window.innerWidth < 1280);
@@ -1225,7 +1264,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, []);
+  }, [activeLayout]);
 
   useEffect(() => {
     if (!focusMode) return;
@@ -1241,12 +1280,22 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const dockedOpen = showAgent && !hudCollapsed && !focusMode;
+    const dockedOpen = activeLayout === "docked" && showAgent && !hudCollapsed && !focusMode;
     document.documentElement.dataset.dasStage = dockedOpen ? "open" : "collapsed";
+    document.documentElement.dataset.dasLayout = activeLayout;
     window.dispatchEvent(
-      new CustomEvent("das-stage-layout", { detail: { dockedOpen, focusMode } })
+      new CustomEvent("das-stage-layout", {
+        detail: { dockedOpen, focusMode, isSpeaking, layoutMode: activeLayout },
+      })
     );
-  }, [showAgent, hudCollapsed, focusMode]);
+  }, [activeLayout, showAgent, hudCollapsed, focusMode, isSpeaking]);
+
+  const bgFaceOpacityClass =
+    focusMode || isSpeaking || activeTab === "overview"
+      ? "opacity-100"
+      : activeTab === "interview" || activeTab === "analytics"
+        ? "opacity-35"
+        : "opacity-65";
 
   return (
     <div className={showAgent ? "relative min-h-screen bg-transparent text-white overflow-x-hidden" : "relative min-h-screen bg-transparent"}>
@@ -1259,7 +1308,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {codeTask && (
         <div
           className={`fixed top-16 left-2 right-2 sm:left-auto sm:top-20 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#09090B]/95 backdrop-blur-md border border-white/[0.12] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3 ${
-            !hudCollapsed && !focusMode
+            activeLayout === "docked" && !hudCollapsed && !focusMode
               ? "sm:right-6 xl:right-[384px] 2xl:right-[424px]"
               : "sm:right-6"
           }`}
@@ -1403,6 +1452,300 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         </div>
       )}
 
+      {/* DAS Agent Layout Switch: "background" (Hero Backdrop + Speaking Spotlight) vs "docked" */}
+      {activeLayout === "background" ? (
+        <>
+          {focusMode && (
+            <div
+              onClick={() => {
+                setFocusMode(false);
+                window.dispatchEvent(
+                  new CustomEvent("das-toggle-focus", { detail: { focus: false } })
+                );
+              }}
+              className="fixed inset-0 z-30 bg-black/75 backdrop-blur-[2px]"
+              aria-hidden="true"
+            />
+          )}
+
+          {/* Full-Viewport Dramatic 3D Face Hero Backdrop (Pointer-Events None, Singleton Canvas) */}
+          <div
+            data-das-layout="background"
+            data-state={isSpeaking ? "speaking" : micActive ? "listening" : "idle"}
+            className={`fixed inset-0 pointer-events-none transition-opacity duration-500 ${
+              focusMode ? "z-40 opacity-100" : `z-[1] ${bgFaceOpacityClass}`
+            }`}
+          >
+            <Avatar3D
+              style={{
+                position: "relative",
+                inset: "auto",
+                width: "100%",
+                height: "100%",
+                zIndex: 1,
+              }}
+            />
+          </div>
+
+          {hudCollapsed && !focusMode ? (
+            <div
+              id="das-hud-collapsed-pill"
+              className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 rounded-full border border-white/[0.14] bg-[#09090B]/95 backdrop-blur-md px-3.5 py-1.5 shadow-2xl"
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  connected ? "bg-[#FAFAFA] animate-pulse" : "bg-[#71717A]"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setHudCollapsed(false)}
+                aria-label="Open DAS AI bar"
+                title="Expand DAS AI controls"
+                className="text-xs font-semibold tracking-wide text-[#FAFAFA] hover:text-white transition cursor-pointer flex items-center gap-1.5 px-1"
+              >
+                <ChevronUp className="h-3.5 w-3.5 text-[#A1A1AA]" />
+                <span>DAS AI</span>
+                {isSpeaking && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-white/[0.1] border border-white/[0.18] text-[#FAFAFA]">
+                    Speaking
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFocusMode(true);
+                  window.dispatchEvent(
+                    new CustomEvent("das-toggle-focus", { detail: { focus: true } })
+                  );
+                }}
+                className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-white/[0.12] bg-[#141419] text-[#D4D4D8] hover:text-[#FAFAFA] transition cursor-pointer"
+                title="Focus on DAS 3D Mentor"
+              >
+                Focus
+              </button>
+              <button
+                type="button"
+                onClick={toggleMic}
+                aria-label={micActive ? "Mute microphone" : "Speak to DAS"}
+                title={micActive ? "Mute mic" : "Speak to DAS"}
+                className={`h-6 w-6 rounded-full flex items-center justify-center border transition cursor-pointer ${
+                  micActive
+                    ? "bg-[#FAFAFA] border-white text-[#09090B]"
+                    : "bg-[#141419] border-white/[0.12] text-[#FAFAFA] hover:bg-[#1E1E26]"
+                }`}
+              >
+                {micActive ? (
+                  <Square className="h-2.5 w-2.5 fill-current" />
+                ) : (
+                  <Mic className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
+          ) : (
+            <div
+              id="das-bottom-hud"
+              data-state={isSpeaking ? "speaking" : micActive ? "listening" : "idle"}
+              className={`fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-[94%] sm:w-[86%] max-w-xl rounded-2xl border bg-[#09090B]/95 backdrop-blur-md px-3 py-2 shadow-2xl flex flex-col gap-1.5 transition-colors duration-200 ${
+                isSpeaking ? "border-white/[0.28]" : "border-white/[0.12]"
+              }`}
+            >
+              <div className="flex items-center justify-between text-[11px] px-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      connected ? "bg-[#FAFAFA] animate-pulse" : "bg-[#71717A]"
+                    }`}
+                  />
+                  <span className="font-semibold tracking-wider text-[#FAFAFA]">DAS AI</span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium border border-white/[0.1] bg-[#141419] text-[#D4D4D8]">
+                    {isSpeaking ? "SPEAKING" : connected ? "ONLINE" : "CONNECTING"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (codeTask) {
+                        void codingStudioController.execute({ action: "close" });
+                      } else {
+                        void codingStudioController.execute({ action: "open", language: "python" });
+                      }
+                    }}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border transition cursor-pointer ${
+                      codeTask
+                        ? "bg-[#1E1E26] border-white/[0.32] text-[#FAFAFA]"
+                        : "bg-[#141419] border-white/[0.1] text-[#D4D4D8] hover:border-white/[0.2] hover:text-[#FAFAFA]"
+                    }`}
+                    title="Open DAS Voice-Controlled Code Scratchpad (11 languages)"
+                  >
+                    <Code2 className="h-3 w-3 text-[#A1A1AA]" />
+                    <span>Code</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !focusMode;
+                      setFocusMode(next);
+                      window.dispatchEvent(
+                        new CustomEvent("das-toggle-focus", { detail: { focus: next } })
+                      );
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium border border-white/[0.12] bg-[#141419] text-[#FAFAFA] hover:border-white/[0.28] transition cursor-pointer"
+                    title={focusMode ? "Exit Focus Mode (Esc)" : "Spotlight DAS 3D Face"}
+                  >
+                    <span>{focusMode ? "Exit Focus (Esc)" : "Focus"}</span>
+                  </button>
+                  {!focusMode && (
+                    <button
+                      type="button"
+                      onClick={() => setHudCollapsed(true)}
+                      aria-label="Hide DAS panel"
+                      title="Minimize DAS bar"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border border-white/[0.1] bg-[#141419] text-[#D4D4D8] hover:text-[#FAFAFA] hover:border-white/[0.2] transition cursor-pointer"
+                    >
+                      <ChevronDown className="h-3 w-3 text-[#A1A1AA]" />
+                      <span>Hide</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {userTranscript && (
+                <div className="flex items-start gap-2 text-[11px] text-[#FAFAFA] rounded-xl px-2.5 py-1 max-h-10 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border border-white/[0.08] bg-[#121216]">
+                  <User className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[#A1A1AA]" />
+                  <span>You: {userTranscript}</span>
+                </div>
+              )}
+
+              <div
+                className={`flex items-start gap-2 rounded-xl px-2.5 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border border-white/[0.08] bg-[#121216] ${
+                  focusMode ? "text-xs sm:text-sm text-[#FAFAFA]" : "text-xs text-[#E4E4E7]"
+                }`}
+              >
+                <Volume2 className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[#A1A1AA]" />
+                <span>{focusMode ? transcript : `DAS: ${transcript}`}</span>
+              </div>
+
+              {micActive && (
+                <div className="flex items-center justify-between px-2.5 py-1 rounded-xl text-[11px] border border-white/[0.08] bg-[#121216]">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-[#FAFAFA] shrink-0">
+                      {micSilentWarning ? (
+                        <>
+                          <AlertCircle className="h-3.5 w-3.5 text-[#D4D4D8]" />
+                          <span>NO MIC SIGNAL</span>
+                        </>
+                      ) : (
+                        <>
+                          <AudioLines className="h-3.5 w-3.5 text-[#FAFAFA]" />
+                          <span>MIC LIVE</span>
+                        </>
+                      )}
+                    </span>
+                    <div className="w-16 h-1.5 rounded-full bg-black/60 overflow-hidden shrink-0">
+                      <div
+                        ref={micBarRef}
+                        className="h-full bg-[#FAFAFA] transition-[width] duration-75"
+                        style={{ width: "4%" }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-[#A1A1AA] truncate">
+                      {micSilentWarning
+                        ? micHealthHint || "Voice faint or muted — raise volume or check earphones"
+                        : activeMicLabel || "Capturing 16kHz PCM"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleMic}
+                    className="text-[10px] text-[#FAFAFA] hover:text-[#D4D4D8] font-semibold ml-2 cursor-pointer shrink-0"
+                  >
+                    Mute
+                  </button>
+                </div>
+              )}
+
+              <form onSubmit={handleSendText} autoComplete="off" className="flex flex-wrap sm:flex-nowrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={toggleMic}
+                  className={`px-2.5 py-1.5 rounded-xl font-medium text-[11px] transition cursor-pointer flex items-center gap-1.5 border shrink-0 ${
+                    micActive
+                      ? "bg-[#1C1C24] border-white/[0.28] text-[#FAFAFA]"
+                      : "bg-[#141419] border-white/[0.12] text-[#FAFAFA] hover:bg-[#1E1E26]"
+                  }`}
+                  title={micActive ? "Click to Mute Microphone" : "Click to Speak"}
+                >
+                  {micActive ? (
+                    <>
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FAFAFA] opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FAFAFA]"></span>
+                      </span>
+                      <span>Listening...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="h-3.5 w-3.5 text-[#D4D4D8]" />
+                      <span>Speak</span>
+                    </>
+                  )}
+                </button>
+
+                <input
+                  id="das-command-input"
+                  name="dasCommand"
+                  type="text"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  value={inputText}
+                  onFocus={() => dasSocket.warmup()}
+                  onChange={(e) => {
+                    audioEngine.notifyTypingActivity(850);
+                    dasSocket.warmup();
+                    setInputText(e.target.value);
+                  }}
+                  placeholder="Ask DAS anything..."
+                  className="min-w-[100px] flex-1 rounded-xl px-2.5 py-1.5 text-xs text-[#FAFAFA] placeholder-[#8A8A92] focus:outline-none border border-white/[0.1] bg-[#121216] focus:border-white/[0.28]"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (userTranscript) {
+                      const cleaned = userTranscript.replace(/^(?:🎤\s*)?You:\s*/i, "").trim();
+                      setInputText(cleaned);
+                      toast.info("Previous command loaded for editing!");
+                    }
+                    const inputEl = document.getElementById("das-command-input") as HTMLInputElement;
+                    inputEl?.focus();
+                    inputEl?.select();
+                  }}
+                  aria-label="Edit previous command"
+                  className="px-2 py-1.5 rounded-xl text-[11px] font-medium transition cursor-pointer border border-white/[0.12] bg-[#141419] hover:bg-[#1E1E26] flex items-center gap-1 text-[#FAFAFA] shrink-0"
+                  title="Edit / Recall Previous Query"
+                >
+                  <PenLine className="h-3 w-3 text-[#D4D4D8]" />
+                </button>
+
+                <button
+                  type="submit"
+                  aria-label="Send message to DAS"
+                  className="px-3 py-1.5 rounded-xl text-[11px] font-semibold text-[#09090B] bg-[#FAFAFA] hover:bg-white transition cursor-pointer inline-flex items-center gap-1 shrink-0"
+                >
+                  <span>Send</span>
+                  <SendHorizontal className="h-3 w-3" />
+                </button>
+              </form>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
       {/* Focus Mode Dimmed Backdrop */}
       {focusMode && (
         <div
@@ -1702,6 +2045,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             )}
           </button>
         </div>
+      )}
+        </>
       )}
         </>
       )}
