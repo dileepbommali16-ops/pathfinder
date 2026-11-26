@@ -90,6 +90,12 @@ export function isPlaceholderCandidateName(val?: string | null): boolean {
   return !s || /^(student candidate|guest student|guest|stranger|student|new student|candidate)$/i.test(s);
 }
 
+/** Returns true when an email is blank or a synthetic guest/placeholder address. */
+export function isPlaceholderCandidateEmail(val?: string | null): boolean {
+  const s = (val || "").trim().toLowerCase();
+  return !s || /^(guest|candidate|student|demo)@pathfinder\.ai$/i.test(s);
+}
+
 /** Prefers a concrete candidate name over generic template placeholders. */
 export function pickCandidateFullName(candidate?: string | null, fallback?: string | null): string {
   const c = (candidate || "").trim();

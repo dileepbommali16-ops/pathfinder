@@ -20,21 +20,21 @@ const SLIDE_PREVIEWS: Record<
 > = {
   overview: {
     eyebrow: "Slide 01 · Predictive Engine",
-    metric: "91.9%",
-    metricLabel: "Random Forest offer confidence",
+    metric: "120 Trees",
+    metricLabel: "Random Forest estimators · 5 readiness axes",
     points: [
       "Calibrated probability benchmark against 972 campus records",
       "5-axis competency telemetry across academics, DSA, projects & STAR",
-      "Live eligibility radar across Google, Razorpay, Amazon & TCS Digital",
+      "Reference cutoff benchmarks across Google, Razorpay, Amazon & TCS Digital",
     ],
   },
   resume: {
     eyebrow: "Slide 02 · JD & ATS Lab",
-    metric: "89 / 100",
-    metricLabel: "Tailored hiring manager match",
+    metric: "5-Axis ATS",
+    metricLabel: "Uninflated rubric & Google X-Y-Z audit",
     points: [
       "Instant job-description keyword parser against your skill ledger",
-      "Automated Google X-Y-Z metric bullet synthesis for 1-page ATS PDFs",
+      "Structured Google X-Y-Z resume templates & 1-page ATS PDF export",
       "Uninflated senior manager rubric scan without fake inflation",
     ],
   },
@@ -230,19 +230,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
 
         {/* Studio Hardware Video Stage */}
         <section id="walkthrough" className="pb-24 sm:pb-32">
-          <div
-            onClick={() => setShowDemoModal(true)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setShowDemoModal(true);
-              }
-            }}
-            aria-label="Open Pathfinder 2.0 55-second product walkthrough with sound"
-            className="pf-titanium-card group cursor-pointer rounded-2xl p-2 sm:p-3"
-          >
+          <div className="pf-titanium-card group relative rounded-2xl p-2 sm:p-3">
             {/* Machined window titlebar */}
             <div className="flex items-center justify-between gap-4 px-3 py-2.5 sm:px-4">
               <div className="flex items-center gap-2">
@@ -268,25 +256,23 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 muted
                 loop
                 playsInline
-                className="aspect-[16/9] w-full object-cover opacity-95 transition-opacity duration-200 group-hover:opacity-100"
+                className="pointer-events-none aspect-[16/9] w-full object-cover opacity-95 transition-opacity duration-200 group-hover:opacity-100"
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3 sm:bottom-6 sm:left-6 sm:right-6">
-                <button
-                  id="btn-watch-launch-film"
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDemoModal(true);
-                  }}
-                  className="inline-flex h-10 items-center justify-center rounded-lg border border-white/25 bg-black/85 px-4 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 hover:bg-black active:scale-[0.98] sm:text-sm"
-                >
+              <button
+                id="btn-watch-launch-film"
+                type="button"
+                onClick={() => setShowDemoModal(true)}
+                aria-label="Open Pathfinder 2.0 55-second product walkthrough with sound"
+                className="absolute inset-0 flex items-end justify-between gap-3 p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:p-6 cursor-pointer"
+              >
+                <span className="inline-flex h-10 items-center justify-center rounded-lg border border-white/25 bg-black/85 px-4 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 group-hover:bg-black active:scale-[0.98] sm:text-sm">
                   Watch 55s walkthrough
-                </button>
+                </span>
                 <span className="hidden rounded-md border border-white/15 bg-black/80 px-3 py-1.5 font-mono text-[11px] text-[#D4D4D8] tabular-nums sm:inline-block">
                   Click anywhere to open with sound
                 </span>
-              </div>
+              </button>
             </div>
           </div>
         </section>
@@ -327,19 +313,19 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   </p>
                 </div>
 
-                {/* Live UI Preview Micro-Widget */}
+                {/* Illustrative Sample Preview Micro-Widget */}
                 <div className="pf-subpanel rounded-xl p-5 sm:p-6">
                   <div className="flex items-baseline justify-between gap-4 border-b border-white/[0.06] pb-4">
                     <div>
                       <span className="font-mono text-[10px] uppercase tracking-wider text-[#71717A]">
-                        Calibrated Probability
+                        Sample Profile Preview · Illustrative
                       </span>
                       <div className="mt-1 font-mono text-3xl font-semibold text-[#FAFAFA] tabular-nums">
-                        91.9%
+                        84.5%
                       </div>
                     </div>
                     <span className="rounded-md border border-white/[0.1] bg-[#16161C] px-2.5 py-1 font-mono text-[11px] text-[#E4E4E7]">
-                      Tier-1 Shortlist Ready
+                      Sample Output
                     </span>
                   </div>
                   <div className="mt-4 space-y-3">
@@ -425,18 +411,21 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   </p>
                 </div>
 
-                {/* ATS Before / After Preview */}
+                {/* ATS Before / After Illustrative Preview */}
                 <div className="pf-subpanel space-y-3 rounded-xl p-5 sm:p-6">
+                  <span className="block font-mono text-[10px] uppercase tracking-wider text-[#71717A]">
+                    Illustrative ATS Diff Preview
+                  </span>
                   <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-black/40 px-3.5 py-2.5">
-                    <span className="font-mono text-xs text-[#71717A]">Baseline match</span>
+                    <span className="font-mono text-xs text-[#71717A]">Sample baseline</span>
                     <span className="font-mono text-sm font-semibold text-[#A1A1AA] tabular-nums">
                       54%
                     </span>
                   </div>
                   <div className="flex items-center justify-between rounded-lg border border-white/[0.14] bg-[#16161C] px-3.5 py-2.5">
-                    <span className="font-mono text-xs text-[#FAFAFA]">After X-Y-Z Sync</span>
+                    <span className="font-mono text-xs text-[#FAFAFA]">Sample after X-Y-Z sync</span>
                     <span className="font-mono text-sm font-semibold text-[#FAFAFA] tabular-nums">
-                      89% Ready
+                      89%
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-1 font-mono text-[10px] text-[#D4D4D8]">
@@ -475,7 +464,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 <div className="pf-subpanel overflow-hidden rounded-xl">
                   <div className="flex items-center justify-between border-b border-white/[0.06] bg-black/50 px-4 py-2.5 font-mono text-[11px] text-[#A1A1AA]">
                     <span>solution.py · Python 3.11</span>
-                    <span className="text-[#FAFAFA]">PASSED · 12ms · HIRE</span>
+                    <span className="text-[#FAFAFA]">Sample Run · PASSED</span>
                   </div>
                   <pre className="overflow-x-auto p-5 font-mono text-xs leading-[1.65] text-[#D4D4D8]">
                     {`def first_occurrence(arr, target):
@@ -564,7 +553,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               <div className="lg:col-span-5">
                 <div className="pf-subpanel rounded-2xl p-7 sm:p-8">
                   <span className="font-mono text-[11px] uppercase tracking-wider text-[#71717A]">
-                    Slide Focus Signal
+                    Workspace Capability
                   </span>
                   <div className="mt-3 font-mono text-4xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-5xl">
                     {activeSlideDetail.metric}

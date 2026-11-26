@@ -756,7 +756,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               }
               className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium cursor-pointer"
             >
-              Ask Coach Hint
+              Ask DAS Hint
             </button>
           )}
 
@@ -765,7 +765,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
             onClick={handleSpeakQuestionAloud}
             className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium cursor-pointer"
           >
-            Have DAS Ask Aloud
+            Read Problem Aloud
           </button>
         </div>
       </div>

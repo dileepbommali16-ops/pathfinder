@@ -163,8 +163,12 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         const rawNormalized = String(e.detail.tab).toLowerCase().trim();
         if (rawNormalized === "defense" || rawNormalized === "viva" || rawNormalized === "project-defense") {
           setInterviewMode("defense");
-        } else if (rawNormalized === "interview" || rawNormalized === "mock-interview" || rawNormalized === "mock_interview") {
+          setInterviewWorkspace("mock");
+        } else if (rawNormalized === "mock-interview" || rawNormalized === "mock_interview") {
           setInterviewMode("company");
+          setInterviewWorkspace("mock");
+        } else if (rawNormalized === "interview" || rawNormalized === "coding-arena" || rawNormalized === "live-coding") {
+          setInterviewWorkspace("coding");
         }
         const mapped = mapToValidTab(e.detail.tab);
         setActiveTab(mapped.tab);
@@ -388,9 +392,17 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     }
     return "company";
   });
+  const [interviewWorkspace, setInterviewWorkspace] = useState<"coding" | "mock">(() => {
+    if (typeof window !== "undefined") {
+      const t = new URLSearchParams(window.location.search).get("tab")?.toLowerCase();
+      if (t === "defense" || t === "viva" || t === "mock-interview") return "mock";
+    }
+    return "coding";
+  });
 
   const handleLaunchMockInterview = (companyName: string, roleTitle: string) => {
     setInterviewMode("company");
+    setInterviewWorkspace("mock");
     setInterviewCompany(companyName);
     setInterviewRole(roleTitle);
     setActiveTab("interview");
@@ -434,7 +446,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         } catch { }
       }
     }
-    return "candidate@pathfinder.ai";
+    return "";
   });
 
   const [userRole, setUserRole] = useState<string>(() => {
@@ -2218,7 +2230,6 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                     badge="1 of 3 · Readiness"
                     accent="cyan"
                     helperLabel="Calculated via Random Forest model trained on 972 student records"
-                    onAskCoach={handleAskCoach}
                   />
                   <HeroMetrics
                     username={username}
@@ -2233,10 +2244,9 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 <section id="career-skill-gap" data-das-id="skill-gap" className="space-y-6">
                   <SectionHeader
                     title="Target Role Skill Gap Analysis"
-                    description="Direct alignment of your competencies against hiring cutoffs for your chosen domain"
+                    description="Direct alignment of your competencies against reference hiring cutoffs for your chosen domain"
                     badge="2 of 3 · Skill Gaps"
                     accent="amber"
-                    onAskCoach={handleAskCoach}
                   />
                   <div id="skill-gap-matrix">
                     <SkillGapSection
@@ -2252,11 +2262,10 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 <section id="career-company-radar" data-das-id="company-radar" className="space-y-6">
                   <SectionHeader
                     title="Target Company Placement Radar"
-                    description="Real-time hiring compatibility score mapped against historical campus drive cutoffs and technical rubrics"
+                    description="Estimated profile fit compared against reference campus cutoff benchmarks and standard interview rubrics"
                     badge="3 of 3 · Company Radar"
                     accent="accent"
-                    helperLabel="Evaluates eligibility for Google, Razorpay, Amazon, and TCS Digital"
-                    onAskCoach={handleAskCoach}
+                    helperLabel="Industry reference benchmarks for Google, Razorpay, Amazon, and TCS Digital"
                   />
                   <div id="placement-radar">
                     <CompanyPlacementRadar
@@ -2270,7 +2279,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
               </motion.div>
             )}
 
-            {/* TAB: INTERVIEW (3. Live Coding & Viva Arena) */}
+            {/* TAB: INTERVIEW (3. Live Coding & Viva Arena / Company & Project Defense) */}
             {activeTab === "interview" && (
               <motion.div
                 key="interview"
@@ -2279,30 +2288,69 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-16 sm:space-y-20"
+                className="space-y-8"
               >
-                <LiveCodingInterviewArena
-                  profile={profile}
-                  apiBase={API_BASE}
-                  customChallenge={arenaCustomChallenge}
-                  onAskCoach={(q) => handleAskCoach(q, "interview", "Live Coding & Voice Viva Arena")}
-                />
-                <SectionHeader
-                  title="Company Mock Interview & STAR Project Defense Simulator"
-                  description="Practice timed company hiring rounds or defend your project architecture trade-offs with live AI grading and voice"
-                  badge="Live Audio & Grading"
-                  accent="accent"
-                  helperLabel="Switch between Company Rounds and Project Defense (Viva) tracks"
-                  onAskCoach={handleAskCoach}
-                />
-                <MockInterviewConsole
-                  profile={profile}
-                  initialCompany={interviewCompany}
-                  initialRole={interviewRole}
-                  initialMode={interviewMode}
-                  onNavigateTab={(tab) => setActiveTab(tab as TabId)}
-                  onAskCoach={handleAskCoach}
-                />
+                <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/[0.08] bg-[#0B0B0F]/85 p-4 sm:flex-row sm:items-center sm:px-6">
+                  <div>
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-[#71717A]">
+                      Interview Simulator Workspace
+                    </span>
+                    <p className="mt-0.5 text-xs text-[#A1A1AA]">
+                      Switch between live 11-language coding rounds and structured STAR / project
+                      architecture defense.
+                    </p>
+                  </div>
+                  <div
+                    role="tablist"
+                    aria-label="Interview workspace mode"
+                    className="inline-flex shrink-0 items-center rounded-xl border border-white/[0.1] bg-black/60 p-1"
+                  >
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={interviewWorkspace === "coding"}
+                      onClick={() => setInterviewWorkspace("coding")}
+                      className={`h-9 rounded-lg px-4 text-xs font-medium transition-colors cursor-pointer ${
+                        interviewWorkspace === "coding"
+                          ? "bg-[#FAFAFA] text-[#09090B]"
+                          : "text-[#A1A1AA] hover:text-[#FAFAFA]"
+                      }`}
+                    >
+                      Live Coding &amp; Viva
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={interviewWorkspace === "mock"}
+                      onClick={() => setInterviewWorkspace("mock")}
+                      className={`h-9 rounded-lg px-4 text-xs font-medium transition-colors cursor-pointer ${
+                        interviewWorkspace === "mock"
+                          ? "bg-[#FAFAFA] text-[#09090B]"
+                          : "text-[#A1A1AA] hover:text-[#FAFAFA]"
+                      }`}
+                    >
+                      Company &amp; Project Defense
+                    </button>
+                  </div>
+                </div>
+
+                {interviewWorkspace === "coding" ? (
+                  <LiveCodingInterviewArena
+                    profile={profile}
+                    apiBase={API_BASE}
+                    customChallenge={arenaCustomChallenge}
+                    onAskCoach={(q) => handleAskCoach(q, "interview", "Live Coding & Voice Viva Arena")}
+                  />
+                ) : (
+                  <MockInterviewConsole
+                    profile={profile}
+                    initialCompany={interviewCompany}
+                    initialRole={interviewRole}
+                    initialMode={interviewMode}
+                    onNavigateTab={(tab) => setActiveTab(tab as TabId)}
+                    onAskCoach={handleAskCoach}
+                  />
+                )}
               </motion.div>
             )}
 
@@ -2318,7 +2366,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 transition={{ duration: 0.25 }}
                 className="space-y-16 sm:space-y-20"
               >
-                <div id="sprint-roadmap">
+                <div id="skills-sprint-roadmap">
                   <RoadmapVisualizer
                     roadmap={roadmap}
                     isLoading={isRoadmapLoading}
@@ -2460,6 +2508,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                   onOpenOnePageResume={() => setShowOnePageResume(true)}
                   onLaunchInCodingArena={(challenge) => {
                     setArenaCustomChallenge(challenge);
+                    setInterviewWorkspace("coding");
                     setActiveTab("interview");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
@@ -2529,6 +2578,11 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           isOpen={showOnePageResume}
           onClose={() => setShowOnePageResume(false)}
           profile={profile}
+          onOpenProfile={() => {
+            setShowOnePageResume(false);
+            setActiveTab("profile");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         />
 
         {/* 6-Slide Workspace Switcher Pager */}

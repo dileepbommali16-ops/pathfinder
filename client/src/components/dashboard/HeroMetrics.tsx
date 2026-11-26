@@ -82,18 +82,6 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
 
             <button
               type="button"
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent("das-toggle-focus", { detail: { focus: true } }));
-                window.scrollTo({ top: 0, behavior: "smooth" });
-                setTimeout(() => document.getElementById("das-command-input")?.focus(), 180);
-              }}
-              className="pf-btn-secondary inline-flex h-11 items-center justify-center rounded-xl px-5 text-xs font-medium active:scale-[0.98]"
-            >
-              Talk to 3D voice coach
-            </button>
-
-            <button
-              type="button"
               onClick={() => onNavigateTab("resume")}
               title="Instant ATS Resume Audit & Sync"
               className="pf-btn-secondary inline-flex h-11 items-center justify-center rounded-xl px-5 text-xs font-medium text-[#D4D4D8] hover:text-[#FAFAFA] active:scale-[0.98]"

@@ -159,13 +159,20 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                   : "TPO Institutional Command Center"}
               </h2>
               <span className="rounded-md border border-white/[0.1] bg-[#141418] px-2.5 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
-                {viewMode === "explorer" ? "972 Records" : "NAAC / NIRF Mode"}
+                {viewMode === "explorer"
+                  ? analytics?.total_records != null
+                    ? `${analytics.total_records.toLocaleString()} Records`
+                    : "Loading Records"
+                  : "TPO Reporting View"}
               </span>
             </div>
             <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
               {viewMode === "explorer"
-                ? "Interactive cohort distributions calibrated across 9 engineering branches"
-                : "Institutional compliance, at-risk early warning interventions, and NIRF accreditation audits"}
+                ? `Interactive cohort distributions across ${
+                    analytics?.branch_distribution?.length ||
+                    branches.filter((b) => b !== "All").length
+                  } engineering branches`
+                : "Institutional placement summaries, department rollups, and at-risk CSV exports"}
             </p>
           </div>
 
@@ -396,15 +403,12 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <div className="flex flex-col justify-between gap-2 border-b border-[#1F1F23] pb-4 sm:flex-row sm:items-center">
               <div>
                 <h3 className="text-base font-semibold text-[#FAFAFA]">
-                  NAAC Criterion 5.2.1 / NIRF Placement Compliance
+                  Department Placement Summary (NAAC 5.2.1 Format)
                 </h3>
                 <p className="text-xs text-[#A1A1AA]">
-                  Placement of Outgoing Students during academic year {filters.year}
+                  Filtered cohort placement rollup for graduating class {filters.year}
                 </p>
               </div>
-              <span className="rounded border border-[#27272A] bg-[#101014] px-2.5 py-1 font-mono text-[10px] text-[#D4D4D8]">
-                Accreditation Ready
-              </span>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-4">
@@ -431,7 +435,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {analytics?.median_package ? `₹${analytics.median_package} LPA` : "—"}
                 </div>
-                <span className="text-[11px] text-[#A1A1AA]">NAAC Benchmark</span>
+                <span className="text-[11px] text-[#A1A1AA]">Filtered Cohort Median</span>
               </div>
 
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
@@ -450,9 +454,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                     <th className="px-5 py-3 font-medium">Engineering Program</th>
                     <th className="px-5 py-3 font-medium">Total Registered</th>
                     <th className="px-5 py-3 font-medium">Number Placed</th>
+                    <th className="px-5 py-3 font-medium">Unplaced</th>
                     <th className="px-5 py-3 font-medium">Placement %</th>
-                    <th className="px-5 py-3 font-medium">Primary Recruiters</th>
-                    <th className="px-5 py-3 font-medium">Audit Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1F1F23] bg-[#09090B]">
@@ -466,22 +469,17 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                         <td className="px-5 py-3.5 font-mono font-medium text-[#FAFAFA] tabular-nums">
                           {dept.placed}
                         </td>
+                        <td className="px-5 py-3.5 font-mono text-[#A1A1AA] tabular-nums">
+                          {Math.max(0, dept.total - dept.placed)}
+                        </td>
                         <td className="px-5 py-3.5 font-mono font-medium text-[#FAFAFA] tabular-nums">
                           {dept.placement_rate.toFixed(1)}%
-                        </td>
-                        <td className="px-5 py-3.5 text-[#A1A1AA]">
-                          TCS, Infosys, Accenture, Product Drives
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8]">
-                            Verified
-                          </span>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-5 py-6 text-center text-[#A1A1AA]">
+                      <td colSpan={5} className="px-5 py-6 text-center text-[#A1A1AA]">
                         No department records available for the selected filter criteria.
                       </td>
                     </tr>

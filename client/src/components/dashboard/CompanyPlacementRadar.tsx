@@ -20,7 +20,7 @@ interface CompanyBenchmark {
   requiredSkills: string[];
   recommendedProjects: string[];
   interviewRounds: string[];
-  hiringStatus: "Active Campus Drives" | "Upcoming Q4" | "Rolling Openings";
+  hiringCycle: "Typical Campus Season" | "Campus & Off-Campus" | "National Qualifier (NQT)";
 }
 
 const BENCHMARKS: CompanyBenchmark[] = [
@@ -35,7 +35,7 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["Data Structures & Algorithms", "System Design", "Operating Systems", "Clean Code"],
     recommendedProjects: ["Distributed Key-Value Store", "Real-Time Collaborative Engine"],
     interviewRounds: ["Online Coding (2 DSA Hard)", "System Design Round", "Googliness & Leadership"],
-    hiringStatus: "Active Campus Drives",
+    hiringCycle: "Typical Campus Season",
   },
   {
     id: "razorpay",
@@ -48,7 +48,7 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["React / TypeScript", "Microservices (Go / Node / Python)", "Idempotency & Payments", "SQL & Redis"],
     recommendedProjects: ["Event-Driven Payment Gateway", "Idempotent Financial Ledger"],
     interviewRounds: ["Machine Coding Round (2.5 hrs)", "System Architecture Round", "Bar Raiser Culture Fit"],
-    hiringStatus: "Active Campus Drives",
+    hiringCycle: "Campus & Off-Campus",
   },
   {
     id: "amazon",
@@ -61,7 +61,7 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["Trees & Graphs", "Dynamic Programming", "AWS / Docker", "Leadership Principles (STAR)"],
     recommendedProjects: ["Cloud Resource Autoscaler", "High-Throughput Messaging Queue"],
     interviewRounds: ["Online Assessment (Debugging + 2 DSA)", "2 Technical Problem Solving", "Bar Raiser Interview"],
-    hiringStatus: "Upcoming Q4",
+    hiringCycle: "Typical Campus Season",
   },
   {
     id: "tcs_digital",
@@ -74,7 +74,7 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["Java / Python", "Object-Oriented Programming", "DBMS & SQL", "Aptitude & Speed"],
     recommendedProjects: ["Full-Stack Student Management System", "Automated Query Optimization"],
     interviewRounds: ["NQT Digital Advanced Coding", "Technical Interview (Core CS)", "HR & Managerial"],
-    hiringStatus: "Active Campus Drives",
+    hiringCycle: "National Qualifier (NQT)",
   },
   {
     id: "swiggy",
@@ -87,7 +87,7 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["Full Stack Architecture", "REST & GraphQL", "Kafka / Message Queues", "State Management"],
     recommendedProjects: ["Geo-Distributed Tracking API", "Low-Latency Order Engine"],
     interviewRounds: ["Live Machine Coding", "DSA Problem Solving", "Engineering Manager Round"],
-    hiringStatus: "Rolling Openings",
+    hiringCycle: "Campus & Off-Campus",
   },
   {
     id: "salesforce",
@@ -100,7 +100,7 @@ const BENCHMARKS: CompanyBenchmark[] = [
     requiredSkills: ["Cloud Architecture", "Database Internals", "Security & Auth", "API Design"],
     recommendedProjects: ["Multi-Tenant RBAC Authorization API", "Enterprise Audit Log Pipeline"],
     interviewRounds: ["HackerRank Coding", "System Design & OOP", "Values & Culture"],
-    hiringStatus: "Upcoming Q4",
+    hiringCycle: "Typical Campus Season",
   },
 ];
 
@@ -176,12 +176,12 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
     <SpotlightSurface className="rounded-2xl p-8 sm:p-10">
       {/* Compact Filter Bar */}
       <div className="flex flex-col justify-between gap-4 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="font-mono text-xs font-medium text-[#A1A1AA]">
-            Target Recruiter Benchmarks
+            Industry Reference Benchmarks
           </span>
           <span className="rounded-md border border-white/[0.1] bg-[#121216] px-2.5 py-0.5 font-mono text-[10px] text-[#D4D4D8] tabular-nums">
-            {filteredBenchmarks.length} firms
+            Reference cutoffs · {filteredBenchmarks.length} firms
           </span>
         </div>
 
@@ -264,9 +264,9 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                     {selectedCompany.category}
                   </span>
                   <span className="text-xs text-[#A1A1AA]">
-                    Drive Status:{" "}
+                    Typical Cycle:{" "}
                     <strong className="font-medium text-[#FAFAFA]">
-                      {selectedCompany.hiringStatus}
+                      {selectedCompany.hiringCycle}
                     </strong>
                   </span>
                 </div>
@@ -283,12 +283,12 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
             {/* Score & Progress Metric Tiles */}
             <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-3">
               <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
-                <span className="text-xs text-[#A1A1AA]">Match Probability</span>
+                <span className="text-xs text-[#A1A1AA]">Estimated Profile Fit</span>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                     {selectedScore !== null ? `${selectedScore}%` : "—"}
                   </span>
-                  <span className="text-xs text-[#71717A]">Score</span>
+                  <span className="text-xs text-[#71717A]">Est.</span>
                 </div>
                 <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
                   <div
@@ -299,15 +299,15 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
               </div>
 
               <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
-                <span className="text-xs text-[#A1A1AA]">Package Compensation</span>
+                <span className="text-xs text-[#A1A1AA]">Reference CTC Band</span>
                 <div className="mt-2 font-mono text-lg font-semibold text-[#FAFAFA] tabular-nums">
                   {selectedCompany.packageRange}
                 </div>
-                <div className="mt-2 text-[11px] text-[#71717A]">Fixed Base + Stock Grants</div>
+                <div className="mt-2 text-[11px] text-[#71717A]">Industry Reference Range</div>
               </div>
 
               <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
-                <span className="text-xs text-[#A1A1AA]">Academic Cutoff</span>
+                <span className="text-xs text-[#A1A1AA]">Reference CGPA Cutoff</span>
                 <div className="mt-2 flex items-center gap-2 font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
                   <span>{selectedCompany.minCgpa}+ CGPA</span>
                   <span className="text-[11px] font-normal text-[#A1A1AA]">
@@ -315,9 +315,11 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   </span>
                 </div>
                 <div className="mt-2 text-[11px] text-[#71717A]">
-                  {studentBacklogs === 0
-                    ? "0 Backlogs Cleared"
-                    : `${studentBacklogs} Active Backlog(s)`}
+                  {!hasConfiguredProfile
+                    ? "Profile not configured"
+                    : studentBacklogs === 0
+                      ? "0 Active Backlogs"
+                      : `${studentBacklogs} Active Backlog(s)`}
                 </div>
               </div>
             </div>
@@ -394,7 +396,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   }
                   className="pf-btn-secondary inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-xs font-medium sm:w-auto cursor-pointer"
                 >
-                  Ask Coach Strategy
+                  Ask DAS Strategy
                 </button>
               )}
 

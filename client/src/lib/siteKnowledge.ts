@@ -119,7 +119,7 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
       "PDF Upload & ATS Diagnostic Scanner: Identifies formatting traps and keyword gaps."
     ],
     dataSource: "Real-time skill extraction & match computation paired with Gemini structured ATS JSON analysis.",
-    howToUse: "Select or paste a target company JD, click 'Add to My Skills' or 'Hear DAS JD Verdict', export your 1-page tailored resume, or scan your PDF below.",
+    howToUse: "Select or paste a target company JD, click 'Add to my skills' or 'Ask DAS', export your 1-page tailored resume, or scan your PDF below.",
     limitations: "ATS scoring evaluates keyword and formatting hygiene; human interviewers evaluate technical depth during live rounds."
   },
   branches: {

@@ -22,6 +22,7 @@ import {
   isProfileUnconfigured,
   buildFreshOnboardingProfile,
   buildInitialProfileFromStorage,
+  isPlaceholderCandidateEmail,
   isPlaceholderCandidateName,
   pickCandidateFullName,
 } from "../types/profile";
@@ -349,5 +350,59 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
       expect(layoutSrc).not.toContain(banned);
     }
     expect(settingsSrc).not.toContain("Addressing Mode");
+  });
+
+  it("removes fabricated resume/JD/cohort data, duplicate CTAs, duplicate sprint-roadmap IDs, and invalid DOM nesting", () => {
+    const srcRoot = path.resolve(__dirname, "..");
+    const resumeModalSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/OnePageResumeModal.tsx"), "utf-8");
+    const jdTailorSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/JDCustomTailor.tsx"), "utf-8");
+    const cohortSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/CohortExplorer.tsx"), "utf-8");
+    const landingSrc = fs.readFileSync(path.join(srcRoot, "components/landing/ComputeLandingPage.tsx"), "utf-8");
+    const layoutSrc = fs.readFileSync(path.join(srcRoot, "agent/AgentLayout.tsx"), "utf-8");
+    const homeSrc = fs.readFileSync(path.join(srcRoot, "pages/Home.tsx"), "utf-8");
+    const heroSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/HeroMetrics.tsx"), "utf-8");
+    const radarSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/CompanyPlacementRadar.tsx"), "utf-8");
+
+    // 1. OnePageResumeModal: zero hardcoded fake projects, stats, or duplicate bars/arrows
+    for (const fake of [
+      "3,500+ tasks/sec",
+      "Distributed Asynchronous Task Queue",
+      "50+ concurrent users",
+      "150+ DSA problems",
+      "candidate@pathfinder.ai",
+      "github.com/candidate",
+      "leetcode.com/candidate",
+      "Institute of Technology",
+      "← Back",
+    ]) {
+      expect(resumeModalSrc).not.toContain(fake);
+    }
+    expect(resumeModalSrc.match(/onClick=\{handlePrint\}/g)?.length).toBe(1);
+    expect(isPlaceholderCandidateEmail("guest@pathfinder.ai")).toBe(true);
+    expect(isPlaceholderCandidateEmail("candidate@pathfinder.ai")).toBe(true);
+    expect(isPlaceholderCandidateEmail("dileepbommali16@gmail.com")).toBe(false);
+
+    // 2. JDCustomTailor: zero fabricated 42% latency claim, fake projectsCount || 2, or duplicate verdict CTA
+    expect(jdTailorSrc).not.toContain("42% p95 response latency");
+    expect(jdTailorSrc).not.toContain("projectsCount || 2");
+    expect(jdTailorSrc).not.toContain("Math.max(18,");
+    expect(jdTailorSrc).not.toContain("Hear DAS JD verdict");
+
+    // 3. CohortExplorer: zero hardcoded recruiters or fake Verified/Accreditation Ready badges
+    expect(cohortSrc).not.toContain("TCS, Infosys, Accenture, Product Drives");
+    expect(cohortSrc).not.toContain("Accreditation Ready");
+    expect(cohortSrc).not.toContain('"972 Records"');
+
+    // 4. ComputeLandingPage & AgentLayout: no nested <main> or nested button inside role="button"
+    expect(layoutSrc).not.toContain("<main");
+    expect(landingSrc).not.toContain('role="button"');
+    expect(landingSrc).not.toContain("91.9%");
+    expect(landingSrc).not.toContain("89 / 100");
+
+    // 5. Deduplicated DOM IDs, coach CTAs, and honest reference benchmarks
+    expect(homeSrc.match(/id="sprint-roadmap"/g)?.length).toBe(1);
+    expect(heroSrc).not.toContain("Talk to 3D voice coach");
+    expect(radarSrc).toContain("Industry Reference Benchmarks");
+    expect(radarSrc).not.toContain("Active Campus Drives");
   });
 });

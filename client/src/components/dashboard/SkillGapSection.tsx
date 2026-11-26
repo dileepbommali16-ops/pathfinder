@@ -82,7 +82,9 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
           </span>
         </div>
         <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA]">
-          Evaluated relative to verified campus hiring thresholds.
+          {hasMetrics
+            ? "Profile competency axes evaluated against reference campus hiring thresholds."
+            : "Add your CGPA, branch, and skills in Profile & Settings to compute your 5 competency axes."}
         </p>
 
         <div className="mt-7 space-y-6">
@@ -108,11 +110,19 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
           })}
         </div>
 
-        {/* High-Yield Focus Topics — Spacious Pills */}
+        {/* Industry Reference Focus Topics — Spacious Pills */}
         <div className="mt-8 border-t border-white/[0.07] pt-6">
-          <span className="block font-mono text-[11px] uppercase tracking-wider text-[#71717A]">
-            Recommended focus topics
-          </span>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="block font-mono text-[11px] uppercase tracking-wider text-[#71717A]">
+              Industry reference focus topics
+            </span>
+            <span className="rounded-md border border-white/[0.08] bg-[#121216] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
+              Reference Benchmarks
+            </span>
+          </div>
+          <p className="mt-1.5 text-[11px] text-[#71717A]">
+            Standard campus interview syllabus topics — select any topic to review with DAS.
+          </p>
           <div className="mt-3.5 flex flex-wrap gap-2.5">
             {skillsList.map((skill) => (
               <button

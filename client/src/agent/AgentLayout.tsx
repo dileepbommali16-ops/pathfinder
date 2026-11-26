@@ -1201,7 +1201,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  // 1. Keep outer wrapper + <main>{children}</main> identical across auth transitions so Home never unmounts mid-login
+  // 1. Keep outer wrapper + container identical across auth transitions so Home never unmounts mid-login
   const hasUser = typeof window !== "undefined" && Boolean(localStorage.getItem("pathfinder_user"));
   const showAgent = isAuthenticated || hasUser;
 
@@ -1210,8 +1210,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {/* Background 3D Robot Face */}
       {showAgent && <Avatar3D />}
 
-      {/* Main Dashboard Content */}
-      <main className={showAgent ? (hudCollapsed ? "relative z-10 pb-16 bg-transparent" : "relative z-10 pb-36 sm:pb-32 bg-transparent") : "relative min-h-screen bg-transparent"}>{children}</main>
+      {/* Route Viewport Container (each page renders its own semantic <main>) */}
+      <div className={showAgent ? (hudCollapsed ? "relative z-10 pb-16 bg-transparent" : "relative z-10 pb-36 sm:pb-32 bg-transparent") : "relative min-h-screen bg-transparent"}>{children}</div>
 
       {showAgent && (
         <>
@@ -1432,10 +1432,10 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   ? "bg-[#1E1E26] border-white/[0.32] text-[#FAFAFA]"
                   : "bg-[#141419] border-white/[0.1] text-[#D4D4D8] hover:border-white/[0.2] hover:text-[#FAFAFA]"
               }`}
-              title="Open Multi-Language Online Coding Compiler (Python, C, C++, Java, JS, TS, SQL, Go, Rust)"
+              title="Open DAS Voice-Controlled Code Scratchpad (11 languages)"
             >
               <Code2 className="h-3 w-3 text-[#A1A1AA]" />
-              <span>Online Compiler</span>
+              <span>Code Scratchpad</span>
             </button>
           </div>
 

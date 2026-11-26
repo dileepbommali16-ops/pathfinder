@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { StudentProfileState } from "@/types/profile";
-import { audioEngine } from "@/agent/audioIO";
+import { StudentProfileState, isProfileUnconfigured } from "@/types/profile";
 import { toast } from "sonner";
 import { SpotlightSurface } from "@/components/ui/TitaniumPrimitives";
 
@@ -199,7 +198,7 @@ interface JDCustomTailorProps {
 
 export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
   profile,
-  apiBase,
+  apiBase: _apiBase,
   onAddSkillsToProfile,
   onOpenOnePageResume,
   onAskCoach,
@@ -209,7 +208,6 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
   const [customJdText, setCustomJdText] = useState<string>(JD_PRESETS[0].jdText);
   const [customCompany, setCustomCompany] = useState<string>(JD_PRESETS[0].company);
   const [customRole, setCustomRole] = useState<string>(JD_PRESETS[0].role);
-  const [isSpeakingVerdict, setIsSpeakingVerdict] = useState<boolean>(false);
 
   const activePreset = useMemo(
     () => JD_PRESETS.find((p) => p.id === selectedPresetId) || JD_PRESETS[0],
@@ -224,22 +222,37 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
   };
 
   const analysis = useMemo(() => {
-    const userSkillList = [
-      ...(profile.technicalSkills || []),
-      ...(profile.skills || []),
-      ...(profile.tools || []),
-      ...(profile.programmingLanguages || []),
-    ];
-    const userSkillLower = new Set(userSkillList.map((s) => s.toLowerCase().trim()));
+    const userSkillList = Array.from(
+      new Set(
+        [
+          ...(profile.technicalSkills || []),
+          ...(profile.skills || []),
+          ...(profile.tools || []),
+          ...(profile.programmingLanguages || []),
+        ]
+          .map((s) => String(s || "").trim())
+          .filter(Boolean)
+      )
+    );
+    const userSkillLower = new Set(userSkillList.map((s) => s.toLowerCase()));
 
+    const trimmedJd = customJdText.trim();
+    const hasJd = trimmedJd.length > 0;
     const detectedFromJd: string[] = [];
-    for (const [rx, label] of SKILL_EXTRACT_PATTERNS) {
-      if (rx.test(customJdText) && !detectedFromJd.includes(label)) {
-        detectedFromJd.push(label);
+    if (hasJd) {
+      for (const [rx, label] of SKILL_EXTRACT_PATTERNS) {
+        if (rx.test(trimmedJd) && !detectedFromJd.includes(label)) {
+          detectedFromJd.push(label);
+        }
       }
     }
-    const targetSkills =
-      detectedFromJd.length >= 4 ? detectedFromJd : activePreset.requiredSkills;
+
+    const isExactPresetJd = trimmedJd === activePreset.jdText.trim();
+    const targetSkills = !hasJd
+      ? []
+      : isExactPresetJd
+        ? activePreset.requiredSkills
+        : detectedFromJd;
 
     const matched: string[] = [];
     const missing: string[] = [];
@@ -253,23 +266,56 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
       else missing.push(req);
     }
 
-    const skillRatio = matched.length / Math.max(1, targetSkills.length);
-    const cgpaBonus = Math.min(18, Math.max(0, (profile.cgpa - 6.5) * 6));
-    const projBonus = Math.min(14, (profile.projectsCount || 0) * 4);
-    const backlogPenalty = (profile.activeBacklogs || 0) * 12;
-    const rawMatch = Math.round(
-      Math.max(18, Math.min(98, skillRatio * 68 + cgpaBonus + projBonus - backlogPenalty))
-    );
+    const profileEmpty =
+      isProfileUnconfigured(profile) &&
+      userSkillList.length === 0 &&
+      (Number(profile.projectsCount) || 0) <= 0;
 
-    const tailoredSummary = `Results-driven ${profile.branch || "Engineering"} undergraduate at ${profile.college || "your university"
-      } (${profile.cgpa > 0 ? `CGPA: ${profile.cgpa.toFixed(1)}/10` : "Academic profile pending"}) targeting ${customRole} at ${customCompany}. Proven hands-on execution across ${matched.slice(0, 6).join(", ") || "Python, SQL, React, and REST APIs"
-      } with ${profile.projectsCount || 2} production-grade capstones and measurable latency and reliability outcomes.`;
+    let matchScore: number | null = null;
+    if (hasJd && targetSkills.length > 0 && !profileEmpty) {
+      const skillRatio = matched.length / targetSkills.length;
+      const cgpaBonus =
+        Number(profile.cgpa) > 0 ? Math.min(18, Math.max(0, (Number(profile.cgpa) - 6.5) * 6)) : 0;
+      const projBonus = Math.min(14, Math.max(0, Number(profile.projectsCount) || 0) * 4);
+      const backlogPenalty = Math.max(0, Number(profile.activeBacklogs ?? profile.backlogs ?? 0)) * 12;
+      matchScore = Math.round(
+        Math.max(0, Math.min(98, skillRatio * 68 + cgpaBonus + projBonus - backlogPenalty))
+      );
+    }
 
-    const tailoredBullet = `Accomplished a 42% p95 response latency reduction for ${customCompany}-grade workloads as measured by automated benchmark telemetry by architecting a modular ${matched.slice(0, 3).join(" + ") || "FastAPI + PostgreSQL + React"
-      } service with Docker containerization and CI/CD validation.`;
+    const companyLabel = customCompany.trim() || "[Target Company]";
+    const roleLabel = customRole.trim() || "[Target Role]";
+    const branchLabel = (profile.branch || "").trim() || "[Branch]";
+    const collegeLabel = (profile.college || "").trim() || "[Institution]";
+    const cgpaClause =
+      Number(profile.cgpa) > 0 ? ` (CGPA: ${Number(profile.cgpa).toFixed(1)}/10)` : "";
+    const skillClause =
+      matched.length > 0
+        ? `hands-on experience in ${matched.slice(0, 6).join(", ")}`
+        : userSkillList.length > 0
+          ? `experience in ${userSkillList.slice(0, 5).join(", ")}`
+          : "preparation aligned with [Add Verified Skills]";
+    const projectsCount = Math.max(0, Number(profile.projectsCount) || 0);
+    const projectsClause =
+      projectsCount > 0
+        ? ` across ${projectsCount} engineering project${projectsCount === 1 ? "" : "s"}`
+        : "";
+
+    const tailoredSummary = `${branchLabel} undergraduate at ${collegeLabel}${cgpaClause} targeting ${roleLabel} at ${companyLabel}, with ${skillClause}${projectsClause}.`;
+
+    const bulletStack =
+      matched.length > 0
+        ? matched.slice(0, 3).join(" + ")
+        : userSkillList.length > 0
+          ? userSkillList.slice(0, 3).join(" + ")
+          : "[Your Tech Stack]";
+
+    const tailoredBullet = `Accomplished [X%] [latency / throughput / reliability improvement] for [project or workload] aligned with ${companyLabel} requirements, as measured by [benchmark or test metric], by implementing a modular ${bulletStack} service with [testing / deployment workflow].`;
 
     return {
-      matchScore: rawMatch,
+      hasJd,
+      profileEmpty,
+      matchScore,
       cutoff: activePreset.cutoffScore,
       matched,
       missing,
@@ -305,41 +351,17 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
               type="button"
               onClick={() =>
                 onAskCoach(
-                  `I am targeting ${customRole} at ${customCompany} where my JD match is ${analysis.matchScore}% (cutoff ${analysis.cutoff}%). ${analysis.missing.length > 0
+                  `I am targeting ${customRole || "a software role"} at ${customCompany || "my target company"} where my JD match is ${analysis.matchScore !== null ? `${analysis.matchScore}%` : "not calculated yet"} (reference cutoff ${analysis.cutoff}%). ${analysis.missing.length > 0
                     ? `My missing keywords are: ${analysis.missing.join(", ")}.`
-                    : "I match all detected technical keywords."
+                    : "Please advise on tailoring my resume and interview prep."
                   } How should I tailor my resume bullets and prep in the next 7 days?`
                 )
               }
               className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium cursor-pointer"
             >
-              Ask Coach
+              Ask DAS
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={() => {
-              const verdictMsg = `Your current profile matches ${analysis.matchScore} percent for ${customRole} at ${customCompany}. ${analysis.missing.length > 0
-                ? `Add ${analysis.missing.slice(0, 3).join(", ")} to cross the ${analysis.cutoff} percent shortlist bar.`
-                : "You clear the technical keyword cutoff!"
-                }`;
-              audioEngine.unlockAudio();
-              audioEngine.clearAudioQueue();
-              window.dispatchEvent(
-                new CustomEvent("das-interviewer-prompt", {
-                  detail: { question: verdictMsg, track: "jd" },
-                })
-              );
-              setIsSpeakingVerdict(true);
-              void audioEngine
-                .speakTextPuckOrLocal(verdictMsg, apiBase)
-                .finally(() => setIsSpeakingVerdict(false));
-            }}
-            className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium cursor-pointer"
-          >
-            {isSpeakingVerdict ? "Speaking verdict..." : "Hear DAS JD verdict"}
-          </button>
 
           <button
             type="button"
@@ -436,24 +458,30 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                 <span className="font-mono text-[11px] text-[#71717A]">Live JD Alignment</span>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="font-mono text-3xl font-semibold text-[#FAFAFA] tabular-nums">
-                    {analysis.matchScore}%
+                    {analysis.matchScore !== null ? `${analysis.matchScore}%` : "—"}
                   </span>
                   <span className="font-mono text-xs text-[#A1A1AA] tabular-nums">
-                    vs {customCompany} ({analysis.cutoff}%)
+                    vs {customCompany || "Target"} ({analysis.cutoff}% ref)
                   </span>
                 </div>
               </div>
               <span className="rounded-md border border-white/[0.1] bg-black/50 px-3 py-1 font-mono text-[11px] text-[#FAFAFA] tabular-nums">
-                {analysis.matchScore >= analysis.cutoff
-                  ? "Shortlist Ready"
-                  : `${analysis.cutoff - analysis.matchScore}% Below Cutoff`}
+                {!analysis.hasJd
+                  ? "Paste JD to Score"
+                  : analysis.profileEmpty
+                    ? "Profile Unconfigured"
+                    : analysis.matchScore === null
+                      ? "No Keywords Detected"
+                      : analysis.matchScore >= analysis.cutoff
+                        ? "Shortlist Ready"
+                        : `${analysis.cutoff - analysis.matchScore}% Below Cutoff`}
               </span>
             </div>
 
             <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-[#A1A1AA] to-[#FAFAFA] transition-[width] duration-500"
-                style={{ width: `${analysis.matchScore}%` }}
+                style={{ width: `${analysis.matchScore ?? 0}%` }}
               />
             </div>
 
@@ -463,14 +491,22 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
                   Matched Profile Skills ({analysis.matched.length})
                 </span>
                 <div className="mt-2.5 flex flex-wrap gap-2">
-                  {analysis.matched.map((sk) => (
-                    <span
-                      key={sk}
-                      className="rounded-md border border-white/[0.12] bg-[#16161C] px-2.5 py-1 text-[11px] font-medium text-[#FAFAFA]"
-                    >
-                      {sk}
+                  {analysis.matched.length > 0 ? (
+                    analysis.matched.map((sk) => (
+                      <span
+                        key={sk}
+                        className="rounded-md border border-white/[0.12] bg-[#16161C] px-2.5 py-1 text-[11px] font-medium text-[#FAFAFA]"
+                      >
+                        {sk}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[11px] text-[#71717A]">
+                      {!analysis.hasJd
+                        ? "Enter a job description above to detect matching skills."
+                        : "No matching profile skills yet — add skills in Profile Settings or below."}
                     </span>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -513,20 +549,25 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
         <div className="space-y-7 lg:col-span-7">
           <div className="pf-subpanel space-y-4 rounded-2xl p-6 sm:p-7">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold text-[#FAFAFA] sm:text-sm">
-                Auto-Tailored ATS Summary &amp; Google X-Y-Z Bullet ({customCompany})
-              </span>
+              <div>
+                <span className="block text-xs font-semibold text-[#FAFAFA] sm:text-sm">
+                  ATS Summary &amp; Google X-Y-Z Bullet Template ({customCompany || "Target"})
+                </span>
+                <span className="mt-0.5 block text-[11px] text-[#71717A]">
+                  Replace bracketed [placeholders] with your own verified metrics before copying.
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => {
                   navigator.clipboard?.writeText(
                     `${analysis.tailoredSummary}\n• ${analysis.tailoredBullet}`
                   );
-                  toast.success("Tailored JD summary & X-Y-Z bullet copied to clipboard.");
+                  toast.success("Tailored JD summary & X-Y-Z template copied to clipboard.");
                 }}
                 className="pf-btn-secondary inline-flex h-8 shrink-0 items-center rounded-lg px-3 text-[11px] font-medium cursor-pointer"
               >
-                Copy bullets
+                Copy template
               </button>
             </div>
             <p className="rounded-xl border border-white/[0.07] bg-black/45 p-4 text-xs leading-relaxed text-[#A1A1AA]">
