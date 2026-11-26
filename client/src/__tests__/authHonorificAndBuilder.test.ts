@@ -424,7 +424,8 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(faceEffectsSrc).not.toContain("#F5F3EF");
     expect(avatarSrc).toContain('color="#5BC0DE"');
     expect(avatarSrc).not.toContain('color="#F5F3EF"');
-    expect(layoutSrc).toContain("border-[#E5322D]");
+    expect(layoutSrc).not.toContain("#E5322D");
+    expect(layoutSrc).not.toContain("229,50,45");
     expect(homeSrc).toContain("duration: 0.12");
     expect(homeSrc).not.toContain("duration: 0.25");
     expect(indexCssSrc).toContain("--text-muted: #8a8a92");
