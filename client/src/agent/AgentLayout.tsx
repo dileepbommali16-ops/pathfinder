@@ -120,6 +120,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [connected, setConnected] = useState(false);
   const [micActive, setMicActive] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isOverviewScrolled, setIsOverviewScrolled] = useState(false);
+  const speakingOffTimerRef = useRef<number | null>(null);
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window !== "undefined") {
       return (window as any).__DAS_PAGE_CONTEXT__?.activeTab || "overview";
@@ -1243,10 +1245,46 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const showAgent = isAuthenticated || hasUser;
 
   useEffect(() => {
-    return audioEngine.onSpeakingStateChange((speaking) => {
-      setIsSpeaking(speaking);
+    const SPEAKING_OFF_DEBOUNCE_MS = 400;
+    const unsubscribe = audioEngine.onSpeakingStateChange((speaking) => {
+      if (speaking) {
+        if (speakingOffTimerRef.current !== null) {
+          window.clearTimeout(speakingOffTimerRef.current);
+          speakingOffTimerRef.current = null;
+        }
+        setIsSpeaking(true);
+      } else {
+        if (speakingOffTimerRef.current !== null) {
+          window.clearTimeout(speakingOffTimerRef.current);
+        }
+        speakingOffTimerRef.current = window.setTimeout(() => {
+          speakingOffTimerRef.current = null;
+          setIsSpeaking(false);
+        }, SPEAKING_OFF_DEBOUNCE_MS);
+      }
     });
+    return () => {
+      if (speakingOffTimerRef.current !== null) {
+        window.clearTimeout(speakingOffTimerRef.current);
+        speakingOffTimerRef.current = null;
+      }
+      unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || activeLayout !== "background") return;
+    if (activeTab !== "overview") {
+      setIsOverviewScrolled(false);
+      return;
+    }
+    const onScroll = () => {
+      setIsOverviewScrolled(window.scrollY > 260);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [activeLayout, activeTab]);
 
   useEffect(() => {
     if (activeLayout !== "background") return;
@@ -1290,12 +1328,17 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   }, [activeLayout, showAgent, hudCollapsed, focusMode, isSpeaking]);
 
+  const isOverviewHeroActive =
+    activeLayout === "background" && activeTab === "overview" && !focusMode && !isOverviewScrolled;
+
   const bgFaceOpacityClass =
-    focusMode || isSpeaking || activeTab === "overview"
+    focusMode || isSpeaking || isOverviewHeroActive
       ? "opacity-100"
-      : activeTab === "interview" || activeTab === "analytics"
-        ? "opacity-35"
-        : "opacity-65";
+      : "opacity-35";
+
+  const bgFaceTransformClass = isOverviewHeroActive
+    ? "translate-x-0 translate-y-0 scale-100 lg:translate-x-[18%] lg:-translate-y-[1%] lg:scale-[0.86] xl:translate-x-[19%] xl:-translate-y-[1%] xl:scale-[0.96]"
+    : "translate-x-0 translate-y-0 scale-100";
 
   return (
     <div className={showAgent ? "relative min-h-screen bg-transparent text-white overflow-x-hidden" : "relative min-h-screen bg-transparent"}>
@@ -1471,8 +1514,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           {/* Full-Viewport Dramatic 3D Face Hero Backdrop (Pointer-Events None, Singleton Canvas) */}
           <div
             data-das-layout="background"
+            data-hero-stage={isOverviewHeroActive ? "overview-open" : "ambient"}
             data-state={isSpeaking ? "speaking" : micActive ? "listening" : "idle"}
-            className={`fixed inset-0 pointer-events-none transition-opacity duration-500 ${
+            className={`fixed inset-0 pointer-events-none transition-[opacity,transform] duration-500 ease-out ${bgFaceTransformClass} ${
               focusMode ? "z-40 opacity-100" : `z-[1] ${bgFaceOpacityClass}`
             }`}
           >
@@ -1547,7 +1591,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <div
               id="das-bottom-hud"
               data-state={isSpeaking ? "speaking" : micActive ? "listening" : "idle"}
-              className={`fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-[94%] sm:w-[86%] max-w-xl rounded-2xl border bg-[#09090B]/95 backdrop-blur-md px-3 py-2 shadow-2xl flex flex-col gap-1.5 transition-colors duration-200 ${
+              className={`fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-[94%] sm:w-[84%] max-w-lg rounded-2xl border bg-[#09090B]/95 backdrop-blur-md px-3 py-1.5 shadow-2xl flex flex-col gap-1 transition-colors duration-200 ${
                 isSpeaking ? "border-white/[0.28]" : "border-white/[0.12]"
               }`}
             >
@@ -1621,7 +1665,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               )}
 
               <div
-                className={`flex items-start gap-2 rounded-xl px-2.5 py-1.5 max-h-16 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-relaxed border border-white/[0.08] bg-[#121216] ${
+                className={`flex items-start gap-2 rounded-xl px-2.5 py-1 max-h-12 overflow-y-auto das-scrollbar whitespace-pre-wrap leading-snug border border-white/[0.08] bg-[#121216] ${
                   focusMode ? "text-xs sm:text-sm text-[#FAFAFA]" : "text-xs text-[#E4E4E7]"
                 }`}
               >
