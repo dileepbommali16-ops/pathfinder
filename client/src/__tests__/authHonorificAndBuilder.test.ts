@@ -394,7 +394,7 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(cohortSrc).not.toContain('"972 Records"');
 
     // 4. ComputeLandingPage & AgentLayout: no nested <main> or nested button inside role="button"
-    expect(layoutSrc).not.toContain("<main");
+    expect(layoutSrc).not.toMatch(/<main[\s>]/);
     expect(landingSrc).not.toContain('role="button"');
     expect(landingSrc).not.toContain("91.9%");
     expect(landingSrc).not.toContain("89 / 100");

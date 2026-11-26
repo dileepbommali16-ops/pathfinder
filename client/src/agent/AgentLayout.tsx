@@ -1210,7 +1210,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {/* Background 3D Robot Face */}
       {showAgent && <Avatar3D />}
 
-      {/* Route Viewport Container (each page renders its own semantic <main>) */}
+      {/* Route Viewport Container (each page renders its own semantic main landmark) */}
       <div className={showAgent ? (hudCollapsed ? "relative z-10 pb-16 bg-transparent" : "relative z-10 pb-36 sm:pb-32 bg-transparent") : "relative min-h-screen bg-transparent"}>{children}</div>
 
       {showAgent && (
