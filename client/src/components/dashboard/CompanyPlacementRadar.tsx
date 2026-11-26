@@ -181,7 +181,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
             Industry Reference Benchmarks
           </span>
           <span className="rounded-md border border-white/[0.1] bg-[#121216] px-2.5 py-0.5 font-mono text-[10px] text-[#D4D4D8] tabular-nums">
-            Reference cutoffs · {filteredBenchmarks.length} firms
+            Illustrative reference ranges, not dataset values · {filteredBenchmarks.length} firms
           </span>
         </div>
 
@@ -205,10 +205,10 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
       {/* Spacious 12-Col Grid */}
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
         {/* Left 5 cols: Recruiter Selector List */}
-        <div className="space-y-3.5 lg:col-span-5">
-          <div className="flex items-center justify-between px-1 font-mono text-[11px] text-[#71717A]">
+        <div className="min-w-0 space-y-3.5 lg:col-span-5">
+          <div className="flex items-center justify-between px-1 font-mono text-[11px] text-[#8A8A92]">
             <span>Target Recruiter</span>
-            <span>Match</span>
+            <span>Match Estimate</span>
           </div>
 
           <div className="space-y-3.5">
@@ -236,7 +236,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                         <span className="font-mono text-[#D4D4D8] tabular-nums">
                           {comp.packageRange}
                         </span>
-                        <span className="text-[#52525B]">·</span>
+                        <span className="text-[#8A8A92]">·</span>
                         <span className="font-mono tabular-nums">Min {comp.minCgpa} CGPA</span>
                       </div>
                     </div>
@@ -246,7 +246,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                     <div className="font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
                       {compScore !== null ? `${compScore}%` : "—"}
                     </div>
-                    <div className="text-[10px] text-[#71717A]">Readiness</div>
+                    <div className="text-[10px] text-[#8A8A92]">Estimate</div>
                   </div>
                 </button>
               );
@@ -255,7 +255,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
         </div>
 
         {/* Right 7 cols: Deep Dive Benchmark Diagnostic */}
-        <div className="pf-subpanel flex flex-col justify-between rounded-2xl p-7 sm:p-9 lg:col-span-7">
+        <div className="pf-subpanel flex min-w-0 flex-col justify-between rounded-2xl p-6 sm:p-8 lg:col-span-7">
           <div>
             <div className="flex flex-col justify-between gap-3 border-b border-white/[0.07] pb-6 sm:flex-row sm:items-center">
               <div>
@@ -281,14 +281,14 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
             </div>
 
             {/* Score & Progress Metric Tiles */}
-            <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-3">
-              <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
-                <span className="text-xs text-[#A1A1AA]">Estimated Profile Fit</span>
+            <div className="mt-7 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+              <div className="min-w-0 rounded-xl border border-white/[0.07] bg-black/45 p-4">
+                <span className="text-xs text-[#A1A1AA]">Match Score Estimate</span>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                     {selectedScore !== null ? `${selectedScore}%` : "—"}
                   </span>
-                  <span className="text-xs text-[#71717A]">Est.</span>
+                  <span className="text-xs text-[#8A8A92]">Estimate</span>
                 </div>
                 <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
                   <div
@@ -298,15 +298,17 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
+              <div className="min-w-0 rounded-xl border border-white/[0.07] bg-black/45 p-4">
                 <span className="text-xs text-[#A1A1AA]">Reference CTC Band</span>
                 <div className="mt-2 font-mono text-lg font-semibold text-[#FAFAFA] tabular-nums">
                   {selectedCompany.packageRange}
                 </div>
-                <div className="mt-2 text-[11px] text-[#71717A]">Industry Reference Range</div>
+                <div className="mt-2 text-[11px] text-[#8A8A92]">
+                  Illustrative reference range, not dataset values
+                </div>
               </div>
 
-              <div className="rounded-xl border border-white/[0.07] bg-black/45 p-5">
+              <div className="min-w-0 rounded-xl border border-white/[0.07] bg-black/45 p-4">
                 <span className="text-xs text-[#A1A1AA]">Reference CGPA Cutoff</span>
                 <div className="mt-2 flex items-center gap-2 font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
                   <span>{selectedCompany.minCgpa}+ CGPA</span>
@@ -314,7 +316,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                     (You: {studentCgpa > 0 ? studentCgpa : "Not set"})
                   </span>
                 </div>
-                <div className="mt-2 text-[11px] text-[#71717A]">
+                <div className="mt-2 text-[11px] text-[#8A8A92]">
                   {!hasConfiguredProfile
                     ? "Profile not configured"
                     : studentBacklogs === 0
@@ -352,7 +354,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                       key={idx}
                       className="rounded-xl border border-white/[0.07] bg-black/45 p-4 text-xs text-[#A1A1AA]"
                     >
-                      <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                      <span className="font-mono text-[10px] text-[#8A8A92] tabular-nums">
                         Round {String(idx + 1).padStart(2, "0")}
                       </span>
                       <p className="mt-1.5 font-medium text-[#FAFAFA]">{rnd}</p>

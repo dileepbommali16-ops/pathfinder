@@ -18,8 +18,8 @@ interface LampLoginProps {
 const STUDIO_HIGHLIGHTS = [
   {
     index: "01",
-    title: "972 Audited Campus Outcomes",
-    detail: "Instant Random Forest placement odds across CGPA, skills, and drive cutoffs.",
+    title: "972-Record Synthetic Placement Dataset",
+    detail: "Random Forest odds trained on a 972-record synthetic placement dataset, augmented from a 215-record public baseline.",
   },
   {
     index: "02",
@@ -157,11 +157,6 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
         ) : (
           <div />
         )}
-
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#0B0B0E]/90 px-3 py-1 font-mono text-[11px] text-[#A1A1AA]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
-          <span>System Operational</span>
-        </div>
       </header>
 
       {/* Spacious Two-Column Titanium Studio Auth Layout (Zero Videos) */}
@@ -174,7 +169,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
               <span className="block text-base font-semibold tracking-[-0.02em] text-[#FAFAFA]">
                 Pathfinder 2.0
               </span>
-              <span className="font-mono text-[11px] text-[#71717A]">
+              <span className="font-mono text-[11px] text-[#8A8A92]">
                 COMPUTE STUDIO WORKSPACE
               </span>
             </div>
@@ -184,7 +179,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
             className="text-3xl font-semibold leading-[1.12] tracking-[-0.035em] text-[#FAFAFA] xl:text-4xl"
             style={{ textWrap: "balance" }}
           >
-            From campus preparation to verified engineering offers.
+            From structured preparation to engineering offers.
           </h2>
 
           <div className="space-y-4">
@@ -193,7 +188,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
                 key={item.index}
                 className="pf-subpanel flex items-start gap-4 rounded-xl p-4 sm:p-5"
               >
-                <span className="mt-0.5 font-mono text-xs text-[#71717A] tabular-nums">
+                <span className="mt-0.5 font-mono text-xs text-[#8A8A92] tabular-nums">
                   {item.index}
                 </span>
                 <div>
@@ -224,7 +219,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
                 Sign in to Pathfinder
               </h1>
               <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
-                Continue with Google or GitHub, or enter your campus email.
+                Continue with Google or GitHub, or enter your name and email.
               </p>
             </div>
 
@@ -297,7 +292,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
 
             <div className="my-6 flex items-center gap-3">
               <div className="h-px flex-1 bg-white/[0.08]" />
-              <span className="font-mono text-[11px] text-[#71717A]">or continue with email</span>
+              <span className="font-mono text-[11px] text-[#8A8A92]">or continue with email</span>
               <div className="h-px flex-1 bg-white/[0.08]" />
             </div>
 
@@ -314,9 +309,9 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Dileep Bommali"
+                  placeholder="Your full name"
                   autoComplete="name"
-                  className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#52525B]"
+                  className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#8A8A92]"
                 />
               </div>
 
@@ -334,7 +329,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="student@university.edu"
                   autoComplete="email"
-                  className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#52525B]"
+                  className="pf-input h-11 w-full rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#8A8A92]"
                 />
               </div>
 
@@ -347,8 +342,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
               </button>
             </form>
 
-            <div className="mt-6 flex items-center justify-between border-t border-white/[0.08] pt-5 text-xs text-[#71717A]">
-              <span>Just exploring?</span>
+            <div className="mt-6 space-y-2.5 border-t border-white/[0.08] pt-5">
               <button
                 id="btn-demo-guest"
                 type="button"
@@ -359,16 +353,19 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
                     bypassOnboarding: true,
                   })
                 }
-                className="inline-flex min-h-10 items-center font-medium text-[#E4E4E7] underline decoration-[#52525B] underline-offset-4 transition-colors duration-150 hover:text-[#FAFAFA] hover:decoration-[#FAFAFA]"
+                className="pf-btn-secondary inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-xs font-medium active:scale-[0.98] cursor-pointer"
               >
-                Continue as guest
+                Explore Interactive Demo (Guest)
               </button>
+              <p className="text-center text-[11px] text-[#8A8A92]">
+                No sign-up needed — loads a clearly labeled sample profile
+              </p>
             </div>
           </SpotlightSurface>
         </motion.div>
       </main>
 
-      <footer className="relative z-10 text-center font-mono text-[11px] text-[#52525B]">
+      <footer className="relative z-10 text-center font-mono text-[11px] text-[#8A8A92]">
         Pathfinder 2.0 · Autonomous Placement Intelligence
       </footer>
     </div>

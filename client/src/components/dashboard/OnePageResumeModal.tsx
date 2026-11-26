@@ -322,7 +322,7 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
                 </div>
               ) : (
                 <p className="text-[11px] italic text-zinc-500">
-                  No technical skills recorded yet. Add your verified skills in Profile Settings.
+                  No technical skills recorded yet. Add your skills in Profile Settings.
                 </p>
               )}
             </div>
@@ -341,7 +341,7 @@ export const OnePageResumeModal: React.FC<OnePageResumeModalProps> = ({
                       </div>
                       <p className="mt-1 text-zinc-600">
                         Replace this section in your final document with each organization name,
-                        role title, duration, and verified Google X-Y-Z outcomes.
+                        role title, duration, and measured Google X-Y-Z outcomes.
                       </p>
                     </div>
                   )}

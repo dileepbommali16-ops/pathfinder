@@ -155,24 +155,24 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-[28px]">
                 {viewMode === "explorer"
-                  ? "Cohort Analytics & Placement Records"
-                  : "TPO Institutional Command Center"}
+                  ? "Placement Dataset Analytics"
+                  : "Placement Dataset Report Format"}
               </h2>
               <span className="rounded-md border border-white/[0.1] bg-[#141418] px-2.5 py-0.5 font-mono text-[10px] text-[#A1A1AA] tabular-nums">
                 {viewMode === "explorer"
                   ? analytics?.total_records != null
-                    ? `${analytics.total_records.toLocaleString()} Records`
+                    ? `${analytics.total_records.toLocaleString()} Filtered · 972 Total`
                     : "Loading Records"
-                  : "TPO Reporting View"}
+                  : "Report Format"}
               </span>
             </div>
             <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
               {viewMode === "explorer"
-                ? `Interactive cohort distributions across ${
+                ? `Based on a 972-record synthetic placement dataset, augmented from a 215-record public baseline, across ${
                     analytics?.branch_distribution?.length ||
                     branches.filter((b) => b !== "All").length
                   } engineering branches`
-                : "Institutional placement summaries, department rollups, and at-risk CSV exports"}
+                : "Structured summary tables, branch rollups, and CSV exports from the 972-record synthetic placement dataset, augmented from a 215-record public baseline"}
             </p>
           </div>
 
@@ -187,7 +187,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                     : "text-[#A1A1AA] hover:text-[#FAFAFA]"
                 }`}
               >
-                Cohort Data
+                Dataset Explorer
               </button>
               <button
                 type="button"
@@ -198,7 +198,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                     : "text-[#A1A1AA] hover:text-[#FAFAFA]"
                 }`}
               >
-                TPO &amp; NAAC 5.2
+                Report Format
               </button>
             </div>
 
@@ -208,14 +208,14 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 onClick={handlePrintReport}
                 className="pf-btn-primary inline-flex h-10 items-center rounded-xl px-5 text-xs font-medium cursor-pointer"
               >
-                Print NAAC Report
+                Print Summary Report
               </button>
             ) : (
               <>
                 <button
                   type="button"
                   onClick={onDownloadCSV}
-                  className="pf-btn-secondary inline-flex h-10 items-center rounded-xl px-4 text-xs font-medium cursor-pointer"
+                  className="inline-flex h-10 items-center rounded-xl border border-white/[0.12] bg-transparent px-4 text-xs font-medium text-[#D4D4D8] transition-colors hover:border-white/[0.24] hover:bg-white/[0.05] hover:text-[#FAFAFA] cursor-pointer"
                 >
                   Export CSV
                 </button>
@@ -236,7 +236,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
         <div className="mt-7 grid grid-cols-2 gap-5 sm:grid-cols-4">
           <div className="space-y-2">
             <label htmlFor="cohort-filter-year" className="block text-xs font-medium text-[#D4D4D8]">
-              Cohort Year
+              Dataset Year
             </label>
             <select
               id="cohort-filter-year"
@@ -245,9 +245,12 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               onChange={(e) => onFilterChange({ ...filters, year: parseInt(e.target.value, 10) })}
               className="pf-input h-11 w-full rounded-xl px-3.5 text-xs font-medium text-[#FAFAFA]"
             >
+              <option value={0} className="bg-[#09090B]">
+                All Years (972 records)
+              </option>
               {years.map((y) => (
                 <option key={y} value={y} className="bg-[#09090B]">
-                  Class of {y}
+                  Year {y}
                 </option>
               ))}
             </select>
@@ -319,44 +322,44 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
         </div>
 
         {/* 6 Key Macro Metrics Cards */}
-        <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-6">
-          <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Total Audited</span>
+        <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 2xl:grid-cols-6">
+          <div className="pf-subpanel rounded-xl p-5 text-center min-w-0">
+            <span className="font-mono text-[10px] text-[#8A8A92]">Total Records</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.total_records ?? "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Placement Rate</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Placement Rate</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.placement_rate ? `${analytics.placement_rate.toFixed(1)}%` : "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Avg CGPA</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Avg CGPA</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.avg_cgpa ? analytics.avg_cgpa.toFixed(2) : "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Coding Index</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Coding Index</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.avg_coding_score ? `${analytics.avg_coding_score.toFixed(1)}/10` : "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Average CTC</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Average CTC</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.avg_package ? `${analytics.avg_package.toFixed(1)} LPA` : "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
-            <span className="font-mono text-[10px] text-[#71717A]">Highest Package</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Highest Package</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
               {analytics?.highest_package ? `${analytics.highest_package.toFixed(1)} LPA` : "—"}
             </p>
@@ -403,25 +406,27 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             <div className="flex flex-col justify-between gap-2 border-b border-[#1F1F23] pb-4 sm:flex-row sm:items-center">
               <div>
                 <h3 className="text-base font-semibold text-[#FAFAFA]">
-                  Department Placement Summary (NAAC 5.2.1 Format)
+                  Department Placement Summary (Report Format)
                 </h3>
                 <p className="text-xs text-[#A1A1AA]">
-                  Filtered cohort placement rollup for graduating class {filters.year}
+                  Filtered rollup from the 972-record synthetic placement dataset, augmented from a
+                  215-record public baseline ·{" "}
+                  {filters.year === 0 ? "All Years" : `Year ${filters.year}`}
                 </p>
               </div>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-4">
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
-                <span className="font-mono text-[10px] text-[#71717A]">Outgoing Batch</span>
+                <span className="font-mono text-[10px] text-[#8A8A92]">Dataset Slice</span>
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {records.length}
                 </div>
-                <span className="text-[11px] text-[#A1A1AA]">Filtered Candidates</span>
+                <span className="text-[11px] text-[#A1A1AA]">Filtered Records</span>
               </div>
 
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
-                <span className="font-mono text-[10px] text-[#71717A]">Campus Placements</span>
+                <span className="font-mono text-[10px] text-[#8A8A92]">Placed Records</span>
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {placedStudents}
                 </div>
@@ -431,15 +436,15 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               </div>
 
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
-                <span className="font-mono text-[10px] text-[#71717A]">Median CTC</span>
+                <span className="font-mono text-[10px] text-[#8A8A92]">Median CTC</span>
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {analytics?.median_package ? `₹${analytics.median_package} LPA` : "—"}
                 </div>
-                <span className="text-[11px] text-[#A1A1AA]">Filtered Cohort Median</span>
+                <span className="text-[11px] text-[#A1A1AA]">Filtered Dataset Median</span>
               </div>
 
               <div className="rounded-xl border border-[#222226] bg-[#101014] p-4 text-center">
-                <span className="font-mono text-[10px] text-[#71717A]">Intervention Queue</span>
+                <span className="font-mono text-[10px] text-[#8A8A92]">Intervention Queue</span>
                 <div className="mt-1 font-mono text-2xl font-semibold text-[#FAFAFA] tabular-nums">
                   {atRiskStudents.length}
                 </div>
@@ -449,7 +454,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
             <div className="mt-6 overflow-x-auto rounded-xl border border-[#222226]">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-[#1F1F23] bg-[#0C0C0E] font-mono text-[11px] text-[#71717A]">
+                <thead className="border-b border-[#1F1F23] bg-[#0C0C0E] font-mono text-[11px] text-[#8A8A92]">
                   <tr>
                     <th className="px-5 py-3 font-medium">Engineering Program</th>
                     <th className="px-5 py-3 font-medium">Total Registered</th>
@@ -491,10 +496,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
         </div>
       ) : (
         <>
-          {/* AI Cohort Intelligence */}
+          {/* AI Dataset Intelligence */}
           <div className="pf-titanium-card rounded-2xl p-7 sm:p-8">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <span className="text-sm font-semibold text-[#FAFAFA]">AI Cohort Intelligence</span>
+              <span className="text-sm font-semibold text-[#FAFAFA]">AI Dataset Intelligence</span>
 
               <button
                 type="button"
@@ -528,7 +533,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
 
           {/* Interactive Charts Grid */}
           <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
-            <div className="pf-titanium-card rounded-2xl p-7 sm:p-8">
+            <div className="pf-titanium-card min-w-0 rounded-2xl p-7 sm:p-8">
               <h3 className="text-base font-semibold text-[#FAFAFA]">
                 Branch Placement Distribution
               </h3>
@@ -539,8 +544,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.branch_distribution || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1F1F23" vertical={false} />
-                    <XAxis dataKey="branch" stroke="#71717A" fontSize={11} />
-                    <YAxis stroke="#71717A" fontSize={11} domain={[0, 100]} />
+                    <XAxis dataKey="branch" stroke="#8A8A92" fontSize={11} />
+                    <YAxis stroke="#8A8A92" fontSize={11} domain={[0, 100]} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "#09090B",
@@ -556,7 +561,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               </div>
             </div>
 
-            <div className="pf-titanium-card rounded-2xl p-7 sm:p-8">
+            <div className="pf-titanium-card min-w-0 rounded-2xl p-7 sm:p-8">
               <h3 className="text-base font-semibold text-[#FAFAFA]">
                 Skill Domain Conversion Rates
               </h3>
@@ -567,8 +572,8 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.skill_distribution || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1F1F23" vertical={false} />
-                    <XAxis dataKey="skill" stroke="#71717A" fontSize={11} />
-                    <YAxis stroke="#71717A" fontSize={11} domain={[0, 100]} />
+                    <XAxis dataKey="skill" stroke="#8A8A92" fontSize={11} />
+                    <YAxis stroke="#8A8A92" fontSize={11} domain={[0, 100]} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "#09090B",
@@ -589,20 +594,20 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           <div className="pf-titanium-card overflow-hidden rounded-2xl">
             <div className="flex items-center justify-between border-b border-[#1F1F23] p-6">
               <div>
-                <h3 className="text-sm font-semibold text-[#FAFAFA]">Audited Student Records</h3>
+                <h3 className="text-sm font-semibold text-[#FAFAFA]">Filtered Dataset Records</h3>
                 <p className="mt-0.5 text-xs text-[#A1A1AA]">
-                  Showing {records.length} matching candidate profiles from {filters.branch} (
-                  {filters.year})
+                  Showing {records.length} matching records from {filters.branch} (
+                  {filters.year === 0 ? "All Years" : `Year ${filters.year}`})
                 </p>
               </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-[#1F1F23] bg-[#0C0C0E] font-mono text-[11px] text-[#71717A]">
+                <thead className="border-b border-[#1F1F23] bg-[#0C0C0E] font-mono text-[11px] text-[#8A8A92]">
                   <tr>
-                    <th className="px-6 py-3 font-medium">Candidate ID</th>
-                    <th className="px-6 py-3 font-medium">Class Year</th>
+                    <th className="px-6 py-3 font-medium">Record ID</th>
+                    <th className="px-6 py-3 font-medium">Dataset Year</th>
                     <th className="px-6 py-3 font-medium">Branch</th>
                     <th className="px-6 py-3 font-medium">Gender</th>
                     <th className="px-6 py-3 font-medium">Skill Focus</th>

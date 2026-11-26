@@ -141,7 +141,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               <span className="text-sm font-medium text-[#FAFAFA]">
                 {selectedFile ? selectedFile.name : "Drop PDF resume here or browse"}
               </span>
-              <span className="mt-1.5 font-mono text-[11px] text-[#71717A]">
+              <span className="mt-1.5 font-mono text-[11px] text-[#8A8A92]">
                 PDF format · Selectable text · Up to 50MB
               </span>
 
@@ -191,7 +191,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               data-agent-id="resume-text-input"
               placeholder="Paste your resume text (Education, Skills, Projects, Certifications, Experience) here..."
               rows={7}
-              className="pf-input w-full rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B]"
+              className="pf-input w-full rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#8A8A92]"
             />
           </div>
         </div>
@@ -246,7 +246,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                 <span className="font-mono text-2xl font-semibold leading-none text-[#FAFAFA] tabular-nums">
                   {feedback.score}
                 </span>
-                <span className="mt-1 font-mono text-[9px] text-[#71717A] tabular-nums">/100</span>
+                <span className="mt-1 font-mono text-[9px] text-[#8A8A92] tabular-nums">/100</span>
               </div>
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
@@ -263,7 +263,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                           : "Major Overhaul Needed")}
                   </span>
                   {feedback.evaluation_source && (
-                    <span className="rounded border border-[#222226] bg-[#0C0C0E] px-2 py-0.5 font-mono text-[10px] text-[#71717A]">
+                    <span className="rounded border border-[#222226] bg-[#0C0C0E] px-2 py-0.5 font-mono text-[10px] text-[#8A8A92]">
                       {feedback.evaluation_source}
                     </span>
                   )}
@@ -392,7 +392,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                     <span className="font-mono font-semibold text-[#FAFAFA] tabular-nums">
                       {activeCompanyMatch.cutoff_score}/100
                     </span>
-                    <span className="text-[#71717A]">·</span>
+                    <span className="text-[#8A8A92]">·</span>
                     <span className="text-[#A1A1AA]">Your Resume Match:</span>
                     <span
                       data-agent-id="company-match-score"
@@ -417,7 +417,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                         </span>
                       ))
                     ) : (
-                      <span className="text-[#71717A]">None matched yet</span>
+                      <span className="text-[#8A8A92]">None matched yet</span>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -451,7 +451,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               <ul data-agent-id="critical-improvements-list" className="mt-3.5 space-y-2.5">
                 {(feedback.improvements || []).map((imp, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed text-[#E4E4E7]">
-                    <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                    <span className="font-mono text-[10px] text-[#8A8A92] tabular-nums">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span>{imp}</span>
@@ -486,7 +486,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               <ul data-agent-id="recommended-certifications-list" className="mt-3.5 space-y-2.5">
                 {(feedback.recommended_certifications || []).map((cert, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed text-[#D4D4D8]">
-                    <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                    <span className="font-mono text-[10px] text-[#8A8A92] tabular-nums">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span>{cert}</span>
@@ -502,7 +502,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               <ul data-agent-id="project-upgrade-list" className="mt-3.5 space-y-2.5">
                 {(feedback.project_upgrade_plan || feedback.project_suggestions || []).map((up, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed text-[#D4D4D8]">
-                    <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                    <span className="font-mono text-[10px] text-[#8A8A92] tabular-nums">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span>{up}</span>
@@ -533,7 +533,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
                       {item.after}
                     </div>
                     {item.reason && (
-                      <div className="border-t border-[#1F1F23] pt-2 text-[11px] text-[#71717A]">
+                      <div className="border-t border-[#1F1F23] pt-2 text-[11px] text-[#8A8A92]">
                         Why it works: {item.reason}
                       </div>
                     )}
@@ -550,7 +550,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               <ul data-agent-id="candidate-strengths-list" className="mt-3.5 space-y-2.5">
                 {(feedback.strengths || []).map((str, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed text-[#D4D4D8]">
-                    <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                    <span className="font-mono text-[10px] text-[#8A8A92] tabular-nums">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span>{str}</span>
@@ -580,7 +580,7 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
               <ul data-agent-id="formatting-guidelines-list" className="mt-3.5 space-y-2.5">
                 {(feedback.formatting_tips || []).map((tip, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed text-[#A1A1AA]">
-                    <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+                    <span className="font-mono text-[10px] text-[#8A8A92] tabular-nums">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span>{tip}</span>

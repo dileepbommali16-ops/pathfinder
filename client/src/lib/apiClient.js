@@ -10,9 +10,13 @@ export const PROD_BACKEND_URL = "https://pathfinder-backend-sg.onrender.com";
 
 export const getApiBase = () => {
   if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") {
+      return window.location.origin;
+    }
     const envUrl = import.meta.env.VITE_API_BASE_URL;
     if (envUrl && envUrl.trim()) return envUrl.replace(/\/+$/, "");
-    if (window.location.hostname.includes("onrender.com")) {
+    if (host.includes("onrender.com")) {
       return window.location.origin;
     }
   }
@@ -187,7 +191,9 @@ if (typeof window !== "undefined" && typeof window.fetch === "function" && !wind
   window.fetch = async (input, init) => {
     const urlStr = typeof input === "string" ? input : input instanceof URL ? input.toString() : input?.url || "";
     const isTargetBackend =
-      urlStr.includes(".onrender.com") || (API_BASE && urlStr.startsWith(API_BASE));
+      urlStr.includes(".onrender.com") ||
+      urlStr.includes("/api/") ||
+      (API_BASE && urlStr.startsWith(API_BASE));
 
     if (!isTargetBackend) {
       return nativeFetch(input, init);

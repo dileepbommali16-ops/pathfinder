@@ -851,7 +851,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
       {/* Spacious Split-Screen Grid */}
       <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
         {/* Left 5 cols: Problem + Clean Viva Box */}
-        <div className="space-y-6 lg:col-span-5">
+        <div className="min-w-0 space-y-6 lg:col-span-5">
           <div className="pf-subpanel space-y-4 rounded-2xl p-6 sm:p-7">
             <div className="flex items-center justify-between">
               <span className="rounded-md border border-white/[0.1] bg-black/50 px-2.5 py-0.5 font-mono text-[11px] font-medium text-[#FAFAFA]">
@@ -916,7 +916,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
               value={explanation}
               onChange={(e) => setExplanation(e.target.value)}
               placeholder="Explain your algorithm, time complexity O(...), space complexity O(...), and edge cases in your own words..."
-              className="pf-input w-full rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B]"
+              className="pf-input w-full rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#8A8A92]"
             />
           </div>
 
@@ -934,7 +934,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
 
               <div className="grid grid-cols-2 gap-3.5 text-xs">
                 <div className="rounded-xl border border-white/[0.07] bg-black/45 p-3.5">
-                  <span className="block text-[10px] text-[#A1A1AA]">Verified Code Score</span>
+                  <span className="block text-[10px] text-[#A1A1AA]">Code Execution Score</span>
                   <span className="mt-1 block font-mono text-base font-semibold text-[#FAFAFA] tabular-nums">
                     {verdictResult.codeScore}/100
                   </span>
@@ -984,7 +984,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
         </div>
 
         {/* Right 7 cols: Machined 11-Language IDE Sandbox */}
-        <div className="space-y-5 lg:col-span-7">
+        <div className="min-w-0 space-y-5 lg:col-span-7">
           <div className="pf-subpanel space-y-5 rounded-2xl p-6 sm:p-7">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] pb-4">
               <div className="flex items-center gap-3">
@@ -1065,7 +1065,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
 
             {/* Clean IDE Code Container */}
             <div className="overflow-hidden rounded-xl border border-white/[0.1] bg-[#08080B]">
-              <div className="flex items-center justify-between border-b border-white/[0.06] bg-[#0E0E13] px-4 py-2 font-mono text-[11px] text-[#71717A]">
+              <div className="flex items-center justify-between border-b border-white/[0.06] bg-[#0E0E13] px-4 py-2 font-mono text-[11px] text-[#8A8A92]">
                 <span className="text-[#D4D4D8]">solution.{language === "python" ? "py" : language}</span>
                 <span>Sandbox Execution Ready</span>
               </div>
@@ -1109,7 +1109,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                         setRunStatus("idle");
                         toast.info("Loaded optimal reference program — click Run Code to test.");
                       }}
-                      className="pf-btn-primary inline-flex h-8 items-center rounded-lg px-3 text-[11px] font-medium cursor-pointer"
+                      className="pf-btn-secondary inline-flex h-8 items-center rounded-lg px-3 text-[11px] font-medium cursor-pointer"
                     >
                       Load into editor
                     </button>

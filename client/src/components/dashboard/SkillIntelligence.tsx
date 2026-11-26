@@ -109,8 +109,9 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
               </span>
             </div>
             <p className="mt-1.5 text-xs text-[#A1A1AA] sm:text-sm">
-              Verified correlation between technical skills, campus placement rate, and salary
-              multipliers
+              Observed correlation in the 972-record synthetic placement dataset, augmented from a
+              215-record public baseline, between technical skills, placement rate, and package
+              ranges
             </p>
           </div>
 
@@ -152,7 +153,7 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
                     : `${s.rateDeltaVsAverage}%`}
                 </span>
               </div>
-              <span className="mt-1 block font-mono text-[10px] text-[#71717A] tabular-nums">
+              <span className="mt-1 block font-mono text-[10px] text-[#8A8A92] tabular-nums">
                 {s.totalCandidates} candidates
               </span>
             </button>
@@ -182,7 +183,7 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
                   <CartesianGrid strokeDasharray="3 3" stroke="#1F1F23" vertical={false} />
                   <XAxis
                     dataKey="skill"
-                    stroke="#71717A"
+                    stroke="#8A8A92"
                     tick={{ fontSize: 10, fill: "#A1A1AA" }}
                     interval={0}
                     angle={-12}
@@ -190,7 +191,7 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
                     height={45}
                   />
                   <YAxis
-                    stroke="#71717A"
+                    stroke="#8A8A92"
                     domain={[40, 100]}
                     tick={{ fontSize: 11, fill: "#A1A1AA" }}
                     unit="%"
@@ -313,18 +314,18 @@ export const SkillIntelligence: React.FC<SkillIntelligenceProps> = ({
                   {activeMetric.skill}
                 </span>
                 <span className="mt-0.5 block text-xs text-[#A1A1AA]">
-                  Evaluated across verified campus drives
+                  Computed from the 972-record synthetic placement dataset, augmented from a 215-record public baseline
                 </span>
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <div className="rounded-xl border border-[#222226] bg-[#101014] p-3.5">
-                    <span className="block text-[10px] text-[#71717A]">Placement Rate</span>
+                    <span className="block text-[10px] text-[#8A8A92]">Placement Rate</span>
                     <span className="mt-1 block font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
                       {activeMetric.placementRate}%
                     </span>
                   </div>
                   <div className="rounded-xl border border-[#222226] bg-[#101014] p-3.5">
-                    <span className="block text-[10px] text-[#71717A]">Delta vs Baseline</span>
+                    <span className="block text-[10px] text-[#8A8A92]">Delta vs Baseline</span>
                     <span className="mt-1 block font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
                       {activeMetric.rateDeltaVsAverage >= 0
                         ? `+${activeMetric.rateDeltaVsAverage}%`

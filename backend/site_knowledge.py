@@ -11,7 +11,7 @@ PLATFORM_ARCHITECTURE = {
     "backend": "FastAPI, Python 3.11, Uvicorn, Scikit-Learn, Pandas",
     "database": "Persistent SQLite in WAL mode (data/pathfinder_production.db) with automatic JSON migrations",
     "ai_engine": "Google Gemini API (gemini-2.0-flash, gemini-2.5-flash, gemini-3.8-flash, gemini-3.5-flash-lite) with multi-turn history & repeat protection",
-    "ml_engine": "RandomForestClassifier (120 estimators, 88% verified cross-val accuracy) trained on 972 verified student placement records",
+    "ml_engine": "RandomForestClassifier (120 estimators, 88% cross-validation accuracy on the synthetic dataset) trained on a 972-record synthetic placement dataset, augmented from a 215-record public baseline",
     "authentication": "Google OAuth 2.0, GitHub OAuth 2.0 with cryptographic state validation, signed JWT sessions, and guest instant access",
     "hosting": "Vercel (Frontend Client) + Render (Backend API Web Service)",
     "security": "Sliding-window rate limiter (60 req/min), daily token budget manager (200 req/day), HTML/JS XSS sanitization, SameSite secure cookies"
@@ -27,7 +27,7 @@ TABS_KNOWLEDGE: Dict[str, Dict[str, Any]] = {
             "Next Immediate Actions Widget: High-impact milestones to boost probability within 7-14 days.",
             "What-If Scenario Simulator: Interactive sandbox to preview how raising CGPA, coding, or adding an internship affects probability."
         ],
-        "data_sources": "Real-time inference from RandomForestClassifier trained on 972 records. Input values come from the user's active Student Profile.",
+        "data_sources": "Real-time inference from RandomForestClassifier (88% cross-validation accuracy on the synthetic dataset) trained on a 972-record synthetic placement dataset, augmented from a 215-record public baseline. Input values come from the user's active Student Profile.",
         "how_to_use": "Review your overall readiness gauge. Click 'What-If Simulator' or 'Readiness Command' to see which exact skill lever provides the highest score delta.",
         "limitations": "The percentage score is a statistical probability estimation based on historical placement distributions, not a contractual employment guarantee."
     },
@@ -39,9 +39,9 @@ TABS_KNOWLEDGE: Dict[str, Dict[str, Any]] = {
             "Action Card Deck: Prioritized interventions categorized by High/Medium Impact (e.g., Blind 75 LeetCode sprints, STAR interview stories, Resume keyword alignment).",
             "What-If Simulator: Fine-grained slider experiment to calculate expected ROI on time investments."
         ],
-        "data_sources": "Generated dynamically by evaluating the candidate's profile against the verified benchmark cutoffs of top-tier hiring companies.",
+        "data_sources": "Generated dynamically by evaluating the candidate's profile against reference benchmark cutoffs of top-tier hiring companies.",
         "how_to_use": "Focus on the top 2 'High Impact' actions first. Complete the recommended tasks to systematically eliminate eligibility barriers.",
-        "limitations": "Recommendations prioritize general campus drive criteria and should be tailored if targeting niche research or specialized domains."
+        "limitations": "Recommendations prioritize general placement criteria and should be tailored if targeting niche research or specialized domains."
     },
     "skills": {
         "title": "6-Week Roadmap & Skill Intelligence",
@@ -63,9 +63,9 @@ TABS_KNOWLEDGE: Dict[str, Dict[str, Any]] = {
             "Quick Action Chips: Pre-populated prompts ('Start Mock Interview', 'Find My Skill Gaps', 'Review My Resume', 'Suggest Flagship Project', 'Placement Preparation Plan').",
             "Controls: Stop Generation, Regenerate, Clear Chat, and Server Wake-up notification indicator."
         ],
-        "data_sources": "Direct live inference from Google Gemini models with full site knowledge injection, candidate profile grounding, and verified platform statistics.",
+        "data_sources": "Direct live inference from Google Gemini models with full site knowledge injection, candidate profile grounding, and statistics computed from the 972-record synthetic placement dataset, augmented from a 215-record public baseline.",
         "how_to_use": "Ask anything! Whether you want technical system design explanations, mock behavioral questions, emotional encouragement, or explanations of specific charts on the website.",
-        "limitations": "The AI mentor provides guidance and educational mentorship; it does not grade official university coursework or guarantee job placement."
+        "limitations": "The AI mentor provides guidance and educational mentorship; it does not grade university coursework or guarantee job placement."
     },
     "projects": {
         "title": "Flagship Project Blueprints & Engineering Architectures",
@@ -81,17 +81,17 @@ TABS_KNOWLEDGE: Dict[str, Dict[str, Any]] = {
         "limitations": "Prototypes should be customized according to lab availability and team project scope."
     },
     "analytics": {
-        "title": "Cohort Analytics & Placement Benchmarks",
-        "purpose": "Empirical historical analytics dashboard analyzing placement rates, salary packages, and academic correlations across 9 engineering departments.",
+        "title": "Placement Dataset Analytics & Benchmarks",
+        "purpose": "Analytics dashboard exploring placement rates, salary packages, and academic correlations across a 972-record synthetic placement dataset, augmented from a 215-record public baseline.",
         "widgets": [
-            "Department Filter & Year Selector (2024, 2025, 2026).",
+            "Department Filter & Dataset Year Selector (All Years, 2024, 2025, 2026).",
             "Placement Distribution Charts: Placed vs Unplaced ratios per branch.",
-            "Salary Package Rankings: Highest and average LPA across departments (CSM/AIML highest at 44.6 LPA, CSE at 44.0 LPA).",
+            "Salary Package Rankings: Highest and average LPA across departments (CSM highest at 44.9 LPA, AIML at 44.6 LPA, CSE at 44.0 LPA).",
             "CGPA vs Placement Correlation Scatter: Demonstrates that CGPA >= 7.5 combined with practical internships maximizes clearance probability."
         ],
-        "data_sources": "Verified database of 972 historical student placement records (sample-placement-2024-2026.csv and data/placement_records.json).",
-        "how_to_use": "Compare your branch and CGPA bracket to historical placement cohorts to set realistic package targets and identify benchmark percentiles.",
-        "limitations": "Historical cohort trends provide statistical baselines; macroeconomic hiring shifts between academic years may influence drive volumes."
+        "data_sources": "972-record synthetic placement dataset, augmented from a 215-record public baseline (data/placement_records.csv).",
+        "how_to_use": "Compare your branch and CGPA bracket to the synthetic dataset distributions to set realistic targets and identify benchmark percentiles.",
+        "limitations": "Synthetic dataset trends provide statistical pipeline baselines and do not represent private institutional placement records."
     },
     "resume": {
         "title": "ATS Resume Studio",
@@ -102,7 +102,7 @@ TABS_KNOWLEDGE: Dict[str, Dict[str, Any]] = {
             "Keyword Gap Matcher: Identifies high-frequency industry keywords missing from the resume.",
             "Formatting & Layout Diagnostic: Highlights formatting traps (tables, graphics, unselectable fonts) that fail automated scanners."
         ],
-        "data_sources": "Gemini structured JSON analysis and regex keyword matching against verified job descriptions for software engineering roles.",
+        "data_sources": "Gemini structured JSON analysis and regex keyword matching against reference job descriptions for software engineering roles.",
         "how_to_use": "Upload your resume in PDF format. Review the keyword gaps and formatting tips. Update your bullet points with measurable impact metrics.",
         "limitations": "ATS scoring evaluates keyword and formatting hygiene; human interviewers will evaluate technical depth and personal communication during rounds."
     },
@@ -114,7 +114,7 @@ TABS_KNOWLEDGE: Dict[str, Dict[str, Any]] = {
             "Core Subjects Checklist (OS, DBMS, Networks, Microprocessors, CAD, Power Systems).",
             "Top Tech Hiring Recruiters by Branch."
         ],
-        "data_sources": "Derived from data/branches.json and verified cohort placement records.",
+        "data_sources": "Derived from data/branches.json and the 972-record synthetic placement dataset, augmented from a 215-record public baseline.",
         "how_to_use": "Find your department to discover core academic subjects most frequently tested during campus technical rounds.",
         "limitations": "Non-circuital branches (MECH, CIVIL) should focus on core departmental opportunities or follow the IT transition roadmap if targeting software roles."
     },
@@ -139,7 +139,7 @@ TABS_KNOWLEDGE: Dict[str, Dict[str, Any]] = {
             "Interview Round Breakdown (Online Assessment -> Technical Round 1 -> Technical Round 2 -> HR/Managerial)."
         ],
         "data_sources": "data/roles.json and current job market competencies.",
-        "how_to_use": "Select your target role. Verify that your skills and projects align with the 'Must-Have' criteria before applying to campus drives.",
+        "how_to_use": "Select your target role. Check that your skills and projects align with the 'Must-Have' criteria before applying to engineering roles.",
         "limitations": "Company expectations vary; Tier-1 product firms emphasize DSA and system design, while service firms may emphasize aptitude and domain basics."
     },
     "missions": {
@@ -666,11 +666,11 @@ def get_site_knowledge_context(active_tab: Optional[str] = None, page_context: O
         "================================================================================",
         "PATHFINDER 2.0 FULL PLATFORM KNOWLEDGE BASE (SSOT - DO NOT CONTRADICT)",
         "================================================================================",
-        "PLATFORM OVERVIEW: Pathfinder 2.0 is an intelligent campus placement readiness, cohort",
+        "PLATFORM OVERVIEW: Pathfinder 2.0 is an intelligent placement readiness, dataset",
         "benchmarking, and AI career coaching platform designed for engineering students.",
         f"ARCHITECTURE STACK: {PLATFORM_ARCHITECTURE['frontend']} | {PLATFORM_ARCHITECTURE['backend']} | {PLATFORM_ARCHITECTURE['database']} | ML: {PLATFORM_ARCHITECTURE['ml_engine']}",
-        "PROVENANCE OF STATISTICS: Historical dataset consists of 972 verified student placement records across 9 departments (CSE, IT, ECE, EEE, MECH, CIVIL, AIML, CSD, CSM) from 2024 to 2026. Top package is 44.6 LPA (CSM & AIML), followed by 44.0 LPA (CSE).",
-        "PREDICTION MODEL: Placement probability is calculated using a trained RandomForestClassifier (88% accuracy) based on 5 features: CGPA, Backlogs, Internships, Coding Confidence, Communication Rating.",
+        "PROVENANCE OF STATISTICS: Dataset is a 972-record synthetic placement dataset, augmented from a 215-record public baseline, mapped across 9 departments (CSE, IT, ECE, EEE, MECH, CIVIL, AIML, CSD, CSM) for 2024 to 2026 (324 records/year). Highest package is 44.9 LPA (CSM), followed by 44.6 LPA (AIML) and 44.0 LPA (CSE); 2026 slice placement rate is 50.9% (42.5% overall across all 972 records).",
+        "PREDICTION MODEL: Placement probability is calculated using a trained RandomForestClassifier (88% cross-validation accuracy on the synthetic dataset) based on 5 features: CGPA, Backlogs, Internships, Coding Confidence, Communication Rating.",
         ""
     ]
 

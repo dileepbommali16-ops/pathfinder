@@ -18,6 +18,7 @@ import { SUPPORTED_LANGUAGES } from "../agent/codingStudioController";
 import { tryExecuteClientAutomationIntent } from "../agent/toolRunner";
 import {
   DEFAULT_STUDENT_PROFILE,
+  DEMO_GUEST_PROFILE,
   EMPTY_GUEST_PROFILE,
   isProfileUnconfigured,
   buildFreshOnboardingProfile,
@@ -325,20 +326,110 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(spoken).not.toContain("What's up");
   });
 
-  it("treats Guest and Stranger as placeholder names and keeps unconfigured Guest profiles empty", () => {
+  it("treats Guest and Stranger as placeholder names and preloads Demo Guest Profile cleanly while preserving cleared state", () => {
     expect(isPlaceholderCandidateName("Guest")).toBe(true);
     expect(isPlaceholderCandidateName("Stranger")).toBe(true);
     expect(pickCandidateFullName("Guest", "Priyanka")).toBe("Priyanka");
 
-    const guestProfile = buildInitialProfileFromStorage(
+    const demoGuestProfile = buildInitialProfileFromStorage(
       null,
       JSON.stringify({ email: "guest@pathfinder.ai", username: "Guest Student" })
     );
-    expect(guestProfile.cgpa).toBe(0);
-    expect(guestProfile.branch).toBe("");
-    expect(guestProfile.linkedinUrl).toBe("");
-    expect(isProfileUnconfigured(guestProfile)).toBe(true);
+    expect(demoGuestProfile.cgpa).toBe(DEMO_GUEST_PROFILE.cgpa);
+    expect(demoGuestProfile.branch).toBe("CSE");
+    expect(isProfileUnconfigured(demoGuestProfile)).toBe(false);
+
+    const clearedGuestProfile = buildInitialProfileFromStorage(
+      JSON.stringify(EMPTY_GUEST_PROFILE),
+      JSON.stringify({ email: "guest@pathfinder.ai", username: "Guest Student" })
+    );
+    expect(clearedGuestProfile.cgpa).toBe(0);
+    expect(clearedGuestProfile.branch).toBe("");
+    expect(clearedGuestProfile.linkedinUrl).toBe("");
+    expect(isProfileUnconfigured(clearedGuestProfile)).toBe(true);
     expect(isProfileUnconfigured(EMPTY_GUEST_PROFILE)).toBe(true);
+  });
+
+  it("enforces P0 docked DAS stage, honest claims, and clean Footer/LampLogin copy", () => {
+    const srcRoot = path.resolve(__dirname, "..");
+    const footerSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/Footer.tsx"), "utf-8");
+    const loginSrc = fs.readFileSync(path.join(srcRoot, "components/auth/LampLogin.tsx"), "utf-8");
+    const landingSrc = fs.readFileSync(path.join(srcRoot, "components/landing/ComputeLandingPage.tsx"), "utf-8");
+    const layoutSrc = fs.readFileSync(path.join(srcRoot, "agent/AgentLayout.tsx"), "utf-8");
+    const homeSrc = fs.readFileSync(path.join(srcRoot, "pages/Home.tsx"), "utf-8");
+
+    expect(footerSrc).not.toContain("All 7 subsystems operational");
+    expect(footerSrc).not.toContain("support@pathfinder-ai.io");
+    expect(footerSrc.toLowerCase()).not.toContain("verified");
+
+    expect(loginSrc).not.toContain("Dileep Bommali");
+    expect(loginSrc).not.toContain("Audited");
+    expect(loginSrc).not.toContain("System Operational");
+    expect(loginSrc).toContain("Your full name");
+
+    expect(landingSrc.toLowerCase()).not.toContain("verified");
+    expect(landingSrc.toLowerCase()).not.toContain("audited");
+
+    expect(layoutSrc).toContain("das-stage");
+    expect(layoutSrc).toContain("xl:w-[360px]");
+    expect(layoutSrc).toContain('export const DAS_LAYOUT: DasLayoutMode = "background"');
+    expect(layoutSrc).toContain("onSpeakingStateChange");
+    expect(layoutSrc).toContain("SPEAKING_OFF_DEBOUNCE_MS = 400");
+    expect(layoutSrc).toContain("isOverviewHeroActive");
+    expect(layoutSrc).toContain("opacity-35");
+    expect(homeSrc).toContain("opacity-70");
+    expect(homeSrc).toContain("Demo Profile (Sample)");
+    expect(homeSrc).toContain("Clear &amp; enter my details");
+    const heroMetricsSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/HeroMetrics.tsx"), "utf-8");
+    const norm = (s: string) => s.replace(/\s+/g, " ");
+    const SYNTHETIC_PHRASE = "972-record synthetic placement dataset, augmented from a 215-record public baseline";
+    expect(heroMetricsSrc).toContain('data-das-hero-zone="overview"');
+    expect(norm(heroMetricsSrc)).toContain(SYNTHETIC_PHRASE);
+    expect(norm(footerSrc)).toContain(SYNTHETIC_PHRASE);
+    expect(footerSrc).toContain('data-dataset-credit="public-baseline-215"');
+    expect(footerSrc).not.toContain("Institutional data");
+    expect(footerSrc).not.toContain("Hyderabad, India");
+    expect(footerSrc).not.toContain("Hugging Face");
+    expect(norm(landingSrc)).toContain(SYNTHETIC_PHRASE);
+    const cohortExplorerSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/CohortExplorer.tsx"), "utf-8");
+    expect(norm(cohortExplorerSrc)).toContain(SYNTHETIC_PHRASE);
+    expect(cohortExplorerSrc).not.toContain("TPO Institutional Command Center");
+    expect(cohortExplorerSrc).not.toContain("NAAC 5.2.1");
+    expect(cohortExplorerSrc).not.toContain("Class of {y}");
+    const geminiLiveSrc = fs.readFileSync(path.join(srcRoot, "agent/geminiLive.ts"), "utf-8");
+    const careerAgentSrc = fs.readFileSync(path.join(srcRoot, "lib/careerAgent.js"), "utf-8");
+    const complianceSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/ComplianceModals.tsx"), "utf-8");
+    expect(geminiLiveSrc).toContain(SYNTHETIC_PHRASE);
+    expect(geminiLiveSrc).not.toContain("972 verified");
+    expect(careerAgentSrc).toContain(SYNTHETIC_PHRASE);
+    expect(careerAgentSrc).not.toContain("972 real student records");
+    expect(careerAgentSrc).not.toContain("972 verified");
+    for (const staleSlice of ["198/972", "162/972", "144/972", "96/972", "156/972", "28.4 LPA", "22.0 LPA", "19.5 LPA"]) {
+      expect(careerAgentSrc).not.toContain(staleSlice);
+    }
+    expect(careerAgentSrc).toContain("15.8 LPA");
+    expect(careerAgentSrc).toContain("23.7 LPA");
+    expect(careerAgentSrc).toContain("12.0 LPA");
+    expect(careerAgentSrc).toContain("11.8 LPA");
+    expect(footerSrc).toContain("Placement_Data_Full_Class.csv");
+    const radarBenchSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/CompanyPlacementRadar.tsx"), "utf-8");
+    expect(radarBenchSrc).toContain("Illustrative reference ranges, not dataset values");
+    expect(radarBenchSrc).toContain("Match Score Estimate");
+    expect(complianceSrc).toContain("88% cross-validation accuracy on the synthetic dataset");
+    const faceEffectsSrc = fs.readFileSync(path.join(srcRoot, "agent/FaceEffects.tsx"), "utf-8");
+    const avatarSrc = fs.readFileSync(path.join(srcRoot, "agent/Avatar3D.tsx"), "utf-8");
+    const indexCssSrc = fs.readFileSync(path.join(srcRoot, "index.css"), "utf-8");
+    expect(faceEffectsSrc).toContain("#F5F3EF");
+    expect(faceEffectsSrc).toContain("#E5322D");
+    expect(faceEffectsSrc).not.toContain('new THREE.Color("#5BC0DE")');
+    expect(avatarSrc).toContain('color="#F5F3EF"');
+    expect(avatarSrc).not.toContain('color="#5BC0DE"');
+    expect(layoutSrc).toContain("border-[#E5322D]");
+    expect(homeSrc).toContain("duration: 0.12");
+    expect(homeSrc).not.toContain("duration: 0.25");
+    expect(indexCssSrc).toContain("--text-muted: #8a8a92");
+    const apiClientSrc = fs.readFileSync(path.join(srcRoot, "lib/apiClient.js"), "utf-8");
+    expect(apiClientSrc).toContain('host === "localhost" || host === "127.0.0.1"');
   });
 
   it("keeps visible mode badges, Addressing Mode UI, and dead handleRoleToggle out of AgentLayout and ProfileSettings", () => {

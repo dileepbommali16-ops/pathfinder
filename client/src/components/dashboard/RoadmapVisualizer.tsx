@@ -185,7 +185,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
               <span
                 className={`mt-0.5 flex h-7 w-9 shrink-0 items-center justify-center rounded-md border font-mono text-[10px] font-medium tabular-nums ${isDone
                   ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
-                  : "border-white/[0.1] bg-black/50 text-[#71717A]"
+                  : "border-white/[0.1] bg-black/50 text-[#8A8A92]"
                   }`}
               >
                 {isDone ? "DONE" : idxLabel}
@@ -201,7 +201,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
                   )}
                 </div>
                 <p
-                  className={`mt-2 text-xs leading-[1.65] sm:text-sm ${isDone ? "line-through text-[#71717A]" : "text-[#E4E4E7]"
+                  className={`mt-2 text-xs leading-[1.65] sm:text-sm ${isDone ? "line-through text-[#8A8A92]" : "text-[#E4E4E7]"
                     }`}
                 >
                   {weekDescription}

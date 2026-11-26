@@ -1,4 +1,4 @@
-// Authoritative fallback datasets grounded in 972 verified student records
+// Fallback snapshot derived from 972-record synthetic placement dataset, augmented from a 215-record public baseline
 export const FALLBACK_BRANCHES = [
   {
     "code": "CSE",

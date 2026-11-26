@@ -72,7 +72,7 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
   return (
     <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
       {/* Left 6 cols: 5-Dimension Competency Telemetry */}
-      <SpotlightSurface className="rounded-2xl p-8 sm:p-10 lg:col-span-6">
+      <SpotlightSurface className="min-w-0 rounded-2xl p-8 sm:p-10 lg:col-span-6">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-lg font-semibold tracking-[-0.02em] text-[#FAFAFA]">
             Competency dimensions
@@ -113,14 +113,14 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
         {/* Industry Reference Focus Topics — Spacious Pills */}
         <div className="mt-8 border-t border-white/[0.07] pt-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="block font-mono text-[11px] uppercase tracking-wider text-[#71717A]">
+            <span className="block font-mono text-[11px] uppercase tracking-wider text-[#8A8A92]">
               Industry reference focus topics
             </span>
             <span className="rounded-md border border-white/[0.08] bg-[#121216] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
               Reference Benchmarks
             </span>
           </div>
-          <p className="mt-1.5 text-[11px] text-[#71717A]">
+          <p className="mt-1.5 text-[11px] text-[#8A8A92]">
             Standard campus interview syllabus topics — select any topic to review with DAS.
           </p>
           <div className="mt-3.5 flex flex-wrap gap-2.5">
@@ -141,7 +141,7 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
       </SpotlightSurface>
 
       {/* Right 6 cols: Spacious Numbered Strengths & Priority Actions */}
-      <div className="space-y-8 lg:col-span-6">
+      <div className="min-w-0 space-y-8 lg:col-span-6">
         <SpotlightSurface className="rounded-2xl p-8 sm:p-9">
           <h3 className="text-lg font-semibold tracking-[-0.02em] text-[#FAFAFA]">
             Competitive strengths
@@ -153,7 +153,7 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
                   key={idx}
                   className="pf-subpanel flex items-start gap-3.5 rounded-xl p-4 text-xs leading-relaxed text-[#E4E4E7]"
                 >
-                  <span className="mt-0.5 font-mono text-[11px] text-[#71717A] tabular-nums">
+                  <span className="mt-0.5 font-mono text-[11px] text-[#8A8A92] tabular-nums">
                     {String(idx + 1).padStart(2, "0")}
                   </span>
                   <span>{str}</span>
@@ -178,7 +178,7 @@ export const SkillGapSection: React.FC<SkillGapSectionProps> = ({
                   key={idx}
                   className="pf-subpanel flex items-start gap-3.5 rounded-xl p-4 text-xs leading-relaxed text-[#E4E4E7]"
                 >
-                  <span className="mt-0.5 font-mono text-[11px] text-[#71717A] tabular-nums">
+                  <span className="mt-0.5 font-mono text-[11px] text-[#8A8A92] tabular-nums">
                     {String(idx + 1).padStart(2, "0")}
                   </span>
                   <span>{prio}</span>

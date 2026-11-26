@@ -484,7 +484,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             <span className="font-mono font-semibold text-[#FAFAFA] tabular-nums">
               {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, "0")}
             </span>
-            <span className="font-mono text-[10px] text-[#71717A]">Drill Time</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">Drill Time</span>
           </div>
 
           <button
@@ -549,7 +549,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             }`}
           >
             <span>{selectedTrack === "defense" ? q.roundType : q.company.split("/")[0]}</span>
-            <span className="font-mono text-[10px] text-[#71717A]">({q.difficulty})</span>
+            <span className="font-mono text-[10px] text-[#8A8A92]">({q.difficulty})</span>
           </button>
         ))}
       </div>
@@ -557,7 +557,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
       {/* Main Interview Stage */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
         {/* Left Column: Question Prompt Card */}
-        <div className="pf-subpanel flex flex-col justify-between rounded-2xl p-6 sm:p-7 lg:col-span-5">
+        <div className="pf-subpanel flex min-w-0 flex-col justify-between rounded-2xl p-6 sm:p-7 lg:col-span-5">
           <div>
             <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.07] pb-4">
               <span className="rounded-md border border-white/[0.1] bg-black/50 px-2.5 py-0.5 font-mono text-[10px] font-medium text-[#FAFAFA]">
@@ -572,7 +572,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             </div>
 
             <div className="mt-5">
-              <span className="font-mono text-[10px] text-[#71717A]">Interviewer Prompt</span>
+              <span className="font-mono text-[10px] text-[#8A8A92]">Interviewer Prompt</span>
               <h4 className="mt-2 text-base font-semibold leading-snug text-[#FAFAFA] sm:text-lg">
                 "{currentQ.question}"
               </h4>
@@ -588,7 +588,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             </div>
 
             <div className="mt-5">
-              <span className="font-mono text-[10px] text-[#71717A]">Evaluation Topics</span>
+              <span className="font-mono text-[10px] text-[#8A8A92]">Evaluation Topics</span>
               <div className="mt-2.5 flex flex-wrap gap-2">
                 {currentQ.keyConcepts.map((c, i) => (
                   <span
@@ -656,12 +656,12 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
         </div>
 
         {/* Right Column: Clean Answer Workspace */}
-        <div className="flex flex-col justify-between space-y-6 lg:col-span-7">
+        <div className="flex min-w-0 flex-col justify-between space-y-6 lg:col-span-7">
           <div className="pf-subpanel rounded-2xl p-6 sm:p-7">
             <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
               <span className="text-xs font-medium text-[#D4D4D8]">Your Response Workspace</span>
               <div className="flex items-center gap-3">
-                <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
+                <span className="font-mono text-[11px] text-[#8A8A92] tabular-nums">
                   {userAnswer.trim() ? `${userAnswer.trim().split(/\s+/).length} words` : "0 words"}
                 </span>
 
@@ -689,11 +689,11 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               }}
               placeholder="Type your structured answer here, or click 'Speak answer' to speak via microphone... (Use the STAR framework: Situation, Task, Action, Result)."
               rows={7}
-              className="pf-input mt-5 w-full resize-none rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#52525B] sm:text-sm"
+              className="pf-input mt-5 w-full resize-none rounded-xl p-4 text-xs leading-relaxed text-[#FAFAFA] placeholder-[#8A8A92] sm:text-sm"
             />
 
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-              <span className="text-[11px] text-[#71717A]">
+              <span className="text-[11px] text-[#8A8A92]">
                 Tip: Use <strong className="font-medium text-[#D4D4D8]">Fill benchmark answer</strong>{" "}
                 for instant demo evaluation.
               </span>
@@ -802,7 +802,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                           </span>
                         ))
                       ) : (
-                        <span className="text-[#71717A]">None detected</span>
+                        <span className="text-[#8A8A92]">None detected</span>
                       )}
                     </div>
                   </div>

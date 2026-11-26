@@ -23,7 +23,7 @@ const SLIDE_PREVIEWS: Record<
     metric: "120 Trees",
     metricLabel: "Random Forest estimators · 5 readiness axes",
     points: [
-      "Calibrated probability benchmark against 972 campus records",
+      "Calibrated probability benchmark against a 972-record synthetic placement dataset, augmented from a 215-record public baseline",
       "5-axis competency telemetry across academics, DSA, projects & STAR",
       "Reference cutoff benchmarks across Google, Razorpay, Amazon & TCS Digital",
     ],
@@ -59,12 +59,12 @@ const SLIDE_PREVIEWS: Record<
     ],
   },
   analytics: {
-    eyebrow: "Slide 05 · Institutional Telemetry",
+    eyebrow: "Slide 05 · Synthetic Dataset Analytics",
     metric: "972 Rows",
-    metricLabel: "Verified cohort & NAAC 5.2 tracker",
+    metricLabel: "Synthetic dataset (215-record public baseline) & exports",
     points: [
-      "Slice placement conversion across graduating year, branch, domain & CGPA band",
-      "TPO compliance export mode with CSV/PDF accreditation tables",
+      "Slice placement conversion across dataset year, branch, domain & CGPA band",
+      "Report format view with CSV/PDF export tables",
       "Interactive 6-week placement sprint roadmap persisted per candidate",
     ],
   },
@@ -73,7 +73,7 @@ const SLIDE_PREVIEWS: Record<
     metric: "Live Sync",
     metricLabel: "Real-time prediction recalibration",
     points: [
-      "Edit verified CGPA, conversion scale, active backlogs, internships & links",
+      "Edit your CGPA, conversion scale, active backlogs, internships & links",
       "Role tracks mapped across Software, AI/ML, Embedded VLSI, EV, Robotics & Civil",
       "Saving immediately re-computes offer odds across every workspace slide",
     ],
@@ -188,23 +188,24 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
           >
             <div className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.1] bg-[#0D0D11]/90 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-[#D4D4D8]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
-              <span>Pathfinder 2.0 · Campus Placement Intelligence</span>
+              <span>Pathfinder 2.0 · Placement Intelligence Workbench</span>
             </div>
 
             <h1
               className="mt-7 text-4xl font-semibold leading-[1.04] tracking-[-0.04em] text-[#FAFAFA] sm:text-6xl lg:text-[64px]"
               style={{ textWrap: "balance" }}
             >
-              Placement readiness, engineered from verified signals.
+              Placement readiness, engineered from structured signals.
             </h1>
 
             <p
               className="mt-6 max-w-2xl text-base leading-[1.7] text-[#A1A1AA] sm:text-lg"
               style={{ textWrap: "pretty" }}
             >
-              Calibrate your offer probability against 972 verified campus drives, write and execute
-              solutions across 11 compiler runtimes, and defend system trade-offs aloud with DAS —
-              your live 3D holographic voice mentor.
+              Estimate your offer probability against a 972-record synthetic placement dataset,
+              augmented from a 215-record public baseline, write and execute solutions across 11
+              compiler runtimes, and defend system trade-offs aloud with DAS — your live 3D
+              holographic voice mentor.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-4">
@@ -243,7 +244,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 pathfinder-client-fzom.vercel.app
               </div>
 
-              <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
+              <span className="font-mono text-[11px] text-[#8A8A92] tabular-nums">
                 00:55 · 1080p · Puck Voice
               </span>
             </div>
@@ -280,7 +281,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
         {/* Asymmetric 12-Column Linear Bento Grid */}
         <section id="capabilities" className="border-t border-white/[0.07] py-24 sm:py-32">
           <div className="mb-12 max-w-2xl">
-            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#71717A]">
+            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#8A8A92]">
               Core Architecture
             </span>
             <h2
@@ -290,7 +291,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               Built like an internal engineering workbench, not a static form.
             </h2>
             <p className="mt-3 text-sm leading-[1.7] text-[#A1A1AA] sm:text-base">
-              Every module shares one verified candidate state so code runs, resume audits, and
+              Every module shares one live candidate state so code runs, resume audits, and
               hiring predictions stay continuously synchronized.
             </p>
           </div>
@@ -300,16 +301,17 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             <SpotlightSurface className="rounded-2xl p-8 sm:p-10 lg:col-span-7">
               <div className="flex h-full flex-col justify-between gap-8">
                 <div>
-                  <div className="flex items-center justify-between font-mono text-[11px] text-[#71717A]">
+                  <div className="flex items-center justify-between font-mono text-[11px] text-[#8A8A92]">
                     <span>01 · PLACEMENT PROBABILITY ENGINE</span>
                     <span>120 ESTIMATORS</span>
                   </div>
                   <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
-                    Random Forest prediction across real cutoffs
+                    Random Forest prediction on synthetic placement data
                   </h3>
                   <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-[#A1A1AA]">
                     Evaluates CGPA multipliers, branch history, standing backlogs, internships, and
-                    DSA readiness against 972 audited placement outcomes.
+                    DSA readiness against a 972-record synthetic placement dataset, augmented from a
+                    215-record public baseline.
                   </p>
                 </div>
 
@@ -317,7 +319,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 <div className="pf-subpanel rounded-xl p-5 sm:p-6">
                   <div className="flex items-baseline justify-between gap-4 border-b border-white/[0.06] pb-4">
                     <div>
-                      <span className="font-mono text-[10px] uppercase tracking-wider text-[#71717A]">
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-[#8A8A92]">
                         Sample Profile Preview · Illustrative
                       </span>
                       <div className="mt-1 font-mono text-3xl font-semibold text-[#FAFAFA] tabular-nums">
@@ -356,7 +358,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             <SpotlightSurface className="rounded-2xl p-8 sm:p-10 lg:col-span-5">
               <div className="flex h-full flex-col justify-between gap-8">
                 <div>
-                  <div className="flex items-center justify-between font-mono text-[11px] text-[#71717A]">
+                  <div className="flex items-center justify-between font-mono text-[11px] text-[#8A8A92]">
                     <span>02 · LIVE 3D VOICE MENTOR</span>
                     <span>EN / TE / HI</span>
                   </div>
@@ -376,7 +378,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                       <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
                       DAS Audio Stream
                     </span>
-                    <span className="font-mono text-[10px] text-[#71717A]">24kHz PCM</span>
+                    <span className="font-mono text-[10px] text-[#8A8A92]">24kHz PCM</span>
                   </div>
                   <div className="my-6 flex h-16 items-end justify-between gap-2 px-1">
                     {VOICE_BAR_HEIGHTS.map((h, i) => (
@@ -398,7 +400,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             <SpotlightSurface className="rounded-2xl p-8 sm:p-10 lg:col-span-5">
               <div className="flex h-full flex-col justify-between gap-8">
                 <div>
-                  <div className="flex items-center justify-between font-mono text-[11px] text-[#71717A]">
+                  <div className="flex items-center justify-between font-mono text-[11px] text-[#8A8A92]">
                     <span>03 · JD &amp; ATS DIFF LAB</span>
                     <span>GOOGLE X-Y-Z</span>
                   </div>
@@ -413,11 +415,11 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
 
                 {/* ATS Before / After Illustrative Preview */}
                 <div className="pf-subpanel space-y-3 rounded-xl p-5 sm:p-6">
-                  <span className="block font-mono text-[10px] uppercase tracking-wider text-[#71717A]">
+                  <span className="block font-mono text-[10px] uppercase tracking-wider text-[#8A8A92]">
                     Illustrative ATS Diff Preview
                   </span>
                   <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-black/40 px-3.5 py-2.5">
-                    <span className="font-mono text-xs text-[#71717A]">Sample baseline</span>
+                    <span className="font-mono text-xs text-[#8A8A92]">Sample baseline</span>
                     <span className="font-mono text-sm font-semibold text-[#A1A1AA] tabular-nums">
                       54%
                     </span>
@@ -447,9 +449,9 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             <SpotlightSurface className="rounded-2xl p-8 sm:p-10 lg:col-span-7">
               <div className="flex h-full flex-col justify-between gap-8">
                 <div>
-                  <div className="flex items-center justify-between font-mono text-[11px] text-[#71717A]">
+                  <div className="flex items-center justify-between font-mono text-[11px] text-[#8A8A92]">
                     <span>04 · 11-LANGUAGE COMPILER ARENA</span>
-                    <span>EXECUTION VERIFIED</span>
+                    <span>SANDBOX EXECUTION</span>
                   </div>
                   <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
                     Real code execution paired with oral defense
@@ -483,7 +485,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
         <section id="workspaces" className="border-t border-white/[0.07] py-24 sm:py-32">
           <div className="mb-10 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#71717A]">
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#8A8A92]">
                 6 Integrated Slides
               </span>
               <h2
@@ -512,7 +514,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                     : "border-white/[0.07] bg-[#0B0B0E] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
                     }`}
                 >
-                  <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
+                  <span className="font-mono text-[11px] text-[#8A8A92] tabular-nums">
                     {slide.index}
                   </span>
                   <span className="mt-1.5 text-xs font-semibold sm:text-[13px]">
@@ -541,7 +543,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                       key={pt}
                       className="flex items-start gap-3 text-xs leading-relaxed text-[#E4E4E7] sm:text-sm"
                     >
-                      <span className="mt-0.5 font-mono text-[11px] text-[#71717A] tabular-nums">
+                      <span className="mt-0.5 font-mono text-[11px] text-[#8A8A92] tabular-nums">
                         {String(idx + 1).padStart(2, "0")}
                       </span>
                       <span>{pt}</span>
@@ -552,7 +554,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
 
               <div className="lg:col-span-5">
                 <div className="pf-subpanel rounded-2xl p-7 sm:p-8">
-                  <span className="font-mono text-[11px] uppercase tracking-wider text-[#71717A]">
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-[#8A8A92]">
                     Workspace Capability
                   </span>
                   <div className="mt-3 font-mono text-4xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-5xl">
@@ -567,19 +569,21 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
           </SpotlightSurface>
         </section>
 
-        {/* Verified Benchmarks Strip */}
+        {/* Dataset & Platform Benchmarks Strip */}
         <section id="benchmarks" className="border-t border-white/[0.07] py-20 sm:py-24">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <SpotlightSurface className="rounded-2xl p-7">
-              <span className="font-mono text-[11px] text-[#71717A]">01 · DATASET</span>
+              <span className="font-mono text-[11px] text-[#8A8A92]">01 · DATASET</span>
               <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
                 <AnimatedMetric value={972} />
               </div>
-              <p className="mt-2 text-sm text-[#A1A1AA]">Verified campus offers calibrated</p>
+              <p className="mt-2 text-sm text-[#A1A1AA]">
+                Synthetic placement records (215-record public baseline)
+              </p>
             </SpotlightSurface>
 
             <SpotlightSurface className="rounded-2xl p-7">
-              <span className="font-mono text-[11px] text-[#71717A]">02 · RUNTIMES</span>
+              <span className="font-mono text-[11px] text-[#8A8A92]">02 · RUNTIMES</span>
               <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
                 <AnimatedMetric value={11} />
               </div>
@@ -587,7 +591,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             </SpotlightSurface>
 
             <SpotlightSurface className="rounded-2xl p-7">
-              <span className="font-mono text-[11px] text-[#71717A]">03 · ARCHITECTURES</span>
+              <span className="font-mono text-[11px] text-[#8A8A92]">03 · ARCHITECTURES</span>
               <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
                 <AnimatedMetric value={28} />
               </div>
@@ -595,7 +599,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             </SpotlightSurface>
 
             <SpotlightSurface className="rounded-2xl p-7">
-              <span className="font-mono text-[11px] text-[#71717A]">04 · SPRINT CADENCE</span>
+              <span className="font-mono text-[11px] text-[#8A8A92]">04 · SPRINT CADENCE</span>
               <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
                 <AnimatedMetric value={6} suffix=" wk" />
               </div>
@@ -607,13 +611,14 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
 
       {/* Spacious Minimal Footer — Zero Duplicate CTAs */}
       <footer className="border-t border-white/[0.07]">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-14 text-xs text-[#71717A] sm:flex-row sm:px-10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-14 text-xs text-[#8A8A92] sm:flex-row sm:px-10">
           <div className="flex items-center gap-3 text-[#D4D4D8]">
             <PathfinderLogo size={22} variant="monochrome" />
             <span className="font-medium text-[#FAFAFA]">Pathfinder 2.0</span>
           </div>
-          <p className="text-center font-mono text-[11px] text-[#71717A] sm:text-right">
-            Random Forest ML · Live 3D Voice Coach · 11-Language Compiler
+          <p className="text-center font-mono text-[11px] text-[#8A8A92] sm:text-right">
+            Random Forest ML · 972-Record Synthetic Dataset (215-Record Public Baseline) · Live 3D
+            Voice Coach
           </p>
         </div>
       </footer>

@@ -1,11 +1,11 @@
 # Pathfinder Platform Guide & System Knowledge
 
 ## 1. What Pathfinder Is (In 5 Lines)
-1. Pathfinder is an AI-powered campus placement co-pilot designed for undergraduate engineering students.
+1. Pathfinder is an AI-powered placement readiness workbench designed for undergraduate engineering students.
 2. It solves the problem of generic, one-size-fits-all career guidance by evaluating individual academic and technical metrics.
-3. It helps students understand their real placement readiness through transparent machine learning rather than guesswork.
+3. It helps students understand their placement readiness through transparent machine learning rather than guesswork.
 4. It provides structured 6-week learning roadmaps, portfolio project blueprints, and real-time conversational AI coaching.
-5. It is built for students, training & placement officers (TPOs), and mentors aiming for top-tier software and core engineering placements.
+5. It is built for students and mentors preparing for software and core engineering placements.
 
 ---
 
@@ -36,10 +36,10 @@
 - **How a student uses it**: Students filter by domain/difficulty, review system architecture summaries, recommended tech stacks, key features, and defense talking points.
 - **Result they get**: Real, resume-worthy projects that impress technical recruiters instead of generic cloned tutorial apps.
 
-### 6. Cohort Analytics
-- **What it does**: An interactive data explorer displaying campus recruitment distributions across 972 student records, 9 engineering branches, and multiple graduation years.
-- **How a student uses it**: Students and placement coordinators filter by branch, academic year, and status to view placement percentages, average salary packages (LPA), and minimum CGPA cutoffs.
-- **Result they get**: Realistic benchmarks showing where past candidates with similar profiles were placed and at what packages.
+### 6. Placement Dataset Analytics
+- **What it does**: An interactive data explorer displaying distributions across a 972-record synthetic placement dataset, augmented from a 215-record public baseline, across 9 engineering branches and years 2024–2026.
+- **How a student uses it**: Students filter by branch, dataset year, and status to view placement percentages, average salary packages (LPA), and CGPA bands.
+- **Result they get**: Interactive statistical distributions showing how profile factors correlate with placement outcomes in the synthetic dataset.
 
 ### 7. ATS Resume Studio
 - **What it does**: An instant resume analysis tool that inspects resume text for applicant tracking system (ATS) compatibility, strong action verbs, quantifiable metrics, and missing keywords for the student's target role.
@@ -49,7 +49,7 @@
 ### 8. Branches and Courses (Branch Intelligence)
 - **What it does**: A comparative intelligence module benchmarking placement rates, core hiring companies, and top technical roles across 9 engineering branches (CSE, IT, AIML, CSD, ECE, EEE, Mech, Civil, Cyber Security).
 - **How a student uses it**: Students switch between branch tabs to compare average packages, placed percentages, and industry recruiting sectors.
-- **Result they get**: Contextual clarity on how their specific discipline fares in current campus drives.
+- **Result they get**: Contextual clarity on how their specific discipline compares across dataset benchmarks.
 
 ### 9. Project Defense (Viva Simulator)
 - **What it does**: Simulates a high-pressure technical interview / viva defense for candidate portfolio projects.
@@ -66,7 +66,7 @@
 ## 3. How the AI Works (Simple & Transparent)
 
 ### Random Forest Machine Learning (Readiness Score)
-- **Algorithm**: A calibrated `RandomForestClassifier` trained with 120 decision trees on placement dataset records.
+- **Algorithm**: A calibrated `RandomForestClassifier` trained with 120 decision trees (88% cross-validation accuracy on the synthetic dataset) on a 972-record synthetic placement dataset, augmented from a 215-record public baseline.
 - **Inputs (5 Features)**:
   1. `cgpa`: Academic performance on a 10.0 scale.
   2. `backlogs`: Count of active uncleared academic backlogs.
@@ -74,8 +74,8 @@
   4. `communication_score`: Rated on a 1.0 - 10.0 scale.
   5. `coding_score`: Rated on a 1.0 - 10.0 scale.
 - **Output**: A calibrated probability percentage from 0% to 100%, candidate categorization (e.g., "Strong Candidate Profile", "Solid Foundation", "Needs Focus & Acceleration"), and prioritized strengths/weaknesses.
-- **What the score means**: It indicates the statistical likelihood of placement under historical campus recruitment cutoffs.
-- **Its limits**: It is a mathematical estimate based on historical patterns; it cannot account for real-time interview day nerves, company hiring freezes, or niche interpersonal fit.
+- **What the score means**: It indicates a statistical readiness estimate derived from the synthetic dataset.
+- **Its limits**: It is a mathematical estimate based on synthetic training patterns; it cannot account for real-time interview day nerves, company hiring freezes, or niche interpersonal fit.
 
 ### Gemini AI Coach (Conversational Mentor)
 - Powered by Google Gemini (`gemini-2.0-flash` / `gemini-2.5-flash`), with automated fallback to OpenRouter when needed.
@@ -115,9 +115,9 @@
 ---
 
 ## 5. Honest Data Disclosure
-- **Public Baseline Dataset**: 215 student records originating from the public `Placement_Data_Full_Class.csv` (historical campus recruitment records including degree stream, academic percentages, employability test scores, and placement outcomes).
-- **Augmented Cohort Dataset**: 972 cohort records mapped across 9 engineering disciplines (CSE, IT, AIML, CSD, ECE, EEE, Mech, Civil, Cyber Security) for batches 2024–2026, synthesized to demonstrate institutional multi-year analytics and department-specific benchmarks.
-- **Estimate Disclaimer**: All predictions, readiness percentages, and salary tier forecasts are statistical estimations for self-improvement and preparation, not legal or institutional guarantees of employment.
+- **Public Baseline Dataset**: 215 student records originating from the public baseline `Placement_Data_Full_Class.csv` (source URL & license: TODO).
+- **Synthetic Augmented Dataset**: 972-record synthetic placement dataset, augmented from the 215-record public baseline (`Placement_Data_Full_Class.csv`), mapped across 9 engineering disciplines (CSE, IT, AIML, CSD, ECE, EEE, Mech, Civil, Cyber Security) for 2024–2026 (324 rows per year) to demonstrate multi-year analytics and ML pipelines — not private institutional records.
+- **Estimate Disclaimer**: All predictions, readiness percentages, and salary tier forecasts are statistical estimations for self-improvement and preparation, not guarantees of employment.
 
 ---
 
@@ -139,7 +139,7 @@
 **Answer**: It feeds your 5 key metrics (CGPA, backlogs, internships, coding, communication) through 120 decision trees trained on student placement records to compute the probability of clearing campus recruitment.
 
 ### Q3: Where does the student data come from?
-**Answer**: The baseline data comes from a verified public campus placement dataset (215 records) augmented into a 972-student multi-year cohort (2024–2026) across 9 branches to model realistic campus trends.
+**Answer**: Pathfinder uses a 972-record synthetic placement dataset, augmented from the 215-record public baseline (`Placement_Data_Full_Class.csv`) across 9 engineering branches (2024–2026), to demonstrate the ML and analytics pipeline — not private institutional data.
 
 ### Q4: Does the AI Coach have access to my profile without me repeating it?
 **Answer**: Yes. When you chat with the coach, the backend automatically provides your active profile (branch, CGPA, target role, readiness score) and current dashboard screen into the model's context.
@@ -148,7 +148,7 @@
 **Answer**: Absolutely. Pathfinder supports 9 branches, offering branch-specific placement analytics and hardware/IoT/embedded project blueprints alongside software architectures.
 
 ### Q6: Can a student manipulate their score by entering false numbers?
-**Answer**: While students can adjust their profile values to simulate scenarios (via the What-If Simulator), official placement drives require institutional grade sheet verification. The score is meant as an honest self-assessment diagnostic.
+**Answer**: While students can adjust their profile values to simulate scenarios (via the What-If Simulator), real hiring processes verify academic transcripts directly. The score is meant as an honest self-assessment diagnostic.
 
 ### Q7: Are the 28 project blueprints just standard tutorial clones?
 **Answer**: No. They are comprehensive production-grade architectures (e.g., distributed asynchronous queues, smart IoT healthcare systems, high-scale industry problem statements) complete with system architecture, edge failure modes, and viva defense questions.
@@ -156,8 +156,8 @@
 ### Q8: Does Pathfinder store or leak student passwords?
 **Answer**: No. Pathfinder uses PBKDF2-SHA256 password hashing, secure JWT tokens, session isolation, and strict OWASP security headers. Passwords are never stored in plain text.
 
-### Q9: Does Pathfinder replace campus placement officers or teachers?
-**Answer**: Not at all. It acts as a co-pilot to assist TPOs and teachers by giving each student 24/7 personalized practice, roadmap clarity, and project mentorship at zero marginal cost.
+### Q9: Does Pathfinder replace human mentors or teachers?
+**Answer**: Not at all. It acts as a practice workbench to assist mentors and teachers by giving each student 24/7 personalized practice, roadmap clarity, and project mentorship at zero marginal cost.
 
 ### Q10: Can I use Pathfinder for free without signing up?
 **Answer**: Yes. Pathfinder features an instant Guest Demo mode and one-click New Student Wizard with no credit card or mandatory OAuth required.
