@@ -405,7 +405,7 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(layoutSrc).toContain("SPEAKING_OFF_DEBOUNCE_MS = 400");
     expect(layoutSrc).toContain("translate-x-0 translate-y-0 scale-100");
     expect(layoutSrc).not.toContain("lg:translate-x-[18%]");
-    expect(layoutSrc).toContain("opacity-45");
+    expect(layoutSrc).toContain("opacity-85");
     expect(homeSrc).toContain("opacity-70");
     expect(homeSrc).toContain("Demo Profile (Sample)");
     expect(homeSrc).toContain("Clear &amp; enter my details");

@@ -1286,7 +1286,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const bgFaceOpacityClass =
     focusMode || isSpeaking
       ? "opacity-100"
-      : "opacity-45";
+      : "opacity-85";
 
   const bgFaceTransformClass = "translate-x-0 translate-y-0 scale-100";
 
