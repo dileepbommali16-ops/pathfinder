@@ -19,6 +19,7 @@ import {
   navigateToBlueprintOnScreen,
 } from "./toolRunner";
 import { API_BASE, getSessionId } from "@/lib/apiClient";
+import { runCodeWithParallelFallback } from "@/lib/compileRace";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
 import {
   getUserRole,
@@ -1045,7 +1046,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     setCompileOutput("⏹ Execution stopped.");
   };
 
-  // Multi-tier live code executor (Backend API -> Piston Runner -> Godbolt Compiler Explorer)
+  // Multi-tier parallel code executor (/api/compile raced against fallback after 4s)
   const runCodeLive = async (
     codeOverride?: string,
     langOverride?: string,
@@ -1068,219 +1069,40 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     const controller = new AbortController();
     runAbortRef.current = controller;
 
-    let cleanCode = targetCode;
-    // For single-file Java compilation, remove 'public' so javac doesn't require matching filename
-    if (targetLang === "java") {
-      cleanCode = cleanCode.replace(/\bpublic\s+class\b/g, "class");
-    }
-
     isRunningCodeRef.current = true;
     setIsRunningCode(true);
     setCompileError("");
     compileOutputRef.current = "Running...";
     setCompileOutput("Running...");
 
-    const createLinkedTimeoutSignal = (parent: AbortSignal, ms: number) => {
-      const ac = new AbortController();
-      if (parent.aborted) {
-        ac.abort();
-        return { signal: ac.signal, cleanup: () => {} };
-      }
-      const onParentAbort = () => ac.abort();
-      parent.addEventListener("abort", onParentAbort, { once: true });
-      const tid = window.setTimeout(() => ac.abort(new DOMException("Timeout", "TimeoutError")), ms);
-      return {
-        signal: ac.signal,
-        cleanup: () => {
-          window.clearTimeout(tid);
-          parent.removeEventListener("abort", onParentAbort);
-        },
-      };
-    };
-
     try {
-      // 1. Primary: Run via our backend /api/compile
-      const primarySig = createLinkedTimeoutSignal(controller.signal, 9500);
-      try {
-        const res = await fetch(`${API_BASE}/api/compile`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: primarySig.signal,
-          body: JSON.stringify({
-            language: targetLang,
-            code: cleanCode,
-            stdin: targetStdin,
-            title: codeTaskRef.current?.title || "Live Program",
-          }),
-        });
+      const res = await runCodeWithParallelFallback({
+        apiBase: API_BASE,
+        language: targetLang,
+        code: targetCode,
+        stdin: targetStdin,
+        title: codeTaskRef.current?.title || "Live Program",
+        signal: controller.signal,
+        fallbackDelayMs: 4000,
+      });
 
-        if (res.ok) {
-          const data = await res.json();
-          const stderrText = String(data.stderr || "");
-          const output =
-            data.output || (stderrText ? `Diagnostics:\n${stderrText}` : "Program executed with no standard output.");
-          compileOutputRef.current = output;
-          setCompileOutput(output);
-          if (data.success === false) {
-            setCompileError(stderrText || String(data.error || output || "Compile or runtime error occurred."));
-          } else {
-            setCompileError("");
-          }
-          return {
-            ok: data.success !== false,
-            output: String(output),
-            stderr: stderrText,
-            engine: String(data.engine || "backend"),
-          };
-        }
-      } catch (primaryErr: any) {
-        if (controller.signal.aborted) {
-          setCompileError("");
-          compileOutputRef.current = "⏹ Execution stopped.";
-          setCompileOutput("⏹ Execution stopped.");
-          return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
-        }
-      } finally {
-        primarySig.cleanup();
+      if (res.stopped) {
+        setCompileError("");
+        compileOutputRef.current = "⏹ Execution stopped.";
+        setCompileOutput("⏹ Execution stopped.");
+        return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
       }
 
-      // 2. Secondary High-Speed Fallback: Piston Sandbox Engine
-      const pistonSig = createLinkedTimeoutSignal(controller.signal, 5500);
-      try {
-        const pistonLangs: Record<string, string> = {
-          c: "c",
-          cpp: "c++",
-          "c++": "c++",
-          python: "python",
-          py: "python",
-          java: "java",
-          javascript: "javascript",
-          js: "javascript",
-          typescript: "typescript",
-          ts: "typescript",
-          rust: "rust",
-          go: "go",
-          csharp: "csharp.net",
-          cs: "csharp.net",
-        };
-        const pLang = pistonLangs[targetLang] || "python";
-        const pRes = await fetch("https://emkc.org/api/v2/piston/execute", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: pistonSig.signal,
-          body: JSON.stringify({
-            language: pLang,
-            version: "*",
-            files: [{ content: cleanCode }],
-            stdin: targetStdin || "",
-          }),
-        });
-        if (pRes.ok) {
-          const pData = await pRes.json();
-          const pOut = (pData.run?.output || pData.run?.stdout || "").trim();
-          const pErr = (pData.run?.stderr || "").trim();
-          if (pOut || pErr) {
-            const outStr = pOut || pErr;
-            compileOutputRef.current = outStr;
-            setCompileOutput(outStr);
-            if (pErr && !pOut) {
-              setCompileError(pErr);
-            } else {
-              setCompileError("");
-            }
-            return { ok: !pErr, output: outStr, stderr: pErr, engine: "piston" };
-          }
-        }
-      } catch (pistonErr: any) {
-        if (controller.signal.aborted) {
-          setCompileError("");
-          compileOutputRef.current = "⏹ Execution stopped.";
-          setCompileOutput("⏹ Execution stopped.");
-          return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
-        }
-      } finally {
-        pistonSig.cleanup();
-      }
+      compileOutputRef.current = res.output;
+      setCompileOutput(res.output);
+      setCompileError(res.error || (!res.ok ? res.stderr || res.output : ""));
 
-      // 3. Tertiary Fallback: Compiler Explorer (Godbolt) Official API
-      const godboltSig = createLinkedTimeoutSignal(controller.signal, 6500);
-      try {
-        const compilerMap: Record<string, { id: string; lang: string; args: string }> = {
-          c: { id: "cg132", lang: "c", args: "-O2" },
-          cpp: { id: "g132", lang: "c++", args: "-O2" },
-          "c++": { id: "g132", lang: "c++", args: "-O2" },
-          python: { id: "python311", lang: "python", args: "" },
-          py: { id: "python311", lang: "python", args: "" },
-          java: { id: "java2100", lang: "java", args: "" },
-          rust: { id: "r1750", lang: "rust", args: "-O2" },
-          go: { id: "g121", lang: "go", args: "" },
-          typescript: { id: "typescript54", lang: "typescript", args: "" },
-          ts: { id: "typescript54", lang: "typescript", args: "" },
-          javascript: { id: "v8_12", lang: "javascript", args: "" },
-          js: { id: "v8_12", lang: "javascript", args: "" },
-        };
-
-        const comp = compilerMap[targetLang] || { id: "cg132", lang: "c", args: "-O2" };
-        const fallbackRes = await fetch(`https://godbolt.org/api/compiler/${comp.id}/compile`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          signal: godboltSig.signal,
-          body: JSON.stringify({
-            source: cleanCode,
-            compiler: comp.id,
-            options: {
-              userArguments: comp.args,
-              executeParameters: { args: [], stdin: targetStdin || "" },
-              compilerOptions: { executorRequest: true },
-              filters: { binary: true, execute: true },
-            },
-            lang: comp.lang,
-          }),
-        });
-
-        if (fallbackRes.ok) {
-          const fbData = await fallbackRes.json();
-          const stdout = (fbData.stdout || []).map((i: any) => i.text || "").join("\n").trim();
-          const stderr = (fbData.stderr || []).map((i: any) => i.text || "").join("\n").trim();
-          const buildErr = (fbData.buildResult?.stderr || []).map((i: any) => i.text || "").join("\n").trim();
-          const finalOutput = stdout || stderr || buildErr || "Program executed successfully (no stdout).";
-          compileOutputRef.current = finalOutput;
-          setCompileOutput(finalOutput);
-          if (!stdout && (stderr || buildErr)) {
-            setCompileError(stderr || buildErr);
-          } else {
-            setCompileError("");
-          }
-          return {
-            ok: !(stderr || buildErr),
-            output: finalOutput,
-            stderr: stderr || buildErr,
-            engine: `godbolt-${comp.id}`,
-          };
-        }
-        const errMsg = `Execution failed (HTTP ${fallbackRes.status}). Please try Run Code again.`;
-        compileOutputRef.current = errMsg;
-        setCompileOutput(errMsg);
-        setCompileError(errMsg);
-        return { ok: false, output: errMsg, stderr: errMsg, engine: "error" };
-      } catch (fbErr: any) {
-        if (controller.signal.aborted) {
-          setCompileError("");
-          compileOutputRef.current = "⏹ Execution stopped.";
-          setCompileOutput("⏹ Execution stopped.");
-          return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
-        }
-        const isTimeout = fbErr?.name === "TimeoutError" || /timeout/i.test(String(fbErr));
-        const errMsg = isTimeout
-          ? "Execution timed out. Please try Run Code again."
-          : `Execution error: ${fbErr?.message || String(fbErr)}`;
-        compileOutputRef.current = errMsg;
-        setCompileOutput(errMsg);
-        setCompileError(errMsg);
-        return { ok: false, output: errMsg, stderr: errMsg, engine: "error" };
-      } finally {
-        godboltSig.cleanup();
-      }
+      return {
+        ok: res.ok,
+        output: res.output,
+        stderr: res.stderr,
+        engine: res.engine,
+      };
     } finally {
       if (runAbortRef.current === controller) {
         runAbortRef.current = null;
