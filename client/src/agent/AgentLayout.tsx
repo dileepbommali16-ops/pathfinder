@@ -1458,9 +1458,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           {/* DAS Live Multi-Language Code & Compiler Studio Drawer */}
           {codeTask && (
             <div
-              className={`fixed top-16 left-2 right-2 sm:left-auto sm:top-20 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#09090B]/95 backdrop-blur-md border border-white/[0.12] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3 ${activeLayout === "docked" && !hudCollapsed && !focusMode
+              className={`fixed top-[128px] left-2 right-2 sm:left-auto sm:top-[132px] z-50 sm:w-[min(450px,40vw)] max-w-md max-h-[calc(100vh-196px)] overflow-y-auto bg-[#09090B]/95 backdrop-blur-md border border-white/[0.12] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3 ${activeLayout === "docked" && !hudCollapsed && !focusMode
                 ? "sm:right-6 xl:right-[384px] 2xl:right-[424px]"
-                : "sm:right-6"
+                : "sm:right-4"
                 }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-2.5">
