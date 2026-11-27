@@ -37,10 +37,23 @@
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/og-image.png" />
+    <link rel="dns-prefetch" href="https://pathfinder-backend-sg.onrender.com" />
+    <link rel="preconnect" href="https://pathfinder-backend-sg.onrender.com" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <script>
+      // Pre-warm the cloud backend immediately as the landing HTML loads
+      if (typeof window !== "undefined") {
+        try {
+          var _pfHost = window.location.hostname;
+          var _pfApiBase = (_pfHost.indexOf("onrender.com") !== -1 || _pfHost === "localhost" || _pfHost === "127.0.0.1")
+            ? window.location.origin
+            : "https://pathfinder-backend-sg.onrender.com";
+          window.__PF_LANDING_HEALTH_PING_AT__ = Date.now();
+          fetch(_pfApiBase + "/api/health", { cache: "no-store", keepalive: true }).catch(function () {});
+        } catch {}
+      }
       // Completely disable and remove Vercel Toolbar, Live Feedback, and INP debug overlay
       window.__VERCEL_TOOLBAR_HIDDEN__ = true;
       try {

@@ -102,7 +102,15 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
 
   // Wake the cloud backend early while the visitor explores the landing page
   useEffect(() => {
-    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => { });
+    const pingAt =
+      typeof window !== "undefined" ? Number((window as any).__PF_LANDING_HEALTH_PING_AT__ || 0) : 0;
+    if (!pingAt || Date.now() - pingAt > 10000) {
+      fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => { });
+    }
+    const followUpId = window.setTimeout(() => {
+      fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => { });
+    }, 25000);
+    return () => window.clearTimeout(followUpId);
   }, []);
 
   useEffect(() => {
