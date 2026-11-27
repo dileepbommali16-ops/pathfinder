@@ -273,7 +273,7 @@ export const MyProgressJourney: React.FC<MyProgressJourneyProps> = ({
               caption={
                 stats.readinessDelta !== null
                   ? `${stats.readinessDelta >= 0 ? "+" : ""}${stats.readinessDelta.toFixed(1)} pts since first score`
-                  : "First real score recorded"
+                  : "First score recorded"
               }
               emptyCaption="No real score yet"
             />

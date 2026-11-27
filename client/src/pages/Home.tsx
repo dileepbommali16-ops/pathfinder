@@ -74,6 +74,56 @@ export interface HomeProps {
 
 const PREDICTION_PENDING_LABEL = "Calculating ML score...";
 const PREDICTION_WAKING_LABEL = "ML server waking up";
+const DEMO_SAMPLE_LOADING_LABEL = "Sample score, live model loading";
+const DEMO_SAMPLE_PREDICTION: {
+  chance: number;
+  label: string;
+  tone: "strong" | "steady" | "focus";
+  strengths: string[];
+  priorities: string[];
+  breakdown: Record<string, number>;
+} = {
+  chance: 67.3,
+  label: DEMO_SAMPLE_LOADING_LABEL,
+  tone: "steady",
+  strengths: [
+    "Clears Standard Campus Cutoffs (CGPA 8.1/10 for Tier-2 & most product drives)",
+    "Clean Backlog Status (0 Active Backlogs)",
+    "Baseline Industry Exposure (1 internship recorded)",
+  ],
+  priorities: [
+    "CGPA 8.1 is borderline for strict 8.0+ Dream/Tier-1 shortlists — offset this with verified GitHub repos and DSA proof.",
+    "Deepen production impact from your internship with measurable latency/scale metrics in STAR & ATS bullets.",
+    "Unverified High Coding Claim (8.0/10): Link a live LeetCode/CodeChef profile and prove problem volume under timed conditions.",
+    "Missing GitHub Profile Link — Senior Hiring Managers audit live commits, tests, and README quality before interviews.",
+    "Upload and audit your PDF resume in Tab 5 (ATS Resume Studio) to verify keyword coverage & project rigor.",
+  ],
+  breakdown: {
+    academics: 83.0,
+    skills: 70.6,
+    projects: 54.0,
+    internships: 60.0,
+    coding: 70.6,
+    coding_dsa: 70.6,
+    communication: 70.4,
+    experience: 60.0,
+    eligibility: 95.0,
+  },
+};
+
+function isDemoSampleProfile(p: StudentProfileState | null | undefined): boolean {
+  if (!p) return false;
+  return (
+    (p.email || "").toLowerCase() === "guest@pathfinder.ai" &&
+    !isProfileUnconfigured(p) &&
+    Number(p.cgpa) === DEMO_GUEST_PROFILE.cgpa &&
+    p.branch === DEMO_GUEST_PROFILE.branch &&
+    Number(p.backlogs) === DEMO_GUEST_PROFILE.backlogs &&
+    Number(p.internships) === DEMO_GUEST_PROFILE.internships &&
+    Number(p.coding) === DEMO_GUEST_PROFILE.coding &&
+    Number(p.communication) === DEMO_GUEST_PROFILE.communication
+  );
+}
 
 export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
   const [activeTab, setActiveTab] = useState<TabId>(() => {
@@ -842,16 +892,18 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
   }>(() =>
     isProfileUnconfigured(profile)
       ? UNCONFIGURED_PREDICTION
-      : {
-        chance: null,
-        label: PREDICTION_PENDING_LABEL,
-        tone: "focus",
-        strengths: [],
-        priorities: [
-          "Fetching your real Random Forest placement score from the Pathfinder backend...",
-        ],
-        breakdown: {},
-      }
+      : isDemoSampleProfile(profile)
+        ? DEMO_SAMPLE_PREDICTION
+        : {
+          chance: null,
+          label: PREDICTION_PENDING_LABEL,
+          tone: "focus",
+          strengths: [],
+          priorities: [
+            "Fetching your real Random Forest placement score from the Pathfinder backend...",
+          ],
+          breakdown: {},
+        }
   );
   const [isCalculating, setIsCalculating] = useState(false);
   const predictionRetryRef = useRef<number>(0);
@@ -1093,6 +1145,9 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       } catch { }
     }
     setIsAuthenticated(true);
+    if (isDemoSampleProfile(immediateProfile)) {
+      setPrediction(DEMO_SAMPLE_PREDICTION);
+    }
     void fetchPrediction(immediateProfile);
 
     // 3. Synchronize Bearer token + cloud profile in the background without blocking dashboard UI entry
@@ -1415,23 +1470,27 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     }
   };
 
-  // Never invent a local percentage. If the real model is unreachable (Render cold start),
-  // show an honest waiting state and retry the real /api/predict call with backoff.
+  // Never invent a local percentage for user profiles. If the Guest demo profile is still
+  // waiting for the waking Render backend, keep its cached sample prediction visible while retrying.
   const fallbackPredict = (
     p: StudentProfileState,
     _atsScore?: number | null,
     _githubScore?: number | null
   ) => {
-    setPrediction({
-      chance: null,
-      label: PREDICTION_WAKING_LABEL,
-      tone: "focus",
-      strengths: [],
-      priorities: [
-        "The Random Forest prediction server is starting up. Your real ML score will appear automatically — no estimated number is shown in the meantime.",
-      ],
-      breakdown: {},
-    });
+    if (isDemoSampleProfile(p)) {
+      setPrediction(DEMO_SAMPLE_PREDICTION);
+    } else {
+      setPrediction({
+        chance: null,
+        label: PREDICTION_WAKING_LABEL,
+        tone: "focus",
+        strengths: [],
+        priorities: [
+          "The Random Forest prediction server is starting up. Your real ML score will appear automatically — no estimated number is shown in the meantime.",
+        ],
+        breakdown: {},
+      });
+    }
     if (predictionRetryRef.current < 4) {
       predictionRetryRef.current += 1;
       window.setTimeout(() => {
@@ -2140,6 +2199,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       localStorage.setItem("pathfinder_profile_draft", JSON.stringify(sampleGuest));
     } catch { }
     setIsDemoProfile(true);
+    setPrediction(DEMO_SAMPLE_PREDICTION);
     void fetchPrediction(sampleGuest);
     toast.success("Loaded Demo Profile (Sample).");
   };

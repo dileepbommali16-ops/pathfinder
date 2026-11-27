@@ -3,6 +3,7 @@ import { StudentProfileState } from "@/types/profile";
 import { SUPPORTED_LANGUAGES, normalizeLanguage } from "@/agent/codingStudioController";
 import { audioEngine, startListening } from "@/agent/audioIO";
 import { recordProgressEvent } from "@/lib/progressTracker";
+import { runCodeWithParallelFallback } from "@/lib/compileRace";
 import { toast } from "sonner";
 import { Loader2, AlertCircle } from "lucide-react";
 
@@ -643,18 +644,20 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 65000);
     try {
-      const resp = await fetch(`${apiBase}/api/compile`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await runCodeWithParallelFallback({
+        apiBase,
+        language,
+        code,
+        stdin: "",
+        title: activeChallenge.title,
         signal: controller.signal,
-        body: JSON.stringify({ language, code }),
+        fallbackDelayMs: 4000,
       });
-      const data: any = await resp.json().catch(() => ({}));
-      const out = String(data.output || data.stderr || data.error || "").trim();
-      const compileOk = Boolean(resp.ok && data.success);
+      const out = String(res.output || res.stderr || res.error || "").trim();
+      const compileOk = Boolean(res.ok);
 
       if (!compileOk) {
-        const errMsg = out || String(data.detail || "") || `Compiler request failed (HTTP ${resp.status}).`;
+        const errMsg = out || res.error || "Compile or runtime error occurred.";
         setCompilerOutput(errMsg);
         setRunStatus("error");
         return { compileOk: false, outputMatched: false, out: errMsg, isBlankOrStarter: false };

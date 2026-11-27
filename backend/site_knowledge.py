@@ -11,7 +11,7 @@ PLATFORM_ARCHITECTURE = {
     "backend": "FastAPI, Python 3.11, Uvicorn, Scikit-Learn, Pandas",
     "database": "Persistent SQLite in WAL mode (data/pathfinder_production.db) with automatic JSON migrations",
     "ai_engine": "Google Gemini API (gemini-2.0-flash, gemini-2.5-flash, gemini-3.8-flash, gemini-3.5-flash-lite) with multi-turn history & repeat protection",
-    "ml_engine": "RandomForestClassifier (120 estimators, 88% cross-validation accuracy on the synthetic dataset) trained on a 972-record synthetic placement dataset, generated to demonstrate the pipeline",
+    "ml_engine": "RandomForestClassifier (120 estimators, 5 numeric features: cgpa, backlogs, internships, communication_score, coding_score; 88% cross-validation accuracy on the synthetic dataset) trained on a 972-record synthetic placement dataset, generated to demonstrate the pipeline, blended 35/65 with a Senior Hiring Manager evidence rubric (projects_count, skills, github_url, leetcode_url, certifications, ats_score, github_verified_score, tenth_percentage, twelfth_percentage, target_role)",
     "authentication": "Google OAuth 2.0, GitHub OAuth 2.0 with cryptographic state validation, signed JWT sessions, and guest instant access",
     "hosting": "Vercel (Frontend Client) + Render (Backend API Web Service)",
     "security": "Sliding-window rate limiter (60 req/min), daily token budget manager (200 req/day), HTML/JS XSS sanitization, SameSite secure cookies"
@@ -27,7 +27,7 @@ TABS_KNOWLEDGE: Dict[str, Dict[str, Any]] = {
             "Next Immediate Actions Widget: High-impact milestones to boost probability within 7-14 days.",
             "What-If Scenario Simulator: Interactive sandbox to preview how raising CGPA, coding, or adding an internship affects probability."
         ],
-        "data_sources": "Real-time inference from RandomForestClassifier (88% cross-validation accuracy on the synthetic dataset) trained on a 972-record synthetic placement dataset, generated to demonstrate the pipeline. Input values come from the user's active Student Profile.",
+        "data_sources": "Real-time inference blending a 5-feature RandomForestClassifier (35% weight: cgpa, backlogs, internships, communication_score, coding_score; 88% cross-validation accuracy on the 972-record synthetic placement dataset, generated to demonstrate the pipeline) with a Senior Hiring Manager evidence rubric (65% weight: projects_count, skills, github_url, leetcode_url, certifications, ats_score, github_verified_score, tenth_percentage, twelfth_percentage, target_role). Input values come from the user's active Student Profile.",
         "how_to_use": "Review your overall readiness gauge. Click 'What-If Simulator' or 'Readiness Command' to see which exact skill lever provides the highest score delta.",
         "limitations": "The percentage score is a statistical probability estimation based on historical placement distributions, not a contractual employment guarantee."
     },
