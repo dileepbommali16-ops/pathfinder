@@ -2,7 +2,7 @@
  * DAS AI - Unified RAG Semantic Search & Fast DAS Intelligence Engine
  *
  * TASK 1 (RAG Refactor):
- * - Indexes all 28 Flagship Project Blueprints + 972-Record Synthetic Placement Dataset (augmented from a 215-record public baseline)
+ * - Indexes all 28 Flagship Project Blueprints + 972-Record Synthetic Placement Dataset (generated to demonstrate the pipeline)
  *   into 384-dimensional L2-normalized semantic vectors compatible with Supabase pgvector
  *   (`pathfinder_knowledge_embeddings` / `match_pathfinder_knowledge` RPC).
  * - Performs semantic search FIRST and injects ONLY the Top 3 results into the Gemini Live prompt.
@@ -194,7 +194,7 @@ export function estimatePromptTokens(text = "") {
 }
 
 /**
- * 972-record synthetic placement dataset, augmented from a 215-record public baseline (2024–2026), aggregated into
+ * 972-record synthetic placement dataset, generated to demonstrate the pipeline (2024–2026), aggregated into
  * high-density semantic placement chunks across all branches & skill categories.
  */
 const PLACEMENT_COHORT_VECTORS_RAW = [
@@ -205,7 +205,7 @@ const PLACEMENT_COHORT_VECTORS_RAW = [
     branch: "CSE / AIML",
     skill_category: "AIML & Python",
     content:
-      "[Synthetic Dataset Slice (216/972 records; 108 CSE + 108 AIML)]: CSE 63.0% placed (avg 22.4 LPA, max 44.0 LPA) & AIML 56.5% placed (avg 21.0 LPA, max 44.6 LPA) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Reference focus: 0 backlogs, 7.5+ CGPA, 1+ RAG/System Design project.",
+      "[Synthetic Dataset Slice (216/972 records; 108 CSE + 108 AIML)]: CSE 63.0% placed (avg 22.4 LPA, max 44.0 LPA) & AIML 56.5% placed (avg 21.0 LPA, max 44.6 LPA) in the 972-record synthetic placement dataset, generated to demonstrate the pipeline. Reference focus: 0 backlogs, 7.5+ CGPA, 1+ RAG/System Design project.",
   },
   {
     id: "placement_cohort_cse_java_sde",
@@ -214,7 +214,7 @@ const PLACEMENT_COHORT_VECTORS_RAW = [
     branch: "CSE / IT",
     skill_category: "Java & Backend Systems",
     content:
-      "[Synthetic Dataset Slice (216/972 records; 108 CSE + 108 IT)]: CSE 63.0% placed (avg 22.4 LPA, max 44.0 LPA) & IT 50.0% placed (avg 20.0 LPA, max 31.4 LPA) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Reference focus: Blind 75 DSA + Distributed Systems / Microservices.",
+      "[Synthetic Dataset Slice (216/972 records; 108 CSE + 108 IT)]: CSE 63.0% placed (avg 22.4 LPA, max 44.0 LPA) & IT 50.0% placed (avg 20.0 LPA, max 31.4 LPA) in the 972-record synthetic placement dataset, generated to demonstrate the pipeline. Reference focus: Blind 75 DSA + Distributed Systems / Microservices.",
   },
   {
     id: "placement_cohort_csm_csd_data",
@@ -223,7 +223,7 @@ const PLACEMENT_COHORT_VECTORS_RAW = [
     branch: "CSM / CSD",
     skill_category: "SQL & Data Visualization",
     content:
-      "[Synthetic Dataset Slice (216/972 records; 108 CSM + 108 CSD)]: CSM 55.6% placed (avg 21.4 LPA, max 44.9 LPA — overall dataset peak) & CSD 43.5% placed (avg 22.4 LPA, max 40.9 LPA) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Top skills: SQL window functions, Kafka stream pipelines, DuckDB, Python.",
+      "[Synthetic Dataset Slice (216/972 records; 108 CSM + 108 CSD)]: CSM 55.6% placed (avg 21.4 LPA, max 44.9 LPA — overall dataset peak) & CSD 43.5% placed (avg 22.4 LPA, max 40.9 LPA) in the 972-record synthetic placement dataset, generated to demonstrate the pipeline. Top skills: SQL window functions, Kafka stream pipelines, DuckDB, Python.",
   },
   {
     id: "placement_cohort_ece_embedded",
@@ -232,7 +232,7 @@ const PLACEMENT_COHORT_VECTORS_RAW = [
     branch: "ECE",
     skill_category: "Embedded C, VLSI & IoT",
     content:
-      "[Synthetic Dataset Slice (108/972 records) - ECE]: 44.4% placed (48/108), Avg Placed Package 9.5 LPA, Highest Package 15.8 LPA in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Hybrid ECE + Python candidates target both Core & Software roles.",
+      "[Synthetic Dataset Slice (108/972 records) - ECE]: 44.4% placed (48/108), Avg Placed Package 9.5 LPA, Highest Package 15.8 LPA in the 972-record synthetic placement dataset, generated to demonstrate the pipeline. Hybrid ECE + Python candidates target both Core & Software roles.",
   },
   {
     id: "placement_cohort_eee_smartgrid",
@@ -241,7 +241,7 @@ const PLACEMENT_COHORT_VECTORS_RAW = [
     branch: "EEE",
     skill_category: "Smart Grid, BMS & Embedded C",
     content:
-      "[Synthetic Dataset Slice (108/972 records) - EEE]: 25.9% placed (28/108), Avg Placed Package 15.0 LPA, Highest Package 23.7 LPA in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Pairing Embedded C with Python + IoT MQTT telemetry broadens eligible tracks.",
+      "[Synthetic Dataset Slice (108/972 records) - EEE]: 25.9% placed (28/108), Avg Placed Package 15.0 LPA, Highest Package 23.7 LPA in the 972-record synthetic placement dataset, generated to demonstrate the pipeline. Pairing Embedded C with Python + IoT MQTT telemetry broadens eligible tracks.",
   },
   {
     id: "placement_cohort_mech_civil",
@@ -250,7 +250,7 @@ const PLACEMENT_COHORT_VECTORS_RAW = [
     branch: "MECH / CIVIL",
     skill_category: "CAD/FEA, Robotics & BIM Digital Twins",
     content:
-      "[Synthetic Dataset Slice (216/972 records; 108 MECH + 108 CIVIL)]: MECH 23.1% placed (avg 7.3 LPA, max 12.0 LPA) & CIVIL 20.4% placed (avg 6.9 LPA, max 11.8 LPA) in the 972-record synthetic placement dataset, augmented from a 215-record public baseline. Combining CAD/BIM with Python automation expands technical options.",
+      "[Synthetic Dataset Slice (216/972 records; 108 MECH + 108 CIVIL)]: MECH 23.1% placed (avg 7.3 LPA, max 12.0 LPA) & CIVIL 20.4% placed (avg 6.9 LPA, max 11.8 LPA) in the 972-record synthetic placement dataset, generated to demonstrate the pipeline. Combining CAD/BIM with Python automation expands technical options.",
   },
   {
     id: "placement_cohort_cutoffs_972",
@@ -259,7 +259,7 @@ const PLACEMENT_COHORT_VECTORS_RAW = [
     branch: "ALL",
     skill_category: "Cutoffs & Eligibility",
     content:
-      "[972-Record Synthetic Placement Dataset (augmented from a 215-record public baseline)]: Random Forest ML achieves 88% cross-validation accuracy on the synthetic dataset; overall dataset highest package is 44.9 LPA (CSM), followed by 44.6 LPA (AIML) and 44.0 LPA (CSE). Reference cutoffs: Tier-1 7.5+ CGPA & 0 backlogs; Tier-2 6.5+ CGPA & <=1 backlog.",
+      "[972-Record Synthetic Placement Dataset (generated to demonstrate the pipeline)]: Random Forest ML achieves 88% cross-validation accuracy on the synthetic dataset; overall dataset highest package is 44.9 LPA (CSM), followed by 44.6 LPA (AIML) and 44.0 LPA (CSE). Reference cutoffs: Tier-1 7.5+ CGPA & 0 backlogs; Tier-2 6.5+ CGPA & <=1 backlog.",
   },
 ];
 
@@ -723,7 +723,7 @@ export const getCareerAgentResponse = (
     }
     if (/\b(cohort|analytics|benchmarks?|972)\b/i.test(text)) {
       return (
-        `Opening Placement Dataset Analytics across the 972-record synthetic placement dataset, augmented from a 215-record public baseline, ${title}.` +
+        `Opening Placement Dataset Analytics across the 972-record synthetic placement dataset, generated to demonstrate the pipeline, ${title}.` +
         `|||📊 **Top 3 Semantic Dataset Matches:**\n${top3Markdown} <!--ACTION: {"type": "NAVIGATE_TAB", "target": "analytics"}-->`
       );
     }
@@ -879,9 +879,9 @@ export const getCareerAgentResponse = (
     text.includes("how does pathfinder work")
   ) {
     return (
-      `Pathfinder 2.0 is an autonomous AI placement readiness and career intelligence platform built by Dileep, ${title}. Students use it because it estimates placement probability using a machine learning model (88% cross-validation accuracy on the synthetic dataset) trained on a 972-record synthetic placement dataset, augmented from a 215-record public baseline, gives them 28 production-grade project blueprints, runs live AI mock interviews, builds an ATS-ready resume, and lets them control everything hands-free with me—their 3D DAS voice agent.` +
+      `Pathfinder 2.0 is an autonomous AI placement readiness and career intelligence platform built by Dileep, ${title}. Students use it because it estimates placement probability using a machine learning model (88% cross-validation accuracy on the synthetic dataset) trained on a 972-record synthetic placement dataset, generated to demonstrate the pipeline, gives them 28 production-grade project blueprints, runs live AI mock interviews, builds an ATS-ready resume, and lets them control everything hands-free with me—their 3D DAS voice agent.` +
       `|||🎯 **What is Pathfinder 2.0 & Why Every Engineering Student Needs It (${title}):**\n` +
-      `1. **ML Placement Probability Engine:** Trained on a **972-record synthetic placement dataset, augmented from a 215-record public baseline** (88% cross-validation accuracy on the synthetic dataset).\n` +
+      `1. **ML Placement Probability Engine:** Trained on a **972-record synthetic placement dataset, generated to demonstrate the pipeline** (88% cross-validation accuracy on the synthetic dataset).\n` +
       `2. **28 Production Project Blueprints:** Real-world architectures (Docker, Redis, FastAPI, Kafka, RAG).\n` +
       `3. **Top 3 Semantic RAG Context Retrieved:**\n${top3Markdown}`
     );

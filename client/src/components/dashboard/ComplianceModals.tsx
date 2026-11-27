@@ -63,9 +63,8 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
                   3. Benchmark Data Disclosure
                 </h3>
                 <p>
-                  This platform uses a 972-record synthetic placement dataset, augmented from a
-                  215-record public baseline, across 9 engineering departments with anonymized
-                  records.
+                  This platform uses a 972-record synthetic placement dataset, generated to demonstrate
+                  the pipeline, across 9 engineering departments with anonymized records.
                 </p>
               </section>
 

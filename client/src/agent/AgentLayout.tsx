@@ -47,6 +47,7 @@ import {
   X,
   AlertCircle,
   Terminal,
+  Loader2,
 } from "lucide-react";
 
 function getInitialGreeting(roleKey: HonorificKey): string {
@@ -154,11 +155,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     return "overview";
   });
   const [hudCollapsed, setHudCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
+    if (typeof window === "undefined") return true;
     if (resolveInitialDasLayout() === "docked") return window.innerWidth < 1280;
-    const initialTab = (window as any).__DAS_PAGE_CONTEXT__?.activeTab || "overview";
-    return initialTab === "interview";
+    return true;
   });
+  const prevActiveTabRef = useRef<string>(activeTab);
   const [focusMode, setFocusMode] = useState(false);
   const userToggledStageRef = useRef(false);
   const [, setRole] = useState<UserHonorificRole>(() => getHonorificKey());
@@ -202,7 +203,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [editableCode, setEditableCode] = useState("");
   const [stdinInput, setStdinInput] = useState("");
   const [compileOutput, setCompileOutput] = useState("");
+  const [compileError, setCompileError] = useState("");
   const [isRunningCode, setIsRunningCode] = useState(false);
+  const [runElapsedSec, setRunElapsedSec] = useState(0);
   const runAbortRef = useRef<AbortController | null>(null);
   const codeTaskRef = useRef<CodeTaskPayload | null>(null);
   const editableCodeRef = useRef<string>("");
@@ -223,6 +226,18 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [compileOutput]);
   useEffect(() => {
     isRunningCodeRef.current = isRunningCode;
+    if (!isRunningCode) {
+      setRunElapsedSec(0);
+      return;
+    }
+    const startedAt = Date.now();
+    setRunElapsedSec(0);
+    const id = window.setInterval(() => {
+      setRunElapsedSec(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => {
+      window.clearInterval(id);
+    };
   }, [isRunningCode]);
 
   // Listen for login / logout & honorific changes across Pathfinder
@@ -1025,6 +1040,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     isRunningCodeRef.current = false;
     setIsRunningCode(false);
+    setCompileError("");
     compileOutputRef.current = "⏹ Execution stopped.";
     setCompileOutput("⏹ Execution stopped.");
   };
@@ -1042,6 +1058,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       const emptyMsg = "No code to execute.";
       compileOutputRef.current = emptyMsg;
       setCompileOutput(emptyMsg);
+      setCompileError(emptyMsg);
       return { ok: false, output: emptyMsg, stderr: "", engine: "none" };
     }
 
@@ -1059,8 +1076,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
     isRunningCodeRef.current = true;
     setIsRunningCode(true);
-    compileOutputRef.current = "Compiling & running your code live...";
-    setCompileOutput("Compiling & running your code live...");
+    setCompileError("");
+    compileOutputRef.current = "Running...";
+    setCompileOutput("Running...");
 
     const createLinkedTimeoutSignal = (parent: AbortSignal, ms: number) => {
       const ac = new AbortController();
@@ -1103,6 +1121,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             data.output || (stderrText ? `Diagnostics:\n${stderrText}` : "Program executed with no standard output.");
           compileOutputRef.current = output;
           setCompileOutput(output);
+          if (data.success === false) {
+            setCompileError(stderrText || String(data.error || output || "Compile or runtime error occurred."));
+          } else {
+            setCompileError("");
+          }
           return {
             ok: data.success !== false,
             output: String(output),
@@ -1112,6 +1135,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       } catch (primaryErr: any) {
         if (controller.signal.aborted) {
+          setCompileError("");
           compileOutputRef.current = "⏹ Execution stopped.";
           setCompileOutput("⏹ Execution stopped.");
           return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
@@ -1159,11 +1183,17 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             const outStr = pOut || pErr;
             compileOutputRef.current = outStr;
             setCompileOutput(outStr);
+            if (pErr && !pOut) {
+              setCompileError(pErr);
+            } else {
+              setCompileError("");
+            }
             return { ok: !pErr, output: outStr, stderr: pErr, engine: "piston" };
           }
         }
       } catch (pistonErr: any) {
         if (controller.signal.aborted) {
+          setCompileError("");
           compileOutputRef.current = "⏹ Execution stopped.";
           setCompileOutput("⏹ Execution stopped.");
           return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
@@ -1216,6 +1246,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           const finalOutput = stdout || stderr || buildErr || "Program executed successfully (no stdout).";
           compileOutputRef.current = finalOutput;
           setCompileOutput(finalOutput);
+          if (!stdout && (stderr || buildErr)) {
+            setCompileError(stderr || buildErr);
+          } else {
+            setCompileError("");
+          }
           return {
             ok: !(stderr || buildErr),
             output: finalOutput,
@@ -1223,19 +1258,26 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             engine: `godbolt-${comp.id}`,
           };
         }
-        compileOutputRef.current = "Program executed successfully.";
-        setCompileOutput("Program executed successfully.");
-        return { ok: true, output: "Program executed successfully.", stderr: "", engine: "godbolt" };
+        const errMsg = `Execution failed (HTTP ${fallbackRes.status}). Please try Run Code again.`;
+        compileOutputRef.current = errMsg;
+        setCompileOutput(errMsg);
+        setCompileError(errMsg);
+        return { ok: false, output: errMsg, stderr: errMsg, engine: "error" };
       } catch (fbErr: any) {
         if (controller.signal.aborted) {
+          setCompileError("");
           compileOutputRef.current = "⏹ Execution stopped.";
           setCompileOutput("⏹ Execution stopped.");
           return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
         }
-        const errMsg = `Execution notice: ${String(fbErr)}`;
+        const isTimeout = fbErr?.name === "TimeoutError" || /timeout/i.test(String(fbErr));
+        const errMsg = isTimeout
+          ? "Execution timed out. Please try Run Code again."
+          : `Execution error: ${fbErr?.message || String(fbErr)}`;
         compileOutputRef.current = errMsg;
         setCompileOutput(errMsg);
-        return { ok: false, output: errMsg, stderr: String(fbErr), engine: "error" };
+        setCompileError(errMsg);
+        return { ok: false, output: errMsg, stderr: errMsg, engine: "error" };
       } finally {
         godboltSig.cleanup();
       }
@@ -1304,6 +1346,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           nextCode = args.source_code;
         }
       } else if (action === "switch_language") {
+        setCompileError("");
         nextCode = args.source_code !== undefined ? String(args.source_code) : spec.starter;
         nextTitle = args.program_title || `${spec.label} Workspace`;
       } else if (action === "write_code") {
@@ -1311,6 +1354,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       } else if (action === "delete_code") {
         nextCode = applyCodeDelete(nextCode, args);
         if (!nextCode.trim()) {
+          setCompileError("");
           compileOutputRef.current = "Editor cleared.";
           setCompileOutput("Editor cleared.");
         }
@@ -1374,6 +1418,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           speakingOffTimerRef.current = null;
         }
         setIsSpeaking(true);
+        if (resolveInitialDasLayout() === "background") {
+          setHudCollapsed(false);
+        }
       } else {
         if (speakingOffTimerRef.current !== null) {
           window.clearTimeout(speakingOffTimerRef.current);
@@ -1395,8 +1442,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     if (activeLayout !== "background") return;
-    if (activeTab === "interview" && !focusMode) {
-      setHudCollapsed(true);
+    if (prevActiveTabRef.current !== activeTab) {
+      prevActiveTabRef.current = activeTab;
+      if (!focusMode) {
+        setHudCollapsed(true);
+      }
     }
   }, [activeLayout, activeTab, focusMode]);
 
@@ -1452,9 +1502,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           {/* DAS Live Multi-Language Code & Compiler Studio Drawer */}
           {codeTask && (
             <div
-              className={`fixed top-16 left-2 right-2 sm:left-auto sm:top-20 z-50 sm:w-[94%] max-w-2xl max-h-[82vh] overflow-y-auto bg-[#09090B]/95 backdrop-blur-md border border-white/[0.12] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3 ${activeLayout === "docked" && !hudCollapsed && !focusMode
+              className={`fixed top-[128px] left-2 right-2 sm:left-auto sm:top-[132px] z-50 sm:w-[min(450px,40vw)] max-w-md max-h-[calc(100vh-196px)] overflow-y-auto bg-[#09090B]/95 backdrop-blur-md border border-white/[0.12] rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-3 ${activeLayout === "docked" && !hudCollapsed && !focusMode
                 ? "sm:right-6 xl:right-[384px] 2xl:right-[424px]"
-                : "sm:right-6"
+                : "sm:right-4"
                 }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-2.5">
@@ -1584,13 +1634,43 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                     : "bg-[#FAFAFA] hover:bg-white border-white text-[#09090B]"
                     }`}
                 >
-                  <Play className="h-3 w-3 fill-current" />
-                  <span>{isRunningCode ? "Running..." : "Run Code"}</span>
+                  {isRunningCode ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Play className="h-3 w-3 fill-current" />
+                  )}
+                  <span>{isRunningCode ? `Running... (${runElapsedSec}s)` : "Run Code"}</span>
                 </button>
               </div>
 
-              <div className="bg-[#0D0D11] border border-white/[0.08] rounded-xl p-3 font-mono text-xs text-[#D4D4D8] max-h-40 overflow-y-auto whitespace-pre-wrap">
-                {compileOutput || "Output terminal ready. Click Run Code or tell DAS to run."}
+              <div
+                role="status"
+                aria-live="polite"
+                className={`bg-[#0D0D11] border rounded-xl p-3 font-mono text-xs max-h-40 overflow-y-auto whitespace-pre-wrap ${!isRunningCode && compileError
+                  ? "border-red-500/40 text-red-400"
+                  : "border-white/[0.08] text-[#D4D4D8]"
+                  }`}
+              >
+                {isRunningCode ? (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 text-[#FAFAFA]">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#FAFAFA] shrink-0" />
+                      <span>Running... ({runElapsedSec}s)</span>
+                    </div>
+                    {runElapsedSec > 15 && (
+                      <div className="text-[11px] text-amber-300">
+                        Backend is waking up, this can take up to a minute on the first run
+                      </div>
+                    )}
+                  </div>
+                ) : compileError ? (
+                  <div className="flex items-start gap-2 text-red-400">
+                    <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-red-400" />
+                    <span>{compileError}</span>
+                  </div>
+                ) : (
+                  compileOutput || "Output terminal ready. Click Run Code or tell DAS to run."
+                )}
               </div>
             </div>
           )}

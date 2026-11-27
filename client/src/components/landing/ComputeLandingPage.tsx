@@ -23,7 +23,7 @@ const SLIDE_PREVIEWS: Record<
     metric: "120 Trees",
     metricLabel: "Random Forest estimators · 5 readiness axes",
     points: [
-      "Calibrated probability benchmark against a 972-record synthetic placement dataset, augmented from a 215-record public baseline",
+      "Calibrated probability benchmark against a 972-record synthetic placement dataset, generated to demonstrate the pipeline",
       "5-axis competency telemetry across academics, DSA, projects & STAR",
       "Reference cutoff benchmarks across Google, Razorpay, Amazon & TCS Digital",
     ],
@@ -61,7 +61,7 @@ const SLIDE_PREVIEWS: Record<
   analytics: {
     eyebrow: "Slide 05 · Synthetic Dataset Analytics",
     metric: "972 Rows",
-    metricLabel: "Synthetic dataset (215-record public baseline) & exports",
+    metricLabel: "Synthetic dataset (generated to demonstrate the pipeline) & exports",
     points: [
       "Slice placement conversion across dataset year, branch, domain & CGPA band",
       "Report format view with CSV/PDF export tables",
@@ -70,10 +70,10 @@ const SLIDE_PREVIEWS: Record<
   },
   progress: {
     eyebrow: "Slide 06 · My Progress Journey",
-    metric: "Real Trend",
-    metricLabel: "Only results you actually earned",
+    metric: "Activity Trend",
+    metricLabel: "Computed from your activity in this browser",
     points: [
-      "Readiness trend line from real Random Forest re-scores",
+      "Readiness trend line from Random Forest re-scores in this session",
       "Best ATS scan, Coding Arena average & interview scorecards in one view",
       "Next-best-step guidance that links straight to the right slide",
     ],
@@ -213,7 +213,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               style={{ textWrap: "pretty" }}
             >
               Estimate your offer probability against a 972-record synthetic placement dataset,
-              augmented from a 215-record public baseline, write and execute solutions across 11
+              generated to demonstrate the pipeline, write and execute solutions across 11
               compiler runtimes, and defend system trade-offs aloud with DAS — your live 3D
               holographic voice mentor.
             </p>
@@ -320,7 +320,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   </h3>
                   <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-[#A1A1AA]">
                     Evaluates CGPA multipliers, branch history, standing backlogs, internships, and
-                    DSA readiness across 972 augmented campus records and 5 competency axes.
+                    DSA readiness across 972 synthetic records and 5 competency axes.
                   </p>
                 </div>
 
@@ -587,7 +587,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 <AnimatedMetric value={972} />
               </div>
               <p className="mt-2 text-sm text-[#A1A1AA]">
-                Synthetic placement records (215-record public baseline)
+                Synthetic placement records (generated to demonstrate the pipeline)
               </p>
             </SpotlightSurface>
 
@@ -626,8 +626,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             <span className="font-medium text-[#FAFAFA]">Pathfinder 2.0</span>
           </div>
           <p className="text-center font-mono text-[11px] text-[#8A8A92] sm:text-right">
-            Random Forest ML · 972-Record Synthetic Dataset (215-Record Public Baseline) · Live 3D
-            Voice Coach
+            Random Forest ML · 972-Record Synthetic Dataset · Live 3D Voice Coach
           </p>
         </div>
       </footer>

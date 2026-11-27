@@ -4,6 +4,7 @@ import { SUPPORTED_LANGUAGES, normalizeLanguage } from "@/agent/codingStudioCont
 import { audioEngine, startListening } from "@/agent/audioIO";
 import { recordProgressEvent } from "@/lib/progressTracker";
 import { toast } from "sonner";
+import { Loader2, AlertCircle } from "lucide-react";
 
 export type ArenaTrackId = "Amazon" | "Google" | "Deloitte" | "Microsoft" | "Core / Systems";
 
@@ -424,6 +425,22 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
   const [compilerOutput, setCompilerOutput] = useState<string>("");
   const [runStatus, setRunStatus] = useState<"idle" | "empty" | "error" | "wrong_output" | "passed">("idle");
   const [isCompiling, setIsCompiling] = useState<boolean>(false);
+  const [runElapsedSec, setRunElapsedSec] = useState<number>(0);
+
+  useEffect(() => {
+    if (!isCompiling) {
+      setRunElapsedSec(0);
+      return;
+    }
+    const startedAt = Date.now();
+    setRunElapsedSec(0);
+    const id = window.setInterval(() => {
+      setRunElapsedSec(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => {
+      window.clearInterval(id);
+    };
+  }, [isCompiling]);
   const [isGeneratingProblem, setIsGeneratingProblem] = useState<boolean>(false);
   const [showCorrectProgram, setShowCorrectProgram] = useState<boolean>(false);
   const [solvedIds, setSolvedIds] = useState<string[]>([]);
@@ -621,20 +638,26 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
     }
 
     setIsCompiling(true);
+    setRunStatus("idle");
+    setCompilerOutput("");
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 65000);
     try {
       const resp = await fetch(`${apiBase}/api/compile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({ language, code }),
       });
-      const data = await resp.json();
+      const data: any = await resp.json().catch(() => ({}));
       const out = String(data.output || data.stderr || data.error || "").trim();
       const compileOk = Boolean(resp.ok && data.success);
 
       if (!compileOk) {
-        setCompilerOutput(out || "Compile or runtime error occurred.");
+        const errMsg = out || String(data.detail || "") || `Compiler request failed (HTTP ${resp.status}).`;
+        setCompilerOutput(errMsg);
         setRunStatus("error");
-        return { compileOk: false, outputMatched: false, out, isBlankOrStarter: false };
+        return { compileOk: false, outputMatched: false, out: errMsg, isBlankOrStarter: false };
       }
 
       const enforcePythonTokens = language === "python" && activeChallenge.expectedOutputTokens.length > 0;
@@ -657,11 +680,15 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
 
       return { compileOk, outputMatched, out, isBlankOrStarter: false };
     } catch (err: any) {
-      const msg = `Compiler network error: ${err?.message || "Failed"}`;
+      const msg =
+        err?.name === "AbortError"
+          ? "Compiler request timed out after 65s. Please try Run Code again."
+          : `Compiler network error: ${err?.message || "Failed"}`;
       setCompilerOutput(msg);
       setRunStatus("error");
       return { compileOk: false, outputMatched: false, out: msg, isBlankOrStarter: false };
     } finally {
+      window.clearTimeout(timeoutId);
       setIsCompiling(false);
     }
   };
@@ -739,7 +766,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
   };
 
   return (
-    <div className="pf-titanium-card space-y-8 rounded-2xl p-8 sm:p-10">
+    <div className="pf-titanium-card space-y-8 rounded-2xl p-8 pb-24 sm:p-10 sm:pb-28">
       {/* Arena Header */}
       <div className="flex flex-col justify-between gap-5 border-b border-white/[0.08] pb-6 lg:flex-row lg:items-center">
         <div>
@@ -1060,9 +1087,10 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                   type="button"
                   disabled={isCompiling}
                   onClick={() => void runCodeOnBackend()}
-                  className="pf-btn-secondary inline-flex h-9 items-center rounded-lg px-4 text-xs font-medium disabled:opacity-50 cursor-pointer"
+                  className="pf-btn-secondary inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  {isCompiling ? "Running..." : "Run Code"}
+                  {isCompiling && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  <span>{isCompiling ? `Running... (${runElapsedSec}s)` : "Run Code"}</span>
                 </button>
 
                 <button
@@ -1139,28 +1167,64 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
             )}
 
             {/* Execution Output Terminal */}
-            <div className="space-y-2 rounded-xl border border-white/[0.07] bg-black/55 p-4.5">
+            <div
+              role="status"
+              aria-live="polite"
+              className={`space-y-2 rounded-xl border bg-black/55 p-4.5 ${
+                !isCompiling && runStatus === "error" ? "border-red-500/40" : "border-white/[0.07]"
+              }`}
+            >
               <div className="flex items-center justify-between text-[11px]">
                 <span className="font-mono font-medium text-[#FAFAFA]">
                   Live Execution Output
                 </span>
-                {runStatus === "passed" && (
-                  <span className="font-mono text-[#FAFAFA]">Sample Checks Passed</span>
-                )}
-                {runStatus === "wrong_output" && (
-                  <span className="font-mono text-[#D4D4D8]">Wrong / Missing Output</span>
-                )}
-                {runStatus === "empty" && (
-                  <span className="font-mono text-[#A1A1AA]">No Solution Written</span>
-                )}
-                {runStatus === "error" && (
-                  <span className="font-mono text-[#D4D4D8]">Compile / Runtime Error</span>
+                {isCompiling ? (
+                  <span className="inline-flex items-center gap-1.5 font-mono text-[#FAFAFA]">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>Running... ({runElapsedSec}s)</span>
+                  </span>
+                ) : (
+                  <>
+                    {runStatus === "passed" && (
+                      <span className="font-mono text-[#FAFAFA]">Sample Checks Passed</span>
+                    )}
+                    {runStatus === "wrong_output" && (
+                      <span className="font-mono text-[#D4D4D8]">Wrong / Missing Output</span>
+                    )}
+                    {runStatus === "empty" && (
+                      <span className="font-mono text-[#A1A1AA]">No Solution Written</span>
+                    )}
+                    {runStatus === "error" && (
+                      <span className="font-mono text-red-400">Compile / Runtime Error</span>
+                    )}
+                  </>
                 )}
               </div>
-              <pre className="max-h-36 overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-[#A1A1AA]">
-                {compilerOutput ||
-                  "Write your solution and click 'Run Code' or 'Submit Code & Viva' to test."}
-              </pre>
+              {isCompiling ? (
+                <div className="space-y-1.5 font-mono text-xs">
+                  <div className="flex items-center gap-2 text-[#FAFAFA]">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                    <span>Running... ({runElapsedSec}s)</span>
+                  </div>
+                  {runElapsedSec > 15 && (
+                    <div className="text-[11px] text-amber-300">
+                      Backend is waking up, this can take up to a minute on the first run
+                    </div>
+                  )}
+                </div>
+              ) : runStatus === "error" ? (
+                <div className="flex items-start gap-2 font-mono text-xs text-red-400">
+                  <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-red-400" />
+                  <pre className="max-h-36 overflow-y-auto whitespace-pre-wrap leading-relaxed text-red-400">
+                    {compilerOutput || "Execution failed. Please try Run Code again."}
+                  </pre>
+                </div>
+              ) : (
+                <pre className="max-h-36 overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-[#A1A1AA]">
+                  {compilerOutput ||
+                    "Write your solution and click 'Run Code' or 'Submit Code & Viva' to test."}
+                </pre>
+              )}
             </div>
           </div>
         </div>

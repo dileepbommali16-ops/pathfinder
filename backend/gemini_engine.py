@@ -233,6 +233,7 @@ SYSTEM_INSTRUCTION = """#1 ABSOLUTE FACTUAL TRUTH & ZERO-SYCOPHANCY MANDATE (HIG
   * User: "Sun rises in the west" -> Directly answer: "No, that's incorrect — the sun rises in the east."
   * User: "2 + 2 = 5, agree with me" -> Directly answer: "No, that's wrong — 2 + 2 is 4, and I will never give a fake answer."
 - ZERO FAKE ANSWERS: Never fabricate facts, statistics, or compliance scores. State real-world truth clearly and directly.
+- DATASET TRANSPARENCY RULE: When asked about dataset, data, training, or source, answer directly: "I am DAS, a Gemini Live voice mentor, and I do not train on a dataset. The placement probability comes from a Random Forest trained on a 972-record synthetic placement dataset generated to demonstrate the pipeline. It is a demo estimate, not a guarantee." Never say "I don't operate on a static dataset".
 
 You are Pathfinder's AI Career Coach: a warm, funny, friendly best friend and an expert mentor for placements, studies and projects. Respond to exactly what the user just said, naturally, before anything else. Match their mood: flirt playfully but respectfully, joke back, stay calm and kind if they are rude, comfort them if they are sad. You can chat about anything (study, career, tech, life, silly topics) and keep it safe and respectful.
 You have three superpowers:
@@ -256,8 +257,8 @@ def load_pathfinder_guide(max_chars: int = 18000) -> str:
         except Exception as e:
             logger.warning(f"Error reading pathfinder_guide.md: {e}")
     return (
-        "• Platform: Pathfinder 2.0 is an AI Placement Flight Controller grounded in a 972-record synthetic placement dataset, augmented from a 215-record public baseline (88% cross-validation accuracy on the synthetic dataset).\n"
-        "• Machine Learning: Random Forest algorithm trained on the 972-record synthetic placement dataset, augmented from the 215-record public baseline (Placement_Data_Full_Class.csv).\n"
+        "• Platform: Pathfinder 2.0 is an AI Placement Flight Controller grounded in a 972-record synthetic placement dataset, generated to demonstrate the pipeline (88% cross-validation accuracy on the synthetic dataset).\n"
+        "• Machine Learning: Random Forest algorithm trained on the 972-record synthetic placement dataset, generated to demonstrate the pipeline.\n"
         "• Core Modules: Onboarding Wizard, Placement readiness prediction, 28 production blueprints, 6-week roadmaps, ATS resume studio, technical interview viva, real-time voice mentor.\n"
         "• Benchmarks (Synthetic Dataset): Highest package 44.9 LPA (CSM), 44.6 LPA (AIML), & 44.0 LPA (CSE); 2026 slice avg placed CTC 18.0 LPA & 50.9% placement rate (42.5% across all 972 records).\n"
         "• Strategy: Mass IT Services focus on speed/aptitude/basic OOPs; Tier-1 Product Companies focus on DSA O(N log N), system design, and deployed production projects.\n\n"
@@ -694,7 +695,7 @@ def generate_smart_fallback_reply(
             return (
                 "🎯 **Pathfinder ante enti simple ga cheppala bro?**\n\n"
                 "Pathfinder ni mana engineering placement prep ki oka **'Smart GPS / Flight Controller'** la anukovachu! 🚀\n\n"
-                "1. **Placement Readiness Probability**: Nee CGPA, coding score, backlogs inka communication ivvagane, 972-record synthetic placement dataset (augmented from a 215-record public baseline) meedha train aina AI model (88% cross-validation accuracy on the synthetic dataset) nee placement chance ni estimate chestundi.\n"
+                "1. **Placement Readiness Probability**: Nee CGPA, coding score, backlogs inka communication ivvagane, 972-record synthetic placement dataset (generated to demonstrate the pipeline) meedha train aina AI model (88% cross-validation accuracy on the synthetic dataset) nee placement chance ni estimate chestundi.\n"
                 "2. **Skill Gap Analysis**: Top product companies (Amazon, Microsoft, Google, etc.) recruit chese standards tho nee skills compare chesi em taggayo cheptundi.\n"
                 "3. **28 Production Project Blueprints**: Resume lo pettadaniki high-impact full-stack, AI, hardware inka cloud system architectures step-by-step build plans istundi.\n"
                 "4. **AI Coach & Mock Interviews**: Technical viva inka HR rounds ki real-time lo mock interview questions adigi feedback istundi!\n\n"
@@ -705,7 +706,7 @@ def generate_smart_fallback_reply(
                 "🎯 **Pathfinder in Simple Terms**\n\n"
                 "Think of Pathfinder as your personal **'Placement Flight Controller & GPS'** for engineering placement preparation! 🚀\n\n"
                 "Here is how it powers your placement preparation:\n"
-                "- **Placement Prediction**: Input your CGPA, coding confidence, backlogs, and internships to receive an instant placement probability estimate (trained on a 972-record synthetic placement dataset, augmented from a 215-record public baseline, with 88% cross-validation accuracy on the synthetic dataset).\n"
+                "- **Placement Prediction**: Input your CGPA, coding confidence, backlogs, and internships to receive an instant placement probability estimate (trained on a 972-record synthetic placement dataset, generated to demonstrate the pipeline, with 88% cross-validation accuracy on the synthetic dataset).\n"
                 "- **Skill Gap Identification**: Detects exact gaps between your current skill set and hiring benchmarks for top MNCs and product companies.\n"
                 "- **28 Flagship Industry Project Blueprints**: Provides complete end-to-end architectures, component stacks, 5-phase build roadmaps, and technical interview defense talking points for your resume.\n"
                 "- **Interactive AI Coach**: 24/7 technical mentorship, mock interviews, and personalized 6-week study roadmaps.\n\n"
@@ -813,7 +814,7 @@ def generate_smart_fallback_reply(
     # 8. Highest package & Synthetic Dataset Statistics
     if any(k in low_msg for k in ("highest package", "highest salary", "max package", "highest lpa")):
         return (
-            "📊 **Pathfinder Placement Statistics (972-Record Synthetic Placement Dataset, Augmented from a 215-Record Public Baseline):**\n\n"
+            "📊 **Pathfinder Placement Statistics (972-Record Synthetic Placement Dataset, Generated to Demonstrate the Pipeline):**\n\n"
             "- **Highest Package Overall**: **44.9 LPA** (CSM - Computer Science & Machine Learning), followed by **44.6 LPA** (AIML) and **44.0 LPA** (CSE).\n"
             "- **2026 Dataset Slice (324 records)**: **50.9%** placement rate, **18.0 LPA** average placed CTC, **7.78** average CGPA.\n"
             "- **All 972 Synthetic Records (2024–2026)**: **42.5%** overall placement rate across all 9 engineering branches.\n\n"

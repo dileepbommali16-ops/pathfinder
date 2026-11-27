@@ -19,7 +19,7 @@ const STUDIO_HIGHLIGHTS = [
   {
     index: "01",
     title: "972-Record Synthetic Placement Dataset",
-    detail: "Random Forest probability model calibrated on 972 augmented campus records from a 215-record public baseline.",
+    detail: "Random Forest probability model calibrated on a 972-record synthetic placement dataset, generated to demonstrate the pipeline.",
   },
   {
     index: "02",

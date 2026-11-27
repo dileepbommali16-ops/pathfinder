@@ -37,7 +37,7 @@
 - **Result they get**: Real, resume-worthy projects that impress technical recruiters instead of generic cloned tutorial apps.
 
 ### 6. Placement Dataset Analytics
-- **What it does**: An interactive data explorer displaying distributions across a 972-record synthetic placement dataset, augmented from a 215-record public baseline, across 9 engineering branches and years 2024–2026.
+- **What it does**: An interactive data explorer displaying distributions across a 972-record synthetic placement dataset, generated to demonstrate the pipeline, across 9 engineering branches and years 2024–2026.
 - **How a student uses it**: Students filter by branch, dataset year, and status to view placement percentages, average salary packages (LPA), and CGPA bands.
 - **Result they get**: Interactive statistical distributions showing how profile factors correlate with placement outcomes in the synthetic dataset.
 
@@ -66,7 +66,7 @@
 ## 3. How the AI Works (Simple & Transparent)
 
 ### Random Forest Machine Learning (Readiness Score)
-- **Algorithm**: A calibrated `RandomForestClassifier` trained with 120 decision trees (88% cross-validation accuracy on the synthetic dataset) on a 972-record synthetic placement dataset, augmented from a 215-record public baseline.
+- **Algorithm**: A calibrated `RandomForestClassifier` trained with 120 decision trees (88% cross-validation accuracy on the synthetic dataset) on a 972-record synthetic placement dataset, generated to demonstrate the pipeline.
 - **Inputs (5 Features)**:
   1. `cgpa`: Academic performance on a 10.0 scale.
   2. `backlogs`: Count of active uncleared academic backlogs.
@@ -115,8 +115,7 @@
 ---
 
 ## 5. Honest Data Disclosure
-- **Public Baseline Dataset**: 215 student records originating from the public baseline `Placement_Data_Full_Class.csv` (public Kaggle Campus Recruitment dataset, CC0 Public Domain).
-- **Synthetic Augmented Dataset**: 972-record synthetic placement dataset, augmented from the 215-record public baseline (`Placement_Data_Full_Class.csv`), mapped across 9 engineering disciplines (CSE, IT, AIML, CSD, ECE, EEE, Mech, Civil, Cyber Security) for 2024–2026 (324 rows per year) to demonstrate multi-year analytics and ML pipelines — not private institutional records.
+- **Synthetic Placement Dataset**: 972-record synthetic placement dataset, generated to demonstrate the pipeline (`data/placement_records.csv`), mapped across 9 engineering disciplines (CSE, IT, AIML, CSD, ECE, EEE, Mech, Civil, Cyber Security) for 2024–2026 (324 rows per year, 108 per branch) — not real placement records.
 - **Estimate Disclaimer**: All predictions, readiness percentages, and salary tier forecasts are statistical estimations for self-improvement and preparation, not guarantees of employment.
 
 ---
@@ -139,7 +138,7 @@
 **Answer**: It feeds your 5 key metrics (CGPA, backlogs, internships, coding, communication) through 120 decision trees trained on student placement records to compute the probability of clearing campus recruitment.
 
 ### Q3: Where does the student data come from?
-**Answer**: Pathfinder uses a 972-record synthetic placement dataset, augmented from the 215-record public baseline (`Placement_Data_Full_Class.csv`) across 9 engineering branches (2024–2026), to demonstrate the ML and analytics pipeline — not private institutional data.
+**Answer**: Pathfinder uses a 972-record synthetic placement dataset, generated to demonstrate the pipeline across 9 engineering branches (2024–2026) — not real placement records.
 
 ### Q4: Does the AI Coach have access to my profile without me repeating it?
 **Answer**: Yes. When you chat with the coach, the backend automatically provides your active profile (branch, CGPA, target role, readiness score) and current dashboard screen into the model's context.
