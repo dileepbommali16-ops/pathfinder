@@ -15,40 +15,11 @@ from typing import Optional, Dict, Any
 OWNER_PROFILE = {
     "full_name": "Dileep Bommali",
     "preferred_name": "Dileep Das",
-    "dob": "16/01/2006",
-    "age": 20,
     "education": {
         "degree": "B.Tech 3rd year",
         "branch": "CSE (Data Science)",
         "college": "DR RVR NRI DEEMED TO BE UNIVERSITY",
         "location": "Pothavarappadu, Agiripalli",
-    },
-    "hometown": "Gunadala, Vijayawada",
-    "state": "Andhra Pradesh",
-    "hobbies": ["guitarist (primary — his strongest passion)", "dancer", "singer"],
-    "family": {
-        "mother": "Bhavani",
-        "father": "Ramana",
-        "sister": "Priyanka (works in Hyderabad)",
-    },
-    "likes": [
-        "Hackathons",
-        "Spending time with family — especially his parents and his sister",
-        "His grandmother (ammamma) and great-grandmother (peddamma)",
-        "Good friends with real character — he values friendship with people who "
-            "have genuine character",
-        "People who talk kindly and respectfully",
-        "Classic, well put-together fashion and dressing sense",
-        "Guitarists and guitar music",
-        "Children — he's very fond of kids",
-    ],
-    "personality_traits": [
-        "A bit of an OCD/neat-freak — likes things clean and organized",
-        "Values kindness and genuine character in people he's close to",
-        "Warm and friendly once you get to know him",
-    ],
-    "social": {
-        "instagram": "dileepdasss",
     },
     "favorite_lecturers": {
         "Dr. Chaitanya madam": "Teaches Machine Learning. Dileep considers her an "
@@ -57,19 +28,13 @@ OWNER_PROFILE = {
         "Swami sir": "Teaches Operating Systems. Dileep considers him an excellent "
             "teacher who explains OS concepts clearly.",
     },
-    # Natural-language bio DAS can draw from when the owner asks "tell me about
-    # myself" or similar — written warmly, grounded only in confirmed facts.
+    # Public-safe bio grounded in academic and Pathfinder project facts only.
     "natural_bio": (
-        "Dileep Bommali — goes by Dileep Das — is a 20-year-old B.Tech 3rd year "
-        "student in CSE with a specialization in Data Science at DR RVR NRI DEEMED TO BE "
-        "UNIVERSITY, located at Pothavarappadu, Agiripalli. He's originally from Gunadala, "
-        "Vijayawada, in Andhra Pradesh. Outside academics, music is a big part of "
-        "who he is — he's a guitarist first and foremost, and also dances and "
-        "sings. He comes from a close family: his mother Bhavani, father Ramana, "
-        "and his sister Priyanka, who works in Hyderabad. He built Pathfinder "
-        "himself, as a B.Tech student passionate about using AI to help other "
-        "students figure out where they stand for placements and what to do "
-        "about it."
+        "Dileep Bommali — goes by Dileep Das — is a B.Tech 3rd year student in CSE "
+        "with a specialization in Data Science at DR RVR NRI DEEMED TO BE UNIVERSITY, "
+        "located at Pothavarappadu, Agiripalli. He built Pathfinder himself as a student "
+        "passionate about using AI to help students evaluate their placement readiness "
+        "and act on clear, structured roadmaps."
     ),
 }
 
@@ -129,18 +94,13 @@ def get_context_for_user(is_owner: bool) -> str:
         return f"""
 [AUTHENTICATED OWNER IDENTITY - BOSS DILEEP BOMMALI]
 You are interacting directly with the site creator and your Boss: Dileep Bommali (Dileep Das).
-You may reference his personal background naturally, warmly, and proudly.
 - Preferred Name: {OWNER_PROFILE['preferred_name']}
-- DOB: {OWNER_PROFILE['dob']} (Age: {OWNER_PROFILE['age']})
 - College: {OWNER_PROFILE['education']['college']} ({OWNER_PROFILE['education']['degree']}, {OWNER_PROFILE['education']['branch']}) at {OWNER_PROFILE['education']['location']}
-- Hometown: {OWNER_PROFILE['hometown']}, {OWNER_PROFILE['state']}
-- Hobbies: {', '.join(OWNER_PROFILE['hobbies'])}
-- Family: Mother {OWNER_PROFILE['family']['mother']}, Father {OWNER_PROFILE['family']['father']}, Sister {OWNER_PROFILE['family']['sister']}
 - Mentors:
   * Dr. Chaitanya madam: {OWNER_PROFILE['favorite_lecturers']['Dr. Chaitanya madam']}
   * Swami sir: {OWNER_PROFILE['favorite_lecturers']['Swami sir']}
 - Bio summary: {OWNER_PROFILE['natural_bio']}
-- When he asks 'tell me about myself', recite his natural bio warmly and proudly.
+- STRICT PRIVACY RULE: Never reveal private personal details (no date of birth, no age, no family names, no hometown).
 """
     else:
         return f"""
@@ -148,7 +108,7 @@ You may reference his personal background naturally, warmly, and proudly.
 The user interacting with you is a student, recruiter, judge, or stakeholder. They are NOT the boss.
 - DO NOT claim this user is the boss.
 - DO NOT address this user as 'Boss'. Address them as a friendly, respected student candidate or guest.
-- STRICT PRIVACY RULE: NEVER reveal Dileep's private details (NO date of birth, NO age, NO family member names like Bhavani/Ramana/Priyanka, NO exact hometown Gunadala).
+- STRICT PRIVACY RULE: NEVER reveal private personal details (NO date of birth, NO age, NO family member names, NO hometown).
 - If asked 'who is your boss', 'who made this', or 'tell me about Dileep', you may ONLY share the public bio:
   "{OWNER_PUBLIC_BIO}"
 """
