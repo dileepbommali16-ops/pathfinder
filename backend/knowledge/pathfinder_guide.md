@@ -66,13 +66,14 @@
 ## 3. How the AI Works (Simple & Transparent)
 
 ### Random Forest Machine Learning (Readiness Score)
-- **Algorithm**: A calibrated `RandomForestClassifier` trained with 120 decision trees (88% cross-validation accuracy on the synthetic dataset) on a 972-record synthetic placement dataset, generated to demonstrate the pipeline.
-- **Inputs (5 Features)**:
+- **Algorithm**: A calibrated `RandomForestClassifier` trained with 120 decision trees (88% cross-validation accuracy on the synthetic dataset) on a 972-record synthetic placement dataset, generated to demonstrate the pipeline (35% weight), blended with a Senior Hiring Manager evidence calibration rubric (65% weight).
+- **Random Forest Inputs (5 Numeric Features, 35% weight)**:
   1. `cgpa`: Academic performance on a 10.0 scale.
   2. `backlogs`: Count of active uncleared academic backlogs.
   3. `internships`: Number of completed industry or research internships.
   4. `communication_score`: Rated on a 1.0 - 10.0 scale.
   5. `coding_score`: Rated on a 1.0 - 10.0 scale.
+- **Evidence Calibration Rubric Inputs (65% weight)**: Also evaluates `projects_count`, `skills`, `github_url`, `leetcode_url`, `certifications`, `ats_score`, `github_verified_score`, `tenth_percentage`, `twelfth_percentage`, and `target_role`.
 - **Output**: A calibrated probability percentage from 0% to 100%, candidate categorization (e.g., "Strong Candidate Profile", "Solid Foundation", "Needs Focus & Acceleration"), and prioritized strengths/weaknesses.
 - **What the score means**: It indicates a statistical readiness estimate derived from the synthetic dataset.
 - **Its limits**: It is a mathematical estimate based on synthetic training patterns; it cannot account for real-time interview day nerves, company hiring freezes, or niche interpersonal fit.
@@ -135,7 +136,7 @@
 **Answer**: No. The readiness score is a statistical probability based on historical criteria. Real placement depends on your live coding performance, company test cutoffs, interview performance, and current job market demand.
 
 ### Q2: How does the Random Forest calculate the score?
-**Answer**: It feeds your 5 key metrics (CGPA, backlogs, internships, coding, communication) through 120 decision trees trained on student placement records to compute the probability of clearing campus recruitment.
+**Answer**: It feeds 5 numeric features (`cgpa`, `backlogs`, `internships`, `communication_score`, `coding_score` — 35% weight) through 120 decision trees trained on the 972-record synthetic dataset, and blends that with a Senior Hiring Manager evidence rubric (65% weight) checking `projects_count`, `skills`, `github_url`, `leetcode_url`, `certifications`, `ats_score`, `github_verified_score`, `tenth_percentage`, `twelfth_percentage`, and `target_role`.
 
 ### Q3: Where does the student data come from?
 **Answer**: Pathfinder uses a 972-record synthetic placement dataset, generated to demonstrate the pipeline across 9 engineering branches (2024–2026) — not real placement records.
