@@ -9,6 +9,7 @@
 import {
   analyzeAcousticFrame,
   buildVisemeTimeline,
+  VISEME_PRESETS,
   type VisemeTimeline,
   type VisemeWeights,
 } from "./viseme";
@@ -748,6 +749,11 @@ class AudioEngine {
   private liveVisemeTimeline: VisemeTimeline | null = null;
   private liveAudioStartCtxSec: number = 0;
   private liveAudioEndCtxSec: number = 0;
+  private liveSpokenChars: number = 0;
+  private liveLastFramePerfMs: number = 0;
+  private liveTextVersion: number = 0;
+  private speakerFreqBuf: Uint8Array = new Uint8Array(256);
+  private speakerTimeBuf: Uint8Array = new Uint8Array(512);
   private speakingListeners: Set<(speaking: boolean) => void> = new Set();
   private lastNotifiedSpeaking: boolean = false;
   private speakingEndTimer: number | null = null;
@@ -1061,12 +1067,43 @@ class AudioEngine {
     if (!clean) {
       this.liveTranscriptText = "";
       this.liveVisemeTimeline = null;
+      this.liveSpokenChars = 0;
+      this.liveLastFramePerfMs = 0;
+      this.liveTextVersion++;
       return;
     }
     if (clean !== this.liveTranscriptText) {
       this.liveTranscriptText = clean;
       this.liveVisemeTimeline = buildVisemeTimeline(clean);
+      this.liveTextVersion++;
+      if (this.liveSpokenChars >= clean.length) {
+        this.liveSpokenChars = Math.max(0, clean.length - 1);
+      }
     }
+  }
+
+  private detectSpeechSpanMs(samples: Float32Array, sampleRate: number): { startMs: number; durationMs: number } {
+    const totalMs = (samples.length / Math.max(8000, sampleRate)) * 1000;
+    let firstIdx = -1;
+    let lastIdx = -1;
+    for (let i = 0; i < samples.length; i++) {
+      if (Math.abs(samples[i]) > 0.014) {
+        firstIdx = i;
+        break;
+      }
+    }
+    for (let i = samples.length - 1; i >= 0; i--) {
+      if (Math.abs(samples[i]) > 0.014) {
+        lastIdx = i;
+        break;
+      }
+    }
+    if (firstIdx < 0 || lastIdx <= firstIdx) {
+      return { startMs: 0, durationMs: Math.max(120, totalMs) };
+    }
+    const startMs = (firstIdx / Math.max(8000, sampleRate)) * 1000;
+    const durationMs = Math.max(120, ((lastIdx - firstIdx) / Math.max(8000, sampleRate)) * 1000);
+    return { startMs, durationMs };
   }
 
   /**
@@ -1101,6 +1138,29 @@ class AudioEngine {
           viseme: sv.weights,
         };
       }
+      const spkAnalyser = speaker.getAnalyser();
+      if (spkAnalyser && speaker.isSpeaking) {
+        const fftSize = spkAnalyser.fftSize;
+        if (this.speakerTimeBuf.length !== fftSize) {
+          this.speakerTimeBuf = new Uint8Array(fftSize);
+        }
+        if (this.speakerFreqBuf.length !== spkAnalyser.frequencyBinCount) {
+          this.speakerFreqBuf = new Uint8Array(spkAnalyser.frequencyBinCount);
+        }
+        spkAnalyser.getByteTimeDomainData(this.speakerTimeBuf as any);
+        spkAnalyser.getByteFrequencyData(this.speakerFreqBuf as any);
+        const ac = analyzeAcousticFrame(
+          this.speakerTimeBuf,
+          this.speakerFreqBuf,
+          spkAnalyser.context.sampleRate || 24000,
+          fftSize
+        );
+        if (ac.rms >= 0.0055) {
+          const vol = Math.min(1.0, Math.pow(Math.max(0.0, (ac.rms - 0.0045) * 9.2), 0.68));
+          return { volume: vol, low: ac.low, mid: ac.mid, high: ac.high, zcr: ac.zcr, f2Low: ac.f2Low, f2High: ac.f2High, isSpeaking: true, viseme: null };
+        }
+        return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, f2Low: 0, f2High: 0, isSpeaking: true, viseme: null };
+      }
       const spk = speaker.level();
       if (spk <= 0.01) {
         return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, f2Low: 0, f2High: 0, isSpeaking: false, viseme: null };
@@ -1120,6 +1180,7 @@ class AudioEngine {
 
     const activePlayback = this.isSpeaking();
     if (!this.analyser || !this.audioCtx || !activePlayback) {
+      this.liveLastFramePerfMs = 0;
       return speakerFallback();
     }
 
@@ -1139,36 +1200,51 @@ class AudioEngine {
       this.audioCtx.sampleRate || 48000,
       fftSize
     );
-    const speakingNow = activePlayback || rms > 0.0065;
+    const speakingNow = activePlayback || rms > 0.0055;
     if (!speakingNow) {
+      this.liveLastFramePerfMs = 0;
       return speakerFallback();
     }
 
+    const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const dtSec =
+      this.liveLastFramePerfMs > 0
+        ? Math.min(0.08, Math.max(0, (nowPerf - this.liveLastFramePerfMs) / 1000))
+        : 0.016;
+    this.liveLastFramePerfMs = nowPerf;
+
     // Genuine pause / silence inside an active turn -> close lips cleanly instead of holding an open mouth
-    if (rms < 0.0075) {
+    if (rms < 0.0055) {
       if (activePlayback) {
         return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, f2Low: 0, f2High: 0, isSpeaking: true, viseme: null };
       }
       return speakerFallback();
     }
 
-    const volume = Math.min(1.0, Math.pow(Math.max(0.0, (rms - 0.006) * 5.8), 0.72));
+    const volume = Math.min(1.0, Math.pow(Math.max(0.0, (rms - 0.0045) * 9.2), 0.68));
     let viseme: VisemeWeights | null = null;
     if (this.wholePcmSource && this.ttsTimeline && this.ttsDurationMs > 0) {
-      const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
-      const frac = Math.max(0, Math.min(1, (nowPerf - this.ttsStartPerfMs) / this.ttsDurationMs));
-      viseme = this.ttsTimeline.sampleAtFraction(frac);
+      if (nowPerf < this.ttsStartPerfMs) {
+        viseme = { ...VISEME_PRESETS.SIL };
+      } else {
+        const frac = Math.max(0, Math.min(1, (nowPerf - this.ttsStartPerfMs) / this.ttsDurationMs));
+        viseme = this.ttsTimeline.sampleAtFraction(frac);
+      }
     } else if (
       this.liveVisemeTimeline &&
-      this.audioCtx &&
-      this.liveAudioStartCtxSec > 0 &&
       this.liveTranscriptText.length > 0
     ) {
-      const elapsedSec = Math.max(0, this.audioCtx.currentTime - this.liveAudioStartCtxSec);
-      const estTotalSec = Math.max(0.35, this.liveTranscriptText.length * 0.068);
-      if (elapsedSec <= estTotalSec * 1.1) {
-        viseme = this.liveVisemeTimeline.sampleAtFraction(Math.min(1, elapsedSec / estTotalSec));
+      // Monotonic audio-gated char cursor so streaming transcript updates never jump lips backwards
+      if (rms >= 0.006) {
+        const charsPerSec = 13.5 + volume * 4.5;
+        this.liveSpokenChars = Math.min(
+          Math.max(0, this.liveTranscriptText.length - 1),
+          this.liveSpokenChars + dtSec * charsPerSec
+        );
       }
+      const charIdx = Math.floor(this.liveSpokenChars);
+      const subProg = this.liveSpokenChars - charIdx;
+      viseme = this.liveVisemeTimeline.sampleAtCharIndex(charIdx, subProg);
     }
 
     return { volume, low, mid, high, zcr, f2Low, f2High, isSpeaking: true, viseme };
@@ -1226,6 +1302,20 @@ class AudioEngine {
       float32Data[i] = int16Data[i] / 32768.0;
     }
     return float32Data;
+  }
+
+  public hasCachedPuckTts(rawText: string): boolean {
+    const cleaned = rawText
+      .split("|||")[0]
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replace(/```[\s\S]*?```/g, " code snippet shown on screen. ")
+      .replace(/[*_#`>|~]/g, " ")
+      .replace(/https?:\/\/\S+/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/\b(\w+(?:\s+\w+){0,3})(?:\s+\1\b)+/gi, "$1")
+      .trim()
+      .slice(0, 420);
+    return Boolean(cleaned && this.prefetchedTtsCache.has(cleaned));
   }
 
   public async prefetchPuckTts(texts: string[], apiBase?: string): Promise<void> {
@@ -1327,11 +1417,13 @@ class AudioEngine {
       typeof window !== "undefined" &&
       Boolean(window.location?.hostname?.endsWith(".vercel.app"));
 
-    // Always try genuine Gemini 3.8 Live Puck (/api/voice/tts) FIRST so users always hear authentic Puck!
-    const ttsEndpoints = [
-      { url: `${effectiveApiBase}/api/voice/tts`, timeoutMs: 11000 },
-      ...(canUseSameOriginEdge ? [{ url: "/api/edge-tts", timeoutMs: 10000 }] : []),
-    ];
+    // On Vercel, same-origin /api/edge-tts avoids cold-start roundtrips; otherwise call backend /api/voice/tts first
+    const ttsEndpoints = canUseSameOriginEdge
+      ? [
+          { url: "/api/edge-tts", timeoutMs: 6500 },
+          { url: `${effectiveApiBase}/api/voice/tts`, timeoutMs: 8500 },
+        ]
+      : [{ url: `${effectiveApiBase}/api/voice/tts`, timeoutMs: 8500 }];
 
     for (const ep of ttsEndpoints) {
       const localAc = new AbortController();
@@ -1476,9 +1568,10 @@ class AudioEngine {
     this.wholePcmSource = src;
 
     const nowPerf = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const speechSpan = this.detectSpeechSpanMs(float32Data, rate);
     this.ttsTimeline = spokenText ? buildVisemeTimeline(spokenText) : null;
-    this.ttsStartPerfMs = nowPerf;
-    this.ttsDurationMs = Math.max(120, buffer.duration * 1000);
+    this.ttsStartPerfMs = nowPerf + speechSpan.startMs;
+    this.ttsDurationMs = Math.max(120, speechSpan.durationMs);
     this.playingUntilPerfMs = nowPerf + buffer.duration * 1000;
     this.echoGuardUntilPerfMs = Math.max(this.echoGuardUntilPerfMs, this.playingUntilPerfMs + 260);
     src.onended = () => {
@@ -1588,6 +1681,8 @@ class AudioEngine {
         this.playingUntilPerfMs = 0;
         this.liveAudioStartCtxSec = 0;
         this.liveAudioEndCtxSec = 0;
+        this.liveSpokenChars = 0;
+        this.liveLastFramePerfMs = 0;
       }
       this.notifySpeakingListeners();
     };
@@ -1640,6 +1735,8 @@ class AudioEngine {
     this.liveVisemeTimeline = null;
     this.liveAudioStartCtxSec = 0;
     this.liveAudioEndCtxSec = 0;
+    this.liveSpokenChars = 0;
+    this.liveLastFramePerfMs = 0;
     if (prevWhole) {
       prevWhole.onended = null;
       try {
@@ -1759,7 +1856,7 @@ class AudioEngine {
       this.speechFramesInUtterance += 1;
       this.postSpeechSilenceMs = 0;
       if (this.inUtterance || this.speechOnsetFrames >= 1 || rms >= speechThreshold * 1.15) {
-        this.gateHoldMs = 460;
+        this.gateHoldMs = 340;
       }
     } else {
       this.speechOnsetFrames = Math.max(0, this.speechOnsetFrames - 1);
@@ -1771,7 +1868,7 @@ class AudioEngine {
       }
     }
     const gateOpen =
-      this.gateHoldMs > 0 || (this.speechFramesInUtterance >= 2 && this.postSpeechSilenceMs < 680);
+      this.gateHoldMs > 0 || (this.speechFramesInUtterance >= 2 && this.postSpeechSilenceMs < 460);
 
     // Smooth adaptive speech boost so soft earphone/laptop voices reach clear Gemini Live & fallback STT levels
     if (gateOpen && rms >= speechThreshold && rms < 0.10) {
@@ -1853,7 +1950,7 @@ class AudioEngine {
     }
 
     // Hybrid VAD end-of-speech flush on sustained silence so mobile/desktop Gemini Live replies immediately
-    if (this.speechFramesInUtterance >= 2 && this.postSpeechSilenceMs >= 680) {
+    if (this.speechFramesInUtterance >= 2 && this.postSpeechSilenceMs >= 460) {
       this.speechFramesInUtterance = 0;
       this.postSpeechSilenceMs = 0;
       this.gateHoldMs = 0;

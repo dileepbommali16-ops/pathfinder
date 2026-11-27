@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   analyzeAcousticFrame,
   buildVisemeTimeline,
+  estimateAcousticViseme,
   VISEME_PRESETS,
 } from "../agent/viseme";
 
@@ -99,5 +100,65 @@ describe("Real Phonetic Viseme & Acoustic Lip-Sync Engine", () => {
     eeFreq.fill(220, 43, 56);
     const eeRes = analyzeAcousticFrame(timeBuf, eeFreq, sr, fftSize);
     expect(eeRes.f2High).toBeGreaterThan(eeRes.f2Low * 3);
+  });
+
+  it("maps acoustic formants into distinct MBP closure, OO pucker, EE stretch, SH_SZ sibilant, and AA open visemes", () => {
+    const mbp = estimateAcousticViseme({
+      volume: 0.35,
+      low: 0.2,
+      mid: 0.2,
+      high: 0.05,
+      zcr: 0.04,
+      f2Low: 0.1,
+      f2High: 0.1,
+      valleyClose: 0.85,
+    });
+    expect(mbp.close).toBeGreaterThan(0.4);
+    expect(mbp.press).toBeGreaterThan(0.3);
+
+    const oo = estimateAcousticViseme({
+      volume: 0.75,
+      low: 0.35,
+      mid: 0.25,
+      high: 0.04,
+      zcr: 0.03,
+      f2Low: 0.75,
+      f2High: 0.08,
+    });
+    expect(oo.pucker).toBeGreaterThan(0.35);
+
+    const ee = estimateAcousticViseme({
+      volume: 0.75,
+      low: 0.2,
+      mid: 0.45,
+      high: 0.08,
+      zcr: 0.05,
+      f2Low: 0.08,
+      f2High: 0.75,
+    });
+    expect(ee.stretch).toBeGreaterThan(0.35);
+    expect(ee.stretch).toBeGreaterThan(ee.pucker * 2);
+
+    const sib = estimateAcousticViseme({
+      volume: 0.65,
+      low: 0.08,
+      mid: 0.22,
+      high: 0.72,
+      zcr: 0.22,
+      f2Low: 0.1,
+      f2High: 0.35,
+    });
+    expect(sib.funnel).toBeGreaterThan(0.15);
+
+    const aa = estimateAcousticViseme({
+      volume: 0.9,
+      low: 0.82,
+      mid: 0.18,
+      high: 0.04,
+      zcr: 0.03,
+      f2Low: 0.35,
+      f2High: 0.35,
+    });
+    expect(aa.jawOpen).toBeGreaterThan(0.28);
   });
 });

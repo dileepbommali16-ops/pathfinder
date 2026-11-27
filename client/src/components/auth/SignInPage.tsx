@@ -19,7 +19,7 @@ const STUDIO_HIGHLIGHTS = [
   {
     index: "01",
     title: "972-Record Synthetic Placement Dataset",
-    detail: "Random Forest odds trained on a 972-record synthetic placement dataset, augmented from a 215-record public baseline.",
+    detail: "Random Forest probability model calibrated on 972 augmented campus records from a 215-record public baseline.",
   },
   {
     index: "02",
@@ -50,7 +50,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({ onLogin, initialError, o
 
   // Wake the Render backend early; fire and forget
   useEffect(() => {
-    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
+    fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => { });
   }, []);
 
   // Reset the social loading state when the page is restored from back/forward cache

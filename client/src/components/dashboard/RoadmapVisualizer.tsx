@@ -14,7 +14,7 @@ interface RoadmapVisualizerProps {
 }
 
 const DEFAULT_ROADMAP: RoadmapData = {
-  headline: "6-Week Strategic Campus Placement Acceleration Roadmap",
+  headline: "Structured weekly milestones covering DSA patterns, flagship projects, core CS, and ATS tailoring.",
   skill_gaps: [
     "Pattern-based DSA consistency (Blind 75)",
     "Flagship full-stack project with measurable metrics",

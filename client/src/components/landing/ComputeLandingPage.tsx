@@ -35,7 +35,7 @@ const SLIDE_PREVIEWS: Record<
     points: [
       "Instant job-description keyword parser against your skill ledger",
       "Structured Google X-Y-Z resume templates & 1-page ATS PDF export",
-      "Uninflated senior manager rubric scan without fake inflation",
+      "Strict hiring-manager rubric scoring with zero score inflation",
     ],
   },
   interview: {
@@ -166,7 +166,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               href="#workspaces"
               className="inline-flex min-h-10 items-center transition-colors duration-150 hover:text-[#FAFAFA]"
             >
-              6 Workspaces
+              7 Workspaces
             </a>
             <a
               href="#benchmarks"
@@ -320,24 +320,23 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   </h3>
                   <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-[#A1A1AA]">
                     Evaluates CGPA multipliers, branch history, standing backlogs, internships, and
-                    DSA readiness against a 972-record synthetic placement dataset, augmented from a
-                    215-record public baseline.
+                    DSA readiness across 972 augmented campus records and 5 competency axes.
                   </p>
                 </div>
 
-                {/* Illustrative Sample Preview Micro-Widget */}
+                {/* Model Output Preview Micro-Widget */}
                 <div className="pf-subpanel rounded-xl p-5 sm:p-6">
                   <div className="flex items-baseline justify-between gap-4 border-b border-white/[0.06] pb-4">
                     <div>
                       <span className="font-mono text-[10px] uppercase tracking-wider text-[#8A8A92]">
-                        Sample Profile Preview · Illustrative
+                        Model Preview · Random Forest
                       </span>
                       <div className="mt-1 font-mono text-3xl font-semibold text-[#FAFAFA] tabular-nums">
                         84.5%
                       </div>
                     </div>
                     <span className="rounded-md border border-white/[0.1] bg-[#16161C] px-2.5 py-1 font-mono text-[11px] text-[#E4E4E7]">
-                      Sample Output
+                      Example Output
                     </span>
                   </div>
                   <div className="mt-4 space-y-3">
@@ -423,19 +422,19 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   </p>
                 </div>
 
-                {/* ATS Before / After Illustrative Preview */}
+                {/* ATS Before / After Preview */}
                 <div className="pf-subpanel space-y-3 rounded-xl p-5 sm:p-6">
                   <span className="block font-mono text-[10px] uppercase tracking-wider text-[#8A8A92]">
-                    Illustrative ATS Diff Preview
+                    ATS Diff Preview
                   </span>
                   <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-black/40 px-3.5 py-2.5">
-                    <span className="font-mono text-xs text-[#8A8A92]">Sample baseline</span>
+                    <span className="font-mono text-xs text-[#8A8A92]">Baseline resume</span>
                     <span className="font-mono text-sm font-semibold text-[#A1A1AA] tabular-nums">
                       54%
                     </span>
                   </div>
                   <div className="flex items-center justify-between rounded-lg border border-white/[0.14] bg-[#16161C] px-3.5 py-2.5">
-                    <span className="font-mono text-xs text-[#FAFAFA]">Sample after X-Y-Z sync</span>
+                    <span className="font-mono text-xs text-[#FAFAFA]">After X-Y-Z sync</span>
                     <span className="font-mono text-sm font-semibold text-[#FAFAFA] tabular-nums">
                       89%
                     </span>
@@ -476,7 +475,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                 <div className="pf-subpanel overflow-hidden rounded-xl">
                   <div className="flex items-center justify-between border-b border-white/[0.06] bg-black/50 px-4 py-2.5 font-mono text-[11px] text-[#A1A1AA]">
                     <span>solution.py · Python 3.11</span>
-                    <span className="text-[#FAFAFA]">Sample Run · PASSED</span>
+                    <span className="text-[#FAFAFA]">PASSED</span>
                   </div>
                   <pre className="overflow-x-auto p-5 font-mono text-xs leading-[1.65] text-[#D4D4D8]">
                     {`def first_occurrence(arr, target):

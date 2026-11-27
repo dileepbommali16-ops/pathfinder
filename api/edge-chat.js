@@ -117,7 +117,7 @@ function buildSystemPrompt(honorific, activeTab, profile = {}, pageContext = {},
   const readiness = pageContext?.readinessChance != null ? `Readiness=${pageContext.readinessChance}%` : "";
   const profileLine = `Active candidate profile: Branch=${branch}, CGPA=${cgpa}, TargetRole=${targetRole}${readiness ? `, ${readiness}` : ""}.`;
   const tabsLine =
-    "Pathfinder 2.0 has 6 active navigation slides: 1. Dashboard (overview), 2. JD & Resume Tailor (resume), 3. Live Coding & Viva Arena (interview), 4. Project Blueprints (projects), 5. Cohort & Roadmap (analytics), 6. Profile / Settings (profile).";
+    "Pathfinder 2.0 has 7 active navigation slides: 1. Overview (overview), 2. JD & Resume Lab (resume), 3. Coding & Viva Arena (interview), 4. Project Blueprints (projects), 5. Dataset & Roadmap (analytics), 6. My Progress (progress), 7. Profile / Settings (profile).";
   const tabNote = activeTab ? `Active Pathfinder slide: ${activeTab}.` : "";
   const cardNote = pageContext.cardContext ? `Focused card: ${pageContext.cardContext}.` : "";
 
@@ -237,7 +237,7 @@ export async function POST(request) {
           const resp = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(8000),
+            signal: AbortSignal.timeout(6000),
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: systemText }] },
               contents,

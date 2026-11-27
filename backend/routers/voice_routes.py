@@ -152,7 +152,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                         contents=text,
                         config=cfg,
                     ),
-                    timeout=8.0,
+                    timeout=5.5,
                 )
                 pcm_chunks = bytearray()
                 sample_rate = 24000
@@ -209,8 +209,9 @@ def _normalize_tts_text(raw_text: str) -> str:
     txt = re.sub(r"\[([^\[\]]{1,40})\]", r"\1", txt)
     txt = re.sub(r"[*_#`>|~]", " ", txt)
     txt = re.sub(r"\s+", " ", txt).strip()
-    # Collapse consecutive duplicated words/short phrases (e.g., "Big O of log n Big O of log n")
+    # Collapse consecutive duplicated words/short phrases and duplicated consecutive sentences
     txt = re.sub(r"\b(\w+(?:\s+\w+){0,4})(?:\s+\1\b)+", r"\1", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"([^.!?]{6,}[.!?])\s*\1+", r"\1", txt, flags=re.IGNORECASE)
     if len(txt) > 420:
         cutoff = txt.rfind(".", 0, 420)
         txt = txt[: cutoff + 1].strip() if cutoff >= 120 else txt[:420].strip()
@@ -294,12 +295,12 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                                 if sc and (
                                     (getattr(sc, "turn_complete", False) and len(pcm_buf) >= 4800)
                                     or (speech_seen and getattr(sc, "generation_complete", False) and len(pcm_buf) >= 9600)
-                                    or (speech_seen and trailing_silent_bytes >= 26400)
+                                    or (speech_seen and trailing_silent_bytes >= 19200)
                                     or len(pcm_buf) >= max_pcm_bytes
                                 ):
                                     break
 
-                    await asyncio.wait_for(_run_live(), timeout=11.0)
+                    await asyncio.wait_for(_run_live(), timeout=5.2)
                     raw_pcm = bytes(pcm_buf)
                     _, peak = _chunk_rms_and_peak_int16(raw_pcm)
                     if len(raw_pcm) >= 4800 and peak >= 200:
@@ -320,6 +321,8 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                 except Exception as exc:
                     err_s = repr(exc).lower()
                     logger.warning("[Voice TTS Live Puck] %s attempt#%d failed: %r", LIVE_MODEL, attempt_idx + 1, exc)
+                    if isinstance(exc, asyncio.TimeoutError) and len(keys) == 1:
+                        break
                     if any(tok in err_s for tok in ("1011", "exhausted", "quota", "429")):
                         mark_gemini_key_rate_limited(key, 600.0)
                         quota_hits += 1
@@ -397,9 +400,9 @@ async def synthesize_puck_pcm(text: str, prefer_unary: bool = False) -> Optional
         _TTS_INFLIGHT[cache_key] = task
 
     try:
-        synthesized = await asyncio.wait_for(asyncio.shield(task), timeout=13.5)
+        synthesized = await asyncio.wait_for(asyncio.shield(task), timeout=8.5)
     except asyncio.TimeoutError:
-        logger.warning("[Voice TTS] timed out waiting 13.5s for Puck synthesis")
+        logger.warning("[Voice TTS] timed out waiting 8.5s for Puck synthesis")
         return None
     if synthesized:
         return {"cached": joined_inflight, **synthesized}

@@ -91,8 +91,8 @@ def create_gemini_live_config(system_prompt: str, tools_list: list) -> types.Liv
             rt_kwargs["automatic_activity_detection"] = types.AutomaticActivityDetection(
                 start_of_speech_sensitivity=types.StartSensitivity.START_SENSITIVITY_HIGH,
                 end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_HIGH,
-                prefix_padding_ms=100,
-                silence_duration_ms=340,
+                prefix_padding_ms=80,
+                silence_duration_ms=260,
             )
         if rt_kwargs:
             kwargs["realtime_input_config"] = types.RealtimeInputConfig(**rt_kwargs)

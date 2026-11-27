@@ -107,6 +107,7 @@ export async function POST(request) {
       .replace(/\[([^\[\]]{1,40})\]/g, "$1")
       .replace(/\s+/g, " ")
       .replace(/\b(\w+(?:\s+\w+){0,4})(?:\s+\1\b)+/gi, "$1")
+      .replace(/([^.!?]{6,}[.!?])\s*\1+/gi, "$1")
       .trim()
       .slice(0, 420);
     if (!text) {
@@ -128,7 +129,7 @@ export async function POST(request) {
           const resp = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(9500),
+            signal: AbortSignal.timeout(6500),
             body: JSON.stringify({
               contents: [{ role: "user", parts: [{ text }] }],
               generationConfig: {

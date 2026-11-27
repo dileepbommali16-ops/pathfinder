@@ -396,3 +396,79 @@ export function analyzeAcousticFrame(
 
   return { rms, zcr, low, mid, high, f2Low, f2High };
 }
+
+/**
+ * Maps instantaneous acoustic formants (F1/F2/F3 + ZCR + syllable valleys) into blended
+ * ARKit viseme weights so live streaming speech articulates distinct rounded, spread,
+ * fricative, bilabial-closed, and open-vowel shapes even before/without text alignment.
+ */
+export function estimateAcousticViseme(params: {
+  volume: number;
+  low: number;
+  mid: number;
+  high: number;
+  zcr: number;
+  f2Low: number;
+  f2High: number;
+  valleyClose?: number;
+}): VisemeWeights {
+  const { volume, low, mid, high, zcr, f2Low, f2High, valleyClose = 0 } = params;
+  if (volume <= 0.015) {
+    return { ...VISEME_PRESETS.SIL };
+  }
+
+  const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+  const bandSum = low + mid + high + 0.001;
+  const wLow = low / bandSum;
+  const wMid = mid / bandSum;
+  const wHigh = high / bandSum;
+  const f2Sum = f2Low + f2High + 0.001;
+  const roundDom = clamp01((f2Low / f2Sum - 0.36) * 2.2);
+  const spreadDom = clamp01((f2High / f2Sum - 0.36) * 2.2 + wMid * 0.35);
+  const sibScore = clamp01((zcr - 0.065) * 6.5 + (wHigh - 0.16) * 3.4);
+  const openScore = clamp01(wLow * 1.45 * (1 - sibScore * 0.65));
+
+  // Weighted mixture across core viseme prototypes
+  let wMBP = clamp01(valleyClose * 1.15);
+  let wSib = sibScore * (1 - wMBP * 0.8);
+  let wOO = roundDom * (1 - wSib * 0.7) * (1 - wMBP * 0.8);
+  let wEE = spreadDom * (1 - wOO * 0.65) * (1 - wMBP * 0.8);
+  let wAA = openScore * (1 - wMBP * 0.85) * (1 - wSib * 0.45);
+
+  const totalW = wMBP + wSib + wOO + wEE + wAA;
+  if (totalW <= 0.001) {
+    wAA = 1;
+  } else {
+    wMBP /= totalW;
+    wSib /= totalW;
+    wOO /= totalW;
+    wEE /= totalW;
+    wAA /= totalW;
+  }
+
+  const sibPreset = zcr > 0.14 ? VISEME_PRESETS.SH_SZ : VISEME_PRESETS.FV;
+  const amp = clamp01(0.42 + volume * 0.82);
+
+  const mix = (k: keyof VisemeWeights, scaleWithAmp = true) => {
+    const raw =
+      VISEME_PRESETS.MBP[k] * wMBP +
+      sibPreset[k] * wSib +
+      VISEME_PRESETS.OO[k] * wOO +
+      VISEME_PRESETS.EE[k] * wEE +
+      VISEME_PRESETS.AA[k] * wAA;
+    return scaleWithAmp ? raw * amp : raw;
+  };
+
+  return {
+    jawOpen: mix("jawOpen", true),
+    close: mix("close", false),
+    press: mix("press", false),
+    pucker: mix("pucker", true),
+    funnel: mix("funnel", true),
+    stretch: mix("stretch", true),
+    upperUp: mix("upperUp", true),
+    lowerDown: mix("lowerDown", true),
+    rollLower: mix("rollLower", false),
+    smile: mix("smile", true),
+  };
+}

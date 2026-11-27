@@ -172,7 +172,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                     analytics?.branch_distribution?.length ||
                     branches.filter((b) => b !== "All").length
                   } engineering branches`
-                : "Structured summary tables, branch rollups, and CSV exports from the 972-record synthetic placement dataset, augmented from a 215-record public baseline"}
+                : "Structured summary tables, branch rollups, and CSV exports across all filtered cohort records"}
             </p>
           </div>
 
@@ -409,8 +409,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                   Department Placement Summary (Report Format)
                 </h3>
                 <p className="text-xs text-[#A1A1AA]">
-                  Filtered rollup from the 972-record synthetic placement dataset, augmented from a
-                  215-record public baseline ·{" "}
+                  Filtered department rollup ·{" "}
                   {filters.year === 0 ? "All Years" : `Year ${filters.year}`}
                 </p>
               </div>

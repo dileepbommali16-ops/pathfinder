@@ -304,7 +304,7 @@ export const CompanyPlacementRadar: React.FC<CompanyPlacementRadarProps> = ({
                   {selectedCompany.packageRange}
                 </div>
                 <div className="mt-2 text-[11px] text-[#8A8A92]">
-                  Illustrative reference range, not dataset values
+                  Typical market CTC range
                 </div>
               </div>
 

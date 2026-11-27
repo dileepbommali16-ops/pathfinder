@@ -526,4 +526,32 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(radarSrc).toContain("Industry Reference Benchmarks");
     expect(radarSrc).not.toContain("Active Campus Drives");
   });
+
+  it("ensures clean copy without TODO placeholders, accurate 7 Workspaces count, unique shader keys, and zero consecutive duplicate words", () => {
+    const srcRoot = path.resolve(__dirname, "..");
+    const footerSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/Footer.tsx"), "utf-8");
+    const landingSrc = fs.readFileSync(path.join(srcRoot, "components/landing/ComputeLandingPage.tsx"), "utf-8");
+    const faceEffectsSrc = fs.readFileSync(path.join(srcRoot, "agent/FaceEffects.tsx"), "utf-8");
+    const heroMetricsSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/HeroMetrics.tsx"), "utf-8");
+    const signInSrc = fs.readFileSync(path.join(srcRoot, "components/auth/SignInPage.tsx"), "utf-8");
+    const complianceSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/ComplianceModals.tsx"), "utf-8");
+
+    expect(footerSrc).not.toContain("TODO");
+    expect(landingSrc).toContain("7 Workspaces");
+    expect(landingSrc).not.toContain("6 Workspaces");
+    expect(faceEffectsSrc).toContain("customProgramCacheKey");
+
+    const dupWordRx = /\b([A-Za-z]{3,})\s+\1\b/i;
+    for (const src of [footerSrc, heroMetricsSrc, landingSrc, signInSrc, complianceSrc]) {
+      const stripped = src
+        .replace(/className\s*=\s*"[^"]*"/g, " ")
+        .replace(/className\s*=\s*\{`[^`]*`\}/g, " ");
+      const textNodes = Array.from(stripped.matchAll(/>([^<>{}]+)</g)).map((m) =>
+        m[1].replace(/\s+/g, " ").trim()
+      );
+      for (const nodeText of textNodes) {
+        expect(nodeText).not.toMatch(dupWordRx);
+      }
+    }
+  });
 });

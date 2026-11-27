@@ -114,6 +114,13 @@ class DasAgentSocket {
     }
   }
 
+  private dedupeLiveTranscript(text: string): string {
+    if (!text) return "";
+    return text
+      .replace(/\b([A-Za-z]{2,})(?:\s+\1\b)+/gi, "$1")
+      .replace(/([^.!?]{6,}[.!?])\s*\1+/gi, "$1");
+  }
+
   public muteActiveTurn() {
     this.muteUntilNextSend = true;
     if (this.activeAudioTurnId !== null) {
@@ -555,7 +562,7 @@ CORE AUTONOMOUS CAPABILITIES:
             this.pendingTexts.length === 0 &&
             Date.now() - this.lastTextSentAt > 6000
           ) {
-            this.savedOnTranscript?.(`DAS Online (DAS Ready)! Speak or type now, ${this.roleHonorific}.`);
+            this.savedOnTranscript?.(`DAS Online — speak or type now, ${this.roleHonorific}.`);
           }
           const ctxNow =
             this.latestPageContext ||
@@ -677,7 +684,9 @@ CORE AUTONOMOUS CAPABILITIES:
             }
             this.cancelTtsFallback();
           }
-          this.currentAgentTranscript += data.text;
+          this.currentAgentTranscript = this.dedupeLiveTranscript(
+            this.currentAgentTranscript + data.text
+          );
           audioEngine.updateLiveTranscript(this.currentAgentTranscript);
           this.savedOnTranscript?.(this.currentAgentTranscript);
           if (this.audioChunksInTurn === 0 && !audioEngine.isSpeaking()) {
@@ -696,7 +705,7 @@ CORE AUTONOMOUS CAPABILITIES:
                   this.triggerTextOnlyTts(rescueTxt);
                 }
               }
-            }, 5500);
+            }, 3200);
           }
           return;
         }
@@ -897,7 +906,9 @@ CORE AUTONOMOUS CAPABILITIES:
                 }
                 this.cancelTtsFallback();
               }
-              this.currentAgentTranscript += part.text;
+              this.currentAgentTranscript = this.dedupeLiveTranscript(
+                this.currentAgentTranscript + part.text
+              );
               audioEngine.updateLiveTranscript(this.currentAgentTranscript);
               this.savedOnTranscript?.(this.currentAgentTranscript);
             }
@@ -1137,7 +1148,7 @@ CORE AUTONOMOUS CAPABILITIES:
         this.watchdogRetriedForText = false;
         this.savedOnTranscript?.(`Live session timed out, ${this.roleHonorific}. Please try sending your message again.`);
       }
-    }, 18000);
+    }, 11000);
   }
 
   private forceReconnectNow() {
@@ -1406,6 +1417,8 @@ CORE AUTONOMOUS CAPABILITIES:
     this.savedRole = role;
     this.hasConversationActivity = false;
     this.pendingTexts = [];
+    this.pendingWarmup = true;
+    this.lastWarmupAt = 0;
     this.clearAudioRescueTimer();
     this.cancelTtsFallback();
     this.clearTurnWatchdog();

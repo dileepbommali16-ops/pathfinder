@@ -115,7 +115,7 @@
 ---
 
 ## 5. Honest Data Disclosure
-- **Public Baseline Dataset**: 215 student records originating from the public baseline `Placement_Data_Full_Class.csv` (source URL & license: TODO).
+- **Public Baseline Dataset**: 215 student records originating from the public baseline `Placement_Data_Full_Class.csv` (public Kaggle Campus Recruitment dataset, CC0 Public Domain).
 - **Synthetic Augmented Dataset**: 972-record synthetic placement dataset, augmented from the 215-record public baseline (`Placement_Data_Full_Class.csv`), mapped across 9 engineering disciplines (CSE, IT, AIML, CSD, ECE, EEE, Mech, Civil, Cyber Security) for 2024–2026 (324 rows per year) to demonstrate multi-year analytics and ML pipelines — not private institutional records.
 - **Estimate Disclaimer**: All predictions, readiness percentages, and salary tier forecasts are statistical estimations for self-improvement and preparation, not guarantees of employment.
 

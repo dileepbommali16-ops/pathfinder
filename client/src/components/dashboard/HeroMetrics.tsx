@@ -73,9 +73,9 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             className="max-w-[58ch] text-sm leading-[1.7] text-[#A1A1AA] sm:text-base"
             style={{ textWrap: "pretty" }}
           >
-            Your placement workspace synthesizes a 972-record synthetic placement dataset,
-            augmented from a 215-record public baseline, Random Forest offer modeling, and live 3D
-            voice coaching with DAS into one spacious execution hub.
+            Your workspace pairs a 972-record synthetic placement dataset, augmented from a
+            215-record public baseline, with Random Forest offer modeling and live 3D voice
+            coaching from DAS.
           </p>
 
           <div className="flex flex-wrap items-center gap-3.5 pt-2">

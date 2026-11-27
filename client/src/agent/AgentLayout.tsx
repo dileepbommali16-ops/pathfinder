@@ -91,6 +91,8 @@ function cleanHudReplyText(raw: string): string {
     .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/[*_`~#>]/g, " ")
     .replace(/\s+/g, " ")
+    .replace(/\b([A-Za-z]{2,})(?:\s+\1\b)+/gi, "$1")
+    .replace(/([^.!?]{6,}[.!?])\s*\1+/gi, "$1")
     .trim();
 }
 
@@ -244,6 +246,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       const nextKey = explicitKey || getHonorificKey();
       if (forceReset) {
         resetConversationForSessionSwitch(nextKey);
+        dasSocket.warmup();
         void audioEngine.prefetchPuckTts(
           [getExactHiReply(nextKey, 0), getExactHiReply(nextKey, 1)],
           API_BASE
@@ -428,8 +431,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         Boolean(window.location?.hostname?.endsWith(".vercel.app"));
 
       const endpoints = [
-        ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 9000 }] : []),
-        { url: `${API_BASE}/api/chat`, timeoutMs: 11000 },
+        ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 6000 }] : []),
+        { url: `${API_BASE}/api/chat`, timeoutMs: 8000 },
       ];
 
       for (const ep of endpoints) {
@@ -567,11 +570,27 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    // Strict deterministic "Hi" rule across roles (pre-warmed WebSocket Puck first, instant REST Puck fallback)
+    // Strict deterministic "Hi" rule across roles (0ms cached Puck playback -> pre-warmed WS -> REST Puck)
     if (mode === "chat" && isPureHiGreeting(queryText)) {
       const activeKey = getHonorificKey();
       const exactHi = getExactHiReply(activeKey, hiGreetCountRef.current);
       hiGreetCountRef.current += 1;
+      if (audioEngine.hasCachedPuckTts(exactHi)) {
+        cleanup();
+        dasSocket.warmup();
+        chatHistoryRef.current = [
+          ...chatHistoryRef.current,
+          { role: "assistant" as const, content: exactHi },
+        ].slice(-12);
+        setTranscript(exactHi);
+        const ttsAc = new AbortController();
+        restTtsAbortRef.current = ttsAc;
+        void audioEngine.speakTextPuckOrLocal(exactHi, API_BASE, {
+          signal: ttsAc.signal,
+          shouldContinue: () => askCoachNonceRef.current === nonce,
+        });
+        return;
+      }
       if (dasSocket.isSocketConnected) {
         tryExecuteClientAutomationIntent(queryText, navigate);
         dasSocket.sendTextCommand(queryText);
@@ -596,7 +615,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             signal: ttsAc.signal,
             shouldContinue: () => askCoachNonceRef.current === nonce,
           });
-        }, 2800);
+        }, 1100);
         return;
       }
       cleanup();
@@ -646,7 +665,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       tryExecuteClientAutomationIntent(queryText, navigate);
       dasSocket.sendTextCommand(queryText);
     }
-    const fallbackDelayMs = wasSocketReady ? 6200 : 1600;
+    const fallbackDelayMs = wasSocketReady ? 3000 : 750;
     timerId = window.setTimeout(() => {
       if (
         settled ||
@@ -756,8 +775,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     const activeKey = getHonorificKey();
     const prefetchTimer = window.setTimeout(() => {
-      void audioEngine.prefetchPuckTts([getExactHiReply(activeKey, 0)], API_BASE);
-    }, 1500);
+      void audioEngine.prefetchPuckTts(
+        [getExactHiReply(activeKey, 0), getExactHiReply(activeKey, 1)],
+        API_BASE
+      );
+    }, 300);
 
     const prewarmAudio = () => {
       audioEngine.unlockAudio();
@@ -889,8 +911,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           const delayMs = !dasSocket.isSocketConnected
             ? isPureHiGreeting(cleanSpoken)
               ? 0
-              : 650
-            : 4000;
+              : 350
+            : 2000;
           window.setTimeout(() => {
             if (
               lastAgentActivityAtRef.current < spokenAt &&

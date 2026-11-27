@@ -43,7 +43,7 @@ export const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClos
                   1. Zero Voice Retention Policy
                 </h3>
                 <p>
-                  Pathfinder 2.0 processes conversational speech streams in real time via the Web Speech API and transient server-sent events. We do not store raw microphone audio, voiceprints, or acoustic recordings on disk or cloud storage.
+                  Pathfinder 2.0 processes live voice audio streams in real time over encrypted WebSocket and HTTPS connections. We do not store raw microphone audio, voiceprints, or acoustic recordings on disk or cloud storage.
                 </p>
               </section>
 
