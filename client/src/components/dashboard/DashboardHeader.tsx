@@ -151,11 +151,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </div>
       </div>
 
-      {/* Spacious 6-Slide Segmented Navigation Dock — Zero Icons */}
+      {/* Spacious 7-Slide Segmented Navigation Dock — Zero Icons */}
       <div className="border-t border-white/[0.06] bg-black/75 px-5 py-2.5 sm:px-10">
         <nav
           aria-label="Primary workspace navigation"
-          className="mx-auto flex w-full max-w-[1400px] items-center gap-2 overflow-x-auto scrollbar-none lg:grid lg:grid-cols-6"
+          className="mx-auto flex w-full max-w-[1400px] items-center gap-2 overflow-x-auto scrollbar-none lg:grid lg:grid-cols-7"
         >
           {TABS.map((tab, idx) => {
             const isActive = activeTab === tab.id;
@@ -168,7 +168,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 aria-label={tab.label}
                 aria-current={isActive ? "page" : undefined}
                 onClick={() => handleSelectTab(tab.id)}
-                className={`relative flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3.5 text-xs font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] ${isActive
+                className={`relative flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 lg:px-2.5 text-xs font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] ${isActive
                     ? "border border-white/[0.16] bg-[#141419] text-[#FAFAFA] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                     : "border border-transparent text-[#A1A1AA] hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                   }`}

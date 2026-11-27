@@ -173,6 +173,20 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
     howToUse: "Complete weekly missions to build consistency and confidence leading up to the campus recruitment season.",
     limitations: "Badges track personal preparation discipline and effort; they serve as internal motivational milestones."
   },
+  progress: {
+    id: "progress",
+    title: "My Progress Journey (Real Activity & Score Trend)",
+    purpose: "Shows only real results the candidate actually earned in Pathfinder: Random Forest readiness trend over time, best ATS score, Coding Arena average, Mock Interview average, Roadmap weeks checked off, and an activity timeline.",
+    widgets: [
+      "5 Live Summary Metrics: Latest ML Readiness %, Best ATS Score, Coding Arena Avg, Interview Avg, and Roadmap Weeks.",
+      "Readiness Trend Line Chart plotted from real backend ML re-scores.",
+      "Next Best Steps card linking straight to missing or low-scoring modules.",
+      "Activity Timeline listing the latest 12 graded results with Clear History control."
+    ],
+    dataSource: "Private per-browser activity log (pathfinder_progress_log_v1_*) populated strictly from completed backend predictions, ATS scans, Coding Arena submissions, and graded interview answers — zero pre-filled or synthetic data.",
+    howToUse: "Run your profile prediction, scan a resume, submit a Coding Arena round, or answer a mock interview question, then review your real trajectory here or ask DAS to audit your next best step.",
+    limitations: "Tracks preparation progress stored locally in the active browser session; metrics stay blank until real actions are completed."
+  },
   profile: {
     id: "profile",
     title: "Profile & Settings (Single Source of Truth)",

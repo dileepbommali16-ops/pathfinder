@@ -26,6 +26,8 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
   onAskCoach,
 }) => {
   const isConfigured = chance !== null && chance !== undefined;
+  const isWaitingForModel = !isConfigured && /calculating|waking/i.test(label || "");
+  const waitingLabel = label || "Awaiting Profile Input";
   const clampedChance = isConfigured ? Math.max(0, Math.min(100, chance)) : 0;
 
   const emailNow =
@@ -52,7 +54,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
         <div className="space-y-6 lg:col-span-7">
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center rounded-md border border-white/[0.12] bg-[#141419] px-3 py-1 text-xs font-medium text-[#FAFAFA]">
-              {isConfigured ? label : "Awaiting Profile Input"}
+              {isConfigured ? label : waitingLabel}
             </span>
             <span className="inline-flex items-center gap-2 rounded-md border border-white/[0.08] bg-[#0D0D11] px-3 py-1 font-mono text-[11px] text-[#A1A1AA] tabular-nums">
               <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
@@ -115,7 +117,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
                 )}
               </span>
               <span className="font-mono text-xs text-[#A1A1AA]">
-                {isConfigured ? label : "Awaiting Profile Input"}
+                {isConfigured ? label : waitingLabel}
               </span>
             </div>
 
@@ -151,6 +153,10 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
                   Ask DAS to break down this score
                 </button>
               )
+            ) : isWaitingForModel ? (
+              <div className="mt-6 flex h-11 w-full items-center justify-center rounded-xl border border-white/[0.08] bg-[#121216] px-4 font-mono text-xs text-[#A1A1AA]">
+                Waiting for real Random Forest score...
+              </div>
             ) : (
               <button
                 type="button"

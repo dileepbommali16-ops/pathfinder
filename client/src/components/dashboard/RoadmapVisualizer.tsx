@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { PROGRESS_UPDATED_EVENT } from "@/lib/progressTracker";
 
 export interface RoadmapData {
   headline: string;
@@ -69,6 +70,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
   const persistCompleted = (next: Record<number, boolean>) => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent(PROGRESS_UPDATED_EVENT));
     } catch { }
   };
 
@@ -104,6 +106,9 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({
             </h2>
             <span className="rounded-md border border-white/[0.1] bg-[#141418] px-2.5 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
               Sprint Tracker
+            </span>
+            <span className="rounded-md border border-white/[0.08] bg-[#0D0D11] px-2.5 py-0.5 font-mono text-[10px] text-[#8A8A92]">
+              {roadmap ? "AI-Personalized Plan" : "Starter Template · Click Regenerate for AI Plan"}
             </span>
           </div>
           <p className="mt-2 text-xs text-[#A1A1AA] sm:text-sm">{currentRoadmap.headline}</p>

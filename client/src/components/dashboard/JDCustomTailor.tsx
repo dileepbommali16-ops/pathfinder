@@ -374,24 +374,31 @@ export const JDCustomTailor: React.FC<JDCustomTailorProps> = ({
       </div>
 
       {/* Quick Company JD Presets */}
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="mr-1 font-mono text-[11px] text-[#8A8A92]">Quick Company JDs</span>
-        {JD_PRESETS.map((preset) => {
-          const active = preset.id === selectedPresetId;
-          return (
-            <button
-              key={preset.id}
-              type="button"
-              onClick={() => handleSelectPreset(preset)}
-              className={`h-9 rounded-lg border px-4 text-xs font-medium transition-colors cursor-pointer ${active
-                ? "border-white/[0.28] bg-[#18181F] text-[#FAFAFA]"
-                : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
-                }`}
-            >
-              {preset.company} · {preset.role.split("(")[0].trim()} ({preset.packageLpa})
-            </button>
-          );
-        })}
+      <div className="space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="font-mono text-[11px] text-[#8A8A92]">Quick Company JDs</span>
+          <span className="font-mono text-[10px] text-[#8A8A92]">
+            Reference presets · LPA ranges reflect synthetic dataset benchmarks, not official company offers
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {JD_PRESETS.map((preset) => {
+            const active = preset.id === selectedPresetId;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => handleSelectPreset(preset)}
+                className={`h-9 rounded-lg border px-4 text-xs font-medium transition-colors cursor-pointer ${active
+                  ? "border-white/[0.28] bg-[#18181F] text-[#FAFAFA]"
+                  : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
+                  }`}
+              >
+                {preset.company} · {preset.role.split("(")[0].trim()} ({preset.packageLpa})
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Main Grid — Stacked Inputs So Long Role Titles Never Clip */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { StudentProfileState } from "@/types/profile";
 import { SUPPORTED_LANGUAGES, normalizeLanguage } from "@/agent/codingStudioController";
 import { audioEngine, startListening } from "@/agent/audioIO";
+import { recordProgressEvent } from "@/lib/progressTracker";
 import { toast } from "sonner";
 
 export type ArenaTrackId = "Amazon" | "Google" | "Deloitte" | "Microsoft" | "Core / Systems";

@@ -2701,7 +2701,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           }}
         />
 
-        {/* 6-Slide Workspace Switcher Pager */}
+        {/* 7-Slide Workspace Switcher Pager */}
         {!focusOnDas && WORKSPACE_SLIDES.some((s) => s.id === activeTab) && (
           <SlideTransitionBar activeSlideId={activeTab} onSelectSlide={setActiveTab} />
         )}

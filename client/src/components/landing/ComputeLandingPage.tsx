@@ -491,18 +491,18 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
           </div>
         </section>
 
-        {/* Interactive 6-Slide Workspace Previewer */}
+        {/* Interactive 7-Slide Workspace Previewer */}
         <section id="workspaces" className="border-t border-white/[0.07] py-24 sm:py-32">
           <div className="mb-10 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
               <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#8A8A92]">
-                6 Integrated Slides
+                7 Integrated Slides
               </span>
               <h2
                 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[#FAFAFA] sm:text-4xl"
                 style={{ textWrap: "balance" }}
               >
-                Six spacious workspaces inside one studio.
+                Seven spacious workspaces inside one studio.
               </h2>
             </div>
             <p className="max-w-md text-sm leading-relaxed text-[#A1A1AA]">
@@ -511,7 +511,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
             {WORKSPACE_SLIDES.map((slide) => {
               const isSelected = slide.id === activeSlide.id;
               return (
