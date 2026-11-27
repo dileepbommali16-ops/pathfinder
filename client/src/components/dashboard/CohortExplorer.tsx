@@ -168,10 +168,9 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
             </div>
             <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
               {viewMode === "explorer"
-                ? `Based on a 972-record synthetic placement dataset, augmented from a 215-record public baseline, across ${
-                    analytics?.branch_distribution?.length ||
-                    branches.filter((b) => b !== "All").length
-                  } engineering branches`
+                ? `Based on a 972-record synthetic placement dataset, generated to demonstrate the pipeline, across ${analytics?.branch_distribution?.length ||
+                branches.filter((b) => b !== "All").length
+                } engineering branches`
                 : "Structured summary tables, branch rollups, and CSV exports across all filtered cohort records"}
             </p>
           </div>
@@ -181,22 +180,20 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               <button
                 type="button"
                 onClick={() => setViewMode("explorer")}
-                className={`h-8 rounded-lg px-3.5 text-xs font-medium transition-colors cursor-pointer ${
-                  viewMode === "explorer"
-                    ? "bg-[#FAFAFA] text-[#09090B]"
-                    : "text-[#A1A1AA] hover:text-[#FAFAFA]"
-                }`}
+                className={`h-8 rounded-lg px-3.5 text-xs font-medium transition-colors cursor-pointer ${viewMode === "explorer"
+                  ? "bg-[#FAFAFA] text-[#09090B]"
+                  : "text-[#A1A1AA] hover:text-[#FAFAFA]"
+                  }`}
               >
                 Dataset Explorer
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("tpo")}
-                className={`h-8 rounded-lg px-3.5 text-xs font-medium transition-colors cursor-pointer ${
-                  viewMode === "tpo"
-                    ? "bg-[#FAFAFA] text-[#09090B]"
-                    : "text-[#A1A1AA] hover:text-[#FAFAFA]"
-                }`}
+                className={`h-8 rounded-lg px-3.5 text-xs font-medium transition-colors cursor-pointer ${viewMode === "tpo"
+                  ? "bg-[#FAFAFA] text-[#09090B]"
+                  : "text-[#A1A1AA] hover:text-[#FAFAFA]"
+                  }`}
               >
                 Report Format
               </button>
@@ -644,11 +641,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                         </td>
                         <td className="px-6 py-3">
                           <span
-                            className={`inline-flex rounded border px-2 py-0.5 font-mono text-[10px] ${
-                              r.placed_label === "Placed"
-                                ? "border-[#3F3F46] bg-[#141418] text-[#FAFAFA]"
-                                : "border-[#222226] bg-[#0B0B0E] text-[#A1A1AA]"
-                            }`}
+                            className={`inline-flex rounded border px-2 py-0.5 font-mono text-[10px] ${r.placed_label === "Placed"
+                              ? "border-[#3F3F46] bg-[#141418] text-[#FAFAFA]"
+                              : "border-[#222226] bg-[#0B0B0E] text-[#A1A1AA]"
+                              }`}
                           >
                             {r.placed_label}
                           </span>

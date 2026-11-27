@@ -38,7 +38,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
             </div>
             <p className="text-xs leading-relaxed text-[#A1A1AA]">
               Full-stack engineering placement intelligence calibrated on a 972-record synthetic
-              placement dataset, augmented from a 215-record public baseline, pairing scikit-learn
+              placement dataset, generated to demonstrate the pipeline, pairing scikit-learn
               probability models with live 3D voice coaching.
             </p>
           </div>
@@ -170,16 +170,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
           </div>
 
           {/* Column 4: Dataset Credit & Attribution */}
-          <div className="space-y-3" data-dataset-credit="public-baseline-215">
+          <div className="space-y-3" data-dataset-credit="synthetic-972">
             <h3 className="text-xs font-semibold text-[#FAFAFA]">Dataset Credit</h3>
             <p className="text-xs leading-relaxed text-[#A1A1AA]">
-              Uses a 972-record synthetic placement dataset, augmented from a 215-record public
-              baseline (not private college records).
+              Dataset: 972-record synthetic placement dataset, generated to demonstrate the pipeline. Not real placement records.
             </p>
             <div className="space-y-2 pt-1 text-xs">
-              <p className="font-mono text-[11px] text-[#D4D4D8]">
-                Baseline: Placement_Data_Full_Class.csv (215 records · Public Campus Recruitment dataset)
-              </p>
               <div>
                 <button
                   type="button"

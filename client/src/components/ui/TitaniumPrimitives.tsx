@@ -176,7 +176,7 @@ export const WORKSPACE_SLIDES: WorkspaceSlideItem[] = [
     id: "analytics",
     index: "05",
     label: "Dataset & Roadmap",
-    subtitle: "972-record synthetic placement dataset (215-record public baseline) & 6-week sprint",
+    subtitle: "972-record synthetic placement dataset & 6-week sprint",
   },
   {
     id: "progress",

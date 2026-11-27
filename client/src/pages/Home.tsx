@@ -2322,7 +2322,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                     description="Real-time placement probability and primary eligibility benchmark"
                     badge="1 of 3 · Readiness"
                     accent="cyan"
-                    helperLabel="Calculated via Random Forest model trained on 972-record synthetic placement dataset, augmented from a 215-record public baseline"
+                    helperLabel="Calculated via Random Forest model trained on a 972-record synthetic placement dataset, generated to demonstrate the pipeline"
                   />
                   <HeroMetrics
                     username={username}

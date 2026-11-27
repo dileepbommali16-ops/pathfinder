@@ -1,4 +1,4 @@
-// Fallback snapshot derived from 972-record synthetic placement dataset, augmented from a 215-record public baseline
+// Fallback snapshot derived from 972-record synthetic placement dataset, generated to demonstrate the pipeline
 export const FALLBACK_BRANCHES = [
   {
     "code": "CSE",

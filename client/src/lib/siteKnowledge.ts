@@ -25,7 +25,7 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
       "Next Immediate Actions Widget: High-impact milestones to boost probability within 7-14 days.",
       "What-If Scenario Simulator: Interactive sandbox to preview how raising CGPA, coding, or adding an internship affects probability."
     ],
-    dataSource: "Real-time inference from RandomForestClassifier (88% cross-validation accuracy on the synthetic dataset) trained on a 972-record synthetic placement dataset, augmented from a 215-record public baseline. Input values come from the user's active Student Profile.",
+    dataSource: "Real-time inference from RandomForestClassifier (88% cross-validation accuracy on the synthetic dataset) trained on a 972-record synthetic placement dataset, generated to demonstrate the pipeline. Input values come from the user's active Student Profile.",
     howToUse: "Review your overall readiness gauge. Click 'What-If Simulator' or 'Readiness Command' to see which exact skill lever provides the highest score delta.",
     limitations: "The percentage score is a statistical probability estimation based on historical placement distributions, not a contractual employment guarantee."
   },
@@ -78,7 +78,7 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
       "Quick Action Chips: Pre-populated prompts ('Start Mock Interview', 'Find My Skill Gaps', 'Review My Resume', 'Suggest Flagship Project', 'Placement Preparation Plan').",
       "Controls: Stop Generation, Regenerate, Clear Chat, and Server Wake-up notification indicator."
     ],
-    dataSource: "Direct live inference from Google Gemini models with full site knowledge injection, candidate profile grounding, and statistics from the 972-record synthetic placement dataset, augmented from a 215-record public baseline.",
+    dataSource: "Direct live inference from Google Gemini models with full site knowledge injection, candidate profile grounding, and statistics from the 972-record synthetic placement dataset, generated to demonstrate the pipeline.",
     howToUse: "Ask anything! Whether you want technical system design explanations, mock behavioral questions, emotional encouragement, or explanations of specific charts on the website.",
     limitations: "The AI mentor provides guidance and educational mentorship; it does not grade university coursework or guarantee job placement."
   },
@@ -98,13 +98,13 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
   analytics: {
     id: "analytics",
     title: "5. Dataset & Roadmap (972-Record Synthetic Dataset + 6-Week Sprint)",
-    purpose: "Placement analytics across a 972-record synthetic placement dataset, augmented from a 215-record public baseline, paired directly with your personalized 6-Week Strategic Placement Roadmap.",
+    purpose: "Placement analytics across a 972-record synthetic placement dataset, generated to demonstrate the pipeline, paired directly with your personalized 6-Week Strategic Placement Roadmap.",
     widgets: [
       "Department Filter & Dataset Year Selector (All Years, 2024, 2025, 2026).",
       "Placement Distribution & Salary Package Rankings: Highest and average LPA computed across dataset branches (peak 44.9 LPA in CSM, 44.6 LPA in AIML, 44.0 LPA in CSE).",
       "6-Week Strategic Placement Roadmap: Week-by-week interactive sprint deliverables covering DSA patterns, system design, core CS, and mock interviews."
     ],
-    dataSource: "972-record synthetic placement dataset, augmented from a 215-record public baseline, paired with live personalized roadmap generation.",
+    dataSource: "972-record synthetic placement dataset, generated to demonstrate the pipeline, paired with live personalized roadmap generation.",
     howToUse: "Compare your branch and CGPA bracket to the synthetic dataset distributions, then execute your 6-week roadmap milestones right below.",
     limitations: "Synthetic dataset trends provide statistical pipeline baselines; combine benchmark analysis with weekly roadmap execution."
   },
@@ -131,7 +131,7 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
       "Core Subjects Checklist (OS, DBMS, Networks, Microprocessors, CAD, Power Systems).",
       "Top Tech Hiring Recruiters by Branch."
     ],
-    dataSource: "Derived from data/branches.json and the 972-record synthetic placement dataset, augmented from a 215-record public baseline.",
+    dataSource: "Derived from data/branches.json and the 972-record synthetic placement dataset, generated to demonstrate the pipeline.",
     howToUse: "Find your department to discover core academic subjects most frequently tested during campus technical rounds.",
     limitations: "Non-circuital branches (MECH, CIVIL) should focus on core departmental opportunities or follow the IT transition roadmap if targeting software roles."
   },
