@@ -154,11 +154,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     return "overview";
   });
   const [hudCollapsed, setHudCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
+    if (typeof window === "undefined") return true;
     if (resolveInitialDasLayout() === "docked") return window.innerWidth < 1280;
-    const initialTab = (window as any).__DAS_PAGE_CONTEXT__?.activeTab || "overview";
-    return initialTab === "interview";
+    return true;
   });
+  const prevActiveTabRef = useRef<string>(activeTab);
   const [focusMode, setFocusMode] = useState(false);
   const userToggledStageRef = useRef(false);
   const [, setRole] = useState<UserHonorificRole>(() => getHonorificKey());
@@ -1374,6 +1374,9 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           speakingOffTimerRef.current = null;
         }
         setIsSpeaking(true);
+        if (resolveInitialDasLayout() === "background") {
+          setHudCollapsed(false);
+        }
       } else {
         if (speakingOffTimerRef.current !== null) {
           window.clearTimeout(speakingOffTimerRef.current);
@@ -1395,8 +1398,11 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     if (activeLayout !== "background") return;
-    if (activeTab === "interview" && !focusMode) {
-      setHudCollapsed(true);
+    if (prevActiveTabRef.current !== activeTab) {
+      prevActiveTabRef.current = activeTab;
+      if (!focusMode) {
+        setHudCollapsed(true);
+      }
     }
   }, [activeLayout, activeTab, focusMode]);
 
