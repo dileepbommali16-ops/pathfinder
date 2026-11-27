@@ -1155,8 +1155,8 @@ class AudioEngine {
           spkAnalyser.context.sampleRate || 24000,
           fftSize
         );
-        if (ac.rms >= 0.0055) {
-          const vol = Math.min(1.0, Math.pow(Math.max(0.0, (ac.rms - 0.0045) * 9.2), 0.68));
+        if (ac.rms >= 0.0075) {
+          const vol = Math.min(1.0, Math.pow(Math.max(0.0, (ac.rms - 0.006) * 5.8), 0.72));
           return { volume: vol, low: ac.low, mid: ac.mid, high: ac.high, zcr: ac.zcr, f2Low: ac.f2Low, f2High: ac.f2High, isSpeaking: true, viseme: null };
         }
         return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, f2Low: 0, f2High: 0, isSpeaking: true, viseme: null };
@@ -1200,7 +1200,7 @@ class AudioEngine {
       this.audioCtx.sampleRate || 48000,
       fftSize
     );
-    const speakingNow = activePlayback || rms > 0.0055;
+    const speakingNow = activePlayback || rms > 0.0065;
     if (!speakingNow) {
       this.liveLastFramePerfMs = 0;
       return speakerFallback();
@@ -1214,14 +1214,14 @@ class AudioEngine {
     this.liveLastFramePerfMs = nowPerf;
 
     // Genuine pause / silence inside an active turn -> close lips cleanly instead of holding an open mouth
-    if (rms < 0.0055) {
+    if (rms < 0.0075) {
       if (activePlayback) {
         return { volume: 0, low: 0, mid: 0, high: 0, zcr: 0, f2Low: 0, f2High: 0, isSpeaking: true, viseme: null };
       }
       return speakerFallback();
     }
 
-    const volume = Math.min(1.0, Math.pow(Math.max(0.0, (rms - 0.0045) * 9.2), 0.68));
+    const volume = Math.min(1.0, Math.pow(Math.max(0.0, (rms - 0.006) * 5.8), 0.72));
     let viseme: VisemeWeights | null = null;
     if (this.wholePcmSource && this.ttsTimeline && this.ttsDurationMs > 0) {
       if (nowPerf < this.ttsStartPerfMs) {
