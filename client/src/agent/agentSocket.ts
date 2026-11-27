@@ -134,6 +134,7 @@ class DasAgentSocket {
     if (this.activeAudioTurnId !== null) {
       this.interruptedTurnIds.add(this.activeAudioTurnId);
     }
+    this.clearPostToolRescueTimer();
     this.clearAudioRescueTimer();
     this.cancelTtsFallback();
     this.clearTurnWatchdog();
@@ -792,6 +793,7 @@ CORE AUTONOMOUS CAPABILITIES:
           if (isStaleClientTurn) {
             return;
           }
+          this.clearPostToolRescueTimer();
           this.clearAudioRescueTimer();
           const tId = typeof data.turn_id === "number" ? data.turn_id : null;
           if (tId !== null && tId === this.activeAudioTurnId) {
@@ -1195,6 +1197,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.activeAudioTurnId = null;
     this.audioChunksInTurn = 0;
     this.awaitingNextTurn = true;
+    this.clearPostToolRescueTimer();
     this.clearAudioRescueTimer();
     this.savedOnStatusChange?.(false);
     if (this.renderPingTimer) {
@@ -1333,6 +1336,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.muteUntilNextSend = false;
     this.interruptedTurnIds.clear();
     this.activeClientTurnId = ++this.clientTurnSeq;
+    this.clearPostToolRescueTimer();
     this.clearAudioRescueTimer();
     this.cancelTtsFallback();
     this.audioChunksInTurn = 0;
@@ -1455,6 +1459,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.pendingTexts = [];
     this.pendingWarmup = true;
     this.lastWarmupAt = 0;
+    this.clearPostToolRescueTimer();
     this.clearAudioRescueTimer();
     this.cancelTtsFallback();
     this.clearTurnWatchdog();
@@ -1467,6 +1472,7 @@ CORE AUTONOMOUS CAPABILITIES:
     this.connSeq++;
     this.activeAudioTurnId = null;
     this.audioChunksInTurn = 0;
+    this.clearPostToolRescueTimer();
     this.clearAudioRescueTimer();
     this.cancelTtsFallback();
     this.clearTurnWatchdog();

@@ -183,6 +183,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const micBusyRef = useRef<boolean>(false);
   const speechRecRef = useRef<any>(null);
   const lastAgentActivityAtRef = useRef<number>(0);
+  const lastVoiceIntentRef = useRef<{ key: string; at: number }>({ key: "", at: 0 });
   const chatHistoryRef = useRef<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const transcriptRef = useRef<string>(transcript);
   const userTranscriptRef = useRef<string>(userTranscript);
@@ -472,9 +473,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         setCodeTask(payload);
         setEditableCode(payload.code);
         setCompileOutput("Executing code live...");
-        setTimeout(() => {
-          runCodeLiveRef.current(payload.code, payload.language);
-        }, 120);
+        runCodeLiveRef.current(payload.code, payload.language);
       }
     );
   };
@@ -662,10 +661,22 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     if (mode === "coach") {
       dasSocket.askCoach(queryText, ctx);
     } else {
-      tryExecuteClientAutomationIntent(queryText, navigate);
+      const intentKey = queryText.toLowerCase().trim();
+      const recentSame =
+        lastVoiceIntentRef.current.key === intentKey &&
+        Date.now() - lastVoiceIntentRef.current.at < 1500;
+      if (!recentSame && tryExecuteClientAutomationIntent(queryText, navigate)) {
+        lastVoiceIntentRef.current = { key: intentKey, at: Date.now() };
+      }
+      const freshCtx =
+        (typeof window !== "undefined" && (window as any).__DAS_PAGE_CONTEXT__) || {};
+      ctx = { ...ctx, ...freshCtx };
+      if (dasSocket.isSocketConnected) {
+        dasSocket.sendPageContext(ctx);
+      }
       dasSocket.sendTextCommand(queryText);
     }
-    const fallbackDelayMs = wasSocketReady ? 3000 : 750;
+    const fallbackDelayMs = wasSocketReady ? 4500 : 750;
     timerId = window.setTimeout(() => {
       if (
         settled ||
@@ -903,8 +914,15 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         if (finalized) {
           const cleanSpoken = finalized.trim();
+          const spokenKey = cleanSpoken.toLowerCase();
           const spokenAt = Date.now();
           setUserTranscript(cleanSpoken);
+          const alreadyTriggered =
+            lastVoiceIntentRef.current.key === spokenKey &&
+            spokenAt - lastVoiceIntentRef.current.at < 1500;
+          if (!alreadyTriggered && tryExecuteClientAutomationIntent(cleanSpoken, navigate)) {
+            lastVoiceIntentRef.current = { key: spokenKey, at: spokenAt };
+          }
           const curCtx =
             (typeof window !== "undefined" && (window as any).__DAS_PAGE_CONTEXT__) || {};
           const nonceBefore = askCoachNonceRef.current;
@@ -912,12 +930,13 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             ? isPureHiGreeting(cleanSpoken)
               ? 0
               : 350
-            : 2000;
+            : 3400;
           window.setTimeout(() => {
             if (
               lastAgentActivityAtRef.current < spokenAt &&
               askCoachNonceRef.current === nonceBefore &&
               !dasSocket.isAgentSpeaking &&
+              !dasSocket.isAwaitingResponse &&
               !audioEngine.isSpeaking()
             ) {
               dispatchTurnRef.current(cleanSpoken, curCtx, "chat");
@@ -1043,13 +1062,32 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     compileOutputRef.current = "Compiling & running your code live...";
     setCompileOutput("Compiling & running your code live...");
 
+    const createLinkedTimeoutSignal = (parent: AbortSignal, ms: number) => {
+      const ac = new AbortController();
+      if (parent.aborted) {
+        ac.abort();
+        return { signal: ac.signal, cleanup: () => {} };
+      }
+      const onParentAbort = () => ac.abort();
+      parent.addEventListener("abort", onParentAbort, { once: true });
+      const tid = window.setTimeout(() => ac.abort(new DOMException("Timeout", "TimeoutError")), ms);
+      return {
+        signal: ac.signal,
+        cleanup: () => {
+          window.clearTimeout(tid);
+          parent.removeEventListener("abort", onParentAbort);
+        },
+      };
+    };
+
     try {
       // 1. Primary: Run via our backend /api/compile
+      const primarySig = createLinkedTimeoutSignal(controller.signal, 9500);
       try {
         const res = await fetch(`${API_BASE}/api/compile`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
+          signal: primarySig.signal,
           body: JSON.stringify({
             language: targetLang,
             code: cleanCode,
@@ -1073,14 +1111,17 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           };
         }
       } catch (primaryErr: any) {
-        if (primaryErr?.name === "AbortError" || controller.signal.aborted) {
+        if (controller.signal.aborted) {
           compileOutputRef.current = "⏹ Execution stopped.";
           setCompileOutput("⏹ Execution stopped.");
           return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
         }
+      } finally {
+        primarySig.cleanup();
       }
 
       // 2. Secondary High-Speed Fallback: Piston Sandbox Engine
+      const pistonSig = createLinkedTimeoutSignal(controller.signal, 5500);
       try {
         const pistonLangs: Record<string, string> = {
           c: "c",
@@ -1102,7 +1143,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         const pRes = await fetch("https://emkc.org/api/v2/piston/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
+          signal: pistonSig.signal,
           body: JSON.stringify({
             language: pLang,
             version: "*",
@@ -1122,14 +1163,17 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
       } catch (pistonErr: any) {
-        if (pistonErr?.name === "AbortError" || controller.signal.aborted) {
+        if (controller.signal.aborted) {
           compileOutputRef.current = "⏹ Execution stopped.";
           setCompileOutput("⏹ Execution stopped.");
           return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
         }
+      } finally {
+        pistonSig.cleanup();
       }
 
       // 3. Tertiary Fallback: Compiler Explorer (Godbolt) Official API
+      const godboltSig = createLinkedTimeoutSignal(controller.signal, 6500);
       try {
         const compilerMap: Record<string, { id: string; lang: string; args: string }> = {
           c: { id: "cg132", lang: "c", args: "-O2" },
@@ -1150,7 +1194,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         const fallbackRes = await fetch(`https://godbolt.org/api/compiler/${comp.id}/compile`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
-          signal: controller.signal,
+          signal: godboltSig.signal,
           body: JSON.stringify({
             source: cleanCode,
             compiler: comp.id,
@@ -1183,7 +1227,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         setCompileOutput("Program executed successfully.");
         return { ok: true, output: "Program executed successfully.", stderr: "", engine: "godbolt" };
       } catch (fbErr: any) {
-        if (fbErr?.name === "AbortError" || controller.signal.aborted) {
+        if (controller.signal.aborted) {
           compileOutputRef.current = "⏹ Execution stopped.";
           setCompileOutput("⏹ Execution stopped.");
           return { ok: false, stopped: true, output: "Execution stopped.", stderr: "", engine: "aborted" };
@@ -1192,6 +1236,8 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         compileOutputRef.current = errMsg;
         setCompileOutput(errMsg);
         return { ok: false, output: errMsg, stderr: String(fbErr), engine: "error" };
+      } finally {
+        godboltSig.cleanup();
       }
     } finally {
       if (runAbortRef.current === controller) {

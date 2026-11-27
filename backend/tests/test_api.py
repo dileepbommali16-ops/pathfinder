@@ -819,5 +819,55 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIn("Deepika", remembered_reply)
         self.assertNotIn("know your name", remembered_reply.lower())
 
+    def test_promote_gemini_key_and_zero_fake_anti_sycophancy_guards(self):
+        import os
+        import inspect
+        from pathlib import Path
+        from backend.config import key_resolver as kr
+        from backend.agent.live_proxy import das_multimodal_live_ws, get_das_system_instruction
+        from backend.gemini_engine import SYSTEM_INSTRUCTION
+        from backend.site_knowledge import TABS_KNOWLEDGE
+
+        kr.clear_gemini_key_cooldowns()
+        try:
+            with patch.dict(
+                os.environ,
+                {
+                    "GEMINI_API_KEY": "AIzaFirstKey01",
+                    "GEMINI_API_KEY_FALLBACK": "AIzaSecondKey02, AIzaThirdKey03",
+                },
+                clear=False,
+            ):
+                kr.promote_gemini_key("AIzaThirdKey03")
+                promoted = kr.get_gemini_key_candidates()
+                self.assertEqual(promoted[0], "AIzaThirdKey03")
+
+                kr.clear_gemini_key_cooldowns()
+                reset_order = kr.get_gemini_key_candidates()
+                self.assertEqual(reset_order[0], "AIzaFirstKey01")
+        finally:
+            kr.clear_gemini_key_cooldowns()
+
+        live_prompt = get_das_system_instruction("boss")
+        self.assertIn("Peacock", live_prompt)
+        self.assertIn("pigeon", live_prompt.lower())
+        self.assertIn("ZERO-SYCOPHANCY", live_prompt)
+        self.assertIn("Peacock", SYSTEM_INSTRUCTION)
+        self.assertIn("pigeon", SYSTEM_INSTRUCTION.lower())
+
+        prompt_txt = (
+            Path(__file__).resolve().parents[1] / "prompts" / "career_coach_system.txt"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Peacock", prompt_txt)
+        self.assertIn("ZERO-SYCOPHANCY", prompt_txt)
+
+        self.assertIn("interview", TABS_KNOWLEDGE)
+        self.assertIn("progress", TABS_KNOWLEDGE)
+
+        ws_src = inspect.getsource(das_multimodal_live_ws)
+        self.assertIn("in_flight_tool_calls", ws_src)
+        self.assertIn("_post_tool_watchdog", ws_src)
+
+
 if __name__ == "__main__":
     unittest.main()
