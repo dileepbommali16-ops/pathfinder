@@ -25,7 +25,7 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
       "Next Immediate Actions Widget: High-impact milestones to boost probability within 7-14 days.",
       "What-If Scenario Simulator: Interactive sandbox to preview how raising CGPA, coding, or adding an internship affects probability."
     ],
-    dataSource: "Real-time inference from RandomForestClassifier (88% cross-validation accuracy on the synthetic dataset) trained on a 972-record synthetic placement dataset, generated to demonstrate the pipeline. Input values come from the user's active Student Profile.",
+    dataSource: "Hybrid score: Random Forest (88% cross-validation accuracy on a 972-record synthetic placement dataset, generated to demonstrate the pipeline; 5 features: cgpa, backlogs, internships, communication_score, coding_score) blended with an evidence rubric (projects, skills, GitHub, LeetCode, certifications, ATS). Input values come from the user's active Student Profile.",
     howToUse: "Review your overall readiness gauge. Click 'What-If Simulator' or 'Readiness Command' to see which exact skill lever provides the highest score delta.",
     limitations: "The percentage score is a statistical probability estimation based on historical placement distributions, not a contractual employment guarantee."
   },
@@ -176,7 +176,7 @@ export const SITE_KNOWLEDGE: Record<string, TabKnowledge> = {
   progress: {
     id: "progress",
     title: "My Progress Journey (Real Activity & Score Trend)",
-    purpose: "Shows only real results the candidate actually earned in Pathfinder: Random Forest readiness trend over time, best ATS score, Coding Arena average, Mock Interview average, Roadmap weeks checked off, and an activity timeline.",
+    purpose: "Shows only real results the candidate actually earned in Pathfinder: hybrid readiness trend over time, best ATS score, Coding Arena average, Mock Interview average, Roadmap weeks checked off, and an activity timeline.",
     widgets: [
       "5 Live Summary Metrics: Latest ML Readiness %, Best ATS Score, Coding Arena Avg, Interview Avg, and Roadmap Weeks.",
       "Readiness Trend Line Chart plotted from real backend ML re-scores.",

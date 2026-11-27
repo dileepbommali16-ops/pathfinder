@@ -900,7 +900,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           tone: "focus",
           strengths: [],
           priorities: [
-            "Fetching your real Random Forest placement score from the Pathfinder backend...",
+            "Fetching your hybrid Random Forest + evidence rubric score from the Pathfinder backend...",
           ],
           breakdown: {},
         }
@@ -1486,7 +1486,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         tone: "focus",
         strengths: [],
         priorities: [
-          "The Random Forest prediction server is starting up. Your real ML score will appear automatically — no estimated number is shown in the meantime.",
+          "The hybrid score server is starting up. Your live Random Forest + evidence rubric score will appear automatically — no estimated number is shown in the meantime.",
         ],
         breakdown: {},
       });
@@ -2382,7 +2382,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                     description="Real-time placement probability and primary eligibility benchmark"
                     badge="1 of 3 · Readiness"
                     accent="cyan"
-                    helperLabel="Calculated via Random Forest model trained on a 972-record synthetic placement dataset, generated to demonstrate the pipeline"
+                    helperLabel="Hybrid score: Random Forest (88% cross-validation accuracy on the 972-record synthetic placement dataset, generated to demonstrate the pipeline) blended with an evidence rubric (projects, skills, GitHub, LeetCode, certifications, ATS)"
                   />
                   <HeroMetrics
                     username={username}

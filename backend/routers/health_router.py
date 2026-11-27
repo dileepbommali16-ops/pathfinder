@@ -18,6 +18,7 @@ from backend.supabase_store import is_cloud_db_configured
 from backend.data_service import get_placement_df
 from backend.config.key_resolver import get_gemini_key_candidates
 from backend.gemini_engine import get_last_gemini_diagnostic, get_gemini_models
+from backend.ml_engine import get_trained_model
 
 health_router = APIRouter(tags=["Health & System Diagnostics"])
 
@@ -49,6 +50,16 @@ def full_health_check():
 
     sqlite_ok = DB_PATH.exists()
     cloud_db_ok = is_cloud_db_configured()
+
+    ml_status = "ready"
+    estimators_count = 120
+    features_count = 0
+    try:
+        rf_model, rf_features = get_trained_model()
+        estimators_count = int(getattr(rf_model, "n_estimators", 120))
+        features_count = int(getattr(rf_model, "n_features_in_", len(rf_features or [])))
+    except Exception:
+        ml_status = "initializing"
 
     return {
         "status": "online" if dataset_ok else "degraded",
@@ -97,10 +108,11 @@ def full_health_check():
             "diagnostic": get_last_gemini_diagnostic()
         },
         "ml_service": {
-            "status": "ready",
-            "model": "RandomForestClassifier(n_estimators=120)",
+            "status": ml_status,
+            "model": f"RandomForestClassifier(n_estimators={estimators_count})",
             "accuracy": 0.88,
-            "features_count": 8
+            "features_count": features_count,
+            "scoring_mode": "hybrid_rf_and_evidence_rubric",
         },
         "cache": cache.stats(),
         "security": "Enforced: TLS/CORS, Rate-Limiting, Per-User Isolation, Input Sanitization"
